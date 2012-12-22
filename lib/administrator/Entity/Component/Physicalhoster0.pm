@@ -50,21 +50,24 @@ sub hostType {
     return "Physical host";
 }
 
-=head2 getPolicyParams
-
-=cut
-
-sub getPolicyParams {
+sub getHostManagerParams {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'policy_type' ]);
-
-    if ($args{policy_type} eq 'hosting') {
-        return [ { name => 'cpu', label => 'Required CPU number', pattern => '^[0-9]+$', unit => 'core(s)' },
-                 { name => 'ram', label => 'Required RAM amount', pattern => '^[0-9]+$', unit => 'byte' } ];
-    }
-    return [];
+    return {
+        cpu => {
+            label   => 'Required CPU number',
+            type    => 'integer',
+            unit    => 'core(s)',
+            pattern => '^\d*$',
+        },
+        ram => {
+            label   => 'Required RAM amount',
+            type    => 'integer',
+            unit    => 'byte',
+            pattern => '^\d*$',
+        }
+    };
 }
 
 sub getConf {

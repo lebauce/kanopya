@@ -219,26 +219,39 @@ sub checkScaleMemory {
     my $ram_current = pop @{$raw_data->{$indicator_oid}};
     my $ram_before  = pop @{$raw_data->{$indicator_oid}};
 
-    return {ram_current => $ram_current, ram_before => $ram_before};
+    return { ram_current => $ram_current, ram_before => $ram_before };
 }
 
-=head2 getPolicyParams
-
-=cut
-
-sub getPolicyParams {
+sub getHostManagerParams {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'policy_type' ]);
-
-    if ($args{policy_type} eq 'hosting') {
-        return [ { name => 'max_core', label => 'Maximum CPU number', pattern => '^[0-9]+$', unit => 'core(s)' },
-                 { name => 'core',     label => 'Initial CPU number', pattern => '^[0-9]+$', unit => 'core(s)' },
-                 { name => 'max_ram',  label => 'Maximum RAM amount', pattern => '^[0-9]+$', unit => 'byte' },
-                 { name => 'ram',      label => 'Initial RAM amount', pattern => '^[0-9]+$', unit => 'byte' } ];
-    }
-    return [];
+    return {
+        core => {
+            label   => 'Initial CPU number',
+            type    => 'integer',
+            unit    => 'core(s)',
+            pattern => '^\d*$',
+        },
+        ram => {
+            label   => 'Initial RAM amount',
+            type    => 'integer',
+            unit    => 'byte',
+            pattern => '^\d*$',
+        },
+        max_core => {
+            label   => 'Maximum CPU number',
+            type    => 'integer',
+            unit    => 'core(s)',
+            pattern => '^\d*$',
+        },
+        max_ram => {
+            label   => 'Maximum RAM amount',
+            type    => 'integer',
+            unit    => 'byte',
+            pattern => '^\d*$',
+        }
+    };
 }
 
 =head2 getBootPolicies

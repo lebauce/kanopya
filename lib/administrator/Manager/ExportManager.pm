@@ -40,6 +40,24 @@ sub exportType {
 
 sub checkExportManagerParams {}
 
+
+=pod
+
+=begin classdoc
+
+@return the managers parameters as an attribute definition. 
+
+=end classdoc
+
+=cut
+
+sub getExportManagerParams {
+    my $self = shift;
+    my %args  = @_;
+
+    return {};
+}
+
 =head2 getReadOnlyParameter
 
 =cut

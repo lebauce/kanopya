@@ -45,15 +45,6 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub methods {
-    return {
-        # TODO(methods): Remove this method from the api once the policy ui has been reviewed
-        getPolicyParams => {
-            description => 'Return the params required for policies definition.',
-            perm_holder => 'entity',
-        },
-    }
-};
 
 sub new {
     my $class = shift;
@@ -100,19 +91,6 @@ sub getConnectorTypes {
     }
 
     return \@connector_types;
-}
-
-=head2 getHostingPolicyParams
-
-=cut
-
-sub getPolicyParams {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'policy_type' ]);
-
-    return [];
 }
 
 =head2 getServiceProvider

@@ -50,10 +50,9 @@ sub createExport {
          iomode                  => $args{iomode},
     };
 
-    # If container given in paramater, check if the disk is not already exported
+    # If container given in parameters, check if the disk is not already exported
     if ($args{container}) {
         $self->SUPER::createExport(%args);
-
         $params->{container_id} = $args{container}->id;
     }
 

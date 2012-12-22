@@ -12,6 +12,13 @@ use Entity::Component;
 use Entity::WorkflowDef;
 use Operationtype;
 use Entity::Policy;
+use Entity::Policy::HostingPolicy;
+use Entity::Policy::StoragePolicy;
+use Entity::Policy::NetworkPolicy;
+use Entity::Policy::SystemPolicy;
+use Entity::Policy::ScalabilityPolicy;
+use Entity::Policy::BillingPolicy;
+use Entity::Policy::OrchestrationPolicy;
 use Entity::ServiceTemplate;
 use Entity::Netconf;
 use Entity::NetconfRole;
@@ -154,6 +161,13 @@ my @classes = (
     'Entity::Host::VirtualMachine::Opennebula3Vm::Opennebula3KvmVm',
     'Entity::ServiceTemplate',
     'Entity::Policy',
+    'Entity::Policy::HostingPolicy',
+    'Entity::Policy::StoragePolicy',
+    'Entity::Policy::NetworkPolicy',
+    'Entity::Policy::SystemPolicy',
+    'Entity::Policy::ScalabilityPolicy',
+    'Entity::Policy::BillingPolicy',
+    'Entity::Policy::OrchestrationPolicy',
     'Entity::Operation',
     'Entity::Workflow',
     'Entity::Host::Hypervisor::Vsphere5Hypervisor',
@@ -296,8 +310,8 @@ sub registerUsers {
           desc    => 'Component group containing all components',
           system  => 1,
           methods => {
-              'ServiceDeveloper' => [ 'getPolicyParams', 'getExportManagers', 'get' ],
-              'Sales'            => [ 'getPolicyParams', 'getExportManagers', 'get' ]
+              'ServiceDeveloper' => [ 'get' ],
+              'Sales'            => [ 'get' ]
           }
         },
         { name    => 'Connector',
@@ -305,8 +319,8 @@ sub registerUsers {
           desc    => 'Connector group containing all connectors',
           system  => 1,
           methods => {
-              'ServiceDeveloper' => [ 'getPolicyParams', 'getExportManagers', 'get' ],
-              'Sales'            => [ 'getPolicyParams', 'getExportManagers', 'get' ]
+              'ServiceDeveloper' => [ 'get' ],
+              'Sales'            => [ 'get' ]
           }
         },
         { name    => 'Policy',
@@ -314,8 +328,8 @@ sub registerUsers {
           desc    => 'Policy group containing all policies',
           system  => 1,
           methods => {
-              'ServiceDeveloper' => [ 'getFlattenedHash', 'get' ],
-              'Sales'            => [ 'getFlattenedHash', 'get' ]
+              'ServiceDeveloper' => [ 'getPolicyDef' ],
+              'Sales'            => [ 'getPolicyDef' ]
           }
         },
         { name    => 'ServiceTemplate',
@@ -1389,6 +1403,7 @@ sub populate_workflow_def {
             }
         }
     );
+
     my $relieve_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'RelieveHypervisor' })->id;
     $relieve_hypervisor_wf->addStep( operationtype_id => $relieve_hypervisor_op_id );
     $relieve_hypervisor_wf->addStep( operationtype_id => $resubmit_node_op_id );
@@ -1441,12 +1456,12 @@ sub populate_policies {
     # hosting
     my $type_id = ComponentType->find(hash => { component_name => 'Physicalhoster' })->id;
 
-    my $physicalhoster = Entity::Component->find( hash => {
+    my $physicalhoster = Entity::Component->find(hash => {
                              component_type_id   => $type_id,
                              service_provider_id => $executor
-                         } );
+                         });
 
-    $policies{hosting} = Entity::Policy->new(
+    $policies{hosting} = Entity::Policy::HostingPolicy->new(
         policy_name     => 'Default physical host',
         policy_desc     => 'Hosting policy for default physical hosts',
         policy_type     => 'hosting',
@@ -1457,37 +1472,39 @@ sub populate_policies {
 
     # storage
     my $lvm_type_id = ComponentType->find(hash => { component_name => 'Lvm' })->id;
-    my $lvm = Entity::Component->find( hash => { component_type_id => $lvm_type_id, service_provider_id => $executor } );
+    my $lvm = Entity::Component->find(hash => { component_type_id => $lvm_type_id, service_provider_id => $executor });
     my $iscsit_type_id = ComponentType->find(hash => { component_name => 'Iscsitarget' })->id;
-    my $iscsitarget = Entity::Component->find( hash => { component_type_id => $iscsit_type_id, service_provider_id => $executor } );
+    my $iscsitarget = Entity::Component->find(hash => { component_type_id => $iscsit_type_id, service_provider_id => $executor });
 
-    $policies{storage} = Entity::Policy->new(
-        policy_name => 'Kanopya LVM disk exported via ISCSI',
-        policy_desc => 'Datastore on Kanopya cluster for PXE boot via ISCSI',
-        policy_type => 'storage',
-        disk_manager_id => $lvm->id,
+    $policies{storage} = Entity::Policy::StoragePolicy->new(
+        policy_name       => 'Kanopya LVM disk exported via ISCSI',
+        policy_desc       => 'Datastore on Kanopya cluster for PXE boot via ISCSI',
+        policy_type       => 'storage',
+        disk_manager_id   => $lvm->id,
         export_manager_id => $iscsitarget->id,
     );
 
     # network
     my $netconf = Entity::Netconf->find(hash => { netconf_name => 'Kanopya admin' });
     my $network = Entity::Network->find(hash => { network_name => 'admin' });
-    $policies{network} = Entity::Policy->new(
-        policy_name => 'Default network configuration',
-        policy_desc => 'Default network configuration, with admin and public interfaces',
-        policy_type => 'network',
+    $policies{network} = Entity::Policy::NetworkPolicy->new(
+        policy_name          => 'Default network configuration',
+        policy_desc          => 'Default network configuration, with admin and public interfaces',
+        policy_type          => 'network',
         cluster_nameserver1  => '127.0.0.1',
         cluster_nameserver2  => '127.0.0.1',
         cluster_domainname   => 'hedera-technology.com',
         default_gateway_id   => $network->id,
-        interface_netconfs_0 => [ $netconf->id ],
+        interfaces           => [
+            { netconfs => [ $netconf->id ] }
+        ],
     );
 
     # scalability
-    $policies{scalability} = Entity::Policy->new(
-        policy_name => 'Cluster manual scalability',
-        policy_desc => 'Manual scalability',
-        policy_type => 'scalability',
+    $policies{scalability} = Entity::Policy::ScalabilityPolicy->new(
+        policy_name      => 'Cluster manual scalability',
+        policy_desc      => 'Manual scalability',
+        policy_type      => 'scalability',
         cluster_min_node => 1,
         cluster_max_node => 10,
         cluster_priority => 1
@@ -1497,27 +1514,29 @@ sub populate_policies {
     my $puppettypeid = ComponentType->find(hash => { component_name => 'Puppetagent' })->id;
     my $keepalivedtypeid = ComponentType->find(hash => { component_name => 'Keepalived' })->id;
     my $kernel = Entity::Kernel->find(hash => {kernel_name => '2.6.32-5-xen-amd64'});
-    $policies{system} = Entity::Policy->new(
-        policy_name => 'Debian squeeze',
-        policy_desc => 'System policy for standard physical hosts',
-        policy_type => 'system',
+    $policies{system} = Entity::Policy::SystemPolicy->new(
+        policy_name           => 'Debian squeeze',
+        policy_desc           => 'System policy for standard physical hosts',
+        policy_type           => 'system',
         cluster_si_shared     => 0,
         cluster_si_persistent => 0,
-        kernel_id => $kernel->id,
+        kernel_id             => $kernel->id,
         systemimage_size      => 5 * (1024**3), # 5GB
-        component_type_0 => $puppettypeid,
-        component_type_1 => $keepalivedtypeid,
+        components            => [
+            { component_type => $puppettypeid },
+            { component_type => $keepalivedtypeid }
+        ],
     );
 
     # billing
-    $policies{billing} = Entity::Policy->new(
+    $policies{billing} = Entity::Policy::BillingPolicy->new(
         policy_name => 'Empty billing configuration',
         policy_desc => 'Empty billing configuration',
         policy_type => 'billing',
     );
 
     # orchestration
-    $policies{orchestration} = Entity::Policy->new(
+    $policies{orchestration} = Entity::Policy::OrchestrationPolicy->new(
         policy_name => 'Empty orchestration configuration',
         policy_desc => 'Empty orchestration configuration',
         policy_type => 'orchestration',
@@ -1530,14 +1549,14 @@ sub populate_servicetemplates {
     my ($policies) = @_;
     # Standard physical cluster
     my $template = Entity::ServiceTemplate->new(
-        service_name => 'Standard physical cluster',
-        service_desc => 'Service template for standard physical cluster declaration',
-        hosting_policy_id => $policies->{hosting}->id,
-        storage_policy_id => $policies->{storage}->id,
-        network_policy_id => $policies->{network}->id,
-        scalability_policy_id => $policies->{scalability}->id,
-        system_policy_id => $policies->{system}->id,
-        billing_policy_id => $policies->{billing}->id,
+        service_name            => 'Standard physical cluster',
+        service_desc            => 'Service template for standard physical cluster declaration',
+        hosting_policy_id       => $policies->{hosting}->id,
+        storage_policy_id       => $policies->{storage}->id,
+        network_policy_id       => $policies->{network}->id,
+        scalability_policy_id   => $policies->{scalability}->id,
+        system_policy_id        => $policies->{system}->id,
+        billing_policy_id       => $policies->{billing}->id,
         orchestration_policy_id => $policies->{orchestration}->id
     );
 }

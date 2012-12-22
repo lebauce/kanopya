@@ -59,22 +59,43 @@ sub checkExportManagerParams {
     General::checkParams(args => \%args, required => [ "iscsi_portals", "target", "lun" ]);
 }
 
-sub getPolicyParams {
-    my $self = shift;
-    my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'policy_type' ]);
+=pod
+
+=begin classdoc
+
+@return the managers parameters as an attribute definition. 
+
+=end classdoc
+
+=cut
+
+sub getExportManagerParams {
+    my $self = shift;
+    my %args  = @_;
 
     my $portals = {};
-    if ($args{policy_type} eq 'storage') {
-        for my $portal (@{ $self->getConf->{iscsi_portals} }) {
-            $portals->{$portal->{iscsi_portal_id}} = $portal->{iscsi_portal_ip} . ':' . $portal->{iscsi_portal_port}
-        }
-        return [ { name => 'iscsi_portals', label => 'ISCSI portals', values => $portals },
-                 { name => 'target', label => 'ISCSI target' },
-                 { name => 'lun', label => 'LUN number' } ];
+    for my $portal (@{ $self->getConf->{iscsi_portals} }) {
+        $portals->{$portal->{iscsi_portal_id}} = $portal->{iscsi_portal_ip} . ':' . $portal->{iscsi_portal_port}
     }
-    return [];
+
+    return {
+        iscsi_portals => {
+            label   => 'ISCSI portals to use',
+            type    => 'enum',
+            options => $portals
+        },
+        target => {
+            label   => 'ISCSI target name',
+            type    => 'string',
+            pattern => '^.*$',
+        },
+        lun => {
+            label   => 'LUN number',
+            type    => 'integer',
+            pattern => '^\d+$',
+        },
+    };
 }
 
 sub getConf {

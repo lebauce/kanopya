@@ -1674,19 +1674,19 @@ CREATE TABLE `service_template` (
   PRIMARY KEY (`service_template_id`),
   FOREIGN KEY (`service_template_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`hosting_policy_id`),
-  FOREIGN KEY (`hosting_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`hosting_policy_id`) REFERENCES `hosting_policy` (`hosting_policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`storage_policy_id`),
-  FOREIGN KEY (`storage_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`storage_policy_id`) REFERENCES `storage_policy` (`storage_policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`network_policy_id`),
-  FOREIGN KEY (`network_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`network_policy_id`) REFERENCES `network_policy` (`network_policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`scalability_policy_id`),
-  FOREIGN KEY (`scalability_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`scalability_policy_id`) REFERENCES `scalability_policy` (`scalability_policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`system_policy_id`),
-  FOREIGN KEY (`system_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`system_policy_id`) REFERENCES `system_policy` (`system_policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`billing_policy_id`),
-  FOREIGN KEY (`billing_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`billing_policy_id`) REFERENCES `billing_policy` (`billing_policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`orchestration_policy_id`),
-  FOREIGN KEY (`orchestration_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`orchestration_policy_id`) REFERENCES `orchestration_policy` (`orchestration_policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1702,7 +1702,77 @@ CREATE TABLE `policy` (
   PRIMARY KEY (`policy_id`),
   FOREIGN KEY (`policy_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`param_preset_id`),
-  FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE SET NULL ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `hosting_policy`
+--
+
+CREATE TABLE `hosting_policy` (
+  `hosting_policy_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`hosting_policy_id`),
+  FOREIGN KEY (`hosting_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `storage_policy`
+--
+
+CREATE TABLE `storage_policy` (
+  `storage_policy_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`storage_policy_id`),
+  FOREIGN KEY (`storage_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `network_policy`
+--
+
+CREATE TABLE `network_policy` (
+  `network_policy_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`network_policy_id`),
+  FOREIGN KEY (`network_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `system_policy`
+--
+
+CREATE TABLE `system_policy` (
+  `system_policy_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`system_policy_id`),
+  FOREIGN KEY (`system_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `scalability_policy`
+--
+
+CREATE TABLE `scalability_policy` (
+  `scalability_policy_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`scalability_policy_id`),
+  FOREIGN KEY (`scalability_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `billing_policy`
+--
+
+CREATE TABLE `billing_policy` (
+  `billing_policy_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`billing_policy_id`),
+  FOREIGN KEY (`billing_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `orchestration_policy`
+--
+
+CREATE TABLE `orchestration_policy` (
+  `orchestration_policy_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`orchestration_policy_id`),
+  FOREIGN KEY (`orchestration_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

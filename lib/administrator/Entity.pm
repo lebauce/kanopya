@@ -100,14 +100,17 @@ sub new {
 sub update {
     my ($self, %args) = @_;
 
-    # Try to lock the entoty while updating it
+    # Try to lock the entity while updating it
     $self->lock(consumer => $self);
 
     eval {
         $self->SUPER::update(%args);
     };
     if ($@) {
+        my $exception = $@;
         $self->unlock(consumer => $self);
+
+        $exception->rethrow();
     }
     $self->unlock(consumer => $self);
 
@@ -141,7 +144,10 @@ sub remove {
         $self->SUPER::remove(%args);
     };
     if ($@) {
+        my $exception = $@;
         $self->unlock(consumer => $self);
+
+        $exception->rethrow();
     }
 
     $self->unlock(consumer => $self);
@@ -356,10 +362,8 @@ sub lock {
         # Check if the lock is already owned by the workflow
         my $lock;
         eval {
-            $lock = EntityLock->find(hash => {
-                        entity_id   => $self->id,
-                        consumer_id => $consumer_id,
-                    });
+            $lock = EntityLock->find(hash => { entity_id   => $self->id,
+                                               consumer_id => $consumer_id });
         };
         if (not $lock) {
             throw Kanopya::Exception::Execution::Locked(
@@ -379,10 +383,8 @@ sub unlock {
 
     my $lock;
     eval {
-        $lock = EntityLock->find(hash => {
-                    entity_id   => $self->id,
-                    consumer_id => $args{consumer}->id,
-                });
+        $lock = EntityLock->find(hash => { entity_id   => $self->id,
+                                           consumer_id => $args{consumer}->id });
     };
     if ($@) {
         my $error = $@;

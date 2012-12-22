@@ -30,21 +30,29 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
-sub methods {
-    return {
-        # TODO(methods): Remove this method from the api once the policy ui has been reviewed
-        getExportManagers => {
-            description => 'get thje available export manager for this disk manager.',
-            perm_holder => 'entity',
-        },
-    }
-}
-
 =head2 checkDiskManagerParams
 
 =cut
 
 sub checkDiskManagerParams {}
+
+
+=pod
+
+=begin classdoc
+
+@return the managers parameters as an attribute definition. 
+
+=end classdoc
+
+=cut
+
+sub getDiskManagerParams {
+    my $self = shift;
+    my %args  = @_;
+
+    return {};
+}
 
 =head2 getFreeSpace
 

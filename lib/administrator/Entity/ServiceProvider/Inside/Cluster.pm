@@ -232,8 +232,8 @@ sub label {
         },
         interfaces => {
             admin => {
-                interface_role => 'admin',
-                interfaces_networks => [ 1 ],
+                bonds_number => 2,
+                interfaces_netconfs => [ 1, 5 ],
             }
         },
         components => {
@@ -246,69 +246,62 @@ sub label {
 =cut
 
 sub create {
-    my ($class, %params) = @_;
+    my ($class, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'cluster_name', 'user_id' ]);
 
     # Override params with policies param presets
     my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
 
-    # Prepare the configuration pattern from the service template
     my $service_template;
-    if (defined $params{service_template_id}) {
-        # ui related, we get the completed values as flatened values from the form
-        # so we need to transform all the flatened params to a configuration pattern.
-        my %flatened_params = %params;
-        %params = ();
+    my $confpattern = {};
 
-        $service_template = Entity::ServiceTemplate->get(id => $flatened_params{service_template_id});
-        for my $policy (@{ $service_template->getPolicies }) {
-            # Register policy ids in the params
-            push @{ $params{policies} }, $policy->id;
+    # Prepare the configuration pattern from the service template and policies
+    my @policies = defined $args{policies} ? delete $args{policies} : ();
+    if (defined $args{service_template_id}) {
+        $service_template = Entity::ServiceTemplate->get(id => $args{service_template_id});
 
-            # Rebuild params as a configuration pattern
-            my $pattern = Entity::Policy->buildPatternFromHash(policy_type => $policy->policy_type, hash => \%flatened_params);
-            %params = %{ $merge->merge(\%params, \%$pattern) };
-        }
+        @policies = ( @{ $service_template->getPolicies }, @policies );
     }
 
-    General::checkParams(args => \%params, required => [ 'managers' ]);
-    General::checkParams(args => $params{managers}, required => [ 'host_manager', 'disk_manager' ]);
-
-    # Firstly apply the policies presets on the cluster creation parameters.
-    for my $policy_id (@{ $params{policies} }) {
-        my $policy = Entity::Policy->get(id => $policy_id);
-
-        # Load params preset into hash
-        my $policy_presets = $policy->param_preset->load();
-
-        # Merge current polciy preset with others
-        %params = %{ $merge->merge(\%params, \%$policy_presets) };
+    # Firstly translate possible flattened additional policy params to the
+    # cluster configuration pattern format.
+    #
+    # Note that it is possible to give additional policy params in the flattened format
+    # (see Policy.pm), only if the id of the policy that the params belongs to is specified.
+    # Otherwise, params must be given in the cluster configuration pattern format.
+    for my $policy (@policies) {
+        $confpattern = $merge->merge($confpattern, $policy->getPattern(params => \%args));
     }
 
-    delete $params{policies};
+    # Then merge the configuration pattern with the remaining cluster params
+    $confpattern = $merge->merge($confpattern, \%args);
 
-    $log->debug("Final parameters after applying policies:\n" . Dumper(%params));
+    General::checkParams(args => $confpattern, required => [ 'managers' ]);
+    General::checkParams(args => $confpattern->{managers}, required => [ 'host_manager', 'disk_manager' ]);
 
-    my %composite_params;
+    $log->debug("Final parameters after applying policies:\n" . Dumper($confpattern));
+
+    my $composite_params;
     for my $name ('managers', 'interfaces', 'components', 'billing_limits', 'orchestration') {
-        if ($params{$name}) {
-            $composite_params{$name} = delete $params{$name};
+        if ($confpattern->{$name}) {
+            $composite_params->{$name} = delete $confpattern->{$name};
         }
     }
 
-    $class->checkConfigurationPattern(attrs => \%params, composite => \%composite_params);
+    $class->checkConfigurationPattern(attrs => $confpattern, composite => $composite_params);
 
     my $op_params = {
-        cluster_params => \%params,
-        presets        => \%composite_params,
+        cluster_params => $confpattern,
+        presets        => $composite_params,
     };
 
-    # If hte cluster created from a service template, add it in the context
+    # If the cluster created from a service template, add it in the context
     # to handle notification/validation on cluster instanciation.
     if ($service_template) {
         $op_params->{context}->{service_template} = $service_template;
     }
 
-    $log->debug("New Operation Create with attrs : " . %params);
     Entity::Operation->enqueue(
         priority => 200,
         type     => 'AddCluster',

@@ -1,5 +1,5 @@
 require('common/formatters.js');
-require('kanopyaformwizard.js');
+//require('kanopyaformwizard.js');
 
 var g_host_manager_id = undefined;
 
@@ -13,11 +13,15 @@ function host_addbutton_action(e) {
                        'bonding_ifaces' : [ 'bonding_iface_name', 'slave_ifaces' ],
                        'harddisks'      : [ 'harddisk_device' ] },
         rawattrdef : {
-            'host_manager_id' : {
-                'value' : g_host_manager_id
+            host_manager_id : {
+                value : g_host_manager_id,
+                // Required to avoid the field disabled
+                is_editable : 1
             },
-            'active' : {
-                'value' : 1
+            active : {
+                value : 1,
+                // Required to avoid the field disabled
+                is_editable : 1
             }
         },
         attrsCallback  : function (resource) {
@@ -99,8 +103,7 @@ function host_addbutton_action(e) {
             }
         },
         valuesCallback  : function(type, id, attributes) {
-            var host = ajax('GET', '/api/' + type + '/' + id + '?expand=ifaces,harddisks');
-
+            var host = ajax('GET', '/api/' + type + '/' + id + '?expand=ifaces,ifaces.netconf_ifaces,harddisks');
             var ifaces = host['ifaces'];
             host['ifaces'] = [];
 
@@ -112,6 +115,11 @@ function host_addbutton_action(e) {
                         bonding_ifaces[iface.master] = [];
                     }
                     bonding_ifaces[iface.master].push(iface.iface_name);
+                }
+                var netconfs = iface['netconf_ifaces'];
+                iface['netconf_ifaces'] = [];
+                for (var netconf in netconfs) {
+                    iface['netconf_ifaces'].push(netconfs[netconf].netconf_id);
                 }
             }
             for (var index in ifaces) {
@@ -125,10 +133,9 @@ function host_addbutton_action(e) {
             for (var bonding_iface_name in bonding_ifaces) {
                 host['bonding_ifaces'].push({
                     bonding_iface_name : bonding_iface_name,
-                    slave_iface : bonding_ifaces[bonding_iface_name]
+                    slave_ifaces : bonding_ifaces[bonding_iface_name]
                 });
             }
-
             return host;
         },
         submitCallback  : function(data, $form, opts, onsuccess, onerror) {

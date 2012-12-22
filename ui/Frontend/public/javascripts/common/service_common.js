@@ -222,3 +222,24 @@ function findManager(category, service_provider_id, exclude) {
     }
     return managers;
 }
+
+function set_steps (service_attrdef) {
+    var step;
+    for (var index in service_attrdef.displayed) {
+        attrname = service_attrdef.displayed[index];
+
+        if (! $.isPlainObject(attrname) && attrname.match(/_policy_id$/) != undefined) {
+            step = attrname.replace('_policy_id','');
+            step = step.substr(0,1).toUpperCase() + step.substr(1);
+        }
+        if (step) {
+            var attrnames = [attrname];
+            if ($.isPlainObject(attrname)) {
+                attrnames = Object.keys(attrname);
+            }
+            for (index in attrnames){
+                service_attrdef.attributes[attrnames[index]].step = step;
+            }
+        }
+    }
+}

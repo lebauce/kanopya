@@ -44,15 +44,6 @@ sub diskType {
     return "Unmanaged storage";
 }
 
-sub getPolicyParams {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'policy_type' ]);
-
-    return [];
-}
-
 sub getExportManagers {
     my $self = shift;
     my %args = @_;

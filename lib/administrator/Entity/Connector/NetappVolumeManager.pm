@@ -63,24 +63,22 @@ sub checkDiskManagerParams {
     General::checkParams(args => \%args, required => [ "aggregate_id", "systemimage_size" ]);
 }
 
-=head2 getPolicyParams
-
-=cut
-
-sub getPolicyParams {
+sub getDiskManagerParams {
     my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'policy_type' ]);
+    my %args  = @_;
 
     my $aggregates = {};
-    if ($args{policy_type} eq 'storage') {
-        for my $aggr (@{ $self->getConf->{aggregates} }) {
-            $aggregates->{$aggr->{aggregate_id}} = $aggr->{aggregate_name};
-        }
-        return [ { name => 'aggregate_id', label => 'Aggregate to use', values => $aggregates } ];
+    for my $aggr (@{ $self->getConf->{aggregates} }) {
+        $aggregates->{$aggr->{aggregate_id}} = $aggr->{aggregate_name};
     }
-    return [];
+
+    return {
+        aggregate_id => {
+            label   => 'Aggregate to use',
+            type    => 'enum',
+            options => $aggregates
+        }
+    };
 }
 
 sub getExportManagerFromBootPolicy {
