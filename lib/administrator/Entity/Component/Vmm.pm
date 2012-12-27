@@ -17,12 +17,6 @@ package Entity::Component::Vmm;
 use base Entity::Component;
 
 use constant ATTR_DEF => {
-    iaas => {
-        label => 'IaaS',
-        type => 'relation',
-        relation => 'single',
-        is_editable => 1
-    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
