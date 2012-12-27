@@ -33,7 +33,7 @@ our $VERSION = "1.00";
 
 =head2 new
 
-Keep the source ip whatever the the conrete type of EContext.
+Keep the source ip whatever the concrete type of EContext.
 
 =cut
 

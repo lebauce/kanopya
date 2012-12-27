@@ -106,7 +106,7 @@ sub newEContext {
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
     if (!ip_is_ipv4($args{ip_destination})){
-        $errmsg = "EFactory::newEContext ip_source needs to be an ipv4 address";
+        $errmsg = "EFactory::newEContext ip_destination needs to be an ipv4 address";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
