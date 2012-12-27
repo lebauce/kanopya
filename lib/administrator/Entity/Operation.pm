@@ -512,12 +512,12 @@ sub unlockContext {
     $adm->beginTransaction;
     for my $key (keys %{ $params->{context} }) {
         my $entity = $params->{context}->{$key};
-        $log->debug("Trying to unlock entity <$key>:<$entity>");
+        $log->debug("Trying to unlock entity <$key>:" . $entity->id . ">");
         eval {
             $entity->unlock(consumer => $self->getWorkflow);
         };
         if ($@) {
-            #$log->debug("Unable to unlock context param <$key>\n$@");
+            $log->debug("Unable to unlock context param <$key>\n$@");
         }
     }
     $adm->commitTransaction;

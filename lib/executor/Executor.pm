@@ -198,9 +198,11 @@ sub oneRun {
             }
         };
         if ($@) {
+            my $message = $@;
             $op->setState(state => 'blocked');
 
             $log->info("---- [$op] Unable to get locks, skip. ----");
+            $log->debug($message);
 
             # Unset the option include_blocked, to avoid
             # fetching this operation at the next loop.
