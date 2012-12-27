@@ -137,24 +137,27 @@ sub customizeInitramfs {
 
     $log->info("customize initramfs $initrddir");
 
-    my $rootdev = $self->_initrd_iscsi(initrd_dir    => $initrddir,
-                         initiatorname => $args{host}->host_initiatorname,
-                         target        => $target,
-                         portals       => $portals);
-                         
-    # TODO check host harddisks for a harddisk_device called 'autodetect'
-    # if present, initiate deployment
-    #
-    # $rootdev = $self->_initrd_deployment(initrd_dir  => $initrddir,
-    #                                      src_device  => $rootdev,
-    #                                      dest_device => '/dev/sda', 
-    #                                      root_size   => '10',
-    #                                      swap_size   => '4'); 
-    
-    # else remove deployement script
-    $cmd = 'rm '.$args{initrd_dir}.'/boot/83-deploy.sh';
-    $econtext->execute(command => $cmd);
-    
+    my $rootdev = $self->_initrd_iscsi(
+                      initrd_dir    => $initrddir,
+                      initiatorname => $args{host}->host_initiatorname,
+                      target        => $target,
+                      portals       => $portals
+                  );
+
+    # TODO: Check host harddisks for a harddisk_device called 'autodetect'
+    my $host_params = $args{cluster}->getManagerParameters(manager_type => 'host_manager');
+    if ($host_params->{deploy_on_disk}) {
+        $rootdev = $self->_initrd_deployment(initrd_dir  => $initrddir,
+                                             src_device  => $rootdev,
+                                             dest_device => '/dev/sda',
+                                             root_size   => '10',
+                                             swap_size   => '4');
+    }
+    else {
+        # else remove deployement script
+        $cmd = 'rm ' . $args{initrd_dir} . '/boot/83-deploy.sh';
+        $econtext->execute(command => $cmd);
+    }
 
     my @ifaces = $args{host}->getIfaces();
     $self->_initrd_config(initrd_dir => $initrddir,
@@ -252,20 +255,22 @@ desc
 sub _initrd_deployment {
     my ($self, %args) = @_;
     General::checkParams(args     =>\%args,
-                         required => ['initrd_dir','src_device','dest_device', 'root_size', 'swap_size']);
-    
-    $self->generateFile(mount_point => $args{initrd_dir}.'/config',
-                        input_file  => 'deploy.sh.tt',
-                        template_dir => '/opt/kanopya/templates/internal/initrd/sles',
-                        output      => '/deploy.sh',
-                        data        => { deploy_src_dev  => $args{src_device},
-                                         deploy_dest_dev => $args{dest_device},
-                                         deploy_root_size => $args{root_size},
-                                         deploy_swap_size => $args{swap_size}  
-                                       }
-                        );
+                         required => [ 'initrd_dir', 'src_device', 'dest_device',
+                                       'root_size', 'swap_size' ]);
+
+    $self->generateFile(
+        mount_point  => $args{initrd_dir} . '/config',
+        input_file   => 'deploy.sh.tt',
+        template_dir => '/opt/kanopya/templates/internal/initrd/sles',
+        output       => '/deploy.sh',
+        data         => { deploy_src_dev   => $args{src_device},
+                          deploy_dest_dev  => $args{dest_device},
+                          deploy_root_size => $args{root_size},
+                          deploy_swap_size => $args{swap_size} }
+    );
+
     # TODO change hard coded root device (depend on master image partitioning)
-    return '/dev/sda1'
+    return '/dev/sda1';
 }
 
 =pod
