@@ -143,10 +143,6 @@ sub execute {
     my $econtext = $self->getEContext();
     $econtext->execute(command => "rm -r $dir");
 
-    # Component migration
-    $log->info('Processing cluster components configuration for this node');
-    $self->{context}->{cluster}->postStopNode(host => $self->{context}->{host});
-
     $self->{context}->{host}->setAttr(name => "host_hostname", value => undef);
     $self->{context}->{host}->setAttr(name => "host_initiatorname", value => undef);
 
@@ -167,7 +163,10 @@ sub execute {
     );
 
     $self->{context}->{host}->stopToBeNode();
-    
+
+    $log->info('Processing cluster components configuration for this node');
+    $self->{context}->{cluster}->postStopNode(host => $self->{context}->{host});
+
     # delete the image if persistent policy not set
     if($self->{context}->{cluster}->cluster_si_persistent eq '0') {
         $log->info("cluster image persistence is not set, deleting $systemimage_name");
