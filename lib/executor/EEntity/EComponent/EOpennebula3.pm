@@ -1499,6 +1499,7 @@ sub checkUp {
 
     if ($vm_state->{state} eq 'runn') {
         $log->info('VM running try to contact it');
+        return 1;
     }
     elsif ($vm_state->{state} eq 'boot') {
         $log->info('VM still booting');
@@ -1506,12 +1507,14 @@ sub checkUp {
     }
     elsif ($vm_state->{state} eq 'fail' ) {
         my $lastmessage = $self->vmLoggedErrorMessage(opennebula3_vm => $host);
-        throw Kanopya::Exception(error => 'Vm fail on boot: ' . $lastmessage);
+        throw Kanopya::Exception(error => 'VM fail on boot: ' . $lastmessage);
     }
     elsif ($vm_state->{state} eq 'pend' ) {
         $log->info('VM still pending'); #TODO check HV state
         return 0;
     }
+    
+    return 0;
 }
 
 1;
