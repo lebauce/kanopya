@@ -69,4 +69,9 @@ sub getHypervisor {
     return EFactory::newEEntity(data => Entity->get(id => $self->hypervisor->id));
 }
 
+sub halt {
+    my ($self, %args) = @_;
+    $self->getHostManager->halt(host => $self);
+}
+
 1;

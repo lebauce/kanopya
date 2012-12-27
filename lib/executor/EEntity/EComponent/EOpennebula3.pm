@@ -436,6 +436,15 @@ sub retrieveOpennebulaHypervisorStatus {
     return 1;
 }
 
+sub halt {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'host' ]);
+    # retrieve vm info from opennebula
+    my $id = $args{host}->onevm_id;
+    $self->onevm_shutdown(vm_nameorid => $id);
+}
+
+
 sub isUp {
     my ($self, %args) = @_;
     General::checkParams(
@@ -1379,6 +1388,17 @@ sub onevm_show {
     my $result = $self->getEContext->execute(command => $cmd);
     my $xml = XMLin($result->{stdout});
     return $xml;
+}
+
+sub onevm_shutdown {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args     => \%args,
+        required => ['vm_nameorid']
+    );
+
+    my $cmd = one_command("onevm shutdown $args{vm_nameorid}");
+    my $result = $self->getEContext->execute(command => $cmd);
 }
 
 sub onevm_livemigrate {
