@@ -64,17 +64,18 @@ sub setConf {
 
     my $conf = $args{conf};
     my $mountdefs_conf = $conf->{linuxes_mount};
-    
+
     # for each mount definition , we search it in db for update or deletion
     for my $mount ($self->linuxes_mount) {
         my $found = 0;
         my $mountdef_data;
         my $id = $mount->id;
         foreach my $mountdef_conf (@$mountdefs_conf) {
-             if($mountdef_conf->{linux_mount_id} == $id) {
+             if ($mountdef_conf->{linux_mount_id} == $id or
+                 $mountdef_conf->{linux_mount_point} eq $mount->linux_mount_point) {
                  $found = 1;
+                 $mountdef_conf->{linux_mount_id} = $id;
                  $mountdef_data = $mountdef_conf;
-                 last;
              }
         }
         if ($found) {
