@@ -419,7 +419,7 @@ sub updateRRD {
     my $rrd = $self->getRRD( file => $rrdfile_name );
 
     eval {
-        $rrd->update( time => $time, values =>  $args{data} );
+        $rrd->updatev( time => $time, values =>  $args{data} );
     };
     # we catch error to handle unexisting file or configuration change.
     # if happens then we create the rrd file. All stored data will be lost.
