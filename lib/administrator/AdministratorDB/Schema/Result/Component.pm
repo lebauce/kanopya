@@ -636,4 +636,11 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+__PACKAGE__->might_have(
+  "vmm",
+  "AdministratorDB::Schema::Result::Vmm",
+  { "foreign.vmm_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 1;
