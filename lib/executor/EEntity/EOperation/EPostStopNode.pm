@@ -87,8 +87,8 @@ sub prerequisites {
     if ($@) {
         $log->debug("Could not connect to host <$host_id> from cluster <$cluster_id> with ip <$node_ip>.");
     }
-    
-    return $delay if $self->{context}->{host}->ping();
+
+    return $delay if $self->{context}->{host}->checkUp();
 
     $self->{context}->{host}->setState(state => "down");
 
