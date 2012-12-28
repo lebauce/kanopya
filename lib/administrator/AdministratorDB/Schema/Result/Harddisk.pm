@@ -1,17 +1,37 @@
+use utf8;
 package AdministratorDB::Schema::Result::Harddisk;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
-
-
 =head1 NAME
 
 AdministratorDB::Schema::Result::Harddisk
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
+
+=head1 TABLE: C<harddisk>
 
 =cut
 
@@ -39,6 +59,13 @@ __PACKAGE__->table("harddisk");
   is_nullable: 0
   size: 32
 
+=head2 harddisk_size
+
+  data_type: 'bigint'
+  default_value: 0
+  extra: {unsigned => 1}
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -58,7 +85,25 @@ __PACKAGE__->add_columns(
   },
   "harddisk_device",
   { data_type => "char", is_nullable => 0, size => 32 },
+  "harddisk_size",
+  {
+    data_type => "bigint",
+    default_value => 0,
+    extra => { unsigned => 1 },
+    is_nullable => 1,
+  },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</harddisk_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("harddisk_id");
 
 =head1 RELATIONS
@@ -79,9 +124,9 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-25 14:17:36
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:c+zlZznGv3jp9nRdt7dWqQ
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-12-28 18:04:08
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3ci3d/SV6zsyj+hJa+AQvQ
 
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

@@ -33,6 +33,14 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_extended  => 0
     },
+    harddisk_size => {
+        label        => 'Hard disk size',
+        description  => 'Total size of the hard disk',
+        type         => 'integer',
+        unit         => 'byte',
+        pattern      => '^\d*$',
+        is_mandatory => 0
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
