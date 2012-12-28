@@ -147,11 +147,14 @@ sub customizeInitramfs {
     # TODO: Check host harddisks for a harddisk_device called 'autodetect'
     my $host_params = $args{cluster}->getManagerParameters(manager_type => 'host_manager');
     if ($host_params->{deploy_on_disk}) {
-        $rootdev = $self->_initrd_deployment(initrd_dir  => $initrddir,
-                                             src_device  => $rootdev,
-                                             dest_device => '/dev/sda',
-                                             root_size   => '10',
-                                             swap_size   => '4');
+        my $device = '/dev/disk/by-path/ip-' . $portals->[0]->{ip} . ':' .
+                     $portals->[0]->{port} . '-iscsi-' . $target . '-lun-0';
+
+        $self->_initrd_deployment(initrd_dir  => $initrddir,
+                                  src_device  => $device,
+                                  dest_device => '/dev/sda',
+                                  root_size   => '10',
+                                  swap_size   => '4');
     }
     else {
         # else remove deployement script
