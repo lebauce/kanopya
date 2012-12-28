@@ -153,12 +153,12 @@ sub postStartNode {
                     )->single->update({datastore_id => $dsid});
 
                     # create the directory and mount the container
-                    my $command = one_command("mkdir -p /var/lib/one/datastores/$dsid");
+                    my $dir = "/var/lib/one/datastores/$dsid";
+                    my $command = one_command("mkdir -p $dir; chown oneadmin $dir");
                     $self->getEContext->execute(command => $command);
 
                     $command = 'mount -t nfs -o rw,sync,vers=3 ';
-                    $command .= $container_access->getAttr(name => 'container_access_export');
-                    $command .= " /var/lib/one/datastores/$dsid";
+                    $command .= $container_access->getAttr(name => 'container_access_export') . " $dir";
                     $self->getEContext->execute(command => $command);
                 }
 
