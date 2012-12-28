@@ -640,11 +640,7 @@ sub buildInitramfs {
     my $compress = $args{compress_type};
     
     # rebuild and compress the new initrd
-    my $kanopya_dir = Kanopya::Config::getKanopyaDir();
-    my $cmd = "cp -R $kanopya_dir/tools/deployment/system/initramfs-tools/scripts/* $initrddir/scripts";
-    $econtext->execute(command => $cmd);
-
-    $cmd = "(cd $initrddir && find . | cpio -H newc -o | $compress > $newinitrd)";
+    my $cmd = "(cd $initrddir && find . | cpio -H newc -o | $compress > $newinitrd)";
     $econtext->execute(command => $cmd);
 
     # finaly we remove the temporary directory
