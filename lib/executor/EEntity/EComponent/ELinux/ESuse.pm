@@ -147,14 +147,26 @@ sub customizeInitramfs {
     # TODO: Check host harddisks for a harddisk_device called 'autodetect'
     my $host_params = $args{cluster}->getManagerParameters(manager_type => 'host_manager');
     if ($host_params->{deploy_on_disk}) {
+        my $harddisk;
+        eval {
+            $harddisk = $args{host}->findRelated(filters  => [ 'harddisks' ],
+                                                 order_by => 'harddisk_device');
+        };
+        if ($@) {
+            throw Kanopya::Exception::Internal::NotFound(
+                      error => "No hard disk to deploy the system on was found"
+                  );
+        }
+
+        my $size = $harddisk->harddisk_size;
         my $device = '/dev/disk/by-path/ip-' . $portals->[0]->{ip} . ':' .
                      $portals->[0]->{port} . '-iscsi-' . $target . '-lun-0';
 
         $self->_initrd_deployment(initrd_dir  => $initrddir,
                                   src_device  => $device,
-                                  dest_device => '/dev/sda',
-                                  root_size   => '10',
-                                  swap_size   => '4');
+                                  dest_device => $harddisk->harddisk_device,
+                                  root_size   => $size * 0.6 / 1024 / 1024 / 1024,
+                                  swap_size   => $size * 0.4 / 1024 / 1024 / 1024);
     }
     else {
         # else remove deployement script
