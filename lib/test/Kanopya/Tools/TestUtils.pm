@@ -19,7 +19,7 @@
 
 =begin classdoc
 
-Kanopya test utility methods 
+Kanopya test utility methods
 
 @since 17/12/12
 @instance hash
@@ -60,7 +60,7 @@ Sample usage:
 =cut
 
 sub expectedException (&;$;$) {
-    my ($code,$excep_class,$msg) = @_; 
+    my ($code,$excep_class,$msg) = @_;
 
     $msg = $msg || 'Eval post condition';
 

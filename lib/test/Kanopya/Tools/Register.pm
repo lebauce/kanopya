@@ -36,7 +36,6 @@ use warnings;
 
 use Test::More;
 use Test::Exception;
-use Test::Pod;
 
 use Kanopya::Exceptions;
 use General;
