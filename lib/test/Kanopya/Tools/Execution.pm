@@ -38,12 +38,40 @@ use Test::More;
 use Test::Exception;
 use Test::Pod;
 
+use Log::Log4perl qw(:easy);
+my $log = get_logger("");
+
 use Kanopya::Exceptions;
 use General;
 use Executor;
 
 my @args = ();
+
+BEGIN {
+    # Test will fail if any executor is running
+    my $executor_exist = `ps aux | grep kanopya-executor | grep -cv grep`;
+    if ($executor_exist == 1) {
+        throw Kanopya::Exception::Internal(error => 'An executor is already running');
+    }
+}
+
 my $executor = Executor->new();
+
+=pod
+
+=begin classdoc
+
+Execute all operations in queue
+
+=end classdoc
+
+=cut
+
+sub oneRun {
+    my $self = shift;
+
+    $executor->oneRun;
+}
 
 =pod
 
@@ -57,7 +85,7 @@ Check if all the operations of a workflow have been executed, and if not trigger
 
 =cut
 
-sub execute {
+sub executeOne {
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'entity' ]);
@@ -107,6 +135,39 @@ sub execute {
         }
     }
 
+}
+
+=pod
+
+=begin classdoc
+
+Execute all operations in queue
+
+=end classdoc
+
+=cut
+
+sub executeAll {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { 'timeout' => 300 });
+    my $timeout = $args{timeout};
+
+    my $operation;
+    while ($timeout > 0) {
+        eval {
+            $operation = Entity::Operation->find(hash => {});
+        };
+        if ($@) {
+            last;
+        }
+        else {
+            sleep 5;
+            $timeout -= 5;
+            $executor->oneRun;
+            $log->info("sleep 5 ($timeout)");
+        }
+    }
 }
 
 1;
