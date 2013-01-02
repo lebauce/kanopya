@@ -212,6 +212,7 @@ sub _create_and_configure_cluster {
                 iscsi_portal_ip   => '10.200.0.1',
                 iscsi_portal_port => 3260
             },
+        ]
     });
 
     ####################

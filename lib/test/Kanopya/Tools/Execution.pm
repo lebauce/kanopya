@@ -61,7 +61,7 @@ my $executor = Executor->new();
 
 =begin classdoc
 
-Execute all operations in queue
+Lauch 1 executor->oneRun
 
 =end classdoc
 

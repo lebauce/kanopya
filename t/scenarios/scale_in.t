@@ -37,13 +37,6 @@ use Kanopya::Tools::Execution;
 
 my $testing = 0;
 
-Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-my $adm = Administrator->new;
-
-if($testing == 1) {
-    $adm->beginTransaction;
-}
-
 my ($hv1, $hv2);
 my ($vm1, $vm2, $vm3, $vm4);
 my $one;
@@ -51,11 +44,14 @@ my $coefGb2Bytes = 1024**3;
 
 main();
 
-if($testing == 1) {
-    $adm->rollbackTransaction;
-}
-
 sub main {
+    Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
+    my $adm = Administrator->new;
+
+    if($testing == 1) {
+        $adm->beginTransaction;
+    }
+
     #get orchestrator configuration
 
     _check_init();
@@ -71,6 +67,10 @@ sub main {
     scale_cpu_need_to_migrate_other();
     scale_cpu_no_place();
     _reinit_infra_cpu();
+
+    if ($testing == 1) {
+        $adm->rollbackTransaction;
+    }
 }
 
 sub scale_memory_place_ok {

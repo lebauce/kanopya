@@ -67,7 +67,7 @@ sub main {
     stop_vm_cluster();
 #    stop_2nd_hv();
 
-    if($testing == 1) {
+    if ($testing == 1) {
         $adm->rollbackTransaction;
     }
 }

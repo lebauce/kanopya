@@ -75,8 +75,8 @@ my $boards = [
 
 my @interfaces = (
     {
-	name	=> 'face_one',
-	bond_nb => 0,
+        name	=> 'face_one',
+        bond_nb => 0,
     },
 );
 
@@ -96,7 +96,7 @@ sub main {
     diag('Start host with bonded interfaces');
     start_cluster();
 
-    if($testing == 1) {
+    if ($testing == 1) {
         $adm->rollbackTransaction;
     }
 }
@@ -218,11 +218,6 @@ sub _create_and_configure_cluster {
         components => {
             opennebula => {
                 component_type => ComponentType->find(hash => {component_name => 'Opennebula'})->id,
-                component_configuration => {
-                    image_repository_path => "/srv/cloud/images",
-                    opennebula3_id        => $opennebula->id,
-                    hypervisor            => "kvm",
-                }
             },
         },
         interfaces => {
@@ -236,6 +231,21 @@ sub _create_and_configure_cluster {
 
     diag('retrieve Cluster via name');
     my $cluster = Kanopya::Tools::Retrieve->retrieveCluster(criteria => {cluster_name => 'Bondage'});
+
+    diag('retrieve Opennebula component');
+    my $opennebula = $cluster->getComponent(
+        name    => "Opennebula",
+        version => 3
+    );
+
+    diag('configuring Opennebula image repository');
+    $opennebula->setConf(
+        conf => {
+            image_repository_path => "/srv/cloud/images",
+            opennebula3_id        => $opennebula->id,
+            hypervisor            => "kvm",
+        }
+    );
 
     diag('associate netconf to ifaces');
     my @c_interfaces = Entity::Interface->search(hash => {service_provider_id => $cluster->id});

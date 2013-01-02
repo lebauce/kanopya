@@ -57,7 +57,7 @@ sub main {
     node_disabling();
     test_rrd_remove();
 
-    if($testing == 1) {
+    if ($testing == 1) {
         $adm->rollbackTransaction;
     }
 }
@@ -68,15 +68,15 @@ sub node_disabling {
 
     # Create externalcluster with a mock monitor
     my $external_cluster_mockmonitor = Entity::ServiceProvider::Outside::Externalcluster->new(
-            externalcluster_name => 'Test Monitor',
+        externalcluster_name => 'Test Monitor',
     );
 
     my $mock_monitor = Entity::Connector::MockMonitor->new(
-            service_provider_id => $external_cluster_mockmonitor->id,
+        service_provider_id => $external_cluster_mockmonitor->id,
     );
 
     $service_provider = Entity::ServiceProvider::Outside::Externalcluster->new(
-            externalcluster_name => 'Test Service Provider',
+        externalcluster_name => 'Test Service Provider',
     );
 
     diag('Add mock monitor to service provider');
@@ -168,7 +168,7 @@ sub node_disabling {
 
     $orchestrator->manage_aggregates();
 
-    diag('Check nodes rule verification')
+    diag('Check nodes rule verification');
     check_rule_verification(
         nrule1_id => $nrule1->id,
         node1_id  => $node1->id,
@@ -224,7 +224,7 @@ sub check_rule_verification {
             verified_noderule_state              => 'verified',
         });
         diag('## verified');
-    } 'Check node rule are all verified';
+    } 'Check node rules are all verified';
 }
 
 sub test_rrd_remove {

@@ -87,7 +87,7 @@ sub main {
     diag('Stop, deactivate and remove unmanaged iscsi host');
     stop_deactivate_and_remove_iscsi_host();
 
-    if($testing == 1) {
+    if ($testing == 1) {
         $adm->rollbackTransaction;
     }
 }
@@ -139,7 +139,7 @@ sub stop_deactivate_and_remove_iscsi_host {
             die "Cluster is not deactivated";
         }
 
-        diag('Cluster remove operation')
+        diag('Cluster remove operation');
         Kanopya::Tools::Execution->executeOne(entity => $cluster->remove);
 
         expectedException {

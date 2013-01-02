@@ -64,7 +64,7 @@ sub main {
     sco_workflow_triggered_by_rule();
     test_rrd_remove();
 
-    if($testing == 1) {
+    if ($testing == 1) {
         $adm->rollbackTransaction;
     }
 }
@@ -148,7 +148,7 @@ sub sco_workflow_triggered_by_rule {
     );
 
     diag('Create a new service workflow');
-    $service_wf = $sco->createWorkflow(
+    my $service_wf = $sco->createWorkflow(
         workflow_name => 'Test service Workflow',
         params => {
             internal => {
@@ -225,7 +225,7 @@ sub sco_workflow_triggered_by_rule {
 
     #  Check node rule output
     diag('Check postreported operation');
-    $sco_operation = Entity::Operation->find( hash => {
+    my $sco_operation = Entity::Operation->find( hash => {
         type => 'LaunchSCOWorkflow',
         state => 'postreported',
         workflow_id => $node_workflow->id,
@@ -309,7 +309,7 @@ sub sco_workflow_triggered_by_rule {
     chdir "/tmp";
     rename($output_file,$return_file);
     open(FILE,$return_file);
-    close(FILE)
+    close(FILE);
 
     # Modify hoped_execution_time in order to avoid waiting for the delayed time
     $sco_operation->setAttr( name => 'hoped_execution_time', value => time() - 1);

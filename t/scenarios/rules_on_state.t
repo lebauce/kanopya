@@ -107,7 +107,7 @@ sub main {
     resubmit_hypervisor();
     _check_no_operation_and_no_lock();
 
-    if($testing == 1) {
+    if ($testing == 1) {
         $adm->rollbackTransaction;
     }
 }

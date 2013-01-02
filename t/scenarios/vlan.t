@@ -20,17 +20,17 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use Administrator');
-use NetconfVlan');
-use Entity::Vlan');
-use Entity::ServiceProvider::Inside::Cluster');
-use Entity::User');
-use Entity::Host');
-use Entity::Kernel');
-use Entity::Processormodel');
-use Entity::Hostmodel');
-use Entity::Masterimage');
-use Entity::Network');
+use Administrator;
+use NetconfVlan;
+use Entity::Vlan;
+use Entity::ServiceProvider::Inside::Cluster;
+use Entity::User;
+use Entity::Host;
+use Entity::Kernel;
+use Entity::Processormodel;
+use Entity::Hostmodel;
+use Entity::Masterimage;
+use Entity::Network;
 use Entity::Poolip;
 use Entity::Operation;
 use Entity::Netconf;
@@ -79,7 +79,7 @@ sub main {
     diag('Stop and remove cluster with vlan interfaces');
     stop_and_remove_cluster();
 
-    if($testing == 1) {
+    if ($testing == 1) {
         $adm->rollbackTransaction;
     }
 }
@@ -119,7 +119,7 @@ sub stop_and_remove_cluster {
             die "Cluster is not 'up'";
         }
 
-        diag('Cluster remove operation')
+        diag('Cluster remove operation');
         Kanopya::Tools::Execution->executeOne(entity => $cluster->remove);
         expectedException {
             $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $cluster->id);
@@ -203,7 +203,7 @@ sub _create_and_configure_cluster {
         cluster_nameserver1    => '208.67.222.222',
         cluster_nameserver2    => '127.0.0.1',
         kernel_id              => $kernel->id,
-        masterimage_id         => $masterimage->id,
+        masterimage_id         => $opennebula_masterimage->id,
         user_id                => $admin_user->id,
         managers               => {
             host_manager => {

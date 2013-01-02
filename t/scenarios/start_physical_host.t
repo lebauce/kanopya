@@ -1,5 +1,15 @@
 #!/usr/bin/perl -w
 
+=head1 SCOPE
+
+TODO
+
+=head1 PRE-REQUISITE
+
+TODO
+
+=cut
+
 use Test::More 'no_plan';
 use Test::Exception;
 use Test::Pod;
@@ -70,7 +80,7 @@ sub main {
     diag('Start physical host');
     start_cluster();
 
-    if($testing == 1) {
+    if ($testing == 1) {
         $adm->rollbackTransaction;
     }
 }

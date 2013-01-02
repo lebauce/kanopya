@@ -96,7 +96,7 @@ sub main {
     diag('Resubmit host down');
     _resubmit_hosts();
 
-    if($testing == 1) {
+    if ($testing == 1) {
         $adm->rollbackTransaction;
     }
 }
@@ -130,15 +130,15 @@ sub lm_limit {
         # 1st migration
         $vm1_hv1->migrate(hypervisor => $hv2);
         Kanopya::Tools::Execution->executeAll();
-        die '## VM1 has not migrated' if ( not $vm1_hv1->reload->hypervisor->id == $hv2->id );
+        die '## VM1 has not migrated' if ( $vm1_hv1->reload->hypervisor->id != $hv2->id );
         # 2nd migration
         $vm2_hv1->migrate(hypervisor => $hv2);
         Kanopya::Tools::Execution->executeAll();
-        die '## VM2 has not migrated' if ( not $vm2_hv1->reload->hypervisor->id == $hv2->id );
+        die '## VM2 has not migrated' if ( $vm2_hv1->reload->hypervisor->id != $hv2->id );
         # 3rd migration
         $vm3_hv1->migrate(hypervisor => $hv2);
         Kanopya::Tools::Execution->executeAll();
-        die '## VM3 has not migrated' if ( not $vm3_hv1->reload->hypervisor->id == $hv2->id );
+        die '## VM3 has not migrated' if ( $vm3_hv1->reload->hypervisor->id != $hv2->id );
 
         # hv1 host is returned to it's initial state
         $hv1->setAttr(
@@ -168,10 +168,10 @@ sub lm_sequential_no_place_kanopya {
         # 1st migration : VM should migrate
         $vm1_hv2->migrate(hypervisor => $hv1);
         Kanopya::Tools::Execution->executeAll();
-        die '## VM1 has not migrated' if ( not $vm1_hv2->reload->hypervisor->id == $hv1->id );
+        die '## VM1 has not migrated' if ( $vm1_hv2->reload->hypervisor->id != $hv1->id );
         # 2nd migration : VM should not migrate
         $vm2_hv2->migrate(hypervisor => $hv1);
-        die '## VM2 has migrated' if( not $vm2_hv2->reload->hypervisor->id == $hv2->id );
+        die '## VM2 has migrated' if( $vm2_hv2->reload->hypervisor->id != $hv2->id );
         Kanopya::Tools::Execution->executeAll();
 
         # hv1 host is returned to it's initial state
