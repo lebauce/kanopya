@@ -19,7 +19,7 @@ use Test::Exception;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
     level=>'DEBUG',
-    file=>'/tmp/orchestrator_test.log',
+    file=>'/vagrant/orchestrator_test.log',
     layout=>'%F %L %p %m%n'
 });
 
