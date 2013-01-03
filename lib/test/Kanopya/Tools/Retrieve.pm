@@ -56,7 +56,7 @@ Retrieve kanopya cluster if no criteria are provided
 =cut
 
 sub retrieveCluster {
-    my ($self, %args) = shift;
+    my ($self, %args) = @_;
 
     my $kanopya_cluster;
 
