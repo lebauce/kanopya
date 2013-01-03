@@ -47,6 +47,7 @@ Code block represents a post condition of a test.
 
 
 Sample usage:
+ use Kanopya::Tools::TestUtils 'expectedException';
  expectedException { Entity->get(id => -1) } 'Kanopya::Exception::Internal::NotFound', 'Entity -1 does not exist';
 
 @param &code code block
@@ -74,7 +75,7 @@ sub expectedException (&;$;$) {
             die "$msg : Expecting '$excep_class' but got '$error_ref' : $error";
         }
     } else {
-        die "$msg : Expecting '$excep_class' but no exception happens";
+        die "$msg : Expecting '$excep_class' but no exception happened";
     }
 }
 
