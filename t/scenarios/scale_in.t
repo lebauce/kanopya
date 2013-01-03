@@ -196,7 +196,7 @@ sub scale_cpu_place_ok {
 
         $vm2->scale(
             scalein_type  => 'cpu',
-            scalein_value => 2,
+            scalein_value => 3,
         );
         Kanopya::Tools::Execution->executeAll();
 
@@ -308,9 +308,9 @@ sub _check_vm_core {
     }
 
     my $evm = EFactory::newEEntity(data => $vm);
-
-    if (!($evm->getTotalMemory == $core)) {
-        throw Kanopya::Exception(error => 'vm real core value is wrong');
+    my $real_core =  $evm->getTotalCpu;
+    if (!( $real_core == $core)) {
+        throw Kanopya::Exception(error => $vm->host_hostname.' real core value is '.$real_core.' expected value: '.$core);
     }
     diag('# vm core is ok');
 }
@@ -366,15 +366,10 @@ sub _check_init {
         $hv2->setAttr(name => 'host_ram',value => 3*$coefGb2Bytes);
         $hv2->save();
 
-        $hv1->setAttr(name => 'host_core',value => 8);
-        $hv1->save();
-        $hv2->setAttr(name => 'host_core',value => 8);
-        $hv2->save();
-
-        my $hv1_ram  = $hv1->reload->host_ram;
-        my $hv1_core = $hv1->reload->host_core;
-        my $hv2_ram  = $hv2->reload->host_ram;
-        my $hv2_core = $hv2->reload->host_core;
+        my $hv1_ram  = $hv1->reload->host_ram  * $one->overcommitment_memory_factor;
+        my $hv1_core = $hv1->reload->host_core * $one->overcommitment_cpu_factor;
+        my $hv2_ram  = $hv2->reload->host_ram  * $one->overcommitment_memory_factor;
+        my $hv2_core = $hv2->reload->host_core * $one->overcommitment_cpu_factor;
 
         if (!(($hv1_ram == 3*$coefGb2Bytes) &&
               ($hv2_ram == 3*$coefGb2Bytes) &&
