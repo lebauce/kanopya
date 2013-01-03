@@ -96,11 +96,16 @@ sub retrieveData {
     my @OID_list = values( %$var_map );
     my $time = time();
 
-    my %values = (
+    my %all_values = (
         "Cores"  => $host->host_core,
         "Memory" => $host->host_ram,
         "Up"     => (($host->getNodeState())[0] eq 'in') ? 1 : 0,
     );
+
+    my %values;
+    for my $name (keys %$var_map) {
+        $values{$name} = $all_values{$name};
+    }
 
     return ($time, \%values);
 }
