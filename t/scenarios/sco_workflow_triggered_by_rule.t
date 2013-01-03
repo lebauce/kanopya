@@ -45,7 +45,7 @@ use Entity::Combination::AggregateCombination;
 use Entity::AggregateRule;
 
 use Kanopya::Tools::Execution;
-use Kanopya::Tools::TestUtils;
+use Kanopya::Tools::TestUtils 'expectedException';
 
 my $testing = 1;
 

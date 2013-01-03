@@ -38,7 +38,7 @@ use ComponentType;
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::Register;
 use Kanopya::Tools::Retrieve;
-use Kanopya::Tools::TestUtils;
+use Kanopya::Tools::TestUtils 'expectedException';
 
 # Set a mock for startHost
 #use EEntity::EComponent::EPhysicalhoster0;

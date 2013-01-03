@@ -40,7 +40,7 @@ use Externalnode::Node;
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::Register;
 use Kanopya::Tools::Retrieve;
-use Kanopya::Tools::TestUtils;
+use Kanopya::Tools::TestUtils 'expectedException';
 
 my $testing = 0;
 

@@ -45,7 +45,7 @@ use Entity::WorkflowDef;
 use Kanopya::Config;
 
 use Kanopya::Tools::Execution;
-use Kanopya::Tools::TestUtils;
+use Kanopya::Tools::TestUtils 'expectedException';
 
 my $testing = 0;
 

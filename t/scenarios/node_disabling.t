@@ -35,7 +35,7 @@ use Entity::Clustermetric;
 use Entity::Combination::AggregateCombination;
 use Entity::CollectorIndicator;
 
-use Kanopya::Tools::TestUtils;
+use Kanopya::Tools::TestUtils 'expectedException';
 
 my $testing = 1;
 
