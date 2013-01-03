@@ -236,9 +236,10 @@ function showServiceConditionModal(sp_id, editid) {
 }
 
 function createNodemetricCondition(container_id, elem_id) {
-    var button = $("<button>", {html : 'Add condition'});
+    var button = $("<button>", { html : 'Add condition' });
     button.bind('click', function() {
         showNodeConditionModal(elem_id);
+        return false;
     }).button({ icons : { primary : 'ui-icon-plusthick' } });
     $('#' + container_id).append(button);
 };
@@ -326,6 +327,7 @@ function createRuleButton(container_id, sp_id, type, editid, onClose) {
     var button = $("<button>", {html : editid ? 'Edit' : 'Add a rule'});
     button.bind('click', function() {
         ruleForm(sp_id, type, editid, onClose);
+        return false;
     }).button({ icons : { primary : editid ? 'ui-icon-pencil' : 'ui-icon-plusthick' } });
     $('#' + container_id).append(button);
 }
@@ -334,6 +336,7 @@ function createServiceCondition(container_id, elem_id) {
     var button = $("<button>", {html : 'Add a Service Condition'});
     button.bind('click', function() {
         showServiceConditionModal(elem_id);
+        return false;
     }).button({ icons : { primary : 'ui-icon-plusthick' } });
     $('#' + container_id).append(button);
 };

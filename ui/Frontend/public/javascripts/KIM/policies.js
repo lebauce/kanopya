@@ -30,7 +30,7 @@ function load_policy_content (container_id) {
                     callback : function () { grid.trigger("reloadGrid"); }
                 })).start();
             } else {
-                addOrchestrationPolicy(policy_opts, grid);
+                addOrchestrationPolicy(grid);
             }
         });
         $('#' + cid).append(button);
@@ -65,7 +65,7 @@ function load_policy_details (elem_id, row_data, grid_id) {
 
     // Special management for Orchestration policy
     if (policy.policy_type == 'orchestration') {
-        load_orchestration_policy_details(policy_opts, flattened_policy, grid_id);
+        load_orchestration_policy_details(policy, grid_id);
 
     } else {
         // Use the kanopyaformwizard for policies

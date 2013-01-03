@@ -28,7 +28,7 @@ function getIndicators(sp_id) {
             }
         }
     });
-   return indicators;
+    return indicators;
 };
 
 ////////////////////////MONITORING MODALS//////////////////////////////////

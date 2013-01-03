@@ -2,91 +2,52 @@ require('common/service_monitoring.js');
 require('common/service_rules.js');
 require('common/service_common.js');
 
-// Return a hash with data of all grids in container cont_id
-// keys are grid url
-function exportGrids(cont_id) {
-    var res = {};
-    $('#' + cont_id + ' .ui-jqgrid-btable').each(function() {
-        var data = $(this).jqGrid('getRowData');
-        var grid_url = $(this).jqGrid('getGridParam', 'url');
-        res[grid_url] = data;
-    });
-    return res;
-}
-
-//Generic callback to add row in grid from modalForm data
-function beforeDataSubmit(data, object, options, form, grid) {
-    var format_data = {};
-    $(data).each(function(entry) {format_data[this.name]=this.value});
-    form.closeDialog();
-    grid.jqGrid('addRowData',1,format_data);
-}
-
-function saveOrchestrationPolicy(sp_id, data) {
-    var policy_params = {};
-
-    $(data).each(function() {
-        policy_params[this.name] = this.value;
-    })
-    delete policy_params.monitoring;
-    delete policy_params.rules;
-
-    policy_params['orchestration_service_provider_id'] = sp_id;
-
-    // Post policy
-    $.ajax({
-        type        : 'POST',
-        url         : 'api/policy',
-        data        : policy_params,
-     });
-}
-
-function orchestrationPolicyForm(policy_opts, sp_id, edit_mode, grid) {
-    var policy_opts_spec = {
-        dialogParams  : {
-            //width       : 1000,
+function orchestrationPolicyForm(sp_id, policy, grid) {
+    var form = new KanopyaFormWizard({
+        title      : policy != undefined ? 'Edit the orchestration policy: ' + policy.policy_name :
+                                           'Add an orchestration policy',
+        type       : 'orchestrationpolicy',
+        id         : policy != undefined ? policy.pk : undefined,
+        rawattrdef : {
+            policy_type : {
+                value       : 'orchestration',
+                is_editable : 1
+            }
         },
-        formwizardParams  : {
-            inDuration   : 0,
-            outDuration  : 0,
-            inAnimation  : {},
-            outAnimation : {},
+        rawsteps : {
+            Monitoring : $('<div>'),
+            Rules      : $('<div>')
         },
-        beforeSubmit: function(data, object, options, form) {
-            saveOrchestrationPolicy(sp_id, data);
-            grid.trigger("reloadGrid");
-            form.closeDialog();
-            return false;
+        attrsCallback : function (resource, data) {
+            return ajax('POST', '/api/orchestrationpolicy/getPolicyDef', data);
         },
-        cancel      : function () {
-            if ( !edit_mode ) {
+        submitCallback : function(data, $form, opts, onsuccess, onerror) {
+            data['orchestration_service_provider_id'] = sp_id;
+
+            // Post the policy
+            ajax($(this.form).attr('method').toUpperCase(),
+                 $(this.form).attr('action'), data, onsuccess, onerror);
+        },
+        cancelCallback : function () {
+            if (policy == undefined) {
                 // Remove policy service provider
-                $.ajax({
-                    type     : 'DELETE',
-                    url      : 'api/serviceprovider/' + sp_id,
-                 });
-              }
+                ajax('DELETE', '/api/serviceprovider/' + sp_id);
+            }
         },
-    };
-
-    var form = new PolicyForm($.extend({}, policy_opts, policy_opts_spec));
-    form.start();
-
-    $('#form_policy').append($('<div>', { id:"policy_monitoring", 'class':'custom_policy_step hidden' }));
-    loadServicesMonitoring('policy_monitoring', sp_id, '', true);
-
-    $('#form_policy').append($('<div>', { id:"policy_rules", 'class':'custom_policy_step hidden' }));
-    loadServicesRules('policy_rules', sp_id, '', true);
-
-    $(form.form).on('step_shown', function(event, step_info) {
-        $('#form_policy .custom_policy_step').hide();
-        var step = step_info.currentStep;
-        if (step === 'form_policy_stepMonitoring') {
-            $("#policy_monitoring").show();
-        } else if (step === 'form_policy_stepRules') {
-            $("#policy_rules").show();
+        callback : function () {
+            grid.trigger("reloadGrid");
         }
     });
+    form.start();
+
+    // Fill the empty divs given as raw steps
+    loadServicesMonitoring('form_orchestrationpolicy_step_Monitoring', sp_id, '', true);
+    loadServicesRules('form_orchestrationpolicy_step_Rules', sp_id, '', true);
+
+    // Then manually add the class wizard-ignore to all steps inputs, as the
+    // kanopyaformwizard did not it himself because the div was empty as load time.
+    $("#form_orchestrationpolicy_step_Monitoring").find(":input").addClass("wizard-ignore");
+    $("#form_orchestrationpolicy_step_Rules").find(":input").addClass("wizard-ignore");
 }
 
 // Associate to service provider <sp_id> the manager <type> corresponding to component installed on kanopya cluster
@@ -124,29 +85,21 @@ function createPolicyServiceProvider() {
 }
 
 // Edit existing policy
-function load_orchestration_policy_details(policy_opts, policy, grid_id) {
+function load_orchestration_policy_details(policy, grid_id) {
     var sp_id;
-    var edit_mode = 1;
 
     if (policy.orchestration && policy.orchestration.service_provider_id) {
         sp_id = policy.orchestration.service_provider_id;
+
     } else {
         // default orchestration policy is not linked to a sp, so we create it
         sp_id = createPolicyServiceProvider();
-        edit_mode = 0;
     }
 
-    orchestrationPolicyForm(
-            policy_opts,
-            sp_id,
-            edit_mode,
-            $('#' + grid_id)
-    );
+    orchestrationPolicyForm(sp_id, policy, $('#' + grid_id));
 }
 
-function addOrchestrationPolicy(policy_opts, grid) {
-
+function addOrchestrationPolicy(grid) {
     var sp_id = createPolicyServiceProvider();
-
-    orchestrationPolicyForm(policy_opts, sp_id, 0, grid);
+    orchestrationPolicyForm(sp_id, undefined, grid);
 }
