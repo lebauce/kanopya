@@ -91,10 +91,6 @@ sub main {
     lm_vm_down();
     diag("Test of live migration on an hypervisor down");
     lm_hypervisor_down();
-    # hosts down are resubmitted at end of test
-    # to avoid run of related workflows by a _executor_wait() of later test case
-    diag('Resubmit host down');
-    _resubmit_hosts();
 
     if ($testing == 1) {
         $adm->rollbackTransaction;
