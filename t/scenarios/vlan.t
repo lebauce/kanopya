@@ -76,9 +76,6 @@ sub main {
     diag('Start cluster with vlan interfaces');
     start_cluster();
 
-    diag('Stop and remove cluster with vlan interfaces');
-    stop_and_remove_cluster();
-
     if ($testing == 1) {
         $adm->rollbackTransaction;
     }
@@ -100,32 +97,6 @@ sub start_cluster {
             die "Cluster is not 'up'";
         }
     } 'Start cluster';
-}
-
-sub stop_and_remove_cluster {
-    lives_ok {
-        diag('retrieve Cluster via name');
-        my $cluster = Kanopya::Tools::Retrieve->retrieveCluster(criteria => {cluster_name => 'Bondage'});
-        my $cluster_name = $cluster->cluster_name;
-        my $cluster_id = $cluster->id;
-
-        diag('Cluster stop operation');
-        Kanopya::Tools::Execution->executeOne(entity => $cluster->forceStop);
-        my ($state, $timestemp) = $cluster->getState;
-        if ($state eq 'down') {
-            diag("Cluster $cluster_name stopped successfully");
-        }
-        else {
-            die "Cluster is not 'up'";
-        }
-
-        diag('Cluster remove operation');
-        Kanopya::Tools::Execution->executeOne(entity => $cluster->remove);
-        expectedException {
-            $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $cluster->id);
-        } 'Kanopya::Exception::DB',
-        "Cluster $cluster_name with id $cluster_id has been successfully removed";
-    } 'Stop and remove cluster';
 }
 
 sub _create_and_configure_cluster {
