@@ -86,15 +86,19 @@ function conditionDialog(sp_id, condition_type, fields, editid) {
     form.append($('<label>', {'for':'type_select', html:'Type : '})).append(type_select);
     form.append('<br>').append('<br>');
 
-    // Left operand
-    var left_operand_select = $('<select>', {name : 'left_combination_id'}).appendTo(form);
-    left_operand_select.change(function() {
+    // Select combination handler (manage unit)
+    function onSelectCombination(e) {
+        var side = e.data;
         var combi_id = $(this).find('option:selected').val();
-        $.get('/api/combination/'+combi_id+'?expand=unit').success(function(combi) {
-           form.find('#left_unit').text(combi.unit);
+        $.get('/api/combination/'+combi_id).success(function(combi) {
+           form.find('#'+side+'_unit').text(combi.combination_unit);
            checkUnit();
         });
-    });
+    }
+
+    // Left operand
+    var left_operand_select = $('<select>', {name : 'left_combination_id'}).appendTo(form);
+    left_operand_select.change('left', onSelectCombination);
 
     // Operator
     var operator_select = $('<select>', {name:fields.operator}).appendTo(form);
@@ -113,13 +117,7 @@ function conditionDialog(sp_id, condition_type, fields, editid) {
     $('<span>', {id:'view_cond_combi', 'class':'cond_view hidden'}).append(
             right_combi_select.append(right_combi_select_group_node).append(right_combi_select_group_service)
     ).appendTo(form);
-    right_combi_select.change(function() {
-        var combi_id = $(this).find('option:selected').val();
-        $.get('/api/combination/'+combi_id+'?expand=unit').success(function(combi) {
-            form.find('#right_unit').text(combi.unit);
-            checkUnit();
-        });
-    });
+    right_combi_select.change('right', onSelectCombination);
 
     // Unit info
     form.append('<br>').append($('<label>', {'for':'unit_info', html:'Unit : '}))
