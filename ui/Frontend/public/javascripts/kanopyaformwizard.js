@@ -162,6 +162,14 @@ var KanopyaFormWizard = (function() {
             }
         }
 
+        // Add raw steps divs if defined
+        for (var name in this.rawsteps) {
+            // Ignore all the raw step inputs
+            this.rawsteps[name].find(":input").addClass("wizard-ignore");
+
+            this.addStep(name, this.rawsteps[name]);
+        }
+
         // We add buttons at end of the form
         var buttons = this.actionsCallback();
         if (buttons) {
@@ -827,11 +835,8 @@ var KanopyaFormWizard = (function() {
         // If the div for the step does not exists, create it
         var stepdiv;
         if (this.steps[step] === undefined) {
-            stepdiv = $("<div>", { id : this.name + '_step_' + step }).appendTo(this.form);
-            if (step !== this.type) {
-                stepdiv.addClass('step').attr('rel', step);
-            }
-            this.steps[step] = {};
+            stepdiv = $("<div>");
+            this.addStep(step, stepdiv);
 
         } else {
             stepdiv = $(this.form).find('#' + this.name + '_step_' + step);
@@ -855,6 +860,16 @@ var KanopyaFormWizard = (function() {
         return this.steps[step][table];
     }
 
+    KanopyaFormWizard.prototype.addStep = function(name, div) {
+        $(div).attr('id', this.name + '_step_' + name);
+        $(div).appendTo(this.form);
+
+        if (name !== this.type) {
+            $(div).addClass('step').attr('rel', name);
+        }
+        this.steps[name] = {};
+    }
+
     KanopyaFormWizard.prototype.start = function() {
         $(document).append(this.content);
         // Open the modal and start the form wizard
@@ -875,6 +890,7 @@ var KanopyaFormWizard = (function() {
         this.displayed       = args.displayed       || [];
         this.relations       = args.relations       || {};
         this.rawattrdef      = args.rawattrdef      || {};
+        this.rawsteps        = args.rawsteps        || {};
         this.callback        = args.callback        || $.noop;
         this.title           = args.title           || this.name;
         this.skippable       = args.skippable       || false;
@@ -886,7 +902,7 @@ var KanopyaFormWizard = (function() {
         this.attrsCallback   = args.attrsCallback   || this.getAttributes;
         this.optionsCallback = args.optionsCallback || function () { return false } ;
         this.actionsCallback = args.actionsCallback || $.noop;
-        this.cancelCallback  = args.cancel          || $.noop;
+        this.cancelCallback  = args.cancelCallback  || $.noop;
         this.error           = args.error           || $.noop;
     }
 
@@ -898,6 +914,7 @@ var KanopyaFormWizard = (function() {
             displayed       : this.displayed,
             relations       : this.relations,
             rawattrdef      : this.rawattrdef,
+            rawsteps        : this.rawsteps,
             callback        : this.callback,
             title           : this.title,
             skippable       : this.skippable,
@@ -907,7 +924,7 @@ var KanopyaFormWizard = (function() {
             submitCallback  : this.submitCallback,
             valuesCallback  : this.valuesCallback,
             attrsCallback   : this.attrsCallback,
-            cancel          : this.cancelCallback
+            cancelCallback  : this.cancelCallback
         };
     }
 
@@ -935,6 +952,7 @@ var KanopyaFormWizard = (function() {
 
     KanopyaFormWizard.prototype.changeStep = function(event, data) {
         var steps = $(this.form).children("div.step");
+
         var text  = "";
         var index = 1;
         $(steps).each(function() {
@@ -947,7 +965,7 @@ var KanopyaFormWizard = (function() {
             if (text === "") {
                 text += prepend + index + ". " + $(this).attr('rel') + append;
             } else {
-                text += " >> " + prepend + index + ". " + $(this).attr('rel') + append;
+                text += " > " + prepend + index + ". " + $(this).attr('rel') + append;
             }
             ++index;
         });
@@ -985,11 +1003,6 @@ var KanopyaFormWizard = (function() {
 
         var steps = $(this.form).children("div.step");
         if (steps.length > 1) {
-            $(steps).each(function() {
-                if (!$(this).html()) {
-                    $(this).remove();
-                }
-            });
             $(this.content).prepend($("<br />"));
             $(this.content).prepend($("<div>", { id : this.name + "_steps" }).css({
                 width           : '100%',
@@ -1146,9 +1159,8 @@ var KanopyaFormWizard = (function() {
     KanopyaFormWizard.prototype.validateForm = function () {
         this.disableButtons();
 
-        var _this = this;
-
         // Add validation rules for inputs inserted dynamically in the form.
+        var _this = this;
         $(this.form).find(':input').each(function () {
             for (var rule in _this.validateRules[$(this).attr('name')]) {
                 var rules = $(this).rules();
