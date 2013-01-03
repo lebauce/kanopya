@@ -412,10 +412,10 @@ sub update {
                 my $db_data = $self->updateHostData( %params );
 
                 # Collect rest of sets only if node is up
-                 my $net_data;
+                my $net_data;
                 if ($node->node_state =~ '^in') {
                     $params{sets} = \@net_monitored_sets;
-                    my $net_data = $self->updateHostData( %params );
+                    $net_data = $self->updateHostData( %params );
                 }
                 $hosts_values{ $host->host_hostname } = Hash::Merge::merge($db_data, $net_data);
             }
