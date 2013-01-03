@@ -110,7 +110,7 @@ sub executeOne {
 
         my $current;
         eval {
-          $current = $workflow->getCurrentOperation;
+            $current = $workflow->getCurrentOperation;
         };
 
         # refresh workflow view
