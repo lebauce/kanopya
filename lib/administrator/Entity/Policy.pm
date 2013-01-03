@@ -129,7 +129,7 @@ sub toJSON {
     my $json = $self->SUPER::toJSON(%args);
 
     if (not $args{model}) {
-        $json = $self->mergeValues(values => $json);
+        $json = $merge->merge($self->mergeValues(values => $json), $self->getParams(noarrays => 1));
     }
     return $json;
 }
