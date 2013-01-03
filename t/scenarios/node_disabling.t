@@ -176,6 +176,8 @@ sub node_disabling {
         node3_id  => $node3->id
     );
 
+    $node3->disable();
+
     expectedException {
         VerifiedNoderule->find(hash => {
             verified_noderule_externalnode_id    => $node3->id,
@@ -266,7 +268,7 @@ sub test_rrd_remove {
             }
             close(FILE);
         }
-        if ($one_rrd_remove != 0) {
+        if ($one_rrd_remove == 0) {
             diag('## checked');
         }
         else {

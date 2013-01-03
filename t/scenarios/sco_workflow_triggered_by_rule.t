@@ -252,7 +252,7 @@ sub sco_workflow_triggered_by_rule {
     }
 
     diag('Check if node file contain line 2');
-    if ( $lines[1] ne $return_file) {
+    if ( $lines[1] eq $return_file) {
         diag('## checked');
     }
     else {
@@ -500,7 +500,7 @@ sub test_rrd_remove {
             diag('## checked');
         }
         else {
-             "All rrd have not been removed, still $one_rrd_remove rrd";
+             die "All rrd have not been removed, still $one_rrd_remove rrd";
         }
     } 'Test rrd remove';
 }

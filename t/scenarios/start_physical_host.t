@@ -183,7 +183,7 @@ sub _create_and_configure_cluster {
     diag('Create cluster');
     my $cluster_create = Entity::ServiceProvider::Inside::Cluster->create(
                           active                 => 1,
-                          cluster_name           => "Bondage",
+                          cluster_name           => "MyCluster",
                           cluster_min_node       => "1",
                           cluster_max_node       => "3",
                           cluster_priority       => "100",
