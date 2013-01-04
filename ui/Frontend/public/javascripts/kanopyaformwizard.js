@@ -950,29 +950,15 @@ var KanopyaFormWizard = (function() {
         }
     }
 
-    KanopyaFormWizard.prototype.changeStep = function(event, data) {
-        var steps = $(this.form).children("div.step");
-
-        var text  = "";
-        var index = 1;
-        $(steps).each(function() {
-            var prepend = "";
-            var append  = "";
-            if ($(this).attr("id") == data.currentStep) {
-                prepend = "<b>";
-                append  = "</b>";
-            }
-            if (text === "") {
-                text += prepend + index + ". " + $(this).attr('rel') + append;
-            } else {
-                text += " > " + prepend + index + ". " + $(this).attr('rel') + append;
-            }
-            ++index;
-        });
-        $(this.content).children("div#" + this.name + "_steps").html(text);
+    KanopyaFormWizard.prototype.changeStep = function(event, state) {
+        var stepsdiv  = $(this.content).children("div#" + this.name + "_steps");
+        if (state.previousStep != state.currentStep) {
+            // Unbold the previuous step
+            stepsdiv.children("label#" + state.previousStep + "_label").css('font-weight', 'normal');
+        }
+        stepsdiv.children("label#" + state.currentStep + "_label").css('font-weight', 'bold');
 
         // Update buttons state
-        var state = $(this.form).formwizard("state");
         if (! state.isLastStep) {
             this.buttons['Ok'].find('span').text('Next');
         }
@@ -1003,12 +989,33 @@ var KanopyaFormWizard = (function() {
 
         var steps = $(this.form).children("div.step");
         if (steps.length > 1) {
-            $(this.content).prepend($("<br />"));
-            $(this.content).prepend($("<div>", { id : this.name + "_steps" }).css({
+            // Add a div to display steps names
+            var stepsdiv = $("<div>", { id : this.name + "_steps" }).css({
                 width           : '100%',
                 'border-bottom' : '1px solid #AAA',
                 position        : 'relative'
-            }));
+            });
+
+            var index = 1;
+            var _this = this;
+            $(steps).each(function() {
+                var steplabel = $("<label>");
+                steplabel.attr('id', $(this).attr('id') + '_label');
+                steplabel.attr('rel', $(this).attr('id'));
+                steplabel.html(index + '. ' + $(this).attr('rel'));
+                steplabel.css("cursor", "pointer");
+                steplabel.click(function () {
+                    _this.disableButtons();
+                    $(_this.form).formwizard("show", $(this).attr('rel'));
+                });
+
+                stepsdiv.append(steplabel).append($("<label>", { text : ' > '}));
+                ++index;
+            });
+
+            $(this.content).prepend($("<br />"));
+            $(this.content).prepend(stepsdiv);
+
             this.changeStep({}, $(this.form).formwizard("state"));
             $(this.form).bind('step_shown', $.proxy(this.changeStep, this));
         }
@@ -1141,6 +1148,7 @@ var KanopyaFormWizard = (function() {
             state = $(this.form).formwizard("state");
         }
         for (var button in this.buttons) {
+            console.log(button + ", " + state.isFirstStep);
             if (! (state.isFirstStep && button === 'Back')) {
                 this.buttons[button].removeAttr('disabled').removeClass("ui-state-disabled");
             }
@@ -1177,9 +1185,7 @@ var KanopyaFormWizard = (function() {
         // If the state has not changed, there was an error while
         // validation, so enable buttons.
         var state = $(this.form).formwizard("state");
-        if (Object.keys(this.steps).length <= 1 ||
-            (oldstep === state.currentStep && ! state.isLastStep)) {
-
+        if (Object.keys(this.steps).length <= 1 || (oldstep === state.currentStep && ! state.isLastStep)) {
             this.enableButtons();
         }
     }
