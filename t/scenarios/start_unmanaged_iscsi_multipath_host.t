@@ -45,6 +45,8 @@ use Kanopya::Tools::Retrieve;
 
 my $testing = 1;
 
+main();
+
 sub main {
     Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
     my $adm = Administrator->new;
