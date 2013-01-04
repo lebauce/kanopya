@@ -155,7 +155,7 @@ sub _create_and_configure_cluster {
     my $deploy = Entity::Operation->enqueue(
                   priority => 200,
                   type     => 'DeployMasterimage',
-                  params   => { file_path => "/vagrant/" . ($ENV{'MASTERIMAGE'} || "centos-6.3-opennebula3.tar.bz2"),
+                  params   => { file_path => "/masterimages/" . ($ENV{'MASTERIMAGE'} || "centos-6.3-opennebula3.tar.bz2"),
                                 keep_file => 1 },
     );
     Kanopya::Tools::Execution->executeOne(entity => $deploy);
