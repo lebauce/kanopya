@@ -40,6 +40,8 @@ use Test::Exception;
 use Kanopya::Exceptions;
 use General;
 use Entity::Host;
+use Entity::Container;
+use Entity::ContainerAccess;
 use Entity::ServiceProvider::Inside::Cluster;
 use Hash::Merge qw(merge);
 
@@ -54,6 +56,8 @@ Create a cluster
 @optional managers managers for the cluster 
 @optional hosts hosts to be created along the cluster
 
+@warning cluster_basehostname use cluster_name
+
 =end classdoc
 
 =cut
@@ -63,6 +67,7 @@ sub createCluster {
 
     my $hosts      = $args{hosts};
     my $components = $args{components};
+    my $interfaces = $args{interfaces};
     my $managers   = $args{managers};
     my $given_conf = $args{cluster_conf};
     my %cluster_conf;
@@ -84,28 +89,6 @@ sub createCluster {
                               entity => $kanopya_cluster->getComponent(name    => "Iscsitarget",
                                                                        version => 1)
                          );
-
-    diag('Retrieving NFS server component');
-    my $nfs_manager = EEntity->new(
-                           entity => $kanopya_cluster->getComponent(name    => "Nfsd",
-                                                                    version => 3)
-                      );
-
-    diag('Creating disk for image repository');
-    my $image_disk = $disk_manager->createDisk(
-            name       => "test_image_repository",
-            size       => 6 * 1024 * 1024 * 1024,
-            filesystem => "ext3",
-            vg_id      => 1
-    )->_getEntity;
-
-    diag('Creating export for image repository');
-    my $nfs = $nfs_manager->createExport(
-            container      => $image_disk,
-            export_name    => "test_image_repository",
-            client_name    => "*",
-            client_options => "rw,sync,no_root_squash"
-        );
 
     diag('Get a kernel');
     my $kernel = Entity::Kernel->find(hash => { kernel_name => $ENV{'KERNEL'} || "2.6.32-279.5.1.el6.x86_64" });
@@ -145,7 +128,6 @@ sub createCluster {
                            cluster_si_shared     => 0,
                            cluster_si_persistent => 1,
                            cluster_domainname    => 'my.domain',
-                           cluster_basehostname  => 'one',
                            cluster_nameserver1   => '208.67.222.222',
                            cluster_nameserver2   => '127.0.0.1',
                            kernel_id             => $kernel->id,
@@ -228,6 +210,22 @@ sub createCluster {
         %cluster_conf = %{ merge(\%cluster_conf, \%mgrs) };
     }
 
+    my %ifcs;
+    if (defined $interfaces) {
+        while (my ($interface,$netconfs) = each %$interfaces) {
+            my %tmp = (
+                interfaces => {
+                    $interface => {
+                        interface_netconfs => $netconfs
+                    }
+                }
+            );
+            Hash::Merge::set_behavior('RIGHT_PRECEDENT');
+            %mgrs = %{ merge(\%ifcs, \%tmp) };
+        }
+        %cluster_conf = %{ merge(\%cluster_conf, \%ifcs) };
+    }
+
     diag('Create cluster');
     my $cluster_create = Entity::ServiceProvider::Inside::Cluster->create(%cluster_conf);
 
@@ -252,7 +250,105 @@ Create a cluster of VMs
 =end classdoc
 
 =cut
-sub createVMcluster {
+
+sub createVmCluster {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => ['iaas']);
+
+    my $iaas = $args{iaas};
+
+    #get iaas Cloudmanager component to use it as host manager
+    my $host_manager = $iaas->getComponent(category => 'Cloudmanager');
+
+    #get fileimagemanager from kanopya cluster as export and disk manager
+    my $kanopya = Kanopya::Tools::Retrieve->retrieveCluster();
+    my $fileimagemanager = $kanopya->getComponent(name    => "Fileimagemanager",
+                                                  version => 0);
+
+
+    my $nfs_manager = EEntity->new(
+                          entity => $kanopya->getComponent(name    => 'Nfsd',
+                                                           version => 3)
+                      );
+
+    my $nfs;
+    my $nfs_container;
+    eval {
+        $nfs_container   = Entity::Container->find(hash => {container_name => 'test_image_repository'});
+        my @nfs_accesses = Entity::ContainerAccess->search(hash => {
+                               container_id => $nfs_container->id
+                           });
+        my @nfss = grep {$_->export_manager_id != 0} @nfs_accesses;
+        $nfs = $nfss[0];
+    };
+    if (not defined $nfs) {
+        my $disk_manager = EEntity->new(
+                               entity => $kanopya->getComponent(name    => "Lvm",
+                                                                version => 2)
+                           );
+
+        my $image_disk = $disk_manager->createDisk(
+                name       => "test_image_repository",
+                size       => 6 * 1024 * 1024 * 1024,
+                filesystem => "ext3",
+                vg_id      => 1
+        )->_getEntity;
+
+        $nfs = $nfs_manager->createExport(
+                   container      => $image_disk,
+                   export_name    => "test_image_repository",
+                   client_name    => "*",
+                   client_options => "rw,sync,no_root_squash",
+               );
+    }
+
+    delete $args{iaas};
+
+    $self->createCluster(
+        %args,
+        managers => {
+            host_manager => {
+                manager_id     => $host_manager->id,
+                manager_params => {
+                    core    => 2,
+                    ram     => 512 * 1024 * 1024,
+                    ifaces  => 1,
+                },
+            },
+            disk_manager => {
+                manager_id => $fileimagemanager->id,
+                manager_params => {
+                     container_access_id => $nfs->id ,
+                     systemimage_size => 4 * 1024 * 1024 * 1024,
+                },
+            },
+            export_manager => {
+                manager_id => $fileimagemanager->id,
+                manager_params => {
+                     container_access_id => $nfs->id ,
+                     systemimage_size => 4 * 1024 * 1024 * 1024,
+                },
+            }
+        },
+    );
+}
+
+=pod
+
+=begin classdoc
+
+Create a iaas cluster. This function does provide the facility of giving a bridge interface to the cluster
+call createCluster() with an admin interface an a single bridge interface
+
+@optional interfaces
+
+=end classdoc
+
+=cut
+
+sub createIaasCluster {
+    my ($self,%args) = @_;
 
 }
 

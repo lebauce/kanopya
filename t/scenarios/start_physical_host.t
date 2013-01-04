@@ -56,8 +56,8 @@ sub main {
     diag('Create and configure cluster');
     Kanopya::Tools::Create->createCluster();
 
-    #diag('Start physical host');
-    #start_cluster();
+    diag('Start physical host');
+    start_cluster();
 
     if ($testing == 1) {
         $adm->rollbackTransaction;
@@ -66,9 +66,8 @@ sub main {
 
 sub start_cluster {
     lives_ok {
-        my $cluster;
         diag('retrieve Cluster via name');
-        $cluster = Kanopya::Tools::Retrieve->retrieveCluster(criteria => {cluster_name => 'MyCluster'});
+        my $cluster = Kanopya::Tools::Retrieve->retrieveCluster(criteria => {cluster_name => 'MyCluster'});
         Kanopya::Tools::Execution->executeOne(entity => $cluster->start());
 
         my ($state, $timestemp) = $cluster->getState;
