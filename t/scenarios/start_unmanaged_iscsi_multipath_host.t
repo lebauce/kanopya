@@ -271,7 +271,7 @@ sub _create_and_configure_cluster {
                 manager_type     => "export_manager",
                 manager_params   => {
                     iscsi_portals => \@iscsi_portal_ids,
-                    target        => 'iqn.2012-11.com.hederatech.nas:vm',
+                    target        => 'iqn.2012-11.com.hederatech.nas:' . ($ENV{'LUNNAME'} || 'vm'),
                     lun           => 0
                 }
             },
