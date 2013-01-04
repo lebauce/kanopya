@@ -46,17 +46,14 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        'get_service_profiles'          => {
-            'description'   => 'call get_service_profile with UCS API',
-            'perm_holder'   => 'entity'
+        get_service_profiles => {
+            description => 'call get_service_profile with UCS API',
         },
-        'get_service_profile_templates' => {
-            'description'   => 'call get_service_profile_templates with UCS API',
-            'perm_holder'   => 'entity'
+        get_service_profile_templates => {
+            description => 'call get_service_profile_templates with UCS API',
         },
-        'get_blades'                    => {
-            'description'   => 'call get_blades with UCS API',
-            'perm_holder'   => 'entity'
+        get_blades => {
+            description => 'call get_blades with UCS API',
         }
     }
 }
@@ -137,7 +134,7 @@ sub getHostManagerParams {
     my %args = @_;
 
     return {
-        service_profile_template_i => {
+        service_profile_template_id => {
             label   => 'Service profile',
             type    => 'enum',
             options => [ 'sptmpl_kanopya01-A', 'sptmpl_kanopya01-B' ]
