@@ -41,6 +41,7 @@ use Kanopya::Exceptions;
 use General;
 use Entity::Host;
 use Entity::ServiceProvider::Inside::Cluster;
+use Hash::Merge qw(merge);
 
 =pod
 
@@ -48,10 +49,10 @@ use Entity::ServiceProvider::Inside::Cluster;
 
 Create a cluster
 
-@param hosts the cluster hosts
-@param cluster_name the name of the cluster
-@param $host_manager_params parameters to be given to the host manager
-@param $disk_manager_params parameters to be given to the disk manager
+@optional cluster_conf override configuration for cluster
+@optional components components for the cluster 
+@optional managers managers for the cluster 
+@optional hosts hosts to be created along the cluster
 
 =end classdoc
 
@@ -60,10 +61,11 @@ Create a cluster
 sub createCluster {
     my ($self,%args) = @_;
 
-    my $hosts = $args{hosts};
-    my $cluster_name = $args{cluster_name};
-    my $host_manager_params = $args{host_manager_params};
-    my $disk_manager_params = $args{disk_manager_params};
+    my $hosts      = $args{hosts};
+    my $components = $args{components};
+    my $managers   = $args{managers};
+    my $given_conf = $args{cluster_conf};
+    my %cluster_conf;
 
     diag('Retrieve the Kanopya cluster');
     my $kanopya_cluster = Kanopya::Tools::Retrieve->retrieveCluster();
@@ -108,16 +110,8 @@ sub createCluster {
     diag('Get a kernel');
     my $kernel = Entity::Kernel->find(hash => { kernel_name => $ENV{'KERNEL'} || "2.6.32-279.5.1.el6.x86_64" });
 
-    diag('Retrieve physical hosts');
-    my @hosts = Entity::Host->find(hash => { host_manager_id => $physical_hoster->id });
-
     diag('Retrieve the admin user');
     my $admin_user = Entity::User->find(hash => { user_login => 'admin' });
-
-    diag('Registering physical hosts');
-    foreach my $host (@{ $hosts }) {
-        Kanopya::Tools::Register->registerHost(board => $host);
-    }
 
     diag('Deploy master image');
     my $deploy = Entity::Operation->enqueue(
@@ -142,51 +136,124 @@ sub createCluster {
         push @iscsi_portal_ids, $portal->id;
     }
 
+    my %default_conf = (
+                           active                => 1,
+                           cluster_name          => 'DefaultCluster',
+                           cluster_min_node      => 1,
+                           cluster_max_node      => 3,
+                           cluster_priority      => "100",
+                           cluster_si_shared     => 0,
+                           cluster_si_persistent => 1,
+                           cluster_domainname    => 'my.domain',
+                           cluster_basehostname  => 'one',
+                           cluster_nameserver1   => '208.67.222.222',
+                           cluster_nameserver2   => '127.0.0.1',
+                           kernel_id             => $kernel->id,
+                           masterimage_id        => $masterimage->id,
+                           user_id               => $admin_user->id,
+                           managers              => {
+                               host_manager => {
+                                   manager_id     => $physical_hoster->id,
+                                   manager_type   => "host_manager",
+                                   manager_params => {
+                                       cpu => 1,
+                                       ram => 512*1024*1024,
+                                   },
+                               },
+                               disk_manager => {
+                                   manager_id     => $disk_manager->id,
+                                   manager_type   => "disk_manager",
+                                   manager_params => {
+                                       vg_id => 1,
+                                       systemimage_size => 4 * 1024 * 1024 * 1024,
+                                   },
+                               },
+                               export_manager => {
+                                   manager_id     => $export_manager->id,
+                                   manager_type   => "export_manager",
+                                   manager_params => {
+                                       iscsi_portals => \@iscsi_portal_ids,
+                                   }
+                               },
+                           },
+                           components => {
+                           },
+                           interfaces => {
+                               public => {
+                                   interface_netconfs  => { $adminnetconf->id => $adminnetconf->id },
+                               }
+                           }
+                       );
+
+    if (defined $given_conf) {
+        Hash::Merge::set_behavior('RIGHT_PRECEDENT');
+        %cluster_conf = %{ merge(\%default_conf, $given_conf) };
+    }
+    else {
+        %cluster_conf = %default_conf;
+    }
+
+    my %comps;
+    if (defined $components) {
+        while (my ($component,$comp_conf) = each %$components) {
+            my %tmp = (
+                components => {
+                    $component => {
+                        component_type => ComponentType->find(hash => {
+                                               component_name => $component
+                                          })->id
+                    }
+                }
+            );
+            Hash::Merge::set_behavior('RIGHT_PRECEDENT');
+            %comps = %{ merge(\%comps, \%tmp) };
+        }
+        %cluster_conf = %{ merge(\%cluster_conf, \%comps) };
+    }
+
+    my %mgrs;
+    if (defined $managers) {
+        while (my ($manager,$mgr_conf) = each %$managers) {
+            my %tmp = (
+                managers => { 
+                    $manager => {
+                        manager_type => $manager,
+                        %$mgr_conf
+                    }
+                }
+            );
+            Hash::Merge::set_behavior('RIGHT_PRECEDENT');
+            %mgrs = %{ merge(\%mgrs, \%tmp) };
+        }
+        %cluster_conf = %{ merge(\%cluster_conf, \%mgrs) };
+    }
+
     diag('Create cluster');
-    my $cluster_create = Entity::ServiceProvider::Inside::Cluster->create(
-                          active                 => 1,
-                          cluster_name           => $cluster_name,
-                          cluster_min_node       => "1",
-                          cluster_max_node       => "3",
-                          cluster_priority       => "100",
-                          cluster_si_shared      => 0,
-                          cluster_si_persistent  => 1,
-                          cluster_domainname     => 'my.domain',
-                          cluster_basehostname   => 'one',
-                          cluster_nameserver1    => '208.67.222.222',
-                          cluster_nameserver2    => '127.0.0.1',
-                          kernel_id              => $kernel->id,
-                          masterimage_id         => $masterimage->id,
-                          user_id                => $admin_user->id,
-                          managers               => {
-                              host_manager => {
-                                  manager_id     => $physical_hoster->id,
-                                  manager_type   => "host_manager",
-                                  manager_params => $host_manager_params,
-                              },
-                              disk_manager => {
-                                  manager_id       => $disk_manager->id,
-                                  manager_type     => "disk_manager",
-                                  manager_params   => $disk_manager_params,
-                              },
-                              export_manager => {
-                                  manager_id       => $export_manager->id,
-                                  manager_type     => "export_manager",
-                                  manager_params   => {
-                                      iscsi_portals => \@iscsi_portal_ids,
-                                  }
-                              },
-                          },
-                          components             => {
-                          },
-                          interfaces             => {
-                              public => {
-                                  interface_netconfs  => { $adminnetconf->id => $adminnetconf->id },
-                              }
-                          }
-                      );
+    my $cluster_create = Entity::ServiceProvider::Inside::Cluster->create(%cluster_conf);
+
+    if (defined $hosts) {
+        diag('Registering physical hosts');
+        foreach my $host (@{ $hosts }) {
+            Kanopya::Tools::Register->registerHost(board => $host);
+        }
+    }
 
     Kanopya::Tools::Execution->executeOne(entity => $cluster_create);
+}
+
+=pod
+
+=begin classdoc
+
+Create a cluster of VMs
+
+@param iaas the cluster of hypervisors to be used for the vm's cluster
+
+=end classdoc
+
+=cut
+sub createVMcluster {
+
 }
 
 1;
