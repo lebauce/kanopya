@@ -15,6 +15,21 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+
+=begin classdoc
+
+The network policy defines the parameters describing how a service
+manage the network interfaces of it's hosts.
+
+@since    2012-Aug-16
+@instance hash
+@self     $self
+
+=end classdoc
+
+=cut
+
 package Entity::Policy::NetworkPolicy;
 use base 'Entity::Policy';
 
@@ -86,8 +101,22 @@ use constant POLICY_ATTR_DEF => {
 
 sub getPolicyAttrDef { return POLICY_ATTR_DEF; }
 
-
 my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
+
+
+=pod
+
+=begin classdoc
+
+Get the static policy attributes definition from the parent,
+and merge with the policy type specific dynamic attributes
+depending on attributes values given in parameters.
+
+@return the dynamic attributes definition.
+
+=end classdoc
+
+=cut
 
 sub getPolicyDef {
     my $self  = shift;
@@ -142,6 +171,22 @@ sub getPolicyDef {
 
     return $attributes;
 }
+
+
+=pod
+
+=begin classdoc
+
+Handle network policy specific parameters to build
+the policy pattern. Here, handle the list of network interfaces
+by transforming the interfaces array to a hash, indexed by unique
+keys to allows to merge with another policies.
+
+@return a policy pattern fragment
+
+=end classdoc
+
+=cut
 
 sub getPatternFromParams {
     my $self = shift;

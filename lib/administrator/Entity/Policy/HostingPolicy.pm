@@ -1,4 +1,4 @@
-# Copyright © 2011-2012 Hedera Technology SAS
+# Copyright © 2011-2013 Hedera Technology SAS
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -14,6 +14,22 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
+
+=pod
+
+=begin classdoc
+
+The hosting policy defines the hosting parameters describing how
+a service provider find free hosts and manage them during all
+the service life cycle.
+
+@since    2012-Aug-16
+@instance hash
+@self     $self
+
+=end classdoc
+
+=cut
 
 package Entity::Policy::HostingPolicy;
 use base 'Entity::Policy';
@@ -45,8 +61,22 @@ use constant POLICY_ATTR_DEF => {
 
 sub getPolicyAttrDef { return POLICY_ATTR_DEF; }
 
-
 my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
+
+
+=pod
+
+=begin classdoc
+
+Get the static policy attributes definition from the parent,
+and merge with the policy type specific dynamic attributes
+depending on attributes values given in parameters.
+
+@return the dynamic attributes definition.
+
+=end classdoc
+
+=cut
 
 sub getPolicyDef {
     my $self  = shift;
@@ -133,6 +163,21 @@ sub getPolicyDef {
 
     return $attributes;
 }
+
+
+=pod
+
+=begin classdoc
+
+For the hosting policy, the attribute host_manager_id is
+added to the non editable attrs because it is never stored in
+the params preset of the policy.
+
+@return the non editable params list
+
+=end classdoc
+
+=cut
 
 sub getNonEditableAttributes {
     my ($self, %args) = @_;

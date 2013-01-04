@@ -15,6 +15,24 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+
+=begin classdoc
+
+A service template is a set of policies. A cluster could be associated to
+a service template, and so the cluster configuration pattern required at 
+cluster creation is automatically builded from policies by merging all
+policies cluster pattern fragments, and the cluster could be reconfigured
+when one or more of the service template policies is updated.
+
+@since    2012-Aug-16
+@instance hash
+@self     $self
+
+=end classdoc
+
+=cut
+
 package Entity::ServiceTemplate;
 use base 'Entity';
 
@@ -125,6 +143,24 @@ my $POLICY_TYPES = [ 'hosting', 'storage', 'network', 'scalability', 'system', '
 my $merge = Hash::Merge->new('LEFT_PRECEDENT');
 
 
+=pod
+
+=begin classdoc
+
+@constructor
+
+Create a service template from a set of policy ids. Policy parameters
+(see Policy.pm) could be given with policy ids, and will be considered as
+addtional params of policies. When creating a service template, if additonal
+parameters found for a policy, the policy is duplicated and it's pattern is
+update with the additional parameters.
+
+@return a class instance
+
+=end classdoc
+
+=cut
+
 sub new {
     my $class = shift;
     my %args = @_;
@@ -168,6 +204,23 @@ sub new {
     }
     return $class->SUPER::new(%$attrs);
 }
+
+
+=pod
+
+=begin classdoc
+
+Merge all it's policies attributes definition to build the complete hash
+that could represent a cluster configuration pattern. By setting values
+to all or part of the attributes as a keys/values hash allows to build the
+cluster configuration pattern for service instance that come from the
+service template.
+
+@return the dynamic attributes definition.
+
+=end classdoc
+
+=cut
 
 sub getServiceTemplateDef {
     my $self  = shift;
@@ -252,7 +305,18 @@ sub getServiceTemplateDef {
     return $attributes;
 }
 
-sub getPolicies () {
+
+=pod
+
+=begin classdoc
+
+@return the service template policies instance list.
+
+=end classdoc
+
+=cut
+
+sub getPolicies {
     my $self = shift;
     my %args = @_;
 

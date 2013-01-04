@@ -15,6 +15,21 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+
+=begin classdoc
+
+The orchestration policy defines the parameters describing how a service
+manage the monitoring and automation rules and conditions.
+
+@since    2012-Aug-16
+@instance hash
+@self     $self
+
+=end classdoc
+
+=cut
+
 package Entity::Policy::OrchestrationPolicy;
 use base 'Entity::Policy';
 
@@ -34,6 +49,20 @@ use constant POLICY_ATTR_DEF => {};
 
 sub getPolicyAttrDef { return POLICY_ATTR_DEF; }
 
+
+=pod
+
+=begin classdoc
+
+Handle network policy specific parameters to build
+the policy pattern. Here, handle the service provider id
+that containers rules and condition to clone.
+
+@return a policy pattern fragment
+
+=end classdoc
+
+=cut
 
 sub getPatternFromParams {
     my $self = shift;

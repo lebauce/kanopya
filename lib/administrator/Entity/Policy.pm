@@ -1,4 +1,4 @@
-# Copyright © 2011-2012 Hedera Technology SAS
+# Copyright © 2011-2013 Hedera Technology SAS
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -14,6 +14,31 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
+
+=pod
+
+=begin classdoc
+
+Base class to manage cluster configuration policies.
+Currently 7 type of policy are identifyed: hosting, storage, network,
+scalability, system, orchestration and billing. The type is used for
+sorting policies only, or for user interface purposes.
+
+A policy is composed by a name, a type, and a hash representing a sub hash
+of the cluster configuration pattern. When creating or reconfigurating a
+cluster, all policies pattern are merged to reconstituate the cluster
+configuration pattern.
+
+Note that this pattern is stored as JSON in the param preset table, and
+represent the dynamic attributes of the policy.
+
+@since    2012-Aug-16
+@instance hash
+@self     $self
+
+=end classdoc
+
+=cut
 
 package Entity::Policy;
 use base 'Entity';
@@ -73,8 +98,23 @@ sub methods {
     };
 }
 
-
 my $merge = Hash::Merge->new('LEFT_PRECEDENT');
+
+
+=pod
+
+=begin classdoc
+
+@constructor
+
+Create a concrete policy by tranforming keys/values parameters
+into a pattern that can be stored in the param preset table.
+
+@return a class instance
+
+=end classdoc
+
+=cut
 
 sub new {
     my $class = shift;
@@ -99,6 +139,19 @@ sub new {
     return $self;
 }
 
+
+=pod
+
+=begin classdoc
+
+As the same as the constructor, update the policy real attrs,
+and override the params preset by storing a new pattern builded
+from keys/values parameters.
+
+=end classdoc
+
+=cut
+
 sub update {
     my $self  = shift;
     my %args  = @_;
@@ -120,6 +173,21 @@ sub update {
     $self->setPatternFromParams(params => \%args);
 }
 
+
+=pod
+
+=begin classdoc
+
+Override the generic toJSON to handle dynamic attributes.
+Build the JSON by merging the real attributes with the dynamic
+ones, transformed from the stored pattern to keys/values params.
+
+@return the JSON representation of the instance.
+
+=end classdoc
+
+=cut
+
 sub toJSON {
     my ($self, %args) = @_;
     my $class = ref($self) || $self;
@@ -129,20 +197,30 @@ sub toJSON {
     my $json = $self->SUPER::toJSON(%args);
 
     if (not $args{model}) {
-        $json = $merge->merge($self->mergeValues(values => $json), $self->getParams(noarrays => 1));
+        $json = $merge->merge($self->mergeValues(values => $json),
+                              $self->getParams(noarrays => 1));
     }
     return $json;
 }
 
-sub setPatternFromParams {
-    my $self  = shift;
-    my %args  = @_;
 
-    General::checkParams(args => \%args, required => [ 'params' ]);
+=pod
 
-    my $preset = ParamPreset->new(params => $self->getPattern(params => $args{params}));
-    $self->setAttr(name => 'param_preset_id', value => $preset->id, save => 1);
-}
+=begin classdoc
+
+Like toJSON (with option 'model'), build the dynamic attribute definition
+of the policy. The attribute definition depends of possibly defined values of some
+attributes, for example, the complete list of attributes of an hosting policy depends
+of the value of the attribute 'host_manager'.
+
+This method implemented in the base class of policies only build the real (static)
+attribute list, dynamic ones are handled in concrete classes.
+
+@return the static attributes definiton.
+
+=end classdoc
+
+=cut
 
 sub getPolicyDef {
     my $self  = shift;
@@ -161,6 +239,26 @@ sub getPolicyDef {
 
     return $merge->merge($attributes, $json);
 }
+
+
+=pod
+
+=begin classdoc
+
+Flat params given in parameters are merged with the exsting ones
+in the param presets of the policy, and converted into a pattern.
+
+As a policy is often stored with non fixed values, for further completion,
+this method is usefull to get the complette pattern of a policy by giving
+additional params given by the user at cluster creation time.
+
+@optional params the flat keys/values parameters describing the policy.
+
+@return the policy pattern respecting the cluster configuration pattern format.
+
+=end classdoc
+
+=cut
 
 sub getPattern {
     my $self = shift;
@@ -185,6 +283,26 @@ sub getPattern {
     }
     return $pattern
 }
+
+
+=pod
+
+=begin classdoc
+
+Transform the keys/values parameters to a pattern respecting the cluster
+configuration pattern format. 
+
+This method implemented in the base class of policies only handle
+common parameters types that can be defined by all policies. Policy type
+specific parameters are handled in the concrete implementation.
+
+@optional params the flat keys/values parameters describing the policy.
+
+@return the policy pattern respecting the cluster configuration pattern format.
+
+=end classdoc
+
+=cut
 
 sub getPatternFromParams {
     my $self  = shift;
@@ -211,7 +329,9 @@ sub getPatternFromParams {
                 $pattern->{managers}->{$manager_type}->{manager_id}   = delete $args{params}->{$name};
                 $pattern->{managers}->{$manager_type}->{manager_type} = $manager_type;
 
-                # Set the manager params if required
+                # Set the manager params if required.
+                # Build the method name that return the managers params in funtion of the type
+                # of the manager, and call it on the manager instance.
                 my $manager = Entity->get(id => $pattern->{managers}->{$manager_type}->{manager_id});
                 my $method = 'get' . join('', map { ucfirst($_) } split('_', $manager_type)) . 'Params';
 
@@ -231,6 +351,44 @@ sub getPatternFromParams {
     }
     return $pattern;
 }
+
+
+=pod
+
+=begin classdoc
+
+Store params as a pattern in the policy param presets.
+
+@param params the flat keys/values parameters describing the policy.
+
+=end classdoc
+
+=cut
+
+sub setPatternFromParams {
+    my $self  = shift;
+    my %args  = @_;
+
+    General::checkParams(args => \%args, required => [ 'params' ]);
+
+    my $preset = ParamPreset->new(params => $self->getPattern(params => $args{params}));
+    $self->setAttr(name => 'param_preset_id', value => $preset->id, save => 1);
+}
+
+
+=pod
+
+=begin classdoc
+
+Merge the value given in parameter with the instance ones.
+
+@param values the policy attribute values
+
+@return the values defining the policy.
+
+=end classdoc
+
+=cut
 
 sub mergeValues {
     my $self  = shift;
@@ -259,6 +417,28 @@ sub mergeValues {
     return $args{values};
 }
 
+
+=pod
+
+=begin classdoc
+
+Add the defined values into the policy attribute definition hash map.
+It could be usefull to get the attrdef hash with values to avoid
+re-requesting the api to get values after getting the attributes.
+
+@param attributes the attribute defintion hash to fill with values
+@param values to add to the attrdef
+
+@optional set_mandatory force to set attrbiutes as mandatory
+@optional set_editable force to set attributes as editable
+@optional set_params_editable force to set attributes as editable
+          only if they are not stored in param preset, set attributes
+          as non editable instead.
+
+=end classdoc
+
+=cut
+
 sub setValues {
     my $self  = shift;
     my $class = ref($self) || $self;
@@ -271,8 +451,8 @@ sub setValues {
                                        'set_params_editable' => 0 });
 
     # If set_params_editable defined, we must to set non editable all
-    # attributes that come from the policy instance, all others all some parameters
-    # added to the policy definition.
+    # attributes that come from the policy instance only, all others are
+    # some parameters added to the original policy definition.
     my $noneditable = {};
     if (ref($self) and $args{set_params_editable}) {
         $noneditable = $self->getNonEditableAttributes(%{ $args{values} });
@@ -298,11 +478,45 @@ sub setValues {
     }
 }
 
+
+=pod
+
+=begin classdoc
+
+Get the non editable attributes list for the 'set_params_editable' mode
+of the method setValues.
+
+This method implemented in the base class of policies simply return
+the stored param preset in the param format (not pattern).
+
+@return the non editable params list
+
+=end classdoc
+
+=cut
+
 sub getNonEditableAttributes {
     my ($self, %args) = @_;
 
     return $self->getParams();
 }
+
+
+=pod
+
+=begin classdoc
+
+Get the param preset (dynamic attributes) of the policy in a flat
+format keys/values. It is usefull for example to display and edit
+the policy pattern.
+
+@return the parameters hash.
+
+@todo dispath policy type pecific params hnadling a concrete classes.
+
+=end classdoc
+
+=cut
 
 sub getParams {
     my $self = shift;
@@ -376,6 +590,20 @@ sub getParams {
     return $flat_hash;
 }
 
+
+=pod
+
+=begin classdoc
+
+Utility method to search among existing managers in function of
+manager category.
+
+@return a manager list.
+
+=end classdoc
+
+=cut
+
 sub searchManagers {
     my $self  = shift;
     my %args  = @_;
@@ -384,7 +612,6 @@ sub searchManagers {
                          required => [ 'component_category' ],
                          optional => { 'service_provider_id' => undef });
 
-    # Build the list of host providers
     my $types = {
         component => 'Entity::Component',
         connector => 'Entity::Connector',
@@ -400,6 +627,17 @@ sub searchManagers {
     }
     return @managers;
 }
+
+
+=pod
+
+=begin classdoc
+
+@return the master group name associated with this entity
+
+=end classdoc
+
+=cut
 
 sub getMasterGroupName {
     my $self = shift;
