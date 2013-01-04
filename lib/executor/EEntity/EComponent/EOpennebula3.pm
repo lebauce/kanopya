@@ -256,18 +256,13 @@ sub migrateHost {
     my $src_hypervisor = $args{host}->hypervisor;
     $log->debug("The VM <" . $args{host}->getId . "> is on the <" . $src_hypervisor->getId . "> host");
 
-    my $hypervisor_id = $args{hypervisor_dst}->onehost_id;
-    my $hypervisor_host_name = $args{hypervisor_dst}->host_hostname;
-
-    my $host_id = $args{host}->onevm_id;
-
     # $log->debug("Apply VLAN on the destination hypervisor");
     # $self->propagateVLAN(host       => $args{host},
     #                      hypervisor => $args{hypervisor_dst});
 
     $self->onevm_livemigrate(
-        vm_nameorid   => $host_id,
-        host_nameorid => $hypervisor_id
+        vm_nameorid   => $args{host}->host_hostname,
+        host_nameorid => $args{hypervisor_dst}->host_hostname,
     );
 
     return $src_hypervisor;
@@ -278,8 +273,7 @@ sub getVMState {
 
     General::checkParams(args     => \%args, required => ['host']);
 
-    my $host_id = $args{host}->onevm_id;
-    my $hxml = $self->onevm_show(vm_nameorid => $host_id);
+    my $hxml = $self->onevm_show(vm_nameorid => $args{host}->host_hostname);
 
     my $history = $hxml->{HISTORY_RECORDS}->{HISTORY};
     my $hypervisor_migr;
@@ -318,9 +312,7 @@ sub scaleMemory {
 
     General::checkParams(args => \%args, required => [ 'host', 'memory' ]);
 
-    my $host_id = $args{host}->onevm_id;
-
-    $self->onevm_memset(vm_nameorid => $host_id, ram => $args{memory} / 1024 / 1024);
+    $self->onevm_memset(vm_nameorid => $args{host}->host_hostname, ram => $args{memory} / 1024 / 1024);
 }
 
 sub restoreHost {
@@ -352,7 +344,7 @@ sub restoreHost {
             }
             else {
                 if (defined $args{check_resubmit}){
-                    $self->onevm_resubmit(vm_nameorid => $vm->onevm_id);
+                    $self->onevm_resubmit(vm_nameorid => $vm->host_hostname);
                 }
             }
         }
@@ -401,7 +393,6 @@ sub scaleCpu {
 
     my $cpu_number = $args{cpu_number};
 
-    my $host_id = $args{host}->onevm_id;
     my $hyptype = $self->getHypervisorType;
     if ($hyptype eq 'kvm') {
         if ($cpu_number <= $args{host}->opennebula3_kvm_vm_cores) {
@@ -416,7 +407,7 @@ sub scaleCpu {
 
     # This line is never called as the VM are created with the maximum
     # number of VCPUs and scaled down at startup due to a bug in libvirtd
-    $self->onevm_vcpuset(vm_nameorid => $host_id, cpu => $cpu_number);
+    $self->onevm_vcpuset(vm_nameorid => $args{host}->host_hostname, cpu => $cpu_number);
 }
 
 sub retrieveOpennebulaHypervisorStatus {
@@ -440,8 +431,7 @@ sub halt {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'host' ]);
     # retrieve vm info from opennebula
-    my $id = $args{host}->onevm_id;
-    $self->onevm_shutdown(vm_nameorid => $id);
+    $self->onevm_shutdown(vm_nameorid => $args{host}->host_hostname);
 }
 
 
@@ -555,13 +545,14 @@ sub stopHost {
 
     # retrieve vm info from opennebula
 
-    my $id = $args{host}->onevm_id;
+    my $hostname = $args{host}->host_hostname;
+
     my $image = $args{host}->getNodeSystemimage();
 
-    my $xml = $self->onevm_show(vm_nameorid => $id);
+    my $xml = $self->onevm_show(vm_nameorid => $hostname);
 
     # delete the vm
-    $self->onevm_delete(vm_nameorid => $id);
+    $self->onevm_delete(vm_nameorid => $hostname);
 
     # delete the vnets
     my @ifaces = $args{host}->getIfaces();
@@ -587,8 +578,7 @@ sub postStart {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    my $oneid = $args{host}->onevm_id;
-    my $hxml    = $self->onevm_show(vm_nameorid => $oneid);
+    my $hxml    = $self->onevm_show(vm_nameorid => $args{host}->host_hostname);
 
     my $vnc_port = $hxml->{TEMPLATE}->{GRAPHICS}->{PORT};
 
@@ -668,8 +658,8 @@ sub forceDeploy {
         required => [ 'vm', 'hypervisor' ]
     );
     $self->onevm_deploy(
-        vm_nameorid   => $args{vm}->onevm_id,
-        host_nameorid => $args{hypervisor}->onehost_id
+        vm_nameorid   => $args{vm}->host_hostname,
+        host_nameorid => $args{hypervisor}->host_hostname,
     );
 }
 
