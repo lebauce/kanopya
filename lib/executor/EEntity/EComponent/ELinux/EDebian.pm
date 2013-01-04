@@ -18,6 +18,9 @@ use base 'EEntity::EComponent::ELinux';
 
 use strict;
 use warnings;
+
+use Kanopya::Config;
+
 use Log::Log4perl 'get_logger';
 use Data::Dumper;
 
@@ -112,5 +115,15 @@ sub service {
     }
 }
 
-1;
+sub customizeInitramfs {
+    my ($self, %args) = @_;
 
+    General::checkParams(args     =>\%args,
+                         required => [ 'initrd_dir', 'cluster', 'host' ]);
+
+    my $kanopya_dir = Kanopya::Config::getKanopyaDir();
+    my $cmd = "cp -R $kanopya_dir/tools/deployment/system/initramfs-tools/scripts/* " . $args{initrd_dir} . "/scripts";
+    $self->getExecutorEContext->execute(command => $cmd);
+}
+            
+1;
