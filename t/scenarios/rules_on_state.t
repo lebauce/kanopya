@@ -82,30 +82,23 @@ sub main {
     my @hvs = $one->hypervisors;
     ($hv1, $hv2) = ($hvs[0], $hvs[1]);
 
-    _remove_operations_and_locks();
+    _check_no_operation_and_no_lock();
 
     diag('Maintenance hypervisor');
     _split_2_2();
-    _check_no_operation_and_no_lock();
     maintenance_hypervisor();
 
     diag('resubmit_vm_on_state');
-    _check_no_operation_and_no_lock();
     _split_2_2();
-    _check_no_operation_and_no_lock();
     resubmit_vm_on_state();
 
     diag('Resubmit hypervisor on state');
     _split_2_2();
-    _check_no_operation_and_no_lock();
     resubmit_hv_on_state();
 
     diag('Resubmit hypervisor');
-    _check_no_operation_and_no_lock();
     _split_2_2();
-    _check_no_operation_and_no_lock();
     resubmit_hypervisor();
-    _check_no_operation_and_no_lock();
 
     if ($testing == 1) {
         $adm->rollbackTransaction;
@@ -171,7 +164,7 @@ sub resubmit_hv_on_state {
         );
 
         die 'Hv1 is not up' if ($nodes_metrics ->{$hv1->host_hostname}->{'Host is up'} != 1);
-        die 'Hv1 is activated' if ($hv1->active != 1);
+        die 'Hv1 is not activated' if ($hv1->active != 1);
 
         $orchestrator->manage_aggregates();
 
@@ -193,7 +186,7 @@ sub resubmit_hv_on_state {
                 verified_noderule_externalnode_id       => $hv1->id,
                 verified_noderule_nodemetric_rule_id    => $rule->id,
             });
-        } 'Kanopya::Exception::DB',
+        } 'Kanopya::Exception::Internal::NotFound',
         'Rule not verified';
 
         $orchestrator->manage_aggregates();
@@ -284,7 +277,7 @@ sub resubmit_hv_on_state {
 
         while (@operations) { (pop @operations)->delete(); }
         $ncomb->delete();
-    } 'Resubmit hypervisor on state';
+    } 'Resubmit all the vms of a (simulated) broken hypervisor after a rule detection';
 }
 
 sub resubmit_vm_on_state {
@@ -380,7 +373,7 @@ sub resubmit_vm_on_state {
                 verified_noderule_externalnode_id       => $vm->id,
                 verified_noderule_nodemetric_rule_id    => $rule->id,
             });
-        } 'Kanopya::Exception::DB',
+        } 'Kanopya::Exception::Internal::NotFound',
         'Rule not verified';
 
         $orchestrator->manage_aggregates();
@@ -463,7 +456,7 @@ sub resubmit_vm_on_state {
 
         while (@operations) { (pop @operations)->delete(); }
         $ncomb->delete();
-    } 'Resubmit vm on state';
+    } 'Resubmit a vm when (simulated) state broken detected by a rule';
 }
 
 sub resubmit_hypervisor {
@@ -513,7 +506,7 @@ sub resubmit_hypervisor {
             _check_vm_cpu(vm => $hv2_vms[$i], cpu => $old_cpus[$i]);
             _check_vm_ram(vm => $hv2_vms[$i], ram => $old_rams[$i]);
         }
-    } 'Resubmit hypervisor';
+    } 'Resubmit manualy all vms of a broken hypervisor ';
 }
 
 sub maintenance_hypervisor {
@@ -547,38 +540,14 @@ sub maintenance_hypervisor {
         $hv2->setAttr( name => 'active', value => '1');
         $hv2->save();
         die 'hypervisor 2 has not been re-activated' if ($hv2->reload->active != 1);
-    } 'Hypervisor maintenance';
+    } 'Hypervisor maintenance flushes all vms';
 }
 
 sub _check_no_operation_and_no_lock {
     my @ops = Entity::Operation->search(hash => {});
-    is (@ops, 0, 'no more operation enqueued');
+    if (@ops > 0) { die 'Some operations are enqueued'; }
     my @locks = EntityLock->search(hash => {});
-    is (@locks, 0, 'no more locks enqueued');
-    _remove_operations_and_locks();
-}
-
-sub _remove_operations_and_locks {
-    my @locks = EntityLock->search(hash => {});
-    while (@locks) {
-        (pop @locks)->delete();
-    }
-
-    my @ops = Entity::Operation->search(hash => {});
-    while (@ops) {
-	diag("delete op");
-        (pop @ops)->delete();
-    }
-
-    my @nr = Entity::NodemetricRule->search(hash => {});
-    while (@nr) {
-        (pop @nr)->delete();
-    }
-    my @ar = Entity::AggregateRule->search(hash => {});
-    while (@ar) {
-        (pop @ar)->delete();
-    }
-
+    if (@locks > 0) {die 'Some locks are present';}
 }
 
 sub _split_2_2 {
@@ -591,7 +560,7 @@ sub _split_2_2 {
             $vm->migrate(hypervisor => $hv2);
 
             Kanopya::Tools::Execution->executeAll();
-            is ($vm->reload->hypervisor->id, $hv2->id, 'Check vm has migrated');
+            if ($vm->reload->hypervisor->id != $hv2->id) {die 'Vm has not migrated';}
         }
     }
     elsif ($hv1->virtual_machines < $hv2->virtual_machines) {
@@ -601,12 +570,13 @@ sub _split_2_2 {
             $vm->migrate(hypervisor => $hv1);
 
             Kanopya::Tools::Execution->executeAll();
-            is ($vm->reload->hypervisor->id, $hv1->id, 'Check vm has migrated');
+            if ($vm->reload->hypervisor->id != $hv1->id) {die 'Vm has not migrated'};
         }
     }
 
-    is ( scalar $hv1->virtual_machines, 2, 'Check split');
-    is ( scalar $hv2->virtual_machines, 2, 'Check split');
+    if (((scalar $hv1->virtual_machines) != 2) || ((scalar $hv2->virtual_machines) != 2) ) {
+        die 'Put 2 vms on each hypervisors fail';
+    }
 }
 
 sub _check_vm_ram {
