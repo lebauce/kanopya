@@ -19,7 +19,7 @@
 
 =begin classdoc
 
-Kanopya test utility methods 
+Kanopya test utility methods
 
 @since 17/12/12
 @instance hash
@@ -47,6 +47,7 @@ Code block represents a post condition of a test.
 
 
 Sample usage:
+ use Kanopya::Tools::TestUtils 'expectedException';
  expectedException { Entity->get(id => -1) } 'Kanopya::Exception::Internal::NotFound', 'Entity -1 does not exist';
 
 @param &code code block
@@ -60,7 +61,7 @@ Sample usage:
 =cut
 
 sub expectedException (&;$;$) {
-    my ($code,$excep_class,$msg) = @_; 
+    my ($code,$excep_class,$msg) = @_;
 
     $msg = $msg || 'Eval post condition';
 
@@ -74,7 +75,7 @@ sub expectedException (&;$;$) {
             die "$msg : Expecting '$excep_class' but got '$error_ref' : $error";
         }
     } else {
-        die "$msg : Expecting '$excep_class' but no exception happens";
+        die "$msg : Expecting '$excep_class' but no exception happened";
     }
 }
 
