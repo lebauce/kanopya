@@ -67,12 +67,6 @@ sub getHostManagerParams {
             unit    => 'byte',
             pattern => '^\d*$',
         },
-        deploy_on_disk => {
-            label   => 'Deploy on hard disk',
-            type    => 'integer',
-            pattern => '^\d*$',
-            default => '0'
-        }
     };
 }
 

@@ -143,13 +143,18 @@ sub getPolicyDef {
 
     my $policy_attrdef = clone($class->getPolicyAttrDef);
 
-    # Manually add the systemimage_size attr because it is a manager param
+    # Manually add the systemimage_size and deploy_on_disk attrs because they are manager params
     $policy_attrdef->{systemimage_size} = {
         label   => 'System image size',
         type    => 'integer',
         unit    => 'byte',
         pattern => '^\d*$',
     };
+    $policy_attrdef->{deploy_on_disk} = {
+        label   => 'Deploy on hard disk',
+        type    => 'boolean',
+        pattern => '^\d*$',
+    },
 
     $policy_attrdef->{kernel_id}->{options} = \@kernels;
     $policy_attrdef->{masterimage_id}->{options} = \@masterimages;
@@ -157,7 +162,7 @@ sub getPolicyDef {
 
     my $attributes = {
         displayed  => [ 'kernel_id', 'masterimage_id', 'systemimage_size', 'cluster_basehostname',
-                        'cluster_si_persistent', 'cluster_si_shared' ],
+                        'cluster_si_persistent', 'cluster_si_shared', 'deploy_on_disk' ],
         attributes => $policy_attrdef,
         relations  => {
             components => {
@@ -215,6 +220,9 @@ sub getPatternFromParams {
     }
     if (defined $args{params}->{systemimage_size}) {
         $pattern->{managers}->{disk_manager}->{manager_params}->{systemimage_size} = delete $args{params}->{systemimage_size};
+    }
+    if (defined $args{params}->{deploy_on_disk}) {
+        $pattern->{managers}->{host_manager}->{manager_params}->{deploy_on_disk} = delete $args{params}->{deploy_on_disk};
     }
     return $pattern;
 }
