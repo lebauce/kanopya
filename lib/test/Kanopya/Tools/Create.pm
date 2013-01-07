@@ -39,9 +39,13 @@ use Test::Exception;
 
 use Kanopya::Exceptions;
 use General;
+use NetconfPoolip;
+use Entity::Poolip;
+use Entity::NetconfRole;
+use Entity::Netconf;
 use Entity::Host;
 use Entity::Container;
-use Entity::ContainerAccess;
+use Entity::ContainerAccess::NfsContainerAccess;
 use Entity::ServiceProvider::Inside::Cluster;
 use Hash::Merge qw(merge);
 
@@ -128,7 +132,7 @@ sub createCluster {
                                    manager_type   => "host_manager",
                                    manager_params => {
                                        cpu => 1,
-                                       ram => 512*1024*1024,
+                                       ram => 2*1024*1024,
                                    },
                                },
                                disk_manager => {
@@ -199,19 +203,9 @@ sub createCluster {
         %cluster_conf = %{ merge(\%cluster_conf, \%mgrs) };
     }
 
-    my %ifcs;
     if (defined $interfaces) {
-        while (my ($interface,$netconfs) = each %$interfaces) {
-            my %tmp = (
-                interfaces => {
-                    $interface => {
-                        interface_netconfs => $netconfs
-                    }
-                }
-            );
-            Hash::Merge::set_behavior('RIGHT_PRECEDENT');
-            %mgrs = %{ merge(\%ifcs, \%tmp) };
-        }
+        my %ifcs = (interfaces => $interfaces);
+        Hash::Merge::set_behavior('RIGHT_PRECEDENT');
         %cluster_conf = %{ merge(\%cluster_conf, \%ifcs) };
     }
 
@@ -220,7 +214,7 @@ sub createCluster {
 
     Kanopya::Tools::Execution->executeOne(entity => $cluster_create);
 
-    return Entity::ServiceProvider::Inside::Cluster->find(hash => { cluster_name => $cluster_conf{cluster_name} });
+    return Kanopya::Tools::Retrieve->retrieveCluster(criteria => { cluster_name => $cluster_conf{cluster_name} });
 }
 
 =pod
@@ -257,14 +251,11 @@ sub createVmCluster {
                       );
 
     my $nfs;
-    my $nfs_container;
     eval {
-        $nfs_container   = Entity::Container->find(hash => {container_name => 'test_image_repository'});
-        my @nfs_accesses = Entity::ContainerAccess->search(hash => {
-                               container_id => $nfs_container->id
-                           });
-        my @nfss = grep {$_->export_manager_id != 0} @nfs_accesses;
-        $nfs = $nfss[0];
+        $nfs = Kanopya::Tools::Retrieve->retrieveContainerAccess(
+                   name       => 'test_image_repository',
+                   type       => 'nfs',
+               );
     };
     if (not defined $nfs) {
         my $disk_manager = EEntity->new(
@@ -336,47 +327,87 @@ sub createIaasCluster {
 
     my $kanopya_cluster = Kanopya::Tools::Retrieve->retrieveCluster();
 
-    my $disk_manager = EFactory::newEEntity(
-                           data => $kanopya_cluster->getComponent(name => "Lvm")
+    my $disk_manager = EEntity->new(
+                           entity => $kanopya_cluster->getComponent(name => "Lvm")
                        );
 
-    my $nfs_manager = EFactory::newEEntity(
-                          data => $kanopya_cluster->getComponent(name => "Nfsd")
+    my $nfs_manager = EEntity->new(
+                          entity => $kanopya_cluster->getComponent(name => "Nfsd")
                       );
 
     for my $datastore ("system_datastore", "test_image_repository") {
-        eval { Entity::Container->find(hash => {}); };
+        eval { Entity::Container->find(hash => {container_name => $datastore}); };
         next if ! $@;
 
-        my $disk;
-        lives_ok {
-            $disk = $disk_manager->createDisk(
-                name         => $datastore,
-                size         => 128 * 1024 * 1024,
-                filesystem   => "ext3",
-                vg_id        => 1
-            )->_getEntity;
-        } 'Creating disk for the system datastore';
+        my $disk = $disk_manager->createDisk(
+                       name         => $datastore,
+                       size         => 128 * 1024 * 1024,
+                       filesystem   => "ext3",
+                       vg_id        => 1
+                   )->_getEntity;
 
-        my $nfs;
-        lives_ok {
-            $nfs = $nfs_manager->createExport(
-                container      => $disk, 
-                export_name    => $datastore,
-                client_name    => "*",
-                client_options => "rw,sync,no_root_squash"
-            );
-        } 'Creating export for image repository';
+        my $nfs = $nfs_manager->createExport(
+                      container      => $disk,
+                      export_name    => $datastore,
+                      client_name    => "*",
+                      client_options => "rw,sync,no_root_squash"
+                  );
     }
 
-    return createCluster {
-        components => {
-            opennebula => {
-            }
-        },
-        interfaces => {
-        }
-    };
+    #get vms netconf
+    my $admin_poolip = Entity::Poolip->find(hash => { poolip_name => 'kanopya_admin' });
+    my $vms_role = Entity::NetconfRole->find(hash => { netconf_role_name => "vms" });
+    my $vms_netconf = Entity::Netconf->create(netconf_name    => "vms",
+                                              netconf_role_id => $vms_role->id);
+    NetconfPoolip->new(netconf_id => $vms_netconf->id,
+                       poolip_id  => $admin_poolip->id);
+
+    my $iaas = $self->createCluster (
+                   components => {
+                       opennebula => {
+                       },
+                       kvm => {
+                       }
+                   },
+                   interfaces => {
+                        vms => {
+                            interface_netconfs => {
+                                $vms_netconf->id => $vms_netconf->id
+                            }
+                        }
+                   },
+                   %args
+                 );
+
+    my $opennebula = $iaas->getComponent(name => "Opennebula");
+    my $kvm = $iaas->getComponent(name => "Kvm");
+
+    my $system_datastore = Kanopya::Tools::Retrieve->retrieveContainerAccess(
+                               name => 'system_datastore',
+                               type => 'nfs'
+                           );
+    my $test_image_repository = Kanopya::Tools::Retrieve->retrieveContainerAccess(
+                                    name => 'test_image_repository',
+                                    type => 'nfs'
+                                );
+    $kvm->setConf(conf => {
+        iaas_id => $opennebula->id,
+      } );
+
+    $opennebula->setConf(conf => {
+        image_repository_path    => "/srv/cloud/images",
+        opennebula3_id           => $opennebula->id,
+        opennebula3_repositories => [ {
+            container_access_id  => $test_image_repository->id,
+            repository_name      => 'image_repo'
+        }, {
+            container_access_id  => $system_datastore->id,
+            repository_name      => 'system'
+        } ],
+        hypervisor               => "kvm"
+    } );
+
+    return $iaas;
 }
 
 1;

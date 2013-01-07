@@ -74,4 +74,35 @@ sub retrieveCluster {
     return $kanopya_cluster;
 }
 
+=pod
+
+=begin classdoc
+
+retrieve a container access from a container name
+
+@return entity
+
+=end classdoc
+
+=cut
+
+sub retrieveContainerAccess {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => ['name', 'type']);
+
+    my $container = Entity::Container->find(hash => {container_name => $args{name}});
+    my $container_access;
+
+    if ($args{type} eq 'nfs') {
+        my @nfs_accesses = Entity::ContainerAccess::NfsContainerAccess->search(hash => {
+                               container_id => $container->id
+                           });
+        my @nfss = grep {$_->export_manager_id != 0} @nfs_accesses;
+        $container_access = $nfss[0];
+    }
+
+    return $container_access;
+}
+
 1;
