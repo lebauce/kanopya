@@ -83,6 +83,7 @@ sub getExportManagerParams {
         iscsi_portals => {
             label        => 'ISCSI portals to use',
             type         => 'enum',
+            relation     => 'multi',
             is_mandatory => 1,
             options      => $portals
         },

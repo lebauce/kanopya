@@ -373,7 +373,8 @@ var KanopyaFormWizard = (function() {
                 this.validateRules[name].required = true;
             }
 
-        } else if ((toInputType(attr.type) === 'select' && attr.relation === 'single') || attr.type === 'enum') {
+        } else if ((toInputType(attr.type) === 'select' && attr.relation === 'single') ||
+                   (attr.type === 'enum' && attr.relation !== 'multi')) {
             var option = $("<option>", { value : '', text : '-' }).prependTo(input);
             if (value === undefined) {
                 $(option).attr('selected', 'selected');
