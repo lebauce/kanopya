@@ -41,6 +41,7 @@ use Kanopya::Exceptions;
 use General;
 use Entity::Host;
 use Entity::ServiceProvider::Inside::Cluster;
+use Entity::Masterimage;
 
 =pod
 
@@ -96,6 +97,23 @@ sub registerHost {
     }
 
     return $host;
+}
+
+sub registerMasterImage {
+    my $name = shift || $ENV{'MASTERIMAGE'} || "centos-6.3-opennebula3.tar.bz2";
+
+    diag('Deploy master image');
+    my $deploy = Entity::Operation->enqueue(
+                  priority => 200,
+                  type     => 'DeployMasterimage',
+                  params   => { file_path => "/masterimages/" . $name,
+                                keep_file => 1 },
+    );
+
+    Kanopya::Tools::Execution->executeOne(entity => $deploy);
+
+    return Entity::Masterimage->find(hash     => { },
+                                     order_by => 'masterimage_id');
 }
 
 1;
