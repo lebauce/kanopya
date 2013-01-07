@@ -64,18 +64,13 @@ sub registerHost {
 
     my $board = $args{board};
 
-    my $kanopya_cluster = Entity::ServiceProvider::Inside::Cluster->find(
-                              hash => {
-                                  cluster_name => 'Kanopya'
-                              }
-                          );
-
+    my $kanopya_cluster = Kanopya::Tools::Retrieve->retrieveCluster();
     my $physical_hoster = $kanopya_cluster->getHostManager();
 
     my $host = Entity::Host->new(
                    active             => 1,
                    host_manager_id    => $physical_hoster->id,
-                   host_serial_number => '123',
+                   host_serial_number => 'Kro',
                    host_ram           => $board->{ram} * 1024 * 1024,
                    host_core          => $board->{core},
                );
