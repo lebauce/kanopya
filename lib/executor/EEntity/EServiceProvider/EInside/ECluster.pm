@@ -58,10 +58,6 @@ sub create {
     # set initial state to down
     $self->setAttr(name => 'cluster_state', value => 'down:'.time);
 
-    # Save the new cluster in db
-    $log->debug("trying to update the new cluster previouly created");
-    $self->save();
-
     # Add all the components provided by the master image
     if ($self->masterimage) {
         foreach my $component ($self->masterimage->components_provided) {
@@ -69,7 +65,16 @@ sub create {
                 component_type => $component->component_type_id
             };
         }
+
+        if ($self->masterimage->masterimage_defaultkernel && ! $self->kernel) {
+            $self->setAttr(name  => "kernel_id",
+                           value => $self->masterimage->masterimage_defaultkernel->id);
+        }
     }
+
+    # Save the new cluster in db
+    $log->debug("trying to update the new cluster previouly created");
+    $self->save();
 
     # Set default permissions on this cluster for the related customer
     for my $method (keys %{ $self->getMethods }) {
