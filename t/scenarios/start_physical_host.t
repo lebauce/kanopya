@@ -57,7 +57,7 @@ sub main {
     Kanopya::Tools::Register::registerMasterImage();
 
     diag('Create and configure cluster');
-    Kanopya::Tools::Create->createCluster();
+    my $cluster = Kanopya::Tools::Create->createCluster();
 
     diag('Start physical host');
     start_cluster($cluster);
