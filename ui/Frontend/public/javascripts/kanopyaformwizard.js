@@ -332,9 +332,13 @@ var KanopyaFormWizard = (function() {
             }
 
             // Inserting select options
+            console.log(attr.options);
             for (var i in attr.options) if (attr.options.hasOwnProperty(i)) {
-                var optionvalue = attr.options[i][link_to_attribute_pk_name] || attr.options[i].pk || attr.options[i];
                 var optiontext  = attr.options[i].label || attr.options[i].pk || attr.options[i];
+                console.log(attr.options[i].pk);
+                var optionvalue = attr.options[i][link_to_attribute_pk_name] || attr.options[i].pk ||
+                                  ($.isArray(attr.options) ? attr.options[i] : i);
+
                 var option = $("<option>", { value : optionvalue, text : optiontext }).appendTo(input);
                 if (attr.formatter != null) {
                     $(option).text(attr.formatter($(option).text()));
@@ -1148,7 +1152,6 @@ var KanopyaFormWizard = (function() {
             state = $(this.form).formwizard("state");
         }
         for (var button in this.buttons) {
-            console.log(button + ", " + state.isFirstStep);
             if (! (state.isFirstStep && button === 'Back')) {
                 this.buttons[button].removeAttr('disabled').removeClass("ui-state-disabled");
             }
