@@ -332,10 +332,8 @@ var KanopyaFormWizard = (function() {
             }
 
             // Inserting select options
-            console.log(attr.options);
             for (var i in attr.options) if (attr.options.hasOwnProperty(i)) {
                 var optiontext  = attr.options[i].label || attr.options[i].pk || attr.options[i];
-                console.log(attr.options[i].pk);
                 var optionvalue = attr.options[i][link_to_attribute_pk_name] || attr.options[i].pk ||
                                   ($.isArray(attr.options) ? attr.options[i] : i);
 
