@@ -72,6 +72,7 @@ sub start_cluster {
 
     lives_ok {
         Kanopya::Tools::Execution->executeOne(entity => $cluster->start());
+        $cluster = $cluster->reload();
 
         my ($state, $timestemp) = $cluster->getState;
         if ($state eq 'up') {
