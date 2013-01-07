@@ -77,9 +77,10 @@ sub getDiskManagerParams {
 
     return {
         volume_id => {
-            label   => 'Volume to use',
-            type    => 'enum',
-            options => $volumes
+            label        => 'Volume to use',
+            type         => 'enum',
+            is_mandatory => 1,
+            options      => $volumes
         }
     };
 }

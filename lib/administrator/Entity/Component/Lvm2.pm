@@ -88,9 +88,10 @@ sub getDiskManagerParams {
 
     return {
         vg_id => {
-            label   => 'Volume group to use',
-            type    => 'enum',
-            options => $vgs
+            label        => 'Volume group to use',
+            type         => 'enum',
+            is_mandatory => 1,
+            options      => $vgs
         }
     };
 }

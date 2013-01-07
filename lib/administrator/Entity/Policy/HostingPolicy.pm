@@ -120,39 +120,46 @@ sub getPolicyDef {
     # Complete the attributes with common ones
     $attributes = $merge->merge($self->SUPER::getPolicyDef(%args), $attributes);
 
-    # If host_provider_id not defined, select it from host manager or
-    # select the first one.
+    # If host_provider_id not defined, select it from host manager if defined
     if (not defined $args{host_provider_id}) {
         if (defined $args{host_manager_id}) {
             $args{host_provider_id} = Entity->get(id => $args{host_manager_id})->service_provider->id;
         }
-        elsif (scalar @hostproviders){
+        elsif ($args{set_mandatory} and scalar (@hostproviders) > 0) {
             $args{host_provider_id} = $hostproviders[0]->{pk};
         }
     }
 
-    # Build the list of host manager of the host provider
+    # Build the list of host manager of the host provider if defined
     my $manager_options = {};
-    for my $component ($class->searchManagers(component_category  => 'Cloudmanager',
-                                              service_provider_id => $args{host_provider_id})) {
-        $manager_options->{$component->id} = $component->toJSON();
-        $manager_options->{$component->id}->{label} = $component->host_type;
-    }
-    my @options = values %{$manager_options};
-    $attributes->{attributes}->{host_manager_id}->{options} = \@options;
+    if (defined $args{host_provider_id}) {
+        for my $component ($class->searchManagers(component_category  => 'Cloudmanager',
+                                                  service_provider_id => $args{host_provider_id})) {
+            $manager_options->{$component->id} = $component->toJSON();
+            $manager_options->{$component->id}->{label} = $component->host_type;
+        }
+        my @options = values %{$manager_options};
+        $attributes->{attributes}->{host_manager_id}->{options} = \@options;
 
-    # If the manager id not defined or the defined value not in options
-    # so use the first options as selected value.
-    if (not defined $args{host_manager_id} or not defined $manager_options->{$args{host_manager_id}}) {
-        $args{host_manager_id} = $attributes->{attributes}->{host_manager_id}->{options}[0]->{pk};
+        # If host_manager_id defined but do not corresponding to a available value,
+        # it is an old value, so delete it.
+        if (not defined $manager_options->{$args{host_manager_id}}) {
+            delete $args{host_manager_id};
+        }
+        # If no host_manager_id defined and and attr is mandatory, use the first one as value
+        if (not defined $args{host_manager_id} and $args{set_mandatory} and scalar (@options) > 0) {
+            $args{host_manager_id} = $options[0]->{pk};
+        }
     }
 
-    # Get the host manager params from the selected host manager
-    my $hostmanager = Entity->get(id => $args{host_manager_id});
-    my $managerparams = $hostmanager->getHostManagerParams();
-    for my $attrname (keys %{$managerparams}) {
-        $attributes->{attributes}->{$attrname} = $managerparams->{$attrname};
-        push @{ $attributes->{displayed} }, $attrname;
+    if (defined $args{host_manager_id}) {
+        # Get the host manager params from the selected host manager
+        my $hostmanager = Entity->get(id => $args{host_manager_id});
+        my $managerparams = $hostmanager->getHostManagerParams();
+        for my $attrname (keys %{$managerparams}) {
+            $attributes->{attributes}->{$attrname} = $managerparams->{$attrname};
+            push @{ $attributes->{displayed} }, $attrname;
+        }
     }
 
     $self->setValues(attributes          => $attributes,

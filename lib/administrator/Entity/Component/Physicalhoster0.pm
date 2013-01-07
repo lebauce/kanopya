@@ -56,16 +56,18 @@ sub getHostManagerParams {
 
     return {
         cpu => {
-            label   => 'Required CPU number',
-            type    => 'integer',
-            unit    => 'core(s)',
-            pattern => '^\d*$',
+            label        => 'Required CPU number',
+            type         => 'integer',
+            unit         => 'core(s)',
+            pattern      => '^\d*$',
+            is_mandatory => 1
         },
         ram => {
-            label   => 'Required RAM amount',
-            type    => 'integer',
-            unit    => 'byte',
-            pattern => '^\d*$',
+            label        => 'Required RAM amount',
+            type         => 'integer',
+            unit         => 'byte',
+            pattern      => '^\d*$',
+            is_mandatory => 1
         },
     };
 }

@@ -49,32 +49,37 @@ sub getAttrDef { return ATTR_DEF; }
 
 use constant POLICY_ATTR_DEF => {
     cluster_domainname => {
-        label   => 'Domain name',
-        type    => 'string',
-        pattern => '^[a-z0-9-]+(\\.[a-z0-9-]+)+$',
+        label        => 'Domain name',
+        type         => 'string',
+        pattern      => '^[a-z0-9-]+(\\.[a-z0-9-]+)+$',
+        is_mandatory => 1
     },
     cluster_nameserver1 => {
-        label   => 'Name server 1',
-        type    => 'string',
-        pattern => '^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$'
+        label        => 'Name server 1',
+        type         => 'string',
+        pattern      => '^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$',
+        is_mandatory => 1
     },
     cluster_nameserver2 => {
-        label   => 'Name server 2',
-        type    => 'string',
-        pattern => '^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$'
+        label        => 'Name server 2',
+        type         => 'string',
+        pattern      => '^[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}$',
+        is_mandatory => 1
     },
     default_gateway_id => {
-        label    => 'Default gateway network',
-        type     => 'relation',
-        relation => 'single',
-        pattern  => '^\d*$',
+        label        => 'Default gateway network',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^\d*$',
+        is_mandatory => 1
     },
     interfaces => {
-        label       => 'Interfaces',
-        type        => 'relation',
-        relation    => 'single_multi',
-        is_editable => 1,
-        attributes  => {
+        label        => 'Interfaces',
+        type         => 'relation',
+        relation     => 'single_multi',
+        is_editable  => 1,
+        is_mandatory => 1,
+        attributes   => {
             attributes => {
                 policy_id => {
                     type     => 'relation',

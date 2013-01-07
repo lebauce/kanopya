@@ -472,8 +472,11 @@ sub setValues {
         else {
             $args{attributes}->{attributes}->{$attrname}->{is_editable} = 1;
         }
-        if ($args{set_mandatory}) {
-            $args{attributes}->{attributes}->{$attrname}->{is_mandatory} = 1;
+
+        # If the attribute do not belongs to the base type Policy, use set_mandatory option
+        if (not defined Entity::Policy->getAttrDef->{$attrname}) {
+            my $mandatory = ($args{set_mandatory} and $args{attributes}->{attributes}->{$attrname}->{is_mandatory});
+            $args{attributes}->{attributes}->{$attrname}->{is_mandatory} = $mandatory ? 1 : 0;
         }
     }
 }

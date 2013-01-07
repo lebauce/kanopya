@@ -135,9 +135,10 @@ sub getHostManagerParams {
 
     return {
         service_profile_template_id => {
-            label   => 'Service profile',
-            type    => 'enum',
-            options => [ 'sptmpl_kanopya01-A', 'sptmpl_kanopya01-B' ]
+            label        => 'Service profile',
+            type         => 'enum',
+            is_mandatory => 1,
+            options      => [ 'sptmpl_kanopya01-A', 'sptmpl_kanopya01-B' ]
         }
     };
 }

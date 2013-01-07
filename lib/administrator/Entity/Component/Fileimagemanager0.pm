@@ -95,14 +95,16 @@ sub getDiskManagerParams {
 
     return {
         container_access_id => {
-            label   => 'NFS repository to use',
-            type    => 'enum',
-            options => $accesses
+            label        => 'NFS repository to use',
+            type         => 'enum',
+            is_mandatory => 1,
+            options      => $accesses
         },
         image_type => {
-            label   => 'Disk image format',
-            type    => 'enum',
-            options => [ "raw", "qcow2", "VMDK" ]
+            label        => 'Disk image format',
+            type         => 'enum',
+            is_mandatory => 1,
+            options      => [ "raw", "qcow2", "VMDK" ]
         },
     };
 }

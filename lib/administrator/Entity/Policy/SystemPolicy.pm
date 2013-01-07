@@ -50,47 +50,53 @@ sub getAttrDef { return ATTR_DEF; }
 
 use constant POLICY_ATTR_DEF => {
     masterimage_id => {
-        label    => 'Master image',
-        type     => 'relation',
-        relation => 'single',
-        pattern  => '^\d*$',
+        label        => 'Master image',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^\d*$',
+        reload       => 1,
     },
     kernel_id => {
-        label   => 'Kernel',
-        type     => 'relation',
-        relation => 'single',
-        pattern  => '^\d*$',
+        label        => 'Kernel',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^\d*$',
     },
     cluster_si_shared => {
-        label   => 'System image shared',
-        type    => 'boolean',
+        label        => 'System image shared',
+        type         => 'boolean',
+        is_mandatory => 1
     },
     cluster_si_persistent => {
-        label   => 'Persistent system images',
-        type    => 'boolean',
+        label        => 'Persistent system images',
+        type         => 'boolean',
+        is_mandatory => 1
     },
     cluster_basehostname => {
-        label   => 'Cluster base hostname',
-        type    => 'string',
-        pattern => '^[a-z_0-9]+$',
+        label        => 'Cluster base hostname',
+        type         => 'string',
+        pattern      => '^[a-z_0-9]+$',
+        is_mandatory => 1
     },
     components => {
-        label       => 'Components',
-        type        => 'relation',
-        relation    => 'single_multi',
-        is_editable => 1,
-        attributes  => {
+        label        => 'Components',
+        type         => 'relation',
+        relation     => 'single_multi',
+        is_editable  => 1,
+        is_mandatory => 1,
+        attributes   => {
             attributes => {
                 policy_id => {
                     type     => 'relation',
                     relation => 'single',
                 },
                 component_type => {
-                    label       => 'Component type',
-                    type        => 'relation',
-                    relation    => 'single',
-                    pattern     => '^\d*$',
-                    is_editable => 1
+                    label        => 'Component type',
+                    type         => 'relation',
+                    relation     => 'single',
+                    pattern      => '^\d*$',
+                    is_mandatory => 1,
+                    is_editable  => 1
                 },
             }
         }
@@ -142,27 +148,35 @@ sub getPolicyDef {
     }
 
     my $policy_attrdef = clone($class->getPolicyAttrDef);
+    my @displayed      = ( 'kernel_id', 'masterimage_id', 'cluster_basehostname',
+                           'cluster_si_persistent', 'cluster_si_shared', 'deploy_on_disk' );
 
     # Manually add the systemimage_size and deploy_on_disk attrs because they are manager params
-    $policy_attrdef->{systemimage_size} = {
-        label   => 'System image size',
-        type    => 'integer',
-        unit    => 'byte',
-        pattern => '^\d*$',
-    };
     $policy_attrdef->{deploy_on_disk} = {
-        label   => 'Deploy on hard disk',
-        type    => 'boolean',
-        pattern => '^\d*$',
-    },
+        label        => 'Deploy on hard disk',
+        type         => 'boolean',
+        pattern      => '^\d*$',
+        is_mandatory => 1
+    };
+    if (defined $args{masterimage_id}) {
+        $policy_attrdef->{systemimage_size} = {
+            label        => 'System image size',
+            type         => 'integer',
+            unit         => 'byte',
+            pattern      => '^\d*$',
+            is_mandatory => 1
+        };
+        # Insert systemimage_size after
+        splice @displayed, 2, 0, 'systemimage_size';
+    }
+
 
     $policy_attrdef->{kernel_id}->{options} = \@kernels;
     $policy_attrdef->{masterimage_id}->{options} = \@masterimages;
     $policy_attrdef->{components}->{attributes}->{attributes}->{component_type}->{options} = \@componenttypes;
 
     my $attributes = {
-        displayed  => [ 'kernel_id', 'masterimage_id', 'systemimage_size', 'cluster_basehostname',
-                        'cluster_si_persistent', 'cluster_si_shared', 'deploy_on_disk' ],
+        displayed  => \@displayed,
         attributes => $policy_attrdef,
         relations  => {
             components => {

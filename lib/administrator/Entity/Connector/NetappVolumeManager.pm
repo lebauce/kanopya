@@ -74,9 +74,10 @@ sub getDiskManagerParams {
 
     return {
         aggregate_id => {
-            label   => 'Aggregate to use',
-            type    => 'enum',
-            options => $aggregates
+            label        => 'Aggregate to use',
+            type         => 'enum',
+            is_mandatory => 1,
+            options      => $aggregates
         }
     };
 }

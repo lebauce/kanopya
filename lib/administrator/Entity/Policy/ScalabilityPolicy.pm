@@ -49,19 +49,22 @@ sub getAttrDef { return ATTR_DEF; }
 
 use constant POLICY_ATTR_DEF => {
     cluster_min_node => {
-        label    => 'Minimum node number',
-        type     => 'integer',
-        pattern  => '^[1-9][0-9]*$',
+        label        => 'Minimum node number',
+        type         => 'integer',
+        pattern      => '^[1-9][0-9]*$',
+        is_mandatory => 1
     },
     cluster_max_node => {
-        label    => 'Maximum node number',
-        type     => 'integer',
-        pattern  => '^[1-9][0-9]*$',
+        label        => 'Maximum node number',
+        type         => 'integer',
+        pattern      => '^[1-9][0-9]*$',
+        is_mandatory => 1
     },
     cluster_priority => {
-        label    => 'Cluster priority',
-        type     => 'integer',
-        pattern  => '^[1-9][0-9]*$',
+        label        => 'Cluster priority',
+        type         => 'integer',
+        pattern      => '^[1-9][0-9]*$',
+        is_mandatory => 1
     },
 };
 

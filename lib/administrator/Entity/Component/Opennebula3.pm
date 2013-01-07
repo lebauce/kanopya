@@ -228,28 +228,32 @@ sub getHostManagerParams {
 
     return {
         core => {
-            label   => 'Initial CPU number',
-            type    => 'integer',
-            unit    => 'core(s)',
-            pattern => '^\d*$',
+            label        => 'Initial CPU number',
+            type         => 'integer',
+            unit         => 'core(s)',
+            pattern      => '^\d*$',
+            is_mandatory => 1
         },
         ram => {
-            label   => 'Initial RAM amount',
-            type    => 'integer',
-            unit    => 'byte',
-            pattern => '^\d*$',
+            label        => 'Initial RAM amount',
+            type         => 'integer',
+            unit         => 'byte',
+            pattern      => '^\d*$',
+            is_mandatory => 1
         },
         max_core => {
-            label   => 'Maximum CPU number',
-            type    => 'integer',
-            unit    => 'core(s)',
-            pattern => '^\d*$',
+            label        => 'Maximum CPU number',
+            type         => 'integer',
+            unit         => 'core(s)',
+            pattern      => '^\d*$',
+            is_mandatory => 1
         },
         max_ram => {
-            label   => 'Maximum RAM amount',
-            type    => 'integer',
-            unit    => 'byte',
-            pattern => '^\d*$',
+            label        => 'Maximum RAM amount',
+            type         => 'integer',
+            unit         => 'byte',
+            pattern      => '^\d*$',
+            is_mandatory => 1
         }
     };
 }
