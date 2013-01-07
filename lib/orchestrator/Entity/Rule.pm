@@ -94,7 +94,7 @@ Implement specific behavior for subscription : must associate the rule with an e
 sub subscribe {
     my $self        = shift;
     my %args        = @_;
- 
+
     my $result  = $self->SUPER::subscribe(%args);
 
     if (not defined $self->workflow_def) {

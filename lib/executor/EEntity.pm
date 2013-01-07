@@ -182,7 +182,7 @@ sub notificationMessage {
     );
 
     my $message = "";
-    
+
     my $template        = Template->new(General::getTemplateConfiguration());
     my $templatedata    = { operation => $args{operation}->label };
     $template->process('notificationmail.tt', $templatedata, \$message)

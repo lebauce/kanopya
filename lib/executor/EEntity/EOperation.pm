@@ -160,7 +160,7 @@ sub validation {
                 $self->addValidationPerm(consumer => $subscribtion->subscriber);
 
                 $validation = 1;
-                
+
                 $template->process($input . '.tt', $templatedata, \$message)
                     or throw Kanopya::Exception::Internal(
                          error => "Error when processing template " . $input . '.tt'
@@ -168,7 +168,7 @@ sub validation {
             }
             else {
                 $input      = "notificationmail";
-                my $eentity = EFactoroy::newEEntity(data => $entity);
+                my $eentity = EFactory::newEEntity(data => $entity);
                 $message    = $eentity->notificationMessage(operation => $self->_getEntity);
             }
 

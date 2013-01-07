@@ -156,7 +156,7 @@ sub deassociateWorkflow {
                rule_id  => $args{rule_id},
                scope_id => $workflow_params->{internal}->{scope_id}
            );
-    
+
     # Check if there's subscriptions on this rule
     my @notification_subscriptions  = NotificationSubscription->search(hash => {
             entity_id   => $args{rule_id}
