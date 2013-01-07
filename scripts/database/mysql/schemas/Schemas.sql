@@ -1631,8 +1631,11 @@ CREATE TABLE `masterimage` (
   `masterimage_desc` char(255) DEFAULT NULL,
   `masterimage_os` char(64) DEFAULT NULL,
   `masterimage_size` bigint(16) unsigned NOT NULL,
+  `masterimage_defaultkernel_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`masterimage_id`),
-  FOREIGN KEY (`masterimage_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`masterimage_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`masterimage_defaultkernel_id`),
+  FOREIGN KEY (`masterimage_defaultkernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

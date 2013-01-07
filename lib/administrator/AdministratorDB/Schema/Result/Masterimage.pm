@@ -76,6 +76,13 @@ __PACKAGE__->table("masterimage");
   extra: {unsigned => 1}
   is_nullable: 0
 
+=head2 masterimage_defaultkernel_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -96,6 +103,13 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 1, size => 64 },
   "masterimage_size",
   { data_type => "bigint", extra => { unsigned => 1 }, is_nullable => 0 },
+  "masterimage_defaultkernel_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
 );
 
 =head1 PRIMARY KEY
@@ -154,7 +168,27 @@ __PACKAGE__->belongs_to(
   "masterimage",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "masterimage_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
+);
+
+=head2 masterimage_defaultkernel
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Kernel>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "masterimage_defaultkernel",
+  "AdministratorDB::Schema::Result::Kernel",
+  { kernel_id => "masterimage_defaultkernel_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "NO ACTION",
+    on_update     => "NO ACTION",
+  },
 );
 
 =head2 component_types
