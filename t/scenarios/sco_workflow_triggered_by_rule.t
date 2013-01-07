@@ -2,11 +2,13 @@
 
 =head1 SCOPE
 
+Triggering and return of sco workflow using node and cluster rules
+
 TODO
 
 =head1 PRE-REQUISITE
 
-TODO
+None
 
 =cut
 
@@ -19,7 +21,7 @@ use Test::Exception;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
     level=>'DEBUG',
-    file=>'/vagrant/orchestrator_test.log',
+    file=>'/tmp/orchestrator_test.log',
     layout=>'%F %L %p %m%n'
 });
 
@@ -62,7 +64,7 @@ sub main {
     }
 
     sco_workflow_triggered_by_rule();
-    test_rrd_remove();
+    clean_infra();
 
     if ($testing == 1) {
         $adm->rollbackTransaction;
@@ -180,136 +182,113 @@ sub sco_workflow_triggered_by_rule {
     #Launch orchestrator a workflow must be enqueued
     $orchestrator->manage_aggregates();
 
-    diag('Check triggered node workflow');
-    my $node_workflow = Entity::Workflow->find(hash=>{
-        workflow_name => $node_rule_ids->{node_rule2_id}.'_'.($node_wf->workflow_def_name),
-        state => 'running',
-        related_id => $service_provider->id,
-    });
-    diag('Triggered node workflow checked');
+    my ($node_workflow, $service_workflow, $sco_operation, $service_sco_operation);
+    lives_ok {
+        diag('Check triggered node workflow');
+        $node_workflow = Entity::Workflow->find(hash=>{
+            workflow_name => $node_rule_ids->{node_rule2_id}.'_'.($node_wf->workflow_def_name),
+            state => 'running',
+            related_id => $service_provider->id,
+        });
 
-    diag('Check triggered service workflow');
-    my $service_workflow = Entity::Workflow->find(hash=>{
-        workflow_name => $agg_rule_ids->{agg_rule2_id}.'_'.($service_wf->workflow_def_name),
-        state => 'running',
-        related_id => $service_provider->id,
-    });
-    diag('## checked');
+        diag('Check triggered service workflow');
+        $service_workflow = Entity::Workflow->find(hash=>{
+            workflow_name => $agg_rule_ids->{agg_rule2_id}.'_'.($service_wf->workflow_def_name),
+            state => 'running',
+            related_id => $service_provider->id,
+        });
 
-    diag('Check WorkflowNoderule creation');
-    WorkflowNoderule->find(hash=>{
-        externalnode_id => $node->id,
-        nodemetric_rule_id  => $node_rule_ids->{node_rule2_id},
-        workflow_id => $node_workflow->id,
-    });
-    diag('## checked');
+        diag('Check WorkflowNoderule creation');
+        WorkflowNoderule->find(hash=>{
+            externalnode_id => $node->id,
+            nodemetric_rule_id  => $node_rule_ids->{node_rule2_id},
+            workflow_id => $node_workflow->id,
+        });
 
-    diag('Check triggered node enqueued operation');
-    Entity::Operation->find( hash => {
-        type => 'LaunchSCOWorkflow',
-        state => 'ready',
-        workflow_id => $node_workflow->id,
-    });
-    diag('## checked');
+        diag('Check triggered node enqueued operation');
+        Entity::Operation->find( hash => {
+            type => 'LaunchSCOWorkflow',
+            state => 'ready',
+            workflow_id => $node_workflow->id,
+        });
 
-    diag('Check triggered service enqueued operation');
-    Entity::Operation->find( hash => {
-        type => 'LaunchSCOWorkflow',
-        state => 'ready',
-        workflow_id => $service_workflow->id,
-    });
-    diag('## checked');
+        diag('Check triggered service enqueued operation');
+        Entity::Operation->find( hash => {
+            type => 'LaunchSCOWorkflow',
+            state => 'ready',
+            workflow_id => $service_workflow->id,
+        });
 
-    #Execute operations enqueued
-    Kanopya::Tools::Execution->executeAll();
+        #Execute operation 2 times (1 time per operation enqueud)
+        Kanopya::Tools::Execution->oneRun();
+        Kanopya::Tools::Execution->oneRun();
 
-    #  Check node rule output
-    diag('Check postreported operation');
-    my $sco_operation = Entity::Operation->find( hash => {
-        type => 'LaunchSCOWorkflow',
-        state => 'postreported',
-        workflow_id => $node_workflow->id,
-    });
-    diag('## checked');
+        #  Check node rule output
+        diag('Check postreported operation');
+        $sco_operation = Entity::Operation->find( hash => {
+            type => 'LaunchSCOWorkflow',
+            state => 'postreported',
+            workflow_id => $node_workflow->id,
+        });
 
-    my $output_file = '/tmp/'.($sco_operation->getParams->{output_file});
-    my $return_file = $sco_operation->getParams->{return_file};
+        my $output_file = '/tmp/'.($sco_operation->getParams->{output_file});
+        my $return_file = $sco_operation->getParams->{return_file};
 
-    diag('Open the output file');
-    open(FILE,$output_file);
+        diag('Open the output file');
+        open(FILE,$output_file);
 
-    my @lines;
-    while (<FILE>) {
-        push @lines, $_;
-    }
+        my @lines;
+        while (<FILE>) {
+            push @lines, $_;
+        }
 
-    diag('Check if node file contain line 1');
-    if ( $lines[0] eq $node->externalnode_hostname."\n") {
-        diag('## checked');
-    }
-    else {
-        die 'Node file does not contain line 1';
-    }
+        diag('Check if node file contain line 1');
+        die 'Node file does not contain line 1' if ( $lines[0] ne $node->externalnode_hostname."\n");
 
-    diag('Check if node file contain line 2');
-    if ( $lines[1] eq $return_file) {
-        diag('## checked');
-    }
-    else {
-        die 'Node file does not contain line 2';
-    }
+        diag('Check if node file contain line 2');
+        die 'Node file does not contain line 2' if ( $lines[1] ne $return_file);
 
-    close(FILE);
+        close(FILE);
 
-    diag('Rename the output sco node file');
-    chdir "/tmp";
-    rename($output_file,$return_file);
-    open(FILE,$return_file);
-    close(FILE);
+        diag('Rename the output sco node file');
+        chdir "/tmp";
+        rename($output_file,$return_file);
+        open(FILE,$return_file);
+        close(FILE);
 
-    #  Check service rule output
-    diag('Check postreported service sco operation');
-    my $service_sco_operation = Entity::Operation->find( hash => {
-        type => 'LaunchSCOWorkflow',
-        state => 'postreported',
-        workflow_id => $service_workflow->id,
-    });
-    diag('## checked');
+        #  Check service rule output
+        diag('Check postreported service sco operation');
+        $service_sco_operation = Entity::Operation->find( hash => {
+            type => 'LaunchSCOWorkflow',
+            state => 'postreported',
+            workflow_id => $service_workflow->id,
+        });
 
-    $output_file = '/tmp/'.($service_sco_operation->getParams->{output_file});
-    $return_file = $service_sco_operation->getParams->{return_file};
+        $output_file = '/tmp/'.($service_sco_operation->getParams->{output_file});
+        $return_file = $service_sco_operation->getParams->{return_file};
 
-    diag('Open the output service file');
-    open(FILE,$output_file);
+        diag('Open the output service file');
+        open(FILE,$output_file);
 
-    @lines= ();
-    while (<FILE>) {
-        push @lines, $_;
-    }
+        @lines= ();
+        while (<FILE>) {
+            push @lines, $_;
+        }
 
-    diag('Check if service file contain line 1');
-    if ( $lines[0] eq $service_provider->externalcluster_name." hello world!\n") {
-        diag('## checked');
-    }
-    else {
-        die 'Service file does not contain line 1';
-    }
+        diag('Check if service file contain line 1');
+        die 'Service file does not contain line 1' if ($lines[0] ne $service_provider->externalcluster_name." hello world!\n");
 
-    diag('Check if service file contain line 2');
-    if ( $lines[1] eq $return_file) {
-        diag('## checked');
-    }
-    else {
-        die 'Service file does not contain line 2';
-    }
+        diag('Check if service file contain line 2');
+        die 'Service file does not contain line 2' if ($lines[1] ne $return_file);
 
-    close(FILE);
+        close(FILE);
 
-    diag('Rename the output sco service file');
-    chdir "/tmp";
-    rename($output_file,$return_file);
-    open(FILE,$return_file);
-    close(FILE);
+        diag('Rename the output sco service file');
+        chdir "/tmp";
+        rename($output_file,$return_file);
+        open(FILE,$return_file);
+        close(FILE);
+    } 'Triggering of SCO workflow using rule (node and service scope)';
 
     # Modify hoped_execution_time in order to avoid waiting for the delayed time
     $sco_operation->setAttr( name => 'hoped_execution_time', value => time() - 1);
@@ -319,190 +298,183 @@ sub sco_workflow_triggered_by_rule {
     $service_sco_operation->setAttr( name => 'hoped_execution_time', value => time() - 1);
     $service_sco_operation->save();
 
-    Kanopya::Tools::Execution->executeAll();
+    # Execute operation 2 times (1 time per operation enqueud)
+    Kanopya::Tools::Execution->oneRun();
+    Kanopya::Tools::Execution->oneRun();
 
-    expectedException {
-        Entity::Operation->find( hash => {
-            type => 'LaunchSCOWorkflow',
-            workflow_id => $node_workflow->id,
+    lives_ok {
+        expectedException {
+            Entity::Operation->find( hash => {
+                type => 'LaunchSCOWorkflow',
+                workflow_id => $node_workflow->id,
+            });
+        } 'Kanopya::Exception::Internal::NotFound',
+        'Check node operation has been deleted';
+
+        expectedException {
+            Entity::Operation->find( hash => {
+                type => 'LaunchSCOWorkflow',
+                workflow_id => $service_workflow->id,
+            });
+        } 'Kanopya::Exception::Internal::NotFound',
+        'Check service operation has been deleted';
+
+        diag('Check if node workflow is done');
+        $node_workflow = Entity::Workflow->find(hash=>{
+            workflow_name => $node_rule_ids->{node_rule2_id}.'_'.($node_wf->workflow_def_name),
+            state => 'done',
+            related_id => $service_provider->id,
         });
-    } 'Kanopya::Exception::Internal::NotFound',
-    'Check node operation has been deleted';
 
-    expectedException {
-        Entity::Operation->find( hash => {
-            type => 'LaunchSCOWorkflow',
-            workflow_id => $service_workflow->id,
+        diag('Check if service workflow is done');
+        $service_workflow = Entity::Workflow->find(hash=>{
+            workflow_name => $agg_rule_ids->{agg_rule2_id}.'_'.($service_wf->workflow_def_name),
+            state => 'done',
+            related_id => $service_provider->id,
         });
-    } 'Kanopya::Exception::Internal::NotFound',
-    'Check service operation has been deleted';
 
-    diag('Check if node workflow is done');
-    $node_workflow = Entity::Workflow->find(hash=>{
-        workflow_name => $node_rule_ids->{node_rule2_id}.'_'.($node_wf->workflow_def_name),
-        state => 'done',
-        related_id => $service_provider->id,
-    });
-    diag('## checked');
+        # Modify node rule2 to avoid a new triggering
+        my $node_rule2 = Entity::NodemetricRule->get(id => $node_rule_ids->{node_rule2_id});
+        $node_rule2->setAttr(name => 'nodemetric_rule_formula', value => '! ('.$node_rule2->nodemetric_rule_formula.')');
+        $node_rule2->save();
 
-    diag('Check if service workflow is done');
-    $service_workflow = Entity::Workflow->find(hash=>{
-        workflow_name => $agg_rule_ids->{agg_rule2_id}.'_'.($service_wf->workflow_def_name),
-        state => 'done',
-        related_id => $service_provider->id,
-    });
-    diag('## checked');
+        # Modify service rule2 to avoid a new triggering
+        my $agg_rule2 = Entity::AggregateRule->get(id => $agg_rule_ids->{agg_rule2_id});
+        $agg_rule2->setAttr(name => 'aggregate_rule_formula', value => 'not ('.$agg_rule2->aggregate_rule_formula.')');
+        $agg_rule2->save();
 
-    # Modify node rule2 to avoid a new triggering
-    my $node_rule2 = Entity::NodemetricRule->get(id => $node_rule_ids->{node_rule2_id});
-    $node_rule2->setAttr(name => 'nodemetric_rule_formula', value => '! ('.$node_rule2->nodemetric_rule_formula.')');
-    $node_rule2->save();
+        # Launch Orchestrator
+        $orchestrator->manage_aggregates();
 
-    # Modify service rule2 to avoid a new triggering
-    my $agg_rule2 = Entity::AggregateRule->get(id => $agg_rule_ids->{agg_rule2_id});
-    $agg_rule2->setAttr(name => 'aggregate_rule_formula', value => 'not ('.$agg_rule2->aggregate_rule_formula.')');
-    $agg_rule2->save();
+        expectedException {
+            VerifiedNoderule->find(hash => {
+                verified_noderule_externalnode_id    => $node->id,
+                verified_noderule_nodemetric_rule_id => $node_rule_ids->{node_rule2_id},
+                verified_noderule_state              => 'verified',
+            });
+        } 'Kanopya::Exception::Internal::NotFound',
+        'Check node rule 2 is not verified after formula has changed';
 
-    # Launch Orchestrator
-    $orchestrator->manage_aggregates();
-
-    expectedException {
-        VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node->id,
-            verified_noderule_nodemetric_rule_id => $node_rule_ids->{node_rule2_id},
-            verified_noderule_state              => 'verified',
+        diag('Check if service rule 2 is not verified after formula has changed');
+        Entity::AggregateRule->find(hash => {
+            aggregate_rule_id => $agg_rule_ids->{agg_rule2_id},
+            aggregate_rule_last_eval => 0,
         });
-    } 'Kanopya::Exception::Internal::NotFound',
-    'Check node rule 2 is not verified after formula has changed';
 
-    diag('Check if service rule 2 is not verified after formula has changed');
-    Entity::AggregateRule->find(hash => {
-        aggregate_rule_id => $agg_rule_ids->{agg_rule2_id},
-        aggregate_rule_last_eval => 0,
-    });
-    diag('## checked');
+        expectedException {
+            WorkflowNoderule->find(hash=>{
+                externalnode_id => $node->id,
+                nodemetric_rule_id  => $node_rule2->id,
+                workflow_id => $node_workflow->id,
+            });
+        } 'Kanopya::Exception::Internal::NotFound',
+        'Check node WorkflowNoderule has been deleted';
 
-    expectedException {
-        WorkflowNoderule->find(hash=>{
-            externalnode_id => $node->id,
-            nodemetric_rule_id  => $node_rule2->id,
-            workflow_id => $node_workflow->id,
-        });
-    } 'Kanopya::Exception::Internal::NotFound',
-    'Check node WorkflowNoderule has been deleted';
+        expectedException {
+            WorkflowNoderule->find(hash=>{
+                externalnode_id => $node->id,
+                nodemetric_rule_id  => $agg_rule2->id,
+                workflow_id => $service_workflow->id,
+            });
+        } 'Kanopya::Exception::Internal::NotFound',
+        'Check service WorkflowNoderule has been deleted';
 
-    expectedException {
-        WorkflowNoderule->find(hash=>{
-            externalnode_id => $node->id,
-            nodemetric_rule_id  => $agg_rule2->id,
-            workflow_id => $service_workflow->id,
-        });
-    } 'Kanopya::Exception::Internal::NotFound',
-    'Check service WorkflowNoderule has been deleted';
+        diag('Check node metric workflow def');
+        my $wf1 = Entity->get(id=>$node_rule2->id)->workflow_def;
 
-    diag('Check node metric workflow def');
-    my $wf1 = Entity->get(id=>$node_rule2->id)->workflow_def;
-    diag('## checked');
+        diag('Check service metric workflow def');
+        my $wf2 = Entity->get(id=>$agg_rule2->id)->workflow_def;
 
-    diag('Check service metric workflow def');
-    my $wf2 = Entity->get(id=>$agg_rule2->id)->workflow_def;
-    diag('## checked');
+        $node_rule2->delete();
+        expectedException {
+            Entity::WorkflowDef->get(id => $wf1->id);
+        } 'Kanopya::Exception::Internal::NotFound',
+        'Node workflow def is deleted';
 
-    $node_rule2->delete();
-    expectedException {
-        WorkflowDef->get(id => $wf1->id);
-    } 'Kanopya::Exception::Internal::NotFound',
-    'Node workflow def is deleted';
-
-    $agg_rule2->delete();
-    expectedException {
-        WorkflowDef->get(id => $wf2->id);
-    } 'Kanopya::Exception::Internal::NotFound',
-    'Service workflow def is deleted';
+        $agg_rule2->delete();
+        expectedException {
+            Entity::WorkflowDef->get(id => $wf2->id);
+        } 'Kanopya::Exception::Internal::NotFound',
+        'Service workflow def is deleted';
+    } 'Ending of triggered SCO workflow (node and service scope)';
 }
 
 sub check_rule_verification {
     my %args = @_;
 
-    lives_ok {
-        diag('# Service rule 1 verification');
-        Entity::AggregateRule->find(hash => {
-            aggregate_rule_id => $args{agg_rule1_id},
-            aggregate_rule_last_eval => 0,
-        });
-        diag('## verified');
+    diag('# Service rule 1 verification');
+    Entity::AggregateRule->find(hash => {
+        aggregate_rule_id => $args{agg_rule1_id},
+        aggregate_rule_last_eval => 0,
+    });
 
-        diag('# Service rule 2 verification');
-        Entity::AggregateRule->find(hash => {
-            aggregate_rule_id => $args{agg_rule2_id},
-            aggregate_rule_last_eval => 1,
-        });
-        diag('## verified');
+    diag('# Service rule 2 verification');
+    Entity::AggregateRule->find(hash => {
+        aggregate_rule_id => $args{agg_rule2_id},
+        aggregate_rule_last_eval => 1,
+    });
 
-        diag('# Node rule 1 verification');
+    diag('# Node rule 1 verification');
+    expectedException {
         VerifiedNoderule->find(hash => {
             verified_noderule_externalnode_id    => $args{node_id},
-            verified_noderule_nodemetric_rule_id => $args{node_rule1_id},,
+            verified_noderule_nodemetric_rule_id => $args{node_rule1_id},
             verified_noderule_state              => 'verified',
         });
-        diag('## verified');
+    } 'Kanopya::Exception::Internal::NotFound', 'Node rule 1 is not verified';
 
-        diag('# Node rule 2 verification');
-        VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $args{node_id},
-            verified_noderule_nodemetric_rule_id => $args{node_rule2_id},,
-            verified_noderule_state              => 'verified',
-        });
-        diag('## verified');
-    } 'Rules verification';
+    diag('# Node rule 2 verification');
+    VerifiedNoderule->find(hash => {
+        verified_noderule_externalnode_id    => $args{node_id},
+        verified_noderule_nodemetric_rule_id => $args{node_rule2_id},
+        verified_noderule_state              => 'verified',
+    });
 }
 
-sub test_rrd_remove {
-    lives_ok {
-        my @cms = Entity::Clustermetric->search (hash => {
-            clustermetric_service_provider_id => $service_provider->id
-        });
+sub clean_infra {
+    my @cms = Entity::Clustermetric->search (hash => {
+        clustermetric_service_provider_id => $service_provider->id
+    });
 
-        my @cm_ids = map {$_->id} @cms;
-        while (@cms) { (pop @cms)->delete(); };
+    my @cm_ids = map {$_->id} @cms;
+    while (@cms) { (pop @cms)->delete(); };
 
-        diag('Check if all aggregrate combinations have been deleted');
-        my @acs = Entity::Combination::AggregateCombination->search (hash => {
-            service_provider_id => $service_provider->id
-        });
-        if ( scalar @acs == 0 ) {
-            diag('## checked');
-        }
-        else {
-            die 'All aggregate combinations have not been deleted';
-        }
+    diag('Check if all aggregrate combinations have been deleted');
+    my @acs = Entity::Combination::AggregateCombination->search (hash => {
+        service_provider_id => $service_provider->id
+    });
+    if ( scalar @acs == 0 ) {
+        diag('## checked');
+    }
+    else {
+        die 'All aggregate combinations have not been deleted';
+    }
 
-        diag('Check if all aggregrate rules have been deleted');
-        my @ars = Entity::AggregateRule->search (hash => {
-            aggregate_rule_service_provider_id => $service_provider->id
-        });
-        if ( scalar @ars == 0 ) {
-            diag('## checked');
-        }
-        else {
-            die 'All aggregate rules have not been deleted';
-        }
+    diag('Check if all aggregrate rules have been deleted');
+    my @ars = Entity::AggregateRule->search (hash => {
+        aggregate_rule_service_provider_id => $service_provider->id
+    });
+    if ( scalar @ars == 0 ) {
+        diag('## checked');
+    }
+    else {
+        die 'All aggregate rules have not been deleted';
+    }
 
-        diag('Check if all rrd have been deleted');
-        my $one_rrd_remove = 0;
-        for my $cm_id (@cm_ids) {
-            if (defined open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$cm_id.'.rrd')) {
-                $one_rrd_remove++;
-            }
-            close(FILE);
+    diag('Check if all rrd have been deleted');
+    my $one_rrd_remove = 0;
+    for my $cm_id (@cm_ids) {
+        if (defined open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$cm_id.'.rrd')) {
+            $one_rrd_remove++;
         }
-        if ($one_rrd_remove == 0) {
-            diag('## checked');
-        }
-        else {
-             die "All rrd have not been removed, still $one_rrd_remove rrd";
-        }
-    } 'Test rrd remove';
+        close(FILE);
+    }
+    if ($one_rrd_remove == 0) {
+        diag('## checked');
+    }
+    else {
+         die "All rrd have not been removed, still $one_rrd_remove rrd";
+    }
 }
 
 sub _service_rule_objects_creation {
