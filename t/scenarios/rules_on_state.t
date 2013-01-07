@@ -10,6 +10,8 @@ These test needs :
 One IAAS Opennebula with 2 hypervisors
 4 vms on the first hypervisor
 
+Warning : hypervisor 2 is eth0 down at the end of the test
+
 =cut
 
 use strict;
@@ -43,15 +45,18 @@ use VerifiedNoderule;
 use Entity::Workflow;
 use Entity::WorkflowDef;
 use Kanopya::Config;
+use Entity::Component::Kanopyacollector1;
 
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::TestUtils 'expectedException';
+
+use Data::Dumper;
 
 my $testing = 0;
 
 my $aggregator;
 my $orchestrator;
-my $collector;
+
 my ($hv1, $hv2);
 my $one;
 
@@ -75,14 +80,21 @@ sub main {
 
     $aggregator   = Aggregator->new();
     $orchestrator = Orchestrator->new();
-    $collector     = Monitor::Collector->new();
+
     #get orchestrator configuration
 
     $one = Entity::Component::Opennebula3->find(hash => {});
     my @hvs = $one->hypervisors;
-    ($hv1, $hv2) = ($hvs[0], $hvs[1]);
+
+    if ($hvs[0]->host_hostname eq 'one1') {
+        ($hv1, $hv2) = @hvs;
+    }
+    else {
+        ($hv2, $hv1) = @hvs;
+    }
 
     _check_no_operation_and_no_lock();
+    _add_mock_monitor();
 
     diag('Maintenance hypervisor');
     _split_2_2();
@@ -100,8 +112,72 @@ sub main {
     _split_2_2();
     resubmit_hypervisor();
 
+    _remove_mock_monitor();
+
     if ($testing == 1) {
         $adm->rollbackTransaction;
+    }
+}
+
+sub _remove_mock_monitor {
+    my @spms = $one->service_provider_managers;
+    my $vm_cluster = $spms[0]->service_provider;
+    my @hvs = $one->hypervisors;
+    my $hv_cluster = $hvs[0]->node->inside;
+
+    my $external_cluster_mockmonitor = Entity::ServiceProvider::Outside::Externalcluster->find(
+            hash => {externalcluster_name => 'Test Monitor'},
+    );
+
+    $external_cluster_mockmonitor->remove();
+
+    my $kc = Entity::Component::Kanopyacollector1->find(hash => {});
+    my $kanopya_collector_id = $kc->id;
+
+    $vm_cluster->addManager(
+        manager_id      => $kanopya_collector_id,
+        manager_type    => 'collector_manager',
+        no_default_conf => 1,
+    );
+
+    $hv_cluster->addManager(
+        manager_id      => $kanopya_collector_id,
+        manager_type    => 'collector_manager',
+        no_default_conf => 1,
+    );
+}
+
+sub _add_mock_monitor {
+
+    my @spms = $one->service_provider_managers;
+    my $vm_cluster = $spms[0]->service_provider;
+    my @hvs = $one->hypervisors;
+    my $hv_cluster = $hvs[0]->node->inside;
+
+    my $external_cluster_mockmonitor = Entity::ServiceProvider::Outside::Externalcluster->new(
+            externalcluster_name => 'Test Monitor',
+    );
+
+    my $mock_monitor = Entity::Connector::MockMonitor->new(
+            service_provider_id => $external_cluster_mockmonitor->id,
+    );
+
+    my @clusters = ($vm_cluster, $hv_cluster);
+
+    for my $cluster (@clusters) {
+
+        my $kanopya_collector_manager = ServiceProviderManager->find( hash => {
+            manager_type        => 'collector_manager',
+            service_provider_id => $cluster->id,
+        });
+
+        $kanopya_collector_manager->remove();
+
+        $cluster->addManager(
+            manager_id      => $mock_monitor->id,
+            manager_type    => 'collector_manager',
+            no_default_conf => 1,
+        );
     }
 }
 
@@ -110,9 +186,9 @@ sub resubmit_hv_on_state {
         my @hvs = $one->hypervisors;
         die 'There is not 2 hypervisors in the infra' if (scalar @hvs != 2);
 
-        my ($hv1, $hv2) = @hvs;
         my @hv1_vms = $hv1->virtual_machines;
         my @hv2_vms = $hv2->virtual_machines;
+
         die 'Hv1 has not 2 vms' if (scalar @hv1_vms != 2);
         die 'Hv2 has not 2 vms' if (scalar @hv2_vms != 2);
 
@@ -144,19 +220,17 @@ sub resubmit_hv_on_state {
 
         my $node = $hv1->node;
 
-        for my $hv_t (@hvs) {
-            $collector->deleteRRD(set_name => 'state', host_name => $hv_t->host_hostname);
-        }
-
         $node->setAttr(name => 'node_state', value => 'in:'.time());
         $node->save();
 
+        $hv_cluster->addManagerParameter(
+            manager_type    => 'collector_manager',
+            name            => 'mockmonit_config',
+            value           =>  "{'default':{'const':1},'nodes':{'one1':{'const':1}, 'one2':{'const':1}}}",
+        );
+
         my %indicators;
         $indicators{$indic->indicator->indicator_oid} = $indic->indicator;
-
-        $collector->update();
-        sleep(5);
-        $collector->update();
 
         my $nodes_metrics = $hv_cluster->getNodesMetrics(
             indicators => \%indicators,
@@ -171,8 +245,11 @@ sub resubmit_hv_on_state {
         $node->setAttr(name => 'node_state', value => 'broken:'.time());
         $node->save();
 
-        sleep(5);
-        $collector->update();
+        $hv_cluster->addManagerParameter(
+            manager_type    => 'collector_manager',
+            name            => 'mockmonit_config',
+            value           =>  "{'default':{'const':1},'nodes':{'one1':{'const':0}, 'one2':{'const':1}}}",
+        );
 
         $nodes_metrics = $hv_cluster->getNodesMetrics(
             indicators => \%indicators,
@@ -277,7 +354,7 @@ sub resubmit_hv_on_state {
 
         while (@operations) { (pop @operations)->delete(); }
         $ncomb->delete();
-    } 'Resubmit all the vms of a (simulated) broken hypervisor after a rule detection';
+    } 'Resubmit a simulated broken hypervisor using a nodemetric rule';
 }
 
 sub resubmit_vm_on_state {
@@ -315,21 +392,17 @@ sub resubmit_vm_on_state {
         my $old_ram = $vm->host_ram;
         my $old_cpu = $vm->host_core;
 
-        for my $vm_t (@vms) {
-            $collector->deleteRRD(set_name => 'state', host_name => $vm_t->host_hostname);
-        }
-
         $node->setAttr(name => 'node_state', value => 'in:'.time());
         $node->save();
 
+    $vm_cluster->addManagerParameter(
+        manager_type    => 'collector_manager',
+        name            => 'mockmonit_config',
+        value           =>  "{'default':{'const':1},'nodes':{'vm1':{'const':1}, 'vm2':{'const':1}}}",
+    );
+
         my %indicators;
         $indicators{$indic->indicator->indicator_oid} = $indic->indicator;
-
-        $collector->update();
-
-        sleep(5);
-
-        $collector->update();
 
         my $nodes_metrics = $vm_cluster->getNodesMetrics(
             indicators => \%indicators,
@@ -350,18 +423,18 @@ sub resubmit_vm_on_state {
         $node->setAttr(name => 'node_state', value => 'broken:'.time());
         $node->save();
 
-        $collector->update();
-
-        sleep(5);
-
-        $collector->update();
+        $vm_cluster->addManagerParameter(
+            manager_type    => 'collector_manager',
+            name            => 'mockmonit_config',
+            value           =>  "{'default':{'const':1},'nodes':{'vm1':{'const':0}, 'vm2':{'const':1}}}",
+        );
 
         $nodes_metrics = $vm_cluster->getNodesMetrics(
             indicators => \%indicators,
             time_span  => 1200,
         );
 
-        if ($nodes_metrics ->{$vm->host_hostname}->{'Host is up'} != 0) {
+        if ($nodes_metrics ->{$vm->host_hostname}->{'Host is up'} == 0) {
             diag('Host is down');
         }
         else {
@@ -456,7 +529,7 @@ sub resubmit_vm_on_state {
 
         while (@operations) { (pop @operations)->delete(); }
         $ncomb->delete();
-    } 'Resubmit a vm when (simulated) state broken detected by a rule';
+    } 'Resubmit a simulated broken state and unreachable virtual machine using rule';
 }
 
 sub resubmit_hypervisor {
@@ -506,7 +579,7 @@ sub resubmit_hypervisor {
             _check_vm_cpu(vm => $hv2_vms[$i], cpu => $old_cpus[$i]);
             _check_vm_ram(vm => $hv2_vms[$i], ram => $old_rams[$i]);
         }
-    } 'Resubmit manualy all vms of a broken hypervisor ';
+    } 'Resubmit an unreachable hypervisor';
 }
 
 sub maintenance_hypervisor {
@@ -540,7 +613,7 @@ sub maintenance_hypervisor {
         $hv2->setAttr( name => 'active', value => '1');
         $hv2->save();
         die 'hypervisor 2 has not been re-activated' if ($hv2->reload->active != 1);
-    } 'Hypervisor maintenance flushes all vms';
+    } 'Hypervisor maintenance';
 }
 
 sub _check_no_operation_and_no_lock {
