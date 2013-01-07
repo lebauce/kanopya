@@ -139,8 +139,8 @@ sub getPolicyDef {
     }
 
     # Build the list of disk manager of the storage provider
-    my $manager_options = {};
     if (defined $args{storage_provider_id}) {
+        my $manager_options = {};
         for my $component ($class->searchManagers(component_category  => 'Storage',
                                                   service_provider_id => $args{storage_provider_id})) {
             $manager_options->{$component->id} = $component->toJSON();
@@ -151,8 +151,8 @@ sub getPolicyDef {
 
         # If disk_manager_id defined but do not corresponding to a available value,
         # it is an old value, so delete it.
-        if (not defined $manager_options->{$args{host_manager_id}}) {
-            delete $args{host_manager_id};
+        if (not defined $manager_options->{$args{disk_manager_id}}) {
+            delete $args{disk_manager_id};
         }
         # If no disk_manager_id defined and and attr is mandatory, use the first one as value
         if (not defined $args{disk_manager_id} and $args{set_mandatory} and scalar (@diskmanageroptions) > 0) {
@@ -173,7 +173,7 @@ sub getPolicyDef {
         push @{ $attributes->{displayed} }, 'export_manager_id';
 
         # Build the list of export manager usable for the disk manager
-        $manager_options = {};
+        my $manager_options = {};
         for my $component (@{ $diskmanager->getExportManagers }) {
             $manager_options->{$component->id} = $component->toJSON();
             $manager_options->{$component->id}->{label} = $component->export_type;
@@ -234,8 +234,8 @@ sub getNonEditableAttributes {
 
     my $definition = $self->SUPER::getNonEditableAttributes();
 
-    # Add the storage_provider_id as a non editable attr if host_manager_id
-    # defined as as a non editable attr.
+    # Add the storage_provider_id as a non editable attr if disk_manager_id
+    # or export_manager_id defined as as a non editable attr.
     if (defined $definition->{disk_manager_id} or defined $definition->{export_manager_id}) {
         $definition->{storage_provider_id} = 1;
     }

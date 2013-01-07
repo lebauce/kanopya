@@ -131,8 +131,8 @@ sub getPolicyDef {
     }
 
     # Build the list of host manager of the host provider if defined
-    my $manager_options = {};
     if (defined $args{host_provider_id}) {
+        my $manager_options = {};
         for my $component ($class->searchManagers(component_category  => 'Cloudmanager',
                                                   service_provider_id => $args{host_provider_id})) {
             $manager_options->{$component->id} = $component->toJSON();
