@@ -193,7 +193,7 @@ sub createCluster {
                 managers => { 
                     $manager => {
                         manager_type => $manager,
-                        %$mgr_conf
+                        manager_params => $mgr_conf
                     }
                 }
             );
