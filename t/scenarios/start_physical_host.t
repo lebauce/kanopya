@@ -54,34 +54,24 @@ sub main {
     }
 
     diag('Register master image');
-    Kanopya::Tools::Register::registerMasterImage();
+    lives_ok {
+        Kanopya::Tools::Register::registerMasterImage();
+    } 'Register master image';
 
     diag('Create and configure cluster');
-    my $cluster = Kanopya::Tools::Create->createCluster();
+    my $cluster;
+    lives_ok {
+        $cluster = Kanopya::Tools::Create->createCluster();
+    } 'Create cluster';
 
     diag('Start physical host');
-    start_cluster($cluster);
+    lives_ok {
+        Kanopya::Tools::Execution::startCluster(cluster => $cluster);
+    } 'Start cluster';
 
     if ($testing == 1) {
         $adm->rollbackTransaction;
     }
-}
-
-sub start_cluster {
-    my $cluster = shift;
-
-    lives_ok {
-        Kanopya::Tools::Execution->executeOne(entity => $cluster->start());
-        $cluster = $cluster->reload();
-
-        my ($state, $timestemp) = $cluster->getState;
-        if ($state eq 'up') {
-            diag("Cluster $cluster->cluster_name started successfully");
-        }
-        else {
-            die "Cluster is not 'up'";
-        }
-    } 'Start cluster';
 }
 
 1;

@@ -170,4 +170,25 @@ sub executeAll {
     }
 }
 
+sub startCluster {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'cluster' ]);
+
+    my $cluster = $args{cluster};
+
+    Kanopya::Tools::Execution->executeOne(entity => $cluster->start());
+    $cluster = $cluster->reload();
+
+    my ($state, $timestemp) = $cluster->getState;
+    if ($state eq 'up') {
+        diag("Cluster " . $cluster->cluster_name . " started successfully");
+    }
+    else {
+        die "Cluster is not 'up'";
+    }
+
+    return $cluster;
+}
+
 1;
