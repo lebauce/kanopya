@@ -24,12 +24,13 @@ Logical formula of aggregate conditions
 
 =cut
 
-package Entity::AggregateRule;
+package Entity::Rule::AggregateRule;
+use base 'Entity::Rule';
 
 use strict;
 use warnings;
+
 use TimeData::RRDTimeData;
-use base 'Entity';
 use Entity::AggregateCondition;
 use Data::Dumper;
 use Switch;
@@ -434,6 +435,15 @@ sub delete {
     my $workflow_def = $self->workflow_def;
     $self->SUPER::delete();
     if (defined $workflow_def) { $workflow_def->delete(); };
+}
+
+sub serviceProvider {
+    my $self    = shift;
+    return $self->aggregate_rule_service_provider;
+}
+
+sub notifyWorkflowName {
+    return "NotifyWorkflow service_provider";
 }
 
 1;

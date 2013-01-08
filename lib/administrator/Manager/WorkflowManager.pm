@@ -30,12 +30,14 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 use Data::Dumper;
 
-use Entity::AggregateRule;
-use Entity::NodemetricRule;
+use Entity::Rule;
+use Entity::Rule::AggregateRule;
+use Entity::Rule::NodemetricRule;
 use Entity::WorkflowDef;
 use WorkflowDefManager;
 use ParamPreset;
 use Scope;
+use NotificationSubscription;
 
 sub methods {
   return {
@@ -155,6 +157,17 @@ sub deassociateWorkflow {
                scope_id => $workflow_params->{internal}->{scope_id}
            );
 
+    # Check if there's subscriptions on this rule
+    my @notification_subscriptions  = NotificationSubscription->search(hash => {
+            entity_id   => $args{rule_id}
+    });
+    if ($#notification_subscriptions > -1) {
+        # If any, must re-associate the rule with the empty workflow
+        Entity::Rule->find(hash => {
+            rule_id => $args{rule_id}
+        })->associateWithNotifyWorkflow();
+    }
+
     # Delete workflow def
     $workflow_def->delete();
 }
@@ -179,6 +192,14 @@ sub associateWorkflow {
                                                        'rule_id', ],
                                          optional => { 'specific_params' => {} },
     );
+
+    my $rule    = Entity::Rule->find(hash => { rule_id => $args{rule_id} });
+    if (defined $rule->workflow_def) {
+        $self->deassociateWorkflow(
+            rule_id         => $args{rule_id},
+            workflow_def_id => $rule->workflow_def_id
+        );
+    }
 
     my $workflow_def_id      = $args{origin_workflow_def_id};
     my $origin_workflow_name = $self->getWorkflowDef (workflow_def_id => $workflow_def_id)
@@ -294,16 +315,9 @@ sub _linkWorkflowToRule {
     my $scope      = Scope->find(hash => {scope_id => $scope_id});
     my $scope_name = $scope->getAttr(name => 'scope_name');
 
-    if ($scope_name eq 'node') {
-        $rule = Entity::NodemetricRule->find (hash => {nodemetric_rule_id => $rule_id});
-        $rule->setAttr (name => 'workflow_def_id', value => $workflow_def_id);
-        $rule->save();
-
-    } elsif ($scope_name eq 'service_provider') {
-        $rule = Entity::AggregateRule->find(hash => {aggregate_rule_id => $rule_id});
-        $rule->setAttr (name => 'workflow_def_id', value => $workflow_def_id);
-        $rule->save();
-    }
+    $rule    = Entity::Rule->find(hash => { rule_id => $rule_id });
+    $rule->setAttr (name => 'workflow_def_id', value => $workflow_def_id);
+    $rule->save();
 }
 
 =head2 runWorkflow
@@ -361,8 +375,7 @@ sub runWorkflow {
                name       => $workflow_name,
                related_id => $service_provider_id,
                params     => $workflow_params,
-               # TODO: Uncomment the following line once rules becomme entities.
-               # rule    => Entity->get(id => $rule_id),
+               rule    => Entity->get(id => $rule_id),
            );
 }
 

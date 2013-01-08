@@ -17,20 +17,12 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 14 july 2010
 
-=head1 NAME
+=pod
+=begin classdoc
 
 EEntity - EEntity is the highest general execution object
 
-=head1 SYNOPSIS
-
-
-
-=head1 DESCRIPTION
-
-EEntity is the highest general execution object
-
-=head1 METHODS
-
+=end classdoc
 =cut
 package EEntity;
 
@@ -159,6 +151,38 @@ sub setMock {
     General::checkParams(args => \%args, optional => { 'mock' => undef });
 
     $mocks_classes->{$class} = $args{mock};
+}
+
+=pod
+=begin classdoc
+
+Build a notification message with a given Operation
+
+@param operation
+@return notification message
+
+=end classdoc
+=cut
+
+sub notificationMessage {
+    my $self    = shift;
+    my %args    = @_;
+
+    General::checkParams(
+        args        => \%args,
+        required    => [ 'operation' ]
+    );
+
+    my $message = "";
+
+    my $template        = Template->new(General::getTemplateConfiguration());
+    my $templatedata    = { operation => $args{operation}->label };
+    $template->process('notificationmail.tt', $templatedata, \$message)
+        or throw Kanopya::Exception::Internal(
+             error => "Error when processing template notificationmail.tt"
+         );
+
+    return $message;
 }
 
 sub AUTOLOAD {

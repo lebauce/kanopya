@@ -184,9 +184,9 @@ my @classes = (
     'Entity::Combination::ConstantCombination',
     'Entity::Combination::AggregateCombination',
     'Entity::AggregateCondition',
-    'Entity::AggregateRule',
+    'Entity::Rule::AggregateRule',
     'Entity::NodemetricCondition',
-    'Entity::NodemetricRule',
+    'Entity::Rule::NodemetricRule',
     'Entity::WorkflowDef',
     'Entity::Component::Apache2::Apache2Virtualhost',
     'Entity::Component::Linux::LinuxMount',
@@ -197,7 +197,8 @@ my @classes = (
     'Entity::Component::Iscsi::IscsiPortal',
     'Entity::Component::Vmm',
     'Entity::Component::Vmm::Kvm',
-    'Entity::Component::Vmm::Xen'
+    'Entity::Component::Vmm::Xen',
+    'Entity::Rule',
 );
 
 sub registerClassTypes {
@@ -359,7 +360,7 @@ sub registerUsers {
           desc    => 'Entity master group containing all entities',
           system  => 1,
           methods => {
-              'Administrator' => [ 'create', 'update', 'remove', 'get', 'addPerm', 'removePerm' ]
+              'Administrator' => [ 'create', 'update', 'remove', 'get', 'addPerm', 'removePerm', 'subscribe' ]
           }
         },
     ];
@@ -1447,6 +1448,28 @@ sub populate_workflow_def {
     );
     my $resubmit_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'ResubmitHypervisor' })->id;
     $hypervisor_resubmit_wf->addStep( operationtype_id => $resubmit_hypervisor_op_id);
+
+    my $notify_wf_node      = $kanopya_wf_manager->createWorkflow(
+        workflow_name   => 'NotifyWorkflow node',
+        params          => {
+            internal   => {
+                scope_id    => 1
+            },
+            automatic  => { },
+            specific   => { }
+        }
+    );
+
+    my $notify_wf_service   = $kanopya_wf_manager->createWorkflow(
+        workflow_name   => 'NotifyWorkflow service_provider',
+        params          => {
+            internal   => {
+                scope_id    => 2
+            },
+            automatic  => { },
+            specific   => { }
+        }
+    );
 }
 
 sub populate_policies {

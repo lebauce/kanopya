@@ -115,21 +115,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 aggregate_rule
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::AggregateRule>
-
-=cut
-
-__PACKAGE__->might_have(
-  "aggregate_rule",
-  "AdministratorDB::Schema::Result::AggregateRule",
-  { "foreign.aggregate_rule_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 alerts
 
 Type: has_many
@@ -600,18 +585,18 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 nodemetric_rule
+=head2 rule
 
 Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::NodemetricRule>
+Related object: L<AdministratorDB::Schema::Result::Rule>
 
 =cut
 
 __PACKAGE__->might_have(
-  "nodemetric_rule",
-  "AdministratorDB::Schema::Result::NodemetricRule",
-  { "foreign.nodemetric_rule_id" => "self.entity_id" },
+  "rule",
+  "AdministratorDB::Schema::Result::Rule",
+  { "foreign.rule_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 

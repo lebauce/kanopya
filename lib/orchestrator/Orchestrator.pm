@@ -57,8 +57,8 @@ use Entity::ServiceProvider::Inside::Cluster;
 use Entity::ServiceProvider::Outside::Externalcluster;
 use Data::Dumper;
 use Parse::BooleanLogic;
-use Entity::AggregateRule;
-use Entity::NodemetricRule;
+use Entity::Rule::AggregateRule;
+use Entity::Rule::NodemetricRule;
 use Entity::NodemetricCondition;
 use Entity::Combination::NodemetricCombination;
 use Entity::WorkflowDef;
@@ -185,7 +185,7 @@ sub nodemetricManagement {
 
     $log->info('Cluster NM management'.$service_provider_id);
 
-    my @rules = Entity::NodemetricRule->search (
+    my @rules = Entity::Rule::NodemetricRule->search (
                     hash => {
                         nodemetric_rule_service_provider_id => $service_provider_id,
                         nodemetric_rule_state               => 'enabled',
@@ -431,20 +431,20 @@ sub clustermetricManagement{
     my $service_provider_id = $service_provider->getId();
 
     # Get rules relative to a cluster
-    my @rules_enabled   = Entity::AggregateRule->search(
+    my @rules_enabled   = Entity::Rule::AggregateRule->search(
                             hash => {
                                 aggregate_rule_service_provider_id => $service_provider_id,
                                 aggregate_rule_state               => 'enabled',
                             }
                         );
 
-    my @rules_triggered = Entity::AggregateRule->search(
+    my @rules_triggered = Entity::Rule::AggregateRule->search(
                               hash => {
                                   aggregate_rule_service_provider_id => $service_provider_id,
                                   aggregate_rule_state               => 'triggered'
                               }
                           );
-    my @rules_delayed   = Entity::AggregateRule->search(
+    my @rules_delayed   = Entity::Rule::AggregateRule->search(
                               hash => {
                                   aggregate_rule_service_provider_id => $service_provider_id,
                                   aggregate_rule_state               => 'delayed'

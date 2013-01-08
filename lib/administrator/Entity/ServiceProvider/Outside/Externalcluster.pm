@@ -37,10 +37,10 @@ use General;
 
 use Entity::Combination::NodemetricCombination;
 use Entity::NodemetricCondition;
-use Entity::NodemetricRule;
+use Entity::Rule::NodemetricRule;
 use Entity::Combination::AggregateCombination;
 use Entity::AggregateCondition;
-use Entity::AggregateRule;
+use Entity::Rule::AggregateRule;
 use Entity::Clustermetric;
 use Entity::CollectorIndicator;
 use Externalnode;
@@ -491,7 +491,7 @@ sub monitoringDefaultInit {
             aggregate_rule_label                => 'Cluster load',
             aggregate_rule_description          => 'Mem, cpu and network usages are low, your cluster may be oversized',
         };
-        Entity::AggregateRule->new(%$params_rule);
+        Entity::Rule::AggregateRule->new(%$params_rule);
     }
 
     if(defined $active_session_indicator_id) {
@@ -588,7 +588,7 @@ sub ruleGeneration{
         aggregate_rule_label                => 'Cluster '.$label.' homogeneity',
         aggregate_rule_description          => $label.' is not well balanced across the cluster',
     };
-    Entity::AggregateRule->new(%$params_rule);
+    Entity::Rule::AggregateRule->new(%$params_rule);
 
    $params_rule = {
         aggregate_rule_service_provider_id  => $extcluster_id,
@@ -597,7 +597,7 @@ sub ruleGeneration{
         aggregate_rule_label                => 'Cluster '.$label.' consistency',
         aggregate_rule_description          => 'The '.$label.' usage of some nodes of the cluster is far from the average behavior',
     };
-    Entity::AggregateRule->new(%$params_rule);
+    Entity::Rule::AggregateRule->new(%$params_rule);
 
    $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
@@ -615,7 +615,7 @@ sub ruleGeneration{
         aggregate_rule_label                => 'Cluster '.$label.' overload',
         aggregate_rule_description          => 'Average '.$label.' is too high, your cluster may be undersized',
     };
-    Entity::AggregateRule->new(%$params_rule);
+    Entity::Rule::AggregateRule->new(%$params_rule);
 
    $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
@@ -652,7 +652,7 @@ sub generateAOutOfRangeRule {
         aggregate_rule_label                => $label,
         aggregate_rule_description          => 'Check the indicators of the nodes generating isolated datas',
     };
-    Entity::AggregateRule->new(%$params_rule);
+    Entity::Rule::AggregateRule->new(%$params_rule);
 };
 
 sub generateOverRules {
@@ -679,7 +679,7 @@ sub generateOverRules {
     $params_rule->{aggregate_rule_label}       = 'Cluster '.$aggregate_condition->left_combination->toString().' overloaded';
     $params_rule->{aggregate_rule_description} = 'You may add a node';
 
-    Entity::AggregateRule->new(%$params_rule);
+    Entity::Rule::AggregateRule->new(%$params_rule);
 };
 
 
@@ -707,7 +707,7 @@ sub generateUnderRules {
     $params_rule->{aggregate_rule_label}       = 'Cluster '.$aggregate_condition->left_combination->toString().' underloaded';
     $params_rule->{aggregate_rule_description} = 'You may add a node';
 
-    Entity::AggregateRule->new(%$params_rule);
+    Entity::Rule::AggregateRule->new(%$params_rule);
 };
 
 # CHECK IF THERE ARE DATA OUT OF MEAN - x SIGMA RANGE
@@ -740,7 +740,7 @@ sub generateCoefficientOfVariationRules {
         aggregate_rule_label                => 'Heterogeneity detected with '.$aggregate_combination->toString(),
         aggregate_rule_description          => 'All the datas seems homogenous please check the loadbalancer configuration',
     };
-    Entity::AggregateRule->new(%$params_rule);
+    Entity::Rule::AggregateRule->new(%$params_rule);
 };
 
 # CHECK IF THERE ARE DATA OUT OF MEAN - x SIGMA RANGE
@@ -772,7 +772,7 @@ sub generateStandardDevRuleForNormalizedIndicatorsRules {
         aggregate_rule_label                => 'Data homogeneity',
         aggregate_rule_description          => 'All the datas seems homogenous please check the loadbalancer configuration',
     };
-    Entity::AggregateRule->new(%$params_rule);
+    Entity::Rule::AggregateRule->new(%$params_rule);
 };
 
 
@@ -834,7 +834,7 @@ sub generateNodeMetricRules{
             nodemetric_rule_state               => 'enabled',
             nodemetric_rule_service_provider_id => $extcluster_id,
         };
-        Entity::NodemetricRule->new(%$prule);
+        Entity::Rule::NodemetricRule->new(%$prule);
     }
 }
 

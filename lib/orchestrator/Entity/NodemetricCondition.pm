@@ -32,7 +32,7 @@ use strict;
 use warnings;
 use base 'Entity';
 use Entity::Combination;
-require 'Entity/NodemetricRule.pm';
+require 'Entity/Rule/NodemetricRule.pm';
 use Entity::Combination::ConstantCombination;
 use Data::Dumper;
 # logger
@@ -197,7 +197,7 @@ sub evalOnOneNode{
 
 sub getDependentRules {
     my $self = shift;
-    my @rules_from_same_service = Entity::NodemetricRule->search(
+    my @rules_from_same_service = Entity::Rule::NodemetricRule->search(
                                       hash => {
                                           nodemetric_rule_service_provider_id => $self->nodemetric_condition_service_provider_id
                                       }
@@ -232,7 +232,7 @@ sub getDependencies {
 
 sub delete {
     my $self = shift;
-    my @rules_from_same_service = Entity::NodemetricRule->search(hash => {nodemetric_rule_service_provider_id => $self->nodemetric_condition_service_provider_id});
+    my @rules_from_same_service = Entity::Rule::NodemetricRule->search(hash => {nodemetric_rule_service_provider_id => $self->nodemetric_condition_service_provider_id});
     my $id = $self->getId;
     RULE:
     while(@rules_from_same_service) {
