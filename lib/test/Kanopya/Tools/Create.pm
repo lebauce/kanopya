@@ -39,8 +39,15 @@ use Test::Exception;
 
 use Kanopya::Exceptions;
 use General;
+use NetconfPoolip;
+use Entity::Poolip;
+use Entity::NetconfRole;
+use Entity::Netconf;
 use Entity::Host;
+use Entity::Container;
+use Entity::ContainerAccess::NfsContainerAccess;
 use Entity::ServiceProvider::Inside::Cluster;
+use Hash::Merge qw(merge);
 
 =pod
 
@@ -48,10 +55,12 @@ use Entity::ServiceProvider::Inside::Cluster;
 
 Create a cluster
 
-@param hosts the cluster hosts
-@param cluster_name the name of the cluster
-@param $host_manager_params parameters to be given to the host manager
-@param $disk_manager_params parameters to be given to the disk manager
+@optional cluster_conf override configuration for cluster
+@optional components components for the cluster 
+@optional managers managers for the cluster 
+@optional hosts hosts to be created along the cluster
+
+@warning cluster_basehostname use cluster_name
 
 =end classdoc
 
@@ -60,10 +69,10 @@ Create a cluster
 sub createCluster {
     my ($self,%args) = @_;
 
-    my $hosts = $args{hosts};
-    my $cluster_name = $args{cluster_name};
-    my $host_manager_params = $args{host_manager_params};
-    my $disk_manager_params = $args{disk_manager_params};
+    my $components = $args{components};
+    my $interfaces = $args{interfaces};
+    my $managers   = $args{managers};
+    my %cluster_conf;
 
     diag('Retrieve the Kanopya cluster');
     my $kanopya_cluster = Kanopya::Tools::Retrieve->retrieveCluster();
@@ -73,60 +82,21 @@ sub createCluster {
 
     diag('Retrieving LVM disk manager');
     my $disk_manager = EEntity->new(
-                        entity => $kanopya_cluster->getComponent(name    => "Lvm",
-                                                                 version => 2)
+                           entity => $kanopya_cluster->getComponent(name    => "Lvm",
+                                                                    version => 2)
                        );
 
     diag('Retrieving iSCSI component');
     my $export_manager = EEntity->new(
-                              entity => $kanopya_cluster->getComponent(name    => "Iscsitarget",
-                                                                       version => 1)
+                             entity => $kanopya_cluster->getComponent(name    => "Iscsitarget",
+                                                                      version => 1)
                          );
-
-    diag('Retrieving NFS server component');
-    my $nfs_manager = EEntity->new(
-                           entity => $kanopya_cluster->getComponent(name    => "Nfsd",
-                                                                    version => 3)
-                      );
-
-    diag('Creating disk for image repository');
-    my $image_disk = $disk_manager->createDisk(
-            name       => "test_image_repository",
-            size       => 6 * 1024 * 1024 * 1024,
-            filesystem => "ext3",
-            vg_id      => 1
-    )->_getEntity;
-
-    diag('Creating export for image repository');
-    my $nfs = $nfs_manager->createExport(
-            container      => $image_disk,
-            export_name    => "test_image_repository",
-            client_name    => "*",
-            client_options => "rw,sync,no_root_squash"
-        );
 
     diag('Get a kernel');
     my $kernel = Entity::Kernel->find(hash => { kernel_name => $ENV{'KERNEL'} || "2.6.32-279.5.1.el6.x86_64" });
 
-    diag('Retrieve physical hosts');
-    my @hosts = Entity::Host->find(hash => { host_manager_id => $physical_hoster->id });
-
     diag('Retrieve the admin user');
     my $admin_user = Entity::User->find(hash => { user_login => 'admin' });
-
-    diag('Registering physical hosts');
-    foreach my $host (@{ $hosts }) {
-        Kanopya::Tools::Register->registerHost(board => $host);
-    }
-
-    diag('Deploy master image');
-    my $deploy = Entity::Operation->enqueue(
-                  priority => 200,
-                  type     => 'DeployMasterimage',
-                  params   => { file_path => "/vagrant/" . ($ENV{'MASTERIMAGE'} || "centos-6.3-opennebula3.tar.bz2"),
-                                keep_file => 1 },
-    );
-    Kanopya::Tools::Execution->executeOne(entity => $deploy);
 
     diag('Retrieve master image');
     my $masterimage = Entity::Masterimage->find( hash => { } );
@@ -142,51 +112,302 @@ sub createCluster {
         push @iscsi_portal_ids, $portal->id;
     }
 
+    my %default_conf = (
+                           active                => 1,
+                           cluster_name          => 'DefaultCluster',
+                           cluster_min_node      => 1,
+                           cluster_max_node      => 3,
+                           cluster_priority      => "100",
+                           cluster_si_shared     => 0,
+                           cluster_si_persistent => 1,
+                           cluster_domainname    => 'my.domain',
+                           cluster_nameserver1   => '208.67.222.222',
+                           cluster_nameserver2   => '127.0.0.1',
+                           cluster_basehostname  => 'default',
+                           masterimage_id        => $masterimage->id,
+                           user_id               => $admin_user->id,
+                           managers              => {
+                               host_manager => {
+                                   manager_id     => $physical_hoster->id,
+                                   manager_type   => "host_manager",
+                                   manager_params => {
+                                       cpu => 1,
+                                       ram => 2*1024*1024,
+                                   },
+                               },
+                               disk_manager => {
+                                   manager_id     => $disk_manager->id,
+                                   manager_type   => "disk_manager",
+                                   manager_params => {
+                                       vg_id => 1,
+                                       systemimage_size => 4 * 1024 * 1024 * 1024,
+                                   },
+                               },
+                               export_manager => {
+                                   manager_id     => $export_manager->id,
+                                   manager_type   => "export_manager",
+                                   manager_params => {
+                                       iscsi_portals => \@iscsi_portal_ids,
+                                   }
+                               },
+                           },
+                           components => {
+                           },
+                           interfaces => {
+                               public => {
+                                   interface_netconfs  => { $adminnetconf->id => $adminnetconf->id },
+                               }
+                           }
+                       );
+
+    if (defined $args{cluster_conf}) {
+        Hash::Merge::set_behavior('RIGHT_PRECEDENT');
+        %cluster_conf = %{ merge(\%default_conf, $args{cluster_conf}) };
+    }
+    else {
+        %cluster_conf = %default_conf;
+    }
+
+    my %comps;
+    if (defined $components) {
+        while (my ($component,$comp_conf) = each %$components) {
+            my %tmp = (
+                components => {
+                    $component => {
+                        component_type => ComponentType->find(hash => {
+                                               component_name => $component
+                                          })->id
+                    }
+                }
+            );
+            Hash::Merge::set_behavior('RIGHT_PRECEDENT');
+            %comps = %{ merge(\%comps, \%tmp) };
+        }
+        %cluster_conf = %{ merge(\%cluster_conf, \%comps) };
+    }
+
+    my %mgrs;
+    if (defined $managers) {
+        while (my ($manager,$mgr_conf) = each %$managers) {
+            my %tmp = (
+                managers => { 
+                    $manager => {
+                        manager_type => $manager,
+                        %$mgr_conf
+                    }
+                }
+            );
+            Hash::Merge::set_behavior('RIGHT_PRECEDENT');
+            %mgrs = %{ merge(\%mgrs, \%tmp) };
+        }
+        %cluster_conf = %{ merge(\%cluster_conf, \%mgrs) };
+    }
+
+    if (defined $interfaces) {
+        my %ifcs = (interfaces => $interfaces);
+        Hash::Merge::set_behavior('RIGHT_PRECEDENT');
+        %cluster_conf = %{ merge(\%cluster_conf, \%ifcs) };
+    }
+
     diag('Create cluster');
-    my $cluster_create = Entity::ServiceProvider::Inside::Cluster->create(
-                          active                 => 1,
-                          cluster_name           => $cluster_name,
-                          cluster_min_node       => "1",
-                          cluster_max_node       => "3",
-                          cluster_priority       => "100",
-                          cluster_si_shared      => 0,
-                          cluster_si_persistent  => 1,
-                          cluster_domainname     => 'my.domain',
-                          cluster_basehostname   => 'one',
-                          cluster_nameserver1    => '208.67.222.222',
-                          cluster_nameserver2    => '127.0.0.1',
-                          kernel_id              => $kernel->id,
-                          masterimage_id         => $masterimage->id,
-                          user_id                => $admin_user->id,
-                          managers               => {
-                              host_manager => {
-                                  manager_id     => $physical_hoster->id,
-                                  manager_type   => "host_manager",
-                                  manager_params => $host_manager_params,
-                              },
-                              disk_manager => {
-                                  manager_id       => $disk_manager->id,
-                                  manager_type     => "disk_manager",
-                                  manager_params   => $disk_manager_params,
-                              },
-                              export_manager => {
-                                  manager_id       => $export_manager->id,
-                                  manager_type     => "export_manager",
-                                  manager_params   => {
-                                      iscsi_portals => \@iscsi_portal_ids,
-                                  }
-                              },
-                          },
-                          components             => {
-                          },
-                          interfaces             => {
-                              public => {
-                                  interface_netconfs  => { $adminnetconf->id => $adminnetconf->id },
-                              }
-                          }
-                      );
+    my $cluster_create = Entity::ServiceProvider::Inside::Cluster->create(%cluster_conf);
 
     Kanopya::Tools::Execution->executeOne(entity => $cluster_create);
+
+    return Kanopya::Tools::Retrieve->retrieveCluster(criteria => { cluster_name => $cluster_conf{cluster_name} });
+}
+
+=pod
+
+=begin classdoc
+
+Create a cluster of VMs
+
+@param iaas the cluster of hypervisors to be used for the vm's cluster
+
+=end classdoc
+
+=cut
+
+sub createVmCluster {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => ['iaas']);
+
+    my $iaas = $args{iaas};
+
+    #get iaas Cloudmanager component to use it as host manager
+    my $host_manager = $iaas->getComponent(category => 'Cloudmanager');
+
+    #get fileimagemanager from kanopya cluster as export and disk manager
+    my $kanopya = Kanopya::Tools::Retrieve->retrieveCluster();
+    my $fileimagemanager = $kanopya->getComponent(name    => "Fileimagemanager",
+                                                  version => 0);
+
+
+    my $nfs_manager = EEntity->new(
+                          entity => $kanopya->getComponent(name    => 'Nfsd',
+                                                           version => 3)
+                      );
+
+    my $nfs;
+    eval {
+        $nfs = Kanopya::Tools::Retrieve->retrieveContainerAccess(
+                   name       => 'test_image_repository',
+                   type       => 'nfs',
+               );
+    };
+    if (not defined $nfs) {
+        my $disk_manager = EEntity->new(
+                               entity => $kanopya->getComponent(name    => "Lvm",
+                                                                version => 2)
+                           );
+
+        my $image_disk = $disk_manager->createDisk(
+                name       => "test_image_repository",
+                size       => 6 * 1024 * 1024 * 1024,
+                filesystem => "ext3",
+                vg_id      => 1
+        )->_getEntity;
+
+        $nfs = $nfs_manager->createExport(
+                   container      => $image_disk,
+                   export_name    => "test_image_repository",
+                   client_name    => "*",
+                   client_options => "rw,sync,no_root_squash",
+               );
+    }
+
+    delete $args{iaas};
+
+    return $self->createCluster(
+        %args,
+        managers => {
+            host_manager => {
+                manager_id     => $host_manager->id,
+                manager_params => {
+                    core    => 2,
+                    ram     => 512 * 1024 * 1024,
+                    ifaces  => 1,
+                },
+            },
+            disk_manager => {
+                manager_id => $fileimagemanager->id,
+                manager_params => {
+                     container_access_id => $nfs->id ,
+                     systemimage_size => 4 * 1024 * 1024 * 1024,
+                },
+            },
+            export_manager => {
+                manager_id => $fileimagemanager->id,
+                manager_params => {
+                     container_access_id => $nfs->id ,
+                     systemimage_size => 4 * 1024 * 1024 * 1024,
+                },
+            }
+        },
+    );
+}
+
+=pod
+
+=begin classdoc
+
+Create a iaas cluster. This function does provide the facility of giving a bridge interface to the cluster
+call createCluster() with an admin interface an a single bridge interface
+
+@optional interfaces
+
+=end classdoc
+
+=cut
+
+sub createIaasCluster {
+    my ($self, %args) = @_;
+
+    my $kanopya_cluster = Kanopya::Tools::Retrieve->retrieveCluster();
+
+    my $disk_manager = EEntity->new(
+                           entity => $kanopya_cluster->getComponent(name => "Lvm")
+                       );
+
+    my $nfs_manager = EEntity->new(
+                          entity => $kanopya_cluster->getComponent(name => "Nfsd")
+                      );
+
+    for my $datastore ("system_datastore", "test_image_repository") {
+        eval { Entity::Container->find(hash => {container_name => $datastore}); };
+        next if ! $@;
+
+        my $disk = $disk_manager->createDisk(
+                       name         => $datastore,
+                       size         => 128 * 1024 * 1024,
+                       filesystem   => "ext3",
+                       vg_id        => 1
+                   )->_getEntity;
+
+        my $nfs = $nfs_manager->createExport(
+                      container      => $disk,
+                      export_name    => $datastore,
+                      client_name    => "*",
+                      client_options => "rw,sync,no_root_squash"
+                  );
+    }
+
+    #get vms netconf
+    my $admin_poolip = Entity::Poolip->find(hash => { poolip_name => 'kanopya_admin' });
+    my $vms_role = Entity::NetconfRole->find(hash => { netconf_role_name => "vms" });
+    my $vms_netconf = Entity::Netconf->create(netconf_name    => "vms",
+                                              netconf_role_id => $vms_role->id);
+    NetconfPoolip->new(netconf_id => $vms_netconf->id,
+                       poolip_id  => $admin_poolip->id);
+
+    my $iaas = $self->createCluster (
+                   components => {
+                       opennebula => {
+                       },
+                       kvm => {
+                       }
+                   },
+                   interfaces => {
+                        vms => {
+                            interface_netconfs => {
+                                $vms_netconf->id => $vms_netconf->id
+                            }
+                        }
+                   },
+                   %args
+                 );
+
+    my $opennebula = $iaas->getComponent(name => "Opennebula");
+    my $kvm = $iaas->getComponent(name => "Kvm");
+
+    my $system_datastore = Kanopya::Tools::Retrieve->retrieveContainerAccess(
+                               name => 'system_datastore',
+                               type => 'nfs'
+                           );
+    my $test_image_repository = Kanopya::Tools::Retrieve->retrieveContainerAccess(
+                                    name => 'test_image_repository',
+                                    type => 'nfs'
+                                );
+    $kvm->setConf(conf => {
+        iaas_id => $opennebula->id,
+      } );
+
+    $opennebula->setConf(conf => {
+        image_repository_path    => "/srv/cloud/images",
+        opennebula3_id           => $opennebula->id,
+        opennebula3_repositories => [ {
+            container_access_id  => $test_image_repository->id,
+            repository_name      => 'image_repo'
+        }, {
+            container_access_id  => $system_datastore->id,
+            repository_name      => 'system'
+        } ],
+        hypervisor               => "kvm"
+    } );
+
+    return $iaas;
 }
 
 1;

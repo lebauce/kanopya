@@ -45,6 +45,8 @@ use Kanopya::Tools::Retrieve;
 
 my $testing = 1;
 
+main();
+
 sub main {
     Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
     my $adm = Administrator->new;
@@ -269,7 +271,7 @@ sub _create_and_configure_cluster {
                 manager_type     => "export_manager",
                 manager_params   => {
                     iscsi_portals => \@iscsi_portal_ids,
-                    target        => 'iqn.2012-11.com.hederatech.nas:vm',
+                    target        => 'iqn.2012-11.com.hederatech.nas:' . ($ENV{'LUNNAME'} || 'vm'),
                     lun           => 0
                 }
             },

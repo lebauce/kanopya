@@ -56,6 +56,10 @@ use constant ATTR_DEF => {
         pattern      => '^[0-9]+$',
         is_mandatory => 1,
     },
+    masterimage_defaultkernel => {
+        pattern      => '^[0-9]*$',
+        is_mandatory => 0
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }

@@ -141,7 +141,7 @@ sub _create_and_configure_cluster {
     );
 
     diag('Get a kernel for KVM');
-    my $kernel = Entity::Kernel->find(hash => { kernel_name => '3.0.42-0.7-default' });
+    my $kernel = Entity::Kernel->find(hash => { kernel_name => $ENV{'KERNEL'} || '3.0.42-0.7-default' });
 
     diag('Retrieve the admin user');
     my $admin_user = Entity::User->find(hash => { user_login => 'admin' });
@@ -155,7 +155,7 @@ sub _create_and_configure_cluster {
     my $deploy = Entity::Operation->enqueue(
                   priority => 200,
                   type     => 'DeployMasterimage',
-                  params   => { file_path => "/vagrant/" . ($ENV{'MASTERIMAGE'} || "centos-6.3-opennebula3.tar.bz2"),
+                  params   => { file_path => "/masterimages/" . ($ENV{'MASTERIMAGE'} || "centos-6.3-opennebula3.tar.bz2"),
                                 keep_file => 1 },
     );
     Kanopya::Tools::Execution->executeOne(entity => $deploy);

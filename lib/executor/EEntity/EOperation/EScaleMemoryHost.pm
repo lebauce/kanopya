@@ -144,7 +144,8 @@ sub postrequisites {
         return 5;
     }
     else {
-        my $error = 'ScaleIn of vm <' . $self->{context}->{host}->id . '> : Failed. Current RAM is <' . $vm_ram . '>';
+        my $lastmessage = $self->{context}->{cloudmanager_comp}->vmLoggedErrorMessage(opennebula3_vm => $self->{context}->{host});
+        my $error = 'ScaleIn of vm <' . $self->{context}->{host}->id . '> : Failed. Current RAM is <' . $vm_ram . '>. Cloud manager logs: '.$lastmessage;
         Message->send(
              from    => 'EScaleMemoryHost',
              level   => 'error',

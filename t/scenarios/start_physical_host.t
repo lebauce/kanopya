@@ -42,29 +42,6 @@ use Kanopya::Tools::Create;
 
 my $testing = 0;
 my $NB_HYPERVISORS = 1;
-my $boards = [
-    {
-        ram    => 2048,
-        core   => 2,
-        ifaces => [
-            {
-                name => "eth0",
-                mac  => "00:11:22:33:44:55",
-                pxe  => 1
-            },
-            {
-                name => "eth1",
-                mac  => "66:77:88:99:00:aa",
-                pxe  => 0,
-            },
-            {
-                name => "eth2",
-                mac  => "aa:bb:cc:dd:ee:ff",
-                pxe  => 0,
-            },
-        ]
-    },
-];
 
 main();
 
@@ -76,46 +53,25 @@ sub main {
         $adm->beginTransaction;
     }
 
-    diag('Create and configure cluster');
-    my $host_manager_params = {
-        cpu => 1,
-        ram => 512 * 1024 * 1024,
-    };
-    my $disk_manager_params = {
-        vg_id            => 1,
-        systemimage_size => 4 * 1024 * 1024 * 1024,
-    };
+    diag('Register master image');
+    lives_ok {
+        Kanopya::Tools::Register::registerMasterImage();
+    } 'Register master image';
 
-    Kanopya::Tools::Create->createCluster(
-        cluste_name => 'MyCluster',
-        hosts => $boards,
-        host_manager_params => $host_manager_params,
-        disk_manager_params => $disk_manager_params,
-    );
+    diag('Create and configure cluster');
+    my $cluster;
+    lives_ok {
+        $cluster = Kanopya::Tools::Create->createCluster();
+    } 'Create cluster';
 
     diag('Start physical host');
-    start_cluster();
+    lives_ok {
+        Kanopya::Tools::Execution->startCluster(cluster => $cluster);
+    } 'Start cluster';
 
     if ($testing == 1) {
         $adm->rollbackTransaction;
     }
-}
-
-sub start_cluster {
-    lives_ok {
-        my $cluster;
-        diag('retrieve Cluster via name');
-        $cluster = Kanopya::Tools::Retrieve->retrieveCluster(criteria => {cluster_name => 'MyCluster'});
-        Kanopya::Tools::Execution->executeOne(entity => $cluster->start());
-
-        my ($state, $timestemp) = $cluster->getState;
-        if ($state eq 'up') {
-            diag("Cluster $cluster->cluster_name started successfully");
-        }
-        else {
-            die "Cluster is not 'up'";
-        }
-    } 'Start cluster';
 }
 
 1;

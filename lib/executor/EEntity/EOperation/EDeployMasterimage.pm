@@ -38,6 +38,10 @@ use warnings;
 
 use Data::Dumper;
 use XML::Simple;
+use File::Temp qw/ tempdir /;
+use File::Copy qw/ move /;
+use File::Path qw/ mkpath /;
+use Kanopya::Config;
 use Kanopya::Exceptions;
 use Entity::Masterimage;
 use Entity::ServiceProvider::Inside::Cluster;
@@ -93,14 +97,15 @@ sub execute {
     my $self = shift;
     my ($cmd, $cmd_res);
 
-    # Untar master image archive on local /tmp
-    $log->debug("Unpack archive files from archive '$self->{params}->{file}' into /tmp");
+    # Untar master image archive in a temporary folder
+    my $tmpdir = tempdir(CLEANUP => 1);
+    $log->debug("Unpack archive files from archive '$self->{params}->{file}' into $tmpdir");
     my $compress = $self->{params}->{compress_type} eq 'bzip2' ? 'j' : 'z';
-    $cmd = "tar -x -$compress -f $self->{params}->{file} -C /tmp"; 
+    $cmd = "tar -x -$compress -f $self->{params}->{file} -C $tmpdir"; 
     $cmd_res = $self->getEContext->execute(command => $cmd);
 
     # check metadata file exists
-    my $metadatafile = '/tmp/img-metadata.xml';
+    my $metadatafile = "$tmpdir/img-metadata.xml";
     if(! -e $metadatafile) {
         $errmsg = "File missing in archive ; $metadatafile";
         $log->error($errmsg);
@@ -109,7 +114,7 @@ sub execute {
     
     # parse and validate metadata file
     # TODO check metadata format and values
-    my $metadata = XMLin($metadatafile);
+    my $metadata = XMLin($metadatafile, ForceArray => [ "kernel", "component" ]); # , ForceArray => 'name');
     my $imagefile = $metadata->{file};
     
     # retrieve master images directory
@@ -118,22 +123,45 @@ sub execute {
     $directory =~ s/\/$//g;
     
     # get the image size
-    $cmd = "du -s --bytes /tmp/$imagefile | awk '{print \$1}'";
+    $cmd = "du -s --bytes $tmpdir/$imagefile | awk '{print \$1}'";
     $cmd_res = $self->getEContext->execute(command => $cmd);
     my $image_size = $cmd_res->{stdout};  
     
     # create the directory for the image
-    $cmd = "mkdir -p $directory/$imagefile";
-    $cmd_res = $self->getEContext->execute(command => $cmd);
+    mkpath("$directory/$imagefile");
     
     # move image and metadata to the directory
-    $cmd = "mv /tmp/$imagefile /tmp/img-metadata.xml $directory/$imagefile";
-    $cmd_res = $self->getEContext->execute(command => $cmd);
-    
+    move("$tmpdir/$imagefile", "$directory/$imagefile");
+
+    # register the available kernels
+    my $defaultkernel;
+    if (defined $metadata->{kernel}) {
+        while (my ($name, $infos) = each(%{$metadata->{kernel}})) {
+            my $kernel;
+            eval {
+                $kernel = Entity::Kernel->find(hash => { kernel_name => $name });
+            };
+            if ($@) {
+                # move image and metadata to the directory
+                my $tftpdir = Kanopya::Config::get('executor')->{tftp}->{directory};
+                move("$tmpdir/" . $infos->{file}, $tftpdir);
+
+                $kernel = Entity::Kernel->new(
+                    kernel_name    => $name,
+                    kernel_version => $infos->{version},
+                    kernel_desc    => $infos->{description}
+                );
+            }
+
+            if ($infos->{default}) {
+                $defaultkernel = $kernel->id;
+            }
+        }
+    }
+
     # delete uploaded archive
     if (! $self->{params}->{keep_file}) {
-        $cmd = "rm $self->{params}->{file}";
-        $cmd_res = $self->getEContext->execute(command => $cmd);
+        unlink $self->{params}->{file};
     }
 
     my $args = {
@@ -142,6 +170,7 @@ sub execute {
         masterimage_desc => $metadata->{description},
         masterimage_os   => $metadata->{os},
         masterimage_size => $image_size,
+        masterimage_defaultkernel_id => $defaultkernel
     };
     
     my $masterimage = Entity::Masterimage->new(%$args);
