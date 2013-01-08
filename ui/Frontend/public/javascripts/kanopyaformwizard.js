@@ -235,12 +235,6 @@ var KanopyaFormWizard = (function() {
             }
         }
 
-        if ($(this.content).height() > $(window).innerHeight() - 200) {
-            $(this.content).css('height', $(window).innerHeight() - 200);
-            $(this.content).css('width', $(this.content).width() + 15);
-        }
-        $(this.content).dialog('option', 'position', 'top');
-
         // Use jQuery.mutiselect (after DOM loaded)
         this.content.find('select[multiple="multiple"]').multiselect({selectedList: 4});
         this.content.find('select[multiple!="multiple"]').not('.unit').multiselect({
@@ -248,6 +242,8 @@ var KanopyaFormWizard = (function() {
             header: false,
             selectedList: 1
         });
+
+        this.resizeDialog();
     };
 
     KanopyaFormWizard.prototype.getOptions = function(name, value, relations) {
@@ -1022,6 +1018,7 @@ var KanopyaFormWizard = (function() {
             this.changeStep({}, $(this.form).formwizard("state"));
             $(this.form).bind('step_shown', $.proxy(this.changeStep, this));
         }
+        this.resizeDialog();
     }
 
     KanopyaFormWizard.prototype.errorPlacement = function(error, element) {
@@ -1164,6 +1161,18 @@ var KanopyaFormWizard = (function() {
             $(this.form).formwizard("destroy");
             $(this.content).remove();
         }, this), 10);
+    }
+
+    KanopyaFormWizard.prototype.resizeDialog = function() {
+        if ($(this.content).height() > $(window).innerHeight() - 200) {
+            $(this.content).css('height', $(window).innerHeight() - 200);
+        }
+        if ($(this.content).width() > $(window).innerWidth() - 50) {
+            $(this.content).css('width', $(this.content).innerWidth() - 50);
+        } else {
+            $(this.content).css('width', $(this.content).width() + 15);
+        }
+        $(this.content).dialog('option', 'position', 'top');
     }
 
     KanopyaFormWizard.prototype.validateForm = function () {
