@@ -146,6 +146,10 @@ sub execute {
                 my $tftpdir = Kanopya::Config::get('executor')->{tftp}->{directory};
                 move("$tmpdir/" . $infos->{file}, $tftpdir);
 
+                if (defined ($infos->{initrd})) {
+                    move("$tmpdir/" . $infos->{initrd}, $tftpdir);
+                }
+
                 $kernel = Entity::Kernel->new(
                     kernel_name    => $name,
                     kernel_version => $infos->{version},
