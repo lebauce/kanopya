@@ -637,7 +637,7 @@ sub vmLoggedErrorMessage {
         required => [ 'opennebula3_vm' ]
     );
 
-    my $command = one_command('tail -n 50 /var/log/one/oned.log |grep "LOG I '.($args{opennebula3_vm}->onevm_id).' Error"');
+    my $command = one_command('tail -n 10 /var/log/one/'.($args{opennebula3_vm}->onevm_id).'.log');
 
     $log->debug("commande = $command");
     my $result  = $self->getEContext->execute(command => $command);
@@ -1503,7 +1503,7 @@ sub checkUp {
         $log->info('VM still pending'); #TODO check HV state
         return 0;
     }
-    
+
     return 0;
 }
 
