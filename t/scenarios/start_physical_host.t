@@ -66,7 +66,7 @@ sub main {
 
     diag('Start physical host');
     lives_ok {
-        Kanopya::Tools::Execution::startCluster(cluster => $cluster);
+        Kanopya::Tools::Execution->startCluster(cluster => $cluster);
     } 'Start cluster';
 
     if ($testing == 1) {
