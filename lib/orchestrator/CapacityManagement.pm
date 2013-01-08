@@ -881,7 +881,9 @@ sub _scaleOnNewHV {
     my $new_value    = $args{new_value};
     my $scale_metric = $args{scale_metric};
 
-    my $hv_cluster   = $self->{_cloud_manager}->getServiceProvider();
+    my $hv_cluster   = (defined $self->{_cloud_manager}) ?
+                       $self->{_cloud_manager}->getServiceProvider() :
+                       undef;
 
     # Add new hypervisor
     push @{$self->{_operationPlan}}, {
