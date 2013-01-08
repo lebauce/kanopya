@@ -12,12 +12,33 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+=pod
+=begin classdoc
+
+ERule - Abstract class of Rule object
+
+@since 2012-dec-19
+
+=end classdoc
+=cut
+
 package EEntity::ERule;
 use base "EEntity";
+use strict;
+use warnings;
 
 use General;
 
-use vars qw ( $AUTOLOAD );
+=pod
+=begin classdoc
+
+Implement specific notification message
+
+@param operation
+@return notification message
+
+=end classdoc
+=cut
 
 sub notificationMessage {
     my $self    = shift;
@@ -37,7 +58,7 @@ sub notificationMessage {
     };
     $template->process('rulenotificationmail.tt', $templatedata, \$message)
         or throw Kanopya::Exception::Internal(
-             error => "Error when processing template notificationmail.tt"
+             error => "Error when processing template rulenotificationmail.tt"
          );
 
     return $message;

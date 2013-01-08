@@ -161,7 +161,7 @@ sub deassociateWorkflow {
     my @notification_subscriptions  = NotificationSubscription->search(hash => {
             entity_id   => $args{rule_id}
     });
-    if ($#notification_subscriptions gt -1) {
+    if ($#notification_subscriptions > -1) {
         # If any, must re-associate the rule with the empty workflow
         Entity::Rule->find(hash => {
             rule_id => $args{rule_id}
@@ -375,7 +375,6 @@ sub runWorkflow {
                name       => $workflow_name,
                related_id => $service_provider_id,
                params     => $workflow_params,
-               # TODO: Uncomment the following line once rules becomme entities.
                rule    => Entity->get(id => $rule_id),
            );
 }

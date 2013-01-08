@@ -17,20 +17,12 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 14 july 2010
 
-=head1 NAME
+=pod
+=begin classdoc
 
 EEntity - EEntity is the highest general execution object
 
-=head1 SYNOPSIS
-
-
-
-=head1 DESCRIPTION
-
-EEntity is the highest general execution object
-
-=head1 METHODS
-
+=end classdoc
 =cut
 package EEntity;
 
