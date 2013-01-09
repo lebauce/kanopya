@@ -154,7 +154,7 @@ sub createCluster {
                            components => {
                            },
                            interfaces => {
-                               public => {
+                               admin => {
                                    interface_netconfs  => { $adminnetconf->id => $adminnetconf->id },
                                }
                            }
