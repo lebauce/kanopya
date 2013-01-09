@@ -123,6 +123,7 @@ sub execute {
             # Public network on loadbalanced cluster must be configured only
             # on the master node
             if ($iface->hasRole(role => 'public') and $is_loadbalanced and not $is_masternode) {
+                $log->info("Skipping interface " . $iface->iface_name);
                 next IFACE;
             }
 
