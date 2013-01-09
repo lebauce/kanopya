@@ -96,6 +96,20 @@ sub registerHost {
     return $host;
 }
 
+=pod
+
+=begin classdoc
+
+Register a masterimage into kanopya
+
+@param masterimage_name (unamed argument)
+
+@return masterimage the created masterimage
+
+=end classdoc
+
+=cut
+
 sub registerMasterImage {
     my $name = shift || $ENV{'MASTERIMAGE'} || "centos-6.3-opennebula3.tar.bz2";
 
