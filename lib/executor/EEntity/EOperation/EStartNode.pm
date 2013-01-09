@@ -113,7 +113,7 @@ sub execute {
     }
 
     my $is_loadbalanced = $self->{context}->{cluster}->isLoadBalanced;
-    my $is_masternode = $self->{context}->{cluster}->getCurrentNodesCount == 0;
+    my $is_masternode = $self->{context}->{cluster}->getCurrentNodesCount == 1;
 
     $log->info("Generate network configuration");
     IFACE:
