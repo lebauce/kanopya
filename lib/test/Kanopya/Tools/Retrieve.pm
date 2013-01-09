@@ -41,6 +41,7 @@ use Kanopya::Exceptions;
 use General;
 use Entity::Host;
 use Entity::ServiceProvider::Inside::Cluster;
+use Entity::Netconf;
 
 =pod
 
@@ -103,6 +104,31 @@ sub retrieveContainerAccess {
     }
 
     return $container_access;
+}
+
+=pod
+
+=begin classdoc
+
+Use the BaseDB `find` method to retrieve a netconf from Kanopya
+
+@param criteria the criteria hash for `find` research
+
+@return netconf the network configuration
+
+=end classdoc
+
+=cut
+
+sub retrieveNetconf {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'criteria' ]);
+    my $criteria = $args{criteria};
+
+    my $netconf = Entity::Netconf->find(hash => $criteria);
+
+    return $netconf;
 }
 
 1;

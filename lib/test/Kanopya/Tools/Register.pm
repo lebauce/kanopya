@@ -42,6 +42,8 @@ use General;
 use Entity::Host;
 use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Masterimage;
+use Entity::Vlan;
+use NetconfVlan;
 
 =pod
 
@@ -109,6 +111,35 @@ sub registerMasterImage {
 
     return Entity::Masterimage->find(hash     => { },
                                      order_by => 'masterimage_id');
+}
+
+=pod
+
+=begin classdoc
+
+Register a VLAN into Kanopya
+
+@param netconf network configuration
+
+@param vlan_name name of the VLAN to be registered
+
+@param vlan_number ID of the VLAN to be registered
+
+=end classdoc
+
+=cut
+
+sub registerVlan {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'netconf', 'vlan_name', 'vlan_number' ]);
+
+    my $netconf = $args{netconf};
+    my $vlan_name = $args{vlan_name};
+    my $vlan_number = $args{vlan_number};
+
+    my $vlan = Entity::Vlan->new(vlan_name => $vlan_name, vlan_number => $vlan_number);
+    NetconfVlan->new(netconf_id => $netconf->id, vlan_id => $vlan->id);
 }
 
 1;
