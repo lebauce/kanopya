@@ -2,11 +2,11 @@
 
 =head1 SCOPE
 
-TODO
+Setup a cluster with a bonded interface, and provide it an host with the matching bonded ifaces
+Deactivate one of the slave, ping the bonded iface, then reactivate the iface and deactivate the
+other slave, and ping again the master.
 
 =head1 PRE-REQUISITE
-
-TODO
 
 =cut
 
@@ -21,64 +21,19 @@ Log::Log4perl->easy_init({
 });
 
 use Administrator;
-use NetconfVlan;
-use Entity::Vlan;
-use Entity::ServiceProvider::Inside::Cluster;
-use Entity::User;
 use Entity::Host;
-use Entity::Kernel;
-use Entity::Masterimage;
-use Entity::Network;
-use Entity::Poolip;
-use Entity::Operation;
-use Entity::Netconf;
 use Entity::Iface;
-use Externalnode::Node;
+use Net::Ping;
+use Ip;
 
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::Register;
 use Kanopya::Tools::Retrieve;
+use Kanopya::Tools::Create;
 
 my $testing = 0;
 
 my $NB_HYPERVISORS = 1;
-my $boards = [
-    {
-        ram    => 4,
-        core   => 2,
-        ifaces => [
-            {
-                name => "eth0",
-                mac  => "00:11:22:33:44:55",
-                pxe  => 1
-            },
-            {
-                name => "eth1",
-                mac  => "66:77:88:99:00:aa",
-                pxe  => 0,
-		        master => 'bond0',
-            },
-            {
-                name => "eth2",
-                mac  => "66:87:88:99:00:aa",
-                pxe  => 0,
-        		master => 'bond0',
-            },
-            {
-                name => "bond0",
-                mac  => "66:89:88:99:00:aa",
-                pxe  => 0,
-            },
-        ]
-    },
-];
-
-my @interfaces = (
-    {
-        name	=> 'face_one',
-        bond_nb => 0,
-    },
-);
 
 main();
 
@@ -90,188 +45,105 @@ sub main {
         $adm->beginTransaction;
     }
 
+    my $host = Entity::Host->find(hash => { 
+	           -or => [ host_serial_number => 'Desperado', host_serial_number => 'Heineken', host_serial_number => 'Swinkels' ] 
+	       });
+    
+    my $eth3 = Entity::Iface->find(hash => {
+                   iface_name => 'eth3',
+                   host_id    => $host->id,
+               });
+    $eth3->setAttr(name => 'iface_name', value => 'bond0');
+    $eth3->save();
+
+    my $eth1 = Entity::Iface->find(hash => {
+	           iface_name => 'eth1',
+		   host_id    => $host->id,
+	       });
+
+    $eth1->setAttr(name => 'master', value => 'bond0');
+    $eth1->save();
+
+     my $eth2 = Entity::Iface->find(hash => {
+	           iface_name => 'eth2',
+		   host_id    => $host->id,
+	       });
+
+    $eth2->setAttr(name => 'master', value => 'bond0');
+    $eth2->save();
+    
+    diag('register masterimage');
+    Kanopya::Tools::Register::registerMasterImage();
+
+    diag('retrieve admin netconf');
+    my $adminnetconf = Kanopya::Tools::Retrieve->retrieveNetconf(criteria => { netconf_name => 'Kanopya admin' });
+
     diag('Create and configure cluster');
-    _create_and_configure_cluster();
+    my $bondage = Kanopya::Tools::Create->createCluster(
+                      cluster_conf => {
+                          cluster_name => 'Bondage',
+                          cluster_basehostname => 'bondage',
+                      },
+                      interfaces => {
+                          public => {
+                              interface_netconfs  => { $adminnetconf->id => $adminnetconf->id },
+                              bonds_number => 2
+                          },
+                      }
+                  );
 
     diag('Start host with bonded interfaces');
-    start_cluster();
+    Kanopya::Tools::Execution->startCluster(cluster => $bondage);
 
-    if ($testing == 1) {
+    diag('deactivate slave n°1');
+    _deactivate_iface(iface => 'eth1', cluster => $bondage);
+
+    diag('ping iface bond0');
+    _ping_ifaces();
+
+    diag('deactivate slave n°2');
+    _deactivate_iface(iface => 'eth2', cluster => $bondage);
+
+    diag('ping iface bond0');
+    _ping_ifaces();
+
+    if($testing == 1) {
         $adm->rollbackTransaction;
     }
 }
 
-sub start_cluster {
+sub _deactivate_iface {
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['iface','cluster']);
+
+    my @hosts = values (%{ $args{cluster}->getHosts() });
+    my $host = pop @hosts;
+    my $ehost = EEntity->new(entity => $host);
+    $ehost->getEContext->execute(command => 'ifconfig ' . $args{iface} . ' down');
+}
+
+
+sub _ping_ifaces {
     lives_ok {
         diag('retrieve Cluster via name');
         my $cluster = Kanopya::Tools::Retrieve->retrieveCluster(criteria => {cluster_name => 'Bondage'});
-        Kanopya::Tools::Execution->executeOne(entity => $cluster->start());
 
-        my ($state, $timestemp) = $cluster->getState;
-        if ($state eq 'up') {
-            diag("Cluster $cluster->cluster_name started successfully");
+        my $hosts = $cluster->getHosts();
+        my @bonded_ifaces;
+        foreach my $host (values %$hosts) {
+            my @ifaces = grep { scalar @{ $_->slaves} > 0 } Entity::Iface->find(hash => {host_id => $host->id});
+            push @bonded_ifaces, @ifaces;
         }
-        else {
-            die "Cluster is not 'up'";
+
+        my $ip;
+        my $ping;
+        my $pingable = 0;
+        foreach my $iface (@bonded_ifaces) {
+            $ping = Net::Ping->new('icmp');
+            $pingable |= $ping->ping($iface->getIPAddr, 10);
         }
-    } 'Start cluster';
+    } 'ping cluster\'s hosts bonded ifaces';
 }
 
-sub _create_and_configure_cluster {
-    diag('Retrieve the Kanopya cluster');
-    my $kanopya_cluster = Kanopya::Tools::Retrieve->retrieveCluster();
-
-    diag('Get physical hoster');
-    my $physical_hoster = $kanopya_cluster->getHostManager();
-
-    diag('Retrieve Lvm disk manager');
-    my $disk_manager = EEntity->new(
-        entity => $kanopya_cluster->getComponent(
-            name    => 'Lvm',
-            version => 2
-        )
-    );
-
-    diag('Retrieving iSCSI component');
-    my $export_manager = EEntity->new(
-        entity => $kanopya_cluster->getComponent(
-            name    => 'Iscsitarget',
-            version => 1
-        )
-    );
-
-    diag('Get a kernel for KVM');
-    my $kernel = Entity::Kernel->find(hash => { kernel_name => $ENV{'KERNEL'} || '3.0.42-0.7-default' });
-
-    diag('Retrieve the admin user');
-    my $admin_user = Entity::User->find(hash => { user_login => 'admin' });
-
-    diag('Registering physical hosts');
-    foreach my $board (@{ $boards }) {
-        Kanopya::Tools::Register->registerHost(board => $board);
-    }
-
-    diag('Deploy master image');
-    my $deploy = Entity::Operation->enqueue(
-                  priority => 200,
-                  type     => 'DeployMasterimage',
-                  params   => { file_path => "/masterimages/" . ($ENV{'MASTERIMAGE'} || "centos-6.3-opennebula3.tar.bz2"),
-                                keep_file => 1 },
-    );
-    Kanopya::Tools::Execution->executeOne(entity => $deploy);
-
-    diag('Retrieve KVM master image');
-    my $masterimage = Entity::Masterimage->find( hash => { } );
-
-    diag('Retrieve admin NetConf');
-    my $adminnetconf = Entity::Netconf->find(hash => {
-        netconf_name    => "Kanopya admin"
-    });
-
-    diag('Retrieve admin network');
-    my @iscsi_portal_ids;
-    for my $portal (Entity::Component::Iscsi::IscsiPortal->search(hash => { iscsi_id => $export_manager->id })) {
-        push @iscsi_portal_ids, $portal->id;
-    }
-
-    diag('Create cluster and configure Opennebula component');
-    my $cluster_create = Entity::ServiceProvider::Inside::Cluster->create(
-        active                 => 1,
-        cluster_name           => "Bondage",
-        cluster_min_node       => "1",
-        cluster_max_node       => "3",
-        cluster_priority       => "100",
-        cluster_si_shared      => 0,
-        cluster_si_persistent  => 1,
-        cluster_domainname     => 'my.domain',
-        cluster_basehostname   => 'one',
-        cluster_nameserver1    => '208.67.222.222',
-        cluster_nameserver2    => '127.0.0.1',
-        kernel_id              => $kernel->id,
-        masterimage_id         => $masterimage->id,
-        user_id                => $admin_user->id,
-        managers               => {
-            host_manager => {
-                manager_id     => $physical_hoster->id,
-                manager_type   => "host_manager",
-                manager_params => {
-                    cpu        => 1,
-                    ram        => 4 * 1024 * 1024,
-                }
-            },
-            disk_manager => {
-                manager_id       => $disk_manager->id,
-                manager_type     => "disk_manager",
-                manager_params   => {
-                    vg_id            => 1,
-                    systemimage_size => 4 * 1024 * 1024 * 1024
-                },
-            },
-            export_manager => {
-                manager_id       => $export_manager->id,
-                manager_type     => "export_manager",
-                manager_params   => {
-                    iscsi_portals => \@iscsi_portal_ids,
-                }
-            },
-        },
-        components => {
-            opennebula => {
-                component_type => ComponentType->find(hash => {component_name => 'Opennebula'})->id,
-            },
-        },
-        interfaces => {
-            public => {
-                interface_netconfs  => { $adminnetconf->id => $adminnetconf->id },
-                    bonds_number => 2
-            },
-        },
-    );
-    Kanopya::Tools::Execution->executeOne(entity => $cluster_create);
-
-    diag('retrieve Cluster via name');
-    my $cluster = Kanopya::Tools::Retrieve->retrieveCluster(criteria => {cluster_name => 'Bondage'});
-
-    diag('retrieve Opennebula component');
-    my $opennebula = $cluster->getComponent(
-        name    => "Opennebula",
-        version => 3
-    );
-
-    diag('configuring Opennebula image repository');
-    $opennebula->setConf(
-        conf => {
-            image_repository_path => "/srv/cloud/images",
-            opennebula3_id        => $opennebula->id,
-            hypervisor            => "kvm",
-        }
-    );
-
-    diag('associate netconf to ifaces');
-    my @c_interfaces = Entity::Interface->search(hash => {service_provider_id => $cluster->id});
-    my $hosts = $cluster->getHosts;
-    foreach my $host (values %$hosts) {
-        my @ifaces = Entity::Ifaces->search(hash => {host_id => $host->id});
-        my @simple_ifaces = grep {scalar @{ $_->slaves } == 0 && !$_->master } @ifaces;
-        my @bonded = grep {scalar @{ $_->slaves } > 0 || defined $_->master } @ifaces;
-        foreach my $interface (@c_interfaces) {
-            my @netconfs = $interface->netconfs;
-            if (!$interface->bonds_number || $interface->bonds_number == 0) {
-                foreach my $simple_iface (@simple_ifaces) {
-                    foreach my $netconf (@netconfs) {
-                        NetconfIface->new(netconf_id => $netconf->id,
-                                          iface_id   => $simple_iface->id);
-                    }
-                }
-            }
-            else {
-                foreach my $bonded (@bonded) {
-                    foreach my $netconf (@netconfs) {
-                        NetconfIface->new(netconf_id => $netconf->id,
-                                          iface_id   => $bonded->id);
-                    }
-                }
-            }
-        }
-    }
-}
+1;
