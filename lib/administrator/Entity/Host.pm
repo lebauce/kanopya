@@ -394,16 +394,15 @@ sub becomeNode {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'inside_id', 'master_node',
-                                       'node_number', 'systemimage_id' ]);
+                         required => [ 'inside_id', 'master_node', 'node_number' ],
+                         optional => { 'systemimage_id' => undef });
 
-    my $adm = Administrator->new();
     my $node = Externalnode::Node->new(
-                   inside_id           => $args{inside_id},
-                   host_id             => $self->getAttr(name => 'host_id'),
-                   master_node         => $args{master_node},
-                   node_number         => $args{node_number},
-                   systemimage_id      => $args{systemimage_id},
+                   host_id        => $self->id,
+                   inside_id      => $args{inside_id},
+                   master_node    => $args{master_node},
+                   node_number    => $args{node_number},
+                   systemimage_id => $args{systemimage_id},
                );
 
     return $node->id;
