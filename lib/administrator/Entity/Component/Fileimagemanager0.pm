@@ -15,6 +15,16 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+
+=begin classdoc
+
+TODO
+
+=end classdoc
+
+=cut
+
 package Entity::Component::Fileimagemanager0;
 use base "Entity::Component";
 use base "Manager::ExportManager";

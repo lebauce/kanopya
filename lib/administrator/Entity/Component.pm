@@ -16,6 +16,16 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 3 july 2010
 
+=pod
+
+=begin classdoc
+
+This module is components generalization
+
+=end classdoc
+
+=cut
+
 package Entity::Component;
 use base "Entity";
 

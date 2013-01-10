@@ -1,3 +1,14 @@
+
+=pod
+
+=begin classdoc
+
+Entity base class
+
+=end classdoc
+
+=cut
+
 package Entity;
 use base 'BaseDB';
 

@@ -15,6 +15,16 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+=pod
+
+=begin classdoc
+
+Select better fit host according to context, constraints and choice policy
+
+=end classdoc
+
+=cut
+
 package DecisionMaker::HostSelector;
 
 use strict;

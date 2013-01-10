@@ -15,6 +15,16 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+
+=begin classdoc
+
+This object allows to manipulate cluster configuration
+
+=end classdoc
+
+=cut
+
 package Entity::ServiceProvider::Inside::Cluster;
 use base 'Entity::ServiceProvider::Inside';
 
