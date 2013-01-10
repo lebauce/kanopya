@@ -58,7 +58,7 @@ Create a cluster
 @optional cluster_conf override configuration for cluster
 @optional components components for the cluster 
 @optional managers managers for the cluster 
-@optional hosts hosts to be created along the cluster
+@optional interfaces interfaces to be specified for the cluster
 
 @warning cluster_basehostname use cluster_name
 
