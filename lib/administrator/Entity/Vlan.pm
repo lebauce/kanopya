@@ -37,19 +37,6 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    my $self = $class->SUPER::new(%args);
-
-    # Add the component to the Component group
-    Entity::Network->getMasterGroup->appendEntity(entity => $self);
-
-    return $self;
-}
-
 =head2 toString
 
     desc: return a string representation of the entity

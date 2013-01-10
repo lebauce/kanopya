@@ -90,33 +90,6 @@ sub methods {
 
 =begin classdoc
 
-@constructor
-
-Add the instance to the corresponding group.
-
-@return the instance
-
-=end classdoc
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    my $self = $class->SUPER::new(%args);
-
-    # Add the service provider to the ServiceProvider group
-    Entity::ServiceProvider->getMasterGroup->appendEntity(entity => $self);
-
-    return $self;
-}
-
-
-=pod
-
-=begin classdoc
-
 Get the monitoring data for a node.
 
 @return node monitoring data

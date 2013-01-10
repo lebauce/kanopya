@@ -112,9 +112,6 @@ sub new {
 
     bless $self, $class;
 
-    # Add the component to the Component group
-    Entity::Component->getMasterGroup->appendEntity(entity => $self);
-
     return $self;
 }
 

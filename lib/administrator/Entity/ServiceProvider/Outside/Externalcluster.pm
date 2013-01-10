@@ -95,22 +95,6 @@ sub label {
     return $self->externalcluster_name;
 }
 
-=head2 new
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    my $self = $class->SUPER::new( %args );
-
-    # Add the external cluster to the ServiceProvider group
-    Entity::ServiceProvider->getMasterGroup->appendEntity(entity => $self);
-
-    return $self;
-}
-
 =head2 addManager
 
     overload ServiceProvider::addManager to insert initial monitoring configuration when adding a collector manager

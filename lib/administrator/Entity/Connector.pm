@@ -68,12 +68,7 @@ sub new {
         throw Kanopya::Exception::Internal(error => "Connector type $connector_name not found in DB");
     }
 
-    my $self = $class->SUPER::new(%args, connector_type_id => $connector_type->id);
-
-    # Add the component to the Component group
-    Entity::Connector->getMasterGroup->appendEntity(entity => $self);
-
-    return $self;
+    return $class->SUPER::new(%args, connector_type_id => $connector_type->id);
 }
 
 sub getConnectorTypes {

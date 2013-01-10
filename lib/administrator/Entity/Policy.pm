@@ -133,9 +133,6 @@ sub new {
     # Build the policy pattern from args
     $self->setPatternFromParams(params => \%args);
 
-    # Add the concrete policy to the Policy master group
-    Entity::Policy->getMasterGroup->appendEntity(entity => $self);
-
     return $self;
 }
 

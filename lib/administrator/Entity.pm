@@ -91,14 +91,22 @@ sub new {
 
     my $self = $class->SUPER::new(%args);
 
-    # Add the entity in the master group corresponding to it concrete class
-    # and also in the master group Entity.
-    my $mastergroup = $class->getMasterGroup;
-    if ($mastergroup->gp_name ne 'Entity') {
-        Entity->getMasterGroup->appendEntity(entity => $self);
+    # Try to add the instance to master groups of the whole hierachy.
+    for my $groupname (reverse(split(/::/, "$class"))) {
+        my $mastergroup;
+        eval {
+            $mastergroup = Entity::Gp->find(hash => { gp_name => $groupname });
+        };
+        if ($@) {
+            my $exception = $@;
+            if (not $exception->isa('Kanopya::Exception::Internal::NotFound')) {
+                $exception->rethrow();
+            }
+        }
+        else {
+            $mastergroup->appendEntity(entity => $self);
+        }
     }
-    $mastergroup->appendEntity(entity => $self);
-
     return $self;
 }
 
