@@ -48,6 +48,7 @@ use Log::Log4perl "get_logger";
 our $VERSION = "1.00";
 
 use Log::Log4perl "get_logger";
+use Data::Dumper;
 
 my $log = get_logger("");
 my $errmsg;
@@ -98,47 +99,18 @@ sub checkPerm {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['method','entity_id']);
-    
+    General::checkParams(args => \%args, required => [ 'method', 'entity_id' ]);
+
     my $consumer_ids = $self->SUPER::_getEntityIds(entity_id => $self->{user_id});
     my $consumed_ids = $self->SUPER::_getEntityIds(entity_id => $args{entity_id});
 
-    my $row = $self->{schema}->resultset('Entityright')->search(
-        {
-            entityright_consumer_id => $consumer_ids,
-            entityright_consumed_id => $consumed_ids,
-            entityright_method => $args{method}
-        },
-        #{ select => [
-        #    'entityright_consumer_id',
-        #    'entityright_consumed_id',
-        #    'entityright_method' ],
-        #    order_by => { -desc => ['entityright_rights']},
-        #}
-    )->first;
-    if($row) { 
-        #$log->debug("row exists !");
-        return 1;
-    } else {
-        #$log->debug("row doesnt exist !");
-        return 0;    
-    }
+    my $row = $self->{schema}->resultset('Entityright')->search({
+                  entityright_consumer_id => $consumer_ids,
+                  entityright_consumed_id => $consumed_ids,
+                  entityright_method => $args{method}
+              })->first;
+
+    return $row ? 1 : 0;
 }
 
-
-
-
-
-
-
-
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut
