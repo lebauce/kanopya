@@ -71,13 +71,13 @@ sub new {
     my ($class, %args) = @_;
 
     my $host = Entity->get(id => $args{host_id});
-
     my $self = $class->SUPER::new(
-        service_provider_id   => $args{inside_id},
-        externalnode_hostname => $host->getAttr(name => 'host_hostname'),
-        externalnode_state    => "enabled",
-        %args,
-    );
+                   service_provider_id   => $args{inside_id},
+                   externalnode_hostname => $host->host_hostname,
+                   externalnode_state    => "enabled",
+                   %args,
+               );
+
     return $self;
 }
 
