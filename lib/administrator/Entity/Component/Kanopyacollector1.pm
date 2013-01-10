@@ -35,8 +35,6 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
-#Collect every hour, stock data during 24 hours
-
 use constant ATTR_DEF => {
     kanopyacollector1_collect_frequency => {
         pattern      => '^\d*$',
@@ -51,18 +49,6 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
-
-=head2 retrieveData
-
-    Desc: Call kanopya native monitoring API to retrieve indicators data
-
-    Args:   (required) \%indicators, \@nodelist
-            (required) $time_span OR $start, $end
-            (optional) historical
-
-    return \%monitored_values
-
-=cut
 
 sub new {
     my ($class, %args) = @_;
@@ -86,6 +72,19 @@ sub new {
 
     return $self;
 }
+
+=head2 retrieveData
+
+    Desc: Call kanopya native monitoring API to retrieve indicators data
+
+    Args:   (required) \%indicators, \@nodelist
+            (required) $time_span OR $start, $end
+            (optional) historical
+
+    return \%monitored_values
+
+=cut
+
 sub retrieveData {
     my ($self, %args) = @_;
 
@@ -211,14 +210,46 @@ sub collectIndicator {
     my $indicator = $collector_indicator->indicator;
 
     eval {
-        my $adm = Administrator->new();
-        $adm->{db}->resultset('Collect')->create({
+        Collect->new(
             service_provider_id => $args{service_provider_id},
             indicatorset_id     => $indicator->indicatorset_id
-        });
+        );
     };
     if ($@) {
         $log->info($@);
+    }
+}
+
+=head2 collectIndicator
+
+    Desc: Start collecting indicators of the specified sets
+    ! Do not check if wanted set to collect contains available indicators for the service provider (i.e CollectorIndicators)
+
+    Args:
+        sets_name : array ref of set name
+        service_provider_id
+
+=cut
+
+sub collectSets {
+    my ($self, %args) = @_;
+
+    my @indicator_sets = Indicatorset->search(
+        hash => {
+            indicatorset_name => $args{sets_name}
+        }
+    );
+
+    for my $indicator_set (@indicator_sets) {
+        eval {
+            Collect->new(
+                service_provider_id => $args{service_provider_id},
+                indicatorset_id     => $indicator_set->id
+            );
+        };
+        if ($@) {
+            $log->info($@);
+        }
     }
 }
 
