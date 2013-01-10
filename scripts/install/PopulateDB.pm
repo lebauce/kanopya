@@ -1065,7 +1065,8 @@ sub registerKanopyaMaster {
             conf => {
                 kanopyacollector1_collect_frequency => 3600,
                 kanopyacollector1_storage_time      => 86400
-            }
+            },
+            manager => 'collector_manager'
         },
         {
             name => "Kanopyaworkflow"
@@ -1110,6 +1111,12 @@ sub registerKanopyaMaster {
 
         $installed->{$component->{name}} = $comp;
     }
+
+    # Collect some indicators for admin cluster
+    $installed->{'Kanopyacollector'}->collectSets(
+        sets_name           => ['mem', 'cpu'],
+        service_provider_id => $admin_cluster->id
+    );
 
     my $vg = Entity::Component::Lvm2::Lvm2Vg->new(
         lvm2_id           => $installed->{"Lvm"}->id,
