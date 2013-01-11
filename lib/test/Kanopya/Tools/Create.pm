@@ -341,7 +341,7 @@ sub createIaasCluster {
 
         my $disk = $disk_manager->createDisk(
                        name         => $datastore,
-                       size         => 128 * 1024 * 1024,
+                       size         => 4 * 1024 * 1024 * 1024,
                        filesystem   => "ext3",
                        vg_id        => 1
                    )->_getEntity;
