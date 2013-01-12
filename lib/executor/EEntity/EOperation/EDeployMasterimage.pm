@@ -132,6 +132,7 @@ sub execute {
     
     # move image and metadata to the directory
     move("$tmpdir/$imagefile", "$directory/$imagefile");
+    move($metadatafile, "$directory/$imagefile");
 
     # register the available kernels
     my $defaultkernel;
