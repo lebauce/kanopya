@@ -123,9 +123,12 @@ sub service {
 
 sub customizeInitramfs {
     my ($self, %args) = @_;
+        
     General::checkParams(args     =>\%args,
-                         required => ['initrd_dir','cluster', 'host']);
-    
+                         required => [ 'initrd_dir', 'cluster', 'host' ]);
+                                     
+    $self->SUPER::customizeInitramfs(%args);
+
     my $econtext = $self->getExecutorEContext;
     my $initrddir = $args{initrd_dir};
     my $systemimage = $args{host}->getNodeSystemimage;
@@ -364,4 +367,3 @@ sub _initrd_config {
 }
 
 1;
-

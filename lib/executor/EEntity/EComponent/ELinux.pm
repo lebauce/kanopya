@@ -590,29 +590,22 @@ update initrd directory content
 sub customizeInitramfs {
     my ($self, %args) = @_;
     General::checkParams(args     =>\%args,
-                         required => ['initrd_dir','cluster', 'host']);
+                         required => [ 'initrd_dir','cluster', 'host' ]);
     
     my $econtext = $self->getExecutorEContext;
     my $initrddir = $args{initrd_dir};
-    
-    my $cluster_kernel_id = $args{cluster}->kernel_id;
-    my $kernel_id = $cluster_kernel_id ? $cluster_kernel_id : $args{host}->kernel_id;
+
+    $log->info("customize initramfs $initrddir");
 
     my $clustername = $args{cluster}->cluster_name;
     my $hostname = $args{host}->host_hostname;
 
-    my $kernel_version = Entity::Kernel->get(id => $kernel_id)->kernel_version;
-
-    my $tftpdir = Kanopya::Config::get('executor')->{tftp}->{directory};
-    my $nodedir = Kanopya::Config::get('executor')->{clusters}->{directory}."/$clustername/$hostname";
-
-    $log->info("customize initramfs $initrddir");
+    my $nodedir = Kanopya::Config::get('executor')->{clusters}->{directory} . "/$clustername/$hostname";
 
     # append files to the archive directory
-    my $sourcefile = $nodedir.'/etc/udev/rules.d/70-persistent-net.rules';
+    my $sourcefile = $nodedir . '/etc/udev/rules.d/70-persistent-net.rules';
     my $cmd = "(cd $initrddir && mkdir -p etc/udev/rules.d && cp $sourcefile etc/udev/rules.d)";
     $econtext->execute(command => $cmd);
-
 }
 
 =pod
@@ -666,7 +659,5 @@ sub _writeNetConf {
 
     $log->info("Skipping configuration of network for cluster " . $args{cluster}->cluster_name);
 }
-
-
 
 1;
