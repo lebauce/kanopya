@@ -422,7 +422,6 @@ service([ 'kanopya-executor' ], 'restart');
 service([ 'kanopya-state-manager' ], 'restart');
 service([ 'kanopya-aggregator' ], 'restart');
 service([ 'kanopya-collector' ], 'restart');
-service([ 'kanopya-grapher' ], 'restart');
 service([ 'kanopya-orchestrator' ], 'restart');
 service([ 'kanopya-front' ], 'restart');
 
