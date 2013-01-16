@@ -26,8 +26,10 @@ Subroutines to read/write kanopya configuration files.
 =cut
 
 package Kanopya::Config;
+
 use strict;
 use warnings;
+
 use XML::Simple;
 use Storable 'dclone';
 use Path::Class;

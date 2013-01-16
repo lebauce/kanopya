@@ -730,7 +730,9 @@ sub generatePuppetConfiguration {
     my $config = Kanopya::Config::get('executor');
     my $kanopya = Entity->get(id => $config->{cluster}->{executor});
     my $linux = $kanopya->getComponent(category => "System");
-    my $kanopya_master = (values %{$kanopya->getHosts()})[0];
+    
+    my @hosts = $kanopya->getHosts();
+    my $kanopya_master = $hosts[0];
     my $puppetmaster = $kanopya->getComponent(name => "Puppetmaster");
     my $fstab_puppet_definitions = $linux->getPuppetDefinition(
                                        host    => $kanopya_master,

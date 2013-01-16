@@ -65,8 +65,7 @@ sub postStartNode {
     General::checkParams(args     => \%args,
                          required => [ 'cluster', 'host' ]);
 
-    my $hosts = $args{cluster}->getHosts();
-    my @ehosts = map { EEntity->new(entity => $_) } values %$hosts;
+    my @ehosts = map { EEntity->new(entity => $_) } @{ $args{cluster}->getHosts() };
     for my $ehost (@ehosts) {
         $self->generateConfiguration(
             cluster => $args{cluster},
@@ -81,8 +80,7 @@ sub postStopNode {
     General::checkParams(args     => \%args,
                          required => [ 'cluster', 'host' ]);
 
-    my $hosts = $args{cluster}->getHosts();
-    my @ehosts = map { EEntity->new(entity => $_) } values %$hosts;
+    my @ehosts = map { EEntity->new(entity => $_) } @{ $args{cluster}->getHosts() };
     for my $ehost (@ehosts) {
         $self->generateConfiguration(
             cluster => $args{cluster},
@@ -258,11 +256,10 @@ sub _generateHosts {
 
     $log->debug('Generate /etc/hosts file');
 
-    my $nodes = $args{cluster}->getHosts();
     my @hosts_entries = ();
 
     # we add each nodes 
-    foreach my $node (values %$nodes) {
+    foreach my $node ($args{cluster}->getHosts()) {
         push @hosts_entries, {
             hostname   => $node->getAttr(name => 'host_hostname'),
             domainname => $args{kanopya_domainname},

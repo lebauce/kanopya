@@ -871,12 +871,8 @@ sub getMasterNodeSystemimage {
 sub getHosts {
     my ($self) = @_;
 
-    my %hosts;
-    for my $node ($self->nodes) {
-        my $host = $node->host;
-        $hosts{$host->id} = $host;
-    }
-    return \%hosts;
+    my @hosts = map { $_->host } $self->nodes;
+    return wantarray ? @hosts : \@hosts;
 }
 
 =head2 getHostManager
@@ -1020,7 +1016,7 @@ sub stop {
 
 sub getState {
     my $self = shift;
-    my $state = $self->{_dbix}->get_column('cluster_state');
+    my $state = $self->cluster_state;
     return wantarray ? split(/:/, $state) : $state;
 }
 
@@ -1032,23 +1028,23 @@ sub setState {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['state']);
-    my $new_state = $args{state};
-    my $current_state = $self->getState();
-    $self->{_dbix}->update({'cluster_prev_state' => $current_state,
-                            'cluster_state' => $new_state.":".time})->discard_changes();;
+    General::checkParams(args => \%args, required => [ 'state' ]);
+
+    $self->setAttr(name => 'cluster_prev_state', value => $self->getState());
+    $self->setAttr(name => 'cluster_state', value => $args{state} . ":" . time);
+    $self->save();
 }
 
 
 sub getNewNodeNumber {
     my $self = shift;
-    my $nodes = $self->getHosts();
+    my @nodes = $self->getHosts();
 
     # if no nodes already registered, number is 1
-    if(! keys %$nodes) { return 1; }
+    if (scalar(@nodes) <= 0) { return 1; }
 
     my @current_nodes_number = ();
-    while( my ($host_id, $host) = each(%$nodes) ) {
+    for my $host (@nodes) {
         push @current_nodes_number, $host->getNodeNumber();
     }
 
@@ -1068,25 +1064,6 @@ sub getNewNodeNumber {
 
     return $counter;
 }
-
-=head2 getNodeState
-
-
-=cut
-
-sub getNodeState {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => ['hostname']);
-
-    my $host       = Entity::Host->find(hash => {host_hostname => $args{hostname}});
-    my $host_id    = $host->getId();
-    my $node       = Externalnode::Node->find(hash => {host_id => $host_id});
-    my $node_state = $node->getAttr(name => 'node_state');
-
-    return $node_state;
-}
-
 
 =head2 _cloneOrchestrationCompositeData
 
@@ -1171,14 +1148,12 @@ sub getNodesMetrics {
 
     General::checkParams(args => \%args, required => [ 'time_span', 'indicators' ]);
 
-    my $collector_manager   = $self->getManager(manager_type => "collector_manager");
-    my $mparams             = $self->getManagerParameters( manager_type => 'collector_manager' );
+    my $collector_manager = $self->getManager(manager_type => "collector_manager");
+    my $mparams           = $self->getManagerParameters(manager_type => 'collector_manager');
 
-    my $nodes = $self->getHosts();
     my @nodelist;
-
-    while (my ($host_id, $host_object) = each(%$nodes)) {
-        push @nodelist, $host_object->getAttr(name => 'host_hostname');
+    for my $host (@{ $self->getHosts() }) {
+        push @nodelist, $host->host_hostname;
     }
 
     return $collector_manager->retrieveData(

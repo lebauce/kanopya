@@ -166,7 +166,7 @@ sub execute {
 
     # Update kanopya etc hosts
     my @data = ();
-    for my $host (Entity::Host->getHosts(hash => {})) {
+    for my $host (Entity::Host->search(hash => {})) {
         my $hostname = $host->host_hostname;
         next if (not $hostname or $hostname eq '');
         push @data, {
@@ -211,8 +211,7 @@ sub _cancel {
 
     $self->{context}->{host}->stopToBeNode();
 
-    my $hosts = $self->{context}->{cluster}->getHosts();
-    if (! scalar keys %$hosts) {
+    if (! scalar(@{ $self->{context}->{cluster}->getHosts() })) {
         $self->{context}->{cluster}->setState(state => "down");
     }
 

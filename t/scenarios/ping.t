@@ -26,9 +26,8 @@ eval {
     $cluster = Kanopya::Tools::Retrieve->retrieveCluster(criteria => {cluster_name => 'Bondage'});
 
     lives_ok {
-        my $hosts = $cluster->getHosts();
         my @bonded_ifaces;
-        foreach my $host (values %$hosts) {
+        foreach my $host ($cluster->getHosts()) {
             my @ifaces = grep { scalar @{ $_->slaves} > 0 } Entity::Iface->find(hash => {host_id => $host->id});
             push @bonded_ifaces, @ifaces;
         }

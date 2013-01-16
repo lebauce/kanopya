@@ -199,7 +199,7 @@ sub getFreeHosts {
         host_manager_id => $self->id
     };
 
-    my @hosts = Entity::Host->getHosts(hash => $where);
+    my @hosts = Entity::Host->search(hash => $where);
     my @free;
     foreach my $m (@hosts) {
         if(not $m->node) {

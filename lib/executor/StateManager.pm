@@ -84,17 +84,17 @@ sub oneRun {
     my $adm = Administrator->new();
 
     # Check all nodes services availability
-    my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {});
+    my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {}, prefetch => [ 'nodes.host' ]);
 
     $log->info('---------------------------------------------');
     $log->info('***** Check ' . scalar (@clusters) . ' services availability *****');
 
     CLUSTER:
     foreach my $cluster (@clusters) {
-        my $nodes = $cluster->getHosts();
+        my @nodes = $cluster->getHosts();
 
         my $services_available = 1;
-        if(!scalar(values %$nodes)) {
+        if (! scalar(@nodes)) {
             # we deactive all alerts for this cluster
             my @alerts = Alert->search(hash => { alert_active => 1, entity_id => $cluster->id });
             for my $alert(@alerts) {
@@ -104,8 +104,8 @@ sub oneRun {
         }
 
         $log->info('---------------------------------------------');
-        $log->info('***** Check ['.$cluster->cluster_name.'] service availability on '.scalar(values %$nodes).' nodes *****');
-        foreach my $node (values %$nodes) {
+        $log->info('***** Check ['.$cluster->cluster_name.'] service availability on ' . scalar(@nodes) . ' nodes *****');
+        foreach my $node (@nodes) {
             my $ehost = EFactory::newEEntity(data => $node);
 
             $adm->beginTransaction;
@@ -232,6 +232,5 @@ sub oneRun {
         $adm->commitTransaction;
     }
 }
-
 
 1;

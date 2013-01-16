@@ -116,17 +116,17 @@ sub execute {
 sub finish {
     my $self = shift;
 
-    my $cluster_nodes = $self->{context}->{cluster}->getHosts();
+    my @nodes = $self->{context}->{cluster}->getHosts();
 
     # Add another node if required
-    if ((scalar keys %$cluster_nodes) < $self->{context}->{cluster}->cluster_min_node) {
+    if (scalar(@nodes) < $self->{context}->{cluster}->cluster_min_node) {
         # _getEntity is important here, cause we want to enqueue AddNode operation.
         $self->{context}->{cluster}->_getEntity->addNode();
     }
     else {
         my $nodes_states = 1;
-        foreach my $node (keys %$cluster_nodes) {
-            my @node_state = $cluster_nodes->{$node}->getNodeState();
+        foreach my $node (@nodes) {
+            my @node_state = $node->getNodeState();
             if ($node_state[0] ne "in"){
                 $nodes_states = 0;
             }
@@ -157,8 +157,7 @@ sub _cancel {
         $log->debug($@);
     }
 
-    my $hosts = $self->{context}->{cluster}->getHosts();
-    if (! scalar keys %$hosts) {
+    if (! scalar(@{ $self->{context}->{cluster}->getHosts() })) {
         $self->{context}->{cluster}->setState(state => "down");
     }
 }

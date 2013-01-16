@@ -624,13 +624,13 @@ sub graphFromConf {
         
             my $graphs_settings = $self->{_admin}->{manager}{monitor}->getClusterGraphSettings( cluster_id => $cluster_id );
             
-            my @nodes = map { $_->getAttr(name => "host_hostname") } values %{ $cluster->getHosts( ) };
+            my @nodes = map { $_->host_hostname } @ { $cluster->getHosts() };
             
             # Graph Node Count
             foreach my $laps (@time_laps) {
-                $self->graphNodeCount(     time_laps => $laps,
-                                        time_range => $time_range,
-                                        cluster => $cluster_name );
+                $self->graphNodeCount(time_laps  => $laps,
+                                      time_range => $time_range,
+                                      cluster    => $cluster_name);
             }
             
             next CLUSTER if (0 == scalar @nodes);

@@ -78,11 +78,9 @@ sub execute {
     my $self = shift;
     $self->SUPER::execute();
 
-    my $nodes = $self->{context}->{cluster}->getHosts();
     my $subnet = $self->{context}->{component_dhcpd}->getInternalSubNetId();
 
-    foreach my $key (keys %$nodes) {
-        my $node = $nodes->{$key};
+    foreach my $node ($self->{context}->{cluster}->getHosts()) {
         eval {
             # Halt Node
             my $ehost = EFactory::newEEntity(data => $node);

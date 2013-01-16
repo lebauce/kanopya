@@ -117,7 +117,7 @@ sub _deactivate_iface {
 
     General::checkParams(args => \%args, required => ['iface','cluster']);
 
-    my @hosts = values (%{ $args{cluster}->getHosts() });
+    my @hosts = $args{cluster}->getHosts();
     my $host = pop @hosts;
     my $ehost = EEntity->new(entity => $host);
     $ehost->getEContext->execute(command => 'ifconfig ' . $args{iface} . ' down');
@@ -129,9 +129,8 @@ sub _ping_ifaces {
         diag('retrieve Cluster via name');
         my $cluster = Kanopya::Tools::Retrieve->retrieveCluster(criteria => {cluster_name => 'Bondage'});
 
-        my $hosts = $cluster->getHosts();
         my @bonded_ifaces;
-        foreach my $host (values %$hosts) {
+        foreach my $host ($cluster->getHosts()) {
             my @ifaces = grep { scalar @{ $_->slaves} > 0 } Entity::Iface->find(hash => {host_id => $host->id});
             push @bonded_ifaces, @ifaces;
         }

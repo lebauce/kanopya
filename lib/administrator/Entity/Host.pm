@@ -628,27 +628,13 @@ sub adminIp {
     }
 }
 
-=head2 getHosts
-
-=cut
-
-sub getHosts {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['hash']);
-
-    return $class->search(%args);
-}
-
 sub getHost {
     my $class = shift;
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['hash']);
 
-    my @Hosts = $class->search(%args);
-    return pop @Hosts;
+    return  $class->find(%args)
 }
 
 sub getHostFromIP {
@@ -668,7 +654,7 @@ sub getFreeHosts {
         $hash->{host_manager_id} = $args{host_manager_id}
     }
 
-    my @hosts = $class->getHosts(hash => $hash);
+    my @hosts = $class->search(hash => $hash);
     my @free;
     foreach my $m (@hosts) {
         if(not $m->node) {
