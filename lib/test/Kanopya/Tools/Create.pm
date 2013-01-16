@@ -58,7 +58,7 @@ Create a cluster
 @optional cluster_conf override configuration for cluster
 @optional components components for the cluster 
 @optional managers managers for the cluster 
-@optional interfaces interfaces to be specified for the cluster
+@optional hosts hosts to be created along the cluster
 
 @warning cluster_basehostname use cluster_name
 
@@ -99,7 +99,10 @@ sub createCluster {
     my $admin_user = Entity::User->find(hash => { user_login => 'admin' });
 
     diag('Retrieve master image');
-    my $masterimage = Entity::Masterimage->find( hash => { } );
+    my $masterimage;
+    eval {
+        $masterimage = Entity::Masterimage->find( hash => { } );
+    };
 
     diag('Retrieve admin NetConf');
     my $adminnetconf   = Entity::Netconf->find(hash => {
@@ -113,52 +116,54 @@ sub createCluster {
     }
 
     my %default_conf = (
-                           active                => 1,
-                           cluster_name          => 'DefaultCluster',
-                           cluster_min_node      => 1,
-                           cluster_max_node      => 3,
-                           cluster_priority      => "100",
-                           cluster_si_shared     => 0,
-                           cluster_si_persistent => 1,
-                           cluster_domainname    => 'my.domain',
-                           cluster_nameserver1   => '208.67.222.222',
-                           cluster_nameserver2   => '127.0.0.1',
-                           cluster_basehostname  => 'default',
-                           masterimage_id        => $masterimage->id,
-                           user_id               => $admin_user->id,
-                           managers              => {
-                               host_manager => {
-                                   manager_id     => $physical_hoster->id,
-                                   manager_type   => "host_manager",
-                                   manager_params => {
-                                       cpu => 1,
-                                       ram => 2*1024*1024,
-                                   },
-                               },
-                               disk_manager => {
-                                   manager_id     => $disk_manager->id,
-                                   manager_type   => "disk_manager",
-                                   manager_params => {
-                                       vg_id => 1,
-                                       systemimage_size => 4 * 1024 * 1024 * 1024,
-                                   },
-                               },
-                               export_manager => {
-                                   manager_id     => $export_manager->id,
-                                   manager_type   => "export_manager",
-                                   manager_params => {
-                                       iscsi_portals => \@iscsi_portal_ids,
-                                   }
-                               },
-                           },
-                           components => {
-                           },
-                           interfaces => {
-                               admin => {
-                                   interface_netconfs  => { $adminnetconf->id => $adminnetconf->id },
-                               }
-                           }
-                       );
+        active                => 1,
+        cluster_name          => 'DefaultCluster',
+        cluster_min_node      => 1,
+        cluster_max_node      => 3,
+        cluster_priority      => "100",
+        cluster_si_shared     => 0,
+        cluster_si_persistent => 1,
+        cluster_domainname    => 'my.domain',
+        cluster_nameserver1   => '208.67.222.222',
+        cluster_nameserver2   => '127.0.0.1',
+        cluster_basehostname  => 'default',
+        user_id               => $admin_user->id,
+        managers              => {
+            host_manager => {
+                manager_id     => $physical_hoster->id,
+                manager_type   => "host_manager",
+                    manager_params => {
+                        cpu => 1,
+                        ram => 2*1024*1024,
+                    },
+                },
+            disk_manager => {
+                manager_id     => $disk_manager->id,
+                manager_type   => "disk_manager",
+                manager_params => {
+                    vg_id => 1,
+                    systemimage_size => 4 * 1024 * 1024 * 1024,
+                },
+            },
+            export_manager => {
+                manager_id     => $export_manager->id,
+                manager_type   => "export_manager",
+                manager_params => {
+                    iscsi_portals => \@iscsi_portal_ids,
+                }
+            },
+        },
+        components => {},
+        interfaces => {
+            admin => {
+                interface_netconfs  => { $adminnetconf->id => $adminnetconf->id },
+            }
+        }
+    );
+
+    if (defined $masterimage) {
+        $default_conf{masterimage_id} =  $masterimage->id;
+    }
 
     if (defined $args{cluster_conf}) {
         Hash::Merge::set_behavior('RIGHT_PRECEDENT');
