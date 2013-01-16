@@ -1169,8 +1169,6 @@ var KanopyaFormWizard = (function() {
         }
         if ($(this.content).width() > $(window).innerWidth() - 50) {
             $(this.content).css('width', $(this.content).innerWidth() - 50);
-        } else {
-            $(this.content).css('width', $(this.content).width() + 15);
         }
         $(this.content).dialog('option', 'position', 'top');
     }
