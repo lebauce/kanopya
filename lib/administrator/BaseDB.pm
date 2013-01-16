@@ -1066,8 +1066,11 @@ sub search {
     my $source = $class->getResultSource;
     for my $relation (@{$args{prefetch}}) {
         my @comps = split(/\./, $relation);
-        $prefetch = $merge->merge($prefetch, $class->getJoinQuery(comps   => \@comps,
-                                                                  indepth => 1)->{join});
+        while (scalar @comps) {
+            $prefetch = $merge->merge($prefetch, $class->getJoinQuery(comps   => \@comps,
+                                                                      indepth => 1)->{join});
+            pop @comps;
+        }
     }
 
     for my $filter (keys %{$args{hash}}) {
