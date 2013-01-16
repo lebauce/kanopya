@@ -1,5 +1,4 @@
 require('common/formatters.js');
-require('views.js');
 
 var addSubscriptionButtonInGrid = function(grid, rowid, rowdata, rowelem, colid, operationType, validation) {
     var cell            = $(grid).find('tr#' + rowid).find('td[aria-describedby="' + colid + '"]');
