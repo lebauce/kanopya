@@ -101,8 +101,7 @@ sub assignIp {
                     $log->info("Cannot pop IP from pool <" . $poolip->poolip_name . ">\n$@");
                     next POOLIPS;
                 }
-                $ip->setAttr(name  => 'iface_id', value => $self->id);
-                $ip->save();
+                $ip->setAttr(name  => 'iface_id', value => $self->id, save => 1);
 
                 $log->info("Ip " . $ip->ip_addr . " assigned to iface ". $self->iface_name);
 

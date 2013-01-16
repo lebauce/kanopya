@@ -397,15 +397,13 @@ sub becomeNode {
                          required => [ 'inside_id', 'master_node', 'node_number' ],
                          optional => { 'systemimage_id' => undef });
 
-    my $node = Externalnode::Node->new(
-                   host_id        => $self->id,
-                   inside_id      => $args{inside_id},
-                   master_node    => $args{master_node},
-                   node_number    => $args{node_number},
-                   systemimage_id => $args{systemimage_id},
-               );
-
-    return $node->id;
+    return Externalnode::Node->new(
+               host_id        => $self->id,
+               inside_id      => $args{inside_id},
+               master_node    => $args{master_node},
+               node_number    => $args{node_number},
+               systemimage_id => $args{systemimage_id},
+           );
 }
 
 sub becomeMasterNode {
@@ -487,13 +485,13 @@ sub configureIfaces {
             my @valid_ifaces = grep {scalar @{ $_->slaves } == $interface->bonds_number } @ifaces;
             my $selected_iface = $valid_ifaces[0];
             @ifaces = grep {$selected_iface ne $_} @ifaces;
-            $selected_iface->update(netconf_ifaces => \@netconfs);
+            $selected_iface->populateRelations(relations => { netconf_ifaces => \@netconfs });
         }
         else {
             my @valid_ifaces = grep {scalar @{ $_->slaves } == 0} @ifaces;
             my $selected_iface = $valid_ifaces[0];
             @ifaces = grep {$selected_iface ne $_} @ifaces;
-            $selected_iface->update(netconf_ifaces => \@netconfs);
+            $selected_iface->populateRelations(relations => { netconf_ifaces => \@netconfs });
         }
     }
 }
@@ -518,14 +516,15 @@ sub addIface {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'iface_name', 'iface_mac_addr', 'iface_pxe' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'iface_name' ],
+                         optional => { 'iface_mac_addr' => undef, 'iface_pxe' => 0 });
 
     my $iface = Entity::Iface->new(iface_name     => $args{iface_name},
                                    iface_mac_addr => $args{iface_mac_addr},
                                    iface_pxe      => $args{iface_pxe},
                                    host_id        => $self->id);
-
-    return $iface->id;
+    return $iface;
 }
 
 =head2 getIfaces
@@ -613,7 +612,7 @@ sub getAdminIface {
     my @ifaces = $self->getIfaces(role => "admin");
     if (scalar (@ifaces) == 0 and defined $args{throw}) {
         throw Kanopya::Exception::Internal::NotFound(
-                  error => "Host <" . $self->id . "> Could not find any iface associate to a admin role."
+                  error => "Host <" . $self->id . "> could not find any iface associate to a admin role."
               );
     }
     return $ifaces[0];
@@ -624,10 +623,8 @@ sub adminIp {
     my %args = @_;
 
     my $iface = $self->getAdminIface();
-    if ($iface and $iface->hasIp) {
-        if (defined ($iface) and $iface->hasIp) {
-            return $iface->getIPAddr;
-        }
+    if (defined $iface and $iface->hasIp) {
+        return $iface->getIPAddr;
     }
 }
 

@@ -872,20 +872,9 @@ sub getHosts {
     my ($self) = @_;
 
     my %hosts;
-    eval {
-        my @nodes = Externalnode::Node->search(hash => { inside_id => $self->getId });
-        for my $node (@nodes) {
-            my $host = $node->host;
-            my $host_id = $host->getId;
-            eval {
-                $hosts{$host_id} = $host;
-            };
-        }
-    };
-    if ($@) {
-        throw Kanopya::Exception::Internal(
-                  error => "Could not get cluster nodes:\n$@"
-              );
+    for my $node ($self->nodes) {
+        my $host = $node->host;
+        $hosts{$host->id} = $host;
     }
     return \%hosts;
 }
