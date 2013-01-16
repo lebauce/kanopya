@@ -128,8 +128,7 @@ sub _cancel {
     my $self = shift;
 
     if ($self->{context}->{cluster}) {
-        my $hosts = $self->{context}->{cluster}->getHosts();
-        if (! scalar keys %$hosts) {
+        if (! scalar(@{ $self->{context}->{cluster}->getHosts() })) {
             $self->{context}->{cluster}->setState(state => 'down');
         }
     }

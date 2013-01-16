@@ -377,7 +377,7 @@ sub getHostsEntries {
     my @hosts_entries = ();
 
     for my $vmm ($self->vmms) {
-        foreach my $node (values %{$vmm->getServiceProvider->getHosts()}) {
+        foreach my $node ($vmm->getServiceProvider->getHosts()) {
             push @hosts_entries, {
                 hostname   => $node->host_hostname,
                 domainname => $self->getServiceProvider->cluster_domainname,

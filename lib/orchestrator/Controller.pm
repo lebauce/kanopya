@@ -138,13 +138,10 @@ sub getClusterConf {
     my $self = shift;
     my %args = @_;
 
-    my $cluster = $args{cluster};
-    
-    my @hosts = values %{ $cluster->getHosts( ) };
-    my @in_nodes = grep { $_->getNodeState() =~ '^in' } @hosts; 
+    my @in_nodes = grep { $_->getNodeState() =~ '^in' } @{ $args{cluster}->getHosts() }; 
 
     # TODO get mpl from cluster/component
-    return {nb_nodes => scalar(@in_nodes), mpl => 1000};
+    return { nb_nodes => scalar(@in_nodes), mpl => 1000 };
 }
 
 sub getWorkload {

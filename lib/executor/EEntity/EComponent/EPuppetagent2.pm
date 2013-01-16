@@ -153,8 +153,7 @@ sub applyConfiguration {
 
     EEntity->new(entity => $self->getPuppetMaster)->updateSite();
 
-    my $hosts = $args{cluster}->getHosts();
-    my @ehosts = map { EEntity->new(entity => $_) } values %$hosts;
+    my @ehosts = map { EEntity->new(entity => $_) } @{  $args{cluster}->getHosts() };
     for my $ehost (@ehosts) {
         $self->generatePuppetDefinitions(%args,
                                          host => $ehost);
@@ -168,8 +167,7 @@ sub applyAllManifests {
 
     General::checkParams(args => \%args, required => [ 'cluster' ]);
 
-    my $hosts = $args{cluster}->getHosts();
-    my @ehosts = map { EEntity->new(entity => $_) } values %$hosts;
+    my @ehosts = map { EEntity->new(entity => $_) } @{  $args{cluster}->getHosts() };
     for my $ehost (@ehosts) {
         $self->applyManifest(host => $ehost);
     }

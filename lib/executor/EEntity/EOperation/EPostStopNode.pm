@@ -189,15 +189,15 @@ sub finish {
     my $self = shift;
 
     my @cluster_state = $self->{context}->{cluster}->getState;
-    my $cluster_nodes = $self->{context}->{cluster}->getHosts();
+    my $nbnodes = scalar(@{ $self->{context}->{cluster}->getHosts() });
 
     # If the cluster has no node any more, it has been properly stoped
-    if ((scalar keys %$cluster_nodes) == 0) {
+    if ($nbnodes == 0) {
         $self->{context}->{cluster}->setState(state => "down");
     }
 
     # If a stoping cluster has one node left, this is must be the master node
-    if ($cluster_state[0] eq 'stopping' and (scalar keys %$cluster_nodes) == 1) {
+    if ($cluster_state[0] eq 'stopping' and $nbnodes == 1) {
         $self->{context}->{cluster}->removeNode(
             host_id => $self->{context}->{cluster}->getMasterNodeId()
         );

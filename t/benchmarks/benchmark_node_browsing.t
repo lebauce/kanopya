@@ -37,8 +37,10 @@ $adm->beginTransaction;
 my $serviceload = 1;
 my $nodeload = 1;
 
-my $kanopya    = Entity::ServiceProvider::Inside::Cluster->find(hash => { cluster_name => 'Kanopya' });
-my $adminiface = (values ($kanopya->getHosts))[0]->getAdminIface;
+my $kanopya = Entity::ServiceProvider::Inside::Cluster->find(hash => { cluster_name => 'Kanopya' });
+
+my @hosts = $kanopya->getHosts();
+my $adminiface = $hosts[0]->getAdminIface;
 
 sub registerCluster {
     my ($self, %args) = @_;
@@ -103,7 +105,7 @@ sub browseNodesWithPrefetch {
 
     my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {}, prefetch => [ 'nodes.host' ]);
     for my $cluster (@clusters) {
-        my $host = $cluster->getHosts();
+        $cluster->getHosts();
     }
 
     $profiler->stop();

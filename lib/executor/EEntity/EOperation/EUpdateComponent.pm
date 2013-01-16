@@ -65,8 +65,8 @@ sub prepare {
 
 sub execute {
     my ($self, %args) = @_;
-    my $hosts = $self->{context}->{cluster}->getHosts();
-    for my $host (values %$hosts) {
+ 
+    for my $host ($self->{context}->{cluster}->getHosts()) {
         my $ehost = EFactory::newEEntity(data => $host);
         my $puppet_definitions = "";
         $self->{context}->{component}->generateConfiguration(

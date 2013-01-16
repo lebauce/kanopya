@@ -63,9 +63,9 @@ sub execute {
     my $self = shift;
     $self->SUPER::execute();
 
-    my $hosts = $self->{context}->{cluster}->getHosts();
+    my @hosts = $self->{context}->{cluster}->getHosts();
 
-    if(not scalar keys %$hosts) {
+    if(not scalar(@hosts)) {
         $self->{context}->{cluster}->setState(state  => 'stopping');
         $errmsg = "EStopCluster->execute : this cluster with id " . 
                   "$self->{context}->{cluster}->getAttr(name => 'cluster_id') seems to have no node";
@@ -74,17 +74,17 @@ sub execute {
     }
     my $master_node_id =  $self->{context}->{cluster}->getMasterNodeId();
 
-    foreach my $mb_id (keys %$hosts) {
-        if ((scalar keys %$hosts) > 1 and $master_node_id == $mb_id){
+    foreach my $host (@hosts) {
+        if ((scalar(@hosts)) > 1 and $master_node_id == $host->id){
             next;
         }
 
         # We stop nodes with state 'up' only
         # TODO: ma,ager others nodes states
-        my ($state, $timestamp) = $hosts->{$mb_id}->getState();
+        my ($state, $timestamp) = $host->getState();
         if($state ne 'up') { next; }
 
-        $self->{context}->{cluster}->removeNode(host_id => $mb_id);
+        $self->{context}->{cluster}->removeNode(host_id => $host->id);
     }
 
     $self->{context}->{cluster}->setState(state => 'stopping');

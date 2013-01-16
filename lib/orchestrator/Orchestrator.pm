@@ -37,18 +37,11 @@ Orchestrator is the main object for mc management politic.
 =cut
 
 package Orchestrator;
-
 use base 'BaseDB';
-
-###############################################################################################################
-#WARN l'orchestrator considère actuellement que les noeuds sont homogènes et ne prend pas en compte les spécificités de chaque carte
-#TODO Prendre en compte les spécificités des cartes dans les algos, faire un système de notation pour le choix des cartes à ajouter/supprimer
-#TODO Percent option. WARN: avg % != % avg
-#TODO use Kanopya Exception
-###############################################################################################################
 
 use strict;
 use warnings;
+
 use XML::Simple;
 use General;
 use Administrator;
@@ -937,17 +930,15 @@ sub _isNodeMigrating {
 
     my $cluster_name = $args{cluster_name};
 
-    my $cluster = $self->getClusterByName( cluster_name => $cluster_name );
-    my $hosts = $cluster->getHosts();
-    for my $mb (values %$hosts) {
+    my $cluster = $self->getClusterByName(cluster_name => $cluster_name);
+
+    for my $mb ($cluster->getHosts()) {
         if (not $mb->getNodeState() eq "in") {
             return 1;
         }
     }
-
     return 0;
 }
-
 
 
 =head2 _canAddNode

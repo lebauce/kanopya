@@ -273,7 +273,7 @@ sub updateClusterData {
     my ($cluster, $hosts_values, $collect_time ) = ($args{cluster}, $args{hosts_values}, $args{collect_time});
     my $cluster_name = $cluster->getAttr( name => "cluster_name" );
     
-    my @mbs = values %{ $cluster->getHosts( ) };
+    my @mbs = $cluster->getHosts();
     my @in_node_mb = grep { $_->getNodeState() =~ '^in' } @mbs; 
     
     # No more aggregating cluster values here since it's handled by cluster metrics mecanism (aggregator)
@@ -452,24 +452,25 @@ sub updateConsumption {
     my $rrd = RRDTool::OO->new( file =>  $rrd_file );
     if ( not -e $rrd_file ) {    
         $log->info("Info: create total consumption rrd");
-        $rrd->create('step' => $self->{_time_step},
-                     'archive' => {
-                         rows => $self->{_period} / $self->{_time_step}
-                     },
-                     'archive' => {
-                         rows    => $self->{_period} / $self->{_time_step},
-                         cpoints => 10,
-                         cfunc   => "AVERAGE"
-                     },
-                     'data_source' => {
-                         name => 'consumption',
-                         type => 'GAUGE'
-                     },
+        $rrd->create(
+            step    => $self->{_time_step},
+            archive => {
+                rows => $self->{_period} / $self->{_time_step}
+            },
+            archive => {
+                rows    => $self->{_period} / $self->{_time_step},
+                cpoints => 10,
+                cfunc   => "AVERAGE"
+            },
+            data_source => {
+                name => 'consumption',
+                type => 'GAUGE'
+            },
         );
     }
-    
+
     my $consumption = 0;
-    my @up_hosts = Entity::Host->getHosts( hash => { host_state => { -like => 'up:%'}} );
+    my @up_hosts = Entity::Host->search(hash => { host_state => { -like => 'up:%' } });
     for (@up_hosts) {
         my %model = $_->getModel();
         $consumption += $model{hostmodel_consumption} || 0;

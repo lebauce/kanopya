@@ -142,23 +142,21 @@ sub retrieveHostsByCluster {
     my %hosts_by_cluster;
 
     my $adm = $self->{_admin};
-    my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {});
+    my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {}, prefetch => [ 'nodes.host' ]);
     foreach my $cluster (@clusters) {
         my @components = $cluster->getComponents(category => 'all');
         my @components_name = map { $_->component_type->component_name } @components;
 
         my %mb_info;
-        foreach my $mb ( values %{ $cluster->getHosts( ) } ) {
-            $mb_info{ $mb->getAttr( name => "host_hostname" ) } = {
+        foreach my $mb ($cluster->getHosts()) {
+            $mb_info{$mb->host_hostname} = {
                 ip         => $mb->adminIp,
-                state      => $mb->getAttr( name => "host_state" ),
+                state      => $mb->host_state,
                 components => \@components_name
             };
         }
-
-        $hosts_by_cluster{ $cluster->getAttr( name => "cluster_name" ) } = \%mb_info;
-    }    
-
+        $hosts_by_cluster{$cluster->cluster_name} = \%mb_info;
+    }
     return %hosts_by_cluster;
 }
 
@@ -166,9 +164,9 @@ sub getClustersName {
     my $self = shift;
 
     my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {});
-    my @clustersName = map { $_->getAttr( name => "cluster_name" ) } @clusters;
-    
-    return @clustersName;    
+    my @clustersName = map { $_->cluster_name } @clusters;
+
+    return @clustersName;
 }
 
 sub getClusterHostsInfo {
