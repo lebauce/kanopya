@@ -727,8 +727,7 @@ sub getAttr {
     }
 
     if (not $found) {
-        $errmsg = ref($self) . " getAttr no attr name $args{name}!";
-        $log->error($errmsg);
+        $errmsg = ref($self) . " getAttr no attr name $args{name}.";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
