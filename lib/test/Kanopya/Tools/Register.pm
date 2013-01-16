@@ -79,14 +79,13 @@ sub registerHost {
 
     if (defined $board->{ifaces}) {
         foreach my $iface (@{ $board->{ifaces} }) {
-            my $if_id = $host->addIface(
-                            iface_name     => $iface->{name},
-                            iface_pxe      => $iface->{pxe},
-                            iface_mac_addr => $iface->{mac},
-                        );
+            my $if = $host->addIface(
+                         iface_name     => $iface->{name},
+                         iface_pxe      => $iface->{pxe},
+                         iface_mac_addr => $iface->{mac},
+                     );
 
             if (defined $iface->{master}) {
-                my $if = Entity::Iface->get(id => $if_id);
                 $if->setAttr(name => 'master', value => $iface->{master});
                 $if->save();
             }
