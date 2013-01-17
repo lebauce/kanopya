@@ -98,6 +98,8 @@ sub addNode {
         mountpoint => $args{mount_point}, 
         scriptname => 'puppet', 
     );    
+
+    $self->generatePuppetDefinitions(%args);
 }
 
 sub generatePuppetDefinitions {
