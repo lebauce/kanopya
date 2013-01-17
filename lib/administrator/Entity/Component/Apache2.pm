@@ -312,7 +312,7 @@ sub insertDefaultExtendedConfiguration {
     );    
 }
 
-sub getNetConf{
+sub getNetConf {
     my $self = shift;
     my $http_port = $self->{_dbix}->get_column("apache2_ports");
     my $https_port = $self->{_dbix}->get_column("apache2_sslports");
@@ -327,7 +327,15 @@ sub getNetConf{
     return \%net_conf;
 }
 
-sub getClusterizationType { return 'loadbalanced'; }
+sub getClusterizationType {
+    return 'loadbalanced';
+}
+
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    return "class { 'apache': }\n";
+}
 
 # SYP: this sub is commented because when workload is high on a node, ssh sometimes fail
 #      and so the node is considered broken even if it's no really broken.

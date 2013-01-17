@@ -90,6 +90,12 @@ sub setConf {
     }
 }
 
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    return "class { 'puppetmaster': }\n";
+}
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.

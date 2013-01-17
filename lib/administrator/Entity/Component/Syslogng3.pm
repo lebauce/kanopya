@@ -217,6 +217,12 @@ sub getKanopyaNodesLogDirectories {
     return ("/var/log/kanopya_nodes/");
 }
 
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    return "class { 'syslogng': }\n";
+}
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.

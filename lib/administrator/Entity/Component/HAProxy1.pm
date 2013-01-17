@@ -130,6 +130,12 @@ sub insertDefaultExtendedConfiguration {
     $self->save();
 }
 
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    return "class { 'haproxy': }\n";
+}
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.

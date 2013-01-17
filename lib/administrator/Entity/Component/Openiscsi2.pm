@@ -123,6 +123,12 @@ sub getExportsList {
     
 }
 
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    return "class { 'openiscsi': }\n";
+}
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.

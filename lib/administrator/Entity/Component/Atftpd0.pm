@@ -135,6 +135,11 @@ sub getBaseConfiguration {
     };
 }
 
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    return "class { 'atftpd': }\n";
+}
 
 =head1 DIAGNOSTICS
 

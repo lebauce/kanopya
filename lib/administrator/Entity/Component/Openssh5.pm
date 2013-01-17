@@ -78,6 +78,12 @@ sub getNetConf {
     return { 22 => ['tcp'] };
 }
 
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    return "class { 'openssh': }\n";
+}
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.

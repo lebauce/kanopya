@@ -122,6 +122,11 @@ sub getBaseConfiguration {
     };
 }
 
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    return "class { 'apache::mod::php': }\n";
+}
 
 =head1 DIAGNOSTICS
 

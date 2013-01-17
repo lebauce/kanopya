@@ -140,6 +140,12 @@ sub getNetConf {
     return { $port => ['tcp'] };
 }
 
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    return "class { 'mysqld': }\n";
+}
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.

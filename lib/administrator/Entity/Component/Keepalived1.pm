@@ -378,6 +378,12 @@ sub getBaseConfiguration {
     };
 }
 
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    return "class { 'lvm': }\n";
+}
+
 sub readyNodeRemoving {
     my $self = shift;
     my %args = @_;
