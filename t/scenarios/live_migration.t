@@ -29,18 +29,7 @@ use Orchestrator;
 use Monitor::Collector;
 use Entity;
 use Entity::Component::Opennebula3;
-use Entity::ServiceProvider::Outside::Externalcluster;
-use Entity::Connector::MockMonitor;
-use Entity::Clustermetric;
-use Entity::AggregateCondition;
-use Entity::Combination::AggregateCombination;
-use Entity::AggregateRule;
-use Entity::Combination::NodemetricCombination;
-use Entity::NodemetricCondition;
-use Entity::NodemetricRule;
 use VerifiedNoderule;
-use Entity::Workflow;
-use Entity::WorkflowDef;
 use Kanopya::Config;
 
 use Kanopya::Tools::Execution;

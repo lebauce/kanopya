@@ -29,7 +29,7 @@ use Entity::ServiceProvider::Outside::Externalcluster;
 use Entity::Connector::MockMonitor;
 use Entity::Combination::NodemetricCombination;
 use Entity::NodemetricCondition;
-use Entity::NodemetricRule;
+use Entity::Rule::NodemetricRule;
 use VerifiedNoderule;
 use Entity::Clustermetric;
 use Entity::Combination::AggregateCombination;
@@ -250,7 +250,7 @@ sub test_rrd_remove {
         }
 
         diag('Check if all aggregrate rules have been deleted');
-        my @ars = Entity::AggregateRule->search (hash => {
+        my @ars = Entity::Rule::AggregateRule->search (hash => {
             aggregate_rule_service_provider_id => $service_provider->id
         });
         if ( scalar @ars == 0 ) {
@@ -313,7 +313,7 @@ sub _node_rule_objects_creation {
         nodemetric_condition_threshold => '0',
     );
 
-    $nrule1 = Entity::NodemetricRule->new(
+    $nrule1 = Entity::Rule::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc1->id,
         nodemetric_rule_state => 'enabled'

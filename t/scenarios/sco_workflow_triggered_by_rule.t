@@ -38,13 +38,13 @@ use Entity::Operation;
 use Entity::Combination;
 use Entity::Combination::NodemetricCombination;
 use Entity::NodemetricCondition;
-use Entity::NodemetricRule;
+use Entity::Rule::NodemetricRule;
 use VerifiedNoderule;
 use WorkflowNoderule;
 use Entity::Clustermetric;
 use Entity::AggregateCondition;
 use Entity::Combination::AggregateCombination;
-use Entity::AggregateRule;
+use Entity::Rule::AggregateRule;
 
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::TestUtils 'expectedException';
@@ -334,12 +334,12 @@ sub sco_workflow_triggered_by_rule {
         });
 
         # Modify node rule2 to avoid a new triggering
-        my $node_rule2 = Entity::NodemetricRule->get(id => $node_rule_ids->{node_rule2_id});
+        my $node_rule2 = Entity::Rule::NodemetricRule->get(id => $node_rule_ids->{node_rule2_id});
         $node_rule2->setAttr(name => 'nodemetric_rule_formula', value => '! ('.$node_rule2->nodemetric_rule_formula.')');
         $node_rule2->save();
 
         # Modify service rule2 to avoid a new triggering
-        my $agg_rule2 = Entity::AggregateRule->get(id => $agg_rule_ids->{agg_rule2_id});
+        my $agg_rule2 = Entity::Rule::AggregateRule->get(id => $agg_rule_ids->{agg_rule2_id});
         $agg_rule2->setAttr(name => 'aggregate_rule_formula', value => 'not ('.$agg_rule2->aggregate_rule_formula.')');
         $agg_rule2->save();
 
@@ -356,7 +356,7 @@ sub sco_workflow_triggered_by_rule {
         'Check node rule 2 is not verified after formula has changed';
 
         diag('Check if service rule 2 is not verified after formula has changed');
-        Entity::AggregateRule->find(hash => {
+        Entity::Rule::AggregateRule->find(hash => {
             aggregate_rule_id => $agg_rule_ids->{agg_rule2_id},
             aggregate_rule_last_eval => 0,
         });
@@ -403,13 +403,13 @@ sub check_rule_verification {
     my %args = @_;
 
     diag('# Service rule 1 verification');
-    Entity::AggregateRule->find(hash => {
+    Entity::Rule::AggregateRule->find(hash => {
         aggregate_rule_id => $args{agg_rule1_id},
         aggregate_rule_last_eval => 0,
     });
 
     diag('# Service rule 2 verification');
-    Entity::AggregateRule->find(hash => {
+    Entity::Rule::AggregateRule->find(hash => {
         aggregate_rule_id => $args{agg_rule2_id},
         aggregate_rule_last_eval => 1,
     });
@@ -451,7 +451,7 @@ sub clean_infra {
     }
 
     diag('Check if all aggregrate rules have been deleted');
-    my @ars = Entity::AggregateRule->search (hash => {
+    my @ars = Entity::Rule::AggregateRule->search (hash => {
         aggregate_rule_service_provider_id => $service_provider->id
     });
     if ( scalar @ars == 0 ) {
@@ -526,13 +526,13 @@ sub _service_rule_objects_creation {
         threshold => '0',
     );
 
-    $rule1 = Entity::AggregateRule->new(
+    $rule1 = Entity::Rule::AggregateRule->new(
         aggregate_rule_service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac1->id.' && id'.$ac2->id,
         aggregate_rule_state => 'enabled'
     );
 
-    $rule2 = Entity::AggregateRule->new(
+    $rule2 = Entity::Rule::AggregateRule->new(
         aggregate_rule_service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac1->id.' || id'.$ac2->id,
         aggregate_rule_state => 'enabled'
@@ -579,13 +579,13 @@ sub _node_rule_objects_creation {
         nodemetric_condition_threshold => '0',
     );
 
-    $rule1 = Entity::NodemetricRule->new(
+    $rule1 = Entity::Rule::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc1->id.' && id'.$nc2->id,
         nodemetric_rule_state => 'enabled'
     );
 
-    $rule2 = Entity::NodemetricRule->new(
+    $rule2 = Entity::Rule::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc1->id.' || id'.$nc2->id,
         nodemetric_rule_state => 'enabled'

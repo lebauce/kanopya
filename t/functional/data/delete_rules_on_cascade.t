@@ -20,7 +20,7 @@ use Entity::CollectorIndicator;
 use Externalnode;
 use Entity::Combination::NodemetricCombination;
 use Entity::NodemetricCondition;
-use Entity::NodemetricRule;
+use Entity::Rule::NodemetricRule;
 use VerifiedNoderule;
 use WorkflowNoderule;
 use Entity::Clustermetric;
@@ -143,15 +143,15 @@ sub main {
         } 'Kanopya::Exception::Internal::NotFound', 'Error ConstantCombination not deleted';
 
         expectedException {
-            Entity::AggregateRule->get(id => $rule1d->id);
+            Entity::Rule::AggregateRule->get(id => $rule1d->id);
         } 'Kanopya::Exception::Internal::NotFound', 'Error AggregateRule not deleted';
 
         expectedException {
-            Entity::AggregateRule->get(id => $rule2d->id);
+            Entity::Rule::AggregateRule->get(id => $rule2d->id);
         } 'Kanopya::Exception::Internal::NotFound', 'Error AggregateRule not deleted';
 
         expectedException {
-            Entity::AggregateRule->get(id => $rule3d->id);
+            Entity::Rule::AggregateRule->get(id => $rule3d->id);
         } 'Kanopya::Exception::Internal::NotFound', 'Error AggregateRule not deleted';
 
         expectedException {
@@ -194,26 +194,26 @@ sub main {
         } 'Kanopya::Exception::Internal::NotFound', 'Error right combination not deleted';
 
         expectedException {
-            Entity::NodemetricRule->get(id => $nrule1d->id);
+            Entity::Rule::NodemetricRule->get(id => $nrule1d->id);
         } 'Kanopya::Exception::Internal::NotFound', 'Error NodemetricRule not deleted';
 
         expectedException {
-            Entity::NodemetricRule->get(id => $nrule2d->id);
+            Entity::Rule::NodemetricRule->get(id => $nrule2d->id);
         } 'Kanopya::Exception::Internal::NotFound', 'Error NodemetricRule not deleted';
 
         expectedException {
-            Entity::NodemetricRule->get(id => $nrule3d->id);
+            Entity::Rule::NodemetricRule->get(id => $nrule3d->id);
         } 'Kanopya::Exception::Internal::NotFound', 'Error NodemetricRule not deleted';
 
         Entity::Clustermetric->get(id => $cm2->id);
         Entity::Clustermetric->get(id => $cm3->id);
         Entity::Combination->get(id => $acomb3->id);
         Entity::AggregateCondition->get(id => $ac3->id);
-        Entity::AggregateRule->get(id => $rule4->id);
+        Entity::Rule::AggregateRule->get(id => $rule4->id);
         Entity::Combination->get(id => $ncomb3->id);
         Entity::Combination->get(id => Entity::NodemetricCondition->get(id => $nc3->id)->left_combination_id);
         Entity::Combination->get(id => Entity::NodemetricCondition->get(id => $nc3->id)->right_combination_id);
-        Entity::NodemetricRule->get(id => $nrule4->id);
+        Entity::Rule::NodemetricRule->get(id => $nrule4->id);
 
     } 'Delete indicator on cascade';
 
@@ -247,7 +247,7 @@ sub test_rrd_remove {
 
     if ((scalar @acs) != 0) { die 'Error in all aggregate combinations are deleted';}
 
-    my @ars = Entity::AggregateRule->search (hash => {
+    my @ars = Entity::Rule::AggregateRule->search (hash => {
         aggregate_rule_service_provider_id => $service_provider->id
     });
     
@@ -328,25 +328,25 @@ sub _service_rule_objects_creation {
         threshold => '0',
     );
 
-    $rule1d = Entity::AggregateRule->new(
+    $rule1d = Entity::Rule::AggregateRule->new(
         aggregate_rule_service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$acd1->id.' && id'.$acd2->id,
         aggregate_rule_state => 'enabled'
     );
 
-    $rule2d = Entity::AggregateRule->new(
+    $rule2d = Entity::Rule::AggregateRule->new(
         aggregate_rule_service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac3->id.' || id'.$acd2->id,
         aggregate_rule_state => 'enabled'
     );
 
-    $rule3d = Entity::AggregateRule->new(
+    $rule3d = Entity::Rule::AggregateRule->new(
         aggregate_rule_service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$acd2->id.' && id'.$ac3->id,
         aggregate_rule_state => 'enabled'
     );
 
-    $rule4 = Entity::AggregateRule->new(
+    $rule4 = Entity::Rule::AggregateRule->new(
         aggregate_rule_service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac3->id.' || id'.$ac3->id,
         aggregate_rule_state => 'enabled'
@@ -397,25 +397,25 @@ sub _node_rule_objects_creation {
         nodemetric_condition_threshold => '0',
     );
 
-    $nrule1d = Entity::NodemetricRule->new(
+    $nrule1d = Entity::Rule::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$ncd1->id.' && id'.$ncd2->id,
         nodemetric_rule_state => 'enabled'
     );
 
-    $nrule2d = Entity::NodemetricRule->new(
+    $nrule2d = Entity::Rule::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$ncd1->id.' || id'.$nc3->id,
         nodemetric_rule_state => 'enabled'
     );
 
-    $nrule3d = Entity::NodemetricRule->new(
+    $nrule3d = Entity::Rule::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc3->id.' || id'.$ncd2->id,
         nodemetric_rule_state => 'enabled'
     );
 
-    $nrule4 = Entity::NodemetricRule->new(
+    $nrule4 = Entity::Rule::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc3->id.' || id'.$nc3->id,
         nodemetric_rule_state => 'enabled'

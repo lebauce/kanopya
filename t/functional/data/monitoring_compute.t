@@ -532,12 +532,6 @@ sub test_rrd_remove {
 
     is ((scalar @acs), 0, 'Check all aggregate combinations are deleted');
 
-    my @ars = Entity::AggregateRule->search (hash => {
-        aggregate_rule_service_provider_id => $service_provider->id
-    });
-    
-    is (scalar @acs, 0, 'Check all aggregate rules are deleted');
-
     my $one_rrd_remove = 0;
     for my $cm_id (@cm_ids) {
         if (defined open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$cm_id.'.rrd')) {

@@ -37,10 +37,10 @@ use Entity::Connector::MockMonitor;
 use Entity::Clustermetric;
 use Entity::AggregateCondition;
 use Entity::Combination::AggregateCombination;
-use Entity::AggregateRule;
+use Entity::Rule::AggregateRule;
 use Entity::Combination::NodemetricCombination;
 use Entity::NodemetricCondition;
-use Entity::NodemetricRule;
+use Entity::Rule::NodemetricRule;
 use VerifiedNoderule;
 use Entity::Workflow;
 use Entity::WorkflowDef;
@@ -212,7 +212,7 @@ sub resubmit_hv_on_state {
             nodemetric_condition_threshold  => '0',
         );
 
-        my $rule = Entity::NodemetricRule->new(
+        my $rule = Entity::Rule::NodemetricRule->new(
             nodemetric_rule_service_provider_id => $hv_cluster->id,
             nodemetric_rule_formula => 'id'.$ncond->id,
             nodemetric_rule_state => 'enabled'
@@ -380,7 +380,7 @@ sub resubmit_vm_on_state {
             nodemetric_condition_threshold  => 0,
         );
 
-        my $rule = Entity::NodemetricRule->new(
+        my $rule = Entity::Rule::NodemetricRule->new(
             nodemetric_rule_service_provider_id => $vm_cluster->id,
             nodemetric_rule_formula => 'id'.$ncond->id,
             nodemetric_rule_state => 'enabled'

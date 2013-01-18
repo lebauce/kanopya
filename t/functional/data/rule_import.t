@@ -27,10 +27,10 @@ lives_ok {
     use Entity::Clustermetric;
     use Entity::AggregateCondition;
     use Entity::Combination::AggregateCombination;
-    use Entity::AggregateRule;
+    use Entity::Rule::AggregateRule;
     use Entity::Combination::NodemetricCombination;
     use Entity::NodemetricCondition;
-    use Entity::NodemetricRule;
+    use Entity::Rule::NodemetricRule;
 } 'All uses';
 
 Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
@@ -64,7 +64,7 @@ sub testNodeRuleImport {
 
     lives_ok {
         # 'overloaded' new will do a clone
-        Entity::NodemetricRule->new(
+        Entity::Rule::NodemetricRule->new(
             nodemetric_rule_id   => $nr->id,
             service_provider_id  => $sp_dest->id
         );
@@ -104,7 +104,7 @@ sub testNodeRuleImport {
     } 'Constant combination cloned';
 
     lives_ok {
-        Entity::NodemetricRule->find(
+        Entity::Rule::NodemetricRule->find(
             hash => {
                 nodemetric_rule_service_provider_id => $sp_dest->id,
                 nodemetric_rule_label               => 'node rule label',
@@ -122,7 +122,7 @@ sub testServiceRuleImport {
 
     lives_ok {
         # 'overloaded' new will do a clone
-        Entity::AggregateRule->new(
+        Entity::Rule::AggregateRule->new(
             aggregate_rule_id   => $ar->id,
             service_provider_id => $sp_dest->id
         );
@@ -173,7 +173,7 @@ sub testServiceRuleImport {
     } 'Constant combination cloned';
 
     lives_ok {
-        $cloned_ar = Entity::AggregateRule->find(
+        $cloned_ar = Entity::Rule::AggregateRule->find(
             hash => {
                 aggregate_rule_service_provider_id  => $sp_dest->id,
                 aggregate_rule_label                => 'service rule label',
@@ -193,7 +193,7 @@ sub testExceptions {
 
     throws_ok {
         # 'overloaded' new will do a clone
-        Entity::NodemetricRule->new(
+        Entity::Rule::NodemetricRule->new(
             nodemetric_rule_id  => $nr->id,
             service_provider_id => $bad_sp_dest->id
         );
@@ -202,7 +202,7 @@ sub testExceptions {
 
     throws_ok {
         # 'overloaded' new will do a clone
-        Entity::AggregateRule->new(
+        Entity::Rule::AggregateRule->new(
             aggregate_rule_id   => $ar->id,
             service_provider_id => $bad_sp_dest->id
         );
@@ -225,7 +225,7 @@ sub testExceptions {
 
     throws_ok {
         # 'overloaded' new will do a clone
-        Entity::NodemetricRule->new(
+        Entity::Rule::NodemetricRule->new(
             nodemetric_rule_id  => $nr->id,
             service_provider_id => $bad_sp_dest->id
         );
@@ -234,7 +234,7 @@ sub testExceptions {
 
     throws_ok {
         # 'overloaded' new will do a clone
-        Entity::AggregateRule->new(
+        Entity::Rule::AggregateRule->new(
             aggregate_rule_id   => $ar->id,
             service_provider_id => $bad_sp_dest->id
         );
@@ -297,7 +297,7 @@ sub init {
     );
 
     # Nodemetric rule
-   $nr = Entity::NodemetricRule->new(
+   $nr = Entity::Rule::NodemetricRule->new(
         nodemetric_rule_service_provider_id => $sp_src->id,
         nodemetric_rule_label               => 'node rule label',
         nodemetric_rule_formula             => 'id'.$ncond->id,
@@ -330,7 +330,7 @@ sub init {
     );
 
     # Aggregate rule
-   $ar = Entity::AggregateRule->new(
+   $ar = Entity::Rule::AggregateRule->new(
         aggregate_rule_service_provider_id  => $sp_src->id,
         aggregate_rule_label                => 'service rule label',
         aggregate_rule_formula              => 'id'.$acond->id,
