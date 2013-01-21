@@ -892,6 +892,7 @@ sub getClassType {
                 return $class_type;
             }
         }
+        return $args{class};
     }
 
     return "BaseDB";
