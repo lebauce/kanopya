@@ -78,23 +78,19 @@ sub _contructRetrieverOutput {
     my $indicators = { };
     my $time_span = 0;
 
-    my $service_provider = Entity::ServiceProvider->get(id => $args{service_provider_id});
-    my @clustermetrics = $service_provider->clustermetrics;
-
-    for my $clustermetric (@clustermetrics) {
+    for my $clustermetric ($args{service_provider}->clustermetrics) {
         my $clustermetric_time_span = $clustermetric->clustermetric_window_time;
         my $indicator = $clustermetric->getIndicator();
         $indicators->{$indicator->indicator_oid} = $indicator;
+
         if (! defined $time_span) {
             $time_span = $clustermetric_time_span;
-        } else {
-            if ($time_span != $clustermetric_time_span) {
+        }
+        elsif ($time_span != $clustermetric_time_span) {
                 #$log->info("WARNING !!! ALL TIME SPAN MUST BE EQUALS IN FIRST VERSION");
-            }
         }
 
-        $time_span = ($clustermetric_time_span > $time_span) ?
-                         $clustermetric_time_span : $time_span;
+        $time_span = ($clustermetric_time_span > $time_span) ? $clustermetric_time_span : $time_span;
     }
 
     return {
@@ -122,18 +118,15 @@ sub update() {
     CLUSTER:
     for my $service_provider (@service_providers) {
         eval {
-            my $service_provider_id = $service_provider->id;
-
             eval {
                 $service_provider->getManager(manager_type => "collector_manager");
             };
-
             if (not $@){
-                $log->info('Aggregator collecting for service provider '. $service_provider_id);
+                $log->info('Aggregator collecting for service provider '.  $service_provider->id);
 
                 # Construct input of the collector retriever
                 my $host_indicator_for_retriever = $self->_contructRetrieverOutput(
-                                                       service_provider_id => $service_provider_id
+                                                       service_provider => $service_provider
                                                    );
 
                 # Call the retriever to get monitoring data
@@ -145,57 +138,56 @@ sub update() {
                 # Verify answers received from SCOM to detect metrics anomalies
                 my $checker = $self->_checkNodesMetrics(
                                   service_provider_id => $service_provider->id,
-                                  asked_indicators => $host_indicator_for_retriever->{indicators},
-                                  received => $monitored_values
+                                  asked_indicators    => $host_indicator_for_retriever->{indicators},
+                                  received            => $monitored_values
                               );
 
                 # Parse retriever return, compute clustermetric values and store in DB
                 if ($checker == 1) {
                     $self->_computeCombinationAndFeedTimeDB(
-                        values     => $monitored_values,
-                        cluster_id => $service_provider_id
+                        values           => $monitored_values,
+                        service_provider => $service_provider
                     );
                 }
                 1;
             }
         };
-        if($@) {
+        if ($@) {
             $log->error("An error occurred : " . $@);
             next CLUSTER;
         }
     }
 }
 
-sub _checkNodesMetrics{
+sub _checkNodesMetrics {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [
-        'asked_indicators',
-        'received',
-        'service_provider_id',
-    ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'asked_indicators', 'received', 'service_provider_id' ]);
 
-    my $asked_indicators = $args{asked_indicators};
-    my $received         = $args{received};
+    my $asked_indicators    = $args{asked_indicators};
+    my $received            = $args{received};
     my $service_provider_id = $args{service_provider_id};
 
     foreach my $indicator (values %$asked_indicators) {
-        while ( my ($node_name, $metrics) = each(%$received) ) {
-            my $msg = "Indicator " . $indicator->indicator_name . '(' . $indicator->indicator_oid . ')' .
-                        " was not retrieved by collector for node $node_name";
+        while (my ($node_name, $metrics) = each(%$received)) {
+            my $msg = "Indicator " . $indicator->indicator_name . "(" . $indicator->indicator_oid . ") " .
+                      "was not retrieved by collector for node $node_name";
 
-            my $alert =  eval { Alert->find( hash => {
-                                          alert_message => $msg,
-                                          entity_id => $service_provider_id })
+            my $alert;
+            eval {
+                $alert = Alert->find(hash => {
+                             alert_message => $msg,
+                             entity_id     => $service_provider_id
+                         });
             };
-
 
             if (! defined $metrics->{$indicator->indicator_oid}) {
                 $log->debug($msg);
 
                 if ((! defined $alert) || ($alert->alert_active == 0) ) {
-                    Alert->new (
+                    Alert->new(
                         entity_id       => $service_provider_id,
                         alert_message   => $msg,
                         alert_signature => $msg.' '.time()
@@ -227,11 +219,9 @@ sub _computeCombinationAndFeedTimeDB {
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['values']);
-    my $values     = $args{values};
-    my $cluster_id = $args{cluster_id};
 
-    my $service_provider = Entity::ServiceProvider->get('id' => $cluster_id);
-    my @clustermetrics   = $service_provider->clustermetrics;
+    my $values = $args{values};
+    my @clustermetrics = $args{service_provider}->clustermetrics;
 
     # Loop on all the clustermetrics
     for my $clustermetric (@clustermetrics) {

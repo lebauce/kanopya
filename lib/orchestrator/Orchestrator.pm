@@ -421,25 +421,33 @@ sub _contructRetrieverOutput {
 sub clustermetricManagement{
     my ($self, %args) = @_;
     my $service_provider = $args{service_provider};
-    my $service_provider_id = $service_provider->getId();
+
+    # TODO: Test the following block to replace the 3 calls to AggregateRule
+
+#    my @rules = Entity::Rule::AggregateRule->search(hash => {
+#                    aggregate_rule_service_provider_id => $service_provider->id,
+#                    -or => [ aggregate_rule_state => 'enabled',
+#                             aggregate_rule_state => 'triggered',
+#                             aggregate_rule_state => 'delayed' ] 
+#                });
 
     # Get rules relative to a cluster
     my @rules_enabled   = Entity::Rule::AggregateRule->search(
                             hash => {
-                                aggregate_rule_service_provider_id => $service_provider_id,
+                                aggregate_rule_service_provider_id => $service_provider->id,
                                 aggregate_rule_state               => 'enabled',
                             }
                         );
 
     my @rules_triggered = Entity::Rule::AggregateRule->search(
                               hash => {
-                                  aggregate_rule_service_provider_id => $service_provider_id,
+                                  aggregate_rule_service_provider_id => $service_provider->id,
                                   aggregate_rule_state               => 'triggered'
                               }
                           );
     my @rules_delayed   = Entity::Rule::AggregateRule->search(
                               hash => {
-                                  aggregate_rule_service_provider_id => $service_provider_id,
+                                  aggregate_rule_service_provider_id => $service_provider->id,
                                   aggregate_rule_state               => 'delayed'
                               }
                           );
@@ -456,12 +464,12 @@ sub clustermetricManagement{
         my $workflow_id;
 
         eval {
-
-            eval{ # Avoid the reinstantiation for each node
+            eval{
+                # Avoid the reinstantiation for each node
                 $workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager');
             };
             if($@){
-                $log->info('No workflow manager in service provider <'.($service_provider->getId()).'>')
+                $log->info('No workflow manager in service provider <' . $service_provider->id . '>')
             }
 
             $workflow_def_id  = $aggregate_rule->getAttr(name => 'workflow_def_id');
@@ -548,7 +556,7 @@ sub clustermetricManagement{
                         my $workflow = $workflow_manager->runWorkflow(
                             workflow_def_id     => $workflow_def_id,
                             rule_id             => $rule_id,
-                            service_provider_id => $service_provider_id
+                            service_provider_id => $service_provider->id
                         );
 
                         $aggregate_rule->setAttr(name => 'aggregate_rule_state', value => 'triggered');
