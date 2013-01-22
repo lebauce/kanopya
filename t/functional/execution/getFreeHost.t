@@ -65,7 +65,7 @@ use Log::Log4perl qw(:easy);
 
 Log::Log4perl->easy_init({
     level  => 'DEBUG',
-    file   => '/tmp/getFreeHost.t.log',
+    file   => 'getFreeHost.t.log',
     layout => '%F %L %p %m%n'
 });
 

@@ -15,7 +15,7 @@ use Log::Log4perl qw(:easy);
 
 Log::Log4perl->easy_init({
     level  => 'DEBUG',
-    file   => '/tmp/01storage.t.log',
+    file   => '01storage.t.log',
     layout => '%F %L %p %m%n'
 });
 

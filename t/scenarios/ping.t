@@ -7,7 +7,7 @@ use Test::Pod;
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
     level=>'DEBUG',
-    file=>'/vagrant/Bonding.t.log',
+    file=>'Bonding.t.log',
     layout=>'%F %L %p %m%n'
 });
 

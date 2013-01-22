@@ -18,7 +18,7 @@ use Test::Exception;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
     level=>'DEBUG',
-    file=>'/vagrant/node_disabling.log',
+    file=>'node_disabling.log',
     layout=>'%F %L %p %m%n'
 });
 

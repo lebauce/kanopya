@@ -22,7 +22,7 @@ use Test::Exception;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
     level=>'DEBUG',
-    file=>'/vagrant/rules_on_state.log',
+    file=>'rules_on_state.log',
     layout=>'%F %L %p %m%n'
 });
 

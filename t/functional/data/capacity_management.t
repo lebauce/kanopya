@@ -9,7 +9,7 @@ use Test::Pod;
 use Data::Dumper;
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level=>'DEBUG', file=>'/tmp/capacity_management.log', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>'capacity_management.log', layout=>'%F %L %p %m%n'});
 my $log = get_logger("");
 
 my $testing = 0;

@@ -23,7 +23,7 @@ use Test::Exception;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
     level=>'DEBUG',
-    file=>'/vagrant/start_and_stop_vm.log',
+    file=>'start_and_stop_vm.log',
     layout=>'%F %L %p %m%n'
 });
 

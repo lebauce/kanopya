@@ -8,7 +8,7 @@ use ComponentType;
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
     level=>'DEBUG',
-    file=>'/vagrant/StartSLESIaaS.t.log',
+    file=>'start_sles_iaas.log',
     layout=>'%F %L %p %m%n'
 });
 

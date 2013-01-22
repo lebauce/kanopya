@@ -8,7 +8,7 @@ use Test::Pod;
 use Data::Dumper;
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level=>'DEBUG', file=>'/tmp/rule_compute.log', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>'rule_compute.log', layout=>'%F %L %p %m%n'});
 my $log = get_logger("");
 
 lives_ok {

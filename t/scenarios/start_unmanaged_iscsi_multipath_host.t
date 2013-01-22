@@ -17,7 +17,7 @@ use Kanopya::Exceptions;
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
     level=>'INFO',
-    file=>'/vagrant/SetupUnmanagedStorageHost.t.log',
+    file=>'setup_unmanaged_iscsi_multipath.t.log',
     layout=>'%F %L %p %m%n'
 });
 

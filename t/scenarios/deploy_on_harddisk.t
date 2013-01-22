@@ -19,7 +19,7 @@ use ComponentType;
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
     level=>'DEBUG',
-    file=>'/vagrant/DeployOnHarddisk.t.log',
+    file=>'DeployOnHarddisk.t.log',
     layout=>'%F %L %p %m%n'
 });
 

@@ -19,7 +19,7 @@ use Test::Exception;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
     level=>'DEBUG',
-    file=>'/vagrant/live_migration.log',
+    file=>'live_migration.log',
     layout=>'%F %L %p %m%n'
 });
 

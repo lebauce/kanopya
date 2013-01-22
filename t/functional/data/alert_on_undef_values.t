@@ -9,7 +9,7 @@ use Test::Pod;
 use Data::Dumper;
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level=>'DEBUG', file=>'/tmp/alert_on_undef_values.log', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>'alert_on_undef_values.log', layout=>'%F %L %p %m%n'});
 my $log = get_logger("");
 
 

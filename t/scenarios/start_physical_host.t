@@ -19,7 +19,7 @@ use ComponentType;
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
     level=>'DEBUG',
-    file=>'/vagrant/SetupPhysicalHost.t.log',
+    file=>'start_physical_host.t.log',
     layout=>'%F %L %p %m%n'
 });
 
