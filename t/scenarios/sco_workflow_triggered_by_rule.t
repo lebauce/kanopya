@@ -208,20 +208,20 @@ sub sco_workflow_triggered_by_rule {
         diag('Check triggered node enqueued operation');
         Entity::Operation->find( hash => {
             type => 'LaunchSCOWorkflow',
-            state => 'ready',
+            state => 'pending',
             workflow_id => $node_workflow->id,
         });
 
         diag('Check triggered service enqueued operation');
         Entity::Operation->find( hash => {
             type => 'LaunchSCOWorkflow',
-            state => 'ready',
+            state => 'pending',
             workflow_id => $service_workflow->id,
         });
 
-        #Execute operation 2 times (1 time per operation enqueud)
-        Kanopya::Tools::Execution->oneRun();
-        Kanopya::Tools::Execution->oneRun();
+        #Execute operation 4 times (1 time per trigerred rule * 2 (op confirmation + op workflow))
+        Kanopya::Tools::Execution->nRun(n => 4);
+
 
         #  Check node rule output
         diag('Check postreported operation');

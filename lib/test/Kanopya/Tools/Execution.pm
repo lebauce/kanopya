@@ -61,7 +61,7 @@ my $executor = Executor->new();
 
 =begin classdoc
 
-Lauch 1 executor->oneRun
+Launch 1 executor->oneRun
 
 =end classdoc
 
@@ -71,6 +71,24 @@ sub oneRun {
     my $self = shift;
 
     $executor->oneRun;
+}
+
+=pod
+
+=begin classdoc
+
+Launch n executor->oneRun
+
+=end classdoc
+
+=cut
+
+sub nRun {
+    my ($self, %args) = @_;
+
+    for (1..$args{n}) {
+        $executor->oneRun;
+    }
 }
 
 =pod
