@@ -17,7 +17,7 @@ class nfsd::install {
 		'nfsd':
 			name => $operatingsystem ? {
 				/(Red Hat|CentOS|Fedora)/ => 'nfs-utils',
-				default => 'nfsd'
+				default => 'nfs-kernel-server'
 			},
 			ensure => present,
 	}
