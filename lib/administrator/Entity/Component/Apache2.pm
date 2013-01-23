@@ -102,8 +102,8 @@ sub getNetConf {
     my %net_conf = ($http_port => ['tcp']);
 
     # manage ssl
-    my $virtualhosts = $self->apache2_virtualhosts;
-    my $ssl_enable = grep { $_->{apache2_virtualhost_sslenable} == 1 } @$virtualhosts;
+    my @virtualhosts = $self->apache2_virtualhosts;
+    my $ssl_enable = grep { $_->{apache2_virtualhost_sslenable} == 1 } @virtualhosts;
     $net_conf{$https_port} = ['tcp', 'ssl'] if ($ssl_enable);
 
     return \%net_conf;
