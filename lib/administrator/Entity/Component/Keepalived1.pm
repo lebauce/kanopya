@@ -274,51 +274,6 @@ sub setRealServerWeightToZero {
     $realServer->update();
 }
 
-=head2 getConf
-    
-    Desc : This function return the whole configuration to passed to the ui template.
-    return : hash ref 
-
-=cut
-
-sub getConf {
-    my $self = shift;
-    my $row = $self->{_dbix};
-    my $keepalived1_conf = {
-        keepalived_id          => $row->get_column('keepalived_id'),
-        daemon_method           => $row->get_column('daemon_method'),
-        notification_email      => $row->get_column('notification_email'),
-        notification_email_from => $row->get_column('notification_email_from'),
-        smtp_server             => $row->get_column('smtp_server'),
-        smtp_connect_timeout    => $row->get_column('smtp_connect_timeout'),
-    };
-    
-    return $keepalived1_conf;
-}
-
-=head2 setConf
-    
-    Desc : This function save the whole configuration sended by the ui
-    return : hash ref 
-
-=cut
-
-sub setConf {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['conf']);
-
-    my $conf = $args{conf};
-    if (not $conf->{keepalived_id}) {
-         # new configuration -> create    
-         $self->{_dbix}->create($conf);
-    } else {
-        # old configuration -> update
-        $self->{_dbix}->update($conf);
-    }
-}
-
 # return a data structure to pass to the template processor for ipvsadm file
 sub getTemplateDataIpvsadm {
     my $self = shift;
