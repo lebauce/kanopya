@@ -250,33 +250,10 @@ sub createVmCluster {
                                                            version => 3)
                       );
 
-    my $nfs;
-    eval {
-        $nfs = Kanopya::Tools::Retrieve->retrieveContainerAccess(
-                   name       => 'test_image_repository',
-                   type       => 'nfs',
-               );
-    };
-    if (not defined $nfs) {
-        my $disk_manager = EEntity->new(
-                               entity => $kanopya->getComponent(name    => "Lvm",
-                                                                version => 2)
-                           );
-
-        my $image_disk = $disk_manager->createDisk(
-                name       => "test_image_repository",
-                size       => 6 * 1024 * 1024 * 1024,
-                filesystem => "ext3",
-                vg_id      => 1
-        )->_getEntity;
-
-        $nfs = $nfs_manager->createExport(
-                   container      => $image_disk,
-                   export_name    => "test_image_repository",
-                   client_name    => "*",
-                   client_options => "rw,sync,no_root_squash",
-               );
-    }
+    my $nfs = Kanopya::Tools::Retrieve->retrieveContainerAccess(
+                  name       => 'test_image_repository',
+                  type       => 'nfs',
+              );
 
     delete $args{iaas};
 
@@ -341,7 +318,7 @@ sub createIaasCluster {
 
         my $disk = $disk_manager->createDisk(
                        name         => $datastore,
-                       size         => 4 * 1024 * 1024 * 1024,
+                       size         => 20 * 1024 * 1024 * 1024,
                        filesystem   => "ext3",
                        vg_id        => 1
                    )->_getEntity;
