@@ -12,45 +12,8 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package EEntity::EComponent::EMysql5;
+use base "EEntity::EComponent";
 
 use strict;
-use Template;
-use String::Random;
-use base "EEntity::EComponent";
-use Log::Log4perl "get_logger";
-
-my $log = get_logger("");
-my $errmsg;
-
-sub addNode {
-    my $self = shift;
-    my %args = @_;
-    
-    General::checkParams(args => \%args, required => ['host','mount_point']);
-
-    my $data = $self->_getEntity()->getConf();    
-        
-    # generation of /etc/mysql/my.cnf
-    $self->generateFile(mount_point  => $args{mount_point}.'/etc',
-                        template_dir => "/templates/components/mysql5",
-                        input_file   => "my.cnf.tt",
-                        output       => "/mysql/my.cnf",
-                        data         => $data);
-
-    $self->addInitScripts(
-        mountpoint => $args{mount_point},
-        scriptname => 'mysql'
-    );
-        
-}
-
-sub reload {
-    my $self = shift;
-    my %args = @_;
-
-    my $command = "invoke-rc.d mysql restart";
-    my $result = $self->getEContext->execute(command => $command);
-    return undef;
-}
 
 1;
