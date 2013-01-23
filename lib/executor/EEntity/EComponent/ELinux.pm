@@ -444,7 +444,7 @@ sub _generateNetConf {
 
     # search for an potential 'loadbalanced' component
     my $cluster_components = $args{cluster}->getComponents(category => "all");
-    my $is_masternode = $args{cluster}->getCurrentNodesCount == 0;
+    my $is_masternode = $args{cluster}->getCurrentNodesCount == 1;
     my $is_loadbalanced = 0;
     foreach my $component (@{ $cluster_components }) {
         my $clusterization_type = $component->getClusterizationType();
