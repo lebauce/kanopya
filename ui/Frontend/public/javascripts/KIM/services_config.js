@@ -35,4 +35,20 @@ function loadServicesConfig(cid, eid) {
                 }
             }
         });
+
+    var addButton   = $('<a>', { text : 'Add component' }).appendTo('#' + cid)
+                        .button({ icons : { primary : 'ui-icon-plusthick' } });
+    $(addButton).bind('click', function (e) {
+        (new KanopyaFormWizard({
+            title      : 'Add components',
+            type       : 'cluster',
+            id         : eid,
+            relations  : { 'components' : [ "component_type_id" ] },
+            displayed  : [ 'cluster_name', 'components' ],
+            rawattrdef : {
+                components : {
+                    hide_existing : 1
+                }
+            } })).start();
+    });
 }

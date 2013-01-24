@@ -81,7 +81,7 @@ var KanopyaFormWizard = (function() {
         this.buildFromAttrDef(attributes, displayed, values, relations);
 
         // For each relation 1-N, list all entries, add input to create an entry
-        for (relation_name in this.relations) if (this.relations.hasOwnProperty(relation_name)) {
+        for (var relation_name in this.relations) if (this.relations.hasOwnProperty(relation_name)) {
             var relationdef = relations[relation_name];
 
             // Get the relation type attrdef
@@ -424,7 +424,7 @@ var KanopyaFormWizard = (function() {
         }
 
         // Finally, insert DOM elements in the form
-        this.insertInput(input, label, table, attr.help || attr.description, listing);
+        this.insertInput(input, label, table, attr.help || attr.description, listing, value);
 
         if ($(input).attr('type') === 'date') {
             $(input).datepicker({ dateFormat : 'yyyy-mm-dd', constrainInput : true });
@@ -480,7 +480,7 @@ var KanopyaFormWizard = (function() {
         }
     }
 
-    KanopyaFormWizard.prototype.insertInput = function(input, label, table, help, listing) {
+    KanopyaFormWizard.prototype.insertInput = function(input, label, table, help, listing, value) {
         var linecontainer;
 
         // TODO: factorize code for both mode listing or not
@@ -495,12 +495,14 @@ var KanopyaFormWizard = (function() {
                 input.width(110);
             }
 
+            var relation_name = this.attributedefs[input.attr('name')].belongs_to;
+
             // Search for the line that contains labels for this listing
             var labelsline = $(table).find('tr.labels_' + listing).get(0);
             var errorsline = $(table).find('tr.errors_' + listing).get(0);
             if (! labelsline) {
                 // Add an empty line if not existsset next
-                labelsline = $("<tr>").css('position', 'relative');
+                labelsline = $("<tr>").css('position', 'relative').css('display', 'none');
                 labelsline.addClass('labels_' + listing);
                 labelsline.appendTo(table);
                 // Add another line for error messages
@@ -546,20 +548,26 @@ var KanopyaFormWizard = (function() {
 
                 var td = $("<td>", { align : 'left', width : 60 });
 
-                var relation_name = this.attributedefs[input.attr('name')].belongs_to;
                 if (! (relation_name && ! this.attributedefs[relation_name].is_editable)) {
                     // Add a button to remove the line
                     var removeButton = $('<a>').button({ icons : { primary : 'ui-icon-closethick' }, text : false });
                     removeButton.addClass('wizard-ignore');
                     removeButton.bind('click', function () {
                         $(line).remove();
-                        if ($(table).find('tr').length <= 3) {
+                        if ($(table).find('tr:visible').length <= 3) {
                             $(labelsline).remove();
                             $(errorsline).remove();
                         }
                     });
                     td.append(removeButton);
                 }
+
+                if (this.attributedefs[relation_name].hide_existing && value != undefined) {
+                    line.css('display', 'none');
+                } else {
+                    $(labelsline).css('display', '');
+                }
+
                 line.append(td);
             }
 

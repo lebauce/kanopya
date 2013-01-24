@@ -50,10 +50,13 @@ use constant ATTR_DEF => {
         is_editable    => 0
     },
     component_type_id => {
+        label        => 'Component type',
         pattern        => '^\d*$',
+        type           => 'relation',
+        relation       => 'single',
         is_mandatory   => 1,
         is_extended    => 0,
-        is_editable    => 0
+        is_editable    => 1
     },
     component_template_id => {
         pattern        => '^\d*$',

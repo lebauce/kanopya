@@ -161,10 +161,18 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_editable  => 1
     },
-	user_id => {
+    user_id => {
         pattern      => '^\d+$',
         is_mandatory => 1,
         is_editable  => 0
+    },
+    components => {
+        label        => 'Components',
+        type         => 'relation',
+        relation     => 'single_multi',
+        link_to      => 'component',
+        is_mandatory => 0,
+        is_editable  => 1,
     },
 };
 
@@ -1372,6 +1380,28 @@ sub unlock {
 
     # Unlock the cluster himself
     $self->SUPER::unlock(%args);
+}
+
+sub update {
+    my $self = shift;
+    my %args = @_;
+
+    if (defined ($args{components})) {
+        for my $component (@{$args{components}}) {
+            $self->addComponentFromType(component_type_id => $component->{component_type_id});
+        }
+        delete $args{components};
+
+        Entity::Operation->enqueue(
+            priority => 200,
+            type     => 'UpdatePuppetCluster',
+            params   => {
+                context => {
+                    cluster => $self,
+                },
+            },
+        );
+    }
 }
 
 1;

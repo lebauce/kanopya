@@ -32,30 +32,29 @@ my $errmsg;
 
 sub prepare {
     my ($self, %args) = @_;
+
     # check if this cluster has a puppet agent component
-    my $puppetagent = eval { 
-        $self->{context}->{cluster}->getComponent(name    => 'Puppetagent',
-                                                  version => 2
-        );
+    my $puppetagent = eval {
+        $self->{context}->{cluster}->getComponent(category => 'Configurationagent');
     };
-    if(not $puppetagent) {
-        my $errmsg = "UpdatePuppetCluster Operation cannot be used without a puppet agent component configured on the cluster";
+    if (not $puppetagent) {
+        my $errmsg = "UpdatePuppetCluster Operation cannot be used without a puppet " .
+                     "agent component configured on the cluster";
         $log->error($errmsg);
         thow Kanopya::Exception::Internal(error => $errmsg);
     } else {
         $self->{context}->{puppetagent} = EFactory::newEEntity(
-                data => $puppetagent
+            data => $puppetagent
         );
     }
 }
 
 sub execute {
     my ($self, %args) = @_;
-    my $hosts = $self->{context}->{cluster}->getHosts();
-    for my $host (values %$hosts) {
-        my $ehost = EFactory::newEEntity(data => $host);
-        $self->{context}->{puppetagent}->applyManifest(host => $ehost);
-    }
+
+    $self->{context}->{puppetagent}->applyConfiguration(
+        cluster => $self->{context}->{cluster}
+    );
 }
 
 1;
