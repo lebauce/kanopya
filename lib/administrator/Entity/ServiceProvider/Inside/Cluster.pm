@@ -70,6 +70,7 @@ my $errmsg;
 
 use constant ATTR_DEF => {
     cluster_name => {
+        label        => 'Instance name',
         pattern      => '^[\w\d\.]+$',
         is_mandatory => 1,
         is_editable  => 0
@@ -86,6 +87,7 @@ use constant ATTR_DEF => {
         is_editable  => 0
     },
     cluster_boot_policy => {
+        label        => 'Boot policy',
         pattern      => '^.*$',
         is_mandatory => 0,
         is_editable  => 0
@@ -102,11 +104,13 @@ use constant ATTR_DEF => {
         is_editable  => 0
     },
     cluster_min_node => {
+        label        => 'Minimum number of nodes',
         pattern      => '^\d*$',
         is_mandatory => 1,
         is_editable  => 1
     },
     cluster_max_node => {
+        label        => 'Maximum number of nodes',
         pattern      => '^\d*$',
         is_mandatory => 1,
         is_editable  => 1
@@ -117,26 +121,31 @@ use constant ATTR_DEF => {
         is_editable  => 1
     },
     cluster_state => {
+        label        => 'State',
         pattern      => '^up:\d*|down:\d*|starting:\d*|stopping:\d*|warning:\d*',
         is_mandatory => 0,
         is_editable  => 0
     },
     cluster_domainname => {
+        label        => 'Domain',
         pattern      => '^[a-z0-9-]+(\.[a-z0-9-]+)+$',
         is_mandatory => 1,
         is_editable  => 0
     },
     cluster_nameserver1 => {
+        label        => 'Primary name server',
         pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
         is_mandatory => 1,
         is_editable  => 0
     },
     cluster_nameserver2 => {
+        label        => 'Secondary name server',
         pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
         is_mandatory => 1,
         is_editable  => 0
     },
     cluster_basehostname => {
+        label        => 'Base host name',
         pattern      => '^[a-z_0-9-]+$',
         is_mandatory => 1,
         is_editable  => 1
@@ -147,22 +156,32 @@ use constant ATTR_DEF => {
         is_editable  => 1
     },
     active => {
+        label        => 'Active',
         pattern      => '^[01]$',
         is_mandatory => 0,
         is_editable  => 0
     },
     masterimage_id => {
+        label        => 'Master image',
         pattern      => '\d*',
+        type         => 'relation',
+        relation     => 'single',
         is_mandatory => 0,
         is_editable  => 0
     },
     kernel_id => {
+        label        => 'Kernel',
         pattern      => '^\d*$',
+        type         => 'relation',
+        relation     => 'single',
         is_mandatory => 0,
         is_editable  => 1
     },
     user_id => {
+        label        => 'Owner',
         pattern      => '^\d+$',
+        type         => 'relation',
+        relation     => 'single',
         is_mandatory => 1,
         is_editable  => 0
     },
