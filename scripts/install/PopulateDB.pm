@@ -1499,8 +1499,12 @@ sub populate_policies {
         ram             => 1024*1024*1024,
         cpu             => 1,
     );
-    $policies{'Standard OpenNebula KVM IAAS'}{hosting} = $policies{'Standard physical cluster'}{hosting};
-    $policies{'Standard OpenNebula Xen IAAS'}{hosting} = $policies{'Standard physical cluster'}{hosting};
+    $policies{'Standard OpenNebula KVM IAAS'}{hosting} = Entity::Policy::HostingPolicy->new(
+        policy_name     => 'Generic host',
+        policy_desc     => 'Hosting policy for generic hosts',
+        policy_type     => 'hosting',
+    );
+    $policies{'Standard OpenNebula Xen IAAS'}{hosting} = $policies{'Standard OpenNebula KVM IAAS'}{hosting};
 
     # storage
     my $lvm_type_id = ComponentType->find(hash => { component_name => 'Lvm' })->id;
