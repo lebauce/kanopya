@@ -10,6 +10,14 @@ class kvm::service {
 			hasrestart => true,
 			enable => true,
 	}
+	service {
+		'dnsmasq':
+			name => 'dnsmasq',
+			ensure => stopped,
+			hasstatus => true,
+			hasrestart => true,
+			enable => false,
+	}
 }
 
 class kvm::install {
