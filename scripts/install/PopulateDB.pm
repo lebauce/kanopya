@@ -1491,7 +1491,7 @@ sub populate_policies {
                              service_provider_id => $executor
                          });
 
-    $policies{hosting} = Entity::Policy::HostingPolicy->new(
+    $policies{'Standard physical cluster'}{hosting} = Entity::Policy::HostingPolicy->new(
         policy_name     => 'Default physical host',
         policy_desc     => 'Hosting policy for default physical hosts',
         policy_type     => 'hosting',
@@ -1499,6 +1499,8 @@ sub populate_policies {
         ram             => 1024*1024*1024,
         cpu             => 1,
     );
+    $policies{'Standard OpenNebula KVM IAAS'}{hosting} = $policies{'Standard physical cluster'}{hosting};
+    $policies{'Standard OpenNebula Xen IAAS'}{hosting} = $policies{'Standard physical cluster'}{hosting};
 
     # storage
     my $lvm_type_id = ComponentType->find(hash => { component_name => 'Lvm' })->id;
@@ -1506,20 +1508,22 @@ sub populate_policies {
     my $iscsit_type_id = ComponentType->find(hash => { component_name => 'Iscsitarget' })->id;
     my $iscsitarget = Entity::Component->find(hash => { component_type_id => $iscsit_type_id, service_provider_id => $executor });
 
-    $policies{storage} = Entity::Policy::StoragePolicy->new(
+    $policies{'Standard physical cluster'}{storage} = Entity::Policy::StoragePolicy->new(
         policy_name       => 'Kanopya LVM disk exported via ISCSI',
         policy_desc       => 'Datastore on Kanopya cluster for PXE boot via ISCSI',
         policy_type       => 'storage',
         disk_manager_id   => $lvm->id,
         export_manager_id => $iscsitarget->id,
     );
+    $policies{'Standard OpenNebula KVM IAAS'}{storage} = $policies{'Standard physical cluster'}{storage};
+    $policies{'Standard OpenNebula Xen IAAS'}{storage} = $policies{'Standard physical cluster'}{storage};
 
     # network
     my $netconf = Entity::Netconf->find(hash => { netconf_name => 'Kanopya admin' });
     my $network = Entity::Network->find(hash => { network_name => 'admin' });
-    $policies{network} = Entity::Policy::NetworkPolicy->new(
+    $policies{'Standard physical cluster'}{network} = Entity::Policy::NetworkPolicy->new(
         policy_name          => 'Default network configuration',
-        policy_desc          => 'Default network configuration, with admin and public interfaces',
+        policy_desc          => 'Default network configuration, with admin interface',
         policy_type          => 'network',
         cluster_nameserver1  => '127.0.0.1',
         cluster_nameserver2  => '127.0.0.1',
@@ -1530,23 +1534,44 @@ sub populate_policies {
         ],
     );
 
+    my $vmsrole = Entity::NetconfRole->find(hash => { netconf_role_name => "vms" });
+    my $vmsnetconf = Entity::Netconf->create(netconf_name    => "Virtual machines bridge",
+                                              netconf_role_id => $vmsrole->id);
+
+    $policies{'Standard OpenNebula KVM IAAS'}{network} = Entity::Policy::NetworkPolicy->new(
+        policy_name          => 'Default IAAS network configuration',
+        policy_desc          => 'Default IAAS network configuration, with admin and bridge interfaces',
+        policy_type          => 'network',
+        cluster_nameserver1  => '127.0.0.1',
+        cluster_nameserver2  => '127.0.0.1',
+        cluster_domainname   => 'hedera-technology.com',
+        default_gateway_id   => $network->id,
+        interfaces           => [
+            { netconfs => [ $netconf->id ] },
+            { netconfs => [ $vmsnetconf->id ] }
+        ],
+    );
+    $policies{'Standard OpenNebula Xen IAAS'}{network} = $policies{'Standard OpenNebula KVM IAAS'}{network};
+
     # scalability
-    $policies{scalability} = Entity::Policy::ScalabilityPolicy->new(
-        policy_name      => 'Cluster manual scalability',
+    $policies{'Standard physical cluster'}{scalability} = Entity::Policy::ScalabilityPolicy->new(
+        policy_name      => 'Manual scalability cluster',
         policy_desc      => 'Manual scalability',
         policy_type      => 'scalability',
         cluster_min_node => 1,
         cluster_max_node => 10,
         cluster_priority => 1
     );
+    $policies{'Standard OpenNebula KVM IAAS'}{scalability} = $policies{'Standard physical cluster'}{scalability};
+    $policies{'Standard OpenNebula Xen IAAS'}{scalability} = $policies{'Standard physical cluster'}{scalability};
 
     # system
     my $puppettypeid = ComponentType->find(hash => { component_name => 'Puppetagent' })->id;
     my $keepalivedtypeid = ComponentType->find(hash => { component_name => 'Keepalived' })->id;
     my $kernel = Entity::Kernel->find(hash => {kernel_name => '2.6.32-5-xen-amd64'});
-    $policies{system} = Entity::Policy::SystemPolicy->new(
-        policy_name           => 'Debian squeeze',
-        policy_desc           => 'System policy for standard physical hosts',
+    $policies{'Standard physical cluster'}{system} = Entity::Policy::SystemPolicy->new(
+        policy_name           => 'Default non persitent cluster',
+        policy_desc           => 'System policy for default non persitent cluster',
         policy_type           => 'system',
         cluster_si_shared     => 0,
         cluster_si_persistent => 0,
@@ -1558,37 +1583,75 @@ sub populate_policies {
         ],
     );
 
+    my $opennebula = ComponentType->find(hash => { component_name => 'Puppetagent' })->id;
+    my $kvm = ComponentType->find(hash => { component_name => 'Kvm' })->id;
+    my $xen = ComponentType->find(hash => { component_name => 'Xen' })->id;
+    $policies{'Standard OpenNebula KVM IAAS'}{system} = Entity::Policy::SystemPolicy->new(
+        policy_name           => 'Default OpenNebula KVM IAAS',
+        policy_desc           => 'System policy for default OpenNebula KVM IAAS',
+        policy_type           => 'system',
+        cluster_si_shared     => 0,
+        cluster_si_persistent => 0,
+        kernel_id             => $kernel->id,
+        systemimage_size      => 5 * (1024**3), # 5GB
+        components            => [
+            { component_type => $puppettypeid },
+            { component_type => $opennebula },
+            { component_type => $kvm }
+        ],
+    );
+    $policies{'Standard OpenNebula Xen IAAS'}{system} = Entity::Policy::SystemPolicy->new(
+        policy_name           => 'Default OpenNebula KVM IAAS',
+        policy_desc           => 'System policy for default OpenNebula KVM IAAS',
+        policy_type           => 'system',
+        cluster_si_shared     => 0,
+        cluster_si_persistent => 0,
+        kernel_id             => $kernel->id,
+        systemimage_size      => 5 * (1024**3), # 5GB
+        components            => [
+            { component_type => $puppettypeid },
+            { component_type => $opennebula },
+            { component_type => $xen }
+        ],
+    );
+
     # billing
-    $policies{billing} = Entity::Policy::BillingPolicy->new(
+    $policies{'Standard physical cluster'}{billing} = Entity::Policy::BillingPolicy->new(
         policy_name => 'Empty billing configuration',
         policy_desc => 'Empty billing configuration',
         policy_type => 'billing',
     );
+    $policies{'Standard OpenNebula KVM IAAS'}{billing} = $policies{'Standard physical cluster'}{billing};
+    $policies{'Standard OpenNebula Xen IAAS'}{billing} = $policies{'Standard physical cluster'}{billing};
 
     # orchestration
-    $policies{orchestration} = Entity::Policy::OrchestrationPolicy->new(
+    $policies{'Standard physical cluster'}{orchestration} = Entity::Policy::OrchestrationPolicy->new(
         policy_name => 'Empty orchestration configuration',
         policy_desc => 'Empty orchestration configuration',
         policy_type => 'orchestration',
     );
+    $policies{'Standard OpenNebula KVM IAAS'}{orchestration} = $policies{'Standard physical cluster'}{orchestration};
+    $policies{'Standard OpenNebula Xen IAAS'}{orchestration} = $policies{'Standard physical cluster'}{orchestration};
 
     return \%policies;
 }
 
 sub populate_servicetemplates {
     my ($policies) = @_;
-    # Standard physical cluster
-    my $template = Entity::ServiceTemplate->new(
-        service_name            => 'Standard physical cluster',
-        service_desc            => 'Service template for standard physical cluster declaration',
-        hosting_policy_id       => $policies->{hosting}->id,
-        storage_policy_id       => $policies->{storage}->id,
-        network_policy_id       => $policies->{network}->id,
-        scalability_policy_id   => $policies->{scalability}->id,
-        system_policy_id        => $policies->{system}->id,
-        billing_policy_id       => $policies->{billing}->id,
-        orchestration_policy_id => $policies->{orchestration}->id
-    );
+
+    for my $templatename (keys %{ $policies }) {
+        Entity::ServiceTemplate->new(
+            service_name            => $templatename,
+            service_desc            => 'Service template for ' . lcfirst ($templatename) . ' declaration',
+            hosting_policy_id       => $policies->{$templatename}->{hosting}->id,
+            storage_policy_id       => $policies->{$templatename}->{storage}->id,
+            network_policy_id       => $policies->{$templatename}->{network}->id,
+            scalability_policy_id   => $policies->{$templatename}->{scalability}->id,
+            system_policy_id        => $policies->{$templatename}->{system}->id,
+            billing_policy_id       => $policies->{$templatename}->{billing}->id,
+            orchestration_policy_id => $policies->{$templatename}->{orchestration}->id
+        );
+    }
 }
 
 sub login {
