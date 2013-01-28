@@ -132,7 +132,7 @@ sub retrieveData {
         else
         {
             $value = undef;
-            $log->warn("oid '$oid' not found in Apache status.");
+            $log->warn("oid '$oid' not found in Apache status (maybe you forgot to activate ExtendedStatus in mod_status conf).");
         }
         $values{$name} = $value;
     }
