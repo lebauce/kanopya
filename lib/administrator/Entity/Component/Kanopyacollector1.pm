@@ -97,7 +97,7 @@ sub retrieveData {
     ####################################
     # WARNING time span hardcoded here!!
     ####################################
-    my $time_span = 300;
+    my $time_span = 600;
 
     my $nodelist       = $args{'nodelist'};
     my $indicators     = $args{'indicators'};
