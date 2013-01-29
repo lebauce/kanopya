@@ -58,7 +58,7 @@ sub getBaseConfiguration {
     return {
         mysql5_port => 3306,
         mysql5_datadir => "/var/lib/mysql",
-        mysql5_bindaddress => '127.0.0.1'
+        mysql5_bindaddress => '0.0.0.0'
     };
 }
 
