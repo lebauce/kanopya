@@ -607,8 +607,6 @@ sub registerOperations {
         [ 'PreStopNode', 'Configuring node removal' ],
         [ 'PostStopNode', 'Finalizing node removal' ],
         [ 'PostStartNode', 'Finalizing node addition' ],
-        [ 'InstallComponentOnSystemImage' ],
-        [ 'DeployComponent', 'Deploying component' ],
         [ 'CreateDisk', 'Creating new disk' ],
         [ 'CreateExport', 'Exporting disk' ], 
         [ 'ForceStopCluster', 'Force service stopping' ],

@@ -76,29 +76,6 @@ sub methods {
     };
 }
 
-=head2 installComponent
-
-=cut
-
-sub installComponent {
-    my $self = shift;
-    my %args = @_;
-    
-    General::checkParams(args=>\%args,required=>["component_type_id"]);
-    
-    $log->debug("New Operation InstallComponentOnSystemImage");
-    Entity::Operation->enqueue(
-        priority => 200,
-        type     => 'InstallComponentOnSystemImage',
-        params   => {
-            context => {
-                systemimage => $self,
-            },
-            component_type_id => $args{component_type_id},
-        }
-    );
-}
-
 sub installedComponentLinkCreation {
     my $self = shift;
     my %args = @_;
