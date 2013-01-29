@@ -110,7 +110,7 @@ sub generatePuppetDefinitions {
     my $puppetmaster = EEntity->new(entity => $self->getPuppetMaster);
     my $fqdn = $args{host}->host_hostname . "." . $self->{_executor}->cluster_domainname;
     my $puppet_definitions = "";
-    my $cluster_components = $args{cluster}->getComponents(category => "all");
+    my $cluster_components = $args{cluster}->getComponents(category => "all", order_by => "priority");
     foreach my $component (@{ $cluster_components }) {
         # retrieve puppet definition to create manifest
         $puppet_definitions .= $component->getPuppetDefinition(
