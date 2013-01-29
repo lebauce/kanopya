@@ -212,7 +212,8 @@ Generate the hostname configuration file
 sub _generateHostname {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host','cluster' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'cluster' ],
+                                         optional => { 'path' => '/etc/hostname' });
 
     my $hostname = $args{host}->getAttr(name => 'host_hostname');
     my $file = $self->generateNodeFile(
@@ -224,7 +225,7 @@ sub _generateHostname {
         data          => { hostname => $hostname }
     );
     
-    return { src  => $file, dest => '/etc/hostname' };
+    return { src  => $file, dest => $args{path} };
 }
 
 sub _generateFstab {
