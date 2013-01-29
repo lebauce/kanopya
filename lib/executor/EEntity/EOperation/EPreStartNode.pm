@@ -140,9 +140,9 @@ sub _cancel {
         $dir .= '/' . $self->{context}->{host}->getAttr(name => 'host_hostname');
         $self->getEContext->execute(command => "rm -r $dir");
 
+        $self->{context}->{host}->stop();
         $self->{context}->{host}->setAttr(name  => 'host_hostname', value => undef);
         $self->{context}->{host}->setState(state => 'down');
-        $self->{context}->{host}->stop();
     }
 }
 
