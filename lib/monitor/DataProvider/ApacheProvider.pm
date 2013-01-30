@@ -38,6 +38,8 @@ Apache status var names correspond to strings before ":" displayed in apache sta
 
 package DataProvider::ApacheProvider;
 
+use base 'DataProvider';
+
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
