@@ -73,6 +73,11 @@ use Entity::Component::Linux::Debian;
 use Entity::Component::Linux::Redhat;
 use Entity::Component::Linux::Suse;
 use Entity::Component::Mailnotifier0;
+use Entity::Component::NovaController;
+use Entity::Component::NovaCompute;
+use Entity::Component::Glance;
+use Entity::Component::Keystone;
+use Entity::Component::Quantum;
 use NetconfInterface;
 use NetconfPoolip;
 use NetconfIface;
@@ -121,6 +126,11 @@ my @classes = (
     'Entity::Component::Syslogng3',
     'Entity::Component::Nfsd3',
     'Entity::Component::Storage',
+    'Entity::Component::NovaController',
+    'Entity::Component::NovaCompute',
+    'Entity::Component::Quantum',
+    'Entity::Component::Keystone',
+    'Entity::Component::Glance',
     'Entity::Connector::ActiveDirectory',
     'Entity::Connector::Scom',
     'Entity::ServiceProvider::Outside::Externalcluster',
@@ -678,6 +688,11 @@ sub registerComponents {
         [ 'Suse', '11', 'System', '/templates/components/suse' ],
         [ 'Kvm', '1', 'Hypervisor', undef ],
         [ 'Xen', '1', 'Hypervisor', undef ],
+        [ 'Glance', '6', '', undef ],
+        [ 'Keystone', '6', '', undef ],
+        [ 'NovaCompute', '6', '', undef ],
+        [ 'NovaController', '6', '', undef ],
+        [ 'Quantum', '6', '', undef ],
     ];
 
     for my $component_type (@{$components}) {
