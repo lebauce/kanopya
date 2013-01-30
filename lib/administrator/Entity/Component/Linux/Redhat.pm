@@ -70,4 +70,21 @@ sub insertDefaultExtendedConfiguration {
     }
 }
 
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+
+    my $definition = "yumrepo {\n" .
+                     "\t\"epel\":\n" .
+                     "\t\tdescr          => \"Extra Packages for Enterprise Linux - \\\$basearch\",\n" .
+                     "\t\tmirrorlist     => \"http://mirrors.fedoraproject.org/mirrorlist?repo=epel-\\\$releasever&arch=\\\$basearch\",\n" .
+                     "\t\tfailovermethod => \"priority\",\n" .
+                     "\t\tgpgcheck       => \"0\",\n" .
+                     "\t\tenabled        => \"1\";\n" .
+                     "}\n";
+
+    return $self->SUPER::getPuppetDefinition(%args) . $definition;
+}
+
 1;

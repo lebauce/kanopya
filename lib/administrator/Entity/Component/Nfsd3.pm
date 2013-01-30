@@ -307,4 +307,10 @@ sub createExport {
     );
 }
 
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    return "class { 'nfsd': }\n";
+}
+
 1;

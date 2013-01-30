@@ -249,4 +249,10 @@ sub createExport {
     );
 }
 
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    return "class { 'iscsitarget': }\n";
+}
+
 1;

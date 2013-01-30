@@ -34,6 +34,12 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
+sub _generateHostname {
+    my ($self, %args) = @_;
+
+    $self->SUPER::_generateHostname(%args, path => "/etc/HOSTNAME");
+}
+
 sub _writeNetConf {
     my ($self, %args) = @_;
 

@@ -260,6 +260,12 @@ sub getNetConf {
     return { 67 => ['udp'] };
 }
 
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    return "class { 'dhcpd': }\n";
+}
+
 =head1 DIAGNOSTICS
 
 Exceptions are thrown when mandatory arguments are missing.

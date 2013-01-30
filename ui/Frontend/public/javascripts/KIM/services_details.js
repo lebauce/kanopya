@@ -6,36 +6,23 @@ function loadServicesDetails(cid, eid, is_iaas) {
     var div = $('<div>', { id: divId}).appendTo($("<td>").appendTo(table));
      $('<h4>Details</h4>').appendTo(div);
 
-    var service_opts = {
-        name   : 'cluster',
-        filters : { expand : 'kernel,masterimage,user,service_template' },
-        fields : { cluster_name         : {label: 'Name'},
-                   cluster_state        : {label: 'State'},
-                   cluster_prev_state   : {label: 'Previous state'},
-                   active               : {label: 'Active'},
-                   cluster_min_node     : {label: 'Min node'},
-                   cluster_max_node     : {label: 'Max node'},
-                   "masterimage.masterimage_name" : {label: 'Master Image'},
-                   "kernel.kernel_name" : {label: 'Kernel'},
-                   "service_template.service_name" : {label: 'Service template'},
-                   cluster_domainname   : {label: 'Domain name'},
-                   cluster_nameserver1  : {label: 'Domain name server 1'},
-                   cluster_nameserver2  : {label: 'Domain name server 2'},
-                   cluster_boot_policy  : {label: 'Boot policy'},
-                   cluster_basehostname : {label: 'Base hostname'},
-                   cluster_priority     : {label: 'Priority'},
-                   cluster_si_persistent: {label: 'Persistent'},
-                   cluster_si_shared    : {label: 'Shared'},
-                   "user.user_login"    : {label: 'User'},
-                                            
+    $("#" + divId).append(
+        new KanopyaFormWizard({
+            title      : 'Add components',
+            type       : 'cluster',
+            id         : eid,
+            relations  : { },
+            displayed  : [ 'cluster_name', 'cluster_state', 'active', 'cluster_min_node',
+                           'cluster_max_node', 'masterimage_id', 'kernel_id', 'user_id',
+                           'cluster_nameserver1', 'cluster_nameserver2', 'cluster_boot_policy',
+                           'cluster_basehostname' ],
+            rawattrdef : {
+                components : {
+                    hide_existing : 1
+                }
+            }
+        }).content);
 
-        },
-    };   
-
-    var details = new DetailsTable(divId, eid, service_opts);
-
-    details.show();
-    
     $('<h4>', { text : 'Managers' }).appendTo(div);
     var managerstable   = $('<table>').appendTo(div);
 

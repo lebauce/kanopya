@@ -56,7 +56,7 @@ use constant ATTR_DEF => {
         pattern      => '^[0-9]+$',
         is_mandatory => 1,
     },
-    masterimage_defaultkernel => {
+    masterimage_defaultkernel_id => {
         pattern      => '^[0-9]*$',
         is_mandatory => 0
     }

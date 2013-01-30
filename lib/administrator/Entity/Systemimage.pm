@@ -46,11 +46,6 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_extended  => 0
     },
-    container_id => {
-        pattern      => '^\d*$',
-        is_mandatory => 0,
-        is_extended  => 0
-    },
     active => {
         pattern      => '^[01]$',
         is_mandatory => 0,
@@ -79,29 +74,6 @@ sub methods {
             perm_holder => 'entity',
         },
     };
-}
-
-=head2 installComponent
-
-=cut
-
-sub installComponent {
-    my $self = shift;
-    my %args = @_;
-    
-    General::checkParams(args=>\%args,required=>["component_type_id"]);
-    
-    $log->debug("New Operation InstallComponentOnSystemImage");
-    Entity::Operation->enqueue(
-        priority => 200,
-        type     => 'InstallComponentOnSystemImage',
-        params   => {
-            context => {
-                systemimage => $self,
-            },
-            component_type_id => $args{component_type_id},
-        }
-    );
 }
 
 sub installedComponentLinkCreation {

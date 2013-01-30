@@ -162,23 +162,21 @@ sub postStartNode {
                     $comp->{_dbix}->opennebula3_repositories->search(
                         {repository_name => $ds_name}
                     )->single->update({datastore_id => $dsid});
-
-                    # create the directory and mount the container
-                    my $dir = "/var/lib/one/datastores/$dsid";
-                    my $command = one_command("mkdir -p $dir; chown oneadmin $dir");
-                    $self->getEContext->execute(command => $command);
-
-                    $command = 'mount -t nfs -o rw,sync,vers=3 ';
-                    $command .= $container_access->getAttr(name => 'container_access_export') . " $dir";
-                    $self->getEContext->execute(command => $command);
                 }
+
+                # Give rights to the 'oneadmin' user
+                my $dir = "/var/lib/one/datastores/$dsid";
+                my $command = "mkdir -p $dir; mount -t nfs -o rw,sync,vers=3 " .
+                              $container_access->container_access_export . " $dir; " .
+                              "chown oneadmin:oneadmin $dir; umount $dir";
+                $self->getEContext->execute(command => $command);
 
                 # update linux mount table
                 push @mountentries, {
                     linux_mount_dumpfreq   => 0,
                     linux_mount_filesystem => 'nfs',
                     linux_mount_point      => "/var/lib/one/datastores/$dsid",
-                    linux_mount_device     => $container_access->getAttr(name => 'container_access_export'),
+                    linux_mount_device     => $container_access->container_access_export,
                     linux_mount_options    => 'rw,sync,vers=3',
                     linux_mount_passnum    => 0,
                 };

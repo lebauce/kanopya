@@ -111,6 +111,12 @@ sub getBaseConfiguration {
     };
 }
 
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    return "class { 'memcached': }\n";
+}
+
 # Commented because we want check this component only on master node
 #sub getNetConf {
 #    my $self = shift;

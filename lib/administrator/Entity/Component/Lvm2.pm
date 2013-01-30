@@ -338,4 +338,10 @@ sub getFreeSpace {
     return $vg_rs->get_column('lvm2_vg_freespace');
 }
 
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    return "class { 'lvm': }\n";
+}
+
 1;

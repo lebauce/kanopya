@@ -141,6 +141,11 @@ sub getBaseConfiguration {
     };
 }
 
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    return "class { 'snmpd': }\n";
+}
 
 =head1 DIAGNOSTICS
 

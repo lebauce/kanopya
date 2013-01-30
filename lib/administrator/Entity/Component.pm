@@ -50,10 +50,13 @@ use constant ATTR_DEF => {
         is_editable    => 0
     },
     component_type_id => {
+        label        => 'Component type',
         pattern        => '^\d*$',
+        type           => 'relation',
+        relation       => 'single',
         is_mandatory   => 1,
         is_extended    => 0,
-        is_editable    => 0
+        is_editable    => 1
     },
     component_template_id => {
         pattern        => '^\d*$',
@@ -125,7 +128,15 @@ sub getConf {
     my $self = shift;
     my $conf = {};
 
-    return $self->toJSON(raw => 1);
+    my $class = ref($self) || $self;
+    my @relations;
+    while (my ($name, $attr) = each %{$class->getAttrDefs()}) {
+        if ($attr->{type} eq "relation") {
+            push @relations, $name;
+        }
+    }
+
+    return $self->toJSON(raw => 1, deep => 1, expand => \@relations);
 }
 
 =head2 setConf
@@ -142,18 +153,20 @@ sub setConf {
 
     General::checkParams(args => \%args, required => ['conf']);
 
-    my $current_conf = $self->getConf;
+    $self->update(%{ $args{conf} });
 
-    my $updated = 0;
-    for my $attr (keys %{$args{conf}}) {
-        if ($current_conf->{$attr} ne $args{conf}->{$attr}) {
-            $self->setAttr(name => $attr, value => $args{conf}->{$attr});
-            $updated = 1;
-        }
-    }
-    if ($updated) {
-        $self->save();
-    }
+    #my $current_conf = $self->getConf;
+
+    #my $updated = 0;
+    #for my $attr (keys %{$args{conf}}) {
+    #    if ($current_conf->{$attr} ne $args{conf}->{$attr}) {
+    #        $self->setAttr(name => $attr, value => $args{conf}->{$attr});
+    #        $updated = 1;
+    #    }
+    #}
+    #if ($updated) {
+    #    $self->save();
+    #}
 }
 
 =head2 getTemplateDirectory

@@ -891,6 +891,7 @@ sub getClassType {
                 return $class_type;
             }
         }
+        return $args{class};
     }
 
     return "BaseDB";
@@ -1536,6 +1537,7 @@ sub populateRelations {
         my $relation_schema = $self->{_dbix}->$relation->result_source;
         my $relationclass = classFromDbix($relation_schema);
 
+        $relationclass = getClassType(class => $relationclass);
         requireClass($relationclass);
 
         # Deduce the foreign key attr for link entries in relations multi

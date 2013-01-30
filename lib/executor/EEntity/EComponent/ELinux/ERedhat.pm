@@ -55,5 +55,53 @@ sub customizeInitramfs {
     $self->getExecutorEContext->execute(command => $cmd);
 }
 
+sub _writeNetConf {
+    my ($self, %args) = @_;
+
+    General::checkParams(
+        args     => \%args,
+        required => [ 'cluster', 'host', 'mount_point', 'ifaces', 'econtext' ]
+    );
+
+    for my $iface (@{ $args{ifaces} }) {
+        my $file = $self->generateNodeFile(
+            cluster       => $args{cluster},
+            host          => $args{host},
+            file          => '/etc/sysconfig/network-scripts/ifcfg-' . $iface->{name},
+            template_dir  => '/templates/components/redhat',
+            template_file => 'ifcfg.tt',
+            data          => { interface => $iface }
+        );
+
+        $args{econtext}->send(
+            src  => $file,
+            dest => $args{mount_point} . '/etc/sysconfig/network-scripts/ifcfg-' . $iface->{name}
+        );
+
+        if ($iface->{vlans}) {
+            my $template_file = 'ifcfg-vlan.tt';
+            foreach my $vlan (@{ $iface->{vlans} }) {
+                my %vlan_infos;
+                my $vlan_id = 'vlan' . $vlan->vlan_number;
+                $vlan_infos{iface_name} = $iface->{name};
+
+                my $file = $self->generateNodeFile(
+                    cluster       => $args{cluster},
+                    host          => $args{host},
+                    file          => '/etc/sysconfig/network/ifcfg-' . $vlan_id,
+                    template_dir  => '/templates/components/redhat',
+                    template_file => $template_file,
+                    data          => { interface => \%vlan_infos }
+                );
+
+                $args{econtext}->send(
+                    src  => $file,
+                    dest => $args{mount_point} . '/etc/sysconfig/network/ifcfg-' . $vlan_id
+                );
+            }
+        }
+    }
+}
+
 1;
 

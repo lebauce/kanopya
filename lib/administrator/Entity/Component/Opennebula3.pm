@@ -404,6 +404,12 @@ sub getTemplateDataOnedInitScript {
     return $data;
 }
 
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    return "class { 'opennebula': }\n";
+}
+
 ### hypervisors manipulation ###
 
 =head2 getVmResources

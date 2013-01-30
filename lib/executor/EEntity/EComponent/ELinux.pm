@@ -210,7 +210,8 @@ Generate the hostname configuration file
 sub _generateHostname {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host','cluster' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'cluster' ],
+                                         optional => { 'path' => '/etc/hostname' });
 
     my $hostname = $args{host}->getAttr(name => 'host_hostname');
     my $file = $self->generateNodeFile(
@@ -222,7 +223,7 @@ sub _generateHostname {
         data          => { hostname => $hostname }
     );
     
-    return { src  => $file, dest => '/etc/hostname' };
+    return { src  => $file, dest => $args{path} };
 }
 
 sub _generateFstab {
@@ -441,15 +442,8 @@ sub _generateNetConf {
 
     # search for an potential 'loadbalanced' component
     my $cluster_components = $args{cluster}->getComponents(category => "all");
-    my $is_masternode = $args{cluster}->getCurrentNodesCount == 0;
-    my $is_loadbalanced = 0;
-    foreach my $component (@{ $cluster_components }) {
-        my $clusterization_type = $component->getClusterizationType();
-        if ($clusterization_type && ($clusterization_type eq 'loadbalanced')) {
-            $is_loadbalanced = 1;
-            last;
-        }
-    }
+    my $is_masternode = $args{cluster}->getCurrentNodesCount == 1;
+    my $is_loadbalanced = $args{cluster}->isLoadBalanced;
 
     # Pop an IP adress for all host iface,
     my @net_ifaces;
