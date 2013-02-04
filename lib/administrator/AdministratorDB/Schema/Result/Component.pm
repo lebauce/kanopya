@@ -224,6 +224,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 glance
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Glance>
+
+=cut
+
+__PACKAGE__->might_have(
+  "glance",
+  "AdministratorDB::Schema::Result::Glance",
+  { "foreign.glance_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 haproxy1
 
 Type: might_have
@@ -296,6 +311,21 @@ __PACKAGE__->might_have(
   "keepalived1",
   "AdministratorDB::Schema::Result::Keepalived1",
   { "foreign.keepalived_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 keystone
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Keystone>
+
+=cut
+
+__PACKAGE__->might_have(
+  "keystone",
+  "AdministratorDB::Schema::Result::Keystone",
+  { "foreign.keystone_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -388,6 +418,37 @@ __PACKAGE__->might_have(
   { "foreign.nfsd3_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
+
+=head2 nova_compute
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::NovaCompute>
+
+=cut
+
+__PACKAGE__->might_have(
+  "nova_compute",
+  "AdministratorDB::Schema::Result::NovaCompute",
+  { "foreign.nova_compute_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 nova_controller
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::NovaController>
+
+=cut
+
+__PACKAGE__->might_have(
+  "nova_controller",
+  "AdministratorDB::Schema::Result::NovaController",
+  { "foreign.nova_controller_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 
 =head2 openiscsi2
 
@@ -506,6 +567,21 @@ __PACKAGE__->might_have(
   "puppetmaster2",
   "AdministratorDB::Schema::Result::Puppetmaster2",
   { "foreign.puppetmaster2_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 quantum
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Quantum>
+
+=cut
+
+__PACKAGE__->might_have(
+  "quantum",
+  "AdministratorDB::Schema::Result::Quantum",
+  { "foreign.quantum_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
