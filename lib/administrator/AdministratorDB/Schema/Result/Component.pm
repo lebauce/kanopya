@@ -114,6 +114,21 @@ __PACKAGE__->set_primary_key("component_id");
 
 =head1 RELATIONS
 
+=head2 amqp
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Amqp>
+
+=cut
+
+__PACKAGE__->might_have(
+  "amqp",
+  "AdministratorDB::Schema::Result::Amqp",
+  { "foreign.amqp_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 apache2
 
 Type: might_have
