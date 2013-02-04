@@ -15,17 +15,13 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package  Entity::Component::Openstack::NovaCompute;
-use base "Entity::Component::Openstack";
+package Entity::Component::Openstack;
+use base "Entity::Component";
 
 use strict;
 use warnings;
 
-use Log::Log4perl "get_logger";
-my $log = get_logger("");
-
-use constant ATTR_DEF => {
-};
+use constant ATTR_DEF => { };
 
 sub getAttrDef { return ATTR_DEF; }
 

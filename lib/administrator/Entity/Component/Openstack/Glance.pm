@@ -16,7 +16,7 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 package  Entity::Component::Openstack::Glance;
-use base "Entity::Component";
+use base "Entity::Component::Openstack";
 
 use strict;
 use warnings;
