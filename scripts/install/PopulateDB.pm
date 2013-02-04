@@ -73,11 +73,11 @@ use Entity::Component::Linux::Debian;
 use Entity::Component::Linux::Redhat;
 use Entity::Component::Linux::Suse;
 use Entity::Component::Mailnotifier0;
-use Entity::Component::NovaController;
-use Entity::Component::NovaCompute;
-use Entity::Component::Glance;
-use Entity::Component::Keystone;
-use Entity::Component::Quantum;
+use Entity::Component::Openstack::NovaController;
+use Entity::Component::Openstack::NovaCompute;
+use Entity::Component::Openstack::Glance;
+use Entity::Component::Openstack::Keystone;
+use Entity::Component::Openstack::Quantum;
 use NetconfInterface;
 use NetconfPoolip;
 use NetconfIface;
@@ -126,11 +126,11 @@ my @classes = (
     'Entity::Component::Syslogng3',
     'Entity::Component::Nfsd3',
     'Entity::Component::Storage',
-    'Entity::Component::NovaController',
-    'Entity::Component::NovaCompute',
-    'Entity::Component::Quantum',
-    'Entity::Component::Keystone',
-    'Entity::Component::Glance',
+    'Entity::Component::Openstack::NovaController',
+    'Entity::Component::Openstack::NovaCompute',
+    'Entity::Component::Openstack::Quantum',
+    'Entity::Component::Openstack::Keystone',
+    'Entity::Component::Openstack::Glance',
     'Entity::Connector::ActiveDirectory',
     'Entity::Connector::Scom',
     'Entity::ServiceProvider::Outside::Externalcluster',
