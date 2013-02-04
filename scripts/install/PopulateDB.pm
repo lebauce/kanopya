@@ -81,6 +81,7 @@ use Entity::Component::Openstack::Quantum;
 use NetconfInterface;
 use NetconfPoolip;
 use NetconfIface;
+use Entity::Component::Amqp;
 
 # Catch warnings to clean the setup output (this warnings are not kanopya code related)
 $SIG{__WARN__} = sub {
@@ -209,6 +210,7 @@ my @classes = (
     'Entity::Component::Vmm::Kvm',
     'Entity::Component::Vmm::Xen',
     'Entity::Rule',
+    'Entity::Component::Amqp',
 );
 
 sub registerClassTypes {
@@ -693,6 +695,7 @@ sub registerComponents {
         [ 'NovaCompute', '6', '', undef ],
         [ 'NovaController', '6', '', undef ],
         [ 'Quantum', '6', '', undef ],
+        [ 'Amqp', '0', '', undef ],
     ];
 
     for my $component_type (@{$components}) {
