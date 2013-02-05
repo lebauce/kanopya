@@ -93,4 +93,9 @@ __PACKAGE__->belongs_to(
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Component",
+    { "foreign.component_id" => "self.quantum_id" },
+    { cascade_copy => 0, cascade_delete => 1 });
 1;
