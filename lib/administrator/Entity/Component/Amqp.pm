@@ -29,7 +29,7 @@ sub getPuppetDefinition {
     my ($self, %args) = @_;
 
     my $definitions = "\$rabbitmq_repo = \$operatingsystem ? {\n" .
-                      "\t/(?i)(debian|ubuntu)/ => 'rabbitmq::repo::apt'\n" .
+                      "\t/(?i)(debian|ubuntu)/ => 'rabbitmq::repo::apt',\n" .
                       "\tdefault => 'rabbitmq::repo::rhel'\n" .
                       "}\n" .
                       "class { \"\$rabbitmq_repo\": }\n" .
