@@ -25,4 +25,17 @@ use constant ATTR_DEF => { };
 
 sub getAttrDef { return ATTR_DEF };
 
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    my $definitions = "\$rabbitmq_repo = \$operatingsystem ? {\n" .
+                      "\t/(?i)(debian|ubuntu)/ => 'rabbitmq::repo::apt'\n" .
+                      "\tdefault => 'rabbitmq::repo::rhel'\n" .
+                      "}\n" .
+                      "class { \"\$rabbitmq_repo\": }\n" .
+                      "class { 'rabbitmq::server': }\n";
+
+    return $definitions;
+}
+
 1;
