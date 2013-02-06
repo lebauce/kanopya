@@ -36,7 +36,17 @@ sub getPuppetDefinition {
                       "\tuser => 'nova',\n" .
                       "\tpassword => 'nova',\n" .
                       "\tdbname => 'nova',\n" .
-                      "}";
+                      "}\n" .
+                      "class { 'nova': sql_connection => 'mysql://nova:nova\@localhost/nova' }\n".
+                      "class { 'nova::api':\n" .
+                      "\tenabled => true,\n" .
+                      "\tadmin_password => 'nova',\n" .
+                      "}\n" .
+                      "class { 'nova::scheduler': enabled => true }\n" .
+                      "class { 'nova::objectstore': enabled => true }\n" .
+                      "class { 'nova::cert': enabled => true }\n" .
+                      "class { 'nova::vncproxy': enabled => true }\n" .
+                      "class { 'nova::consoleauth': enabled => true }\n";
 
     return $definitions;
 }
