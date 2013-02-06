@@ -29,4 +29,16 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    my $definitions = "class { 'nova::db::mysql':\n" .
+                      "\tuser => 'nova',\n" .
+                      "\tpassword => 'nova',\n" .
+                      "\tdbname => 'nova',\n" .
+                      "}";
+
+    return $definitions;
+}
+
 1;
