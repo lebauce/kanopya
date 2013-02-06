@@ -294,17 +294,23 @@ in the hierarchy, it also support miulti inherintance by using Class::ISA::self_
 =cut
 
 sub getMethods {
-    my $self  = shift;
+    my ($self, %args) = @_;
     my $class = ref($self) || $self;
+
+    General::checkParams(args => \%args, optional => { 'depth' => undef });
 
     my $methods = {};
     my @supers  = Class::ISA::self_and_super_path($class);
     my $merge   = Hash::Merge->new();
 
+    $args{depth} = $args{depth} or scalar @supers;
+
+    SUPER:
     for my $sup (@supers) {
         if ($sup->can('methods')) {
             $methods = $merge->merge($methods, $sup->methods());
         }
+        last SUPER if --$args{depth} == 0;
      }
      return $methods;
 }
@@ -1838,26 +1844,6 @@ sub id {
     return $self->{_dbix}->get_column($self->getPrimaryKey);
 }
 
-
-=pod
-
-=begin classdoc
-
-@param $class the full class name with the hierachy
-
-@return the parent class name
-
-=end classdoc
-
-=cut
-
-sub _parentClass {
-    my ($class) = @_;
-    $class =~ s/\:\:[a-zA-Z0-9]+$//g;
-    return $class;
-}
-
-
 =pod
 
 =begin classdoc
@@ -1875,7 +1861,6 @@ sub _childClass {
     $class =~ s/^[a-zA-Z0-9]+\:\://g;
     return $class;
 }
-
 
 =pod
 

@@ -381,11 +381,7 @@ sub registerUsers {
     for my $classtype (@classes) {
         BaseDB::requireClass($classtype);
 
-        my $parenttype = BaseDB::_parentClass($classtype);
-        my $methods    = $classtype->getMethods();
-        for my $parentmethod (keys %{$parenttype->getMethods()}) {
-            delete $methods->{$parentmethod};
-        }
+        my $methods    = $classtype->getMethods(depth => 1);
 
         my @methodlist = keys %$methods;
         if (scalar (@methodlist)) {
