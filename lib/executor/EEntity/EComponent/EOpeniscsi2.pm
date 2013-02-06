@@ -67,12 +67,11 @@ sub _generateKanopyaHalt {
     my $omitted_file = "Kanopya_omitted_iscsid";
     my $vars = {
         target       => $args{targetname},
-        nas_ip       => $args{container_access}->getAttr(name => 'container_access_ip'),
-        nas_port     => $args{container_access}->getAttr(name => 'container_access_port'),
-        data_exports => $self->getExports()
+        nas_ip       => $args{container_access}->container_access_ip,
+        nas_port     => $args{container_access}->container_access_port,
+        data_exports => $self->getConf()->{openiscsi2_targets}
     };
 
-    $log->debug("Generate Kanopya Halt with :" . Dumper($vars));
     my $file = $self->generateNodeFile(
         cluster       => $args{cluster},
         host          => $args{host},
