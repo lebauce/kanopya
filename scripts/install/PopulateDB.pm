@@ -1232,6 +1232,8 @@ sub registerKanopyaMaster {
             $installed->{$component_name}->insertDefaultConfiguration();
         }
     }
+
+    return $admin_cluster;
 }
 
 sub registerScopes {
@@ -1478,6 +1480,8 @@ sub populate_workflow_def {
 }
 
 sub populate_policies {
+    my %args = @_;
+
     my %policies = ();
     my $executor = Kanopya::Config::get("executor")->{cluster}->{executor};
 
@@ -1627,15 +1631,129 @@ sub populate_policies {
     $policies{'Standard OpenNebula Xen IAAS'}{billing} = $policies{'Standard physical cluster'}{billing};
 
     # orchestration
+    my $orch_policy_sp = configureDefaultOrchestrationPolicyService( admin_cluster => $args{kanopya_master} );
     $policies{'Standard physical cluster'}{orchestration} = Entity::Policy::OrchestrationPolicy->new(
-        policy_name => 'Empty orchestration configuration',
-        policy_desc => 'Empty orchestration configuration',
-        policy_type => 'orchestration',
+        policy_name     => 'Standard orchestration configuration',
+        policy_desc     => 'Standard orchestration configuration',
+        policy_type     => 'orchestration',
+        orchestration   => { service_provider_id => $orch_policy_sp->id }
     );
     $policies{'Standard OpenNebula KVM IAAS'}{orchestration} = $policies{'Standard physical cluster'}{orchestration};
     $policies{'Standard OpenNebula Xen IAAS'}{orchestration} = $policies{'Standard physical cluster'}{orchestration};
 
     return \%policies;
+}
+
+# Link to kanopya workflow and collector manager
+# Add cpu and mem metrics and rules
+sub configureDefaultOrchestrationPolicyService {
+    my %args = @_;
+
+    my $sp = Entity::ServiceProvider->new();
+
+     # Add default workflow manager
+    my $workflow_manager = $args{admin_cluster}->getComponent(name => "Kanopyaworkflow", version => "0");
+    $sp->addManager(manager_id   => $workflow_manager->id,
+                    manager_type =>"workflow_manager");
+
+    # Add default collector manager
+    my $collector_manager = $args{admin_cluster}->getComponent(name => "Kanopyacollector", version => "1");
+    $sp->addManager(manager_id   => $collector_manager->id,
+                    manager_type =>"collector_manager");
+
+    my $noderule_conf = {
+        'mem/Available' => {
+             comparator      => '<',
+             threshold       => 256*1024,
+             cond_label      => 'Available memory < 256M',
+             rule_label      => 'Available memory too low',
+             rule_description => 'Available memory is too low for this node',
+        },
+    };
+
+    my $clusterrule_conf = {
+        'mem/Available' => {
+             'mean' => {
+                 comparator      => '<',
+                 threshold       => 256*1024,
+                 cond_label      => 'Mean available memory < 256M',
+                 rule_label      => 'Mean available memory too low',
+                 rule_description => 'Available memory is too low for this service',
+             }
+        },
+    };
+
+    # Get indicators
+    my @indics = Entity::CollectorIndicator->search (
+        hash => {
+            collector_manager_id                        => $collector_manager->id,
+            'indicator.indicatorset.indicatorset_name'  => ['cpu', 'mem']
+        }
+    );
+
+    for my $indic (@indics) {
+        my $indic_label = $indic->indicator->indicator_label;
+
+        # Node level
+        # Node metric combinations
+        my $nmcomb = Entity::Combination::NodemetricCombination->new(
+            service_provider_id             => $sp->id,
+            nodemetric_combination_formula  => 'id'.$indic->id
+        );
+        if (exists $noderule_conf->{$indic_label}) {
+            # Node condition
+            my $nmcond = Entity::NodemetricCondition->new(
+                left_combination_id                 => $nmcomb->id,
+                nodemetric_condition_label          => $noderule_conf->{$indic_label}->{cond_label},
+                nodemetric_condition_comparator     => $noderule_conf->{$indic_label}->{comparator},
+                nodemetric_condition_threshold      => $noderule_conf->{$indic_label}->{threshold},
+                nodemetric_condition_service_provider_id => $sp->id,
+            );
+            # Node rule
+            Entity::Rule::NodemetricRule->new(
+                nodemetric_rule_formula             => 'id'.$nmcond->id,
+                nodemetric_rule_label               => $noderule_conf->{$indic_label}->{rule_label},
+                nodemetric_rule_description         => $noderule_conf->{$indic_label}->{rule_description},
+                nodemetric_rule_state               => 'enabled',
+                nodemetric_rule_service_provider_id => $sp->id,
+            );
+        }
+
+        # Service level
+        for my $func ('sum', 'mean') {
+             # Cluster metrics and combinations
+            my $cm = Entity::Clustermetric->new(
+                clustermetric_service_provider_id       => $sp->id,
+                clustermetric_indicator_id              => $indic->id,
+                clustermetric_statistics_function_name  => $func,
+                clustermetric_window_time               => '600',
+            );
+            my $acomb = Entity::Combination::AggregateCombination->new(
+                service_provider_id             => $sp->id,
+                aggregate_combination_formula   => 'id'.$cm->id
+            );
+            if (exists $clusterrule_conf->{$indic_label}{$func}) {
+                # Service condition
+                my $acond = Entity::AggregateCondition->new(
+                    left_combination_id                 => $acomb->id,
+                    aggregate_condition_label           => $clusterrule_conf->{$indic_label}{$func}->{cond_label},
+                    comparator                          => $clusterrule_conf->{$indic_label}{$func}->{comparator},
+                    threshold                           => $clusterrule_conf->{$indic_label}{$func}->{threshold},
+                    aggregate_condition_service_provider_id => $sp->id,
+                );
+                # Service rule
+                Entity::Rule::AggregateRule->new(
+                    aggregate_rule_formula             => 'id'.$acond->id,
+                    aggregate_rule_label               => $clusterrule_conf->{$indic_label}{$func}->{rule_label},
+                    aggregate_rule_description         => $clusterrule_conf->{$indic_label}{$func}->{rule_description},
+                    aggregate_rule_state               => 'enabled',
+                    aggregate_rule_service_provider_id => $sp->id,
+                );
+            }
+        }
+    }
+
+    return $sp;
 }
 
 sub populate_servicetemplates {
@@ -1694,12 +1812,12 @@ sub populateDB {
     registerComponents(%args);
     registerNetconfRoles(%args);
     registerIndicators(%args);
-    registerKanopyaMaster(%args);
+    my $kanopya_master = registerKanopyaMaster(%args);
     registerScopes(%args);
 
     populate_workflow_def();
 
-    my $policies = populate_policies();
+    my $policies = populate_policies(kanopya_master => $kanopya_master);
     populate_servicetemplates($policies);
 }
 
