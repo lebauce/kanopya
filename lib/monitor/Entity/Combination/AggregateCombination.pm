@@ -228,7 +228,6 @@ sub toString {
 =begin classdoc
 
 Compute the combination value between two dates. Use getValuesFromDB() method of Clustermetric.
-May be deprecated.
 
 @param start_time the begining date
 @param stop_time the ending date
