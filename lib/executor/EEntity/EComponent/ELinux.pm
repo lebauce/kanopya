@@ -150,10 +150,9 @@ sub generateConfiguration {
     General::checkParams(args     => \%args,
                          required => [ 'cluster', 'host' ]);
      
-    my $generated_files = [];                     
+    my $generated_files = [];
                          
     push @$generated_files, $self->_generateHostname(%args);
-    push @$generated_files, $self->_generateFstab(%args);
     push @$generated_files, $self->_generateResolvconf(%args);
     push @$generated_files, $self->_generateUdevPersistentNetRules(%args);
     push @$generated_files, $self->_generateHosts(
@@ -224,30 +223,6 @@ sub _generateHostname {
     );
     
     return { src  => $file, dest => $args{path} };
-}
-
-sub _generateFstab {
-    my ($self, %args) = @_;
-    General::checkParams(args     => \%args,
-                         required => ['cluster','host']);
-    
-    my $data = $self->_getEntity()->getConf();
-
-    foreach my $row (@{$data->{linuxes_mount}}) {
-        delete $row->{linux_id};
-    }
-
-    my $file = $self->generateNodeFile(
-        cluster       => $args{cluster},
-        host          => $args{host},
-        file          => '/etc/fstab',
-        template_dir  => '/templates/components/linux',
-        template_file => 'fstab.tt',
-        data          => $data 
-    );
-    
-    return { src  => $file, dest => '/etc/fstab' };
-                     
 }
 
 sub _generateHosts {

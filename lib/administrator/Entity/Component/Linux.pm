@@ -26,7 +26,6 @@ use Entity::Component::Linux::LinuxMount;
 use Log::Log4perl 'get_logger';
 
 my $log = get_logger("");
-my $errmsg;
 
 use constant ATTR_DEF => {
     linuxes_mount => {
@@ -89,61 +88,6 @@ sub setConf {
         if (not exists $mtdef->{linux_mount_id}) {
             Entity::Component::Linux::LinuxMount->new(linux_id => $self->id, %$mtdef);
         }
-    }
-}
-
-# Insert default configuration in db for this component 
-sub insertDefaultExtendedConfiguration {
-    my $self = shift;
-    
-    my @default_conf = (
-        { linux_mount_device => 'proc',
-          linux_mount_point => '/proc',
-          linux_mount_filesystem => 'proc',
-          linux_mount_options => 'nodev,noexec,nosuid',
-          linux_mount_dumpfreq => '0',
-          linux_mount_passnum => '0'
-        },
-        { linux_mount_device => 'sysfs',
-          linux_mount_point => '/sys',
-          linux_mount_filesystem => 'sysfs',
-          linux_mount_options => 'defaults',
-          linux_mount_dumpfreq => '0',
-          linux_mount_passnum => '0'
-        },
-        { linux_mount_device => 'tmpfs',
-          linux_mount_point => '/tmp',
-          linux_mount_filesystem => 'tmpfs',
-          linux_mount_options => 'defaults',
-          linux_mount_dumpfreq => '0',
-          linux_mount_passnum => '0'
-        },
-        { linux_mount_device => 'tmpfs',
-          linux_mount_point => '/var/tmp',
-          linux_mount_filesystem => 'tmpfs',
-          linux_mount_options => 'defaults',
-          linux_mount_dumpfreq => '0',
-          linux_mount_passnum => '0'
-        },
-        { linux_mount_device => 'tmpfs',
-          linux_mount_point => '/var/run',
-          linux_mount_filesystem => 'tmpfs',
-          linux_mount_options => 'defaults',
-          linux_mount_dumpfreq => '0',
-          linux_mount_passnum => '0'
-        },
-        { linux_mount_device => 'tmpfs',
-          linux_mount_point => '/var/lock',
-          linux_mount_filesystem => 'tmpfs',
-          linux_mount_options => 'defaults',
-          linux_mount_dumpfreq => '0',
-          linux_mount_passnum => '0'
-        },
-    );
-
-    foreach my $row (@default_conf) {
-        Entity::Component::Linux::LinuxMount->new(linux_id => $self->id,
-                                                  %$row);
     }
 }
 
