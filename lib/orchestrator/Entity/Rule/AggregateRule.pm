@@ -391,27 +391,10 @@ sub clone {
         attrs_clone_handler => $attrs_cloner
     );
 
-    # Manage associated workflow
-    # Clone only if both services use the same workflow manager
-    if ($self->workflow_def_id) {
-        eval {
-            my $src_workflow_manager = ServiceProviderManager->find( hash => {
-                 manager_type        => 'workflow_manager',
-                 service_provider_id => $self->aggregate_rule_service_provider_id
-            });
-            my $dest_workflow_manager = ServiceProviderManager->find( hash => {
-                manager_type        => 'workflow_manager',
-                service_provider_id => $args{'dest_service_provider_id'}
-            });
-            if ($src_workflow_manager->manager_id == $dest_workflow_manager->manager_id) {
-                my $manager = Entity->get(id => $src_workflow_manager->manager_id );
-                $manager->cloneWorkflow(
-                    workflow_def_id => $self->workflow_def_id,
-                    rule_id         => $clone->id
-                );
-            }
-        };
-    }
+    # Clone workflow
+    $self->cloneAssociatedWorkflow(
+        dest_rule => $clone
+    );
 
     return $clone;
 }

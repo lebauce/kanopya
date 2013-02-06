@@ -28,6 +28,10 @@ use base "Entity";
 use strict;
 use warnings;
 
+# logger
+use Log::Log4perl "get_logger";
+my $log = get_logger("");
+
 use Entity::WorkflowDef;
 
 use constant ATTR_DEF   => { };
@@ -109,6 +113,46 @@ sub subscribe {
     }
 
     return $result;
+}
+
+=pod
+=begin classdoc
+
+Clone the associated workflow if exists and link the clone to the destination rule.
+Clone only if both services linked to the rules use the same workflow manager, else log warning.
+
+@param dest_rule The rule to associate with the cloned workflow
+
+=end classdoc
+=cut
+
+sub cloneAssociatedWorkflow {
+    my ($self, %args) = @_;
+
+    if ($self->workflow_def_id) {
+        eval {
+            my $src_workflow_manager = ServiceProviderManager->find( hash => {
+                 manager_type        => 'workflow_manager',
+                 service_provider_id => $self->serviceProvider()->id
+            });
+            my $dest_workflow_manager = ServiceProviderManager->find( hash => {
+                manager_type        => 'workflow_manager',
+                service_provider_id => $args{dest_rule}->serviceProvider()->id
+            });
+            if ($src_workflow_manager->manager_id != $dest_workflow_manager->manager_id) {
+                die 'Both linked service providers have not the same workflow manager';
+            }
+            my $manager = Entity->get(id => $src_workflow_manager->manager_id );
+            $manager->cloneWorkflow(
+                workflow_def_id => $self->workflow_def_id,
+                rule_id         => $args{dest_rule}->id
+            );
+        };
+        if ($@) {
+            my $error = $@;
+            $log->warn('Can not clone associated workflow : ' . $error);
+        }
+    }
 }
 
 1;
