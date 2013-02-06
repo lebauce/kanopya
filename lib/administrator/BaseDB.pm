@@ -337,9 +337,9 @@ sub getAttrDefs {
         return $attr_defs_cache{$args{'group_by'}}{$class};
     }
 
-    my @hierachy = getClassHierarchy($class);
+    my @hierarchy = getClassHierarchy($class);
 
-    while(@hierachy) {
+    while (@hierarchy) {
         my $attr_def = {};
 
         if ($modulename ne "BaseDB") {
@@ -391,11 +391,10 @@ sub getAttrDefs {
             $attributedefs->{$modulename} = $attr_def;
         }
 
-        if (scalar(@hierachy) > 1) {
-            $modulename = _parentClass($modulename);
+        pop @hierarchy;
+        if (scalar(@hierarchy) > 0) {
+            $modulename = join('::', @hierarchy);
         }
-
-        pop @hierachy;
     }
 
     my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
@@ -1795,6 +1794,7 @@ sub getClassHierarchy {
         @hierarchy = split(/::/, $classpath);
     }
 
+    @hierarchy = grep { eval { getResultSource($_) }; not $@ } @hierarchy;
     return wantarray ? @hierarchy : \@hierarchy;
 }
 
