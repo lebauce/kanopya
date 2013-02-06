@@ -12,4 +12,10 @@ class linux ($sourcepath) {
 		hasrestart => true,
 		enable     => false,
 	}
-}  
+	file { '/etc/resolv.conf':
+		path    => '/etc/resolv.conf',
+		ensure  => present,
+		mode    => 0644,
+		source  => "puppet:///kanopyafiles/${sourcepath}/etc/resolv.conf",
+	}
+}
