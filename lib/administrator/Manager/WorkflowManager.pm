@@ -271,7 +271,7 @@ sub cloneWorkflow {
     my $rule_id = $args{rule_id};
 
     # Get original workflow def and params
-    my $wf_def      = WorkflowDef->get(id => $args{workflow_def_id});
+    my $wf_def      = Entity::WorkflowDef->get(id => $args{workflow_def_id});
     my $wf_params   = $wf_def->paramPresets;
     my $wf_name     = $wf_def->workflow_def_name;
 
