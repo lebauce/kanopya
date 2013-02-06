@@ -149,6 +149,7 @@ sub updateName {
 =head2 toString
 
     desc: return a string representation of the entity
+            add unit only if right combi is a constant
 
 =cut
 
@@ -157,7 +158,11 @@ sub toString {
 
     return  $self->left_combination->combination_formula_string.' '
            .$self->nodemetric_condition_comparator.' '
-           .$self->right_combination->combination_formula_string;
+           .$self->right_combination->combination_formula_string
+           .((ref $self->right_combination) eq 'Entity::Combination::ConstantCombination'
+                ? ' ' . $self->left_combination->combination_unit
+                : ''
+            );
 };
 
 sub evalOnOneNode{
