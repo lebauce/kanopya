@@ -54,7 +54,7 @@ sub getPolicyAttrDef { return POLICY_ATTR_DEF; }
 
 =begin classdoc
 
-Handle network policy specific parameters to build
+Handle orchestration policy specific parameters to build
 the policy pattern. Here, handle the service provider id
 that containers rules and condition to clone.
 
@@ -72,8 +72,8 @@ sub getPatternFromParams {
 
     my $pattern = $self->SUPER::getPatternFromParams(params => $args{params});
 
-    if (defined $args{params}->{orchestration_service_provider_id}) {
-        $pattern->{orchestration}->{service_provider_id} = delete $args{params}->{orchestration_service_provider_id};
+    if (defined $args{params}->{orchestration}{service_provider_id}) {
+        $pattern->{orchestration}->{service_provider_id} = delete $args{params}->{orchestration}{service_provider_id};
     }
     return $pattern;
 }
