@@ -601,62 +601,15 @@ sub configureOrchestration {
 
     my $sp = Entity::ServiceProvider->get(id => $args{service_provider_id});
 
-    # Node metrics
-    my @nodemetriccombinations = $sp->nodemetric_combinations;
-    for my $nmc (@nodemetriccombinations) {
-        my %attrs = $nmc->getAttrs();
-        delete $attrs{nodemetric_combination_id};
-
-        $attrs{service_provider_id} = $self->getId();
-        Entity::Combination::NodemetricCombination->new( %attrs );
-    }
-
-    # Cluster metrics and combinations
-    $self->_cloneOrchestrationCompositeData(
-        from            => $sp,
-        elem_name       => 'clustermetric',
-        composite_name  => 'aggregate_combination',
-    );
-
-    # Node conditions and rules
-    $self->_cloneOrchestrationCompositeData(
-        from            => $sp,
-        elem_name       => 'nodemetric_condition',
-        composite_name  => 'nodemetric_rule',
-    );
-
-    # Cluster conditions and rules
-    $self->_cloneOrchestrationCompositeData(
-        from            => $sp,
-        elem_name       => 'aggregate_condition',
-        composite_name  => 'aggregate_rule',
-    );
-
-    # Associate workflows to rules (clone workflows)
-    # Workflow_def associated to the rule is the same than the policy
-    # So we clone it and associate the new one to the rule to keep 1 <-> 1 relationship
-    my $workflow_manager = $self->getManager( manager_type => 'workflow_manager');
-    for my $rule ($self->nodemetric_rules, $self->aggregate_rules) {
-        my $rule_id    = $rule->id;
-        my $wf_id      = $rule->workflow_def_id; # The wf id from the policy
-        if ($wf_id) {
-            # Get original workflow def and params (from policy)
-            my $wf_def      = $rule->workflow_def;
-            my $wf_params   = $wf_def->paramPresets;
-            my $wf_name     = $wf_def->workflow_def_name;
-
-            # Replacing in workflow name the id of original rule (from policy) with id of this rule
-            # TODO change associated workflow naming convention (currently: <ruleid>_<origin_wf_def_name>) UGLY!
-            $wf_name =~ s/^[0-9]*/$rule_id/;
-
-            # Associate to the rule a copy of the policy workflow
-            $workflow_manager->associateWorkflow(
-                'new_workflow_name'         => $wf_name,
-                'origin_workflow_def_id'    => $wf_def->workflow_def_origin,
-                'specific_params'           => $wf_params->{specific} || {},
-                'rule_id'                   => $rule_id,
-            );
-        }
+    for (
+        $sp->clustermetrics,
+        $sp->combinations,
+        $sp->nodemetric_conditions,
+        $sp->aggregate_conditions,
+        $sp->nodemetric_rules,
+        $sp->aggregate_rules
+        ) {
+        $_->clone( dest_service_provider_id => $self->id );
     }
 }
 
@@ -1090,77 +1043,6 @@ sub getNewNodeNumber {
     }
 
     return $counter;
-}
-
-=head2 _cloneOrchestrationCompositeData
-
-    desc :
-        clone all <elems> from service provider <from> and add it to $self
-        do the same with <composites>
-        A composite has a formula build with elems id,
-        this formula is translated during cloning according to cloned elems ids
-
-=cut
-
-sub _cloneOrchestrationCompositeData {
-    my $self    = shift;
-    my %args    = @_;
-
-    my $elem_name   = $args{elem_name};
-    my $elem_class  = BaseDB::normalizeName($elem_name);
-    my $comp_name   = $args{composite_name};
-    my $comp_class  = BaseDB::normalizeName($comp_name);
-
-    my %id_mapper;
-    my $relationship;
-
-    $relationship = $elem_name . 's';
-    my @elems = $args{from}->$relationship;
-    for my $elem (@elems) {
-        my %attrs = $elem->getAttrs();
-        my $elem_id = delete $attrs{ $elem_name . '_id'};
-        $attrs{ $elem_name . '_service_provider_id' } = $self->getId();
-        my $clone_elem = $elem_class->new( %attrs );
-        $id_mapper{ $elem_id } = $clone_elem->getId();
-    }
-
-    $relationship = $comp_name . 's';
-    my @composites = $args{from}->$relationship;
-    for my $comp (@composites) {
-        my %attrs = $comp->getAttrs();
-        delete $attrs{ $comp_name . '_id'};
-        $attrs{ $comp_name . '_service_provider_id' } = $self->getId();
-        $attrs{ $comp_name . '_formula' } = $self->_translateFormula(
-            formula => $attrs{ $comp_name . '_formula' },
-            id_map  => \%id_mapper,
-        );
-        $comp_class->new( %attrs );
-    }
-}
-
-=head2 _translateFormula
-
-    desc : replaces id of a formula (used for metrics and rules) using an id translation map
-
-=cut
-
-sub _translateFormula {
-    my $self    = shift;
-    my %args    = @_;
-
-    my $formula = $args{formula};
-    my $id_map  = $args{id_map};
-
-    # Split id from formula
-    my @array = split(/(id\d+)/, $formula);
-    # replace each id by its translation id
-    for my $element (@array) {
-        if( $element =~ m/id(\d+)/)
-        {
-            $element = 'id' . $id_map->{$1};
-        }
-    }
-    return join('',@array);
 }
 
 =head2 getNodesMetrics
