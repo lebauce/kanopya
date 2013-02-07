@@ -9,6 +9,7 @@ class kvm::service {
 			hasstatus => true,
 			hasrestart => true,
 			enable => true,
+			require => Class['kvm::install'],
 	}
 	service {
 		'dnsmasq':

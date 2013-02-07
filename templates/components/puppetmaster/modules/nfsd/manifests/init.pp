@@ -9,6 +9,7 @@ class nfsd::service {
 			hasstatus => true,
 			hasrestart => true,
 			enable => true,
+			require => Class['nfsd::install'],
 	}
 }
 

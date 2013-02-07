@@ -8,6 +8,7 @@ class openldap::service {
 			hasstatus => true,
 			hasrestart => true,
 			enable => true,
+			require => Class['openldap::install'],
 	}
 }
 

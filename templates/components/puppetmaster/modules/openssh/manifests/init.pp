@@ -9,6 +9,7 @@ class openssh::service {
 			hasstatus => true,
 			hasrestart => true,
 			enable => true,
+			require => Class['openssh::install'],
 	}
 }
 

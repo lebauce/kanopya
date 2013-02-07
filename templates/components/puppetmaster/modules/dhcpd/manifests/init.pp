@@ -9,6 +9,7 @@ class dhcpd::service {
 			hasstatus => true,
 			hasrestart => true,
 			enable => true,
+			require => Class['dhcpd::install'],
 	}
 }
 

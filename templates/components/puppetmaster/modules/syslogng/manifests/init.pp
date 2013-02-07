@@ -8,6 +8,7 @@ class syslogng::service {
 			hasstatus => true,
 			hasrestart => true,
 			enable => true,
+			require => Class['syslogng::install']
 	}
 }
 
@@ -22,6 +23,6 @@ class syslogng::install {
 }
 
 class syslogng {
-	include syslogng::install
+	include syslogng::install, syslogng::service
 }
 

@@ -7,6 +7,7 @@ class nfs::service {
 				hasstatus => true,
 				hasrestart => true,
 				enable => true,
+				require => Class['nfs::install'],
 		}
 	}
 }

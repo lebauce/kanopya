@@ -8,6 +8,7 @@ class opennebula::service {
 			hasstatus => true,
 			hasrestart => true,
 			enable => true,
+			require => Class['opennebula::install'],
 	}
 }
 

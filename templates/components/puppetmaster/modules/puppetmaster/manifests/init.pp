@@ -8,6 +8,7 @@ class puppetmaster::service {
 			hasstatus => true,
 			hasrestart => true,
 			enable => true,
+			require => Class['puppetmaster::install'],
 	}
 }
 

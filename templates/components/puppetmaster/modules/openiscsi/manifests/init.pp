@@ -9,6 +9,7 @@ class openiscsi::service {
 			hasstatus => true,
 			hasrestart => true,
 			enable => true,
+			require => Class['openiscsi::install'],
 	}
 }
 

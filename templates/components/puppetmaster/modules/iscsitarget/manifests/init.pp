@@ -8,6 +8,7 @@ class iscsitarget::service {
 			hasstatus => true,
 			hasrestart => true,
 			enable => true,
+			require => Class['iscsitarget::install'],
 	}
 }
 

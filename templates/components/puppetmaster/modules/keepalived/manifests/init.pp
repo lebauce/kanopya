@@ -8,6 +8,7 @@ class keepalived::service {
 			hasstatus => true,
 			hasrestart => true,
 			enable => true,
+			require => Class['keepalived::install'],
 	}
 }
 

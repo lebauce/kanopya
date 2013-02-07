@@ -8,6 +8,7 @@ class atftpd::service {
 			hasstatus => true,
 			hasrestart => true,
 			enable => true,
+			require => Class['atftpd::install'],
 	}
 }
 

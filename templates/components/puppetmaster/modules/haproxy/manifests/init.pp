@@ -8,6 +8,7 @@ class haproxy::service {
 			hasstatus => true,
 			hasrestart => true,
 			enable => true,
+			require => Class['haproxy::install'],
 	}
 }
 

@@ -8,6 +8,7 @@ class memcached::service {
 			hasstatus => true,
 			hasrestart => true,
 			enable => true,
+			require => Class['memcached::install'],
 	}
 }
 

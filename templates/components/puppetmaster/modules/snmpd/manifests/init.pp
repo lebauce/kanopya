@@ -8,6 +8,7 @@ class snmpd::service {
 			hasstatus => true,
 			hasrestart => true,
 			enable => true,
+			require => Class['snmpd::install'],
 	}
 }
 
