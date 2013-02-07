@@ -362,7 +362,7 @@ function confirmDeleteWithDependencies(url, id, grid_ids) {
 $(document).ready(function () {
     $(document).keydown( function(e) {
         if(e.which == 13) { // enter pressed
-            if(!$("input,textarea").is(":focus")){
+            if(!$("textarea").is(":focus")){
                 $('.ui-button:contains("Ok"):visible').click();
             }
         }
