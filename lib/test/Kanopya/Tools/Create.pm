@@ -128,6 +128,7 @@ sub createCluster {
         cluster_nameserver2   => '127.0.0.1',
         cluster_basehostname  => 'default',
         user_id               => $admin_user->id,
+        default_gateway_id    => ($adminnetconf->poolips)[0]->network->id,
         managers              => {
             host_manager => {
                 manager_id     => $physical_hoster->id,
