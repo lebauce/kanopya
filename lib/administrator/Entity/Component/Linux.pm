@@ -99,9 +99,9 @@ sub getPuppetDefinition {
     my $conf = $self->getConf();
     my $nfs;
     my $str = "";
-    my $definition = "class {'linux': sourcepath => \"" .
+    my $definition = "class { 'linux': sourcepath => \"" .
                      $args{cluster}->cluster_name . '/' . $args{host}->host_hostname .
-                     "\",}\n";
+                     "\", stage => system }\n";
 
     # /etc/fstab et mounts
     foreach my $mount (@{$conf->{linuxes_mount}}) {
