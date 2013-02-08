@@ -99,7 +99,7 @@ sub getPuppetDefinition {
     my $conf = $self->getConf();
     my $nfs;
     my $str = "";
-    my $definition = "class { 'linux': sourcepath => \"" .
+    my $definition = "class { 'kanopya::linux': sourcepath => \"" .
                      $args{cluster}->cluster_name . '/' . $args{host}->host_hostname .
                      "\", stage => system }\n";
 
@@ -121,7 +121,7 @@ sub getPuppetDefinition {
     }
 
     if ($nfs) {
-        $definition .= "class { 'nfs': }\n";
+        $definition .= "class { 'kanopya::nfs': }\n";
     }
 
     return $definition . $str;

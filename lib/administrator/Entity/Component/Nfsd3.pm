@@ -310,7 +310,7 @@ sub createExport {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return "class { 'nfsd': }\n";
+    return "class { 'kanopya::nfsd': }\n";
 }
 
 1;

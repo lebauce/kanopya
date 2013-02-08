@@ -91,7 +91,7 @@ sub getPuppetDefinition {
     my ($self, %args) = @_;
 
     return "class { 'apache::mod::php': }\n" .
-           "class { 'php5': }\n";
+           "class { 'kanopya::php5': }\n";
 }
 
 1;
