@@ -32,7 +32,11 @@ sub getAttrDef { return ATTR_DEF; }
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    my $definitions = "class { 'nova::db::mysql':\n" .
+    my $definitions = "if \$kanopya_openstack_repository == undef {\n" .
+                      "\tclass { 'kanopya::openstack::repository': }\n" .
+                      "\t\$kanopya_openstack_repository = 1\n" .
+                      "}\n" .
+                      "class { 'nova::db::mysql':\n" .
                       "\tuser => 'nova',\n" .
                       "\tpassword => 'nova',\n" .
                       "\tdbname => 'nova',\n" .

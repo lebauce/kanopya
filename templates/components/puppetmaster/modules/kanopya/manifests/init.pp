@@ -18,4 +18,4 @@ include "openiscsi.pp"
 include "opennebula.pp"
 include "php5.pp"
 include "snmpd.pp"
-
+include "openstack.pp"

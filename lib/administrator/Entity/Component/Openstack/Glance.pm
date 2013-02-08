@@ -29,4 +29,13 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    return "if \$kanopya_openstack_repository == undef {\n" .
+           "\tclass { 'kanopya::openstack::repository': }\n" .
+           "\t\$kanopya_openstack_repository = 1\n" .
+           "}\n";
+}
+
 1;
