@@ -21,12 +21,49 @@ use base "Entity::Component";
 use strict;
 use warnings;
 
+use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
+my $errmsg;
 
 use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    my $definition;
+    my $sqlconnection;
+    my $sql = $self->mysql5;
+    $DB::single =1;
+    if (ref($sql) eq 'Entity::Component::Mysql5') {
+        $sqlconnection  = 'mysql://keystone_admin:keystone@';
+        $sqlconnection .= $sql->service_provider->getMasterNodeIp;
+        $sqlconnection .= '/keystone';
+    }
+    else {
+        $errmsg = "Only mysql is currently supported as DB backend";
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+
+    $definition = "class { 'keystone':
+                         verbose        => true,
+                         debug          => true,
+                         sql_connection => $sqlconnection,
+                         catalog_type   => 'sql',
+                         admin_token    => 'admin_token',
+                         before => Class['keystone::roles::admin'],
+                     }\n";
+
+    $definition .= "class { 'keystone::roles::admin':
+                        email => " . $self->service_provider->user->user_email . ",
+                        password => 'pass',
+                    }\n";
+    $definition .= "class { 'kanopya_keystone': }\n";
+
+    return $definition;
+}
 
 1;

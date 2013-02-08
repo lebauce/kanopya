@@ -131,7 +131,7 @@ sub createHostCertificate {
 sub createHostManifest {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'puppet_definitions', 'host_fqdn' ]);
-    
+
     my $config = {
         INCLUDE_PATH => '/templates/components/puppetmaster',
         INTERPOLATE  => 0,               # expand "$var" in plain text
@@ -139,16 +139,16 @@ sub createHostManifest {
         EVAL_PERL    => 1,               # evaluate Perl code blocks
         RELATIVE => 1,                   # desactive par defaut
     };
-    
+
     my $input = 'host_manifest.pp.tt';
     my $output = '/etc/puppet/manifests/nodes/';
     $output .= $args{host_fqdn}.'.pp';
-    
+
     my $data = {
         host_fqdn          => $args{host_fqdn},
-        puppet_definitions => $args{puppet_definitions} 
+        puppet_definitions => $args{puppet_definitions}
     };
-    
+
     my $template = Template->new($config);
     $template->process($input, $data, $output) || do {
         $errmsg = "error during generation from '$input':" .  $template->error;

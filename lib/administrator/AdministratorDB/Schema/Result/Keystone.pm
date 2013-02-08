@@ -46,6 +46,13 @@ __PACKAGE__->table("keystone");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 mysql5_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -55,6 +62,13 @@ __PACKAGE__->add_columns(
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
+  },
+  "mysql5_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
   },
 );
 
@@ -87,15 +101,34 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
+=head2 mysql5
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-02-04 14:01:22
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:FvNVJex+jIbk9cK00aUv+Q
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Mysql5>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "mysql5",
+  "AdministratorDB::Schema::Result::Mysql5",
+  { mysql5_id => "mysql5_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "NO ACTION",
+  },
+);
 
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-02-08 16:34:08
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:2gRFwdTpUkpl7BERaHKN7g
+# You can replace this text with custom content, and it will be preserved on regeneration
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Component",
     { "foreign.component_id" => "self.keystone_id" },
     { cascade_copy => 0, cascade_delete => 1 });
+
 1;
