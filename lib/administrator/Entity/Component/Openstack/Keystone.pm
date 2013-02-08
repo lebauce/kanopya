@@ -37,9 +37,9 @@ sub getPuppetDefinition {
     my $definition;
     my $sqlconnection;
     my $sql = $self->mysql5;
-    $DB::single =1;
+
     if (ref($sql) eq 'Entity::Component::Mysql5') {
-        $sqlconnection  = 'mysql://keystone_admin:keystone@';
+        $sqlconnection  = 'mysql://keystone:keystone@';
         $sqlconnection .= $sql->service_provider->getMasterNodeIp;
         $sqlconnection .= '/keystone';
     }
@@ -58,7 +58,7 @@ sub getPuppetDefinition {
                      }\n";
 
     $definition .= "class { 'keystone::roles::admin':
-                        email => " . $self->service_provider->user->user_email . ",
+                        email => '" . $self->service_provider->user->user_email . "',
                         password => 'pass',
                     }\n";
     $definition .= "class { 'kanopya_keystone': }\n";
