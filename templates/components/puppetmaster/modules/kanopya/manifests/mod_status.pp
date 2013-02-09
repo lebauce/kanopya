@@ -1,6 +1,6 @@
 class kanopya::mod_status {
   file { "${apache::params::vdir}/status.conf":
     ensure => present,
-    content => template('mod_status/status.conf.erb'),
+    content => template('kanopya/status.conf.erb'),
   }
 }
