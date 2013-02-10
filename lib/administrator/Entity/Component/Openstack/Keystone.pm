@@ -55,17 +55,23 @@ sub getPuppetDefinition {
                    class { 'keystone':
                          verbose        => true,
                          debug          => true,
-                         sql_connection => $sqlconnection,
+                         sql_connection => '$sqlconnection',
                          catalog_type   => 'sql',
                          admin_token    => 'admin_token',
                          before => Class['keystone::roles::admin'],
-                     }\n";
+                   }
+                   exec { \"/usr/bin/keystone-manage db_sync\":
+                         path => \"/usr/bin:/usr/sbin:/bin:/sbin\",
+                   }\n";
 
     $definition .= "class { 'keystone::roles::admin':
                         email => '" . $self->service_provider->user->user_email . "',
                         password => 'pass',
+                        require => Exec['/usr/bin/keystone-manage db_sync'],
                     }\n";
-    $definition .= "class { 'kanopya_keystone': }\n";
+    $definition .= "class { 'kanopya::keystone': dbserver => \"" .
+                   $sql->service_provider->getMasterNode->fqdn .
+                   "\", password => \"keystone\" }\n";
 
     return $definition;
 }

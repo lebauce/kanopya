@@ -12,3 +12,12 @@ class kanopya::openstack::repository {
 	}
 }
 
+class kanopya::keystone($dbserver, $password) {
+	@@mysql::db { 'keystone':
+		user     => 'keystone',
+		password => "${password}",
+		host     => "${ipaddress}",
+		grant    => ['all'],
+		tag      => "${dbserver}",
+	}
+}
