@@ -152,12 +152,6 @@ sub execute {
                                  container_access => $self->{context}->{container_access},
                                  erollback        => $self->{erollback});
         }
-
-        # Authorize the Kanopya master to connect to the node using SSH
-        my $mntpoint = $self->{params}->{mountpoint};
-        my $rsapubkey_cmd = "mkdir -p $mntpoint/root/.ssh ; " .
-                            "cat /root/.ssh/kanopya_rsa.pub > $mntpoint/root/.ssh/authorized_keys";
-        $self->getExecutorEContext->execute(command => $rsapubkey_cmd);
     }
 
     $log->info("Operate Boot Configuration");
@@ -165,26 +159,9 @@ sub execute {
                              options     => $mount_options);
 
     # Update kanopya etc hosts
-    my @data = ();
-    for my $host (Entity::Host->search(hash => {})) {
-        my $hostname = $host->host_hostname;
-        next if (not $hostname or $hostname eq '');
-        push @data, {
-            ip         => $host->adminIp,
-            hostname   => $hostname,
-            domainname => $self->{params}->{kanopya_domainname},
-        };
-    }
-
-    my $template = Template->new( {
-        INCLUDE_PATH => '/templates/components/linux',
-        INTERPOLATE  => 0,
-        POST_CHOMP   => 0,
-        EVAL_PERL    => 1,
-        RELATIVE     => 1,
-    } );
-
-    $template->process('hosts.tt', { hosts => \@data }, '/etc/hosts');
+    my $agent = $self->{_executor}->getComponent(category => "Configurationagent");
+    my $eagent = EFactory::newEEntity(data => $agent);
+    $eagent->applyConfiguration(cluster => $self->{_executor});
 
     # Umount system image container
     if ($self->{params}->{mountpoint}) {

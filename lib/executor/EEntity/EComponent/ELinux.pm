@@ -237,9 +237,10 @@ sub _generateHosts {
     # we add each nodes 
     foreach my $node ($args{cluster}->getHosts()) {
         push @hosts_entries, {
-            hostname   => $node->getAttr(name => 'host_hostname'),
-            domainname => $args{kanopya_domainname},
-            ip         => $node->adminIp 
+            fqdn    => $node->fqdn,
+            aliases => [ $node->host_hostname . "." . $args{kanopya_domainname},
+                         $node->host_hostname ],
+            ip      => $node->adminIp
         };
     }
 
