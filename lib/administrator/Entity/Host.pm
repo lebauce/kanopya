@@ -797,4 +797,10 @@ sub checkStoppable {
     return 1;
 }
 
+sub fqdn {
+    my $self = shift;
+
+    return $self->host_hostname . '.' . $self->getCluster->cluster_domainname;
+}
+
 1;
