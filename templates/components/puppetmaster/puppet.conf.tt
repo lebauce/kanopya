@@ -16,6 +16,7 @@ filetimeout=0
 # and can safely be removed if webrick is used.
 ssl_client_header = SSL_CLIENT_S_DN 
 ssl_client_verify_header = SSL_CLIENT_VERIFY
+storeconfigs = true
 
 [agent]
 server = [% kanopya_hostname %].[% admin_domainname %]
