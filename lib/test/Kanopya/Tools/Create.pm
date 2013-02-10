@@ -182,7 +182,8 @@ sub createCluster {
                     $component => {
                         component_type => ComponentType->find(hash => {
                                                component_name => $component
-                                          })->id
+                                          })->id,
+                        component_configuration => $comp_conf
                     }
                 }
             );
