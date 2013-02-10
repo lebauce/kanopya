@@ -199,7 +199,7 @@ sub finish {
     # If a stoping cluster has one node left, this is must be the master node
     if ($cluster_state[0] eq 'stopping' and $nbnodes == 1) {
         $self->{context}->{cluster}->removeNode(
-            host_id => $self->{context}->{cluster}->getMasterNodeId()
+            host_id => $self->{context}->{cluster}->getMasterNode->id
         );
     }
 }

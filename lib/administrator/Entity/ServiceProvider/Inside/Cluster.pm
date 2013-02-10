@@ -858,23 +858,6 @@ sub getMasterNodeIp {
     return;
 }
 
-sub getMasterNodeFQDN {
-    my $self = shift;
-
-    return $self->getMasterNode()->host_hostname . '.' . $self->cluster_domainname;
-}
-
-sub getMasterNodeId {
-    my $self = shift;
-    my $host = $self->getMasterNode;
-
-    if (defined ($host)) {
-        return $host->id;
-    }
-
-    return;
-}
-
 sub getMasterNodeSystemimage {
     my $self = shift;
     my $node_instance_rs = $self->{_dbix}->parent->search_related(

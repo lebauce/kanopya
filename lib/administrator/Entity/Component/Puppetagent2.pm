@@ -73,8 +73,9 @@ sub setConf {
     if ($conf->{puppetagent2_mode} eq 'kanopya') {        
         my $config = Kanopya::Config::get('executor');
         my $kanopya_cluster = Entity->get(id => $config->{cluster}->{executor});
-        $conf->{puppetagent2_masterip} = $kanopya_cluster->getMasterNodeIp();
-        $conf->{puppetagent2_masterfqdn} = $kanopya_cluster->getMasterNodeFQDN();
+        my $master = $kanopya_cluster->getMasterNode();
+        $conf->{puppetagent2_masterip} = $master->adminIp;
+        $conf->{puppetagent2_masterfqdn} = $master->fqdn;
     }
 
     $self->SUPER::setConf(conf => $conf);
@@ -99,12 +100,13 @@ sub getHostsEntries {
 sub getBaseConfiguration {
     my $config = Kanopya::Config::get('executor');
     my $kanopya_cluster = Entity->get(id => $config->{cluster}->{executor});
+    my $master = $kanopya_cluster->getMasterNode();
 
     return {
         puppetagent2_options    => '',
         puppetagent2_mode       => 'kanopya',
-        puppetagent2_masterip   => $kanopya_cluster->getMasterNodeIp(),
-        puppetagent2_masterfqdn => $kanopya_cluster->getMasterNodeFQDN() 
+        puppetagent2_masterip   => $master->adminIp,
+        puppetagent2_masterfqdn => $master->fqdn
     };
 }
 
