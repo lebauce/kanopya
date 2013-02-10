@@ -78,7 +78,8 @@ sub getPuppetDefinition {
            "\t\t\t'bind_address' => '" . $self->mysql5_bindaddress . "',\n" .
            "\t\t\t'datadir' => '" . $self->mysql5_datadir . "',\n" .
            "\t\t}\n" .
-           "}\n";
+           "}\n" .
+           "class { 'kanopya::mysql': }\n";
 }
 
 1;
