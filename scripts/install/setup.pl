@@ -740,7 +740,7 @@ sub generatePuppetConfiguration {
                                    );
 
     my $epuppetmaster = EEntity->new(entity => $puppetmaster);
-    my $fqdn = $kanopya_master->host_hostname . "." . $kanopya->cluster_domainname;
+    my $fqdn = $kanopya_master->node->node_hostname . "." . $kanopya->cluster_domainname;
 
     $epuppetmaster->createHostCertificate(
         mount_point => "/tmp",

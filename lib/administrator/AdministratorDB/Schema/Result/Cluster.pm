@@ -312,14 +312,14 @@ __PACKAGE__->add_unique_constraint("cluster_name", ["cluster_name"]);
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Inside>
+Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
 
 =cut
 
 __PACKAGE__->belongs_to(
   "cluster",
-  "AdministratorDB::Schema::Result::Inside",
-  { inside_id => "cluster_id" },
+  "AdministratorDB::Schema::Result::ServiceProvider",
+  { service_provider_id => "cluster_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
@@ -398,21 +398,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 rules
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Rule>
-
-=cut
-
-__PACKAGE__->has_many(
-  "rules",
-  "AdministratorDB::Schema::Result::Rule",
-  { "foreign.cluster_id" => "self.cluster_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 service_template
 
 Type: belongs_to
@@ -464,13 +449,13 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-20 14:19:16
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UWuTvCkO+Iuh4zOn+/0MYw
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-01-30 18:11:24
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:B22mIfP1l6Q0eYKcYMQsNQ
 
 __PACKAGE__->belongs_to(
   "parent",
-  "AdministratorDB::Schema::Result::Inside",
-  { inside_id => "cluster_id" },
+  "AdministratorDB::Schema::Result::ServiceProvider",
+  { service_provider_id => "cluster_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 

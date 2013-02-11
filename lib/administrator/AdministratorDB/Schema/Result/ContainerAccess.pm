@@ -88,7 +88,8 @@ __PACKAGE__->table("container_access");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_nullable: 0
+  is_foreign_key: 1
+  is_nullable: 1
 
 =cut
 
@@ -118,7 +119,12 @@ __PACKAGE__->add_columns(
   "partition_connected",
   { data_type => "char", default_value => "", is_nullable => 0, size => 255 },
   "export_manager_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
 );
 
 =head1 PRIMARY KEY
@@ -168,6 +174,26 @@ __PACKAGE__->belongs_to(
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "container_access_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 export_manager
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Component>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "export_manager",
+  "AdministratorDB::Schema::Result::Component",
+  { component_id => "export_manager_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 file_container_access
@@ -311,8 +337,8 @@ __PACKAGE__->many_to_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-29 10:51:58
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UmK3sjp6awlrXCDLeFBErQ
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-02-11 10:57:51
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:sYk5kgpeawPIBaD27BlEeA
 
 __PACKAGE__->belongs_to(
   "parent",

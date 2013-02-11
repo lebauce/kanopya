@@ -235,21 +235,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 connector
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Connector>
-
-=cut
-
-__PACKAGE__->might_have(
-  "connector",
-  "AdministratorDB::Schema::Result::Connector",
-  { "foreign.connector_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 container
 
 Type: might_have
@@ -585,21 +570,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 rule
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Rule>
-
-=cut
-
-__PACKAGE__->might_have(
-  "rule",
-  "AdministratorDB::Schema::Result::Rule",
-  { "foreign.rule_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 notification_subscription_entities
 
 Type: has_many
@@ -690,6 +660,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 rule
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Rule>
+
+=cut
+
+__PACKAGE__->might_have(
+  "rule",
+  "AdministratorDB::Schema::Result::Rule",
+  { "foreign.rule_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 service_provider
 
 Type: might_have
@@ -702,21 +687,6 @@ __PACKAGE__->might_have(
   "service_provider",
   "AdministratorDB::Schema::Result::ServiceProvider",
   { "foreign.service_provider_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 service_provider_managers
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::ServiceProviderManager>
-
-=cut
-
-__PACKAGE__->has_many(
-  "service_provider_managers",
-  "AdministratorDB::Schema::Result::ServiceProviderManager",
-  { "foreign.manager_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -836,8 +806,8 @@ Composing rels: L</ingroups> -> gp
 __PACKAGE__->many_to_many("gps", "ingroups", "gp");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-15 16:02:27
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UOPZo+azGTDFTeoIV2Vb3A
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-01-31 11:35:18
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:I4I2ir+9rTqrN182hBGD0w
 
 __PACKAGE__->might_have(
   "workflow",

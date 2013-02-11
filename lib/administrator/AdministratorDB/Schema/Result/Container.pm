@@ -1,17 +1,37 @@
+use utf8;
 package AdministratorDB::Schema::Result::Container;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
-
-
 =head1 NAME
 
 AdministratorDB::Schema::Result::Container
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
+
+=head1 TABLE: C<container>
 
 =cut
 
@@ -60,7 +80,8 @@ __PACKAGE__->table("container");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_nullable: 0
+  is_foreign_key: 1
+  is_nullable: 1
 
 =cut
 
@@ -83,8 +104,24 @@ __PACKAGE__->add_columns(
   "container_freespace",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "disk_manager_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</container_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("container_id");
 
 =head1 RELATIONS
@@ -117,6 +154,26 @@ __PACKAGE__->has_many(
   "AdministratorDB::Schema::Result::ContainerAccess",
   { "foreign.container_id" => "self.container_id" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 disk_manager
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Component>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "disk_manager",
+  "AdministratorDB::Schema::Result::Component",
+  { component_id => "disk_manager_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 file_container
@@ -194,24 +251,9 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 systemimages
 
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Systemimage>
-
-=cut
-
-__PACKAGE__->has_many(
-  "systemimages",
-  "AdministratorDB::Schema::Result::Systemimage",
-  { "foreign.container_id" => "self.container_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-10-16 11:49:53
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:FiBKQ3t5uMuzgXqGj6VDdQ
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-02-11 11:19:23
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:M6oTMkClmoJ221odWt3caQ
 
 __PACKAGE__->belongs_to(
   "parent",

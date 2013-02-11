@@ -1,17 +1,37 @@
+use utf8;
 package AdministratorDB::Schema::Result::Netapp;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
-
-
 =head1 NAME
 
 AdministratorDB::Schema::Result::Netapp
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
+
+=head1 TABLE: C<netapp>
 
 =cut
 
@@ -27,34 +47,34 @@ __PACKAGE__->table("netapp");
   is_nullable: 0
 
 =head2 netapp_name
- 
-   data_type: 'char'
-   is_nullable: 0
-   size: 32
- 
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 32
+
 =head2 netapp_desc
- 
-   data_type: 'char'
-   is_nullable: 1
-   size: 255
- 
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 255
+
 =head2 netapp_addr
- 
-   data_type: 'char'
-   is_nullable: 0
-   size: 15
- 
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 15
+
 =head2 netapp_login
- 
-   data_type: 'char'
-   is_nullable: 0
-   size: 32
- 
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 32
+
 =head2 netapp_passwd
- 
-   data_type: 'char'
-   is_nullable: 0
-   size: 32
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 32
 
 =cut
 
@@ -67,35 +87,27 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "netapp_name",
-  { 
-    data_type => "char",
-    is_nullable => 0, size => 32,
-  },
+  { data_type => "char", is_nullable => 0, size => 32 },
   "netapp_desc",
-  { 
-    data_type => "char", 
-    is_nullable => 1,
-    size => 255,
-  },
+  { data_type => "char", is_nullable => 1, size => 255 },
   "netapp_addr",
-  { 
-    data_type => "char",
-    is_nullable => 0,
-    size => 15,
-  },
+  { data_type => "char", is_nullable => 0, size => 15 },
   "netapp_login",
-  { 
-    data_type => "char",
-    is_nullable => 0,
-    size => 32,
-  },
+  { data_type => "char", is_nullable => 0, size => 32 },
   "netapp_passwd",
-  {
-    data_type => "char",
-    is_nullable => 0,
-    size => 32,
-  },
+  { data_type => "char", is_nullable => 0, size => 32 },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</netapp_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("netapp_id");
 
 =head1 RELATIONS
@@ -104,25 +116,41 @@ __PACKAGE__->set_primary_key("netapp_id");
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Outside>
+Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
 
 =cut
 
 __PACKAGE__->belongs_to(
   "netapp",
-  "AdministratorDB::Schema::Result::Outside",
-  { outside_id => "netapp_id" },
-  { on_delete => "CASCADE", on_update => "CASCADE" },
+  "AdministratorDB::Schema::Result::ServiceProvider",
+  { service_provider_id => "netapp_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 netapp_aggregates
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::NetappAggregate>
+
+=cut
+
+__PACKAGE__->has_many(
+  "netapp_aggregates",
+  "AdministratorDB::Schema::Result::NetappAggregate",
+  { "foreign.netapp_id" => "self.netapp_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-02-02 10:20:28
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:LHxtKXtQ0vdLBfBHxkjBAA
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-01-30 18:11:24
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:4QHRKD3roqOyoyb1BKlWQg
 
 __PACKAGE__->belongs_to(
   "parent",
-  "AdministratorDB::Schema::Result::Outside",
-    { "foreign.outside_id" => "self.netapp_id" },
-    { cascade_copy => 0, cascade_delete => 1 });
+  "AdministratorDB::Schema::Result::ServiceProvider",
+  { service_provider_id => "netapp_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
 1;

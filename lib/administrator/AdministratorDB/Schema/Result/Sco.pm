@@ -13,7 +13,23 @@ AdministratorDB::Schema::Result::Sco
 use strict;
 use warnings;
 
-use base 'DBIx::Class::Core';
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
 
 =head1 TABLE: C<sco>
 
@@ -62,27 +78,27 @@ __PACKAGE__->set_primary_key("sco_id");
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Connector>
+Related object: L<AdministratorDB::Schema::Result::Component>
 
 =cut
 
 __PACKAGE__->belongs_to(
   "sco",
-  "AdministratorDB::Schema::Result::Connector",
-  { connector_id => "sco_id" },
+  "AdministratorDB::Schema::Result::Component",
+  { component_id => "sco_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-06-08 14:15:53
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:R15rj5+bZtn9wOUtTbtvhg
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-01-31 12:19:38
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ZIzKGtjJPZ2Hl2JchaRfQw
 
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 __PACKAGE__->belongs_to(
   "parent",
-  "AdministratorDB::Schema::Result::Connector",
-    { "foreign.connector_id" => "self.sco_id" },
-    { cascade_copy => 0, cascade_delete => 1 }
+  "AdministratorDB::Schema::Result::Component",
+  { component_id => "sco_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
+
 1;
