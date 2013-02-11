@@ -21,14 +21,8 @@ use base "Entity";
 use strict;
 use warnings;
 
-use Kanopya::Exceptions;
-use Entity::Operation;
 use General;
-use Externalnode::Node;
-
-use Entity::ServiceProvider;
-use Entity::Container;
-use Entity::Interface;
+use Node;
 use Entity::Iface;
 use Entity::Operation;
 use Entity::Workflow;
@@ -91,13 +85,6 @@ use constant ATTR_DEF => {
         label        => 'Active',
         type         => 'boolean',
         pattern      => '^[01]$',
-        is_mandatory => 0,
-        is_editable  => 0,
-    },
-    host_hostname => {
-        label        => 'Hostname',
-        type         => 'string',
-        pattern      => '^[\w\d\-\.]*$',
         is_mandatory => 0,
         is_editable  => 0,
     },
@@ -204,21 +191,6 @@ sub resubmit() {
 }
 
 
-
-=head2 getServiceProvider
-
-    desc: Return the service provider that provides the host.
-
-=cut
-
-sub getServiceProvider {
-    my $self = shift;
-
-    my $service_provider_id = $self->getHostManager->getAttr(name => 'service_provider_id');
-
-    return Entity::ServiceProvider->get(id => $service_provider_id);
-}
-
 =head2 getHostManager
 
     desc: Return the component/conector that manage this host.
@@ -228,7 +200,7 @@ sub getServiceProvider {
 sub getHostManager {
     my $self = shift;
 
-    return Entity->get(id => $self->getAttr(name => 'host_manager_id'));
+    return $self->host_manager;
 }
 
 =head2 getState
@@ -334,7 +306,7 @@ sub updateCPU {
     # If the host is a node, then it is used in a cluster
     # belonging to a user, so update quota
     if ($self->node) {
-        my $user = $self->node->inside->user;
+        my $user = $self->node->service_provider->user;
 
         if ($args{cpu_number} < $self->host_core) {
             $user->releaseQuota(resource => 'cpu',
@@ -361,7 +333,7 @@ sub updateMemory {
     # If the host is a node, then it is used in a cluster
     # belonging to a user, so update quota
     if ($self->node) {
-        my $user = $self->node->inside->user;
+        my $user = $self->node->service_provider->user;
 
         if ($args{memory} < $self->host_ram) {
             $user->releaseQuota(resource => 'ram',
@@ -376,33 +348,21 @@ sub updateMemory {
     $self->save();
 }
 
-=head2 Entity::Host->becomeNode (%args)
-
-    Class : Public
-
-    Desc : Create a new node instance in db from host linked to cluster (in params).
-
-    args:
-        inside_id : Int : inside identifier
-        master_node : Int : 0 or 1 to say if the host is the master node
-    return: Node identifier
-
-=cut
-
 sub becomeNode {
     my $self = shift;
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'inside_id', 'master_node', 'node_number' ],
-                         optional => { 'systemimage_id' => undef });
+                         required => [ 'service_provider_id', 'master_node', 'node_number' ],
+                         optional => { 'systemimage_id' => undef, 'hostname' => undef });
 
-    return Externalnode::Node->new(
-               host_id        => $self->id,
-               inside_id      => $args{inside_id},
-               master_node    => $args{master_node},
-               node_number    => $args{node_number},
-               systemimage_id => $args{systemimage_id},
+    return Node->new(
+               host_id             => $self->id,
+               service_provider_id => $args{service_provider_id},
+               master_node         => $args{master_node},
+               node_number         => $args{node_number},
+               systemimage_id      => $args{systemimage_id},
+               node_hostname       => $args{hostname},
            );
 }
 
@@ -419,17 +379,6 @@ sub becomeMasterNode {
     $node->setAttr(name => 'master_node', value => 1);
     $node->save();
 }
-
-=head2 Entity::Host->stopToBeNode (%args)
-
-    Class : Public
-
-    Desc : Remove a node instance for a dedicated host.
-
-    args:
-        cluster_id : Int : Cluster identifier
-
-=cut
 
 sub stopToBeNode {
     my $self = shift;
