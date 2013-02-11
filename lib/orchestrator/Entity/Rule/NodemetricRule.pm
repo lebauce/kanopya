@@ -30,13 +30,12 @@ use base 'Entity::Rule';
 use strict;
 use warnings;
 
-use Data::Dumper;
-use Externalnode;
+use Node;
 use Entity::NodemetricCondition;
 use Entity::ServiceProvider;
 use VerifiedNoderule;
 use List::MoreUtils qw {any} ;
-use Switch;
+
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -107,16 +106,14 @@ use constant ATTR_DEF => {
 sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
-  return {
-    'toString'              => {
-      'description' => 'toString',
-      'perm_holder' => 'entity'
-    },
-    'isVerifiedForANode'    => {
-      'description' => 'isverifiedForANode',
-      'perm_holder' => 'entity'
+    return {
+        toString => {
+            description => 'toString',
+        },
+        isVerifiedForANode => {
+            description => 'isverifiedForANode',
+        }
     }
-  }
 }
 
 # Virtual attribute getter
@@ -141,13 +138,13 @@ sub new {
     my $toString = $self->toString();
 
     $self->setAttr(name=>'nodemetric_rule_formula_string', value => $toString);
-    if ((! defined $args{nodemetric_rule_label}) || $args{nodemetric_rule_label} eq ''){
+    if (! defined $args{nodemetric_rule_label} || $args{nodemetric_rule_label} eq ''){
         $self->setAttr(name=>'nodemetric_rule_label', value => $toString);
     }
     $self->save();
 
     # When enabled, set undef for each node (will be update next orchestrator loop)
-    if ($self->getAttr('name' => 'nodemetric_rule_state') eq 'enabled'){
+    if ($self->nodemetric_rule_state eq 'enabled'){
         $self->setUndefForEachNode();
     }
 
@@ -158,12 +155,12 @@ sub new {
 sub setUndefForEachNode{
     my ($self) = @_;
     #ADD A ROW IN VERIFIED_NODERULE TABLE indicating undef data
-#    my $extcluster = Entity::ServiceProvider::Outside::Externalcluster->get(
+#    my $extcluster = Entity::ServiceProvider::Externalcluster->get(
 #                        'id' => $self->getAttr(name => 'nodemetric_rule_service_provider_id'),
 #                     );
     my $service_provider = Entity::ServiceProvider->get(
-                        'id' => $self->getAttr(name => 'nodemetric_rule_service_provider_id'),
-                     );
+                               'id' => $self->nodemetric_rule_service_provider_id,
+                           );
 
     my $nodes = $service_provider->getNodes();
 
@@ -171,7 +168,7 @@ sub setUndefForEachNode{
         $self->{_dbix}
         ->verified_noderules
         ->update_or_create({
-            verified_noderule_externalnode_id    =>  $node->{'id'},
+            verified_noderule_node_id    =>  $node->{'id'},
             verified_noderule_state              => 'undef',
         });
     }
@@ -232,14 +229,14 @@ sub evalOnOneNode{
 sub isVerifiedForANode{
     my ($self, %args) = @_;
 
-    my $externalnode_id = (defined $args{externalnode_hostname}) ?
-                          Externalnode->find (hash => {externalnode_hostname => $args{externalnode_hostname}})->id :
-                          $args{externalnode_id};
+    my $node_id = (defined $args{node_hostname}) ?
+                          Node->find (hash => {node_hostname => $args{node_hostname}})->id :
+                          $args{node_id};
 
     my $verified_noderule_state;
     eval {
         $verified_noderule_state = VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $externalnode_id,
+            verified_noderule_node_id    => $node_id,
             verified_noderule_nodemetric_rule_id => $self->id,
         })->verified_noderule_state;
     };
@@ -255,17 +252,17 @@ sub isVerifiedForANode{
     }
 
     throw Kanopya::Exception::Internal::WrongValue(error => 'Wrong state value '.
-    $verified_noderule_state.' for rule <'.$self->id.'> and node <'.($externalnode_id).'>');
+    $verified_noderule_state.' for rule <'.$self->id.'> and node <'.($node_id).'>');
 };
 
 sub deleteVerifiedRule  {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'externalnode_id' ]);
+    General::checkParams(args => \%args, required => [ 'node_id' ]);
 
     my $verified_noderule;
     eval{
         $verified_noderule = VerifiedNoderule->find(hash=>{
-            verified_noderule_externalnode_id    => $args{externalnode_id},
+            verified_noderule_node_id    => $args{node_id},
             verified_noderule_nodemetric_rule_id => $self->getId(),
         });
     };
@@ -308,7 +305,7 @@ sub deleteVerifiedRuleWfDefId {
     }
     else {
         my $verified_noderule = VerifiedNoderule->find(hash => {
-                                    verified_noderule_externalnode_id    => $node_id,
+                                    verified_noderule_node_id    => $node_id,
                                     verified_noderule_nodemetric_rule_id => $rule_id
                                 });
         $verified_noderule->setAttr(name => 'workflow_def_id', value => 'null');
@@ -319,14 +316,14 @@ sub deleteVerifiedRuleWfDefId {
 sub setVerifiedRule{
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'externalnode_id',
+    General::checkParams(args => \%args, required => [ 'node_id',
                                                        'state',
     ]);
 
     $self->{_dbix}
          ->verified_noderules
          ->update_or_create({
-               verified_noderule_externalnode_id  => $args{externalnode_id},
+               verified_noderule_node_id  => $args{node_id},
                verified_noderule_state            => $args{state},
     });
 }
@@ -365,7 +362,7 @@ sub setAllRulesUndefForANode{
         $nodemetric_rule->{_dbix}
             ->verified_noderules
             ->update_or_create({
-                verified_noderule_externalnode_id    =>  $node_id,
+                verified_noderule_node_id    =>  $node_id,
                 verified_noderule_state              => 'undef',
         });
     }

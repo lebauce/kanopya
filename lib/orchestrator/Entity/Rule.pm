@@ -71,7 +71,7 @@ sub notifyWorkflowName {
 sub associateWithNotifyWorkflow {
     my $self        = shift;
 
-    my $wf_manager  = $self->serviceProvider->getManager(manager_type => "workflow_manager");
+    my $wf_manager  = $self->serviceProvider->getManager(manager_type => "WorkflowManager");
     # TODO
     # Do not use a fake attribute to retrieve the fake workflow name but create only one
     # fake workflow and modify its scope_id dynamically
