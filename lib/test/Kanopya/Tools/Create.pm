@@ -46,8 +46,9 @@ use Entity::Netconf;
 use Entity::Host;
 use Entity::Container;
 use Entity::ContainerAccess::NfsContainerAccess;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 use Hash::Merge qw(merge);
+use ClassType::ComponentType;
 
 =pod
 
@@ -131,7 +132,7 @@ sub createCluster {
         managers              => {
             host_manager => {
                 manager_id     => $physical_hoster->id,
-                manager_type   => "host_manager",
+                manager_type   => "HostManager",
                     manager_params => {
                         cpu => 1,
                         ram => 2*1024*1024,
@@ -139,7 +140,7 @@ sub createCluster {
                 },
             disk_manager => {
                 manager_id     => $disk_manager->id,
-                manager_type   => "disk_manager",
+                manager_type   => "DiskManager",
                 manager_params => {
                     vg_id => 1,
                     systemimage_size => 4 * 1024 * 1024 * 1024,
@@ -147,7 +148,7 @@ sub createCluster {
             },
             export_manager => {
                 manager_id     => $export_manager->id,
-                manager_type   => "export_manager",
+                manager_type   => "ExportManager",
                 manager_params => {
                     iscsi_portals => \@iscsi_portal_ids,
                 }
@@ -179,7 +180,7 @@ sub createCluster {
             my %tmp = (
                 components => {
                     $component => {
-                        component_type => ComponentType->find(hash => {
+                        component_type => ClassType::ComponentType->find(hash => {
                                                component_name => $component
                                           })->id
                     }
@@ -215,7 +216,7 @@ sub createCluster {
     }
 
     diag('Create cluster');
-    my $cluster_create = Entity::ServiceProvider::Inside::Cluster->create(%cluster_conf);
+    my $cluster_create = Entity::ServiceProvider::Cluster->create(%cluster_conf);
 
     Kanopya::Tools::Execution->executeOne(entity => $cluster_create);
 
@@ -241,8 +242,8 @@ sub createVmCluster {
 
     my $iaas = $args{iaas};
 
-    #get iaas Cloudmanager component to use it as host manager
-    my $host_manager = $iaas->getComponent(category => 'Cloudmanager');
+    #get iaas HostManager component to use it as host manager
+    my $host_manager = $iaas->getComponent(category => 'HostManager');
 
     #get fileimagemanager from kanopya cluster as export and disk manager
     my $kanopya = Kanopya::Tools::Retrieve->retrieveCluster();
