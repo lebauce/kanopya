@@ -146,7 +146,7 @@ sub getComponentInstance{
    my $self = shift;
    #my $var;
    my $cluster_id = $self->{_dbix}->get_column('cluster_id');
-   my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => $cluster_id);
+   my $cluster = Entity::ServiceProvider::Cluster->get(id => $cluster_id);
    my @components = $cluster->getComponents(category => "all");  
    my $data_components = [];
     foreach my $element (@components) {
@@ -176,7 +176,7 @@ return $data;
 
 sub getClusterIp{
     my  $self=shift;
-    my $cluster = Entity::ServiceProvider::Inside::Cluster->get(id => 1);
+    my $cluster = Entity::ServiceProvider::Cluster->get(id => 1);
     my $clusteradmadresse = $cluster->getMasterNodeIp();
     return $clusteradmadresse;
    

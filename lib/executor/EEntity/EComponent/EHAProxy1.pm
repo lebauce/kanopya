@@ -28,8 +28,8 @@ sub configureNode {
     
     General::checkParams(args => \%args, required => ['host', 'mount_point']);
     
-    my $cluster = $self->_getEntity->getServiceProvider;
-    my $conf = $self->_getEntity()->getConf();
+    my $cluster = $self->service_provider;
+    my $conf = $self->getConf();
     my %data;
     # remove prefix of var name
     for (keys %$conf) {

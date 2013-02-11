@@ -12,8 +12,8 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package EEntity::EConnector::ENetappVolumeManager;
-use base "EEntity::EConnector";
+package EEntity::EComponent::ENetappVolumeManager;
+use base "EEntity::EComponent";
 
 use warnings;
 use strict;
@@ -126,7 +126,7 @@ sub createExport {
     # Check if the disk is not already exported
     $self->SUPER::createExport(%args);
 
-    my $manager_ip = $self->_getEntity->getServiceProvider->getMasterNodeIp;
+    my $manager_ip = $self->service_provider->getMasterNodeIp;
     my $entity = Entity::ContainerAccess::NfsContainerAccess->new(
                      container_id            => $args{container}->getAttr(name => 'container_id'),
                      export_manager_id       => $self->_getEntity->getAttr(name => 'entity_id'),

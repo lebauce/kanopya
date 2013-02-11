@@ -128,8 +128,8 @@ sub startHost {
     #TODO fix this way to get image disk file type
     my $image_name  = $image->systemimage_name.'.raw';
     my $image_size  = $image->container->container_size;
-    my $disk_params = $cluster->getManagerParameters(manager_type => 'disk_manager');
-    my $host_params = $cluster->getManagerParameters(manager_type => 'host_manager');
+    my $disk_params = $cluster->getManagerParameters(manager_type => 'DiskManager');
+    my $host_params = $cluster->getManagerParameters(manager_type => 'HostManager');
     my $repository  = $self->getRepository(
                           container_access_id => $disk_params->{container_access_id}
                       );
@@ -137,8 +137,8 @@ sub startHost {
                           vsphere5_datacenter_id => $hypervisor->vsphere5_datacenter_id
                       });
     
-    $host_conf{hostname}   = $host->host_hostname;
-    $host_conf{hypervisor} = $hypervisor->host_hostname;
+    $host_conf{hostname}   = $host->node->node_hostname;
+    $host_conf{hypervisor} = $hypervisor->node->node_hostname;
     $host_conf{datacenter} = $datacenter->vsphere5_datacenter_name;
     $host_conf{guest_id}   = $guest_id;
     $host_conf{datastore}  = $repository->repository_name;
@@ -162,12 +162,12 @@ sub startHost {
 
     #Power on the VM
     #We retrieve a view of the newly created VM
-    my $hypervisor_hash_filter = {name => $hypervisor->host_hostname};
+    my $hypervisor_hash_filter = {name => $hypervisor->node->node_hostname};
     my $hypervisor_view        = findEntityView(
                                     view_type   => 'HostSystem',
                                     hash_filter => $hypervisor_hash_filter,
                                  );
-    my $vm_hash_filter        = {name => $host->host_hostname};
+    my $vm_hash_filter        = {name => $host->node->node_hostname};
     my $vm_view               = findEntityView(
                                     view_type    => 'VirtualMachine',
                                     hash_filter  => $vm_hash_filter,
@@ -301,7 +301,7 @@ sub scaleCpu {
         my $vm_view = $self->findEntityView(
                           view_type    => 'VirtualMachine',
                           hash_filter  => {
-                              name => $host->node->externalnode_hostname,
+                              name => $host->node->node_hostname,
                           },
                           begin_entity => $dc_view,
                       );
@@ -316,7 +316,7 @@ sub scaleCpu {
                 );
         };
         if ($@) {
-            $errmsg = 'Error scaling in CPU on virtual machine '.$host->host_hostname.': '.$@;
+            $errmsg = 'Error scaling in CPU on virtual machine '.$host->node->node_hostname.': '.$@;
             throw Kanopya::Exception::Internal(error => $errmsg);
         }
         #We Refresh the values of view
@@ -368,7 +368,7 @@ sub scaleMemory {
         my $vm_view = $self->findEntityView(
                           view_type    => 'VirtualMachine',
                           hash_filter  => {
-                              name => $host->node->externalnode_hostname,
+                              name => $host->node->node_hostname,
                           },
                           begin_entity => $dc_view,
                       );
@@ -384,7 +384,7 @@ sub scaleMemory {
             );
         };
         if ($@) {
-            $errmsg = 'Error scaling in Memory on virtual machine '.$host->host_hostname.': '.$@;
+            $errmsg = 'Error scaling in Memory on virtual machine '.$host->node->node_hostname.': '.$@;
             throw Kanopya::Exception::Internal(error => $errmsg);
         }
         #We Refresh the values of view

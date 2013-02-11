@@ -44,7 +44,7 @@ sub createExport {
 
     # Check if the given container is provided by the same
     # storage provider than the nfsd storage provider.
-    if ($args{container}->getServiceProvider->getAttr(name => "service_provider_id") !=
+    if ($args{container}->service_provider->getAttr(name => "service_provider_id") !=
         $self->_getEntity()->getAttr(name => "service_provider_id")) {
         throw Kanopya::Exception::Execution(
                   error => "Only local containers can be exported through NFS"
@@ -92,7 +92,7 @@ sub createExport {
     my $eagent = EFactory::newEEntity(data => $agent);
     $eagent->applyConfiguration(cluster => $cluster);
 
-    my $manager_ip = $self->getServiceProvider->getMasterNodeIp;
+    my $manager_ip = $self->service_provider->getMasterNodeIp;
     my $mount_dir  = $self->getMountDir(device => $args{container}->getAttr(name => 'container_device'));
 
     my $entity = Entity::ContainerAccess::NfsContainerAccess->new(

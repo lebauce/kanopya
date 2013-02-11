@@ -15,8 +15,8 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 3 july 2010
-package Entity::Connector::Scom;
-use base 'Entity::Connector';
+package Entity::Component::Scom;
+use base 'Entity::Component';
 use base 'Manager::CollectorManager';
 
 use strict;

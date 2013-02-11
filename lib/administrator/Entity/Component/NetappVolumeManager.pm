@@ -14,8 +14,8 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package Entity::Connector::NetappVolumeManager;
-use base "Entity::Connector::NetappManager";
+package Entity::Component::NetappVolumeManager;
+use base "Entity::Component::NetappManager";
 use base "Manager::ExportManager";
 use base "Manager::DiskManager";
 
@@ -202,7 +202,7 @@ sub synchronize {
     my $self = shift;
     my %args = @_;
     my $aggregates = {};
-    my $manager_ip = $self->getServiceProvider->getMasterNodeIp;
+    my $manager_ip = $self->service_provider->getMasterNodeIp;
     my $netapp_id = $self->getAttr(name => "service_provider_id");
 
     foreach my $aggregate ($self->aggregates) {

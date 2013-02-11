@@ -32,7 +32,7 @@ sub addNode {
     General::checkParams(args => \%args, required => ['mount_point', 'host']);
 
     my $keepalived = $self->_getEntity();
-    my $masternodeip = $self->getServiceProvider->getMasterNodeIp();
+    my $masternodeip = $self->service_provider->getMasterNodeIp();
 
     # recuperer les adresses ips publiques et les ports
     if(not defined $masternodeip) {
@@ -234,7 +234,7 @@ sub generateKeepalived {
     my ($self, %args) = @_;
     
     General::checkParams(args => \%args, required => ['host','mount_point']);
-    my $cluster = $self->_getEntity->getServiceProvider;
+    my $cluster = $self->service_provider;
     my $host = $cluster->getMasterNode;
     $host = $args{host} if not defined $host;
     my $data = $self->_getEntity()->getTemplateDataKeepalived();
@@ -258,7 +258,7 @@ sub generateSysctlconf {
     my ($self, %args) = @_;
     
     General::checkParams(args => \%args, required => ['host','mount_point']);
-    my $cluster = $self->_getEntity->getServiceProvider;
+    my $cluster = $self->service_provider;
     my $host = $cluster->getMasterNode;
     $host = $args{host} if not defined $host;
     my $data = { sysctl_entries => [ 'net.ipv4.ip_forward = 1' ] };
@@ -282,8 +282,8 @@ sub generateAndSendKeepalived {
     
     my $data = $self->_getEntity()->getTemplateDataKeepalived();
     my $file = $self->generateNodeFile(
-        host          => $self->getServiceProvider->getMasterNode,
-        cluster       => $self->getServiceProvider,
+        host          => $self->service_provider->getMasterNode,
+        cluster       => $self->service_provider,
         file          => '/etc/keepalived/keepalived.conf',
         template_dir  => '/templates/components/keepalived',
         template_file => 'keepalived.conf.tt',
@@ -301,7 +301,7 @@ sub generateIpvsadm {
     my ($self, %args) = @_;
     
     General::checkParams(args => \%args, required => ['host','mount_point']);
-    my $cluster = $self->_getEntity->getServiceProvider;
+    my $cluster = $self->service_provider;
     my $host = $cluster->getMasterNode;
     $host = $args{host} if not defined $host;
     my $data = $self->_getEntity()->getTemplateDataIpvsadm();
@@ -331,8 +331,8 @@ sub addnetwork_routes {
     $data->{gateway} = $args{loadbalancer_internal_ip};
     
     my $file = $self->generateNodeFile(
-        host          => $self->getServiceProvider->getMasterNode,
-        cluster       => $self->getServiceProvider,
+        host          => $self->service_provider->getMasterNode,
+        cluster       => $self->service_provider,
         file          => '/etc/init.d/network_routes',
         template_dir  => '/templates/components/keepalived',
         template_file => 'network_routes.tt',

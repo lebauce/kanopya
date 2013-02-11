@@ -215,8 +215,7 @@ sub addLun {
     my %args  = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "device", "number", "typeio",
-                                       "iomode", "target_name" ]);
+                         required => [ "device", "number", "typeio", "iomode", "target_name" ]);
 
     my $tid = $self->gettid(target_name => $args{target_name});
 

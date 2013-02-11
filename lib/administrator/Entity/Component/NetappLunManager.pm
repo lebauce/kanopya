@@ -14,8 +14,8 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package Entity::Connector::NetappLunManager;
-use base 'Entity::Connector::NetappManager';
+package Entity::Component::NetappLunManager;
+use base 'Entity::Component::NetappManager';
 use base "Manager::ExportManager";
 use base "Manager::DiskManager";
 

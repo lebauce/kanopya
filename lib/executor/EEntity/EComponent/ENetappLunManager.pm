@@ -12,8 +12,8 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package EEntity::EConnector::ENetappLunManager;
-use base "EEntity::EConnector";
+package EEntity::EComponent::ENetappLunManager;
+use base "EEntity::EComponent";
 
 use warnings;
 use strict;
@@ -149,7 +149,7 @@ sub createExport {
     my $volume = $args{container}->getVolume();
     my $lun_path = $args{container}->getPath();
 
-    my $kanopya_cluster = Entity::ServiceProvider::Inside::Cluster->find(
+    my $kanopya_cluster = Entity::ServiceProvider::Cluster->find(
                              hash => {
                                  cluster_name => 'Kanopya'
                              }
@@ -180,9 +180,9 @@ sub createExport {
 
     my $entity = Entity::ContainerAccess::IscsiContainerAccess->new(
                      container_id            => $args{container}->getAttr(name => 'container_id'),
-                     export_manager_id       => $self->_getEntity->getAttr(name => 'entity_id'),
-                     container_access_export => $self->_getEntity->iscsi_node_get_name->node_name,
-                     container_access_ip     => $self->_getEntity->getServiceProvider->getMasterNodeIp,
+                     export_manager_id       => $self->getAttr(name => 'entity_id'),
+                     container_access_export => $self->iscsi_node_get_name->node_name,
+                     container_access_ip     => $self->service_provider->getMasterNodeIp,
                      container_access_port   => 3260,
                      typeio                  => $args{typeio},
                      iomode                  => $args{iomode},

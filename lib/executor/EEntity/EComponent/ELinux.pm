@@ -200,7 +200,7 @@ sub preconfigureSystemimage {
 Generate the hostname configuration file
 
 @param host Entity::Host instance
-@param cluster Entity::ServiceProvider::Inside::Cluster instance
+@param cluster Entity::ServiceProvider::Cluster instance
 @return hashref with src as full path of the generated file, dest as the full path destination
 
 =end classdoc
@@ -213,14 +213,13 @@ sub _generateHostname {
     General::checkParams(args => \%args, required => [ 'host', 'cluster' ],
                                          optional => { 'path' => '/etc/hostname' });
 
-    my $hostname = $args{host}->getAttr(name => 'host_hostname');
     my $file = $self->generateNodeFile(
         cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/hostname',
         template_dir  => '/templates/components/linux',
         template_file => 'hostname.tt',
-        data          => { hostname => $hostname }
+        data          => { hostname => $args{host}->node->node_hostname }
     );
     
     return { src  => $file, dest => $args{path} };
@@ -262,7 +261,7 @@ sub _generateHosts {
     # we add each nodes 
     foreach my $node ($args{cluster}->getHosts()) {
         push @hosts_entries, {
-            hostname   => $node->getAttr(name => 'host_hostname'),
+            hostname   => $node->node->node_hostname,
             domainname => $args{kanopya_domainname},
             ip         => $node->adminIp 
         };
@@ -572,7 +571,7 @@ update initrd directory content
 
 @param initrd_dir directory path
 @param host Entity::Host instance
-@param cluster Entity::ServiceProvider::Inside::Cluster instance
+@param cluster Entity::ServiceProvider::Cluster instance
 
 =end classdoc
 
@@ -589,7 +588,7 @@ sub customizeInitramfs {
     $log->info("customize initramfs $initrddir");
 
     my $clustername = $args{cluster}->cluster_name;
-    my $hostname = $args{host}->host_hostname;
+    my $hostname = $args{host}->node->node_hostname;
 
     my $nodedir = Kanopya::Config::get('executor')->{clusters}->{directory} . "/$clustername/$hostname";
 

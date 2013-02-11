@@ -18,7 +18,7 @@
 
 =head1 NAME
 
-Entity::Connector::MockMonitor
+Entity::Component::MockMonitor
 
 =head1 SYNOPSIS
 
@@ -39,8 +39,8 @@ Configuration example (JSON format):
 
 =cut
 
-package Entity::Connector::MockMonitor;
-use base 'Entity::Connector';
+package Entity::Component::MockMonitor;
+use base 'Entity::Component';
 use base 'Manager::CollectorManager';
 
 use strict;

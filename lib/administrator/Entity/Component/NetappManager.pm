@@ -14,10 +14,10 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package Entity::Connector::NetappManager;
-use base 'Entity::Connector';
+package Entity::Component::NetappManager;
+use base 'Entity::Component';
 
-use Entity::ServiceProvider::Outside::Netapp;
+use Entity::ServiceProvider::Netapp;
 use warnings;
 use NetApp::API;
 
@@ -39,7 +39,7 @@ sub init {
 
     return if (defined $self->{api});
 
-    my $netapp = Entity::ServiceProvider::Outside::Netapp->get(
+    my $netapp = Entity::ServiceProvider::Netapp->get(
                      id => $self->getAttr(name => "service_provider_id")
                  );
 

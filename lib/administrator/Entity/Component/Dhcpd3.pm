@@ -1,5 +1,5 @@
-# Dhcp3.pm - Dhcp 3 server component (Adminstrator side)
 #    Copyright © 2011 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -12,42 +12,6 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-# Created 2 august 2010
-
-=head1 NAME
-
-<Entity::Component::Dhcpd3> <Dhcpd3 component concret class>
-
-=head1 VERSION
-
-This documentation refers to <Entity::Component::Dhcpd3> version 1.0.0.
-
-=head1 SYNOPSIS
-
-use <Entity::Component::Dhcpd3>;
-
-my $component_instance_id = 2; # component instance id
-
-Entity::Component::Dhcpd3->get(id=>$component_instance_id);
-
-# Cluster id
-
-my $cluster_id = 3;
-
-# Component id are fixed, please refer to component id table
-
-my $component_id =2 
-
-Entity::Component::Dhcpd3->new(component_id=>$component_id, cluster_id=>$cluster_id);
-
-=head1 DESCRIPTION
-
-Entity::Component::Dhcpd3 is class allowing to instantiate an Dhcpd3 component
-This Entity is empty but present methods to set configuration.
-
-=head1 METHODS
-
-=cut
 
 package Entity::Component::Dhcpd3;
 use parent "Entity::Component";
@@ -127,7 +91,7 @@ sub getConf {
     $data->{domain_name}        = $dhcpd3->get_column('dhcpd3_domain_name');
     $data->{domain_name_server} = $dhcpd3->get_column('dhcpd3_domain_server');
     $data->{server_name}        = $dhcpd3->get_column('dhcpd3_servername');
-    $data->{server_ip}          = $self->getServiceProvider->getMasterNodeIp;
+    $data->{server_ip}          = $self->service_provider->getMasterNodeIp;
 
     my $subnets = $dhcpd3->dhcpd3_subnets;
     my @data_subnets = ();

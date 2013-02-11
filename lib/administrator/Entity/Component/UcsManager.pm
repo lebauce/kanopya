@@ -13,11 +13,10 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package Entity::Connector::UcsManager;
-use base "Entity::Connector";
+package Entity::Component::UcsManager;
+use base "Entity::Component";
 use base "Manager::HostManager";
 
-use Administrator;
 use Manager::HostManager;
 use Entity::Processormodel;
 use Entity::Host;

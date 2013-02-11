@@ -187,7 +187,7 @@ sub postStartNode {
         $linux->setConf(conf => { linuxes_mount => \@mounts });
 
         for my $vmm ($self->vmms) {
-            $linux = $vmm->getServiceProvider->getComponent(category => "System");
+            $linux = $vmm->service_provider->getComponent(category => "System");
             $oldconf = $linux->getConf();
             @mounts = (@{$oldconf->{linuxes_mount}}, @mountentries);
             $linux->setConf(conf => { linuxes_mount => \@mounts });
@@ -203,18 +203,18 @@ sub registerHypervisor {
         required => [ 'host' ]
     );
 
-    my $system = $self->getServiceProvider->getComponent(category => "System");
+    my $system = $self->service_provider->getComponent(category => "System");
     my $esystem = EFactory::newEEntity(data => $system);
-    $esystem->postStartNode(cluster => $self->getServiceProvider,
+    $esystem->postStartNode(cluster => $self->service_provider,
                             host    => $args{host});
 
-    my $agent = $self->getServiceProvider->getComponent(category => "Configurationagent");
+    my $agent = $self->service_provider->getComponent(category => "Configurationagent");
     my $eagent = EFactory::newEEntity(data => $agent);
-    $eagent->postStartNode(cluster => $self->getServiceProvider,
+    $eagent->postStartNode(cluster => $self->service_provider,
                            host    => $args{host});
 
     # hypervisor declaration
-    my $hostname = $args{host}->host_hostname;
+    my $hostname = $args{host}->node->node_hostname;
     my $hostid = $self->onehost_create(hostname => $hostname);
 
     # Delete the hypervisor from opennebula if the operation fail later.
@@ -270,8 +270,8 @@ sub migrateHost {
     #                      hypervisor => $args{hypervisor_dst});
 
     $self->onevm_livemigrate(
-        vm_nameorid   => $args{host}->host_hostname,
-        host_nameorid => $args{hypervisor_dst}->host_hostname,
+        vm_nameorid   => $args{host}->node->node_hostname,
+        host_nameorid => $args{hypervisor_dst}->node->node_hostname,
     );
 
     return $src_hypervisor;
@@ -282,7 +282,7 @@ sub getVMState {
 
     General::checkParams(args     => \%args, required => ['host']);
 
-    my $hxml = $self->onevm_show(vm_nameorid => $args{host}->host_hostname);
+    my $hxml = $self->onevm_show(vm_nameorid => $args{host}->node->node_hostname);
 
     my $history = $hxml->{HISTORY_RECORDS}->{HISTORY};
     my $hypervisor_migr;
@@ -321,7 +321,7 @@ sub scaleMemory {
 
     General::checkParams(args => \%args, required => [ 'host', 'memory' ]);
 
-    $self->onevm_memset(vm_nameorid => $args{host}->host_hostname, ram => $args{memory} / 1024 / 1024);
+    $self->onevm_memset(vm_nameorid => $args{host}->node->node_hostname, ram => $args{memory} / 1024 / 1024);
 }
 
 sub restoreHost {
@@ -333,7 +333,7 @@ sub restoreHost {
                                        check_hypervisor => undef,
                                        check_resources  => undef });
 
-    my $host_name = $args{hypervisor}->host_hostname;
+    my $host_name = $args{hypervisor}->node->node_hostname;
     my $vms       = $args{hypervisor}->getVms();
 
     if (defined $args{check_resubmit} || defined $args{check_hypervisor}) {
@@ -343,17 +343,21 @@ sub restoreHost {
             $log->info('vm <'.($vm->getId).'> hv '.$state->{hypervisor}.' state '.$state->{state});
             if($state->{state} eq 'runn') {
                 if (defined $args{hypervisor}) {
-                    if(!($args{hypervisor}->host_hostname eq $state->{hypervisor})){
+                    if(!($args{hypervisor}->node->node_hostname eq $state->{hypervisor})){
                         $log->info('VM running on a wrong hypervisor');
-                        $vm->setAttr(name => 'hypervisor_id',
-                                     value => Entity::Host->find(hash => {host_hostname => $state->{hypervisor}})->getId());
+                        $vm->setAttr(
+                            name  => 'hypervisor_id',
+                            value => Entity::Host->find(hash => {
+                                         'node.node_hostname' => $state->{hypervisor}
+                                     })->id
+                        );
                         $vm->save();
                     }
                 }
             }
             else {
                 if (defined $args{check_resubmit}){
-                    $self->onevm_resubmit(vm_nameorid => $vm->host_hostname);
+                    $self->onevm_resubmit(vm_nameorid => $vm->node->node_hostname);
                 }
             }
         }
@@ -365,7 +369,7 @@ sub restoreHost {
         $log->info(Dumper $host_vm_capacities);
 
         for my $vm (@{$vms}) {
-            $log->info('VM <'.($vm->getId()).'> <'.($vm->host_hostname).'>');
+            $log->info('VM <'.($vm->getId()).'> <'.($vm->node->node_hostname).'>');
 
             if(defined $host_vm_capacities->{$vm->getId()}->{ram}) {
 
@@ -416,7 +420,7 @@ sub scaleCpu {
 
     # This line is never called as the VM are created with the maximum
     # number of VCPUs and scaled down at startup due to a bug in libvirtd
-    $self->onevm_vcpuset(vm_nameorid => $args{host}->host_hostname, cpu => $cpu_number);
+    $self->onevm_vcpuset(vm_nameorid => $args{host}->node->node_hostname, cpu => $cpu_number);
 }
 
 sub retrieveOpennebulaHypervisorStatus {
@@ -426,13 +430,13 @@ sub retrieveOpennebulaHypervisorStatus {
         required => [ 'host' ]
     );
 
-    my $hxml = $self->onehost_show(host_nameorid => $args{host}->host_hostname);
+    my $hxml = $self->onehost_show(host_nameorid => $args{host}->node->node_hostname);
     if($hxml->{STATE} != 2) {
-        $log->info('hypervisor <'.$args{host}->host_hostname.'> error for opennebula');
+        $log->info('hypervisor <'.$args{host}->node->node_hostname.'> error for opennebula');
         return 0;
     }
 
-    $log->info('hypervisor <'.$args{host}->host_hostname.'> running for opennebula');
+    $log->info('hypervisor <'.$args{host}->node->node_hostname.'> running for opennebula');
     return 1;
 }
 
@@ -440,7 +444,7 @@ sub halt {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'host' ]);
     # retrieve vm info from opennebula
-    $self->onevm_shutdown(vm_nameorid => $args{host}->host_hostname);
+    $self->onevm_shutdown(vm_nameorid => $args{host}->node->node_hostname);
 }
 
 
@@ -490,7 +494,7 @@ sub startHost {
 
     # generate image template for the vm and register it
     my $cluster = Entity->get(id => $args{host}->getClusterId());
-    my $disk_params = $cluster->getManagerParameters(manager_type => 'disk_manager');
+    my $disk_params = $cluster->getManagerParameters(manager_type => 'DiskManager');
     my $image = $args{host}->getNodeSystemimage();
     my $image_name = $image->systemimage_name;
 
@@ -529,8 +533,8 @@ sub startHost {
     $log->info('vm id returned by opennebula: '.$vmid);
 
     # deploy the VM as the OpenNebula's scheduler sometimes refuse to deploy it
-    my $cmd = one_command("onevm deploy " . $args{host}->host_hostname .
-                          " " . $hypervisor->host_hostname);
+    my $cmd = one_command("onevm deploy " . $args{host}->node->node_hostname .
+                          " " . $hypervisor->node->node_hostname);
 
     my $result = $self->getEContext->execute(command => $cmd);
     if ($result->{exitcode} != 0) {
@@ -554,7 +558,7 @@ sub stopHost {
 
     # retrieve vm info from opennebula
 
-    my $hostname = $args{host}->host_hostname;
+    my $hostname = $args{host}->node->node_hostname;
 
     my $image = $args{host}->getNodeSystemimage();
 
@@ -587,7 +591,7 @@ sub postStart {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    my $hxml    = $self->onevm_show(vm_nameorid => $args{host}->host_hostname);
+    my $hxml    = $self->onevm_show(vm_nameorid => $args{host}->node->node_hostname);
 
     my $vnc_port = $hxml->{TEMPLATE}->{GRAPHICS}->{PORT};
 
@@ -667,8 +671,8 @@ sub forceDeploy {
         required => [ 'vm', 'hypervisor' ]
     );
     $self->onevm_deploy(
-        vm_nameorid   => $args{vm}->host_hostname,
-        host_nameorid => $args{hypervisor}->host_hostname,
+        vm_nameorid   => $args{vm}->node->node_hostname,
+        host_nameorid => $args{hypervisor}->node->node_hostname,
     );
 }
 
@@ -684,7 +688,7 @@ sub _generateOnedConf {
         required => [ 'host', 'mount_point']
     );
 
-    my $cluster = $self->_getEntity->getServiceProvider;
+    my $cluster = $self->service_provider;
     my $data = $self->_getEntity()->getTemplateDataOned();
     my $file = $self->generateNodeFile(
         cluster       => $cluster,
@@ -756,7 +760,7 @@ sub generateDatastoreTemplate {
         datastore_tm_mad => 'shared',
     };
 
-    my $cluster = $self->_getEntity->getServiceProvider;
+    my $cluster = $self->service_provider;
     my $template_file = 'datastore-' . $args{ds_name} . '.tt';
     my $file = $self->generateNodeFile(
         cluster       => $cluster,
@@ -802,7 +806,7 @@ sub generateImageTemplate {
         $data->{image_target} = 'vda';
     }
 
-    my $cluster = $self->_getEntity->getServiceProvider;
+    my $cluster = $self->service_provider;
     my $template_file = 'image-' . $args{image_name} . '.tt';
     my $file = $self->generateNodeFile(
         cluster       => $cluster,
@@ -839,7 +843,7 @@ sub generateVnetTemplate {
         vnet_mac        => $args{vnet_mac}
     };
 
-    my $cluster = $self->_getEntity->getServiceProvider;
+    my $cluster = $self->service_provider;
     my $template_file = 'vnet-' . $args{vnet_name} . '.tt';
     my $file = $self->generateNodeFile(
         cluster       => $cluster,
@@ -878,10 +882,10 @@ sub generateXenVmTemplate {
     my $kernel = Entity->get(id => $cluster->getAttr(name => "kernel_id"));
     my $kernel_version = $kernel->kernel_version;
 
-    my $disk_params = $cluster->getManagerParameters(manager_type => 'disk_manager');
+    my $disk_params = $cluster->getManagerParameters(manager_type => 'DiskManager');
     my $image = $args{host}->getNodeSystemimage();
     my $image_name = $image->systemimage_name;
-    my $hostname = $args{host}->host_hostname;
+    my $hostname = $args{host}->node->node_hostname;
 
     my %repo = $self->_getEntity()->getImageRepository(
                    container_access_id => $disk_params->{container_access_id}
@@ -924,13 +928,13 @@ sub generateXenVmTemplate {
         kernelpath      => '/var/lib/one/datastores/'.$repo{datastore_id} .'/'. $kernel_filename,
         initrdpath      => '/var/lib/one/datastores/'.$repo{datastore_id} .'/'. $initrd_filename,
         image_name      => $image_name,
-        hypervisor_name => $args{hypervisor}->host_hostname,
+        hypervisor_name => $args{hypervisor}->node->node_hostname,
         interfaces      => $interfaces,
     };
 
     my $template_file = 'vm-' . $hostname . '.tt';
     my $file = $self->generateNodeFile(
-        cluster       => $self->_getEntity->getServiceProvider,
+        cluster       => $self->service_provider,
         host          => $args{hypervisor},
         file          => $template_file,
         template_dir  => '/templates/components/opennebula',
@@ -990,17 +994,17 @@ sub generateKvmVmTemplate {
     my $cluster = Entity->get(id => $args{host}->getClusterId());
 
     # get the maximum memory from the hosting policy
-    my $host_params = $cluster->getManagerParameters(manager_type => 'host_manager');
+    my $host_params = $cluster->getManagerParameters(manager_type => 'HostManager');
     my $maxcpu = $host_params->{max_core} || $args{host}->host_core;
     my $maxram = General::convertFromBytes(
                      value => $host_params->{max_ram}  || $args{host}->host_ram,
                      units => 'M'
                  );
 
-    my $disk_params = $cluster->getManagerParameters(manager_type => 'disk_manager');
+    my $disk_params = $cluster->getManagerParameters(manager_type => 'DiskManager');
     my $image = $args{host}->getNodeSystemimage();
     my $image_name = $image->systemimage_name;
-    my $hostname = $args{host}->host_hostname;
+    my $hostname = $args{host}->node->node_hostname;
 
     my %repo = $self->getImageRepository(
                    container_access_id => $disk_params->{container_access_id}
@@ -1077,13 +1081,13 @@ sub generateKvmVmTemplate {
         maxcpu          => $maxcpu,
         cpu             => $maxcpu,
         image_name      => $image_name,
-        hypervisor_name => $args{hypervisor}->host_hostname,
+        hypervisor_name => $args{hypervisor}->node->node_hostname,
         interfaces      => $interfaces,
     };
 
     my $template_file = 'vm-' . $hostname . '.tt';
     my $file = $self->generateNodeFile(
-        cluster       => $self->_getEntity->getServiceProvider,
+        cluster       => $self->service_provider,
         host          => $args{hypervisor},
         file          => $template_file,
         template_dir  => '/templates/components/opennebula',

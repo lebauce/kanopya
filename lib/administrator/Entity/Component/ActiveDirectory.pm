@@ -16,8 +16,8 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 24 july 2010
 
-package Entity::Connector::ActiveDirectory;
-use base "Entity::Connector";
+package Entity::Component::ActiveDirectory;
+use base "Entity::Component";
 use base "Manager::DirectoryServiceManager";
 
 use strict;

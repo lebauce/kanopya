@@ -16,24 +16,18 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 5 june 2012
 
-package Entity::Connector::Sco;
-use base 'Entity::Connector';
+package Entity::Component::Sco;
+use base 'Entity::Component';
 use base 'Manager::WorkflowManager';
 
 use strict;
 use warnings;
-use General;
-use Kanopya::Exceptions;
 
-use ScopeParameter;
+use General;
 use Scope;
-use Externalnode;
 use Operationtype;
 use Entity::Workflow;
-use WorkflowDefManager;
-use Entity::ServiceProvider::Outside::Externalcluster;
-
-use Data::Dumper;
+use Entity::ServiceProvider;
 
 use Log::Log4perl 'get_logger';
 my $log = get_logger("");
@@ -169,11 +163,11 @@ sub _getOuFrom {
 
     General::checkParams(args => \%args, required => [ 'sp_id' ]);
 
-    my $service_provider            = Entity::ServiceProvider::Outside::Externalcluster->get(id => $args{sp_id});
+    my $service_provider = Entity::ServiceProvider->get(id => $args{sp_id});
 
-    my $directory_service_manager_params =  $service_provider->getManagerParameters(
-                                                manager_type => 'directory_service_manager'
-                                            );
+    my $directory_service_manager_params = $service_provider->getManagerParameters(
+                                               manager_type => 'directory_service_manager'
+                                           );
 
     my $ou_from = $directory_service_manager_params->{ad_nodes_base_dn};
 
@@ -194,8 +188,7 @@ sub _getServiceProviderName {
     General::checkParams(args => \%args, required => [ 'sp_id' ]);
 
     my $service_provider = Entity::ServiceProvider->get(id => $args{sp_id});
-
-    my $sp_name          = $service_provider->getAttr(name => 'externalcluster_name');
+    my $sp_name = $service_provider->getAttr(name => 'externalcluster_name');
 
     return $sp_name;
 }

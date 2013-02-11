@@ -30,7 +30,7 @@ sub configureNode {
     General::checkParams(args => \%args, required => ['host', 'mount_point']);
 
      #TODO insert configuration files generation
-    my $cluster = $self->_getEntity->getServiceProvider;
+    my $cluster = $self->service_provider;
     my $data = {};
  
     my $components_instance=$self->_getEntity()->getComponentInstance();
