@@ -120,7 +120,7 @@ sub enableNode {
 
     General::checkParams(args => \%args, required => [ 'node_id' ]);
 
-    return ExternalNode->get(id => $args{node_id})->enable();
+    return Node->get(id => $args{node_id})->enable();
 }
 
 
@@ -139,7 +139,7 @@ sub disableNode {
 
     General::checkParams(args => \%args, required => [ 'node_id' ]);
 
-    return ExternalNode->get(id => $args{node_id})->disable();
+    return Node->get(id => $args{node_id})->disable();
 }
 
 sub getNodesMetrics {}
