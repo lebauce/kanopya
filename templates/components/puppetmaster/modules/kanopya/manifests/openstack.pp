@@ -21,3 +21,23 @@ class kanopya::keystone($dbserver, $password) {
 		tag      => "${dbserver}",
 	}
 }
+
+class kanopya::novacontroller($api_admin_password, $db_server, $db_password) {
+        @@mysql::db { 'nova':
+                user     => 'nova',
+                password => "${db_password}",
+                host     => "${db_server}",
+                grant    => ['all'],
+                tag      => "${db_server}",
+        }
+        class { 'nova::api':
+                enabled        => true,
+                admin_password => "${api_admin_password}",
+        }
+        class { 'nova': sql_connection => "mysql://nova:${db_password}@${db_server}/nova", }
+        class { 'nova::scheduler': enabled => true, }
+        class { 'nova::objectstore': enabled => true, }
+        class { 'nova::cert': enabled => true, }
+        class { 'nova::vncproxy': enabled => true, }
+        class { 'nova::consoleauth': enabled => true, }
+}
