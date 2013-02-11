@@ -91,10 +91,11 @@ sub getHostsEntries {
     my ($self) = @_;
     my $fqdn = $self->puppetagent2_masterfqdn;
     my @tmp = split(/\./, $fqdn);
-    
+    my $hostname = shift @tmp;
+
     return [ { ip         => $self->puppetagent2_masterip,
-               hostname   => shift @tmp,
-               domainname => join('.', @tmp) } ];
+               fqdn       => $fqdn,
+               aliases    => [ $hostname ] } ];
 }
 
 sub getBaseConfiguration {

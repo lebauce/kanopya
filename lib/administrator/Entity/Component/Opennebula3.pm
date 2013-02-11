@@ -379,9 +379,9 @@ sub getHostsEntries {
     for my $vmm ($self->vmms) {
         foreach my $node ($vmm->getServiceProvider->getHosts()) {
             push @hosts_entries, {
-                hostname   => $node->host_hostname,
-                domainname => $self->getServiceProvider->cluster_domainname,
-                ip         => $node->adminIp
+                fqdn    => $node->fqdn,
+                aliases => [ $node->host_hostname ],
+                ip      => $node->adminIp
             };
         }
     }
