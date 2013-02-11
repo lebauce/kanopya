@@ -5,7 +5,7 @@ use warnings;
 use XML::Simple;
 
 use Kanopya::Exceptions;
-use Administrator;
+use BaseDB;
 use Entity::Operation;
 use General;
 
@@ -28,10 +28,10 @@ my $conf = XMLin("/opt/kanopya/conf/executor.conf");
 General::checkParams(args=>$conf->{user}, required=>["name","password"]);
 
 
-my $adm = Administrator::authenticate(
-    login    => $conf->{user}->{name},
-	password => $conf->{user}->{password}
-);
+my $adm = BaseDB->authenticate(
+              login    => $conf->{user}->{name},
+	          password => $conf->{user}->{password}
+          );
 
 eval {
     Entity::Operation->enqueue(
