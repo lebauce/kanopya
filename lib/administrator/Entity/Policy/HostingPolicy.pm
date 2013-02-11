@@ -92,7 +92,7 @@ sub getPolicyDef {
 
     # Build the host provider list
     my $providers = {};
-    for my $component ($class->searchManagers(component_category => 'Cloudmanager')) {
+    for my $component ($class->searchManagers(component_category => 'HostManager')) {
         $providers->{$component->service_provider->id} = $component->service_provider->toJSON();
     }
     my @hostproviders = values %{$providers};
@@ -133,7 +133,7 @@ sub getPolicyDef {
     # Build the list of host manager of the host provider if defined
     if (defined $args{host_provider_id}) {
         my $manager_options = {};
-        for my $component ($class->searchManagers(component_category  => 'Cloudmanager',
+        for my $component ($class->searchManagers(component_category  => 'HostManager',
                                                   service_provider_id => $args{host_provider_id})) {
             $manager_options->{$component->id} = $component->toJSON();
             $manager_options->{$component->id}->{label} = $component->host_type;

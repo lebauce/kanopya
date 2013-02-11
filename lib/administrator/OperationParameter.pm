@@ -21,7 +21,6 @@ use base 'BaseDB';
 use strict;
 use warnings;
 
-use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
 my $log = get_logger("");

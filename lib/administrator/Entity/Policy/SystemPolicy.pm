@@ -143,7 +143,7 @@ sub getPolicyDef {
         push @kernels, $kernel->toJSON();
     }
     my @componenttypes;
-    for my $componenttype (ComponentType->search(hash => {})) {
+    for my $componenttype (ClassType::ComponentType->search(hash => {})) {
         push @componenttypes, $componenttype->toJSON();
     }
 

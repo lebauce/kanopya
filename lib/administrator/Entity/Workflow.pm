@@ -247,7 +247,6 @@ sub enqueueNow {
 
 sub getCurrentOperation {
     my ($self, %args) = @_;
-    my $adm = Administrator->new();
 
     my $op;
     eval {

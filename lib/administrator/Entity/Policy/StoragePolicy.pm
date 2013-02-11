@@ -100,7 +100,7 @@ sub getPolicyDef {
 
     # Build the storage provider list
     my $providers = {};
-    for my $component ($class->searchManagers(component_category => 'Storage')) {
+    for my $component ($class->searchManagers(component_category => 'DiskManager')) {
         $providers->{$component->service_provider->id} = $component->service_provider->toJSON();
     }
     my @storageproviders = values %{$providers};
@@ -141,7 +141,7 @@ sub getPolicyDef {
     # Build the list of disk manager of the storage provider
     if (defined $args{storage_provider_id}) {
         my $manager_options = {};
-        for my $component ($class->searchManagers(component_category  => 'Storage',
+        for my $component ($class->searchManagers(component_category  => 'DiskManager',
                                                   service_provider_id => $args{storage_provider_id})) {
             $manager_options->{$component->id} = $component->toJSON();
             $manager_options->{$component->id}->{label} = $component->disk_type;
