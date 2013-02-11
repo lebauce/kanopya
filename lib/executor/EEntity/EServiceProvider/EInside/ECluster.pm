@@ -260,4 +260,12 @@ sub getEContext {
                                  ip_destination => $self->getMasterNodeIp());
 }
 
+sub reconfigure {
+    my $self = shift;
+
+    my $agent = $self->getComponent(category => "Configurationagent");
+    my $eagent = EFactory::newEEntity(data => $agent);
+    $eagent->applyConfiguration(cluster => $self);
+}
+
 1;
