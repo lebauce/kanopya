@@ -1,4 +1,4 @@
-#    Copyright © 2011-2012 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -21,7 +21,6 @@ use base 'BaseDB';
 use strict;
 use warnings;
 
-use Administrator;
 use Kanopya::Exceptions;
 use General;
 use DateTime;
@@ -39,7 +38,7 @@ use constant ATTR_DEF => {
         is_extended  => 0
     },
     message_from => {
-        pattern      => '^.{32}$',
+        pattern      => '^.{0,32}$',
         is_mandatory => 1,
         is_extended  => 0
     },
@@ -54,7 +53,7 @@ use constant ATTR_DEF => {
         is_extended  => 0
     },
     message_level => {
-        pattern      => '^.{32}$',
+        pattern      => '^.{0,32}$',
         is_mandatory => 1,
         is_extended  => 0
     },
@@ -67,68 +66,31 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub getMessages {
-    my $class = shift;
-    my %args = @_;
-    my @objs = ();
-    my ($rs);
-
-    General::checkParams(args => \%args, required => ['hash']);
-
-    my $adm = Administrator->new();
-    
-    $rs = $adm->_getDbixFromHash( table => "Message", hash => $args{hash} );
-
-
-    while ( my $row = $rs->next ) {
-        my $id = $row->get_column("message_id");
-        my $obj = eval { Message->get(id => $id); }; 
-        if($@) {
-            my $exception = $@; 
-            if(Kanopya::Exception::Permission::Denied->caught()) {
-                next;
-            } 
-            else { $exception->rethrow(); } 
-        }
-        else {push @objs, $obj; }
-    }
-    return  \@objs;
-}
-
-
 sub new {
     my $class = shift;
     my %args = @_;
     my $self = {};
-    
-    General::checkParams(args => \%args, required => ['level', 'from', 'content']);
-    
-    my $adm = Administrator->new();
-    $self->{_dbix} = $adm->_newDbix( table => 'Message', row => {
-                                                                user_id => $adm->{_rightschecker}->{_user},
-                                                                message_from => $args{from},
-                                                                message_creationdate => \"CURRENT_DATE()",
-                                                                message_creationtime => \"CURRENT_TIME()",
-                                                                message_level => $args{level},
-                                                                message_content => $args{content}});
-    bless $self, $class;
-    return $self;
+
+    General::checkParams(args => \%args, required => [ 'level', 'from', 'content' ]);
+
+    return $class->SUPER::new(
+               message_from         => $args{from},
+               message_level        => $args{level},
+               message_content      => $args{content},
+               message_creationdate => \"CURRENT_DATE()",
+               message_creationtime => \"CURRENT_TIME()",
+               # The user id will be automatically set by the ORM
+               user_id              => undef,
+           );
 }
 
 sub send {
     my $class = shift;
     my %args = @_;
-    
-    General::checkParams(args => \%args, required => ['level', 'from', 'content']);
+
+    General::checkParams(args => \%args, required => [ 'level', 'from', 'content' ]);
 
     my $msg = Message->new(%args);
-    $msg->save();
-}
-
-sub save {
-    my $self = shift;
-
-    my $newmessage = $self->{_dbix}->insert;
 }
 
 1;
