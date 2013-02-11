@@ -44,7 +44,7 @@ use Data::Dumper;
 
 use EFactory;
 use Kanopya::Exceptions;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 use Entity::Systemimage;
 
 our $VERSION = '1.00';

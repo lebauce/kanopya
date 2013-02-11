@@ -71,14 +71,13 @@ sub execute {
     if ($self->{context}->{cluster}->cluster_max_node > 1) {
         $hostname .=  $self->{params}->{node_number};
     }
-    $self->{context}->{host}->setAttr(name => "host_hostname", value => $hostname);
-    $self->{context}->{host}->save();
 
     $self->{context}->{host}->becomeNode(
-        inside_id      => $self->{context}->{cluster}->id,
-        master_node    => 0,
-        systemimage_id => $self->{context}->{systemimage}->id,
-        node_number    => $self->{params}->{node_number},
+        service_provider_id => $self->{context}->{cluster}->id,
+        master_node         => 0,
+        systemimage_id      => $self->{context}->{systemimage}->id,
+        node_number         => $self->{params}->{node_number},
+        hostname            => $hostname
     );
 
     # Create the node working directory where generated files will be
@@ -101,7 +100,7 @@ sub execute {
 
     my $initiatorname = 'iqn.' . $year . '-' . $month . '.';
     $initiatorname .= $self->{context}->{cluster}->cluster_name;
-    $initiatorname .= '.' . $self->{context}->{host}->host_hostname;
+    $initiatorname .= '.' . $self->{context}->{host}->node->node_hostname;
     $initiatorname .= ':' . time();
 
     $self->{context}->{host}->setAttr(name  => "host_initiatorname",
@@ -135,12 +134,12 @@ sub _cancel {
 
     if ($self->{context}->{host}) {
         my $dir = $self->{config}->{clusters}->{directory};
-        $dir .= '/' . $self->{context}->{cluster}->getAttr(name => 'cluster_name');
-        $dir .= '/' . $self->{context}->{host}->getAttr(name => 'host_hostname');
+        $dir .= '/' . $self->{context}->{cluster}->cluster_name;
+        $dir .= '/' . $self->{context}->{host}->node->node_hostname;
         $self->getEContext->execute(command => "rm -r $dir");
 
         $self->{context}->{host}->stop();
-        $self->{context}->{host}->setAttr(name  => 'host_hostname', value => undef);
+        $self->{context}->{host}->node->setAttr(name  => 'node_hostname', value => undef, save => 1);
         $self->{context}->{host}->setState(state => 'down');
     }
 }

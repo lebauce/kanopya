@@ -173,26 +173,11 @@ sub isUp {
     return 1;
 }
 
-
-=head2 getEContext
-
-=cut
-
 sub getEContext {
     my ($self) = @_;
 
-    my $service_provider = $self->getServiceProvider;
     return EFactory::newEContext(ip_source      => $self->{_executor}->getMasterNodeIp(),
-                                 ip_destination => $service_provider->getMasterNodeIp());
+                                 ip_destination => $self->service_provider->getMasterNodeIp());
 }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut

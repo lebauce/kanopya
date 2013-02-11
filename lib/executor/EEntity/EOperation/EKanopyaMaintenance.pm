@@ -60,7 +60,7 @@ sub prepare {
     my %args = @_;
     $self->SUPER::prepare();
 
-    my $messages = Message->getMessages(hash=>{});
+    my $messages = Message->search(hash => {});
     if (scalar @$messages < 1000) {
         $log->info("Not enough message in database to backup it");
         throw Kanopya::Exception::Internal(error => "Not enough message in database to backup it", hidden => 1);

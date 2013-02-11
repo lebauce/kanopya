@@ -63,7 +63,7 @@ sub prepare {
                          required => [ "name", "size", "filesystem" ]);
 
     # Check service provider state
-    my $storage_provider = $self->{context}->{disk_manager}->_getEntity->getServiceProvider;
+    my $storage_provider = $self->{context}->{disk_manager}->disk_manager->service_provider;
     my ($state, $timestamp) = $storage_provider->getState();
     if ($state ne 'up'){
         $errmsg = "Service provider has to be up !";
@@ -83,7 +83,7 @@ sub execute {
                         %{ $self->{params} }
                     );
 
-    $log->info("New container <" . $container->getAttr(name => 'container_name') . "> created");
+    $log->info("New container <" . $container->container_name . "> created");
 }
 
 =head1 DIAGNOSTICS

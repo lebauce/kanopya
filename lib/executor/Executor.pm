@@ -45,9 +45,9 @@ use strict;
 use warnings;
 
 use General;
+use BaseDB;
 use Kanopya::Config;
 use Kanopya::Exceptions;
-use Administrator;
 use EFactory;
 use Entity::Operation;
 use Message;
@@ -80,10 +80,8 @@ sub new {
 
     General::checkParams(args => $self->{config}->{user}, required => [ "name", "password" ]);
 
-    my $adm = Administrator::authenticate(
-                  login    => $self->{config}->{user}->{name},
-                  password => $self->{config}->{user}->{password}
-              );
+    BaseDB->authenticate(login    => $self->{config}->{user}->{name},
+                         password => $self->{config}->{user}->{password});
 
     $self->{include_blocked} = 1;
     $self->{last_workflow_id} = -1;
@@ -119,7 +117,6 @@ sub run {
 
 sub oneRun {
     my ($self) = @_;
-    my $adm = Administrator->new();
 
     my $operation = Entity::Operation->getNextOp(include_blocked => $self->{include_blocked});
 
@@ -213,7 +210,7 @@ sub oneRun {
         # Process the operation
         eval {
             # Start transaction for prerequisite/postrequisite
-            $adm->beginTransaction;
+            $operation->beginTransaction;
 
             # If the operation never been processed, check its prerequisite
             if ($op->state eq 'ready' or $op->state eq 'prereported') {
@@ -225,10 +222,10 @@ sub oneRun {
                 if ($delay == 0) {
                     $op->setState(state => 'processing');
 
-                    $adm->commitTransaction;
+                    $operation->commitTransaction;
 
                     # Start transaction for processing
-                    $adm->beginTransaction;
+                    $operation->beginTransaction;
 
                     $log->info("Prepare step");
                     $op->prepare();
@@ -264,7 +261,7 @@ sub oneRun {
                         $op->setState(state => 'postreported');
                     }
                 }
-                $adm->commitTransaction;
+                $operation->commitTransaction;
 
                 throw Kanopya::Exception::Execution::OperationReported(error => 'Operation reported');
             }
@@ -284,7 +281,7 @@ sub oneRun {
                 $op->{erollback}->undo();
             }
             # Rollback transaction
-            $adm->rollbackTransaction;
+            $operation->rollbackTransaction;
 
             # Cancelling the workflow
             eval {
@@ -322,7 +319,7 @@ sub oneRun {
             }
 
             # Commit transaction
-            $adm->commitTransaction;
+            $operation->commitTransaction;
 
             $log->info("---- $logprefix Processing SUCCEED ----");
             Message->send(

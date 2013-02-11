@@ -98,7 +98,7 @@ sub getRamUsedByVm {
         }
     }
     else {
-        $errmsg = 'Vm\'s used memory not available for vm '. $self->host_hostname;
+        $errmsg = 'Vm\'s used memory not available for vm '. $self->node->node_hostname;
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 }

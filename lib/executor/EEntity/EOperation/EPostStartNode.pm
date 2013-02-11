@@ -24,7 +24,7 @@ use warnings;
 use Kanopya::Exceptions;
 use EFactory;
 use Entity::ServiceProvider;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 use Entity::Host;
 
 use Log::Log4perl "get_logger";

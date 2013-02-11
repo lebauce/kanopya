@@ -24,7 +24,7 @@ use warnings;
 use Kanopya::Exceptions;
 use EFactory;
 
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 use Entity::Systemimage;
 use Entity::Gp;
 use Entity;
@@ -69,7 +69,7 @@ sub prepare {
 
     # Cluster creation
     eval {
-        my $cluster = Entity::ServiceProvider::Inside::Cluster->new(%{$self->{params}->{cluster_params}});
+        my $cluster = Entity::ServiceProvider::Cluster->new(%{$self->{params}->{cluster_params}});
         $self->{context}->{cluster} = EFactory::newEEntity(data => $cluster);
     };
     if($@) {

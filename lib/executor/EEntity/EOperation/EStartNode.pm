@@ -26,7 +26,7 @@ use Kanopya::Exceptions;
 use EFactory;
 use EEntity;
 use Entity::ServiceProvider;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 use Entity::Host;
 use Entity::Kernel;
 use Template;
@@ -167,7 +167,7 @@ sub execute {
     # Update kanopya etc hosts
     my @data = ();
     for my $host (Entity::Host->search(hash => {})) {
-        my $hostname = $host->host_hostname;
+        my $hostname = $host->node->node_hostname;
         next if (not $hostname or $hostname eq '');
         push @data, {
             ip         => $host->adminIp,
@@ -251,7 +251,7 @@ sub _generateBootConf {
         my $cluster_kernel_id = $cluster->kernel_id;
         my $kernel_id = $cluster_kernel_id ? $cluster_kernel_id : $host->kernel_id;
         my $clustername = $cluster->cluster_name;
-        my $hostname = $host->host_hostname;
+        my $hostname = $host->node->node_hostname;
 
         my $kernel_version = Entity::Kernel->get(id => $kernel_id)->kernel_version;
         my $linux_component = EEntity->new(entity => $cluster->getComponent(category => "system"));
@@ -313,7 +313,7 @@ sub _generateBootConf {
                          );
 
             my $tftp_conf = $self->{config}->{tftp}->{directory};
-            my $dest = $tftp_conf . '/' . $self->{context}->{host}->host_hostname . ".conf";
+            my $dest = $tftp_conf . '/' . $self->{context}->{host}->node->node_hostname . ".conf";
 
             $self->getEContext->send(src => "/tmp/$tmpfile", dest => "$dest");
             unlink "/tmp/$tmpfile";
@@ -332,7 +332,7 @@ sub _generatePXEConf {
     my $kernel_id = $cluster_kernel_id ? $cluster_kernel_id : $args{host}->kernel_id;
 
     my $clustername = $args{cluster}->cluster_name;
-    my $hostname = $args{host}->host_hostname;
+    my $hostname = $args{host}->node->node_hostname;
 
     my $kernel_version = Entity::Kernel->get(id => $kernel_id)->kernel_version;
     my $boot_policy    = $args{cluster}->cluster_boot_policy;
@@ -355,9 +355,6 @@ sub _generatePXEConf {
     # Add host in the dhcp
     my $subnet = $self->{context}->{dhcpd_component}->getInternalSubNetId();
 
-    # Set Hostname
-    my $host_hostname = $self->{context}->{host}->host_hostname;
-
     # Configure DHCP Component
     my $tmp_kernel_id = $self->{context}->{cluster}->kernel_id;
     my $host_kernel_id = $tmp_kernel_id ? $tmp_kernel_id : $self->{context}->{host}->kernel_id;
@@ -366,7 +363,7 @@ sub _generatePXEConf {
         dhcpd3_subnet_id                => $subnet,
         dhcpd3_hosts_ipaddr             => $pxeiface->getIPAddr,
         dhcpd3_hosts_mac_address        => $pxeiface->iface_mac_addr,
-        dhcpd3_hosts_hostname           => $host_hostname,
+        dhcpd3_hosts_hostname           => $hostname,
         dhcpd3_hosts_ntp_server         => $self->{context}->{bootserver}->getMasterNodeIp(),
         dhcpd3_hosts_domain_name        => $self->{context}->{cluster}->cluster_domainname,
         dhcpd3_hosts_domain_name_server => $self->{context}->{cluster}->cluster_nameserver1,

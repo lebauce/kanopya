@@ -88,7 +88,7 @@ sub execute {
     }
     else {
         throw Kanopya::Exception(
-                  error => "The hypervisor ".$self->{context}->{host}->host_hostname." can't be flushed"
+                  error => "The hypervisor ".$self->{context}->{host}->node->node_hostname." can't be flushed"
               );
     }
     $self->SUPER::execute();

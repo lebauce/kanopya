@@ -39,7 +39,7 @@ use base "EEntity::EOperation";
 use strict;
 use warnings;
 use Log::Log4perl "get_logger";
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 my $log = get_logger("");
 my $errmsg;
 

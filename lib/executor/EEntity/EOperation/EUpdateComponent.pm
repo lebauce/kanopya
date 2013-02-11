@@ -65,7 +65,7 @@ sub prepare {
 
 sub execute {
     my ($self, %args) = @_;
- 
+
     for my $host ($self->{context}->{cluster}->getHosts()) {
         my $ehost = EFactory::newEEntity(data => $host);
         my $puppet_definitions = "";
@@ -77,15 +77,15 @@ sub execute {
             host    => $host,
             cluster => $self->{context}->{cluster},
         );
-        
-        my $fqdn = $host->getAttr(name => 'host_hostname');
+
+        my $fqdn = $host->node->node_hostname;
         $fqdn .= '.' . $self->{params}->{kanopya_domainname};
-        
+
         $self->{context}->{component_puppetmaster}->createHostManifest(
                 host_fqdn          => $fqdn,
                 puppet_definitions => $puppet_definitions
         );
-        
+
         $self->{context}->{puppetagent}->applyManifest(host => $ehost);
     }
 }

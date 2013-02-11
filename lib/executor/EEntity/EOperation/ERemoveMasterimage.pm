@@ -44,7 +44,7 @@ use Data::Dumper;
 
 use EFactory;
 use Kanopya::Exceptions;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 use Entity::Masterimage;
 use File::Basename;
 
@@ -67,7 +67,7 @@ sub prepare {
 
     # Check if the masterimage is used by any clusters
     my $masterimage_id = $self->{context}->{masterimage}->getAttr(name => 'entity_id');
-    my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {
+    my @clusters = Entity::ServiceProvider::Cluster->search(hash => {
                        masterimage_id => $masterimage_id
                    });
 

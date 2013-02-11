@@ -123,13 +123,10 @@ sub execute {
             );
         }
 
-        $node->setAttr(name => "host_hostname", value => undef);
-        $node->setAttr(name => "host_initiatorname", value => undef);
+        $node->node->setAttr(name => "node_hostname", value => undef, save => 1);
+        $node->setAttr(name => "host_initiatorname", value => undef, save => 1);
 
-        # finaly save the host
-        $node->save();
-
-        $node->stopToBeNode(cluster_id => $self->{context}->{cluster}->getAttr(name => "cluster_id"));
+        $node->stopToBeNode(cluster_id => $self->{context}->{cluster}->id);
     }
 
     # Generate and reload Dhcp conf

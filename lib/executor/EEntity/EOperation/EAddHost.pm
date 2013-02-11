@@ -27,7 +27,7 @@ use Template;
 
 use Entity;
 use Entity::Host;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 use Entity::Kernel;
 use Entity::Hostmodel;
 use Entity::Processormodel;
