@@ -16,6 +16,7 @@ use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
 use EntityLock;
+use Entityright;
 use EntityComment;
 use Entity::Workflow;
 use Message;
@@ -26,7 +27,7 @@ use Operationtype;
 use Kanopya::Exceptions;
 use Entity::Operation;
 use NotificationSubscription;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 
 my $log = get_logger("");
 
@@ -233,11 +234,9 @@ sub addPerm {
 
     General::checkParams(args => \%args, required => [ 'method', 'consumer' ]);
 
-    my $adm = Administrator->new();
-
     if ($class) {
         # Consumed is an entity instance
-        $adm->getRightChecker->addPerm(
+        Entityright->addPerm(
             consumer_id => $args{consumer}->id,
             consumed_id => $self->id,
             method      => $args{method},
@@ -249,7 +248,7 @@ sub addPerm {
         my $mastergroup = pop(@list);
         my $entity_id = Entity::Gp->find(hash => { gp_name => $mastergroup })->id;
 
-        $adm->getRightChecker->addPerm(
+        Entityright->addPerm(
             consumer_id => $args{consumer}->id,
             consumed_id => $entity_id,
             method      => $args{method},
@@ -268,11 +267,9 @@ sub removePerm {
 
     General::checkParams(args => \%args, required => [ 'method' ], optional => { 'consumer' => undef });
 
-    my $adm = Administrator->new();
-
     if ($class) {
         # Consumed is an entity instance
-        $adm->getRightChecker->removePerm(
+        Entityright->removePerm(
             consumer_id => defined $args{consumer} ? $args{consumer}->id : undef,
             consumed_id => $self->id,
             method      => $args{method},
@@ -284,7 +281,7 @@ sub removePerm {
         my $mastergroup = pop(@list);
         my $entity_id = Entity::Gp->find(hash => { gp_name => $mastergroup })->id;
 
-        $adm->getRightChecker->removePerm(
+        Entityright->removePerm(
             consumer_id => defined $args{consumer} ? $args{consumer}->id : undef,
             consumed_id => $entity_id,
             method      => $args{method},
@@ -292,9 +289,19 @@ sub removePerm {
     }
 }
 
-=head2 subscribe
+sub checkPerm {
+    my $self = shift;
+    my %args = @_;
 
-=cut
+    General::checkParams(args => \%args, required => [ 'method', 'user_id' ]);
+
+    # Check each combination of consumer related ids and
+    # consumer ones for the method.
+    Entityright->match(consumer_id => $args{user_id},
+                        consumed_id => $self->id,
+                        method      => $args{method});
+}
+
 
 sub subscribe {
     my $self = shift;
@@ -306,7 +313,7 @@ sub subscribe {
                                        'validation'          => 0 });
 
     if (not defined $args{service_provider_id}) {
-        $args{service_provider_id} = Entity::ServiceProvider::Inside::Cluster->find(
+        $args{service_provider_id} = Entity::ServiceProvider::Cluster->find(
                                          hash => { cluster_name => 'Kanopya' }
                                      )->id;
     }
@@ -326,9 +333,8 @@ sub activate {
     my $self = shift;
 
     if (defined $self->ATTR_DEF->{active}) {
-        $self->{_dbix}->update({active => "1"});
-#        $self->setAttr(name => 'active', value => 1);
-        $log->debug("Entity::Activate : Entity is activated");
+        $self->setAttr(name => 'active', value => 1, save => 1);
+
     } else {
         $errmsg = "Entity->activate Entity ". ref($self) . " unable to activate !";
         $log->error($errmsg);
