@@ -22,11 +22,11 @@
 TODO
 
 =end classdoc
-
+    
 =cut
 
-package ComponentType;
-use base 'BaseDB';
+package ClassType::ComponentType;
+use base 'ClassType';
 
 use strict;
 use warnings;
@@ -44,16 +44,44 @@ use constant ATTR_DEF => {
         is_extended     => 0,
         is_editable     => 0
     },
-    component_category    => {
-        pattern         => '^.*$',
-        is_mandatory    => 0,
-        is_extended     => 0,
-        is_editable     => 0
-    }
+    component_type_categories => {
+        type         => 'relation',
+        relation     => 'multi',
+        link_to      => 'component_category',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
+
+=pod
+
+=begin classdoc
+
+Overrride the BaseDB search to make easier the search of ComponentType
+in function of ComponentCategory.
+
+@return the search result
+
+=end classdoc
+
+=cut
+
+sub search {
+    my $class = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, optional => { 'hash' => {} });
+
+    if (defined $args{by_category}) {
+        # TODO: try to use the many-to-mnay relation name 'component_categories.category_name'
+        my $categoryfilter = 'component_type_categories.component_category.category_name';
+        $args{hash}->{$categoryfilter} = delete $args{by_category};
+    }
+    return $class->SUPER::search(%args);
+}
 
 =pod
 
@@ -67,7 +95,6 @@ By default, permissions are checked on the entity itself.
 =end classdoc
 
 =cut
-
 
 sub getDelegatee {
     my $self = shift;
