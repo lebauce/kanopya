@@ -33,7 +33,10 @@ use strict;
 use warnings;
 
 use General;
-use Administrator;
+use Kanopya::Exceptions;
+use Kanopya::Config;
+
+use AdministratorDB::Schema;
 
 use Class::ISA;
 use Hash::Merge;
@@ -66,6 +69,13 @@ sub methods {
 }
 
 
+my $adm = {
+    schema => undef,
+    config => undef,
+    user   => undef,
+};
+
+
 =pod
 
 =begin classdoc
@@ -95,6 +105,11 @@ sub new {
         if ($relation && defined($relation->{relation}) && $args{$attr}->isa("BaseDB")) {
             $args{$attr . "_id"} = $args{$attr}->id;
             delete $args{$attr};
+        }
+        # If an attr is 'user_id' and is null, automatically set it
+        # to the current user id.
+        elsif ($attr eq 'user_id' and not defined $args{$attr}) {
+            $args{$attr} = $class->_adm->{user}->{user_id};
         }
     }
 
@@ -194,12 +209,12 @@ sub promote {
 
     General::checkParams(args => \%args, required => [ 'promoted' ]);
 
-    my $adm = Administrator->new();
+    my $promoted = delete $args{promoted};
 
     # Check if the new type is in the same hierarchy
-    my $baseclass = ref($args{promoted});
+    my $baseclass = ref($promoted);
     if (not ($class =~ m/$baseclass/)) {
-        $errmsg = "Unable to promote " . ref($args{promoted}) . " to " . $class;
+        $errmsg = "Unable to promote " . ref($promoted) . " to " . $class;
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
 
@@ -208,12 +223,14 @@ sub promote {
     $subclass =~ s/^$pattern//g;
 
     # Set the primary key to the parent primary key value.
-    my $primary_key = ($adm->{db}->source(_rootTable($subclass))->primary_columns)[0];
-    $args{$primary_key} = $args{promoted}->id;
+    my $primary_key = ($class->_adm->{schema}->source(_rootTable($subclass))->primary_columns)[0];
+    $args{$primary_key} = $promoted->id;
+
+    # Extract relation for futher handling
+    my $relations = extractRelations(hash => \%args);
 
     # Merge the base object attributtes and new ones for attrs checking
-    my %totalargs = (%args, $args{promoted}->getAttrs);
-    delete $totalargs{promoted};
+    my %totalargs = (%args, $promoted->getAttrs);
 
     # Then extract only the attrs for new tables for insertion
     my $attrs = $class->checkAttrs(attrs => \%totalargs,
@@ -223,10 +240,13 @@ sub promote {
 
     bless $self, $class;
 
+    # Populate relations
+    $self->populateRelations(relations => $relations);
+
     # Set the class type to the new promotion class
     eval {
-        my $rs = $adm->_getDbixFromHash(table => "ClassType",
-                                        hash  => { class_type => $class })->single;
+        my $rs = $class->_getDbixFromHash(table => "ClassType",
+                                          hash  => { class_type => $class })->single;
 
         $self->setAttr(name => 'class_type_id', value => $rs->get_column('class_type_id'));
         $self->save();
@@ -255,8 +275,6 @@ sub demote {
 
     General::checkParams(args => \%args, required => [ 'demoted' ]);
 
-    my $adm = Administrator->new();
-
     # Check if the new type is in the same hierarchy
     my $baseclass = ref($args{demoted});
     if (not ($baseclass =~ m/$class/)) {
@@ -270,8 +288,8 @@ sub demote {
     bless $args{demoted}, $class;
 
     # Set the class type to the new promotion class
-    my $rs = $adm->_getDbixFromHash(table => "ClassType",
-                                    hash  => { class_type => $class })->single;
+    my $rs = $class->_getDbixFromHash(table => "ClassType",
+                                      hash  => { class_type => $class })->single;
 
     $args{demoted}->setAttr(name  => 'class_type_id',
                             value => $rs->get_column('class_type_id'));
@@ -354,8 +372,7 @@ sub getAttrDefs {
                 $schema = $class->{_dbix}->result_source();
             };
             if ($@) {
-                my $adm = Administrator->new();
-                $schema = $adm->{db}->source(_buildClassNameFromString($modulename));
+                $schema = $class->_adm->{schema}->source(_buildClassNameFromString($modulename));
             }
 
             my @relnames = $schema->relationships();
@@ -566,8 +583,7 @@ sub newDBix {
                          required => [ 'attrs' ],
                          optional => { 'subclass' => $class });
 
-    my $adm = Administrator->new();
-    my $dbixroot = $adm->_newDbix(table => _rootTable($args{subclass}), row => $args{attrs});
+    my $dbixroot = $class->_newDbix(table => _rootTable($args{subclass}), row => $args{attrs});
 
     eval {
         $dbixroot->insert;
@@ -582,7 +598,7 @@ sub newDBix {
     }
 
     return {
-        _dbix => $adm->getRow(
+        _dbix => $class->getRow(
                      table => _buildClassNameFromString($class),
                      id    => getRowPrimaryKey(row => $dbixroot),
                  )
@@ -605,7 +621,7 @@ Construct the proper BaseDB based instance from a DBIx row
 =cut
 
 sub fromDBIx {
-    my %args = @_;
+    my ($class, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'row' ],
                                          optional => { deep => 0 });
@@ -617,7 +633,7 @@ sub fromDBIx {
     };
     if ($@) {
         my $err = $@;
-        $modulename = getClassType(class => $modulename);
+        $modulename = $class->getClassType(class => $modulename);
         requireClass($modulename);
     }
 
@@ -628,11 +644,17 @@ sub fromDBIx {
                   _dbix      => $args{row},
               }, $modulename;
 
-    if ($args{deep} && $args{row}->result_source->from() ne "class_type") {
+    # TODO: Do not hard code exceptions ("class_type", "component_type"),
+    #       Those two types have no relation to class_type table,
+    #       but have class_type_id as primary key column name.
+    if ($args{deep} &&
+        $args{row}->result_source->from() ne "class_type" &&
+        $args{row}->result_source->from() ne "component_type") {
+
         my $dbix = $args{row};
         do {
             if ($dbix->has_column('class_type_id')) {
-                my $class_type = getClassType(id => $dbix->get_column('class_type_id'));
+                my $class_type = $class->getClassType(id => $dbix->get_column('class_type_id'));
                 requireClass($class_type);
                 return $class_type->get(id => $obj->id);
             }
@@ -686,11 +708,11 @@ sub getAttr {
             my $name = $args{name};
             my $relinfo = $dbix->relationship_info($args{name});
             if ($relinfo->{attrs}->{accessor} eq "multi") {
-                return map { fromDBIx(row => $_, deep => $args{deep}) } $dbix->$name;
+                return map { $class->fromDBIx(row => $_, deep => $args{deep}) } $dbix->$name;
             }
             else {
                 if ($dbix->$name) {
-                    $value = fromDBIx(row => $dbix->$name, deep => $args{deep});
+                    $value = $class->fromDBIx(row => $dbix->$name, deep => $args{deep});
                 }
             }
             last;
@@ -698,7 +720,7 @@ sub getAttr {
         # The attr is a many to many relation
         elsif ($dbix->can($args{name})) {
             my $name = $args{name};
-            return map { fromDBIx(row => $_, deep => $args{deep}) } $dbix->$name;
+            return map { $class->fromDBIx(row => $_, deep => $args{deep}) } $dbix->$name;
         }
         # The attr is a virtual attr
         elsif (($self->can($args{name}) or $self->can(normalizeMethod($args{name}))) and
@@ -870,12 +892,10 @@ get all the entries and cache them into a hash for *LOT* faster accesses.
 =cut
 
 sub getClassType {
-    my %args = @_;
+    my ($class, %args) = @_;
 
-    my $adm = Administrator->new();
     if (not %class_type_cache) {
-        my $class_types = $adm->_getDbixFromHash(table => "ClassType",
-                                                 hash  => { });
+        my $class_types = $class->_getDbixFromHash(table => "ClassType", hash  => {});
         while (my $class_type = $class_types->next) {
             $class_type_cache{$class_type->get_column("class_type_id")} =
                 $class_type->get_column("class_type");
@@ -884,7 +904,8 @@ sub getClassType {
 
     if (defined ($args{id})) {
         return $class_type_cache{$args{id}};
-    } else {
+    }
+    else {
         for my $class_type_id (keys %class_type_cache) {
             my $class_type = $class_type_cache{$class_type_id};
             if ($class_type =~ "::$args{class}\$") {
@@ -912,7 +933,6 @@ Build the join query required to get all the attributes of the whole class hiera
 
 sub getJoin {
     my ($class) = @_;
-    my $adm = Administrator->new();
 
     my @hierarchy = getClassHierarchy($class);
     my $depth = scalar @hierarchy;
@@ -921,7 +941,7 @@ sub getJoin {
     my $parent_join;
     while ($current > 0) {
         last if $hierarchy[$current - 1] eq "BaseDB";
-        $parent_join = $adm->{db}->source($hierarchy[$current - 1])->has_relationship("parent") ?
+        $parent_join = $class->_adm->{schema}->source($hierarchy[$current - 1])->has_relationship("parent") ?
                            ($parent_join ? { parent => $parent_join } : { "parent" => undef }) :
                            $parent_join;
         $current -= 1;
@@ -1052,17 +1072,16 @@ sub search {
     my @objs = ();
 
     General::checkParams(args     => \%args,
-                         required => [ 'hash' ],
-                         optional => { 'page' => undef, 'rows' => undef, 'join' => undef,
-                                       'order_by' => undef, 'dataType' => undef,
-                                       'prefetch' => [ ], 'raw_hash' => { } });
-
-    my $table = _buildClassNameFromString($class);
-    my $adm   = Administrator->new();
+                         optional => { 'hash' => {}, 'page' => undef, 'rows' => undef,
+                                       'join' => undef, 'order_by' => undef, 'dataType' => undef,
+                                       'prefetch' => [], 'raw_hash' => {} });
 
     my $merge = Hash::Merge->new('STORAGE_PRECEDENT');
+
     my $prefetch = $class->getJoin() || {};
     $prefetch = $merge->merge($prefetch, $args{join});
+
+    my $table  = _buildClassNameFromString($class);
     my $source = $class->getResultSource;
     for my $relation (@{$args{prefetch}}) {
         my @comps = split(/\./, $relation);
@@ -1091,10 +1110,10 @@ sub search {
 
     $args{hash} = $merge->merge($args{hash}, $args{raw_hash});
 
-    my $rs = $adm->_getDbixFromHash('table' => $table,      'hash'     => $args{hash},
-                                    'page'  => $args{page}, 'prefetch' => $prefetch,
-                                    'rows'  => $args{rows}, 'order_by' => $args{order_by},
-                                    'join'  => $args{join});
+    my $rs = $class->_getDbixFromHash('table' => $table,      'hash'     => $args{hash},
+                                      'page'  => $args{page}, 'prefetch' => $prefetch,
+                                      'rows'  => $args{rows}, 'order_by' => $args{order_by},
+                                      'join'  => $args{join});
 
     while (my $row = $rs->next) {
         my $obj = { _dbix => $row };
@@ -1105,13 +1124,14 @@ sub search {
         }
 
         my $class_type;
-        if ($parent->has_column("class_type_id") and $class ne "ClassType") {
-            $class_type = getClassType(id => $parent->get_column("class_type_id"));
+        if ($parent->has_column("class_type_id") and not ($class =~ m/^ClassType.*/)) {
+            $class_type = $class->getClassType(id => $parent->get_column("class_type_id"));
 
             if (length($class_type) > length($class)) {
                 requireClass($class_type);
                 $obj = $class_type->get(id => $parent->get_column("entity_id"));
-            } else {
+            }
+            else {
                 bless $obj, $class_type;
             }
         }
@@ -1147,8 +1167,7 @@ sub searchRelated {
                          required => [ 'filters' ],
                          optional => { 'hash' => { } });
 
-    my $adm = Administrator->new();
-    my $source = $adm->{db}->source(_buildClassNameFromString($class));
+    my $source = $class->_adm->{schema}->source(_buildClassNameFromString($class));
     my $join;
     eval {
         # If the function is called on a class that is only a base class of the
@@ -1188,12 +1207,11 @@ Return a single element matching the specified criterias take the same arguments
 sub find {
     my ($class, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'hash' ],
-                                         optional => { deep => 0 });
+    General::checkParams(args => \%args, optional => { 'hash' => {}, 'deep' => 0 });
 
     my @objects = $class->search(%args);
 
-    my $object = pop @objects;
+    my $object = shift @objects;
     if (! defined $object) {
         throw Kanopya::Exception::Internal::NotFound(
                   error => "No entry found for " . $class . ", with hash " . Dumper($args{hash})
@@ -1426,14 +1444,13 @@ sub toJSON {
 
     if ($args{model}) {
         my $table = _buildClassNameFromString($class);
-        my $adm = Administrator->new();
         my @hierarchy = split(/::/, $class);
         my $depth = scalar @hierarchy;
         my $current = $depth;
         my $parent;
 
         for (my $current = $depth - 1; $current >= 0; $current--) {
-            $parent = $adm->{db}->source($hierarchy[$current]);
+            $parent = $class->_adm->{schema}->source($hierarchy[$current]);
             my @relnames = $parent->relationships();
             for my $relname (@relnames) {
                 my $relinfo = $parent->relationship_info($relname);
@@ -1537,7 +1554,7 @@ sub populateRelations {
         my $relation_schema = $self->{_dbix}->$relation->result_source;
         my $relationclass = classFromDbix($relation_schema);
 
-        $relationclass = getClassType(class => $relationclass);
+        $relationclass = $class->getClassType(class => $relationclass);
         requireClass($relationclass);
 
         # Deduce the foreign key attr for link entries in relations multi
@@ -1592,6 +1609,127 @@ sub populateRelations {
             $remaning->remove();
         }
     }
+}
+
+
+=pod
+
+=begin classdoc
+
+Return the dbix schema of an object of the given type and given id(s). 
+
+@param table DB table name
+@param id the id of the object, possbile multiple
+
+@return the db schema (dbix)
+
+=end classdoc
+
+=cut
+
+sub getRow {
+    my $class = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'id', 'table' ]);
+
+    my $dbix;
+    eval {
+        if (ref($args{id}) eq 'ARRAY') {
+            $dbix = $class->_adm->{schema}->resultset( $args{table} )->find(@{$args{id}});
+        } else {
+            $dbix = $class->_adm->{schema}->resultset( $args{table} )->find($args{id});
+        }
+    };
+    if ($@) {
+        throw Kanopya::Exception::DB(error => $@);
+    }
+
+    if (not $dbix) {
+        $errmsg = "No row found with id $args{id} in table $args{table}";
+        $log->warn($errmsg);
+        throw Kanopya::Exception::Internal::NotFound(error => $errmsg);
+    }
+
+    return $dbix;
+}   
+
+
+=pod
+
+=begin classdoc
+
+Instanciate dbix class mapped to corresponding raw in DB.
+
+@param table DB table name
+@param hash hash of constraints to find entity
+
+@return the db schema (dbix)
+
+=end classdoc
+
+=cut
+
+sub _getDbixFromHash {
+    my $class = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['table', 'hash']);
+
+    if (defined ($args{rows}) and not defined ($args{page})) {
+        $args{page} = 1;
+    }
+
+    # Catch specifics warnings to avoid Dancer to raise an error 500 on warnings
+    $SIG{__WARN__} = sub {
+        my $warn_msg = $_[0];
+        if ($warn_msg =~ m/Prefetching multiple has_many rel/) {
+            $log->warn($warn_msg);
+        }
+        else {
+            #arn $warn_msg;
+        }
+    };
+
+    my $dbix;
+    eval {
+        $dbix = $class->_adm->{schema}->resultset($args{table})->search($args{hash}, {
+                    prefetch => $args{prefetch},
+                    join     => $args{join},
+                    rows     => $args{rows},
+                    page     => $args{page},
+                    order_by => $args{order_by}
+                });
+    };
+    if ($@) {
+        throw Kanopya::Exception::Internal(error =>  $@);
+    }
+    return $dbix;
+}
+
+
+=pod
+
+=begin classdoc
+
+Instanciate dbix class filled with <params>, doesn't add in DB.
+
+@param table DB table name
+@param row representing the new row (key mapped on <table> columns)
+
+@return the db schema (dbix)
+
+=end classdoc
+
+=cut
+
+sub _newDbix {
+    my $class = shift;
+    my %args  = @_;
+
+    General::checkParams(args => \%args, required => ['table', 'row']);
+
+    return $class->_adm->{schema}->resultset($args{table})->new($args{row});
 }
 
 
@@ -2035,8 +2173,7 @@ sub getResultSource {
     my $self  = shift;
     my $class = ref($self) || $self;
 
-    my $adm = Administrator->new();
-    return $adm->{db}->source(_buildClassNameFromString($class));
+    return $class->_adm->{schema}->source(_buildClassNameFromString($class));
 }
 
 =pod
@@ -2063,92 +2200,6 @@ sub requireClass {
     }
 }
 
-
-=pod
-
-=begin classdoc
-
-Return the delegatee entity on which the permissions must be checked.
-By default, permissions are checked on the entity itself.
-
-@return the delegatee entity.
-
-=end classdoc
-
-=cut
-
-
-sub getDelegatee {
-    my $self = shift;
-
-    throw Kanopya::Exception::NotImplemented(
-              error => "Non entity class <$self> must implement getDelegatee method for permissions check."
-          );
-}
-
-
-=pod
-
-=begin classdoc
-
-Method used by the api as entry point for methods calls.
-It is convenient for centralizing permmissions checking.
-
-@param method the method name to call
-@optional params method call parameters
-
-=end classdoc
-
-=cut
-
-sub methodCall {
-    my $self  = shift;
-    my $class = ref $self;
-    my %args  = @_;
-
-    my $adm = Administrator->new();
-
-    General::checkParams(args => \%args, required => [ 'method' ],
-                                         optional => { 'params' => {} });
-
-    foreach my $key (keys %{$args{params}}) {
-        my $param = $args{params}->{$key};
-        if ((ref $param) eq "HASH" && defined ($param->{pk}) && defined ($param->{class_type_id})) {
-            my $class = getClassType(id => $param->{class_type_id});
-
-            my $granted = $adm->getRightChecker->checkPerm(entity_id => $class->getDelegatee->getMasterGroup->id,
-                                                           method    => "get");
-            if (not $granted) {
-                my $msg = "Permission denied to get parameter " . $param->{pk};
-                throw Kanopya::Exception::Permission::Denied(error => $msg);
-            }
-
-            # TODO: use DBIx::Class::ResultSet->new_result and bless it to 'class' instead of a 'get'
-            $args{params}->{$key} = $class->get(id => $param->{pk});
-        }
-    }
-
-    my $methods = $self->getMethods();
-
-    # Retreive the perm holder if it is not a method cal on a entity (usally class methods)
-    my ($granted, $perm_holder_id);
-    if ($class) {
-        $perm_holder_id = $self->getDelegatee->id;
-    }
-    else {
-        $perm_holder_id = $self->getDelegatee->getMasterGroup->id;
-    }
-
-    # Check the permissions for the logged user
-    $granted = $adm->getRightChecker->checkPerm(entity_id => $perm_holder_id, method => $args{method});
-    if (not $granted) {
-        my $msg = "Permission denied to " . $methods->{$args{method}}->{description};
-        throw Kanopya::Exception::Permission::Denied(error => $msg);
-    }
-
-    my $method = $args{method};
-    return $self->$method(%{$args{params}});
-}
 
 =pod
 
@@ -2211,6 +2262,7 @@ sub _importToRelated {
     return $clone_elem;
 }
 
+
 =pod
 
 =begin classdoc
@@ -2247,6 +2299,333 @@ sub _cloneFormula {
     $formula =~ s/id(\d+)/id$ids{$1}/g;
 
     return $formula;
+}
+
+
+=pod
+
+=begin classdoc
+
+Start a transction on the ORM.
+
+=end classdoc
+
+=cut
+
+sub beginTransaction {
+    my $self = shift;
+
+    $log->debug("Beginning database transaction");
+    $self->_adm->{schema}->txn_begin;
+}
+
+
+=pod
+
+=begin classdoc
+
+Commit a transaction according the database configuration.
+
+=end classdoc
+
+=cut
+
+sub commitTransaction {
+    my $self = shift;
+    my $counter = 0;
+
+    while ($counter++ < $self->_adm->{config}->{dbconf}->{txn_commit_retry}) {
+        eval {
+            $log->debug("Committing transaction to database");
+            $self->_adm->{schema}->txn_commit;
+        };
+        if ($@) {
+            $log->error("Transaction commit failed: $@");
+        }
+        else {
+            last;
+        }
+    }
+
+}
+
+
+=pod
+
+=begin classdoc
+
+Rollback (cancel) an openned transaction.
+
+=end classdoc
+
+=cut
+
+sub rollbackTransaction {
+    my $self = shift;
+
+    $log->debug("Rollbacking database transaction");
+    $self->_adm->{schema}->txn_rollback;
+}
+
+
+=pod
+
+=begin classdoc
+
+Return the delegatee entity on which the permissions must be checked.
+By default, permissions are checked on the entity itself.
+
+@return the delegatee entity.
+
+=end classdoc
+
+=cut
+
+
+sub getDelegatee {
+    my $self = shift;
+
+    throw Kanopya::Exception::NotImplemented(
+              error => "Non entity class <$self> must implement getDelegatee method for permissions check."
+          );
+}
+
+
+=pod
+
+=begin classdoc
+
+Method used by the api as entry point for methods calls.
+It is convenient for centralizing permmissions checking.
+
+@param method the method name to call
+@optional params method call parameters
+
+=end classdoc
+
+=cut
+
+sub methodCall {
+    my $self  = shift;
+    my $class = ref($self) || $self;
+    my %args  = @_;
+
+    General::checkParams(args => \%args, required => [ 'method' ],
+                                         optional => { 'params' => {} });
+
+    my $userid   = $class->_adm->{user}->{user_id};
+    my $usertype = $class->_adm->{user}->{user_system};
+    my $goodmode = defined $class->_adm->{config}->{dbconf}->{god_mode} &&
+                       $class->_adm->{config}->{dbconf}->{god_mode} eq 1;
+
+    if (not ($goodmode || $usertype)) {
+        $class->checkUserPerm(user_id => $userid, %args);
+    }
+
+    my $method = $args{method};
+    return $self->$method(%{$args{params}});
+}
+
+
+=pod
+
+=begin classdoc
+
+Check permmissions on a method for a user.
+
+=end classdoc
+
+=cut
+
+sub checkUserPerm {
+    my $self  = shift;
+    my $class = ref $self;
+    my %args  = @_;
+
+    General::checkParams(args => \%args, required => [ 'method', 'user_id' ],
+                                         optional => { 'params' => {} });
+
+    foreach my $key (keys %{$args{params}}) {
+        my $param = $args{params}->{$key};
+        if ((ref $param) eq "HASH" && defined ($param->{pk}) && defined ($param->{class_type_id})) {
+            my $class = $class->getClassType(id => $param->{class_type_id});
+
+            my $granted = $class->getDelegatee->getMasterGroup->checkPerm(user_id => $args{user_id}, method => "get");
+            if (not $granted) {
+                my $msg = "Permission denied to get parameter " . $param->{pk};
+                throw Kanopya::Exception::Permission::Denied(error => $msg);
+            }
+
+            # TODO: use DBIx::Class::ResultSet->new_result and bless it to 'class' instead of a 'get'
+            $args{params}->{$key} = $class->get(id => $param->{pk});
+        }
+    }
+
+    my $methods = $self->getMethods();
+
+    # Retreive the perm holder if it is not a method cal on a entity (usally class methods)
+    my ($granted, $perm_holder);
+    if ($class) {
+        $perm_holder = $self->getDelegatee;
+    }
+    else {
+        $perm_holder = $self->getDelegatee->getMasterGroup;
+    }
+
+    # Check the permissions for the logged user
+    $granted = $perm_holder->checkPerm(user_id => $args{user_id}, method => $args{method});
+    if (not $granted) {
+        my $msg = "Permission denied to " . $methods->{$args{method}}->{description};
+        throw Kanopya::Exception::Permission::Denied(error => $msg);
+    }
+}
+
+
+=pod
+
+=begin classdoc
+
+Authenticate the user on the permissions management system.
+
+=end classdoc
+
+=cut
+
+sub authenticate {
+    my $class = shift;
+    my %args  = @_;
+
+    General::checkParams(args => \%args, required => [ 'login', 'password' ]);
+
+    my $user_data = $class->_adm(no_user_check => 1)->{schema}->resultset('User')->search({
+                        user_login    => $args{login},
+                        user_password => General::cryptPassword(password => $args{password}),
+                    })->single;
+
+    if(not defined $user_data) {
+        $errmsg = "Authentication failed for login " . $args{login};
+        throw Kanopya::Exception::AuthenticationFailed(error => $errmsg);
+    }
+    else {
+        $log->debug("Authentication succeed for login " . $args{login});
+        $ENV{EID} = $user_data->id;
+    }
+}
+
+=pod
+
+=begin classdoc
+
+Return the $adm instance if defined, instanciate it instead.
+The $adm singleton contains the database schema to proccess
+queries, the loaded configuration and the current user informations.
+
+@return the adminitrator singleton
+
+=end classdoc
+
+=cut
+
+sub _adm {
+    my $class = shift;
+    my %args  = @_;
+
+    General::checkParams(args => \%args, optional => { 'no_user_check' => 0 });
+
+    if (not defined $adm->{config}) {
+        $adm->{config} = $class->_loadconfig();
+    }
+    if (not defined $adm->{schema}) {
+        $adm->{schema} = $class->_connectdb(config => $adm->{config});
+    }
+
+    if (not $args{no_user_check}) {
+        if (not exists $ENV{EID} or not defined $ENV{EID}) {
+            $errmsg = "No valid session registered ;";
+            $errmsg .= " BaseDB->authenticate must be call with a valid login/password pair";
+            throw Kanopya::Exception::AuthenticationRequired(error => $errmsg);
+        }
+
+        if (! defined $adm->{user} || $adm->{user}->{user_id} != $ENV{EID}) {
+            my $user = $adm->{schema}->resultset('User')->find($ENV{EID});
+
+            # Set new user infomations in the adm singleton
+            if (defined $user) {
+                $adm->{user} = {
+                    user_id     => $user->id,
+                    user_system => $user->user_system,
+                };
+            }
+        }
+    }
+    return $adm;
+}
+
+
+=pod
+
+=begin classdoc
+
+Get the configuration config module and check the configuration
+constants existance
+
+@return the configuration hash
+
+=end classdoc
+
+=cut
+
+sub _loadconfig {
+    my $class = shift;
+
+    my $config = Kanopya::Config::get('libkanopya');
+
+    General::checkParams(args => $config->{internalnetwork}, required => [ 'ip', 'mask' ]);
+
+    General::checkParams(args => $config->{dbconf}, required => [ 'name', 'password', 'type', 'host', 'user', 'port' ]);
+
+    if (! defined ($config->{dbconf}->{txn_commit_retry})) {
+        $config->{dbconf}->{txn_commit_retry} = 10;
+    }
+
+    $config->{dbi} = "dbi:" . $config->{dbconf}->{type} . ":" . $config->{dbconf}->{name} .
+                     ":" . $config->{dbconf}->{host} . ":" . $config->{dbconf}->{port};
+    
+    return $config;
+}
+
+
+=pod
+
+=begin classdoc
+
+Get the DBIx schema by connecting to the database server.
+
+@return the whole databse schema
+
+=end classdoc
+
+=cut
+
+sub _connectdb {
+    my $class = shift;
+    my %args  = @_;
+
+    General::checkParams(args => \%args, required => [ 'config' ]);
+
+    my $schema;
+    eval {
+        $schema = AdministratorDB::Schema->connect(
+                      $args{config}->{dbi},
+                      $args{config}->{dbconf}->{user},
+                      $args{config}->{dbconf}->{password},
+                      { mysql_enable_utf8 => 1 }
+                  );
+    };
+    if ($@) {
+        throw Kanopya::Exception::Internal(error => $@);
+    }
+    return $schema;
 }
 
 =pod
