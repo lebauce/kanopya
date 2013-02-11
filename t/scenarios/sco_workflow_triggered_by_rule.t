@@ -25,14 +25,14 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use Administrator;
+use BaseDB;
 
 use Orchestrator;
 use Aggregator;
 use Entity::CollectorIndicator;
-use Entity::ServiceProvider::Outside::Externalcluster;
-use Entity::Connector::MockMonitor;
-use Entity::Connector::Sco;
+use Entity::ServiceProvider::Externalcluster;
+use Entity::Component::MockMonitor;
+use Entity::Component::Sco;
 use Entity::Workflow;
 use Entity::Operation;
 use Entity::Combination;
@@ -56,47 +56,46 @@ my $service_provider;
 main();
 
 sub main {
-    Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-    my $adm = Administrator->new;
+    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if ($testing == 1) {
-        $adm->beginTransaction;
+        BaseDB->beginTransaction;
     }
 
     sco_workflow_triggered_by_rule();
     clean_infra();
 
     if ($testing == 1) {
-        $adm->rollbackTransaction;
+        BaseDB->rollbackTransaction;
     }
 }
 
 sub sco_workflow_triggered_by_rule {
     my $aggregator= Aggregator->new();
 
-    my $external_cluster_mockmonitor = Entity::ServiceProvider::Outside::Externalcluster->new(
+    my $external_cluster_mockmonitor = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Monitor',
     );
 
-    my $mock_monitor = Entity::Connector::MockMonitor->new(
+    my $mock_monitor = Entity::Component::MockMonitor->new(
             service_provider_id => $external_cluster_mockmonitor->id,
     );
 
-    $service_provider = Entity::ServiceProvider::Outside::Externalcluster->new(
+    $service_provider = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Service Provider',
     );
 
     # Create one node
-    my $node = Externalnode->new(
-        externalnode_hostname => 'test_node',
+    my $node = Node->new(
+        node_hostname => 'test_node',
         service_provider_id   => $service_provider->id,
-        externalnode_state    => 'up',
+        monitoring_state    => 'up',
     );
 
     diag('Add mock monitor to service provider');
     $service_provider->addManager(
         manager_id      => $mock_monitor->id,
-        manager_type    => 'collector_manager',
+        manager_type    => 'CollectorManager',
         no_default_conf => 1,
     );
 
@@ -121,18 +120,18 @@ sub sco_workflow_triggered_by_rule {
     );
 
     #Create a SCO workflow
-    my $external_cluster_sco = Entity::ServiceProvider::Outside::Externalcluster->new(
+    my $external_cluster_sco = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test SCO Workflow Manager',
     );
 
-    my $sco = Entity::Connector::Sco->new(
+    my $sco = Entity::Component::Sco->new(
             service_provider_id => $external_cluster_sco->id,
     );
 
     diag('Add workflow manager to service provider');
     $service_provider->addManager(
         manager_id   => $sco->id,
-        manager_type => 'workflow_manager',
+        manager_type => 'WorkflowManager',
     );
 
     diag('Create a new node workflow');
@@ -200,7 +199,7 @@ sub sco_workflow_triggered_by_rule {
 
         diag('Check WorkflowNoderule creation');
         WorkflowNoderule->find(hash=>{
-            externalnode_id => $node->id,
+            node_id => $node->id,
             nodemetric_rule_id  => $node_rule_ids->{node_rule2_id},
             workflow_id => $node_workflow->id,
         });
@@ -243,7 +242,7 @@ sub sco_workflow_triggered_by_rule {
         }
 
         diag('Check if node file contain line 1');
-        die 'Node file does not contain line 1' if ( $lines[0] ne $node->externalnode_hostname."\n");
+        die 'Node file does not contain line 1' if ( $lines[0] ne $node->node_hostname."\n");
 
         diag('Check if node file contain line 2');
         die 'Node file does not contain line 2' if ( $lines[1] ne $return_file);
@@ -348,7 +347,7 @@ sub sco_workflow_triggered_by_rule {
 
         expectedException {
             VerifiedNoderule->find(hash => {
-                verified_noderule_externalnode_id    => $node->id,
+                verified_noderule_node_id    => $node->id,
                 verified_noderule_nodemetric_rule_id => $node_rule_ids->{node_rule2_id},
                 verified_noderule_state              => 'verified',
             });
@@ -363,7 +362,7 @@ sub sco_workflow_triggered_by_rule {
 
         expectedException {
             WorkflowNoderule->find(hash=>{
-                externalnode_id => $node->id,
+                node_id => $node->id,
                 nodemetric_rule_id  => $node_rule2->id,
                 workflow_id => $node_workflow->id,
             });
@@ -372,7 +371,7 @@ sub sco_workflow_triggered_by_rule {
 
         expectedException {
             WorkflowNoderule->find(hash=>{
-                externalnode_id => $node->id,
+                node_id => $node->id,
                 nodemetric_rule_id  => $agg_rule2->id,
                 workflow_id => $service_workflow->id,
             });
@@ -417,7 +416,7 @@ sub check_rule_verification {
     diag('# Node rule 1 verification');
     expectedException {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $args{node_id},
+            verified_noderule_node_id    => $args{node_id},
             verified_noderule_nodemetric_rule_id => $args{node_rule1_id},
             verified_noderule_state              => 'verified',
         });
@@ -425,7 +424,7 @@ sub check_rule_verification {
 
     diag('# Node rule 2 verification');
     VerifiedNoderule->find(hash => {
-        verified_noderule_externalnode_id    => $args{node_id},
+        verified_noderule_node_id    => $args{node_id},
         verified_noderule_nodemetric_rule_id => $args{node_rule2_id},
         verified_noderule_state              => 'verified',
     });
@@ -484,7 +483,7 @@ sub _service_rule_objects_creation {
     my $rule1;
     my $rule2;
 
-    my $service_provider = Entity::ServiceProvider::Outside::Externalcluster->find(
+    my $service_provider = Entity::ServiceProvider::Externalcluster->find(
         hash => {externalcluster_name => 'Test Service Provider'}
     );
 
@@ -550,7 +549,7 @@ sub _node_rule_objects_creation {
     my $rule1;
     my $rule2;
 
-    my $service_provider = Entity::ServiceProvider::Outside::Externalcluster->find(
+    my $service_provider = Entity::ServiceProvider::Externalcluster->find(
         hash => {externalcluster_name => 'Test Service Provider'}
     );
 

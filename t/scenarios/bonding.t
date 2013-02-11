@@ -20,7 +20,7 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use Administrator;
+use BaseDB;
 use Entity::Host;
 use Entity::Iface;
 use Net::Ping;
@@ -38,11 +38,10 @@ my $NB_HYPERVISORS = 1;
 main();
 
 sub main {
-    Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-    my $adm = Administrator->new;
+    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if ($testing == 1) {
-        $adm->beginTransaction;
+        BaseDB->beginTransaction;
     }
 
     my $host = Entity::Host->find(hash => { 
@@ -108,7 +107,7 @@ sub main {
     _ping_ifaces();
 
     if($testing == 1) {
-        $adm->rollbackTransaction;
+        BaseDB->rollbackTransaction;
     }
 }
 

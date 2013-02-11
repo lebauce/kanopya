@@ -11,10 +11,9 @@ use Data::Dumper;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'RegisterVsphereInfra.t.log', layout=>'%F %L %p %m%n'});
 
-use_ok ('Administrator');
 use_ok ('Executor');
 use_ok ('EFactory');
-use_ok ('Entity::ServiceProvider::Inside::Cluster');
+use_ok ('Entity::ServiceProvider::Cluster');
 use_ok ('Entity::User');
 use_ok ('Entity::Kernel');
 use_ok ('Entity::Processormodel');
@@ -27,19 +26,18 @@ use_ok ('Entity::Operation');
 use_ok ('Entity::Container');
 use_ok ('Entity::ContainerAccess');
 use_ok ('Entity::ContainerAccess::NfsContainerAccess');
-use_ok ('Externalnode::Node');
-use_ok ('ComponentType');
+use_ok ('Node');
+use_ok ('ClassType::ComponentType');
 use_ok ('Entity::InterfaceRole');
 
 my $testing = 0;
 my $vsphere_url = '192.168.2.160';
 
 eval {
-    Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-    my $adm = Administrator->new;
+    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if ($testing == 1) {
-        $adm->beginTransaction;
+        BaseDB->beginTransaction;
     }
 
     my @args = ();
@@ -52,7 +50,7 @@ eval {
 
     my $cluster;
     lives_ok {
-        $cluster = Entity::ServiceProvider::Inside::Cluster->new(
+        $cluster = Entity::ServiceProvider::Cluster->new(
             active                 => 1,
             cluster_name           => "VSphere",
             cluster_min_node       => "1",
@@ -68,12 +66,12 @@ eval {
         );
       } 'Register VSphere cluster';
 
-    isa_ok($cluster, 'Entity::ServiceProvider::Inside::Cluster');
+    isa_ok($cluster, 'Entity::ServiceProvider::Cluster');
 
     my $vsphereInstance;
     lives_ok {
         $vsphereInstance = $cluster->addComponentFromType(
-                               component_type_id => ComponentType->find(hash => {
+                               component_type_id => ClassType::ComponentType->find(hash => {
                                                         component_name => 'Vsphere'})->id,
                            );
     } 'register Vsphere component';
@@ -181,7 +179,7 @@ eval {
                 $total_items_nbr++;
                 eval {
                     (my $clusterOrHypervisor_vsphere_renamed = $clusterOrHypervisor_vsphere->{name}) =~ s/[^\w\d]/_/g;
-                    my $clusterOrHypervisor_kanopya = Entity::ServiceProvider::Inside::Cluster->find(
+                    my $clusterOrHypervisor_kanopya = Entity::ServiceProvider::Cluster->find(
                                                           hash => {cluster_name => $clusterOrHypervisor_vsphere_renamed},
                                                       );
                 };
@@ -194,7 +192,7 @@ eval {
                         $total_items_nbr++;
                         eval {
                             (my $vm_hypervisor_vsphere_renamed = $vm_hypervisor_vsphere->{name}) =~ s/[^\w\d]/_/g;
-                            my $vm_hypervisor_vsphere_kanopya = Entity::ServiceProvider::Inside::Cluster->find(
+                            my $vm_hypervisor_vsphere_kanopya = Entity::ServiceProvider::Cluster->find(
                                                                     hash => {cluster_name => $vm_hypervisor_vsphere_renamed},
                                                                 );
                         };
@@ -209,7 +207,7 @@ eval {
                             $total_items_nbr++;
                             eval {
                                 (my $vm_vsphere_renamed = $vm_vsphere->{name}) =~ s/[^\w\d]/_/g;
-                                my $vm_kanopya = Entity::ServiceProvider::Inside::Cluster->find(
+                                my $vm_kanopya = Entity::ServiceProvider::Cluster->find(
                                                      hash => {cluster_name => $vm_vsphere_renamed},
                                                  );
                             };
@@ -233,14 +231,14 @@ eval {
     lives_ok {
         my $unwanted_items_nbr = 2;#Unwanted items (cluster Kanopya and cluster on which component is installed)
         $kanopya_items_nbr     =   scalar(Vsphere5Datacenter->search(hash => {}));
-        $kanopya_items_nbr    +=   scalar(Entity::ServiceProvider::Inside::Cluster->search(hash => {}));
+        $kanopya_items_nbr    +=   scalar(Entity::ServiceProvider::Cluster->search(hash => {}));
         $kanopya_items_nbr    -=   $unwanted_items_nbr;
     } 'get Kanopya items number';
 
     is($kanopya_items_nbr, $total_items_nbr - $ko_items_nbr, 'Test if no more item is registered');
 
     if ($testing == 1) {
-        $adm->rollbackTransaction;
+        BaseDB->rollbackTransaction;
     }
 };    
 

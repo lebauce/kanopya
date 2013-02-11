@@ -14,18 +14,18 @@ my $log = get_logger("");
 
 
 lives_ok {
-    use Administrator;
+    use BaseDB;
     use Aggregator;
     use Orchestrator;
-    use Entity::ServiceProvider::Outside::Externalcluster;
-    use Entity::Connector::MockMonitor;
+    use Entity::ServiceProvider::Externalcluster;
+    use Entity::Component::MockMonitor;
     use Entity::Clustermetric;
     use Entity::Combination::NodemetricCombination;
 } 'All uses';
 
-Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-my $adm = Administrator->new;
-$adm->beginTransaction;
+BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+
+BaseDB->beginTransaction;
 
 my ($indic1, $indic2);
 my $service_provider;
@@ -36,38 +36,38 @@ eval{
     $aggregator   = Aggregator->new();
     $orchestrator = Orchestrator->new();
 
-    $service_provider = Entity::ServiceProvider::Outside::Externalcluster->new(
+    $service_provider = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Service Provider',
     );
 
-    my $external_cluster_mockmonitor = Entity::ServiceProvider::Outside::Externalcluster->new(
+    my $external_cluster_mockmonitor = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Monitor',
     );
 
-    my $mock_monitor = Entity::Connector::MockMonitor->new(
+    my $mock_monitor = Entity::Component::MockMonitor->new(
             service_provider_id => $external_cluster_mockmonitor->id,
     );
 
     lives_ok{
         $service_provider->addManager(
             manager_id      => $mock_monitor->id,
-            manager_type    => 'collector_manager',
+            manager_type    => 'CollectorManager',
             no_default_conf => 1,
         );
     } 'Add mock monitor to service provider';
 
     # Create node 1
-    Externalnode->new(
-        externalnode_hostname => 'node_1',
+    Node->new(
+        node_hostname => 'node_1',
         service_provider_id   => $service_provider->id,
-        externalnode_state    => 'up',
+        monitoring_state    => 'up',
     );
 
     # Create node 2
-    Externalnode->new(
-        externalnode_hostname => 'node_2',
+    Node->new(
+        node_hostname => 'node_2',
         service_provider_id   => $service_provider->id,
-        externalnode_state    => 'up',
+        monitoring_state    => 'up',
     );
 
     # Get indicators
@@ -140,12 +140,12 @@ eval{
     test_alerts_aggregator();
     test_alerts_orchestrator();
     test_rrd_remove();
-    $adm->rollbackTransaction;
+    BaseDB->rollbackTransaction;
 };
 if($@) {
     my $error = $@;
     print $error."\n";
-    $adm->rollbackTransaction;
+    BaseDB->rollbackTransaction;
     fail('Exception occurs');
 
 
@@ -191,7 +191,7 @@ sub test_alerts_aggregator {
     my $mock_conf  = "{'default':{'const':10},"
                 . "'nodes':{'node_1':{'const':50}},'indics':{'Memory/Pool Paged Bytes':{'const':null}}}";
     $service_provider->addManagerParameter (
-        manager_type    => 'collector_manager',
+        manager_type    => 'CollectorManager',
         name            => 'mockmonit_config',
         value           => $mock_conf
     );
@@ -223,7 +223,7 @@ sub test_alerts_aggregator {
     $mock_conf  = "{'default':{'const':10},"
                 . "'nodes':{'node_1':{'const':50}},'indics':{'Memory/Pool Paged Bytes':{'const':100}}}";
     $service_provider->addManagerParameter (
-        manager_type    => 'collector_manager',
+        manager_type    => 'CollectorManager',
         name            => 'mockmonit_config',
         value           => $mock_conf
     );
@@ -241,7 +241,7 @@ sub test_alerts_aggregator {
     $mock_conf  = "{'default':{'const':10},"
                 . "'nodes':{'node_1':{'const':50}},'indics':{'Memory/Pool Paged Bytes':{'const':null}}}";
     $service_provider->addManagerParameter(
-        manager_type    => 'collector_manager',
+        manager_type    => 'CollectorManager',
         name            => 'mockmonit_config',
         value           => $mock_conf
     );
@@ -275,7 +275,7 @@ sub test_alerts_orchestrator {
                 . "'nodes':{'node_1':{'const':50}},'indics':{'Memory/Pool Paged Bytes':{'const':100}}}";
 
     $service_provider->addManagerParameter (
-        manager_type    => 'collector_manager',
+        manager_type    => 'CollectorManager',
         name            => 'mockmonit_config',
         value           => $mock_conf
     );
@@ -289,7 +289,7 @@ sub test_alerts_orchestrator {
                 . "'nodes':{'node_1':{'const':50}},'indics':{'Memory/Pool Paged Bytes':{'const':null}}}";
 
     $service_provider->addManagerParameter (
-        manager_type    => 'collector_manager',
+        manager_type    => 'CollectorManager',
         name            => 'mockmonit_config',
         value           => $mock_conf
     );
@@ -318,7 +318,7 @@ sub test_alerts_orchestrator {
                 . "'nodes':{'node_1':{'const':50}},'indics':{'Memory/Pool Paged Bytes':{'const':100}}}";
 
     $service_provider->addManagerParameter (
-        manager_type    => 'collector_manager',
+        manager_type    => 'CollectorManager',
         name            => 'mockmonit_config',
         value           => $mock_conf
     );
@@ -336,7 +336,7 @@ sub test_alerts_orchestrator {
                 . "'nodes':{'node_1':{'const':50}},'indics':{'Memory/Pool Paged Bytes':{'const':null}}}";
 
     $service_provider->addManagerParameter (
-        manager_type    => 'collector_manager',
+        manager_type    => 'CollectorManager',
         name            => 'mockmonit_config',
         value           => $mock_conf
     );

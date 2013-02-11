@@ -14,17 +14,17 @@ my $log = get_logger("");
 
 my $testing = 0;
 
-use Administrator;
+use BaseDB;
 use Entity::Kernel;
 use Entity::Component;
-use Entity::ServiceProvider::Outside::Externalcluster;
+use Entity::ServiceProvider::Externalcluster;
 use CapacityManagement;
 use Entity::Component::Opennebula3;
-use ComponentType;
+use ClassType::ComponentType;
 
-Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-my $adm = Administrator->new;
-$adm->beginTransaction;
+BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+
+BaseDB->beginTransaction;
 
 my @vms;
 my $coef = 1024**3;
@@ -37,19 +37,19 @@ main();
 sub main {
 
     if ($testing == 1) {
-        $adm->beginTransaction;
+        BaseDB->beginTransaction;
     }
 
-    $service_provider = Entity::ServiceProvider::Outside::Externalcluster->new(
+    $service_provider = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Service Provider',
     );
 
-    $service_provider_hypervisors = Entity::ServiceProvider::Outside::Externalcluster->new(
+    $service_provider_hypervisors = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Hypervisor Externacluster',
     );
 
     $one = $service_provider_hypervisors->addComponentFromType(
-        component_type_id => ComponentType->find(
+        component_type_id => ClassType::ComponentType->find(
             hash => {
                 component_name => 'Opennebula',
             }
@@ -69,7 +69,7 @@ sub main {
 
     $service_provider->addManager(
         manager_id   => $one->id,
-        manager_type => 'host_manager',
+        manager_type => 'HostManager',
     );
 
 
@@ -82,7 +82,7 @@ sub main {
     test_optimiaas();
 
     if ($testing == 1) {
-        $adm->rollbackTransaction;
+        BaseDB->rollbackTransaction;
     }
 }
 

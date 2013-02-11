@@ -11,10 +11,9 @@ use Data::Dumper;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'start_vsphere_host.t.log', layout=>'%F %L %p %m%n'});
 
-use_ok ('Administrator');
 use_ok ('Executor');
 use_ok ('EFactory');
-use_ok ('Entity::ServiceProvider::Inside::Cluster');
+use_ok ('Entity::ServiceProvider::Cluster');
 use_ok ('Entity::User');
 use_ok ('Entity::Kernel');
 use_ok ('Entity::Processormodel');
@@ -27,8 +26,8 @@ use_ok ('Entity::Operation');
 use_ok ('Entity::Container');
 use_ok ('Entity::ContainerAccess');
 use_ok ('Entity::ContainerAccess::NfsContainerAccess');
-use_ok ('Externalnode::Node');
-use_ok ('ComponentType');
+use_ok ('Node');
+use_ok ('ClassType::ComponentType');
 use_ok ('Entity::InterfaceRole');
 
 my $testing = 0;
@@ -48,11 +47,10 @@ my $boards = [
 ];
 
 eval {
-    Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-    my $adm = Administrator->new;
+    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if ($testing == 1) {
-        $adm->beginTransaction;
+        BaseDB->beginTransaction;
     }
 
     my @args = ();
@@ -61,12 +59,12 @@ eval {
     my $kanopya_cluster;
     my $physical_hoster;
     lives_ok {
-        $kanopya_cluster = Entity::ServiceProvider::Inside::Cluster->find(
+        $kanopya_cluster = Entity::ServiceProvider::Cluster->find(
                                hash => { cluster_name => 'kanopya' });
         $physical_hoster = $kanopya_cluster->getHostManager();
     } 'Retrieve Kanopya cluster';
 
-    isa_ok ($kanopya_cluster, 'Entity::ServiceProvider::Inside::Cluster');
+    isa_ok ($kanopya_cluster, 'Entity::ServiceProvider::Cluster');
     isa_ok ($physical_hoster, 'Entity::Component::Physicalhoster0');
 
     my $disk_manager;
@@ -210,7 +208,7 @@ eval {
     } 'Get the interface role vms';
 
     lives_ok {
-          Entity::ServiceProvider::Inside::Cluster->create(
+          Entity::ServiceProvider::Cluster->create(
             active                 => 1,
             cluster_name           => "VSphere",
             cluster_min_node       => "1",
@@ -228,7 +226,7 @@ eval {
             managers               => {
                 host_manager => {
                     manager_id     => $physical_hoster->getId,
-                    manager_type   => "host_manager",
+                    manager_type   => 'HostManager',
                     manager_params => {
                         cpu        => 1,
                         ram        => 512*1024*1024,
@@ -236,7 +234,7 @@ eval {
                 },
                 disk_manager => {
                     manager_id       => $disk_manager->getId,
-                    manager_type     => "disk_manager",
+                    manager_type     => 'DiskManager',
                     manager_params   => {
                         vg_id => 1,
                         systemimage_size => 4 * 1024 * 1024 * 1024
@@ -244,7 +242,7 @@ eval {
                 },
                 export_manager => {
                     manager_id       => $export_manager->getId,
-                    manager_type     => "export_manager",
+                    manager_type     => 'ExportManager',
                     manager_params   => {
                         systemimage_size => 4 * 1024 * 1024 * 1024
                     }
@@ -252,7 +250,7 @@ eval {
             },
             components             => {
                 vsphere5 => {
-                    component_type => ComponentType->find(hash => {
+                    component_type => ClassType::ComponentType->find(hash => {
                                           component_name => "Vsphere"
                     				  } )->id
                 }
@@ -272,12 +270,12 @@ eval {
     #$DB::single = 1;
     my ($cluster, $cluster_id);
     lives_ok {
-        $cluster = Entity::ServiceProvider::Inside::Cluster->find(
+        $cluster = Entity::ServiceProvider::Cluster->find(
                        hash => { cluster_name => 'VSphere'}
                    );
     } 'retrieve Cluster via name';
 
-    isa_ok($cluster, 'Entity::ServiceProvider::Inside::Cluster');
+    isa_ok($cluster, 'Entity::ServiceProvider::Cluster');
 
     #lives_ok {
     #    $cluster->setAttr(name => 'service_template_id', value => 1);
@@ -300,15 +298,15 @@ eval {
         $iface->save();
     } 'associate cluster admin interface to host iface';
 
-    my $externalnode;
+    my $node;
     lives_ok {
-        $externalnode = Externalnode::Node->new(
-                            inside_id   => $cluster->id,
-                            host_id     => $host->id,
-                            master_node => 1,
-                            node_number => 1,
-                            node_state  => 'in:1344944117',
-                            externalnode_hostname => 'vsphere01'
+        $node = Node->new(
+                            service_provider_id => $cluster->id,
+                            host_id             => $host->id,
+                            master_node         => 1,
+                            node_number         => 1,
+                            node_state          => 'in:1344944117',
+                            node_hostname       => 'vsphere01'
                         );
     } 'create node from hypervisor cluster and host';
 
@@ -363,7 +361,7 @@ eval {
     # START THE HYPERVISOR CLUSTER WHEN THE FEATURE IS AVAILABLE
 
     lives_ok {
-        Entity::ServiceProvider::Inside::Cluster->create(
+        Entity::ServiceProvider::Cluster->create(
             active                 => 1,
             cluster_name           => "VMcluster",
             cluster_min_node       => "1",
@@ -382,7 +380,7 @@ eval {
             managers               => {
                 host_manager => {
                     manager_id     => $vsphere->getId,
-                    manager_type   => "host_manager",
+                    manager_type   => 'HostManager',
                     manager_params => {
                         cpu      => 1,
                         ram      => 512*1024*1024,
@@ -391,7 +389,7 @@ eval {
                 },
                 disk_manager => {
                     manager_id     => $fileimagemanager->getId,
-                    manager_type   => "disk_manager",
+                    manager_type   => 'DiskManager',
                     manager_params => {
                         container_access_id => $nfs->getId,
                         systemimage_size    => 4 * 1024 * 1024 * 1024
@@ -399,7 +397,7 @@ eval {
                 },
                 export_manager => {
                     manager_id      => $fileimagemanager->getId,
-                    manager_type    => "export_manager",
+                    manager_type    => 'ExportManager',
                     manager_params  => {
                         container_access_id => $nfs->getId,
                         systemimage_size    => 4 * 1024 * 1024 * 1024
@@ -420,12 +418,12 @@ eval {
 
     my $vm_cluster;
     lives_ok {
-        $vm_cluster = Entity::ServiceProvider::Inside::Cluster->getCluster(
+        $vm_cluster = Entity::ServiceProvider::Cluster->getCluster(
                           hash => { cluster_name => 'VMcluster'}
                       );
     } 'retrieve Cluster via name';
 
-    isa_ok($vm_cluster, 'Entity::ServiceProvider::Inside::Cluster');
+    isa_ok($vm_cluster, 'Entity::ServiceProvider::Cluster');
 
     #lives_ok {
     #    $vm_cluster->setAttr(name => 'service_template_id', value => 1);
@@ -437,7 +435,7 @@ eval {
     #} 'add node on vmcluster';
 
     if ($testing == 1) {
-        $adm->rollbackTransaction;
+        BaseDB->rollbackTransaction;
     }
 };    
 

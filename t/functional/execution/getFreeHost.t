@@ -88,24 +88,21 @@ eval {
     use_ok ('NetconfIface');
     use_ok ('EEntity');
     use_ok ('Executor');
-    use_ok ('Administrator');
-    use_ok ('Entity::ServiceProvider::Inside::Cluster');
+    use_ok ('Entity::ServiceProvider::Cluster');
 
-    lives_ok {
-        Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-    } 'Connect to database';
-
-    my $adm = Administrator->new;
+#    lives_ok {
+#        BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+#    } 'Connect to database';
 
     my @args = ();
     my $executor = new_ok("Executor", \@args, "Instantiate an executor");
 
      if ($testing) {
-           $adm->beginTransaction;
+           BaseDB->beginTransaction;
      }
 
     lives_ok {
-        $kanopya_cluster = Entity::ServiceProvider::Inside::Cluster->find(
+        $kanopya_cluster = Entity::ServiceProvider::Cluster->find(
                                hash => { cluster_name => 'Kanopya' });
         $physical_hoster = $kanopya_cluster->getHostManager();
     } 'Retrieve Kanopya cluster';
@@ -233,7 +230,9 @@ eval {
     @if = $c_host->ifaces;
     my @tmp;
     push @tmp, $if[0];
-    _associateNetconfIface(ifaces => \@tmp, netconfs => ($netconf));
+    my @confs;
+    push @confs, $netconf;
+    _associateNetconfIface(ifaces => \@tmp, netconfs => \@confs);
 
     $host_manager = _getHostManagerParams(sp => $sp);
 
@@ -258,7 +257,7 @@ sub _associateNetconfIface {
     my $netconfs = $args{netconfs};
 
     foreach my $iface (@$ifaces) {
-        $iface->update('netconf_ifaces' => $netconfs);
+        $iface->populateRelations(relations => { netconf_ifaces => $netconfs });
     }
 }
 
@@ -288,7 +287,7 @@ sub _getHostManagerParams {
     my $host_manager  = $sp->getHostManager();
     my @c_interfaces  = $sp->interfaces;
     my $ehost_manager = EEntity->new(entity => $host_manager);
-    my $host_manager_params = $sp->getManagerParameters(manager_type => 'host_manager');
+    my $host_manager_params = $sp->getManagerParameters(manager_type => 'HostManager');
     $host_manager_params->{interfaces} = \@c_interfaces;
 
     return { params => $host_manager_params, ehost_manager => $ehost_manager };
@@ -331,7 +330,7 @@ sub _createCluster {
     my $cluster_name = $args{name};
     my $cluster;
     lives_ok {
-        $cluster = Entity::ServiceProvider::Inside::Cluster->new(
+        $cluster = Entity::ServiceProvider::Cluster->new(
                        active                 => 1,
                        cluster_name           => $cluster_name,
                        cluster_min_node       => "1",
@@ -348,7 +347,7 @@ sub _createCluster {
     } 'AddCluster operation enqueue';
 
     lives_ok {
-        $cluster->addManager(manager_type   => 'host_manager',
+        $cluster->addManager(manager_type   => 'HostManager',
                              manager_id     => $physical_hoster->id,
                              manager_params => {
                                  cpu => 1,

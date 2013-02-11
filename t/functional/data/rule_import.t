@@ -21,9 +21,9 @@ my ($ncomb, $ncond, $nr);
 my ($cm, $acomb, $acond, $ar);
 
 lives_ok {
-    use Administrator;
-    use Entity::ServiceProvider::Outside::Externalcluster;
-    use Entity::Connector::MockMonitor;
+    use BaseDB;
+    use Entity::ServiceProvider::Externalcluster;
+    use Entity::Component::MockMonitor;
     use Entity::Clustermetric;
     use Entity::AggregateCondition;
     use Entity::Combination::AggregateCombination;
@@ -33,9 +33,9 @@ lives_ok {
     use Entity::Rule::NodemetricRule;
 } 'All uses';
 
-Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-my $adm = Administrator->new;
-$adm->beginTransaction;
+BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+
+BaseDB->beginTransaction;
 
 eval {
     init();
@@ -49,10 +49,10 @@ eval {
     # test all condition type cloning (different left and right cobination type)
     # test cloning of already existing object
 
-    $adm->rollbackTransaction;
+    BaseDB->rollbackTransaction;
 };
 if($@) {
-    $adm->rollbackTransaction;
+    BaseDB->rollbackTransaction;
     my $error = $@;
     print $error."\n";
     fail('Exception occurs');
@@ -187,7 +187,7 @@ sub testServiceRuleImport {
 }
 
 sub testExceptions {
-    my $bad_sp_dest = Entity::ServiceProvider::Outside::Externalcluster->new(
+    my $bad_sp_dest = Entity::ServiceProvider::Externalcluster->new(
         externalcluster_name => 'Bad Dest Service Provider',
     );
 
@@ -209,17 +209,17 @@ sub testExceptions {
     } 'Kanopya::Exception::Internal::NotFound',
     'Can not import service rule if no collector manager on dest';
 
-     my $tech_service = Entity::ServiceProvider::Outside::Externalcluster->new(
+     my $tech_service = Entity::ServiceProvider::Externalcluster->new(
         externalcluster_name => 'Test Monitor 2',
     );
 
-    my $mock_monitor = Entity::Connector::MockMonitor->new(
+    my $mock_monitor = Entity::Component::MockMonitor->new(
         service_provider_id => $tech_service->id,
     );
 
     $bad_sp_dest->addManager(
         manager_id      => $mock_monitor->id,
-        manager_type    => 'collector_manager',
+        manager_type    => 'CollectorManager',
         no_default_conf => 1,
     );
 
@@ -245,31 +245,31 @@ sub testExceptions {
 # Create and configure services
 # Add metrics and rules to source service provider
 sub init {
-    $sp_src = Entity::ServiceProvider::Outside::Externalcluster->new(
+    $sp_src = Entity::ServiceProvider::Externalcluster->new(
         externalcluster_name => 'Source Service Provider',
     );
 
-    $sp_dest = Entity::ServiceProvider::Outside::Externalcluster->new(
+    $sp_dest = Entity::ServiceProvider::Externalcluster->new(
         externalcluster_name => 'Dest Service Provider',
     );
 
-    my $tech_service = Entity::ServiceProvider::Outside::Externalcluster->new(
+    my $tech_service = Entity::ServiceProvider::Externalcluster->new(
         externalcluster_name => 'Test Monitor',
     );
 
-    my $mock_monitor = Entity::Connector::MockMonitor->new(
+    my $mock_monitor = Entity::Component::MockMonitor->new(
         service_provider_id => $tech_service->id,
     );
 
     $sp_src->addManager(
         manager_id      => $mock_monitor->id,
-        manager_type    => 'collector_manager',
+        manager_type    => 'CollectorManager',
         no_default_conf => 1,
     );
 
     $sp_dest->addManager(
         manager_id      => $mock_monitor->id,
-        manager_type    => 'collector_manager',
+        manager_type    => 'CollectorManager',
         no_default_conf => 1,
     );
 
