@@ -25,7 +25,6 @@ CREATE TABLE `glance` (
 CREATE TABLE `keystone` (
   `keystone_id` int(8) unsigned NOT NULL,
   `mysql5_id` int(8) unsigned NULL DEFAULT NULL,
-  `nova_controller_id` int(8) unsigned NULL DEFAULT NULL,
   PRIMARY KEY (`keystone_id`),
   CONSTRAINT `fk_keystone_1` FOREIGN KEY (`keystone_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY(`mysql5_id`),

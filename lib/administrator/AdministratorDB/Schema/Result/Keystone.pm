@@ -53,12 +53,6 @@ __PACKAGE__->table("keystone");
   is_foreign_key: 1
   is_nullable: 1
 
-=head2 nova_controller_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_nullable: 1
-
 =cut
 
 __PACKAGE__->add_columns(
@@ -76,8 +70,6 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 1,
   },
-  "nova_controller_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY
