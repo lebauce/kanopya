@@ -50,7 +50,7 @@ sub getPuppetDefinition {
            "\tdbserver => '" . $sql->service_provider->getMasterNode->adminIp . "',\n" .
            "\tpassword => 'glance',\n" .
            "\tkeystone => '" . $keystone->service_provider->getMasterNode->fqdn . "',\n" .
-           "\temail    => '" . $sql->service_provider->user->email . "'\n" .
+           "\temail    => '" . $self->service_provider->user->email . "'\n" .
            "}\n";
     ;
 }

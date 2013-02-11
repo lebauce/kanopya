@@ -65,7 +65,14 @@ class kanopya::glance($dbserver, $password, $keystone, $email) {
     class { 'glance::backend::file': }
 }
 
-class kanopya::novacontroller($api_admin_password, $dbserver, $password) {
+class kanopya::novacontroller($password, $dbserver, $amqpserver, $keystone, $email) {
+    @@rabbitmq_user { 'nova':
+        admin    => true,
+        password => "${password}",
+        provider => 'rabbitmqctl',
+        tag      => "${amqpserver}",
+    }
+
     @@mysql::db { 'nova':
             user     => 'nova',
             password => "${password}",
@@ -84,7 +91,7 @@ class kanopya::novacontroller($api_admin_password, $dbserver, $password) {
 
     class { 'nova::api':
             enabled        => true,
-            admin_password => "${api_admin_password}",
+            admin_password => "${password}",
     }
     class { 'nova': sql_connection => "mysql://nova:${password}@${dbserver}/nova", }
     class { 'nova::scheduler': enabled => true, }

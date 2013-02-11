@@ -33,14 +33,16 @@ sub getPuppetDefinition {
     my ($self, %args) = @_;
 
     my $sql        = $self->mysql5;
+    my $keystone   = $self->keystone;
     my $definition = "if \$kanopya_openstack_repository == undef {\n" .
                      "\tclass { 'kanopya::openstack::repository': }\n" .
                      "\t\$kanopya_openstack_repository = 1\n" .
                      "}\n" .
                      "class { 'kanopya::novacontroller':\n" .
-                     "\tapi_admin_password => 'nova',\n" .
-                     "\tdb_server => '$sql->service_provider->getMasterNode->fqdn',\n" .
-                     "\tdb_password => 'nova',\n" .
+                     "\tdbserver => '$sql->service_provider->getMasterNode->fqdn',\n" .
+                     "\tpassword => 'nova',\n" .
+                     "\tkeystone => '$keystone->service_provider->getMasterNode->fqdn',\n" .
+                     "\temail => '$self->service_provider->user->email',\n" .
                      "}\n";
 
     return $definition;
