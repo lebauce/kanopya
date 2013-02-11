@@ -53,6 +53,12 @@ __PACKAGE__->table("keystone");
   is_foreign_key: 1
   is_nullable: 1
 
+=head2 nova_controller_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -70,6 +76,8 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 1,
   },
+  "nova_controller_id",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY
@@ -98,7 +106,7 @@ __PACKAGE__->belongs_to(
   "keystone",
   "AdministratorDB::Schema::Result::Component",
   { component_id => "keystone_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 mysql5
@@ -117,14 +125,29 @@ __PACKAGE__->belongs_to(
     is_deferrable => 1,
     join_type     => "LEFT",
     on_delete     => "CASCADE",
-    on_update     => "NO ACTION",
+    on_update     => "CASCADE",
   },
 );
 
+=head2 nova_controllers
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-02-08 16:34:08
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:2gRFwdTpUkpl7BERaHKN7g
-# You can replace this text with custom content, and it will be preserved on regeneration
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::NovaController>
+
+=cut
+
+__PACKAGE__->has_many(
+  "nova_controllers",
+  "AdministratorDB::Schema::Result::NovaController",
+  { "foreign.keystone_id" => "self.keystone_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-02-11 15:49:43
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:QH2CivU/im6L093lQ+ce+w
+
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Component",

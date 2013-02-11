@@ -46,6 +46,20 @@ __PACKAGE__->table("nova_compute");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 mysql5_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
+=head2 nova_controller_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -55,6 +69,20 @@ __PACKAGE__->add_columns(
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
+  },
+  "mysql5_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
+  "nova_controller_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
   },
 );
 
@@ -72,6 +100,26 @@ __PACKAGE__->set_primary_key("nova_compute_id");
 
 =head1 RELATIONS
 
+=head2 mysql5
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Mysql5>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "mysql5",
+  "AdministratorDB::Schema::Result::Mysql5",
+  { mysql5_id => "mysql5_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
+
 =head2 nova_compute
 
 Type: belongs_to
@@ -84,18 +132,37 @@ __PACKAGE__->belongs_to(
   "nova_compute",
   "AdministratorDB::Schema::Result::Component",
   { component_id => "nova_compute_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 nova_controller
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::NovaController>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "nova_controller",
+  "AdministratorDB::Schema::Result::NovaController",
+  { nova_controller_id => "nova_controller_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-02-04 14:01:22
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:yMViDJKRcgVcqZmH+gK+Wg
+# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-02-11 15:02:05
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ZHMBFx1Vsgsa9MqpDcQDIg
 
-
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Component",
     { "foreign.component_id" => "self.nova_compute_id" },
     { cascade_copy => 0, cascade_delete => 1 });
+
 1;

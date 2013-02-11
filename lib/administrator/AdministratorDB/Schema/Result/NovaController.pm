@@ -46,6 +46,27 @@ __PACKAGE__->table("nova_controller");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 mysql5_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
+=head2 amqp_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
+=head2 keystone_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -55,6 +76,27 @@ __PACKAGE__->add_columns(
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
+  },
+  "mysql5_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
+  "amqp_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
+  "keystone_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
   },
 );
 
@@ -72,6 +114,81 @@ __PACKAGE__->set_primary_key("nova_controller_id");
 
 =head1 RELATIONS
 
+=head2 amqp
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Amqp>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "amqp",
+  "AdministratorDB::Schema::Result::Amqp",
+  { amqp_id => "amqp_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
+
+=head2 glances
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Glance>
+
+=cut
+
+__PACKAGE__->has_many(
+  "glances",
+  "AdministratorDB::Schema::Result::Glance",
+  { "foreign.nova_controller_id" => "self.nova_controller_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 keystone
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Keystone>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "keystone",
+  "AdministratorDB::Schema::Result::Keystone",
+  { keystone_id => "keystone_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
+
+=head2 mysql5
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Mysql5>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "mysql5",
+  "AdministratorDB::Schema::Result::Mysql5",
+  { mysql5_id => "mysql5_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
+
 =head2 nova_controller
 
 Type: belongs_to
@@ -84,18 +201,47 @@ __PACKAGE__->belongs_to(
   "nova_controller",
   "AdministratorDB::Schema::Result::Component",
   { component_id => "nova_controller_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 novas_compute
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::NovaCompute>
+
+=cut
+
+__PACKAGE__->has_many(
+  "novas_compute",
+  "AdministratorDB::Schema::Result::NovaCompute",
+  { "foreign.nova_controller_id" => "self.nova_controller_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 quantums
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Quantum>
+
+=cut
+
+__PACKAGE__->has_many(
+  "quantums",
+  "AdministratorDB::Schema::Result::Quantum",
+  { "foreign.nova_controller_id" => "self.nova_controller_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-02-04 14:01:22
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:kkJuwhWH74/+ZZYKmB87gQ
+# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-02-11 15:49:44
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dK46F+0grM1B/353BTC3Yw
 
-
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Component",
     { "foreign.component_id" => "self.nova_controller_id" },
     { cascade_copy => 0, cascade_delete => 1 });
+
 1;
