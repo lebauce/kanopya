@@ -165,7 +165,7 @@ sub new {
 
     # Ask the collector manager to collect the related indicator
     my $service_provider = $self->service_provider;
-    my $collector = $service_provider->getManager(manager_type => "collector_manager");
+    my $collector = $service_provider->getManager(manager_type => "CollectorManager");
 
     my %ids = map { $_ => undef } ($self->nodemetric_combination_formula =~ m/id(\d+)/g);
     for my $indicator_id (keys %ids) {
@@ -411,14 +411,20 @@ sub clone {
     General::checkParams(args => \%args, required => ['dest_service_provider_id']);
 
     # Check that both services use the same collector manager
-    my $src_collector_manager = ServiceProviderManager->find( hash => {
-        manager_type        => 'collector_manager',
-        service_provider_id => $self->service_provider_id
-    });
-    my $dest_collector_manager = ServiceProviderManager->find( hash => {
-        manager_type        => 'collector_manager',
-        service_provider_id => $args{'dest_service_provider_id'}
-    });
+    my $src_collector_manager = ServiceProviderManager->find( 
+                                    hash => {
+                                        service_provider_id => $self->service_provider_id
+                                    },
+                                    by_category => 'CollectorManager'
+                                );
+
+    my $dest_collector_manager = ServiceProviderManager->find(
+                                     hash => {
+                                         service_provider_id => $args{'dest_service_provider_id'}
+                                     },
+                                     by_category => 'CollectorManager'
+                                 );
+
     if ($src_collector_manager->manager_id != $dest_collector_manager->manager_id) {
         throw Kanopya::Exception::Internal::Inconsistency(
             error => "Source and dest service provider have not the same collector manager"

@@ -43,11 +43,14 @@ package Monitor;
 
 use strict;
 use warnings;
+
 use XML::Simple;
-use Administrator;
-use Entity::ServiceProvider::Inside::Cluster;
+use BaseDB;
+use Entity::ServiceProvider::Cluster;
 use General;
 use Kanopya::Config;
+use MonitorManager;
+
 use Log::Log4perl "get_logger";
 if ($^O eq 'linux') {
 	require RRDTool::OO;
@@ -101,11 +104,13 @@ sub new {
     }
     mkdir "$self->{_graph_dir}/tmp";
 
-    # Get Administrator
-    my ($login, $password) = ($conf->{user}{name}, $conf->{user}{password});    
-    Administrator::authenticate( login => $login, password => $password );
-    $self->{_admin} = Administrator->new();
-    
+    # Authenticate
+    BaseDB->authenticate(login => $conf->{user}{name}, password => $conf->{user}{password});
+
+    # Instanciate the monitor manager
+    # TODO: Do not access to the private _adm
+    $self->{monitormanager} = MonitorManager->new(schemas => BaseDB->_adm->{schema});
+
     return $self;
 }
 
@@ -141,15 +146,14 @@ sub retrieveHostsByCluster {
 
     my %hosts_by_cluster;
 
-    my $adm = $self->{_admin};
-    my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {}, prefetch => [ 'nodes.host' ]);
+    my @clusters = Entity::ServiceProvider::Cluster->search(hash => {}, prefetch => [ 'nodes.host' ]);
     foreach my $cluster (@clusters) {
         my @components = $cluster->getComponents(category => 'all');
         my @components_name = map { $_->component_type->component_name } @components;
 
         my %mb_info;
         foreach my $mb ($cluster->getHosts()) {
-            $mb_info{$mb->host_hostname} = {
+            $mb_info{$mb->node->node_hostname} = {
                 ip         => $mb->adminIp,
                 state      => $mb->host_state,
                 components => \@components_name
@@ -163,7 +167,7 @@ sub retrieveHostsByCluster {
 sub getClustersName {
     my $self = shift;
 
-    my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {});
+    my @clusters = Entity::ServiceProvider::Cluster->search(hash => {});
     my @clustersName = map { $_->cluster_name } @clusters;
 
     return @clustersName;
@@ -246,7 +250,7 @@ sub getSetDesc {
     my $set_label = $args{set_label};
     if ($set_label =~ /(.+)\..+/ ) {$set_label = $1;}
         
-    return $self->{_admin}->{manager}{monitor}->getSetDesc( set_name => $set_label );
+    return $self->{monitormanager}->getSetDesc(set_name => $set_label);
 }
 
 =head2 rrdName

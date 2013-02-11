@@ -57,7 +57,7 @@ sub updateHostData {
 
     my $start_time = time();
     my $host = $args{host};
-    my $host_name = $host->host_hostname;
+    my $host_name = $host->node->node_hostname;
     my $host_ip = $host->adminIp;
     my $host_reachable = 1;
     my %all_values = ();
@@ -260,7 +260,7 @@ sub updateClusterNodeCount {
     Desc : Aggregate and store indicators values for each set for a cluster
     
     Args :
-        cluster : Entity::ServiceProvider::Inside::Cluster
+        cluster : Entity::ServiceProvider::Cluster
         hosts_values : hash ref : indicators values of each set for each hosts
         collect_time : seconds since Epoch when hosts data have been collected 
     
@@ -284,7 +284,7 @@ sub updateClusterData {
         # Group indicators values by set
         my %sets;
         foreach my $mb (@in_node_mb) {
-            my $host_name = $mb->getAttr(name => "host_hostname");
+            my $host_name = $mb->node->node_hostname;
             my @sets_name = keys %{ $hosts_values->{ $host_name } };
             foreach my $set_name ( @sets_name ) {
                 push @{$sets{$set_name}}, $hosts_values->{ $host_name }{$set_name};
@@ -330,9 +330,8 @@ sub updateClusterData {
     }
 
     # log cluster nodes state
-    my @state_log = map { $_->getAttr(name => "host_hostname") .
-                          " (" . $_->getAttr( name => "host_state" ) .
-                          ", node:" .  $_->getNodeState() . ")"
+    my @state_log = map { $_->node->node_hostname . " (" .
+                          $_->host_state . ", node:" .  $_->getNodeState() . ")"
                         } @mbs;
 
     $log->debug( "# '$cluster_name' nodes : " . join " | ", @state_log );
@@ -373,7 +372,7 @@ sub update {
         # Update data for each host #
         #############################
         my %hosts_values = ();
-        my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {}, expand => ['nodes']);
+        my @clusters = Entity::ServiceProvider::Cluster->search(hash => {}, expand => ['nodes']);
 
         foreach my $cluster (@clusters) {
             $log->info("# Update nodes data of cluster " . $cluster->getAttr( name => "cluster_name"));
@@ -417,7 +416,7 @@ sub update {
                     $params{sets} = \@net_monitored_sets;
                     $net_data = $self->updateHostData( %params );
                 }
-                $hosts_values{ $host->host_hostname } = Hash::Merge::merge($db_data, $net_data);
+                $hosts_values{ $host->node->node_hostname } = Hash::Merge::merge($db_data, $net_data);
             }
         }
 

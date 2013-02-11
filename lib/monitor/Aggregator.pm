@@ -13,10 +13,9 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package Aggregator;
 
-use base 'BaseDB';
-
 use strict;
 use warnings;
+
 use General;
 use Data::Dumper;
 use XML::Simple;
@@ -54,11 +53,10 @@ sub new {
     my $self = {};
     bless $self, $class;
 
-    # Get Administrator
-    my $conf               = getAggregatorConf();
+    my $conf = getAggregatorConf();
+
     my ($login, $password) = ($conf->{user_name}, $conf->{user_password});
-    Administrator::authenticate( login => $login, password => $password );
-    $self->{_admin} = Administrator->new();
+    BaseDB->authenticate(login => $login, password => $password);
 
     return $self;
 };
@@ -119,7 +117,7 @@ sub update() {
     for my $service_provider (@service_providers) {
         eval {
             eval {
-                $service_provider->getManager(manager_type => "collector_manager");
+                $service_provider->getManager(manager_type => "CollectorManager");
             };
             if (not $@){
                 $log->info('Aggregator collecting for service provider '.  $service_provider->id);

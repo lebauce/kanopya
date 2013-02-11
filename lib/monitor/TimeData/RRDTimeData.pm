@@ -307,12 +307,12 @@ sub updateTimeDataStore {
     my $value      = (defined $args{'value'})      ? $args{'value'}      : 'U';
 
     my $cmd = $rrd.' updatev '.$dir.$name.' -t '.$datasource.' '.$time.':'.$value;
-    $log->debug($cmd);
+#    $log->debug($cmd);
     # print $cmd."\n";
 
     my $exec =`$cmd 2>&1`;
     # print $exec."\n";
-    $log->debug($exec);
+#    $log->debug($exec);
 
     if ($exec =~ m/^ERROR.*/) {
         throw Kanopya::Exception::Internal(error => 'RRD update failed: '.$exec);
@@ -371,7 +371,7 @@ sub getLastUpdatedValue {
     }
 
     #print Dumper(\%values);
-    $log->debug(Dumper(\%values));
+#    $log->debug(Dumper(\%values));
     return %values;
 }
 

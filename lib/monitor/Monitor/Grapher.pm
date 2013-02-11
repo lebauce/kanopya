@@ -614,7 +614,7 @@ sub graphFromConf {
     }
     my @time_laps = ('1200', 'hour', 'day');
     
-    my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {});
+    my @clusters = Entity::ServiceProvider::Cluster->search(hash => {});
     CLUSTER:
     foreach my $cluster (@clusters) {
         eval {
@@ -624,7 +624,7 @@ sub graphFromConf {
         
             my $graphs_settings = $self->{_admin}->{manager}{monitor}->getClusterGraphSettings( cluster_id => $cluster_id );
             
-            my @nodes = map { $_->host_hostname } @ { $cluster->getHosts() };
+            my @nodes = map { $_->node->node_hostname } @ { $cluster->getHosts() };
             
             # Graph Node Count
             foreach my $laps (@time_laps) {
