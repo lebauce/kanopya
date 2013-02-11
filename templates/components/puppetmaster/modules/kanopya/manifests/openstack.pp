@@ -20,6 +20,49 @@ class kanopya::keystone($dbserver, $password) {
 		grant    => ['all'],
 		tag      => "${dbserver}",
 	}
+
+	Keystone_user <<| tag == "${fqdn}" |>>
+}
+
+class kanopya::glance($dbserver, $password, $keystone, $email) {
+	@@mysql::db { 'glance':
+		user     => 'glance',
+		password => "${password}",
+		host     => "${ipaddress}",
+		grant    => ['all'],
+		tag      => "${dbserver}",
+	}
+
+	@@keystone_user { 'glance':
+		ensure   => present,
+		password => "${keystone}",
+		email    => "${email}",
+		tenant   => 'services',
+		tag      => "${keystone}"
+	}
+
+	class { 'glance::api':
+		verbose           => 'False',
+		debug             => 'False',
+		auth_type         => 'keystone',
+		auth_port         => '35357',
+		keystone_tenant   => 'services',
+		keystone_user     => 'glance',
+		keystone_password => 'glance',
+		sql_connection    => "mysql://glance:glance@${dbserver}/glance",
+	}
+
+	class { 'glance::registry':
+		verbose           => 'True',
+		debug             => 'True',
+		auth_type         => 'keystone',
+		keystone_tenant   => 'services',
+		keystone_user     => 'glance',
+		keystone_password => 'glance',
+		sql_connection    => "mysql://glance:glance@${dbserver}/glance",
+	}
+
+	class { 'glance::backend::file': }
 }
 
 class kanopya::novacontroller($api_admin_password, $db_server, $db_password) {

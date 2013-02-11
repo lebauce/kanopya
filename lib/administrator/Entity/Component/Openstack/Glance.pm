@@ -32,10 +32,27 @@ sub getAttrDef { return ATTR_DEF; }
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
+    my $sqlconnection;
+    my $sql = $self->mysql5;
+    my $keystone = $self->nova_controller->keystone;
+    
+    if (ref($sql) ne 'Entity::Component::Mysql5') {
+        throw Kanopya::Exception::Internal(
+            error => "Only mysql is currently supported as DB backend"
+        );
+    }
+
     return "if \$kanopya_openstack_repository == undef {\n" .
            "\tclass { 'kanopya::openstack::repository': }\n" .
            "\t\$kanopya_openstack_repository = 1\n" .
+           "}\n" .
+           "class { 'kanopya::glance':\n" .
+           "\tdbserver => '" . $sql->service_provider->getMasterNode->adminIp . "',\n" .
+           "\tpassword => 'glance',\n" .
+           "\tkeystone => '" . $keystone->service_provider->getMasterNode->fqdn . "',\n" .
+           "\temail    => '" . $sql->service_provider->user->email . "'\n" .
            "}\n";
+    ;
 }
 
 1;
