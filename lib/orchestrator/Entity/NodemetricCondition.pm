@@ -156,13 +156,18 @@ sub updateName {
 sub toString {
     my $self = shift;
 
+    # Not used yet due to bad Combination::computeUnit() behavior (see also AggregateCondition::toString())
+    my $unit = '';
+    if ((ref $self->right_combination) eq 'Entity::Combination::ConstantCombination') {
+        my $left_unit = $self->left_combination->combination_unit;
+        if ($left_unit && (($left_unit ne '?') || ($left_unit ne '-'))) {
+            $unit = $left_unit;
+        }
+    }
+
     return  $self->left_combination->combination_formula_string.' '
            .$self->nodemetric_condition_comparator.' '
-           .$self->right_combination->combination_formula_string
-           .((ref $self->right_combination) eq 'Entity::Combination::ConstantCombination'
-                ? ' ' . $self->left_combination->combination_unit
-                : ''
-            );
+           .$self->right_combination->combination_formula_string;
 };
 
 sub evalOnOneNode{
