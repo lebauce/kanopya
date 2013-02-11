@@ -47,12 +47,6 @@ use strict;
 use warnings;
 
 use ParamPreset;
-use Entity::ServiceProvider::Inside::Cluster;
-use Entity::Network;
-use Entity::Netconf;
-use Entity::Masterimage;
-use Entity::Kernel;
-use ComponentType;
 
 use Clone qw(clone);
 
@@ -612,20 +606,14 @@ sub searchManagers {
                          required => [ 'component_category' ],
                          optional => { 'service_provider_id' => undef });
 
-    my $types = {
-        component => 'Entity::Component',
-        connector => 'Entity::Connector',
+    my $searchargs = {
+        by_category => $args{component_category}
     };
-
-    my @managers;
-    for my $name (keys %{$types}) {
-        my $filters = { $name . '_type.' . $name . '_category' => $args{component_category} };
-        if (defined $args{service_provider_id}) {
-            $filters->{service_provider_id} = $args{service_provider_id};
-        }
-        @managers = (@managers, $types->{$name}->search(hash => $filters));
+    if (defined $args{service_provider_id}) {
+        $searchargs->{hash}->{service_provider_id} = $args{service_provider_id};
     }
-    return @managers;
+
+    return Entity::Component->search(%$searchargs);
 }
 
 
