@@ -15,14 +15,14 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package EEntity::EServiceProvider::EInside::ECluster;
+package EEntity::EServiceProvider::ECluster;
 use base 'EEntity';
 
 use strict;
 use warnings;
 
 use Entity;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 use General;
 use Kanopya::Config;
 use EFactory;
@@ -103,7 +103,7 @@ sub create {
     if ($@) {
         $log->debug("Automatically add the admin interface as it is not defined.");
 
-        my $kanopya   = Entity::ServiceProvider::Inside::Cluster->find(hash => { cluster_name => 'Kanopya' });
+        my $kanopya   = Entity::ServiceProvider::Cluster->find(hash => { cluster_name => 'Kanopya' });
         my $interface = Entity::Interface->find(hash => {
                             service_provider_id => $kanopya->id,
                             'netconf_interfaces.netconf.netconf_role.netconf_role_id' => $adminrole->id
@@ -118,8 +118,8 @@ sub addNode {
     my $self = shift;
     my %args = @_;
 
-    my $host_manager = $self->getManager(manager_type => 'host_manager');
-    my $host_manager_params = $self->getManagerParameters(manager_type => 'host_manager');
+    my $host_manager = $self->getManager(manager_type => 'HostManager');
+    my $host_manager_params = $self->getManagerParameters(manager_type => 'HostManager');
    
     my @interfaces = $self->interfaces;
     $host_manager_params->{interfaces} = \@interfaces;
@@ -182,7 +182,7 @@ sub generateHostsConf {
     # we add each nodes
     foreach my $node (values %$nodes) {
         my $tmp = {
-            hostname   => $node->getAttr(name => 'host_hostname'),
+            hostname   => $node->node->node_hostname,
             domainname => $args{kanopya_domainname},
             ip         => $node->adminIp
         };
@@ -237,7 +237,7 @@ sub updateHostsFile {
     my $template = Template->new(General::getTemplateConfiguration());
     my $input = "hosts.tt";
 
-    my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {});
+    my @clusters = Entity::ServiceProvider::Cluster->search(hash => {});
     my $cluster_id = $self->getAttr(name => 'cluster_id');
 
     my @all_nodes = ();
@@ -247,7 +247,7 @@ sub updateHostsFile {
         my $nodes = $cluster->getHosts();
         foreach my $node (values %$nodes) {
             my $tmp = {
-                hostname   => $node->getAttr(name => 'host_hostname'),
+                hostname   => $node->node->node_hostname,
                 domainname => $args{kanopya_domainname},
                 ip         => $node->adminIp
             };

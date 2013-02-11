@@ -13,14 +13,15 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package Entity::ServiceProvider::Outside::UnifiedComputingSystem;
-use base 'Entity::ServiceProvider::Outside';
+package Entity::ServiceProvider::UnifiedComputingSystem;
+use base 'Entity::ServiceProvider';
 
 use strict;
 use warnings;
 
 use NetAddr::IP;
-use Entity::Connector::UcsManager;
+use Entity::Component::UcsManager;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
@@ -62,6 +63,7 @@ sub methods {
 sub getUcs {
     my $class = shift;
     my %args = @_;
+
     General::checkParams(args => \%args, required => ['hash']);
 
     return $class->search(%args);
@@ -73,8 +75,8 @@ sub new {
 
     my $self = $class->SUPER::new(%args);
 
-    my $connector = Entity::Connector::UcsManager->new();
-    $self->addConnector('connector' => $connector);
+    my $component = Entity::Component::UcsManager->new();
+    $self->addComponent(component => $component);
 
     return $self;
 }
@@ -86,22 +88,22 @@ sub remove {
 
 sub getMasterNodeIp {
     my $self = shift;
-    return $self->{_dbix}->get_column('ucs_addr');
+    return $self->ucs_addr;
 }
 
 sub toString {
     my $self = shift;
-    my $str = $self->{_dbix}->get_column('ucs_name'); 
-    return $str.' (UCS Equipment)';
+
+    return $self->ucs_name . ' (UCS Equipment)';
 }
 
 sub synchronize {
     my ($self) = @_;
-    my @connectors = $self->getConnectors();
-    
-    foreach my $connector (@connectors) {
-        if ($connector->isa("Entity::Connector::UcsManager") ) {
-            $connector->synchronize();
+    my @components = $self->getComponents();
+
+    foreach my $component (@components) {
+        if ($component->isa("Entity::Component::UcsManager") ) {
+            $component->synchronize();
         }
     }
 }

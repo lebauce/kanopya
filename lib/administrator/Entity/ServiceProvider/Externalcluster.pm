@@ -26,13 +26,12 @@ Specific Service Provider representing a cluster not directly managed by Kanopya
 
 =cut
 
-package Entity::ServiceProvider::Outside::Externalcluster;
-use base 'Entity::ServiceProvider::Outside';
+package Entity::ServiceProvider::Externalcluster;
+use base 'Entity::ServiceProvider';
 
 use strict;
 use warnings;
 use Kanopya::Exceptions;
-use Administrator;
 use General;
 
 use Entity::Combination::NodemetricCombination;
@@ -43,7 +42,7 @@ use Entity::AggregateCondition;
 use Entity::Rule::AggregateRule;
 use Entity::Clustermetric;
 use Entity::CollectorIndicator;
-use Externalnode;
+use Node;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -109,7 +108,7 @@ sub addManager {
 
     my $manager = $self->SUPER::addManager( %args );
 
-    if ($args{"manager_type"} eq 'collector_manager') {
+    if ($args{"manager_type"} eq 'CollectorManager') {
         $self->monitoringDefaultInit( no_default_conf => $args{no_default_conf} );
     }
 
@@ -156,9 +155,9 @@ sub addNode {
 
     General::checkParams(args => \%args, required => ['hostname']);
 
-    $self->{_dbix}->parent->externalnodes->create({
-        externalnode_hostname   => $args{hostname},
-        externalnode_state      => 'down',
+    $self->{_dbix}->parent->nodes->create({
+        node_hostname   => $args{hostname},
+        monitoring_state      => 'down',
     });
 }
 
@@ -166,12 +165,12 @@ sub getNode {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['externalnode_id']);
+    General::checkParams(args => \%args, required => ['node_id']);
     my $repNode;
-    my $node = $self->{_dbix}->parent->externalnodes->find({
-        externalnode_id   => $args{externalnode_id},
+    my $node = $self->{_dbix}->parent->nodes->find({
+        node_id   => $args{node_id},
     });
-    $repNode->{hostname} = $node->get_column('externalnode_hostname');
+    $repNode->{hostname} = $node->get_column('node_hostname');
     return $repNode;
 }
 
@@ -180,11 +179,11 @@ sub getNodeId {
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['hostname']);
-    my $node = $self->{_dbix}->parent->externalnodes->find({
-        externalnode_hostname   => $args{hostname},
+    my $node = $self->{_dbix}->parent->nodes->find({
+        node_hostname   => $args{hostname},
     });
 
-    return $node->get_column('externalnode_id');
+    return $node->get_column('node_id');
 }
 
 
@@ -196,12 +195,9 @@ sub getNodeId {
 sub getNodeState {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => ['hostname']);
+    General::checkParams(args => \%args, required => [ 'hostname' ]);
 
-    my $node       = Externalnode->find(hash => {externalnode_hostname => $args{hostname}});
-    my $node_state = $node->getAttr(name => 'externalnode_state');
-
-    return $node_state;
+    return Node->find(hash => { node_hostname => $args{hostname} })->monitoring_state;
 }
 
 sub updateNodeState {
@@ -212,13 +208,13 @@ sub updateNodeState {
     my $state    = $args{state};
     my $host;
 
-    $host = Externalnode->find(hash => {
-                externalnode_hostname => $hostname,
-                service_provider_id   => $self->getId,
+    $host = Node->find(hash => {
+                node_hostname       => $hostname,
+                service_provider_id => $self->id,
             });
 
     if (defined $host) {
-        $host->setAttr(name => 'externalnode_state', value => $state);
+        $host->setAttr(name => 'monitoring_state', value => $state);
         $host->save();
     }
 }
@@ -229,18 +225,18 @@ sub getDisabledNodes {
 
     my $shortname = defined $args{shortname};
 
-    my $node_rs = $self->{_dbix}->parent->externalnodes;
+    my $node_rs = $self->{_dbix}->parent->nodes;
 
     my $domain_name;
     my @nodes;
     while (my $node_row = $node_rs->next) {
-        if($node_row->get_column('externalnode_state') eq 'disabled'){
-            my $hostname = $node_row->get_column('externalnode_hostname');
+        if($node_row->get_column('monitoring_state') eq 'disabled'){
+            my $hostname = $node_row->get_column('node_hostname');
             $hostname =~ s/\..*// if ($shortname);
             push @nodes, {
                 hostname           => $hostname,
-                state              => $node_row->get_column('externalnode_state'),
-                id                 => $node_row->get_column('externalnode_id'),
+                state              => $node_row->get_column('monitoring_state'),
+                id                 => $node_row->get_column('node_id'),
                 num_verified_rules => $node_row->verified_noderules
                                                ->search({
                                                  verified_noderule_state => 'verified'})
@@ -282,8 +278,8 @@ sub updateNodes {
 
     General::checkParams(args => \%args, optional => {'synchro' => undef});
 
-     my $ds_manager = $self->getManager( manager_type => 'directory_service_manager' );
-     my $mparams    = $self->getManagerParameters( manager_type => 'directory_service_manager' );
+     my $ds_manager = $self->getManager( manager_type => 'DirectoryServiceManager' );
+     my $mparams    = $self->getManagerParameters( manager_type => 'DirectoryServiceManager' );
      $args{ad_nodes_base_dn}    = $mparams->{ad_nodes_base_dn};
 
      my $nodes;
@@ -298,10 +294,10 @@ sub updateNodes {
 
     # Differences between current nodes and retrieved nodes
     my @nodes_to_remove;
-    for my $node ($self->externalnodes) {
-        if (exists $nodes_to_add{$node->externalnode_hostname}) {
+    for my $node ($self->nodes) {
+        if (exists $nodes_to_add{$node->node_hostname}) {
             # node already in cluster, do not add it
-            delete $nodes_to_add{$node->externalnode_hostname};
+            delete $nodes_to_add{$node->node_hostname};
         } else {
             # node not in retrieved list, we delete it (delayed because it's current loop item)
             push @nodes_to_remove, $node;
@@ -318,10 +314,10 @@ sub updateNodes {
     # Add new nodes
     my $added_node_count = 0;
     for my $node_name (keys %nodes_to_add) {
-        Externalnode->new(
-            externalnode_hostname   => $node_name,
-            externalnode_state      => 'down',
-            service_provider_id     => $self->id,
+        Node->new(
+            node_hostname       => $node_name,
+            monitoring_state    => 'down',
+            service_provider_id => $self->id,
         );
         $added_node_count++;
     }
@@ -349,15 +345,15 @@ sub getNodesMetrics {
     General::checkParams(args => \%args, required => ['indicators', 'time_span']);
 
     my $shortname = defined $args{shortname};
-    my $ms_connector    = $self->getManager(manager_type => 'collector_manager');
-    my $mparams         = $self->getManagerParameters( manager_type => 'collector_manager' );
+    my $ms_connector    = $self->getManager(manager_type => 'CollectorManager');
+    my $mparams         = $self->getManagerParameters( manager_type => 'CollectorManager' );
 
     my @hostnames = ();
-    my @nodes = $self->externalnodes;
+    my @nodes = $self->nodes;
 
     for my $node (@nodes) {
-        if( ! ($node->externalnode_state eq 'disabled')) {
-            push @hostnames, $node->externalnode_hostname
+        if( ! ($node->monitoring_state eq 'disabled')) {
+            push @hostnames, $node->node_hostname
         }
     }
 
@@ -420,12 +416,10 @@ sub generateClustermetricAndCombination{
 sub monitoringDefaultInit {
     my ($self, %args) = @_;
 
-    my $adm = Administrator->new();
-
     return if ($args{no_default_conf});
 
     my $service_provider_id = $self->id;
-    my @collector_indicators = $self->getManager(manager_type => "collector_manager")->collector_indicators;
+    my @collector_indicators = $self->getManager(manager_type => "CollectorManager")->collector_indicators;
 
     my $active_session_indicator_id;
     my ($low_mean_cond_mem_id, $low_mean_cond_cpu_id, $low_mean_cond_net_id);

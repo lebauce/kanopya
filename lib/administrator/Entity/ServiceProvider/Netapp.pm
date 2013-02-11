@@ -14,12 +14,13 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package Entity::ServiceProvider::Outside::Netapp;
-use base 'Entity::ServiceProvider::Outside';
+package Entity::ServiceProvider::Netapp;
+use base 'Entity::ServiceProvider';
 
 use NetAddr::IP;
-use Entity::Connector::NetappLunManager;
-use Entity::Connector::NetappVolumeManager;
+use Entity::Component::NetappLunManager;
+use Entity::Component::NetappVolumeManager;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
@@ -65,11 +66,11 @@ sub new {
 
     my $self = $class->SUPER::new(%args);
 
-    my $connector = Entity::Connector::NetappLunManager->new();
-    $self->addConnector('connector' => $connector);
+    my $component = Entity::Component::NetappLunManager->new();
+    $self->addComponent(component => $component);
 
-    $connector = Entity::Connector::NetappVolumeManager->new();
-    $self->addConnector('connector' => $connector);
+    $component = Entity::Component::NetappVolumeManager->new();
+    $self->addComponent(component => $component);
 
     return $self;
 }
@@ -81,12 +82,14 @@ sub remove {
 
 sub getMasterNodeIp {
     my $self = shift;
-    return $self->{_dbix}->get_column('netapp_addr');
+
+    return $self->netapp_addr;
 }
 
 sub toString {
     my $self = shift;
-    my $string = $self->{_dbix}->get_column('netapp_name');
+
+    my $string = $self->netapp_name;
     $string .= ' (NetApp Equipement)';
     return $string;
 }
@@ -97,17 +100,17 @@ sub getState {
 
 sub synchronize {
     my ($self) = @_;
-    my @connectors = $self->getConnectors();
+    my @components = $self->getComponents();
     
-    foreach my $connector (@connectors) {
-        if ($connector->isa("Entity::Connector::NetappVolumeManager") ) {
-            $connector->synchronize();
+    foreach my $component (@components) {
+        if ($component->isa("Entity::Component::NetappVolumeManager") ) {
+            $component->synchronize();
         }
     }
 
-    foreach my $connector (@connectors) {
-        if ($connector->isa("Entity::Connector::NetappLunManager") ) {
-            $connector->synchronize();
+    foreach my $component (@components) {
+        if ($component->isa("Entity::Component::NetappLunManager") ) {
+            $component->synchronize();
         }
     }
 }

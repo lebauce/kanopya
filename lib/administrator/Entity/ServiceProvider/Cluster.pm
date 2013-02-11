@@ -25,37 +25,29 @@ This object allows to manipulate cluster configuration
 
 =cut
 
-package Entity::ServiceProvider::Inside::Cluster;
-use base 'Entity::ServiceProvider::Inside';
+package Entity::ServiceProvider::Cluster;
+use base 'Entity::ServiceProvider';
 
 use strict;
 use warnings;
-use Kanopya::Exceptions;
-use Kanopya::Config;
+
+use General;
+use Node;
+use Indicatorset;
+use Collect;
+use BillingManager;
+use ServiceProviderManager;
 use Entity::Component;
-use Entity::Host;
-use Externalnode::Node;
-use Entity::Systemimage;
-use Externalnode::Node;
 use Entity::Operation;
 use Entity::Workflow;
-use Entity::Combination::NodemetricCombination;
 use Entity::Clustermetric;
+use Entity::Combination::NodemetricCombination;
 use Entity::Combination::AggregateCombination;
-use Entity::Policy;
-use Administrator;
-use General;
-use ServiceProviderManager;
 use Entity::ServiceTemplate;
-use VerifiedNoderule;
-use Entity::Indicator;
-use Indicatorset;
 use Entity::Billinglimit;
-use Entity::Component::Kanopyaworkflow0;
-use Entity::Component::Kanopyacollector1;
-use BillingManager;
-use ComponentType;
+use ClassType::ComponentType;
 use Manager::HostManager;
+use Kanopya::Config;
 
 use Hash::Merge;
 use DateTime;
@@ -253,7 +245,7 @@ sub label {
         managers => {
             host_manager => {
                 manager_id     => 2,
-                manager_type   => 'host_manager',
+                manager_type   => 'HostManager',
                 manager_params => {
                     cpu => 2,
                     ram => 1024,
@@ -317,7 +309,7 @@ sub create {
     General::checkParams(args => $confpattern, required => [ 'managers' ]);
     General::checkParams(args => $confpattern->{managers}, required => [ 'host_manager', 'disk_manager' ]);
 
-    $log->debug("Final parameters after applying policies:\n" . Dumper($confpattern));
+#    $log->debug("Final parameters after applying policies:\n" . Dumper($confpattern));
 
     my $composite_params;
     for my $name ('managers', 'interfaces', 'components', 'billing_limits', 'orchestration') {
@@ -428,46 +420,33 @@ sub configureManagers {
 
     my $kanopya = Entity->get(id => Kanopya::Config::get("executor")->{cluster}->{executor});
 
-    # Workaround to handle connectors that have both category.
-    # We need to fix this when we will merge inside/outside.
-    my $wok_disk_manager   = $args{managers}->{disk_manager}->{manager_id};
-    my $wok_export_manager = $args{managers}->{export_manager}->{manager_id};
-    if ($wok_disk_manager and $wok_export_manager) {
-        if ($wok_disk_manager != $kanopya->getComponent(name => "Lvm", version => "2")->id and
-            $wok_disk_manager != $kanopya->getComponent(name => "Storage")->id) {
-            $args{managers}->{export_manager}->{manager_id} = $wok_disk_manager;
-        }
-    }
-
     # Install new managers or/and new managers params if required
     if (defined $args{managers}) {
         # Add default workflow manager
         my $workflow_manager = $kanopya->getComponent(name => "Kanopyaworkflow", version => "0");
-        $args{managers}->{workflow_manager} = {
-            manager_id   => $workflow_manager->id,
-            manager_type => "workflow_manager"
-        };
+        $args{managers}->{workflow_manager} = { manager_id   => $workflow_manager->id,
+                                                manager_type => "WorkflowManager" };
 
         # Add default collector manager
         my $collector_manager = $kanopya->getComponent(name => "Kanopyacollector", version => "1");
-        $args{managers}->{collector_manager} = {
-            manager_id   => $collector_manager->id,
-            manager_type => "collector_manager"
-        };
+        $args{managers}->{collector_manager} = { manager_id   => $collector_manager->id,
+                                                 manager_type => "CollectorManager" };
 
         for my $manager (values %{$args{managers}}) {
             # Check if the manager is already set, add it otherwise,
             # and set manager parameters if defined.
             eval {
-                ServiceProviderManager->find(hash => { manager_type        => $manager->{manager_type},
-                                                       service_provider_id => $self->id });
+                ServiceProviderManager->find(
+                    hash        => { service_provider_id => $self->id },
+                    by_category => $manager->{manager_type},
+                );
             };
             if ($@) {
                 next if not $manager->{manager_id};
                 $self->addManager(manager_id   => $manager->{manager_id},
                                   manager_type => $manager->{manager_type});
 
-                if ($manager->{manager_type} eq 'collector_manager') {
+                if ($manager->{manager_type} eq 'CollectorManager') {
                     $self->initCollectorManager(collector_manager => Entity->get(id => $manager->{manager_id}));
                 }
             }
@@ -480,8 +459,8 @@ sub configureManagers {
         }
     }
 
-    my $disk_manager   = $self->getManager(manager_type => 'disk_manager');
-    my $export_manager = eval { $self->getManager(manager_type => 'export_manager') };
+    my $disk_manager   = $self->getManager(manager_type => 'DiskManager');
+    my $export_manager = eval { $self->getManager(manager_type => 'ExportManager') };
 
     # If the export manager exists, deduce the boot policy
     if(not ($export_manager and $self->cluster_boot_policy)) {
@@ -496,13 +475,13 @@ sub configureManagers {
                                   boot_policy => $self->cluster_boot_policy
                               );
 
-            $self->addManager(manager_id => $export_manager->id, manager_type => "export_manager");
+            $self->addManager(manager_id => $export_manager->id, manager_type => "ExportManager");
         }
     }
     
     if ($self->cluster_boot_policy eq Manager::HostManager->BOOT_POLICIES->{pxe_iscsi}) {
         $self->addComponentFromType(
-            component_type_id => ComponentType->find(hash => { component_name => "Openiscsi" })->id
+            component_type_id => ClassType::ComponentType->find(hash => { component_name => "Openiscsi" })->id
         );
     }
 
@@ -515,7 +494,7 @@ sub configureManagers {
     #       but there will be export manager params consitency problem if policies are updated.
     if ($readonly_param) {
         $self->addManagerParameter(
-            manager_type => 'export_manager',
+            manager_type => 'ExportManager',
             name         => $readonly_param->{name},
             value        => $readonly_param->{value}
         );
@@ -609,7 +588,7 @@ sub configureOrchestration {
         $sp->nodemetric_rules,
         $sp->aggregate_rules
         ) {
-        $_->clone( dest_service_provider_id => $self->id );
+        $_->clone(dest_service_provider_id => $self->id);
     }
 }
 
@@ -619,7 +598,6 @@ sub configureOrchestration {
 
 sub remove {
     my $self = shift;
-    my $adm = Administrator->new();
 
     $log->debug("New Operation Remove Cluster with cluster id : " .  $self->id);
     Entity::Operation->enqueue(
@@ -714,83 +692,15 @@ sub addComponent {
     return $component;
 }
 
-=head2 getComponents
-
-    Desc : This function get components used in a cluster. This function allows to select
-            category of components or all of them.
-    args:
-        category : String : Component category
-
-    return : a hashref of components, it is indexed on component_instance_id
-
-=cut
-
-sub getComponents {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'category' ],
-                                         optional => { order_by => undef } );
-
-    my $hash = { 'service_provider_id' => $self->id };
-
-    if (defined ($args{category}) and $args{category} ne "all") {
-        $hash->{'component_type.component_category'} = $args{category};
-    };
-
-    my @components = Entity::Component->search(hash => $hash);
-
-    if (defined ($args{order_by})) {
-        my $criteria = $args{order_by};
-        @components = sort { $a->$criteria <=> $b->$criteria } @components;
-    }
-
-    return wantarray ? @components : \@components;
-}
-
-=head2 getComponent
-
-    Desc : This function get component used in a cluster. This function allows to select
-            a particular component with its name and version.
-    args:
-        administrator : Administrator : Administrator object to instanciate all components
-        name : String : Component name
-        version : String : Component version
-    return : a component instance
-
-=cut
-
-sub getComponent {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args);
-
-    my $hash = { 'service_provider_id' => $self->id };
-
-    if (defined ($args{name})) {
-        $hash->{'component_type.component_name'} = $args{name};
-    }
-
-    if (defined ($args{category})) {
-        $hash->{'component_type.component_category'} = $args{category};
-    }
-
-    if (defined ($args{version})) {
-        $hash->{'component_type.component_version'} = $args{version};
-    }
-
-    return Entity::Component->find(hash => $hash);
-}
-
 sub getMasterNode {
     my $self = shift;
     my $masternode;
 
     eval {
-        $masternode = Externalnode::Node->find(hash => {
-                          inside_id   => $self->id,
-                          master_node => 1
-                      } );
+        $masternode = Node->find(hash => {
+                          service_provider_id => $self->id,
+                          master_node         => 1
+                      });
     };
     if ($@) {
         return undef;
@@ -814,7 +724,7 @@ sub getMasterNodeIp {
 sub getMasterNodeFQDN {
     my $self = shift;
 
-    return $self->getMasterNode()->host_hostname . '.' . $self->cluster_domainname;
+    return $self->getMasterNode()->node->node_hostname . '.' . $self->cluster_domainname;
 }
 
 sub getMasterNodeId {
@@ -830,23 +740,12 @@ sub getMasterNodeId {
 
 sub getMasterNodeSystemimage {
     my $self = shift;
-    my $node_instance_rs = $self->{_dbix}->parent->search_related(
-                               "nodes", { master_node => 1 }
-                           )->single;
 
-    if(defined $node_instance_rs) {
-        return Entity::Systemimage->get(id => $node_instance_rs->get_column('systemimage_id'));
-    }
+    my $node = $self->findRelated(filters => ['nodes'], hash => { master_node => 1 });
+
+    return $node->systemimage;
 }
 
-=head2 getHosts
-
-    Desc : This function get hosts executing the cluster.
-    args:
-        administrator : Administrator : Administrator object to instanciate all components
-    return : a hashref of host, it is indexed on host_id
-
-=cut
 
 sub getHosts {
     my ($self) = @_;
@@ -864,7 +763,7 @@ sub getHosts {
 sub getHostManager {
     my $self = shift;
 
-    return $self->getManager(manager_type => 'host_manager');
+    return $self->getManager(manager_type => 'HostManager');
 }
 
 =head2 getCurrentNodesCount
@@ -1030,7 +929,6 @@ sub getNewNodeNumber {
 
     # http://rosettacode.org/wiki/Sort_an_integer_array#Perl
     @current_nodes_number =  sort {$a <=> $b} @current_nodes_number;
-    $log->debug("Nodes number sorted: " . Dumper(@current_nodes_number));
 
     my $counter = 1;
     for my $number (@current_nodes_number) {
@@ -1057,12 +955,12 @@ sub getNodesMetrics {
 
     General::checkParams(args => \%args, required => [ 'time_span', 'indicators' ]);
 
-    my $collector_manager = $self->getManager(manager_type => "collector_manager");
-    my $mparams           = $self->getManagerParameters(manager_type => 'collector_manager');
+    my $collector_manager = $self->getManager(manager_type => "CollectorManager");
+    my $mparams           = $self->getManagerParameters(manager_type => 'CollectorManager');
 
     my @nodelist;
     for my $host (@{ $self->getHosts() }) {
-        push @nodelist, $host->host_hostname;
+        push @nodelist, $host->node->node_hostname;
     }
 
     return $collector_manager->retrieveData(
@@ -1133,7 +1031,7 @@ sub generateOverLoadNodemetricRules {
 sub generateDefaultMonitoringConfiguration {
     my ($self, %args) = @_;
 
-    my $indicators = $self->getManager(manager_type => "collector_manager")->getIndicators();
+    my $indicators = $self->getManager(manager_type => "CollectorManager")->getIndicators();
     my $service_provider_id = $self->getId;
 
     # We create a nodemetric combination for each indicator
@@ -1181,18 +1079,15 @@ sub initCollectorManager {
 
     General::checkParams(args => \%args, required => [ 'collector_manager' ]);
 
-    my @indicatorsets = Indicatorset->search (hash => {});
+    my @indicatorsets = Indicatorset->search(hash => {});
 
     foreach my $indicatorset (@indicatorsets) {
         if ($indicatorset->indicatorset_provider eq 'SnmpProvider' ||
             $indicatorset->indicatorset_provider eq 'KanopyaDatabaseProvider') {
-            eval {
-                my $adm = Administrator->new();
-                $adm->{db}->resultset('Collect')->create({
-                    cluster_id      => $self->getId,
-                    indicatorset_id => $indicatorset->indicatorset_id
-                });
-            };
+            Collect->create(
+                service_provider_id => $self->id,
+                indicatorset_id     => $indicatorset->indicatorset_id
+            );
         }
     }
 }
@@ -1202,21 +1097,21 @@ sub initCollectorManager {
 =cut
 
 sub getMonthlyConsommation {
-    my $self    = shift;
+    my $self = shift;
 
     my ($from, $to);
 
-    $to         = DateTime->now;
-    $from       = DateTime->new(
-                    year        => $to->year,
-                    month       => $to->month,
-                    day         => 1,
-                    hour        => 0,
-                    minute      => 0,
-                    second      => 0,
-                    nanosecond  => 0,
-                    time_zone   => $to->time_zone
-                  );
+    $to   = DateTime->now;
+    $from = DateTime->new(
+                year        => $to->year,
+                month       => $to->month,
+                day         => 1,
+                hour        => 0,
+                minute      => 0,
+                second      => 0,
+                nanosecond  => 0,
+                time_zone   => $to->time_zone
+            );
 
     BillingManager::clusterBilling($self->user, $self, $from, $to, 1);
 }
@@ -1268,5 +1163,6 @@ sub update {
         );
     }
 }
+
 
 1;
