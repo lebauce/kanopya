@@ -48,7 +48,7 @@ use constant ATTR_DEF => {
     },
     export_manager_id => {
         pattern      => '^[0-9\.]*$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_extended  => 0
     },
     container_access_export => {
@@ -87,25 +87,6 @@ sub getAttrDef { return ATTR_DEF; }
 
 =begin classdoc
 
-Get the service provider on wich is installed the component that provides the container access.
-
-@return the service provider.
-
-=end classdoc
-
-=cut
-
-sub getServiceProvider {
-    my $self = shift;
-
-    return $self->getExportManager->service_provider;
-}
-
-
-=pod
-
-=begin classdoc
-
 Accessor to get the exported container.
 
 @return the container
@@ -136,7 +117,7 @@ Accessor to get the component that provides the container access.
 sub getExportManager {
     my $self = shift;
 
-    return Entity->get(id => $self->export_manager_id);
+    return $self->export_manager;
 }
 
 

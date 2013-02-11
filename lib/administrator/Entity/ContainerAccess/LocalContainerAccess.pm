@@ -73,10 +73,28 @@ sub new {
         }
     }
 
-    # This type of export is not handled by a manager
-    $args{export_manager_id} = 0;
-
     return $class->SUPER::new(%args);
+}
+
+
+=pod
+
+=begin classdoc
+
+Overrides the accessor of the export manager to raise
+the proper exception.
+
+=end classdoc
+
+=cut
+
+sub export_manager {
+    my $class = shift;
+    my %args = @_;
+
+    throw Kanopya::Exception::Internal(
+              error => "A local container access is not managed by any export manager"
+          );
 }
 
 1;
