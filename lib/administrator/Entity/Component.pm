@@ -33,12 +33,10 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use Data::Dumper;
-use Administrator;
 use General;
-use ComponentType;
-use Log::Log4perl "get_logger";
+use ClassType::ComponentType;
 
+use Log::Log4perl "get_logger";
 my $log = get_logger("");
 my $errmsg;
 
@@ -90,7 +88,6 @@ sub new {
     if ($class !~ /Entity::Component.*::(\D+)(\d*)/) {
         $errmsg = "Entity::Component->new : Entity::Component must not " .
                   "be instanciated without a concret component class";
-        $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
@@ -110,13 +107,28 @@ sub new {
         $hash->{component_version} = $component_version;
     }
 
-    my $self = $class->SUPER::new(component_type_id => ComponentType->find(hash => $hash)->id,
+    my $self = $class->SUPER::new(component_type_id => ClassType::ComponentType->find(hash => $hash)->id,
                                   %$config);
 
     bless $self, $class;
 
     return $self;
 }
+
+sub search {
+    my $class = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, optional => { 'hash' => {} });
+
+    if (defined $args{by_category}) {
+        # TODO: try to use the many-to-mnay relation name 'component_type.component_categories.category_name'
+        my $filter = 'component_type.component_type_categories.component_category.category_name';
+        $args{hash}->{$filter} = delete $args{by_category};
+    }
+    return $class->SUPER::search(%args);
+}
+
 
 =head2 getConf
 
@@ -185,20 +197,8 @@ sub getTemplateDirectory {
     my $template_id = $self->getAttr(name => 'component_template_id'); 
 
     if (defined $template_id) {
-        return $self->{_dbix}->parent->component_template->get_column('component_template_directory');
+        return $self->component_template->component_template_directory;
     }
-}
-
-=head2 getServiceProvider
-
-    Desc: Returns the service provider the component is on
-
-=cut
-
-sub getServiceProvider {
-    my $self = shift;
-
-    return Entity->get(id => $self->getAttr(name => "service_provider_id"));
 }
 
 =head2 remove
@@ -206,14 +206,12 @@ sub getServiceProvider {
     Desc: Overrided to remove associated service_provider_manager
           Managers can't be cascade deleted because they are linked either to a a connector or a component.
 
-    TODO : merge connector and component or make them inerit from a parent class
-
 =cut
 
 sub remove {
     my $self = shift;
 
-    my @managers = ServiceProviderManager->search( hash => {manager_id => $self->id} );
+    my @managers = ServiceProviderManager->search( hash => { manager_id => $self->id } );
     for my $manager (@managers) {
         $manager->delete();
     }
@@ -235,8 +233,8 @@ B<throws>  : None
 sub toString {
     my $self = shift;
 
-    my $component_name = $self->{_dbix}->parent->component_type->get_column('component_name');
-    my $component_version = $self->{_dbix}->parent->component_type->get_column('component_version');
+    my $component_name = $self->component_type->component_name;
+    my $component_version = $self->component_type->component_version;
 
     return $component_name . " " . $component_version;
 }
