@@ -3,7 +3,6 @@ package MasterImage;
 use Dancer ':syntax';
 use Dancer::Plugin::Ajax;
 
-use Administrator;
 use Entity::Masterimage;
 
 prefix undef;

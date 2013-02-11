@@ -63,7 +63,7 @@ function loadServicesDetails(cid, eid, is_iaas) {
                 url     : '/api/component',
                 data    : {
                     'service_provider_id'               : eid,
-                    'component_type.component_category' : 'Cloudmanager'
+                    'component_type.component_category' : 'HostManager'
                 },
                 async   : false,
                 success : function(data) {

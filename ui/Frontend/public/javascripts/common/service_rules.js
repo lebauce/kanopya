@@ -613,7 +613,7 @@ function rule_nodes_tab(cid, rule_id, service_provider_id) {
             // Where rowid = rule_id
             
             $.ajax({
-                 url: '/api/externalnode/' + row.pk + '/verified_noderules?verified_noderule_nodemetric_rule_id=' + rule_id,
+                 url: '/api/node/' + row.pk + '/verified_noderules?verified_noderule_nodemetric_rule_id=' + rule_id,
                  async: false,
                  success: function(answer) {
                     if (answer.length == 0) {
@@ -629,18 +629,18 @@ function rule_nodes_tab(cid, rule_id, service_provider_id) {
             });
         return VerifiedRuleFormat;
     }
-//         url: '/api/externalnode/' + eid,
+//         url: '/api/node/' + eid,
     
     var loadNodeRulesTabGridId = 'rule_nodes_tabs';
     create_grid( {
-        url: '/api/externalnode?externalnode_state=<>,disabled&service_provider_id=' + service_provider_id,
+        url: '/api/node?monitoring_state=<>,disabled&service_provider_id=' + service_provider_id,
         content_container_id: cid,
         grid_id: loadNodeRulesTabGridId,
         grid_class: 'rule_nodes_grid',
         colNames: [ 'id', 'hostname', 'state' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
-            { name: 'externalnode_hostname', index: 'externalnode_hostname', width: 110,},
+            { name: 'node_hostname', index: 'node_hostname', width: 110,},
             { name: 'verified_noderule_state', index: 'verified_noderule_state', width: 60, formatter: verifiedRuleNodesStateFormatter,}, 
         ],
         action_delete : 'no',

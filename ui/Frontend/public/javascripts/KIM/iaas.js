@@ -19,7 +19,7 @@ function vmdetails(spid) {
             { label : 'Monitoring', id : 'resource_monitoring', onLoad : function(cid, eid) { NodeIndicatorDetailsHistorical(cid, eid, spid); } },
             { label : 'Rules', id : 'rules', onLoad : function(cid, eid) { node_rules_tab(cid, eid, spid); } },
         ],
-        title : { from_column : 'externalnode_hostname' }
+        title : { from_column : 'node_hostname' }
     };
 }
 
@@ -207,11 +207,11 @@ function load_hypervisorvm_details(cid, eid, cmgrid) {
 function load_iaas_content (container_id) {
     require('common/formatters.js');
     var iaas   = [];
-    var iaases = getServiceProviders('Cloudmanager');
+    var iaases = getServiceProviders('HostManager');
     for (var i in iaases) {
         for (var component in iaases[i].components) {
             var component = iaases[i].components[component];
-            if (component.component_type.component_category === 'Cloudmanager' &&
+            if (component.component_type.component_category === 'HostManager' &&
                 component.host_type === 'Virtual Machine') {
                 iaases[i].cloudmanager = component;
                 iaas.push(iaases[i]);
@@ -219,7 +219,7 @@ function load_iaas_content (container_id) {
         }
         for (var connector in iaases[i].connectors) {
             var connector = iaases[i].connectors[connector];
-            if (connector.connector_type.connector_category === 'Cloudmanager' &&
+            if (connector.connector_type.connector_category === 'HostManager' &&
                 connector.host_type === 'Virtual Machine') {
                 iaases[i].cloudmanager = connector;
                 iaas.push(iaases[i]);

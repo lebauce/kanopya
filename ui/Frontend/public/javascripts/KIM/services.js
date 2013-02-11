@@ -30,7 +30,7 @@ function servicesListFilter(elem) {
 
 function servicesList (container_id, elem_id) {
     resources  = {};
-    var providers = getServiceProviders('Cloudmanager');
+    var providers = getServiceProviders('HostManager');
     for (var provider in providers) {
         resources[providers[provider].pk] = true;
     }
@@ -214,7 +214,7 @@ function loadServicesResources (container_id, elem_id) {
         }
     });
     create_grid( {
-        url: '/api/node?inside_id=' + elem_id,
+        url: '/api/node?service_provider_id=' + elem_id,
         content_container_id: container_id,
         grid_id: loadServicesResourcesGridId,
         grid_class: 'service_resources_list',
@@ -247,7 +247,7 @@ function loadServicesResources (container_id, elem_id) {
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
             { name: 'host_id', index: 'host_id', hidden: true},
             { name: 'node_state', index: 'node_state', width: 90, formatter: StateFormatter },
-            { name: 'externalnode_hostname', index: 'node_hostname', width: 200 },
+            { name: 'node_hostname', index: 'node_hostname', width: 200 },
             { name: 'host_core', index: 'host_core', width: 40 },
             { name: 'host_ram', index: 'host_ram' },
             { name: 'admin_ip', index: 'admin_ip' },
@@ -260,7 +260,7 @@ function loadServicesResources (container_id, elem_id) {
                         { label : 'Monitoring', id : 'resource_monitoring', onLoad : NodeIndicatorDetailsHistorical },
                         { label : 'Rules', id : 'rules', onLoad : function(cid, eid) { node_rules_tab(cid, eid, elem_id); } },
                     ],
-            title : { from_column : 'externalnode_hostname' }
+            title : { from_column : 'node_hostname' }
         },
         action_delete: {url : '/api/node'},
     } );

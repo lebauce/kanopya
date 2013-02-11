@@ -169,16 +169,16 @@ function loadServicesConfig (container_id, elem_id) {
                 });
             }
 
-            if (!isThereAManager(elem_id, 'workflow_manager')) {
-                createManagerButton('workflow_manager', ctnr, elem_id, container_id);
+            if (!isThereAManager(elem_id, 'WorkflowManager')) {
+                createManagerButton('WorkflowManager', ctnr, elem_id, container_id);
             }
 
-            if (!isThereAManager(elem_id, 'collector_manager')) {
-                createManagerButton('collector_manager', ctnr, elem_id, container_id);
+            if (!isThereAManager(elem_id, 'CollectorManager')) {
+                createManagerButton('CollectorManager', ctnr, elem_id, container_id);
             }
 
-            if (!isThereAManager(elem_id, 'directory_service_manager')) {
-                createManagerButton('directory_service_manager', ctnr, elem_id, container_id);
+            if (!isThereAManager(elem_id, 'DirectoryServiceManager')) {
+                createManagerButton('DirectoryServiceManager', ctnr, elem_id, container_id);
             }
 
         }
@@ -202,24 +202,11 @@ function _managerParams() {
 }
 var managerParams = _managerParams();
 
-function _managerConnectorTranslate() {
-    var params  = {
-        'workflow_manager'          : 'WorkflowManager',
-        'collector_manager'         : 'Collectormanager',
-        'directory_service_manager' : 'DirectoryServiceManager'
-    };
-
-    return (function(name) {
-        return params[name];
-    });
-}
-var managerConnectorTranslate = _managerConnectorTranslate();
-
 function createmanagerDialog(managertype, sp_id, callback, skippable, instance_id, comp_id) {
     var that        = this;
     var mode_config = instance_id && instance_id > 0;
     callback        = callback || $.noop;
-    connectortype   = managerConnectorTranslate(managertype);
+    connectortype   = managertype;
 
     // Retrieve kanopya cluster to exclude it from manager search
     var kanopya_cluster_id;
@@ -385,7 +372,7 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
 
 function createManagerButton(managertype, ctnr, sp_id, container_id) {
     var addManagerButton    = $("<a>", {
-        text    : 'Link to a ' + managerConnectorTranslate(managertype),
+        text    : 'Link to a ' + managertype,
         style   : 'width:300px'
     }).button({ icons : { primary : 'ui-icon-link' } });
     var that                = this;

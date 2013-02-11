@@ -4,7 +4,6 @@ use Dancer ':syntax';
 use Dancer::Plugin::Ajax;
 use Data::Dumper;
 
-use Administrator;
 use Entity::Combination::NodemetricCombination;
 use Entity::Combination::AggregateCombination;
 use DateTime::Format::Strptime;
