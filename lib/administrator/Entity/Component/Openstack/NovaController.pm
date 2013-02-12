@@ -39,13 +39,23 @@ sub getPuppetDefinition {
                      "\t\$kanopya_openstack_repository = 1\n" .
                      "}\n" .
                      "class { 'kanopya::novacontroller':\n" .
-                     "\tdbserver => '$sql->service_provider->getMasterNode->fqdn',\n" .
+                     "\tdbserver => '" . $sql->service_provider->getMasterNode->fqdn . "',\n" .
+                     "\tamqpserver => '" . $self->amqp->service_provider->getMasterNode->fqdn . "',\n" .
                      "\tpassword => 'nova',\n" .
-                     "\tkeystone => '$keystone->service_provider->getMasterNode->fqdn',\n" .
-                     "\temail => '$self->service_provider->user->email',\n" .
+                     "\tkeystone => '" . $keystone->service_provider->getMasterNode->fqdn . "',\n" .
+                     "\temail => '" . $self->service_provider->user->user_email . "',\n" .
                      "}\n";
 
     return $definition;
+}
+
+sub getHostsEntries {
+    my $self = shift;
+
+    my @entries = ($self->keystone->service_provider->getHostEntries(),
+                   $self->mysql5->service_provider->getHostEntries());
+
+    return \@entries;
 }
 
 1;
