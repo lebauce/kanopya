@@ -622,7 +622,7 @@ sub fromDBIx {
     };
     if ($@) {
         my $err = $@;
-        $modulename = getClassType(class => $modulename);
+        $modulename = getClassType(class => $modulename) || $modulename;
         requireClass($modulename);
     }
 
@@ -896,7 +896,7 @@ sub getClassType {
                 return $class_type;
             }
         }
-        return $args{class};
+        return undef;
     }
 
     return "BaseDB";
@@ -1542,7 +1542,7 @@ sub populateRelations {
         my $relation_schema = $self->{_dbix}->$relation->result_source;
         my $relationclass = classFromDbix($relation_schema);
 
-        $relationclass = getClassType(class => $relationclass);
+        $relationclass = getClassType(class => $relationclass) || $relationclass;
         requireClass($relationclass);
 
         # Deduce the foreign key attr for link entries in relations multi
@@ -1996,14 +1996,19 @@ sub classFromDbix {
     my $source = shift;
     my $args = @_;
 
-    my $name = ucfirst($source->from);
+    my $name = normalizeName($source->from);
+    my $class = getClassType(class => $name);
+    if (!$class) {
+        while (1) {
+            last if not $source->has_relationship("parent");
+            $source = $source->related_source("parent");
+            $name = ucfirst($source->from) . "::" . $name;
+        }
 
-    while (1) {
-        last if not $source->has_relationship("parent");
-        $source = $source->related_source("parent");
-        $name = ucfirst($source->from) . "::" . $name;
+        $class = normalizeName($name);
     }
-    return normalizeName($name);
+
+    return $class;
 }
 
 =pod
