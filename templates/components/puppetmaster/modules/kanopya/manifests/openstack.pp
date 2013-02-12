@@ -76,7 +76,7 @@ class kanopya::novacontroller($password, $dbserver, $amqpserver, $keystone, $ema
     @@mysql::db { 'nova':
             user     => 'nova',
             password => "${password}",
-            host     => "${dbserver}",
+            host     => "${ipaddress}",
             grant    => ['all'],
             tag      => "${dbserver}",
     }
