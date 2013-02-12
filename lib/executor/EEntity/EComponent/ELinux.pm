@@ -230,31 +230,9 @@ sub _generateHosts {
 
     General::checkParams(args => \%args, required => [ 'cluster', 'host', 'kanopya_domainname' ]);
 
+    my @hosts_entries = $args{cluster}->getHostEntries(components => 1);
+
     $log->debug('Generate /etc/hosts file');
-
-    my @hosts_entries = ();
-
-    # we add each nodes 
-    foreach my $node ($args{cluster}->getHosts()) {
-        push @hosts_entries, {
-            fqdn    => $node->fqdn,
-            aliases => [ $node->host_hostname . "." . $args{kanopya_domainname},
-                         $node->host_hostname ],
-            ip      => $node->adminIp
-        };
-    }
-
-    # we ask components for additional hosts entries
-    my @components = $args{cluster}->getComponents(category => 'all');
-    foreach my $component (@components) {
-        my $entries = $component->getHostsEntries();
-        if (defined $entries) {
-            foreach my $entry (@$entries) {
-                push @hosts_entries, $entry;
-            }
-        }
-    }
-
     my $file = $self->generateNodeFile(
         cluster       => $args{cluster},
         host          => $args{host},

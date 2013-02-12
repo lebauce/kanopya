@@ -185,7 +185,7 @@ sub getTemplateDirectory {
 sub getServiceProvider {
     my $self = shift;
 
-    return Entity->get(id => $self->getAttr(name => "service_provider_id"));
+    return $self->service_provider;
 }
 
 =head2 remove
