@@ -155,7 +155,7 @@ sub applyConfiguration {
 
     EEntity->new(entity => $self->getPuppetMaster)->updateSite();
 
-    my @ehosts = map { EEntity->new(entity => $_) } @{  $args{cluster}->getHosts() };
+    my @ehosts = map { EEntity->new(entity => $_) } @{ $args{cluster}->getHosts() };
     for my $ehost (@ehosts) {
         $self->generatePuppetDefinitions(%args,
                                          host => $ehost);
