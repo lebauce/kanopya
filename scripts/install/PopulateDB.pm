@@ -997,6 +997,9 @@ sub registerKanopyaMaster {
     $config->{cluster}->{monitor} = $kanopya->id;
     $config->{cluster}->{nas} = $kanopya->id;
 
+    my $hostname = `hostname`;
+    chomp($hostname);
+
     Kanopya::Config::set(subsystem => 'executor',
                          config    => $config);
 
@@ -1062,7 +1065,9 @@ sub registerKanopyaMaster {
         {
             name => "Puppetagent",
             conf => {
-                puppetagent2_mode => "kanopya"
+                puppetagent2_mode       => "kanopya",
+                puppetagent2_masterfqdn => $hostname . '.' . $args{admin_domainname},
+                puppetagent2_masterip   => $args{poolip_addr}
             }
         },
         {
@@ -1161,9 +1166,6 @@ sub registerKanopyaMaster {
         $month = '0' . $month;
     }
    
-    my $hostname = `hostname`;
-    chomp($hostname);
-
     my $kanopya_initiator = "iqn.$year-$month."
         . join('.', reverse split(/\./, $domain)) . ':' . time();
 
