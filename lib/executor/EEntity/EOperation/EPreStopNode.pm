@@ -137,7 +137,7 @@ sub prepare {
     my $node_count  = $self->{context}->{cluster}->getCurrentNodesCount();
     my $host_id     = $self->{context}->{host}->id;
 
-    if ($master_node && $node_count > 1 && $master_node->id == $host->id){
+    if ($master_node && $node_count > 1 && $master_node->id == $host_id) {
         $errmsg = "Node <$host_id> is master node and not alone";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg, hidden => 1);
