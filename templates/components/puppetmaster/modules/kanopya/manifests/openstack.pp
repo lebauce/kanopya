@@ -50,15 +50,36 @@ class kanopya::glance($dbserver, $password, $keystone, $email) {
         tag      => "${keystone}"
     }
 
+    @@keystone_user_role { "glance@services":
+        ensure  => present,
+        roles   => 'admin',
+        tag     => "${keystone}"
+    }
+
+    @@keystone_service { 'glance':
+        ensure      => present,
+        type        => 'image',
+        description => "Openstack Image Service",
+        tag         => "${keystone}"
+    }
+
+    @@keystone_endpoint { "RegionOne/glance":
+        ensure       => present,
+        public_url   => "http://${fqdn}:9292/v1",
+        admin_url    => "http://${fqdn}:9292/v1",
+        internal_url => "http://${fqdn}:9292/v1",
+        tag          => "${keystone}"
+    }
+
     class { 'glance::api':
-        verbose           => 'False',
-        debug             => 'False',
+        verbose           => 'True',
+        debug             => 'True',
         auth_type         => 'keystone',
         auth_port         => '35357',
         keystone_tenant   => 'services',
         keystone_user     => 'glance',
         keystone_password => 'glance',
-        sql_connection    => "mysql://glance:glance@${dbserver}/glance",
+        sql_connection    => "mysql://glance:${password}@${dbserver}/glance",
     }
 
     class { 'glance::registry':
@@ -68,18 +89,56 @@ class kanopya::glance($dbserver, $password, $keystone, $email) {
         keystone_tenant   => 'services',
         keystone_user     => 'glance',
         keystone_password => 'glance',
-        sql_connection    => "mysql://glance:glance@${dbserver}/glance",
+        sql_connection    => "mysql://glance:${password}@${dbserver}/glance",
     }
 
     class { 'glance::backend::file': }
 }
 
-class kanopya::novacontroller($password, $dbserver, $amqpserver, $keystone, $email) {
+class kanopya::novacontroller($password, $dbserver, $amqpserver, $keystone, $email, $glance) {
     @@rabbitmq_user { 'nova':
         admin    => true,
         password => "${password}",
         provider => 'rabbitmqctl',
         tag      => "${amqpserver}",
+    }
+
+    @@rabbitmq_user_permissions { "nova@/":
+        configure_permission => '.*',
+        write_permission     => '.*',
+        read_permission      => '.*',
+        provider             => 'rabbitmqctl',
+        tag                  => "${amqpserver}",
+    }
+
+    @@keystone_user { 'nova':
+        ensure   => present,
+        password => "${password}",
+        email    => "${email}",
+        tenant   => 'services',
+        tag      => "${keystone}",
+    }
+
+    @@keystone_user_role { 'nova@services':
+        ensure  => present,
+        roles   => 'admin',
+        tag     => "${keystone}",
+    }
+
+    @@keystone_service { 'nova':
+        ensure      => present,
+        type        => 'controller',
+        description => 'Openstack nova controller',
+        tag         => "${keystone}",
+    }
+
+    @@keystone_endpoint { 'RegionOne/nova':
+        ensure       => present,
+        public_url   => "http://${fqdn}:8774/v2.0",
+        admin_url    => "http://${fqdn}:8774/v2.0",
+        internal_url => "http://${fqdn}:8774/v2.0",
+        region       => "RegionOne",
+        tag          => "${keystone}",
     }
 
     @@mysql::db { 'nova':
@@ -90,22 +149,126 @@ class kanopya::novacontroller($password, $dbserver, $amqpserver, $keystone, $ema
             tag      => "${dbserver}",
     }
 
-    @@keystone_user { 'controller':
-        ensure   => present,
-        password => "${password}",
-        email    => "${email}",
-        tenant   => 'services',
-        tag      => "${keystone}"
+    class { 'memcached':
+        listen_ip => '127.0.0.1',
     }
+
+    class { 'horizon': }
 
     class { 'nova::api':
             enabled        => true,
             admin_password => "${password}",
+            auth_host      => "${keystone}",
     }
-    class { 'nova': sql_connection => "mysql://nova:${password}@${dbserver}/nova", }
+
+    class { 'nova':
+        sql_connection      => "mysql://nova:${password}@${dbserver}/nova",
+        rabbit_host         => "${amqpserver}",
+        glance_api_servers  => "${glance}:9292",
+    }
+
     class { 'nova::scheduler': enabled => true, }
     class { 'nova::objectstore': enabled => true, }
     class { 'nova::cert': enabled => true, }
     class { 'nova::vncproxy': enabled => true, }
     class { 'nova::consoleauth': enabled => true, }
+}
+
+class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone, $password) {
+    class { 'nova':
+        # set sql and rabbit to false so that the resources will be collected
+        sql_connection     => "mysql://nova:${password}@${dbserver}/nova",
+        rabbit_host        => "${amqpserver}",
+        image_service      => 'nova.image.glance.GlanceImageService',
+        glance_api_servers => "${glance}",
+        rabbit_userid      => "nova",
+        rabbit_password    => "nova"
+    }
+
+    class { 'nova::compute':
+        enabled => true,
+    }
+
+    class { 'nova::compute::libvirt':
+        libvirt_type => 'qemu',
+    }
+
+    @@keystone_service { 'compute':
+        ensure      => present,
+        type        => "compute",
+        description => "Nova Compute Service",
+        tag         => "${keystone}"
+    }
+
+    @@keystone_endpoint { "RegionOne/compute":
+        ensure       => present,
+        public_url   => "http://${fqdn}:8774",
+        admin_url    => "http://${fqdn}:8774",
+        internal_url => "http://${fqdn}:8774",
+        tag          => "${keystone}"
+    }
+}
+
+class kanopya::quantum_($amqpserver, $dbserver, $keystone, $password) {
+    class { 'quantum':
+        rabbit_password => "${password}",
+        rabbit_host     => "${amqpserver}",
+        rabbit_user     => 'quantum'
+    }
+
+    class { 'quantum::server':
+        auth_password => $password,
+        auth_host     => "${keystone}"
+    }
+
+    @@mysql::db { 'quantum':
+        user     => 'quantum',
+        password => "${password}",
+        host     => "${ipaddress}",
+        tag      => "${dbserver}"
+    }
+
+    @@rabbitmq_user { 'quantum':
+        admin    => true,
+        password => "${password}",
+        provider => 'rabbitmqctl',
+        tag      => "${amqpserver}"
+    }
+
+    @@rabbitmq_user_permissions { "quantum@/":
+        configure_permission => '.*',
+        write_permission     => '.*',
+        read_permission      => '.*',
+        provider             => 'rabbitmqctl',
+        tag                  => "${amqpserver}"
+    }
+
+    @@keystone_user { 'quantum':
+        ensure   => present,
+        password => "${password}",
+        email    => "quantum@localhost",
+        tenant   => "services",
+        tag      => "${keystone}"
+    }
+
+    @@keystone_user_role { "quantum@services":
+        ensure  => present,
+        roles   => 'admin',
+        tag     => "${keystone}"
+    }
+
+    @@keystone_service { 'quantum':
+        ensure      => present,
+        type        => "network",
+        description => "Quantum Networking Service",
+        tag         => "${keystone}"
+    }
+
+    @@keystone_endpoint { "RegionOne/quantum":
+        ensure       => present,
+        public_url   => "http://${fqdn}:9696",
+        admin_url    => "http://${fqdn}:9696",
+        internal_url => "http://${fqdn}:9696",
+        tag          => "${keystone}"
+    }
 }

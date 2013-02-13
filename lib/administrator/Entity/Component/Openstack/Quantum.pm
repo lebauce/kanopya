@@ -32,10 +32,20 @@ sub getAttrDef { return ATTR_DEF; }
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
+    my $keystone = $self->nova_controller->keystone->service_provider->getMasterNode->fqdn;
+    my $amqp = $self->nova_controller->amqp->service_provider->getMasterNode->fqdn;
+    my $sql = $self->mysql5->service_provider->getMasterNode->fqdn;
+
     return "if \$kanopya_openstack_repository == undef {\n" .
            "\tclass { 'kanopya::openstack::repository': }\n" .
            "\t\$kanopya_openstack_repository = 1\n" .
-           "}\n";
+           "}\n" .
+           "class { 'kanopya::quantum_':\n" .
+           "\tamqpserver => '" . $amqp . "',\n" .
+           "\tkeystone => '" . $keystone . "',\n" .
+           "\tpassword => 'quantum'," .
+           "\tdbserver => '" . $sql . "'\n" .
+           "}";
 }
 
 1;
