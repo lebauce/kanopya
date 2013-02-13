@@ -21,7 +21,16 @@ class kanopya::keystone($dbserver, $password) {
         tag      => "${dbserver}",
     }
 
+    class { 'keystone::endpoint':
+        public_address   => "${fqdn}",
+        admin_address    => "${fqdn}",
+        internal_address => "${fqdn}",
+    }
+
     Keystone_user <<| tag == "${fqdn}" |>>
+    Keystone_user_role <<| tag == "${fqdn}" |>>
+    Keystone_service <<| tag == "${fqdn}" |>>
+    Keystone_endpoint <<| tag == "${fqdn}" |>>
 }
 
 class kanopya::glance($dbserver, $password, $keystone, $email) {
