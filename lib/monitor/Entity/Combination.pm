@@ -158,4 +158,25 @@ sub updateUnit {
 
 sub computeUnit {
 }
+
+sub computeDataModel {
+    my ($self, %args) = @_;
+    General::checkParams(args     => \%args,
+                         required => ['start_time', 'end_time'],
+                         optional => { 'node_id' => undef });
+
+    my $params = {context => {combination => $self},
+                  start_time => $args{start_time},
+                  end_time => $args{end_time},};
+
+    if (defined $args{node_id}) {$params->{node_id} = $args{node_id}}
+
+    $log->info('Enqueuing combination id='.$self->id);
+    Entity::Operation->enqueue(
+        priority => 200,
+        type     => 'SelectDataModel',
+        params   => $params
+    );
+}
+
 1;
