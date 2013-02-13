@@ -76,4 +76,10 @@ sub getPuppetDefinition {
     return $definition;
 }
 
+sub getHostsEntries {
+    my $self = shift;
+
+    return $self->mysql5->service_provider->getHostEntries();
+}
+
 1;

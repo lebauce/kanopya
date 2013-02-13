@@ -48,4 +48,14 @@ sub getPuppetDefinition {
            "}";
 }
 
+sub getHostsEntries {
+    my $self = shift;
+
+    my @entries = ($self->nova_controller->keystone->service_provider->getHostEntries(),
+                   $self->nova_controller->amqp->service_provider->getHostEntries(),
+                   $self->mysql5->service_provider->getHostEntries());
+
+    return \@entries;
+}
+
 1;
