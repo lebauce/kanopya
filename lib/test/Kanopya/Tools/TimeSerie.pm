@@ -67,6 +67,7 @@ Generate a time serie according to a function
 @optional season Saisonality in second (reset all func vars each saison)
 @optional srand Seed for the rand
 @optional time Start time for the series (seconds since Epoch). Default now
+@optional step Step in second between to point
 @optional noneg Replace generated negative values by 0
 
 =end classdoc
@@ -76,16 +77,15 @@ Generate a time serie according to a function
 sub generate {
     my ($self, %args) = @_;
 
-    my ($rows, $func, $prec, $srand, $season) = (
+    my ($rows, $func, $prec, $step, $srand, $season) = (
         $args{rows}         || 100,
         $args{func}         || 'rand(X)',
         $args{'precision'}  || {},
+        $args{step}         || 1,
         $args{'srand'},
         $args{season},
     );
     my %precision = %$prec;
-
-    my $step = 1;
 
     $self->{func} = $func;
     my @func_vars;
@@ -129,6 +129,7 @@ sub generate {
     $self->{end_time}   = $time;
     $self->{step}       = $step;
     $self->{serie}      = \@serie;
+    $self->{season}     = $season;
 }
 
 =pod
@@ -201,6 +202,11 @@ sub graph {
     }
     my $prec_string = join  ', ', @prec_info;
 
+    my @comment = ('\n', 'Precision '.$prec_string);
+    if (defined $self->{season}) {
+        push @comment, ('\n', 'Season ' . $self->{season});
+    }
+
     $self->{rrd}->graph(
         image          => $img_file,
         start          => $self->{start_time},
@@ -210,7 +216,7 @@ sub graph {
             color  => '0000FF',
             legend => $self->{func},
         },
-        comment => ['\n', 'Precision '.$prec_string],
+        comment => \@comment,
     );
 }
 
