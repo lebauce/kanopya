@@ -198,6 +198,8 @@ my @classes = (
     'Entity::Component::Vmm::Kvm',
     'Entity::Component::Vmm::Xen',
     'Entity::Rule',
+    'Entity::DataModel',
+    'Entity::DataModel::LinearRegression',
 );
 
 sub registerClassTypes {
