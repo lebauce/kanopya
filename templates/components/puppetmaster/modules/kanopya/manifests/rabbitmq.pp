@@ -6,4 +6,6 @@ class kanopya::rabbitmq {
     class { "$rabbitmq_repo": }
     class { 'rabbitmq::server': }
     Rabbitmq_user <<| tag == "${fqdn}" |>>
+    Rabbitmq_user_permissions <<| tag == "${fqdn}" |>>
 }
+
