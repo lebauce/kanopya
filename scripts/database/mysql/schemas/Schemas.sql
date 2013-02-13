@@ -1806,4 +1806,25 @@ CREATE TABLE `dashboard` (
   FOREIGN KEY (`dashboard_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Table structure for table `data_model`
+--
+
+CREATE TABLE `data_model` (
+  `data_model_id` int(8) unsigned NOT NULL,
+  `combination_id` INT(8) unsigned NOT NULL,
+  `node_id` INT(8) unsigned NULL,
+  `param_preset_id` INT(8) unsigned NULL,
+  `start_time` int(8) NULL,
+  `end_time` int(8) NULL,
+  PRIMARY KEY (`data_model_id`),
+  FOREIGN KEY (`data_model_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY(`combination_id`),
+  FOREIGN KEY (`combination_id`) REFERENCES `combination` (`combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY(`node_id`),
+  FOREIGN KEY (`node_id`) REFERENCES `externalnode` (`externalnode_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`param_preset_id`),
+  FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE = InnoDB DEFAULT CHARSET=utf8;
+
 SET foreign_key_checks=1;
