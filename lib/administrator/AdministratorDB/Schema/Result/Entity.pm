@@ -265,6 +265,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 data_model
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::DataModel>
+
+=cut
+
+__PACKAGE__->might_have(
+  "data_model",
+  "AdministratorDB::Schema::Result::DataModel",
+  { "foreign.data_model_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 entity_comment
 
 Type: belongs_to

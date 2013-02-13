@@ -162,14 +162,14 @@ __PACKAGE__->belongs_to(
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Externalnode>
+Related object: L<AdministratorDB::Schema::Result::Node>
 
 =cut
 
 __PACKAGE__->belongs_to(
   "node",
-  "AdministratorDB::Schema::Result::Externalnode",
-  { externalnode_id => "node_id" },
+  "AdministratorDB::Schema::Result::Node",
+  { node_id => "node_id" },
   {
     is_deferrable => 1,
     join_type     => "LEFT",

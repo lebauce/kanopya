@@ -167,6 +167,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 data_models
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::DataModel>
+
+=cut
+
+__PACKAGE__->has_many(
+  "data_models",
+  "AdministratorDB::Schema::Result::DataModel",
+  { "foreign.combination_id" => "self.combination_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 nodemetric_combination
 
 Type: might_have

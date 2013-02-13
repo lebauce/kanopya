@@ -79,6 +79,21 @@ __PACKAGE__->set_primary_key("param_preset_id");
 
 =head1 RELATIONS
 
+=head2 data_models
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::DataModel>
+
+=cut
+
+__PACKAGE__->has_many(
+  "data_models",
+  "AdministratorDB::Schema::Result::DataModel",
+  { "foreign.param_preset_id" => "self.param_preset_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 policies
 
 Type: has_many
