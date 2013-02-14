@@ -69,12 +69,12 @@ __PACKAGE__->table("data_model");
 
 =head2 start_time
 
-  data_type: 'integer'
+  data_type: 'double precision'
   is_nullable: 1
 
 =head2 end_time
 
-  data_type: 'integer'
+  data_type: 'double precision'
   is_nullable: 1
 
 =cut
@@ -109,9 +109,9 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
   "start_time",
-  { data_type => "integer", is_nullable => 1 },
+  { data_type => "double precision", is_nullable => 1 },
   "end_time",
-  { data_type => "integer", is_nullable => 1 },
+  { data_type => "double precision", is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY

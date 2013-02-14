@@ -43,12 +43,12 @@ use constant ATTR_DEF => {
         is_extended => 0
     },
     start_time => {
-        pattern => '^\d+$',
+        pattern => '^.*$',
         is_mandatory => 0,
         is_extended => 0
     },
     end_time => {
-        pattern => '^\d+$',
+        pattern => '^.*$',
         is_mandatory => 0,
         is_extended => 0
     },
