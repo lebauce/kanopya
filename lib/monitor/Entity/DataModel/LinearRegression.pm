@@ -66,10 +66,11 @@ sub configure {
     my $preset = ParamPreset->new(params => {a => $a, b => $b, rSquared => $rSquared});
 
     $self->setAttr(name => 'param_preset_id', value => $preset->id);
-    $self->setAttr(name => 'start_time', value => $args{start_time});
-    $self->setAttr(name => 'end_time', value => $args{end_time});
+    $self->setAttr(name => 'start_time',      value => $args{start_time});
+    $self->setAttr(name => 'end_time',        value => $args{end_time});
 
     $self->save();
+    return $preset;
 }
 
 sub predict {
