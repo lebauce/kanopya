@@ -27,7 +27,7 @@ my @options_def = (
     ['srand=i'      , \$options{'srand'}    , 'Rand seed'],
     ['precision=f%' , \$options{'precision'}, 'Precision for each func var (e.g -p X=01 -p Y=2)'],
     ['noneg'        , \$options{noneg}      , 'Replace all generated negative values by 0'],
-    ['time=i'       , \$options{'time'}     , 'Start time (second since epoch)'],
+    ['time=i'       , \$options{'time'}     , 'End time (second since epoch)'],
     ['step=i'       , \$options{'step'}     , 'Step in second between 2 points'],
     ['rrd'          , \$output_rrd          , 'Output rrd path and name'],
     ['display'      , \$display             , 'Print time serie on stdout (see --format)'],

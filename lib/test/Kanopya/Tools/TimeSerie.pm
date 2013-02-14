@@ -66,7 +66,7 @@ Generate a time serie according to a function
 @optional precision Hash ref of precision for each func vars ('X','Y','Z'). Default 1 for each
 @optional season Saisonality in second (reset all func vars each saison)
 @optional srand Seed for the rand
-@optional time Start time for the series (seconds since Epoch). Default now
+@optional time End time for the series (seconds since Epoch). Default now
 @optional step Step in second between to point
 @optional noneg Replace generated negative values by 0
 
@@ -99,8 +99,10 @@ sub generate {
 
     srand $srand if ($srand);
 
-    my $start_time = $args{'time'} || time();
-    $start_time -= $start_time % 10; # round time to avoid rrd extrapolation
+    my $end_time = $args{'time'} || time();
+    $end_time -= $end_time % 10; # round time to avoid rrd extrapolation
+
+    my $start_time = $end_time - $step * $rows;
 
     # Default vars precision
     map { $precision{$_} = $precision{$_} || 1 } @func_vars;
