@@ -200,6 +200,7 @@ my @classes = (
     'Entity::Rule',
     'Entity::DataModel',
     'Entity::DataModel::LinearRegression',
+    'Entity::DataModel::LogarithmicRegression',
 );
 
 sub registerClassTypes {
