@@ -219,6 +219,36 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 openstack_hypervisors
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::OpenstackHypervisor>
+
+=cut
+
+__PACKAGE__->has_many(
+  "openstack_hypervisors",
+  "AdministratorDB::Schema::Result::OpenstackHypervisor",
+  { "foreign.nova_controller_id" => "self.nova_controller_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 openstack_vms
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::OpenstackVm>
+
+=cut
+
+__PACKAGE__->has_many(
+  "openstack_vms",
+  "AdministratorDB::Schema::Result::OpenstackVm",
+  { "foreign.nova_controller_id" => "self.nova_controller_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 quantums
 
 Type: has_many
@@ -235,8 +265,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-02-11 15:49:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dK46F+0grM1B/353BTC3Yw
+# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-02-14 19:04:08
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Ho4hGqTN2fe8D5SPOkySBQ
 
 __PACKAGE__->belongs_to(
   "parent",
