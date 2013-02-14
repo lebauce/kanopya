@@ -91,15 +91,17 @@ sub computeRSquared {
     return (1 - $SSerr / $SStot);
 }
 
+sub getRSquared {
+    my ($self, @args) = @_;
+    my $pp = $self->param_preset->load;
+    return $pp->{rSquared};
+}
+
 sub configure {
     throw Kanopya::Exception(error => 'Method not implemented');
 }
 
 sub predict {
-    throw Kanopya::Exception(error => 'Method not implemented');
-}
-
-sub getRSquared {
     throw Kanopya::Exception(error => 'Method not implemented');
 }
 

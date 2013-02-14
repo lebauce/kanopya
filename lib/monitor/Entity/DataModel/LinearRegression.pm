@@ -126,10 +126,4 @@ sub predict {
         }
     }
 }
-
-sub getRSquared {
-    my ($self, @args) = @_;
-    my $pp = $self->param_preset->load;
-    return $pp->{rSquared};
-}
 1;
