@@ -14,6 +14,7 @@ use Test::More 'no_plan';
 use Test::Exception;
 use Data::Dumper;
 use Kanopya::Tools::Execution;
+use Kanopya::Tools::TimeSerie;
 
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
@@ -32,6 +33,8 @@ use Entity::Combination::NodemetricCombination;
 
 use Entity::DataModel;
 use Entity::DataModel::LinearRegression;
+use Entity::DataModel::LogarithmicRegression;
+
 use List::MoreUtils;
 use List::Util;
 
@@ -46,7 +49,9 @@ my $node_1;
 my $indic_1;
 my $node_data_model;
 my $service_data_model;
+my $service_data_log_model;
 my $comb;
+my $cm;
 
 my @timestamps = ( 1360605400,
                    1360605410,
@@ -77,10 +82,13 @@ sub main {
 
     setup();
 
-    test_configure();
-    test_predict();
+    logarithmic_regression_configure();
+    logarithmic_regression_predict();
+
+    linear_regression_configure ();
+    linear_regression_predict();
     test_R_squared();
-    test_operation_execute();
+    select_best_model_operation();
 
     clean();
 
@@ -94,30 +102,81 @@ sub clean {
     $external_cluster_mockmonitor->delete();
 }
 
-sub test_operation_execute {
+sub select_best_model_operation {
+    # TODO factorize code
+
     lives_ok {
-        my $aggregator = Aggregator->new();
         my $executor   = Executor->new();
 
-        my $start_time = time();
-        my $end_time   = $start_time + 60;
+        my $time_serie = Kanopya::Tools::TimeSerie->new();
+        
+        $time_serie->generate(func => 'X + rand(10)',
+                              srand => 1,
+                              rows => 100,
+                              step => 60);
 
-        while (time() < $end_time) {
-            $aggregator->update();
-            sleep(3);
-        }
+        $time_serie->store();
+        $time_serie->linkToMetric( metric => $cm );
 
-        $comb->computeDataModel( start_time => $start_time, end_time => $end_time );
+        map {$_->delete() } Entity::DataModel->search( hash => { combination_id => $comb->id, });
+
+        $comb->computeDataModel( start_time => time() - 100*60, end_time => time() );
+        
         Kanopya::Tools::Execution->executeAll();
 
         # Check if datamodel has been created
-        my $data_model = Entity::DataModel->find( hash => {
+        my @models = Entity::DataModel->search( hash => {
                              combination_id => $comb->id,
-                             start_time     => $start_time,
-                             end_time       => $end_time,
                          });
 
-    } 'Test select DataModel creation from combination via operation';
+        if ((scalar @models) != 1) {die 'Just one data model must have been created got:'.(scalar @models)}
+
+        my $model = (pop @models);
+
+        my ($ts, $values) = $model->predict(start_time      => time() - 10*60,
+                                            end_time        => time() + 10*60,
+                                            sampling_period => 100,);
+
+        if (! $model->isa('Entity::DataModel::LinearRegression')) {
+            die 'Wrong Linear Regresssion';
+        }
+        $model->delete();
+    } 'Select best model is linear regression';
+
+    lives_ok {
+        my $time_serie = Kanopya::Tools::TimeSerie->new();
+
+        $time_serie->generate(func => 'log(X)',
+                              srand => 1,
+                              rows => 100,
+                              step => 60,
+                              precision => {
+                                 X => 0.1
+                              });
+
+        $time_serie->store();
+        $time_serie->linkToMetric( metric => $cm );
+
+        $comb->computeDataModel( start_time => time() - 100*60, end_time => time() );
+
+        Kanopya::Tools::Execution->executeAll();
+
+        # Check if datamodel has been created
+        my @models = Entity::DataModel->search( hash => {
+                             combination_id => $comb->id, 
+                  });
+
+        if ((scalar @models) != 1) {die 'Just one data model must have been created got:'.(scalar @models)}
+
+        my $model = (pop @models);
+
+        my ($ts, $values) = $model->predict(start_time      => time() - 10*60,
+                                         end_time        => time() + 10*60,
+                                         sampling_period => 100,);
+
+        $model->delete();
+
+    } 'Select best model is logarithmic regression';
 }
 
 sub test_R_squared {
@@ -133,10 +192,36 @@ sub test_R_squared {
         if ($Rsquared - 0.974688777619551 > 10**(-5)) {
             die 'Wrong Rsquared computation';
         }
-    } 'Test linear regression Rsquared';
+    } 'Linear regression Rsquared';
 }
 
-sub test_predict {
+sub logarithmic_regression_predict {
+    lives_ok {
+        my $timestamps = [1360605540, 1360605550, 1360605560, 1360605570, 1360605580, 1360605590, 1360605600, 1360605610,1360606000,1360607000,];
+        my $predictions = $service_data_log_model->predict(timestamps => $timestamps);
+
+        my @expected_values = ('2.28648922262471',
+                               '14.2019256162136',
+                               '17.415095491243',
+                               '19.3503937957755',
+                               '20.7396853466509',
+                               '21.8242141470061',
+                               '22.7139268202061',
+                               '23.46826956028',
+                               '32.7640981019322',
+                               '38.4958739180753',
+        );
+
+       my $sum = List::Util::sum (List::MoreUtils::pairwise {abs($a - $b)} @{$predictions}, @expected_values);
+
+        if ( $sum > 10**(-5) ) {
+            die 'Wrong prediction 1 (sum = '.$sum.')';
+        }
+
+    } 'Logarithmic regression prediction';
+}
+
+sub linear_regression_predict {
     lives_ok {
 
         my $timestamps = [1360605410,1360605430,1360605500,1360605600,1360606000,1360607000,];
@@ -177,10 +262,44 @@ sub test_predict {
         if ( $sum > 10**(-5) ) {
             die 'Wrong prediction (sum = '.$sum.')';
         }
-    } 'Test linear regression prediction';
+    } 'Linear regression prediction';
 }
 
-sub test_configure {
+sub logarithmic_regression_configure {
+
+    lives_ok{
+        my @timestamps = ( 1360605540, 1360605550, 1360605560, 1360605570, 1360605580, 1360605590, 1360605600, 1360605610, );
+        my @data_values = ( 5, 10, 15, 18, 20, 23, 25, 26);
+    
+        # construct data hash table
+        my $data;
+        my $ea = List::MoreUtils::each_array( @timestamps, @data_values );
+        while (my ($ts,$dv) = $ea->()) { $data->{$ts} = $dv; }
+    
+        $service_data_log_model->configure(data => $data);
+
+        my $pp = $service_data_log_model->param_preset->load;
+        if ($pp->{a} != 4.96912293408187 || $pp->{b} != 2.28648922262471) {
+            die 'Wrong logarithmic regression configuration';
+        }
+
+        $service_data_log_model->configure(data => $data, start_time => 1360605545);
+
+        $pp = $service_data_log_model->param_preset->load;
+        if ($pp->{a} != 3.80640059030539 || $pp->{b} != 8.3519668674633) {
+            die 'Wrong logarithmic regression configuration';
+        }
+
+        $service_data_log_model->configure(data => $data, start_time => 1360605535);
+        
+        $pp = $service_data_log_model->param_preset->load;
+        if ($pp->{a} != 4.96912293408187 || $pp->{b} != 2.28648922262471) {
+            die 'Wrong logarithmic regression configuration';
+        }
+    } 'Logarithmic regression configuration';
+}
+
+sub linear_regression_configure {
 
     lives_ok {
         $service_data_model->configure(data => $data);
@@ -213,7 +332,7 @@ sub test_configure {
             print ($pp->{rSquared}.' != 0.457851461964588'."\n");
             die 'Wrong linear regretion configuration 1';
         }
-    } 'Test linear regression configuration'
+    } 'Linear regression configuration'
 }
 
 sub setup {
@@ -253,7 +372,7 @@ sub setup {
                );
 
    # Clustermetric
-    my $cm = Entity::Clustermetric->new(
+    $cm = Entity::Clustermetric->new(
                  clustermetric_service_provider_id      => $service_provider->id,
                  clustermetric_indicator_id             => ($indic_1->id),
                  clustermetric_statistics_function_name => 'sum',
@@ -282,4 +401,9 @@ sub setup {
     $service_data_model = Entity::DataModel::LinearRegression->new(
                               combination_id => $comb->id,
                           );
+
+    $service_data_log_model = Entity::DataModel::LogarithmicRegression->new(
+                                  combination_id => $comb->id,
+                              );
+
 }
