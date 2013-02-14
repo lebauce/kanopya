@@ -45,7 +45,7 @@ sub configure {
     my @sorted_data_values;
     my @sorted_time_keys;
 
-    while (my $key = shift @sorted_all_time_keys) {
+    for my $key (@sorted_all_time_keys) {
         # Keep only data between start_time and end_time
         if ((defined $args{data}->{$key}) && ($args{start_time} <= $key) && ($key <= $args{end_time})) {
             push @sorted_time_keys, ($key - $args{start_time}); # Offset all data to zero
