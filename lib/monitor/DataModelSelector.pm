@@ -19,7 +19,13 @@ use strict;
 use Data::Dumper;
 use BaseDB;
 
-my @model_classes = ('Entity::DataModel::LinearRegression',);
+# logger
+use Log::Log4perl "get_logger";
+my $log = get_logger("");
+
+my @model_classes = ('Entity::DataModel::LinearRegression',
+                     'Entity::DataModel::LogarithmicRegression'
+                    );
 
 sub selectDataModel {
     my ($self, %args) = @_;
@@ -51,6 +57,7 @@ sub selectDataModel {
 
         push @models, $model;
         push @RSquareds, $model->getRSquared();
+        $log->info("$data_model_class -> R = ".($model->getRSquared())."\n");
     }
 
     my $max_model    = shift @models;
@@ -70,6 +77,7 @@ sub selectDataModel {
             $current_model->delete();
         }
     }
+    $log->info('Best model id '.($max_model->id));
     return $max_model;
 }
 
