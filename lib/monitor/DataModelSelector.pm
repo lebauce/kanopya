@@ -38,7 +38,7 @@ sub selectDataModel {
     # Configure all DataModels available
     for my $data_model_class (@model_classes) {
 
-        BaseDB->requireClass($data_model_class);
+        BaseDB::requireClass($data_model_class);
 
         my $model = $data_model_class->new(
                         node_id        => $args{node_id},
