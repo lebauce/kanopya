@@ -25,4 +25,11 @@ use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub label {
+    my $self = shift;
+
+    (my $label = $self->category_name) =~ s/Manager$//g;
+    return $label . ' manager';
+}
+
 1;
