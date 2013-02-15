@@ -28,6 +28,7 @@ use Entity::Component::Physicalhoster0;
 use EEntity;
 use ClassType;
 use ClassType::ComponentType;
+use ClassType::ServiceProviderType;
 use Profile;
 use Entity::Gp;
 use Entity::User;
@@ -650,215 +651,288 @@ sub registerManagerCategories {
     }
 }
 
+sub registerServiceProviders {
+    my %args = @_;
+
+    my $serviceproviders = [
+        { service_provider_name => 'Cluster' },
+        { service_provider_name => 'Externalcluster' },
+        { service_provider_name => 'Netapp' },
+        { service_provider_name => 'UnifiedComputingSystem' },
+    ];
+
+    for my $serviceprovider_type (@{ $serviceproviders }) {
+        my $class_type = ClassType->find(hash => {
+                             class_type => {
+                                 like => "Entity::ServiceProvider::%" . $serviceprovider_type->{service_provider_name}
+                             }
+                         });
+
+        my $type = ClassType::ServiceProviderType->promote(
+            promoted                  => $class_type,
+            service_provider_name     => $serviceprovider_type->{service_provider_name},
+        );
+
+        if (defined $component_type->{component_template}) {
+            my $template_name = lc $component_type->{component_name};
+            ComponentTemplate->new(
+                component_template_name      => lc($component_type->{component_name}),
+                component_template_directory => $component_type->{component_template},
+                component_type_id            => $type->id
+            );
+        }
+    }
+}
+
+
 sub registerComponents {
     my %args = @_;
 
     my $components = [
         {
-            component_name       => 'Openssh',
-            component_version    => 5,
-            component_categories => [ 'Secureshell' ],
+            component_name         => 'Openssh',
+            component_version      => 5,
+            component_categories   => [ 'Secureshell' ],
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Storage',
-            component_version    => 0,
-            component_categories => [ 'DiskManager' ],
+            component_name         => 'Storage',
+            component_version      => 0,
+            component_categories   => [ 'DiskManager' ],
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Lvm',
-            component_version    => 2,
-            component_categories => [ 'DiskManager' ],
+            component_name         => 'Lvm',
+            component_version      => 2,
+            component_categories   => [ 'DiskManager' ],
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Apache',
-            component_version    => 2,
-            component_categories => [ 'Webserver' ],
-            component_template   => '/templates/components/apache2'
+            component_name         => 'Apache',
+            component_version      => 2,
+            component_categories   => [ 'Webserver' ],
+            component_template     => '/templates/components/apache2',
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Iscsi',
-            component_version    => 0,
-            component_categories => [ 'ExportManager' ],
+            component_name         => 'Iscsi',
+            component_version      => 0,
+            component_categories   => [ 'ExportManager' ],
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Iscsitarget',
-            component_version    => 1,
-            component_categories => [ 'ExportManager' ],
-            component_template   => '/templates/components/ietd'
+            component_name         => 'Iscsitarget',
+            component_version      => 1,
+            component_categories   => [ 'ExportManager' ],
+            component_template     => '/templates/components/ietd',
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Openiscsi',
-            component_version    => 2,
-            component_categories => [ 'Exportclient' ],
+            component_name         => 'Openiscsi',
+            component_version      => 2,
+            component_categories   => [ 'Exportclient' ],
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Dhcpd',
-            component_version    => 3,
-            component_categories => [ 'Dhcpserver' ],
-            component_template   => '/templates/components/dhcpd'
+            component_name         => 'Dhcpd',
+            component_version      => 3,
+            component_categories   => [ 'Dhcpserver' ],
+            component_template     => '/templates/components/dhcpd',
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Atftpd',
-            component_version    => 0,
-            component_categories => [ 'Tftpserver' ],
+            component_name         => 'Atftpd',
+            component_version      => 0,
+            component_categories   => [ 'Tftpserver' ],
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Snmpd',
-            component_version    => 5,
-            component_categories => [ 'Monitoragent' ],
-            component_template   => '/templates/components/snmpd'
+            component_name         => 'Snmpd',
+            component_version      => 5,
+            component_categories   => [ 'Monitoragent' ],
+            component_template     => '/templates/components/snmpd',
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Nfsd',
-            component_version    => 3,
-            component_categories => [ 'ExportManager' ],
-            component_template   => '/templates/components/nfsd3'
+            component_name         => 'Nfsd',
+            component_version      => 3,
+            component_categories   => [ 'ExportManager' ],
+            component_template     => '/templates/components/nfsd3',
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Linux',
-            component_version    => 5,
-            component_categories => [ 'System' ],
-            component_template   => '/templates/components/linux'
+            component_name         => 'Linux',
+            component_version      => 5,
+            component_categories   => [ 'System' ],
+            component_template     => '/templates/components/linux',
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Mysql',
-            component_version    => 5,
-            component_categories => [ 'DBMS' ],
-            component_template   => '/templates/components/nfsd3'
+            component_name         => 'Mysql',
+            component_version      => 5,
+            component_categories   => [ 'DBMS' ],
+            component_template     => '/templates/components/nfsd3',
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Syslogng',
-            component_version    => 3,
-            component_categories => [ 'Logger' ],
+            component_name         => 'Syslogng',
+            component_version      => 3,
+            component_categories   => [ 'Logger' ],
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Openldap',
-            component_version    => 1,
-            component_categories => [ 'Annuary' ],
+            component_name         => 'Openldap',
+            component_version      => 1,
+            component_categories   => [ 'Annuary' ],
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Opennebula',
-            component_version    => 3,
-            component_categories => [ 'HostManager' ],
+            component_name         => 'Opennebula',
+            component_version      => 3,
+            component_categories   => [ 'HostManager' ],
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Physicalhoster',
-            component_version    => 0,
-            component_categories => [ 'Hostmanager' ],
+            component_name         => 'Physicalhoster',
+            component_version      => 0,
+            component_categories   => [ 'Hostmanager' ],
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Fileimagemanager',
-            component_version    => 0,
-            component_categories => [ 'DiskManager', 'ExportManager' ],
+            component_name         => 'Fileimagemanager',
+            component_version      => 0,
+            component_categories   => [ 'DiskManager', 'ExportManager' ],
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Puppetagent',
-            component_version    => 2,
-            component_categories => [ 'Configurationagent' ],
+            component_name         => 'Puppetagent',
+            component_version      => 2,
+            component_categories   => [ 'Configurationagent' ],
+            service_provider_types => [ 'Cluster' ],
         },
         
         {
-            component_name       => 'Puppetmaster',
-            component_version    => 2,
-            component_categories => [ 'Configurationserver' ],
+            component_name         => 'Puppetmaster',
+            component_version      => 2,
+            component_categories   => [ 'Configurationserver' ],
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Kanopyacollector',
-            component_version    => 1,
-            component_categories => [ 'CollectorManager' ],
+            component_name         => 'Kanopyacollector',
+            component_version      => 1,
+            component_categories   => [ 'CollectorManager' ],
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Keepalived',
-            component_version    => 1,
-            component_categories => [ 'LoadBalancer' ],
+            component_name         => 'Keepalived',
+            component_version      => 1,
+            component_categories   => [ 'LoadBalancer' ],
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Kanopyaworkflow',
-            component_version    => 0,
-            component_categories => [ 'WorkflowManager' ],
+            component_name         => 'Kanopyaworkflow',
+            component_version      => 0,
+            component_categories   => [ 'WorkflowManager' ],
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Mailnotifier',
-            component_version    => 0,
-            component_categories => [ 'NotificationManager' ],
+            component_name         => 'Mailnotifier',
+            component_version      => 0,
+            component_categories   => [ 'NotificationManager' ],
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Memcached',
-            component_version    => 1,
-            component_categories => [ 'Cache' ],
+            component_name         => 'Memcached',
+            component_version      => 1,
+            component_categories   => [ 'Cache' ],
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Php',
-            component_version    => 5,
-            component_categories => [ 'Lib' ],
+            component_name         => 'Php',
+            component_version      => 5,
+            component_categories   => [ 'Lib' ],
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Vsphere',
-            component_version    => 5,
-            component_categories => [ 'Hostmanager' ],
+            component_name         => 'Vsphere',
+            component_version      => 5,
+            component_categories   => [ 'Hostmanager' ],
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Debian',
-            component_version    => 6,
-            component_categories => [ 'System' ],
-            component_template   => '/templates/components/debian',
+            component_name         => 'Debian',
+            component_version      => 6,
+            component_categories   => [ 'System' ],
+            component_template     => '/templates/components/debian',
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Redhat',
-            component_version    => 6,
-            component_categories => [ 'System' ],
-            component_template   => '/templates/components/redhat',
+            component_name         => 'Redhat',
+            component_version      => 6,
+            component_categories   => [ 'System' ],
+            component_template     => '/templates/components/redhat',
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Suse',
-            component_version    => 11,
-            component_categories => [ 'System' ],
-            component_template   => '/templates/components/suse',
+            component_name         => 'Suse',
+            component_version      => 11,
+            component_categories   => [ 'System' ],
+            component_template     => '/templates/components/suse',
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Kvm',
-            component_version    => 1,
-            component_categories => [ 'Hypervisor' ],
+            component_name         => 'Kvm',
+            component_version      => 1,
+            component_categories   => [ 'Hypervisor' ],
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'Xen',
-            component_version    => 1,
-            component_categories => [ 'Hypervisor' ],
+            component_name         => 'Xen',
+            component_version      => 1,
+            component_categories   => [ 'Hypervisor' ],
+            service_provider_types => [ 'Cluster' ],
         },
         {
-            component_name       => 'ActiveDirectory',
-            component_version    => 1,
-            component_categories => [ 'DirectoryServiceManager' ],
+            component_name         => 'ActiveDirectory',
+            component_version      => 1,
+            component_categories   => [ 'DirectoryServiceManager' ],
+            service_provider_types => [ 'Externalcluster' ],
         },
         {
-            component_name       => 'Scom',
-            component_version    => 1,
-            component_categories => [ 'CollectorManager' ],
+            component_name         => 'Scom',
+            component_version      => 1,
+            component_categories   => [ 'CollectorManager' ],
+            service_provider_types => [ 'Externalcluster' ],
         },
         {
-            component_name       => 'Sco',
-            component_version    => 1,
-            component_categories => [ 'WorkflowManager' ],
+            component_name         => 'Sco',
+            component_version      => 1,
+            component_categories   => [ 'WorkflowManager' ],
+            service_provider_types => [ 'Externalcluster' ],
         },
         {
-            component_name       => 'MockMonitor',
-            component_version    => 1,
-            component_categories => [ 'CollectorManager' ],
+            component_name         => 'MockMonitor',
+            component_version      => 1,
+            component_categories   => [ 'CollectorManager' ],
+            service_provider_types => [ 'Cluster', 'Externalcluster' ],
         },
         {
-            component_name       => 'UcsManager',
-            component_version    => 1,
-            component_categories => [ 'HostManager' ],
+            component_name         => 'UcsManager',
+            component_version      => 1,
+            component_categories   => [ 'HostManager' ],
+            service_provider_types => [ 'UnifiedComputingSystem' ],
         },
         {
-            component_name       => 'NetappLunManager',
-            component_version    => 1,
-            component_categories => [ 'DiskManager', 'ExportManager' ],
+            component_name         => 'NetappLunManager',
+            component_version      => 1,
+            component_categories   => [ 'DiskManager', 'ExportManager' ],
+            service_provider_types => [ 'Netapp' ],
         },
         {
-            component_name       => 'NetappVolumeManager',
-            component_version    => 1,
-            component_categories => [ 'DiskManager', 'ExportManager' ],
+            component_name         => 'NetappVolumeManager',
+            component_version      => 1,
+            component_categories   => [ 'DiskManager', 'ExportManager' ],
+            service_provider_types => [ 'Netapp' ],
         },
     ];
 
@@ -891,11 +965,17 @@ sub registerComponents {
             }
         }
 
+        my @servicetypes;
+        for my $servicetype (@{ $component_type->{service_provider_types} }) {
+            push @servicetypes, ClassType::ServiceProviderType->find(hash => { service_provider_name => $servicetype });
+        }
+
         my $type = ClassType::ComponentType->promote(
-            promoted                  => $class_type,
-            component_name            => $component_type->{component_name},
-            component_version         => $component_type->{component_version},
-            component_type_categories => \@categories,
+            promoted                              => $class_type,
+            component_name                        => $component_type->{component_name},
+            component_version                     => $component_type->{component_version},
+            component_type_categories             => \@categories,
+            service_provider_type_component_types => \@servicetypes,
         );
 
         if (defined $component_type->{component_template}) {
@@ -1826,19 +1906,19 @@ sub configureDefaultOrchestrationPolicyService {
      # Add default workflow manager
     my $workflow_manager = $args{admin_cluster}->getComponent(name => "Kanopyaworkflow", version => "0");
     $sp->addManager(manager_id   => $workflow_manager->id,
-                    manager_type =>"workflow_manager");
+                    manager_type =>"WorkflowManager");
 
     # Add default collector manager
     my $collector_manager = $args{admin_cluster}->getComponent(name => "Kanopyacollector", version => "1");
     $sp->addManager(manager_id   => $collector_manager->id,
-                    manager_type =>"collector_manager");
+                    manager_type =>"CollectorManager");
 
     my $noderule_conf = {
         'mem/Available' => {
-             comparator      => '<',
-             threshold       => 256*1024,
-             cond_label      => 'Available memory < 256M',
-             rule_label      => 'Available memory too low',
+             comparator       => '<',
+             threshold        => 256*1024,
+             cond_label       => 'Available memory < 256M',
+             rule_label       => 'Available memory too low',
              rule_description => 'Available memory is too low for this node',
         },
     };
@@ -1846,10 +1926,10 @@ sub configureDefaultOrchestrationPolicyService {
     my $clusterrule_conf = {
         'mem/Available' => {
              'mean' => {
-                 comparator      => '<',
-                 threshold       => 256*1024,
-                 cond_label      => 'Mean available memory < 256M',
-                 rule_label      => 'Mean available memory too low',
+                 comparator       => '<',
+                 threshold        => 256*1024,
+                 cond_label       => 'Mean available memory < 256M',
+                 rule_label       => 'Mean available memory too low',
                  rule_description => 'Available memory is too low for this service',
              }
         },
@@ -1981,6 +2061,7 @@ sub populateDB {
     registerKernels(%args);
     registerProcessorModels(%args);
     registerOperations(%args);
+    registerServiceProviders(%args);
     registerComponents(%args);
     registerNetconfRoles(%args);
     registerIndicators(%args);
