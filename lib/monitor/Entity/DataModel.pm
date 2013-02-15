@@ -124,4 +124,58 @@ sub time_label {
     return "[$start_date -> $end_date]";
 }
 
+sub constructTimeStamps {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['start_time', 'end_time', 'sampling_period']);
+
+    my @timestamps= ();
+    for (my $ts = $args{start_time} ; $ts <= $args{end_time} ; $ts += $args{sampling_period}) {
+        push @timestamps, $ts;
+    }
+    return \@timestamps;
+}
+
+sub constructPrediction {
+    my ($self, %args) = @_;
+
+    my $function_args = $args{function_args};
+
+    # Construct timestamps if not defined
+    if (! defined $args{timestamps}) {
+        $args{timestamps} = $self->constructTimeStamps(
+                                start_time      => $args{start_time},
+                                end_time        => $args{end_time},
+                                sampling_period => $args{sampling_period},
+                            );
+    }
+
+    my @predictions;
+    my @timestamps_temp;
+
+    # Compute prediction with good format
+    for my $ts (@{$args{timestamps}}) {
+
+        $function_args->{ts} = $ts;
+        my $value = $self->prediction_function(function_args => $function_args);
+
+        # Need to use a local variable in order to avoid input data (by ref) modification
+        my $ts_temp = ($args{time_format} eq 'ms') ? $ts * 1000 : $ts;
+
+        my $prediction;
+        if ($args{data_format} eq 'pair') {
+            $prediction = [$ts_temp, $value];
+        }
+        else {
+            push @timestamps_temp, $ts_temp;
+            $prediction = $value
+        }
+        push @predictions, $prediction;
+    }
+    if ($args{data_format} eq 'pair') {
+        return \@predictions;
+    }
+    else {
+        return {timestamps => \@timestamps_temp, values => \@predictions};
+    }
+}
 1;

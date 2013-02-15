@@ -86,56 +86,35 @@ sub predict {
                                        'data_format'     => undef});
 
     my $pp = $self->param_preset->load;
-    my $a  = $pp->{a};
-    my $b  = $pp->{b};
-
-    if ( (! defined $a) || (! defined $b) ) {
-        throw Kanopya::Exception(error => 'DataModel LinearRegression seems to have been badly configured');
-    }
 
     # configuration has been made with an offset value
     my $offset = $self->getAttr(name => 'start_time');
 
-    # Construct timestamps if not defined
-    if (! defined $args{timestamps}) {
-        if (defined $args{start_time} &&
-            defined $args{end_time} &&
-            defined $args{sampling_period}) {
+    if ( (! defined $pp->{a}) ||
+         (! defined $pp->{b}) ||
+         (! defined $offset)) {
+        throw Kanopya::Exception(error => 'DataModel LinearRegression seems to have been badly configured');
+    }
 
-            for (my $ts = $args{start_time} ; $ts <= $args{end_time} ; $ts += $args{sampling_period}) {
-                push @{$args{timestamps}}, $ts;
-            }
-        }
-        else {
-            throw Kanopya::Exception(error => 'predict method need either timestamps or
-                                               a start_time, a end time and a sampling period');
-        }
-    }
-    my @predictions;
-    my @timestamps_temp;
-    # Compute prediction with good format
-    for my $ts (@{$args{timestamps}}) {
-        my $value = $a * ($ts - $offset) + $b;
+    my $function_args = {a      => $pp->{a},
+                         b      => $pp->{b},
+                         offset => $offset,};
 
-        # Need to use a local variable in order to avoid input data (by ref) modification
-        my $ts_temp = ($args{time_format} eq 'ms') ? $ts * 1000 : $ts;
+    return $self->constructPrediction (
+               function_args => $function_args,
+                %args,
+           );
+}
 
-        my $prediction;
-        if ($args{data_format} eq 'pair') {
-            $prediction = [$ts_temp, $value];
-        }
-        else {
-            push @timestamps_temp, $ts_temp;
-            $prediction = $value
-        }
-        push @predictions, $prediction;
-    }
-    if ($args{data_format} eq 'pair') {
-        return \@predictions;
-    }
-    else {
-        return {timestamps => \@timestamps_temp, values => \@predictions};
-    }
+sub prediction_function {
+    my ($self, %args) = @_;
+    General::checkParams(args     => \%args,
+                         required => ['function_args'],);
+
+    # a * (ts - offset) + b
+    return $args{function_args}->{a} *
+           ($args{function_args}->{ts} - $args{function_args}->{offset}) +
+           $args{function_args}->{b};
 }
 
 sub label {

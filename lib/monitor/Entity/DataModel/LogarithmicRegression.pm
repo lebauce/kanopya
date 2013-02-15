@@ -106,68 +106,49 @@ sub predict {
                                        'end_time'        => undef,
                                        'sampling_period' => undef,});
 
-    # TODO factorize code of prediction same code excepted the formula
-    # function reference
+    my $pp     = $self->param_preset->load;
+    my $offset = $self->getAttr(name => 'start_time');
 
-    my $pp         = $self->param_preset->load;
-    my $a          = $pp->{a};
-    my $b          = $pp->{b};
-    my $offset_lin = $pp->{offset_lin};
+    # configuration has been made with an offset value
 
-    if ( (! defined $a) || (! defined $b) || (! defined $offset_lin )) {
+
+    if ((! defined $pp->{a}) ||
+        (! defined $pp->{b}) ||
+        (! defined $pp->{offset_lin} ) ||
+        (! defined $offset) ) {
+
         throw Kanopya::Exception(error => 'DataModel LogarithmicRegression seems to have been badly configured');
     }
 
-    # configuration has been made with an offset value
-    my $offset   = $self->getAttr(name => 'start_time');
+    my $function_args = {
+        a          => $pp->{a},
+        b          => $pp->{b},
+        offset_lin => $pp->{offset_lin},
+        offset     => $offset,
+    };
 
-    if ( (! defined $a) || (! defined $b) ) {
-        throw Kanopya::Exception(error => 'DataModel LinearRegression seems to have been badly configured');
-    }
-
-    # Construct timestamps if not defined
-    if (! defined $args{timestamps}) {
-        if (defined $args{start_time} &&
-            defined $args{end_time} &&
-            defined $args{sampling_period}) {
-
-            for (my $ts = $args{start_time} ; $ts <= $args{end_time} ; $ts += $args{sampling_period}) {
-                push @{$args{timestamps}}, $ts;
-            }
-        }
-        else {
-            throw Kanopya::Exception(error => 'predict method need either timestamps or
-                                               a start_time, a end time and a sampling period');
-        }
-    }
-    my @predictions;
-    my @timestamps_temp;
-    # Compute prediction with good format
-    for my $ts (@{$args{timestamps}}) {
-
-        my $value = ($ts - $offset + 1 > 0) ?  $a * ( log ($ts - $offset + 1) - $offset_lin) + $b
-                                            : undef;
-
-        # Need to use a local variable in order to avoid input data (by ref) modification
-        my $ts_temp = ($args{time_format} eq 'ms') ? $ts * 1000 : $ts;
-
-        my $prediction;
-        if ($args{data_format} eq 'pair') {
-            $prediction = [$ts_temp, $value];
-        }
-        else {
-            push @timestamps_temp, $ts_temp;
-            $prediction = $value
-        }
-        push @predictions, $prediction;
-    }
-    if ($args{data_format} eq 'pair') {
-        return \@predictions;
-    }
-    else {
-        return {timestamps => \@timestamps_temp, values => \@predictions};
-    }
+    return $self->constructPrediction (
+               function_args => $function_args,
+               %args,
+           );
 }
+
+sub prediction_function {
+    my ($self, %args) = @_;
+    General::checkParams(args     => \%args,
+                         required => ['function_args'],);
+
+    # (ts - offset + 1 > 0)
+    if ($args{function_args}->{ts} - $args{function_args}->{offset} + 1 > 0) {
+        # a * ( log (ts - offset + 1) - offset_lin) + b
+        return $args{function_args}->{a} *
+               (log ($args{function_args}->{ts} - $args{function_args}->{offset} + 1) -
+               $args{function_args}->{offset_lin}) +
+               $args{function_args}->{b}
+    }
+    return undef;
+}
+
 
 sub label {
     my $self = shift;
