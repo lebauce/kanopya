@@ -10,20 +10,13 @@ function getIndicators(sp_id) {
     var indicators = {};
     $.ajax({
         // Get collector manager
-        url     : '/api/serviceprovider/'+sp_id+'/service_provider_managers?manager_type=collector_manager',
+        url     : '/api/serviceprovider/'+sp_id+'/service_provider_managers?expand=manager.collector_indicators.indicator&custom.category=CollectorManager',
         async   :false,
-        success : function(collector_manager) {
-            if (collector_manager.length > 0) {
-                $.ajax({
-                    // Get indicators of the collector manager
-                    url     : '/api/entity/' + collector_manager[0].manager_id + '?expand=collector_indicators,collector_indicators.indicator',
-                    async   : false,
-                    success : function(collector_manager_details) {
-                        $(collector_manager_details.collector_indicators).each(function(i,collector_indic) {
-                            var indicator = collector_indic.indicator;
-                            indicators[indicator.indicator_label] = collector_indic;
-                        });
-                    }
+        success : function(service_provider) {
+            if (service_provider.length > 0) {
+                $(service_provider[0].manager.collector_indicators).each(function(i,collector_indic) {
+                    var indicator = collector_indic.indicator;
+                    indicators[indicator.indicator_label] = collector_indic;
                 });
             }
         }
@@ -43,7 +36,7 @@ function createServiceMetric(container_id, elem_id, ext, options) {
         var service_fields  = {
             clustermetric_label    : {
                 label   : 'Name',
-                type    : 'text',
+                type    : 'text'
             },
             clustermetric_statistics_function_name    : {
                 label   : 'Statistic function name',
@@ -53,21 +46,21 @@ function createServiceMetric(container_id, elem_id, ext, options) {
             clustermetric_indicator_id  :{
                 label   : 'Indicator',
                 type    : 'select',
-                options : indic_options,
+                options : indic_options
             },
             clustermetric_window_time   :{
                 type    : 'hidden',
-                value   : '1200',
+                value   : '1200'
             },
             clustermetric_service_provider_id   :{
                 type    : 'hidden',
-                value   : elem_id,
+                value   : elem_id
             },
             createcombination  :{
                 label   : 'Create the associate combination',
                 type    : 'checkbox',
-                skip    : true,
-            },
+                skip    : true
+            }
         };
         var service_opts    = {
             title       : 'Create a Service Metric',

@@ -5,24 +5,13 @@ require('common/service_common.js');
 function isThereAConnector(elem_id, connector_category) {
     var is  = false;
     // Get all configured connectors on the service
+    var filter = 'component_type.component_type_categories.component_category.category_name=' + connector_category;
     $.ajax({
         async   : false,
-        url     : '/api/connector?service_provider_id=' + elem_id,
+        url     : '/api/component?service_provider_id=' + elem_id + '&' + filter,
         success : function(connectors) {
-            for (i in connectors) if (connectors.hasOwnProperty(i)) {
-                // Get the connector type for each
-                $.ajax({
-                    async   : false,
-                    url     : '/api/connectortype?connector_type_id=' + connectors[i].connector_type_id,
-                    success : function(data) {
-                        if (data[0].connector_category === connector_category) {
-                            is  = true;
-                        }
-                    }
-                });
-                if (is) {
-                    break;
-                }
+            if (connectors.length > 0) {
+                is = true;
             }
         }
     });
@@ -33,19 +22,12 @@ function isThereAManager(elem_id, category) {
     var manager = undefined;
 
     $.ajax({
-        url         : '/api/serviceprovider/' + elem_id + '/service_provider_managers?manager_type=' + category,
+        url         : '/api/serviceprovider/' + elem_id + '/service_provider_managers?expand=manager&custom.category=' + category,
         type        : 'GET',
         async       : false,
         success     : function(data) {
             if (data[0]) {
-                $.ajax({
-                    url         : '/api/entity/' + data[0].manager_id,
-                    type        : 'GET',
-                    async       : false,
-                    success     : function(component) {
-                        manager = component;
-                    }
-               });
+                manager = data[0].manager;
             }
         }
     });
@@ -65,122 +47,79 @@ function deleteManager(pk, container_id, elem_id) {
 
 function loadServicesConfig (container_id, elem_id) {
     var container = $('#' + container_id);
-    var externalclustername = '';
-    
-    var connectorsTypeHash = {};
-    var connectorsTypeArray = new Array;
-    
-    var that = this;
+    var connectors = [];
 
     // Service details
-    var table   = $("<table>").css("width", "100%").appendTo(container);
+    var table = $("<table>").css("width", "100%").appendTo(container);
+    var expand = 'expand=service_provider_managers.manager_category,service_provider_managers.manager.service_provider,service_provider_managers.manager.component_type';
     $.ajax({
-        url     : '/api/serviceprovider/' + elem_id,
+        url     : '/api/serviceprovider/' + elem_id + '?' + expand,
         type    : 'GET',
-        success : function(data) {
-            var external    = "";
-            if (data.externalcluster_id != null) external = 'external';
+        success : function(serviceprovider) {
+            var external = "";
+            if (serviceprovider.externalcluster_id != null) external = 'external';
+
+            // Add the General div to display name and desc.
             $(table).append($("<tr>").append($("<td>", { colspan : 2, class : 'table-title', text : "General" })));
-            $(table).append($("<tr>").append($("<td>", { text : 'Name :', width : '100' })).append($("<td>", { text : data[external + 'cluster_name'] })));
-            $(table).append($("<tr>").append($("<td>", { text : 'Description :' })).append($("<td>", { text : data[external + 'cluster_desc'] })));
+            $(table).append($("<tr>").append($("<td>", { text : 'Name :', width : '100' })).append($("<td>", { text : serviceprovider[external + 'cluster_name'] })));
+            $(table).append($("<tr>").append($("<td>", { text : 'Description :' })).append($("<td>", { text : serviceprovider[external + 'cluster_desc'] })));
             $(table).append($("<tr>", { height : '15' }).append($("<td>", { colspan : 2 })));
-        }
-    });
 
-    $.ajax({
-        url: '/api/connectortype?dataType=jqGrid',
-        async   : false,
-        success: function(connTypeData) {
-                $(connTypeData.rows).each(function(row) {
-                    //connectorsTypeHash = { 'pk' : connTypeData.rows[row].pk, 'connectorName' : connTypeData.rows[row].connector_name };
-                    var pk = connTypeData.rows[row].pk;
-                    connectorsTypeArray[pk] = {
-                        name        : connTypeData.rows[row].connector_name,
-                        category    : connTypeData.rows[row].connector_category
-                    };
-                });
-            }
-    });
-
-    $.ajax({
-        url     : '/api/serviceprovidermanager?service_provider_id=' + elem_id,
-        success : function(data) {
-            var ctnr    = $("<div>", { id : "managerslistcontainer", 'class' : 'details_section' });
+            // Add the Managers div
+            var ctnr = $("<div>", { id : "managerslistcontainer", 'class' : 'details_section' });
             $(ctnr).appendTo($(container));
-            var table   = $("<table>", { id : 'managerslist' }).prependTo($(ctnr));
-            $(table).append($("<tr>").append($("<td>", { colspan : 3, class : 'table-title', text : "Managers" })));
+            var managers = $("<table>", { id : 'managerslist' }).prependTo($(ctnr));
+            $(managers).append($("<tr>").append($("<td>", { colspan : 3, class : 'table-title', text : "Managers" })));
 
-            for (var i in data) if (data.hasOwnProperty(i)) {
+            // Display each manager infos
+            for (var index in serviceprovider.service_provider_managers) {
+                var spmanager = serviceprovider.service_provider_managers[index];
+                var sp = spmanager.manager.service_provider
+
+                // Manager type + connector provider name
+                var line = $("<tr>");
+                $("<td>", { text : spmanager.manager_category.category_name + ' : ' }).css('vertical-align', 'middle').appendTo(line);
+                var std = $("<td>", { text : (sp.externalcluster_name != null) ? sp.externalcluster_name : sp.cluster_name }).appendTo(line);
+                $(std).css('vertical-align', 'middle');
+
+                // Configuration button
                 $.ajax({
-                    url       : '/api/entity/' + data[i].manager_id,
-                    async     : false,
-                    success   : function(mangr) {
-                        $.ajax({
-                            url     : '/api/serviceprovider/' + mangr.service_provider_id,
-                            async   : false,
-                            success : function(sp) {
-                                var l   = $("<tr>");
-                                // Manager type + connector provider name
-                                $("<td>", { text : data[i].manager_type + ' : ' }).css('vertical-align', 'middle').appendTo(l);
-                                var std = $("<td>", { text : (sp.externalcluster_name != null) ? sp.externalcluster_name : sp.cluster_name }).appendTo(l);
-                                $(std).css('vertical-align', 'middle');
+                    url     : '/api/component/' + spmanager.manager.pk + '/getManagerParamsDef',
+                    type    : 'POST',
+                    async   : false,
+                    success : function(manager_params) {
+                        if (Object.keys(manager_params).length > 0) {
+                            $("<td>").append($("<a>", { text : 'Configure' }).button({ icons : { primary : 'ui-icon-wrench' } })).bind('click', { manager : spmanager }, function(event) {
+                                var manager = event.data.manager;
+                                createmanagerDialog(manager.manager_category.catgegory_name, elem_id, $.noop, false, manager.pk, manager.manager_id);
+                            }).appendTo(line);
 
-                                // Configuration button
-                                $.ajax({
-                                    url     : '/api/entity/' + mangr.pk + '/getManagerParamsDef',
-                                    type    : 'POST',
-                                    async   : false,
-                                    success : function(manager_params) {
-                                        if (Object.keys(manager_params).length > 0) {
-                                            $("<td>").append($("<a>", { text : 'Configure' }).button({ icons : { primary : 'ui-icon-wrench' } })).bind('click', { manager : data[i] }, function(event) {
-                                                var manager = event.data.manager;
-                                                createmanagerDialog(manager.manager_type, elem_id, $.noop, false, manager.pk, manager.manager_id);
-                                            }).appendTo(l);
-                                        } else {
-                                            // Don't show configuration button if no parameters for this manager
-                                            $("<td>").appendTo(l);
-                                        }
-                                    }
-                                });
-
-                                // Deletion button
-                                $("<td>").append($("<a>", { text : 'Delete' }).button({ icons : { primary : 'ui-icon-trash' } }).bind('click', { pk : data[i].pk }, function(event) {
-                                    deleteManager(event.data.pk, container_id, elem_id);
-                                })).appendTo(l);
-                                $(table).append(l);
-
-                                // Concrete connector type name
-                                $.ajax({
-                                    url     : '/api/connector/' + mangr.pk,
-                                    success : function(conn) {
-                                        if (conn.connector_type_id != null) {
-                                            $.ajax({
-                                                url     : '/api/connectortype/' + conn.connector_type_id,
-                                                success : function(conntype) {
-                                                    $(std).text($(std).text() + ' - ' + conntype.connector_name);
-                                                }
-                                            });
-                                        }
-                                    }
-                                });
-                            }
-                        });
+                        } else {
+                            // Don't show configuration button if no parameters for this manager
+                            $("<td>").appendTo(line);
+                        }
                     }
                 });
+
+                // Deletion button
+                $("<td>").append($("<a>", { text : 'Delete' }).button({ icons : { primary : 'ui-icon-trash' } }).bind('click', { pk : spmanager.pk }, function(event) {
+                    deleteManager(event.data.pk, container_id, elem_id);
+                })).appendTo(line);
+                $(managers).append(line);
+
+                // Concrete connector type name
+                $(std).text($(std).text() + ' - ' + spmanager.manager.component_type.component_name);
+
+                // Update the connector list for further use
+                connectors.push(spmanager.manager_category.category_name);
             }
 
-            if (!isThereAManager(elem_id, 'WorkflowManager')) {
-                createManagerButton('WorkflowManager', ctnr, elem_id, container_id);
+            var categories = [ 'WorkflowManager', 'CollectorManager', 'DirectoryServiceManager' ];
+            for (var category in categories) {
+                if ($.inArray(categories[category], connectors) < 0) {
+                    createManagerButton(categories[category], ctnr, elem_id, container_id);
+                }
             }
-
-            if (!isThereAManager(elem_id, 'CollectorManager')) {
-                createManagerButton('CollectorManager', ctnr, elem_id, container_id);
-            }
-
-            if (!isThereAManager(elem_id, 'DirectoryServiceManager')) {
-                createManagerButton('DirectoryServiceManager', ctnr, elem_id, container_id);
-            }
-
         }
     });
 }
@@ -230,6 +169,7 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
     }
     var select  = $("<select>", { name : 'managerselection' })
     var fieldset= $('<fieldset>').css({'border' : 'none'});
+
     for (var i in managers) if (managers.hasOwnProperty(i)) {
         var theName = managers[i].component_type ? managers[i].component_type.component_name : managers[i].connector_type.connector_name;
         var manager = managers[i];
@@ -360,7 +300,6 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
                             $("div#waiting_default_insert").dialog("destroy");
                         },
                         error         : function(error) {
-                            alert(error.responseText);
                             if (skippable) callback();
                         }
                     });

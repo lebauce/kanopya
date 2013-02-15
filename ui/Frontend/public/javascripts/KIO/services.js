@@ -55,7 +55,7 @@ function servicesList (container_id, elem_id) {
     var container = $('#' + container_id);
     
     create_grid( {
-        url: '/api/externalcluster?connectors.connector_id=', // Only list externalcluster without connector
+        url: '/api/externalcluster?components.component_id=', // Only list externalcluster without connector
         content_container_id: container_id,
         grid_id: 'services_list',
         afterInsertRow: function (grid, rowid, rowdata, rowelem) {
@@ -113,6 +113,7 @@ function createUpdateNodeButton(container, elem_id, grid) {
     } else {
         function disableButton(button) {
             button.attr('disabled', 'disabled');
+            button.addClass("ui-state-disabled");
             button.attr('title', 'Your service must be connected with a directory.');
         }
         disableButton(import_button);
@@ -146,8 +147,8 @@ function loadServicesResources (container_id, elem_id) {
                 url         : '/api/serviceprovider/' + elem_id + '/' + action + 'Node',
                 contentType : 'application/json',
                 data        : JSON.stringify( {
-                    node_id : rowid,
-                }),
+                    node_id : rowid
+                })
             });
         });
     }

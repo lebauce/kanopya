@@ -28,7 +28,7 @@ function importItemButton(container_id, sp_id, obj_info, grid_ids) {
             // Do not list destination service provider
             if (sp.pk != sp_id) {
                 // List only service providers with the same collector manager than dest service provider
-                $.get('/api/serviceprovider/' + sp.pk + '/service_provider_managers?manager_type=collector_manager')
+                $.get('/api/serviceprovider/' + sp.pk + '/service_provider_managers?custom.category=CollectorManager')
                 .success(function(manager) {
                     if (manager.length > 0 && manager[0].manager_id === collector_manager_id) {
                         // Get related items and add them to the tree
@@ -156,7 +156,7 @@ function importItemButton(container_id, sp_id, obj_info, grid_ids) {
 
     // Retrieve collector manager id (used to check available service providers for import)
     // Add import button only if there is a linked collector manager
-    $.get('/api/serviceprovider/' + sp_id + '/service_provider_managers?manager_type=collector_manager')
+    $.get('/api/serviceprovider/' + sp_id + '/service_provider_managers?custom.category=CollectorManager')
     .success(function(manager) {
         if (manager.length > 0) {
             collector_manager_id = manager[0].manager_id;

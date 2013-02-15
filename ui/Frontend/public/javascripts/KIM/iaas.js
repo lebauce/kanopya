@@ -217,14 +217,6 @@ function load_iaas_content (container_id) {
                 iaas.push(iaases[i]);
             }
         }
-        for (var connector in iaases[i].connectors) {
-            var connector = iaases[i].connectors[connector];
-            if (connector.connector_type.connector_category === 'HostManager' &&
-                connector.host_type === 'Virtual Machine') {
-                iaases[i].cloudmanager = connector;
-                iaas.push(iaases[i]);
-            }
-        }
     }
 
     var tabs = [];
