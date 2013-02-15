@@ -412,17 +412,13 @@ sub clone {
 
     # Check that both services use the same collector manager
     my $src_collector_manager = ServiceProviderManager->find( 
-                                    hash => {
-                                        service_provider_id => $self->service_provider_id
-                                    },
-                                    by_category => 'CollectorManager'
+                                    hash   => { service_provider_id => $self->service_provider_id },
+                                    custom => { category => 'CollectorManager' }
                                 );
 
     my $dest_collector_manager = ServiceProviderManager->find(
-                                     hash => {
-                                         service_provider_id => $args{'dest_service_provider_id'}
-                                     },
-                                     by_category => 'CollectorManager'
+                                     hash   => { service_provider_id => $args{'dest_service_provider_id'} },
+                                     custom => { category => 'CollectorManager' }
                                  );
 
     if ($src_collector_manager->manager_id != $dest_collector_manager->manager_id) {
