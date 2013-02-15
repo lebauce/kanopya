@@ -313,23 +313,25 @@ sub getPatternFromParams {
 
             # Handle managers
             if ($name =~ m/_manager_id/) {
-                my $manager_type = $name;
-                $manager_type =~ s/_id$//g;
+                my $manager_key = $name;
+                $manager_key =~ s/_id$//g;
+
+                my $manager_type = join('', map { ucfirst($_) } split('_', $manager_key));
 
                 # Set the manager infos
-                $pattern->{managers}->{$manager_type}->{manager_id}   = delete $args{params}->{$name};
-                $pattern->{managers}->{$manager_type}->{manager_type} = $manager_type;
+                $pattern->{managers}->{$manager_key}->{manager_id}   = delete $args{params}->{$name};
+                $pattern->{managers}->{$manager_key}->{manager_type} = $manager_type;
 
                 # Set the manager params if required.
                 # Build the method name that return the managers params in funtion of the type
                 # of the manager, and call it on the manager instance.
-                my $manager = Entity->get(id => $pattern->{managers}->{$manager_type}->{manager_id});
-                my $method = 'get' . join('', map { ucfirst($_) } split('_', $manager_type)) . 'Params';
+                my $manager = Entity->get(id => $pattern->{managers}->{$manager_key}->{manager_id});
+                my $method = 'get' . $manager_type . 'Params';
 
                 my @params = keys % { $manager->$method };
                 for my $param (@params) {
                     if (defined $args{params}->{$param} and $args{params}->{$param}) {
-                        $pattern->{managers}->{$manager_type}->{manager_params}->{$param} = delete $args{params}->{$param};
+                        $pattern->{managers}->{$manager_key}->{manager_params}->{$param} = delete $args{params}->{$param};
                     }
                 }
             }
@@ -527,13 +529,17 @@ sub getParams {
     for my $name (keys %$pattern) {
         # Handle managers
         if ($name eq 'managers') {
-            for my $manager_type (keys %{$pattern->{$name}}) {
+            for my $manager (keys %{$pattern->{$name}}) {
+                my $manager_type = $pattern->{$name}->{$manager}->{manager_type};
+                $manager_type =~ s/Manager$//g;
+                $manager_type = lcfirst($manager_type) . '_manager';
+
                 # Set the manager id
-                $flat_hash->{$manager_type . '_id'} = $pattern->{$name}->{$manager_type}->{manager_id};
+                $flat_hash->{$manager_type . '_id'} = $pattern->{$name}->{$manager}->{manager_id};
 
                 # Set the manager parameters
-                for my $manager_param (keys %{$pattern->{$name}->{$manager_type}->{manager_params}}) {
-                    $flat_hash->{$manager_param} = $pattern->{$name}->{$manager_type}->{manager_params}->{$manager_param};
+                for my $manager_param (keys %{$pattern->{$name}->{$manager}->{manager_params}}) {
+                    $flat_hash->{$manager_param} = $pattern->{$name}->{$manager}->{manager_params}->{$manager_param};
                 }
             }
         }
@@ -607,7 +613,7 @@ sub searchManagers {
                          optional => { 'service_provider_id' => undef });
 
     my $searchargs = {
-        by_category => $args{component_category}
+        custom => { category => $args{component_category} }
     };
     if (defined $args{service_provider_id}) {
         $searchargs->{hash}->{service_provider_id} = $args{service_provider_id};

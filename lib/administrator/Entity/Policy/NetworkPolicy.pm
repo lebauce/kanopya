@@ -36,6 +36,9 @@ use base 'Entity::Policy';
 use strict;
 use warnings;
 
+use Entity::Netconf;
+use Entity::Network;
+
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
