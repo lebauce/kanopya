@@ -96,7 +96,7 @@ sub new {
     my $hash = \%args;
 
     # Extract relation for futher handling
-    my $relations = extractRelations(hash => $hash);
+    my $relations = $class->extractRelations(hash => $hash);
 
     my @attrs = keys %args;
     foreach my $attr (@attrs) {
@@ -167,7 +167,7 @@ sub update {
     my $hash  = \%args;
 
     # Extract relation for futher handling
-    my $relations = extractRelations(hash => $hash);
+    my $relations = $class->extractRelations(hash => $hash);
     delete $hash->{id};
 
     my $updated = 0;
@@ -227,7 +227,7 @@ sub promote {
     $args{$primary_key} = $promoted->id;
 
     # Extract relation for futher handling
-    my $relations = extractRelations(hash => \%args);
+    my $relations = $class->extractRelations(hash => \%args);
 
     # Merge the base object attributtes and new ones for attrs checking
     my %totalargs = (%args, $promoted->getAttrs);
@@ -644,12 +644,13 @@ sub fromDBIx {
                   _dbix      => $args{row},
               }, $modulename;
 
-    # TODO: Do not hard code exceptions ("class_type", "component_type"),
+    # TODO: Do not hard code exceptions ("class_type", "component_type", "service_provider_type"),
     #       Those two types have no relation to class_type table,
     #       but have class_type_id as primary key column name.
     if ($args{deep} &&
         $args{row}->result_source->from() ne "class_type" &&
-        $args{row}->result_source->from() ne "component_type") {
+        $args{row}->result_source->from() ne "component_type" &&
+        $args{row}->result_source->from() ne "service_provider_type") {
 
         my $dbix = $args{row};
         do {
@@ -1074,7 +1075,7 @@ sub search {
     General::checkParams(args     => \%args,
                          optional => { 'hash' => {}, 'page' => undef, 'rows' => undef,
                                        'join' => undef, 'order_by' => undef, 'dataType' => undef,
-                                       'prefetch' => [], 'raw_hash' => {} });
+                                       'prefetch' => [], 'raw_hash' => {}, 'presets' => {} });
 
     my $merge = Hash::Merge->new('STORAGE_PRECEDENT');
 
@@ -1397,45 +1398,61 @@ sub toJSON {
     }
 
     if ($args{expand}) {
-        for my $expand (@{$args{expand}}) {
-            my $obj = $self;
+        # Build the expands hash
+        my $expands;
+        if (ref($args{expand}) and ref($args{expand}) eq "HASH") {
+            $expands = $args{expand};
+        }
+        else {
+            $expands = {};
+            for my $expand (@{ $args{expand} }) {
+                my $current = $expands;
+                my @comps   = split(/\./, $expand);
+                for my $comp (@comps) {
+                    if (not defined $current->{$comp}) {
+                        $current->{$comp} = {};
+                    }
+                    $current = $current->{$comp};
+                }
+            }
+        }
+
+        for my $expand (keys %$expands) {
+            my $obj  = $self;
             my $dbix = $self->{_dbix};
             my $is_relation = 0;
 
-            my @comps = split(/\./, $expand);
-            my $comp = shift @comps;
             COMPONENT:
-            while ($comp && $dbix) {
+            while ($expand && $dbix) {
                 my $source = $dbix->result_source;
                 my $many_to_many = $source->result_class->can("_m2m_metadata") &&
-                                   defined ($source->result_class->_m2m_metadata->{$comp});
+                                       defined ($source->result_class->_m2m_metadata->{$expand});
 
-                if ($source->has_relationship($comp)) {
-                    $is_relation = $source->relationship_info($comp)->{attrs}->{accessor};
+                if ($source->has_relationship($expand)) {
+                    $is_relation = $source->relationship_info($expand)->{attrs}->{accessor};
                     last COMPONENT;
-                } elsif ($many_to_many) {
+                }
+                elsif ($many_to_many) {
                     $is_relation = "multi";
                     last COMPONENT;
                 }
-
                 $dbix = $dbix->result_source->has_relationship('parent') ? $dbix->parent : undef;
             }
 
-            my @rest = join('.', @comps);
             if ($is_relation) {
-                $hash->{$comp} = [];
+                $hash->{$expand} = [];
                 if ($is_relation eq 'single_multi' ||
                     $is_relation eq 'multi') {
-                    for my $item ($obj->getAttr(name => $comp, deep => $args{deep})) {
-                        push @{$hash->{$comp}}, $item->toJSON(expand => [ join('.', @comps) ],
-                                                              deep   => $args{deep});
+                    for my $item ($obj->getAttr(name => $expand, deep => $args{deep})) {
+                        push @{$hash->{$expand}}, $item->toJSON(expand => $expands->{$expand},
+                                                                deep   => $args{deep});
                     }
                 }
                 elsif ($is_relation eq 'single') {
-                    my $obj = $self->getAttr(name => $comp, deep => 1);
+                    my $obj = $self->getAttr(name => $expand, deep => 1);
                     if ($obj) {
-                        $hash->{$comp} = $obj->toJSON(expand => [ join('.', @comps) ],
-                                                      deep   => $args{deep});
+                        $hash->{$expand} = $obj->toJSON(expand => $expands->{$expand},
+                                                        deep   => $args{deep});
                     }
                 }
             }
@@ -1493,6 +1510,7 @@ sub toJSON {
     return $hash;
 }
 
+
 =pod
 
 =begin classdoc
@@ -1508,7 +1526,8 @@ Extract relations sub hashes from the hash represeting the object.
 =cut
 
 sub extractRelations {
-    my (%args) = @_;
+    my ($self, %args) = @_;
+    my $class = ref($self) || $self;
 
     General::checkParams(args => \%args, required => [ 'hash' ]);
 
@@ -2419,7 +2438,7 @@ sub methodCall {
                        $class->_adm->{config}->{dbconf}->{god_mode} eq 1;
 
     if (not ($goodmode || $usertype)) {
-        $class->checkUserPerm(user_id => $userid, %args);
+        $self->checkUserPerm(user_id => $userid, %args);
     }
 
     my $method = $args{method};
@@ -2439,32 +2458,35 @@ Check permmissions on a method for a user.
 
 sub checkUserPerm {
     my $self  = shift;
-    my $class = ref $self;
+    my $class = ref ($self);
     my %args  = @_;
 
     General::checkParams(args => \%args, required => [ 'method', 'user_id' ],
                                          optional => { 'params' => {} });
 
+    # Firstly check permssions on parameters
     foreach my $key (keys %{$args{params}}) {
         my $param = $args{params}->{$key};
         if ((ref $param) eq "HASH" && defined ($param->{pk}) && defined ($param->{class_type_id})) {
-            my $class = $class->getClassType(id => $param->{class_type_id});
-
-            my $granted = $class->getDelegatee->getMasterGroup->checkPerm(user_id => $args{user_id}, method => "get");
-            if (not $granted) {
-                my $msg = "Permission denied to get parameter " . $param->{pk};
-                throw Kanopya::Exception::Permission::Denied(error => $msg);
+            my $paramclass = $self->getClassType(id => $param->{class_type_id});
+            eval {
+                $paramclass->getDelegatee->getMasterGroup->checkPerm(user_id => $args{user_id}, method => "get");
+            };
+            if ($@) {
+                my $err = $@;
+                if ($err->isa('Kanopya::Exception::Permission::Denied')) {
+                    my $msg = "Permission denied to get parameter " . $param->{pk};
+                    throw Kanopya::Exception::Permission::Denied(error => $msg);
+                }
+                else { $err->rethrow(); }
             }
-
             # TODO: use DBIx::Class::ResultSet->new_result and bless it to 'class' instead of a 'get'
-            $args{params}->{$key} = $class->get(id => $param->{pk});
+            $args{params}->{$key} = $paramclass->get(id => $param->{pk});
         }
     }
 
-    my $methods = $self->getMethods();
-
-    # Retreive the perm holder if it is not a method cal on a entity (usally class methods)
-    my ($granted, $perm_holder);
+    # Retreive the perm holder if it is not a method call on a entity (usally class methods)
+    my $perm_holder;
     if ($class) {
         $perm_holder = $self->getDelegatee;
     }
@@ -2473,9 +2495,11 @@ sub checkUserPerm {
     }
 
     # Check the permissions for the logged user
-    $granted = $perm_holder->checkPerm(user_id => $args{user_id}, method => $args{method});
-    if (not $granted) {
-        my $msg = "Permission denied to " . $methods->{$args{method}}->{description};
+    eval {
+        $perm_holder->checkPerm(user_id => $args{user_id}, method => $args{method});
+    };
+    if ($@) {
+        my $msg = "Permission denied to " . $self->getMethods->{$args{method}}->{description};
         throw Kanopya::Exception::Permission::Denied(error => $msg);
     }
 }
@@ -2541,7 +2565,7 @@ sub _adm {
 
     if (not $args{no_user_check}) {
         if (not exists $ENV{EID} or not defined $ENV{EID}) {
-            $errmsg = "No valid session registered ;";
+            $errmsg = "No valid session registered:";
             $errmsg .= " BaseDB->authenticate must be call with a valid login/password pair";
             throw Kanopya::Exception::AuthenticationRequired(error => $errmsg);
         }
