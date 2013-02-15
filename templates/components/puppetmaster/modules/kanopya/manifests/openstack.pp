@@ -67,16 +67,16 @@ class kanopya::glance($dbserver, $password, $keystone, $email) {
 
     @@keystone_endpoint { "RegionOne/glance":
         ensure       => present,
-        public_url   => "http://${fqdn}:9292/v1",
-        admin_url    => "http://${fqdn}:9292/v1",
-        internal_url => "http://${fqdn}:9292/v1",
+        public_url   => "http://${fqdn}:9292/v2",
+        admin_url    => "http://${fqdn}:9292/v2",
+        internal_url => "http://${fqdn}:9292/v2",
         tag          => "${keystone}"
     }
 
     class { 'glance::api':
         verbose           => 'True',
         debug             => 'True',
-        auth_type         => 'keystone',
+        auth_type         => '',
         auth_port         => '35357',
         keystone_tenant   => 'services',
         keystone_user     => 'glance',
@@ -87,7 +87,7 @@ class kanopya::glance($dbserver, $password, $keystone, $email) {
     class { 'glance::registry':
         verbose           => 'True',
         debug             => 'True',
-        auth_type         => 'keystone',
+        auth_type         => '',
         keystone_tenant   => 'services',
         keystone_user     => 'glance',
         keystone_password => 'glance',
