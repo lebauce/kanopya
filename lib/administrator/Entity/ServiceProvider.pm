@@ -30,6 +30,7 @@ use base "Entity";
 
 use General;
 use ClassType::ComponentType;
+use ClassType::ServiceProviderType;
 use ComponentCategory::ManagerCategory;
 use Entity::Component;
 use Entity::Interface;
@@ -43,8 +44,8 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    service_provider_name => {
-        pattern      => '^.*$',
+    service_provider_type_id => {
+        pattern      => '^\d+$',
         is_mandatory => 0,
         is_extended  => 0
     },
@@ -55,31 +56,59 @@ sub getAttrDef { return ATTR_DEF; }
 sub methods {
     return {
         addComponent => {
-            description => 'add a component to this cluster',
+            description => 'add a component to this service provider.',
         },
         removeComponent => {
-            description => 'remove a component from this cluster',
+            description => 'remove a component from this service provider.',
         },
         addManager => {
-            description => 'addManager',
+            description => 'add a manager to this service provider.',
         },
         getNodeMonitoringData => {
-            description => 'get monitoring data of a node',
+            description => 'get monitoring data of a node.',
         },
         enableNode => {
-            description => 'Enable node',
+            description => 'enable node.',
         },
         disableNode => {
-            description => 'Disable node',
+            description => 'disable node',
         },
         addManagerParameters => {
-            description => 'add paramaters to a manager',
+            description => 'add paramaters to a manager.',
         },
-        # TODO(methods): Remove this method from the api once the merge of component/connector
         getManagerParameters => {
-            description => 'getManagerParameters',
+            description => 'get managers parameters.',
         },
     };
+}
+
+
+=pod
+
+=begin classdoc
+
+@constructor
+
+
+Override the constructor to set the proper service provider type.
+
+@return the service provider instance
+
+=end classdoc
+
+=cut
+
+sub new {
+    my $class = shift;
+    my %args = @_;
+
+    if ($class ne 'Entity::ServiceProvider') {
+        (my $type = $class) =~ s/^.*:://g;
+        $args{service_provider_type_id}
+            = ClassType::ServiceProviderType->find(hash => { service_provider_name => $type })->id;
+    }
+
+    return $class->SUPER::new(%args);
 }
 
 
@@ -162,8 +191,8 @@ sub getManager {
 
     General::checkParams(args => \%args, required => [ 'manager_type' ]);
 
-    my $cluster_manager = $self->findRelated(filters     => [ 'service_provider_managers' ],
-                                             by_category =>  $args{manager_type});
+    my $cluster_manager = $self->findRelated(filters => [ 'service_provider_managers' ],
+                                             custom  => { category => $args{manager_type} });
 
     return $cluster_manager->manager;
 }
@@ -196,11 +225,18 @@ sub getNodes {
 }
 
 
-=head2 addManager
+=pod
 
-    Desc: add a manager to a service provider
-    Args: manager object (Component entity) and $manager_type (string)
-    Return: manager object
+=begin classdoc
+
+Add a manager to a service provider
+
+@param manager_id the id of the component to use as manager
+@param manager_type the type of the manager to add
+
+@return the ServiceProviderManager instance
+
+=end classdoc
 
 =cut
 
@@ -239,8 +275,8 @@ sub addManagerParameter {
 
     General::checkParams(args => \%args, required => [ 'manager_type', 'name', 'value' ]);
 
-    my $cluster_manager = $self->findRelated(filters     => [ 'service_provider_managers' ],
-                                             by_category =>  $args{manager_type});
+    my $cluster_manager = $self->findRelated(filters => [ 'service_provider_managers' ],
+                                             custom  => { category => $args{manager_type} });
 
     $cluster_manager->addParams(params => { $args{name} => $args{value} });
 }
@@ -252,7 +288,7 @@ sub addManagerParameter {
 
 Set parameters of a manager defined by its type.
 
-@param manager_type the of the manager on which we set the params
+@param manager_type the type of the manager on which we set the params
 @param params the parameters hash to set 
 
 =end classdoc
@@ -267,8 +303,8 @@ sub addManagerParameters {
                          required => [ "manager_type", "params" ],
                          optional => { "override" => 0 });
 
-    my $manager = $self->findRelated(filters     => [ 'service_provider_managers' ],
-                                     by_category =>  $args{manager_type});
+    my $manager = $self->findRelated(filters => [ 'service_provider_managers' ],
+                                     custom  => { category => $args{manager_type} });
 
     $manager->addParams(params => $args{params}, override => $args{override});
 }
@@ -288,8 +324,8 @@ sub getManagerParameters {
 
     General::checkParams(args => \%args, required => [ 'manager_type' ]);
 
-    my $cluster_manager = $self->findRelated(filters     => [ 'service_provider_managers' ],
-                                             by_category =>  $args{manager_type});
+    my $cluster_manager = $self->findRelated(filters => [ 'service_provider_managers' ],
+                                             custom  => { category => $args{manager_type} });
 
     return $cluster_manager->getParams();
 }
@@ -354,8 +390,8 @@ sub getLimit {
         my $now = time() * 1000;
         for my $limit (@limits) {
             if (($limit->start < $now) && ($limit->ending > $now)){ 
-                $billing_limit_value = $billing_limit_value ? min($billing_limit_value, $limit->value) : $limit->value;
-                $log->debug('Limit value'.($limit->value));
+                $billing_limit_value = $billing_limit_value ?
+                                           min($billing_limit_value, $limit->value) : $limit->value;
             }
         }
 
@@ -376,8 +412,6 @@ sub getLimit {
             $host_limit_value = $host_params->{max_core};
         }
 
-        $log->debug('sp <'.($self->getId).'> Type <'.($args{type}).'> Billing limit <'.($billing_limit_value).'> host limit <'.($host_limit_value).'>');
-
         my $value;
         if (defined $billing_limit_value){
             if ( defined $host_limit_value ) {
@@ -397,31 +431,50 @@ sub getLimit {
     } 
 }
 
-=head2 addComponent
-
-    Desc: link a existing component with the cluster
-
 =cut
-
-sub addComponent {
-    my ($self,%args) = @_;
-    my $noconf;
-
-    General::checkParams(args => \%args, required => ['component']);
-
-    my $component = $args{component};
-    $component->setAttr(name  => 'service_provider_id',
-                        value => $self->id);
-    $component->save();
-
-    return $component;
-}
 
 =pod
 
 =begin classdoc
 
-=head2 addComponentFromType
+Link a existing component with the service provider. Also
+check compatibility with the component type and the service provider type.
+
+@param component the component to link with the service provider
+
+@return the linked component
+
+=end classdoc
+
+=cut
+
+sub addComponent {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'component' ]);
+
+    # Check if the type of the given component is installable on this type
+    # of service provider.
+    my $component_type = $args{component}->component_type;
+    my @service_provider_types = $component_type->service_provider_types;
+    if (scalar (grep { $_->id == $self->service_provider_type_id } @service_provider_types) <= 0) {
+        throw Kanopya::Exception::Internal(
+                  error => "Component type <" . $component_type->component_name .
+                           "> can not be installed on a service provider of type <" .
+                           $self->service_provider_type->service_provider_name . ">."
+              );
+    }
+
+    $args{component}->setAttr(name  => 'service_provider_id',
+                              value => $self->id,
+                              save  => 1);
+
+    return $args{component};
+}
+
+=pod
+
+=begin classdoc
 
 Create a new componant and link it to the cluster
 
@@ -488,7 +541,7 @@ sub getComponents {
     };
 
     if (defined ($args{category}) and $args{category} ne "all") {
-        $findargs->{by_category} = $args{category};
+        $findargs->{custom}->{category} = $args{category};
     };
 
     my @components = Entity::Component->search(%$findargs);
@@ -515,7 +568,7 @@ sub getComponent {
     }
 
     if (defined ($args{category})) {
-        $findargs->{by_category} = $args{category};
+        $findargs->{custom}->{category} = $args{category};
     }
 
     if (defined ($args{version})) {

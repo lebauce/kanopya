@@ -29,24 +29,30 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    ucs_name            => { pattern      => '.*',
-							 is_mandatory => 1,
-                           },
-    ucs_desc            => { pattern      => '.*',
-							 is_mandatory => 0,
-                           },
-    ucs_addr            => { pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
-							 is_mandatory => 1,
-                           },
-    ucs_login           => { pattern    => '.*',
-                             is_mandatory => 1,
-                           },
-    ucs_passwd          => { pattern    => '.*',
-                             is_mandatory => 1,
-                           },
-    ucs_ou              =>  { pattern => '.*',
-                             is_mandatory => 0,
-                            },
+    ucs_name => {
+        pattern      => '.*',
+        is_mandatory => 1,
+    },
+    ucs_desc => {
+        pattern      => '.*',
+        is_mandatory => 0,
+    },
+    ucs_addr => {
+        pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
+        is_mandatory => 1,
+    },
+    ucs_login => {
+        pattern      => '.*',
+        is_mandatory => 1,
+    },
+    ucs_passwd => {
+        pattern      => '.*',
+        is_mandatory => 1,
+    },
+    ucs_ou => {
+        pattern      => '.*',
+        is_mandatory => 0,
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -54,8 +60,7 @@ sub getAttrDef { return ATTR_DEF; }
 sub methods {
     return {
         synchronize => {
-            description => 'synchronize width UCS',
-            perm_holder => 'entity'
+            description => 'synchronize Kanopya width the UCS device.',
         }
     };
 }

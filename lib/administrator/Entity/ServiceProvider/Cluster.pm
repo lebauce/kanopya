@@ -1,5 +1,5 @@
-# Cluster.pm - This object allows to manipulate cluster configuration
 #    Copyright 2011 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -54,8 +54,6 @@ use DateTime;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-
-our $VERSION = "1.00";
 
 my $log = get_logger("");
 my $errmsg;
@@ -437,8 +435,8 @@ sub configureManagers {
             # and set manager parameters if defined.
             eval {
                 ServiceProviderManager->find(
-                    hash        => { service_provider_id => $self->id },
-                    by_category => $manager->{manager_type},
+                    hash   => { service_provider_id => $self->id },
+                    custom => { category => $manager->{manager_type} },
                 );
             };
             if ($@) {

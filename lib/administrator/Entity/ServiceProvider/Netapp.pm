@@ -28,21 +28,26 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    netapp_name            => { pattern      => '.*',
-                             is_mandatory => 1,
-                           },
-    netapp_desc            => { pattern      => '.*',
-                             is_mandatory => 0,
-                           },
-    netapp_addr            => { pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
-                             is_mandatory => 1,
-                           },
-    netapp_login           => { pattern    => '.*',
-                             is_mandatory => 1,
-                           },
-    netapp_passwd          => { pattern    => '.*',
-                             is_mandatory => 1,
-                           },
+    netapp_name => {
+        pattern      => '.*',
+        is_mandatory => 1,
+    },
+    netapp_desc => {
+        pattern      => '.*',
+        is_mandatory => 0,
+    },
+    netapp_addr => {
+        pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
+        is_mandatory => 1,
+    },
+    netapp_login => {
+        pattern      => '.*',
+        is_mandatory => 1,
+    },
+    netapp_passwd => {
+        pattern      => '.*',
+        is_mandatory => 1,
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -50,12 +55,10 @@ sub getAttrDef { return ATTR_DEF; }
 sub methods {
     return {
         getState    => {
-            description => 'get the state',
-            perm_holder => 'entity'
+            description => 'get the state of the NetApp device.',
         },
         synchronize => {
-            description => 'synchronize',
-            perm_holder => 'entity'
+            description => 'synchronize Kanpya with the NetApp device.',
         }
     };
 }
