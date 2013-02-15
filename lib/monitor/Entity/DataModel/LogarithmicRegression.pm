@@ -164,4 +164,9 @@ sub predict {
     }
 }
 
+sub label {
+    my $self = shift;
+    return 'Logarithmic regression '.$self->time_label();
+}
+
 1;

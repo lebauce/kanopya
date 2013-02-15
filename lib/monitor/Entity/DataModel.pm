@@ -105,4 +105,23 @@ sub predict {
     throw Kanopya::Exception(error => 'Method not implemented');
 }
 
+sub label {
+    throw Kanopya::Exception(error => 'Method not implemented');
+}
+
+sub time_label {
+    my $self = shift;
+
+    my $time = time;    # or any other epoch timestamp
+    my @months = ("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec");
+
+    my ($sec, $min, $hour, $day,$month,$year) = (localtime($self->start_time))[0,1,2,3,4,5];
+    my $start_date = $months[$month]." ".$day.", ".($year+1900)." ".$hour.":".$min.":".$sec;
+
+    ($sec, $min, $hour, $day,$month,$year) = (localtime($self->end_time))[0,1,2,3,4,5];
+    my $end_date = $months[$month]." ".$day.", ".($year+1900)." ".$hour.":".$min.":".$sec;
+
+    return "[$start_date -> $end_date]";
+}
+
 1;

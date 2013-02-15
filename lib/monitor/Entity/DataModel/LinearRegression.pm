@@ -127,4 +127,10 @@ sub predict {
         }
     }
 }
+
+sub label {
+    my $self = shift;
+    return 'Linear regression '.$self->time_label();
+}
+
 1;
