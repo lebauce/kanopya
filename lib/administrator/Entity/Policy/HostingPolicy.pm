@@ -199,4 +199,29 @@ sub getNonEditableAttributes {
     return $definition;
 }
 
+
+=pod
+
+=begin classdoc
+
+Remove possibly defined host_provider_id from params, as it is a
+field convenient for manager selection only.
+
+@return a policy pattern fragment
+
+=end classdoc
+
+=cut
+
+sub getPatternFromParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'params' ]);
+
+    delete $args{params}->{host_provider_id};
+
+    return $self->SUPER::getPatternFromParams(params => $args{params});
+}
+
 1;
