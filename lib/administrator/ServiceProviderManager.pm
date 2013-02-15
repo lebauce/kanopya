@@ -86,14 +86,19 @@ sub search {
 
     General::checkParams(args => \%args, optional => { 'hash' => {} });
 
-    if (defined $args{by_category}) {
-        # TODO: Support this request in the api
-        # $args{hash}->{'manager_category.category_name'} = delete $args{by_category};
+    if (defined $args{custom}) {
+        if (defined $args{custom}->{category}) {
+            # TODO: Support this request in the api
+            # $args{hash}->{'manager_category.category_name'} = delete $args{custom}->{category};
 
-        $args{hash}->{'manager_category_id'} = ComponentCategory::ManagerCategory->find(
-                                                   hash => { category_name => $args{by_category} }
-                                               )->id 
+            $args{hash}->{'manager_category_id'}
+                = ComponentCategory::ManagerCategory->find(
+                      hash => { category_name => delete $args{custom}->{category} }
+               )->id;
+        }
+        delete $args{custom};
     }
+
     return $class->SUPER::search(%args);
 }
 
