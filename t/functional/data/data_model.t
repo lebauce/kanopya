@@ -133,9 +133,9 @@ sub select_best_model_operation {
 
         my $model = (pop @models);
 
-        my ($ts, $values) = $model->predict(start_time      => time() - 10*60,
-                                            end_time        => time() + 10*60,
-                                            sampling_period => 100,);
+        my $pred = $model->predict(start_time      => time() - 10*60,
+                                   end_time        => time() + 10*60,
+                                   sampling_period => 100,);
 
         if (! $model->isa('Entity::DataModel::LinearRegression')) {
             die 'Wrong Linear Regresssion';
@@ -170,9 +170,9 @@ sub select_best_model_operation {
 
         my $model = (pop @models);
 
-        my ($ts, $values) = $model->predict(start_time      => time() - 10*60,
-                                         end_time        => time() + 10*60,
-                                         sampling_period => 100,);
+        my $pred = $model->predict(start_time      => time() - 10*60,
+                                   end_time        => time() + 10*60,
+                                   sampling_period => 100,);
 
         $model->delete();
 
@@ -181,14 +181,14 @@ sub select_best_model_operation {
 
 sub test_R_squared {
     lives_ok {
-        my ($ts, $data_model) = $service_data_model->predict(
+        my $pred = $service_data_model->predict(
                                     start_time => 1,
                                     end_time => 10,
                                     sampling_period => 1,
                                 );
 
         my $Rsquared = $service_data_model->computeRSquared( data       => \@data_values,
-                                                             data_model => $data_model, );
+                                                             data_model => $pred->{values}, );
         if ($Rsquared - 0.974688777619551 > 10**(-5)) {
             die 'Wrong Rsquared computation';
         }
@@ -212,7 +212,7 @@ sub logarithmic_regression_predict {
                                '38.4958739180753',
         );
 
-       my $sum = List::Util::sum (List::MoreUtils::pairwise {abs($a - $b)} @{$predictions}, @expected_values);
+       my $sum = List::Util::sum (List::MoreUtils::pairwise {abs($a - $b)} @{$predictions->{values}}, @expected_values);
 
         if ( $sum > 10**(-5) ) {
             die 'Wrong prediction 1 (sum = '.$sum.')';
@@ -235,7 +235,7 @@ sub linear_regression_predict {
                                 '-177.410627952599',
                                 '-560.753435612598',);
 
-        my $sum = List::Util::sum (List::MoreUtils::pairwise {abs($a - $b)} @{$predictions}, @expected_values);
+        my $sum = List::Util::sum (List::MoreUtils::pairwise {abs($a - $b)} @{$predictions->{values}}, @expected_values);
 
         if ( $sum > 10**(-5) ) {
             die 'Wrong prediction 1 (sum = '.$sum.')';
@@ -257,7 +257,7 @@ sub linear_regression_predict {
                                   '-244.887818061666',
                                   '-277.453261451666',);
 
-        $sum = List::Util::sum (List::MoreUtils::pairwise {abs($a - $b)} @{$predictions_2}, @expected_values_2);
+        $sum = List::Util::sum (List::MoreUtils::pairwise {abs($a - $b)} @{$predictions_2->{values}}, @expected_values_2);
 
         if ( $sum > 10**(-5) ) {
             die 'Wrong prediction (sum = '.$sum.')';

@@ -103,7 +103,7 @@ sub predict {
             push @predictions, $a * ($ts - $offset) + $b;
         }
 
-        return ($args{timestamps}, \@predictions);
+        return {timestamps => $args{timestamps}, values => \@predictions};
     }
     else {
 
@@ -119,7 +119,7 @@ sub predict {
                 push @predictions, $a * ($ts - $offset) + $b;
             }
 
-            return (\@timestamps, \@predictions);
+            return {timestamps => \@timestamps, values => \@predictions};
         }
         else {
             throw Kanopya::Exception(error => 'predict method need either timestamps or
