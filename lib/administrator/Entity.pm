@@ -1,3 +1,17 @@
+#    Copyright © 2011 Hedera Technology SAS
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 =pod
 
@@ -68,18 +82,27 @@ sub methods {
             description => 'subscribe to notification about this entity.',
         },
         addPerm => {
-            description => 'subscribe to notification about this entity.',
+            description => 'add a permission for this entity.',
         },
         removePerm => {
-            description => 'subscribe to notification about this entity.',
+            description => 'remove a permission for this entity.',
         }
     };
 }
 
-=head2 new
 
-    Override BaseDB constructor to add the newly created entity
-    to the corresponding group. 
+=pod
+
+=begin classdoc
+
+@constructor
+
+Override BaseDB constructor to add the newly created entity
+to the corresponding groups of the whole class hierachy. 
+
+@return the entity instance
+
+=end classdoc
 
 =cut
 
@@ -111,9 +134,16 @@ sub new {
     return $self;
 }
 
-=head2
 
-    Lock the entity while updating it.
+=pod
+
+=begin classdoc
+
+Lock the entity while updating it.
+
+@return the updated instance
+
+=end classdoc
 
 =cut
 
@@ -137,9 +167,16 @@ sub update {
     return $self;
 }
 
-=head2
 
-    Reload entity from database
+=pod
+
+=begin classdoc
+
+Reload entity from database
+
+@return the reloaded instance
+
+=end classdoc
 
 =cut
 
@@ -148,9 +185,14 @@ sub reload {
     return Entity->get(id => $self->id);
 }
 
-=head2
 
-    Ensure to get the lock on the entity before removing it.
+=pod
+
+=begin classdoc
+
+Ensure to get the lock on the entity before removing it.
+
+=end classdoc
 
 =cut
 
@@ -174,13 +216,13 @@ sub remove {
 }
 
 
-=head2 getMasterGroup
+=pod
 
-    Class : public
+=begin classdoc
 
-    desc : return entity_id of entity master group
-    TO BE CALLED ONLY ON CHILD CLASS/INSTANCE
-    return : scalar : entity_id
+@return the entity master group
+
+=end classdoc
 
 =cut
 
@@ -197,11 +239,14 @@ sub getMasterGroup {
     return $group;
 }
 
-=head2 getMasterGroupName
 
-    Class : public
-    desc : retrieve the master group name associated with this entity
-    return : scalar : master group name
+=pod
+
+=begin classdoc
+
+@return the master group name associated with this entity
+
+=end classdoc
 
 =cut
 
@@ -214,6 +259,17 @@ sub getMasterGroupName {
     return $mastergroup;
 }
 
+
+=pod
+
+=begin classdoc
+
+@return a string representing the entity.
+
+=end classdoc
+
+=cut
+
 sub asString {
     my $self = shift;
 
@@ -222,10 +278,6 @@ sub asString {
     return ref $self, " ( ",  @s,  " )";
 }
 
-
-=head2 addPerm
-
-=cut
 
 sub addPerm {
     my $self = shift;
@@ -256,9 +308,6 @@ sub addPerm {
     }
 }
 
-=head2 removePerm
-
-=cut
 
 sub removePerm {
     my $self = shift;
@@ -295,13 +344,22 @@ sub checkPerm {
 
     General::checkParams(args => \%args, required => [ 'method', 'user_id' ]);
 
-    # Check each combination of consumer related ids and
-    # consumer ones for the method.
-    Entityright->match(consumer_id => $args{user_id},
-                        consumed_id => $self->id,
-                        method      => $args{method});
+    eval {
+        # Check each combination of consumer related ids and
+        # consumer ones for the method.
+        Entityright->match(consumer_id => $args{user_id},
+                           consumed_id => $self->id,
+                           method      => $args{method});
+    };
+    if ($@) {
+        my $err = $@;
+        $log->debug($err);
+        throw Kanopya::Exception::Permission::Denied(
+            error => "No permissions found for user <" . $args{user_id} .
+                     ">, on method <$args{method}> of entity <" . $self->id . ">."
+        );
+    }
 }
-
 
 sub subscribe {
     my $self = shift;
@@ -371,7 +429,6 @@ sub setComment {
         $self->save();
     }
 }
-
 
 sub lock {
     my $self = shift;
@@ -472,7 +529,6 @@ sub toJSON {
             }
         }
     }
-
     return $hash;
 }
 

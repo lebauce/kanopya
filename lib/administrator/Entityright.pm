@@ -62,7 +62,6 @@ sub _getEntityIds {
     foreach my $g (@groups) { 
         push @$ids, $g->id;
     }
-    
     return $ids;
 }
 
@@ -70,7 +69,7 @@ sub match {
     my $class = shift;
     my %args = @_;
 
-    General::checkParams(args     => \%args, 
+    General::checkParams(args     => \%args,
                          required => [ 'consumer_id', 'consumed_id', 'method' ]);
 
     my $consumer_ids = $class->_getEntityIds(entity_id => $args{consumer_id});
