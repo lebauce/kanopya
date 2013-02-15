@@ -168,7 +168,7 @@ class kanopya::novacontroller($password, $dbserver, $amqpserver, $keystone, $ema
     class { 'nova':
         sql_connection      => "mysql://nova:${password}@${dbserver}/nova",
         rabbit_host         => "${amqpserver}",
-        glance_api_servers  => "${glance}:9292",
+        glance_api_servers  => "${glance}",
     }
 
     class { 'nova::scheduler': enabled => true, }
@@ -191,6 +191,12 @@ class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone, $password
         rabbit_password    => "nova"
     }
 
+    class { 'nova::api':
+        enabled        => true,
+        admin_password => "nova",
+        auth_host      => "${keystone}",
+    }
+
     class { 'nova::compute':
         enabled => true,
     }
@@ -208,18 +214,31 @@ class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone, $password
 
     @@keystone_endpoint { "RegionOne/compute":
         ensure       => present,
-        public_url   => "http://${fqdn}:8774",
-        admin_url    => "http://${fqdn}:8774",
-        internal_url => "http://${fqdn}:8774",
+        public_url   => "http://${fqdn}:8774/v2/\$(tenant_id)s",
+        admin_url    => "http://${fqdn}:8774/v2/\$(tenant_id)s",
+        internal_url => "http://${fqdn}:8774/v2/\$(tenant_id)s",
         tag          => "${keystone}"
     }
+
+    @@database_user { "nova@${ipaddress}":
+        password_hash => mysql_password("${password}"),
+        tag           => "${dbserver}",
+    }
+
+    @@database_grant { "nova@${ipaddress}/nova":
+        privileges => ['all'] ,
+        tag        => "${dbserver}"
+    }
+
+    Class['kanopya::openstack::repository'] -> Class['kanopya::novacompute']
 }
 
 class kanopya::quantum_($amqpserver, $dbserver, $keystone, $password) {
     class { 'quantum':
         rabbit_password => "${password}",
         rabbit_host     => "${amqpserver}",
-        rabbit_user     => 'quantum'
+        rabbit_user     => 'quantum',
+        sql_connection  => "mysql://quantum:${password}@${dbserver}/quantum",
     }
 
     class { 'quantum::server':
