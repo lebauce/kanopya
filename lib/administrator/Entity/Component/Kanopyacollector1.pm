@@ -216,7 +216,13 @@ sub collectIndicator {
         );
     };
     if ($@) {
-        $log->info($@);
+        my $err = $@;
+        if ($err->isa('Kanopya::Exception::DB')) {
+            $log->warn("Collect <$args{service_provider_id}-" . $indicator->indicatorset_id .  "> already exists.");
+        }
+        else {
+            $err->rethrow()
+        }
     }
 }
 
