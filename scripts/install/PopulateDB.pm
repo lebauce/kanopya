@@ -689,7 +689,7 @@ sub registerComponents {
         [ 'Glance', '6', '', undef ],
         [ 'Keystone', '6', '', undef ],
         [ 'NovaCompute', '6', '', undef ],
-        [ 'NovaController', '6', '', undef ],
+        [ 'NovaController', '6', 'Cloudmanager', undef ],
         [ 'Quantum', '6', '', undef ],
         [ 'Amqp', '0', '', undef ],
     ];
