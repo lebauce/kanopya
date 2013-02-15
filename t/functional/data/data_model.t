@@ -53,23 +53,6 @@ my $service_data_log_model;
 my $comb;
 my $cm;
 
-my @timestamps = ( 1360605400,
-                   1360605410,
-                   1360605420,
-                   1360605430,
-                   1360605440,);
-
-my @data_values = ( 57.743673592,
-                    42.898686612,
-                    45.779966765,
-                    36.385597934,
-                    41.833077548,);
-
-# construct data hash table
-my $data;
-my $ea = List::MoreUtils::each_array( @timestamps, @data_values );
-while (my ($ts,$dv) = $ea->()) { $data->{$ts} = $dv; }
-
 main();
 
 sub main {
@@ -181,6 +164,22 @@ sub select_best_model_operation {
 
 sub test_R_squared {
     lives_ok {
+        my @timestamps = ( 1360605400,
+                           1360605410,
+                           1360605420,
+                           1360605430,
+                           1360605440,);
+
+        my @data_values = ( 57.743673592,
+                            42.898686612,
+                            45.779966765,
+                            36.385597934,
+                            41.833077548,);
+
+        my $data;
+        my $ea = List::MoreUtils::each_array( @timestamps, @data_values );
+        while (my ($ts,$dv) = $ea->()) { $data->{$ts} = $dv; }
+
         my $pred = $service_data_model->predict(
                                     start_time => 1,
                                     end_time => 10,
@@ -212,12 +211,24 @@ sub logarithmic_regression_predict {
                                '38.4958739180753',
         );
 
-       my $sum = List::Util::sum (List::MoreUtils::pairwise {abs($a - $b)} @{$predictions->{values}}, @expected_values);
+        my $sum = List::Util::sum (List::MoreUtils::pairwise {abs($a - $b)} @{$predictions->{values}}, @expected_values);
 
         if ( $sum > 10**(-5) ) {
             die 'Wrong prediction 1 (sum = '.$sum.')';
         }
 
+        my $pair_predictions = $service_data_log_model->predict(timestamps => $timestamps, data_format => 'pair', time_format => 'ms');
+
+        my $ea = List::MoreUtils::each_array( @$timestamps, @expected_values, @$pair_predictions);
+
+        while (my ($ts,$value,$pair) = $ea->()) {
+            # Do not compare two floats exactly !
+            if ( (($ts*1000) != $pair->[0]) || (($value - $pair->[1]) > 10**(-5))) {
+                die 'Wrong linear prediction in pair format or ms format:'.
+                    ($ts*1000).' != '.($pair->[0])." OR $value != ".($pair->[1]);
+            }
+        }
+        
     } 'Logarithmic regression prediction';
 }
 
@@ -237,6 +248,7 @@ sub linear_regression_predict {
 
         my $sum = List::Util::sum (List::MoreUtils::pairwise {abs($a - $b)} @{$predictions->{values}}, @expected_values);
 
+        # Do not compare two floats exactly !
         if ( $sum > 10**(-5) ) {
             die 'Wrong prediction 1 (sum = '.$sum.')';
         }
@@ -259,8 +271,21 @@ sub linear_regression_predict {
 
         $sum = List::Util::sum (List::MoreUtils::pairwise {abs($a - $b)} @{$predictions_2->{values}}, @expected_values_2);
 
+        # Do not compare two floats exactly !
         if ( $sum > 10**(-5) ) {
             die 'Wrong prediction (sum = '.$sum.')';
+        }
+
+        my $pair_predictions = $service_data_model->predict(timestamps => $timestamps, data_format => 'pair', time_format => 'ms');
+
+        my $ea = List::MoreUtils::each_array( @$timestamps, @expected_values, @$pair_predictions);
+
+        while (my ($ts,$value,$pair) = $ea->()) {
+            # Do not compare two floats exactly !
+            if ( (($ts*1000) != $pair->[0]) || (($value - $pair->[1]) > 10**(-5))) {
+                die 'Wrong linear prediction in pair format or ms format:'.
+                    ($ts*1000).' != '.($pair->[0])." OR $value != ".($pair->[1]);
+            }
         }
     } 'Linear regression prediction';
 }
@@ -285,6 +310,8 @@ sub logarithmic_regression_configure {
 
         $service_data_log_model->configure(data => $data, start_time => 1360605545);
 
+        print ($service_data_log_model->label."\n");
+
         $pp = $service_data_log_model->param_preset->load;
         if ($pp->{a} != 3.80640059030539 || $pp->{b} != 8.3519668674633) {
             die 'Wrong logarithmic regression configuration';
@@ -300,8 +327,23 @@ sub logarithmic_regression_configure {
 }
 
 sub linear_regression_configure {
-
     lives_ok {
+        my @timestamps = ( 1360605400,
+                           1360605410,
+                           1360605420,
+                           1360605430,
+                           1360605440,);
+
+        my @data_values = ( 57.743673592,
+                            42.898686612,
+                            45.779966765,
+                            36.385597934,
+                            41.833077548,);
+
+        my $data;
+        my $ea = List::MoreUtils::each_array( @timestamps, @data_values );
+        while (my ($ts,$dv) = $ea->()) { $data->{$ts} = $dv; }
+
         $service_data_model->configure(data => $data);
         my $pp = $service_data_model->param_preset->load;
 

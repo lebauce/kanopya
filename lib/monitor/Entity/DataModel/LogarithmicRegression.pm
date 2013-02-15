@@ -106,7 +106,8 @@ sub predict {
                                        'end_time'        => undef,
                                        'sampling_period' => undef,});
 
-    # TODO factorize code of prediction same code excepted the formula)
+    # TODO factorize code of prediction same code excepted the formula
+    # function reference
 
     my $pp         = $self->param_preset->load;
     my $a          = $pp->{a};
@@ -120,47 +121,51 @@ sub predict {
     # configuration has been made with an offset value
     my $offset   = $self->getAttr(name => 'start_time');
 
-    # Implement 2 different for loops in order to avoid two array traversals
-    if (defined $args{timestamps}) {
-
-        my @predictions;
-
-        for my $ts (@{$args{timestamps}}) {
-            if ($ts - $offset + 1 > 0) {
-                push @predictions, $a * ( log ($ts - $offset + 1) - $offset_lin) + $b;
-            }
-            else {
-                push @predictions, undef
-            }
-        }
-
-        return {timestamps => $args{timestamps}, values => \@predictions};
+    if ( (! defined $a) || (! defined $b) ) {
+        throw Kanopya::Exception(error => 'DataModel LinearRegression seems to have been badly configured');
     }
-    else {
 
+    # Construct timestamps if not defined
+    if (! defined $args{timestamps}) {
         if (defined $args{start_time} &&
             defined $args{end_time} &&
             defined $args{sampling_period}) {
 
-            my @predictions;
-            my @timestamps;
-
             for (my $ts = $args{start_time} ; $ts <= $args{end_time} ; $ts += $args{sampling_period}) {
-                push @timestamps, $ts;
-                if ($ts - $offset + 1 > 0) {
-                    push @predictions, $a * (log ($ts - $offset + 1) - $offset_lin) + $b;
-                }
-                else {
-                    push @predictions, undef;
-                }
+                push @{$args{timestamps}}, $ts;
             }
-
-            return {timestamps => \@timestamps, values => \@predictions};
         }
         else {
             throw Kanopya::Exception(error => 'predict method need either timestamps or
                                                a start_time, a end time and a sampling period');
         }
+    }
+    my @predictions;
+    my @timestamps_temp;
+    # Compute prediction with good format
+    for my $ts (@{$args{timestamps}}) {
+
+        my $value = ($ts - $offset + 1 > 0) ?  $a * ( log ($ts - $offset + 1) - $offset_lin) + $b
+                                            : undef;
+
+        # Need to use a local variable in order to avoid input data (by ref) modification
+        my $ts_temp = ($args{time_format} eq 'ms') ? $ts * 1000 : $ts;
+
+        my $prediction;
+        if ($args{data_format} eq 'pair') {
+            $prediction = [$ts_temp, $value];
+        }
+        else {
+            push @timestamps_temp, $ts_temp;
+            $prediction = $value
+        }
+        push @predictions, $prediction;
+    }
+    if ($args{data_format} eq 'pair') {
+        return \@predictions;
+    }
+    else {
+        return {timestamps => \@timestamps_temp, values => \@predictions};
     }
 }
 
