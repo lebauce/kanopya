@@ -31,6 +31,8 @@ class kanopya::keystone($dbserver, $password) {
     Keystone_user_role <<| tag == "${fqdn}" |>>
     Keystone_service <<| tag == "${fqdn}" |>>
     Keystone_endpoint <<| tag == "${fqdn}" |>>
+
+    Class['kanopya::openstack::repository'] -> Class['kanopya::keystone']
 }
 
 class kanopya::glance($dbserver, $password, $keystone, $email) {
@@ -93,6 +95,8 @@ class kanopya::glance($dbserver, $password, $keystone, $email) {
     }
 
     class { 'glance::backend::file': }
+
+    Class['kanopya::openstack::repository'] -> Class['kanopya::glance']
 }
 
 class kanopya::novacontroller($password, $dbserver, $amqpserver, $keystone, $email, $glance) {
@@ -172,6 +176,8 @@ class kanopya::novacontroller($password, $dbserver, $amqpserver, $keystone, $ema
     class { 'nova::cert': enabled => true, }
     class { 'nova::vncproxy': enabled => true, }
     class { 'nova::consoleauth': enabled => true, }
+
+    Class['kanopya::openstack::repository'] -> Class['kanopya::novacontroller']
 }
 
 class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone, $password) {
@@ -271,4 +277,6 @@ class kanopya::quantum_($amqpserver, $dbserver, $keystone, $password) {
         internal_url => "http://${fqdn}:9696",
         tag          => "${keystone}"
     }
+
+    Class['kanopya::openstack::repository'] -> Class['kanopya::quantum_']
 }
