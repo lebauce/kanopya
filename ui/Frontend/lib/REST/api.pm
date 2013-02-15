@@ -140,6 +140,7 @@ my %resources = (
     "scopeparameter"           => "ScopeParameter",
     "snmpd5"                   => "Entity::Component::Snmpd5",
     "serviceprovider"          => "Entity::ServiceProvider",
+    "serviceprovidertype"      => "ClassType::ServiceProviderType",
     "serviceprovidermanager"   => "ServiceProviderManager",
     "servicetemplate"          => "Entity::ServiceTemplate",
     "storage"                  => "Entity::Component::Storage",
@@ -231,6 +232,15 @@ sub getResources {
         my @prefetch = split(',', $query{expand});
         $params{prefetch} = \@prefetch;
         delete $query{expand};
+    }
+
+    # Handle custom search options
+    my @customs = grep { $_ =~ '^custom\.' } keys %query;
+    for my $custom (map { s/^custom\.//g; $_; } @customs) {
+        if (not defined $params{custom}) {
+            $params{custom} = {};
+        }
+        $params{custom}->{$custom} = delete $query{'custom.' . $custom};
     }
 
     foreach my $attr (keys %query) {
