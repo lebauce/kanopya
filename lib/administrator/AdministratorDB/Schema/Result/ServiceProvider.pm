@@ -46,11 +46,12 @@ __PACKAGE__->table("service_provider");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 service_provider_name
+=head2 service_provider_type_id
 
-  data_type: 'char'
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
   is_nullable: 1
-  size: 32
 
 =cut
 
@@ -62,8 +63,13 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "service_provider_name",
-  { data_type => "char", is_nullable => 1, size => 32 },
+  "service_provider_type_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
 );
 
 =head1 PRIMARY KEY
@@ -377,6 +383,26 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 service_provider_type
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::ServiceProviderType>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "service_provider_type",
+  "AdministratorDB::Schema::Result::ServiceProviderType",
+  { service_provider_type_id => "service_provider_type_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
+
 =head2 unified_computing_system
 
 Type: might_have
@@ -403,8 +429,8 @@ Composing rels: L</collects> -> indicatorset
 __PACKAGE__->many_to_many("indicatorsets", "collects", "indicatorset");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-01-30 18:56:45
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:WHYevg2G2MbiVr0wfwvg4g
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-02-13 14:18:41
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:oTe3ucdDDVJD2ibXL7uUlg
 
 __PACKAGE__->belongs_to(
   "parent",

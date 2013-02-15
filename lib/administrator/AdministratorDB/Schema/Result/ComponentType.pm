@@ -178,6 +178,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 service_provider_type_component_types
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ServiceProviderTypeComponentType>
+
+=cut
+
+__PACKAGE__->has_many(
+  "service_provider_type_component_types",
+  "AdministratorDB::Schema::Result::ServiceProviderTypeComponentType",
+  { "foreign.component_type_id" => "self.component_type_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 component_categories
 
 Type: many_to_many
@@ -202,6 +217,20 @@ Composing rels: L</components_provided> -> masterimage
 
 __PACKAGE__->many_to_many("masterimages", "components_provided", "masterimage");
 
+=head2 service_provider_types
+
+Type: many_to_many
+
+Composing rels: L</service_provider_type_component_types> -> service_provider_type
+
+=cut
+
+__PACKAGE__->many_to_many(
+  "service_provider_types",
+  "service_provider_type_component_types",
+  "service_provider_type",
+);
+
 =head2 systemimages
 
 Type: many_to_many
@@ -213,8 +242,8 @@ Composing rels: L</components_installed> -> systemimage
 __PACKAGE__->many_to_many("systemimages", "components_installed", "systemimage");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-01-31 15:56:09
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:nqGNiOSRJz8gpfLEhSSkLw
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-02-13 14:18:40
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:uAyyAFq1QjXSa46ssTq/Aw
 
 __PACKAGE__->belongs_to(
   "parent",

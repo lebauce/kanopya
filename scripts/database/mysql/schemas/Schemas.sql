@@ -74,9 +74,10 @@ CREATE TABLE `entity_lock` (
 
 CREATE TABLE `service_provider` (
   `service_provider_id` int(8) unsigned NOT NULL,
-  `service_provider_name` char(32) DEFAULT NULL,
+  `service_provider_type_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`service_provider_id`),
-  FOREIGN KEY (`service_provider_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`service_provider_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`service_provider_type_id`) REFERENCES `service_provider_type` (`service_provider_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1039,6 +1040,29 @@ CREATE TABLE `component_type` (
   `component_version` char(32) NOT NULL,
   PRIMARY KEY (`component_type_id`),
   FOREIGN KEY (`component_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `service_provider_type`
+--
+
+CREATE TABLE `service_provider_type` (
+  `service_provider_type_id` int(8) unsigned NOT NULL,
+  `service_provider_name` char(32) NOT NULL,
+  PRIMARY KEY (`service_provider_type_id`),
+  FOREIGN KEY (`service_provider_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `service_provider_type_component_type`
+--
+
+CREATE TABLE `service_provider_type_component_type` (
+  `service_provider_type_id` int(8) unsigned NOT NULL,
+  `component_type_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`service_provider_type_id`,`component_type_id`),
+  FOREIGN KEY (`service_provider_type_id`) REFERENCES `service_provider_type` (`service_provider_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (`component_type_id`) REFERENCES `component_type` (`component_type_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
