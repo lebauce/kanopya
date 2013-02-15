@@ -34,7 +34,7 @@ use warnings;
 use constant ATTR_DEF => {
     component_name        => {
         pattern         => '^.*$',
-        is_mandatory    => 0,
+        is_mandatory    => 1,
         is_extended     => 0,
         is_editable     => 0
     },
@@ -48,6 +48,13 @@ use constant ATTR_DEF => {
         type         => 'relation',
         relation     => 'multi',
         link_to      => 'component_category',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
+    service_provider_type_component_types => {
+        type         => 'relation',
+        relation     => 'multi',
+        link_to      => 'service_provider_type',
         is_mandatory => 0,
         is_editable  => 1,
     },
@@ -75,11 +82,15 @@ sub search {
 
     General::checkParams(args => \%args, optional => { 'hash' => {} });
 
-    if (defined $args{by_category}) {
-        # TODO: try to use the many-to-mnay relation name 'component_categories.category_name'
-        my $categoryfilter = 'component_type_categories.component_category.category_name';
-        $args{hash}->{$categoryfilter} = delete $args{by_category};
+    if (defined $args{custom}) {
+        if (defined $args{custom}->{category}) {
+            # TODO: try to use the many-to-mnay relation name 'component_categories.category_name'
+            my $categoryfilter = 'component_type_categories.component_category.category_name';
+            $args{hash}->{$categoryfilter} = delete $args{custom}->{category};
+        }
+        delete $args{custom};
     }
+
     return $class->SUPER::search(%args);
 }
 
@@ -104,7 +115,7 @@ sub getDelegatee {
         return 'Entity::Component';
     }
 
-    return $self::SUPER->getDelegatee;
+    return $self->SUPER::getDelegatee;
 }
 
 1;

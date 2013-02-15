@@ -72,10 +72,10 @@ sub getAttrDef { return ATTR_DEF; }
 sub methods {
     return {
         getConf   => {
-            description => 'get configuration',
+            description => 'get configuration of the component.',
         },
         setConf   => {
-            description => 'set configuration',
+            description => 'set configuration of the component.',
         },
     }
 };
@@ -87,7 +87,7 @@ sub new {
     # Avoid abstract Entity::Component instanciation
     if ($class !~ /Entity::Component.*::(\D+)(\d*)/) {
         $errmsg = "Entity::Component->new : Entity::Component must not " .
-                  "be instanciated without a concret component class";
+                  "be instanciated without a concret component class.";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
@@ -107,12 +107,8 @@ sub new {
         $hash->{component_version} = $component_version;
     }
 
-    my $self = $class->SUPER::new(component_type_id => ClassType::ComponentType->find(hash => $hash)->id,
-                                  %$config);
-
-    bless $self, $class;
-
-    return $self;
+    return $class->SUPER::new(component_type_id => ClassType::ComponentType->find(hash => $hash)->id,
+                              %$config);
 }
 
 sub search {
@@ -121,10 +117,13 @@ sub search {
 
     General::checkParams(args => \%args, optional => { 'hash' => {} });
 
-    if (defined $args{by_category}) {
-        # TODO: try to use the many-to-mnay relation name 'component_type.component_categories.category_name'
-        my $filter = 'component_type.component_type_categories.component_category.category_name';
-        $args{hash}->{$filter} = delete $args{by_category};
+    if (defined $args{custom}) {
+        if (defined $args{custom}->{category}) {
+            # TODO: try to use the many-to-mnay relation name 'component_type.component_categories.category_name'
+            my $filter = 'component_type.component_type_categories.component_category.category_name';
+            $args{hash}->{$filter} = delete $args{custom}->{category};
+        }
+        delete $args{custom};
     }
     return $class->SUPER::search(%args);
 }
