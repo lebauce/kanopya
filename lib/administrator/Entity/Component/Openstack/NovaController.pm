@@ -90,6 +90,8 @@ sub getPuppetDefinition {
 
     my $sql        = $self->mysql5;
     my $keystone   = $self->keystone;
+    my $glance     = join(",", map { $_->service_provider->getMasterNode->fqdn . ":9292" } $self->nova_controller->glances);
+
     my $definition = "if \$kanopya_openstack_repository == undef {\n" .
                      "\tclass { 'kanopya::openstack::repository': }\n" .
                      "\t\$kanopya_openstack_repository = 1\n" .
@@ -100,6 +102,7 @@ sub getPuppetDefinition {
                      "\tpassword => 'nova',\n" .
                      "\tkeystone => '" . $keystone->service_provider->getMasterNode->fqdn . "',\n" .
                      "\temail => '" . $self->service_provider->user->user_email . "',\n" .
+                     "\ŧglance => '" . $glance . "',\n" .
                      "}\n";
 
     return $definition;
