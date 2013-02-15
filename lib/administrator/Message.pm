@@ -38,7 +38,7 @@ use constant ATTR_DEF => {
         is_extended  => 0
     },
     message_from => {
-        pattern      => '^.{0,32}$',
+        pattern      => '^.*$',
         is_mandatory => 1,
         is_extended  => 0
     },
@@ -53,7 +53,7 @@ use constant ATTR_DEF => {
         is_extended  => 0
     },
     message_level => {
-        pattern      => '^.{0,32}$',
+        pattern      => '^.*$',
         is_mandatory => 1,
         is_extended  => 0
     },
