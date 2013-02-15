@@ -1859,7 +1859,7 @@ sub populate_policies {
         ],
     );
     $policies{'Standard OpenNebula Xen IAAS'}{system} = Entity::Policy::SystemPolicy->new(
-        policy_name           => 'Default OpenNebula KVM IAAS',
+        policy_name           => 'Default OpenNebula Xen IAAS',
         policy_desc           => 'System policy for default OpenNebula KVM IAAS',
         policy_type           => 'system',
         cluster_si_shared     => 0,
