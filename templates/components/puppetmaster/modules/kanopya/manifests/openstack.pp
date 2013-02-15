@@ -129,35 +129,14 @@ class kanopya::novacontroller($password, $dbserver, $amqpserver, $keystone, $ema
         tag     => "${keystone}",
     }
 
-    @@keystone_service { 'nova':
-        ensure      => present,
-        type        => 'controller',
-        description => 'Openstack nova controller',
-        tag         => "${keystone}",
-    }
-
-    @@keystone_endpoint { 'RegionOne/nova':
-        ensure       => present,
-        public_url   => "http://${fqdn}:8774/v2.0",
-        admin_url    => "http://${fqdn}:8774/v2.0",
-        internal_url => "http://${fqdn}:8774/v2.0",
-        region       => "RegionOne",
-        tag          => "${keystone}",
-    }
-
     @@mysql::db { 'nova':
             user     => 'nova',
             password => "${password}",
             host     => "${ipaddress}",
             grant    => ['all'],
+            charset  => 'latin1',
             tag      => "${dbserver}",
     }
-
-    class { 'memcached':
-        listen_ip => '127.0.0.1',
-    }
-
-    class { 'horizon': }
 
     class { 'nova::api':
             enabled        => true,
