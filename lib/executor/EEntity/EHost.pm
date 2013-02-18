@@ -57,7 +57,9 @@ sub start {
     my $self = shift;
     my %args = @_;
 
-    $self->getHostManager->startHost(host => $self, hypervisor => $args{hypervisor});
+    $self->getHostManager->startHost(host       => $self,
+                                     hypervisor => $args{hypervisor},
+                                     cluster    => $args{cluster});
 
     $self->setState(state => 'starting');
 
