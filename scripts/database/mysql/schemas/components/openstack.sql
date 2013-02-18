@@ -106,8 +106,21 @@ CREATE TABLE `openstack_vm` (
   `openstack_vm_uuid` int(8) unsigned NULL DEFAULT NULL,
   PRIMARY KEY (`openstack_vm_id`),
   FOREIGN KEY (`openstack_vm_id`) REFERENCES `virtual_machine` (`virtual_machine_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`nova_controller_id`),
   FOREIGN KEY (`nova_controller_id`) REFERENCES `nova_controller` (`nova_controller_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `openstack_repository`
+--
+
+CREATE TABLE `openstack_repository` (
+  `openstack_repository_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `nova_controller_id` int(8) unsigned NOT NULL,
+  `repository_name` char(255) NOT NULL,
+  `container_access_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`openstack_repository_id`),
+  FOREIGN KEY (`nova_controller_id`) REFERENCES `nova_controller` (`nova_controller_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`container_access_id`) REFERENCES `container_access` (`container_access_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks=1;

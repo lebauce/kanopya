@@ -30,6 +30,15 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
+    openstack_repositories => {
+        label       => 'Virtual machine images repositories',
+        type        => 'relation',
+        relation    => 'single_multi',
+        is_editable => 1,
+    },
+    host_type => {
+        is_virtual => 1
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -83,6 +92,10 @@ sub getBootPolicies {
 
 sub supportHotConfiguration {
     return 0;
+}
+
+sub hostType {
+    return "OpenStack VM";
 }
 
 sub getPuppetDefinition {

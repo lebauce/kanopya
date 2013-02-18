@@ -234,6 +234,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 openstack_repositories
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::OpenstackRepository>
+
+=cut
+
+__PACKAGE__->has_many(
+  "openstack_repositories",
+  "AdministratorDB::Schema::Result::OpenstackRepository",
+  { "foreign.nova_controller_id" => "self.nova_controller_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 openstack_vms
 
 Type: has_many
