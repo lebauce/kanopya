@@ -22,6 +22,11 @@ use Data::Dumper;
 
 use Entity::DataModel::LinearRegression;
 
+
+# logger
+use Log::Log4perl "get_logger";
+my $log = get_logger("");
+
 sub configure {
     my ($self, %args) = @_;
 
@@ -29,17 +34,36 @@ sub configure {
                          required => ['data'],
                          optional => {'start_time' => undef, 'end_time' => undef });
 
+    $log->info('Input start time = ['.($args{start_time}).'], stop time = ['.($args{end_time}).']');
 
     # Convert time to log(time)
 
     my @times = keys %{$args{data}};
 
-    my $min_time = $times[0];
-    my $max_time = $times[0];
-
+    my $min_time;
+    my $max_time;
     my $time;
-
     my @time_filter;
+
+    # Init min/max with first defined value
+    TIME_INIT:
+    while (@times) {
+        $time = pop @times;
+        if (! (defined $args{data}->{$time})) {
+            next TIME_INIT;
+        }
+        if ((defined $args{start_time}) && $time < $args{start_time}) {
+            next TIME_INIT;
+        }
+        if ((defined $args{end_time}) && $time > $args{end_time}) {
+            next TIME_INIT;
+        }
+
+        $min_time = $time;
+        $max_time = $time;
+        push @time_filter, $time;
+        last TIME_INIT;
+    }
 
     # Get max time and min time and filter times outside input range
     TIME:
@@ -54,9 +78,14 @@ sub configure {
         if ((defined $args{end_time}) && $time > $args{end_time}) {
             next TIME;
         }
-        if ($min_time > $time) {$min_time = $time}
-        if ($max_time < $time) {$max_time = $time}
+
+        if ($min_time > $time) {$min_time = $time; $log->info('up min')}
+        if ($max_time < $time) {$max_time = $time; $log->info('up max')}
         push @time_filter, $time;
+    }
+
+    if ((! defined $min_time) || ($min_time == $max_time)) {
+        throw Kanopya::Exception(error => 'Not enough data to configure model');
     }
 
     $args{start_time} = $min_time;
@@ -88,6 +117,9 @@ sub configure {
     $self->setAttr(name => 'param_preset_id', value => $preset->id);
     $self->setAttr(name => 'start_time',      value => $args{start_time});
     $self->setAttr(name => 'end_time',        value => $args{end_time});
+
+    $log->info('Start_time = '.($args{start_time}).', end_time = '.($args{end_time}).')');
+    $log->info('Learnt parameters = '.(Dumper $pp_lin));
 
     $self->save();
     $linreg_preset->delete();
