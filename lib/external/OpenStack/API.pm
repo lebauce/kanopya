@@ -48,6 +48,9 @@ sub login {
 
     # TODO serviceCatalog
     $self->{token} = $response->{access}->{token}->{id};
+
+    $self->{tenant_id} = $self->tenants->get(target => 'identity')->{tenants}[0]->{id};
+
     # TODO process token expiration date (2013-01-25T16:21:38Z) => date_format()
     $self->{token_expiration} = $response->{access}->{token}->{expires};
 }
