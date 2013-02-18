@@ -296,7 +296,7 @@ sub jsonify {
     my $var = shift;
 
     # Jsonify the non scalar only
-    if (ref($var) and ref($var) ne "HASH") {
+    if (ref($var) and (ref($var) ne "HASH") and (ref($var) ne "ARRAY")) {
         if ($var->can("toJSON")) {
             if ($var->isa("Entity::Operation")) {
                 return Entity::Operation->methodCall(method => 'get', params => { id => $var->id })->toJSON;
