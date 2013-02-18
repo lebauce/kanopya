@@ -12,6 +12,19 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+=pod
+
+=begin classdoc
+
+Static class which implements DataModel related methods
+
+@since    2013-Feb-13
+
+=end classdoc
+
+=cut
+
+
 package DataModelSelector;
 
 use warnings;
@@ -27,8 +40,28 @@ my @model_classes = ('Entity::DataModel::LinearRegression',
                      'Entity::DataModel::LogarithmicRegression'
                     );
 
+=pod
+
+=begin classdoc
+
+Class method which configure all the available models for a combination.
+Save and returns the model which has the highest R squared error.
+
+@param combination the combination to model
+@param start_time define the start time of historical data taken to configure
+@param end_time define the end time of historical data taken to configure
+
+@optional node_id modeled node in case of NodemetricCombination
+
+@return the selected model
+
+=end classdoc
+
+=cut
+
+
 sub selectDataModel {
-    my ($self, %args) = @_;
+    my ($class, %args) = @_;
 
     General::checkParams(args     => \%args,
                          required => ['combination', 'start_time', 'end_time'],
