@@ -12,6 +12,23 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+=pod
+
+=begin classdoc
+
+Class which configures a linear regression model for the data of a combination.
+Once configured, the LinearRegression stores the parameters (slopes, zero) which allow data
+forecasting through the function: forcasted_data = zero + slopes * (time - start_time)
+
+@since    2013-Feb-13
+@instance hash
+@self     $self
+
+=end classdoc
+
+=cut
+
 package Entity::DataModel::LinearRegression;
 
 use base 'Entity::DataModel';
@@ -22,6 +39,29 @@ use Data::Dumper;
 
 use Statistics::LineFit;
 use Kanopya::Exceptions;
+
+# logger
+use Log::Log4perl "get_logger";
+my $log = get_logger("");
+
+
+=pod
+
+=begin classdoc
+
+Apply a linear regression to the input datas.
+Store parameters (slope 'a', zero 'b' and Rsquared value) in database
+
+@param data hash {timestamp => value} of datas to be modeled
+
+@optional start_time model consider only time_stamp > start_time
+@optional end_time model consider only time_stamp < end_time
+
+@return hash time of store parameters
+
+=end classdoc
+
+=cut
 
 sub configure {
     my ($self, %args) = @_;
@@ -73,6 +113,32 @@ sub configure {
     return $preset;
 }
 
+
+=pod
+
+=begin classdoc
+
+Compute forecasted values from timestamps with linear function and parameters.
+Model must have been configured first (see configure method)
+Timestamps can have 2 formats: either an array of (timestamps) or
+a (start_time, end_time, sampling period).
+
+By default the method return a hash with two keys 'timestamps' (reference to an array of timestamps)
+and 'values' (reference an array of forecasted values).
+
+@optional timestamps array of timestamps when using the (timestamps) format
+@optional start_time start_time when using the format (start_time, end_time, sampling_period)
+@optional end_time end_time when using the format (start_time, end_time, sampling_period)
+@optional sampling_period sampling_period when using the format (start_time, end_time, sampling_period)
+@optional time_format 'ms' returns time in milliseconds
+@optional data_format 'pair' returns an array of references of pair [timestamp, value]
+
+@return the timestamps and forecasted values with the chosen data_format.
+
+=end classdoc
+
+=cut
+
 sub predict {
     my ($self, %args) = @_;
 
@@ -106,6 +172,21 @@ sub predict {
            );
 }
 
+
+=pod
+
+=begin classdoc
+
+Compute the regression function
+
+@param function_args hash which contains the parameters of the function (a, b, ts and offset) values.
+
+@return evaluation of the function
+
+=end classdoc
+
+=cut
+
 sub prediction_function {
     my ($self, %args) = @_;
     General::checkParams(args     => \%args,
@@ -116,6 +197,20 @@ sub prediction_function {
            ($args{function_args}->{ts} - $args{function_args}->{offset}) +
            $args{function_args}->{b};
 }
+
+
+=pod
+
+=begin classdoc
+
+Construct a human readable label for the model:
+'Linear regression : [$human_readable_start_date -> $human_readable_end_date]'
+
+@return contructed label
+
+=end classdoc
+
+=cut
 
 sub label {
     my $self = shift;
