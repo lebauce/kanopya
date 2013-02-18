@@ -186,7 +186,7 @@ sub update {
     if ($updated) { $self->save(); }
 
     # Populate relations
-    $self->populateRelations(relations => $relations);
+    $self->populateRelations(relations => $relations, override => 1);
 
     return $self;
 }
@@ -1559,7 +1559,9 @@ sub populateRelations {
     my ($self, %args) = @_;
     my $class = ref($self) || $self;
 
-    General::checkParams(args => \%args, required => [ 'relations' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'relations' ],
+                         optional => { 'override' => 0 });
 
     # For each relations type
     for my $relation (keys %{$args{relations}}) {
@@ -1624,8 +1626,10 @@ sub populateRelations {
         }
 
         # Finally delete remaining entries
-        for my $remaning (values %$exsting) {
-            $remaning->remove();
+        if ($args{override}) {
+            for my $remaning (values %$exsting) {
+                $remaning->remove();
+            }
         }
     }
 }
