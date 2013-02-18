@@ -430,18 +430,13 @@ sub configureIfaces {
     # We consider that the available ifaces match the cluster interfaces since getFreeHost selection
     foreach my $interface ($args{cluster}->interfaces) {
         my @netconfs = $interface->netconfs;
-        if ($interface->bonds_number > 0) {
-            my @valid_ifaces = grep {scalar @{ $_->slaves } == $interface->bonds_number } @ifaces;
-            my $selected_iface = $valid_ifaces[0];
-            @ifaces = grep {$selected_iface ne $_} @ifaces;
-            $selected_iface->populateRelations(relations => { netconf_ifaces => \@netconfs });
-        }
-        else {
-            my @valid_ifaces = grep {scalar @{ $_->slaves } == 0} @ifaces;
-            my $selected_iface = $valid_ifaces[0];
-            @ifaces = grep {$selected_iface ne $_} @ifaces;
-            $selected_iface->populateRelations(relations => { netconf_ifaces => \@netconfs });
-        }
+        my $nbbonds  = $interface->bonds_number > 0 ? $interface->bonds_number : 0;
+
+        my @valid_ifaces = grep { scalar @{ $_->slaves } == $nbbonds } @ifaces;
+        $valid_ifaces[0]->populateRelations(relations => { netconf_ifaces => \@netconfs });
+
+        # Remove the iface form the list
+        @ifaces = grep { $valid_ifaces[0] ne $_ } @ifaces;
     }
 }
 
@@ -489,10 +484,12 @@ sub getIfaces {
 
     # Make sure to have all pxe ifaces before non pxe ones within the resulting array
     foreach my $pxe (1, 0) {
-        my @ifcs = Entity::Iface->search(hash => { host_id   => $self->id,
-                                                   iface_pxe => $pxe,
-                                                   # Do not search bonding slave ifaces
-                                                   master    => '' });
+        my @ifcs = Entity::Iface->search(hash => {
+                       host_id   => $self->id,
+                       iface_pxe => $pxe,
+                       # Do not search bonding slave ifaces
+                       master    => ''
+                   });
 
         IFACE:
         for my $iface (@ifcs) {
