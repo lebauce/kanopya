@@ -45,6 +45,7 @@ my %resources = (
     "containeraccess"          => "Entity::ContainerAccess",
     "customer"                 => "Entity::User::Customer",
     "dashboard"                => "Dashboard",
+    "datamodel"                => "Entity::DataModel",
     "debian"                   => "Entity::Component::Debian",
     "entity"                   => "Entity",
     "entitycomment"            => "EntityComment",
