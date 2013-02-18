@@ -62,6 +62,15 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub methods {
+    return {
+        computeDataModel => {
+            description => 'Enqueue the select data model operation.',
+            perm_holder => 'entity',
+        }
+    };
+}
+
 =pod
 
 =begin classdoc
