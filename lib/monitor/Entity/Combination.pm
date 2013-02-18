@@ -159,6 +159,22 @@ sub updateUnit {
 sub computeUnit {
 }
 
+
+=pod
+
+=begin classdoc
+
+Enqueue ESelectDataModel operation
+
+@param start_time define the start time of historical data taken to configure
+@param end_time define the end time of historical data taken to configure
+
+@optional node_id modeled node in case of NodemetricCombination
+
+=end classdoc
+
+=cut
+
 sub computeDataModel {
     my ($self, %args) = @_;
     General::checkParams(args     => \%args,
