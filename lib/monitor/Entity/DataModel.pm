@@ -72,6 +72,14 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub methods {
+    return {
+        predict => {
+            description => 'Predict metric values.',
+            perm_holder => 'entity',
+        }
+    };
+}
 
 =pod
 
