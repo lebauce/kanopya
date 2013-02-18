@@ -19,9 +19,56 @@ use base "EManager::EHostManager::EVirtualMachineManager";
 use strict;
 use warnings;
 
-use Log::Log4perl "get_logger";
+use JSON;
+use OpenStack::API;
 
+use Log::Log4perl "get_logger";
 my $log = get_logger("");
+
+sub api {
+    my $self = shift;
+
+    my $credentials = {
+        auth => {
+            passwordCredentials => {
+                username    => "admin",
+                password    => "pass"
+            },
+            tenantName      => "openstack"
+        }
+    };
+
+    my $keystone = $self->keystone;
+    my @glances  = $self->glances;
+    my $glance   = shift @glances;
+    my @computes = $self->novas_compute;
+    my $compute  = shift @computes;
+    my @quantums  = $self->quantums;
+    my $quantum  = shift @quantums;
+
+    my $config = {
+        verify_ssl => 0,
+        identity => {
+            url     => 'http://' . $keystone->service_provider->getMasterNode->fqdn . ':5000/v2.0'
+        },
+        image => {
+            url     => 'http://' . $glance->service_provider->getMasterNode->fqdn  . ':9292/v1'
+        },
+        compute => {
+            url     => 'http://' . $compute->service_provider->getMasterNode->fqdn . ':8774/v2'
+        },
+        network => {
+            url     => 'http://' . $quantum->service_provider->getMasterNode->fqdn . ':9696/v2.0'
+        }
+    };
+
+    my $os_api = OpenStack::API->new(
+        credentials => $credentials,
+        config      => $config,
+    );
+
+    return $os_api;
+}
 
 sub addNode {
     my ($self, %args) = @_;
