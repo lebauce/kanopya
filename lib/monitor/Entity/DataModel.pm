@@ -12,6 +12,22 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+=pod
+
+=begin classdoc
+
+Base class to configure a model for the data of a combination.
+Can be configured from a start time to a end time.
+Once configured, the DatamModel stores the parameters which allow data forecasting
+
+@since    2013-Feb-13
+@instance hash
+@self     $self
+
+=end classdoc
+
+=cut
+
 package Entity::DataModel;
 
 use base 'Entity';
@@ -56,6 +72,22 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+
+=pod
+
+=begin classdoc
+
+@constructor
+
+Create a new instance of the class. Constructor is overridden to check params.
+A DataModel of a NodemetricCombination needs a node_id parameter to specify which node is modeled.
+
+@return a class instance
+
+=end classdoc
+
+=cut
+
 sub new {
     my $class = shift;
     my %args = @_;
@@ -79,6 +111,22 @@ sub new {
     return $self;
 }
 
+
+=pod
+
+=begin classdoc
+
+Computes the coefficient of determination (or R squared) of a model.
+
+@param data array containing the real data
+@param data_model array containing the computed data
+
+@return coefficient of determination (or R squared)
+
+=end classdoc
+
+=cut
+
 sub computeRSquared {
     my ($self, %args) = @_;
     General::checkParams(args     => \%args, required => ['data', 'data_model']);
@@ -90,6 +138,19 @@ sub computeRSquared {
 
     return (1 - $SSerr / $SStot);
 }
+
+=pod
+
+=begin classdoc
+
+Returns the already computed coefficient of determination (or R squared) of a model. Return undef
+if the coefficient has not be computed yet
+
+@return coefficient of determination (or R squared)
+
+=end classdoc
+
+=cut
 
 sub getRSquared {
     my ($self, @args) = @_;
@@ -109,6 +170,19 @@ sub label {
     throw Kanopya::Exception(error => 'Method not implemented');
 }
 
+
+=pod
+
+=begin classdoc
+
+Format the current time in human readable form
+
+@return the time in human readable form
+
+=end classdoc
+
+=cut
+
 sub time_label {
     my $self = shift;
 
@@ -124,6 +198,24 @@ sub time_label {
     return "[$start_date -> $end_date]";
 }
 
+
+
+=pod
+
+=begin classdoc
+
+Contruct an array of time stamps from a start time to a end time w.r.t. a sampling period (step)
+
+@param start_time the start time
+@param end_time the end time
+@param sampling_period the sampling period
+
+@return array of time stamps from start_time
+
+=end classdoc
+
+=cut
+
 sub constructTimeStamps {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['start_time', 'end_time', 'sampling_period']);
@@ -134,6 +226,26 @@ sub constructTimeStamps {
     }
     return \@timestamps;
 }
+
+
+=pod
+
+=begin classdoc
+
+Method called from child class instance to compute the forcasting.
+By default the method return a hash with two keys 'timestamps' (reference to an array of timestamps)
+and 'values' (reference an array of forecasted values).
+
+@param function_args all the arguments of the forcasting function
+
+@optional time_format 'ms' returns time in milliseconds
+@optional data_format 'pair' returns an array of references of pair [timestamp, value]
+
+@return the timestamps and forecasted values with the chosen data_format.
+
+=end classdoc
+
+=cut
 
 sub constructPrediction {
     my ($self, %args) = @_;
