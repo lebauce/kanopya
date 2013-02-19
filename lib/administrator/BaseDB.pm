@@ -109,7 +109,7 @@ sub new {
         # If an attr is 'user_id' and is null, automatically set it
         # to the current user id.
         elsif ($attr eq 'user_id' and not defined $args{$attr}) {
-            $args{$attr} = $class->_adm->{user}->{user_id};
+            $args{$attr} = BaseDB->_adm->{user}->{user_id};
         }
     }
 
@@ -223,7 +223,7 @@ sub promote {
     $subclass =~ s/^$pattern//g;
 
     # Set the primary key to the parent primary key value.
-    my $primary_key = ($class->_adm->{schema}->source(_rootTable($subclass))->primary_columns)[0];
+    my $primary_key = (BaseDB->_adm->{schema}->source(_rootTable($subclass))->primary_columns)[0];
     $args{$primary_key} = $promoted->id;
 
     # Extract relation for futher handling
@@ -349,21 +349,20 @@ sub getAttrDefs {
     General::checkParams(args => \%args, optional => { 'group_by' => 'none' });
 
     my $attributedefs = {};
-    my $modulename = $class;
 
     if (exists $attr_defs_cache{$args{'group_by'}}{$class}) {
         return $attr_defs_cache{$args{'group_by'}}{$class};
     }
 
-    my @hierachy = getClassHierarchy($class);
+    my @hierarchy = getClassHierarchy($class);
+    my $modulename = join('::', @hierarchy);
 
-    while(@hierachy) {
+    while (@hierarchy) {
         my $attr_def = {};
 
         if ($modulename ne "BaseDB") {
-            requireClass($modulename);
-
             eval {
+                requireClass($modulename);
                 $attr_def = clone($modulename->getAttrDef());
             };
 
@@ -372,7 +371,7 @@ sub getAttrDefs {
                 $schema = $class->{_dbix}->result_source();
             };
             if ($@) {
-                $schema = $class->_adm->{schema}->source(_buildClassNameFromString($modulename));
+                $schema = BaseDB->_adm->{schema}->source(_buildClassNameFromString($modulename));
             }
 
             my @relnames = $schema->relationships();
@@ -408,11 +407,11 @@ sub getAttrDefs {
             $attributedefs->{$modulename} = $attr_def;
         }
 
-        if (scalar(@hierachy) > 1) {
+        if (scalar(@hierarchy) > 1) {
             $modulename = _parentClass($modulename);
         }
 
-        pop @hierachy;
+        pop @hierarchy;
     }
 
     my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
@@ -597,12 +596,7 @@ sub newDBix {
         throw Kanopya::Exception::DB(error => "Unable to create a new $class: " .  $errmsg);
     }
 
-    return {
-        _dbix => $class->getRow(
-                     table => _buildClassNameFromString($class),
-                     id    => getRowPrimaryKey(row => $dbixroot),
-                 )
-    };
+    return $class->get(id => getRowPrimaryKey(row => $dbixroot));
 }
 
 
@@ -942,7 +936,7 @@ sub getJoin {
     my $parent_join;
     while ($current > 0) {
         last if $hierarchy[$current - 1] eq "BaseDB";
-        $parent_join = $class->_adm->{schema}->source($hierarchy[$current - 1])->has_relationship("parent") ?
+        $parent_join = BaseDB->_adm->{schema}->source($hierarchy[$current - 1])->has_relationship("parent") ?
                            ($parent_join ? { parent => $parent_join } : { "parent" => undef }) :
                            $parent_join;
         $current -= 1;
@@ -1077,12 +1071,13 @@ sub search {
                                        'join' => undef, 'order_by' => undef, 'dataType' => undef,
                                        'prefetch' => [], 'raw_hash' => {}, 'presets' => {} });
 
+    my $table = _buildClassNameFromString(join('::', getClassHierarchy($class)));
+
     my $merge = Hash::Merge->new('STORAGE_PRECEDENT');
 
     my $prefetch = $class->getJoin() || {};
     $prefetch = $merge->merge($prefetch, $args{join});
 
-    my $table  = _buildClassNameFromString($class);
     my $source = $class->getResultSource;
     for my $relation (@{$args{prefetch}}) {
         my @comps = split(/\./, $relation);
@@ -1168,7 +1163,7 @@ sub searchRelated {
                          required => [ 'filters' ],
                          optional => { 'hash' => { } });
 
-    my $source = $class->_adm->{schema}->source(_buildClassNameFromString($class));
+    my $source = BaseDB->_adm->{schema}->source(_buildClassNameFromString($class));
     my $join;
     eval {
         # If the function is called on a class that is only a base class of the
@@ -1467,7 +1462,7 @@ sub toJSON {
         my $parent;
 
         for (my $current = $depth - 1; $current >= 0; $current--) {
-            $parent = $class->_adm->{schema}->source($hierarchy[$current]);
+            $parent = BaseDB->_adm->{schema}->source($hierarchy[$current]);
             my @relnames = $parent->relationships();
             for my $relname (@relnames) {
                 my $relinfo = $parent->relationship_info($relname);
@@ -1639,7 +1634,7 @@ sub populateRelations {
 
 =begin classdoc
 
-Return the dbix schema of an object of the given type and given id(s). 
+Return the dbix schema of an object of the given type and given id(s).
 
 @param table DB table name
 @param id the id of the object, possbile multiple
@@ -1659,9 +1654,9 @@ sub getRow {
     my $dbix;
     eval {
         if (ref($args{id}) eq 'ARRAY') {
-            $dbix = $class->_adm->{schema}->resultset( $args{table} )->find(@{$args{id}});
+            $dbix = BaseDB->_adm->{schema}->resultset( $args{table} )->find(@{$args{id}});
         } else {
-            $dbix = $class->_adm->{schema}->resultset( $args{table} )->find($args{id});
+            $dbix = BaseDB->_adm->{schema}->resultset( $args{table} )->find($args{id});
         }
     };
     if ($@) {
@@ -1675,7 +1670,7 @@ sub getRow {
     }
 
     return $dbix;
-}   
+}
 
 
 =pod
@@ -1716,7 +1711,7 @@ sub _getDbixFromHash {
 
     my $dbix;
     eval {
-        $dbix = $class->_adm->{schema}->resultset($args{table})->search($args{hash}, {
+        $dbix = BaseDB->_adm->{schema}->resultset($args{table})->search($args{hash}, {
                     prefetch => $args{prefetch},
                     join     => $args{join},
                     rows     => $args{rows},
@@ -1752,7 +1747,7 @@ sub _newDbix {
 
     General::checkParams(args => \%args, required => ['table', 'row']);
 
-    return $class->_adm->{schema}->resultset($args{table})->new($args{row});
+    return BaseDB->_adm->{schema}->resultset($args{table})->new($args{row});
 }
 
 
@@ -1956,6 +1951,7 @@ sub getClassHierarchy {
         @hierarchy = split(/::/, $classpath);
     }
 
+    @hierarchy = grep { eval { BaseDB->_adm->{schema}->source($_) }; not $@ } @hierarchy;
     return wantarray ? @hierarchy : \@hierarchy;
 }
 
@@ -2196,7 +2192,8 @@ sub getResultSource {
     my $self  = shift;
     my $class = ref($self) || $self;
 
-    return $class->_adm->{schema}->source(_buildClassNameFromString($class));
+    $class = join("::", getClassHierarchy($class));
+    return BaseDB->_adm->{schema}->source(_buildClassNameFromString($class));
 }
 
 =pod
@@ -2436,12 +2433,12 @@ sub methodCall {
     General::checkParams(args => \%args, required => [ 'method' ],
                                          optional => { 'params' => {} });
 
-    my $userid   = $class->_adm->{user}->{user_id};
-    my $usertype = $class->_adm->{user}->{user_system};
-    my $goodmode = defined $class->_adm->{config}->{dbconf}->{god_mode} &&
-                       $class->_adm->{config}->{dbconf}->{god_mode} eq 1;
+    my $userid   = BaseDB->_adm->{user}->{user_id};
+    my $usertype = BaseDB->_adm->{user}->{user_system};
+    my $godmode = defined BaseDB->_adm->{config}->{dbconf}->{god_mode} &&
+                      BaseDB->_adm->{config}->{dbconf}->{god_mode} eq 1;
 
-    if (not ($goodmode || $usertype)) {
+    if (not ($godmode || $usertype)) {
         $self->checkUserPerm(user_id => $userid, %args);
     }
 
@@ -2525,7 +2522,7 @@ sub authenticate {
 
     General::checkParams(args => \%args, required => [ 'login', 'password' ]);
 
-    my $user_data = $class->_adm(no_user_check => 1)->{schema}->resultset('User')->search({
+    my $user_data = BaseDB->_adm(no_user_check => 1)->{schema}->resultset('User')->search({
                         user_login    => $args{login},
                         user_password => General::cryptPassword(password => $args{password}),
                     })->single;
@@ -2618,7 +2615,7 @@ sub _loadconfig {
 
     $config->{dbi} = "dbi:" . $config->{dbconf}->{type} . ":" . $config->{dbconf}->{name} .
                      ":" . $config->{dbconf}->{host} . ":" . $config->{dbconf}->{port};
-    
+
     return $config;
 }
 
