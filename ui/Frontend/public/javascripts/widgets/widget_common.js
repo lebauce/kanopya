@@ -119,3 +119,14 @@ function getPickedDate(widget) {
         end   : widget.find('.graph_end_time').val(),
     };
 }
+
+function widgetCommonInit(widget_elem) {
+    // All .widget_part tags can be clicked to toggle the element directly under it
+    widget_elem.find('.widget_part').click( function() {
+        $(this).find('span').toggleClass('ui-icon-triangle-1-e ui-icon-triangle-1-s');
+        $(this).next().toggle('slide');
+    })
+    .prepend($('<span>', {'class' : 'ui-icon ui-icon-triangle-1-e' }))
+    .addClass('clickable')
+    .next().addClass('hidden');
+}
