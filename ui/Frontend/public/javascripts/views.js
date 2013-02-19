@@ -97,12 +97,12 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
     if (!(details_info.noDialog)) {
         var dialog = $(view_detail_container)
         .dialog({
-            autoOpen: true,
-            modal: true,
-            title: title,
-            width: 800,
-            height: 500,
-            resizable: false,
+            autoOpen    : true,
+            modal       : true,
+            title       : title,
+            width       : 800,
+            height      : details_info.height || 500,
+            resizable   : details_info.resizable || false,
             close: function(event, ui) {
                 if (details_info.onClose) {details_info.onClose()}
                 $('.last_content').addClass('current_content').removeClass('last_content');
