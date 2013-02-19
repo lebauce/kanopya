@@ -161,7 +161,17 @@ function dataModelManagement(e) {
         model_container.find('.new_model_config').hide();
         return;
     }
+
+    graph_container.children().remove();
+    graph_container.append(graph_div);
     if (selected_model_id === 'new_model') {
+        timedGraph(
+                [graph_info.histovalues],
+                graph_info.min, graph_info.max,
+                graph_info.label, graph_info.unit,
+                graph_info.graph_div_id,
+                []
+        );
         model_container.find('.forcast_config').hide();
         model_container.find('.new_model_config').show();
         model_container.find('.learn_data').prop('disabled', true);
@@ -187,9 +197,6 @@ function dataModelManagement(e) {
             color     : 'rgba(89, 198, 154, 0.45)',
             shadow    : false
         }}];
-        graph_container.children().remove();
-        graph_container.append(graph_div);
-
         var time_settings = getPickedDate(graph_container.parent());
         var sampling_period = model_container.find('.model_sampling').val();
         $.ajax({
@@ -207,7 +214,13 @@ function dataModelManagement(e) {
                   }
           ),
           success     : function (prediction_data) {
-              timedGraph([graph_info.histovalues, prediction_data], graph_info.min, graph_info.max, graph_info.label, graph_info.unit, graph_info.graph_div_id, overlays);
+              timedGraph(
+                      [graph_info.histovalues, prediction_data],
+                      graph_info.min, graph_info.max,
+                      graph_info.label, graph_info.unit,
+                      graph_info.graph_div_id,
+                      overlays
+              );
           }
       });
     }
@@ -260,7 +273,7 @@ function timedGraph(graph_lines, min, max, label, unit, div_id, overlays, opts) 
             show: true,
             // formatString: '<p class="cluster_combination_tooltip">Date: %s<br /> value: %f</p>',
         },
-        seriesColors : ['#4bb2c5', '#FF0000'],
+        seriesColors : ['#4bb2c5', 'rgba(200, 100, 100, 0.45)'],
         canvasOverlay: {
             show    : true,
             objects :  overlays
@@ -268,7 +281,8 @@ function timedGraph(graph_lines, min, max, label, unit, div_id, overlays, opts) 
         cursor: {
             show                : (opts && opts.show_cursor) || true,
             showVerticalLine    : true,
-            clickReset          : true
+            clickReset          : true,
+            showTooltip         : false,
         }
     });
 
