@@ -3,20 +3,19 @@ package Services;
 use Dancer ':syntax';
 use Dancer::Plugin::Ajax;
 
-use Administrator;
-use Entity::ServiceProvider::Outside::Externalcluster;
+use Entity::ServiceProvider::Externalcluster;
 
 prefix '/kio';
 
 # Seem to be DEPRECATRED => TODO check and remove
 ajax '/services/:serviceid/nodes/update' => sub {
     content_type 'json';
-    my $adm = Administrator->new;
+
     my %res;
     my $node_count;
 
     eval {
-        my $cluster = Entity::ServiceProvider::Outside::Externalcluster->methodCall(method => 'get', params => { id => param('serviceid') });
+        my $cluster = Entity::ServiceProvider::Externalcluster->methodCall(method => 'get', params => { id => param('serviceid') });
              
         my $rep = $cluster->methodCall(method => 'updateNodes', params => { password => param('password') });
 
@@ -34,13 +33,13 @@ ajax '/services/:serviceid/nodes/update' => sub {
     if($@) {
         my $exception = $@;
         if(Kanopya::Exception::Permission::Denied->caught()) {
-            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
+#            $adm->addMessage(from => 'Administrator', level => 'error', content => $exception->error);
             $res{redirect} = '/permission_denied';
         }    
         else { $res{msg} = "$exception"; }
     }    
     else {
-        $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster successfully update nodes');
+#        $adm->addMessage(from => 'Administrator', level => 'info', content => 'cluster successfully update nodes');
         $res{msg} = "$node_count node" . ( $node_count > 1 ? 's' : '') . " retrieved.";
     }    
     

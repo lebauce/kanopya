@@ -23,6 +23,7 @@ use warnings;
 
 use General;
 use Kanopya::Exceptions;
+use Entity::Gp;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -45,63 +46,57 @@ my $errmsg;
 =cut
 
 sub _getEntityIds {
-    my $self = shift;
+    my $class = shift;
     my %args = @_;
-    
-    General::checkParams(args => \%args, required => ['entity_id']);
+ 
+    General::checkParams(args => \%args, required => [ 'entity_id' ]);
 
     my $ids = [];
     # TODO verifier que l'entity_id fournis exists en base
     push @$ids, $args{entity_id};
-    
+
     # retrieve entity_id of groups containing this entity object
-    my @groups = $self->{schema}->resultset('Gp')->search( 
-        { 'ingroups.entity_id' => $args{entity_id} },
-        { join                 => [qw/ingroups/] }
-    );
+    my @groups = Entity::Gp->search(hash => { 'ingroups.entity_id' => $args{entity_id} });
+
     # add entity_id groups to the arrayref
     foreach my $g (@groups) { 
         push @$ids, $g->id;
     }
-    
     return $ids;
 }
 
-=head2 addPerm
+sub match {
+    my $class = shift;
+    my %args = @_;
 
-    Class : public
-    Desc : given a consumer_id - User (or Groups with user type) entity id - a consumed_id 
-           and a method, grant the permission to that consumed method for that 
-           consumer entity 
-    args:
-        consumer : Entity::User instance or Entity::Gp instance
-        consumed : Entity::* instance
-        method   : scalar (string) : method name
+    General::checkParams(args     => \%args,
+                         required => [ 'consumer_id', 'consumed_id', 'method' ]);
 
-=cut
+    my $consumer_ids = $class->_getEntityIds(entity_id => $args{consumer_id});
+    my $consumed_ids = $class->_getEntityIds(entity_id => $args{consumed_id});
+
+    return $class->find(hash => {
+               entityright_consumer_id => $consumer_ids,
+               entityright_consumed_id => $consumed_ids,
+               entityright_method      => $args{method}
+           });
+}
 
 sub addPerm {
-    my $self = shift;
-    my %args = @_;
+    my $class = shift;
+    my %args  = @_;
     
     General::checkParams(args => \%args, required => ['consumer_id', 'consumed_id', 'method']);
     
-    # TODO verifier que la methode donnée en argument exists sur l'entity
-    # représentée par consumed_id
+    # TODO: Check if the method exists
 
-    $self->{schema}->resultset('Entityright')->find_or_create(
-        { entityright_consumer_id => $args{consumer_id},
-          entityright_consumed_id => $args{consumed_id},
-          entityright_method => $args{method} },
-    );
+    $class->new(entityright_consumer_id => $args{consumer_id},
+                entityright_consumed_id => $args{consumed_id},
+                entityright_method      => $args{method});
 }
 
-=head2 removePerm
-
-=cut
-
 sub removePerm {
-    my $self = shift;
+    my $class = shift;
     my %args = @_;
 
     General::checkParams(args     => \%args,
@@ -124,81 +119,18 @@ sub removePerm {
     }
 }
 
-=head2 updatePerms
-
-    desc : update all permissions methods 
-    args: consumer_id, consumed_id, methods list
-    
-=cut
-
-sub updatePerms {
-    my $self = shift;
-    my %args = @_;
-    
-    General::checkParams(args => \%args, required => ['consumer_id', 'consumed_id', 'methods']);
-    
-    my $methods = $args{methods};
-    # we remove actuals perms not in methods argument
-    
-    if ((@$methods[0]) eq "") {
-        my $actualperms = $self->{schema}->resultset('Entityright')->search(
-        {    entityright_consumer_id => $args{consumer_id},
-             entityright_consumed_id => $args{consumed_id},
-        },
-        )->delete_all;
-        last;
-    }
-    else{
-        my $actualperms = $self->{schema}->resultset('Entityright')->search(
-        {    entityright_consumer_id => $args{consumer_id},
-             entityright_consumed_id => $args{consumed_id},
-             entityright_method => { -not_in => @$methods },
-        },
-        )->delete_all;
-    }   
- 
-    # we add new method perms if not already exists
-    if (ref scalar(@$methods[0]) ne "ARRAY"){
-    $methods = [$methods];
-    }
-    foreach my $m (@$methods) {	 
-        for (my $i=0; $i<scalar(@$m); $i++){
-            $self->{schema}->resultset('Entityright')->find_or_create(
-            {   entityright_consumer_id => $args{consumer_id},
-                entityright_consumed_id => $args{consumed_id},    
-                entityright_method => $m->[$i],
-            }
-            );
-        }   
-    }
-}
-
-=head2 getGrantedMethods
-
-    desc : given a consumer entity (user or user's group) and a consumed entity,
-           return an array containing all granted methods for that consumer on this consumed. 
-    args: consumer_id, consumed_id
-    return : array of scalar (string methods name)
-
-=cut 
-
 sub getGrantedMethods {
-    my $self = shift;
-    my %args = @_;
+    my $class = shift;
+    my %args  = @_;
     
     General::checkParams(args => \%args, required => ['consumer_id', 'consumed_id']);
-   
-    my @methods = ();
-    my $resultset = $self->{schema}->resultset('Entityright')->search(
-        { entityright_consumer_id => $args{consumer_id},
-          entityright_consumed_id => $args{consumed_id},
-        },
-        { columns => ['entityright_method']}
-    );
-    while(my $row = $resultset->next) {
-        push @methods, $row->get_column('entityright_method');
-    }
-    return @methods;
+
+    my @rights = $class->search(hash => {
+                     entityright_consumer_id => $args{consumer_id},
+                     entityright_consumed_id => $args{consumed_id},
+                 });
+
+    return map { $_->entityright_method } @rights;
 }
 
 

@@ -227,7 +227,7 @@ sub new {
     RRDTimeData::createTimeDataStore(name => $clustermetric_id);
 
     my $service_provider = $self->clustermetric_service_provider;
-    my $collector = $service_provider->getManager(manager_type => "collector_manager");
+    my $collector = $service_provider->getManager(manager_type => "CollectorManager");
     $collector->collectIndicator(indicator_id        => $self->clustermetric_indicator_id,
                                  service_provider_id => $self->clustermetric_service_provider_id);
 
@@ -393,14 +393,16 @@ sub clone {
     General::checkParams(args => \%args, required => ['dest_service_provider_id']);
 
     # Check that both services use the same collector manager
-    my $src_collector_manager = ServiceProviderManager->find( hash => {
-        manager_type        => 'collector_manager',
-        service_provider_id => $self->clustermetric_service_provider_id
-    });
-    my $dest_collector_manager = ServiceProviderManager->find( hash => {
-        manager_type        => 'collector_manager',
-        service_provider_id => $args{'dest_service_provider_id'}
-    });
+    my $src_collector_manager = ServiceProviderManager->find(
+                                    hash   => { service_provider_id => $self->clustermetric_service_provider_id },
+                                    custom => { category => 'CollectorManager' }
+                                );
+
+    my $dest_collector_manager = ServiceProviderManager->find(
+                                     hash => { service_provider_id => $args{dest_service_provider_id} },
+                                     custom => { category => 'CollectorManager' }
+                                 );
+
     if ($src_collector_manager->manager_id != $dest_collector_manager->manager_id) {
         throw Kanopya::Exception::Internal::Inconsistency(
             error => "Source and dest service provider have not the same collector manager"
@@ -408,7 +410,7 @@ sub clone {
     }
 
     $self->_importToRelated(
-        dest_obj_id         => $args{'dest_service_provider_id'},
+        dest_obj_id         => $args{dest_service_provider_id},
         relationship        => 'clustermetric_service_provider',
         label_attr_name     => 'clustermetric_label',
     );

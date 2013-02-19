@@ -26,7 +26,7 @@ use Kanopya::Exceptions;
 use EFactory;
 use EEntity;
 use Entity::ServiceProvider;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 use Entity::Host;
 use Entity::Kernel;
 use Template;
@@ -167,22 +167,20 @@ sub execute {
     # Update kanopya etc hosts
     my @data = ();
     for my $host (Entity::Host->search(hash => {})) {
-        my $hostname = $host->host_hostname;
+        my $hostname = $host->node->node_hostname;
         next if (not $hostname or $hostname eq '');
-        push @data, {
-            ip         => $host->adminIp,
-            hostname   => $hostname,
-            domainname => $self->{params}->{kanopya_domainname},
-        };
+        push @data, { ip         => $host->adminIp,
+                      hostname   => $hostname,
+                      domainname => $self->{params}->{kanopya_domainname} };
     }
 
-    my $template = Template->new( {
-        INCLUDE_PATH => '/templates/components/linux',
-        INTERPOLATE  => 0,
-        POST_CHOMP   => 0,
-        EVAL_PERL    => 1,
-        RELATIVE     => 1,
-    } );
+    my $template = Template->new({
+                       INCLUDE_PATH => '/templates/components/linux',
+                       INTERPOLATE  => 0,
+                       POST_CHOMP   => 0,
+                       EVAL_PERL    => 1,
+                       RELATIVE     => 1,
+                   });
 
     $template->process('hosts.tt', { hosts => \@data }, '/etc/hosts');
 
@@ -198,9 +196,10 @@ sub execute {
 
     # Finally we start the node
     $self->{context}->{host} = $self->{context}->{host}->start(
-        erollback  => $self->{erollback},
-        hypervisor => $self->{context}->{hypervisor}, #only need for vm add
-    );
+                                   erollback  => $self->{erollback},
+                                   # Required for vm add only
+                                   hypervisor => $self->{context}->{hypervisor},
+                               );
 }
 
 sub _cancel {
@@ -239,22 +238,21 @@ sub _generateBootConf {
                          required => [ 'options' ],
                          optional => { 'mount_point' => undef });
 
-    my $cluster = $self->{context}->{cluster};
-    my $host = $self->{context}->{host};
+    my $cluster     = $self->{context}->{cluster};
+    my $host        = $self->{context}->{host};
     my $boot_policy = $cluster->cluster_boot_policy;
-    my $tftpdir = $self->{config}->{tftp}->{directory};
+    my $tftpdir     = $self->{config}->{tftp}->{directory};
 
     # is dedicated initramfs needed for remote root ?
     if ($boot_policy =~ m/(ISCSI|NFS)/) {
         $log->info("Boot policy $boot_policy requires a dedicated initramfs");
-        
-        my $cluster_kernel_id = $cluster->kernel_id;
-        my $kernel_id = $cluster_kernel_id ? $cluster_kernel_id : $host->kernel_id;
-        my $clustername = $cluster->cluster_name;
-        my $hostname = $host->host_hostname;
 
-        my $kernel_version = Entity::Kernel->get(id => $kernel_id)->kernel_version;
-        my $linux_component = EEntity->new(entity => $cluster->getComponent(category => "system"));
+        my $kernel_id   = $cluster->kernel_id ? $cluster->kernel_id : $host->kernel_id;
+        my $clustername = $cluster->cluster_name;
+        my $hostname    = $host->node->node_hostname;
+
+        my $kernel_version  = Entity::Kernel->get(id => $kernel_id)->kernel_version;
+        my $linux_component = EEntity->new(entity => $cluster->getComponent(category => "System"));
         
         $log->info("Extract initramfs $tftpdir/initrd_$kernel_version");
         
@@ -262,9 +260,8 @@ sub _generateBootConf {
         $log->info("Customize initramfs in $initrd_dir");
         $linux_component->customizeInitramfs(initrd_dir => $initrd_dir,
                                              cluster    => $cluster,
-                                             host       => $host
-                                            );
-                                       
+                                             host       => $host);
+
         # create the final storing directory
         my $path = "$tftpdir/$clustername/$hostname";
         my $cmd = "mkdir -p $path";
@@ -274,17 +271,13 @@ sub _generateBootConf {
         $log->info("Build initramfs $newinitrd");
         $linux_component->buildInitramfs(initrd_dir      => $initrd_dir,
                                          compress_type   => 'gzip',
-                                         new_initrd_file => $newinitrd
-                                         );
+                                         new_initrd_file => $newinitrd);
     }
 
     if ($boot_policy =~ m/PXE/) {
         $self->_generatePXEConf(cluster     => $self->{context}->{cluster},
                                 host        => $self->{context}->{host},
                                 mount_point => $args{mount_point});
-
-
-
 
         if ($boot_policy =~ m/ISCSI/) {
             my $targetname = $self->{context}->{container_access}->container_access_export;
@@ -313,7 +306,7 @@ sub _generateBootConf {
                          );
 
             my $tftp_conf = $self->{config}->{tftp}->{directory};
-            my $dest = $tftp_conf . '/' . $self->{context}->{host}->host_hostname . ".conf";
+            my $dest = $tftp_conf . '/' . $self->{context}->{host}->node->node_hostname . ".conf";
 
             $self->getEContext->send(src => "/tmp/$tmpfile", dest => "$dest");
             unlink "/tmp/$tmpfile";
@@ -332,7 +325,7 @@ sub _generatePXEConf {
     my $kernel_id = $cluster_kernel_id ? $cluster_kernel_id : $args{host}->kernel_id;
 
     my $clustername = $args{cluster}->cluster_name;
-    my $hostname = $args{host}->host_hostname;
+    my $hostname = $args{host}->node->node_hostname;
 
     my $kernel_version = Entity::Kernel->get(id => $kernel_id)->kernel_version;
     my $boot_policy    = $args{cluster}->cluster_boot_policy;
@@ -355,9 +348,6 @@ sub _generatePXEConf {
     # Add host in the dhcp
     my $subnet = $self->{context}->{dhcpd_component}->getInternalSubNetId();
 
-    # Set Hostname
-    my $host_hostname = $self->{context}->{host}->host_hostname;
-
     # Configure DHCP Component
     my $tmp_kernel_id = $self->{context}->{cluster}->kernel_id;
     my $host_kernel_id = $tmp_kernel_id ? $tmp_kernel_id : $self->{context}->{host}->kernel_id;
@@ -366,7 +356,7 @@ sub _generatePXEConf {
         dhcpd3_subnet_id                => $subnet,
         dhcpd3_hosts_ipaddr             => $pxeiface->getIPAddr,
         dhcpd3_hosts_mac_address        => $pxeiface->iface_mac_addr,
-        dhcpd3_hosts_hostname           => $host_hostname,
+        dhcpd3_hosts_hostname           => $hostname,
         dhcpd3_hosts_ntp_server         => $self->{context}->{bootserver}->getMasterNodeIp(),
         dhcpd3_hosts_domain_name        => $self->{context}->{cluster}->cluster_domainname,
         dhcpd3_hosts_domain_name_server => $self->{context}->{cluster}->cluster_nameserver1,

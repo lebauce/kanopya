@@ -22,11 +22,11 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use Administrator;
+use BaseDB;
 use Orchestrator;
 use Aggregator;
-use Entity::ServiceProvider::Outside::Externalcluster;
-use Entity::Connector::MockMonitor;
+use Entity::ServiceProvider::Externalcluster;
+use Entity::Component::MockMonitor;
 use Entity::Combination::NodemetricCombination;
 use Entity::NodemetricCondition;
 use Entity::Rule::NodemetricRule;
@@ -47,18 +47,17 @@ my $service_provider;
 main();
 
 sub main {
-    Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-    my $adm = Administrator->new;
+    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if($testing == 1) {
-        $adm->beginTransaction;
+        BaseDB->beginTransaction;
     }
 
     node_disabling();
     test_rrd_remove();
 
     if ($testing == 1) {
-        $adm->rollbackTransaction;
+        BaseDB->rollbackTransaction;
     }
 }
 
@@ -67,41 +66,41 @@ sub node_disabling {
     my $orchestrator = Orchestrator->new();
 
     # Create externalcluster with a mock monitor
-    my $external_cluster_mockmonitor = Entity::ServiceProvider::Outside::Externalcluster->new(
+    my $external_cluster_mockmonitor = Entity::ServiceProvider::Externalcluster->new(
         externalcluster_name => 'Test Monitor',
     );
 
-    my $mock_monitor = Entity::Connector::MockMonitor->new(
+    my $mock_monitor = Entity::Component::MockMonitor->new(
         service_provider_id => $external_cluster_mockmonitor->id,
     );
 
-    $service_provider = Entity::ServiceProvider::Outside::Externalcluster->new(
+    $service_provider = Entity::ServiceProvider::Externalcluster->new(
         externalcluster_name => 'Test Service Provider',
     );
 
     diag('Add mock monitor to service provider');
     $service_provider->addManager(
         manager_id   => $mock_monitor->id,
-        manager_type => 'collector_manager',
+        manager_type => 'CollectorManager',
     );
 
     # Create two nodes
-    my $node1 = Externalnode->new(
-        externalnode_hostname => 'test_node_1',
+    my $node1 = Node->new(
+        node_hostname => 'test_node_1',
         service_provider_id   => $service_provider->id,
-        externalnode_state    => 'up',
+        monitoring_state    => 'up',
     );
 
-    my $node2 = Externalnode->new(
-        externalnode_hostname => 'test_node_2',
+    my $node2 = Node->new(
+        node_hostname => 'test_node_2',
         service_provider_id   => $service_provider->id,
-        externalnode_state    => 'up',
+        monitoring_state    => 'up',
     );
 
-    my $node3 = Externalnode->new(
-        externalnode_hostname => 'test_node_3',
+    my $node3 = Node->new(
+        node_hostname => 'test_node_3',
         service_provider_id   => $service_provider->id,
-        externalnode_state    => 'up',
+        monitoring_state    => 'up',
     );
 
     @indicators = Entity::CollectorIndicator->search (hash => {collector_manager_id => $mock_monitor->id});
@@ -130,9 +129,9 @@ sub node_disabling {
     sleep(5);
     $aggregator->update();
     # Reload object to get changes
-    $node3 = Externalnode->get(id => $node3->id);
+    $node3 = Node->get(id => $node3->id);
     diag('Check disabling node 3');
-    if ( $node3->externalnode_state eq 'disabled' ) {
+    if ( $node3->monitoring_state eq 'disabled' ) {
         diag('## disabled');
     }
     else {
@@ -148,9 +147,9 @@ sub node_disabling {
     }
 
     $node3->enable();
-    $node3 = Externalnode->get(id => $node3->id);
+    $node3 = Node->get(id => $node3->id);
     diag('Check enabling node 3');
-    if ( $node3->externalnode_state ne 'disabled' ) {
+    if ( $node3->monitoring_state ne 'disabled' ) {
         diag('## enabled');
     }
     else {
@@ -180,7 +179,7 @@ sub node_disabling {
 
     expectedException {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node3->id,
+            verified_noderule_node_id    => $node3->id,
             verified_noderule_nodemetric_rule_id => $nrule1->id,
             verified_noderule_state              => 'verified',
         });
@@ -191,7 +190,7 @@ sub node_disabling {
 
     expectedException {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node3->id,
+            verified_noderule_node_id    => $node3->id,
             verified_noderule_nodemetric_rule_id => $nrule1->id,
             verified_noderule_state              => 'verified',
         });
@@ -205,7 +204,7 @@ sub check_rule_verification {
     lives_ok {
         diag('# Node 1 rule verification');
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $args{node1_id},
+            verified_noderule_node_id    => $args{node1_id},
             verified_noderule_nodemetric_rule_id => $args{nrule1_id},
             verified_noderule_state              => 'verified',
         });
@@ -213,7 +212,7 @@ sub check_rule_verification {
 
         diag('# Node 2 rule verification');
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $args{node2_id},
+            verified_noderule_node_id    => $args{node2_id},
             verified_noderule_nodemetric_rule_id => $args{nrule1_id},
             verified_noderule_state              => 'verified',
         });
@@ -221,7 +220,7 @@ sub check_rule_verification {
 
         diag('# Node 3 rule verification');
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $args{node3_id},
+            verified_noderule_node_id    => $args{node3_id},
             verified_noderule_nodemetric_rule_id => $args{nrule1_id},
             verified_noderule_state              => 'verified',
         });
@@ -278,7 +277,7 @@ sub test_rrd_remove {
 }
 
 sub _service_rule_objects_creation {
-    my $service_provider = Entity::ServiceProvider::Outside::Externalcluster->find(
+    my $service_provider = Entity::ServiceProvider::Externalcluster->find(
         hash => {externalcluster_name => 'Test Service Provider'}
     );
 
@@ -296,7 +295,7 @@ sub _service_rule_objects_creation {
 }
 
 sub _node_rule_objects_creation {
-    my $service_provider = Entity::ServiceProvider::Outside::Externalcluster->find(
+    my $service_provider = Entity::ServiceProvider::Externalcluster->find(
         hash => {externalcluster_name => 'Test Service Provider'}
     );
 

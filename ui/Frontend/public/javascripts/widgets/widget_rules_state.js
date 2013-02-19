@@ -52,7 +52,7 @@ function displayRulesGraph(widget, sp_id) {
     var nodes_graph_cont  = widget.element.find('.node_rules_state_overview');
     nodes_graph_cont.append($('<div>', {id : nrules_graph_div_id}));
     $.get(
-            'api/serviceprovider/' + sp_id + '/externalnodes?externalnode_state=<>,disabled',
+            'api/serviceprovider/' + sp_id + '/nodes?monitoring_state=<>,disabled',
             function(nodes) {
                 var total_nodes = nodes.length;
                 var checked_nodes = 0;
@@ -60,7 +60,7 @@ function displayRulesGraph(widget, sp_id) {
                 var undef_rules = 0;
                 $.each(nodes, function(idx,node) {
                     $.get(
-                            'api/externalnode/' + node.pk + '/verified_noderules',
+                            'api/node/' + node.pk + '/verified_noderules',
                             function(verified_rules) {
                                 $.each(verified_rules, function(i,e) {
                                     (e.verified_noderule_state === 'verified') ? warn_rules++ : undef_rules++;

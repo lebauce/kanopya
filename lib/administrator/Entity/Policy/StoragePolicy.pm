@@ -100,7 +100,7 @@ sub getPolicyDef {
 
     # Build the storage provider list
     my $providers = {};
-    for my $component ($class->searchManagers(component_category => 'Storage')) {
+    for my $component ($class->searchManagers(component_category => 'DiskManager')) {
         $providers->{$component->service_provider->id} = $component->service_provider->toJSON();
     }
     my @storageproviders = values %{$providers};
@@ -141,7 +141,7 @@ sub getPolicyDef {
     # Build the list of disk manager of the storage provider
     if (defined $args{storage_provider_id}) {
         my $manager_options = {};
-        for my $component ($class->searchManagers(component_category  => 'Storage',
+        for my $component ($class->searchManagers(component_category  => 'DiskManager',
                                                   service_provider_id => $args{storage_provider_id})) {
             $manager_options->{$component->id} = $component->toJSON();
             $manager_options->{$component->id}->{label} = $component->disk_type;
@@ -240,6 +240,30 @@ sub getNonEditableAttributes {
         $definition->{storage_provider_id} = 1;
     }
     return $definition;
+}
+
+=pod
+
+=begin classdoc
+
+Remove possibly defined storage_provider_id from params, as it is a
+field convenient for manager selection only.
+
+@return a policy pattern fragment
+
+=end classdoc
+
+=cut
+
+sub getPatternFromParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'params' ]);
+
+    delete $args{params}->{storage_provider_id};
+
+    return $self->SUPER::getPatternFromParams(params => $args{params});
 }
 
 1;

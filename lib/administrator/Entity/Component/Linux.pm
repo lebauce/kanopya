@@ -156,7 +156,7 @@ sub getPuppetDefinition {
     my $nfs;
     my $str = "";
     my $definition = "class {'linux': sourcepath => \"" .
-                     $args{cluster}->cluster_name . '/' . $args{host}->host_hostname .
+                     $args{cluster}->cluster_name . '/' . $args{host}->node->node_hostname .
                      "\",}\n";
 
     # /etc/fstab et mounts

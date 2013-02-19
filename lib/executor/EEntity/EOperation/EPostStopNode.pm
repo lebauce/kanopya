@@ -24,7 +24,7 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 use Entity::Systemimage;
 use EFactory;
 use String::Random;
@@ -138,13 +138,13 @@ sub execute {
     # remove the node working directory where generated files are
     # stored.
     my $dir = $self->{config}->{clusters}->{directory};
-    $dir .= '/' . $self->{context}->{cluster}->getAttr(name => 'cluster_name');
-    $dir .= '/' . $self->{context}->{host}->getAttr(name => 'host_hostname');
+    $dir .= '/' . $self->{context}->{cluster}->cluster_name;
+    $dir .= '/' . $self->{context}->{host}->node->node_hostname;
     my $econtext = $self->getEContext();
     $econtext->execute(command => "rm -r $dir");
 
-    $self->{context}->{host}->setAttr(name => "host_hostname", value => undef);
-    $self->{context}->{host}->setAttr(name => "host_initiatorname", value => undef);
+    $self->{context}->{host}->node->setAttr(name => "node_hostname", value => undef, save => 1);
+    $self->{context}->{host}->setAttr(name => "host_initiatorname", value => undef, save => 1);
 
     my $systemimage_name = $self->{context}->{cluster}->cluster_name;
     $systemimage_name .= '_' . $self->{context}->{host}->getNodeNumber();

@@ -20,6 +20,7 @@ package RulesManager;
 
 use strict;
 use warnings;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;

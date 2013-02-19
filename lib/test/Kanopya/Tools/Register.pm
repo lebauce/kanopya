@@ -40,7 +40,7 @@ use Test::Exception;
 use Kanopya::Exceptions;
 use General;
 use Entity::Host;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 use Entity::Masterimage;
 use Entity::Vlan;
 use NetconfVlan;

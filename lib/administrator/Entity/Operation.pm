@@ -45,6 +45,7 @@ use ParamPreset;
 use Kanopya::Exceptions;
 use NotificationSubscription;
 use Entity::Operation;
+use OldOperation;
 
 use DateTime;
 use Hash::Merge;
@@ -170,8 +171,6 @@ sub new {
                          optional => { 'workflow_id' => undef,
                                        'params'      => undef });
 
-    my $adm = Administrator->new();
-
     # If workflow not defined, initiate a new one with parameters
     if (not defined $args{workflow_id}) {
         my $workflow = Entity::Workflow->new(workflow_name => $args{type});
@@ -182,12 +181,11 @@ sub new {
     my $hoped_execution_time = defined $args{hoped_execution_time} ? time + $args{hoped_execution_time} : undef;
 
     # Get the next execution rank within the creation transation.
-    $adm->beginTransaction;
+    $class->beginTransaction;
 
     eval {
         my $execution_rank = $class->getNextRank(workflow_id => $args{workflow_id});
         my $initial_state  = $execution_rank ? "pending" : "ready";
-        my $user_id        = $adm->getRightChecker->{user_id};
 
         $log->debug("Enqueuing new operation <$args{type}>, in workflow <$args{workflow_id}>");
 
@@ -196,25 +194,26 @@ sub new {
             state                => $initial_state,
             execution_rank       => $execution_rank,
             workflow_id          => $args{workflow_id},
-            user_id              => $user_id,
             priority             => $args{priority},
             creation_date        => \"CURRENT_DATE()",
             creation_time        => \"CURRENT_TIME()",
             hoped_execution_time => $hoped_execution_time,
+            # The user id will be automatically set by the ORM
+            user_id              => undef,
         };
 
         $self = $class->SUPER::new(%$params);
     };
     if ($@) {
         $log->error($@);
-        $adm->rollbackTransaction;
+        $class->rollbackTransaction;
     }
 
     if (defined $args{params}) {
         $self->setParams(params => $args{params});
     }
 
-    $adm->commitTransaction;
+    $class->commitTransaction;
 
     return $self;
 }
@@ -238,25 +237,23 @@ sub getNextOp {
         push @$states, "blocked";
     }
 
-    my $adm = Administrator->new();
-    # Get all operation
-    my $all_ops = $adm->_getDbixFromHash(table => 'Operation', hash => {});
-    #$log->debug("Get Operation $all_ops");
-
     # Choose the next operation to be treated :
     # if hoped_execution_time is definied, value returned by time function must be superior to hoped_execution_time
     # unless operation is not execute at this moment
-
-    my $opdata = $all_ops->search(
-        { state => { -in => $states },
-          -or   => [ hoped_execution_time => undef, hoped_execution_time => { '<', time } ] },
-        { order_by => [ { -asc => 'priority' }, { -asc => 'operation_id' } ]}
-    )->next();
-    if (! defined $opdata){
+    my $operation;
+    eval {
+        $operation = Entity::Operation->find(
+                         hash => {
+                             state => { -in => $states },
+                             -or   => [ hoped_execution_time => undef, hoped_execution_time => { '<', time } ]
+                         },
+                         order_by => 'priority asc'
+                     );
+    };
+    if ($@) {
         return;
     }
-
-    return Entity::Operation->get(id => $opdata->get_column("operation_id"));
+    return $operation;
 }
 
 =head2 delete
@@ -270,38 +267,31 @@ sub getNextOp {
 sub delete {
     my $self = shift;
 
-    my $adm = Administrator->new();
+    # Firstly build the old_operation params list
+    my @oldoperationparams;
+    for my $opparams ($self->operation_parameters) {
+        my $json = $opparams->toJSON();
+        delete $json->{operation_id};
 
-    my $id = $self->id;
-    my $new_old_op = $adm->_newDbix(
-        table => 'OldOperation',
-        row => {
-            type             => $self->getAttr(name => "type"),
-            workflow_id      => $self->getAttr(name => "workflow_id"),
-            user_id          => $self->getAttr(name => "user_id"),
-            priority         => $self->getAttr(name => "priority"),
-            creation_date    => $self->getAttr(name => "creation_date"),
-            creation_time    => $self->getAttr(name => "creation_time"),
-            execution_date   => \"CURRENT_DATE()",
-            execution_time   => \"CURRENT_TIME()",
-            execution_status => $self->getAttr(name => "state"),
-        }
-    );
-    $new_old_op->insert;
-
-    my $params_rs = $self->{_dbix}->operation_parameters;
-    while (my $param = $params_rs->next){
-        $new_old_op->create_related('old_operation_parameters', {
-            name  => $param->get_column('name'),
-            value => $param->get_column('value'),
-            tag   => $param->get_column('tag'),
-        });
+        push @oldoperationparams, $json;
     }
 
-    $params_rs->delete;
+    # Then create the old_operation from the operation
+    OldOperation->new(
+        type                     => $self->type,
+        workflow_id              => $self->workflow_id,
+        user_id                  => $self->user_id,
+        priority                 => $self->priority,
+        creation_date            => $self->creation_date,
+        creation_time            => $self->creation_time,
+        execution_date           => \"CURRENT_DATE()",
+        execution_time           => \"CURRENT_TIME()",
+        execution_status         => $self->state,
+        old_operation_parameters => \@oldoperationparams,
+    );
     $self->SUPER::delete();
 
-    $log->debug(ref($self)." <$id> deleted from database (removed from execution list)");
+    $log->debug(ref($self)." <" . $self->id . "> deleted from database (removed from execution list)");
 }
 
 sub getWorkflow {
@@ -335,22 +325,18 @@ sub getNextRank {
 
     General::checkParams(args => \%args, required => [ 'workflow_id' ]);
 
-    my $adm = Administrator->new();
-    my $row = $adm->{db}->resultset('Operation')->search(
-                  { workflow_id => $args{workflow_id} },
-                  { column   => 'execution_rank',
-                    order_by => [ 'execution_rank desc' ]}
-              )->first;
-
-    if (! $row) {
+    my $operation;
+    eval {
+        $operation = Entity::Operation->find(hash     => { workflow_id => $args{workflow_id} },
+                                             order_by => 'execution_rank desc');
+    };
+    if ($@) {
         $log->debug("No previous operation in queue for workflow $args{workflow_id}");
         return 0;
     }
-    else {
-        my $last_in_db = $row->get_column('execution_rank');
-        $log->debug("Previous operation in queue is $last_in_db");
-        return $last_in_db + 1;
-    }
+    my $last_in_db = $operation->execution_rank;
+    $log->debug("Previous operation in queue is $last_in_db");
+    return $last_in_db + 1;
 }
 
 sub setState {
@@ -481,35 +467,30 @@ sub lockContext {
     my $self = shift;
     my %args = @_;
 
-    my $entity;
-    my $adm = Administrator->new();
-
-    $adm->beginTransaction;
+    $self->beginTransaction;
     eval {
-        for $entity (values %{ $self->getParams->{context} }) {
+        for my $entity (values %{ $self->getParams->{context} }) {
             $log->debug("Trying to lock entity <$entity>");
             $entity->lock(consumer => $self->getWorkflow);
         }
     };
     if ($@) {
         my $exception = $@;
-        $adm->rollbackTransaction;
+        $self->rollbackTransaction;
         $exception->rethrow;
     }
-    $adm->commitTransaction;
+    $self->commitTransaction;
 }
 
 sub unlockContext {
     my $self = shift;
     my %args = @_;
 
-    my $adm = Administrator->new();
-
     # Get the params with option 'skip_not_found', as some input context entities,
     # could be deleted by the operation, so no need to unlock them.
     my $params = $self->getParams(skip_not_found => 1);
 
-    $adm->beginTransaction;
+    $self->beginTransaction;
     for my $key (keys %{ $params->{context} }) {
         my $entity = $params->{context}->{$key};
         $log->debug("Trying to unlock entity <$key>:" . $entity->id . ">");
@@ -520,7 +501,7 @@ sub unlockContext {
             $log->debug("Unable to unlock context param <$key>\n$@");
         }
     }
-    $adm->commitTransaction;
+    $self->commitTransaction;
 }
 
 sub validate {

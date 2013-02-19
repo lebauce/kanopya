@@ -19,12 +19,12 @@ use Kanopya::Tools::Create;
 use Kanopya::Tools::Profiler;
 
 lives_ok {
-    use Administrator;
+    use BaseDB;
     use Aggregator;
     use Orchestrator;
 
-    use Entity::ServiceProvider::Inside::Cluster;
-    use Entity::Connector::MockMonitor;
+    use Entity::ServiceProvider::Cluster;
+    use Entity::Component::MockMonitor;
     
     use Entity::Clustermetric;
     use Entity::Combination::AggregateCombination;
@@ -33,20 +33,18 @@ lives_ok {
 
 } 'All uses';
 
-Administrator::authenticate(login =>'admin', password => 'K4n0pY4');
-my $adm          = Administrator->new;
 my $aggregator   = Aggregator->new();
 my $orchestrator = Orchestrator->new();
-my $profiler     = Kanopya::Tools::Profiler->new(schema => $adm->{db});
+my $profiler     = Kanopya::Tools::Profiler->new(schema => BaseDB->_adm->{schema});
 
-$adm->beginTransaction;
+BaseDB->beginTransaction;
 
 my $serviceload = 1;
 my $nodeload = 1;
 my $ruleload = 0;
 
-my $kanopya = Entity::ServiceProvider::Inside::Cluster->find(hash => { cluster_name => 'Kanopya' });
-my $mock_monitor = Entity::Connector::MockMonitor->new(
+my $kanopya = Entity::ServiceProvider::Cluster->find(hash => { cluster_name => 'Kanopya' });
+my $mock_monitor = Entity::Component::MockMonitor->new(
                        service_provider_id => $kanopya->id,
                    );
 
@@ -64,7 +62,7 @@ sub registerCluster {
 
     $cluster->addManager(
         manager_id      => $mock_monitor->id,
-        manager_type    => 'collector_manager',
+        manager_type    => 'CollectorManager',
         no_default_conf => 1,
     );
  
@@ -83,8 +81,12 @@ sub addNode {
                });
 
     # Make the host node for the new service
-    $host->setAttr(name => 'host_hostname', value => 'hostname' . $args{cluster}->cluster_name . 'node' . $args{number}, save => 1);
-    $host->becomeNode(inside_id => $args{cluster}->id, master_node => ($args{number} == 1) ? 1 : 0, node_number => $args{number});
+    $host->becomeNode(
+        service_provider_id => $args{cluster}->id,
+        master_node         => ($args{number} == 1) ? 1 : 0,
+        node_number         => $args{number},
+        hostname            => 'hostname' . $args{cluster}->cluster_name . 'node' . $args{number}
+    );
     $host->setState(state => 'up');
     $host->setNodeState(state => 'in');
 }
@@ -146,7 +148,7 @@ eval{
         benchmarkAggregatorUpdate();
 
         # Add 10 nodes to each services
-        for my $cluster (Entity::ServiceProvider::Inside::Cluster->search(hash => {})) {
+        for my $cluster (Entity::ServiceProvider::Cluster->search(hash => {})) {
             for my $index (1 .. 10) {
                 addNode(cluster => $cluster, number => ($nodeload + $index));
             }
@@ -158,7 +160,7 @@ eval{
         benchmarkAggregatorUpdate();
 
         # Add 10 rules to each services
-        for my $cluster (Entity::ServiceProvider::Inside::Cluster->search(hash => {})) {
+        for my $cluster (Entity::ServiceProvider::Cluster->search(hash => {})) {
             for my $index (1 .. 10) {
                 addAggregateRule(cluster => $cluster);
             }
@@ -167,13 +169,13 @@ eval{
     }
     benchmarkAggregatorUpdate();
 
-    $adm->rollbackTransaction;
+    BaseDB->rollbackTransaction;
 };
 if ($@) {
     my $error = $@;
     print $error."\n";
 
-    $adm->rollbackTransaction;
+    BaseDB->rollbackTransaction;
 
     fail('Exception occurs');
 }

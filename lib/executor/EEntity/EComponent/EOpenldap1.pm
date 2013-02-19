@@ -29,7 +29,7 @@ sub addNode {
 
     General::checkParams(args => \%args, required => ['host', 'mount_point']);
 
-    my $cluster = $self->_getEntity->getServiceProvider;
+    my $cluster = $self->service_provider;
     my $data = $self->_getEntity()->getConf();
     my $data1={};
    

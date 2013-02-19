@@ -30,7 +30,7 @@ use ERollback;
 use EFactory;
 use Entity::Operation;
 use Operationtype;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 
 use Kanopya::Config;
 use Kanopya::Exceptions;
@@ -97,10 +97,9 @@ sub validation {
     my $self = shift;
     my %args = @_;
 
-    my $adm    = Administrator->new();
     my $config = General::getTemplateConfiguration();
 
-    $adm->beginTransaction;
+    $self->beginTransaction;
 
     # Search for all context entites if notification/validation required
     my $validation = 0;
@@ -119,7 +118,7 @@ sub validation {
             my $notifier;
             eval {
                 my $component = $subscribtion->service_provider->getManager(
-                                    manager_type => 'notification_manager'
+                                    manager_type => 'NotificationManager'
                                 );
 
                 $notifier = EFactory::newEEntity(data => $component);
@@ -136,7 +135,7 @@ sub validation {
 
             # TODO: We do not have a mechanism to retreive the url of the web ui...
             #       So try to get the public ip of the kanopya master node, but the port is still hard core.
-            my $kanopya = Entity::ServiceProvider::Inside::Cluster->find(hash => { cluster_name => 'Kanopya' });
+            my $kanopya = Entity::ServiceProvider::Cluster->find(hash => { cluster_name => 'Kanopya' });
 
             my $ip;
             eval {
@@ -188,7 +187,7 @@ sub validation {
         }
     }
 
-    $adm->commitTransaction;
+    $self->commitTransaction;
 
     return not $validation;
 }

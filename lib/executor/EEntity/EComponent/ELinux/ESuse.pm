@@ -139,7 +139,7 @@ sub customizeInitramfs {
     my $initrddir = $args{initrd_dir};
     my $systemimage = $args{host}->getNodeSystemimage;
     my $ifaces = $args{host}->getIfaces;
-    my $hostname = $args{host}->host_hostname;
+    my $hostname = $args{host}->node->node_hostname;
 
     my $file = $self->_generateUdevPersistentNetRules(host => $args{host}, cluster => $args{cluster});
     my $cmd = 'cp '.$file->{src}.' '.$initrddir.$file->{dest};
@@ -164,7 +164,7 @@ sub customizeInitramfs {
                   );
 
     # TODO: Check host harddisks for a harddisk_device called 'autodetect'
-    my $host_params = $args{cluster}->getManagerParameters(manager_type => 'host_manager');
+    my $host_params = $args{cluster}->getManagerParameters(manager_type => 'HostManager');
     if ($host_params->{deploy_on_disk}) {
         my $harddisk;
         eval {
@@ -196,7 +196,7 @@ sub customizeInitramfs {
     my @ifaces = $args{host}->getIfaces();
     $self->_initrd_config(initrd_dir => $initrddir,
                           ifaces     => \@ifaces,
-                          hostname   => $args{host}->host_hostname,
+                          hostname   => $args{host}->node->node_hostname,
                           rootdev    => $rootdev);
 }
 

@@ -23,7 +23,7 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use Administrator;
+use BaseDB;
 use Aggregator;
 use Orchestrator;
 use Monitor::Collector;
@@ -44,11 +44,10 @@ my $one;
 main();
 
 sub main {
-    Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-    my $adm = Administrator->new;
+    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if($testing == 1) {
-        $adm->beginTransaction;
+        BaseDB->beginTransaction;
     }
 
     my $config = Kanopya::Config::get('monitor');
@@ -82,7 +81,7 @@ sub main {
     lm_hypervisor_down();
 
     if ($testing == 1) {
-        $adm->rollbackTransaction;
+        BaseDB->rollbackTransaction;
     }
 }
 

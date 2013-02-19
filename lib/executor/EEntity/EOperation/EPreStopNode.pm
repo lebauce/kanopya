@@ -44,14 +44,11 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use EFactory;
-use Entity::ServiceProvider::Inside::Cluster;
 use Entity::Host;
-use Externalnode::Node;
+use EFactory;
+
 use String::Random;
 use Date::Simple (':all');
-use Template;
-use Entity::Workflow;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -59,18 +56,6 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
-my $config = {
-    INCLUDE_PATH => '/templates/internal/',
-    INTERPOLATE  => 1,               # expand "$var" in plain text
-    POST_CHOMP   => 0,               # cleanup whitespace
-    EVAL_PERL    => 1,               # evaluate Perl code blocks
-    RELATIVE => 1,                   # desactive par defaut
-};
-
-
-=head2 prerequisites
-
-=cut
 
 sub prerequisites {
     my ($self, %args) = @_;
@@ -82,22 +67,16 @@ sub prerequisites {
     if ((not defined $self->{context}->{host}) && (defined $self->{context}->{cluster})) {
         $log->info('No node selected, select a random node');
 
-        my @nodes = Externalnode::Node->search(hash => {
-                inside_id   => $self->{context}->{cluster}->getId(),
-                master_node => 0,
-        });
-
-        if((scalar @nodes) == 0) {
+        my @nodes = $self->{context}->{cluster}->searchRelated(filters => [ 'nodes' ], hash => { master_node => 0 });
+        if (scalar (@nodes) == 0) {
             throw Kanopya::Exception(error => 'Cannot remove a node from cluster <'.($self->{context}->{cluster}->getId()).'> only one master left');
         }
         my $random_int = int(scalar (@nodes) * rand);
-
         my $node = $nodes[$random_int];
 
-        $log->info('Node <'.$node->getId().'> selected to be removed between <'.(scalar @nodes).'> nodes');
-        my $host = $node->host;
+        $log->info('Node <' . $node->id . '> selected to be removed between <' . (scalar @nodes) . '> nodes');
 
-        $self->{context}->{host} = EFactory::newEEntity(data => $host);
+        $self->{context}->{host} = EFactory::newEEntity(data => $node->host);
     }
 
     if ($self->{context}->{host}->checkStoppable == 0) {

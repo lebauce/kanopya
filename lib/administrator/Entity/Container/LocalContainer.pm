@@ -47,7 +47,7 @@ sub getAttrDef { return ATTR_DEF; }
 @constructor
 
 Overrides the generic container constructor to fix values
-that does not mùake sens for this type of container.
+that does not make sens for this type of container.
 
 @return a local container instance
 
@@ -59,11 +59,30 @@ sub new {
     my $class = shift;
     my %args = @_;
 
-    # This type of disk is not handled by a manager
-    $args{disk_manager_id} = 0;
     $args{container_freespace} = 0;
 
     return $class->SUPER::new(%args);
+}
+
+
+=pod
+
+=begin classdoc
+
+Overrides the accessor of the disk manager to raise
+the proper exception.
+
+=end classdoc
+
+=cut
+
+sub disk_manager {
+    my $class = shift;
+    my %args = @_;
+
+    throw Kanopya::Exception::Internal(
+              error => "A local container is not managed by any disk manager"
+          );
 }
 
 1;

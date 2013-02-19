@@ -6,7 +6,7 @@ require('common/formatters.js');
 function addServiceExtraData(grid, rowid, rowdata, rowelem, ext) {
     var id  = $(grid).getCell(rowid, 'pk');
     $.ajax({
-        url     : '/api/externalnode?service_provider_id=' + id,
+        url     : '/api/node?service_provider_id=' + id,
         type    : 'GET',
         success : function(data) {
             var i   = 0;
@@ -64,7 +64,7 @@ function addResourceExtraData(grid, rowid, rowdata, rowelem, nodemetricrules, sp
         $(cellContent).append($('<img>', { rel : 'notok', src : '/images/icons/broken.png' })).append(notok);
         $(cellContent).append($('<img>', { rel : 'undef', src : '/images/icons/down.png' })).append(undef);
         $.ajax({
-            url         : '/api/nodemetricrule/' + nodemetricrules[i].pk + '/verified_noderules?verified_noderule_externalnode_id='+rowdata.pk,
+            url         : '/api/nodemetricrule/' + nodemetricrules[i].pk + '/verified_noderules?verified_noderule_node_id='+rowdata.pk,
             contentType : 'application/json',
             success     : function(data) {
                 var verified_node_rule = data[0];
@@ -95,7 +95,7 @@ function node_rules_tab(cid, eid, service_provider_id) {
         var VerifiedRuleFormat;
         // Where rowid = rule_id
         $.ajax({
-             url: '/api/externalnode/' + eid + '/verified_noderules?verified_noderule_nodemetric_rule_id=' + row.pk,
+             url: '/api/node/' + eid + '/verified_noderules?verified_noderule_nodemetric_rule_id=' + row.pk,
              async: false,
              success: function(answer) {
                 if (answer.length == 0) {
@@ -169,25 +169,14 @@ function getServiceProviders(category) {
     }
 
     var providers = [];
+    var expand = 'components.component_type.component_type_categories.component_category';
+    var filter = 'components.component_type.component_type_categories.component_category.category_name=' + category;
     $.ajax({
-        url         : '/api/serviceprovider?expand=components,connectors,components.component_type,connectors.connector_type&deep=1',
+        url         : '/api/serviceprovider?' + filter + '&expand=' + expand + '&deep=1',
         type        : 'GET',
         async       : false,
         success     : function(data) {
-            for (var i in data) if (data.hasOwnProperty(i)) {
-                for (var component in data[i].components) {
-                    if (data[i].components[component].component_type.component_category === category) {
-                        providers.push(data[i]);
-                        break
-                    }
-                }
-                for (var connector in data[i].connectors) {
-                    if (data[i].connectors[connector].connector_type.connector_category === category) {
-                        providers.push(data[i]);
-                        break
-                    }
-                }
-            }
+            providers = data;
         }
     });
     return providers;
@@ -199,27 +188,23 @@ function findManager(category, service_provider_id, exclude) {
         category = category['category'];
     }
 
+    var expand = 'component_type.component_type_categories.component_category';
+    var filter = 'component_type.component_type_categories.component_category.category_name=' + category;
     var managers = [];
-    var types = ['component', 'connector'];
-    for (var i in types) {
-        var type = types[i];
-        var url = '/api/' + type + '?expand=' + type + '_type&' + type + '_type.' + type + '_category=' + category;
 
-        if (service_provider_id) {
-            url += '&service_provider_id=' + (exclude ? '<>,' : '') + service_provider_id;
-        }
-
-        $.ajax({
-            url     : url,
-            type    : 'GET',
-            async   : false,
-            success : function(data) {
-                for (manager in data) {
-                    managers.push(data[manager]);
-                }
-            }
-        });
+    var url = '/api/component?expand=' + expand + '&' + filter;
+    if (service_provider_id) {
+        url += '&service_provider_id=' + (exclude ? '<>,' : '') + service_provider_id;
     }
+
+    $.ajax({
+        url     : url,
+        type    : 'GET',
+        async   : false,
+        success : function(data) {
+            managers = data;
+        }
+    });
     return managers;
 }
 

@@ -1,19 +1,19 @@
 use Data::Dumper;
-use Administrator;
-use Entity::ServiceProvider::Outside::Externalcluster;
-use Entity::Connector::ActiveDirectory;
-use Entity::Connector::Scom;
+use BaseDB;
+use Entity::ServiceProvider::Externalcluster;
+use Entity::Component::ActiveDirectory;
+use Entity::Component::Scom;
 
-Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
+BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
     
-my $cluster = Entity::ServiceProvider::Outside::Externalcluster->new(
+my $cluster = Entity::ServiceProvider::Externalcluster->new(
     externalcluster_name => "vw_cluster",
     );
         
-#    my @clusters = Entity::ServiceProvider::Outside::Externalcluster->search(hash => {externalcluster_name => "vWorkspace"});
+#    my @clusters = Entity::ServiceProvider::Externalcluster->search(hash => {externalcluster_name => "vWorkspace"});
 #    my $cluster = pop @clusters;
     
-my $ad_connector = Entity::Connector::ActiveDirectory->new(
+my $ad_connector = Entity::Component::ActiveDirectory->new(
     ad_host => "WIN-09DSUKS61DT",
     ad_user => 'administrator@hedera.forest',
     ad_pwd  => 'H3d3r4#234',
@@ -22,7 +22,7 @@ my $ad_connector = Entity::Connector::ActiveDirectory->new(
     
 $cluster->addConnector(connector => $ad_connector);
 
-my $scom_connector = Entity::Connector::Scom->new(
+my $scom_connector = Entity::Component::Scom->new(
     scom_ms_name => "WIN-09DSUKS61DT.hedera.forest",
     );
     

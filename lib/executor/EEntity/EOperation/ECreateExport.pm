@@ -64,7 +64,7 @@ sub prepare {
     General::checkParams(args => $self->{params}, required => [ "manager_params" ]);
 
     # Check state of the storage_provider
-    my $storage_provider = $self->{context}->{export_manager}->getServiceProvider;
+    my $storage_provider = $self->{context}->{export_manager}->export_manager->service_provider;
     my ($state, $timestamp) = $storage_provider->getState();
     if ($state ne 'up'){
         $errmsg = "ServiceProvider has to be up !";

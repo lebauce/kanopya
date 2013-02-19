@@ -44,10 +44,10 @@ use warnings;
 
 use XML::Simple;
 use General;
-use Administrator;
+use BaseDB;
 use Kanopya::Config;
-use Entity::ServiceProvider::Inside::Cluster;
-use Entity::ServiceProvider::Outside::Externalcluster;
+use Entity::ServiceProvider::Cluster;
+use Entity::ServiceProvider::Externalcluster;
 use Data::Dumper;
 use Parse::BooleanLogic;
 use Entity::Rule::AggregateRule;
@@ -59,6 +59,8 @@ use WorkflowNoderule;
 use Entity::Workflow;
 use Message;
 use Alert;
+use Node;
+use RulesManager;
 
 use Log::Log4perl "get_logger";
 
@@ -99,11 +101,13 @@ sub new {
 
     # Load conf
     my $conf = Kanopya::Config::get('orchestrator');
-   # Get Administrator
+
     my ($login, $password) = ($conf->{user}{name}, $conf->{user}{password});
-    Administrator::authenticate( login => $login, password => $password );
-    $self->{_admin} = Administrator->new();
-    #$self->{_monitor} = Monitor::Retriever->new( );
+    BaseDB->authenticate(login => $login, password => $password);
+
+    # Instanciate the rules manager
+    # TODO: Do not access to the private _adm
+    $self->{rulesmanager} = RulesManager->new(schemas => BaseDB->_adm->{schema});
 
     return $self;
 }
@@ -132,7 +136,7 @@ sub manage_aggregates {
             my $service_provider_id = $service_provider->getAttr(name => 'service_provider_id');
 
             eval {
-                $service_provider->getManager(manager_type => "collector_manager");
+                $service_provider->getManager(manager_type => "CollectorManager");
             };
             if ($@){
                 $log->info('Orchestrator skip service provider '.$service_provider_id.' because it has no collector manager');
@@ -284,7 +288,7 @@ sub _evalRule {
     my $workflow_manager;
 
     eval{ # Avoid the reinstantiation for each node
-        $workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager');
+        $workflow_manager = $service_provider->getManager(manager_type => 'WorkflowManager');
     };
     if($@){
         $log->info('No workflow manager in service provider <'.($service_provider_id).'>')
@@ -308,15 +312,15 @@ sub _evalRule {
         );
 
         $log->info('Node Eval <'.$nodeEval.'>');
-        my $externalnode = Externalnode->find(hash => {
-            externalnode_hostname => $host_name,
+        my $node = Node->find(hash => {
+            node_hostname => $host_name,
             service_provider_id   => $service_provider->id,
         });
 
-        my $externalnode_id = $externalnode->id;
+        my $node_id = $node->id;
         # Manage Workflow
         my $workflowState = WorkflowNoderule->workflowState(
-            externalnode_id    => $externalnode_id,
+            node_id    => $node_id,
             nodemetric_rule_id => $rule_id,
         );
 
@@ -325,12 +329,12 @@ sub _evalRule {
         if(defined $nodeEval){
             if($nodeEval eq 0){
                 $log->info('Rule not verified for node <'.($host_name).'>');
-                $rule->deleteVerifiedRule(externalnode_id => $externalnode_id);
+                $rule->deleteVerifiedRule(node_id => $node_id);
             }
             else {
                 $rep++;
                 $rule->setVerifiedRule(
-                    externalnode_id     => $externalnode_id,
+                    node_id     => $node_id,
                     state               => 'verified',
                 );
 
@@ -348,7 +352,7 @@ sub _evalRule {
                         );
 
                         WorkflowNoderule->new(
-                            externalnode_id    => $externalnode_id,
+                            node_id    => $node_id,
                             nodemetric_rule_id => $rule_id,
                             workflow_id        => $workflow->id,
                         );
@@ -371,7 +375,7 @@ sub _evalRule {
         else { #value undef
             $log->info('Rule '.$rule->getAttr(name => 'nodemetric_rule_id').' on host '.$host_name.' is undef');
             $rule->setVerifiedRule(
-                externalnode_id     => $externalnode_id,
+                node_id     => $node_id,
                 state               => 'undef',
             );
         }
@@ -466,7 +470,7 @@ sub clustermetricManagement{
         eval {
             eval{
                 # Avoid the reinstantiation for each node
-                $workflow_manager = $service_provider->getManager(manager_type => 'workflow_manager');
+                $workflow_manager = $service_provider->getManager(manager_type => 'WorkflowManager');
             };
             if($@){
                 $log->info('No workflow manager in service provider <' . $service_provider->id . '>')
@@ -614,9 +618,9 @@ sub manage {
 
         eval {
             #TODO keep cluster id from the beginning (get by name is not really good)
-            my $cluster_id = Entity::ServiceProvider::Inside::Cluster->find(hash => { cluster_name => $cluster })->id;
+            my $cluster_id = Entity::ServiceProvider::Cluster->find(hash => { cluster_name => $cluster })->id;
 
-            my $rules_manager = $self->{_admin}->{manager}{rules};
+            my $rules_manager = $self->{rulesmanager};
 
             # Solve rules
             my $rules = $rules_manager->getClusterRules( cluster_id => $cluster_id );
@@ -1058,7 +1062,7 @@ sub getClusterByName {
     my $self = shift;
     my %args = @_;
 
-       my @cluster = Entity::ServiceProvider::Inside::Cluster->search(hash => { cluster_name => $args{cluster_name} });
+       my @cluster = Entity::ServiceProvider::Cluster->search(hash => { cluster_name => $args{cluster_name} });
        die "More than one cluster with the name '$args{cluster_name}'" if ( 1 < @cluster);
        die "Cluster with name '$args{cluster_name}' no longer exists" if ( 0 == @cluster);
        return pop @cluster;

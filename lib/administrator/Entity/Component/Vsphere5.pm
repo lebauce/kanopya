@@ -52,7 +52,7 @@ use Entity::User;
 use Entity::Policy;
 use Entity::ServiceTemplate;
 use Entity::Operation;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 use Entity::Host::VirtualMachine::Vsphere5Vm;
 use Entity::Host::Hypervisor::Vsphere5Hypervisor;
 use Entity::ContainerAccess;
@@ -849,8 +849,9 @@ sub registerVm {
     #Get the datacenter used by the hosting hypervisor(s)
     my @hypervisors_nodes;
     eval {
-        @hypervisors_nodes = Externalnode::Node->search(hash => {
-                                 inside_id => $parent_service_provider->id});
+        @hypervisors_nodes = Node->search(hash => {
+                                 service_provider_id => $parent_service_provider->id
+                             });
     };
     if ($@) {
         $errmsg  = 'Could not find any node in the parent service provider: '. $@;
@@ -884,7 +885,7 @@ sub registerVm {
     my $service_provider;
 
     eval {
-        $service_provider = Entity::ServiceProvider::Inside::Cluster->find(hash => {
+        $service_provider = Entity::ServiceProvider::Cluster->find(hash => {
                                          cluster_name => $service_provider_renamed,});
     };
     if (defined $service_provider) {
@@ -898,7 +899,7 @@ sub registerVm {
         eval {
             my $admin_user = Entity::User->find(hash => { user_login => 'admin' });
 
-            $service_provider = Entity::ServiceProvider::Inside::Cluster->new(
+            $service_provider = Entity::ServiceProvider::Cluster->new(
                                     active                 => 1,
                                     cluster_name           => $service_provider_renamed,
                                     cluster_state          => 'up:'. time(),
@@ -954,7 +955,7 @@ sub registerVm {
             }
             
             #Now set this manager as host manager for the new service provider
-            $service_provider->addManager(manager_type => 'host_manager',
+            $service_provider->addManager(manager_type => 'HostManager',
                                           manager_id   => $self->id);
         };
         if ($@) {
@@ -1001,15 +1002,15 @@ sub registerVm {
         #we define the state time as now
         if ($vm_view->runtime->connectionState->val    eq 'disconnected') {
             $time       = time();
-            $host_state = 'down: '. $time;
+            $host_state = 'down: ' . $time;
         }
         elsif ($vm_view->runtime->connectionState->val eq 'connected') {
             $time       = time();
-            $host_state = 'up: '. $time;
+            $host_state = 'up: ' . $time;
         }
         elsif ($vm_view->runtime->connectionState->val eq 'inaccessible') {
             $time       = time();
-            $host_state = 'broken: '. $time;
+            $host_state = 'broken: ' . $time;
         }
 
         my $vm = Entity::Host::VirtualMachine->new(
@@ -1020,7 +1021,6 @@ sub registerVm {
                      active             => 1,
                      host_ram           => $vm_view->config->hardware->memoryMB * 1024 * 1024,
                      host_core          => $vm_view->config->hardware->numCPU,
-                     host_hostname      => $service_provider_renamed,
                      host_state         => $host_state,
                      hypervisor_id      => $hosting_hypervisor_id,
                  );
@@ -1028,13 +1028,13 @@ sub registerVm {
         #promote new virtual machine class to a vsphere5Vm one
         $self->addVM(host => $vm, guest_id => $vm_view->config->guestId, uuid => $vm_uuid);
 
-        my $node = Externalnode::Node->new(
-                       inside_id             => $service_provider->id,
-                       host_id               => $vm->id,
-                       master_node           => 1,
-                       node_number           => 1,
-                       node_state            => 'in:'.$time,
-                       externalnode_hostname => $vm_view->name,
+        my $node = Node->new(
+                       service_provider_id => $service_provider->id,
+                       host_id             => $vm->id,
+                       master_node         => 1,
+                       node_number         => 1,
+                       node_state          => 'in:' . $time,
+                       node_hostname       => $service_provider_renamed,
                    );
 
         return $service_provider;
@@ -1099,7 +1099,7 @@ sub registerHypervisor {
     my $service_provider;
 
     eval {
-        $service_provider = Entity::ServiceProvider::Inside::Cluster->find(hash => {
+        $service_provider = Entity::ServiceProvider::Cluster->find(hash => {
                                          cluster_name => $service_provider_renamed,}
                             );
     };
@@ -1114,7 +1114,7 @@ sub registerHypervisor {
             my $admin_user           = Entity::User->find(hash => { user_login => 'admin' });
             my $cluster_basehostname = 'vsphere_service_'. $hypervisor_view->summary->host->value;
 
-            $service_provider = Entity::ServiceProvider::Inside::Cluster->new(
+            $service_provider = Entity::ServiceProvider::Cluster->new(
                                     active                 => 1,
                                     cluster_name           => $service_provider_renamed,
                                     cluster_state          => 'up:'. time(),
@@ -1170,7 +1170,7 @@ sub registerHypervisor {
             }
 
             #Now set this manager as host manager for the new service provider
-            $service_provider->addManager(manager_type => 'host_manager',
+            $service_provider->addManager(manager_type => 'HostManager',
                                           manager_id   => $self->id);
         };
         if ($@) {
@@ -1206,20 +1206,19 @@ sub registerHypervisor {
                      active             => 1,
                      host_ram           => $hypervisor_view->hardware->memorySize,
                      host_core          => $hypervisor_view->hardware->cpuInfo->numCpuCores,
-                     host_hostname      => $service_provider_renamed,
                      host_state         => $host_state,
                  );
 
         #promote new hypervisor class to a vsphere5Hypervisor one
         $self->addHypervisor(host => $hv, datacenter_id => $datacenter->id, uuid => $hv_uuid);
 
-        my $node = Externalnode::Node->new(
-                       inside_id             => $service_provider->id,
-                       host_id               => $hv->id,
-                       master_node           => 1,
-                       node_number           => 1,
-                       node_state            => 'in:'.$time,
-                       externalnode_hostname => $hypervisor_view->name,
+        my $node = Node->new(
+                       service_provider_id => $service_provider->id,
+                       host_id             => $hv->id,
+                       master_node         => 1,
+                       node_number         => 1,
+                       node_state          => 'in:'.$time,
+                       node_hostname       => $service_provider_renamed,
                    );
 
         return $service_provider;
@@ -1283,7 +1282,7 @@ sub registerCluster {
     my $service_provider;
 
     eval {
-        $service_provider = Entity::ServiceProvider::Inside::Cluster->find(hash => {
+        $service_provider = Entity::ServiceProvider::Cluster->find(hash => {
                                          cluster_name => $cluster_renamed,
                                      });
     };
@@ -1298,7 +1297,7 @@ sub registerCluster {
             my $admin_user           = Entity::User->find(hash => { user_login => 'admin' });
             my $cluster_basehostname = 'vsphere_service_'. lc $cluster_renamed. '_' .time();
 
-            $service_provider = Entity::ServiceProvider::Inside::Cluster->new(
+            $service_provider = Entity::ServiceProvider::Cluster->new(
                                     active                 => 1,
                                     cluster_name           => $cluster_renamed,
                                     cluster_state          => 'up:'. time(),
@@ -1353,7 +1352,7 @@ sub registerCluster {
             }
 
             #Now set this manager as host manager for the new service provider
-            $service_provider->addManager(manager_type => 'host_manager',
+            $service_provider->addManager(manager_type => 'HostManager',
                                           manager_id   => $self->id);
         };
         if ($@) {
@@ -1370,19 +1369,16 @@ sub registerCluster {
             #Get hypervisor's view from it's MOR
             my $hypervisor_view = $self->getView(mo_ref => $hypervisor);
             my $host_state;
-            my $time;
+            my $time = time();
 
             #we define the state time as now
             if ($hypervisor_view->runtime->connectionState->val    eq 'disconnected') {
-                $time = time();            
                 $host_state = 'down: '.$time;
             }
-            elsif ($hypervisor_view->runtime->connectionState->val eq 'connected') {
-                $time = time();            
+            elsif ($hypervisor_view->runtime->connectionState->val eq 'connected') {   
                 $host_state = 'up: '.$time;
             }
             elsif ($hypervisor_view->runtime->connectionState->val eq 'notResponding') {
-                $time = time();            
                 $host_state = 'broken: '.$time;
             }
 
@@ -1394,7 +1390,6 @@ sub registerCluster {
                          active             => 1,
                          host_ram           => $hypervisor_view->hardware->memorySize,
                          host_core          => $hypervisor_view->hardware->cpuInfo->numCpuCores,
-                         host_hostname      => $hypervisor_view->name,
                          host_state         => $host_state,
                     );
 
@@ -1405,17 +1400,16 @@ sub registerCluster {
                 uuid          => $hypervisor_view->hardware->systemInfo->uuid,
             );
 
-            my $node = Externalnode::Node->new(
-                           inside_id             => $service_provider->id,
-                           host_id               => $hv->id,
-                           master_node           => 0,
-                           node_number           => $hv_number + 1,
-                           node_state            => 'in:'.$time,
-                           externalnode_hostname => $hypervisor_view->name,
+            my $node = Node->new(
+                           service_provider_id => $service_provider->id,
+                           host_id             => $hv->id,
+                           master_node         => 0,
+                           node_number         => $hv_number + 1,
+                           node_state          => 'in:' . $time,
+                           node_hostname       => $hypervisor_view->name,
                        );
         }
-
-    return $service_provider;
+        return $service_provider;
     }
 }
 
@@ -1635,8 +1629,8 @@ sub powerOnVm {
 
     General::checkParams(args => \%args, required => [ 'hypervisor', 'vm']);
 
-    my $host_name = $args{hypervisor}->host_hostname;
-    my $vm_name   = $args{vm}->host_hostname;
+    my $host_name = $args{hypervisor}->node->node_hostname;
+    my $vm_name   = $args{vm}->node->node_hostname;
 
     #get the HostSystem view
     my $host_view = $self->findEntityView(view_type   => 'HostSystem',

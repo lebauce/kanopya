@@ -180,7 +180,7 @@ function sco_workflow(container_id) {
             success : function(data) {
                 workflowmanagers[i].service_provider      = data;
                 workflowmanagers[i].service_provider_name = data.label;
-                workflowmanagers[i].name = workflowmanagers[i].component_type ? workflowmanagers[i].component_type.component_name : workflowmanagers[i].connector_type.connector_name
+                workflowmanagers[i].name = workflowmanagers[i].component_type.component_name;
                 workflowmanagers[i].id = workflowmanagers[i].pk;
             }
         });
@@ -193,7 +193,7 @@ function sco_workflow(container_id) {
         colModel                : [
             { name : 'id', index : 'id', width : 60, sorttype : 'int', hidden : true },
             { name : 'service_provider_name', index : 'service_provider_name'},
-            { name : 'name', index : 'name' },
+            { name : 'name', index : 'name' }
         ],
         data                    : workflowmanagers,
         action_delete           : 'no'
@@ -215,7 +215,7 @@ function workflowdetails(workflowmanagerid, workflowmanager) {
         title       : workflowmanager.service_provider_name + ' - ' + workflowmanager.name
     });
     $.ajax({
-        url         : '/api/entity/' + workflowmanager.id + '/getWorkflowDefs',
+        url         : '/api/component/' + workflowmanager.id + '/getWorkflowDefs',
         type        : 'POST',
         contentType : 'application/json',
         data        : JSON.stringify({ no_associate : 1 }),
@@ -394,7 +394,7 @@ function workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
             params.specific_params[$(this).attr('name')] = getRawValue($(this).val(), 'unit_' + $(this).attr('name'));
         });
         $.ajax({
-            url         : '/api/entity/' + manager.manager_id + '/associateWorkflow',
+            url         : '/api/component/' + manager.manager_id + '/associateWorkflow',
             type        : 'POST',
             contentType : 'application/json',
             data        : JSON.stringify(params),
@@ -414,7 +414,7 @@ function workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
             manager = data[0];
             if (manager) {
                 $.ajax({
-                        url         : '/api/entity/' + manager.manager_id + '/getWorkflowDefs',
+                        url         : '/api/component/' + manager.manager_id + '/getWorkflowDefs',
                         type        : 'POST',
                         contentType : 'application/json',
                         data        : JSON.stringify({ 'no_associate' : 1 }),
@@ -476,7 +476,7 @@ function workflowRuleDeassociation(cid, rule_id, wfdef_id, serviceprovider_id) {
                     rule_id         : rule_id
             };
             $.ajax({
-                url         : '/api/entity/' + managers[0].manager_id + '/deassociateWorkflow',
+                url         : '/api/coponent/' + managers[0].manager_id + '/deassociateWorkflow',
                 type        : 'POST',
                 contentType : 'application/json',
                 data        : JSON.stringify(params),

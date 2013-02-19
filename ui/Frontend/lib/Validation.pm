@@ -4,7 +4,6 @@ use Dancer ':syntax';
 use Dancer::Plugin::Ajax;
 use Data::Dumper;
 
-use Administrator;
 use Entity::Operation;
 
 use Log::Log4perl "get_logger";

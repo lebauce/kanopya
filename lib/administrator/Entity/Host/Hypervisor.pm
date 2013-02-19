@@ -55,7 +55,7 @@ sub checkStoppable {
     my @vms = $self->getVms();
 
     if (scalar @vms) {
-        throw Kanopya::Exception(error => "The hypervisor " . $self->host_hostname .
+        throw Kanopya::Exception(error => "The hypervisor " . $self->node->node_hostname .
                                           " can't be stopped as it still runs virtual machines");
     }
 

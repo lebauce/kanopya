@@ -119,7 +119,7 @@ sub generateNodeFile {
     my $econtext = $self->getExecutorEContext();
     my $path = $config->{clusters}->{directory};
     $path .= '/' . $args{cluster}->cluster_name;
-    $path .= '/' . $args{host}->host_hostname;
+    $path .= '/' . $args{host}->node->node_hostname;
     $path .= '/' . $args{file};
     my ($filename, $directories, $prefix) = fileparse($path);
     $econtext->execute(command => "mkdir -p $directories");

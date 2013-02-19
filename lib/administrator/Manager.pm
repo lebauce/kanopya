@@ -50,22 +50,22 @@ sub checkManagerParams {
 
     $args{manager_params} = $args{manager_params} ? $args{manager_params} : {};
 
-    if ($args{manager_type} eq 'host_manager') {
+    if ($args{manager_type} eq 'HostManager') {
         return $self->checkHostManagerParams(%{ $args{manager_params} });
     }
-    elsif ($args{manager_type} eq 'disk_manager') {
+    elsif ($args{manager_type} eq 'DiskManager') {
         return $self->checkDiskManagerParams(%{ $args{manager_params} });
     }
-    elsif ($args{manager_type} eq 'export_manager') {
+    elsif ($args{manager_type} eq 'ExportManager') {
         return $self->checkExportManagerParams(%{ $args{manager_params} });
     }
-    elsif ($args{manager_type} eq 'collector_manager') {
+    elsif ($args{manager_type} eq 'CollectorManager') {
         return $self->checkCollectorManagerParams(%{ $args{manager_params} });
     }
-    elsif ($args{manager_type} eq 'workflow_manager') {
+    elsif ($args{manager_type} eq 'WorkflowManager') {
         return $self->checkWorkflowManagerParams(%{ $args{manager_params} });
     }
-    elsif ($args{manager_type} eq 'notification_manager') {
+    elsif ($args{manager_type} eq 'NotificationManager') {
         return $self->checkNotificationManagerParams(%{ $args{manager_params} });
     }
 }

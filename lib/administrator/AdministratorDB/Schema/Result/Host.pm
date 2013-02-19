@@ -1,17 +1,37 @@
+use utf8;
 package AdministratorDB::Schema::Result::Host;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
-
-
 =head1 NAME
 
 AdministratorDB::Schema::Result::Host
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
+
+=head1 TABLE: C<host>
 
 =cut
 
@@ -30,6 +50,7 @@ __PACKAGE__->table("host");
 
   data_type: 'integer'
   extra: {unsigned => 1}
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 hostmodel_id
@@ -89,12 +110,6 @@ __PACKAGE__->table("host");
   extra: {unsigned => 1}
   is_nullable: 1
 
-=head2 host_hostname
-
-  data_type: 'char'
-  is_nullable: 1
-  size: 32
-
 =head2 host_state
 
   data_type: 'char'
@@ -119,7 +134,12 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "host_manager_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
   "hostmodel_id",
   {
     data_type => "integer",
@@ -153,8 +173,6 @@ __PACKAGE__->add_columns(
   { data_type => "bigint", extra => { unsigned => 1 }, is_nullable => 1 },
   "host_core",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
-  "host_hostname",
-  { data_type => "char", is_nullable => 1, size => 32 },
   "host_state",
   {
     data_type => "char",
@@ -165,6 +183,17 @@ __PACKAGE__->add_columns(
   "host_prev_state",
   { data_type => "char", is_nullable => 1, size => 32 },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</host_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("host_id");
 
 =head1 RELATIONS
@@ -199,6 +228,21 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 host_manager
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Component>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "host_manager",
+  "AdministratorDB::Schema::Result::Component",
+  { component_id => "host_manager_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
 =head2 hostmodel
 
 Type: belongs_to
@@ -217,41 +261,6 @@ __PACKAGE__->belongs_to(
     on_delete     => "CASCADE",
     on_update     => "CASCADE",
   },
-);
-
-=head2 processormodel
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Processormodel>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "processormodel",
-  "AdministratorDB::Schema::Result::Processormodel",
-  { processormodel_id => "processormodel_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
-);
-
-=head2 kernel
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Kernel>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "kernel",
-  "AdministratorDB::Schema::Result::Kernel",
-  { kernel_id => "kernel_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 hypervisor
@@ -284,6 +293,26 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 kernel
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Kernel>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "kernel",
+  "AdministratorDB::Schema::Result::Kernel",
+  { kernel_id => "kernel_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
+
 =head2 node
 
 Type: might_have
@@ -297,6 +326,26 @@ __PACKAGE__->might_have(
   "AdministratorDB::Schema::Result::Node",
   { "foreign.host_id" => "self.host_id" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 processormodel
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Processormodel>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "processormodel",
+  "AdministratorDB::Schema::Result::Processormodel",
+  { processormodel_id => "processormodel_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 virtual_machine
@@ -315,14 +364,14 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-10-22 09:48:45
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:zBDbyKxVhVZSRpZn9MkADA
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-02-04 17:48:41
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:CX4hcwa/fapAw4MrtWMknw
 
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
-  { "foreign.entity_id" => "self.host_id" },
-  { cascade_copy => 0, cascade_delete => 1 }
+  { entity_id => "host_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 1;

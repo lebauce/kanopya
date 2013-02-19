@@ -114,7 +114,7 @@ sub _retrieveVmData {
     my $hv_view = $args{vsphere}->findEntityView(
                       view_type    => 'HostSystem',
                       hash_filter  => {
-                            name => $hypervisor->host_hostname
+                            name => $hypervisor->node->node_hostname
                       },
                       begin_entity => $dc_view,
                   );
@@ -123,7 +123,7 @@ sub _retrieveVmData {
     my $vm_view = $args{vsphere}->findEntityView(
                       view_type    => 'VirtualMachine',
                       hash_filter  => {
-                          name => $self->{host}->host_hostname
+                          name => $self->{host}->node->node_hostname
                       },
                       begin_entity => $hv_view,
                    )->summary;
@@ -168,7 +168,7 @@ sub _retrieveHypervisorData {
     my $hv_view = $args{vsphere}->findEntityView(
                       view_type    => 'HostSystem',
                       hash_filter  => {
-                            name => $self->{host}->host_hostname
+                            name => $self->{host}->node->node_hostname
                       },
                       begin_entity => $dc_view,
                   )->summary;

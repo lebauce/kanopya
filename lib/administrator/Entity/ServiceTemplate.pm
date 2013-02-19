@@ -189,6 +189,9 @@ sub new {
                 not $policy->getPolicyDef->{attributes}->{$attrname}->{is_virtual} and
                 ref($args{$attrname}) ne "ARRAY") {
 
+                $log->debug("$policy <" . $policy->id . ">, attr <$attrname> value has been set: " . 
+                            "$json->{$attrname} => $args{$attrname}.");
+
                 $json->{$attrname} = $args{$attrname};
                 $altered = 1;
             }

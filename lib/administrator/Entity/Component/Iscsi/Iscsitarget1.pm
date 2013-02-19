@@ -33,7 +33,6 @@ use strict;
 use warnings;
 
 use General;
-use Administrator;
 use Kanopya::Exceptions;
 
 use Entity::Operation;

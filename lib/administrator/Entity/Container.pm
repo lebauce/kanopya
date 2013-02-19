@@ -45,7 +45,7 @@ my $errmsg;
 use constant ATTR_DEF => {
     disk_manager_id => {
         pattern      => '^[0-9\.]*$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_extended  => 0
     },
     container_name => {
@@ -128,25 +128,6 @@ sub getLocalAccess {
 
 =begin classdoc
 
-Get the service provider on wich is installed the component that provides the container.
-
-@return the service provider.
-
-=end classdoc
-
-=cut
-
-sub getServiceProvider {
-    my $self = shift;
-
-    return $self->getDiskManager->service_provider;
-}
-
-
-=pod
-
-=begin classdoc
-
 Accessor to get the component that provides the container.
 
 @return the component that provides the container.
@@ -158,7 +139,7 @@ Accessor to get the component that provides the container.
 sub getDiskManager {
     my $self = shift;
 
-    return Entity->get(id => $self->disk_manager_id);
+    return $self->disk_manager;
 }
 
 

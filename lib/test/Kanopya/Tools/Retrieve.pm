@@ -40,7 +40,7 @@ use Test::Exception;
 use Kanopya::Exceptions;
 use General;
 use Entity::Host;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 use Entity::Netconf;
 
 =pod
@@ -64,10 +64,10 @@ sub retrieveCluster {
     if (defined $args{criteria}) {
         my $criteria = $args{criteria};
 
-        $kanopya_cluster = Entity::ServiceProvider::Inside::Cluster->find(hash => $criteria);
+        $kanopya_cluster = Entity::ServiceProvider::Cluster->find(hash => $criteria);
     }
     else {
-        $kanopya_cluster = Entity::ServiceProvider::Inside::Cluster->find(
+        $kanopya_cluster = Entity::ServiceProvider::Cluster->find(
                                hash => { cluster_name =>  'Kanopya' }
                            );
     }

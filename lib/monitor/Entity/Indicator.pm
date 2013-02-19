@@ -189,7 +189,6 @@ sub delete {
             for my $nm_indicator_id (@collector_indicator_ids) {
                 $log->info("$collector_indicator_id vs $nm_indicator_id");
                 if ($collector_indicator_id == $nm_indicator_id) {
-                    $log->info("------------- delete !");
                     $nm_combi->delete();
                     next NODEMETRIC_COMBINATION;
                 }

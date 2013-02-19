@@ -21,7 +21,6 @@ use base "Entity";
 use strict;
 use warnings;
 
-use Administrator;
 use DateTime;
 use Kanopya::Exceptions;
 use General;

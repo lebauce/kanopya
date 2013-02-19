@@ -3,7 +3,7 @@ use Test::More 'no_plan';
 use Test::Exception;
 use Test::Pod;
 use Kanopya::Exceptions;
-use ComponentType;
+use ClassType::ComponentType;
 
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
@@ -12,9 +12,9 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use Administrator;
+use BaseDB;
 use Executor;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 use Entity::User;
 use Entity::Host;
 use Entity::Kernel;
@@ -32,11 +32,10 @@ use Entity::ServiceTemplate;
 my $testing = 0;
 
 eval {
-    Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-    my $adm = Administrator->new;
+    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if ($testing == 1) {
-        $adm->beginTransaction;
+        BaseDB->beginTransaction;
     }
 
     diag('Register master image');

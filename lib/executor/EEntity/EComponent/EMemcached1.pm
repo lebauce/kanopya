@@ -25,8 +25,8 @@ my $errmsg;
 sub configureNode {
     my ($self, %args) = @_;
 
-    my $conf = $self->_getEntity()->getConf();
-    my $cluster = $self->_getEntity->getServiceProvider;
+    my $conf = $self->getConf();
+    my $cluster = $self->service_provider;
 
     # Generation of memcached.conf
     my $data = { connection_port => $conf->{memcached1_port},

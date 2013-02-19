@@ -25,7 +25,7 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
-    externalnode_id         =>  {pattern       => '^.*$',
+    node_id         =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
@@ -47,7 +47,7 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub workflowState{
     my ($class, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'externalnode_id',
+    General::checkParams(args => \%args, required => [ 'node_id',
                                                        'nodemetric_rule_id',
                                                      ]);
 
@@ -55,7 +55,7 @@ sub workflowState{
     my $workflow_noderule;
     eval{
         $workflow_noderule = $class->find(hash => {
-            externalnode_id    => $args{externalnode_id},
+            node_id    => $args{node_id},
             nodemetric_rule_id => $args{nodemetric_rule_id},
         });
     };
@@ -108,20 +108,20 @@ sub workflowState{
         }
     }
 
-    $log->info('workflow_noderule extnode_id <'.$args{externalnode_id}.'> nodemetric_rule_id <'.$args{nodemetric_rule_id}.'> not defined');
+    $log->info('workflow_noderule extnode_id <'.$args{node_id}.'> nodemetric_rule_id <'.$args{nodemetric_rule_id}.'> not defined');
     return {state => 'ready_to_launch'};
 }
 
 sub isWorkflowRunning{
     my ($class, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'externalnode_id',
+    General::checkParams(args => \%args, required => [ 'node_id',
                                                        'nodemetric_rule_id',
                                                      ]);
 
     my $workflow_noderule;
     eval{
         $workflow_noderule = $class->find(hash => {
-            externalnode_id    => $args{externalnode_id},
+            node_id    => $args{node_id},
             nodemetric_rule_id => $args{nodemetric_rule_id},
         });
     };
@@ -140,7 +140,7 @@ sub isWorkflowRunning{
         return 0;
     }
 
-    $log->info('workflow_noderule extnode_id <'.$args{externalnode_id}.'> nodemetric_rule_id <'.$args{nodemetric_rule_id}.'> not defined');
+    $log->info('workflow_noderule extnode_id <'.$args{node_id}.'> nodemetric_rule_id <'.$args{nodemetric_rule_id}.'> not defined');
     return 0;
 }
 1;

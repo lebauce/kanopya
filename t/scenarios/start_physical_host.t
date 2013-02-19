@@ -14,7 +14,7 @@ use Test::More 'no_plan';
 use Test::Exception;
 use Test::Pod;
 use Kanopya::Exceptions;
-use ComponentType;
+use ClassType::ComponentType;
 
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
@@ -23,8 +23,8 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use Administrator;
-use Entity::ServiceProvider::Inside::Cluster;
+use BaseDB;
+use Entity::ServiceProvider::Cluster;
 use Entity::User;
 use Entity::Kernel;
 use Entity::Processormodel;
@@ -46,11 +46,9 @@ my $NB_HYPERVISORS = 1;
 main();
 
 sub main {
-    Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-    my $adm = Administrator->new;
 
     if ($testing == 1) {
-        $adm->beginTransaction;
+        BaseDB->beginTransaction;
     }
 
     diag('Register master image');
@@ -70,7 +68,7 @@ sub main {
     } 'Start cluster';
 
     if ($testing == 1) {
-        $adm->rollbackTransaction;
+        BaseDB->rollbackTransaction;
     }
 }
 

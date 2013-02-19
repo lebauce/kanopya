@@ -29,8 +29,8 @@ sub addNode {
     $log->info("Configuring system for iSCSI");
  
     # generation of /etc/iscsi/initiatorname.iscsi (needed to start the iscsid daemon)
-    my $cluster = $self->_getEntity->getServiceProvider;
-    my $data = { initiatorname => $args{host}->getAttr(name => 'host_initiatorname')};
+    my $cluster = $self->service_provider;
+    my $data = { initiatorname => $args{host}->host_initiatorname };
     
     my $file = $self->generateNodeFile(
         cluster       => $cluster,

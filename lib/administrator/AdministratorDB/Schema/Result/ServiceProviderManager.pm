@@ -53,11 +53,12 @@ __PACKAGE__->table("service_provider_manager");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 manager_type
+=head2 manager_category_id
 
-  data_type: 'char'
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
   is_nullable: 0
-  size: 64
 
 =head2 manager_id
 
@@ -90,8 +91,13 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "manager_type",
-  { data_type => "char", is_nullable => 0, size => 64 },
+  "manager_category_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
   "manager_id",
   {
     data_type => "integer",
@@ -126,14 +132,29 @@ __PACKAGE__->set_primary_key("service_provider_manager_id");
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Entity>
+Related object: L<AdministratorDB::Schema::Result::Component>
 
 =cut
 
 __PACKAGE__->belongs_to(
   "manager",
-  "AdministratorDB::Schema::Result::Entity",
-  { entity_id => "manager_id" },
+  "AdministratorDB::Schema::Result::Component",
+  { component_id => "manager_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 manager_category
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::ManagerCategory>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "manager_category",
+  "AdministratorDB::Schema::Result::ManagerCategory",
+  { manager_category_id => "manager_category_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
@@ -173,8 +194,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-08 14:54:52
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:HuslDsoSzBbOkAQX8IMbYg
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-01-30 18:11:25
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:oHdgrjCM7/XNT1LmnS0Fvw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -114,6 +114,21 @@ __PACKAGE__->set_primary_key("component_id");
 
 =head1 RELATIONS
 
+=head2 active_directory
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::ActiveDirectory>
+
+=cut
+
+__PACKAGE__->might_have(
+  "active_directory",
+  "AdministratorDB::Schema::Result::ActiveDirectory",
+  { "foreign.ad_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 apache2
 
 Type: might_have
@@ -144,6 +159,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 collector_indicators
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::CollectorIndicator>
+
+=cut
+
+__PACKAGE__->has_many(
+  "collector_indicators",
+  "AdministratorDB::Schema::Result::CollectorIndicator",
+  { "foreign.collector_manager_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 component
 
 Type: belongs_to
@@ -156,7 +186,7 @@ __PACKAGE__->belongs_to(
   "component",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "component_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 component_template
@@ -174,8 +204,8 @@ __PACKAGE__->belongs_to(
   {
     is_deferrable => 1,
     join_type     => "LEFT",
-    on_delete     => "NO ACTION",
-    on_update     => "NO ACTION",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
   },
 );
 
@@ -191,7 +221,22 @@ __PACKAGE__->belongs_to(
   "component_type",
   "AdministratorDB::Schema::Result::ComponentType",
   { component_type_id => "component_type_id" },
-  { is_deferrable => 1, on_delete => "NO ACTION", on_update => "NO ACTION" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 container_accesses
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ContainerAccess>
+
+=cut
+
+__PACKAGE__->has_many(
+  "container_accesses",
+  "AdministratorDB::Schema::Result::ContainerAccess",
+  { "foreign.export_manager_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 =head2 dhcpd3
@@ -236,6 +281,21 @@ __PACKAGE__->might_have(
   "haproxy1",
   "AdministratorDB::Schema::Result::Haproxy1",
   { "foreign.haproxy1_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 hosts
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Host>
+
+=cut
+
+__PACKAGE__->has_many(
+  "hosts",
+  "AdministratorDB::Schema::Result::Host",
+  { "foreign.host_manager_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -359,6 +419,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 mock_monitor
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::MockMonitor>
+
+=cut
+
+__PACKAGE__->might_have(
+  "mock_monitor",
+  "AdministratorDB::Schema::Result::MockMonitor",
+  { "foreign.mock_monitor_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 mysql5
 
 Type: might_have
@@ -371,6 +446,36 @@ __PACKAGE__->might_have(
   "mysql5",
   "AdministratorDB::Schema::Result::Mysql5",
   { "foreign.mysql5_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 netapp_lun_manager
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::NetappLunManager>
+
+=cut
+
+__PACKAGE__->might_have(
+  "netapp_lun_manager",
+  "AdministratorDB::Schema::Result::NetappLunManager",
+  { "foreign.netapp_lun_manager_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 netapp_volume_manager
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::NetappVolumeManager>
+
+=cut
+
+__PACKAGE__->might_have(
+  "netapp_volume_manager",
+  "AdministratorDB::Schema::Result::NetappVolumeManager",
+  { "foreign.netapp_volume_manager_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -509,6 +614,36 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 sco
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Sco>
+
+=cut
+
+__PACKAGE__->might_have(
+  "sco",
+  "AdministratorDB::Schema::Result::Sco",
+  { "foreign.sco_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 scom
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Scom>
+
+=cut
+
+__PACKAGE__->might_have(
+  "scom",
+  "AdministratorDB::Schema::Result::Scom",
+  { "foreign.scom_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 service_provider
 
 Type: belongs_to
@@ -525,8 +660,23 @@ __PACKAGE__->belongs_to(
     is_deferrable => 1,
     join_type     => "LEFT",
     on_delete     => "CASCADE",
-    on_update     => "NO ACTION",
+    on_update     => "CASCADE",
   },
+);
+
+=head2 service_provider_managers
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ServiceProviderManager>
+
+=cut
+
+__PACKAGE__->has_many(
+  "service_provider_managers",
+  "AdministratorDB::Schema::Result::ServiceProviderManager",
+  { "foreign.manager_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 =head2 snmpd5
@@ -571,6 +721,21 @@ __PACKAGE__->might_have(
   "syslogng3",
   "AdministratorDB::Schema::Result::Syslogng3",
   { "foreign.syslogng3_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 ucs_manager
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::UcsManager>
+
+=cut
+
+__PACKAGE__->might_have(
+  "ucs_manager",
+  "AdministratorDB::Schema::Result::UcsManager",
+  { "foreign.ucs_manager_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -619,9 +784,25 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 workflow_def_managers
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2012-12-11 14:47:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:cse0s6oPdmP8Yrt8GQj3rg
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::WorkflowDefManager>
+
+=cut
+
+__PACKAGE__->has_many(
+  "workflow_def_managers",
+  "AdministratorDB::Schema::Result::WorkflowDefManager",
+  { "foreign.manager_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-02-04 17:48:40
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Z8mK8iBtsdiU4Tcny/Racw
+
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",

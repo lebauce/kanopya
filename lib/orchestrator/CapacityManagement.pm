@@ -39,10 +39,9 @@ use warnings;
 use Data::Dumper;
 use Clone qw(clone);
 use List::Util;
-use Administrator;
 use EFactory;
 use Message;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -86,7 +85,6 @@ sub new {
             throw Kanopya::Exception(error => 'No cloud_manager arg capacity manager cannot construct infra');
         }
 
-        $self->{_admin} = Administrator->new();
         $self->{_infra} = $self->_constructInfra;
 
         # Get available memory for all cloud manager hosts (hypervisors)
@@ -882,7 +880,7 @@ sub _scaleOnNewHV {
     my $scale_metric = $args{scale_metric};
 
     my $hv_cluster   = (defined $self->{_cloud_manager}) ?
-                       $self->{_cloud_manager}->getServiceProvider() :
+                       $self->{_cloud_manager}->service_provider :
                        undef;
 
     # Add new hypervisor

@@ -64,7 +64,7 @@ sub new {
     my $self = $class->SUPER::new(%args);
 
     # Compute the current consomation value for the resource
-    my @services = Entity::ServiceProvider::Inside::Cluster->search(hash => {
+    my @services = Entity::ServiceProvider::Cluster->search(hash => {
                        user_id => $self->user->id
                    });
 

@@ -40,10 +40,8 @@ use strict;
 use warnings;
 
 use Entity;
-use Externalnode::Node;
 
 use Log::Log4perl "get_logger";
-use Data::Dumper;
 
 my $log = get_logger("");
 my $errmsg;
@@ -65,7 +63,7 @@ sub prepare {
         throw Kanopya::Exception::Internal::WrongValue(error => $error);
     }
 
-    $self->{context}->{vm_cluster} = $node->inside;
+    $self->{context}->{vm_cluster} = $node->service_provider;
 
     $self->{context}->{cloudmanager_comp} = EFactory::newEEntity(
                                                 data => Entity->get(
@@ -78,7 +76,7 @@ sub prepare {
 
     if (! defined $self->{context}->{hypervisor}) {
 
-        my $host_manager_params = $self->{context}->{vm_cluster}->getManagerParameters(manager_type => 'host_manager');
+        my $host_manager_params = $self->{context}->{vm_cluster}->getManagerParameters(manager_type => 'HostManager');
 
         $self->{context}->{host}->updateMemory(memory => $host_manager_params->{ram});
         $self->{context}->{host}->updateCPU(cpu_number => $host_manager_params->{core});
@@ -112,27 +110,27 @@ sub execute {
     $self->SUPER::execute();
 
     $self->{context}->{cloudmanager_comp}->onevm_resubmit(
-        vm_nameorid => $self->{context}->{host}->host_hostname,
+        vm_nameorid => $self->{context}->{host}->node->node_hostname,
     );
 
     sleep(5); # Wait 5 seconds for the VM to be pending
 
     $self->{context}->{cloudmanager_comp}->onevm_deploy(
-        vm_nameorid    => $self->{context}->{host}->host_hostname,
-        host_nameorid  => $self->{context}->{hypervisor}->host_hostname,
+        vm_nameorid    => $self->{context}->{host}->node->node_hostname,
+        host_nameorid  => $self->{context}->{hypervisor}->node->node_hostname,
     );
 
     sleep(5);
 
     $self->{context}->{cloudmanager_comp}->onevm_resubmit(
-        vm_nameorid => $self->{context}->{host}->host_hostname,
+        vm_nameorid => $self->{context}->{host}->node->node_hostname,
     );
 
     sleep(5); # Wait 5 seconds for the VM to be pending
 
     $self->{context}->{cloudmanager_comp}->onevm_deploy(
-        vm_nameorid    => $self->{context}->{host}->host_hostname,
-        host_nameorid  => $self->{context}->{hypervisor}->host_hostname,
+        vm_nameorid    => $self->{context}->{host}->node->node_hostname,
+        host_nameorid  => $self->{context}->{hypervisor}->node->node_hostname,
     );
 
     $self->{context}->{host}->setState(state => 'starting');
@@ -143,9 +141,7 @@ sub postrequisites {
     my ($self, %args)  = @_;
 
     $self->{context}->{cloudmanager_comp} = EFactory::newEEntity(
-                                                data => Entity->get(
-                                                    id => $self->{context}->{host}->host_manager_id
-                                                )
+                                                data => $self->{context}->{host}->host_manager
                                             );
 
     # Duration to wait before retrying prerequistes

@@ -23,13 +23,12 @@ use Cwd qw(abs_path);
 use File::Basename;
 use File::Temp;
 
-use_ok ('Administrator');
 use_ok ('Executor');
-use_ok ('Entity::ServiceProvider::Inside::Cluster');
+use_ok ('Entity::ServiceProvider::Cluster');
 
-#use_ok ('Entity::ServiceProvider::Outside::Netapp');
-#use_ok ('Entity::Connector::NetappLunManager');
-#use_ok ('Entity::Connector::NetappVolumeManager');
+#use_ok ('Entity::ServiceProvider::Netapp');
+#use_ok ('Entity::Component::NetappLunManager');
+#use_ok ('Entity::Component::NetappVolumeManager');
 #use_ok ('Entity::Container::NetappVolume');
 #use_ok ('Entity::Container::NetappLun');
 
@@ -39,11 +38,8 @@ my @disks   = ();
 my @exports = ();    
 
 lives_ok {
-    Administrator::authenticate(login => 'admin', password => 'K4n0pY4');
+    BaseDB->authenticate(login => 'admin', password => 'K4n0pY4');
 } 'Connect to database';
-
-my $adm = Administrator->new;
-my $db  = $adm->{db};
 
 
 sub testDiskManager {
@@ -112,7 +108,7 @@ sub testDiskManager {
 }
 
 eval {
-    $adm->beginTransaction;
+    BaseDB->beginTransaction;
 
     my $econtext;
     lives_ok {
@@ -131,7 +127,7 @@ eval {
 
     # Firstly create the netapp or skip
 #    lives_ok {
-#        Entity::ServiceProvider::Outside::Netapp->create(
+#        Entity::ServiceProvider::Netapp->create(
 #            netapp_name   => "netapp",
 #            netapp_desc   => "netapp",
 #            netapp_addr   => "127.0.0.1",
@@ -147,7 +143,7 @@ eval {
         
         my @storagecomponents;
         lives_ok {
-            @storagecomponents = $provider->getComponents(category => 'Storage');
+            @storagecomponents = $provider->getComponents(category => 'DiskManager');
 
         } "Retreive storgae components from service provider $provider";
 
@@ -299,7 +295,7 @@ eval {
         @exports = @nextexports;
     }
 
-    $adm->rollbackTransaction;
+    BaseDB->rollbackTransaction;
 };
 if($@) {
     my $error = $@;

@@ -22,7 +22,7 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 use Entity::Masterimage;
 use Entity::Systemimage;
 use Entity::Host;
@@ -47,7 +47,7 @@ sub prerequisites {
     if ($host_type eq 'Virtual Machine') {
 
         $self->{context}->{host_manager} = EFactory::newEEntity(
-                                               data => $cluster->getManager(manager_type => 'host_manager'),
+                                               data => $cluster->getManager(manager_type => 'HostManager'),
                                            );
 
         my @hvs   = $self->{context}->{host_manager}->hypervisors;
@@ -61,7 +61,7 @@ sub prerequisites {
         }
         $log->info("Hvs selected <@hv_in_ids>");
 
-        my $host_manager_params = $cluster->getManagerParameters(manager_type => 'host_manager');
+        my $host_manager_params = $cluster->getManagerParameters(manager_type => 'HostManager');
         $log->info('host_manager_params :'.(Dumper $host_manager_params));
 
         my $cm = CapacityManagement->new(
@@ -86,7 +86,7 @@ sub prerequisites {
         }
         else {
             $log->info('Need to start a new hypervisor');
-            my $hv_cluster = $self->{context}->{host_manager}->getServiceProvider();
+            my $hv_cluster = $self->{context}->{host_manager}->service_provider;
             my $workflow_to_enqueue = { name => 'AddNode', params => { context => { cluster => $hv_cluster, }  }};
             $self->workflow->enqueueBefore(workflow => $workflow_to_enqueue);
             $log->info('Enqueue "add hypervisor" operations before starting a new virtual machine');
@@ -111,11 +111,11 @@ sub prepare {
     General::checkParams(args => $self->{context}, required => [ "cluster" ]);
 
     # Get the disk manager for disk creation
-    my $disk_manager = $self->{context}->{cluster}->getManager(manager_type => 'disk_manager');
+    my $disk_manager = $self->{context}->{cluster}->getManager(manager_type => 'DiskManager');
     $self->{context}->{disk_manager} = EFactory::newEEntity(data => $disk_manager);
 
     # Get the export manager for disk creation
-    my $export_manager = $self->{context}->{cluster}->getManager(manager_type => 'export_manager');
+    my $export_manager = $self->{context}->{cluster}->getManager(manager_type => 'ExportManager');
     $self->{context}->{export_manager} = EFactory::newEEntity(data => $export_manager);
 
     # Get the masterimage for node systemimage creation.
@@ -126,7 +126,7 @@ sub prepare {
     # Check if a host is specified.
     if (defined $self->{context}->{host}) {
         my $host_manager_id = $self->{context}->{host}->host_manager_id;
-        my $cluster_host_manager_id = $self->{context}->{cluster}->getManager(manager_type => 'host_manager')->id;
+        my $cluster_host_manager_id = $self->{context}->{cluster}->getManager(manager_type => 'HostManager')->id;
 
         # Check if the specified host is managed by the cluster host manager
         if ($host_manager_id != $cluster_host_manager_id) {
@@ -168,7 +168,7 @@ sub prepare {
             $log->info("A new systemimage instance <$systemimage_name> must be created");
 
             my $systemimage_desc = 'System image for node ' . $self->{params}->{node_number}  .' in cluster ' .
-                                   $self->{context}->{cluster}->getAttr(name => 'cluster_name') . '.';
+                                   $self->{context}->{cluster}->cluster_name . '.';
 
             eval {
                my $entity = Entity::Systemimage->new(systemimage_name => $systemimage_name,
@@ -223,8 +223,8 @@ sub execute {
         $self->{context}->{cluster}->save();
     }
 
-    my $createdisk_params   = $self->{context}->{cluster}->getManagerParameters(manager_type => 'disk_manager');
-    my $createexport_params = $self->{context}->{cluster}->getManagerParameters(manager_type => 'export_manager');
+    my $createdisk_params   = $self->{context}->{cluster}->getManagerParameters(manager_type => 'DiskManager');
+    my $createexport_params = $self->{context}->{cluster}->getManagerParameters(manager_type => 'ExportManager');
 
     # Create system image for node if required.
     if ($self->{params}->{create_systemimage} and $self->{context}->{masterimage}) {

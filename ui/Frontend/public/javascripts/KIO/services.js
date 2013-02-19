@@ -32,8 +32,8 @@ function createAddServiceButton(container) {
         },
         callback    : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
-            createmanagerDialog('directory_service_manager', data.pk, function() {
-                createmanagerDialog('collector_manager', data.pk, function() {
+            createmanagerDialog('DirectoryServiceManager', data.pk, function() {
+                createmanagerDialog('CollectorManager', data.pk, function() {
                     reloadServices();
                 }, true);
             }, true);
@@ -55,7 +55,7 @@ function servicesList (container_id, elem_id) {
     var container = $('#' + container_id);
     
     create_grid( {
-        url: '/api/externalcluster?connectors.connector_id=', // Only list externalcluster without connector
+        url: '/api/externalcluster?components.component_id=', // Only list externalcluster without connector
         content_container_id: container_id,
         grid_id: 'services_list',
         afterInsertRow: function (grid, rowid, rowdata, rowelem) {
@@ -85,7 +85,7 @@ function createUpdateNodeButton(container, elem_id, grid) {
         .button({ icons : { primary : 'ui-icon-arrowthick-2-e-w' } });
 
     // Check if there is a configured directory service
-    var manager = isThereAManager(elem_id, 'directory_service_manager');
+    var manager = isThereAManager(elem_id, 'DirectoryServiceManager');
     if (manager) {
         function bindButton(button, data) {
             button.bind('click', function(event) {
@@ -113,6 +113,7 @@ function createUpdateNodeButton(container, elem_id, grid) {
     } else {
         function disableButton(button) {
             button.attr('disabled', 'disabled');
+            button.addClass("ui-state-disabled");
             button.attr('title', 'Your service must be connected with a directory.');
         }
         disableButton(import_button);
@@ -129,7 +130,7 @@ function loadServicesResources (container_id, elem_id) {
 
     // Manage enable/disable nodes and add control button in grid 
     function manageNodeEnabling(grid, rowid, rowdata, rowelem) {
-        var node_disabled = rowelem.externalnode_state === 'disabled';
+        var node_disabled = rowelem.monitoring_state === 'disabled';
         if (node_disabled) {
             $(grid).find('tr#' + rowid).css('background', 'lightgrey');
         }
@@ -146,8 +147,8 @@ function loadServicesResources (container_id, elem_id) {
                 url         : '/api/serviceprovider/' + elem_id + '/' + action + 'Node',
                 contentType : 'application/json',
                 data        : JSON.stringify( {
-                    node_id : rowid,
-                }),
+                    node_id : rowid
+                })
             });
         });
     }
@@ -159,12 +160,12 @@ function loadServicesResources (container_id, elem_id) {
         }
     });
     create_grid( {
-        url     : '/api/externalnode?service_provider_id=' + elem_id,
+        url     : '/api/node?service_provider_id=' + elem_id,
         content_container_id: container_id,
         grid_id     : loadServicesResourcesGridId,
         grid_class  : 'service_resources_list',
         rowNum      : 25,
-        sortname    : 'externalnode_state',
+        sortname    : 'monitoring_state',
         sortorder   : 'desc',
         afterInsertRow: function(grid, rowid, rowdata, rowelem) {
             // Add generic resource data
@@ -191,19 +192,19 @@ function loadServicesResources (container_id, elem_id) {
         colNames: [ 'id', 'Hostname', 'Rules State', '' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
-            { name: 'externalnode_hostname', index: 'externalnode_hostname', width: 200 },
+            { name: 'node_hostname', index: 'node_hostname', width: 200 },
             { name: 'rulesstate', index: 'rulestate' },
-            { name: 'activate_control', index: 'externalnode_state', width: 50, nodetails : true }
+            { name: 'activate_control', index: 'monitoring_state', width: 50, nodetails : true }
         ],
         details : {
             tabs : [
                         { label : 'Rules', id : 'rules', onLoad : function(cid, eid) { node_rules_tab(cid, eid, elem_id); } },
                     ],
-            title : { from_column : 'externalnode_hostname' }
+            title : { from_column : 'node_hostname' }
         },
     } );
 
     createUpdateNodeButton($('#' + container_id), elem_id, $('#' + loadServicesResourcesGridId));
-    //reload_grid(loadServicesResourcesGridId,'/api/externalnode?outside_id=' + elem_id);
+    //reload_grid(loadServicesResourcesGridId,'/api/node?outside_id=' + elem_id);
     $('service_resources_list').jqGrid('setGridWidth', $(container_id).parent().width()-20);
 }

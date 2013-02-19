@@ -88,7 +88,7 @@ sub prepare {
 
     # Check if host is on the hypervisors cluster
     if ($self->{context}->{'host'}->getClusterId() !=
-        $self->{context}->{'vm'}->getServiceProvider->getAttr(name => "entity_id")) {
+        $self->{context}->{'vm'}->host_manager->service_provider->id) {
         throw Kanopya::Exception::Internal::WrongValue(error => "VM is not on the hypervisor cluster");
     }
 
@@ -97,10 +97,10 @@ sub prepare {
         host => $self->{context}->{vm},
     );
 
-    $log->info('Destination hv <' . $self->{context}->{host}->host_hostname .
+    $log->info('Destination hv <' . $self->{context}->{host}->node->node_hostname .
                '> vs opennebula hv <' . $vm_state->{hypervisor} . '>');
 
-    if ($self->{context}->{host}->host_hostname eq $vm_state->{hypervisor}) {
+    if ($self->{context}->{host}->node->node_hostname eq $vm_state->{hypervisor}) {
         $log->info('VM is on the same hypervisor, no need to migrate');
         $self->{params}->{no_migration} = 1;
     }
@@ -157,11 +157,11 @@ sub postrequisites {
 
     $log->info('Virtual machine <' . $self->{context}->{vm}->id . '> state: <'. $migr_state->{state} .
                '>, current hypervisor: <' . $migr_state->{hypervisor} .
-               '>, dest hypervisor: <' . $self->{context}->{host}->host_hostname . '>');
+               '>, dest hypervisor: <' . $self->{context}->{host}->node->node_hostname . '>');
 
     if ($migr_state->{state} eq 'runn') {
         # On the targeted hv
-        if ($migr_state->{hypervisor} eq $self->{context}->{host}->host_hostname) {
+        if ($migr_state->{hypervisor} eq $self->{context}->{host}->node->node_hostname) {
 
             # After checking migration -> store migration in DB
             $self->{context}->{cloudmanager_comp}->_getEntity->migrateHost(

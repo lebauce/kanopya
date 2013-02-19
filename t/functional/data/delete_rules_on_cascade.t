@@ -12,12 +12,12 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'delete_rule.log', layout=>'%F %L %p %m%n'});
 my $log = get_logger("");
 
-use Administrator;
-use Entity::ServiceProvider::Outside::Externalcluster;
-use Entity::Connector::MockMonitor;
+use BaseDB;
+use Entity::ServiceProvider::Externalcluster;
+use Entity::Component::MockMonitor;
 use Entity::Indicator;
 use Entity::CollectorIndicator;
-use Externalnode;
+use Node;
 use Entity::Combination::NodemetricCombination;
 use Entity::NodemetricCondition;
 use Entity::Rule::NodemetricRule;
@@ -28,8 +28,7 @@ use Entity::AggregateCondition;
 use Entity::Combination::AggregateCombination;
 use Kanopya::Tools::TestUtils 'expectedException';
 
-Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-my $adm = Administrator->new;
+BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
 
 my $indicator_deleted;
 my $indicator_other;
@@ -67,31 +66,31 @@ main ();
 sub main {
 
     if ($testing == 1) {
-        $adm->beginTransaction;
+        BaseDB->beginTransaction;
     }
 
-    $service_provider = Entity::ServiceProvider::Outside::Externalcluster->new(
+    $service_provider = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Service Provider',
     );
 
-    $external_cluster_mockmonitor = Entity::ServiceProvider::Outside::Externalcluster->new(
+    $external_cluster_mockmonitor = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Monitor',
     );
 
-    my $mock_monitor = Entity::Connector::MockMonitor->new(
+    my $mock_monitor = Entity::Component::MockMonitor->new(
             service_provider_id => $external_cluster_mockmonitor->id,
     );
 
     $service_provider->addManager(
         manager_id   => $mock_monitor->id,
-        manager_type => 'collector_manager',
+        manager_type => 'CollectorManager',
     );
 
     # Create one node
-    my $node = Externalnode->new(
-        externalnode_hostname => 'test_node',
+    my $node = Node->new(
+        node_hostname => 'test_node',
         service_provider_id   => $service_provider->id,
-        externalnode_state    => 'up',
+        monitoring_state    => 'up',
     );
 
     $indicator_deleted = Entity::CollectorIndicator->find(
@@ -229,7 +228,7 @@ sub main {
     );
 
     if ($testing == 1) {
-        $adm->rollbackTransaction;
+        BaseDB->rollbackTransaction;
     }
 }
 

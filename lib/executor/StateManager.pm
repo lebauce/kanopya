@@ -22,8 +22,9 @@ use warnings;
 
 use Kanopya::Config;
 use Kanopya::Exceptions;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 
+use BaseDB;
 use Message;
 use Alert;
 use EFactory;
@@ -51,7 +52,8 @@ sub new {
         throw Kanopya::Exception::Internal::IncorrectParam(error => "StateManager->new need user definition in config file!");
     }
 
-    my $adm = Administrator::authenticate(login => $self->{config}->{user}->{name}, password => $self->{config}->{user}->{password});
+    BaseDB->authenticate(login => $self->{config}->{user}->{name},
+                         password => $self->{config}->{user}->{password});
 
     return $self;
 }
@@ -81,10 +83,8 @@ sub run {
 sub oneRun {
     my ($self) = @_;
 
-    my $adm = Administrator->new();
-
     # Check all nodes services availability
-    my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {}, prefetch => [ 'nodes.host' ]);
+    my @clusters = Entity::ServiceProvider::Cluster->search(hash => {}, prefetch => [ 'nodes.host' ]);
 
     $log->info('---------------------------------------------');
     $log->info('***** Check ' . scalar (@clusters) . ' services availability *****');
@@ -108,12 +108,12 @@ sub oneRun {
         foreach my $node (@nodes) {
             my $ehost = EFactory::newEEntity(data => $node);
 
-            $adm->beginTransaction;
+            $cluster->beginTransaction;
 
             # Firstly try to ping the node
             my $pingable;
             my $hostalert;
-            my $hostname = $ehost->host_hostname;
+            my $hostname = $ehost->node->node_hostname;
             my $hostmsg  = "Host $hostname not reachable";
             # search if an alert exists
             eval {
@@ -131,7 +131,7 @@ sub oneRun {
             my ($hoststate, $hosttimestamp) = $ehost->getState;
 
             if (! $pingable and $hoststate eq 'up') {
-                my $msg = "Node " . $node->host_hostname . " unreachable in cluster :" . $cluster->cluster_name;
+                my $msg = "Node " . $node->node->node_hostname . " unreachable in cluster :" . $cluster->cluster_name;
                 $log->warn($msg);
                 Message->send(from => 'StateManager', level => 'info', content => $msg);
 
@@ -146,7 +146,7 @@ sub oneRun {
                 $ehost->setNodeState(state => 'broken');
                 $cluster->setState(state => 'warning');
 
-                $adm->commitTransaction;
+                $cluster->commitTransaction;
                 next;
             }
             elsif ($pingable and $hoststate eq 'broken') {
@@ -182,7 +182,7 @@ sub oneRun {
 
                 if (! $ecomponent->isUp(host => $ehost, cluster => $cluster)) {
                     my $msg = $component_name .
-                              " not available on node (" . $node->host_hostname .
+                              " not available on node (" . $node->node->node_hostname .
                               ") in cluster (" . $cluster->cluster_name . ")";
                     #$log->warn($msg);
 
@@ -210,7 +210,7 @@ sub oneRun {
                 # Set the node state to broken
                 $ehost->setNodeState(state => 'broken');
                 $cluster->setState(state => 'warning');
-                $adm->commitTransaction;
+                $cluster->commitTransaction;
                 next;
             }
             elsif ($node_available and $nodestate eq 'broken') {
@@ -218,10 +218,10 @@ sub oneRun {
                 $ehost->setNodeState(state => 'in');
             }
 
-            $adm->commitTransaction;
+            $cluster->commitTransaction;
         }
 
-        $adm->beginTransaction;
+        $cluster->beginTransaction;
 
         my ($clusterstate, $clustertimestamp) = $cluster->getState;
         if ($services_available and $clusterstate eq 'warning') {
@@ -229,7 +229,7 @@ sub oneRun {
             $cluster->setState(state => 'up');
         }
 
-        $adm->commitTransaction;
+        $cluster->commitTransaction;
     }
 }
 

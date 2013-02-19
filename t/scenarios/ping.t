@@ -12,16 +12,15 @@ Log::Log4perl->easy_init({
 });
 
 
-use Administrator;
-use Entity::ServiceProvider::Inside::Cluster;
+use BaseDB;
+use Entity::ServiceProvider::Cluster;
 use Net::Ping;
 use Ip;
 use Entity::Iface;
 use Kanopya::Tools::Retrieve;
 
 eval {
-    Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-    my $adm = Administrator->new;
+    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
 
     $cluster = Kanopya::Tools::Retrieve->retrieveCluster(criteria => {cluster_name => 'Bondage'});
 

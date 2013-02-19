@@ -35,7 +35,6 @@ use Entity::Host::VirtualMachine::Opennebula3Vm::Opennebula3KvmVm;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-use Administrator;
 use General;
 use Entity::Kernel;
 use Entity::Host qw(get new);
@@ -377,10 +376,10 @@ sub getHostsEntries {
     my @hosts_entries = ();
 
     for my $vmm ($self->vmms) {
-        foreach my $node ($vmm->getServiceProvider->getHosts()) {
+        foreach my $node ($vmm->service_provider->getHosts()) {
             push @hosts_entries, {
-                hostname   => $node->host_hostname,
-                domainname => $self->getServiceProvider->cluster_domainname,
+                hostname   => $node->node->node_hostname,
+                domainname => $self->service_provider->cluster_domainname,
                 ip         => $node->adminIp
             };
         }
@@ -463,7 +462,7 @@ sub addVM {
 
     if ($self->hypervisor eq 'kvm') {
         my $cluster = Entity->get(id => $args{host}->getClusterId());
-        my $host_params = $cluster->getManagerParameters(manager_type => 'host_manager');
+        my $host_params = $cluster->getManagerParameters(manager_type => 'HostManager');
 
         $opennebulavm->setAttr(name => 'opennebula3_kvm_vm_cores',
                                value => $host_params->{max_core} || $args{host}->host_core);
@@ -546,7 +545,7 @@ sub getRemoteSessionURL {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    return "vnc://" . $args{host}->hypervisor->adminIp() . ":" . $args{host}->vnc_port;
+    return "vnc://" . $args{host}->hypervisor->adminIp . ":" . $args{host}->vnc_port;
 }
 
 =head2 scaleHost

@@ -44,7 +44,7 @@ use File::Path qw/ mkpath /;
 use Kanopya::Config;
 use Kanopya::Exceptions;
 use Entity::Masterimage;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 use Entity::Gp;
 use EFactory;
 

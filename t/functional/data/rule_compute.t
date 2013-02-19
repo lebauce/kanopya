@@ -12,11 +12,11 @@ Log::Log4perl->easy_init({level=>'DEBUG', file=>'rule_compute.log', layout=>'%F 
 my $log = get_logger("");
 
 lives_ok {
-    use Administrator;
+    use BaseDB;
     use Aggregator;
     use Orchestrator;
-    use Entity::ServiceProvider::Outside::Externalcluster;
-    use Entity::Connector::MockMonitor;
+    use Entity::ServiceProvider::Externalcluster;
+    use Entity::Component::MockMonitor;
     use Entity::Clustermetric;
     use Entity::AggregateCondition;
     use Entity::Combination::AggregateCombination;
@@ -27,9 +27,9 @@ lives_ok {
     use VerifiedNoderule;
 } 'All uses';
 
-Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-my $adm = Administrator->new;
-$adm->beginTransaction;
+BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+
+BaseDB->beginTransaction;
 
 my ($indic1,$indic2);
 my ($ac_f, $ac_t);
@@ -45,38 +45,38 @@ eval{
     $aggregator   = Aggregator->new();
     $orchestrator = Orchestrator->new();
 
-    $service_provider = Entity::ServiceProvider::Outside::Externalcluster->new(
+    $service_provider = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Service Provider',
     );
 
-    my $external_cluster_mockmonitor = Entity::ServiceProvider::Outside::Externalcluster->new(
+    my $external_cluster_mockmonitor = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Monitor',
     );
 
-    my $mock_monitor = Entity::Connector::MockMonitor->new(
+    my $mock_monitor = Entity::Component::MockMonitor->new(
             service_provider_id => $external_cluster_mockmonitor->id,
     );
 
     lives_ok{
         $service_provider->addManager(
             manager_id      => $mock_monitor->id,
-            manager_type    => 'collector_manager',
+            manager_type    => 'CollectorManager',
             no_default_conf => 1,
         );
     } 'Add mock monitor to service provider';
 
     # Create node
-    $node = Externalnode->new(
-        externalnode_hostname => 'node_1',
+    $node = Node->new(
+        node_hostname => 'node_1',
         service_provider_id   => $service_provider->id,
-        externalnode_state    => 'up',
+        monitoring_state    => 'up',
     );
 
     # Create node
-    $node2 = Externalnode->new(
-        externalnode_hostname => 'node_2',
+    $node2 = Node->new(
+        node_hostname => 'node_2',
         service_provider_id   => $service_provider->id,
-        externalnode_state    => 'up',
+        monitoring_state    => 'up',
     );
 
     # Get indicators
@@ -106,13 +106,13 @@ eval{
     test_nodemetric_condition();
     test_nodemetric_rules();
     test_rrd_remove();
-    $adm->rollbackTransaction;
-    #$adm->commitTransaction();
+    BaseDB->rollbackTransaction;
+    #BaseDB->commitTransaction();
 };
 if($@) {
     my $error = $@;
     print $error."\n";
-    $adm->rollbackTransaction;
+    BaseDB->rollbackTransaction;
 }
 
 sub test_rrd_remove {
@@ -204,7 +204,7 @@ sub test_nodemetric_condition {
     } 'Verify ConstantCombiantion creation on the left';
 
     $service_provider->addManagerParameter(
-        manager_type    => 'collector_manager',
+        manager_type    => 'CollectorManager',
         name            => 'mockmonit_config',
         value           =>  "{'default':{'const':50},'nodes':{'node_1':{'const':1.234}, 'node_2':{'const':2.345}}}",
     );
@@ -247,7 +247,7 @@ sub test_nodemetric_condition {
 
     lives_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_node_id    => $node->id,
             verified_noderule_nodemetric_rule_id => $r1->id,
             verified_noderule_state              => 'verified',
         })
@@ -255,7 +255,7 @@ sub test_nodemetric_condition {
 
     lives_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_node_id    => $node->id,
             verified_noderule_nodemetric_rule_id => $r2->id,
             verified_noderule_state              => 'verified',
         })
@@ -263,7 +263,7 @@ sub test_nodemetric_condition {
 
     lives_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_node_id    => $node->id,
             verified_noderule_nodemetric_rule_id => $r3->id,
             verified_noderule_state              => 'verified',
         })
@@ -271,21 +271,21 @@ sub test_nodemetric_condition {
 
     dies_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node2->id,
+            verified_noderule_node_id    => $node2->id,
             verified_noderule_nodemetric_rule_id => $r3->id,
         })
     } 'Check mixed nodemetric rule node 2 (a)';
 
     dies_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_node_id    => $node->id,
             verified_noderule_nodemetric_rule_id => $r4->id,
         })
     } 'Check mixed nodemetric rule node 1 (b)';
 
     lives_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node2->id,
+            verified_noderule_node_id    => $node2->id,
             verified_noderule_nodemetric_rule_id => $r4->id,
             verified_noderule_state              => 'verified',
         })
@@ -380,7 +380,7 @@ sub test_two_combinations_on_nodemetric_condition {
     );
 
     $service_provider->addManagerParameter(
-        manager_type    => 'collector_manager',
+        manager_type    => 'CollectorManager',
         name            => 'mockmonit_config',
         value           =>  "{
                                   'default':{ 'const':50 },
@@ -397,7 +397,7 @@ sub test_two_combinations_on_nodemetric_condition {
 
     lives_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_node_id    => $node->id,
             verified_noderule_nodemetric_rule_id => $r1->id,
             verified_noderule_state              => 'verified',
         })
@@ -405,7 +405,7 @@ sub test_two_combinations_on_nodemetric_condition {
 
     dies_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_node_id    => $node->id,
             verified_noderule_nodemetric_rule_id => $r2->id,
             verified_noderule_state              => 'verified',
         })
@@ -446,7 +446,7 @@ sub test_aggregate_combination_on_nodemetric_condition {
 
     lives_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_node_id    => $node->id,
             verified_noderule_nodemetric_rule_id => $r1->id,
             verified_noderule_state              => 'verified',
         })
@@ -454,7 +454,7 @@ sub test_aggregate_combination_on_nodemetric_condition {
 
     lives_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node2->id,
+            verified_noderule_node_id    => $node2->id,
             verified_noderule_nodemetric_rule_id => $r1->id,
             verified_noderule_state              => 'verified',
         })
@@ -484,7 +484,7 @@ sub test_nodemetric_rules {
     );
 
     $service_provider->addManagerParameter(
-        manager_type    => 'collector_manager',
+        manager_type    => 'CollectorManager',
         name            => 'mockmonit_config',
         value           =>  "{'default':{'const':50},'nodes':{'node_2':{'const':null}}}",
     );
@@ -506,14 +506,14 @@ sub test_nodemetric_rules {
 
     $orchestrator->manage_aggregates();
 
-    is ($nr_t->isVerifiedForANode(externalnode_id => $node->id), 1, 'Check node rule true via method');
-    is ($nr_f->isVerifiedForANode(externalnode_id => $node->id), 0, 'Check node rule false via method');
-    ok (! defined $nr_t->isVerifiedForANode(externalnode_id => $node2->id), 'Check node rule undef via method (a)');
-    ok (! defined $nr_f->isVerifiedForANode(externalnode_id => $node2->id), 'Check node rule undef via method (b)');
+    is ($nr_t->isVerifiedForANode(node_id => $node->id), 1, 'Check node rule true via method');
+    is ($nr_f->isVerifiedForANode(node_id => $node->id), 0, 'Check node rule false via method');
+    ok (! defined $nr_t->isVerifiedForANode(node_id => $node2->id), 'Check node rule undef via method (a)');
+    ok (! defined $nr_f->isVerifiedForANode(node_id => $node2->id), 'Check node rule undef via method (b)');
 
     dies_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_node_id    => $node->id,
             verified_noderule_nodemetric_rule_id => $nr_f->id,
             verified_noderule_state              => 'verified',
         })
@@ -521,7 +521,7 @@ sub test_nodemetric_rules {
 
     lives_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_node_id    => $node->id,
             verified_noderule_nodemetric_rule_id => $nr_t->id,
             verified_noderule_state              => 'verified',
         });
@@ -529,7 +529,7 @@ sub test_nodemetric_rules {
 
     lives_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node2->id,
+            verified_noderule_node_id    => $node2->id,
             verified_noderule_nodemetric_rule_id => $nr_t->id,
             verified_noderule_state              => 'undef',
         });
@@ -537,7 +537,7 @@ sub test_nodemetric_rules {
 
     lives_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node2->id,
+            verified_noderule_node_id    => $node2->id,
             verified_noderule_nodemetric_rule_id => $nr_t->id,
             verified_noderule_state              => 'undef',
         });
@@ -586,7 +586,7 @@ sub test_aggregate_rules_undef {
     is (Entity->get(id=>$rule->id)->aggregate_rule_last_eval, 1, 'cm ok, check rule');
 
     $service_provider->addManagerParameter(
-        manager_type    => 'collector_manager',
+        manager_type    => 'CollectorManager',
         name            => 'mockmonit_config',
         value           =>  "{'default':{'const':null}}",
     );
@@ -651,7 +651,7 @@ sub test_aggregate_combination {
     );
 
     $service_provider->addManagerParameter(
-        manager_type    => 'collector_manager',
+        manager_type    => 'CollectorManager',
         name            => 'mockmonit_config',
         value           =>  "{'default':{'const':50},'nodes':{'node_1':{'const':1.234}, 'node_2':{'const':2.345}}}",
     );
@@ -738,7 +738,7 @@ sub test_aggregate_rules {
 
     # No node responds
     $service_provider->addManagerParameter(
-        manager_type    => 'collector_manager',
+        manager_type    => 'CollectorManager',
         name            => 'mockmonit_config',
         value           =>  "{'default':{'const':50},'nodes':{'node_2':{'const':null}}}",
     );
@@ -786,7 +786,7 @@ sub test_and_n {
 
     dies_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_node_id    => $node->id,
             verified_noderule_nodemetric_rule_id => $r1->id,
             verified_noderule_state              => 'verified',
         })
@@ -794,7 +794,7 @@ sub test_and_n {
 
     dies_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_node_id    => $node->id,
             verified_noderule_nodemetric_rule_id => $r2->id,
             verified_noderule_state              => 'verified',
         })
@@ -802,7 +802,7 @@ sub test_and_n {
 
     dies_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_node_id    => $node->id,
             verified_noderule_nodemetric_rule_id => $r3->id,
             verified_noderule_state              => 'verified',
         })
@@ -810,7 +810,7 @@ sub test_and_n {
 
     lives_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_node_id    => $node->id,
             verified_noderule_nodemetric_rule_id => $r4->id,
             verified_noderule_state              => 'verified',
         })
@@ -883,7 +883,7 @@ sub test_or_n {
 
     dies_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_node_id    => $node->id,
             verified_noderule_nodemetric_rule_id => $r1->id,
             verified_noderule_state              => 'verified',
         })
@@ -891,7 +891,7 @@ sub test_or_n {
 
     lives_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_node_id    => $node->id,
             verified_noderule_nodemetric_rule_id => $r2->id,
             verified_noderule_state              => 'verified',
         })
@@ -899,7 +899,7 @@ sub test_or_n {
 
     lives_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_node_id    => $node->id,
             verified_noderule_nodemetric_rule_id => $r3->id,
             verified_noderule_state              => 'verified',
         })
@@ -907,7 +907,7 @@ sub test_or_n {
 
     lives_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_node_id    => $node->id,
             verified_noderule_nodemetric_rule_id => $r4->id,
             verified_noderule_state              => 'verified',
         })
@@ -975,7 +975,7 @@ sub test_not_n {
     $orchestrator->manage_aggregates();
     lives_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_node_id    => $node->id,
             verified_noderule_nodemetric_rule_id => $r1->id,
             verified_noderule_state              => 'verified',
         })
@@ -983,7 +983,7 @@ sub test_not_n {
 
     lives_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node2->id,
+            verified_noderule_node_id    => $node2->id,
             verified_noderule_nodemetric_rule_id => $r1->id,
             verified_noderule_state              => 'undef',
         })
@@ -991,7 +991,7 @@ sub test_not_n {
 
     dies_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_node_id    => $node->id,
             verified_noderule_nodemetric_rule_id => $r2->id,
             verified_noderule_state              => 'verified',
         });
@@ -999,7 +999,7 @@ sub test_not_n {
 
     dies_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_node_id    => $node->id,
             verified_noderule_nodemetric_rule_id => $r3->id,
             verified_noderule_state              => 'verified',
         })
@@ -1007,7 +1007,7 @@ sub test_not_n {
 
     lives_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_node_id    => $node->id,
             verified_noderule_nodemetric_rule_id => $r4->id,
             verified_noderule_state              => 'verified',
         });
@@ -1074,7 +1074,7 @@ sub test_big_formulas_n {
 
    lives_ok {
         VerifiedNoderule->find(hash => {
-            verified_noderule_externalnode_id    => $node->id,
+            verified_noderule_node_id    => $node->id,
             verified_noderule_nodemetric_rule_id => $r1->id,
             verified_noderule_state              => 'verified',
         })

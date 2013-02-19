@@ -21,8 +21,8 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use Administrator;
-use Entity::ServiceProvider::Inside::Cluster;
+use BaseDB;
+use Entity::ServiceProvider::Cluster;
 use Entity::User;
 use Entity::Host;
 use Entity::Kernel;
@@ -36,7 +36,7 @@ use NetconfIface;
 use Entity::Poolip;
 use Entity::Operation;
 use Entity::Component::Iscsi::IscsiPortal;
-use ComponentType;
+use ClassType::ComponentType;
 use Entity::Workflow;
 
 use Kanopya::Tools::Execution;
@@ -48,11 +48,10 @@ my $testing = 1;
 main();
 
 sub main {
-    Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-    my $adm = Administrator->new;
+    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if ($testing) {
-        $adm->beginTransaction;
+        BaseDB->beginTransaction;
     }
 
     diag('Create and configure cluster');
@@ -62,7 +61,7 @@ sub main {
     start_unmanaged_multipath_host();
 
     if ($testing) {
-        $adm->rollbackTransaction;
+        BaseDB->rollbackTransaction;
     }
 }
 
@@ -235,7 +234,7 @@ sub _create_and_configure_cluster {
     );
 
     diag('Create cluster');
-    my $cluster_create = Entity::ServiceProvider::Inside::Cluster->create(
+    my $cluster_create = Entity::ServiceProvider::Cluster->create(
         active                 => 1,
         cluster_name           => "UnmanagedMulStorageCluster",
         cluster_min_node       => "1",
@@ -252,7 +251,7 @@ sub _create_and_configure_cluster {
         managers               => {
             host_manager => {
                 manager_id     => $physical_hoster->id,
-                manager_type   => "host_manager",
+                manager_type   => 'Hostmanager',
                 manager_params => {
                     cpu        => 1,
                     ram        => 512 *1024 *1024,
@@ -260,7 +259,7 @@ sub _create_and_configure_cluster {
             },
             disk_manager => {
                 manager_id       => $disk_manager->id,
-                manager_type     => "disk_manager",
+                manager_type     => 'DiskManager',
                 manager_params   => {
                     vg_id => 1,
                     systemimage_size => 4 * 1024 * 1024 * 1024
@@ -268,7 +267,7 @@ sub _create_and_configure_cluster {
             },
             export_manager => {
                 manager_id       => $export_manager->id,
-                manager_type     => "export_manager",
+                manager_type     => 'ExportManager',
                 manager_params   => {
                     iscsi_portals => \@iscsi_portal_ids,
                     target        => 'iqn.2012-11.com.hederatech.nas:' . ($ENV{'LUNNAME'} || 'vm'),
@@ -278,13 +277,13 @@ sub _create_and_configure_cluster {
         },
         components             => {
             fileimagemanager => {
-                component_type => ComponentType->find(hash => { component_name => 'Fileimagemanager' })->id,
+                component_type => ClassType::ComponentType->find(hash => { component_name => 'Fileimagemanager' })->id,
             },
             opennebula => {
-                component_type => ComponentType->find(hash => { component_name => 'Opennebula' })->id,
+                component_type => ClassType::ComponentType->find(hash => { component_name => 'Opennebula' })->id,
             },
             suse => {
-                component_type => ComponentType->find(hash => { component_name => 'Suse' })->id,
+                component_type => ClassType::ComponentType->find(hash => { component_name => 'Suse' })->id,
             }
         },
         interfaces => {

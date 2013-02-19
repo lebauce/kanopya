@@ -7,37 +7,35 @@ use Test::More 'no_plan', 'no_diag';
 use Test::Exception;
 use Test::Pod;
 use Data::Dumper;
+use BaseDB;
 
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({ level=>'DEBUG', file=>'/tmp/benchmark_node_browsing.log', layout=>'%F %L %p %m%n' });
 my $log = get_logger("");
 
-use Kanopya::Tools::Execution;
-use Kanopya::Tools::Register;
-use Kanopya::Tools::Retrieve;
-use Kanopya::Tools::Create;
-use Kanopya::Tools::Profiler;
-
 lives_ok {
-    use Administrator;
     use StateManager;
-    use Entity::ServiceProvider::Inside::Cluster;
+    use Entity::ServiceProvider::Cluster;
     use Entity::Poolip;
     use Ip;
 
 } 'All uses';
 
-Administrator::authenticate(login =>'admin', password => 'K4n0pY4');
-my $adm = Administrator->new;
-my $profiler = Kanopya::Tools::Profiler->new(schema => $adm->{db});
+use Kanopya::Tools::Execution;  
+use Kanopya::Tools::Register;
+use Kanopya::Tools::Retrieve;
+use Kanopya::Tools::Create;
+use Kanopya::Tools::Profiler;
+
+my $profiler = Kanopya::Tools::Profiler->new(schema => BaseDB->_adm->{schema});
 
 
-$adm->beginTransaction;
+BaseDB->beginTransaction;
 
 my $serviceload = 1;
 my $nodeload = 1;
 
-my $kanopya = Entity::ServiceProvider::Inside::Cluster->find(hash => { cluster_name => 'Kanopya' });
+my $kanopya = Entity::ServiceProvider::Cluster->find(hash => { cluster_name => 'Kanopya' });
 
 my @hosts = $kanopya->getHosts();
 my $adminiface = $hosts[0]->getAdminIface;
@@ -65,8 +63,13 @@ sub addNode {
                });
 
     # Make the host node for the new service
-    $host->setAttr(name => 'host_hostname', value => 'hostname' . $args{cluster}->cluster_name . 'node' . $args{number}, save => 1);
-    $host->becomeNode(inside_id => $args{cluster}->id, master_node => ($args{number} == 1) ? 1 : 0, node_number => $args{number});
+    $host->becomeNode(
+        service_provider_id => $args{cluster}->id,
+        master_node         => ($args{number} == 1) ? 1 : 0,
+        node_number         => $args{number},
+        hostname            => 'hostname' . $args{cluster}->cluster_name . 'node' . $args{number}
+    );
+
     $host->setState(state => 'up');
     $host->setNodeState(state => 'in');
 
@@ -90,7 +93,7 @@ sub browseNodes {
 
     $profiler->start(print_queries => 0);
 
-    my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {});
+    my @clusters = Entity::ServiceProvider::Cluster->search(hash => {});
     for my $cluster (@clusters) {
         $cluster->getHosts();
     }
@@ -103,7 +106,7 @@ sub browseNodesWithPrefetch {
 
     $profiler->start(print_queries => 0);
 
-    my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => {}, prefetch => [ 'nodes.host' ]);
+    my @clusters = Entity::ServiceProvider::Cluster->search(hash => {}, prefetch => [ 'nodes.host' ]);
     for my $cluster (@clusters) {
         $cluster->getHosts();
     }
@@ -135,7 +138,7 @@ eval{
         benchmarkBrowseNodes();
 
         # Add 10 nodes to each services
-        for my $cluster (Entity::ServiceProvider::Inside::Cluster->search(hash => {})) {
+        for my $cluster (Entity::ServiceProvider::Cluster->search(hash => {})) {
             for my $index (1 .. 10) {
                 addNode(cluster => $cluster, number => ($nodeload + $index));
             }
@@ -144,13 +147,13 @@ eval{
     }
     benchmarkBrowseNodes();
 
-    $adm->rollbackTransaction;
+    BaseDB->rollbackTransaction;
 };
 if ($@) {
     my $error = $@;
     print $error."\n";
 
-    $adm->rollbackTransaction;
+    BaseDB->rollbackTransaction;
 
     fail('Exception occurs');
 }

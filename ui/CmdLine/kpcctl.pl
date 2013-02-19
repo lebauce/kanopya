@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Administrator;
+use BaseDB;
 use General;
 
 use Log::Log4perl qw(:easy);
@@ -33,8 +33,8 @@ sub authenticate {
         chomp $pwd;
          
         eval {
-            #Administrator::authenticate( login => $user, password => $pwd );
-            Administrator::authenticate( login => 'admin', password => 'K4n0pY4' );
+            #BaseDB->authenticate( login => $user, password => $pwd );
+            BaseDB->authenticate( login => 'admin', password => 'K4n0pY4' );
         };
         if ($@) {
             print $@, "\n";

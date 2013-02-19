@@ -1,7 +1,22 @@
+#    Copyright © 2011-2013 Hedera Technology SAS
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+# Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
+
 package Alert;
 use parent 'BaseDB';
-
-use Administrator;
 
 use constant ATTR_DEF => {
     entity_id => {
@@ -25,30 +40,19 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub new {
     my ($class, %args) = @_;
-    General::checkParams(
-        args => \%args, 
-        required => ['entity_id', 'alert_message', 'alert_signature']);
-    
-    my $adm = Administrator->new();
-    my $self = {};
-    my $row = {
-            alert_message => $args{alert_message},
-            alert_active  => 1,
-            alert_date    => \"CURRENT_DATE()",
-            alert_time    => \"CURRENT_TIME()",
-            entity_id     => $args{entity_id},
-            alert_signature => $args{alert_signature}
-    };
 
-    $self->{_dbix} = $adm->{db}->resultset('Alert')->create($row);
-    bless $self, $class;
-    return $self;
+    General::checkParams(args     => \%args, 
+                         required => [ 'entity_id', 'alert_message', 'alert_signature' ]);
+
+    return $class->SUPUER::new(alert_date => \"CURRENT_DATE()",
+                               alert_time => \"CURRENT_TIME()",
+                               %args);
 }
 
 sub mark_resolved {
     my ($self) = @_;
-    $self->setAttr(name => 'alert_active', value => 0);
-    $self->save;
+
+    $self->setAttr(name => 'alert_active', value => 0, save => 1);
 }
 
 1;

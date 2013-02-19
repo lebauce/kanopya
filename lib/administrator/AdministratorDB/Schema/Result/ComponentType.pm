@@ -13,7 +13,23 @@ AdministratorDB::Schema::Result::ComponentType
 use strict;
 use warnings;
 
-use base 'DBIx::Class::Core';
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
 
 =head1 TABLE: C<component_type>
 
@@ -27,7 +43,7 @@ __PACKAGE__->table("component_type");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 component_name
@@ -42,19 +58,6 @@ __PACKAGE__->table("component_type");
   is_nullable: 0
   size: 32
 
-=head2 component_category
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 32
-
-=head2 component_class_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 0
-
 =cut
 
 __PACKAGE__->add_columns(
@@ -62,22 +65,13 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "component_name",
   { data_type => "char", is_nullable => 0, size => 32 },
   "component_version",
   { data_type => "char", is_nullable => 0, size => 32 },
-  "component_category",
-  { data_type => "char", is_nullable => 0, size => 32 },
-  "component_class_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 0,
-  },
 );
 
 =head1 PRIMARY KEY
@@ -94,21 +88,6 @@ __PACKAGE__->set_primary_key("component_type_id");
 
 =head1 RELATIONS
 
-=head2 component_class
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::ClassType>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "component_class",
-  "AdministratorDB::Schema::Result::ClassType",
-  { class_type_id => "component_class_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
 =head2 component_templates
 
 Type: has_many
@@ -120,6 +99,36 @@ Related object: L<AdministratorDB::Schema::Result::ComponentTemplate>
 __PACKAGE__->has_many(
   "component_templates",
   "AdministratorDB::Schema::Result::ComponentTemplate",
+  { "foreign.component_type_id" => "self.component_type_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 component_type
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::ClassType>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "component_type",
+  "AdministratorDB::Schema::Result::ClassType",
+  { class_type_id => "component_type_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 component_type_categories
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ComponentTypeCategory>
+
+=cut
+
+__PACKAGE__->has_many(
+  "component_type_categories",
+  "AdministratorDB::Schema::Result::ComponentTypeCategory",
   { "foreign.component_type_id" => "self.component_type_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -169,6 +178,35 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 service_provider_type_component_types
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ServiceProviderTypeComponentType>
+
+=cut
+
+__PACKAGE__->has_many(
+  "service_provider_type_component_types",
+  "AdministratorDB::Schema::Result::ServiceProviderTypeComponentType",
+  { "foreign.component_type_id" => "self.component_type_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 component_categories
+
+Type: many_to_many
+
+Composing rels: L</component_type_categories> -> component_category
+
+=cut
+
+__PACKAGE__->many_to_many(
+  "component_categories",
+  "component_type_categories",
+  "component_category",
+);
+
 =head2 masterimages
 
 Type: many_to_many
@@ -178,6 +216,20 @@ Composing rels: L</components_provided> -> masterimage
 =cut
 
 __PACKAGE__->many_to_many("masterimages", "components_provided", "masterimage");
+
+=head2 service_provider_types
+
+Type: many_to_many
+
+Composing rels: L</service_provider_type_component_types> -> service_provider_type
+
+=cut
+
+__PACKAGE__->many_to_many(
+  "service_provider_types",
+  "service_provider_type_component_types",
+  "service_provider_type",
+);
 
 =head2 systemimages
 
@@ -190,9 +242,14 @@ Composing rels: L</components_installed> -> systemimage
 __PACKAGE__->many_to_many("systemimages", "components_installed", "systemimage");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-10-31 02:01:09
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:cnL5Sr0WFGqZ02PVbyh6pg
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-02-13 14:18:40
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:uAyyAFq1QjXSa46ssTq/Aw
 
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::ClassType",
+  { class_type_id => "component_type_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

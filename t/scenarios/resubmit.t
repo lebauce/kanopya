@@ -26,14 +26,14 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use Administrator;
+use BaseDB;
 use Aggregator;
 use Orchestrator;
 use Monitor::Collector;
 use Entity;
 use Entity::Component::Opennebula3;
-use Entity::ServiceProvider::Outside::Externalcluster;
-use Entity::Connector::MockMonitor;
+use Entity::ServiceProvider::Externalcluster;
+use Entity::Component::MockMonitor;
 use Entity::Clustermetric;
 use Entity::AggregateCondition;
 use Entity::Combination::AggregateCombination;
@@ -63,11 +63,10 @@ my $one;
 main();
 
 sub main {
-    Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-    my $adm = Administrator->new;
+    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if($testing == 1) {
-        $adm->beginTransaction;
+        BaseDB->beginTransaction;
     }
 
     my $config = Kanopya::Config::get('monitor');
@@ -86,7 +85,7 @@ sub main {
     $one = Entity::Component::Opennebula3->find(hash => {});
     my @hvs = $one->hypervisors;
 
-    if ($hvs[0]->host_hostname eq 'one1') {
+    if ($hvs[0]->node->node_hostname eq 'one1') {
         ($hv1, $hv2) = @hvs;
     }
     else {
@@ -115,7 +114,7 @@ sub main {
     _remove_mock_monitor();
 
     if ($testing == 1) {
-        $adm->rollbackTransaction;
+        BaseDB->rollbackTransaction;
     }
 }
 
@@ -125,7 +124,7 @@ sub _remove_mock_monitor {
     my @hvs = $one->hypervisors;
     my $hv_cluster = $hvs[0]->node->inside;
 
-    my $external_cluster_mockmonitor = Entity::ServiceProvider::Outside::Externalcluster->find(
+    my $external_cluster_mockmonitor = Entity::ServiceProvider::Externalcluster->find(
             hash => {externalcluster_name => 'Test Monitor'},
     );
 
@@ -136,13 +135,13 @@ sub _remove_mock_monitor {
 
     $vm_cluster->addManager(
         manager_id      => $kanopya_collector_id,
-        manager_type    => 'collector_manager',
+        manager_type    => 'CollectorManager',
         no_default_conf => 1,
     );
 
     $hv_cluster->addManager(
         manager_id      => $kanopya_collector_id,
-        manager_type    => 'collector_manager',
+        manager_type    => 'CollectorManager',
         no_default_conf => 1,
     );
 }
@@ -154,11 +153,11 @@ sub _add_mock_monitor {
     my @hvs = $one->hypervisors;
     my $hv_cluster = $hvs[0]->node->inside;
 
-    my $external_cluster_mockmonitor = Entity::ServiceProvider::Outside::Externalcluster->new(
+    my $external_cluster_mockmonitor = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Monitor',
     );
 
-    my $mock_monitor = Entity::Connector::MockMonitor->new(
+    my $mock_monitor = Entity::Component::MockMonitor->new(
             service_provider_id => $external_cluster_mockmonitor->id,
     );
 
@@ -167,7 +166,7 @@ sub _add_mock_monitor {
     for my $cluster (@clusters) {
 
         my $kanopya_collector_manager = ServiceProviderManager->find( hash => {
-            manager_type        => 'collector_manager',
+            manager_type        => 'CollectorManager',
             service_provider_id => $cluster->id,
         });
 
@@ -175,7 +174,7 @@ sub _add_mock_monitor {
 
         $cluster->addManager(
             manager_id      => $mock_monitor->id,
-            manager_type    => 'collector_manager',
+            manager_type    => 'CollectorManager',
             no_default_conf => 1,
         );
     }
@@ -224,7 +223,7 @@ sub resubmit_hv_on_state {
         $node->save();
 
         $hv_cluster->addManagerParameter(
-            manager_type    => 'collector_manager',
+            manager_type    => 'CollectorManager',
             name            => 'mockmonit_config',
             value           =>  "{'default':{'const':1},'nodes':{'one1':{'const':1}, 'one2':{'const':1}}}",
         );
@@ -237,7 +236,7 @@ sub resubmit_hv_on_state {
             time_span  => 1200,
         );
 
-        die 'Hv1 is not up' if ($nodes_metrics ->{$hv1->host_hostname}->{'Host is up'} != 1);
+        die 'Hv1 is not up' if ($nodes_metrics ->{$hv1->node->node_hostname}->{'Host is up'} != 1);
         die 'Hv1 is not activated' if ($hv1->active != 1);
 
         $orchestrator->manage_aggregates();
@@ -246,7 +245,7 @@ sub resubmit_hv_on_state {
         $node->save();
 
         $hv_cluster->addManagerParameter(
-            manager_type    => 'collector_manager',
+            manager_type    => 'CollectorManager',
             name            => 'mockmonit_config',
             value           =>  "{'default':{'const':1},'nodes':{'one1':{'const':0}, 'one2':{'const':1}}}",
         );
@@ -256,11 +255,11 @@ sub resubmit_hv_on_state {
             time_span  => 1200,
         );
 
-        die 'Hv1 is not broken' if ($nodes_metrics ->{$hv1->host_hostname}->{'Host is up'} != 0);
+        die 'Hv1 is not broken' if ($nodes_metrics ->{$hv1->node->node_hostname}->{'Host is up'} != 0);
 
         expectedException {
             VerifiedNoderule->find( hash => {
-                verified_noderule_externalnode_id       => $hv1->id,
+                verified_noderule_node_id       => $hv1->id,
                 verified_noderule_nodemetric_rule_id    => $rule->id,
             });
         } 'Kanopya::Exception::Internal::NotFound',
@@ -269,7 +268,7 @@ sub resubmit_hv_on_state {
         $orchestrator->manage_aggregates();
 
         my $verifNodeRule = VerifiedNoderule->find( hash => {
-            verified_noderule_externalnode_id       => $hv1->node->id,
+            verified_noderule_node_id       => $hv1->node->id,
             verified_noderule_nodemetric_rule_id    => $rule->id,
             verified_noderule_state                 => 'verified',
         });
@@ -277,7 +276,7 @@ sub resubmit_hv_on_state {
 
         my $wf_manager = $hv_cluster->findRelated(
                              filters    => ['service_provider_managers'],
-                             hash       => { manager_type => 'workflow_manager' }
+                             hash       => { manager_type => 'WorkflowManager' }
                          )->manager;
 
         my $workflow_def = Entity::WorkflowDef->find(hash => {workflow_def_name => 'ResubmitHypervisor'});
@@ -396,7 +395,7 @@ sub resubmit_vm_on_state {
         $node->save();
 
     $vm_cluster->addManagerParameter(
-        manager_type    => 'collector_manager',
+        manager_type    => 'CollectorManager',
         name            => 'mockmonit_config',
         value           =>  "{'default':{'const':1},'nodes':{'vm1':{'const':1}, 'vm2':{'const':1}}}",
     );
@@ -409,7 +408,7 @@ sub resubmit_vm_on_state {
             time_span  => 1200,
         );
 
-        die 'Host is not up' if ($nodes_metrics ->{$vm->host_hostname}->{'Host is up'} != 1);
+        die 'Host is not up' if ($nodes_metrics ->{$vm->node->node_hostname}->{'Host is up'} != 1);
 
         $orchestrator->manage_aggregates();
 
@@ -424,7 +423,7 @@ sub resubmit_vm_on_state {
         $node->save();
 
         $vm_cluster->addManagerParameter(
-            manager_type    => 'collector_manager',
+            manager_type    => 'CollectorManager',
             name            => 'mockmonit_config',
             value           =>  "{'default':{'const':1},'nodes':{'vm1':{'const':0}, 'vm2':{'const':1}}}",
         );
@@ -434,7 +433,7 @@ sub resubmit_vm_on_state {
             time_span  => 1200,
         );
 
-        if ($nodes_metrics ->{$vm->host_hostname}->{'Host is up'} == 0) {
+        if ($nodes_metrics ->{$vm->node->node_hostname}->{'Host is up'} == 0) {
             diag('Host is down');
         }
         else {
@@ -443,7 +442,7 @@ sub resubmit_vm_on_state {
 
         expectedException {
             VerifiedNoderule->find( hash => {
-                verified_noderule_externalnode_id       => $vm->id,
+                verified_noderule_node_id       => $vm->id,
                 verified_noderule_nodemetric_rule_id    => $rule->id,
             });
         } 'Kanopya::Exception::Internal::NotFound',
@@ -453,7 +452,7 @@ sub resubmit_vm_on_state {
 
         diag('Rule verification');
         my $verifNodeRule = VerifiedNoderule->find( hash => {
-            verified_noderule_externalnode_id       => $vm->node->id,
+            verified_noderule_node_id       => $vm->node->id,
             verified_noderule_nodemetric_rule_id    => $rule->id,
             verified_noderule_state                 => 'verified',
         });
@@ -461,7 +460,7 @@ sub resubmit_vm_on_state {
 
         my $wf_manager = $vm_cluster->findRelated(
                              filters    => ['service_provider_managers'],
-                             hash       => { manager_type => 'workflow_manager' }
+                             hash       => { manager_type => 'WorkflowManager' }
                          )->manager;
 
         my $workflow_def = Entity::WorkflowDef->find(hash => {workflow_def_name => 'ResubmitNode'});

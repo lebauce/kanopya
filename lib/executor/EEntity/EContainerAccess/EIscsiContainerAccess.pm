@@ -51,7 +51,7 @@ sub connect {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $kanopya_cluster = Entity::ServiceProvider::Inside::Cluster->find(
+    my $kanopya_cluster = Entity::ServiceProvider::Cluster->find(
                                  hash => { cluster_name => 'Kanopya' }
                           );
     my $executor = Entity->get(id => $kanopya_cluster->getMasterNode->host->id);

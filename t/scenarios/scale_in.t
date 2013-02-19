@@ -26,7 +26,7 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use Administrator;
+use BaseDB;
 use Entity;
 use Entity::Component::Opennebula3;
 use Entity::Workflow;
@@ -45,11 +45,10 @@ my $coefGb2Bytes = 1024**3;
 main();
 
 sub main {
-    Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-    my $adm = Administrator->new;
+    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if($testing == 1) {
-        $adm->beginTransaction;
+        BaseDB->beginTransaction;
     }
 
     #get orchestrator configuration
@@ -69,7 +68,7 @@ sub main {
     _reinit_infra_cpu();
 
     if ($testing == 1) {
-        $adm->rollbackTransaction;
+        BaseDB->rollbackTransaction;
     }
 }
 
@@ -310,7 +309,7 @@ sub _check_vm_core {
     my $evm = EFactory::newEEntity(data => $vm);
     my $real_core =  $evm->getTotalCpu;
     if (!( $real_core == $core)) {
-        throw Kanopya::Exception(error => $vm->host_hostname.' real core value is '.$real_core.' expected value: '.$core);
+        throw Kanopya::Exception(error => $vm->node->node_hostname.' real core value is '.$real_core.' expected value: '.$core);
     }
     diag('# vm core is ok');
 }

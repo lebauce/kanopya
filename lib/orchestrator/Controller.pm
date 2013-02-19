@@ -16,17 +16,18 @@ package Controller;
 use strict;
 use warnings;
 use Data::Dumper;
-use Administrator;
 use XML::Simple;
 
 use Monitor::Retriever;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 use CapacityPlanning::IncrementalSearch;
 use Model::MVAModel;
 use MultiTuning;
 use Actuator;
 use Kanopya::Config;
 use Message;
+use BaseDB;
+use RulesManager;
 
 use Log::Log4perl "get_logger";
 
@@ -57,18 +58,16 @@ sub _authenticate {
          (! defined $self->{config}{user}{password}) ) { 
         throw Kanopya::Exception::Internal::IncorrectParam(error => "needs user definition in config file!");
     }
-    Administrator::authenticate( login => $self->{config}{user}{name},
-                                 password => $self->{config}{user}{password});
-                                 
-    
+    BaseDB->authenticate(login    => $self->{config}{user}{name},
+                         password => $self->{config}{user}{password});
+
     return;
 }
 
 sub init {
     my $self = shift;
     
-    my $admin = Administrator->new();
-    $self->{data_manager} = $admin->{manager}{rules};
+    $self->{data_manager} = RulesManager->new(schemas => BaseDB->_adm->{schema});
     
     $self->{_monitor} = Monitor::Retriever->new( );
     
@@ -1060,7 +1059,7 @@ sub update {
     my $self = shift;
     my %args = @_;
 
-    my @clusters = Entity::ServiceProvider::Inside::Cluster->search(hash => { cluster_state => {-like => 'up:%'} });
+    my @clusters = Entity::ServiceProvider::Cluster->search(hash => { cluster_state => {-like => 'up:%'} });
     
     
     for my $cluster (@clusters) {        

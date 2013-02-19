@@ -3,8 +3,10 @@ package Login;
 use Dancer ':syntax';
 use Dancer::Plugin::FormValidator;
 use Dancer::Plugin::EscapeHTML;
+
 use Log::Log4perl "get_logger";
-use Administrator;
+
+use BaseDB;
 
 my $log = get_logger("");
 
@@ -52,10 +54,7 @@ post '/login' => sub {
     }
 
     eval {
-        Administrator::authenticate(
-            login    => $user,
-            password => $password
-        );
+        BaseDB->authenticate(login => $user, password => $password);
     };
 
     if ( $@ ) {

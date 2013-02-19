@@ -44,7 +44,7 @@ use Data::Dumper;
 
 use CapacityManagement;
 use Kanopya::Exceptions;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 use Entity::Host;
 use EFactory;
 
