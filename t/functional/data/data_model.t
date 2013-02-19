@@ -15,6 +15,7 @@ use Test::Exception;
 use Data::Dumper;
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::TimeSerie;
+use Kanopya::Tools::TestUtils 'expectedException';
 
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
@@ -92,7 +93,7 @@ sub select_best_model_operation {
         my $executor   = Executor->new();
 
         my $time_serie = Kanopya::Tools::TimeSerie->new();
-        
+
         $time_serie->generate(func => 'X + rand(10)',
                               srand => 1,
                               rows => 100,
@@ -104,7 +105,7 @@ sub select_best_model_operation {
         map {$_->delete() } Entity::DataModel->search( hash => { combination_id => $comb->id, });
 
         $comb->computeDataModel( start_time => time() - 100*60, end_time => time() );
-        
+
         Kanopya::Tools::Execution->executeAll();
 
         # Check if datamodel has been created
@@ -146,7 +147,7 @@ sub select_best_model_operation {
 
         # Check if datamodel has been created
         my @models = Entity::DataModel->search( hash => {
-                             combination_id => $comb->id, 
+                             combination_id => $comb->id,
                   });
 
         if ((scalar @models) != 1) {die 'Just one data model must have been created got:'.(scalar @models)}
@@ -228,7 +229,7 @@ sub logarithmic_regression_predict {
                     ($ts*1000).' != '.($pair->[0])." OR $value != ".($pair->[1]);
             }
         }
-        
+
     } 'Logarithmic regression prediction';
 }
 
@@ -295,17 +296,18 @@ sub logarithmic_regression_configure {
     lives_ok{
         my @timestamps = ( 1360605540, 1360605550, 1360605560, 1360605570, 1360605580, 1360605590, 1360605600, 1360605610, );
         my @data_values = ( 5, 10, 15, 18, 20, 23, 25, 26);
-    
+
         # construct data hash table
         my $data;
         my $ea = List::MoreUtils::each_array( @timestamps, @data_values );
         while (my ($ts,$dv) = $ea->()) { $data->{$ts} = $dv; }
-    
+
         $service_data_log_model->configure(data => $data);
 
         my $pp = $service_data_log_model->param_preset->load;
         if ($pp->{a} != 4.96912293408187 || $pp->{b} != 2.28648922262471) {
-            die 'Wrong logarithmic regression configuration';
+            die 'Wrong logarithmic regression configuration '.
+                ($pp->{a}).' != 4.96912293408187 || '.($pp->{b}).' != 2.28648922262471';
         }
 
         $service_data_log_model->configure(data => $data, start_time => 1360605545);
@@ -318,7 +320,7 @@ sub logarithmic_regression_configure {
         }
 
         $service_data_log_model->configure(data => $data, start_time => 1360605535);
-        
+
         $pp = $service_data_log_model->param_preset->load;
         if ($pp->{a} != 4.96912293408187 || $pp->{b} != 2.28648922262471) {
             die 'Wrong logarithmic regression configuration';
@@ -435,17 +437,25 @@ sub setup {
 
 #    my $temp = Entity::DataModel->new(combination_id => $comb->id);
 
-    $node_data_model = Entity::DataModel::LinearRegression->new(
-                           node_id        => $node_1->id,
-                           combination_id => $ncomb->id,
-                       );
+    lives_ok {
+        $node_data_model = Entity::DataModel::LinearRegression->new(
+                               node_id        => $node_1->id,
+                               combination_id => $ncomb->id,
+                           );
 
-    $service_data_model = Entity::DataModel::LinearRegression->new(
-                              combination_id => $comb->id,
-                          );
-
-    $service_data_log_model = Entity::DataModel::LogarithmicRegression->new(
+        $service_data_model = Entity::DataModel::LinearRegression->new(
                                   combination_id => $comb->id,
                               );
 
+        $service_data_log_model = Entity::DataModel::LogarithmicRegression->new(
+                                      combination_id => $comb->id,
+                                  );
+
+        expectedException {
+            Entity::DataModel::LinearRegression->new(
+                combination_id => $ncomb->id,
+            );
+        } 'Kanopya::Exception', 'Exception NodemetriCombination LinearRegression created without node_id';
+    } 'DataModel creation'
 }
+
