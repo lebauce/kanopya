@@ -103,7 +103,7 @@ CREATE TABLE `openstack_hypervisor` (
 CREATE TABLE `openstack_vm` (
   `openstack_vm_id` int(8) unsigned NOT NULL,
   `nova_controller_id` int(8) unsigned NOT NULL,
-  `openstack_vm_uuid` int(8) unsigned NULL DEFAULT NULL,
+  `openstack_vm_uuid` char(64) NULL DEFAULT NULL,
   PRIMARY KEY (`openstack_vm_id`),
   FOREIGN KEY (`openstack_vm_id`) REFERENCES `virtual_machine` (`virtual_machine_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`nova_controller_id`) REFERENCES `nova_controller` (`nova_controller_id`) ON DELETE CASCADE ON UPDATE NO ACTION
