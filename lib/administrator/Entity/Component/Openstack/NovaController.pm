@@ -115,7 +115,7 @@ sub getPuppetDefinition {
                      "\tpassword => 'nova',\n" .
                      "\tkeystone => '" . $keystone->service_provider->getMasterNode->fqdn . "',\n" .
                      "\temail => '" . $self->service_provider->user->user_email . "',\n" .
-                     "\ŧglance => '" . $glance . "',\n" .
+                     "\tglance => '" . $glance . "',\n" .
                      "}\n";
 
     return $definition;
