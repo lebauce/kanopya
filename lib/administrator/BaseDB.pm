@@ -1432,7 +1432,7 @@ sub toJSON {
     if ($args{model}) {
         my $table = _buildClassNameFromString($class);
         my $adm = Administrator->new();
-        my @hierarchy = split(/::/, $class);
+        my @hierarchy = getClassHierarchy($class);
         my $depth = scalar @hierarchy;
         my $current = $depth;
         my $parent;
