@@ -2,6 +2,7 @@
     require('widgets/widget_historical_service_metric.js');
 </script>
 
+<h5 class='widget_part'>Configuration</h5>
 <div class="clustermetric_options">
     <div class="field">
         <span class='graph_time_settings'></span>
@@ -18,3 +19,18 @@
 </div>
 
 <div class="clusterCombinationView"></div>
+
+<h5 class='widget_part'>Forecasting</h5>
+<div class='datamodel_fields hidden'>
+        <select class="model_list"></select>
+        <br/>
+        <div class='forcast_config'>
+            <br/>
+            Precision of <input class='model_sampling' value='5' size='4'/> minutes
+       </div>
+       <div class='new_model_config hidden'>
+            <br/>
+            <i>click on the graph to select start and end dates</i><br/>
+            <button class='learn_data'>Find the best model</button>
+       </div>
+</div>
