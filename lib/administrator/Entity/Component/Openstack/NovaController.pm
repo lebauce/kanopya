@@ -15,6 +15,16 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+
+=begin classdoc
+
+OpenStack component, used as host manager by Kanopya
+
+=end classdoc
+
+=cut
+
 package  Entity::Component::Openstack::NovaController;
 
 use base "Entity::Component";
@@ -75,7 +85,7 @@ sub getHostManagerParams {
             unit         => 'byte',
             pattern      => '^\d*$',
             is_mandatory => 1
-        }
+        },
     };
 }
 
@@ -85,6 +95,16 @@ sub checkHostManagerParams {
 
     General::checkParams(args => \%args, required => [ 'ram', 'core' ]);
 }
+
+=pod
+
+=begin classdoc
+
+Return the boot policies for the host ruled by this host manager
+
+=end classdoc
+
+=cut
 
 sub getBootPolicies {
     return (Manager::HostManager->BOOT_POLICIES->{virtual_disk}, );
@@ -164,10 +184,34 @@ sub getHostsEntries {
     return \@entries;
 }
 
+=pod
+
+=begin classdoc
+
+Return a list of hypervisors under the rule of this instance of manager
+
+@return opnestack_hypervisors
+
+=end classdoc
+
+=cut
+
 sub hypervisors {
     my $self = shift;
     return $self->openstack_hypervisors;
 }
+
+=pod
+
+=begin classdoc
+
+Return a list of active hypervisors ruled by this manager
+
+@return active_hypervisors
+
+=end classdoc
+
+=cut
 
 sub activeHypervisors {
     my $self = shift;
@@ -179,6 +223,18 @@ sub activeHypervisors {
 
     return wantarray ? @hypervisors : \@hypervisors;
 }
+
+=pod
+
+=begin classdoc
+
+Promote a host to the Entity::Host::Hypervisor::OpenstackHypervisor- class
+
+àreturn OpenstackHypervisor instance of OpenstackHypervisor
+
+=end classdoc
+
+=cut
 
 sub addHypervisor {
     my $self = shift;
@@ -192,6 +248,18 @@ sub addHypervisor {
                openstack_hypervisor_uuid => $args{uuid},
            );
 }
+
+=pod
+
+=begin classdoc
+
+Demote an OpenStack hypervisor to the Entity::Host::Hypervisor class
+
+@return Hypervisor an instance of Hypervisor
+
+=end classdoc
+
+=cut
 
 sub removeHypervisor {
     my $self = shift;
