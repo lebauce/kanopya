@@ -214,7 +214,8 @@ Construct a human readable label for the model:
 
 sub label {
     my $self = shift;
-    return 'Linear regression '.$self->time_label();
+    my $r_rounded = sprintf("%.2f", $self->getRSquared());
+    return 'Linear regression '.$self->time_label()." (R = $r_rounded)";
 }
 
 1;
