@@ -31,6 +31,7 @@
 <script src="/javascripts/jquery/jqplot/jqplot.canvasTextRenderer.min.js"></script>
 <script src="/javascripts/jquery/jqplot/jqplot.canvasAxisLabelRenderer.min.js"></script>
 <script src="/javascripts/jquery/jqplot/jqplot.categoryAxisRenderer.min.js"></script>
+<script src="/javascripts/jquery/jqplot/jqplot.cursor.min.js"></script>
 <script src="/javascripts/jquery/jqplot/jqplot.dateAxisRenderer.min.js"></script>
 <script src="/javascripts/jquery/jqplot/jqplot.highlighter.min.js"></script>
 <script src="/javascripts/jquery/jqplot/jqplot.canvasOverlay.min.js"></script>
