@@ -99,7 +99,7 @@ class kanopya::glance($dbserver, $password, $keystone, $email) {
     Class['kanopya::openstack::repository'] -> Class['kanopya::glance']
 }
 
-class kanopya::novacontroller($password, $dbserver, $amqpserver, $keystone, $email, $glance) {
+class kanopya::novacontroller($password, $dbserver, $amqpserver, $keystone, $email, $glance, $quantum) {
     @@rabbitmq_user { 'nova':
         admin    => true,
         password => "${password}",
@@ -150,6 +150,14 @@ class kanopya::novacontroller($password, $dbserver, $amqpserver, $keystone, $ema
         glance_api_servers  => "${glance}",
     }
 
+    class { 'nova::network::quantum':
+        quantum_admin_password    => "quantum",
+        quantum_auth_strategy     => 'keystone',
+        quantum_url               => "http://${quantum}:9696",
+        quantum_admin_tenant_name => 'services',
+        quantum_admin_auth_url    => "http://${keystone}:35357/v2.0",
+    }
+
     class { 'nova::scheduler': enabled => true, }
     class { 'nova::objectstore': enabled => true, }
     class { 'nova::cert': enabled => true, }
@@ -179,6 +187,8 @@ class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone, $password
     class { 'nova::compute':
         enabled => true,
     }
+
+    class { 'nova::compute::quantum': }
 
     class { 'nova::compute::libvirt':
         libvirt_type => 'qemu',

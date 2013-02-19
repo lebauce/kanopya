@@ -98,11 +98,39 @@ sub hostType {
     return "OpenStack VM";
 }
 
+=pod
+
+=begin classdoc
+
+Return the type of host managed
+
+@return "OpenStack VM"
+=end classdoc
+
+=cut
+
+sub hostType {
+    return "OpenStack VM";
+}
+
+=pod
+
+=begin classdoc
+
+Build the content of the puppet agent manifest for a node
+
+@return definition
+
+=end classdoc
+
+=cut
+
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
     my $sql        = $self->mysql5;
     my $keystone   = $self->keystone;
+    my $quantum    = $self->quantum;
     my $glance     = join(",", map { $_->service_provider->getMasterNode->fqdn . ":9292" } $self->nova_controller->glances);
 
     my $definition = "if \$kanopya_openstack_repository == undef {\n" .
@@ -116,6 +144,7 @@ sub getPuppetDefinition {
                      "\tkeystone => '" . $keystone->service_provider->getMasterNode->fqdn . "',\n" .
                      "\temail => '" . $self->service_provider->user->user_email . "',\n" .
                      "\tglance => '" . $glance . "',\n" .
+                     "\tquantum => '" . $quantum->service_provider->getMasterNode->fqdn . "',\n" .
                      "}\n";
 
     return $definition;
