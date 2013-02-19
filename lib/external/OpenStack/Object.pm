@@ -12,13 +12,16 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package OSObject;
+package OpenStack::Object;
 
 use HTTP::Request::Common;
 use LWP;
 use JSON qw(from_json to_json);
 
 use Data::Dumper;
+
+use Log::Log4perl "get_logger";
+my $log = get_logger("");
 
 sub AUTOLOAD {
     my ($self, %args) = @_;
@@ -40,7 +43,7 @@ sub AUTOLOAD {
     else {
         $object->{path} = $self->{path} . '/' . $method;
     }
-    bless $object, 'OSObject';
+    bless $object, 'OpenStack::Object';
 
     return $object;
 }
@@ -99,14 +102,14 @@ sub request {
     my $headers = $parameters->{headers};
     my $complete_url = $self->{config}->{$target}->{url} . '/' . $self->{path};
 
-    my $request = '-H "Accept: application/json"';
+    my $request = '-H "Accept: application/json" -H "Expect: "';
     if (defined $content) {
         $request = ' -H "Content-Type:' . $content_type . '"';
         if ($content_type eq 'application/json') {
             $request .= " -d  '" . to_json($content) . "'";
         }
         else { # Content-Type = 'application/octet-stream' => Content = FilePath in our case
-            $request .= ' -d @' . $content;
+            $request .= ' -T ' . $content;
         }
     }
 

@@ -14,7 +14,7 @@
 
 package OpenStack::API;
 
-use OSObject;
+use OpenStack::Object;
 use General;
 use Kanopya::Exceptions;
 
@@ -80,7 +80,7 @@ sub AUTOLOAD {
     else {
         $object->{path} = $method;
     }
-    bless $object, 'OSObject';
+    bless $object, 'OpenStack::Object';
 
     return $object;
 }
@@ -97,7 +97,7 @@ sub tenant {
         token   => $self->{token} || undef,
         token_expiration    => $self->{token_expiration} || undef,
     };
-    bless $object, 'OSObject';
+    bless $object, 'OpenStack::Object';
 
     return $object;
 }
