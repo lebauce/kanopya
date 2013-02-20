@@ -22,8 +22,8 @@ TODO
 
 =cut
 
-package EEntity::EComponent::EOpennebula3;
-use base "EEntity::EComponent";
+package EEntity::EComponent::EVirtualization::EOpennebula3;
+use base "EEntity::EComponent::EVirtualization";
 use base "EManager::EHostManager::EVirtualMachineManager";
 
 use strict;
