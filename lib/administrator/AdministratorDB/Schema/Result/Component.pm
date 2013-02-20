@@ -480,21 +480,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 opennebula3
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Opennebula3>
-
-=cut
-
-__PACKAGE__->might_have(
-  "opennebula3",
-  "AdministratorDB::Schema::Result::Opennebula3",
-  { "foreign.opennebula3_id" => "self.component_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 openssh5
 
 Type: might_have

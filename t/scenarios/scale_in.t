@@ -28,7 +28,7 @@ Log::Log4perl->easy_init({
 
 use Administrator;
 use Entity;
-use Entity::Component::Opennebula3;
+use Entity::Component::Virtualization::Opennebula3;
 use Entity::Workflow;
 use Entity::WorkflowDef;
 use Kanopya::Config;
@@ -349,7 +349,7 @@ sub _reinit_infra_cpu {
 }
 
 sub _check_init {
-        $one = Entity::Component::Opennebula3->find(hash => {});
+        $one = Entity::Component::Virtualization::Opennebula3->find(hash => {});
         my @hvs = $one->hypervisors;
         if ((scalar $hvs[0]->virtual_machines == 4) && (scalar $hvs[1]->virtual_machines == 0)) {
             ($hv1, $hv2) = ($hvs[0], $hvs[1]);

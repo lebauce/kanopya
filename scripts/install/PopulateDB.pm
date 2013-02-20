@@ -122,7 +122,7 @@ my @classes = (
     'Entity::Component::Mysql5',
     'Entity::Component::Openiscsi2',
     'Entity::Component::Openldap1',
-    'Entity::Component::Opennebula3',
+    'Entity::Component::Virtualization::Opennebula3',
     'Entity::Component::Openssh5',
     'Entity::Component::Php5',
     'Entity::Component::Snmpd5',

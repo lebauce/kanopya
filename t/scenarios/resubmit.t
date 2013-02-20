@@ -31,7 +31,7 @@ use Aggregator;
 use Orchestrator;
 use Monitor::Collector;
 use Entity;
-use Entity::Component::Opennebula3;
+use Entity::Component::Virtualization::Opennebula3;
 use Entity::ServiceProvider::Outside::Externalcluster;
 use Entity::Connector::MockMonitor;
 use Entity::Clustermetric;
@@ -83,7 +83,7 @@ sub main {
 
     #get orchestrator configuration
 
-    $one = Entity::Component::Opennebula3->find(hash => {});
+    $one = Entity::Component::Virtualization::Opennebula3->find(hash => {});
     my @hvs = $one->hypervisors;
 
     if ($hvs[0]->host_hostname eq 'one1') {

@@ -28,7 +28,7 @@ use Aggregator;
 use Orchestrator;
 use Monitor::Collector;
 use Entity;
-use Entity::Component::Opennebula3;
+use Entity::Component::Virtualization::Opennebula3;
 use VerifiedNoderule;
 use Kanopya::Config;
 
@@ -59,7 +59,7 @@ sub main {
         config    => $config,
     );
 
-    $one = Entity::Component::Opennebula3->find(hash => {});
+    $one = Entity::Component::Virtualization::Opennebula3->find(hash => {});
     my @hvs = $one->hypervisors;
     ($hv1, $hv2) = ($hvs[0], $hvs[1]);
 

@@ -15,8 +15,8 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package Entity::Component::Opennebula3;
-use base "Entity::Component";
+package Entity::Component::Virtualization::Opennebula3;
+use base "Entity::Component::Virtualization";
 use base "Manager::HostManager::VirtualMachineManager";
 
 use strict;

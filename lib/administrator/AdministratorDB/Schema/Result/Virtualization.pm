@@ -73,6 +73,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 opennebula3
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Opennebula3>
+
+=cut
+
+__PACKAGE__->might_have(
+  "opennebula3",
+  "AdministratorDB::Schema::Result::Opennebula3",
+  { "foreign.opennebula3_id" => "self.virtualization_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head1 PRIMARY KEY
 
 =over 4
