@@ -85,8 +85,8 @@ sub createExport {
 
     $mounttable->setConf(conf => { linuxes_mount => \@mountentries });
 
-    my $emounttable = EFactory::newEEntity(data => $mounttable);
-    $emounttable->_generateFstab(cluster => $cluster, host => $cluster->getMasterNode);
+    #my $emounttable = EFactory::newEEntity(data => $mounttable);
+    #$emounttable->_generateFstab(cluster => $cluster, host => $cluster->getMasterNode);
 
     my $agent = $cluster->getComponent(category => "Configurationagent");
     my $eagent = EFactory::newEEntity(data => $agent);
