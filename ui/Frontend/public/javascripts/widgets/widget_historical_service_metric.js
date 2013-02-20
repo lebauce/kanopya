@@ -93,8 +93,8 @@ function showCombinationGraph(curobj,combi_id,label,start,stop, sp_id) {
             activateWidgetPart(widget.find('.widget_part_forcasting'));
 
             // Fill models list and bind change event
-            var model_list = widget.find('.model_list').empty().unbind('change');
-            model_list.change({
+            var model_list = widget.find('.model_list');
+            model_list.unbind('change').change({
                 graph_container   : graph_container,
                 model_container   : model_container,
                 histovalues : data.first_histovalues,
@@ -105,14 +105,18 @@ function showCombinationGraph(curobj,combi_id,label,start,stop, sp_id) {
                 graph_div_id: div_id,
                 combi_id    : combi_id
             }, dataModelManagement);
-            model_list.append($('<option>', {text : 'Select a model', id : 'model_default'}));
-            $.get('/api/combination/'+combi_id+'/data_models', function (data) {
-                $(data).each( function () {
-                    model_list.append($('<option>', {id : this.pk, start : this.start_time, end : this.end_time, text : this.label}));
+
+            widget.find('.refresh_models_button').unbind().click(function() {
+                model_list.empty();
+                model_list.append($('<option>', {text : 'Select a model', id : 'model_default'}));
+                $.get('/api/combination/'+combi_id+'/data_models', function (data) {
+                    $(data).each( function () {
+                        model_list.append($('<option>', {id : this.pk, start : this.start_time, end : this.end_time, text : this.label}));
+                    });
+                    model_list.append($('<option>', {text : 'New model...', id : 'new_model'}));
+                    model_list.change();
                 });
-                model_list.append($('<option>', {text : 'New model...', id : 'new_model'}));
-                model_list.change();
-            });
+            }).click();
         }
         widget_loading_stop( widget );
     });

@@ -140,4 +140,7 @@ function widgetCommonInit(widget_elem) {
     // All .widget_part tags can be clicked to toggle the element directly under it
     widget_elem.find('.widget_part').prepend($('<span>', {'class' : 'ui-icon ui-icon-triangle-1-e' }));
     activateWidgetPart(widget_elem.find('.widget_part'));
+
+    widget_elem.find('.icon-only-refresh-button').button({ icons : { primary : 'ui-icon-refresh' }, text : false })
+    .css({'margin':'0px'});
 }
