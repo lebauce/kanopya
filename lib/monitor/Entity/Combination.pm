@@ -62,6 +62,15 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub methods {
+    return {
+        computeDataModel => {
+            description => 'Enqueue the select data model operation.',
+            perm_holder => 'entity',
+        }
+    };
+}
+
 =pod
 
 =begin classdoc
@@ -158,4 +167,41 @@ sub updateUnit {
 
 sub computeUnit {
 }
+
+
+=pod
+
+=begin classdoc
+
+Enqueue ESelectDataModel operation
+
+@param start_time define the start time of historical data taken to configure
+@param end_time define the end time of historical data taken to configure
+
+@optional node_id modeled node in case of NodemetricCombination
+
+=end classdoc
+
+=cut
+
+sub computeDataModel {
+    my ($self, %args) = @_;
+    General::checkParams(args     => \%args,
+                         required => ['start_time', 'end_time'],
+                         optional => { 'node_id' => undef });
+
+    my $params = {context => {combination => $self},
+                  start_time => $args{start_time},
+                  end_time => $args{end_time},};
+
+    if (defined $args{node_id}) {$params->{node_id} = $args{node_id}}
+
+    $log->info('Enqueuing combination id='.$self->id);
+    Entity::Operation->enqueue(
+        priority => 200,
+        type     => 'SelectDataModel',
+        params   => $params
+    );
+}
+
 1;

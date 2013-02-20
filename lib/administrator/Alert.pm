@@ -44,9 +44,9 @@ sub new {
     General::checkParams(args     => \%args, 
                          required => [ 'entity_id', 'alert_message', 'alert_signature' ]);
 
-    return $class->SUPUER::new(alert_date => \"CURRENT_DATE()",
-                               alert_time => \"CURRENT_TIME()",
-                               %args);
+    return $class->SUPER::new(alert_date => \"CURRENT_DATE()",
+                              alert_time => \"CURRENT_TIME()",
+                              %args);
 }
 
 sub mark_resolved {

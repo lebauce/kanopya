@@ -198,6 +198,9 @@ my @classes = (
     'Entity::Component::Vmm::Kvm',
     'Entity::Component::Vmm::Xen',
     'Entity::Rule',
+    'Entity::DataModel',
+    'Entity::DataModel::LinearRegression',
+    'Entity::DataModel::LogarithmicRegression',
 );
 
 sub registerClassTypes {
@@ -621,6 +624,7 @@ sub registerOperations {
         [ 'Synchronize', 'Synchronize a component' ],
         [ 'FlushHypervisor', 'Compute flush hypervisor plan' ],
         [ 'ResubmitHypervisor', 'Resubmit hypervisor virtual machines' ],
+        [ 'SelectDataModel', 'Compute the best data model of a combination' ],
     ];
 
     for my $operation (@{$operations}) {

@@ -190,6 +190,21 @@ __PACKAGE__->add_unique_constraint("node_hostname", ["node_hostname", "service_p
 
 =head1 RELATIONS
 
+=head2 data_models
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::DataModel>
+
+=cut
+
+__PACKAGE__->has_many(
+  "data_models",
+  "AdministratorDB::Schema::Result::DataModel",
+  { "foreign.node_id" => "self.node_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 host
 
 Type: belongs_to
