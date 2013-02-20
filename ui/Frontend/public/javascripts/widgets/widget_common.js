@@ -121,17 +121,18 @@ function getPickedDate(widget) {
 }
 
 function activateWidgetPart(elems) {
-    elems.unbind().click( function() {
+    elems.not('.widget-part-enable').unbind().click( function() {
         $(this).find('span').toggleClass('ui-icon-triangle-1-e ui-icon-triangle-1-s');
         $(this).next().toggle('slide');
     })
     .css({'color': '#555', 'font-size': '0.83em', 'font-weight': 'bold'}).attr('title', '')
-    .addClass('clickable')
+    .addClass('clickable widget-part-enable')
     .next().css({'border-style':'groove none'}).hide();
 }
 
 function deactivateWidgetPart(elems, title) {
     elems.unbind().css({'color': '#999', 'font-size': '0.83em', 'font-weight': 'bold'}).attr('title', title);
+    elems.removeClass('widget-part-enable');
     elems.find('span').removeClass('ui-icon-triangle-1-s').addClass('ui-icon-triangle-1-e');
     elems.next().hide();
 }
