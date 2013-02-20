@@ -7,7 +7,7 @@ use warnings;
 
 use Getopt::Long;
 
-use Administrator;
+use BaseDB;
 use Entity;
 use Kanopya::Tools::TimeSerie;
 
@@ -58,7 +58,7 @@ $time_serie->graph();
 $time_serie->display(format => $format) if $display;
 
 if (defined $linkto) {
-    Administrator::authenticate(login => 'admin', password => 'K4n0pY4');
+    BaseDB->authenticate(login => 'admin', password => 'K4n0pY4');
     my $metric = Entity->get( id => $linkto );
     $time_serie->linkToMetric( metric => $metric );
 }
