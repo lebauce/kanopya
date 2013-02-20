@@ -143,5 +143,5 @@ function widgetCommonInit(widget_elem) {
     activateWidgetPart(widget_elem.find('.widget_part'));
 
     widget_elem.find('.icon-only-refresh-button').button({ icons : { primary : 'ui-icon-refresh' }, text : false })
-    .css({'margin':'0px'});
+    .css({'margin':'0px 0px 0px 10px'});
 }
