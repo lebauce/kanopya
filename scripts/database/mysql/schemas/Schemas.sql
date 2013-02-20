@@ -1822,7 +1822,7 @@ CREATE TABLE `data_model` (
   KEY(`combination_id`),
   FOREIGN KEY (`combination_id`) REFERENCES `combination` (`combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY(`node_id`),
-  FOREIGN KEY (`node_id`) REFERENCES `externalnode` (`externalnode_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`node_id`) REFERENCES `node` (`node_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`param_preset_id`),
   FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
