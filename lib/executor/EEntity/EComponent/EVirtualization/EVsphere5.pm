@@ -24,9 +24,9 @@ EVsphere
 
 =cut
 
-package EEntity::EComponent::EVsphere5;
+package EEntity::EComponent::EVirtualization::EVsphere5;
 
-use base "EEntity::EComponent";
+use base "EEntity::EComponent::EVirtualization";
 use base "EManager::EHostManager::EVirtualMachineManager";
 
 use strict;
