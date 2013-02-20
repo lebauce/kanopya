@@ -8,7 +8,7 @@ use ComponentType;
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
     level=>'DEBUG',
-    file=>'start_sles_iaas.log',
+    file=>'/vagrant/StartSLESIaaS.t.log',
     layout=>'%F %L %p %m%n'
 });
 
@@ -29,6 +29,11 @@ use NetconfPoolip;
 use Entity::Operation;
 use Entity::ServiceTemplate;
 
+use Kanopya::Tools::Execution;
+use Kanopya::Tools::Register;
+use Kanopya::Tools::Retrieve;
+use Kanopya::Tools::Create;
+
 my $testing = 0;
 
 eval {
@@ -40,20 +45,28 @@ eval {
     }
 
     diag('Register master image');
-    my $sles_on = Kanopya::Tools::Register::registerMasterImage("sles-11-opennebula-3-6.img.tar.bz2");
+    my $sles_on = Kanopya::Tools::Register::registerMasterImage();
+
+    diag('Setting the default gateway');
+    my $kanopya = Kanopya::Tools::Retrieve::retrieveCluster();
+    my $network = Entity::Network->find(hash => { network_name => "admin" });
+    $network->setAttr(name  => "network_gateway",
+                      value => $kanopya->getMasterNode->adminIp);
+    $network->save();
 
     diag ('create iaas cluster');
     my $iaas = Kanopya::Tools::Create->createIaasCluster(
                    cluster_conf => {
-                       cluster_name => 'OpenNebula',
+                       cluster_name         => 'OpenNebula',
                        cluster_basehostname => 'opennebula',
-                       masterimage_id => $sles_on->id,
+                       masterimage_id       => $sles_on->id,
+                       default_gateway_id   => $network->id
                    }
                );
 
     diag('Start hypervisor');
     lives_ok {
-        Kanopya::Tools::Execution->startCluster(cluster => $cluster);
+        # Kanopya::Tools::Execution->startCluster(cluster => $iaas);
     } 'Start opennebula iaas cluster';
 
     diag('Register master image');
@@ -75,7 +88,7 @@ eval {
 
     diag('Start vm');
     lives_ok {
-        Kanopya::Tools::Execution->startCluster(cluster => $vm_cluster);
+        # Kanopya::Tools::Execution->startCluster(cluster => $vm_cluster);
     } 'Start vm cluster';
 
 
