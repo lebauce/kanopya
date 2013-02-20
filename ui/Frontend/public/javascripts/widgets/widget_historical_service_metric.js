@@ -4,6 +4,7 @@ $('.widget').live('widgetLoadContent',function(e, obj){
     // Check if loaded widget is for us
     if (obj.widget.element.find('.clusterCombinationView').length == 0) {return;}
 
+    setGraphDatePicker(obj.widget.element, obj.widget);
     widgetCommonInit(obj.widget.element);
 
      var sp_id = obj.widget.metadata.service_id;
@@ -12,7 +13,6 @@ $('.widget').live('widgetLoadContent',function(e, obj){
              sp_id
      );
 
-     setGraphDatePicker(obj.widget.element, obj.widget);
 });
 
 function fillServiceMetricCombinationList (widget, sp_id) {
