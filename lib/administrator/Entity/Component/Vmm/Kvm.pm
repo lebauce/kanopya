@@ -35,5 +35,6 @@ sub getPuppetDefinition {
     my ($self, %args) = @_;
 
     return "class { 'kanopya::kvm': }\n";
+}
 
 1;
