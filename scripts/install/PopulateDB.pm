@@ -74,7 +74,7 @@ use Entity::Component::Linux::Redhat;
 use Entity::Component::Linux::Suse;
 use Entity::Component::Mailnotifier0;
 use Entity::Component::Openstack::NovaController;
-use Entity::Component::Openstack::NovaCompute;
+use Entity::Component::Virtualization::NovaCompute;
 use Entity::Component::Openstack::Glance;
 use Entity::Component::Openstack::Keystone;
 use Entity::Component::Openstack::Quantum;
@@ -130,7 +130,7 @@ my @classes = (
     'Entity::Component::Nfsd3',
     'Entity::Component::Storage',
     'Entity::Component::Openstack::NovaController',
-    'Entity::Component::Openstack::NovaCompute',
+    'Entity::Component::Virtualization::NovaCompute',
     'Entity::Component::Openstack::Quantum',
     'Entity::Component::Openstack::Keystone',
     'Entity::Component::Openstack::Glance',

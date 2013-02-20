@@ -1831,6 +1831,7 @@ CREATE TABLE repository (
     `virtualization_id` int(8) unsigned NOT NULL,
     PRIMARY KEY (`repository_id`),
     FOREIGN KEY (`repository_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+    KEY (`virtualization_id`),
     FOREIGN KEY (`virtualization_id`) REFERENCES `virtualization` (`virtualization_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

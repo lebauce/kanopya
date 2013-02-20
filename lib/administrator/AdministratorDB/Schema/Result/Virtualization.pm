@@ -58,6 +58,21 @@ __PACKAGE__->add_columns(
   },
 );
 
+=head2 nova_compute
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::NovaCompute>
+
+=cut
+
+__PACKAGE__->might_have(
+  "nova_compute",
+  "AdministratorDB::Schema::Result::NovaCompute",
+  { "foreign.nova_compute_id" => "self.virtualization_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head1 PRIMARY KEY
 
 =over 4
