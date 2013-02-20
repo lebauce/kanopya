@@ -327,6 +327,11 @@ var KanopyaFormWizard = (function() {
                 });
             }
 
+            // insert yes/no values for boolean select
+            if (attr.type === 'boolean') {
+                attr.options = { 0 : 'No', 1 : 'Yes' };
+            }
+
             // Inserting select options
             for (var i in attr.options) if (attr.options.hasOwnProperty(i)) {
                 var optiontext  = attr.options[i].label || attr.options[i].pk || attr.options[i];
@@ -370,7 +375,7 @@ var KanopyaFormWizard = (function() {
             }
 
         } else if ((toInputType(attr.type) === 'select' && attr.relation === 'single') ||
-                   (attr.type === 'enum' && attr.relation !== 'multi')) {
+                   ((attr.type === 'enum' || attr.type === 'boolean') && attr.relation !== 'multi')) {
             var option = $("<option>", { value : '', text : '-' }).prependTo(input);
             if (value === undefined) {
                 $(option).attr('selected', 'selected');
