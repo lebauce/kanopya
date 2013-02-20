@@ -127,6 +127,7 @@ function widgetCommonInit(widget_elem) {
         $(this).next().toggle('slide');
     })
     .prepend($('<span>', {'class' : 'ui-icon ui-icon-triangle-1-e' }))
+    .css({'color': '#555', 'font-size': '0.83em', 'font-weight': 'bold'})
     .addClass('clickable')
-    .next().addClass('hidden');
+    .next().css({'border-style':'groove none'}).hide();
 }
