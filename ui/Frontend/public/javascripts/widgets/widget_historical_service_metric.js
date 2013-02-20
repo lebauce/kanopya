@@ -80,7 +80,8 @@ function showCombinationGraph(curobj,combi_id,label,start,stop, sp_id) {
     var params = {id:combi_id,start:start,stop:stop};
     $.getJSON(clustersview_url, params, function(data) {
         if (data.error) {
-            graph_container.append($('<div>', {'class' : 'ui-state-highlight ui-corner-all', html: data.error}));
+            graph_container.append('<br>').append($('<div>', {'class' : 'ui-state-highlight ui-corner-all', html: data.error}));
+            deactivateWidgetPart(widget.find('.widget_part_forcasting'), 'You must have data on the graph to forecast');
         } else {
             var button = '<input type=\"button\" value=\"refresh\" id=\"cb_button\" onclick=\"c_replot()\"/>';
             var div_id = 'cluster_combination_graph_' + widget_id;
@@ -88,6 +89,8 @@ function showCombinationGraph(curobj,combi_id,label,start,stop, sp_id) {
             graph_container.css('display', 'block');
             graph_container.append(div);
             timedGraph([data.first_histovalues], data.min, data.max, label, data.unit, div_id);
+
+            activateWidgetPart(widget.find('.widget_part_forcasting'));
 
             // Fill models list and bind change event
             var model_list = widget.find('.model_list').empty().unbind('change');

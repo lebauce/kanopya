@@ -120,14 +120,24 @@ function getPickedDate(widget) {
     };
 }
 
-function widgetCommonInit(widget_elem) {
-    // All .widget_part tags can be clicked to toggle the element directly under it
-    widget_elem.find('.widget_part').click( function() {
+function activateWidgetPart(elems) {
+    elems.unbind().click( function() {
         $(this).find('span').toggleClass('ui-icon-triangle-1-e ui-icon-triangle-1-s');
         $(this).next().toggle('slide');
     })
-    .prepend($('<span>', {'class' : 'ui-icon ui-icon-triangle-1-e' }))
-    .css({'color': '#555', 'font-size': '0.83em', 'font-weight': 'bold'})
+    .css({'color': '#555', 'font-size': '0.83em', 'font-weight': 'bold'}).attr('title', '')
     .addClass('clickable')
     .next().css({'border-style':'groove none'}).hide();
+}
+
+function deactivateWidgetPart(elems, title) {
+    elems.unbind().css({'color': '#999', 'font-size': '0.83em', 'font-weight': 'bold'}).attr('title', title);
+    elems.find('span').removeClass('ui-icon-triangle-1-s').addClass('ui-icon-triangle-1-e');
+    elems.next().hide();
+}
+
+function widgetCommonInit(widget_elem) {
+    // All .widget_part tags can be clicked to toggle the element directly under it
+    widget_elem.find('.widget_part').prepend($('<span>', {'class' : 'ui-icon ui-icon-triangle-1-e' }));
+    activateWidgetPart(widget_elem.find('.widget_part'));
 }
