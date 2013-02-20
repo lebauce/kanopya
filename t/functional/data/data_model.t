@@ -24,10 +24,10 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use Administrator;
-use Entity::ServiceProvider::Outside::Externalcluster;
-use Externalnode;
-use Entity::Connector::MockMonitor;
+use BaseDB;
+use Entity::ServiceProvider::Externalcluster;
+use Node;
+use Entity::Component::MockMonitor;
 use Entity::Clustermetric;
 use Entity::Combination::AggregateCombination;
 use Entity::Combination::NodemetricCombination;
@@ -57,11 +57,10 @@ my $cm;
 main();
 
 sub main {
-    Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-    my $adm = Administrator->new;
+    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if ($testing == 1) {
-        $adm->beginTransaction;
+        BaseDB->beginTransaction;
     }
 
     setup();
@@ -77,7 +76,7 @@ sub main {
     clean();
 
     if ($testing == 1) {
-        $adm->rollbackTransaction;
+        BaseDB->rollbackTransaction;
     }
 }
 
@@ -382,29 +381,29 @@ sub linear_regression_configure {
 sub setup {
 
     srand(1);
-    $service_provider = Entity::ServiceProvider::Outside::Externalcluster->new(
+    $service_provider = Entity::ServiceProvider::Externalcluster->new(
                             externalcluster_name => 'Test Service Provider',
                         );
 
-    $external_cluster_mockmonitor = Entity::ServiceProvider::Outside::Externalcluster->new(
+    $external_cluster_mockmonitor = Entity::ServiceProvider::Externalcluster->new(
                                         externalcluster_name => 'Test Monitor',
                                     );
 
-    my $mock_monitor = Entity::Connector::MockMonitor->new(
+    my $mock_monitor = Entity::Component::MockMonitor->new(
                            service_provider_id => $external_cluster_mockmonitor->id,
                        );
 
     $service_provider->addManager(
         manager_id      => $mock_monitor->id,
-        manager_type    => 'collector_manager',
+        manager_type    => 'CollectorManager',
         no_default_conf => 1,
     );
 
     # Create node 1
-    $node_1 = Externalnode->new(
-                  externalnode_hostname => 'node_1',
+    $node_1 = Node->new(
+                  node_hostname         => 'node_1',
                   service_provider_id   => $service_provider->id,
-                  externalnode_state    => 'up',
+                  monitoring_state      => 'up',
               );
 
     # Get indicators
