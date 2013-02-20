@@ -196,12 +196,13 @@ sub time_label {
 
     my $time = time;    # or any other epoch timestamp
     my @months = ("Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec");
+    my $format = '%02i-%02i-%02i %02i:%02i';
 
     my ($sec, $min, $hour, $day,$month,$year) = (localtime($self->start_time))[0,1,2,3,4,5];
-    my $start_date = $months[$month]." ".$day.", ".($year+1900)." ".$hour.":".$min.":".$sec;
+    my $start_date = sprintf($format, $month+1, $day, ($year+1900)%100, $hour, $min);
 
     ($sec, $min, $hour, $day,$month,$year) = (localtime($self->end_time))[0,1,2,3,4,5];
-    my $end_date = $months[$month]." ".$day.", ".($year+1900)." ".$hour.":".$min.":".$sec;
+    my $end_date = sprintf($format, $month+1, $day, ($year+1900)%100, $hour, $min);
 
     return "[$start_date -> $end_date]";
 }
