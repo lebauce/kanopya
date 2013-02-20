@@ -129,6 +129,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 amqp
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Amqp>
+
+=cut
+
+__PACKAGE__->might_have(
+  "amqp",
+  "AdministratorDB::Schema::Result::Amqp",
+  { "foreign.amqp_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 apache2
 
 Type: might_have
@@ -239,6 +254,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 containers
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Container>
+
+=cut
+
+__PACKAGE__->has_many(
+  "containers",
+  "AdministratorDB::Schema::Result::Container",
+  { "foreign.disk_manager_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 dhcpd3
 
 Type: might_have
@@ -266,6 +296,21 @@ __PACKAGE__->might_have(
   "fileimagemanager0",
   "AdministratorDB::Schema::Result::Fileimagemanager0",
   { "foreign.fileimagemanager0_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 glance
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Glance>
+
+=cut
+
+__PACKAGE__->might_have(
+  "glance",
+  "AdministratorDB::Schema::Result::Glance",
+  { "foreign.glance_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -356,6 +401,21 @@ __PACKAGE__->might_have(
   "keepalived1",
   "AdministratorDB::Schema::Result::Keepalived1",
   { "foreign.keepalived_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 keystone
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Keystone>
+
+=cut
+
+__PACKAGE__->might_have(
+  "keystone",
+  "AdministratorDB::Schema::Result::Keystone",
+  { "foreign.keystone_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -494,6 +554,36 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 nova_compute
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::NovaCompute>
+
+=cut
+
+__PACKAGE__->might_have(
+  "nova_compute",
+  "AdministratorDB::Schema::Result::NovaCompute",
+  { "foreign.nova_compute_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 nova_controller
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::NovaController>
+
+=cut
+
+__PACKAGE__->might_have(
+  "nova_controller",
+  "AdministratorDB::Schema::Result::NovaController",
+  { "foreign.nova_controller_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 openiscsi2
 
 Type: might_have
@@ -611,6 +701,21 @@ __PACKAGE__->might_have(
   "puppetmaster2",
   "AdministratorDB::Schema::Result::Puppetmaster2",
   { "foreign.puppetmaster2_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 quantum
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Quantum>
+
+=cut
+
+__PACKAGE__->might_have(
+  "quantum",
+  "AdministratorDB::Schema::Result::Quantum",
+  { "foreign.quantum_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -800,8 +905,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-02-04 17:48:40
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Z8mK8iBtsdiU4Tcny/Racw
+# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-02-20 20:23:22
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:k+9DTIBGdWoI4A6o69tnPg
 
 __PACKAGE__->belongs_to(
   "parent",

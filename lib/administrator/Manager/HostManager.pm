@@ -174,9 +174,9 @@ sub removeHost {
     );
 }
 
-
 sub getOvercommitmentFactors {
     my ($self) = @_;
+
     return {
         overcommitment_cpu_factor    => 1.0,
         overcommitment_memory_factor => 1.0,

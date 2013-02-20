@@ -71,6 +71,12 @@ use Entity::Component::Linux::Debian;
 use Entity::Component::Linux::Redhat;
 use Entity::Component::Linux::Suse;
 use Entity::Component::Mailnotifier0;
+use Entity::Component::Openstack::NovaController;
+use Entity::Component::Openstack::NovaCompute;
+use Entity::Component::Openstack::Glance;
+use Entity::Component::Openstack::Keystone;
+use Entity::Component::Openstack::Quantum;
+use Entity::Component::Amqp;
 use NetconfInterface;
 use NetconfPoolip;
 use NetconfIface;
@@ -122,7 +128,14 @@ my @classes = (
     'Entity::Component::Storage',
     'Entity::Component::ActiveDirectory',
     'Entity::Component::Scom',
+    'Entity::Component::Amqp',
     'Entity::ServiceProvider::Externalcluster',
+    'Entity::Component::Openstack::NovaController',
+    'Entity::Component::Openstack::NovaCompute',
+    'Entity::Component::Openstack::Quantum',
+    'Entity::Component::Openstack::Keystone',
+    'Entity::Component::Openstack::Glance',
+    'Entity::Component::Openstack::OpenstackRepository',
     'Entity::Component::Physicalhoster0',
     'Entity::Poolip',
     'Entity::Vlan',
@@ -156,6 +169,8 @@ my @classes = (
     'Entity::Host::VirtualMachine',
     'Entity::Host::Hypervisor::Opennebula3Hypervisor',
     'Entity::Host::VirtualMachine::Opennebula3Vm',
+    'Entity::Host::Hypervisor::OpenstackHypervisor',
+    'Entity::Host::VirtualMachine::OpenstackVm',
     'Entity::Component::Mailnotifier0',
     'Entity::Host::VirtualMachine::Opennebula3Vm::Opennebula3KvmVm',
     'Entity::ServiceTemplate',
@@ -362,11 +377,7 @@ sub registerUsers {
     for my $classtype (@classes) {
         BaseDB::requireClass($classtype);
 
-        my $parenttype = BaseDB::_parentClass($classtype);
-        my $methods    = $classtype->getMethods();
-        for my $parentmethod (keys %{$parenttype->getMethods()}) {
-            delete $methods->{$parentmethod};
-        }
+        my $methods    = $classtype->getMethods(depth => 1);
 
         my @methodlist = keys %$methods;
         if (scalar (@methodlist)) {
@@ -938,6 +949,42 @@ sub registerComponents {
             component_categories   => [ 'DiskManager', 'ExportManager' ],
             service_provider_types => [ 'Netapp' ],
         },
+        { 
+            component_name         => 'Glance',
+            component_version      => 6,
+            component_categories   => [ ],
+            service_provider_types => [ 'Cluster' ],
+        },
+        { 
+            component_name         => 'Keystone',
+            component_version      => 6,
+            component_categories   => [ ],
+            service_provider_types => [ 'Cluster' ],
+        },
+        { 
+            component_name         => 'NovaCompute',
+            component_version      => 6,
+            component_categories   => [ ],
+            service_provider_types => [ 'Cluster' ],
+        },
+        { 
+            component_name         => 'NovaController',
+            component_version      => 6,
+            component_categories   => [ 'HostManager' ],
+            service_provider_types => [ 'Cluster' ],
+        },
+        { 
+            component_name         => 'Quantum',
+            component_version      => 6,
+            component_categories   => [ ],
+            service_provider_types => [ 'Cluster' ],
+        },
+        { 
+            component_name         => 'Amqp',
+            component_version      => 6,
+            component_categories   => [ ],
+            service_provider_types => [ 'Cluster' ],
+        },
     ];
 
     for my $component_type (@{$components}) {
@@ -1242,6 +1289,9 @@ sub registerKanopyaMaster {
     $config->{cluster}->{monitor} = $kanopya->id;
     $config->{cluster}->{nas} = $kanopya->id;
 
+    my $hostname = `hostname`;
+    chomp($hostname);
+
     Kanopya::Config::set(subsystem => 'executor',
                          config    => $config);
 
@@ -1307,7 +1357,9 @@ sub registerKanopyaMaster {
         {
             name => "Puppetagent",
             conf => {
-                puppetagent2_mode => "kanopya"
+                puppetagent2_mode       => "kanopya",
+                puppetagent2_masterfqdn => $hostname . '.' . $args{admin_domainname},
+                puppetagent2_masterip   => $args{poolip_addr}
             }
         },
         {
@@ -1409,9 +1461,6 @@ sub registerKanopyaMaster {
         $month = '0' . $month;
     }
    
-    my $hostname = `hostname`;
-    chomp($hostname);
-
     my $kanopya_initiator = "iqn.$year-$month."
         . join('.', reverse split(/\./, $domain)) . ':' . time();
 

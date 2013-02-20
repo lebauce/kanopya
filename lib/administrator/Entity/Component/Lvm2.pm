@@ -341,7 +341,7 @@ sub getFreeSpace {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return "class { 'lvm': }\n";
+    return "class { 'kanopya::lvm': }\n";
 }
 
 1;

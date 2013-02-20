@@ -312,17 +312,23 @@ in the hierarchy, it also support miulti inherintance by using Class::ISA::self_
 =cut
 
 sub getMethods {
-    my $self  = shift;
+    my ($self, %args) = @_;
     my $class = ref($self) || $self;
+
+    General::checkParams(args => \%args, optional => { 'depth' => undef });
 
     my $methods = {};
     my @supers  = Class::ISA::self_and_super_path($class);
     my $merge   = Hash::Merge->new();
 
+    $args{depth} = $args{depth} or scalar @supers;
+
+    SUPER:
     for my $sup (@supers) {
         if ($sup->can('methods')) {
             $methods = $merge->merge($methods, $sup->methods());
         }
+        last SUPER if --$args{depth} == 0;
      }
      return $methods;
 }
@@ -407,11 +413,10 @@ sub getAttrDefs {
             $attributedefs->{$modulename} = $attr_def;
         }
 
-        if (scalar(@hierarchy) > 1) {
-            $modulename = _parentClass($modulename);
-        }
-
         pop @hierarchy;
+        if (scalar(@hierarchy) > 0) {
+            $modulename = join('::', @hierarchy);
+        }
     }
 
     my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
@@ -627,7 +632,7 @@ sub fromDBIx {
     };
     if ($@) {
         my $err = $@;
-        $modulename = $class->getClassType(class => $modulename);
+        $modulename = $class->getClassType(class => $modulename) || $modulename;
         requireClass($modulename);
     }
 
@@ -907,7 +912,7 @@ sub getClassType {
                 return $class_type;
             }
         }
-        return $args{class};
+        return undef;
     }
 
     return "BaseDB";
@@ -1456,7 +1461,7 @@ sub toJSON {
 
     if ($args{model}) {
         my $table = _buildClassNameFromString($class);
-        my @hierarchy = split(/::/, $class);
+        my @hierarchy = getClassHierarchy($class);
         my $depth = scalar @hierarchy;
         my $current = $depth;
         my $parent;
@@ -1570,7 +1575,7 @@ sub populateRelations {
         my $relation_schema = $self->{_dbix}->$relation->result_source;
         my $relationclass = classFromDbix($relation_schema);
 
-        $relationclass = $class->getClassType(class => $relationclass);
+        $relationclass = $class->getClassType(class => $relationclass) || $relationclass;
         requireClass($relationclass);
 
         # Deduce the foreign key attr for link entries in relations multi
@@ -1995,26 +2000,6 @@ sub id {
     return $self->{_dbix}->get_column($self->getPrimaryKey);
 }
 
-
-=pod
-
-=begin classdoc
-
-@param $class the full class name with the hierachy
-
-@return the parent class name
-
-=end classdoc
-
-=cut
-
-sub _parentClass {
-    my ($class) = @_;
-    $class =~ s/\:\:[a-zA-Z0-9]+$//g;
-    return $class;
-}
-
-
 =pod
 
 =begin classdoc
@@ -2032,7 +2017,6 @@ sub _childClass {
     $class =~ s/^[a-zA-Z0-9]+\:\://g;
     return $class;
 }
-
 
 =pod
 
@@ -2168,14 +2152,19 @@ sub classFromDbix {
     my $source = shift;
     my $args = @_;
 
-    my $name = ucfirst($source->from);
+    my $name = normalizeName($source->from);
+    my $class = getClassType(class => $name);
+    if (!$class) {
+        while (1) {
+            last if not $source->has_relationship("parent");
+            $source = $source->related_source("parent");
+            $name = ucfirst($source->from) . "::" . $name;
+        }
 
-    while (1) {
-        last if not $source->has_relationship("parent");
-        $source = $source->related_source("parent");
-        $name = ucfirst($source->from) . "::" . $name;
+        $class = normalizeName($name);
     }
-    return normalizeName($name);
+
+    return $class;
 }
 
 =pod

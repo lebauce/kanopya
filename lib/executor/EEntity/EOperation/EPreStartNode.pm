@@ -43,9 +43,9 @@ sub prepare {
 
     General::checkParams(args => $self->{params}, required => [ "node_number" ]);
 
-    my $master_node_id = $self->{context}->{cluster}->getMasterNodeId();
+    my $master_node = $self->{context}->{cluster}->getMasterNode;
     my $node_count = $self->{context}->{cluster}->getCurrentNodesCount();
-    if (! $master_node_id && $node_count){
+    if (! $master_node && $node_count){
         $errmsg = "No master node when host <" . $self->{context}->{host}->id . "> migrating, pls wait...";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);

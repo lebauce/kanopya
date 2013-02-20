@@ -91,7 +91,7 @@ sub execute {
 
     $self->SUPER::execute();
 
-    if (not $self->{context}->{cluster}->getMasterNodeId()) {
+    if (not $self->{context}->{cluster}->getMasterNode) {
         $self->{context}->{host}->becomeMasterNode();
     }
 

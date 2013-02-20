@@ -112,12 +112,11 @@ sub prepare {
     $self->SUPER::prepare();
     General::checkParams(args => $self->{context}, required => [ 'host', 'cluster' ]);
 
+    my $master_node = $self->{context}->{cluster}->getMasterNode;
+    my $node_count  = $self->{context}->{cluster}->getCurrentNodesCount();
+    my $host_id     = $self->{context}->{host}->id;
 
-    my $master_node_id = $self->{context}->{cluster}->getMasterNodeId();
-    my $node_count     = $self->{context}->{cluster}->getCurrentNodesCount();
-    my $host_id        = $self->{context}->{host}->getAttr(name => 'entity_id');
-
-    if ($node_count > 1 && $master_node_id == $host_id){
+    if ($master_node && $node_count > 1 && $master_node->id == $host_id) {
         $errmsg = "Node <$host_id> is master node and not alone";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg, hidden => 1);

@@ -13,7 +13,23 @@ AdministratorDB::Schema::Result::VirtualMachine
 use strict;
 use warnings;
 
-use base 'DBIx::Class::Core';
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
 
 =head1 TABLE: C<virtual_machine>
 
@@ -113,6 +129,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 openstack_vm
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::OpenstackVm>
+
+=cut
+
+__PACKAGE__->might_have(
+  "openstack_vm",
+  "AdministratorDB::Schema::Result::OpenstackVm",
+  { "foreign.openstack_vm_id" => "self.virtual_machine_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 virtual_machine
 
 Type: belongs_to
@@ -144,8 +175,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2012-08-23 17:42:38
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:pnr6ByVqEjDoAwlJHcCuJA
+# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-02-14 19:04:08
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:gLO2I/7K1xsvgc8St9TD7Q
 
 __PACKAGE__->belongs_to(
   "parent",

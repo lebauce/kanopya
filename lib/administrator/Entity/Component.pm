@@ -165,19 +165,6 @@ sub setConf {
     General::checkParams(args => \%args, required => ['conf']);
 
     $self->update(%{ $args{conf} });
-
-    #my $current_conf = $self->getConf;
-
-    #my $updated = 0;
-    #for my $attr (keys %{$args{conf}}) {
-    #    if ($current_conf->{$attr} ne $args{conf}->{$attr}) {
-    #        $self->setAttr(name => $attr, value => $args{conf}->{$attr});
-    #        $updated = 1;
-    #    }
-    #}
-    #if ($updated) {
-    #    $self->save();
-    #}
 }
 
 =head2 getTemplateDirectory

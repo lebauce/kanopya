@@ -719,23 +719,6 @@ sub getMasterNodeIp {
     return;
 }
 
-sub getMasterNodeFQDN {
-    my $self = shift;
-
-    return $self->getMasterNode()->node->node_hostname . '.' . $self->cluster_domainname;
-}
-
-sub getMasterNodeId {
-    my $self = shift;
-    my $host = $self->getMasterNode;
-
-    if (defined ($host)) {
-        return $host->id;
-    }
-
-    return;
-}
-
 sub getMasterNodeSystemimage {
     my $self = shift;
 
@@ -750,6 +733,48 @@ sub getHosts {
 
     my @hosts = map { $_->host } $self->nodes;
     return wantarray ? @hosts : \@hosts;
+}
+
+=head2 getHostEntries
+
+    Desc : This function returns all the host entries (ip, fqdn, aliases)
+           for a cluster.
+    return : a list of hashref
+
+=cut
+
+sub getHostEntries {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { "components" => undef });
+
+    my $executor = Entity->get(id => Kanopya::Config::get("executor")->{cluster}->{executor});
+    my @host_entries;
+
+    # we add each nodes
+    foreach my $node ($self->getHosts()) {
+        push @host_entries, {
+            fqdn    => $node->fqdn,
+            aliases => [ $node->host_hostname . "." . $executor->cluster_domainname,
+                         $node->host_hostname ],
+            ip      => $node->adminIp
+        };
+    }
+
+    if ($args{components}) {
+        # we ask components for additional hosts entries
+        my @components = $self->getComponents(category => 'all');
+        foreach my $component (@components) {
+            my $entries = $component->getHostsEntries();
+            if (defined $entries) {
+                foreach my $entry (@$entries) {
+                    push @host_entries, $entry;
+                }
+            }
+        }
+    }
+
+    return @host_entries;
 }
 
 =head2 getHostManager

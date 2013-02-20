@@ -28,6 +28,7 @@ TODO
 package Manager::HostManager::VirtualMachineManager;
 use base "Manager::HostManager";
 
+use Entity::Host::Hypervisor;
 use Entity::Host::VirtualMachine;
 use Entity::Iface;
 use Entity::Workflow;
@@ -100,7 +101,7 @@ sub scaleHost {
 
     General::checkParams(args => \%args, required => [ 'host_id', 'scalein_value', 'scalein_type' ]);
 
-    my $host = Entity->get(id => $args{host_id});
+    my $host = Entity::Host::VirtualMachine->get(id => $args{host_id});
 
     my $wf_params = {
         scalein_value => $args{scalein_value},
@@ -120,9 +121,25 @@ sub scaleHost {
 =cut
 
 sub migrate {
-    throw Kanopya::Exception::NotImplemented();
-}
+    my ($self, %args) = @_;
 
+    General::checkParams(args => \%args, required => [ 'host_id', 'hypervisor_id' ]);
+
+    my $hypervisor = Entity::Host::Hypervisor->get(id => $args{hypervisor_id});
+    my $wf_params = {
+        context => {
+            vm   => Entity::Host::VirtualMachine->get(id => $args{host_id}),
+            host => $hypervisor,
+            cloudmanager_comp => $self
+        }
+    };
+
+    return Entity::Workflow->run(
+        name       => 'MigrateWorkflow',
+        related_id => $hypervisor->getClusterId(),
+        params     => $wf_params
+    );
+}
 
 =pod
 
@@ -139,7 +156,6 @@ Abstract method to get the list of hypervisors managed by this host manager.
 sub hypervisors {
     throw Kanopya::Exception::NotImplemented();
 }
-
 
 sub hostType {
     return "Virtual Machine";

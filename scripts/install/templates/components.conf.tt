@@ -33,3 +33,5 @@ suse
 kvm
 xen
 openssh5
+openstack
+amqp

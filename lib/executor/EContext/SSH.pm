@@ -199,7 +199,7 @@ sub send {
         $self->_init();
     }
 
-    my $success = $self->{ssh}->scp_put({}, $args{src}, $args{dest});
+    my $success = $self->{ssh}->scp_put({ recursive => 1 }, $args{src}, $args{dest});
     # return TRUE if success
     if(not $success) {
         $errmsg = "EContext::SSH->send failed while putting $args{src} to $args{dest}!";

@@ -117,7 +117,7 @@ sub getPuppetDefinition {
     my ($self, %args) = @_;
 
     my $definitions = "class { 'apache': }\n" .
-                      "class { 'mod_status': }\n";
+                      "class { 'kanopya::mod_status': }\n";
 
     for my $vhost ($self->apache2_virtualhosts) {
         $definitions .= "apache::vhost {\n";

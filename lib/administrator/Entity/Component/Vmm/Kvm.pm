@@ -34,7 +34,7 @@ sub getAttrDef { return ATTR_DEF; }
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return "class { 'kvm': }\n";
+    return "class { 'kanopya::kvm': }\n";
 }
 
 1;

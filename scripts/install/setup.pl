@@ -722,7 +722,9 @@ sub generatePuppetConfiguration {
         }
     );
 
-    writeFile('/etc/puppet/manifests/site.pp', "import \"nodes/*.pp\"\n");
+    writeFile('/etc/puppet/manifests/site.pp',
+              "stage { 'system': before => Stage['main'], }\n" .
+              "import \"nodes/*.pp\"\n");
 
     use Kanopya::Config;
     use EEntity;

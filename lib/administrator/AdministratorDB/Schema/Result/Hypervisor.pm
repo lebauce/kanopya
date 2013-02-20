@@ -1,17 +1,37 @@
+use utf8;
 package AdministratorDB::Schema::Result::Hypervisor;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
-
-
 =head1 NAME
 
 AdministratorDB::Schema::Result::Hypervisor
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
+
+=head1 TABLE: C<hypervisor>
 
 =cut
 
@@ -37,6 +57,17 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</hypervisor_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("hypervisor_id");
 
 =head1 RELATIONS
@@ -71,18 +102,18 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 vsphere5_hypervisor
+=head2 openstack_hypervisor
 
 Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::Vsphere5Hypervisor>
+Related object: L<AdministratorDB::Schema::Result::OpenstackHypervisor>
 
 =cut
 
 __PACKAGE__->might_have(
-  "vsphere5_hypervisor",
-  "AdministratorDB::Schema::Result::Vsphere5Hypervisor",
-  { "foreign.vsphere5_hypervisor_id" => "self.hypervisor_id" },
+  "openstack_hypervisor",
+  "AdministratorDB::Schema::Result::OpenstackHypervisor",
+  { "foreign.openstack_hypervisor_id" => "self.hypervisor_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -101,9 +132,24 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 vsphere5_hypervisor
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-07-19 15:18:02
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:SWFjJqoiR3bSfY2FNRirmA
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Vsphere5Hypervisor>
+
+=cut
+
+__PACKAGE__->might_have(
+  "vsphere5_hypervisor",
+  "AdministratorDB::Schema::Result::Vsphere5Hypervisor",
+  { "foreign.vsphere5_hypervisor_id" => "self.hypervisor_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-02-14 19:04:08
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:D64cuyOEDenGFfnt0aA1wg
 
 __PACKAGE__->belongs_to(
   "parent",

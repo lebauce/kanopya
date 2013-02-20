@@ -8,6 +8,6 @@
 [kanopyafiles]
   path [% clusters_directory %]
 
-  allow *.[% domainname %]
+  allow *
 
 [plugins]

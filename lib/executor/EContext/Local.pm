@@ -140,7 +140,7 @@ sub send {
     }
     # TODO faire plus de test sur la destination
     my $result = {};
-    my $command = "cp $args{src} $args{dest}";
+    my $command = "cp -R $args{src} $args{dest}";
     $log->info("Running command: $command");
     $ENV{'PATH'} = '/bin:/usr/bin:/sbin:/usr/sbin'; 
     my $stdout = `$command 2> /tmp/EContext.stderr`;

@@ -251,7 +251,7 @@ sub createExport {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return "class { 'iscsitarget': }\n";
+    return "class { 'kanopya::iscsitarget': }\n";
 }
 
 1;

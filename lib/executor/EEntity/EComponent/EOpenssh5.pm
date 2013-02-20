@@ -68,4 +68,16 @@ sub isUp {
     return 1;
 }
 
+sub addNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point' ]);
+
+    my $rsapubkey_cmd = "mkdir -p $args{mount_point}/root/.ssh ; " .
+                        "cat /root/.ssh/kanopya_rsa.pub > " .
+                        "$args{mount_point}/root/.ssh/authorized_keys";
+
+    $self->getExecutorEContext->execute(command => $rsapubkey_cmd);
+}
+
 1;

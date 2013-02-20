@@ -376,11 +376,11 @@ sub getHostsEntries {
     my @hosts_entries = ();
 
     for my $vmm ($self->vmms) {
-        foreach my $node ($vmm->service_provider->getHosts()) {
+        foreach my $host ($vmm->service_provider->getHosts()) {
             push @hosts_entries, {
-                hostname   => $node->node->node_hostname,
-                domainname => $self->service_provider->cluster_domainname,
-                ip         => $node->adminIp
+                fqdn    => $host->fqdn,
+                aliases => [ $host->node->node_hostname ],
+                ip      => $host->adminIp
             };
         }
     }
@@ -406,7 +406,7 @@ sub getTemplateDataOnedInitScript {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return "class { 'opennebula': }\n";
+    return "class { 'kanopya::opennebula': }\n";
 }
 
 ### hypervisors manipulation ###
@@ -486,27 +486,6 @@ sub optimiaas {
 
 }
 
-sub migrate {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'host_id', 'hypervisor_id' ]);
-
-    my $hypervisor = Entity->get(id => $args{hypervisor_id});
-    my $wf_params = {
-        context => {
-            vm   => Entity->get(id => $args{host_id}),
-            host => $hypervisor,
-            cloudmanager_comp => $self
-        }
-    };
-
-    return Entity::Workflow->run(
-        name       => 'MigrateWorkflow',
-        related_id => $hypervisor->getClusterId(),
-        params     => $wf_params
-    );
-}
-
 # Execute host migration to a new hypervisor
 sub migrateHost {
     my $self = shift;
@@ -546,31 +525,6 @@ sub getRemoteSessionURL {
     General::checkParams(args => \%args, required => [ 'host' ]);
 
     return "vnc://" . $args{host}->hypervisor->adminIp . ":" . $args{host}->vnc_port;
-}
-
-=head2 scaleHost
-
-=cut
-
-sub scaleHost {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'host_id', 'scalein_value', 'scalein_type' ]);
-
-    my $host = Entity->get(id => $args{host_id});
-
-    my $wf_params = {
-        scalein_value => $args{scalein_value},
-        scalein_type  => $args{scalein_type},
-        context       => {
-            host              => $host,
-            cloudmanager_comp => $self
-        }
-    };
-
-    Entity::Workflow->run(name   => 'ScaleIn' . ($args{scalein_type} eq 'memory' ? "Memory" : "CPU"),
-                          params => $wf_params);
 }
 
 1;

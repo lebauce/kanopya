@@ -18,6 +18,8 @@ use strict;
 use warnings;
 
 use Template;
+use File::Path qw/ mkpath /;
+use File::Temp qw/ tempdir /;
 use Log::Log4perl 'get_logger';
 
 my $log = get_logger("");
@@ -76,13 +78,13 @@ sub createHostCertificate {
  
     General::checkParams(args => \%args, required => [ 'mount_point', 'host_fqdn' ]);
     
-    my $certificate = $args{host_fqdn}.'.pem';
-    
+    my $certificate = $args{host_fqdn} . '.pem';
+
     # check if new certificate is required
     my $command = "find /etc/puppet/ssl/certs -name $certificate";
     my $result = $self->getExecutorEContext->execute(command => $command);
         
-    if(! $result->{stdout}) {
+    if (! $result->{stdout}) {
         # generate a certificate for the host
         $command = "puppetca --generate $args{host_fqdn}";
         my $result = $self->getExecutorEContext->execute(command => $command);
@@ -90,27 +92,37 @@ sub createHostCertificate {
     }
     
     # clean existing certificates information
-    $command = 'rm -rf '.$args{mount_point} .'/var/lib/puppet/ssl/*';
-    $command .= ' && mkdir -p '.$args{mount_point} .'/var/lib/puppet/ssl/certs ';
-    $command .= $args{mount_point} .'/var/lib/puppet/ssl/private_keys';    
+    $command = 'rm -rf ' . $args{mount_point} . '/var/lib/puppet/ssl/*';
     $self->getExecutorEContext->execute(command => $command);    
-    
+
+    $DB::single = 1;
+    my $tmpdir = tempdir(CLEANUP => 1);
+    mkpath($tmpdir . "/ssl/certs");
+    mkpath($tmpdir . "/ssl/private_keys");
+
+    # We do not use 'mkdir' because of a strange guestmount bug that forbids us
+    # to create a folder in the puppet folder if it's owner by the 'puppet' user
+    $self->getExecutorEContext->send(
+        src  => $tmpdir . "/ssl",
+        dest => $args{mount_point} . '/var/lib/puppet/'
+    );
+
     # copy master certificate to the image
     $self->getExecutorEContext->send(
         src  => '/var/lib/puppet/ssl/certs/ca.pem',
-        dest => $args{mount_point} .'/var/lib/puppet/ssl/certs/ca.pem'
+        dest => $args{mount_point} . '/var/lib/puppet/ssl/certs/ca.pem'
     );
     
     # copy host certificate to the image
     $self->getExecutorEContext->send(
-        src  => '/var/lib/puppet/ssl/certs/'.$certificate,
-        dest => $args{mount_point} .'/var/lib/puppet/ssl/certs/'.$certificate
+        src  => '/var/lib/puppet/ssl/certs/' . $certificate,
+        dest => $args{mount_point} . '/var/lib/puppet/ssl/certs/' . $certificate
     );
     
     # copy host private key to the image
     $self->getExecutorEContext->send(
-        src  => '/var/lib/puppet/ssl/private_keys/'.$certificate,
-        dest => $args{mount_point} .'/var/lib/puppet/ssl/private_keys/'.$certificate
+        src  => '/var/lib/puppet/ssl/private_keys/' . $certificate,
+        dest => $args{mount_point} . '/var/lib/puppet/ssl/private_keys/' . $certificate
     );
 
     $self->updateSite;
@@ -119,7 +131,7 @@ sub createHostCertificate {
 sub createHostManifest {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'puppet_definitions', 'host_fqdn' ]);
-    
+
     my $config = {
         INCLUDE_PATH => '/templates/components/puppetmaster',
         INTERPOLATE  => 0,               # expand "$var" in plain text
@@ -127,16 +139,16 @@ sub createHostManifest {
         EVAL_PERL    => 1,               # evaluate Perl code blocks
         RELATIVE => 1,                   # desactive par defaut
     };
-    
+
     my $input = 'host_manifest.pp.tt';
     my $output = '/etc/puppet/manifests/nodes/';
     $output .= $args{host_fqdn}.'.pp';
-    
+
     my $data = {
         host_fqdn          => $args{host_fqdn},
-        puppet_definitions => $args{puppet_definitions} 
+        puppet_definitions => $args{puppet_definitions}
     };
-    
+
     my $template = Template->new($config);
     $template->process($input, $data, $output) || do {
         $errmsg = "error during generation from '$input':" .  $template->error;
