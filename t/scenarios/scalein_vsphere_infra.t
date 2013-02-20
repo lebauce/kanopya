@@ -82,7 +82,7 @@ eval {
                            );
     } 'Register Vsphere component';
 
-    isa_ok($vsphereInstance, 'Entity::Component::Vsphere5');
+    isa_ok($vsphereInstance, 'Entity::Component::Virtualization::Vsphere5');
 
     my $vsphere;
     lives_ok {
@@ -90,7 +90,7 @@ eval {
                                           version => 5);
     } 'Retrieve Vsphere component';
 
-    isa_ok($vsphere, 'Entity::Component::Vsphere5');
+    isa_ok($vsphere, 'Entity::Component::Virtualization::Vsphere5');
 
     lives_ok {
         $vsphere->setConf(

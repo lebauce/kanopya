@@ -122,6 +122,7 @@ my @classes = (
     'Entity::Component::Mysql5',
     'Entity::Component::Openiscsi2',
     'Entity::Component::Openldap1',
+    'Entity::Component::Virtualization',
     'Entity::Component::Virtualization::Opennebula3',
     'Entity::Component::Openssh5',
     'Entity::Component::Php5',
@@ -188,7 +189,7 @@ my @classes = (
     'Entity::Workflow',
     'Entity::Host::Hypervisor::Vsphere5Hypervisor',
     'Entity::Host::VirtualMachine::Vsphere5Vm',
-    'Entity::Component::Vsphere5',
+    'Entity::Component::Virtualization::Vsphere5',
     'Entity::Component::Linux::Debian',
     'Entity::Component::Linux::Suse',
     'Entity::Component::Linux::Redhat',
@@ -216,7 +217,6 @@ my @classes = (
     'Entity::Component::Vmm::Xen',
     'Entity::Rule',
     'Entity::Component::Amqp',
-    'Entity::Component::Virtualization',
     'Entity::Repository',
 );
 

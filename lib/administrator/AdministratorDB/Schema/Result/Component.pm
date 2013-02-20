@@ -680,21 +680,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 vsphere5
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Vsphere5>
-
-=cut
-
-__PACKAGE__->might_have(
-  "vsphere5",
-  "AdministratorDB::Schema::Result::Vsphere5",
-  { "foreign.vsphere5_id" => "self.component_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 
 # Created by DBIx::Class::Schema::Loader v0.07033 @ 2012-12-11 14:47:24
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:cse0s6oPdmP8Yrt8GQj3rg

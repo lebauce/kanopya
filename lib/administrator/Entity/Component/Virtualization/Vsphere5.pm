@@ -35,8 +35,8 @@ Vsphere component version 5.
 
 =cut
 
-package Entity::Component::Vsphere5;
-use base "Entity::Component";
+package Entity::Component::Virtualization::Vsphere5;
+use base "Entity::Component::Virtualization";
 use base "Manager::HostManager::VirtualMachineManager";
 
 use strict;
