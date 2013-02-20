@@ -690,6 +690,36 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 repository
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Repository>
+
+=cut
+
+__PACKAGE__->might_have(
+  "repository",
+  "AdministratorDB::Schema::Result::Repository",
+  { "foreign.repository_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 rule
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Rule>
+
+=cut
+
+__PACKAGE__->might_have(
+  "rule",
+  "AdministratorDB::Schema::Result::Rule",
+  { "foreign.rule_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 service_provider
 
 Type: might_have

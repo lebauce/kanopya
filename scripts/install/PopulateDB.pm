@@ -82,6 +82,8 @@ use NetconfInterface;
 use NetconfPoolip;
 use NetconfIface;
 use Entity::Component::Amqp;
+use Entity::Component::Virtualization;
+use Entity::Repository;
 
 # Catch warnings to clean the setup output (this warnings are not kanopya code related)
 $SIG{__WARN__} = sub {
@@ -214,6 +216,8 @@ my @classes = (
     'Entity::Component::Vmm::Xen',
     'Entity::Rule',
     'Entity::Component::Amqp',
+    'Entity::Component::Virtualization',
+    'Entity::Repository',
 );
 
 sub registerClassTypes {
@@ -695,6 +699,7 @@ sub registerComponents {
         [ 'NovaController', '6', 'Cloudmanager', undef ],
         [ 'Quantum', '6', '', undef ],
         [ 'Amqp', '0', '', undef ],
+        [ 'Virtualization', '0', '', undef ],
     ];
 
     for my $component_type (@{$components}) {

@@ -665,6 +665,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 virtualization
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Virtualization>
+
+=cut
+
+__PACKAGE__->might_have(
+  "virtualization",
+  "AdministratorDB::Schema::Result::Virtualization",
+  { "foreign.virtualization_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 vmm_iaas
 
 Type: has_many

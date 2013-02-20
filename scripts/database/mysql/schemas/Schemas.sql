@@ -1822,4 +1822,16 @@ CREATE TABLE `dashboard` (
   FOREIGN KEY (`dashboard_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Table structure for table `repository`
+--
+
+CREATE TABLE repository (
+    `repository_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+    `virtualization_id` int(8) unsigned NOT NULL,
+    PRIMARY KEY (`repository_id`),
+    FOREIGN KEY (`repository_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY (`virtualization_id`) REFERENCES `virtualization` (`virtualization_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 SET foreign_key_checks=1;

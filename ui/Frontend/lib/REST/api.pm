@@ -164,6 +164,7 @@ my %resources = (
     "vsphere5repository"       => "Entity::Component::Vsphere5::Vsphere5Repository",
     "workflow"                 => "Entity::Workflow",
     "workflowdef"              => "Entity::WorkflowDef",
+    "repository"               => "Entity::Repository",
 );
 
 sub classFromResource {
