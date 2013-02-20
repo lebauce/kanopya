@@ -642,13 +642,18 @@ var KanopyaFormWizard = (function() {
     }
 
     KanopyaFormWizard.prototype.reload = function() {
+        // Enable fields in non visible steps as the same way while submiting
+        if (Object.keys(this.steps).length > 1) {
+            $(this.form).find(":input").not(".wizard-ignore").removeAttr("disabled");
+        }
+
         this.beforeSerialize($(this.form));
 
         // Update the data hash as it will be given in parameter
         // to the attributtes request at reload
         this.data = this.serialize($(this.form).serializeArray());
 
-        // Remove table of the current step
+        // Remove table of all steps
         for (var step in this.steps) {
             for (var table in this.steps[step]) {
                 $(this.steps[step][table]).find('tr').remove();
@@ -660,6 +665,9 @@ var KanopyaFormWizard = (function() {
 
         // Then reload the form
         this.load();
+
+        var state = $(this.form).formwizard("state");
+        $(this.form).find(".step").not("#" + state.currentStep).find(":input").not(".wizard-ignore").attr("disabled","disabled");
     }
 
     KanopyaFormWizard.prototype.mustDisableField = function(name, value) {
@@ -907,7 +915,7 @@ var KanopyaFormWizard = (function() {
         this.submitCallback  = args.submitCallback  || this.submit;
         this.valuesCallback  = args.valuesCallback  || this.getValues;
         this.attrsCallback   = args.attrsCallback   || this.getAttributes;
-        this.optionsCallback = args.optionsCallback || function () { return false } ;
+        this.optionsCallback = args.optionsCallback || function () { return false };
         this.actionsCallback = args.actionsCallback || $.noop;
         this.cancelCallback  = args.cancelCallback  || $.noop;
         this.error           = args.error           || $.noop;
