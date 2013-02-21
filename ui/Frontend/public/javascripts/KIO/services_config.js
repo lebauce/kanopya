@@ -91,7 +91,7 @@ function loadServicesConfig (container_id, elem_id) {
                         if (Object.keys(manager_params).length > 0) {
                             $("<td>").append($("<a>", { text : 'Configure' }).button({ icons : { primary : 'ui-icon-wrench' } })).bind('click', { manager : spmanager }, function(event) {
                                 var manager = event.data.manager;
-                                createmanagerDialog(manager.manager_category.catgegory_name, elem_id, $.noop, false, manager.pk, manager.manager_id);
+                                createmanagerDialog(manager.manager_category.category_name, elem_id, $.noop, false, manager.pk, manager.manager_id);
                             }).appendTo(line);
 
                         } else {
