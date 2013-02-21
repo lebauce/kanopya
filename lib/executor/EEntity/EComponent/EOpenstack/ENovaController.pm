@@ -317,7 +317,7 @@ sub registerSystemImage {
     General::checkParams(args => \%args, required => [ 'host', 'cluster' ]);
 
     my $image = $args{host}->getNodeSystemimage();
-    my $disk_params = $args{cluster}->getManagerParameters(manager_type => 'disk_manager');
+    my $disk_params = $args{cluster}->getManagerParameters(manager_type => 'DiskManager');
     my $image_name = $image->systemimage_name;
     my $image_type = $disk_params->{image_type};
     my $image_source = '/nfsexports/test_image_repository/' . $image->getContainer->container_device;

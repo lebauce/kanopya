@@ -166,7 +166,7 @@ sub _getOuFrom {
     my $service_provider = Entity::ServiceProvider->get(id => $args{sp_id});
 
     my $directory_service_manager_params = $service_provider->getManagerParameters(
-                                               manager_type => 'directory_service_manager'
+                                               manager_type => 'DirectoryServiceManager'
                                            );
 
     my $ou_from = $directory_service_manager_params->{ad_nodes_base_dn};

@@ -132,11 +132,11 @@ sub cloneAssociatedWorkflow {
     if ($self->workflow_def_id) {
         eval {
             my $src_workflow_manager = ServiceProviderManager->find( hash => {
-                 manager_type        => 'workflow_manager',
+                 manager_type        => 'WorkflowManager',
                  service_provider_id => $self->serviceProvider()->id
             });
             my $dest_workflow_manager = ServiceProviderManager->find( hash => {
-                manager_type        => 'workflow_manager',
+                manager_type        => 'WorkflowManager',
                 service_provider_id => $args{dest_rule}->serviceProvider()->id
             });
             if ($src_workflow_manager->manager_id != $dest_workflow_manager->manager_id) {
