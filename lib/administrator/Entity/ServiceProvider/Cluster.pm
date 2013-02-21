@@ -752,12 +752,12 @@ sub getHostEntries {
     my @host_entries;
 
     # we add each nodes
-    foreach my $node ($self->getHosts()) {
+    foreach my $host ($self->getHosts()) {
         push @host_entries, {
-            fqdn    => $node->fqdn,
-            aliases => [ $node->host_hostname . "." . $executor->cluster_domainname,
-                         $node->host_hostname ],
-            ip      => $node->adminIp
+            fqdn    => $host->fqdn,
+            aliases => [ $host->node->node_hostname . "." . $executor->cluster_domainname,
+                         $host->node->node_hostname ],
+            ip      => $host->adminIp
         };
     }
 

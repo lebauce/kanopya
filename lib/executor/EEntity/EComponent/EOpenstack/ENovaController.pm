@@ -265,7 +265,7 @@ sub startHost {
         target => 'compute',
         content => {
             flavor => {
-                'name'                        => 'flavor_' . $args{host}->host_hostname,
+                'name'                        => 'flavor_' . $args{host}->node->node_hostname,
                 'ram'                         => $args{host}->host_ram / 1024 / 1024,
                 'vcpus'                       => $args{host}->host_core,
                 'disk'                        => $image->getContainer->container_size / 1024 / 1024,
@@ -284,7 +284,7 @@ sub startHost {
             server => {
                 flavorRef   => $flavor_id,
                 imageRef    => $image_id,
-                name        => $args{host}->host_hostname
+                name        => $args{host}->node->node_hostname
             }
         }
     );
@@ -358,7 +358,7 @@ sub registerNetwork {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    my $hostname = $args{host}->host_hostname;
+    my $hostname = $args{host}->node->node_hostname;
 
     my $interfaces = [];
     for my $iface ($args{host}->getIfaces()) {
