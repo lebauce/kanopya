@@ -830,9 +830,9 @@ sub generateNodeMetricRules{
 sub remove {
     my $self = shift;
 
-    my @connectors = $self->connectors;
-    for my $connector (@connectors) {
-        $connector->remove();
+    my @components = $self->components;
+    for my $component (@components) {
+        $component->remove();
     }
 
     $self->delete();
