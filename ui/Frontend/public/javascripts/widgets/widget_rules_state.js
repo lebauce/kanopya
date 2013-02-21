@@ -123,6 +123,9 @@ function rulesStateGraph(div_id, series) {
             tooltipLocation :'n',
             useAxesFormatters:false
         },
-      });
-      setGraphResizeHandlers(div_id, rules_graph);
+        cursor : {
+            show : false
+        }
+    });
+    setGraphResizeHandlers(div_id, rules_graph);
 }

@@ -226,8 +226,10 @@ function nodeTimedGraph(graph_lines, graph_labels, min, max, label, ylabel, div_
         highlighter: {
             show: true,
             // formatString: '<p class="cluster_combination_tooltip">Date: %s<br /> value: %f</p>',
+        },
+        cursor : {
+            show : false
         }
-
     });
 
     // Attach resize event handlers
