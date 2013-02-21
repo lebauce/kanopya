@@ -29,7 +29,7 @@ Log::Log4perl->easy_init({
 
 use BaseDB;
 use Entity;
-use Entity::Component::Opennebula3;
+use Entity::Component::Virtualization::Opennebula3;
 use Entity::Workflow;
 use Entity::WorkflowDef;
 use Kanopya::Config;
@@ -233,7 +233,7 @@ sub stop_vm_cluster {
 }
 
 sub _check_init {
-    $one = Entity::Component::Opennebula3->find(hash => {});
+    $one = Entity::Component::Virtualization::Opennebula3->find(hash => {});
 
     my @hvs = $one->hypervisors;
     my $hv_num = scalar @hvs;

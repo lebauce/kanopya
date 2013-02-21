@@ -1457,6 +1457,7 @@ CREATE TABLE `nodemetric_rule` (
   FOREIGN KEY (`nodemetric_rule_id`) REFERENCES `rule` (`rule_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
 
+
 --
 -- Table structure for table `verified_noderule`
 --
@@ -1826,5 +1827,28 @@ CREATE TABLE `data_model` (
   KEY (`param_preset_id`),
   FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `virtualization`
+--
+
+CREATE TABLE `virtualization` (
+  `virtualization_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`virtualization_id`),
+  FOREIGN KEY (`virtualization_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `repository`
+--
+
+CREATE TABLE `repository` (
+  `repository_id` int(8) unsigned NOT NULL,
+  `virtualization_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`repository_id`),
+  FOREIGN KEY (`repository_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`virtualization_id`),
+  FOREIGN KEY (`virtualization_id`) REFERENCES `virtualization` (`virtualization_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks=1;

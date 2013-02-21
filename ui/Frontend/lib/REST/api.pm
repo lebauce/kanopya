@@ -108,7 +108,7 @@ my %resources = (
     "novacontroller6"          => "Entity::Component::Openstack::NovaController",
     "openiscsi2"               => "Entity::Component::Openiscsi2",
     "openldap1"                => "Entity::Component::Openldap1",
-    "opennebula3"              => "Entity::Component::Opennebula3",
+    "opennebula3"              => "Entity::Component::Virtualization::Opennebula3",
     "opennebula3repository"    => "Entity::Component::Opennebula3::Opennebula3Repository",
     "opennebula3hypervisor"    => "Entity::Host::Hypervisor::Opennebula3Hypervisor",
     "opennebula3vm"            => "Entity::Host::VirtualMachine::Opennebula3Vm",
@@ -157,10 +157,11 @@ my %resources = (
     "userprofile"              => "UserProfile",
     "virtualmachine"           => "Entity::Host::VirtualMachine",
     "vlan"                     => "Entity::Vlan",
-    "vsphere5"                 => "Entity::Component::Vsphere5",
+    "vsphere5"                 => "Entity::Component::Virtualization::Vsphere5",
     "vsphere5repository"       => "Entity::Component::Vsphere5::Vsphere5Repository",
     "workflow"                 => "Entity::Workflow",
     "workflowdef"              => "Entity::WorkflowDef",
+    "repository"               => "Entity::Repository",
 );
 
 sub classFromResource {

@@ -19,7 +19,7 @@ use Entity::Kernel;
 use Entity::Component;
 use Entity::ServiceProvider::Externalcluster;
 use CapacityManagement;
-use Entity::Component::Opennebula3;
+use Entity::Component::Virtualization::Opennebula3;
 use ClassType::ComponentType;
 
 BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );

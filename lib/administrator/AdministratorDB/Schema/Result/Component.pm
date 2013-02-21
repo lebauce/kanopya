@@ -554,21 +554,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 nova_compute
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::NovaCompute>
-
-=cut
-
-__PACKAGE__->might_have(
-  "nova_compute",
-  "AdministratorDB::Schema::Result::NovaCompute",
-  { "foreign.nova_compute_id" => "self.component_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 nova_controller
 
 Type: might_have
@@ -611,21 +596,6 @@ __PACKAGE__->might_have(
   "openldap1",
   "AdministratorDB::Schema::Result::Openldap1",
   { "foreign.openldap1_id" => "self.component_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 opennebula3
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Opennebula3>
-
-=cut
-
-__PACKAGE__->might_have(
-  "opennebula3",
-  "AdministratorDB::Schema::Result::Opennebula3",
-  { "foreign.opennebula3_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -844,6 +814,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 virtualization
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Virtualization>
+
+=cut
+
+__PACKAGE__->might_have(
+  "virtualization",
+  "AdministratorDB::Schema::Result::Virtualization",
+  { "foreign.virtualization_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 vmm_iaas
 
 Type: has_many
@@ -874,21 +859,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 vsphere5
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Vsphere5>
-
-=cut
-
-__PACKAGE__->might_have(
-  "vsphere5",
-  "AdministratorDB::Schema::Result::Vsphere5",
-  { "foreign.vsphere5_id" => "self.component_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 workflow_def_managers
 
 Type: has_many
@@ -905,8 +875,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-02-20 20:23:22
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:k+9DTIBGdWoI4A6o69tnPg
+# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-02-21 17:12:33
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:bOY2JM/wxXUncEHOmVmocg
 
 __PACKAGE__->belongs_to(
   "parent",

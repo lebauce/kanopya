@@ -130,8 +130,8 @@ Related object: L<AdministratorDB::Schema::Result::Component>
 
 __PACKAGE__->belongs_to(
   "nova_compute",
-  "AdministratorDB::Schema::Result::Component",
-  { component_id => "nova_compute_id" },
+  "AdministratorDB::Schema::Result::Virtualization",
+  { virtualization_id => "nova_compute_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
@@ -161,8 +161,8 @@ __PACKAGE__->belongs_to(
 
 __PACKAGE__->belongs_to(
   "parent",
-  "AdministratorDB::Schema::Result::Component",
-    { "foreign.component_id" => "self.nova_compute_id" },
+  "AdministratorDB::Schema::Result::Virtualization",
+    { "foreign.virtualization_id" => "self.nova_compute_id" },
     { cascade_copy => 0, cascade_delete => 1 });
 
 1;

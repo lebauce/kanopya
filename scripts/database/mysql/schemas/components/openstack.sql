@@ -40,7 +40,7 @@ CREATE TABLE `nova_compute` (
   `mysql5_id` int(8) unsigned NULL DEFAULT NULL,
   `nova_controller_id` int(8) unsigned NULL DEFAULT NULL,
   PRIMARY KEY (`nova_compute_id`),
-  CONSTRAINT `fk_nova_compute_1` FOREIGN KEY (`nova_compute_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_nova_compute_1` FOREIGN KEY (`nova_compute_id`) REFERENCES `virtualization` (`virtualization_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY(`mysql5_id`),
   FOREIGN KEY (`mysql5_id`) REFERENCES `mysql5` (`mysql5_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY(`nova_controller_id`),

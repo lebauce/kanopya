@@ -175,7 +175,7 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 collector_indicator_collector_indicator
+=head2 collector_indicator
 
 Type: might_have
 
@@ -184,24 +184,9 @@ Related object: L<AdministratorDB::Schema::Result::CollectorIndicator>
 =cut
 
 __PACKAGE__->might_have(
-  "collector_indicator_collector_indicator",
+  "collector_indicator",
   "AdministratorDB::Schema::Result::CollectorIndicator",
   { "foreign.collector_indicator_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 collector_indicator_collector_managers
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::CollectorIndicator>
-
-=cut
-
-__PACKAGE__->has_many(
-  "collector_indicator_collector_managers",
-  "AdministratorDB::Schema::Result::CollectorIndicator",
-  { "foreign.collector_manager_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -675,6 +660,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 repository
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Repository>
+
+=cut
+
+__PACKAGE__->might_have(
+  "repository",
+  "AdministratorDB::Schema::Result::Repository",
+  { "foreign.repository_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 rule
 
 Type: might_have
@@ -821,8 +821,8 @@ Composing rels: L</ingroups> -> gp
 __PACKAGE__->many_to_many("gps", "ingroups", "gp");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-01-31 11:35:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:I4I2ir+9rTqrN182hBGD0w
+# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-02-21 17:12:33
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:IDXik1wM1YaBKXKaGbXCcw
 
 __PACKAGE__->might_have(
   "workflow",

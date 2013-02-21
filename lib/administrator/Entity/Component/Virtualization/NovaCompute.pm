@@ -15,8 +15,8 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package  Entity::Component::Openstack::NovaCompute;
-use base "Entity::Component";
+package  Entity::Component::Virtualization::NovaCompute;
+use base "Entity::Component::Virtualization";
 
 use strict;
 use warnings;

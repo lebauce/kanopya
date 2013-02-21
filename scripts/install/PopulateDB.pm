@@ -47,6 +47,7 @@ use Entity::ServiceProvider::Cluster;
 use Entity::Network;
 use Entity::Interface;
 use Entity::Iface;
+use Entity::Repository;
 use Ip;
 use Node;
 use ServiceProviderManager;
@@ -72,11 +73,12 @@ use Entity::Component::Linux::Redhat;
 use Entity::Component::Linux::Suse;
 use Entity::Component::Mailnotifier0;
 use Entity::Component::Openstack::NovaController;
-use Entity::Component::Openstack::NovaCompute;
+use Entity::Component::Virtualization::NovaCompute;
 use Entity::Component::Openstack::Glance;
 use Entity::Component::Openstack::Keystone;
 use Entity::Component::Openstack::Quantum;
 use Entity::Component::Amqp;
+use Entity::Component::Virtualization;
 use NetconfInterface;
 use NetconfPoolip;
 use NetconfIface;
@@ -119,7 +121,8 @@ my @classes = (
     'Entity::Component::Mysql5',
     'Entity::Component::Openiscsi2',
     'Entity::Component::Openldap1',
-    'Entity::Component::Opennebula3',
+    'Entity::Component::Virtualization',
+    'Entity::Component::Virtualization::Opennebula3',
     'Entity::Component::Openssh5',
     'Entity::Component::Php5',
     'Entity::Component::Snmpd5',
@@ -131,7 +134,7 @@ my @classes = (
     'Entity::Component::Amqp',
     'Entity::ServiceProvider::Externalcluster',
     'Entity::Component::Openstack::NovaController',
-    'Entity::Component::Openstack::NovaCompute',
+    'Entity::Component::Virtualization::NovaCompute',
     'Entity::Component::Openstack::Quantum',
     'Entity::Component::Openstack::Keystone',
     'Entity::Component::Openstack::Glance',
@@ -156,6 +159,7 @@ my @classes = (
     'Entity::NetconfRole',
     'Entity::Interface',
     'Entity::Iface',
+    'Entity::Repository',
     'Entity::NetappAggregate',
     'Entity::Component::Puppetagent2',
     'Entity::Component::Puppetmaster2',
@@ -186,7 +190,7 @@ my @classes = (
     'Entity::Workflow',
     'Entity::Host::Hypervisor::Vsphere5Hypervisor',
     'Entity::Host::VirtualMachine::Vsphere5Vm',
-    'Entity::Component::Vsphere5',
+    'Entity::Component::Virtualization::Vsphere5',
     'Entity::Component::Linux::Debian',
     'Entity::Component::Linux::Suse',
     'Entity::Component::Linux::Redhat',
@@ -825,7 +829,6 @@ sub registerComponents {
             component_categories   => [ 'Configurationagent' ],
             service_provider_types => [ 'Cluster' ],
         },
-        
         {
             component_name         => 'Puppetmaster',
             component_version      => 2,
@@ -949,39 +952,45 @@ sub registerComponents {
             component_categories   => [ 'DiskManager', 'ExportManager' ],
             service_provider_types => [ 'Netapp' ],
         },
-        { 
+        {
             component_name         => 'Glance',
             component_version      => 6,
             component_categories   => [ ],
             service_provider_types => [ 'Cluster' ],
         },
-        { 
+        {
             component_name         => 'Keystone',
             component_version      => 6,
             component_categories   => [ ],
             service_provider_types => [ 'Cluster' ],
         },
-        { 
+        {
             component_name         => 'NovaCompute',
             component_version      => 6,
             component_categories   => [ ],
             service_provider_types => [ 'Cluster' ],
         },
-        { 
+        {
             component_name         => 'NovaController',
             component_version      => 6,
             component_categories   => [ 'HostManager' ],
             service_provider_types => [ 'Cluster' ],
         },
-        { 
+        {
             component_name         => 'Quantum',
             component_version      => 6,
             component_categories   => [ ],
             service_provider_types => [ 'Cluster' ],
         },
-        { 
+        {
             component_name         => 'Amqp',
             component_version      => 6,
+            component_categories   => [ ],
+            service_provider_types => [ 'Cluster' ],
+        },
+        {
+            component_name         => 'Virtualization',
+            component_version      => 0,
             component_categories   => [ ],
             service_provider_types => [ 'Cluster' ],
         },
