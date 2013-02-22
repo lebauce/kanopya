@@ -243,7 +243,7 @@ sub test_nodemetric_condition {
 
     sleep(2);
     $aggregator->update();
-    $orchestrator->manage_aggregates();
+    $orchestrator->oneRun();
 
     lives_ok {
         VerifiedNoderule->find(hash => {
@@ -393,7 +393,7 @@ sub test_two_combinations_on_nodemetric_condition {
 
     sleep(2);
     $aggregator->update();
-    $orchestrator->manage_aggregates();
+    $orchestrator->oneRun();
 
     lives_ok {
         VerifiedNoderule->find(hash => {
@@ -442,7 +442,7 @@ sub test_aggregate_combination_on_nodemetric_condition {
 
     sleep(2);
     $aggregator->update();
-    $orchestrator->manage_aggregates();
+    $orchestrator->oneRun();
 
     lives_ok {
         VerifiedNoderule->find(hash => {
@@ -504,7 +504,7 @@ sub test_nodemetric_rules {
         nodemetric_rule_state => 'enabled'
     );
 
-    $orchestrator->manage_aggregates();
+    $orchestrator->oneRun();
 
     is ($nr_t->isVerifiedForANode(node_id => $node->id), 1, 'Check node rule true via method');
     is ($nr_f->isVerifiedForANode(node_id => $node->id), 0, 'Check node rule false via method');
@@ -578,7 +578,7 @@ sub test_aggregate_rules_undef {
 
     sleep(2);
     $aggregator->update();
-    $orchestrator->manage_aggregates();
+    $orchestrator->oneRun();
 
     ok (defined $comb->computeLastValue(), 'cm ok, check cm');
     is ($ac->evaluate(), 1, 'cm ok, check condition');
@@ -593,7 +593,7 @@ sub test_aggregate_rules_undef {
 
     sleep(2);
     $aggregator->update();
-    $orchestrator->manage_aggregates();
+    $orchestrator->oneRun();
 
     ok (! defined $comb->computeLastValue(), 'Undef cm, check cm');
     ok (! defined Entity->get(id=>$ac->id)->last_eval, 'Undef cm, check condition (a)');
@@ -782,7 +782,7 @@ sub test_and_n {
         nodemetric_rule_state => 'enabled'
     );
 
-    $orchestrator->manage_aggregates();
+    $orchestrator->oneRun();
 
     dies_ok {
         VerifiedNoderule->find(hash => {
@@ -842,7 +842,7 @@ sub test_and {
         aggregate_rule_state => 'enabled'
     );
 
-    $orchestrator->manage_aggregates();
+    $orchestrator->oneRun();
     is ($rule1->evaluate(), 1, 'Check 1 && 1 rule');
     is ($rule2->evaluate(), 0, 'Check 1 && 0 rule');
     is ($rule3->evaluate(), 0, 'Check 0 && 1 rule');
@@ -879,7 +879,7 @@ sub test_or_n {
         nodemetric_rule_state => 'enabled'
     );
 
-    $orchestrator->manage_aggregates();
+    $orchestrator->oneRun();
 
     dies_ok {
         VerifiedNoderule->find(hash => {
@@ -939,7 +939,7 @@ sub test_or {
         aggregate_rule_state => 'enabled'
     );
 
-    $orchestrator->manage_aggregates();
+    $orchestrator->oneRun();
     is($rule1->evaluate(), 1, 'Check 1 || 1 rule');
     is($rule2->evaluate(), 1, 'Check 1 || 0 rule');
     is($rule3->evaluate(), 1, 'Check 0 || 1 rule');
@@ -972,7 +972,7 @@ sub test_not_n {
         nodemetric_rule_state => 'enabled'
     );
 
-    $orchestrator->manage_aggregates();
+    $orchestrator->oneRun();
     lives_ok {
         VerifiedNoderule->find(hash => {
             verified_noderule_node_id    => $node->id,
@@ -1053,7 +1053,7 @@ sub test_not{
         aggregate_rule_state => 'enabled'
     );
 
-    $orchestrator->manage_aggregates();
+    $orchestrator->oneRun();
     is($rule1->evaluate(), 1, 'Check 1 rule');
     is($rule2->evaluate(), 0, 'Check ! 1 rule');
     is($rule3->evaluate(), 0, 'Check 0 rule');
@@ -1070,7 +1070,7 @@ sub test_big_formulas_n {
         nodemetric_rule_state => 'enabled'
     );
 
-    $orchestrator->manage_aggregates();
+    $orchestrator->oneRun();
 
    lives_ok {
         VerifiedNoderule->find(hash => {
@@ -1095,7 +1095,7 @@ sub test_big_formulas {
         aggregate_rule_state => 'enabled'
     );
 
-    $orchestrator->manage_aggregates();
+    $orchestrator->oneRun();
     is($rule1->evaluate(), 1, 'Check (!! (1 || 0)) && (1 && 1) rule');
     is($rule2->evaluate(), 1, 'Check ((0 || 0) || (0 || 1)) && ! ( (! (0 || 1)) || ! (1 && 1)) rule');
 }

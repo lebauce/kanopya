@@ -165,7 +165,7 @@ sub node_disabling {
         die 'Not 3 nodes in aggregator';
     }
 
-    $orchestrator->manage_aggregates();
+    $orchestrator->oneRun();
 
     diag('Check nodes rule verification');
     check_rule_verification(
@@ -186,7 +186,7 @@ sub node_disabling {
     } 'Kanopya::Exception::Internal::NotFound',
     'Disabled node 3 and check rule not verified';
 
-    $orchestrator->manage_aggregates();
+    $orchestrator->oneRun();
 
     expectedException {
         VerifiedNoderule->find(hash => {

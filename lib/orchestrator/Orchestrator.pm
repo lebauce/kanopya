@@ -120,7 +120,7 @@ sub new {
 
 =cut
 
-sub manage_aggregates {
+sub oneRun {
     my $self = shift;
 
     if (defined $self->{_time_step}) {
@@ -1355,7 +1355,7 @@ sub run {
         $self->{_time_step} = $conf->{time_step};
 
         my $start_time = time();
-        $self->manage_aggregates();
+        $self->oneRun();
 
         my $update_duration = time() - $start_time;
         $log->info( "Manage duration : $update_duration seconds" );

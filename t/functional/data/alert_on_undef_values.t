@@ -280,7 +280,7 @@ sub test_alerts_orchestrator {
         value           => $mock_conf
     );
 
-    $orchestrator->manage_aggregates ();
+    $orchestrator->oneRun();
 
     @alerts = Alert->search (hash => {});
     is(scalar @alerts, 0, 'Check no alert after orchestrator');
@@ -294,7 +294,7 @@ sub test_alerts_orchestrator {
         value           => $mock_conf
     );
 
-    $orchestrator->manage_aggregates ();
+    $orchestrator->oneRun();
 
     @alerts = Alert->search (hash => {});
     is (scalar @alerts, 1, 'Check one alert');
@@ -305,7 +305,7 @@ sub test_alerts_orchestrator {
     is ($first_alert->alert_message, $alert_msg, 'Check alert message');
     is ($first_alert->alert_active, 1, 'Check alert is active');
 
-    $orchestrator->manage_aggregates ();
+    $orchestrator->oneRun();
 
     @alerts = Alert->search (hash=>{});
     is (scalar @alerts, 1, 'Check no more alert created');
@@ -323,7 +323,7 @@ sub test_alerts_orchestrator {
         value           => $mock_conf
     );
 
-    $orchestrator->manage_aggregates ();
+    $orchestrator->oneRun();
 
     @alerts = Alert->search (hash=>{});
     is (scalar @alerts, 1, 'Check no more alert created');
@@ -341,7 +341,7 @@ sub test_alerts_orchestrator {
         value           => $mock_conf
     );
 
-    $orchestrator->manage_aggregates ();
+    $orchestrator->oneRun();
 
     @alerts = Alert->search (hash=>{}, order_by => 'alert_id asc');
     is (scalar @alerts, 2, 'Check one new alert created');

@@ -108,7 +108,7 @@ sub sco_workflow_triggered_by_rule {
 
     # Launch orchestrator with no workflow to trigger
     my $orchestrator = Orchestrator->new();
-    $orchestrator->manage_aggregates();
+    $orchestrator->oneRun();
 
     diag('Check rules verification');
     check_rule_verification(
@@ -179,7 +179,7 @@ sub sco_workflow_triggered_by_rule {
     );
 
     #Launch orchestrator a workflow must be enqueued
-    $orchestrator->manage_aggregates();
+    $orchestrator->oneRun();
 
     my ($node_workflow, $service_workflow, $sco_operation, $service_sco_operation);
     lives_ok {
@@ -343,7 +343,7 @@ sub sco_workflow_triggered_by_rule {
         $agg_rule2->save();
 
         # Launch Orchestrator
-        $orchestrator->manage_aggregates();
+        $orchestrator->oneRun();
 
         expectedException {
             VerifiedNoderule->find(hash => {

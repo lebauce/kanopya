@@ -128,7 +128,7 @@ sub benchmarkAggregatorUpdate {
     print "Benchmarking the aggregator update for $serviceload services, $ruleload agg rules each, $nodeload nodes each:\n";
     $profiler->start(print_queries => 0);
 
-    $orchestrator->manage_aggregates();
+    $orchestrator->oneRun();
 
     $profiler->stop();
 }

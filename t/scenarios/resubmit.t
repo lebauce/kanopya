@@ -239,7 +239,7 @@ sub resubmit_hv_on_state {
         die 'Hv1 is not up' if ($nodes_metrics ->{$hv1->node->node_hostname}->{'Host is up'} != 1);
         die 'Hv1 is not activated' if ($hv1->active != 1);
 
-        $orchestrator->manage_aggregates();
+        $orchestrator->oneRun();
 
         $node->setAttr(name => 'node_state', value => 'broken:'.time());
         $node->save();
@@ -265,7 +265,7 @@ sub resubmit_hv_on_state {
         } 'Kanopya::Exception::Internal::NotFound',
         'Rule not verified';
 
-        $orchestrator->manage_aggregates();
+        $orchestrator->oneRun();
 
         my $verifNodeRule = VerifiedNoderule->find( hash => {
             verified_noderule_node_id       => $hv1->node->id,
@@ -288,7 +288,7 @@ sub resubmit_hv_on_state {
             specific_params         => { delay => 60 },
         );
 
-        $orchestrator->manage_aggregates();
+        $orchestrator->oneRun();
 
         my @operations = Entity::Operation->search(hash => {}, order_by => 'execution_rank asc');
         if (scalar @operations == 1) {
@@ -320,11 +320,11 @@ sub resubmit_hv_on_state {
 
         Kanopya::Tools::Execution->executeAll();
 
-        $orchestrator->manage_aggregates();
+        $orchestrator->oneRun();
         sleep(10);
 
         # With 60 sec delay, workflow is not relaunched
-        $orchestrator->manage_aggregates();
+        $orchestrator->oneRun();
         @operations = Entity::Operation->search(hash => {});
         if (scalar @operations == 0) {
             diag ('no operation waiting for delay');
@@ -340,7 +340,7 @@ sub resubmit_hv_on_state {
 
         sleep(55);
 
-        $orchestrator->manage_aggregates();
+        $orchestrator->oneRun();
 
         @operations = Entity::Operation->search(hash => {});
 
@@ -410,7 +410,7 @@ sub resubmit_vm_on_state {
 
         die 'Host is not up' if ($nodes_metrics ->{$vm->node->node_hostname}->{'Host is up'} != 1);
 
-        $orchestrator->manage_aggregates();
+        $orchestrator->oneRun();
 
         my $evm = EEntity->new(data => $vm);
 
@@ -448,7 +448,7 @@ sub resubmit_vm_on_state {
         } 'Kanopya::Exception::Internal::NotFound',
         'Rule not verified';
 
-        $orchestrator->manage_aggregates();
+        $orchestrator->oneRun();
 
         diag('Rule verification');
         my $verifNodeRule = VerifiedNoderule->find( hash => {
@@ -472,7 +472,7 @@ sub resubmit_vm_on_state {
             specific_params         => { delay => 60 },
         );
 
-        $orchestrator->manage_aggregates();
+        $orchestrator->oneRun();
 
         my @operations = Entity::Operation->search(hash => {}, order_by => 'execution_rank asc');
         if (scalar @operations == 3) {
@@ -500,11 +500,11 @@ sub resubmit_vm_on_state {
             die 'Node not in';
         }
 
-        $orchestrator->manage_aggregates();
+        $orchestrator->oneRun();
         sleep(10);
 
         # With 60 sec delay, workflow is not relaunched
-        $orchestrator->manage_aggregates();
+        $orchestrator->oneRun();
         @operations = Entity::Operation->search(hash => {});
         if (scalar @operations == 0) {
             diag('no operation waiting for delay');
@@ -515,7 +515,7 @@ sub resubmit_vm_on_state {
 
         sleep(55);
 
-        $orchestrator->manage_aggregates();
+        $orchestrator->oneRun();
 
         @operations = Entity::Operation->search(hash => {});
 
