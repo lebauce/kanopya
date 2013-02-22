@@ -581,7 +581,7 @@ sub test_aggregate_rules_undef {
     $orchestrator->manage_aggregates();
 
     ok (defined $comb->computeLastValue(), 'cm ok, check cm');
-    is ($ac->eval(), 1, 'cm ok, check condition');
+    is ($ac->evaluate(), 1, 'cm ok, check condition');
     is (Entity->get(id=>$ac->id)->last_eval, 1, 'cm ok, check condition');
     is (Entity->get(id=>$rule->id)->aggregate_rule_last_eval, 1, 'cm ok, check rule');
 
@@ -597,7 +597,7 @@ sub test_aggregate_rules_undef {
 
     ok (! defined $comb->computeLastValue(), 'Undef cm, check cm');
     ok (! defined Entity->get(id=>$ac->id)->last_eval, 'Undef cm, check condition (a)');
-    ok (! defined Entity->get(id=>$ac->id)->eval(), 'Undef cm, check condition (b)' );
+    ok (! defined Entity->get(id=>$ac->id)->evaluate(), 'Undef cm, check condition (b)' );
     ok (! defined Entity->get(id=>$rule->id)->aggregate_rule_last_eval, 'Undef cm, check rule');
 }
 
@@ -671,9 +671,9 @@ sub test_aggregate_combination {
     is ($comb->computeLastValue(),3.579, 'Check aggregate condition mock monitor combination value (a)');
     is ($comb2->computeLastValue(),2*3.579, 'Check aggregate condition mock monitor combination value (b)');
 
-    is ($ac_left->eval,1, 'Check condition combi left');
-    is ($ac_right->eval,1, 'Check condition combi right');
-    is ($ac_both->eval,1, 'Check condition combi both');
+    is ($ac_left->evaluate(),1, 'Check condition combi left');
+    is ($ac_right->evaluate(),1, 'Check condition combi right');
+    is ($ac_both->evaluate(),1, 'Check condition combi both');
 
     is ($ac_left->toString(),'sum(RAM used) < 12.34','Check to string (a)');
     is ($ac_right->toString(),'-43.21 < sum(RAM used)','Check to string (b)');
@@ -746,8 +746,8 @@ sub test_aggregate_rules {
     sleep(2);
     $aggregator->update();
 
-    is($ac_t->eval, 1, 'Check true condition');
-    is($ac_f->eval, 0, 'Check false condition');
+    is($ac_t->evaluate(), 1, 'Check true condition');
+    is($ac_f->evaluate(), 0, 'Check false condition');
 
 
     test_not();
@@ -843,10 +843,10 @@ sub test_and {
     );
 
     $orchestrator->manage_aggregates();
-    is ($rule1->eval, 1, 'Check 1 && 1 rule');
-    is ($rule2->eval, 0, 'Check 1 && 0 rule');
-    is ($rule3->eval, 0, 'Check 0 && 1 rule');
-    is ($rule4->eval, 0, 'Check 0 && 0 rule');
+    is ($rule1->evaluate(), 1, 'Check 1 && 1 rule');
+    is ($rule2->evaluate(), 0, 'Check 1 && 0 rule');
+    is ($rule3->evaluate(), 0, 'Check 0 && 1 rule');
+    is ($rule4->evaluate(), 0, 'Check 0 && 0 rule');
 
     is ($rule1->aggregate_rule_formula_string, 'sum(RAM used) > 0 && sum(RAM used) > 0', 'Check formula string aggregate rule before update');
     $rule1->update (aggregate_rule_formula => 'id'.$ac_t->id.' && ! id'.$ac_t->id);
@@ -940,10 +940,10 @@ sub test_or {
     );
 
     $orchestrator->manage_aggregates();
-    is($rule1->eval, 1, 'Check 1 || 1 rule');
-    is($rule2->eval, 1, 'Check 1 || 0 rule');
-    is($rule3->eval, 1, 'Check 0 || 1 rule');
-    is($rule4->eval, 0, 'Check 0 || 0 rule');
+    is($rule1->evaluate(), 1, 'Check 1 || 1 rule');
+    is($rule2->evaluate(), 1, 'Check 1 || 0 rule');
+    is($rule3->evaluate(), 1, 'Check 0 || 1 rule');
+    is($rule4->evaluate(), 0, 'Check 0 || 0 rule');
 }
 
 sub test_not_n {
@@ -1054,12 +1054,12 @@ sub test_not{
     );
 
     $orchestrator->manage_aggregates();
-    is($rule1->eval, 1, 'Check 1 rule');
-    is($rule2->eval, 0, 'Check ! 1 rule');
-    is($rule3->eval, 0, 'Check 0 rule');
-    is($rule4->eval, 1, 'Check ! 0 rule');
-    is($rule5->eval, 1, 'Check not ! 1 rule');
-    is($rule6->eval, 0, 'Check ! not ! 1 rule');
+    is($rule1->evaluate(), 1, 'Check 1 rule');
+    is($rule2->evaluate(), 0, 'Check ! 1 rule');
+    is($rule3->evaluate(), 0, 'Check 0 rule');
+    is($rule4->evaluate(), 1, 'Check ! 0 rule');
+    is($rule5->evaluate(), 1, 'Check not ! 1 rule');
+    is($rule6->evaluate(), 0, 'Check ! not ! 1 rule');
 }
 
 sub test_big_formulas_n {
@@ -1096,8 +1096,8 @@ sub test_big_formulas {
     );
 
     $orchestrator->manage_aggregates();
-    is($rule1->eval, 1, 'Check (!! (1 || 0)) && (1 && 1) rule');
-    is($rule2->eval, 1, 'Check ((0 || 0) || (0 || 1)) && ! ( (! (0 || 1)) || ! (1 && 1)) rule');
+    is($rule1->evaluate(), 1, 'Check (!! (1 || 0)) && (1 && 1) rule');
+    is($rule2->evaluate(), 1, 'Check ((0 || 0) || (0 || 1)) && ! ( (! (0 || 1)) || ! (1 && 1)) rule');
 }
 
 sub test_aggregate_condition_update {

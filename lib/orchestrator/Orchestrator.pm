@@ -546,7 +546,7 @@ sub clustermetricManagement{
             throw Kanopya::Exception(error => $error);
         }
 
-        my $result = $aggregate_rule->eval();
+        my $result = $aggregate_rule->evaluate();
         my $rule_state = $aggregate_rule->getAttr (name => 'aggregate_rule_state');
 
         if (defined $result) {

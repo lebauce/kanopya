@@ -206,7 +206,7 @@ sub toString {
 }
 
 
-sub eval {
+sub evaluate {
     my $self = shift;
 
     #Split aggregate_rule id from $formula
@@ -215,7 +215,7 @@ sub eval {
     #replace each rule id by its evaluation
     for my $element (@array) {
         if ($element =~ m/id(\d+)/) {
-            $element = Entity::AggregateCondition->get ('id'=>substr($element,2))->eval();
+            $element = Entity::AggregateCondition->get ('id'=>substr($element,2))->evaluate();
             if( !defined $element) {
                 $self->setAttr(name => 'aggregate_rule_last_eval', value=>undef);
                 $self->save();

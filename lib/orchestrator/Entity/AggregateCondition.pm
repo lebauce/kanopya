@@ -184,7 +184,7 @@ sub toString {
            .$self->right_combination->combination_formula_string;
 }
 
-sub eval{
+sub evaluate{
     my $self = shift;
 
     my $comparator  = $self->getAttr(name => 'comparator');
