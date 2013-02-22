@@ -290,15 +290,19 @@ sub processParams {
                          required => [ 'params' ],
                          optional => { 'trigger' => undef });
 
-    # In function of the trigger attr, check if we need
-    # merge params with existing values.
-    if ($self->requireValuesMerge(params => $args{params}, trigger => $args{trigger})) {
-        $args{params} = $self->mergeValues(values => $args{params});
-    }
+    # If the trigger attribute is set to undef, remove it further
+    # from the params merged with exiting values
+    my $trigger_unset = (defined $args{trigger} && not defined $args{params}->{$args{trigger}});
+
+    # Merge params with existing values.
+    $args{params} = $self->mergeValues(values => $args{params});
 
     # Unset manager if the provider is the trigger
     if (defined $args{trigger}){
         $self->unsetSelectors(selector => $args{trigger}, params => $args{params});
+        if ($trigger_unset){
+            delete $args{params}->{$args{trigger}};
+        }
     }
     return $args{params};
 }
@@ -480,46 +484,6 @@ sub mergeValues {
         $args{values} = $merge->merge($args{values}, $existing);
     }
     return $args{values};
-}
-
-
-=pod
-
-=begin classdoc
-
-Search about the trigger attr in attributes that can reload
-the attribute defintion (reload => 1). Indeed, if the trigger
-attr is a reload attr, then we must not use the existing policy
-values, as a new value has been set for an attr that depends others.
-
-@param boolean to specify we need to merge params with existing values.
-
-@return the values defining the policy.
-
-=end classdoc
-
-=cut
-
-sub requireValuesMerge {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args,
-                         required => [ 'params' ],
-                         optional => { 'trigger' => undef });
-
-    # Only policy instances have existing values
-    if (ref($self) and defined $args{'trigger'} and not defined $args{'params'}->{$args{'trigger'}}) {
-        my $attrdef = $merge->merge($self->getPolicyAttrDef,
-                                    $self->getPolicySelectorAttrDef);
-
-        # Search for reload property
-        my @reloaders = grep { $attrdef->{$_}->{reload}  } keys $attrdef;
-        if (scalar (grep { $_ eq $args{'trigger'} } @reloaders) > 0) {
-            return 0;
-        }
-    }
-    return 1;
 }
 
 
