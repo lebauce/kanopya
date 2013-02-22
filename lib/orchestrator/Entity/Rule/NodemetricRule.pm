@@ -74,12 +74,6 @@ use constant ATTR_DEF => {
         is_extended     => 0,
         is_editable     => 1,
     },
-    nodemetric_rule_service_provider_id => {
-        pattern         => '^.*$',
-        is_mandatory    => 1,
-        is_extended     => 0,
-        is_editable     => 1,
-    },
     workflow_def_id => {
         pattern         => '^.*$',
         is_mandatory    => 0,
@@ -156,10 +150,10 @@ sub setUndefForEachNode{
     my ($self) = @_;
     #ADD A ROW IN VERIFIED_NODERULE TABLE indicating undef data
 #    my $extcluster = Entity::ServiceProvider::Externalcluster->get(
-#                        'id' => $self->getAttr(name => 'nodemetric_rule_service_provider_id'),
+#                        'id' => $self->getAttr(name => 'service_provider_id'),
 #                     );
     my $service_provider = Entity::ServiceProvider->get(
-                               'id' => $self->nodemetric_rule_service_provider_id,
+                               'id' => $self->service_provider_id,
                            );
 
     my $nodes = $service_provider->getNodes();
@@ -353,7 +347,7 @@ sub setAllRulesUndefForANode{
 
     my @nodemetric_rules = Entity::NodemetricRule->search(
                                hash => {
-                                   nodemetric_rule_service_provider_id => $cluster_id,
+                                   service_provider_id => $cluster_id,
                                    nodemetric_rule_state               => 'enabled',
                                },
                            );
@@ -393,7 +387,7 @@ sub clone {
         my %args = @_;
         my $attrs = $args{attrs};
         $attrs->{nodemetric_rule_formula}  = $self->_cloneFormula(
-            dest_sp_id              => $attrs->{nodemetric_rule_service_provider_id},
+            dest_sp_id              => $attrs->{service_provider_id},
             formula                 => $attrs->{nodemetric_rule_formula},
             formula_object_class    => 'Entity::NodemetricCondition'
         );

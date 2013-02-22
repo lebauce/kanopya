@@ -572,8 +572,7 @@ sub configureOrchestration {
         $sp->combinations,
         $sp->nodemetric_conditions,
         $sp->aggregate_conditions,
-        $sp->nodemetric_rules,
-        $sp->aggregate_rules
+        $sp->rules
         ) {
         $_->clone(dest_service_provider_id => $self->id);
     }
@@ -937,7 +936,7 @@ sub generateOverLoadNodemetricRules {
             nodemetric_rule_label               => $value->{rule_label},
             nodemetric_rule_description         => $value->{rule_description},
             nodemetric_rule_state               => 'enabled',
-            nodemetric_rule_service_provider_id => $service_provider_id,
+            service_provider_id => $service_provider_id,
         };
         Entity::Rule::NodemetricRule->new(%$prule);
     }

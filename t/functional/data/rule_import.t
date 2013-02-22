@@ -106,7 +106,7 @@ sub testNodeRuleImport {
     lives_ok {
         Entity::Rule::NodemetricRule->find(
             hash => {
-                nodemetric_rule_service_provider_id => $sp_dest->id,
+                service_provider_id => $sp_dest->id,
                 nodemetric_rule_label               => 'node rule label',
                 nodemetric_rule_formula             => 'id'.$cloned_ncond->id,
                 nodemetric_rule_state               => 'enabled',
@@ -175,7 +175,7 @@ sub testServiceRuleImport {
     lives_ok {
         $cloned_ar = Entity::Rule::AggregateRule->find(
             hash => {
-                aggregate_rule_service_provider_id  => $sp_dest->id,
+                service_provider_id  => $sp_dest->id,
                 aggregate_rule_label                => 'service rule label',
                 aggregate_rule_formula              => 'id'.$cloned_acond->id,
                 aggregate_rule_state                => 'enabled',
@@ -298,7 +298,7 @@ sub init {
 
     # Nodemetric rule
    $nr = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $sp_src->id,
+        service_provider_id => $sp_src->id,
         nodemetric_rule_label               => 'node rule label',
         nodemetric_rule_formula             => 'id'.$ncond->id,
         nodemetric_rule_state               => 'enabled',
@@ -331,7 +331,7 @@ sub init {
 
     # Aggregate rule
    $ar = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id  => $sp_src->id,
+        service_provider_id  => $sp_src->id,
         aggregate_rule_label                => 'service rule label',
         aggregate_rule_formula              => 'id'.$acond->id,
         aggregate_rule_state                => 'enabled',

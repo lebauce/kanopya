@@ -103,23 +103,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 aggregate_rules
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::AggregateRule>
-
-=cut
-
-__PACKAGE__->has_many(
-  "aggregate_rules",
-  "AdministratorDB::Schema::Result::AggregateRule",
-  {
-    "foreign.aggregate_rule_service_provider_id" => "self.service_provider_id",
-  },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 billinglimits
 
 Type: has_many
@@ -306,23 +289,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 nodemetric_rules
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::NodemetricRule>
-
-=cut
-
-__PACKAGE__->has_many(
-  "nodemetric_rules",
-  "AdministratorDB::Schema::Result::NodemetricRule",
-  {
-    "foreign.nodemetric_rule_service_provider_id" => "self.service_provider_id",
-  },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 nodes
 
 Type: has_many
@@ -349,6 +315,21 @@ Related object: L<AdministratorDB::Schema::Result::NotificationSubscription>
 __PACKAGE__->has_many(
   "notification_subscriptions",
   "AdministratorDB::Schema::Result::NotificationSubscription",
+  { "foreign.service_provider_id" => "self.service_provider_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 rules
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Rule>
+
+=cut
+
+__PACKAGE__->has_many(
+  "rules",
+  "AdministratorDB::Schema::Result::Rule",
   { "foreign.service_provider_id" => "self.service_provider_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );

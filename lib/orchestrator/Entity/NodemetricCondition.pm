@@ -209,7 +209,7 @@ sub getDependentRules {
     my $self = shift;
     my @rules_from_same_service = Entity::Rule::NodemetricRule->search(
                                       hash => {
-                                          nodemetric_rule_service_provider_id => $self->nodemetric_condition_service_provider_id
+                                          service_provider_id => $self->nodemetric_condition_service_provider_id
                                       }
                                   );
 
@@ -242,7 +242,7 @@ sub getDependencies {
 
 sub delete {
     my $self = shift;
-    my @rules_from_same_service = Entity::Rule::NodemetricRule->search(hash => {nodemetric_rule_service_provider_id => $self->nodemetric_condition_service_provider_id});
+    my @rules_from_same_service = Entity::Rule::NodemetricRule->search(hash => {service_provider_id => $self->nodemetric_condition_service_provider_id});
     my $id = $self->getId;
     RULE:
     while(@rules_from_same_service) {

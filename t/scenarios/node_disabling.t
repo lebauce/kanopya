@@ -250,7 +250,7 @@ sub test_rrd_remove {
 
         diag('Check if all aggregrate rules have been deleted');
         my @ars = Entity::Rule::AggregateRule->search (hash => {
-            aggregate_rule_service_provider_id => $service_provider->id
+            service_provider_id => $service_provider->id
         });
         if ( scalar @ars == 0 ) {
             diag('## checked');
@@ -313,7 +313,7 @@ sub _node_rule_objects_creation {
     );
 
     $nrule1 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc1->id,
         nodemetric_rule_state => 'enabled'
     );

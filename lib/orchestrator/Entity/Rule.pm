@@ -34,7 +34,14 @@ my $log = get_logger("");
 
 use Entity::WorkflowDef;
 
-use constant ATTR_DEF   => { };
+use constant ATTR_DEF   => {
+    service_provider_id => {
+        pattern         => '^.*$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
+};
 
 sub getAttrDef { return ATTR_DEF; }
 

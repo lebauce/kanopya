@@ -130,7 +130,7 @@ sub test_rrd_remove {
     is ((scalar @acs), 0, 'Check all aggregate combinations are deleted');
 
     my @ars = Entity::Rule::AggregateRule->search (hash => {
-        aggregate_rule_service_provider_id => $service_provider->id
+        service_provider_id => $service_provider->id
     });
     
     is (scalar @acs, 0, 'Check all aggregate rules are deleted');
@@ -218,25 +218,25 @@ sub test_nodemetric_condition {
 
 
     my $r1 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_agg_th_left->id,
         nodemetric_rule_state => 'enabled'
     );
 
     my $r2 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_agg_th_left->id,
         nodemetric_rule_state => 'enabled'
     );
 
     my $r3 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_mix_1->id,
         nodemetric_rule_state => 'enabled'
     );
 
     my $r4 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_mix_2->id,
         nodemetric_rule_state => 'enabled'
     );
@@ -368,13 +368,13 @@ sub test_two_combinations_on_nodemetric_condition {
     );
 
     my $r1 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc1->id,
         nodemetric_rule_state => 'enabled'
     );
 
     my $r2 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc2->id,
         nodemetric_rule_state => 'enabled'
     );
@@ -435,7 +435,7 @@ sub test_aggregate_combination_on_nodemetric_condition {
     );
 
     my $r1 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_t->id,
         nodemetric_rule_state => 'enabled'
     );
@@ -493,13 +493,13 @@ sub test_nodemetric_rules {
     $aggregator->update();
 
     my $nr_f = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_f->id,
         nodemetric_rule_state => 'enabled'
     );
 
     my $nr_t = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_t->id,
         nodemetric_rule_state => 'enabled'
     );
@@ -571,7 +571,7 @@ sub test_aggregate_rules_undef {
     );
 
     my $rule = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac->id,
         aggregate_rule_state => 'enabled'
     );
@@ -645,7 +645,7 @@ sub test_aggregate_combination {
     );
 
     my $rule = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac_left->id.' && id'.$ac_right->id,
         aggregate_rule_state => 'enabled'
     );
@@ -759,25 +759,25 @@ sub test_aggregate_rules {
 sub test_and_n {
 
     my $r1 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_f->id.' && '.'id'.$nc_f->id,
         nodemetric_rule_state => 'enabled'
     );
 
     my $r2 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_f->id.' && '.'id'.$nc_t->id,
         nodemetric_rule_state => 'enabled'
     );
 
     my $r3 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_t->id.' && '.'id'.$nc_f->id,
         nodemetric_rule_state => 'enabled'
     );
 
     my $r4 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_t->id.' && '.'id'.$nc_t->id,
         nodemetric_rule_state => 'enabled'
     );
@@ -819,25 +819,25 @@ sub test_and_n {
 
 sub test_and {
     my $rule1 = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac_t->id.' && id'.$ac_t->id,
         aggregate_rule_state => 'enabled'
     );
 
     my $rule2 = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac_t->id.' && id'.$ac_f->id,
         aggregate_rule_state => 'enabled'
     );
 
     my $rule3 = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac_f->id.' && id'.$ac_t->id,
         aggregate_rule_state => 'enabled'
     );
 
     my $rule4 = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac_f->id.' && id'.$ac_f->id,
         aggregate_rule_state => 'enabled'
     );
@@ -856,25 +856,25 @@ sub test_and {
 sub test_or_n {
 
     my $r1 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_f->id.' || '.'id'.$nc_f->id,
         nodemetric_rule_state => 'enabled'
     );
 
     my $r2 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_f->id.' || '.'id'.$nc_t->id,
         nodemetric_rule_state => 'enabled'
     );
 
     my $r3 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_t->id.' || '.'id'.$nc_f->id,
         nodemetric_rule_state => 'enabled'
     );
 
     my $r4 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc_t->id.' || '.'id'.$nc_t->id,
         nodemetric_rule_state => 'enabled'
     );
@@ -916,25 +916,25 @@ sub test_or_n {
 
 sub test_or {
     my $rule1 = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac_t->id.' || id'.$ac_t->id,
         aggregate_rule_state => 'enabled'
     );
 
     my $rule2 = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac_t->id.' || id'.$ac_f->id,
         aggregate_rule_state => 'enabled'
     );
 
     my $rule3 = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac_f->id.' || id'.$ac_t->id,
         aggregate_rule_state => 'enabled'
     );
 
     my $rule4 = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac_f->id.' || id'.$ac_f->id,
         aggregate_rule_state => 'enabled'
     );
@@ -949,25 +949,25 @@ sub test_or {
 sub test_not_n {
 
     my $r1 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => '! id'.$nc_f->id,
         nodemetric_rule_state => 'enabled'
     );
 
     my $r2 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => '! id'.$nc_t->id,
         nodemetric_rule_state => 'enabled'
     );
 
     my $r3 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'not ! id'.$nc_f->id,
         nodemetric_rule_state => 'enabled'
     );
 
     my $r4 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'not ! id'.$nc_t->id,
         nodemetric_rule_state => 'enabled'
     );
@@ -1018,37 +1018,37 @@ sub test_not_n {
 
 sub test_not{
     my $rule1 = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac_t->id,
         aggregate_rule_state => 'enabled'
     );
 
     my $rule2 = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         aggregate_rule_formula => '! id'.$ac_t->id,
         aggregate_rule_state => 'enabled'
     );
 
     my $rule3 = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac_f->id,
         aggregate_rule_state => 'enabled'
     );
 
     my $rule4 = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         aggregate_rule_formula => '! id'.$ac_f->id,
         aggregate_rule_state => 'enabled'
     );
 
     my $rule5 = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'not ! id'.$ac_t->id,
         aggregate_rule_state => 'enabled'
     );
 
     my $rule6 = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         aggregate_rule_formula => '! not ! id'.$ac_t->id,
         aggregate_rule_state => 'enabled'
     );
@@ -1065,7 +1065,7 @@ sub test_not{
 sub test_big_formulas_n {
 
     my $r1 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => '(!('.'id'.$nc_t->id.' && (!'.'id'.$nc_f->id.') && '.'id'.$nc_t->id.')) || ! ('.'id'.$nc_t->id.' && '.'id'.$nc_f->id.')',
         nodemetric_rule_state => 'enabled'
     );
@@ -1084,13 +1084,13 @@ sub test_big_formulas_n {
 
 sub test_big_formulas {
     my $rule1 = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         aggregate_rule_formula => '(!! ('.'id'.$ac_t->id.' || '.'id'.$ac_f->id.')) && ('.'id'.$ac_t->id.' && '.'id'.$ac_t->id.')',
         aggregate_rule_state => 'enabled'
     );
 
     my $rule2 = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         aggregate_rule_formula => '(('.'id'.$ac_f->id.' || '.'id'.$ac_f->id.') || ('.'id'.$ac_f->id.' || '.'id'.$ac_t->id.')) && ! ( (! ('.'id'.$ac_f->id.' || '.'id'.$ac_t->id.')) || ! ('.'id'.$ac_t->id.' && '.'id'.$ac_t->id.'))',
         aggregate_rule_state => 'enabled'
     );

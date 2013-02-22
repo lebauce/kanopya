@@ -2034,7 +2034,7 @@ sub configureDefaultOrchestrationPolicyService {
                 nodemetric_rule_label               => $noderule_conf->{$indic_label}->{rule_label},
                 nodemetric_rule_description         => $noderule_conf->{$indic_label}->{rule_description},
                 nodemetric_rule_state               => 'enabled',
-                nodemetric_rule_service_provider_id => $sp->id,
+                service_provider_id => $sp->id,
             );
         }
 
@@ -2066,7 +2066,7 @@ sub configureDefaultOrchestrationPolicyService {
                     aggregate_rule_label               => $clusterrule_conf->{$indic_label}{$func}->{rule_label},
                     aggregate_rule_description         => $clusterrule_conf->{$indic_label}{$func}->{rule_description},
                     aggregate_rule_state               => 'enabled',
-                    aggregate_rule_service_provider_id => $sp->id,
+                    service_provider_id => $sp->id,
                 );
             }
         }

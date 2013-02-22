@@ -212,7 +212,7 @@ sub resubmit_hv_on_state {
         );
 
         my $rule = Entity::Rule::NodemetricRule->new(
-            nodemetric_rule_service_provider_id => $hv_cluster->id,
+            service_provider_id => $hv_cluster->id,
             nodemetric_rule_formula => 'id'.$ncond->id,
             nodemetric_rule_state => 'enabled'
         );
@@ -380,7 +380,7 @@ sub resubmit_vm_on_state {
         );
 
         my $rule = Entity::Rule::NodemetricRule->new(
-            nodemetric_rule_service_provider_id => $vm_cluster->id,
+            service_provider_id => $vm_cluster->id,
             nodemetric_rule_formula => 'id'.$ncond->id,
             nodemetric_rule_state => 'enabled'
         );

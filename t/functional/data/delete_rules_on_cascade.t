@@ -247,7 +247,7 @@ sub test_rrd_remove {
     if ((scalar @acs) != 0) { die 'Error in all aggregate combinations are deleted';}
 
     my @ars = Entity::Rule::AggregateRule->search (hash => {
-        aggregate_rule_service_provider_id => $service_provider->id
+        service_provider_id => $service_provider->id
     });
     
     if ((scalar @acs) != 0) {die 'Error in all aggregate rules are deleted'; }
@@ -328,25 +328,25 @@ sub _service_rule_objects_creation {
     );
 
     $rule1d = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$acd1->id.' && id'.$acd2->id,
         aggregate_rule_state => 'enabled'
     );
 
     $rule2d = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac3->id.' || id'.$acd2->id,
         aggregate_rule_state => 'enabled'
     );
 
     $rule3d = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$acd2->id.' && id'.$ac3->id,
         aggregate_rule_state => 'enabled'
     );
 
     $rule4 = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac3->id.' || id'.$ac3->id,
         aggregate_rule_state => 'enabled'
     );
@@ -397,25 +397,25 @@ sub _node_rule_objects_creation {
     );
 
     $nrule1d = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$ncd1->id.' && id'.$ncd2->id,
         nodemetric_rule_state => 'enabled'
     );
 
     $nrule2d = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$ncd1->id.' || id'.$nc3->id,
         nodemetric_rule_state => 'enabled'
     );
 
     $nrule3d = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc3->id.' || id'.$ncd2->id,
         nodemetric_rule_state => 'enabled'
     );
 
     $nrule4 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc3->id.' || id'.$nc3->id,
         nodemetric_rule_state => 'enabled'
     );

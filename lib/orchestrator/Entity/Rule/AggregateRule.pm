@@ -54,12 +54,6 @@ use constant ATTR_DEF => {
         is_extended     => 0,
         is_editable     => 1,
     },
-    aggregate_rule_service_provider_id => {
-        pattern         => '^.*$',
-        is_mandatory    => 1,
-        is_extended     => 0,
-        is_editable     => 0,
-    },
     aggregate_rule_formula => {
         pattern         => '^((id\d+)|and|or|not|[ ()!&|])+$',
         is_mandatory    => 1,
@@ -288,7 +282,7 @@ sub getRules() {
 
     my @rules;
     if (defined $service_provider_id) {
-        @rules = Entity::AggregateRule->search (hash => {'aggregate_rule_service_provider_id' => $service_provider_id});
+        @rules = Entity::AggregateRule->search (hash => {'service_provider_id' => $service_provider_id});
     } else {
         @rules = Entity::AggregateRule->search (hash => {});
     }
@@ -374,7 +368,7 @@ sub clone {
         my %args = @_;
         my $attrs = $args{attrs};
         $attrs->{aggregate_rule_formula}    = $self->_cloneFormula(
-            dest_sp_id              => $attrs->{aggregate_rule_service_provider_id},
+            dest_sp_id              => $attrs->{service_provider_id},
             formula                 => $attrs->{aggregate_rule_formula},
             formula_object_class    => 'Entity::AggregateCondition'
         );
@@ -386,7 +380,7 @@ sub clone {
     # Generic clone
     my $clone = $self->_importToRelated(
         dest_obj_id         => $args{'dest_service_provider_id'},
-        relationship        => 'aggregate_rule_service_provider',
+        relationship        => 'service_provider',
         label_attr_name     => 'aggregate_rule_label',
         attrs_clone_handler => $attrs_cloner
     );
@@ -422,7 +416,7 @@ sub delete {
 
 sub serviceProvider {
     my $self    = shift;
-    return $self->aggregate_rule_service_provider;
+    return $self->service_provider;
 }
 
 sub notifyWorkflowName {

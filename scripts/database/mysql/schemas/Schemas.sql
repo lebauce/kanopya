@@ -1193,8 +1193,11 @@ CREATE TABLE `rulecondition` (
 
 CREATE TABLE `rule` (
   `rule_id` int(8) unsigned NOT NULL,
+  `service_provider_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`rule_id`),
-  FOREIGN KEY (`rule_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`rule_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`service_provider_id`),
+  FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1379,7 +1382,6 @@ CREATE TABLE `nodemetric_combination` (
 CREATE TABLE `aggregate_rule` (
   `aggregate_rule_id` int(8) unsigned NOT NULL PRIMARY KEY,
   `aggregate_rule_label` char(255),
-  `aggregate_rule_service_provider_id` int(8) unsigned NOT NULL,
   `aggregate_rule_formula` char(255) NOT NULL,
   `aggregate_rule_formula_string` TEXT,
   `aggregate_rule_last_eval` int(8) unsigned NULL DEFAULT NULL ,
@@ -1390,8 +1392,6 @@ CREATE TABLE `aggregate_rule` (
   `workflow_id` int(8) unsigned NULL DEFAULT NULL,
   `workflow_untriggerable_timestamp` int(8) NULL DEFAULT NULL,
   FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`aggregate_rule_service_provider_id`),
-  FOREIGN KEY (`aggregate_rule_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`workflow_id`),
   FOREIGN KEY (`workflow_id`) REFERENCES `workflow` (`workflow_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   FOREIGN KEY (`aggregate_rule_id`) REFERENCES `rule` (`rule_id`) ON DELETE CASCADE ON UPDATE NO ACTION
@@ -1452,7 +1452,6 @@ CREATE TABLE `nodemetric_condition` (
 CREATE TABLE `nodemetric_rule` (
   `nodemetric_rule_id` int(8) unsigned NOT NULL PRIMARY KEY,
   `nodemetric_rule_label` char(255),
-  `nodemetric_rule_service_provider_id` int(8) unsigned NOT NULL,
   `nodemetric_rule_formula` char(255) NOT NULL,
   `nodemetric_rule_formula_string` TEXT,
   `nodemetric_rule_timestamp` int(8) unsigned NULL DEFAULT NULL,
@@ -1460,8 +1459,6 @@ CREATE TABLE `nodemetric_rule` (
   `workflow_def_id` int(8) unsigned NULL DEFAULT NULL,
   `nodemetric_rule_description` TEXT,
   FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`nodemetric_rule_service_provider_id`),
-  FOREIGN KEY (`nodemetric_rule_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`nodemetric_rule_id`) REFERENCES `rule` (`rule_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
 

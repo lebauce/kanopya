@@ -46,10 +46,24 @@ __PACKAGE__->table("rule");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 service_provider_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
   "rule_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
+  "service_provider_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -117,8 +131,26 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-12-17 11:23:29
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ElMlQdbugH+MJhsoNtnDug
+
+=head2 service_provider
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "service_provider",
+  "AdministratorDB::Schema::Result::ServiceProvider",
+  { service_provider_id => "service_provider_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07015 @ 2013-02-22 14:20:15
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:sV9iPSVEdvskEgkATmpPow
+
 
  __PACKAGE__->belongs_to(
     "parent",

@@ -218,7 +218,7 @@ sub getDependentRules {
     my $self = shift;
     my @rules_from_same_service = Entity::Rule::AggregateRule->search(
                                       hash => {
-                                          aggregate_rule_service_provider_id => $self->aggregate_condition_service_provider_id
+                                          service_provider_id => $self->aggregate_condition_service_provider_id
                                       }
                                   );
 
@@ -251,7 +251,7 @@ sub getDependencies {
 
 sub delete {
     my $self = shift;
-    my @rules_from_same_service = Entity::Rule::AggregateRule->search(hash => {aggregate_rule_service_provider_id => $self->aggregate_condition_service_provider_id});
+    my @rules_from_same_service = Entity::Rule::AggregateRule->search(hash => {service_provider_id => $self->aggregate_condition_service_provider_id});
 
     my $id = $self->getId;
     LOOP:

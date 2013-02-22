@@ -451,7 +451,7 @@ sub clean_infra {
 
     diag('Check if all aggregrate rules have been deleted');
     my @ars = Entity::Rule::AggregateRule->search (hash => {
-        aggregate_rule_service_provider_id => $service_provider->id
+        service_provider_id => $service_provider->id
     });
     if ( scalar @ars == 0 ) {
         diag('## checked');
@@ -526,13 +526,13 @@ sub _service_rule_objects_creation {
     );
 
     $rule1 = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac1->id.' && id'.$ac2->id,
         aggregate_rule_state => 'enabled'
     );
 
     $rule2 = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         aggregate_rule_formula => 'id'.$ac1->id.' || id'.$ac2->id,
         aggregate_rule_state => 'enabled'
     );
@@ -579,13 +579,13 @@ sub _node_rule_objects_creation {
     );
 
     $rule1 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc1->id.' && id'.$nc2->id,
         nodemetric_rule_state => 'enabled'
     );
 
     $rule2 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc1->id.' || id'.$nc2->id,
         nodemetric_rule_state => 'enabled'
     );

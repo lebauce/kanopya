@@ -126,13 +126,13 @@ eval{
     );
 
     my $nr1 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc1->id,
         nodemetric_rule_state => 'enabled'
     );
 
     my $nr2 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
+        service_provider_id => $service_provider->id,
         nodemetric_rule_formula => 'id'.$nc2->id,
         nodemetric_rule_state => 'enabled'
     );
@@ -166,7 +166,7 @@ sub test_rrd_remove {
     is ((scalar @acs), 0, 'Check all aggregate combinations are deleted');
 
     my @ars = Entity::Rule::AggregateRule->search (hash => {
-        aggregate_rule_service_provider_id => $service_provider->id
+        service_provider_id => $service_provider->id
     });
 
     is (scalar @acs, 0, 'Check all aggregate rules are deleted');

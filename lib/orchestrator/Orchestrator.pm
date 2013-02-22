@@ -184,7 +184,7 @@ sub nodemetricManagement {
 
     my @rules = Entity::Rule::NodemetricRule->search (
                     hash => {
-                        nodemetric_rule_service_provider_id => $service_provider_id,
+                        service_provider_id => $service_provider_id,
                         nodemetric_rule_state               => 'enabled',
                     }
                 );
@@ -429,7 +429,7 @@ sub clustermetricManagement{
     # TODO: Test the following block to replace the 3 calls to AggregateRule
 
 #    my @rules = Entity::Rule::AggregateRule->search(hash => {
-#                    aggregate_rule_service_provider_id => $service_provider->id,
+#                    service_provider_id => $service_provider->id,
 #                    -or => [ aggregate_rule_state => 'enabled',
 #                             aggregate_rule_state => 'triggered',
 #                             aggregate_rule_state => 'delayed' ] 
@@ -438,20 +438,20 @@ sub clustermetricManagement{
     # Get rules relative to a cluster
     my @rules_enabled   = Entity::Rule::AggregateRule->search(
                             hash => {
-                                aggregate_rule_service_provider_id => $service_provider->id,
+                                service_provider_id => $service_provider->id,
                                 aggregate_rule_state               => 'enabled',
                             }
                         );
 
     my @rules_triggered = Entity::Rule::AggregateRule->search(
                               hash => {
-                                  aggregate_rule_service_provider_id => $service_provider->id,
+                                  service_provider_id => $service_provider->id,
                                   aggregate_rule_state               => 'triggered'
                               }
                           );
     my @rules_delayed   = Entity::Rule::AggregateRule->search(
                               hash => {
-                                  aggregate_rule_service_provider_id => $service_provider->id,
+                                  service_provider_id => $service_provider->id,
                                   aggregate_rule_state               => 'delayed'
                               }
                           );
