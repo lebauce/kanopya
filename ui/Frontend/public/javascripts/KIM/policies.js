@@ -7,7 +7,6 @@ function load_policy_content (container_id) {
     var policy_type = container_id.split('_')[1];
 
     function createAddPolicyButton(cid, grid) {
-        // Add another button to try the experimental mode
         var button = $("<button>", {html : 'Add a ' + policy_type + ' policy'}).button({
             icons   : { primary : 'ui-icon-plusthick' }
         });
@@ -24,8 +23,9 @@ function load_policy_content (container_id) {
                             value : policy_type
                         }
                     },
-                    attrsCallback : function (resource, data) {
-                        return ajax('POST', '/api/' + policy_type + 'policy/getPolicyDef', data);
+                    attrsCallback : function (resource, data, trigger) {
+                        var args = { params : data, trigger : trigger };
+                        return ajax('POST', '/api/' + policy_type + 'policy/getPolicyDef', args);
                     },
                     callback : function () { grid.trigger("reloadGrid"); }
                 })).start();
@@ -74,8 +74,9 @@ function load_policy_details (elem_id, row_data, grid_id) {
             type       : policy.policy_type + 'policy',
             id         : policy.pk,
             reloadable : true,
-            attrsCallback : function (resource, data) {
-                return ajax('POST', '/api/' + policy.policy_type + 'policy/' + policy.pk + '/getPolicyDef', data);
+            attrsCallback : function (resource, data, trigger) {
+                var args = { params : data, trigger : trigger };
+                return ajax('POST', '/api/' + policy.policy_type + 'policy/' + policy.pk + '/getPolicyDef', args);
             },
             valuesCallback : function (type, id, attributes) {
                 return ajax('GET', '/api/' + policy.policy_type + 'policy/' + policy.pk);

@@ -19,7 +19,7 @@ function orchestrationPolicyForm(sp_id, policy, grid) {
             Rules      : $('<div>')
         },
         attrsCallback : function (resource, data) {
-            return ajax('POST', '/api/orchestrationpolicy/getPolicyDef', data);
+            return ajax('POST', '/api/orchestrationpolicy/getPolicyDef', { params : data });
         },
         submitCallback : function(data, $form, opts, onsuccess, onerror) {
             data['orchestration_service_provider_id'] = sp_id;

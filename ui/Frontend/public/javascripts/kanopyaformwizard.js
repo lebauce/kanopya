@@ -39,11 +39,11 @@ var KanopyaFormWizard = (function() {
         this.load();
     }
 
-    KanopyaFormWizard.prototype.load = function() {
+    KanopyaFormWizard.prototype.load = function(trigger) {
         this.attributedefs = {};
 
         // Retrieve data structure and values from api
-        var response = this.attrsCallback(this.type, this.data);
+        var response = this.attrsCallback(this.type, this.data, trigger);
         if (response == undefined) {
             throw new Error("KanopyaFormWizard: Could not get attributes of: " + this.type);
         }
@@ -89,7 +89,7 @@ var KanopyaFormWizard = (function() {
             if (attributes[relation_name] !== undefined && attributes[relation_name].attributes !== undefined) {
                 response = attributes[relation_name].attributes;
             } else {
-                response = this.attrsCallback(relationdef.resource, this.data);
+                response = this.attrsCallback(relationdef.resource, this.data, trigger);
             }
             if (response == undefined) {
                 throw new Error("KanopyaFormWizard: Could not get attributes of: " + relationdef.resource);
@@ -646,7 +646,7 @@ var KanopyaFormWizard = (function() {
         $(input).addClass('wizard-ignore').addClass("ui-state-disabled");
     }
 
-    KanopyaFormWizard.prototype.reload = function() {
+    KanopyaFormWizard.prototype.reload = function(event) {
         // Enable fields in non visible steps as the same way while submiting
         if (Object.keys(this.steps).length > 1) {
             $(this.form).find(":input").not(".wizard-ignore").removeAttr("disabled");
@@ -669,10 +669,10 @@ var KanopyaFormWizard = (function() {
         }
 
         // Then reload the form
-        this.load();
+        this.load($(event.target).attr('name'));
 
         var state = $(this.form).formwizard("state");
-        $(this.form).find(".step").not("#" + state.currentStep).find(":input").not(".wizard-ignore").attr("disabled","disabled");
+        $(this.form).find(".step").not("#" + state.currentStep).find(":input").not(".wizard-ignore").attr("disabled", "disabled");
     }
 
     KanopyaFormWizard.prototype.mustDisableField = function(name, value) {
@@ -834,7 +834,10 @@ var KanopyaFormWizard = (function() {
         return values;
     }
 
-    KanopyaFormWizard.prototype.getAttributes = function(resource, data) {
+    KanopyaFormWizard.prototype.getAttributes = function(resource, data, trigger) {
+        if (trigger) {
+            data['trigger'] = trigger;
+        }
         return ajax('GET', '/api/attributes/' + resource, data);
     }
 

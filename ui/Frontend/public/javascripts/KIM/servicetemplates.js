@@ -14,8 +14,12 @@ function load_service_template_content (container_id) {
                 type          : 'servicetemplate',
                 reloadable    : true,
                 displayed     : [ 'service_name', 'service_desc' ],
-                attrsCallback : function (resource, data) {
-                    var attributes = ajax('POST', '/api/' + resource + '/getServiceTemplateDef', data);
+                attrsCallback : function (resource, data, reloaded) {
+                    var args = {
+                        params  : data,
+                        trigger : reloaded
+                    };
+                    var attributes = ajax('POST', '/api/' + resource + '/getServiceTemplateDef', args);
 
                     // Set steps
                     set_steps(attributes);
