@@ -435,6 +435,29 @@ sub postStart {
     General::checkParams(args => \%args, required => [ 'host' ]);
 }
 
+sub postStartNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+
+    # The Puppet manifest is compiled a first time and requests the creation
+    # of the database on the database cluster
+    $self->SUPER::postStartNode(%args);
+
+    # We ask :
+    # - the database cluster to create databases and users
+    # - Keystone to create endpoints, users and roles
+    # - AMQP to create queues and users
+    for my $component ($self->mysql5, $self->amqp, $self->keystone) {
+        if ($component) {
+            EEntity->new(entity => $component->service_provider)->reconfigure();
+        }
+    }
+
+    # Now apply the manifest again
+    $self->SUPER::postStartNode(%args);
+}
+
 sub applyVLAN {
     my ($self, %args) = @_;
 
