@@ -67,7 +67,25 @@ use constant POLICY_ATTR_DEF => {
     }
 };
 
+use constant POLICY_SELECTOR_ATTR_DEF => {
+    storage_provider_id => {
+        label        => 'Data store',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^\d*$',
+        reload       => 1,
+        is_mandatory => 1,
+    },
+};
+
+use constant POLICY_SELECTOR_MAP => {
+    storage_provider_id => [ 'disk_manager_id' ],
+    disk_manager_id     => [ 'export_manager_id' ]
+};
+
 sub getPolicyAttrDef { return POLICY_ATTR_DEF; }
+sub getPolicySelectorAttrDef { return POLICY_SELECTOR_ATTR_DEF; }
+sub getPolicySelectorMap { return POLICY_SELECTOR_MAP; }
 
 my $merge = Hash::Merge->new('LEFT_PRECEDENT');
 
@@ -92,58 +110,46 @@ sub getPolicyDef {
     my %args  = @_;
 
     General::checkParams(args     => \%args,
-                         optional => { 'set_mandatory'       => 0,
+                         optional => { 'params'              => {},
+                                       'set_mandatory'       => 0,
                                        'set_editable'        => 1,
                                        'set_params_editable' => 0 });
 
-    %args = %{ $self->mergeValues(values => \%args) };
+    # Apply the trigger effect on params
+    $args{params} = $self->processParams(%args);
+
+    # Complete the attributes with common ones
+    my $attributes = $self->SUPER::getPolicyDef(%args);
+
+    my $displayed = [ 'storage_provider_id', 'disk_manager_id' ];
+    $attributes = $merge->merge($attributes, { displayed => $displayed });
 
     # Build the storage provider list
     my $providers = {};
     for my $component ($class->searchManagers(component_category => 'DiskManager')) {
-        $providers->{$component->service_provider->id} = $component->service_provider->toJSON();
+        $providers->{$component->service_provider->id} = $component->service_provider->toJSON;
     }
     my @storageproviders = values %{$providers};
-
-    my $policy_attrdef = clone($class->getPolicyAttrDef);
-
-    # Manually add the storage_provider_id attr because it is not an
-    # attribute in the policy pattern
-    $policy_attrdef->{storage_provider_id} = {
-        label        => 'Data store',
-        type         => 'relation',
-        relation     => 'single',
-        pattern      => '^\d*$',
-        reload       => 1,
-        is_mandatory => 1,
-        options      => \@storageproviders
-    };
-
-    my $attributes = {
-        displayed  => [ 'storage_provider_id', 'disk_manager_id' ],
-        attributes => $policy_attrdef,
-    };
-
-    # Complete the attributes with common ones
-    $attributes = $merge->merge($self->SUPER::getPolicyDef(%args), $attributes);
+    $attributes->{attributes}->{storage_provider_id}->{options} = \@storageproviders;
 
     # If storage_provider_id not defined, select it from the disk manager or
     # select the first one.
-    if (not defined $args{storage_provider_id}) {
-        if (defined $args{disk_manager_id}) {
-            $args{storage_provider_id} = Entity->get(id => $args{disk_manager_id})->service_provider->id;
+    if (not $args{params}->{storage_provider_id}) {
+        if ($args{params}->{disk_manager_id}) {
+            $args{params}->{storage_provider_id}
+                = Entity->get(id => $args{params}->{disk_manager_id})->service_provider->id;
         }
         elsif ($args{set_mandatory} and scalar (@storageproviders) > 0) {
-            $args{storage_provider_id} = $storageproviders[0]->{pk};
+            $args{params}->{storage_provider_id} = $storageproviders[0]->{pk};
         }
     }
 
     # Build the list of disk manager of the storage provider
-    if (defined $args{storage_provider_id}) {
+    if ($args{params}->{storage_provider_id}) {
         my $manager_options = {};
         for my $component ($class->searchManagers(component_category  => 'DiskManager',
-                                                  service_provider_id => $args{storage_provider_id})) {
-            $manager_options->{$component->id} = $component->toJSON();
+                                                  service_provider_id => $args{params}->{storage_provider_id})) {
+            $manager_options->{$component->id} = $component->toJSON;
             $manager_options->{$component->id}->{label} = $component->disk_type;
         }
         my @diskmanageroptions = values %{$manager_options};
@@ -151,18 +157,19 @@ sub getPolicyDef {
 
         # If disk_manager_id defined but do not corresponding to a available value,
         # it is an old value, so delete it.
-        if (not defined $manager_options->{$args{disk_manager_id}}) {
-            delete $args{disk_manager_id};
+        if (not $manager_options->{$args{params}->{disk_manager_id}}) {
+            delete $args{params}->{disk_manager_id};
         }
         # If no disk_manager_id defined and and attr is mandatory, use the first one as value
-        if (not defined $args{disk_manager_id} and $args{set_mandatory} and scalar (@diskmanageroptions) > 0) {
-            $args{disk_manager_id} = $diskmanageroptions[0]->{pk};
+        if (! $args{params}->{disk_manager_id} and $args{set_mandatory} and scalar (@diskmanageroptions) > 0) {
+
+            $args{params}->{disk_manager_id} = $diskmanageroptions[0]->{pk};
         }
     }
 
-    if (defined $args{disk_manager_id}) {
+    if ($args{params}->{disk_manager_id}) {
         # Get the disk manager params from the selected disk manager
-        my $diskmanager = Entity->get(id => $args{disk_manager_id});
+        my $diskmanager = Entity->get(id => $args{params}->{disk_manager_id});
         my $managerparams = $diskmanager->getDiskManagerParams();
         for my $attrname (keys %{$managerparams}) {
             $attributes->{attributes}->{$attrname} = $managerparams->{$attrname};
@@ -175,7 +182,7 @@ sub getPolicyDef {
         # Build the list of export manager usable for the disk manager
         my $manager_options = {};
         for my $component (@{ $diskmanager->getExportManagers }) {
-            $manager_options->{$component->id} = $component->toJSON();
+            $manager_options->{$component->id} = $component->toJSON;
             $manager_options->{$component->id}->{label} = $component->export_type;
         }
         my @expmanageroptions = values %{$manager_options};
@@ -186,17 +193,17 @@ sub getPolicyDef {
 
         # If export_manager_id defined but do not corresponding to a available value,
         # it is an old value, so delete it.
-        if (not defined $manager_options->{$args{export_manager_id}}) {
-            delete $args{export_manager_id};
+        if (not $manager_options->{$args{params}->{export_manager_id}}) {
+            delete $args{params}->{export_manager_id};
         }
         # If no export_manager_id defined and and attr is mandatory, use the first one as value
-        if (not defined $args{export_manager_id} and $args{set_mandatory} and scalar (@expmanageroptions) > 0) {
-            $args{export_manager_id} = $expmanageroptions[0]->{pk};
+        if (! $args{params}->{export_manager_id} and $args{set_mandatory} and scalar (@expmanageroptions) > 0) {
+            $args{params}->{export_manager_id} = $expmanageroptions[0]->{pk};
         }
 
-        if (defined $args{export_manager_id}) {
+        if ($args{params}->{export_manager_id}) {
             # Get the export manager params from the selected export manager
-            my $exportmanager = Entity->get(id => $args{export_manager_id});
+            my $exportmanager = Entity->get(id => $args{params}->{export_manager_id});
             $managerparams = $exportmanager->getExportManagerParams();
             for my $attrname (keys %{$managerparams}) {
                 $attributes->{attributes}->{$attrname} = $managerparams->{$attrname};
@@ -206,7 +213,7 @@ sub getPolicyDef {
     }
 
     $self->setValues(attributes          => $attributes,
-                     values              => \%args,
+                     values              => $args{params},
                      set_mandatory       => delete $args{set_mandatory},
                      set_editable        => delete $args{set_editable},
                      set_params_editable => delete $args{set_params_editable});

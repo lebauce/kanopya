@@ -68,7 +68,7 @@ sub getPatternFromParams {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'params' ]);
+    General::checkParams(args => \%args, optional => { 'params' => {} });
 
     my $pattern = $self->SUPER::getPatternFromParams(params => $args{params});
 
