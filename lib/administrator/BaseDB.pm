@@ -2153,7 +2153,7 @@ sub classFromDbix {
     my $args = @_;
 
     my $name = normalizeName($source->from);
-    my $class = getClassType(class => $name);
+    my $class = BaseDB->getClassType(class => $name);
     if (!$class) {
         while (1) {
             last if not $source->has_relationship("parent");
