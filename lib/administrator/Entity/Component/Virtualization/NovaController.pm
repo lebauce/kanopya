@@ -150,6 +150,10 @@ sub getPuppetDefinition {
     my $quantum    = $self->quantum;
     my $glance     = join(",", map { $_->service_provider->getMasterNode->fqdn . ":9292" } $self->nova_controller->glances);
 
+    if (not ($self->mysql5 and $self->keystone and $self->quantum)) {
+        return;
+    }
+
     my $definition = "if \$kanopya_openstack_repository == undef {\n" .
                      "\tclass { 'kanopya::openstack::repository': }\n" .
                      "\t\$kanopya_openstack_repository = 1\n" .
