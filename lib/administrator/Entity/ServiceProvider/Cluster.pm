@@ -932,10 +932,10 @@ sub generateOverLoadNodemetricRules {
         my $condition = Entity::NodemetricCondition->new(%$condition_param);
         my $conditionid = $condition->getAttr(name => 'nodemetric_condition_id');
         my $prule = {
-            nodemetric_rule_formula             => 'id'.$conditionid,
-            nodemetric_rule_label               => $value->{rule_label},
-            nodemetric_rule_description         => $value->{rule_description},
-            nodemetric_rule_state               => 'enabled',
+            formula             => 'id'.$conditionid,
+            label               => $value->{rule_label},
+            description         => $value->{rule_description},
+            state               => 'enabled',
             service_provider_id => $service_provider_id,
         };
         Entity::Rule::NodemetricRule->new(%$prule);

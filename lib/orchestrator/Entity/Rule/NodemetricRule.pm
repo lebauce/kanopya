@@ -47,51 +47,6 @@ use constant ATTR_DEF => {
         is_extended     => 0,
         is_editable     => 0,
     },
-    nodemetric_rule_label => {
-        pattern         => '^.*$',
-        is_mandatory    => 0,
-        is_extended     => 0,
-        is_editable     => 1,
-    },
-    nodemetric_rule_formula => {
-        pattern         => '^((id\d+)|and|or|not|[ ()!&|])+$',
-        is_mandatory    => 1,
-        is_extended     => 0,
-        is_editable     => 1,
-        description     => "Construct a formula by condition's names with logical operators (and, or, not)."
-                           . " It's possible to use parenthesis with spaces between each element of the formula"
-                           . ". Press a letter key to obtain the available choice.",
-    },
-    nodemetric_rule_timestamp => {
-        pattern         => '^.*$',
-        is_mandatory    => 0,
-        is_extended     => 0,
-        is_editable     => 1,
-    },
-    nodemetric_rule_state => {
-        pattern         => '(enabled|disabled|disabled_temp)$',
-        is_mandatory    => 1,
-        is_extended     => 0,
-        is_editable     => 1,
-    },
-    workflow_def_id => {
-        pattern         => '^.*$',
-        is_mandatory    => 0,
-        is_extended     => 0,
-        is_editable     => 1,
-    },
-    nodemetric_rule_description => {
-        pattern         => '^.*$',
-        is_mandatory    => 0,
-        is_extended     => 0,
-        is_editable     => 1,
-    },
-    nodemetric_rule_formula_string => {
-        pattern         => '^.*$',
-        is_mandatory    => 0,
-        is_extended     => 0,
-        is_editable     => 1,
-    },
     formula_label => {
         is_virtual      => 1,
     }
@@ -113,7 +68,7 @@ sub methods {
 # Virtual attribute getter
 sub formula_label {
     my $self = shift;
-    return $self->nodemetric_rule_formula_string;
+    return $self->formula_string;
 }
 
 sub new {
@@ -131,14 +86,14 @@ sub new {
 
     my $toString = $self->toString();
 
-    $self->setAttr(name=>'nodemetric_rule_formula_string', value => $toString);
-    if (! defined $args{nodemetric_rule_label} || $args{nodemetric_rule_label} eq ''){
-        $self->setAttr(name=>'nodemetric_rule_label', value => $toString);
+    $self->setAttr(name=>'formula_string', value => $toString);
+    if (! defined $args{label} || $args{label} eq ''){
+        $self->setAttr(name=>'label', value => $toString);
     }
     $self->save();
 
     # When enabled, set undef for each node (will be update next orchestrator loop)
-    if ($self->nodemetric_rule_state eq 'enabled'){
+    if ($self->state eq 'enabled'){
         $self->setUndefForEachNode();
     }
 
@@ -171,7 +126,7 @@ sub setUndefForEachNode{
 sub toString {
     my $self = shift;
 
-    my @array = split(/(id\d+)/,$self->nodemetric_rule_formula);
+    my @array = split(/(id\d+)/,$self->formula);
     for my $element (@array) {
         if ($element =~ m/id(\d+)/) {
             $element = Entity::NodemetricCondition->get('id'=>substr($element,2))->nodemetric_condition_formula_string;
@@ -182,7 +137,7 @@ sub toString {
 
 sub getDependentConditionIds {
     my $self = shift;
-    my %ids = map { $_ => undef } ($self->nodemetric_rule_formula =~ m/id(\d+)/g);
+    my %ids = map { $_ => undef } ($self->formula =~ m/id(\d+)/g);
     return keys %ids
 }
 
@@ -192,7 +147,7 @@ sub evalOnOneNode{
 
     my $monitored_values_for_one_node = $args{monitored_values_for_one_node};
 
-    my $formula = $self->getAttr(name => 'nodemetric_rule_formula');
+    my $formula = $self->getAttr(name => 'formula');
 
     #Split nodemetric_rule id from $formula
     my @array = split(/(id\d+)/,$formula);
@@ -326,14 +281,14 @@ sub disable {
     my $self = shift;
 
     $self->{_dbix}->verified_noderules->delete_all;
-    $self->setAttr(name => 'nodemetric_rule_state', value => 'disabled');
+    $self->setAttr(name => 'state', value => 'disabled');
     $self->save();
 };
 
 sub enable {
     my $self = shift;
     $self->setUndefForEachNode();
-    $self->setAttr(name => 'nodemetric_rule_state', value => 'enabled');
+    $self->setAttr(name => 'state', value => 'enabled');
     $self->save();
 }
 
@@ -348,7 +303,7 @@ sub setAllRulesUndefForANode{
     my @nodemetric_rules = Entity::NodemetricRule->search(
                                hash => {
                                    service_provider_id => $cluster_id,
-                                   nodemetric_rule_state               => 'enabled',
+                                   state               => 'enabled',
                                },
                            );
 
@@ -386,9 +341,9 @@ sub clone {
     my $attrs_cloner = sub {
         my %args = @_;
         my $attrs = $args{attrs};
-        $attrs->{nodemetric_rule_formula}  = $self->_cloneFormula(
+        $attrs->{formula}  = $self->_cloneFormula(
             dest_sp_id              => $attrs->{service_provider_id},
-            formula                 => $attrs->{nodemetric_rule_formula},
+            formula                 => $attrs->{formula},
             formula_object_class    => 'Entity::NodemetricCondition'
         );
         $attrs->{workflow_def_id}   = undef;
@@ -399,7 +354,7 @@ sub clone {
     my $clone = $self->_importToRelated(
         dest_obj_id         => $args{'dest_service_provider_id'},
         relationship        => 'nodemetric_rule_service_provider',
-        label_attr_name     => 'nodemetric_rule_label',
+        label_attr_name     => 'label',
         attrs_clone_handler => $attrs_cloner
     );
 
@@ -413,7 +368,7 @@ sub clone {
 
 sub updateFormulaString {
     my $self = shift;
-    $self->setAttr(name=>'nodemetric_rule_formula_string', value => $self->toString());
+    $self->setAttr(name=>'formula_string', value => $self->toString());
     $self->save();
 }
 

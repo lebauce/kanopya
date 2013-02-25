@@ -48,53 +48,8 @@ use constant ATTR_DEF => {
         is_extended     => 0,
         is_editable     => 0,
     },
-    aggregate_rule_label => {
-        pattern         => '^.*$',
-        is_mandatory    => 0,
-        is_extended     => 0,
-        is_editable     => 1,
-    },
-    aggregate_rule_formula => {
-        pattern         => '^((id\d+)|and|or|not|[ ()!&|])+$',
-        is_mandatory    => 1,
-        is_extended     => 0,
-        is_editable     => 1,
-        description     => "Construct a formula by condition's names with logical operators (and, or, not)."
-                           . " It's possible to use parenthesis with spaces between each element of the formula."
-                           . " Press a letter key to obtain the availalbe choice.",
-    },
-    aggregate_rule_formula_string => {
-        pattern         => '^.*$',
-        is_mandatory    => 0,
-        is_extended     => 0,
-        is_editable     => 1,
-    },
     aggregate_rule_last_eval => {
         pattern         => '^(0|1)$',
-        is_mandatory    => 0,
-        is_extended     => 0,
-        is_editable     => 1,
-    },
-    aggregate_rule_timestamp => {
-        pattern        => '^.*$',
-        is_mandatory   => 0,
-        is_extended    => 0,
-        is_editable    => 1,
-    },
-    aggregate_rule_state => {
-        pattern         => '(enabled|disabled|delayed|triggered)$',
-        is_mandatory    => 1,
-        is_extended     => 0,
-        is_editable     => 1,
-    },
-    workflow_def_id => {
-        pattern         => '^.*$',
-        is_mandatory    => 0,
-        is_extended     => 0,
-        is_editable     => 1,
-    },
-    aggregate_rule_description => {
-        pattern         => '^.*$',
         is_mandatory    => 0,
         is_extended     => 0,
         is_editable     => 1,
@@ -131,7 +86,7 @@ sub methods {
 # Virtual attribute getter
 sub formula_label {
     my $self = shift;
-    return $self->aggregate_rule_formula_string;
+    return $self->formula_string;
 }
 
 sub new {
@@ -144,16 +99,16 @@ sub new {
         );
     }
 
-    my $formula = (\%args)->{aggregate_rule_formula};
-    _verify ($args{aggregate_rule_formula});
+    my $formula = (\%args)->{formula};
+    _verify ($args{formula});
 
     my $self = $class->SUPER::new(%args);
 
     my $toString = $self->toString();
-    if ((! defined $args{aggregate_rule_label}) || $args{aggregate_rule_label} eq '') {
-        $self->setAttr(name=>'aggregate_rule_label', value => $toString);
+    if ((! defined $args{label}) || $args{label} eq '') {
+        $self->setAttr(name=>'label', value => $toString);
     }
-    $self->setAttr(name=>'aggregate_rule_formula_string', value => $toString);
+    $self->setAttr(name=>'formula_string', value => $toString);
     $self->save();
     return $self;
 }
@@ -161,9 +116,9 @@ sub new {
 sub setLabel{
     my ($self,%args) = @_;
     if((!defined $args{label}) || $args{label} eq ''){
-        $self->setAttr(name=>'aggregate_rule_label', value => $self->toString());
+        $self->setAttr(name=>'label', value => $self->toString());
     }else{
-        $self->setAttr(name=>'aggregate_rule_label', value => $args{label});
+        $self->setAttr(name=>'label', value => $args{label});
     }
     $self->save();
 }
@@ -189,7 +144,7 @@ sub _verify {
 sub toString {
     my $self = shift;
 
-    my @array = split (/(id\d+)/, $self->aggregate_rule_formula);
+    my @array = split (/(id\d+)/, $self->formula);
     for my $element (@array) {
         if ($element =~ m/id(\d+)/) {
             $element = Entity::AggregateCondition->get ('id'=>substr($element,2))->aggregate_condition_formula_string ;
@@ -204,7 +159,7 @@ sub evaluate {
     my $self = shift;
 
     #Split aggregate_rule id from $formula
-    my @array = split(/(id\d+)/,$self->aggregate_rule_formula);
+    my @array = split(/(id\d+)/,$self->formula);
 
     #replace each rule id by its evaluation
     for my $element (@array) {
@@ -224,7 +179,7 @@ sub evaluate {
     #Evaluate the logic formula
     eval $arrayString;
 
-    $self->setAttr(name => 'aggregate_rule_timestamp',value=>time());
+    $self->setAttr(name => 'timestamp',value=>time());
 
     if (defined $res){
         my $store = ($res)?1:0;
@@ -242,16 +197,16 @@ sub evaluate {
 
 sub enable(){
     my $self = shift;
-    $self->setAttr(name => 'aggregate_rule_state', value => 'enabled');
-    #$self->setAttr(name => 'aggregate_rule_timestamp', value => time());
+    $self->setAttr(name => 'state', value => 'enabled');
+    #$self->setAttr(name => 'timestamp', value => time());
     $self->setAttr(name => 'aggregate_rule_last_eval', value => undef);
     $self->save();
 }
 
 sub disable(){
     my $self = shift;
-    $self->setAttr(name => 'aggregate_rule_state', value => 'disabled');
-    #$self->setAttr(name => 'aggregate_rule_timestamp', value => time());
+    $self->setAttr(name => 'state', value => 'disabled');
+    #$self->setAttr(name => 'timestamp', value => time());
     $self->save();
 }
 
@@ -262,15 +217,15 @@ sub disableTemporarily(){
 
     my $length = $args{length};
 
-    $self->setAttr(name => 'aggregate_rule_state', value => 'disabled_temp');
-    $self->setAttr(name => 'aggregate_rule_timestamp', value => time() + $length);
+    $self->setAttr(name => 'state', value => 'disabled_temp');
+    $self->setAttr(name => 'timestamp', value => time() + $length);
     $self->save();
 }
 
 sub isEnabled(){
     my $self = shift;
     #$self->updateState();
-    return ($self->getAttr(name=>'aggregate_rule_state') eq 'enabled');
+    return ($self->getAttr(name=>'state') eq 'enabled');
 }
 
 sub getRules() {
@@ -298,7 +253,7 @@ sub getRules() {
                 #update state and return $rule only if state is corresponding
                 #$rule->updateState();
 
-                if($rule->getAttr(name=>'aggregate_rule_state') eq $state){
+                if($rule->getAttr(name=>'state') eq $state){
                     push @rep, $rule;
                 }
             }
@@ -310,10 +265,10 @@ sub getRules() {
 sub updateState() {
     my $self = shift;
 
-    if ($self->getAttr(name=>'aggregate_rule_state') eq 'disabled_temp') {
-        if( $self->getAttr(name => 'aggregate_rule_timestamp') le time()) {
-            $self->setAttr(name => 'aggregate_rule_timestamp', value => time());
-            $self->setAttr(name => 'aggregate_rule_state'    , value => 'enabled');
+    if ($self->getAttr(name=>'state') eq 'disabled_temp') {
+        if( $self->getAttr(name => 'timestamp') le time()) {
+            $self->setAttr(name => 'timestamp', value => time());
+            $self->setAttr(name => 'state'    , value => 'enabled');
             $self->save();
         }
     }
@@ -321,7 +276,7 @@ sub updateState() {
 
 sub getDependentConditionIds {
     my $self = shift;
-    my %ids = map { $_ => undef } ($self->aggregate_rule_formula =~ m/id(\d+)/g);
+    my %ids = map { $_ => undef } ($self->formula =~ m/id(\d+)/g);
     return keys %ids;
 }
 
@@ -337,7 +292,7 @@ sub isCombinationDependent{
 sub setAttr {
     my $class = shift;
     my %args = @_;
-    if ($args{name} eq 'aggregate_rule_formula'){
+    if ($args{name} eq 'formula'){
         _verify($args{value});
     }
     $class->SUPER::setAttr(%args);
@@ -367,9 +322,9 @@ sub clone {
     my $attrs_cloner = sub {
         my %args = @_;
         my $attrs = $args{attrs};
-        $attrs->{aggregate_rule_formula}    = $self->_cloneFormula(
+        $attrs->{formula}    = $self->_cloneFormula(
             dest_sp_id              => $attrs->{service_provider_id},
-            formula                 => $attrs->{aggregate_rule_formula},
+            formula                 => $attrs->{formula},
             formula_object_class    => 'Entity::AggregateCondition'
         );
         $attrs->{aggregate_rule_last_eval}  = undef;
@@ -381,7 +336,7 @@ sub clone {
     my $clone = $self->_importToRelated(
         dest_obj_id         => $args{'dest_service_provider_id'},
         relationship        => 'service_provider',
-        label_attr_name     => 'aggregate_rule_label',
+        label_attr_name     => 'label',
         attrs_clone_handler => $attrs_cloner
     );
 
@@ -395,7 +350,7 @@ sub clone {
 
 sub updateFormulaString {
     my $self = shift;
-    $self->setAttr(name=>'aggregate_rule_formula_string', value => $self->toString());
+    $self->setAttr(name=>'formula_string', value => $self->toString());
     $self->save();
 }
 
@@ -403,7 +358,7 @@ sub update {
     my ($self, %args) = @_;
 
     my $rep = $self->SUPER::update (%args);
-    $self->updateFormulaString;
+    $self->updateFormulaString();
     return $rep;
 }
 

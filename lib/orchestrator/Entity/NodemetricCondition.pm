@@ -235,7 +235,7 @@ sub getDependencies {
 
     my %dependencies;
     for my $rule (@rules) {
-        $dependencies{$rule->nodemetric_rule_label} = {};
+        $dependencies{$rule->label} = {};
     }
     return \%dependencies;
 }

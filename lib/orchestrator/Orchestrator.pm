@@ -185,7 +185,7 @@ sub nodemetricManagement {
     my @rules = Entity::Rule::NodemetricRule->search (
                     hash => {
                         service_provider_id => $service_provider_id,
-                        nodemetric_rule_state               => 'enabled',
+                        state               => 'enabled',
                     }
                 );
 
@@ -430,29 +430,29 @@ sub clustermetricManagement{
 
 #    my @rules = Entity::Rule::AggregateRule->search(hash => {
 #                    service_provider_id => $service_provider->id,
-#                    -or => [ aggregate_rule_state => 'enabled',
-#                             aggregate_rule_state => 'triggered',
-#                             aggregate_rule_state => 'delayed' ] 
+#                    -or => [ state => 'enabled',
+#                             state => 'triggered',
+#                             state => 'delayed' ]
 #                });
 
     # Get rules relative to a cluster
     my @rules_enabled   = Entity::Rule::AggregateRule->search(
                             hash => {
                                 service_provider_id => $service_provider->id,
-                                aggregate_rule_state               => 'enabled',
+                                state               => 'enabled',
                             }
                         );
 
     my @rules_triggered = Entity::Rule::AggregateRule->search(
                               hash => {
                                   service_provider_id => $service_provider->id,
-                                  aggregate_rule_state               => 'triggered'
+                                  state               => 'triggered'
                               }
                           );
     my @rules_delayed   = Entity::Rule::AggregateRule->search(
                               hash => {
                                   service_provider_id => $service_provider->id,
-                                  aggregate_rule_state               => 'delayed'
+                                  state               => 'delayed'
                               }
                           );
 
@@ -487,18 +487,18 @@ sub clustermetricManagement{
                 elsif ( Entity::Workflow->get(id => $workflow_id)->state eq 'cancelled' ) {
 
                     $log->info('Workflow <'.$workflow_id.'> cancelled, re-enable rule');
-                    $aggregate_rule->setAttr(name  => 'aggregate_rule_state', value => 'enabled' );
+                    $aggregate_rule->setAttr(name  => 'state', value => 'enabled' );
                     $aggregate_rule->setAttr(name  => 'workflow_id',  value => undef );
                     $aggregate_rule->save();
                 }
                 elsif ( Entity::Workflow->get(id => $workflow_id)->state eq 'done' ) {
                     $log->info('Workflow <'.$workflow_id.'> done');
 
-                    if ( $aggregate_rule->aggregate_rule_state eq 'delayed') {
+                    if ( $aggregate_rule->state eq 'delayed') {
                         my $delta = $aggregate_rule->workflow_untriggerable_timestamp - time();
                         if( 0 >= $delta ) {
                             $log->info('Workflow <'.$workflow_id.'> done, end of delay time, re-enable rule');
-                            $aggregate_rule->setAttr(name  => 'aggregate_rule_state',
+                            $aggregate_rule->setAttr(name  => 'state',
                                                      value => 'enabled' );
                             $aggregate_rule->setAttr(name  => 'workflow_id',
                                                      value => undef );
@@ -510,7 +510,7 @@ sub clustermetricManagement{
                             $log->info('Workflow <'.$workflow_id.'> done, still delaying time for <'.($delta).'> sec');
                         }
                     }
-                    elsif ( $aggregate_rule->aggregate_rule_state eq 'triggered' ) {
+                    elsif ( $aggregate_rule->state eq 'triggered' ) {
                         my $wf_def_id = $aggregate_rule->getAttr(name => 'workflow_def_id');
                         my $wf_def    = Entity::WorkflowDef->get(id => $wf_def_id);
                         my $wf_params = $wf_def->paramPresets;
@@ -519,13 +519,13 @@ sub clustermetricManagement{
 
                         if ((not defined $delay) || $delay <= 0) {
                             $log->info('Workflow <'.$workflow_id.'> done, no delay or delay <= 0, re-enable rule');
-                            $aggregate_rule->setAttr(name  => 'aggregate_rule_state', value => 'enabled' );
+                            $aggregate_rule->setAttr(name  => 'state', value => 'enabled' );
                             $aggregate_rule->setAttr(name  => 'workflow_id',  value => undef );
                             $aggregate_rule->save();
                         }
                         else {
                             $log->info('Workflow <'.$workflow_id.'> done, delay new workflow launch');
-                            $aggregate_rule->setAttr(name  => 'aggregate_rule_state',
+                            $aggregate_rule->setAttr(name  => 'state',
                                                      value => 'delayed' );
                             $aggregate_rule->setAttr(name  => 'workflow_untriggerable_timestamp',
                                                      value => time() + $delay);
@@ -533,7 +533,7 @@ sub clustermetricManagement{
                          }
                     }
                     else {
-                      $log->info('unknown case <'.($aggregate_rule->aggregate_rule_state).'>');
+                      $log->info('unknown case <'.($aggregate_rule->state).'>');
                     }
                 }
                 else {
@@ -547,7 +547,7 @@ sub clustermetricManagement{
         }
 
         my $result = $aggregate_rule->evaluate();
-        my $rule_state = $aggregate_rule->getAttr (name => 'aggregate_rule_state');
+        my $rule_state = $aggregate_rule->getAttr (name => 'state');
 
         if (defined $result) {
             if ($result == 1){
@@ -563,7 +563,7 @@ sub clustermetricManagement{
                             service_provider_id => $service_provider->id
                         );
 
-                        $aggregate_rule->setAttr(name => 'aggregate_rule_state', value => 'triggered');
+                        $aggregate_rule->setAttr(name => 'state', value => 'triggered');
                         $aggregate_rule->setAttr(name => 'workflow_id', value => $workflow->getId());
                         $aggregate_rule->save();
                     }

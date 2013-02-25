@@ -37,8 +37,7 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 my @model_classes = ('Entity::DataModel::LinearRegression',
-                     'Entity::DataModel::LogarithmicRegression'
-                    );
+                     'Entity::DataModel::LogarithmicRegression');
 
 =pod
 

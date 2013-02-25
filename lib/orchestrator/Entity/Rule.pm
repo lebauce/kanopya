@@ -41,6 +41,51 @@ use constant ATTR_DEF   => {
         is_extended     => 0,
         is_editable     => 1,
     },
+    label => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
+    formula => {
+        pattern         => '^((id\d+)|and|or|not|[ ()!&|])+$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1,
+        description     => "Construct a formula by condition's names with logical operators (and, or, not)."
+                           . " It's possible to use parenthesis with spaces between each element of the formula"
+                           . ". Press a letter key to obtain the available choice.",
+    },
+    timestamp => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
+    state => {
+        pattern         => '(enabled|disabled|disabled_temp|delayed|triggered)$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
+    workflow_def_id => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
+    description => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
+    formula_string => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }

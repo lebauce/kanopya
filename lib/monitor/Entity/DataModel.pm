@@ -162,7 +162,7 @@ if the coefficient has not be computed yet
 
 sub getRSquared {
     my ($self, @args) = @_;
-    my $pp = $self->param_preset->load;
+    my $pp = $self->param_preset->load();
     return $pp->{rSquared};
 }
 

@@ -244,7 +244,7 @@ sub getDependencies {
 
     my %dependencies;
     for my $rule (@rules) {
-        $dependencies{$rule->aggregate_rule_label} = {};
+        $dependencies{$rule->label} = {};
     }
     return \%dependencies;
 }
