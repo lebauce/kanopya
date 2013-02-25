@@ -107,10 +107,10 @@ sub testNodeRuleImport {
         Entity::Rule::NodemetricRule->find(
             hash => {
                 service_provider_id => $sp_dest->id,
-                nodemetric_rule_label               => 'node rule label',
-                nodemetric_rule_formula             => 'id'.$cloned_ncond->id,
-                nodemetric_rule_state               => 'enabled',
-                nodemetric_rule_description         => 'node rule description',
+                label               => 'node rule label',
+                formula             => 'id'.$cloned_ncond->id,
+                state               => 'enabled',
+                description         => 'node rule description',
             }
         );
     } 'Node rule cloned';
@@ -176,11 +176,11 @@ sub testServiceRuleImport {
         $cloned_ar = Entity::Rule::AggregateRule->find(
             hash => {
                 service_provider_id  => $sp_dest->id,
-                aggregate_rule_label                => 'service rule label',
-                aggregate_rule_formula              => 'id'.$cloned_acond->id,
-                aggregate_rule_state                => 'enabled',
+                label                => 'service rule label',
+                formula              => 'id'.$cloned_acond->id,
+                state                => 'enabled',
                 aggregate_rule_last_eval            => undef, # this attr is not cloned
-                aggregate_rule_description          => 'service rule description',
+                description          => 'service rule description',
             }
         );
     } 'Service rule cloned';
@@ -299,10 +299,10 @@ sub init {
     # Nodemetric rule
    $nr = Entity::Rule::NodemetricRule->new(
         service_provider_id => $sp_src->id,
-        nodemetric_rule_label               => 'node rule label',
-        nodemetric_rule_formula             => 'id'.$ncond->id,
-        nodemetric_rule_state               => 'enabled',
-        nodemetric_rule_description         => 'node rule description',
+        label               => 'node rule label',
+        formula             => 'id'.$ncond->id,
+        state               => 'enabled',
+        description         => 'node rule description',
     );
 
     # Clustermetric
@@ -332,11 +332,11 @@ sub init {
     # Aggregate rule
    $ar = Entity::Rule::AggregateRule->new(
         service_provider_id  => $sp_src->id,
-        aggregate_rule_label                => 'service rule label',
-        aggregate_rule_formula              => 'id'.$acond->id,
-        aggregate_rule_state                => 'enabled',
+        label                => 'service rule label',
+        formula              => 'id'.$acond->id,
+        state                => 'enabled',
         aggregate_rule_last_eval            => '1',
-        aggregate_rule_description          => 'service rule description',
+        description          => 'service rule description',
     );
 }
 

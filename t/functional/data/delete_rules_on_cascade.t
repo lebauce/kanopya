@@ -329,26 +329,26 @@ sub _service_rule_objects_creation {
 
     $rule1d = Entity::Rule::AggregateRule->new(
         service_provider_id => $service_provider->id,
-        aggregate_rule_formula => 'id'.$acd1->id.' && id'.$acd2->id,
-        aggregate_rule_state => 'enabled'
+        formula => 'id'.$acd1->id.' && id'.$acd2->id,
+        state => 'enabled'
     );
 
     $rule2d = Entity::Rule::AggregateRule->new(
         service_provider_id => $service_provider->id,
-        aggregate_rule_formula => 'id'.$ac3->id.' || id'.$acd2->id,
-        aggregate_rule_state => 'enabled'
+        formula => 'id'.$ac3->id.' || id'.$acd2->id,
+        state => 'enabled'
     );
 
     $rule3d = Entity::Rule::AggregateRule->new(
         service_provider_id => $service_provider->id,
-        aggregate_rule_formula => 'id'.$acd2->id.' && id'.$ac3->id,
-        aggregate_rule_state => 'enabled'
+        formula => 'id'.$acd2->id.' && id'.$ac3->id,
+        state => 'enabled'
     );
 
     $rule4 = Entity::Rule::AggregateRule->new(
         service_provider_id => $service_provider->id,
-        aggregate_rule_formula => 'id'.$ac3->id.' || id'.$ac3->id,
-        aggregate_rule_state => 'enabled'
+        formula => 'id'.$ac3->id.' || id'.$ac3->id,
+        state => 'enabled'
     );
 
 }
@@ -398,26 +398,26 @@ sub _node_rule_objects_creation {
 
     $nrule1d = Entity::Rule::NodemetricRule->new(
         service_provider_id => $service_provider->id,
-        nodemetric_rule_formula => 'id'.$ncd1->id.' && id'.$ncd2->id,
-        nodemetric_rule_state => 'enabled'
+        formula => 'id'.$ncd1->id.' && id'.$ncd2->id,
+        state => 'enabled'
     );
 
     $nrule2d = Entity::Rule::NodemetricRule->new(
         service_provider_id => $service_provider->id,
-        nodemetric_rule_formula => 'id'.$ncd1->id.' || id'.$nc3->id,
-        nodemetric_rule_state => 'enabled'
+        formula => 'id'.$ncd1->id.' || id'.$nc3->id,
+        state => 'enabled'
     );
 
     $nrule3d = Entity::Rule::NodemetricRule->new(
         service_provider_id => $service_provider->id,
-        nodemetric_rule_formula => 'id'.$nc3->id.' || id'.$ncd2->id,
-        nodemetric_rule_state => 'enabled'
+        formula => 'id'.$nc3->id.' || id'.$ncd2->id,
+        state => 'enabled'
     );
 
     $nrule4 = Entity::Rule::NodemetricRule->new(
         service_provider_id => $service_provider->id,
-        nodemetric_rule_formula => 'id'.$nc3->id.' || id'.$nc3->id,
-        nodemetric_rule_state => 'enabled'
+        formula => 'id'.$nc3->id.' || id'.$nc3->id,
+        state => 'enabled'
     );
 }
 

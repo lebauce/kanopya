@@ -213,8 +213,8 @@ sub resubmit_hv_on_state {
 
         my $rule = Entity::Rule::NodemetricRule->new(
             service_provider_id => $hv_cluster->id,
-            nodemetric_rule_formula => 'id'.$ncond->id,
-            nodemetric_rule_state => 'enabled'
+            formula => 'id'.$ncond->id,
+            state => 'enabled'
         );
 
         my $node = $hv1->node;
@@ -381,8 +381,8 @@ sub resubmit_vm_on_state {
 
         my $rule = Entity::Rule::NodemetricRule->new(
             service_provider_id => $vm_cluster->id,
-            nodemetric_rule_formula => 'id'.$ncond->id,
-            nodemetric_rule_state => 'enabled'
+            formula => 'id'.$ncond->id,
+            state => 'enabled'
         );
 
         my @vms = $one->opennebula3_vms;

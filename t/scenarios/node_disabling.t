@@ -314,7 +314,7 @@ sub _node_rule_objects_creation {
 
     $nrule1 = Entity::Rule::NodemetricRule->new(
         service_provider_id => $service_provider->id,
-        nodemetric_rule_formula => 'id'.$nc1->id,
-        nodemetric_rule_state => 'enabled'
+        formula => 'id'.$nc1->id,
+        state => 'enabled'
     );
 }

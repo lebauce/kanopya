@@ -115,8 +115,8 @@ sub addAggregateRule {
 
     Entity::Rule::AggregateRule->new(
         service_provider_id => $args{cluster}->id,
-        aggregate_rule_formula             => 'id'.$ac->id,
-        aggregate_rule_state               => 'enabled'
+        formula             => 'id'.$ac->id,
+        state               => 'enabled'
     );
 }
 

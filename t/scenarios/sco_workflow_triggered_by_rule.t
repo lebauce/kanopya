@@ -334,12 +334,12 @@ sub sco_workflow_triggered_by_rule {
 
         # Modify node rule2 to avoid a new triggering
         my $node_rule2 = Entity::Rule::NodemetricRule->get(id => $node_rule_ids->{node_rule2_id});
-        $node_rule2->setAttr(name => 'nodemetric_rule_formula', value => '! ('.$node_rule2->nodemetric_rule_formula.')');
+        $node_rule2->setAttr(name => 'formula', value => '! ('.$node_rule2->formula.')');
         $node_rule2->save();
 
         # Modify service rule2 to avoid a new triggering
         my $agg_rule2 = Entity::Rule::AggregateRule->get(id => $agg_rule_ids->{agg_rule2_id});
-        $agg_rule2->setAttr(name => 'aggregate_rule_formula', value => 'not ('.$agg_rule2->aggregate_rule_formula.')');
+        $agg_rule2->setAttr(name => 'formula', value => 'not ('.$agg_rule2->formula.')');
         $agg_rule2->save();
 
         # Launch Orchestrator
@@ -527,14 +527,14 @@ sub _service_rule_objects_creation {
 
     $rule1 = Entity::Rule::AggregateRule->new(
         service_provider_id => $service_provider->id,
-        aggregate_rule_formula => 'id'.$ac1->id.' && id'.$ac2->id,
-        aggregate_rule_state => 'enabled'
+        formula => 'id'.$ac1->id.' && id'.$ac2->id,
+        state => 'enabled'
     );
 
     $rule2 = Entity::Rule::AggregateRule->new(
         service_provider_id => $service_provider->id,
-        aggregate_rule_formula => 'id'.$ac1->id.' || id'.$ac2->id,
-        aggregate_rule_state => 'enabled'
+        formula => 'id'.$ac1->id.' || id'.$ac2->id,
+        state => 'enabled'
     );
 
     return {
@@ -580,14 +580,14 @@ sub _node_rule_objects_creation {
 
     $rule1 = Entity::Rule::NodemetricRule->new(
         service_provider_id => $service_provider->id,
-        nodemetric_rule_formula => 'id'.$nc1->id.' && id'.$nc2->id,
-        nodemetric_rule_state => 'enabled'
+        formula => 'id'.$nc1->id.' && id'.$nc2->id,
+        state => 'enabled'
     );
 
     $rule2 = Entity::Rule::NodemetricRule->new(
         service_provider_id => $service_provider->id,
-        nodemetric_rule_formula => 'id'.$nc1->id.' || id'.$nc2->id,
-        nodemetric_rule_state => 'enabled'
+        formula => 'id'.$nc1->id.' || id'.$nc2->id,
+        state => 'enabled'
     );
 
     return {
