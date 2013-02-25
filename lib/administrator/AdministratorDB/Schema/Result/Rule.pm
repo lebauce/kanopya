@@ -53,6 +53,47 @@ __PACKAGE__->table("rule");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 label
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 255
+
+=head2 formula
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 255
+
+=head2 formula_string
+
+  data_type: 'text'
+  is_nullable: 1
+
+=head2 timestamp
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 1
+
+=head2 state
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 32
+
+=head2 description
+
+  data_type: 'text'
+  is_nullable: 1
+
+=head2 workflow_def_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -69,6 +110,25 @@ __PACKAGE__->add_columns(
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
+  },
+  "label",
+  { data_type => "char", is_nullable => 1, size => 255 },
+  "formula",
+  { data_type => "char", is_nullable => 0, size => 255 },
+  "formula_string",
+  { data_type => "text", is_nullable => 1 },
+  "timestamp",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
+  "state",
+  { data_type => "char", is_nullable => 0, size => 32 },
+  "description",
+  { data_type => "text", is_nullable => 1 },
+  "workflow_def_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
   },
 );
 
@@ -127,7 +187,7 @@ Related object: L<AdministratorDB::Schema::Result::Entity>
 __PACKAGE__->belongs_to(
   "rule",
   "AdministratorDB::Schema::Result::Entity",
-  { "foreign.entity_id" => "self.rule_id" },
+  { entity_id => "rule_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
@@ -147,6 +207,23 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 workflow_def
+
+Related object: L<AdministratorDB::Schema::Result::WorkflowDef>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "workflow_def",
+  "AdministratorDB::Schema::Result::WorkflowDef",
+  { workflow_def_id => "workflow_def_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
 
 # Created by DBIx::Class::Schema::Loader v0.07015 @ 2013-02-22 14:20:15
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:sV9iPSVEdvskEgkATmpPow
