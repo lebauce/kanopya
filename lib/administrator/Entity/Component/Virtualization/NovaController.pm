@@ -25,7 +25,7 @@ OpenStack component, used as host manager by Kanopya
 
 =cut
 
-package  Entity::Component::Openstack::NovaController;
+package  Entity::Component::Virtualization::NovaController;
 
 use base "Entity::Component";
 use base "Manager::HostManager::VirtualMachineManager";

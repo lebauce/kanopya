@@ -22,7 +22,7 @@ EEntity for the OpenStack host manager
 
 =cut
 
-package EEntity::EComponent::EOpenstack::ENovaController;
+package EEntity::EComponent::EVirtualization::ENovaController;
 
 use base "EEntity::EComponent";
 use base "EManager::EHostManager::EVirtualMachineManager";

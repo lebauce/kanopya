@@ -554,18 +554,18 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 nova_controller
+=head2 nova_compute
 
 Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::NovaController>
+Related object: L<AdministratorDB::Schema::Result::NovaCompute>
 
 =cut
 
 __PACKAGE__->might_have(
-  "nova_controller",
-  "AdministratorDB::Schema::Result::NovaController",
-  { "foreign.nova_controller_id" => "self.component_id" },
+  "nova_compute",
+  "AdministratorDB::Schema::Result::NovaCompute",
+  { "foreign.nova_compute_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 

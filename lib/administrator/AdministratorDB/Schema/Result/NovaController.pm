@@ -193,14 +193,14 @@ __PACKAGE__->belongs_to(
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Component>
+Related object: L<AdministratorDB::Schema::Result::Virtualization>
 
 =cut
 
 __PACKAGE__->belongs_to(
   "nova_controller",
-  "AdministratorDB::Schema::Result::Component",
-  { component_id => "nova_controller_id" },
+  "AdministratorDB::Schema::Result::Virtualization",
+  { virtualization_id => "nova_controller_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
@@ -315,8 +315,8 @@ __PACKAGE__->has_many(
 
 __PACKAGE__->belongs_to(
   "parent",
-  "AdministratorDB::Schema::Result::Component",
-    { "foreign.component_id" => "self.nova_controller_id" },
+  "AdministratorDB::Schema::Result::Virtualization",
+    { "foreign.virtualization_id" => "self.nova_controller_id" },
     { cascade_copy => 0, cascade_delete => 1 });
 
 1;
