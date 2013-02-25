@@ -15,8 +15,8 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package Entity::Component::Opennebula3::Opennebula3Repository;
-use base 'BaseDB';
+package Entity::Repository::Opennebula3Repository;
+use base 'Entity::Repository';
 
 use constant ATTR_DEF => {
     repository_name => {

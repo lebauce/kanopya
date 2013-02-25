@@ -1,17 +1,37 @@
+use utf8;
 package AdministratorDB::Schema::Result::Opennebula3Repository;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
-
-
 =head1 NAME
 
 AdministratorDB::Schema::Result::Opennebula3Repository
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
+
+=head1 TABLE: C<opennebula3_repository>
 
 =cut
 
@@ -23,7 +43,7 @@ __PACKAGE__->table("opennebula3_repository");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 opennebula3_id
@@ -59,7 +79,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "opennebula3_id",
@@ -81,24 +101,20 @@ __PACKAGE__->add_columns(
   "datastore_id",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
 );
-__PACKAGE__->set_primary_key("opennebula3_repository_id");
 
-=head1 RELATIONS
+=head1 PRIMARY KEY
 
-=head2 opennebula3
+=over 4
 
-Type: belongs_to
+=item * L</opennebula3_repository_id>
 
-Related object: L<AdministratorDB::Schema::Result::Opennebula3>
+=back
 
 =cut
 
-__PACKAGE__->belongs_to(
-  "opennebula3",
-  "AdministratorDB::Schema::Result::Opennebula3",
-  { opennebula3_id => "opennebula3_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
+__PACKAGE__->set_primary_key("opennebula3_repository_id");
+
+=head1 RELATIONS
 
 =head2 container_access
 
@@ -115,10 +131,40 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 opennebula3
 
-# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-08-06 17:40:05
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3USdD3Ndig0Oa9dNjXOOdQ
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Opennebula3>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "opennebula3",
+  "AdministratorDB::Schema::Result::Opennebula3",
+  { opennebula3_id => "opennebula3_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 opennebula3_repository
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Repository>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "opennebula3_repository",
+  "AdministratorDB::Schema::Result::Repository",
+  { repository_id => "opennebula3_repository_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-02-25 17:25:23
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UQ4TFJcAMAndSn+02y7MrA
+
+
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;
