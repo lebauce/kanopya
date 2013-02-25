@@ -2098,11 +2098,8 @@ the characters that follows.
 =cut
 
 sub normalizeName {
-    my $name = shift;
-    $name = normalizeMethod($name);
-
-    return ucfirst($name);
-};
+    join('', map(ucfirst, split('_', shift)));
+}
 
 
 =pod
@@ -2121,17 +2118,8 @@ the characters that follows, excepted the first character.
 =cut
 
 sub normalizeMethod {
-    my $name = shift;
-    my $i = 0;
-    while ($i < length($name)) {
-        if (substr($name, $i, 1) eq "_") {
-            $name = substr($name, 0, $i) . ucfirst(substr($name, $i + 1, 1)) . substr($name, $i + 2)
-        }
-        $i += 1;
-    }
-
-    return $name;
-};
+    lcfirst(normalizeName(shift));
+}
 
 
 =pod
