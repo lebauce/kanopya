@@ -227,12 +227,11 @@ class kanopya::quantum_($amqpserver, $dbserver, $keystone, $password) {
         rabbit_password => "${password}",
         rabbit_host     => "${amqpserver}",
         rabbit_user     => 'quantum',
-        sql_connection  => "mysql://quantum:${password}@${dbserver}/quantum",
     }
 
     class { 'quantum::server':
         auth_password => $password,
-        auth_host     => "${keystone}"
+        auth_host     => "${keystone}",
     }
 
     @@mysql::db { 'quantum':
@@ -284,6 +283,10 @@ class kanopya::quantum_($amqpserver, $dbserver, $keystone, $password) {
         admin_url    => "http://${fqdn}:9696",
         internal_url => "http://${fqdn}:9696",
         tag          => "${keystone}"
+    }
+
+    class { 'quantum::plugins::ovs':
+        sql_connection => "mysql://quantum:${password}@${dbserver}/quantum"
     }
 
     Class['kanopya::openstack::repository'] -> Class['kanopya::quantum_']
