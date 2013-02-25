@@ -200,7 +200,7 @@ sub createCluster {
             my %tmp = (
                 managers => { 
                     $manager => {
-                        manager_type => $manager,
+                        manager_type => BaseDB::normalizeName($manager),
                         %$mgr_conf
                     }
                 }
