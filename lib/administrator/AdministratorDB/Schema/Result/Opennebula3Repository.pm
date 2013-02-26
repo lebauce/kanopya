@@ -131,21 +131,6 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 opennebula3
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Opennebula3>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "opennebula3",
-  "AdministratorDB::Schema::Result::Opennebula3",
-  { opennebula3_id => "opennebula3_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
 =head2 opennebula3_repository
 
 Type: belongs_to
@@ -164,6 +149,13 @@ __PACKAGE__->belongs_to(
 
 # Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-02-25 17:25:23
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UQ4TFJcAMAndSn+02y7MrA
+
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Repository",
+  { repository_id => "opennebula3_repository_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -208,21 +208,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 opennebula3_repositories
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Opennebula3Repository>
-
-=cut
-
-__PACKAGE__->has_many(
-  "opennebula3_repositories",
-  "AdministratorDB::Schema::Result::Opennebula3Repository",
-  { "foreign.opennebula3_id" => "self.opennebula3_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 opennebula3_vms
 
 Type: has_many
