@@ -1093,8 +1093,18 @@ sub search {
         }
     }
 
-    for my $filter (keys %{$args{hash}}) {
-        next if substr($filter, 0, 3) eq "me.";
+    my $virtuals = {};
+    my $attrdefs = $class->getAttrDefs();
+
+    FILTER:
+    for my $filter (keys %{ $args{hash} }) {
+        # If the attr is virtual, move the filter to the virtuals hash
+        if ($attrdefs->{$filter}->{is_virtual}) {
+            $virtuals->{$filter} = delete $args{hash}->{$filter};
+            next FILTER;
+        }
+        next FILTER if substr($filter, 0, 3) eq "me.";
+
         my @comps = split('\.', $filter);
         my $value = $args{hash}->{$filter};
 
@@ -1144,9 +1154,13 @@ sub search {
         push @objs, $obj;
     }
 
+    # Finally filter on virtual attributes if required
+    for my $virtual (keys %{ $virtuals }) {
+        @objs = grep { my $value = $_->$virtual; "$value" eq "$virtuals->{$virtual}" } @objs;
+    }
+
     if (defined ($args{dataType}) and $args{dataType} eq "hash") {
-        my $total = (defined ($args{page}) or defined ($args{rows})) ?
-                        $rs->pager->total_entries : $rs->count;
+        my $total = (defined $args{page} or defined $args{rows}) ? $rs->pager->total_entries : $rs->count;
 
         return {
             page    => $args{page} || 1,
