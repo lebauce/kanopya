@@ -220,7 +220,9 @@ function toInputType(type) {
     var types = { integer  : 'text',
                   string   : 'text',
                   text     : 'textarea',
-                  boolean  : 'checkbox',
+                  // Use select with yes/no option for checkboxess
+                  //boolean  : 'checkbox',
+                  boolean  : 'select',
                   enum     : 'select',
                   relation : 'select' };
 

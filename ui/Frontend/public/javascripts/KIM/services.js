@@ -128,7 +128,7 @@ function servicesList (container_id, elem_id) {
                         is_editable  : true
                     }
                 },
-                attrsCallback : function (resource, data) {
+                attrsCallback : function (resource, data, trigger) {
                     var attributes;
 
                     // Define the cluster relation hard coded here, to avoid a call
@@ -148,7 +148,8 @@ function servicesList (container_id, elem_id) {
 
                     // If the service template defined, fill the from with the service template definition
                     if (data.service_template_id) {
-                        attributes = ajax('POST', '/api/servicetemplate/getServiceTemplateDef', data);
+                        var args = { params : data, trigger : trigger };
+                        attributes = ajax('POST', '/api/servicetemplate/getServiceTemplateDef', args);
 
                         // Delete the service template fields other than policies ids
                         delete attributes.attributes['service_name'];

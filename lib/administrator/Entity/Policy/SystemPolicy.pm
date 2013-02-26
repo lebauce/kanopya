@@ -54,7 +54,6 @@ use constant POLICY_ATTR_DEF => {
         type         => 'relation',
         relation     => 'single',
         pattern      => '^\d*$',
-        reload       => 1,
     },
     kernel_id => {
         label        => 'Kernel',
@@ -128,11 +127,20 @@ sub getPolicyDef {
     my %args  = @_;
 
     General::checkParams(args     => \%args,
-                         optional => { 'set_mandatory'       => 0,
+                         optional => { 'params'              => {},
+                                       'set_mandatory'       => 0,
                                        'set_editable'        => 1,
                                        'set_params_editable' => 0 });
 
-    %args = %{ $self->mergeValues(values => \%args) };
+    # Merge params wirh existing values
+    $args{params} = $self->processParams(%args);
+
+    # Complete the attributes with common ones
+    my $attributes = $self->SUPER::getPolicyDef(%args);
+
+    my $displayed = [ 'kernel_id', 'masterimage_id', 'cluster_basehostname',
+                      'cluster_si_persistent', 'cluster_si_shared', 'deploy_on_disk' ];
+    $attributes = $merge->merge($attributes, { displayed => $displayed });
 
     my @masterimages;
     for my $masterimage (Entity::Masterimage->search(hash => {})) {
@@ -147,19 +155,15 @@ sub getPolicyDef {
         push @componenttypes, $componenttype->toJSON();
     }
 
-    my $policy_attrdef = clone($class->getPolicyAttrDef);
-    my @displayed      = ( 'kernel_id', 'masterimage_id', 'cluster_basehostname',
-                           'cluster_si_persistent', 'cluster_si_shared', 'deploy_on_disk' );
-
     # Manually add the systemimage_size and deploy_on_disk attrs because they are manager params
-    $policy_attrdef->{deploy_on_disk} = {
+    $attributes->{attributes}->{deploy_on_disk} = {
         label        => 'Deploy on hard disk',
         type         => 'boolean',
         pattern      => '^\d*$',
         is_mandatory => 1
     };
-    if (defined $args{masterimage_id}) {
-        $policy_attrdef->{systemimage_size} = {
+    if (defined $args{params}->{masterimage_id}) {
+        $attributes->{attributes}->{systemimage_size} = {
             label        => 'System image size',
             type         => 'integer',
             unit         => 'byte',
@@ -167,35 +171,28 @@ sub getPolicyDef {
             is_mandatory => 1
         };
         # Insert systemimage_size after
-        splice @displayed, 2, 0, 'systemimage_size';
+        splice @{ $attributes->{displayed} }, 2, 0, 'systemimage_size';
     }
 
+    $attributes->{attributes}->{kernel_id}->{options} = \@kernels;
+    $attributes->{attributes}->{masterimage_id}->{options} = \@masterimages;
+    $attributes->{attributes}->{components}->{attributes}
+        ->{attributes}->{component_type}->{options} = \@componenttypes;
 
-    $policy_attrdef->{kernel_id}->{options} = \@kernels;
-    $policy_attrdef->{masterimage_id}->{options} = \@masterimages;
-    $policy_attrdef->{components}->{attributes}->{attributes}->{component_type}->{options} = \@componenttypes;
-
-    my $attributes = {
-        displayed  => \@displayed,
-        attributes => $policy_attrdef,
-        relations  => {
-            components => {
-                attrs    => { accessor => 'multi' },
-                cond     => { 'foreign.policy_id' => 'self.policy_id' },
-                resource => 'component'
-            },
+    $attributes->{relations} = {
+        components => {
+            attrs    => { accessor => 'multi' },
+            cond     => { 'foreign.policy_id' => 'self.policy_id' },
+            resource => 'component'
         },
-    };
+    },
 
     push @{ $attributes->{displayed} }, {
         'components' => [ 'component_type' ]
     };
 
-    # Complete the attributes with common ones
-    $attributes = $merge->merge($self->SUPER::getPolicyDef(%args), $attributes);
-
     $self->setValues(attributes          => $attributes,
-                     values              => \%args,
+                     values              => $args{params},
                      set_mandatory       => delete $args{set_mandatory},
                      set_editable        => delete $args{set_editable},
                      set_params_editable => delete $args{set_params_editable});

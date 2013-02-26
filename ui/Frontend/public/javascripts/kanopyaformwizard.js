@@ -39,11 +39,11 @@ var KanopyaFormWizard = (function() {
         this.load();
     }
 
-    KanopyaFormWizard.prototype.load = function() {
+    KanopyaFormWizard.prototype.load = function(trigger) {
         this.attributedefs = {};
 
         // Retrieve data structure and values from api
-        var response = this.attrsCallback(this.type, this.data);
+        var response = this.attrsCallback(this.type, this.data, trigger);
         if (response == undefined) {
             throw new Error("KanopyaFormWizard: Could not get attributes of: " + this.type);
         }
@@ -89,7 +89,7 @@ var KanopyaFormWizard = (function() {
             if (attributes[relation_name] !== undefined && attributes[relation_name].attributes !== undefined) {
                 response = attributes[relation_name].attributes;
             } else {
-                response = this.attrsCallback(relationdef.resource, this.data);
+                response = this.attrsCallback(relationdef.resource, this.data, trigger);
             }
             if (response == undefined) {
                 throw new Error("KanopyaFormWizard: Could not get attributes of: " + relationdef.resource);
@@ -327,6 +327,11 @@ var KanopyaFormWizard = (function() {
                 });
             }
 
+            // insert yes/no values for boolean select
+            if (attr.type === 'boolean') {
+                attr.options = { 0 : 'No', 1 : 'Yes' };
+            }
+
             // Inserting select options
             for (var i in attr.options) if (attr.options.hasOwnProperty(i)) {
                 var optiontext  = attr.options[i].label || attr.options[i].pk || attr.options[i];
@@ -370,7 +375,7 @@ var KanopyaFormWizard = (function() {
             }
 
         } else if ((toInputType(attr.type) === 'select' && attr.relation === 'single') ||
-                   (attr.type === 'enum' && attr.relation !== 'multi')) {
+                   ((attr.type === 'enum' || attr.type === 'boolean') && attr.relation !== 'multi')) {
             var option = $("<option>", { value : '', text : '-' }).prependTo(input);
             if (value === undefined) {
                 $(option).attr('selected', 'selected');
@@ -641,14 +646,19 @@ var KanopyaFormWizard = (function() {
         $(input).addClass('wizard-ignore').addClass("ui-state-disabled");
     }
 
-    KanopyaFormWizard.prototype.reload = function() {
+    KanopyaFormWizard.prototype.reload = function(event) {
+        // Enable fields in non visible steps as the same way while submiting
+        if (Object.keys(this.steps).length > 1) {
+            $(this.form).find(":input").not(".wizard-ignore").removeAttr("disabled");
+        }
+
         this.beforeSerialize($(this.form));
 
         // Update the data hash as it will be given in parameter
         // to the attributtes request at reload
         this.data = this.serialize($(this.form).serializeArray());
 
-        // Remove table of the current step
+        // Remove table of all steps
         for (var step in this.steps) {
             for (var table in this.steps[step]) {
                 $(this.steps[step][table]).find('tr').remove();
@@ -659,7 +669,10 @@ var KanopyaFormWizard = (function() {
         }
 
         // Then reload the form
-        this.load();
+        this.load($(event.target).attr('name'));
+
+        var state = $(this.form).formwizard("state");
+        $(this.form).find(".step").not("#" + state.currentStep).find(":input").not(".wizard-ignore").attr("disabled", "disabled");
     }
 
     KanopyaFormWizard.prototype.mustDisableField = function(name, value) {
@@ -821,7 +834,10 @@ var KanopyaFormWizard = (function() {
         return values;
     }
 
-    KanopyaFormWizard.prototype.getAttributes = function(resource, data) {
+    KanopyaFormWizard.prototype.getAttributes = function(resource, data, trigger) {
+        if (trigger) {
+            data['trigger'] = trigger;
+        }
         return ajax('GET', '/api/attributes/' + resource, data);
     }
 
@@ -907,7 +923,7 @@ var KanopyaFormWizard = (function() {
         this.submitCallback  = args.submitCallback  || this.submit;
         this.valuesCallback  = args.valuesCallback  || this.getValues;
         this.attrsCallback   = args.attrsCallback   || this.getAttributes;
-        this.optionsCallback = args.optionsCallback || function () { return false } ;
+        this.optionsCallback = args.optionsCallback || function () { return false };
         this.actionsCallback = args.actionsCallback || $.noop;
         this.cancelCallback  = args.cancelCallback  || $.noop;
         this.error           = args.error           || $.noop;

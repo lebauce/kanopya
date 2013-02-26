@@ -136,25 +136,24 @@ sub getPolicyDef {
     my %args  = @_;
 
     General::checkParams(args     => \%args,
-                         optional => { 'set_mandatory'       => 0,
+                         optional => { 'params'              => {},
+                                       'set_mandatory'       => 0,
                                        'set_editable'        => 1,
                                        'set_params_editable' => 0 });
 
-    %args = %{ $self->mergeValues(values => \%args) };
+    # Merge params wirh existing values
+    $args{params} = $self->processParams(%args);
 
-    my $policy_attrdef = clone($class->getPolicyAttrDef);
-    my $attributes = {
-        displayed  => [],
-        attributes => $policy_attrdef,
-        relations  => {
-            billing_limits => {
-                attrs    => { accessor => 'multi' },
-                cond     => { 'foreign.policy_id' => 'self.policy_id' },
-                resource => 'billing_limit'
-            },
+    # Complete the attributes with common ones
+    my $attributes = $self->SUPER::getPolicyDef(%args);
+
+    $attributes->{relations} = {
+        billing_limits => {
+            attrs    => { accessor => 'multi' },
+            cond     => { 'foreign.policy_id' => 'self.policy_id' },
+            resource => 'billing_limit'
         }
     };
-    
 
     push @{ $attributes->{displayed} }, {
         'billing_limits' => [ 'limit_start', 'limit_ending', 'limit_type',
@@ -162,11 +161,8 @@ sub getPolicyDef {
                               'limit_repeat_start_time', 'limit_repeat_end_time' ]
     };
 
-    # Complete the attributes with common ones
-    $attributes = $merge->merge($self->SUPER::getPolicyDef(%args), $attributes);
-
     $self->setValues(attributes          => $attributes,
-                     values              => \%args,
+                     values              => $args{params},
                      set_mandatory       => delete $args{set_mandatory},
                      set_editable        => delete $args{set_editable},
                      set_params_editable => delete $args{set_params_editable});

@@ -32,6 +32,11 @@ configuration pattern.
 Note that this pattern is stored as JSON in the param preset table, and
 represent the dynamic attributes of the policy.
 
+Selector attributes are specific attributes that are capable to trigger
+the reload of the attribute definition on the fly. Those parameters have
+the reload property set. The selector relation map indicate which selector
+attributes could be reloaded by another selector attrbiute.
+
 @since    2012-Aug-16
 @instance hash
 @self     $self
@@ -82,6 +87,7 @@ use constant ATTR_DEF => {
     },
 };
 
+
 sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
@@ -91,6 +97,14 @@ sub methods {
         },
     };
 }
+
+use constant POLICY_ATTR_DEF          => {};
+use constant POLICY_SELECTOR_ATTR_DEF => {};
+use constant POLICY_SELECTOR_MAP      => {};
+
+sub getPolicyAttrDef { return POLICY_ATTR_DEF; }
+sub getPolicySelectorAttrDef { return POLICY_SELECTOR_ATTR_DEF; }
+sub getPolicySelectorMap { return POLICY_SELECTOR_MAP; }
 
 my $merge = Hash::Merge->new('LEFT_PRECEDENT');
 
@@ -155,10 +169,7 @@ sub update {
     $self->SUPER::update(%$attrs);
 
     # Firstly empty the old pattern
-    my $presets = $self->param_preset;
-    if ($presets) {
-        $presets->remove()
-    }
+    $self->removePresets();
 
     # Build the policy pattern from args
     $self->setPatternFromParams(params => \%args);
@@ -169,29 +180,45 @@ sub update {
 
 =begin classdoc
 
-Override the generic toJSON to handle dynamic attributes.
-Build the JSON by merging the real attributes with the dynamic
-ones, transformed from the stored pattern to keys/values params.
-
-@return the JSON representation of the instance.
+Manualy remove the related param presets as delete on cascade
+could not be used here.
 
 =end classdoc
 
 =cut
 
-sub toJSON {
-    my ($self, %args) = @_;
-    my $class = ref($self) || $self;
+sub delete {
+    my $self  = shift;
+    my %args  = @_;
 
-    General::checkParams(args => \%args, optional => { 'model' => undef });
+    $self->removePresets();
+    $self->SUPER::delete();
+}
 
-    my $json = $self->SUPER::toJSON(%args);
 
-    if (not $args{model}) {
-        $json = $merge->merge($self->mergeValues(values => $json),
-                              $self->getParams(noarrays => 1));
+=pod
+
+=begin classdoc
+
+Remove the related param preset from db.
+
+=end classdoc
+
+=cut
+
+sub removePresets {
+    my $self  = shift;
+    my %args  = @_;
+
+    # Firstly empty the old pattern
+    my $presets = $self->param_preset;
+    if ($presets) {
+        # Detach presets from the policy
+        $self->setAttr(name => 'param_preset_id', value => undef, save => 1);
+
+        # Remove the preset
+        $presets->remove();
     }
-    return $json;
 }
 
 
@@ -218,8 +245,17 @@ sub getPolicyDef {
     my $class = ref($self) || $self;
     my %args  = @_;
 
+    General::checkParams(args     => \%args,
+                         optional => { 'params'  => {},
+                                       'trigger' => undef });
+
+    # Firstly Merge policy attr def with selector only attr def
+    my $policy_attrdef = $merge->merge(clone($class->getPolicyAttrDef),
+                                       clone($class->getPolicySelectorAttrDef));
+
     my $attributes = {
-        displayed => [ 'policy_name', 'policy_desc' ]
+        displayed  => [ 'policy_name', 'policy_desc' ],
+        attributes => $policy_attrdef,
     };
 
     my $json = clone($class->toJSON(model => 1));
@@ -229,6 +265,46 @@ sub getPolicyDef {
     delete $json->{attributes}->{param_preset_id};
 
     return $merge->merge($attributes, $json);
+}
+
+
+=pod
+
+=begin classdoc
+
+Update the params in function of the trigger effects.
+An attribute trriger could affect the merge of the params
+with the existings values, and unset some params.
+
+@return the processed param hash
+
+=end classdoc
+
+=cut
+
+sub processParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'params' ],
+                         optional => { 'trigger' => undef });
+
+    # If the trigger attribute is set to undef, remove it further
+    # from the params merged with exiting values
+    my $trigger_unset = (defined $args{trigger} && not defined $args{params}->{$args{trigger}});
+
+    # Merge params with existing values.
+    $args{params} = $self->mergeValues(values => $args{params});
+
+    # Unset manager if the provider is the trigger
+    if (defined $args{trigger}){
+        $self->unsetSelectors(selector => $args{trigger}, params => $args{params});
+        if ($trigger_unset){
+            delete $args{params}->{$args{trigger}};
+        }
+    }
+    return $args{params};
 }
 
 
@@ -373,7 +449,7 @@ sub setPatternFromParams {
 
 =begin classdoc
 
-Merge the value given in parameter with the instance ones.
+Merge the values given in parameter with the instance ones.
 
 @param values the policy attribute values
 
@@ -479,6 +555,34 @@ sub setValues {
 
 =begin classdoc
 
+Set to undef the values of paramters taht depends on an other one,
+called a selector, in funtion of the selector relation map
+(see POLICY_SELECTOR_MAP constant).
+
+=end classdoc
+
+=cut
+
+sub unsetSelectors {
+    my $self  = shift;
+    my $class = ref($self) || $self;
+    my %args  = @_;
+
+    General::checkParams(args => \%args, required => [ 'selector', 'params' ]);
+
+    my $map = $self->getPolicySelectorMap();
+    if (ref($map->{$args{selector}}) eq "ARRAY") {
+        for my $relation (@{ $map->{$args{selector}} }) {
+            delete $args{params}->{$relation};
+        }
+    }
+}
+
+
+=pod
+
+=begin classdoc
+
 Get the non editable attributes list for the 'set_params_editable' mode
 of the method setValues.
 
@@ -518,7 +622,7 @@ sub getParams {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, optional => { 'noarrays' => 0 });
+    General::checkParams(args => \%args, optional => { 'noarrays' => 0, 'exclude' => [] });
 
     my $flat_hash = {};
     my $presets = $self->param_preset;
@@ -620,6 +724,27 @@ sub searchManagers {
     }
 
     return Entity::Component->search(%$searchargs);
+}
+
+
+=pod
+
+=begin classdoc
+
+Check if the given attr trigger the reload ofattr def
+by setting it to an undef value.
+
+=end classdoc
+
+=cut
+
+sub isAttributeUnset {
+    my $self = shift;
+    my %args  = @_;
+
+    General::checkParams(args => \%args, required => [ 'name', 'params', 'trigger' ]);
+
+    return $args{trigger} eq $args{name} and not defined $args{params}->{$args{name}};
 }
 
 

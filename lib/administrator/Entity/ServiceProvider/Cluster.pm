@@ -191,23 +191,18 @@ sub methods {
     return {
         addNode => {
             description => 'add a node to this cluster',
-            perm_holder => 'entity',
         },
         removeNode => {
             description => 'remove a node from this cluster',
-            perm_holder => 'entity',
         },
         activate => {
             description => 'activate this cluster',
-            perm_holder => 'entity',
         },
         deactivate => {
             description => 'deactivate this cluster',
-            perm_holder => 'entity',
         },
         start => {
             description => 'start this cluster',
-            perm_holder => 'entity',
         },
         stop => {
             description => 'stop this cluster',
@@ -215,7 +210,6 @@ sub methods {
         },
         forceStop => {
             description => 'force stop this cluster',
-            perm_holder => 'entity',
         },
     };
 }

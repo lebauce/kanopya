@@ -178,7 +178,7 @@ sub new {
         my $policy = Entity::Policy->get(id => delete $args{$arg});
 
         # Remove param_preset_id from the policy JSON
-        my $json = $policy->toJSON;
+        my $json = $merge->merge($policy->toJSON, $policy->getParams(noarrays => 1));
         delete $json->{param_preset_id};
 
         # Browse the policy definition and create a derivated policy
@@ -230,13 +230,16 @@ sub getServiceTemplateDef {
     my $class = ref($self) || $self;
     my %args  = @_;
 
+    General::checkParams(args     => \%args,
+                         optional => { 'params' => {}, 'trigger' => undef });
+
     my $attributes = clone($class->toJSON(model => 1));
 
     # Instanciate the service template if the id is defined,
     # this should occurs at the service instanciation only.
     my $servicetemplate;
-    if (defined $args{service_template_id}) {
-        $servicetemplate = Entity::ServiceTemplate->get(id => $args{service_template_id});
+    if (defined $args{params}->{service_template_id}) {
+        $servicetemplate = Entity::ServiceTemplate->get(id => $args{params}->{service_template_id});
     }
 
     for my $policy_type (@$POLICY_TYPES) {
@@ -249,10 +252,10 @@ sub getServiceTemplateDef {
         # If the service template id is defined, use its policies ids.
         if (defined $servicetemplate) {
             my $policy = $servicetemplate->getAttr(name => $policy_type . '_policy');
-            $args{$policy_type . '_policy_id'} = $policy->id;
+            $args{params}->{$policy_type . '_policy_id'} = $policy->id;
 
             # Set the policy id non editable
-            $attributes->{attributes}->{$policy_type . '_policy_id'}->{options} = [ $policy->toJSON() ];
+            $attributes->{attributes}->{$policy_type . '_policy_id'}->{options} = [ $policy->toJSON ];
             $attributes->{attributes}->{$policy_type . '_policy_id'}->{is_editable} = 0;
         }
         else {
@@ -266,33 +269,44 @@ sub getServiceTemplateDef {
 
             # If the value for the policy not defined and the policy is mandatory...
             if ($attributes->{attributes}->{$policy_type . '_policy_id'}->{is_mandatory} and
-                not defined $args{$policy_type . '_policy_id'} and scalar(@policies)) {
+                ! defined $args{params}->{$policy_type . '_policy_id'} and scalar(@policies)) {
 
                 # ...set the value to the first policy in options
-                $args{$policy_type . '_policy_id'} = $policies[0]->{pk};
+                $args{params}->{$policy_type . '_policy_id'} = $policies[0]->{pk};
             }
         }
 
         # Merge the current policy attrbiutes
+        my $holder;
         my $policy_attributes;
-        if (defined $args{$policy_type . '_policy_id'}) {
-            $attributes->{attributes}->{$policy_type . '_policy_id'}->{value} = $args{$policy_type . '_policy_id'};
+        my $policy_args = { params        => $args{params},
+                            trigger       => $args{trigger},
+                            set_mandatory => defined $servicetemplate ? 1 : 0 };
+
+        # If the policy id defined, use the the instance, use the class instead
+        if (defined $args{params}->{$policy_type . '_policy_id'}) {
+            $attributes->{attributes}->{$policy_type . '_policy_id'}->{value}
+                = $args{params}->{$policy_type . '_policy_id'};
 
             # Get the policy defintion from the policy instance if the id is defined
-            my $policy = Entity::Policy->get(id => $args{$policy_type . '_policy_id'});
-            $policy_attributes = $policy->getPolicyDef(
-                                     set_mandatory       => defined $servicetemplate ? 1 : 0,
-                                     set_editable        => 0,
-                                     set_params_editable => 1,
-                                     %args
-                                 );
+            $holder = Entity::Policy->get(id => $args{params}->{$policy_type . '_policy_id'});
+
+            $policy_args->{set_editable} = 0;
+            $policy_args->{set_params_editable} = 1;
+
+            # If the changed attribute that trigger the call to getServiceTemplateDef is
+            # the policy id, then do not forward params to getPolicyDef.
+            my $params = {};
+            if (defined $args{trigger} and $args{trigger} eq $policy_type . '_policy_id') {
+                delete $policy_args->{params};
+            }
         }
         else {
-            $policy_attributes = $policy_class->getPolicyDef(
-                                     set_mandatory => defined $servicetemplate ? 1 : 0,
-                                     %args
-                                 );
+            $holder = $policy_class;
         }
+
+        # Finaly get the attribute defintion from the policy instance
+        $policy_attributes = $holder->getPolicyDef(%$policy_args);
 
         # Removed policy_name and policy_desc from the displayed attr list
         shift @{ $policy_attributes->{displayed} };
