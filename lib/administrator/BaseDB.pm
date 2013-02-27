@@ -68,7 +68,6 @@ sub methods {
     };
 }
 
-
 my $adm = {
     schema => undef,
     config => undef,
@@ -189,6 +188,44 @@ sub update {
     $self->populateRelations(relations => $relations, override => 1);
 
     return $self;
+}
+
+
+=pod
+
+=begin classdoc
+
+Generic method for object creation.
+
+@return the created object instance
+
+=end classdoc
+
+=cut
+
+sub create {
+    my $class = shift;
+    my %args = @_;
+
+    return $class->new(%args);
+}
+
+
+=pod
+
+=begin classdoc
+
+Generic method for object deletion.
+
+=end classdoc
+
+=cut
+
+sub remove {
+    my $self = shift;
+    my %args = @_;
+
+    $self->delete();
 }
 
 
@@ -1156,7 +1193,13 @@ sub search {
 
     # Finally filter on virtual attributes if required
     for my $virtual (keys %{ $virtuals }) {
-        @objs = grep { my $value = $_->$virtual; "$value" eq "$virtuals->{$virtual}" } @objs;
+        my $op = '=';
+        if (ref($virtuals->{$virtual}) eq "HASH") {
+            map { $op = $_; $virtuals->{$virtual} = $virtuals->{$virtual}->{$_} } keys %{ $virtuals->{$virtual} };
+        }
+        @objs = grep { General::compareScalars(left_op  => $_->$virtual,
+                                               right_op => $virtuals->{$virtual},
+                                               op       => $op) } @objs;
     }
 
     if (defined ($args{dataType}) and $args{dataType} eq "hash") {
@@ -1830,44 +1873,6 @@ sub getLabelAttr {
         return $attrs[0];
     }
     return undef;
-}
-
-
-=pod
-
-=begin classdoc
-
-Generic method for object creation.
-
-@return the created object instance
-
-=end classdoc
-
-=cut
-
-sub create {
-    my $class = shift;
-    my %args = @_;
-
-    return $class->new(%args);
-}
-
-
-=pod
-
-=begin classdoc
-
-Generic method for object deletion.
-
-=end classdoc
-
-=cut
-
-sub remove {
-    my $self = shift;
-    my %args = @_;
-
-    $self->delete();
 }
 
 

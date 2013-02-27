@@ -385,4 +385,83 @@ sub getTemplateConfiguration {
     };
 }
 
+
+=pod
+
+=begin classdoc
+
+Compare two scalar values in function of a SQL operator.
+
+@return the comparison boolean result
+
+=end classdoc
+
+=cut
+
+sub compareScalars {
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'left_op', 'right_op', 'op' ]);
+
+    if ($args{op} =~ m/.*LIKE$/) {
+        if (not $args{right_op} =~ m/^%.*%$/) {
+            if ($args{right_op} =~ m/.*%$/) {
+                $args{right_op} = '^' . $args{right_op};
+            }
+            if ($args{right_op} =~ m/^%.*/) {
+                $args{right_op} = $args{right_op} . '$';
+            }
+        }
+        (my $pattern = $args{right_op}) =~ s/%/.*/g;
+
+        my $comp = ($args{left_op} =~ m/$pattern/);
+        return ($args{op} =~ m/^NOT.*/) ? not $comp : $comp;
+    }
+    # Check if one of the operands is a string
+    elsif (($args{left_op} ^ $args{left_op}) or (($args{right_op} ^ $args{right_op}))) {
+        if ($args{op} eq "=") {
+            return "$args{left_op}" eq "$args{right_op}";
+        }
+        elsif ($args{op} eq "<>") {
+            return "$args{left_op}" ne "$args{right_op}";
+        }
+        elsif ($args{op} eq "<") {
+            return "$args{left_op}" lt "$args{right_op}";
+        }
+        elsif ($args{op} eq ">") {
+            return "$args{left_op}" gt "$args{right_op}";
+        }
+        elsif ($args{op} eq "<=") {
+            return "$args{left_op}" le "$args{right_op}";
+        }
+        elsif ($args{op} eq ">=") {
+            return "$args{left_op}" ge "$args{right_op}";
+        }
+    }
+    else {
+        if ($args{op} eq "=") {
+            return $args{left_op} == $args{right_op};
+        }
+        elsif ($args{op} eq "<>") {
+            return $args{left_op} != $args{right_op};
+        }
+        elsif ($args{op} eq "<") {
+            return $args{left_op} < $args{right_op};
+        }
+        elsif ($args{op} eq ">") {
+            return $args{left_op} > $args{right_op};
+        }
+        elsif ($args{op} eq "<=") {
+            return $args{left_op} <= $args{right_op};
+        }
+        elsif ($args{op} eq ">=") {
+            return $args{left_op} >= $args{right_op};
+        }
+    }
+
+    throw Kanopya::Exception::Internal::UnknownOperator(
+              error => "Unsupported operator $args{op}."
+          );
+}
+
 1;
