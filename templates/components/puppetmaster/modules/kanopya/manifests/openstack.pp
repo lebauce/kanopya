@@ -138,10 +138,15 @@ class kanopya::novacontroller($password, $dbserver, $amqpserver, $keystone, $ema
             tag      => "${dbserver}",
     }
 
+    exec { "/usr/bin/nova-manage db sync":
+        path => "/usr/bin:/usr/sbin:/bin:/sbin",
+    }
+
     class { 'nova::api':
             enabled        => true,
             admin_password => "${password}",
             auth_host      => "${keystone}",
+            require        => Exec["/usr/bin/nova-manage db sync"]
     }
 
     class { 'nova':
