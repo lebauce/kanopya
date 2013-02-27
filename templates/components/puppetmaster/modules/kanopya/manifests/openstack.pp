@@ -173,6 +173,10 @@ class kanopya::novacontroller($password, $dbserver, $amqpserver, $keystone, $ema
 }
 
 class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone, $password) {
+    file { "/run/iscsid.pid":
+        content => "1",
+    }
+
     class { 'nova':
         # set sql and rabbit to false so that the resources will be collected
         sql_connection     => "mysql://nova:${password}@${dbserver}/nova",
