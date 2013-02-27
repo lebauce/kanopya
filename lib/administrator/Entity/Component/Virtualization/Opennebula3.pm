@@ -122,17 +122,14 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_editable  => 1
     },
-    opennebula3_repositories => {
-        label       => 'Virtual machine images repositories',
-        type        => 'relation',
-        relation    => 'single_multi',
-        is_editable => 1,
-    },
     opennebula3_hypervisors => {
         label       => 'Hypervisors',
         type        => 'relation',
         relation    => 'single_multi',
         is_editable => 0,
+    },
+    opennebula3_repositories => {
+        is_virtual => 1
     },
     # TODO: move this virtual attr to HostManager attr def when supported
     host_type => {
@@ -141,6 +138,12 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub opennebula3Repositories {
+    my $self = shift;
+
+    return $self->repositories;
+}
 
 sub getBaseConfiguration {
     return {

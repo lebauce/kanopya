@@ -77,13 +77,9 @@ CREATE TABLE `opennebula3_vm` (
 
 CREATE TABLE `opennebula3_repository` (
   `opennebula3_repository_id` int(8) unsigned NOT NULL,
-  `repository_name` char(255) NOT NULL,
-  `container_access_id` int(8) unsigned NOT NULL,
   `datastore_id` int(8) unsigned NULL DEFAULT NULL,
   PRIMARY KEY `fk_opennabula3repository_1` (`opennebula3_repository_id`),
-  KEY `fk_opennebula3repository_2` (`container_access_id`),
-  CONSTRAINT `fk_opennebula3repository_1` FOREIGN KEY (`opennebula3_repository_id`) REFERENCES `repository` (`repository_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_opennebula3repository_2` FOREIGN KEY (`container_access_id`) REFERENCES `container_access` (`container_access_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  CONSTRAINT `fk_opennebula3repository_1` FOREIGN KEY (`opennebula3_repository_id`) REFERENCES `repository` (`repository_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

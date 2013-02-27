@@ -46,26 +46,6 @@ __PACKAGE__->table("opennebula3_repository");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 opennebula3_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 0
-
-=head2 repository_name
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 255
-
-=head2 container_access_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 0
-
 =head2 datastore_id
 
   data_type: 'integer'
@@ -76,22 +56,6 @@ __PACKAGE__->table("opennebula3_repository");
 
 __PACKAGE__->add_columns(
   "opennebula3_repository_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 0,
-  },
-  "opennebula3_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 0,
-  },
-  "repository_name",
-  { data_type => "char", is_nullable => 0, size => 255 },
-  "container_access_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -116,21 +80,6 @@ __PACKAGE__->set_primary_key("opennebula3_repository_id");
 
 =head1 RELATIONS
 
-=head2 container_access
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::ContainerAccess>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "container_access",
-  "AdministratorDB::Schema::Result::ContainerAccess",
-  { container_access_id => "container_access_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
 =head2 opennebula3_repository
 
 Type: belongs_to
@@ -147,8 +96,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-02-25 17:25:23
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UQ4TFJcAMAndSn+02y7MrA
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-02-26 16:10:40
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dk17l7fgs/4i3AW7rl/L5g
 
 __PACKAGE__->belongs_to(
   "parent",
@@ -156,7 +105,6 @@ __PACKAGE__->belongs_to(
   { repository_id => "opennebula3_repository_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
-
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;
