@@ -62,21 +62,21 @@ function loadServicesDetails(cid, eid, is_iaas) {
             var buttons     = [
                 {
                     label       : 'Start service',
-                    icon        : 'play',
+                    sprite      : 'start',
                     action      : '/api/cluster/' + eid + '/start',
                     condition   : (new RegExp('^down')).test(data.cluster_state),
                     confirm     : 'This will start your instance'
                 },
                 {
                     label       : 'Stop service',
-                    icon        : 'stop',
+                    sprite      : 'stop',
                     action      : '/api/cluster/' + eid + '/stop',
                     condition   : (new RegExp('^up')).test(data.cluster_state),
                     confirm     : 'This will stop all your running instances'
                 },
                 {
                     label       : 'Force stop service',
-                    icon        : 'stop',
+                    sprite      : 'stop',
                     action      : '/api/cluster/' + eid + '/forceStop',
                     condition   : (!(new RegExp('^down')).test(data.cluster_state)),
                     confirm     : 'This will stop all your running instances'
@@ -108,9 +108,14 @@ function createallbuttons(buttons, container) {
 }
 
 function createbutton(button) {
-    return $('<a>', { text : button.label }).button({
-        icons : { primary : 'ui-icon-' + button.icon }
-    }).bind('click', function (e) {
+    return $('<span></span>').append(
+               $('<span class="' +
+                 (button.sprite ?
+                     'kanopya-sprite kanopya-button-sprite sprite-kanopya-' + button.sprite :
+                     'ui-icon-' + button.icon) + '"></span>')
+           ).append(
+               $('<a>', { text : button.label })
+           ).button().bind('click', function (e) {
         if (button.confirm &&
             !confirm(button.confirm + ". Do you want to continue ?")) {
             return false;

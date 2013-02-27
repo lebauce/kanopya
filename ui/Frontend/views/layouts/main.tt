@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="<% request.uri_base %>/css/theme/default/dashboardui.css" />
 
 <link rel="stylesheet" href="<% request.uri_base %>/css/kanopya_style.css" />
+<link rel="stylesheet" href="<% request.uri_base %>/css/kanopya-sprites.css" />
 <link rel="stylesheet" href="<% request.uri_base %>/css/global.css" />
 
 <script src="/javascripts/jquery/jquery-1.7.2.js"></script>
