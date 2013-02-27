@@ -80,6 +80,10 @@ sub execute {
         hostname            => $hostname
     );
 
+    if (not $self->{context}->{cluster}->getMasterNode) {
+        $self->{context}->{host}->becomeMasterNode();
+    }
+
     # Create the node working directory where generated files will be
     # stored.
     my $dir = $self->{config}->{clusters}->{directory};
