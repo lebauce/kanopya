@@ -43,13 +43,13 @@ var mainmenu_def = {
     },
     'Business' : {
         'Policies'  : [
-            { label : 'Hosting',        id : 'hosting_policy',       onLoad : load_policy_content },
-            { label : 'Storage',        id : 'storage_policy',       onLoad : load_policy_content },
-            { label : 'Network',        id : 'network_policy',       onLoad : load_policy_content },
-            { label : 'System',         id : 'system_policy',        onLoad : load_policy_content },
-            { label : 'Scalability',    id : 'scalability_policy',   onLoad : load_policy_content },
-            { label : 'Billing',        id : 'billing_policy',       onLoad : load_policy_content },
-            { label : 'Orchestration',  id : 'orchestration_policy', onLoad : load_policy_content }
+            { label : 'Hosting',        id : 'hosting_policy',       onLoad : load_policy_content, icon : "hosting" },
+            { label : 'Storage',        id : 'storage_policy',       onLoad : load_policy_content, icon : "storage" },
+            { label : 'Network',        id : 'network_policy',       onLoad : load_policy_content, icon : "network" },
+            { label : 'System',         id : 'system_policy',        onLoad : load_policy_content, icon : "system" },
+            { label : 'Scalability',    id : 'scalability_policy',   onLoad : load_policy_content, icon : "scalability" },
+            { label : 'Billing',        id : 'billing_policy',       onLoad : load_policy_content, icon : "metering" },
+            { label : 'Orchestration',  id : 'orchestration_policy', onLoad : load_policy_content, icon : "workload" }
         ],
         'Services'  : [
             { label : 'Services',  id : 'service_template', onLoad : load_service_template_content }
@@ -70,21 +70,21 @@ var mainmenu_def = {
             level2_filter    : function(elem) { return servicesListFilter(elem); }, 
             id_key           : 'pk',
             submenu          : [
-                { label : 'Overview',        id : 'service_overview',      onLoad : function(cid, eid) { require('common/service_dashboard.js'); loadServicesOverview(cid, eid); } },
-                { label : 'Details',         id : 'service_details',       onLoad : function(cid, eid) { require('KIM/services_details.js'); loadServicesDetails(cid, eid); } },
-                { label : 'Configuration',   id : 'service_configuration', onLoad : function(cid, eid) { require('KIM/services_config.js'); loadServicesConfig(cid, eid); } },
-                { label : 'Resources',       id : 'service_resources',     onLoad : function(cid, eid) { require('KIM/services.js'); loadServicesResources(cid, eid); } },
-                { label : 'Monitoring',      id : 'service_monitoring',    onLoad : function(cid, eid) { require('common/service_monitoring.js'); loadServicesMonitoring(cid, eid); } },
-                { label : 'Rules',           id : 'service_rules',         onLoad : function(cid, eid) { require('common/service_rules.js'); loadServicesRules(cid, eid); } },
-                { label : 'Events & Alerts', id : 'events_alerts',         onLoad : function(cid, eid) { require('common/service_eventsalerts.js'); loadServiceEventsAlerts(cid, eid); } },
-                { label : 'Billing',         id : 'billing',               onLoad : function(cid, eid) { require('KIM/billing.js'); billinglist(cid, eid); } }
+                { label : 'Overview',        id : 'service_overview',      onLoad : function(cid, eid) { require('common/service_dashboard.js'); loadServicesOverview(cid, eid); }, icon : 'dashboard' },
+                { label : 'Details',         id : 'service_details',       onLoad : function(cid, eid) { require('KIM/services_details.js'); loadServicesDetails(cid, eid); }, icon : 'details' },
+                { label : 'Configuration',   id : 'service_configuration', onLoad : function(cid, eid) { require('KIM/services_config.js'); loadServicesConfig(cid, eid); }, icon : 'system' },
+                { label : 'Resources',       id : 'service_resources',     onLoad : function(cid, eid) { require('KIM/services.js'); loadServicesResources(cid, eid); }, icon : 'resources' },
+                { label : 'Monitoring',      id : 'service_monitoring',    onLoad : function(cid, eid) { require('common/service_monitoring.js'); loadServicesMonitoring(cid, eid); }, icon : 'monitoring' },
+                { label : 'Rules',           id : 'service_rules',         onLoad : function(cid, eid) { require('common/service_rules.js'); loadServicesRules(cid, eid); }, icon : 'rules' },
+                { label : 'Events & Alerts', id : 'events_alerts',         onLoad : function(cid, eid) { require('common/service_eventsalerts.js'); loadServiceEventsAlerts(cid, eid); }, icon : 'alert' },
+                { label : 'Billing',         id : 'billing',               onLoad : function(cid, eid) { require('KIM/billing.js'); billinglist(cid, eid); }, icon : 'metering' }
             ]
         }
     },
     'Administration'    : {
         'Kanopya'          : [
-            { label : 'Configuration', id : 'service_configuration', onLoad : function(cid) { require('KIM/services_config.js'); loadServicesConfig(cid, kanopya_cluster); } },
-            { label : 'Resources',     id : 'service_resources',     onLoad : function(cid) { require('KIM/services.js'); loadServicesResources(cid, kanopya_cluster); } }
+            { label : 'Configuration', id : 'service_configuration', onLoad : function(cid) { require('KIM/services_config.js'); loadServicesConfig(cid, kanopya_cluster); }, icon : 'system' },
+            { label : 'Resources',     id : 'service_resources',     onLoad : function(cid) { require('KIM/services.js'); loadServicesResources(cid, kanopya_cluster); }, icon : 'resources' }
         ],
         'Right Management' : [
             { label : 'Users',       id : 'users',       onLoad : users.load_content },

@@ -52,3 +52,29 @@ td.action-cell .ui-button {
 .custom_policy_step .ui-accordion-content {
     max-height : 250px;
 }
+
+#mainmenu-container li {
+    padding-top: 2px;
+}
+
+.kanopya-sprite {
+  height: 20px;
+  width: 20px;
+  overflow: hidden;
+  background-repeat: no-repeat;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.kanopya-tab-sprite {
+  margin-right: 5px;
+}
+
+.kanopya-button-sprite {
+  margin-right: 5px;
+}
+
+.kanopya-menu-sprite {
+  margin-right: 5px;
+}
+

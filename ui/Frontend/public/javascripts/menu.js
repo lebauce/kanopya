@@ -15,6 +15,12 @@ function add_menu(container, label, submenu_links, elem_id) {
     var link_li = $('<li id="' + link_id + '" class="view_link_cont alive_link"></li>');
     var link_a = $('<a class="view_link" style="white-space: nowrap" href="#' + view_id + '">' + label + '</a>');
     
+    if (container.index() == 1 && !elem_id) {
+        link_li.append(
+            $('<span class="kanopya-sprite kanopya-menu-sprite sprite-kanopya-' + label.replace(/ /g, '-').toLowerCase() + '"></span>')
+        );
+    }
+
     link_li.append(link_a);
     container.append(link_li);
     build_submenu($('#view-container'), view_id, submenu_links, elem_id);
@@ -215,7 +221,9 @@ function build_submenu(container, view_id, links, elem_id) {
         var content_id = 'content_' + links[smenu]['id'] + '_' + id_suffix;
         var content = $('<div id="' + content_id + '"></div>');
         view.append(content);
-        view.tabs('add', '#' + content_id , links[smenu]['label']);
+        view.tabs('add', '#' + content_id ,
+                  (links[smenu]['icon'] ? "<span class='kanopya-tab-sprite kanopya-sprite sprite-kanopya-" + links[smenu]['icon'] + "'></span>" : "" ) +
+                  links[smenu]['label']);
         
         if (links[smenu]['onLoad']) {
             _content_handlers[content_id] = {

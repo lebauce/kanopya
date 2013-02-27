@@ -377,39 +377,39 @@ function nodedetailsaction(cid, eid) {
             var buttons   = [
                 {
                     label   : 'Stop node',
-                    icon    : 'stop',
+                    sprite  : 'stop',
                     action  : '/api/serviceprovider/' + data.service_provider_id + '/removeNode',
                     data    : { host_id : data.host.pk },
                     confirm : 'The node will be halted'
                 },
                 {
                     label   : 'Resubmit node',
-                    icon    : 'refresh',
+                    sprite  : 'resubmit',
                     condition : isVirtual,
                     action  : '/api/host/' + data.host.pk + '/resubmit',
                     confirm : 'The node will be stopped and restarted'
                 },
                 {
                     label       : 'Scale Cpu',
-                    icon        : 'arrowthick-2-n-s',
+                    sprite      : 'scale',
                     condition   : isVirtual,
                     action      : function() { runScaleWorkflow("CPU", data.host.pk, data.service_provider_id); }
                 },
                 {
                     label       : 'Scale Memory',
-                    icon        : 'arrowthick-2-n-s',
+                    sprite      : 'scale',
                     condition   : isVirtual,
                     action      : function() { runScaleWorkflow("Memory", data.host.pk, data.service_provider_id); }
                 },
                 {
                     label       : 'Migrate',
-                    icon        : 'extlink',
+                    sprite      : 'migrate',
                     condition   : isVirtual,
                     action      : function() { migrate(data.service_provider_id, data.host.pk); }
                 },
                 {
                     label       : 'Remote session',
-                    icon        : 'image',
+                    sprite      : 'scale',
                     condition   : (remoteUrl !== null && remoteUrl !== ''),
                     action      : function() { window.open(remoteUrl); }
                 },
