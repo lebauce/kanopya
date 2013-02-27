@@ -32,6 +32,7 @@ use Entity::Host::Hypervisor::Opennebula3Hypervisor;
 use Entity::Host::VirtualMachine;
 use Entity::Host::VirtualMachine::Opennebula3Vm;
 use Entity::Host::VirtualMachine::Opennebula3Vm::Opennebula3KvmVm;
+use Entity::Repository::Opennebula3Repository;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -274,67 +275,24 @@ sub getBootPolicies {
 
 sub getConf {
     my $self = shift;
-    my %conf = ();
-    my $confindb = $self->{_dbix};
-    if($confindb) {
-        %conf = $confindb->get_columns();
-    }
+    my $conf = $self->SUPER::getConf();
 
-    my @repositories = ();
-    my @available_accesses = ();
-    my @hypervisors = ();
-    my @vms = ();
-
-    my $repo_rs = $confindb->opennebula3_repositories;
-    while (my $repo_row = $repo_rs->next) {
-        my $container_access = Entity::ContainerAccess->get(
-                                   id => $repo_row->get_column('container_access_id')
-                               );
-        push @repositories, {
-            repository_name         => $repo_row->get_column('repository_name'),
-            container_access_export => $container_access->getAttr(name => 'container_access_export'),
-            container_access_id     => $repo_row->get_column('container_access_id'),
-            datastore_id            => $repo_row->get_column('datastore_id'),
+    $conf->{opennebula3_repositories} = ();
+    my @repositories = Entity::Repository::Opennebula3Repository->search(
+        hash     => { virtualization_id => $self->id },
+        prefetch => [ 'container_access' ],
+    );
+    foreach my $repo (@repositories) {
+        my $container_access = $repo->container_access;
+        push @{$conf->{opennebula3_repositories}}, {
+            repository_name         => $repo->repository_name,
+            container_access_export => $container_access->container_access_export,
+            container_access_id     => $container_access->id,
+            datastore_id            => $repo->datastore_id
         }
     }
 
-    my @container_accesses = Entity::ContainerAccess::NfsContainerAccess->search(hash => {});
-    for my $access (@container_accesses) {
-        push @available_accesses, {
-            container_access_id   => $access->getAttr(name => 'container_access_id'),
-            container_access_name => $access->getAttr(name => 'container_access_export'),
-        }
-    }
-
-    my @hyper_rs = Entity::Host::Hypervisor::Opennebula3Hypervisor->search(hash => { opennebula3_id => $self->getId });
-    for my $hyper (@hyper_rs) {
-        my @vms_rs = $hyper->getVms();
-
-        push @hypervisors, {
-                onehost_id             => $hyper->onehost_id,
-                opennebula3_hypervisor_id => $hyper->getId,
-                vms                       => \@vms_rs,
-                nbrevms                   => scalar(@vms_rs)
-        };
-
-        for my $vm (@vms_rs) {
-            my $vm_id = $vm->getId;
-            push @vms, {
-                vm_id                     => $vm->onevm_id,
-                opennebula3_hypervisor_id => $hyper->getId,
-                vm_host_id                => $vm_id,
-                url                       => "/infrastructures/hosts/$vm_id"
-            };
-        }
-    }
-
-    $conf{container_accesses}       = \@available_accesses;
-    $conf{opennebula3_repositories} = \@repositories;
-    $conf{opennebula3_hypervisors}  = \@hypervisors;
-    $conf{opennebula3_vms}          = \@vms;
-    $conf{opennebula3_hypervisor}   = $conf{"hypervisor"};
-
-    return \%conf;
+    return $conf;
 }
 
 sub setConf {
@@ -343,24 +301,25 @@ sub setConf {
 
     General::checkParams(args => \%args, required => ['conf']);
 
-    my $conf = $args{conf};
-    my $repos = $conf->{opennebula3_repositories};
-    delete $conf->{opennebula3_repositories};
+    my $conf  = $args{conf};
+    my $repos = delete $conf->{opennebula3_repositories};
 
-    # main config
-    if (not $conf->{opennebula3_id}) {
-        $self->{_dbix}->create($conf);
-    } else {
-        $self->{_dbix}->update($conf);
+    $self->SUPER::setConf(conf => $conf);
+
+    my @repos = $self->repositories;
+    foreach my $repo (@repos) {
+        $repo->remove;
     }
-
-    # repositories config
-    $self->{_dbix}->opennebula3_repositories->delete_all;
-    foreach my $repo (@$repos) {
-        if(exists $repo->{opennebula3_repository_id}) {
+    foreach my $repo (@{$repos}) {
+        if (exists $repo->{opennebula3_repository_id}) {
             delete $repo->{opennebula3_repository_id};
         }
-        $self->{_dbix}->opennebula3_repositories->create($repo);
+        Entity::Repository::Opennebula3Repository->new(
+            repository_name     => $repo->{repository_name},
+            datastore_id        => $repo->{datastore_id},
+            virtualization_id   => $self->id,
+            container_access_id => $repo->{container_access_id}
+        );
     }
 }
 
@@ -506,15 +465,9 @@ sub getImageRepository {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['container_access_id']);
 
-    my $row = $self->{_dbix}->opennebula3_repositories->search( {
-                  container_access_id => $args{container_access_id} }
-              )->single;
-
-    if (not defined $row) {
-        throw Kanopya::Exception::Internal(error => "No repository configured for OpenNebula " . $self->id);
-    }
-
-    return $row->get_columns();
+    return Entity::Repository::Opennebula3Repository->search(hash => {
+        container_access_id => $args{container_access_id}
+    });
 }
 
 sub supportHotConfiguration {
