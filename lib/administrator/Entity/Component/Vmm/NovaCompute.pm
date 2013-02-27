@@ -15,7 +15,7 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package  Entity::Component::Openstack::NovaCompute;
+package  Entity::Component::Vmm::NovaCompute;
 use base "Entity::Component";
 
 use strict;

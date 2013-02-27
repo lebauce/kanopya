@@ -73,7 +73,7 @@ use Entity::Component::Linux::Redhat;
 use Entity::Component::Linux::Suse;
 use Entity::Component::Mailnotifier0;
 use Entity::Component::Virtualization::NovaController;
-use Entity::Component::Openstack::NovaCompute;
+use Entity::Component::Vmm::NovaCompute;
 use Entity::Component::Openstack::Glance;
 use Entity::Component::Openstack::Keystone;
 use Entity::Component::Openstack::Quantum;
@@ -134,7 +134,7 @@ my @classes = (
     'Entity::Component::Amqp',
     'Entity::ServiceProvider::Externalcluster',
     'Entity::Component::Virtualization::NovaController',
-    'Entity::Component::Openstack::NovaCompute',
+    'Entity::Component::Vmm::NovaCompute',
     'Entity::Component::Openstack::Quantum',
     'Entity::Component::Openstack::Keystone',
     'Entity::Component::Openstack::Glance',
