@@ -443,7 +443,7 @@ sub getImageRepository {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['container_access_id']);
 
-    return Entity::Repository::Opennebula3Repository->search(hash => {
+    return Entity::Repository::Opennebula3Repository->find(hash => {
         container_access_id => $args{container_access_id}
     });
 }
