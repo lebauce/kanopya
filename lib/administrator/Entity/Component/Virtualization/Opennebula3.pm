@@ -143,17 +143,9 @@ sub getBaseConfiguration {
         port => '2633',
         hypervisor => 'kvm',
         debug_level => '3',
-        overcommitment_cpu_factor => '1',
-        overcommitment_memory_factor => '1'
+        overcommitment_memory_factor => 1,
+        overcommitment_cpu_factor => 1
     };
-}
-
-sub getOvercommitmentFactors {
-    my ($self) = @_;
-    return {
-        overcommitment_cpu_factor    => $self->overcommitment_cpu_factor,
-        overcommitment_memory_factor => $self->overcommitment_memory_factor,
-    }
 }
 
 sub hypervisors {

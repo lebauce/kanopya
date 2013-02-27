@@ -40,6 +40,21 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF };
 
+sub getBaseConfigurtation {
+    return {
+        overcommitment_cpu_factor => '1',
+        overcommitment_memory_factor => '1'
+    };
+}
+
+sub getOvercommitmentFactors {
+    my ($self) = @_;
+    return {
+        overcommitment_cpu_factor    => $self->overcommitment_cpu_factor,
+        overcommitment_memory_factor => $self->overcommitment_memory_factor,
+    }
+}
+
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
