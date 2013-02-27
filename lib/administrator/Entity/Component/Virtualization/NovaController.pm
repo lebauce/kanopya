@@ -147,10 +147,10 @@ sub getPuppetDefinition {
 
     my $sql        = $self->mysql5;
     my $keystone   = $self->keystone;
-    my $quantum    = $self->quantum;
+    my $quantum    = ($self->quantums)[0];
     my $glance     = join(",", map { $_->service_provider->getMasterNode->fqdn . ":9292" } $self->nova_controller->glances);
 
-    if (not ($self->mysql5 and $self->keystone and $self->quantum)) {
+    if (not ($sql and $keystone and $quantum)) {
         return;
     }
 
