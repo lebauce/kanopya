@@ -56,6 +56,20 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
+  "overcommitment_cpu_factor",
+  {
+    data_type => "double",
+    default_value => 1,
+    extra => { unsigned => 1 },
+    is_nullable => 0,
+  },
+  "overcommitment_memory_factor",
+  {
+    data_type => "double",
+    default_value => 1,
+    extra => { unsigned => 1 },
+    is_nullable => 0,
+  },
 );
 
 =head2 nova_controller

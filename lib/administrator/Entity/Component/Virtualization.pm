@@ -21,7 +21,22 @@ use base "Entity::Component";
 use strict;
 use warnings;
 
-use constant ATTR_DEF => { };
+use constant ATTR_DEF => {
+    overcommitment_cpu_factor => {
+        label        => 'Overcommitment cpu factor',
+        type         => 'string',
+        pattern      => '^\d*$',
+        is_mandatory => 1,
+        is_editable  => 1
+    },
+    overcommitment_memory_factor => {
+        label        => '0vercommitment memory factor',
+        type         => 'string',
+        pattern      => '^\d*$',
+        is_mandatory => 1,
+        is_editable  => 1
+    },
+};
 
 sub getAttrDef { return ATTR_DEF };
 

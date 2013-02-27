@@ -109,20 +109,6 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_editable  => 1
     },
-    overcommitment_cpu_factor => {
-        label        => 'Overcommitment cpu factor',
-        type         => 'string',
-        pattern      => '^\d*$',
-        is_mandatory => 1,
-        is_editable  => 1
-    },
-    overcommitment_memory_factor => {
-        label        => '0vercommitment memory factor',
-        type         => 'string',
-        pattern      => '^\d*$',
-        is_mandatory => 1,
-        is_editable  => 1
-    },
     opennebula3_hypervisors => {
         label       => 'Hypervisors',
         type        => 'relation',
