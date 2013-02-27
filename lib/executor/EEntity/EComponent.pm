@@ -108,6 +108,9 @@ sub generateFile {
     unlink "/tmp/$tmpfile";
 }
 
+sub generateConfiguration {
+}
+
 sub addNode {}
 sub stopNode {}
 sub postStartNode {}
