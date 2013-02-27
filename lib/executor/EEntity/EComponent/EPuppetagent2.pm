@@ -183,6 +183,7 @@ sub applyManifest {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['host']);
     my $econtext = $args{host}->getEContext;
+    $econtext->{timeout} = 180;
     $econtext->execute(command => 'puppet agent --test');
 }
 
