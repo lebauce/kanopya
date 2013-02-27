@@ -109,7 +109,7 @@ my %resources = (
     "openiscsi2"               => "Entity::Component::Openiscsi2",
     "openldap1"                => "Entity::Component::Openldap1",
     "opennebula3"              => "Entity::Component::Virtualization::Opennebula3",
-    "opennebula3repository"    => "Entity::Component::Opennebula3::Opennebula3Repository",
+    "opennebula3repository"    => "Entity::Repository::Opennebula3Repository",
     "opennebula3hypervisor"    => "Entity::Host::Hypervisor::Opennebula3Hypervisor",
     "opennebula3vm"            => "Entity::Host::VirtualMachine::Opennebula3Vm",
     "openstackrepository"      => "Entity::Component::Openstack::OpenstackRepository",
@@ -162,6 +162,7 @@ my %resources = (
     "workflow"                 => "Entity::Workflow",
     "workflowdef"              => "Entity::WorkflowDef",
     "repository"               => "Entity::Repository",
+    "virtualization"           => "Entity::Component::Virtualization"
 );
 
 sub classFromResource {

@@ -21,9 +21,39 @@ use base "Entity::Component";
 use strict;
 use warnings;
 
-use constant ATTR_DEF => { };
+use constant ATTR_DEF => {
+    overcommitment_cpu_factor => {
+        label        => 'Overcommitment cpu factor',
+        type         => 'string',
+        pattern      => '^\d*$',
+        is_mandatory => 1,
+        is_editable  => 1
+    },
+    overcommitment_memory_factor => {
+        label        => '0vercommitment memory factor',
+        type         => 'string',
+        pattern      => '^\d*$',
+        is_mandatory => 1,
+        is_editable  => 1
+    },
+};
 
 sub getAttrDef { return ATTR_DEF };
+
+sub getBaseConfigurtation {
+    return {
+        overcommitment_cpu_factor => '1',
+        overcommitment_memory_factor => '1'
+    };
+}
+
+sub getOvercommitmentFactors {
+    my ($self) = @_;
+    return {
+        overcommitment_cpu_factor    => $self->overcommitment_cpu_factor,
+        overcommitment_memory_factor => $self->overcommitment_memory_factor,
+    }
+}
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;
