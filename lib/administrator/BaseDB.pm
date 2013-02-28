@@ -1156,6 +1156,33 @@ sub search {
         }
     }
 
+    my $virtual_order_by;
+    if (defined $args{order_by}) {
+        # TODO: handle multiple order_by
+        my @orders = split(/ /, $args{order_by});
+        $args{order_by} = '';
+
+        ORDER:
+        for my $order (@orders) {
+            if (lc($order) =~ m/asc|desc/) {
+                if (defined $virtual_order_by) {
+                    $virtual_order_by .= ' ' . $order;
+                }
+                else {
+                    $args{order_by} .= ' ' . $order;
+                }
+            }
+            else {
+                if ($attrdefs->{$order}->{is_virtual}) {
+                    $virtual_order_by = $order;
+                }
+                else {
+                    $args{order_by} .= ' ' . $order;
+                }
+            }
+        }
+    }
+
     $args{hash} = $merge->merge($args{hash}, $args{raw_hash});
 
     my $rs = $class->_getDbixFromHash('table' => $table,      'hash'     => $args{hash},
@@ -1200,6 +1227,17 @@ sub search {
         @objs = grep { General::compareScalars(left_op  => $_->$virtual,
                                                right_op => $virtuals->{$virtual},
                                                op       => $op) } @objs;
+    }
+
+    # Sort by virtual attribute if required
+    if ($virtual_order_by) {
+        my ($attribute, $order) = split(/ /, $virtual_order_by);
+        if (defined $order and lc($order) eq 'desc') {
+            @objs = sort { $b->$attribute <=> $a->$attribute } @objs;
+        }
+        else {
+            @objs = sort { $a->$attribute <=> $b->$attribute } @objs;
+        }
     }
 
     if (defined ($args{dataType}) and $args{dataType} eq "hash") {
@@ -2179,10 +2217,8 @@ sub classFromDbix {
             $source = $source->related_source("parent");
             $name = ucfirst($source->from) . "::" . $name;
         }
-
         $class = normalizeName($name);
     }
-
     return $class;
 }
 
