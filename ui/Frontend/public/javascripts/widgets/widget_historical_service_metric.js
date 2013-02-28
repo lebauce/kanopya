@@ -111,7 +111,7 @@ function showCombinationGraph(curobj,combi_id,label,start,stop, sp_id) {
                 model_list.append($('<option>', {text : 'Select a model', id : 'model_default'}));
                 $.get('/api/combination/'+combi_id+'/data_models', function (data) {
                     $(data).each( function () {
-                        model_list.append($('<option>', {id : this.pk, start : this.start_time, end : this.end_time, text : this.label}));
+                        model_list.append($('<option>', {id : this.pk, value : this.start_time + ':' + this.end_time, text : this.label}));
                     });
                     model_list.append($('<option>', {text : 'New model...', id : 'new_model'}));
                     model_list.change();
@@ -193,12 +193,11 @@ function dataModelManagement(e) {
         model_container.find('.forcast_config').show();
         model_container.find('.new_model_config').hide();
         var selected_model_id = $(this).find('option:selected').attr('id');
-        var model_start_time = $(this).find('option:selected').attr('start');
-        var model_end_time = $(this).find('option:selected').attr('end');
+        var model_time_range = $(this).find('option:selected').val().split(":");
         var overlays = [{line: {
             name      : 'pebbles',
-            start     : [model_start_time * 1000,0],
-            stop      : [model_end_time * 1000,0],
+            start     : [model_time_range[0] * 1000,0],
+            stop      : [model_time_range[1] * 1000,0],
             lineWidth : 1000,
             lineCap   : 'butt',
             color     : 'rgba(89, 198, 154, 0.45)',
@@ -206,6 +205,13 @@ function dataModelManagement(e) {
         }}];
         var time_settings = getPickedDate(graph_container.parent());
         var sampling_period = model_container.find('.model_sampling').val();
+
+        // Utility function specific to used date format
+        // Return Unix epoch time (sec) from date/time string formatted as 'mm-dd-yy HH:MM'
+        function dateTimeToEpoch(dateTime) {
+            return parseInt(Date.parse(dateTime.replace(/-/g, '/')) / 1000);
+        }
+
         $.ajax({
           url         : '/api/datamodel/'+selected_model_id+'/predict',
           async       : false,
@@ -213,8 +219,8 @@ function dataModelManagement(e) {
           contentType : 'application/json',
           data        : JSON.stringify(
                   {
-                      start_time      : parseInt(new Date(time_settings.start).getTime() / 1000),
-                      end_time        : parseInt(new Date(time_settings.end).getTime() / 1000),
+                      start_time      : dateTimeToEpoch(time_settings.start),
+                      end_time        : dateTimeToEpoch(time_settings.end),
                       sampling_period : sampling_period * 60,
                       data_format     :'pair',
                       time_format     :'ms'
