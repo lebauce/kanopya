@@ -68,7 +68,6 @@ sub methods {
     };
 }
 
-
 my $adm = {
     schema => undef,
     config => undef,
@@ -189,6 +188,44 @@ sub update {
     $self->populateRelations(relations => $relations, override => 1);
 
     return $self;
+}
+
+
+=pod
+
+=begin classdoc
+
+Generic method for object creation.
+
+@return the created object instance
+
+=end classdoc
+
+=cut
+
+sub create {
+    my $class = shift;
+    my %args = @_;
+
+    return $class->new(%args);
+}
+
+
+=pod
+
+=begin classdoc
+
+Generic method for object deletion.
+
+=end classdoc
+
+=cut
+
+sub remove {
+    my $self = shift;
+    my %args = @_;
+
+    $self->delete();
 }
 
 
@@ -1093,8 +1130,18 @@ sub search {
         }
     }
 
-    for my $filter (keys %{$args{hash}}) {
-        next if substr($filter, 0, 3) eq "me.";
+    my $virtuals = {};
+    my $attrdefs = $class->getAttrDefs();
+
+    FILTER:
+    for my $filter (keys %{ $args{hash} }) {
+        # If the attr is virtual, move the filter to the virtuals hash
+        if ($attrdefs->{$filter}->{is_virtual}) {
+            $virtuals->{$filter} = delete $args{hash}->{$filter};
+            next FILTER;
+        }
+        next FILTER if substr($filter, 0, 3) eq "me.";
+
         my @comps = split('\.', $filter);
         my $value = $args{hash}->{$filter};
 
@@ -1106,6 +1153,33 @@ sub search {
 
             $prefetch = $merge->merge($prefetch, $class->getJoinQuery(comps => \@comps)->{join});
             $args{hash}->{$comps[-1] . '.' . $attr} = $value;
+        }
+    }
+
+    my $virtual_order_by;
+    if (defined $args{order_by}) {
+        # TODO: handle multiple order_by
+        my @orders = split(/ /, $args{order_by});
+        $args{order_by} = '';
+
+        ORDER:
+        for my $order (@orders) {
+            if (lc($order) =~ m/asc|desc/) {
+                if (defined $virtual_order_by) {
+                    $virtual_order_by .= ' ' . $order;
+                }
+                else {
+                    $args{order_by} .= ' ' . $order;
+                }
+            }
+            else {
+                if ($attrdefs->{$order}->{is_virtual}) {
+                    $virtual_order_by = $order;
+                }
+                else {
+                    $args{order_by} .= ' ' . $order;
+                }
+            }
         }
     }
 
@@ -1144,9 +1218,30 @@ sub search {
         push @objs, $obj;
     }
 
+    # Finally filter on virtual attributes if required
+    for my $virtual (keys %{ $virtuals }) {
+        my $op = '=';
+        if (ref($virtuals->{$virtual}) eq "HASH") {
+            map { $op = $_; $virtuals->{$virtual} = $virtuals->{$virtual}->{$_} } keys %{ $virtuals->{$virtual} };
+        }
+        @objs = grep { General::compareScalars(left_op  => $_->$virtual,
+                                               right_op => $virtuals->{$virtual},
+                                               op       => $op) } @objs;
+    }
+
+    # Sort by virtual attribute if required
+    if ($virtual_order_by) {
+        my ($attribute, $order) = split(/ /, $virtual_order_by);
+        if (defined $order and lc($order) eq 'desc') {
+            @objs = sort { $b->$attribute <=> $a->$attribute } @objs;
+        }
+        else {
+            @objs = sort { $a->$attribute <=> $b->$attribute } @objs;
+        }
+    }
+
     if (defined ($args{dataType}) and $args{dataType} eq "hash") {
-        my $total = (defined ($args{page}) or defined ($args{rows})) ?
-                        $rs->pager->total_entries : $rs->count;
+        my $total = (defined $args{page} or defined $args{rows}) ? $rs->pager->total_entries : $rs->count;
 
         return {
             page    => $args{page} || 1,
@@ -1823,44 +1918,6 @@ sub getLabelAttr {
 
 =begin classdoc
 
-Generic method for object creation.
-
-@return the created object instance
-
-=end classdoc
-
-=cut
-
-sub create {
-    my $class = shift;
-    my %args = @_;
-
-    return $class->new(%args);
-}
-
-
-=pod
-
-=begin classdoc
-
-Generic method for object deletion.
-
-=end classdoc
-
-=cut
-
-sub remove {
-    my $self = shift;
-    my %args = @_;
-
-    $self->delete();
-}
-
-
-=pod
-
-=begin classdoc
-
 Get the primary key column name
 
 @return the primary key column name.
@@ -2160,10 +2217,8 @@ sub classFromDbix {
             $source = $source->related_source("parent");
             $name = ucfirst($source->from) . "::" . $name;
         }
-
         $class = normalizeName($name);
     }
-
     return $class;
 }
 
