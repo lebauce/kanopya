@@ -103,7 +103,8 @@ function showCombinationGraph(curobj,combi_id,label,start,stop, sp_id) {
                 label       : label,
                 unit        : data.unit,
                 graph_div_id: div_id,
-                combi_id    : combi_id
+                combi_id    : combi_id,
+                widget      : widget
             }, dataModelManagement);
 
             widget.find('.refresh_models_button').unbind().click(function() {
@@ -212,6 +213,7 @@ function dataModelManagement(e) {
             return parseInt(Date.parse(dateTime.replace(/-/g, '/')) / 1000);
         }
 
+        widget_loading_start( graph_info.widget );
         $.ajax({
           url         : '/api/datamodel/'+selected_model_id+'/predict',
           async       : false,
@@ -234,6 +236,9 @@ function dataModelManagement(e) {
                       graph_info.graph_div_id,
                       overlays
               );
+          },
+          complete    : function () {
+             widget_loading_stop( graph_info.widget );
           }
       });
     }
