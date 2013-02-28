@@ -2656,12 +2656,16 @@ that returns the specified attribute or the relation blessed to a BaseDB object.
 =cut
 
 sub AUTOLOAD {
-    my $self = shift;
+    my ($self, @args) = @_;
 
     my @autoload = split(/::/, $AUTOLOAD);
     my $accessor = $autoload[-1];
 
-    return $self->getAttr(name => $accessor, deep => 1);
+    if (scalar (@args)) {
+        $self->setAttr(name => $accessor, value => $args[0], save => 1);
+    } else {
+        return $self->getAttr(name => $accessor, deep => 1);
+    }
 }
 
 
