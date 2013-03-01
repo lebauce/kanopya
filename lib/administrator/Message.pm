@@ -58,7 +58,7 @@ use constant ATTR_DEF => {
         is_extended  => 0
     },
     message_content => {
-        pattern      => '^.*$',
+        pattern      => '.*',
         is_mandatory => 1,
         is_extended  => 0
     },
