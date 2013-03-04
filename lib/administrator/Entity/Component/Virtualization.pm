@@ -22,6 +22,12 @@ use strict;
 use warnings;
 
 use constant ATTR_DEF => {
+    repositories => {
+        label       => 'Virtual machine images repositories',
+        type        => 'relation',
+        relation    => 'single_multi',
+        is_editable => 1,
+    },
     overcommitment_cpu_factor => {
         label        => 'Overcommitment cpu factor',
         type         => 'string',

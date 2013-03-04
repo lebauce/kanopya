@@ -40,11 +40,12 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
-    openstack_repositories => {
+    repositories => {
         label       => 'Virtual machine images repositories',
         type        => 'relation',
         relation    => 'single_multi',
         is_editable => 1,
+        link_to     => 'openstack_repository'
     },
     host_type => {
         is_virtual => 1

@@ -138,7 +138,7 @@ my @classes = (
     'Entity::Component::Openstack::Quantum',
     'Entity::Component::Openstack::Keystone',
     'Entity::Component::Openstack::Glance',
-    'Entity::Component::Openstack::OpenstackRepository',
+    'Entity::Repository::OpenstackRepository',
     'Entity::Component::Physicalhoster0',
     'Entity::Poolip',
     'Entity::Vlan',
