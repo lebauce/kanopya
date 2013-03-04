@@ -32,6 +32,8 @@ use warnings;
 
 use JSON;
 use OpenStack::API;
+use NetAddr::IP;
+use Data::Dumper;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -278,13 +280,24 @@ sub startHost {
         }
     )->{flavor}->{id};
 
+    # register network
+    my $interfaces = $self->registerNetwork(host => $args{host});
+    my $ports;
+    for my $interface (@$interfaces) {
+        push @$ports, {
+            port => $interface->{port}
+        };
+    }
+
+    # create VM
     my $response = $api->tenant(id => $api->{tenant_id})->servers->post(
         target => 'compute',
         content => {
             server => {
-                flavorRef   => $flavor_id,
+                flavorRef   => $flavor->{flavor}->{id},
                 imageRef    => $image_id,
-                name        => $args{host}->node->node_hostname
+                name        => $args{host}->node->node_hostname,
+                networks    => $ports,
             }
         }
     );
@@ -347,7 +360,7 @@ sub registerSystemImage {
 
 Register a network to Quantum
 
-@return $response->{image}->{id}  the id of the created network
+@return @interfaces a list of created networks
 
 =end classdoc
 
@@ -363,59 +376,72 @@ sub registerNetwork {
     my $interfaces = [];
     for my $iface ($args{host}->getIfaces()) {
         my $vlan = undef;
-        my @netconfs = $iface->netconfs;
-        if (scalar @netconfs) {
-            my $netconf = pop @netconfs;
-            my @vlans = $netconf->vlans;
-            if (scalar @vlans) {
-                $vlan = pop @vlans;
-            }
+        my @vlans = $iface->getVlans();
+        if (scalar @vlans) {
+            $vlan = pop @vlans;
         }
 
         # create a network
-        my $network_id = $self->api->networks->post(
-            target  => 'network',
-            content => {
-                network => {
-                    'name'                      => $hostname . '-network',
-                    'admin_state_up'            => JSON::true
-                }
+        my $network_conf = {
+            network => {
+                'name'                      => $hostname . '-network',
+                'admin_state_up'            => JSON::true,
+                'provider:network_type'     => defined $vlan ? 'vlan' : 'flat',
+                'provider:physical_network' => defined $vlan ? 'physnetvlan' : 'physnetflat'
             }
-        )->{network}->{id};
+        };
+        $network_conf->{network}->{'provider:segmentation_id'} = $vlan->vlan_number if (defined $vlan);
+        my $network = $self->api->networks->post(
+            target  => 'network',
+            content => $network_conf
+        );
 
         # create a subnet
-        my $subnet_id = $self->api->subnets->post(
+        my $poolip = $iface->getPoolip();
+        my $ip_network = NetAddr::IP->new(
+            $poolip->poolip_first_addr,
+            $poolip->network->network_netmask
+        );
+        # TODO : search existing poolip and use it when exists
+        my $subnet = $self->api->subnets->post(
             target  => 'network',
             content => {
                 subnet => {
-                    'network_id'          => $network_id,
-                    'ip_version'          => 4,
+                    'network_id'        => $network->{network}->{id},
+                    'ip_version'        => 4,
+                    'cidr'              => $ip_network->network->cidr(),
+                    'allocation_pools'  => [
+                        {
+                            start   => $ip_network->addr(),
+                            end     => ($ip_network + $poolip->poolip_size - 1)->addr()
+                        }
+                    ]
                 }
             }
-        )->{subnet}->{id};
+        );
 
         # create port to assign IP address
-        my $port_id = $self->api->ports->post(
+        my $port = $self->api->ports->post(
             target  => 'network',
             content => {
                 port => {
                     'name'          => $hostname . '-' . $iface->iface_name,
                     'mac_address'   => $iface->iface_mac_addr,
-                    "fixed_ips"     => [
+                    'fixed_ips'     => [
                         {
-                            "ip_address"    => $iface->getIPAddr,
-                            "subnet_id"     => $subnet_id
+                            "ip_address"    => $iface->getIPAddr(),
+                            "subnet_id"     => $subnet->{subnet}->{id}
                         }
                     ],
-                    'network_id'  => $network_id,
+                    'network_id'  => $network->{network}->{id},
                 }
             }
-        )->{port}->{id};
+        );
 
         push @$interfaces, {
             mac     => $iface->iface_mac_addr,
             network => $hostname . '-' . $iface->iface_name,
-            port    => $port_id
+            port    => $port->{port}->{id}
         };
     }
 
