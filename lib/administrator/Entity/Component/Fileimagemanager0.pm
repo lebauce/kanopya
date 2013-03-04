@@ -273,4 +273,10 @@ sub createExport {
     );
 }
 
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    return "class { 'kanopya::fileimagemanager': }\n";
+}
+
 1;
