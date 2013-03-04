@@ -251,9 +251,6 @@ sub startHost {
 
     General::checkParams(args => \%args, required => [ 'host', 'cluster' ]);
 
-    $args{hypervisor} = Entity::Host::Hypervisor::OpenstackHypervisor->find(hash => {});
-    bless $args{hypervisor}, "Entity::Host::Hypervisor::OpenstackHypervisor";
-
     if (! defined $args{hypervisor}) {
         throw Kanopya::Exception::Internal(error => "No hypervisor available");
     }
