@@ -271,4 +271,48 @@ sub removeHypervisor {
     Entity::Host->demote(demoted => $args{host}->_getEntity);
 }
 
+=pod
+
+=begin classdoc
+
+Set the configuration of the component.
+
+If repositories are specified, update the mount entries of all compute nodes
+
+=end classdoc
+
+=cut
+
+sub setConf {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'conf' ]);
+
+    $self->SUPER::setConf(%args);
+
+    # update linux mount table
+    my @mountentries;
+    for my $repository ($self->repositories) {
+        push @mountentries, {
+             linux_mount_dumpfreq   => 0,
+             linux_mount_filesystem => 'nfs',
+             linux_mount_point      => "/var/lib/nova/instances",
+             linux_mount_device     => $repository->container_access->container_access_export,
+             linux_mount_options    => 'rw,sync,vers=3',
+             linux_mount_passnum    => 0,
+        };
+
+        # Don't know how to support multiple shared repositories
+        last;
+    }
+
+    for my $vmm ($self->vmms) {
+        my $linux = $vmm->service_provider->getComponent(category => "System");
+        my $oldconf = $linux->getConf();
+        my @mounts = (@{$oldconf->{linuxes_mount}}, @mountentries);
+        $linux->setConf(conf => { linuxes_mount => \@mounts });
+        $vmm->service_provider->update();
+    }
+}
+
 1;
