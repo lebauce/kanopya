@@ -8,8 +8,8 @@ var Linux0 = (function(_super) {
 
         this.displayed = [];
         this.relations = {
-            'linux0s_mount': [ 'linux0_mount_device', 'linux0_mount_point', 'linux0_mount_filesystem',
-                               'linux0_mount_options', 'linux0_mount_dumpfreq', 'linux0_mount_passnum' ],
+            'linuxes_mount': [ 'linux_mount_device', 'linux_mount_point', 'linux_mount_filesystem',
+                               'linux_mount_options', 'linux_mount_dumpfreq', 'linux_mount_passnum' ],
         }
     };
 

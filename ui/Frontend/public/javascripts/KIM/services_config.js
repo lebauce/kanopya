@@ -27,6 +27,7 @@ function loadServicesConfig(cid, eid) {
                     // Work around to handle components without version number
                     if (window[componentName.ucfirst()] == undefined) {
                         componentName = componentName.substring(0, componentName.length - 1);
+                        require('KIM/components/' + componentName + '.js');
                     }
                     if (componentClass = window[componentName.ucfirst()]) {
                         // Open the configuration modal
