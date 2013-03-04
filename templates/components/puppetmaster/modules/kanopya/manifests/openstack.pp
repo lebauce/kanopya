@@ -268,7 +268,7 @@ class kanopya::quantum_($amqpserver, $dbserver, $keystone, $password, $email, $b
     @@keystone_user { 'quantum':
         ensure   => present,
         password => "${password}",
-        email    => "quantum@localhost",
+        email    => "${email}",
         tenant   => "services",
         tag      => "${keystone}"
     }
