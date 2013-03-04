@@ -369,8 +369,15 @@ sub getAttrDefs {
         if ($modulename ne "BaseDB") {
             eval {
                 requireClass($modulename);
-                $attr_def = clone($modulename->getAttrDef());
             };
+            if ($@) {
+                # For component internal classes
+                my $source = BaseDB->_adm->{schema}->source(_buildClassNameFromString($modulename));
+                $modulename = classFromDbix($source);
+                requireClass($modulename);
+            }
+
+            $attr_def = clone($modulename->getAttrDef());
 
             my $schema;
             eval {
