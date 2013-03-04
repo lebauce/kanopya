@@ -242,12 +242,11 @@ sub addHypervisor {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'host', 'uuid' ]);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
     return Entity::Host::Hypervisor::OpenstackHypervisor->promote(
                promoted                  => $args{host},
                nova_controller_id        => $self->id,
-               openstack_hypervisor_uuid => $args{uuid},
            );
 }
 

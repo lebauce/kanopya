@@ -89,7 +89,6 @@ CREATE TABLE `quantum` (
 CREATE TABLE `openstack_hypervisor` (
   `openstack_hypervisor_id` int(8) unsigned NOT NULL,
   `nova_controller_id` int(8) unsigned NOT NULL,
-  `openstack_hypervisor_uuid` int(8) unsigned NULL DEFAULT NULL,
   PRIMARY KEY (`openstack_hypervisor_id`),
   FOREIGN KEY (`openstack_hypervisor_id`) REFERENCES `hypervisor` (`hypervisor_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`nova_controller_id`),

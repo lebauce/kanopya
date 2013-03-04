@@ -53,12 +53,6 @@ __PACKAGE__->table("openstack_hypervisor");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 openstack_hypervisor_uuid
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_nullable: 1
-
 =cut
 
 __PACKAGE__->add_columns(
@@ -76,8 +70,6 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "openstack_hypervisor_uuid",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY
@@ -106,7 +98,7 @@ __PACKAGE__->belongs_to(
   "nova_controller",
   "AdministratorDB::Schema::Result::NovaController",
   { nova_controller_id => "nova_controller_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
 =head2 openstack_hypervisor
@@ -121,13 +113,12 @@ __PACKAGE__->belongs_to(
   "openstack_hypervisor",
   "AdministratorDB::Schema::Result::Hypervisor",
   { hypervisor_id => "openstack_hypervisor_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-02-14 19:04:08
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:omS4a6SLO5tbDpxSVP5DSw
-
+# Created by DBIx::Class::Schema::Loader v0.07035 @ 2013-03-01 11:24:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:pNahv/MR3Luakm41Ej7Sbg
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Hypervisor",
