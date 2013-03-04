@@ -130,7 +130,7 @@ __PACKAGE__->belongs_to(
     is_deferrable => 1,
     join_type     => "LEFT",
     on_delete     => "CASCADE",
-    on_update     => "CASCADE",
+    on_update     => "NO ACTION",
   },
 );
 
@@ -165,7 +165,7 @@ __PACKAGE__->belongs_to(
     is_deferrable => 1,
     join_type     => "LEFT",
     on_delete     => "CASCADE",
-    on_update     => "CASCADE",
+    on_update     => "NO ACTION",
   },
 );
 
@@ -185,7 +185,7 @@ __PACKAGE__->belongs_to(
     is_deferrable => 1,
     join_type     => "LEFT",
     on_delete     => "CASCADE",
-    on_update     => "CASCADE",
+    on_update     => "NO ACTION",
   },
 );
 
@@ -201,7 +201,7 @@ __PACKAGE__->belongs_to(
   "nova_controller",
   "AdministratorDB::Schema::Result::Virtualization",
   { virtualization_id => "nova_controller_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
 =head2 novas_compute
@@ -265,8 +265,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-02-14 19:04:08
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Ho4hGqTN2fe8D5SPOkySBQ
+# Created by DBIx::Class::Schema::Loader v0.07035 @ 2013-03-01 11:52:49
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dk/hziCY1pIT7EoADgwFog
 
 __PACKAGE__->belongs_to(
   "parent",

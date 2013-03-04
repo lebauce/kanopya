@@ -13,7 +13,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package EEntity::EComponent::EVmm::ENovaCompute;
-use base "EEntity::EComponent";
+use base "EEntity::EComponent::EVmm";
 
 use strict;
 use warnings;

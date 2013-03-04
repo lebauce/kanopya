@@ -16,7 +16,7 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 package  Entity::Component::Vmm::NovaCompute;
-use base "Entity::Component";
+use base "Entity::Component::Vmm";
 
 use strict;
 use warnings;
