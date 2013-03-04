@@ -1,4 +1,4 @@
-#    Copyright © 2012 Hedera Technology SAS
+#    Copyright © 2013 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -35,16 +35,17 @@ sub AUTOLOAD {
         token               => $self->{token} || undef,
         token_expiration    => $self->{token_expiration} || undef,
     };
+
     # $args{id} is used to avoid methods starting with digit
     # abc->images(id => '022efa')->members <---> abc/images/022efa/members
-    if ( defined $args{id} ) {
+    if ( defined $args{id} || defined $args{varchar} ) {
         $object->{path} = $self->{path} . '/' . $method . '/' . $args{id};
     }
     else {
         $object->{path} = $self->{path} . '/' . $method;
     }
-    bless $object, 'OpenStack::Object';
 
+    bless $object, 'OpenStack::Object';
     return $object;
 }
 
