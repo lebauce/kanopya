@@ -89,6 +89,7 @@ sub noExecutionBugInPrintPrettyRForecast {
 
         Utils::R->printPrettyRForecast(R_forecast_ref => $R_forecast,
                                        freq           => $freq,
+                                       no_print       => 1,
                   );
    } 'Testing printPrettyRForecast method (no execution bug)'
 }

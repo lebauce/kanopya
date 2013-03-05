@@ -115,7 +115,7 @@ sub predict {
     if (defined($args{data_format}) && $args{data_format} eq 'pair') {
         my @pairs;
         foreach my $forecast_index (1..scalar(@forecasts)) {
-            push(@pairs, [$n_timestamps[$forecast_index], $forecasts[$forecast_index-1]]);
+            push(@pairs, [ $n_timestamps[$forecast_index], $forecasts[$forecast_index-1] ]);
         }
         return \@pairs;
     }

@@ -119,7 +119,9 @@ sub convertRForecast{
 
 Print the R forecast object with a table representation.
 
-@param R_forecast_ref a ref to the forecast object extracted from R.
+@param R_forecast_ref A ref to the forecast object extracted from R.
+@param no_print If defined and true, the method will not print anything (used for testing that there is
+                no execution bug in the method without filling the console up with useless informations).
 
 =end classdoc
 
@@ -129,7 +131,8 @@ sub printPrettyRForecast{
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => ['R_forecast_ref', 'freq']);
+                         required => ['R_forecast_ref', 'freq'],
+                         optional => { 'no_print' => undef});
 
     my $cols_number               = FORECAST->{'COLUMNS_NUMBER'};
     my $first_row_size            = FORECAST->{'FIRST_ROW_SIZE'};
@@ -140,16 +143,22 @@ sub printPrettyRForecast{
     my @R_forecast_raw = @{$args{R_forecast_ref}};
 
     # If the first row (information row) is present, we print it and remove it
-    print (" " x $column_print_width);
+    unless (defined($args{no_print}) && $args{no_print}) {
+        print (" " x $column_print_width);
+    }
     if ($R_forecast_raw[0] eq 'Point') {
         foreach (0..$first_row_size-1) {
             my $shift = shift(@R_forecast_raw);
             if (("$shift" eq "Lo") || ("$shift" eq "Hi")) {
                 $shift = "$shift" . " " .  shift(@R_forecast_raw); 
             }
-            print("$shift" . " " x ($column_print_width - length($shift)));
+            unless (defined($args{no_print}) && $args{no_print}) {
+                print("$shift" . " " x ($column_print_width - length($shift)));
+            }
         }
-        print("\n");
+        unless (defined($args{no_print}) && $args{no_print}) {
+            print("\n");
+        }
     }
 
     my @forecasts;
@@ -163,17 +172,21 @@ sub printPrettyRForecast{
 
     foreach my $row (0..$rows_number-1) {
         foreach my $col (0..$cols_number) {
-            if (($col == 0) && !($special_freq)) {
+            if (($col == 0) && !($special_freq) && !defined($args{no_print}) && !($args{no_print})) {
                 print (" " x $column_print_width);
             }
             unless ((($col == $cols_number) && !($special_freq))) {
-                my $current = $special_freq ? $R_forecast_raw[(($cols_number + 1) * $row) + $col]
-                            :                 $R_forecast_raw[(($cols_number) * $row) + $col]
+                my $current = $special_freq ? $R_forecast_raw[ (($cols_number + 1) * $row) + $col ]
+                            :                 $R_forecast_raw[ (($cols_number) * $row) + $col ]
                             ;
-                print("$current" . " " x ($column_print_width - length($current)));
+                unless (defined($args{no_print}) && $args{no_print}) {
+                    print("$current" . " " x ($column_print_width - length($current)));
+                } 
             }
         }
-        print("\n");
+        unless (defined($args{no_print}) && $args{no_print}) {
+            print("\n");
+        }
     }
 }
 
