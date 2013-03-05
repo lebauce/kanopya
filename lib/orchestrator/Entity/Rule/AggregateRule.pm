@@ -155,23 +155,37 @@ sub toString {
 }
 
 
+=pod
+
+=begin classdoc
+
+Evaluate the rule. Call evaluation of all depending conditions then evaluate the logical formula
+of the rule according to conditions evaluation.
+
+@return hash reference {service_provider_id => 1} is rule is verified
+                       {service_provider_id => 0} otherwise
+
+=end classdoc
+
+=cut
+
 sub evaluate {
     my $self = shift;
 
-    #Split aggregate_rule id from $formula
+    # Split aggregate_rule id from $formula
     my @array = split(/(id\d+)/,$self->formula);
 
-    #replace each rule id by its evaluation
+    # Replace each rule id by its evaluation
     for my $element (@array) {
         if ($element =~ m/id(\d+)/) {
             $element = Entity::AggregateCondition->get ('id'=>substr($element,2))->evaluate();
-            if( !defined $element) {
+            if (! defined $element) {
                 $self->setAttr(name => 'aggregate_rule_last_eval', value=>undef);
                 $self->save();
-                return undef;
+                return {$self->service_provider_id => undef};
             }
         }
-     }
+    }
 
     my $res = -1;
     my $arrayString = '$res = '."(@array)";
@@ -179,114 +193,19 @@ sub evaluate {
     #Evaluate the logic formula
     eval $arrayString;
 
-    $self->setAttr(name => 'timestamp',value=>time());
-
     if (defined $res){
         my $store = ($res)?1:0;
-        $self->setAttr(name => 'aggregate_rule_last_eval',value=>$store);
-        $self->save();
-        return $store;
+        return {$self->service_provider_id => $store};
     }
 
-    $self->setAttr(name => 'aggregate_rule_last_eval',value=>undef);
-    $self->save();
-    return undef;
+    return {$self->service_provider_id => undef};
 
-}
-
-
-sub enable(){
-    my $self = shift;
-    $self->setAttr(name => 'state', value => 'enabled');
-    #$self->setAttr(name => 'timestamp', value => time());
-    $self->setAttr(name => 'aggregate_rule_last_eval', value => undef);
-    $self->save();
-}
-
-sub disable(){
-    my $self = shift;
-    $self->setAttr(name => 'state', value => 'disabled');
-    #$self->setAttr(name => 'timestamp', value => time());
-    $self->save();
-}
-
-sub disableTemporarily(){
-    my $self = shift;
-    my %args = @_;
-    General::checkParams args => \%args, required => ['length'];
-
-    my $length = $args{length};
-
-    $self->setAttr(name => 'state', value => 'disabled_temp');
-    $self->setAttr(name => 'timestamp', value => time() + $length);
-    $self->save();
-}
-
-sub isEnabled(){
-    my $self = shift;
-    #$self->updateState();
-    return ($self->getAttr(name=>'state') eq 'enabled');
-}
-
-sub getRules() {
-    my $class = shift;
-    my %args = @_;
-
-    my $state               = $args{'state'};
-    my $service_provider_id = $args{'service_provider_id'};
-
-    my @rules;
-    if (defined $service_provider_id) {
-        @rules = Entity::AggregateRule->search (hash => {'service_provider_id' => $service_provider_id});
-    } else {
-        @rules = Entity::AggregateRule->search (hash => {});
-    }
-
-
-    switch ($state){
-        case "all"{
-            return @rules; # All the rules
-        }
-        else {
-            my @rep;
-            foreach my $rule (@rules){
-                #update state and return $rule only if state is corresponding
-                #$rule->updateState();
-
-                if($rule->getAttr(name=>'state') eq $state){
-                    push @rep, $rule;
-                }
-            }
-            return @rep;
-        }
-    }
-}
-
-sub updateState() {
-    my $self = shift;
-
-    if ($self->getAttr(name=>'state') eq 'disabled_temp') {
-        if( $self->getAttr(name => 'timestamp') le time()) {
-            $self->setAttr(name => 'timestamp', value => time());
-            $self->setAttr(name => 'state'    , value => 'enabled');
-            $self->save();
-        }
-    }
 }
 
 sub getDependentConditionIds {
     my $self = shift;
     my %ids = map { $_ => undef } ($self->formula =~ m/id(\d+)/g);
     return keys %ids;
-}
-
-
-sub isCombinationDependent{
-    my $self         = shift;
-    my $condition_id = shift;
-    my @dep_cond_id = $self->getDependentConditionIds();
-    my $rep = any {$_ eq $condition_id} @dep_cond_id;
-    return $rep;
 }
 
 sub setAttr {
@@ -297,6 +216,7 @@ sub setAttr {
     }
     $class->SUPER::setAttr(%args);
 };
+
 
 =pod
 
@@ -348,34 +268,197 @@ sub clone {
     return $clone;
 }
 
-sub updateFormulaString {
-    my $self = shift;
-    $self->setAttr(name=>'formula_string', value => $self->toString());
-    $self->save();
-}
-
-sub update {
-    my ($self, %args) = @_;
-
-    my $rep = $self->SUPER::update (%args);
-    $self->updateFormulaString();
-    return $rep;
-}
-
-sub delete {
-    my $self = shift;
-    my $workflow_def = $self->workflow_def;
-    $self->SUPER::delete();
-    if (defined $workflow_def) { $workflow_def->delete(); };
-}
-
-sub serviceProvider {
-    my $self    = shift;
-    return $self->service_provider;
-}
 
 sub notifyWorkflowName {
     return "NotifyWorkflow service_provider";
 }
 
+
+=pod
+
+=begin classdoc
+
+Update the last evaluation of the rule in DB according to the given evaluation
+
+@param evaluation hash table with only one key (service_provider_id => rule evaluation).
+
+=end classdoc
+
+=cut
+
+sub setEvaluation {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['evaluation']);
+
+    $self->setAttr(name => 'timestamp',value=>time());
+
+    my $evaluation = (values %{$args{evaluation}})[0];
+
+    $self->setAttr(name => 'aggregate_rule_last_eval',value=>$evaluation);
+    $self->save();
+}
+
+
+=pod
+
+=begin classdoc
+
+Update the state of the rule in DB  according to the state of the workflow the rules had triggered earlier
+
+=end classdoc
+
+=cut
+
+sub _updateWorkflowStatus {
+    my ($self, %args) = @_;
+
+    my $workflow_def = $self->workflow_def;
+
+    if (! defined $workflow_def) {
+        # Skip workflow status update if no WorkflowDef linked
+        $log->info('No workflow defined for rule <' . $self->id . '>');
+        return;
+    }
+
+    my $workflow = $self->workflow;
+
+    if (! defined $workflow) {
+        # Skip workflow status update if no workflow has been launched earlier
+        $log->info('No workflow launched buy rule <' . $self->id . '>');
+        return;
+    }
+
+    if ($workflow->state eq 'running') {
+        $log->info('Workflow <'.$workflow->id.'> still running');
+    }
+    elsif ($workflow->state eq 'failed' || $workflow->state eq 'cancelled') {
+        $log->info('Workflow <'.$workflow->id .'>, <'.$workflow->state .'> re-enable rule');
+        $self->setAttr(name  => 'state', value => 'enabled' );
+        $self->setAttr(name  => 'workflow_id',  value => undef );
+        $self->save();
+    }
+    elsif ($workflow->state eq 'done') {
+        $log->info('Workflow <'.$workflow->id.'> done');
+    }
+    elsif ($workflow->state eq 'delayed') {
+        # Manage delay between 2 workflows triggering
+        # Check whether delay is finished or rule has to wait
+        my $delta = $self->workflow_untriggerable_timestamp - time();
+        if (0 >= $delta) {
+            $log->info('Workflow <'.$workflow->id.'> done, end of delay time, re-enable rule');
+            $self->setAttr(name  => 'state', value => 'enabled' );
+            $self->setAttr(name  => 'workflow_id', value => undef );
+            $self->setAttr(name  => 'workflow_untriggerable_timestamp', value => undef );
+            $self->save();
+        }
+        else {
+            $log->info('Workflow <'.$workflow->id.'> done, still delaying time for <'.($delta).'> sec');
+        }
+    }
+    elsif ($workflow->state eq 'triggered') {
+        my $wf_params = $workflow_def->paramPresets;
+        my $delay = $wf_params->{specific}->{delay};
+        $log->info('wf_params = '.(Dumper $wf_params));
+
+        if ((not defined $delay) || $delay <= 0) {
+            $log->info('Workflow <'.$workflow->id.'> done, no delay or delay <= 0, re-enable rule');
+            $self->setAttr(name  => 'state', value => 'enabled' );
+            $self->setAttr(name  => 'workflow_id',  value => undef );
+            $self->save();
+        }
+        else {
+            $log->info('Workflow <'.$workflow->id.'> done, delay new workflow launch');
+            $self->setAttr(name  => 'state', value => 'delayed' );
+            $self->setAttr(name  => 'workflow_untriggerable_timestamp', value => time() + $delay);
+            $self->save();
+         }
+    }
+    else {
+      $log->info('unknown case <'.($self->state).'>');
+    }
+    return;
+}
+
+
+=pod
+
+=begin classdoc
+
+Launch a workflow when rule is linked to a WorkflowDef according to its evaluation.
+
+@param evaluation hash table with only one key (service_provider_id => rule evaluation).
+
+=end classdoc
+
+=cut
+
+sub manageWorkflows {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['evaluation']);
+
+    my $workflow_manager;
+    eval{
+        $workflow_manager = $self->service_provider->getManager(manager_type => 'WorkflowManager');
+    };
+    if($@){
+        # Skip workflow management when service provider has no workflow manager
+        $log->info('No workflow manager in service provider <' . $self->service_provider->id . '>');
+        return;
+    }
+
+    # Update last workflow possibly launched status before trying to trigger a new one
+    $self->_updateWorkflowStatus();
+
+    my $workflow_def_id = $self->workflow_def_id;
+
+    if (! defined $workflow_def_id) {
+        # Skip workflow management when service provider has no workflow_def
+        $log->info('No workflow defined for rule <' . $self->id . '>');
+        return;
+    }
+
+    my $evaluation = (values %{$args{evaluation}})[0];
+
+    if (! defined $evaluation) {
+        # Skip workflow management when rule is not verified
+        $log->info('Rule <'. $self->id. '> result undefined');
+        return;
+    }
+
+    if ($evaluation == 1){
+        $log->info('Rule <'. $self->id. '> is verified');
+        if ($self->state eq 'enabled') {
+            $log->info('Rule <'. $self->id. '> has launched a new workflow (' . $workflow_def_id . ') and was defined as triggered');
+
+            # Rule is enable, is verified and has a WorkflowDef => trigger the workflow !
+            my $workflow = $workflow_manager->runWorkflow(
+                               workflow_def_id     => $workflow_def_id,
+                               rule_id             => $self->id,
+                               service_provider_id => $self->service_provider->id
+                           );
+
+            $self->setAttr(name => 'state', value => 'triggered');
+            $self->setAttr(name => 'workflow_id', value => $workflow->id);
+            $self->save();
+        }
+        elsif ($self->state eq 'triggered') {
+            $log->info('Rule: '.$self->id. ' is verified but a workflow is already triggered');
+        }
+        elsif ($self->state eq 'delayed') {
+            $log->info('Rule: '.$self->id. ' is verified but workflow launching is delayed');
+        }
+        else {
+            throw Kanopya::Exception(error => 'unkown case');
+        }
+    }
+    elsif ($evaluation == 0) {
+        $log->info('Rule <'. $self->id. '> is not verified');
+    }
+    else {
+        my $errmsg = "Unkown rule evaluation value <$evaluation>";
+        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+    }
+
+
+}
 1;
