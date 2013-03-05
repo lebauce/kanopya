@@ -91,7 +91,8 @@ sub prepare {
     # Check if the given ram amount is not bellow the initial ram.
     my $host_manager_params = $self->{context}->{host}->node->parent->service_provider->getManagerParameters(manager_type => 'HostManager');
     if ($host_manager_params->{ram} > $self->{params}->{memory}) {
-        $errmsg = "Could not scale memory bellow the initial ram amount <" . $host_manager_params->{ram} . ">";
+        $errmsg = "Could not scale memory bellow the initial ram amount <" .
+                  ($host_manager_params->{ram} / 1024 / 1024) . "Mo >";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 }
