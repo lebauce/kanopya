@@ -247,7 +247,7 @@ var KanopyaFormWizard = (function() {
                 var value = this.attributedefs[name].value || values[name] || undefined;
 
                 // Get options for select inputs
-                if (this.attributedefs[name].type === 'relation' &&
+                if (!this.attributedefs[name].hidden && this.attributedefs[name].type === 'relation' &&
                     (this.attributedefs[name].options === undefined || this.attributedefs[name].reload_options == true) &&
                     (this.attributedefs[name].relation === 'single' || this.attributedefs[name].relation === 'multi')) {
                     this.attributedefs[name].options = this.getOptions(name, value, relations);
