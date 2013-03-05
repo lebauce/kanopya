@@ -63,6 +63,8 @@ sub _loadconfig {
         orchestrator_path => $kanopya_dir . '/conf/monitor.conf',
         aggregator        => XMLin($kanopya_dir . '/conf/aggregator.conf'),
         aggregator_path   => $kanopya_dir . '/conf/aggregator.conf',
+        rulesengine       => XMLin($kanopya_dir . '/conf/rulesengine.conf'),
+        rulesengine_path  => $kanopya_dir . '/conf/rulesengine.conf',
     }
 }
 

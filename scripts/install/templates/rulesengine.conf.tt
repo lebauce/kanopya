@@ -1,0 +1,3 @@
+<config time_step='300'>
+	<user name="admin" password="[% admin_password %]" />
+</config>
