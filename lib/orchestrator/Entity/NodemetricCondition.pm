@@ -170,40 +170,33 @@ sub toString {
            .$self->right_combination->combination_formula_string;
 };
 
-sub evalOnOneNode{
-    my $self = shift;
-    my %args = @_;
 
-    my $monitored_values_for_one_node = $args{monitored_values_for_one_node};
+sub evaluate {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['nodes']);
 
-    my $comparator     = $self->getAttr(name => 'nodemetric_condition_comparator');
-
+    my $comparator        = $self->nodemetric_condition_comparator;
     my $left_combination  = $self->left_combination;
     my $right_combination = $self->right_combination;
 
-    my $left_value = $left_combination->computeValueFromMonitoredValues(
-                         monitored_values_for_one_node => $monitored_values_for_one_node
-                     );
+    my $left_value  = $left_combination->evaluate(nodes => $args{nodes});
+    my $right_value = $right_combination->evaluate(nodes => $args{nodes});
 
-    my $right_value = $right_combination->computeValueFromMonitoredValues(
-                          monitored_values_for_one_node => $monitored_values_for_one_node
-                      );
 
-    if((not defined $left_value) || (not defined $right_value)){
-        return undef;
-    } else {
-        my $evalString = $left_value.$comparator.$right_value;
+    my %evaluation_for_each_node;
 
-        $log->info("NM Condition formula: $evalString");
-
-        if(eval $evalString){
-            return 1;
-        }else{
-            return 0;
+    for my $node (@{$args{nodes}}) {
+        if ((not defined $left_value->{$node->id}) || (not defined $right_value->{$node->id})) {
+             $evaluation_for_each_node{$node->id} = undef;
+        }
+        else {
+            $evaluation_for_each_node{$node->id} = (eval $left_value->{$node->id}.$comparator.$right_value->{$node->id}) ? 1 : 0;
         }
     }
+    $log->debug('nm condition <'.($self->id).'> <'.$self->nodemetric_condition_formula_string.'>'.
+               (Dumper \%evaluation_for_each_node));
+    return \%evaluation_for_each_node;
 }
-
 
 sub getDependentRules {
     my $self = shift;
