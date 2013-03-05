@@ -220,64 +220,6 @@ sub isVerifiedForANode{
     $verified_noderule_state.' for rule <'.$self->id.'> and node <'.($node_id).'>');
 };
 
-sub deleteVerifiedRule  {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'node_id' ]);
-
-    my $verified_noderule;
-    eval{
-        $verified_noderule = VerifiedNoderule->find(hash=>{
-            verified_noderule_node_id    => $args{node_id},
-            verified_noderule_nodemetric_rule_id => $self->getId(),
-        });
-    };
-
-    if (defined $verified_noderule) {
-        $verified_noderule->delete();
-    }
-}
-
-=head2 deleteVerifiedRuleWfDefId
-    Desc: delete the workflow def id indication in verified_noderule table to indicate
-          that the verified rule has no more running workflow
-
-    Args: $hostname, $service_provider_id
-
-    Return: $workflow_def_id or 0
-
-=cut
-
-sub deleteVerifiedRuleWfDefId {
-    my ($self,%args) = @_;
-
-    my $hostname            = $args{hostname};
-    my $service_provider_id = $args{service_provider_id};
-    my $rule_id             = $self->getAttr(name => 'nodemetric_rule_id');
-    my $service_provider    = Entity::ServiceProvider->get('id' => $service_provider_id);
-    my $nodes               = $service_provider->getNodes();
-    my $node_id;
-
-    foreach my $node (@$nodes) {
-        if($node->{hostname} eq $hostname) {
-            $node_id = $node->{id};
-        }
-    }
-
-    if(not defined $node_id){
-        my $errmsg = "unknown node $hostname in service provider $service_provider_id";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-    else {
-        my $verified_noderule = VerifiedNoderule->find(hash => {
-                                    verified_noderule_node_id    => $node_id,
-                                    verified_noderule_nodemetric_rule_id => $rule_id
-                                });
-        $verified_noderule->setAttr(name => 'workflow_def_id', value => 'null');
-        $verified_noderule->save();
-    }
-}
-
 sub setVerifiedRule{
     my ($self, %args) = @_;
 
