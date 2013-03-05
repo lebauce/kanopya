@@ -445,7 +445,7 @@ var KanopyaFormWizard = (function() {
         this.insertInput(input, label, table, attr.help || attr.description, listing, value);
 
         if ($(input).attr('type') === 'date') {
-            $(input).datepicker({ dateFormat : 'yyyy-mm-dd', constrainInput : true });
+            $(input).datepicker({ dateFormat : 'yy-mm-dd', constrainInput : true });
         }
 
         // Set reload callback on onChange event if required
