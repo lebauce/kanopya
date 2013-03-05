@@ -9,7 +9,7 @@ var Opennebula3 = (function(_super) {
         this.displayed = [ 'host_monitoring_interval', 'vm_polling_interval', 'port', 'hypervisor',
                            'debug_level', 'overcommitment_cpu_factor', 'overcommitment_memory_factor'];
 
-        this.relations = { 'opennebula3_repositories': [ 'repository_name', 'container_access_id' ] };
+        this.relations = { 'opennebula3_repositories': [ 'repository_name', 'container_access_id', 'datastore_id' ] };
     };
 
     return Opennebula3;
