@@ -64,7 +64,6 @@ my %resources = (
     "indicatorset"             => "Indicatorset",
     "interface"                => "Entity::Interface",
     "ip"                       => "Ip",
-    "iptables1"                => "Entity::Component::Iptables1",
     "iscsicontaineraccess"     => "Entity::ContainerAccess::IscsiContainerAccess",
     "iscsi"                    => "Entity::Component::Iscsi",
     "iscsiportal"              => "Entity::Component::Iscsi::IscsiPortal",
