@@ -729,8 +729,7 @@ sub generatePuppetConfiguration {
     use Kanopya::Config;
     use EEntity;
 
-    my $config = Kanopya::Config::get('executor');
-    my $kanopya = Entity->get(id => $config->{cluster}->{executor});
+    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
     my $linux = $kanopya->getComponent(category => "System");
     
     my @hosts = $kanopya->getHosts();

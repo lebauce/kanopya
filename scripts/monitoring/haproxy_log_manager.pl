@@ -104,7 +104,7 @@ sub update {
     my @clusters = Entity::ServiceProvider::Cluster->getClusters( hash => { } );
     foreach my $cluster (@clusters) {
         print "Cluster : ", $cluster->toString(), "\n";
-        my $master_ip =  $cluster->getMasterNodeIp();
+        my $master_ip =  $cluster->getComponent(category => 'System')->getMasterNode->adminIp;
         if (defined $master_ip) {
             manageLog(
                 host => $master_ip,
