@@ -1,4 +1,4 @@
-# RulesEngine.pm - Object class of Orchestrator
+# RulesEngine.pm - Object class of RulesEngine
 
 #    Copyright © 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
@@ -166,7 +166,7 @@ sub evalRules {
 
 =begin classdoc
 
-Launch orchestrator loop regularly
+Launch rules engine loop regularly
 
 =end classdoc
 

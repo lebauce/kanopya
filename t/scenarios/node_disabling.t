@@ -23,7 +23,7 @@ Log::Log4perl->easy_init({
 });
 
 use BaseDB;
-use Orchestrator;
+use RulesEngine;
 use Aggregator;
 use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
@@ -63,7 +63,7 @@ sub main {
 
 sub node_disabling {
     my $aggregator = Aggregator->new();
-    my $orchestrator = Orchestrator->new();
+    my $rulesengine = RulesEngine->new();
 
     # Create externalcluster with a mock monitor
     my $external_cluster_mockmonitor = Entity::ServiceProvider::Externalcluster->new(
@@ -165,7 +165,7 @@ sub node_disabling {
         die 'Not 3 nodes in aggregator';
     }
 
-    $orchestrator->oneRun();
+    $rulesengine->oneRun();
 
     diag('Check nodes rule verification');
     check_rule_verification(
@@ -186,7 +186,7 @@ sub node_disabling {
     } 'Kanopya::Exception::Internal::NotFound',
     'Disabled node 3 and check rule not verified';
 
-    $orchestrator->oneRun();
+    $rulesengine->oneRun();
 
     expectedException {
         VerifiedNoderule->find(hash => {
