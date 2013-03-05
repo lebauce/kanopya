@@ -257,7 +257,8 @@ sub computeValues{
 
 =begin classdoc
 
-Compute the combination value using the last Clustermetric values. Use getLastValueFromDB() method of Clustermetric.
+Compute the combination value using the last Clustermetric values.
+Use evaluate() method of Clustermetric.
 
 @return the computed value or undef if one Clustermetric is undef
 
@@ -265,8 +266,10 @@ Compute the combination value using the last Clustermetric values. Use getLastVa
 
 =cut
 
-sub computeLastValue{
-    my $self = shift;
+sub evaluate {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, optional => {'nodes' => undef});
+
     my $formula = $self->aggregate_combination_formula;
 
     #Split aggregate_rule id from $formula
@@ -274,8 +277,8 @@ sub computeLastValue{
     #replace each rule id by its evaluation
     for my $element (@array) {
         if ($element =~ m/id\d+/) {
-            #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
-            $element = Entity::Clustermetric->get('id'=>substr($element,2))->getLastValueFromDB();
+            #Remove "id" from the begining of $element, get the corresponding aggregator
+            $element = Entity::Clustermetric->get('id'=>substr($element,2))->evaluate();
             if (not defined $element) {
                 return undef;
             }
@@ -284,13 +287,16 @@ sub computeLastValue{
 
     my $res = undef;
     my $arrayString = '$res = '."@array";
-
+    eval $arrayString;
     #Evaluate the logic formula
 
-    #$log->info('Evaluate combination :'.($self->toString()));
-    eval $arrayString;
+    # $log->debug('Evaluate combination :'.($self->toString()));
 
-    $log->info("$arrayString");
+    if (defined $args{nodes}) {
+        my %hash = map {$_->id => $res} @{$args{nodes}};
+        return \%hash;
+    }
+
     return $res;
 }
 
@@ -310,7 +316,7 @@ May be deprecated.
 
 =cut
 
-sub compute{
+sub compute {
     my $self = shift;
     my %args = @_;
 
