@@ -505,6 +505,7 @@ sub startHost {
     my $image_templatefile = $self->generateImageTemplate(
         image_name        => $image_name,
         image_source      => $repo{datastore_id} . '/' . $image->getContainer->container_device,
+        image_type        => $disk_params->{image_type}
     );
 
     my $imageid = $self->oneimage_create(
@@ -784,7 +785,7 @@ sub generateImageTemplate {
     my ($self, %args) = @_;
     General::checkParams(
         args     => \%args,
-        required => [ 'image_name','image_source']
+        required => [ 'image_name', 'image_source', 'image_type' ]
     );
 
     my $hypervisor_type = $self->getHypervisorType();
@@ -802,8 +803,8 @@ sub generateImageTemplate {
         $data->{image_driver} = '"file:"';
         $data->{image_target} = 'xvda';
     } elsif($hypervisor_type eq 'kvm') {
-        $data->{image_driver} = 'raw';
         $data->{image_target} = 'vda';
+        $data->{image_driver} = $args{image_type};
     }
 
     my $cluster = $self->service_provider;
