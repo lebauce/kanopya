@@ -85,14 +85,14 @@ sub createExport {
 
     $mounttable->setConf(conf => { linuxes_mount => \@mountentries });
 
-    #my $emounttable = EFactory::newEEntity(data => $mounttable);
+    #my $emounttable = EEntity->new(data => $mounttable);
     #$emounttable->_generateFstab(cluster => $cluster, host => $cluster->getMasterNode);
 
     my $agent = $cluster->getComponent(category => "Configurationagent");
-    my $eagent = EFactory::newEEntity(data => $agent);
+    my $eagent = EEntity->new(data => $agent);
     $eagent->applyConfiguration(cluster => $cluster);
 
-    my $manager_ip = $self->service_provider->getMasterNodeIp;
+    my $manager_ip = $self->getMasterNode->adminIp;
     my $mount_dir  = $self->getMountDir(device => $args{container}->getAttr(name => 'container_device'));
 
     my $entity = Entity::ContainerAccess::NfsContainerAccess->new(
@@ -104,7 +104,7 @@ sub createExport {
                      options                 =>  $args{client_options},
                  );
 
-    my $container_access = EFactory::newEEntity(data => $entity);
+    my $container_access = EEntity->new(data => $entity);
     my $client = $self->addExportClient(export  => $container_access,
                                         host    => $args{client_name},
                                         options => $args{client_options});

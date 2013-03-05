@@ -20,7 +20,7 @@ use warnings;
 
 use Entity;
 use Entity::ContainerAccess;
-use EFactory;
+use EEntity;
 use General;
 use CapacityManagement;
 use XML::Simple;

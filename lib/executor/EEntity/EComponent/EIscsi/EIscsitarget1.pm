@@ -20,7 +20,7 @@ use warnings;
 use strict;
 
 use General;
-use EFactory;
+use EEntity;
 use Entity::ContainerAccess::IscsiContainerAccess;
 
 use Kanopya::Exceptions;

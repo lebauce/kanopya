@@ -22,10 +22,11 @@ use base "Entity::Component";
 use strict;
 use warnings;
 
+use Entity::ServiceProvider::Cluster;
 use Kanopya::Exceptions;
 use Kanopya::Config;
-use Log::Log4perl "get_logger";
 
+use Log::Log4perl "get_logger";
 my $log = get_logger("");
 my $errmsg;
 
@@ -70,25 +71,26 @@ sub setConf {
     General::checkParams(args => \%args, required => ['conf']);
 
     my $conf = $args{conf};
-    if ($conf->{puppetagent2_mode} eq 'kanopya') {        
-        my $config = Kanopya::Config::get('executor');
-        my $kanopya_cluster = Entity->get(id => $config->{cluster}->{executor});
-        my $master = $kanopya_cluster->getMasterNode();
-        $conf->{puppetagent2_masterip} = $master->adminIp;
+    if ($conf->{puppetagent2_mode} eq 'kanopya') {
+        my $master = $self->getPuppetMaster->getMasterNode;
+
+        $conf->{puppetagent2_masterip}   = $master->adminIp;
         $conf->{puppetagent2_masterfqdn} = $master->fqdn;
     }
-
     $self->SUPER::setConf(conf => $conf);
 }
 
 sub getPuppetMaster {
-    my $config = Kanopya::Config::get('executor');
-    my $kanopya_cluster = Entity->get(id => $config->{cluster}->{executor});
+    my $self = shift;
+    my %args = @_;
+
+    my $kanopya_cluster = Entity::ServiceProvider::Cluster->getKanopyaCluster();
     return $kanopya_cluster->getComponent(name => "Puppetmaster");
 }
 
 sub getHostsEntries {
     my ($self) = @_;
+
     my $fqdn = $self->puppetagent2_masterfqdn;
     my @tmp = split(/\./, $fqdn);
     my $hostname = shift @tmp;
@@ -99,9 +101,9 @@ sub getHostsEntries {
 }
 
 sub getBaseConfiguration {
-    my $config = Kanopya::Config::get('executor');
-    my $kanopya_cluster = Entity->get(id => $config->{cluster}->{executor});
-    my $master = $kanopya_cluster->getMasterNode();
+    my ($class) = @_;
+
+    my $master = $class->getPuppetMaster->getMasterNode;
 
     return {
         puppetagent2_options    => '',

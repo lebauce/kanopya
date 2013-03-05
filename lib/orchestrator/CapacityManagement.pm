@@ -39,7 +39,7 @@ use warnings;
 use Data::Dumper;
 use Clone qw(clone);
 use List::Util;
-use EFactory;
+use EEntity;
 use Message;
 use Entity::ServiceProvider::Cluster;
 # logger
@@ -102,7 +102,7 @@ sub new {
         }
 
         for my $hypervisor (@hypervisors) {
-            my $ehypervisor = EFactory::newEEntity(data => $hypervisor);
+            my $ehypervisor = EEntity->new(data => $hypervisor);
             my $hypervisor_available_memory;
 
             eval {
@@ -129,7 +129,7 @@ sub new {
         for my $vm_id (@vm_ids) {
             $log->debug("try to get vm Entity $vm_id");
             my $vm   = Entity->get(id => $vm_id);
-            my $e_vm = EFactory::newEEntity(data => $vm);
+            my $e_vm = EEntity->new(data => $vm);
             #TODO: This can take some time => need a method whichs retrieve information in one shot
             eval {
 	            $self->{_infra}->{vms}->{$vm_id}->{ram_effective} = $e_vm->getRamUsedByVm->{total};

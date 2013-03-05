@@ -41,7 +41,7 @@ sub configureNode {
         data         => $data
     );
     
-    $self->getExecutorEContext->send(
+    $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc/syslog-ng'
     );

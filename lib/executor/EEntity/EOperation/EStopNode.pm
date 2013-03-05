@@ -19,7 +19,7 @@ package EEntity::EOperation::EStopNode;
 use base "EEntity::EOperation";
 
 use Kanopya::Exceptions;
-use EFactory;
+use EEntity;
 use Entity::ServiceProvider::Cluster;
 use Entity::Host;
 

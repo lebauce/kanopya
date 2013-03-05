@@ -24,7 +24,7 @@ use base "EEntity::EOperation";
 use Kanopya::Exceptions;
 use strict;
 use warnings;
-use EFactory;
+use EEntity;
 
 use Log::Log4perl 'get_logger';
 
@@ -33,33 +33,28 @@ my $errmsg;
 
 sub prepare {
     my ($self, %args) = @_;
+
     # check if this cluster has a puppet agent component
-    my $puppetagent = $self->{context}->{cluster}->getComponent(
-            name    => 'Puppetagent',
-            version => 2
-    );
-    $log->debug(ref($puppetagent));
+    my $puppetagent = $self->{context}->{cluster}->getComponent(name    => 'Puppetagent',
+                                                                version => 2);
     
-    if(not $puppetagent) {
-        my $errmsg = "UpdateComponent Operation cannot be used without a puppet agent component configured on the cluster";
-        $log->error($errmsg);
+    if (not $puppetagent) {
+        my $errmsg = "UpdateComponent Operation cannot be used without a " .
+                     "puppet agent component configured on the cluster";
         throw Kanopya::Exception::Internal(error => $errmsg);
-    } else {
-        $self->{context}->{puppetagent} = EFactory::newEEntity(
-                data => $puppetagent
-        );
+    }
+    else {
+        $self->{context}->{puppetagent} = EEntity->new(data => $puppetagent);
     }
     
      # Instanciate the bootserver Cluster
     $self->{context}->{bootserver}
-        = EFactory::newEEntity(
-              data => Entity->get(id => $self->{config}->{cluster}->{bootserver})
-          );
+        = EEntity->new(entity => Entity::ServiceProvider::Cluster->getKanopyaCluster);
           
-     my $puppetmaster = $self->{context}->{bootserver}->getComponent(name => 'Puppetmaster', version => 2);
-    $self->{context}->{component_puppetmaster} = EFactory::newEEntity(data => $puppetmaster);
-    
-    $self->{params}->{kanopya_domainname} = $self->{context}->{bootserver}->getAttr(name => 'cluster_domainname');
+    my $puppetmaster = $self->{context}->{bootserver}->getComponent(name => 'Puppetmaster', version => 2);
+    $self->{context}->{component_puppetmaster} = EEntity->new(data => $puppetmaster);
+
+    $self->{params}->{kanopya_domainname} = $self->{context}->{bootserver}->cluster_domainname;
     
 }
 
@@ -67,7 +62,7 @@ sub execute {
     my ($self, %args) = @_;
 
     for my $host ($self->{context}->{cluster}->getHosts()) {
-        my $ehost = EFactory::newEEntity(data => $host);
+        my $ehost = EEntity->new(data => $host);
         my $puppet_definitions = "";
         $self->{context}->{component}->generateConfiguration(
             cluster => $self->{context}->{cluster},

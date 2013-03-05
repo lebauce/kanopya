@@ -49,7 +49,7 @@ sub updateCpus {
     $self->getEContext->execute(command => "$cmd");
 
     my $hypervisor = Entity->get(id => $self->hypervisor->id);
-    (EFactory::newEEntity(data => $hypervisor))->updatePinning(
+    (EEntity->new(data => $hypervisor))->updatePinning(
         vm      => $self,
         cpus    => $args{cpus}
     );
@@ -70,7 +70,7 @@ sub postStart {
 
 sub getRamUsedByVm {
     my ($self,%args) = @_;
-    my $e_hypervisor = EFactory::newEEntity(data => $self->hypervisor);
+    my $e_hypervisor = EEntity->new(data => $self->hypervisor);
 
     #this command get the pid of the kvm process then get the RAM used and SWAP used by this process
     my $cmd = 'cat /proc/$(cat /var/run/libvirt/qemu/one-'.($self->onevm_id).'.pid)/status | grep "VmRSS\|VmSwap"';

@@ -91,7 +91,7 @@ sub getConf {
     $data->{domain_name}        = $dhcpd3->get_column('dhcpd3_domain_name');
     $data->{domain_name_server} = $dhcpd3->get_column('dhcpd3_domain_server');
     $data->{server_name}        = $dhcpd3->get_column('dhcpd3_servername');
-    $data->{server_ip}          = $self->service_provider->getMasterNodeIp;
+    $data->{server_ip}          = $self->getMasterNode->adminIp;
 
     my $subnets = $dhcpd3->dhcpd3_subnets;
     my @data_subnets = ();

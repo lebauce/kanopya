@@ -71,7 +71,7 @@ sub createDisk {
                      container_device     => $args{name},
                      volume_id            => $args{volume_id}
                  );
-    my $container = EFactory::newEEntity(data => $entity);
+    my $container = EEntity->new(data => $entity);
 
     if (! defined $noformat) {
         # Connect to the iSCSI target and format it locally
@@ -80,13 +80,13 @@ sub createDisk {
                                                    export_name => $args{name},
                                                    erollback   => $args{erollback});
 
-        my $newdevice = $container_access->connect(econtext => $self->getExecutorEContext);
+        my $newdevice = $container_access->connect(econtext => $self->_host->getEContext);
 
         $self->mkfs(device   => $newdevice,
                     fstype   => $args{filesystem},
-                    econtext => $self->getExecutorEContext);
+                    econtext => $self->_host->getEContext);
 
-        $container_access->disconnect(econtext => $self->getExecutorEContext);
+        $container_access->disconnect(econtext => $self->_host->getEContext);
 
         $self->removeExport(container_access => $container_access);
     }
@@ -149,22 +149,14 @@ sub createExport {
     my $volume = $args{container}->getVolume();
     my $lun_path = $args{container}->getPath();
 
-    my $kanopya_cluster = Entity::ServiceProvider::Cluster->find(
-                             hash => {
-                                 cluster_name => 'Kanopya'
-                             }
-                         );
-
-    my $master = $kanopya_cluster->getMasterNode();
-
     eval {
-        $self->_getEntity()->igroup_create('initiator-group-name' => "igroup_kanopya_master",
-                                           'initiator-group-type' => "iscsi");
+        $api->igroup_create('initiator-group-name' => "igroup_kanopya_master",
+                            'initiator-group-type' => "iscsi");
     };
 
     eval {
-        $self->_getEntity()->igroup_add('initiator'            => $master->getAttr(name => "host_initiatorname"),
-                                        'initiator-group-name' => "igroup_kanopya_master");
+        $api->igroup_add('initiator'            => $self->_host->host_initiatorname,
+                         'initiator-group-name' => "igroup_kanopya_master");
     };
 
     my $lun_id;
@@ -174,24 +166,21 @@ sub createExport {
     };
     if ($@) {
         # The LUN is already mapped, get its lun ID
-        $lun_id = $self->getLunId(lun  => $args{container},
-                                  host => $master);
+        $lun_id = $self->getLunId(lun => $args{container});
     }
 
-    my $entity = Entity::ContainerAccess::IscsiContainerAccess->new(
-                     container_id            => $args{container}->getAttr(name => 'container_id'),
-                     export_manager_id       => $self->getAttr(name => 'entity_id'),
-                     container_access_export => $self->iscsi_node_get_name->node_name,
-                     container_access_ip     => $self->service_provider->getMasterNodeIp,
-                     container_access_port   => 3260,
-                     typeio                  => $args{typeio},
-                     iomode                  => $args{iomode},
-                     lun_name                => "lun-" . $lun_id
-                 );
-    my $container_access = EFactory::newEEntity(data => $entity);
+    my $container_access = EEntity->new(data => Entity::ContainerAccess::IscsiContainerAccess->new(
+                               container_id            => $args{container}->id,
+                               export_manager_id       => $self->id,
+                               container_access_export => $self->iscsi_node_get_name->node_name,
+                               container_access_ip     => $self->getMasterNode->adminIp,
+                               container_access_port   => 3260,
+                               typeio                  => $args{typeio},
+                               iomode                  => $args{iomode},
+                               lun_name                => "lun-" . $lun_id
+                           ));
 
-    $log->info("Added iSCSI export for lun " .
-               $args{container}->getAttr(name => "container_name"));
+    $log->info("Added iSCSI export for lun " . $args{container}->container_name);
 
     if (defined $args{erollback}) {
         $args{erollback}->add(
@@ -199,7 +188,6 @@ sub createExport {
             parameters => [ $self, "container_access", $container_access, ]
         );
     }
-
     return $container_access;
 }
 
@@ -284,9 +272,9 @@ sub getLunId {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'lun', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'lun' ]);
 
-    $log->debug("Looking for the id of LUN " . $args{lun}->id . " for host " . $args{host}->id);
+    $log->debug("Looking for the id of LUN " . $args{lun}->id . " for host " . $self->_host->id);
 
     # Accept both Container and ContainerAccess
     if ($args{lun}->isa("EEntity::EContainerAccess::EIscsiContainerAccess") ||
@@ -296,7 +284,7 @@ sub getLunId {
 
     my $api = $self->_getEntity();
     my @mappings = $api->lun_initiator_list_map_info(
-                       'initiator' => lc($args{host}->host_initiatorname)
+                       'initiator' => lc($self->_host->host_initiatorname)
                    )->child_get("lun-maps")->children_get;
 
     for my $mapping (@mappings) {

@@ -51,7 +51,7 @@ sub addNode {
         data          => $data1
     );
     
-    $self->getExecutorEContext->send(
+    $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc/ldap'
     );
@@ -66,7 +66,7 @@ sub addNode {
         data          => $data2
     );
 
-    $self->getExecutorEContext->send(
+    $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc/ldap'
     );
@@ -81,7 +81,7 @@ sub addNode {
         data          => $data3
     );
     
-    $self->getExecutorEContext->send(
+    $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc/default'
     );

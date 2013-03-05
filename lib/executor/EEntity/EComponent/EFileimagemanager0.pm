@@ -22,7 +22,7 @@ use strict;
 use warnings;
 
 use General;
-use EFactory;
+use EEntity;
 use Kanopya::Exceptions;
 use Entity::ContainerAccess;
 use Entity::Container::FileContainer;
@@ -62,7 +62,7 @@ sub createDisk {
                      container_freespace  => 0,
                      container_device     => $args{name} . '.'. $args{image_type},
                 );
-    my $container = EFactory::newEEntity(data => $entity);
+    my $container = EEntity->new(data => $entity);
 
     if (not $args{"noformat"}) {
         # Create a temporary export and connect to the access to get a device
@@ -143,7 +143,7 @@ sub createExport {
                      container_access_ip     => $underlying->getAttr(name => 'container_access_ip'),
                      container_access_port   => $underlying->getAttr(name => 'container_access_port'),
                  );
-    my $container_access = EFactory::newEEntity(data => $entity);
+    my $container_access = EEntity->new(data => $entity);
 
     $log->info("Added Export for file <$export_name>");
 
@@ -189,7 +189,7 @@ sub fileCreate {
 
     # Firstly mount the container access on the executor.
     my $mountpoint = $args{container_access}->getMountPoint . "_filecreate_" . $args{file_name};
-    my $econtainer_access = EFactory::newEEntity(data => $args{container_access});
+    my $econtainer_access = EEntity->new(data => $args{container_access});
     
     $econtainer_access->mount(mountpoint => $mountpoint,
                               econtext   => $self->getEContext);
@@ -245,7 +245,7 @@ sub fileRemove{
 
     my $mountpoint = $container_access->getMountPoint . "_fileremove_" . $args{container}->container_device;
 
-    my $econtainer_access = EFactory::newEEntity(data => $container_access);
+    my $econtainer_access = EEntity->new(data => $container_access);
     $econtainer_access->mount(mountpoint => $mountpoint, econtext => $self->getEContext);
 
     my $file_image_path = "$mountpoint/" . $args{container}->container_device;

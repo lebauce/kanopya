@@ -60,23 +60,21 @@ sub api {
     my $config = {
         verify_ssl => 0,
         identity => {
-            url     => 'http://' . $keystone->service_provider->getMasterNode->fqdn . ':5000/v2.0'
+            url     => 'http://' . $keystone->getMasterNode->fqdn . ':5000/v2.0'
         },
         image => {
-            url     => 'http://' . $glance->service_provider->getMasterNode->fqdn  . ':9292/v1'
+            url     => 'http://' . $glance->getMasterNode->fqdn  . ':9292/v1'
         },
         compute => {
-            url     => 'http://' . $compute->service_provider->getMasterNode->fqdn . ':8774/v2'
+            url     => 'http://' . $compute->getMasterNode->fqdn . ':8774/v2'
         },
         network => {
-            url     => 'http://' . $quantum->service_provider->getMasterNode->fqdn . ':9696/v2.0'
+            url     => 'http://' . $quantum->getMasterNode->fqdn . ':9696/v2.0'
         }
     };
 
-    my $os_api = OpenStack::API->new(
-        credentials => $credentials,
-        config      => $config,
-    );
+    my $os_api = OpenStack::API->new(credentials => $credentials,
+                                     config      => $config);
 
     return $os_api;
 }

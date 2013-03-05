@@ -44,7 +44,7 @@ sub addNode {
         data          => $data
     );
     
-    $self->getExecutorEContext->send(
+    $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc/default',
     );
@@ -62,7 +62,7 @@ sub addNode {
         data          => $data
     );
     
-    $self->getExecutorEContext->send(
+    $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc/snmp',
     );

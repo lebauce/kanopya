@@ -72,7 +72,7 @@ sub createDisk {
                      lvm2_lv_size       => $args{size}
                  );
 
-    my $container = EFactory::newEEntity(data => $entity);
+    my $container = EEntity->new(data => $entity);
     if (exists $args{erollback} and defined $args{erollback}){
         $args{erollback}->add(
             function   => $self->can('removeDisk'),

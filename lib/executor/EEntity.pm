@@ -30,13 +30,17 @@ use strict;
 use warnings;
 
 use Entity;
+use Entity::Host;
 use Kanopya::Exceptions;
 use Kanopya::Config;
+use EContext;
+
 use File::Basename;
 use Template;
 use vars qw ( $AUTOLOAD );
 
 use Log::Log4perl "get_logger";
+use Data::Dumper;
 use vars qw(@ISA $VERSION);
 
 my $log = get_logger("");
@@ -46,48 +50,51 @@ $VERSION = do { my @r = (q$Revision: 0.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#
 
 
 my $mocks_classes = {};
+my $host;
 
 sub new {
     my ($class, %args) = @_;
 
     $args{entity} = $args{entity} || $args{data};
 
-    General::checkParams(args => \%args, required => ['entity']);
+    General::checkParams(args     => \%args,
+                         required => [ 'entity' ],
+                         optional => { 'eclass' => $class->eclass(class => ref($args{entity})) });
 
-    if ($args{entity}->isa('Entity') && !$args{entity}->isa('Entity::Operation')) {
-        my $entityclass = ref($args{entity});
-        $entityclass =~s/\:\:/\:\:E/g;
-        $class = "E".$entityclass;
-        
-        # Use a possibly defined mock for this execution class
-        $class = $mocks_classes->{$class} ? $class . '::' . $mocks_classes->{$class} : $class;
+    # Use a possibly defined mock for this execution class
+    $args{eclass} = $mocks_classes->{$args{eclass}}
+                        ? $args{eclass} . '::' . $mocks_classes->{$args{eclass}} : $args{eclass};
 
-        while ($class ne "EEntity") {
-            my $location = General::getLocFromClass(entityclass => $class);
-
-            eval {
-                require $location;
-            };
-            if ($@){
-                # Try to use the parent package
-                $class =~ s/\:\:[a-zA-Z0-9]+$//g;
+    while ($args{eclass} ne "EEntity") {
+        my $location = General::getLocFromClass(entityclass => $args{eclass});
+        eval { require $location; };
+        if ($@) {
+            my $err = $@;
+            # If file does not exists, use the parent package
+            if ($err =~ m/Can't locate $location/) {
+                $args{eclass} =~ s/\:\:[a-zA-Z0-9]+$//g;
             }
-            else {
-                last;
-            }
+            else { die $err; }
         }
+        else { last; }
     }
 
-    my $config = Kanopya::Config::get('executor');
-
     my $self = {
-        _entity   => $args{entity},
-        _executor => Entity->get(id => $config->{cluster}->{executor}),
-        config    => $config
+        _entity => $args{entity},
+        config  => Kanopya::Config::get('executor')
     };
 
-    bless $self, $class;
+    bless $self, $args{eclass};
     return $self;
+}
+
+sub eclass {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'class' ]);
+    
+    $args{class} =~s/\:\:/\:\:E/g;
+    return "E" . $args{class};
 }
 
 sub _getEntity{
@@ -96,33 +103,30 @@ sub _getEntity{
 }
 
 sub getEContext {
-    my $self = shift;
+    my ($self, %args) = @_;
 
-    throw Kanopya::Exception::NotImplemented();
-}
+    General::checkParams(args => \%args, required => [ 'dst_host' ]);
 
-sub getExecutorEContext {
-    my $self = shift;
-
-    return EFactory::newEContext(ip_source      => $self->{_executor}->getMasterNodeIp(),
-                                 ip_destination => $self->{_executor}->getMasterNodeIp());
+    return EContext->new(src_host => $self->_host, dst_host => $args{dst_host});
 }
 
 sub generateNodeFile {
     my ($self, %args) = @_;
+
     General::checkParams(
         args     => \%args,
         required => ['cluster','host','file','template_dir','template_file','data']
     );
     
     my $config = Kanopya::Config::get('executor');
-    my $econtext = $self->getExecutorEContext();
+
     my $path = $config->{clusters}->{directory};
     $path .= '/' . $args{cluster}->cluster_name;
     $path .= '/' . $args{host}->node->node_hostname;
     $path .= '/' . $args{file};
     my ($filename, $directories, $prefix) = fileparse($path);
-    $econtext->execute(command => "mkdir -p $directories");
+
+    $self->_host->getEContext->execute(command => "mkdir -p $directories");
     
     my $template_conf = {
         INCLUDE_PATH => $args{template_dir},
@@ -138,7 +142,6 @@ sub generateNodeFile {
     };
     if($@) {
         $errmsg = "error during generation from '$args{template}':" .  $template->error;
-        $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
     return $path;
@@ -183,6 +186,19 @@ sub notificationMessage {
          );
 
     return $message;
+}
+
+sub _host {
+    my $self = shift;
+    my %args = @_;
+
+    return $host if defined $host;
+
+    my $hostname = `hostname`;
+    chomp($hostname);
+
+    $host = EEntity->new(entity => Entity::Host->find(hash => { 'node.node_hostname' => $hostname }));
+    return $host;
 }
 
 sub AUTOLOAD {

@@ -148,20 +148,20 @@ sub getPuppetDefinition {
     my $sql        = $self->mysql5;
     my $keystone   = $self->keystone;
     my $quantum    = $self->quantum;
-    my $glance     = join(",", map { $_->service_provider->getMasterNode->fqdn . ":9292" } $self->nova_controller->glances);
+    my $glance     = join(",", map { $_->getMasterNode->fqdn . ":9292" } $self->nova_controller->glances);
 
     my $definition = "if \$kanopya_openstack_repository == undef {\n" .
                      "\tclass { 'kanopya::openstack::repository': }\n" .
                      "\t\$kanopya_openstack_repository = 1\n" .
                      "}\n" .
                      "class { 'kanopya::novacontroller':\n" .
-                     "\tdbserver => '" . $sql->service_provider->getMasterNode->fqdn . "',\n" .
-                     "\tamqpserver => '" . $self->amqp->service_provider->getMasterNode->fqdn . "',\n" .
+                     "\tdbserver => '" . $sql->getMasterNode->fqdn . "',\n" .
+                     "\tamqpserver => '" . $self->amqp->getMasterNode->fqdn . "',\n" .
                      "\tpassword => 'nova',\n" .
-                     "\tkeystone => '" . $keystone->service_provider->getMasterNode->fqdn . "',\n" .
+                     "\tkeystone => '" . $keystone->getMasterNode->fqdn . "',\n" .
                      "\temail => '" . $self->service_provider->user->user_email . "',\n" .
                      "\tglance => '" . $glance . "',\n" .
-                     "\tquantum => '" . $quantum->service_provider->getMasterNode->fqdn . "',\n" .
+                     "\tquantum => '" . $quantum->getMasterNode->fqdn . "',\n" .
                      "}\n";
 
     return $definition;

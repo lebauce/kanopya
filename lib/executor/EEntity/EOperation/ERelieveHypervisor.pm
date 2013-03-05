@@ -62,7 +62,7 @@ sub prepare {
     }
 
     my @cloudmanagers = $self->{context}->{host}->node->service_provider->getComponents(category => 'HostManager');
-    $self->{context}->{cloud_manager} = EFactory::newEEntity(data => $cloudmanagers[0]);
+    $self->{context}->{cloud_manager} = EEntity->new(data => $cloudmanagers[0]);
 
     my $vm_min_effective_ram = $self->{context}->{host}->getMinEffectiveRamVm(); #vm / ram
     my $hv_max_effective_freeram = $self->{context}->{cloud_manager}->getMaxRamFreeHV();  #hv / ram

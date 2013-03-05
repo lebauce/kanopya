@@ -1,4 +1,5 @@
 #    Copyright © 2011 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -11,18 +12,21 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 package EEntity::EComponent::EKeepalived1;
 use base 'EEntity::EComponent';
 
 use strict;
-use Date::Simple (':all');
-use Log::Log4perl "get_logger";
+use warnings;
+
 use General;
 
-
+use Date::Simple (':all');
+use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
 my $errmsg;
+
 
 # called when a node is added to a cluster
 sub addNode {
@@ -31,11 +35,8 @@ sub addNode {
 
     General::checkParams(args => \%args, required => ['mount_point', 'host']);
 
-    my $keepalived = $self->_getEntity();
-    my $masternodeip = $self->service_provider->getMasterNodeIp();
-
     # recuperer les adresses ips publiques et les ports
-    if(not defined $masternodeip) {
+    if(not defined $self->getMasterNode) {
         # no masternode defined, this host becomes the masternode
         #  so it is the first initialization of keepalived
 
@@ -65,20 +66,22 @@ sub addNode {
             foreach my $port (@$ports) {
                 
                 #$log->debug("adding virtualserver  definition in database");
-                my $vsid = $keepalived->addVirtualserver(
-                    virtualserver_ip => $vip,
-                    virtualserver_port => $port,
-                    virtualserver_lbkind => 'NAT',
-                    virtualserver_lbalgo => 'wlc');
+                my $vsid = $self->addVirtualserver(
+                               virtualserver_ip     => $vip,
+                               virtualserver_port   => $port,
+                               virtualserver_lbkind => 'NAT',
+                               virtualserver_lbalgo => 'wlc'
+                           );
                 
                 $log->debug("adding realserver definition in database");
-                 my $rsid = $keepalived->addRealserver(
-                    virtualserver_id => $vsid,
-                    realserver_ip => $args{host}->adminIp,
-                    realserver_port => $port,
-                    realserver_checkport => $port,
-                    realserver_checktimeout => 15,
-                    realserver_weight => 1);
+                my $rsid = $self->addRealserver(
+                               virtualserver_id        => $vsid,
+                               realserver_ip           => $args{host}->adminIp,
+                               realserver_port         => $port,
+                               realserver_checkport    => $port,
+                               realserver_checktimeout => 15,
+                               realserver_weight       => 1
+                           );
             }    
         }
     
@@ -106,21 +109,22 @@ sub addNode {
         $log->debug("Keepalived update");
         
         # add this host as realserver for each virtualserver of this cluster
-        my $virtualservers = $keepalived->getVirtualservers();
+        my $virtualservers = $self->getVirtualservers();
         
         foreach my $vs (@$virtualservers) {
-            my $rsid = $keepalived->addRealserver(
-                virtualserver_id => $vs->{virtualserver_id},
-                realserver_ip => $args{host}->adminIp,
-                realserver_port => $vs->{virtualserver_port},
-                realserver_checkport => $vs->{virtualserver_port},
-                realserver_checktimeout => 15,
-                realserver_weight => 2);
+            my $rsid = $self->addRealserver(
+                           virtualserver_id        => $vs->{virtualserver_id},
+                           realserver_ip           => $args{host}->adminIp,
+                           realserver_port         => $vs->{virtualserver_port},
+                           realserver_checkport    => $vs->{virtualserver_port},
+                           realserver_checktimeout => 15,
+                           realserver_weight       => 2
+                       );
         }
         
         $log->debug('Generation of network_routes script');
         $self->addnetwork_routes(mount_point              => $args{mount_point},
-                                 loadbalancer_internal_ip => $masternodeip);
+                                 loadbalancer_internal_ip => $self->getMasterNode->adminIp);
         
         $log->debug('init script generation for network_routes script');
         $self->addInitScripts(
@@ -130,7 +134,6 @@ sub addNode {
  
         $self->generateAndSendKeepalived();
         $self->reload();
-        
     }
 }
 
@@ -138,20 +141,18 @@ sub preStopNode {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => ['host', 'cluster']);
-    
-    if ($args{cluster}->getMasterNodeIp() ne $args{host}->adminIp()) {
-        my $keepalived      = $self->_getEntity();
-        my $virtualservers  = $keepalived->getVirtualservers();
-        
+
+    if ($self->getMasterNode->host->id != $args{host}->id) {
+        my $virtualservers  = $self->getVirtualservers();
+
         foreach my $vs (@{$virtualservers}) {
-            my $realserver_id = $keepalived->getRealserverId(virtualserver_id   => $vs->{virtualserver_id},
-                                                             realserver_ip      => $args{host}->adminIp());
-            
-            $keepalived->setRealServerWeightToZero(virtualserver_id => $vs->{virtualserver_id},
-                                                   realserver_id    => $realserver_id);
+            my $realserver_id = $self->getRealserverId(virtualserver_id => $vs->{virtualserver_id},
+                                                       realserver_ip    => $args{host}->adminIp());
+
+            $self->setRealServerWeightToZero(virtualserver_id => $vs->{virtualserver_id},
+                                             realserver_id    => $realserver_id);
         }
-        
+
         $self->generateAndSendKeepalived();
         $self->reload();
     }
@@ -161,26 +162,24 @@ sub preStopNode {
 sub stopNode {
     my $self = shift;
     my %args = @_;
-    
-    my $keepalived = $self->_getEntity();
-    my $masternodeip = $args{cluster}->getMasterNodeIp();
-    if($masternodeip eq $args{host}->adminIp) {
+
+    if ($self->getMasterNode->host->id != $args{host}->id) {
         # this host is the masternode so we remove virtualserver definitions
         $log->debug('No master node ip retreived, we are stopping the master node');
-        my $virtualservers = $keepalived->getVirtualservers();
+        my $virtualservers = $self->getVirtualservers();
         foreach my $vs (@$virtualservers) {
-            $keepalived->removeVirtualserver(virtualserver_id => $vs->{virtualserver_id});
+            $self->removeVirtualserver(virtualserver_id => $vs->{virtualserver_id});
         }
-        
-    } else {
-        my $virtualservers = $keepalived->getVirtualservers();
+    }
+    else {
+        my $virtualservers = $self->getVirtualservers();
         
         foreach my $vs (@{$virtualservers}) {
-            my $realserver_id = $keepalived->getRealserverId(virtualserver_id   => $vs->{virtualserver_id},
-                                                             realserver_ip      => $args{host}->adminIp());
+            my $realserver_id = $self->getRealserverId(virtualserver_id => $vs->{virtualserver_id},
+                                                       realserver_ip    => $args{host}->adminIp());
             
-            $keepalived->removeRealserver(virtualserver_id  => $vs->{virtualserver_id},
-                                          realserver_id     => $realserver_id);
+            $self->removeRealserver(virtualserver_id => $vs->{virtualserver_id},
+                                    realserver_id    => $realserver_id);
         }
         
         $self->generateAndSendKeepalived();
@@ -194,27 +193,22 @@ sub cleanNode {
     my %args = @_;
     
     General::checkParams(args => \%args, required => ['host', 'cluster', 'mount_point']);
-    
-    my $keepalived = $self->_getEntity();
-    
+
     # remove this host as realserver for each virtualserver of this cluster
-    my $virtualservers = $keepalived->getVirtualservers();
+    my $virtualservers = $self->getVirtualservers();
 
     foreach my $vs (@$virtualservers) {
-       my $realserver_id = $keepalived->getRealserverId(virtualserver_id => $vs->{virtualserver_id},
-                                                        realserver_ip => $args{host}->adminIp);
+       my $realserver_id = $self->getRealserverId(virtualserver_id => $vs->{virtualserver_id},
+                                                  realserver_ip => $args{host}->adminIp);
 
-
-       $keepalived->removeRealserver(
-                virtualserver_id => $vs->{virtualserver_id},
-                realserver_id => $realserver_id);
+       $self->removeRealserver(virtualserver_id => $vs->{virtualserver_id},
+                               realserver_id    => $realserver_id);
     }
 
     # If masternode then delete virtual server entry in db
-    my $masternodeip = $args{cluster}->getMasterNodeIp();
-    if($masternodeip eq $args{host}->adminIp) {
+    if ($self->getMasterNode->host->id != $args{host}->id) {
         foreach my $vs (@$virtualservers) {
-           $keepalived->removeVirtualserver(virtualserver_id => $vs->{virtualserver_id});
+           $self->removeVirtualserver(virtualserver_id => $vs->{virtualserver_id});
         }
     }
 }
@@ -234,20 +228,20 @@ sub generateKeepalived {
     my ($self, %args) = @_;
     
     General::checkParams(args => \%args, required => ['host','mount_point']);
-    my $cluster = $self->service_provider;
-    my $host = $cluster->getMasterNode;
+
+    my $host = $self->getMasterNode;
     $host = $args{host} if not defined $host;
     my $data = $self->_getEntity()->getTemplateDataKeepalived();
     my $file = $self->generateNodeFile(
         host          => $host,
-        cluster       => $cluster,
+        cluster       => $self->service_provider,
         file          => '/etc/keepalived/keepalived.conf',
         template_dir  => '/templates/components/keepalived',
         template_file => 'keepalived.conf.tt',
         data          => $data
     );
     
-    $self->getExecutorEContext->send(
+    $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc/keepalived'
     );
@@ -258,20 +252,20 @@ sub generateSysctlconf {
     my ($self, %args) = @_;
     
     General::checkParams(args => \%args, required => ['host','mount_point']);
-    my $cluster = $self->service_provider;
-    my $host = $cluster->getMasterNode;
+
+    my $host = $self->getMasterNode;
     $host = $args{host} if not defined $host;
     my $data = { sysctl_entries => [ 'net.ipv4.ip_forward = 1' ] };
     my $file = $self->generateNodeFile(
         host          => $host,
-        cluster       => $cluster,
+        cluster       => $self->service_provider,
         file          => '/etc/sysctl.conf',
         template_dir  => '/templates/components/keepalived',
         template_file => 'sysctl.conf.tt',
         data          => $data
     );
     
-    $self->getExecutorEContext->send(
+    $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc'
     );
@@ -282,7 +276,7 @@ sub generateAndSendKeepalived {
     
     my $data = $self->_getEntity()->getTemplateDataKeepalived();
     my $file = $self->generateNodeFile(
-        host          => $self->service_provider->getMasterNode,
+        host          => $self->getMasterNode,
         cluster       => $self->service_provider,
         file          => '/etc/keepalived/keepalived.conf',
         template_dir  => '/templates/components/keepalived',
@@ -301,20 +295,20 @@ sub generateIpvsadm {
     my ($self, %args) = @_;
     
     General::checkParams(args => \%args, required => ['host','mount_point']);
-    my $cluster = $self->service_provider;
-    my $host = $cluster->getMasterNode;
+
+    my $host = $self->getMasterNode;
     $host = $args{host} if not defined $host;
     my $data = $self->_getEntity()->getTemplateDataIpvsadm();
     my $file = $self->generateNodeFile(
         host          => $host,
-        cluster       => $cluster,
+        cluster       => $self->service_provider,
         file          => '/etc/default/ipvsadm',
         template_dir  => '/templates/components/keepalived',
         template_file => 'default_ipvsadm.tt',
         data          => $data
     );
-    
-    $self->getExecutorEContext->send(
+
+    $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc/default'
     );
@@ -331,7 +325,7 @@ sub addnetwork_routes {
     $data->{gateway} = $args{loadbalancer_internal_ip};
     
     my $file = $self->generateNodeFile(
-        host          => $self->service_provider->getMasterNode,
+        host          => $self->getMasterNode,
         cluster       => $self->service_provider,
         file          => '/etc/init.d/network_routes',
         template_dir  => '/templates/components/keepalived',
@@ -339,29 +333,29 @@ sub addnetwork_routes {
         data          => $data
     );
     
-    $self->getExecutorEContext->send(
+    $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc/init.d'
     );
     
     my $command = '/bin/chmod +x '.$args{mount_point}.'/etc/init.d/network_routes';
     $log->debug($command);
-    my $result = $self->getExecutorEContext->execute(command => $command);
+    my $result = $self->_host->getEContext->execute(command => $command);
      
 }
 
 sub postStartNode{
     my $self = shift;
     my %args = @_;
-    
-    my $keepalived = $self->_getEntity();
-    my $masternodeip = $args{cluster}->getMasterNodeIp();
-    if($masternodeip eq $args{host}->adminIp) {
+
+    if ($self->getMasterNode->host->id != $args{host}->id) {
         # this host is the masternode so we remove virtualserver definitions
-        return;        
-    } else {
+        return;
+    }
+    else {
         $self->generateAndSendKeepalived();
         $self->reload();
     }
 }
+
 1;

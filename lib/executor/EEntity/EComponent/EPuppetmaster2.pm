@@ -52,14 +52,12 @@ sub addNode {
     my %args = @_;
 
     General::checkParams(args => \%args, required => [ 'mount_point', 'host' ]);
-
-    my $masternodeip = $args{cluster}->getMasterNodeIp();
   
     $self->configureNode(
         mount_point => $args{mount_point}.'/etc',
         host        => $args{host}
     );
-    
+
     $self->addInitScripts(    
         mountpoint => $args{mount_point}, 
         scriptname => 'puppet', 
@@ -70,7 +68,7 @@ sub addNode {
 sub updateSite {
     my ($self) = @_;
     my $command = 'touch /etc/puppet/manifests/site.pp';
-    $self->getExecutorEContext->execute(command => $command);
+    $self->getEContext->execute(command => $command);
 }
 
 sub createHostCertificate {
@@ -82,45 +80,44 @@ sub createHostCertificate {
 
     # check if new certificate is required
     my $command = "find /etc/puppet/ssl/certs -name $certificate";
-    my $result = $self->getExecutorEContext->execute(command => $command);
-        
+    my $result = $self->getEContext->execute(command => $command);
+
     if (! $result->{stdout}) {
         # generate a certificate for the host
         $command = "puppetca --generate $args{host_fqdn}";
-        my $result = $self->getExecutorEContext->execute(command => $command);
+        my $result = $self->getEContext->execute(command => $command);
         # TODO check for error in command execution
     }
-    
+
     # clean existing certificates information
     $command = 'rm -rf ' . $args{mount_point} . '/var/lib/puppet/ssl/*';
-    $self->getExecutorEContext->execute(command => $command);    
+    $self->getEContext->execute(command => $command);    
 
-    $DB::single = 1;
     my $tmpdir = tempdir(CLEANUP => 1);
     mkpath($tmpdir . "/ssl/certs");
     mkpath($tmpdir . "/ssl/private_keys");
 
     # We do not use 'mkdir' because of a strange guestmount bug that forbids us
     # to create a folder in the puppet folder if it's owner by the 'puppet' user
-    $self->getExecutorEContext->send(
+    $self->getEContext->send(
         src  => $tmpdir . "/ssl",
         dest => $args{mount_point} . '/var/lib/puppet/'
     );
 
     # copy master certificate to the image
-    $self->getExecutorEContext->send(
+    $self->getEContext->send(
         src  => '/var/lib/puppet/ssl/certs/ca.pem',
         dest => $args{mount_point} . '/var/lib/puppet/ssl/certs/ca.pem'
     );
     
     # copy host certificate to the image
-    $self->getExecutorEContext->send(
+    $self->getEContext->send(
         src  => '/var/lib/puppet/ssl/certs/' . $certificate,
         dest => $args{mount_point} . '/var/lib/puppet/ssl/certs/' . $certificate
     );
     
     # copy host private key to the image
-    $self->getExecutorEContext->send(
+    $self->getEContext->send(
         src  => '/var/lib/puppet/ssl/private_keys/' . $certificate,
         dest => $args{mount_point} . '/var/lib/puppet/ssl/private_keys/' . $certificate
     );

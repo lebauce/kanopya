@@ -380,12 +380,10 @@ sub applyPolicies {
         if ($name eq 'components') {
             for my $component (values %$value) {
                 # TODO: Check if the component is already installed
-                my $instance = $self->addComponentFromType(
+                $self->addComponent(
                     component_type_id       => $component->{component_type},
                     component_configuration => $component->{component_configuration}
                 );
-                # Insert default configuration for tables linked to component (when exists)
-                $instance->insertDefaultExtendedConfiguration();
             }
         }
         # Handle network interfaces cluster config
@@ -411,7 +409,8 @@ sub configureManagers {
 
     General::checkParams(args => \%args, optional => { 'managers' => undef });
 
-    my $kanopya = Entity->get(id => Kanopya::Config::get("executor")->{cluster}->{executor});
+    # Find the kanopya cluster
+    my $kanopya = $self->getKanopyaCluster();
 
     # Install new managers or/and new managers params if required
     if (defined $args{managers}) {
@@ -473,7 +472,7 @@ sub configureManagers {
     }
     
     if ($self->cluster_boot_policy eq Manager::HostManager->BOOT_POLICIES->{pxe_iscsi}) {
-        $self->addComponentFromType(
+        $self->addComponent(
             component_type_id => ClassType::ComponentType->find(hash => { component_name => "Openiscsi" })->id
         );
     }
@@ -682,41 +681,16 @@ sub addComponent {
     return $component;
 }
 
-sub getMasterNode {
+sub getSharedSystemimage {
     my $self = shift;
-    my $masternode;
 
-    eval {
-        $masternode = Node->find(hash => {
-                          service_provider_id => $self->id,
-                          master_node         => 1
-                      });
-    };
-    if ($@) {
-        return undef;
+    # Use the systemimage of the first found node
+    if (not $self->cluster_si_shared) {
+        throw Kanopya::Exception::Internal(
+                  error => "Should not get shared systemimage in a non si_shared cluster."
+              );
     }
-
-    return $masternode->host;
-}
-
-sub getMasterNodeIp {
-    my $self = shift;
-    my $master;
-
-    $master = $self->getMasterNode();
-    if (defined ($master)) {
-        return $master->adminIp;
-    }
-
-    return;
-}
-
-sub getMasterNodeSystemimage {
-    my $self = shift;
-
-    my $node = $self->findRelated(filters => ['nodes'], hash => { master_node => 1 });
-
-    return $node->systemimage;
+    return $self->findRelated(filters => ['nodes'])->systemimage;
 }
 
 
@@ -740,16 +714,18 @@ sub getHostEntries {
 
     General::checkParams(args => \%args, optional => { "components" => undef });
 
-    my $executor = Entity->get(id => Kanopya::Config::get("executor")->{cluster}->{executor});
+    my $kanopya = $self->getKanopyaCluster();
     my @host_entries;
 
     # we add each nodes
     foreach my $host ($self->getHosts()) {
         push @host_entries, {
-            fqdn    => $host->fqdn,
-            aliases => [ $host->node->node_hostname . "." . $executor->cluster_domainname,
-                         $host->node->node_hostname ],
-            ip      => $host->adminIp
+            fqdn    => $host->node->fqdn,
+            ip      => $host->adminIp,
+            aliases => [
+                $host->node->node_hostname . "." . $kanopya->cluster_domainname,
+                $host->node->node_hostname
+            ],
         };
     }
 
@@ -765,7 +741,6 @@ sub getHostEntries {
             }
         }
     }
-
     return @host_entries;
 }
 
@@ -817,9 +792,9 @@ sub getQoSConstraints {
 sub isLoadBalanced {
     my $self = shift;
 
-    # search for an potential 'loadbalanced' component
-    my $cluster_components = $self->getComponents(category => "all");
+    # Search for a potential 'loadbalanced' component
     my $is_loadbalanced = 0;
+    my $cluster_components = $self->getComponents(category => "all");
     foreach my $component (@{ $cluster_components }) {
         my $clusterization_type = $component->getClusterizationType();
         if ($clusterization_type && ($clusterization_type eq 'loadbalanced')) {
@@ -827,7 +802,6 @@ sub isLoadBalanced {
             last;
         }
     }
-
     return $is_loadbalanced;
 }
 
@@ -991,20 +965,20 @@ sub generateOverLoadNodemetricRules {
     my $service_provider_id = $self->getId();
 
     my $creation_conf = {
-        'memory' => {
-             formula         => 'id2 / id1',
-             comparator      => '>',
-             threshold       => 70,
-             rule_label      => '%MEM used too high',
-             rule_description => 'Percentage memory used is too high',
+        memory => {
+            formula          => 'id2 / id1',
+            comparator       => '>',
+            threshold        => 70,
+            rule_label       => '%MEM used too high',
+            rule_description => 'Percentage memory used is too high',
         },
-        'cpu' => {
+        cpu => {
             #User+Idle+Wait+Nice+Syst+Kernel+Interrupt
-             formula         => '(id5 + id6 + id7 + id8 + id9 + id10) / (id5 + id6 + id7 + id8 + id9 + id10 + id11)',
-             comparator      => '>',
-             threshold       => 70,
-             rule_label      => '%CPU used too high',
-             rule_description => 'Percentage processor used is too high',
+            formula          => '(id5 + id6 + id7 + id8 + id9 + id10) / (id5 + id6 + id7 + id8 + id9 + id10 + id11)',
+            comparator       => '>',
+            threshold        => 70,
+            rule_label       => '%CPU used too high',
+            rule_description => 'Percentage processor used is too high',
         },
     };
 
@@ -1014,7 +988,7 @@ sub generateOverLoadNodemetricRules {
             service_provider_id             => $service_provider_id,
         };
 
-        my $comb  = Entity::Combination::NodemetricCombination->new(%$combination_param);
+        my $comb = Entity::Combination::NodemetricCombination->new(%$combination_param);
 
         my $condition_param = {
             left_combination_id      => $comb->getAttr(name=>'nodemetric_combination_id'),
@@ -1041,7 +1015,6 @@ sub generateOverLoadNodemetricRules {
     Desc: create default nodemetric combination and clustermetric for the service provider
 
 =cut
-
 
 sub generateDefaultMonitoringConfiguration {
     my ($self, %args) = @_;
@@ -1163,7 +1136,7 @@ sub update {
 
     if (defined ($args{components})) {
         for my $component (@{$args{components}}) {
-            $self->addComponentFromType(component_type_id => $component->{component_type_id});
+            $self->addComponent(component_type_id => $component->{component_type_id});
         }
         delete $args{components};
 
@@ -1179,5 +1152,12 @@ sub update {
     }
 }
 
+sub getKanopyaCluster {
+    my $self  = shift;
+    my $class = ref($self) || $self;
+
+    # Centralize this ugly way to get the Kanopya cluster
+    return $class->find(hash => { cluster_name => 'Kanopya' });
+}
 
 1;

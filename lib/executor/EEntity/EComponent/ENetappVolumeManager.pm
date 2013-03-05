@@ -66,7 +66,7 @@ sub createDisk {
                      container_device     => $args{name},
                      aggregate_id         => $args{aggregate_id}
                  );
-    my $container = EFactory::newEEntity(data => $entity);
+    my $container = EEntity->new(data => $entity);
 
     if (exists $args{erollback} and defined $args{erollback}){
         $args{erollback}->add(
@@ -126,16 +126,15 @@ sub createExport {
     # Check if the disk is not already exported
     $self->SUPER::createExport(%args);
 
-    my $manager_ip = $self->service_provider->getMasterNodeIp;
-    my $entity = Entity::ContainerAccess::NfsContainerAccess->new(
-                     container_id            => $args{container}->getAttr(name => 'container_id'),
-                     export_manager_id       => $self->_getEntity->getAttr(name => 'entity_id'),
-                     container_access_export => $manager_ip . ':/vol/' . $args{export_name},
-                     container_access_ip     => $manager_ip,
-                     container_access_port   => 2049,
-                     options                 => $args{client_options},
-                 );
-    my $container_access = EFactory::newEEntity(data => $entity);
+    my $manager_ip = $self->getMasterNode->adminIp;
+    my $container_access = EEntity->new(entity => Entity::ContainerAccess::NfsContainerAccess->new(
+                               container_id            => $args{container}->getAttr(name => 'container_id'),
+                               export_manager_id       => $self->_getEntity->getAttr(name => 'entity_id'),
+                               container_access_export => $manager_ip . ':/vol/' . $args{export_name},
+                               container_access_ip     => $manager_ip,
+                               container_access_port   => 2049,
+                               options                 => $args{client_options},
+                           ));
 
     $log->info("Added NFS export for volume " . $args{container}->getAttr(name => "container_name"));
 

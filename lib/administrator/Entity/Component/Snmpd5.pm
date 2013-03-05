@@ -97,13 +97,24 @@ sub getNetConf {
 }
 
 sub getBaseConfiguration {
-	my $config = Kanopya::Config::get('executor');
-    my $kanopya_cluster = Entity->get(id => $config->{cluster}->{executor});
-    my $ip = $kanopya_cluster->getMasterNodeIp();
     return {
-        monitor_server_ip => $ip,
+        monitor_server_ip => '127.0.0.1',
         snmpd_options => "-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid"
     };
+}
+
+sub insertDefaultExtendedConfiguration {
+    my $self = shift;
+
+    # If the collector manager is the KanopyaCollector, set the server ip
+    # to Kanopya monitor master node.
+    my $collector;
+    eval {
+         $collector = $self->service_provider->getManager(manager_type => 'CollectorManager');
+    };
+    if (defined $collector and $collector->component_type->component_name eq 'Kanopyacollector') {
+        $self->monitor_server_ip($collector->getMasterNode->adminIp);
+    }
 }
 
 sub getPuppetDefinition {

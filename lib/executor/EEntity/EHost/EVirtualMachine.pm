@@ -22,7 +22,7 @@ use strict;
 use warnings;
 
 use Entity;
-use EFactory;
+use EEntity;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -66,7 +66,7 @@ sub getHypervisor {
     # Can not use $self->hypervisor to get the hypervisor as this call
     # do not return the concrete class of the hypervisor yet, and do not
     # return the corresponding EEntity.
-    return EFactory::newEEntity(data => Entity->get(id => $self->hypervisor->id));
+    return EEntity->new(data => Entity->get(id => $self->hypervisor->id));
 }
 
 sub halt {

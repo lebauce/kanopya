@@ -67,18 +67,11 @@ sub execute {
 
     if (not scalar(@hosts)) {
         $self->{context}->{cluster}->setState(state  => 'stopping');
-        $errmsg = "EStopCluster->execute : this cluster with id " . 
-                  "$self->{context}->{cluster}->getAttr(name => 'cluster_id') seems to have no node";
-        $log->error($errmsg);
+        $errmsg = "This cluster <" . $self->{context}->{cluster}->id . "> seems to have no node.";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
-    my $master_node_id = $self->{context}->{cluster}->getMasterNode->id;
     foreach my $host (@hosts) {
-        if ((scalar(@hosts)) > 1 and $master_node_id == $host->id){
-            next;
-        }
-
         # We stop nodes with state 'up' only
         # TODO: ma,ager others nodes states
         my ($state, $timestamp) = $host->getState();

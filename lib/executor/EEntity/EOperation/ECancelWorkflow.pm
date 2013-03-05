@@ -19,7 +19,7 @@ package EEntity::EOperation::ECancelWorkflow;
 use base "EEntity::EOperation";
 
 use Kanopya::Exceptions;
-use EFactory;
+use EEntity;
 use Entity::Workflow;
 
 use strict;
@@ -45,7 +45,7 @@ sub prepare {
 
     # Workflow is not an entity...
     my $workflow = Entity::Workflow->get(id => $self->{params}->{workflow_id});
-    $self->{context}->{workflow} = EFactory::newEEntity(data => $workflow);
+    $self->{context}->{workflow} = EEntity->new(data => $workflow);
 
     # Check if the workflow is 'running'
     if ($self->{context}->{workflow}->getAttr(name => 'state') ne 'running') {

@@ -37,7 +37,7 @@ sub addNode {
     # This handler needs specific configuration (depending on master node)
     if ( $data->{session_handler} eq "memcache" ) {
         # current node is the master node
-        my $masternodeip = $args{cluster}->getMasterNodeIp() || $args{host}->adminIp;
+        my $masternodeip = $self->getMasterNode ? $self->getMasterNode->adminIp : $args{host}->adminIp;
 
         # default port of memcached TODO: retrieve memcached port using component
         my $port = '11211';
@@ -53,7 +53,7 @@ sub addNode {
         data          => $data
     );
     
-    $self->getExecutorEContext->send(
+    $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc/php5/apache2',
     );

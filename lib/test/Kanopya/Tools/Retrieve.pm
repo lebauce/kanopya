@@ -67,9 +67,7 @@ sub retrieveCluster {
         $kanopya_cluster = Entity::ServiceProvider::Cluster->find(hash => $criteria);
     }
     else {
-        $kanopya_cluster = Entity::ServiceProvider::Cluster->find(
-                               hash => { cluster_name =>  'Kanopya' }
-                           );
+        $kanopya_cluster = Entity::ServiceProvider::Cluster->getKanopyaCluster();
     }
 
     return $kanopya_cluster;

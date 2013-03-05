@@ -36,7 +36,7 @@ use strict;
 use warnings;
 
 use General;
-use EFactory;
+use EEntity;
 use EEntity;
 use Kanopya::Exceptions;
 use Entity::Container::LocalContainer;
@@ -148,7 +148,7 @@ Generic method for creating an export of a container usable to copy it.
 sub createDefaultExport {
     my ($self, %args) = @_;
 
-    my $export_manager = EFactory::newEEntity(data => $self->getDefaultExportManager());
+    my $export_manager = EEntity->new(data => $self->getDefaultExportManager());
 
     # Temporary export the containers to copy contents
     my $container_access = $export_manager->createExport(
@@ -179,7 +179,7 @@ sub removeDefaultExport {
 
     General::checkParams(args => \%args, required => [ 'container_access' ]);
 
-    my $export_manager = EFactory::newEEntity(data => $self->getDefaultExportManager());
+    my $export_manager = EEntity->new(data => $self->getDefaultExportManager());
 
     $export_manager->removeExport(container_access => $args{container_access},
                                   erollback        => $args{erollback});

@@ -135,7 +135,7 @@ sub customizeInitramfs {
                                      
     $self->SUPER::customizeInitramfs(%args);
 
-    my $econtext = $self->getExecutorEContext;
+    my $econtext = $self->_host->getEContext;
     my $initrddir = $args{initrd_dir};
     my $systemimage = $args{host}->getNodeSystemimage;
     my $ifaces = $args{host}->getIfaces;
@@ -224,7 +224,7 @@ sub _initrd_iscsi {
     my ($self, %args) = @_;
     General::checkParams(args     =>\%args,
                          required => ['initrd_dir','target', 'portals', 'initiatorname']);
-    my $econtext = $self->getExecutorEContext;
+    my $econtext = $self->_host->getEContext;
     my $cmd;
     
     # generate send_targets and nodes info

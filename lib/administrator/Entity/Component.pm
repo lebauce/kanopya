@@ -20,7 +20,7 @@
 
 =begin classdoc
 
-This module is components generalization
+This module is components generalization.
 
 =end classdoc
 
@@ -43,12 +43,12 @@ my $errmsg;
 use constant ATTR_DEF => {
     service_provider_id => {
         pattern        => '^\d*$',
-        is_mandatory   => 0,
+        is_mandatory   => 1,
         is_extended    => 0,
         is_editable    => 0
     },
     component_type_id => {
-        label        => 'Component type',
+        label          => 'Component type',
         pattern        => '^\d*$',
         type           => 'relation',
         relation       => 'single',
@@ -71,14 +71,16 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        getConf   => {
+        getConf => {
             description => 'get configuration of the component.',
         },
-        setConf   => {
+        setConf => {
             description => 'set configuration of the component.',
         },
     }
-};
+}
+
+my $merge = Hash::Merge->new('LEFT_PRECEDENT');
 
 sub new {
     my $class = shift;
@@ -94,21 +96,17 @@ sub new {
     my $component_name    = $1;
     my $component_version = $2;
 
-    # Set base configuration if not passed to this constructor
-    my $config = (%args) ? \%args : $class->getBaseConfiguration();
-    my $template_id = undef;
-    if (exists $args{component_template_id} and defined $args{component_template_id}) {
-        $template_id = $args{component_template_id};
-    }
+    # Merge the base configuration with args
+    %args = %{ $merge->merge(\%args, $class->getBaseConfiguration()) };
 
     # We set the corresponding component_type
     my $hash = { component_name => $component_name };
-    if (defined ($component_version) && $component_version) {
+    if (defined $component_version && $component_version) {
         $hash->{component_version} = $component_version;
     }
+    $args{component_type_id} = ClassType::ComponentType->find(hash => $hash)->id;
 
-    return $class->SUPER::new(component_type_id => ClassType::ComponentType->find(hash => $hash)->id,
-                              %$config);
+    return $class->SUPER::new(%args);
 }
 
 sub search {
@@ -199,10 +197,28 @@ sub remove {
 
     my @managers = ServiceProviderManager->search( hash => { manager_id => $self->id } );
     for my $manager (@managers) {
-        $manager->delete();
+        $manager->remove();
     }
 
-    $self->delete();
+    $self->remove();
+}
+
+sub registerNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'node' ],
+                         optional => { 'master_node' => 0 });
+
+    ComponentNode->new(component_id => $self->id,
+                       node_id      => $args{node}->id,
+                       master_node  => $args{master_node});
+}
+
+sub getMasterNode {
+    my $self = shift;
+
+    return $self->findRelated(filters => [ 'component_nodes' ], hash => { master_node => 1 })->node;
 }
 
 =head2 toString
@@ -278,6 +294,5 @@ sub needBridge { return 0; }
 sub getHostsEntries { return; }
 
 sub getPuppetDefinition { return ""; }
-
 
 1;

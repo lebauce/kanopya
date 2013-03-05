@@ -1028,14 +1028,11 @@ sub registerVm {
         #promote new virtual machine class to a vsphere5Vm one
         $self->addVM(host => $vm, guest_id => $vm_view->config->guestId, uuid => $vm_uuid);
 
-        my $node = Node->new(
-                       service_provider_id => $service_provider->id,
-                       host_id             => $vm->id,
-                       master_node         => 1,
-                       node_number         => 1,
-                       node_state          => 'in:' . $time,
-                       node_hostname       => $service_provider_renamed,
-                   );
+        # Register the node
+        $service_provider->registerNode(host     => $vm,
+                                        hostname => $service_provider_renamed,
+                                        number   => 1,
+                                        state    => 'in');
 
         return $service_provider;
     }
@@ -1212,14 +1209,11 @@ sub registerHypervisor {
         #promote new hypervisor class to a vsphere5Hypervisor one
         $self->addHypervisor(host => $hv, datacenter_id => $datacenter->id, uuid => $hv_uuid);
 
-        my $node = Node->new(
-                       service_provider_id => $service_provider->id,
-                       host_id             => $hv->id,
-                       master_node         => 1,
-                       node_number         => 1,
-                       node_state          => 'in:'.$time,
-                       node_hostname       => $service_provider_renamed,
-                   );
+        # Register the node
+        $service_provider->registerNode(host     => $hv,
+                                        hostname => $service_provider_renamed,
+                                        number   => 1,
+                                        state    => 'in');
 
         return $service_provider;
     }
@@ -1400,14 +1394,12 @@ sub registerCluster {
                 uuid          => $hypervisor_view->hardware->systemInfo->uuid,
             );
 
-            my $node = Node->new(
-                           service_provider_id => $service_provider->id,
-                           host_id             => $hv->id,
-                           master_node         => 0,
-                           node_number         => $hv_number + 1,
-                           node_state          => 'in:' . $time,
-                           node_hostname       => $hypervisor_view->name,
-                       );
+            # Register the node
+            $service_provider->registerNode(host     => $hv,
+                                            hostname => $hypervisor_view->name,
+                                            number   => $hv_number + 1,
+                                            state    => 'in');
+
         }
         return $service_provider;
     }

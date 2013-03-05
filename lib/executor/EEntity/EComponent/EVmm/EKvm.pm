@@ -20,7 +20,7 @@ use warnings;
 
 use Entity;
 use Entity::ContainerAccess;
-use EFactory;
+use EEntity;
 use General;
 use CapacityManagement;
 use XML::Simple;
@@ -33,13 +33,12 @@ use Hash::Merge qw(merge);
 my $log = get_logger("");
 my $errmsg;
 
-my $resources_keys = {
-    ram => { name => 'currentMemory/0/content', factor => 1024 },
-    cpu => { name => 'vcpu/0/content', factor => 1 }
-};
+my $resources_keys = { ram => { name => 'currentMemory/0/content', factor => 1024 },
+                       cpu => { name => 'vcpu/0/content', factor => 1 } };
 
 sub addNode {
     my ($self, %args) = @_;
+
     General::checkParams(
         args     => \%args,
         required => [ 'host', 'mount_point', 'cluster' ]
@@ -50,12 +49,11 @@ sub addNode {
 
 sub configureNode {
     my ($self, %args) = @_;
+
     General::checkParams(
         args     => \%args,
         required => ['cluster', 'host', 'mount_point']
     );
-
-    my $masternodeip = $args{cluster}->getMasterNodeIp();
 
     $log->debug('generate /lib/udev/rules.d/60-qemu-kvm.rules');
     $self->_generateQemuKvmUdev(%args);
@@ -76,7 +74,7 @@ sub configureNode {
         if (defined $repo->{datastore_id}) {
             my $dir = $args{mount_point} . '/var/lib/one/datastores/' . $repo->{datastore_id};
             my $cmd = "mkdir -p $dir";
-            $self->getExecutorEContext->execute(command => $cmd);
+            $self->_host->getEContext->execute(command => $cmd);
         }
     }
 }
@@ -118,7 +116,7 @@ sub _generateQemuKvmUdev {
 
     my $command = "echo 'KERNEL==\"kvm\", OWNER==\"oneadmin\", GROUP==\"kvm\", " .
                   "MODE==\"0660\"' > $args{mount_point}/lib/udev/rules.d/60-qemu-kvm.rules";
-    $self->getExecutorEContext->execute(command => $command);
+    $self->_host->getEContext->execute(command => $command);
 }
 
 =head2 getAvailableMemory
@@ -273,10 +271,10 @@ sub getMinEffectiveRamVm {
     my @virtual_machines = $args{host}->virtual_machines;
 
     my $min_vm  = shift @virtual_machines;
-    my $min_ram = EFactory::newEEntity(data => $min_vm)->getRamUsedByVm->{total};
+    my $min_ram = EEntity->new(data => $min_vm)->getRamUsedByVm->{total};
 
     for my $virtual_machine (@virtual_machines) {
-        my $ram = EFactory::newEEntity(data => $virtual_machine)->getRamUsedByVm->{total};
+        my $ram = EEntity->new(data => $virtual_machine)->getRamUsedByVm->{total};
         if ($ram < $min_ram) {
             $min_ram = $ram;
             $min_vm  = $virtual_machine;
@@ -292,7 +290,7 @@ sub getMinEffectiveRamVm {
 sub iaas {
     my ($self, %args) = @_;
 
-    return EFactory::newEEntity(data => $self->getAttr(name => "iaas", deep => 1));
+    return EEntity->new(data => $self->getAttr(name => "iaas", deep => 1));
 }
 
 1;

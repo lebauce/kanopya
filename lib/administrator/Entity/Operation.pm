@@ -433,7 +433,7 @@ sub getParams {
             if ($tag eq 'context') {
                 # Try to instanciate value as an entity.
                 eval {
-                    $value = EFactory::newEEntity(data => Entity->get(id => $value));
+                    $value = EEntity->new(data => Entity->get(id => $value));
                 };
                 if ($@) {
                     # Can skip errors on entity instanciation. Could be usefull when

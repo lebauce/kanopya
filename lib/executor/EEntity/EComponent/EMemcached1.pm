@@ -41,7 +41,7 @@ sub configureNode {
         data          => $data 
     );
     
-     $self->getExecutorEContext->send(
+     $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc'
     );
@@ -52,11 +52,9 @@ sub addNode {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => ['cluster','mount_point', 'host']);
-
-    my $masternodeip = $args{cluster}->getMasterNodeIp();
     
     # Memcached run only on master node
-    if(not defined $masternodeip) {
+    if (not defined $self->getMaterNode) {
         # no masternode defined, this host becomes the masternode
             
         $self->configureNode(%args);

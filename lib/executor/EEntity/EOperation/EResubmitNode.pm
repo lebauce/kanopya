@@ -65,7 +65,7 @@ sub prepare {
 
     $self->{context}->{vm_cluster} = $node->service_provider;
 
-    $self->{context}->{cloudmanager_comp} = EFactory::newEEntity(
+    $self->{context}->{cloudmanager_comp} = EEntity->new(
                                                 data => Entity->get(
                                                     id => $self->{context}->{host}->host_manager_id
                                                 )
@@ -140,7 +140,7 @@ sub execute {
 sub postrequisites {
     my ($self, %args)  = @_;
 
-    $self->{context}->{cloudmanager_comp} = EFactory::newEEntity(
+    $self->{context}->{cloudmanager_comp} = EEntity->new(
                                                 data => $self->{context}->{host}->host_manager
                                             );
 
@@ -201,7 +201,7 @@ sub postrequisites {
         my $component_name = $component->component_type->component_name;
         $log->debug("Browse component: " . $component_name);
 
-        my $ecomponent = EFactory::newEEntity(data => $component);
+        my $ecomponent = EEntity->new(data => $component);
 
         if (not $ecomponent->isUp(host => $self->{context}->{host}, cluster =>$self->{context}->{vm_cluster})) {
             $log->info("Component <$component_name> not yet operational on host <$host_id>");

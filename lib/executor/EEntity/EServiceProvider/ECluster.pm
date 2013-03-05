@@ -25,7 +25,7 @@ use Entity;
 use Entity::ServiceProvider::Cluster;
 use General;
 use Kanopya::Config;
-use EFactory;
+use EEntity;
 use EEntity;
 use Entity::NetconfRole;
 
@@ -52,7 +52,7 @@ sub create {
     # Create cluster directory
     my $dir = "$config->{clusters}->{directory}/" . $self->cluster_name;
     my $command = "mkdir -p $dir";
-    $self->getExecutorEContext->execute(command => $command);
+    $self->_host->getEContext->execute(command => $command);
     $log->debug("Execution : mkdir -p $dir");
 
     # set initial state to down
@@ -103,7 +103,7 @@ sub create {
     if ($@) {
         $log->debug("Automatically add the admin interface as it is not defined.");
 
-        my $kanopya   = Entity::ServiceProvider::Cluster->find(hash => { cluster_name => 'Kanopya' });
+        my $kanopya   = Entity::ServiceProvider::Cluster->getKanopyaCluster();
         my $interface = Entity::Interface->find(hash => {
                             service_provider_id => $kanopya->id,
                             'netconf_interfaces.netconf.netconf_role.netconf_role_id' => $adminrole->id
@@ -163,7 +163,7 @@ sub generateResolvConf {
         data          => $data
     );
 
-    $self->getExecutorEContext->send(
+    $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc/resolv.conf'
     );
@@ -215,7 +215,7 @@ sub stopNode {
     $log->info('Processing cluster components configuration for this node');
 
     foreach my $component (@components) {
-        EFactory::newEEntity(data => $component)->stopNode(
+        EEntity->new(data => $component)->stopNode(
             host    => $args{host},
             cluster => $self
         );
@@ -246,25 +246,18 @@ sub postStopNode {
 
     # Ask to all cluster component if they are ready for node addition.
     foreach my $component (@components) {
-        EFactory::newEEntity(data => $component)->postStopNode(
+        EEntity->new(data => $component)->postStopNode(
             host    => $args{host},
             cluster => $self
         );
     }
 }
 
-sub getEContext {
-    my $self = shift;
-
-    return EFactory::newEContext(ip_source      => $self->{_executor}->getMasterNodeIp(),
-                                 ip_destination => $self->getMasterNodeIp());
-}
-
 sub reconfigure {
     my $self = shift;
 
     my $agent = $self->getComponent(category => "Configurationagent");
-    my $eagent = EFactory::newEEntity(data => $agent);
+    my $eagent = EEntity->new(data => $agent);
     $eagent->applyConfiguration(cluster => $self);
 }
 
