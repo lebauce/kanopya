@@ -106,7 +106,7 @@ sub deactivate {
     # Get instances of container accesses from systemimages root container
     $log->info("Remove all container accesses");
     eval {
-        for my $container_access (@{ $self->_getEntity->getDevice->getAccesses }) {
+        for my $container_access ($self->container_accesses) {
             my $export_manager = EFactory::newEEntity(data => $container_access->getExportManager);
             $container_access  = EFactory::newEEntity(data => $container_access);
 
@@ -144,14 +144,13 @@ sub remove {
 
     General::checkParams(args => \%args, required => [ "erollback" ]);
 
+    my $container = EFactory::newEEntity(data => $self->getContainer);
+
     if ($self->active) {
         $self->deactivate(erollback => $args{erollback});
     }
 
-    my $container;
     eval {
-        $container = EFactory::newEEntity(data => $self->getDevice);
-
         # Remove system image container.
         $log->info("Systemimage container deletion");
 
