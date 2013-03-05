@@ -34,7 +34,11 @@ use Node;
 use Entity::NodemetricCondition;
 use Entity::ServiceProvider;
 use VerifiedNoderule;
+use WorkflowNoderule;
+
 use List::MoreUtils qw {any} ;
+
+use Data::Dumper;
 
 # logger
 use Log::Log4perl "get_logger";
@@ -104,21 +108,15 @@ sub new {
 sub setUndefForEachNode{
     my ($self) = @_;
     #ADD A ROW IN VERIFIED_NODERULE TABLE indicating undef data
-#    my $extcluster = Entity::ServiceProvider::Externalcluster->get(
-#                        'id' => $self->getAttr(name => 'service_provider_id'),
-#                     );
-    my $service_provider = Entity::ServiceProvider->get(
-                               'id' => $self->service_provider_id,
-                           );
 
-    my $nodes = $service_provider->getNodes();
+    my @nodes = $self->service_provider->nodes;
 
-    foreach my $node (@$nodes) {
+    foreach my $node (@nodes) {
         $self->{_dbix}
         ->verified_noderules
         ->update_or_create({
-            verified_noderule_node_id    =>  $node->{'id'},
-            verified_noderule_state              => 'undef',
+            verified_noderule_node_id   => $node->id,
+            verified_noderule_state     => 'undef',
         });
     }
 }
@@ -141,39 +139,57 @@ sub getDependentConditionIds {
     return keys %ids
 }
 
-sub evalOnOneNode{
-    my $self = shift;
-    my %args = @_;
 
-    my $monitored_values_for_one_node = $args{monitored_values_for_one_node};
+=pod
 
-    my $formula = $self->getAttr(name => 'formula');
+=begin classdoc
 
-    #Split nodemetric_rule id from $formula
-    my @array = split(/(id\d+)/,$formula);
+Evaluate the rule. Call evaluation of all depending conditions then evaluate the logical formula
+of the rule according to conditions evaluation.
 
-    #replace each id by its evaluation
-    for my $element (@array) {
-        if( $element =~ m/id(\d+)/){
-            $element = Entity::NodemetricCondition->get('id'=>substr($element,2))
-                                          ->evalOnOneNode(
-                                            'monitored_values_for_one_node' => $monitored_values_for_one_node
-                                          );
-            if(not defined $element){
-                return undef;
-            }
+@return hash reference {node_id => 1} is rule is verified for node node_id
+                       {node_id => 0} otherwise
 
-        }
+=end classdoc
+
+=cut
+
+sub evaluate {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { 'nodes' => undef });
+
+    my @nodes = (defined $args{nodes}) ? @{$args{nodes}}
+                                          : $self->service_provider->nodes;
+
+    if (@nodes == 0) {
+        return {};
     }
-    my $res = undef;
-    my $arrayString = '$res = '."(@array)";
 
-    $log->info("NM rule evaluation: $arrayString");
-    #Evaluate the logic formula
-    eval $arrayString;
+    my @nm_cond_ids = ($self->formula =~ m/id(\d+)/g);
 
-    return ($res)?1:0;
-};
+    my %values = map { $_ => Entity::NodemetricCondition->get('id'=>$_)->evaluate(nodes => \@nodes)
+                 } @nm_cond_ids;
+
+
+    my %evaluation_for_each_node;
+    NODE_ID:
+    for my $node (@nodes) {
+        my %values_node = map { $_ => $values{$_}{$node->id}} @nm_cond_ids;
+
+        for my $value (values %values_node) {
+            if (!defined $value) {
+                $evaluation_for_each_node{$node->id} = undef; next NODE_ID;
+            }
+        }
+
+        my $formula = $self->formula;
+        $formula =~ s/id(\d+)/$values_node{$1}/g;
+        $evaluation_for_each_node{$node->id} = (eval $formula) ? 1 : 0;
+        $log->debug('NM rule evaluation for node <'.$node->id.">: $formula => ".$evaluation_for_each_node{$node->id});
+    }
+    return \%evaluation_for_each_node;
+}
 
 sub isVerifiedForANode{
     my ($self, %args) = @_;
