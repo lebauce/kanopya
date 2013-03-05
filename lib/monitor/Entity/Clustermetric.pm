@@ -153,13 +153,16 @@ sub getValuesFromDB{
                                           );
     return \%rep;
 }
-sub getLastValueFromDB{
+
+
+sub evaluate {
     my $self = shift;
 	my $id = $self->getAttr(name=>'clustermetric_id');
     my %last_value = RRDTimeData::getLastUpdatedValue(clustermetric_id => $id);
     my @indicator = (values %last_value);
     return $indicator[0];
 }
+
 
 =head2 regenTimeDataStores
 
