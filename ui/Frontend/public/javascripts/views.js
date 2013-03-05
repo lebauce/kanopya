@@ -43,8 +43,15 @@ function reload_content(container_id, elem_id, keep_last) {
             handler(container_id, elem_id);
 
             // Fill info panel
-            if (_content_handlers[container_id]['info']) {
-                $('#info-container').load(_content_handlers[container_id]['info'].url);
+            var info_content = _content_handlers[container_id]['info'];
+            if (info_content) {
+                if (info_content.url) {
+                    $('#info-container').load(info_content.url);
+                } else if (info_content.img) {
+                    $('#info-container').append($('<img>', {src: info_content.img, width: '150'}));
+                } else {
+                    $('#info-container').append(info_content);
+                }
             } else {
                 $('#info-container').html('');
             }
