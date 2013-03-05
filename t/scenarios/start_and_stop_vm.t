@@ -247,7 +247,7 @@ sub _check_init {
 
     $hv_cluster = $hv1->node->inside;
 
-    my $hv_ecluster = EFactory::newEEntity(data => $hv_cluster);
+    my $hv_ecluster = EEntity->new(data => $hv_cluster);
     my $host = $hv_ecluster->addNode;
     my @spms = $one->service_provider_managers;
 
@@ -275,7 +275,7 @@ sub _check_vm_ram {
         throw Kanopya::Exception(error => 'vm ram value in DB is wrong');
     }
 
-    my $evm = EFactory::newEEntity(data => $vm);
+    my $evm = EEntity->new(data => $vm);
 
     if (!($evm->getTotalMemory == $ram)) {
         throw Kanopya::Exception(error => 'vm real ram value is wrong');

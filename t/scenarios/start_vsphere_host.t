@@ -59,8 +59,7 @@ eval {
     my $kanopya_cluster;
     my $physical_hoster;
     lives_ok {
-        $kanopya_cluster = Entity::ServiceProvider::Cluster->find(
-                               hash => { cluster_name => 'kanopya' });
+        $kanopya_cluster = Entity::ServiceProvider::Cluster->getKanopyaCluster;
         $physical_hoster = $kanopya_cluster->getHostManager();
     } 'Retrieve Kanopya cluster';
 
@@ -69,7 +68,7 @@ eval {
 
     my $disk_manager;
     lives_ok {
-        $disk_manager = EFactory::newEEntity(
+        $disk_manager = EEntity->new(
                             data => $kanopya_cluster->getComponent(name    => "Lvm",
                                                                    version => 2)
                         );
@@ -79,7 +78,7 @@ eval {
 
     my $export_manager;
     lives_ok {
-        $export_manager = EFactory::newEEntity(
+        $export_manager = EEntity->new(
                               data => $kanopya_cluster->getComponent(name    => "Iscsitarget",
                                                                      version => 1)
                           );
@@ -89,7 +88,7 @@ eval {
 
     my $nfs_manager;
     lives_ok {
-        $nfs_manager = EFactory::newEEntity(
+        $nfs_manager = EEntity->new(
                            data => $kanopya_cluster->getComponent(name    => "Nfsd",
                                                                   version => 3)
                        );
@@ -100,8 +99,8 @@ eval {
     my $nfs;
     eval {
         $nfs = Entity::ContainerAccess::NfsContainerAccess->find (hash => {
-            container_access_ip     => $kanopya_cluster->getMasterNodeIp,
-            container_access_export => $kanopya_cluster->getMasterNodeIp . ":/nfsexports/new_img_repo"
+            container_access_ip     => $nfs_manager->getMasterNode->adminIp,
+            container_access_export => $nfs_manager->getMasterNode->adminIp . ":/nfsexports/new_img_repo"
         });
     };
     

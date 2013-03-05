@@ -70,7 +70,7 @@ eval {
 
     my $vsphereInstance;
     lives_ok {
-        $vsphereInstance = $cluster->addComponentFromType(
+        $vsphereInstance = $cluster->addComponent(
                                component_type_id => ClassType::ComponentType->find(hash => {
                                                         component_name => 'Vsphere'})->id,
                            );

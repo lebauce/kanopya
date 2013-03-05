@@ -243,11 +243,11 @@ sub lm_vm_down {
     # we want to live migrate a VM down (vm1_hv1) from hv1 to hv2
     my @hv1_vms = $hv1->virtual_machines;
     my $vm1_hv1 = $hv1_vms[0];
-    my $evm1_hv1 = EFactory::newEEntity(data => $vm1_hv1);
+    my $evm1_hv1 = EEntity->new(data => $vm1_hv1);
 
     # shutdown VM
     my $openNebulaIaas = $hv1->vmm->iaas;
-    my $eopenNebulaIaas = EFactory::newEEntity(data => $openNebulaIaas);
+    my $eopenNebulaIaas = EEntity->new(data => $openNebulaIaas);
     diag('#Shutdown VM');
     my $cmd1 = $eopenNebulaIaas->one_command('onevm shutdown '. $vm1_hv1->onevm_id);
     $eopenNebulaIaas->getEContext->execute(command => $cmd1);
@@ -267,7 +267,7 @@ sub lm_vm_down {
 sub lm_hypervisor_down {
     # now we should have 2 VMs on hv1 and 2 VMs on hv2
     # we want to live migrate a VM (vm1_hv1) on a host down (hv2)
-    my $ehv2 = EFactory::newEEntity(data => $hv2);
+    my $ehv2 = EEntity->new(data => $hv2);
     eval {
         $ehv2->getContext->execute(command => 'ifdown eth0 ; ifdown eth1');
     };

@@ -48,7 +48,7 @@ sub main {
             externalcluster_name => 'Test Hypervisor Externacluster',
     );
 
-    $one = $service_provider_hypervisors->addComponentFromType(
+    $one = $service_provider_hypervisors->addComponent(
         component_type_id => ClassType::ComponentType->find(
             hash => {
                 component_name => 'Opennebula',

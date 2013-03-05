@@ -412,7 +412,7 @@ sub resubmit_vm_on_state {
 
         $orchestrator->manage_aggregates();
 
-        my $evm = EFactory::newEEntity(data => $vm);
+        my $evm = EEntity->new(data => $vm);
 
         eval {
             $evm->getEContext->execute(command => 'ifconfig eth0 down ; ifconfig eth1 down');
@@ -543,7 +543,7 @@ sub resubmit_hypervisor {
         die '1st hv has not 2 vms' if (scalar @hv1_vms != 2);
         die '2nd hv has not 2 vms' if (scalar @hv2_vms != 2);
 
-        my $ehyp = EFactory::newEEntity(data => $hv2);
+        my $ehyp = EEntity->new(data => $hv2);
 
         eval {
             $ehyp->getEContext->execute(command => 'ifconfig eth0 down ; ifconfig eth1 down');
@@ -660,7 +660,7 @@ sub _check_vm_ram {
         die 'vm ram value in DB is wrong';
     }
 
-    my $evm = EFactory::newEEntity(data => $vm);
+    my $evm = EEntity->new(data => $vm);
 
     if (!($evm->getTotalMemory == $ram)) {
         die 'vm real ram value is wrong';
@@ -678,7 +678,7 @@ sub _check_vm_cpu {
         die 'vm cpu value in DB is wrong';
     }
 
-    my $evm = EFactory::newEEntity(data => $vm);
+    my $evm = EEntity->new(data => $vm);
 
     if (!($evm->getTotalCpu == $cpu)) {
         die 'real cpu value is wrong';
