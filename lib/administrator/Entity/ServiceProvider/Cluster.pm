@@ -33,6 +33,7 @@ use warnings;
 
 use General;
 use Node;
+use Entity::CollectorIndicator;
 use Indicatorset;
 use Collect;
 use BillingManager;
@@ -524,21 +525,18 @@ sub configureBillingLimits {
         foreach my $name (keys %{$args{billing_limits}}) {
             my $value = $args{billing_limits}->{$name};
             Entity::Billinglimit->new(
-                start               => $value->{start},
-                ending              => $value->{ending},
-                type                => $value->{type},
-                soft                => $value->{soft},
+                %$value,
                 service_provider_id => $self->getAttr(name => 'entity_id'),
-                repeats             => $value->{repeats},
-                repeat_start_time   => $value->{repeat_start_time},
-                repeat_end_time     => $value->{repeat_end_time},
-                value               => $value->{value}
             );
         }
 
         my @indicators = qw(Memory Cores);
         foreach my $name (@indicators) {
-            my $indicator = Indicator->find(hash => { indicator_name => $name });
+            my $collector_manager = $self->getManager(manager_type => "collector_manager");
+            my $indicator = Entity::CollectorIndicator->find(
+                                hash => { "indicator.indicator_name" => $name,
+                                          "collector_manager_id"     => $collector_manager->id }
+                            );
 
             my $cm = Entity::Clustermetric->new(
                 clustermetric_label                    => "Billing" . $name,

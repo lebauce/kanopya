@@ -59,49 +59,49 @@ use constant POLICY_ATTR_DEF => {
                     type     => 'relation',
                     relation => 'single',
                 },
-                limit_start => {
+                start => {
                     label        => 'Start',
                     type         => 'date',
                     is_mandatory => 1,
                     is_editable  => 1,
                 },
-                limit_ending => {
+                ending => {
                     label        => 'End',
                     type         => 'date',
                     is_mandatory => 1,
                     is_editable  => 1,
                 },
-                limit_type => {
+                type => {
                     label   => 'Type',
                     type    => 'enum',
                     options => [ 'ram', 'cpu' ],
                     # Add a mechanism to have mutliple units in function of the option.
                     is_editable  => 1,
                 },
-                limit_soft => {
+                soft => {
                     label        => 'Soft limit ?',
                     type         => 'boolean',
                     is_mandatory => 1,
                     is_editable  => 1,
                 },
-                limit_value => {
+                value => {
                     label   => 'Value',
                     type    => 'string',
                     pattern => '^[0-9.]+$',
                     is_editable  => 1,
                 },
-                limit_repeats => {
+                repeats => {
                     label   => 'Repeat',
                     type    => 'enum',
                     options => ['Daily'],
                     is_editable  => 1,
                 },
-                limit_repeat_start_time => {
+                repeat_start_time => {
                     label   => 'Repeat start',
                     type    => 'time',
                     is_editable  => 1,
                 },
-                limit_repeat_end_time => {
+                repeat_end_time => {
                     label   => 'Repeat end',
                     type    => 'time',
                     is_editable  => 1,
@@ -156,9 +156,9 @@ sub getPolicyDef {
     };
 
     push @{ $attributes->{displayed} }, {
-        'billing_limits' => [ 'limit_start', 'limit_ending', 'limit_type',
-                              'limit_soft', 'limit_value', 'limit_repeats',
-                              'limit_repeat_start_time', 'limit_repeat_end_time' ]
+        'billing_limits' => [ 'start', 'ending', 'type',
+                              'soft', 'value', 'repeats',
+                              'repeat_start_time', 'repeat_end_time' ]
     };
 
     $self->setValues(attributes          => $attributes,
