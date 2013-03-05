@@ -566,24 +566,6 @@ sub clone {
     );
 }
 
-
-=pod
-
-=begin classdoc
-
-Method from NodemetricCombination call from mother class. Return the same value than >computeLastValue()
-
-@return computeLastValue() method
-
-=end classdoc
-
-=cut
-
-sub computeValueFromMonitoredValues {
-    my $self = shift;
-    return $self->computeLastValue()
-}
-
 # Virtual attribute
 sub combination_formula_string {
     my $self = shift;
