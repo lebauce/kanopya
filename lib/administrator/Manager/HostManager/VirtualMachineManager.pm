@@ -55,6 +55,7 @@ sub methods {
         hypervisors => {
             description => 'get the hypervisors manzaged by the cloud component',
             perm_holder => 'entity',
+            is_virtual  => 1
         },
     };
 }
