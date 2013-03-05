@@ -16,7 +16,7 @@ my $log = get_logger("");
 lives_ok {
     use BaseDB;
     use Aggregator;
-    use Orchestrator;
+    use RulesEngine;
     use Entity::ServiceProvider::Externalcluster;
     use Entity::Component::MockMonitor;
     use Entity::Clustermetric;
@@ -30,11 +30,11 @@ BaseDB->beginTransaction;
 my ($indic1, $indic2);
 my $service_provider;
 my $aggregator;
-my $orchestrator;
+my $rulesengine;
 
 eval{
-    $aggregator   = Aggregator->new();
-    $orchestrator = Orchestrator->new();
+    $aggregator  = Aggregator->new();
+    $rulesengine = RulesEngine->new();
 
     $service_provider = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Service Provider',
@@ -280,7 +280,7 @@ sub test_alerts_orchestrator {
         value           => $mock_conf
     );
 
-    $orchestrator->oneRun();
+    $rulesengine->oneRun();
 
     @alerts = Alert->search (hash => {});
     is(scalar @alerts, 0, 'Check no alert after orchestrator');
@@ -294,7 +294,7 @@ sub test_alerts_orchestrator {
         value           => $mock_conf
     );
 
-    $orchestrator->oneRun();
+    $rulesengine->oneRun();
 
     @alerts = Alert->search (hash => {});
     is (scalar @alerts, 1, 'Check one alert');
@@ -305,7 +305,7 @@ sub test_alerts_orchestrator {
     is ($first_alert->alert_message, $alert_msg, 'Check alert message');
     is ($first_alert->alert_active, 1, 'Check alert is active');
 
-    $orchestrator->oneRun();
+    $rulesengine->oneRun();
 
     @alerts = Alert->search (hash=>{});
     is (scalar @alerts, 1, 'Check no more alert created');
@@ -323,7 +323,7 @@ sub test_alerts_orchestrator {
         value           => $mock_conf
     );
 
-    $orchestrator->oneRun();
+    $rulesengine->oneRun();
 
     @alerts = Alert->search (hash=>{});
     is (scalar @alerts, 1, 'Check no more alert created');
@@ -341,7 +341,7 @@ sub test_alerts_orchestrator {
         value           => $mock_conf
     );
 
-    $orchestrator->oneRun();
+    $rulesengine->oneRun();
 
     @alerts = Alert->search (hash=>{}, order_by => 'alert_id asc');
     is (scalar @alerts, 2, 'Check one new alert created');

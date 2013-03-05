@@ -27,7 +27,7 @@ Log::Log4perl->easy_init({
 
 use BaseDB;
 
-use Orchestrator;
+use RulesEngine;
 use Aggregator;
 use Entity::CollectorIndicator;
 use Entity::ServiceProvider::Externalcluster;
@@ -49,7 +49,7 @@ use Entity::Rule::AggregateRule;
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::TestUtils 'expectedException';
 
-my $testing = 1;
+my $testing = 0;
 
 my $service_provider;
 
@@ -63,7 +63,7 @@ sub main {
     }
 
     sco_workflow_triggered_by_rule();
-    clean_infra();
+#    clean_infra();
 
     if ($testing == 1) {
         BaseDB->rollbackTransaction;
@@ -99,7 +99,7 @@ sub sco_workflow_triggered_by_rule {
         no_default_conf => 1,
     );
 
-    my @indicators = Entity::CollectorIndicator->search (hash => {collector_manager_id => $mock_monitor->id});
+    my @indicators = Entity::CollectorIndicator->search(hash => {collector_manager_id => $mock_monitor->id});
 
     my $agg_rule_ids  = _service_rule_objects_creation(indicators => \@indicators);
     my $node_rule_ids = _node_rule_objects_creation(indicators => \@indicators);
@@ -107,8 +107,8 @@ sub sco_workflow_triggered_by_rule {
     $aggregator->update();
 
     # Launch orchestrator with no workflow to trigger
-    my $orchestrator = Orchestrator->new();
-    $orchestrator->oneRun();
+    my $rulesengine = RulesEngine->new();
+    $rulesengine->oneRun();
 
     diag('Check rules verification');
     check_rule_verification(
@@ -179,7 +179,7 @@ sub sco_workflow_triggered_by_rule {
     );
 
     #Launch orchestrator a workflow must be enqueued
-    $orchestrator->oneRun();
+    $rulesengine->oneRun();
 
     my ($node_workflow, $service_workflow, $sco_operation, $service_sco_operation);
     lives_ok {
@@ -220,7 +220,6 @@ sub sco_workflow_triggered_by_rule {
 
         #Execute operation 4 times (1 time per trigerred rule * 2 (op confirmation + op workflow))
         Kanopya::Tools::Execution->nRun(n => 4);
-
 
         #  Check node rule output
         diag('Check postreported operation');
@@ -343,7 +342,7 @@ sub sco_workflow_triggered_by_rule {
         $agg_rule2->save();
 
         # Launch Orchestrator
-        $orchestrator->oneRun();
+        $rulesengine->oneRun();
 
         expectedException {
             VerifiedNoderule->find(hash => {

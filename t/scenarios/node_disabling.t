@@ -108,7 +108,7 @@ sub node_disabling {
     my $node_rule_ids = _node_rule_objects_creation(indicators => \@indicators);
 
     diag('Check if no values before launching aggregator');
-    if ( not defined $acomb1->computeLastValue ) {
+    if ( not defined $acomb1->evaluate() ) {
         diag('## checked');
     }
     else {
@@ -118,7 +118,7 @@ sub node_disabling {
     $aggregator->update();
 
     diag('Check if 3 nodes in aggregator');
-    if ( $acomb1->computeLastValue == 3 ) {
+    if ( $acomb1->evaluate() == 3 ) {
         diag('## checked');
     }
     else {
@@ -139,7 +139,7 @@ sub node_disabling {
     }
 
     diag('Check if 2 nodes in aggregator');
-    if ( $acomb1->computeLastValue == 2 ) {
+    if ( $acomb1->evaluate() == 2 ) {
         diag('## checked');
     }
     else {
@@ -158,7 +158,7 @@ sub node_disabling {
 
     $aggregator->update();
     diag('Check if 3 nodes in aggregator');
-    if ( $acomb1->computeLastValue == 3 ) {
+    if ( $acomb1->evaluate() == 3 ) {
         diag('## checked');
     }
     else {
