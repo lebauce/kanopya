@@ -177,7 +177,6 @@ sub execute {
         if ($@) {
             $log->debug("Could not find systemimage with name <$systemimage_name> for removal.");
         } 
-        $self->{context}->{systemimage}->deactivate(erollback => $self->{erollback});
         $self->{context}->{systemimage}->remove(erollback => $self->{erollback});
 
     } else {
