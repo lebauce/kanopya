@@ -184,34 +184,53 @@ sub toString {
            .$self->right_combination->combination_formula_string;
 }
 
+
+=pod
+
+=begin classdoc
+
+Evaluate the condition. Call evaluation of both dependant combinations then evaluate the condition
+
+@return scalar 1 if condition is true
+               0 if condition is false
+
+=end classdoc
+
+=cut
+
 sub evaluate{
     my $self = shift;
 
     my $comparator  = $self->getAttr(name => 'comparator');
-    my $left_value  = $self->left_combination->computeLastValue();
-    my $right_value = $self->right_combination->computeLastValue();
 
-    if(defined $left_value && defined $right_value){
+    # Evaluate both conditions
+    my $left_value  = $self->left_combination->evaluate();
+    my $right_value = $self->right_combination->evaluate();
+
+    if (defined $left_value && defined $right_value) {
         my $evalString = $left_value.$comparator.$right_value;
-        $log->info("CM Combination formula: $evalString");
 
-        if(eval $evalString){
-            $log->info($evalString."=> true");
+        $log->debug("AggregateCondition evaluated: $evalString");
+
+        if (eval $evalString) {
+            $log->debug($evalString."=> true");
             $self->setAttr(name => 'last_eval', value => 1);
             $self->save();
             return 1;
-        }else{
-            $log->info($evalString."=> false");
+        }
+        else {
+            $log->debug($evalString."=> false");
             $self->setAttr(name => 'last_eval', value => 0);
             $self->save();
             return 0;
         }
-    }else{
-        $log->warn('No data received from DB for '.($self->left_combination)." or ".($self->right_combination));
-        $self->setAttr(name => 'last_eval', value => undef);
-        $self->save();
-        return undef;
     }
+
+    # At lease one of both condition is undefinded
+    $log->warn('No data received from DB for '.($self->left_combination)." or ".($self->right_combination));
+    $self->setAttr(name => 'last_eval', value => undef);
+    $self->save();
+    return undef;
 }
 
 sub getDependentRules {
