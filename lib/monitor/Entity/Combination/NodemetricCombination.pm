@@ -247,15 +247,13 @@ sub getDependentIndicatorIds{
 
     #replace each rule id by its evaluation
     for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
+        if ($element =~ m/id\d+/) {
             my $collector_indicator_id = substr($element,2);
             push @indicator_ids, Entity::CollectorIndicator->get(id => $collector_indicator_id)->indicator_id;
         }
      }
      return @indicator_ids;
 }
-
 
 =pod
 
@@ -301,6 +299,28 @@ sub computeValueFromMonitoredValues {
 
     $log->info("NM Combination value = $arrayString");
     return $res;
+}
+
+sub evaluate {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'nodes' ]);
+
+    my @col_ind_ids = ($self->nodemetric_combination_formula =~ m/id(\d+)/g);
+
+    my %values = map {$_ => Entity::CollectorIndicator->get(id => $_)
+                            ->evaluate(nodes => $args{nodes}, service_provider => $self->service_provider)
+                 } @col_ind_ids;
+
+    my %evaluation_for_each_node;
+
+    for my $node (@{$args{nodes}}) {
+        my %values_node = map { $_ => $values{$_}{$node->id} } @col_ind_ids;
+        my $formula = $self->nodemetric_combination_formula;
+        $formula =~ s/id(\d+)/$values_node{$1}/g;
+        $evaluation_for_each_node{$node->id} = eval $formula;
+    }
+
+    return \%evaluation_for_each_node;
 }
 
 
@@ -411,7 +431,7 @@ sub clone {
     General::checkParams(args => \%args, required => ['dest_service_provider_id']);
 
     # Check that both services use the same collector manager
-    my $src_collector_manager = ServiceProviderManager->find( 
+    my $src_collector_manager = ServiceProviderManager->find(
                                     hash   => { service_provider_id => $self->service_provider_id },
                                     custom => { category => 'CollectorManager' }
                                 );
