@@ -264,7 +264,7 @@ sub removeHypervisor {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    Entity::Host->demote(demoted => $args{host}->_getEntity);
+    Entity::Host->demote(demoted => $args{host}->_entity);
 }
 
 1;

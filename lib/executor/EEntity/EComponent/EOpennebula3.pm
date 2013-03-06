@@ -125,7 +125,7 @@ sub postStartNode {
     # if the host is the opennebula master, we register datastores
     if ($self->getMasterNode->adminIp() eq $args{host}->adminIp()) {
         my $conf = $self->getConf();
-        my $comp = $self->_getEntity();
+        my $comp = $self->_entity;
         my $linux = $args{cluster}->getComponent(category => "System");
         my $oldconf = $linux->getConf();
         my @mountentries;
@@ -215,7 +215,7 @@ sub registerHypervisor {
 
     $log->info('Hypervisor id returned by opennebula: ' . $hostid);
     my $hypervisor = $self->addHypervisor(
-        host       => $args{host}->_getEntity,
+        host       => $args{host}->_entity,
         onehost_id => $hostid
     );
 
@@ -232,7 +232,7 @@ sub unregisterHypervisor {
 
     $self->onehost_delete(host_nameorid => $args{host}->onehost_id);
 
-    $self->_getEntity->removeHypervisor(host => $args{host});
+    $self->_entity->removeHypervisor(host => $args{host});
 }
 
 
@@ -444,7 +444,7 @@ sub isUp {
     if ((defined $masternodeip) && ($masternodeip eq $hostip)) {
         # host is the opennebula frontend
         # we must test opennebula port reachability
-        my $net_conf = $self->{_entity}->getNetConf();
+        my $net_conf = $self->_entity->getNetConf();
         my ($port, $protocols) = each %$net_conf;
         my $cmd = "nmap -n -sT -p $port $hostip | grep $port | cut -d\" \" -f2";
         my $port_state = `$cmd`;
@@ -481,7 +481,7 @@ sub startHost {
     my $image = $args{host}->getNodeSystemimage();
     my $image_name = $image->systemimage_name;
 
-    my %repo = $self->_getEntity()->getImageRepository(
+    my %repo = $self->_entity->getImageRepository(
                    container_access_id => $disk_params->{container_access_id}
                );
 
@@ -525,8 +525,8 @@ sub startHost {
        throw Kanopya::Exception::Execution(error => $result->{stdout});
     }
 
-    $self->_getEntity()->addVM(
-        host       => $args{host}->_getEntity,
+    $self->_entity->addVM(
+        host       => $args{host}->_entity,
         id         => $vmid,
         hypervisor => $hypervisor
     );
@@ -662,7 +662,7 @@ sub _generateOnedConf {
     General::checkParams(args => \%args, required => [ 'host', 'mount_point']);
 
     my $cluster = $self->service_provider;
-    my $data = $self->_getEntity()->getTemplateDataOned();
+    my $data = $self->_entity->getTemplateDataOned();
     my $file = $self->generateNodeFile(
         cluster       => $cluster,
         host          => $args{host},
@@ -849,11 +849,11 @@ sub generateXenVmTemplate {
     my $image_name = $image->systemimage_name;
     my $hostname = $args{host}->node->node_hostname;
 
-    my %repo = $self->_getEntity()->getImageRepository(
+    my %repo = $self->_entity->getImageRepository(
                    container_access_id => $disk_params->{container_access_id}
                );
 
-    my $repository_path = $self->_getEntity()->getAttr(name => 'image_repository_path') .
+    my $repository_path = $self->_entity->getAttr(name => 'image_repository_path') .
                           '/' . $repo{repository_name};
 
     my $interfaces = [];

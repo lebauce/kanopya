@@ -53,7 +53,7 @@ sub createDisk {
     my $volume_name = "/vol/" . $volume->getAttr(name => "container_name") . "/" . $args{name};
 
     # Make the XML RPC call
-    my $api = $self->_getEntity();
+    my $api = $self->_entity;
     $api->lun_create_by_size(path => $volume_name,
                              size => $args{size},
                              type => "linux");
@@ -63,7 +63,7 @@ sub createDisk {
 
     # Insert the container into the database
     my $entity = Entity::Container::NetappLun->new(
-                     disk_manager_id      => $self->_getEntity->getAttr(name => 'entity_id'),
+                     disk_manager_id      => $self->_entity->getAttr(name => 'entity_id'),
                      container_name       => $args{name},
                      container_size       => $args{size},
                      container_filesystem => $args{filesystem},
@@ -145,7 +145,7 @@ sub createExport {
     # Check if the disk is not already exported
     $self->SUPER::createExport(%args);
 
-    my $api = $self->_getEntity();
+    my $api = $self->_entity;
     my $volume = $args{container}->getVolume();
     my $lun_path = $args{container}->getPath();
 
@@ -233,20 +233,20 @@ sub addExportClient {
     my $initiator_group = 'igroup_kanopya_' . $cluster->getAttr(name => "cluster_name");
 
     eval {
-        $self->_getEntity()->igroup_create('initiator-group-name' => $initiator_group,
+        $self->_entity->igroup_create('initiator-group-name' => $initiator_group,
                                            'initiator-group-type' => "iscsi");
     };
 
     eval {
         $log->info("Adding node " . $host->getAttr(name => "host_initiatorname") .
                    " to initiator group " . $initiator_group);
-        $self->_getEntity()->igroup_add('initiator'            => $host->getAttr(name => "host_initiatorname"),
+        $self->_entity->igroup_add('initiator'            => $host->getAttr(name => "host_initiatorname"),
                                         'initiator-group-name' => $initiator_group);
     };
 
     $log->info("Mapping LUN $path to $initiator_group");
     eval {
-        my $lun_id = $self->_getEntity()->lun_map('path'            => $path,
+        my $lun_id = $self->_entity->lun_map('path'            => $path,
                                                   'initiator-group' => $initiator_group);
 
         $args{export}->setAttr(name  => "number",
@@ -282,7 +282,7 @@ sub getLunId {
         $args{lun} = $args{lun}->getContainer;
     }
 
-    my $api = $self->_getEntity();
+    my $api = $self->_entity;
     my @mappings = $api->lun_initiator_list_map_info(
                        'initiator' => lc($self->_host->host_initiatorname)
                    )->child_get("lun-maps")->children_get;

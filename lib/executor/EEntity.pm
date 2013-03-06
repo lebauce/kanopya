@@ -97,11 +97,6 @@ sub eclass {
     return "E" . $args{class};
 }
 
-sub _getEntity{
-    my $self = shift;
-    return $self->{_entity};
-}
-
 sub getEContext {
     my ($self, %args) = @_;
 
@@ -201,6 +196,11 @@ sub _host {
     return $host;
 }
 
+sub _entity {
+    my $self = shift;
+    return $self->{_entity};
+}
+
 sub AUTOLOAD {
     my $self = shift;
     my %args = @_;
@@ -208,7 +208,7 @@ sub AUTOLOAD {
     my @autoload = split(/::/, $AUTOLOAD);
     my $method = $autoload[-1];
 
-    return $self->_getEntity->$method(%args);
+    return $self->_entity->$method(%args);
 }
 
 sub DESTROY {

@@ -44,7 +44,7 @@ sub addHost {
     my $erollback = $args{erollback};
     delete $args{erollback};
 
-    my $host_id = $self->_getEntity()->addHost(%args);
+    my $host_id = $self->_entity->addHost(%args);
     $args{erollback} = $erollback;
 
     if(exists $args{erollback}) {
@@ -64,11 +64,11 @@ sub removeHost {
     General::checkParams(args => \%args, required => ['dhcpd3_subnet_id','dhcpd3_hosts_id']);
 
     if (exists $args{erollback}){
-        $host = $self->_getEntity()->getHost(dhcpd3_subnet_id    => $args{dhcpd3_subnet_id},
+        $host = $self->_entity->getHost(dhcpd3_subnet_id    => $args{dhcpd3_subnet_id},
                                                 dhcpd3_hosts_id     =>$args{dhcpd3_hosts_id});
     }
     
-    my $ret = $self->_getEntity()->removeHost(%args);
+    my $ret = $self->_entity->removeHost(%args);
     
     if(exists $args{erollback}) {
         $args{erollback}->add(
@@ -96,7 +96,7 @@ sub generate {
     my %args = @_;
 
     my $config = {
-        INCLUDE_PATH => $self->_getEntity()->getTemplateDirectory(),
+        INCLUDE_PATH => $self->_entity->getTemplateDirectory(),
         INTERPOLATE  => 1,               # expand "$var" in plain text
         POST_CHOMP   => 0,               # cleanup whitespace 
         EVAL_PERL    => 1,               # evaluate Perl code blocks
@@ -108,7 +108,7 @@ sub generate {
     # create Template object
     my $template = Template->new($config);
     my $input = "dhcpd.conf.tt";
-    my $data = $self->_getEntity()->getConf();
+    my $data = $self->_entity->getConf();
     
     $template->process($input, $data, "/tmp/".$tmpfile) || do {
         $errmsg = "EComponent::EDhcpd3->generate : error during template generation : $template->error;";

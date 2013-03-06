@@ -30,7 +30,7 @@ sub configureNode {
 
     my $template_path = $args{template_path} || "/templates/components/syslogng";
     
-    my $data = $self->_getEntity()->getConf();
+    my $data = $self->_entity->getConf();
         
     my $file = $self->generateNodeFile(
         cluster      => $args{cluster},

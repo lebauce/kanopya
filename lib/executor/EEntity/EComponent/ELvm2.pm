@@ -49,7 +49,7 @@ sub createDisk {
                          required => [ 'name', 'size', 'filesystem' ],
                          optional => { 'vg_id' => $self->getMainVg->{vgid} });
 
-    my $vg_name = $self->_getEntity()->getVg(lvm2_vg_id => $args{vg_id});
+    my $vg_name = $self->_entity->getVg(lvm2_vg_id => $args{vg_id});
 
     $self->lvCreate(vg_name            => $vg_name,
                     lvm2_lv_name       => $args{name},
@@ -65,7 +65,7 @@ sub createDisk {
     $self->vgSpaceUpdate(lvm2_vg_id   => $args{vg_id},
                          lvm2_vg_name => $vg_name);
 
-    my $entity = $self->_getEntity->lvCreate(
+    my $entity = $self->_entity->lvCreate(
                      lvm2_vg_id         => $args{vg_id},
                      lvm2_lv_name       => $args{name},
                      lvm2_lv_filesystem => $args{filesystem},
@@ -108,7 +108,7 @@ sub removeDisk{
                     lvm2_lv_name => $args{container}->container_name,
                     lvm2_vg_name => $vg->{vgname});
 
-    $self->_getEntity->lvRemove(lvm2_vg_id   => $vg->{vgid},
+    $self->_entity->lvRemove(lvm2_vg_id   => $vg->{vgid},
                                 lvm2_lv_name => $args{container}->container_name);
 
     $self->vgSpaceUpdate(lvm2_vg_id   => $vg->{vgid},
@@ -218,7 +218,7 @@ sub vgSpaceUpdate {
     $freespace =~ s/^[ \t]+//;
     $freespace =~ s/,\d*$//;
 
-    return $self->_getEntity()->vgSizeUpdate(lvm2_vg_freespace => $freespace,
+    return $self->_entity->vgSizeUpdate(lvm2_vg_freespace => $freespace,
                                              lvm2_vg_id        => $args{lvm2_vg_id});
 }
 

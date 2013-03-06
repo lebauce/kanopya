@@ -231,7 +231,7 @@ sub generateKeepalived {
 
     my $host = $self->getMasterNode;
     $host = $args{host} if not defined $host;
-    my $data = $self->_getEntity()->getTemplateDataKeepalived();
+    my $data = $self->_entity->getTemplateDataKeepalived();
     my $file = $self->generateNodeFile(
         host          => $host,
         cluster       => $self->service_provider,
@@ -274,7 +274,7 @@ sub generateSysctlconf {
 sub generateAndSendKeepalived {
     my ($self) = @_;
     
-    my $data = $self->_getEntity()->getTemplateDataKeepalived();
+    my $data = $self->_entity->getTemplateDataKeepalived();
     my $file = $self->generateNodeFile(
         host          => $self->getMasterNode,
         cluster       => $self->service_provider,
@@ -298,7 +298,7 @@ sub generateIpvsadm {
 
     my $host = $self->getMasterNode;
     $host = $args{host} if not defined $host;
-    my $data = $self->_getEntity()->getTemplateDataIpvsadm();
+    my $data = $self->_entity->getTemplateDataIpvsadm();
     my $file = $self->generateNodeFile(
         host          => $host,
         cluster       => $self->service_provider,

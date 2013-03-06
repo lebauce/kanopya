@@ -76,7 +76,7 @@ sub execute{
 
     # set host active in db
     $self->{context}->{host}->setAttr(name => 'active', value => 1);
-    $self->{context}->{host}->_getEntity->save();
+    $self->{context}->{host}->_entity->save();
     $log->info("Host <" . $self->{context}->{host}->getAttr(name => "entity_id") . "> is now active");
 }
 

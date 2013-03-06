@@ -83,7 +83,7 @@ sub generateFile {
     }
 
     my $template_dir = defined $args{template_dir} ? $args{template_dir}
-                                                   : $self->_getEntity()->getTemplateDirectory();
+                                                   : $self->_entity->getTemplateDirectory();
 
     my $config = {
         INCLUDE_PATH => $template_dir,
@@ -133,8 +133,8 @@ sub isUp {
     General::checkParams( args => \%args, required => [ 'cluster', 'host' ] );
     
     my $availability = 1;
-    my $execution_list = $self->{_entity}->getExecToTest();
-    my $net_conf = $self->{_entity}->getNetConf();
+    my $execution_list = $self->_entity->getExecToTest();
+    my $net_conf = $self->_entity->getNetConf();
 
     # Test executable
     foreach my $i (keys %$execution_list) {

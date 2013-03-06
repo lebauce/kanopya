@@ -83,7 +83,7 @@ sub execute{
     
     # set cluster active in db
     $self->{context}->{cluster}->setAttr(name => 'active', value => 0);
-    $self->{context}->{cluster}->_getEntity->save();
+    $self->{context}->{cluster}->_entity->save();
     $log->info("Cluster <" . $self->{context}->{cluster}->getAttr(name => 'cluster_name') . "> deactivated");
 }
 

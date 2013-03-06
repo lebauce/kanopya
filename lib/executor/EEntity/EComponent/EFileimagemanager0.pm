@@ -138,7 +138,7 @@ sub createExport {
 
     my $entity = Entity::ContainerAccess::FileContainerAccess->new(
                      container_id            => $args{container}->getAttr(name => 'container_id'),
-                     export_manager_id       => $self->_getEntity->getAttr(name => 'entity_id'),
+                     export_manager_id       => $self->_entity->getAttr(name => 'entity_id'),
                      container_access_export => $export_name,
                      container_access_ip     => $underlying->getAttr(name => 'container_access_ip'),
                      container_access_port   => $underlying->getAttr(name => 'container_access_port'),

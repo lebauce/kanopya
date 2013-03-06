@@ -290,7 +290,7 @@ sub startHost {
     $log->debug("Nova returned : " . (Dumper $response));
 
     $args{host} = Entity::Host::VirtualMachine::OpenstackVm->promote(
-                      promoted           => $args{host}->_getEntity,
+                      promoted           => $args{host}->_entity,
                       nova_controller_id => $self->id,
                       openstack_vm_uuid  => $response->{server}->{id},
                       hypervisor_id      => $args{hypervisor}->id

@@ -48,7 +48,7 @@ sub addNode {
     }
 
     # adjust some requirements on the image
-    my $data = $self->_getEntity()->getConf();
+    my $data = $self->_entity->getConf();
     my $automountnfs = 0;
     for my $mountdef (@{$data->{linuxes_mount}}) {
         my $mountpoint = $mountdef->{linux_mount_point};

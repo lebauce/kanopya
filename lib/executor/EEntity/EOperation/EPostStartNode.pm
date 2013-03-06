@@ -116,8 +116,8 @@ sub finish {
 
     # Add another node if required
     if (scalar(@nodes) < $self->{context}->{cluster}->cluster_min_node) {
-        # _getEntity is important here, cause we want to enqueue AddNode operation.
-        $self->{context}->{cluster}->_getEntity->addNode();
+        # _entity is important here, cause we want to enqueue AddNode operation.
+        $self->{context}->{cluster}->_entity->addNode();
     }
     else {
         my $nodes_states = 1;

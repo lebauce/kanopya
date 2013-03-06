@@ -163,7 +163,7 @@ sub validation {
             else {
                 $input      = "notificationmail";
                 my $eentity = EEntity->new(data => $entity);
-                $message    = $eentity->notificationMessage(operation => $self->_getEntity);
+                $message    = $eentity->notificationMessage(operation => $self->_entity);
             }
 
             my $subject = '';

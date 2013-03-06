@@ -31,7 +31,7 @@ sub configureNode {
     my ($self, %args) = @_;
     my $data;
 
-    my $conf = $self->_getEntity()->getConf();
+    my $conf = $self->_entity->getConf();
 
     # Generation of /etc/default/puppetmaster
     $data = { 

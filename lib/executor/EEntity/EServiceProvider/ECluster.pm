@@ -155,7 +155,7 @@ sub generateResolvConf {
     };
 
     my $file = $self->generateNodeFile(
-        cluster       => $self->_getEntity,
+        cluster       => $self->_entity,
         host          => $args{host},
         file          => '/etc/resolv.conf',
         template_dir  => '/templates/internal',

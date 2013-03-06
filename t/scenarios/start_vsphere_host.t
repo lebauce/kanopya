@@ -74,7 +74,7 @@ eval {
                         );
     } 'Retrieving LVM component';
 
-    isa_ok ($disk_manager->_getEntity, 'Manager::DiskManager');
+    isa_ok ($disk_manager->_entity, 'Manager::DiskManager');
 
     my $export_manager;
     lives_ok {
@@ -84,7 +84,7 @@ eval {
                           );
     } 'Retrieving iSCSI component';
 
-    isa_ok ($export_manager->_getEntity, 'Manager::ExportManager');
+    isa_ok ($export_manager->_entity, 'Manager::ExportManager');
 
     my $nfs_manager;
     lives_ok {
@@ -94,7 +94,7 @@ eval {
                        );
     } 'Retrieving NFS server component';
 
-    isa_ok ($nfs_manager->_getEntity, 'Manager::ExportManager');
+    isa_ok ($nfs_manager->_entity, 'Manager::ExportManager');
 
     my $nfs;
     eval {
@@ -112,7 +112,7 @@ eval {
                 size         => 6 * 1024 * 1024 * 1024,
                 filesystem   => "ext3",
                 vg_id        => 1
-            )->_getEntity;
+            )->_entity;
         } 'Creating disk for image repository';
       
     	lives_ok {

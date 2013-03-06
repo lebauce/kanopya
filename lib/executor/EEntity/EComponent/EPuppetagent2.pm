@@ -29,7 +29,7 @@ sub configureNode {
     General::checkParams(args     => \%args,
                          required => ['cluster','host','mount_point']);
     
-    my $conf = $self->_getEntity()->getConf();
+    my $conf = $self->_entity->getConf();
 
     # Generation of /etc/default/puppet
     my $data = { 

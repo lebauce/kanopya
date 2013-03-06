@@ -28,7 +28,7 @@ sub addNode {
     General::checkParams(args     => \%args,
                          required => ['cluster','host','mount_point']);
 
-    my $conf = $self->_getEntity()->getConf();
+    my $conf = $self->_entity->getConf();
 
     # Generation of php.ini
     my $data = { session_handler => $conf->{php5_session_handler},

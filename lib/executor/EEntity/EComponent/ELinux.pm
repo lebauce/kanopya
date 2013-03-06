@@ -280,7 +280,7 @@ sub _generateUdevPersistentNetRules {
 
     my @interfaces = ();
     
-    for my $iface ($args{host}->_getEntity()->getIfaces()) {
+    for my $iface ($args{host}->_entity->getIfaces()) {
         my $tmp = {
             mac_address   => lc($iface->getAttr(name => 'iface_mac_addr')),
             net_interface => $iface->getAttr(name => 'iface_name')
