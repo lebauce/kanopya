@@ -18,7 +18,7 @@
 
 Data Model for performing a forecast using the auto.arima method implemented in R.
 
-@since 2012-Feb-27 
+@since 2013-Feb-27 
 @instance hash
 @self $self
 
@@ -105,7 +105,7 @@ sub predict {
                                                     freq           => $args{freq}
                     )};
     my @n_timestamps;
-    foreach (1..scalar(@forecasts)) {
+    for (1..scalar(@forecasts)) {
         push(@n_timestamps, $timestamps[-1] + $_ * $granularity);
     }
 
@@ -114,7 +114,7 @@ sub predict {
     # Pair format
     if (defined($args{data_format}) && $args{data_format} eq 'pair') {
         my @pairs;
-        foreach my $forecast_index (1..scalar(@forecasts)) {
+        for my $forecast_index (1..scalar(@forecasts)) {
             push(@pairs, [ $n_timestamps[$forecast_index], $forecasts[$forecast_index-1] ]);
         }
         return \@pairs;

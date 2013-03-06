@@ -19,10 +19,6 @@
 Utilitary class which provides useful methods for using R objects (extracted with Statistics::R) into Perl.
 In particular forecast objects from the forecast package.
 
-@since 2012-Feb-28
-@instance hash
-@self $self
-
 =end classdoc
 
 =cut
@@ -96,7 +92,7 @@ sub convertRForecast{
     # If this information row is present, we remove it (The structure of the following code is for helping
     # debug if needed)
     if ($R_forecast_raw[0] eq 'Point') {
-        foreach (0..$first_row_size-1) {
+        for (0..$first_row_size-1) {
             my $shift = shift(@R_forecast_raw);
             if (("$shift" eq "Lo") || ("$shift" eq "Hi")) {
                 $shift = "$shift" . " " .  shift(@R_forecast_raw);
@@ -113,7 +109,7 @@ sub convertRForecast{
                     :                 @R_forecast_raw / ($cols_number)
                     ;
 
-    foreach my $row (0..$rows_number - 1) {
+    for my $row (0..$rows_number - 1) { 
         my $index = $special_freq ? (($cols_number + 1) * $row) + $forecast_column + 1
                    :                (($cols_number) * $row) + $forecast_column
                    ;
@@ -157,7 +153,7 @@ sub printPrettyRForecast{
         print (" " x $column_print_width);
     }
     if ($R_forecast_raw[0] eq 'Point') {
-        foreach (0..$first_row_size-1) {
+        for (0..$first_row_size-1) {
             my $shift = shift(@R_forecast_raw);
             if (("$shift" eq "Lo") || ("$shift" eq "Hi")) {
                 $shift = "$shift" . " " .  shift(@R_forecast_raw);
@@ -180,8 +176,8 @@ sub printPrettyRForecast{
                     :                 @R_forecast_raw / ($cols_number)
                     ;
 
-    foreach my $row (0..$rows_number-1) {
-        foreach my $col (0..$cols_number) {
+    for my $row (0..$rows_number-1) {
+        for my $col (0..$cols_number) {
             if (($col == 0) && !($special_freq) && !defined($args{no_print}) && !($args{no_print})) {
                 print (" " x $column_print_width);
             }
