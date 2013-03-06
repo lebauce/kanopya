@@ -58,7 +58,7 @@ if ($^O eq 'MSWin32') {
 
     <Class>   : Public
     <Desc>    : This method create a RRD file.
-    <args>    : name, options, RRA, DS
+    <args>    : name, options, RRA, DS, skip_if_exists
     <Comment> : Only name is mandatory. Default RRD configuration are: step = 60, 1 RRA with 
                 1 PDP per CPD, and 1440 CDP (60x1x1440 = 86400scd/ 1 day). 
                 Standard is 1 RRA and 1 DS per RRD
@@ -80,6 +80,9 @@ sub createTimeDataStore{
     General::checkParams(args => \%args, required => ['name']);
 
     my $name = _formatName(name => $args{'name'});
+
+    # Do nothing if rrd already exists and skip_if_exists option is set
+    return if (-e $dir.$name && $args{'skip_if_exists'});
 
     my $RRA_chain;
     my $DS_chain;
