@@ -215,12 +215,6 @@ sub methods {
     };
 }
 
-=head2
-
-    BaseDB label virtual attribute getter
-
-=cut
-
 sub label {
     my $self = shift;
     return $self->cluster_name;
@@ -581,10 +575,6 @@ sub configureOrchestration {
     }
 }
 
-=head2 remove
-
-=cut
-
 sub remove {
     my $self = shift;
 
@@ -645,12 +635,6 @@ sub deactivate {
     );
 }
 
-=head2 toString
-
-    desc: return a string representation of the entity
-
-=cut
-
 sub toString {
     my $self = shift;
     my $string = $self->{_dbix}->get_column('cluster_name');
@@ -701,14 +685,6 @@ sub getHosts {
     return wantarray ? @hosts : \@hosts;
 }
 
-=head2 getHostEntries
-
-    Desc : This function returns all the host entries (ip, fqdn, aliases)
-           for a cluster.
-    return : a list of hashref
-
-=cut
-
 sub getHostEntries {
     my ($self, %args) = @_;
 
@@ -744,42 +720,18 @@ sub getHostEntries {
     return @host_entries;
 }
 
-=head2 getHostManager
-
-    desc: Return the component/conector that manage this cluster.
-
-=cut
-
 sub getHostManager {
     my $self = shift;
 
     return $self->getManager(manager_type => 'HostManager');
 }
 
-=head2 getCurrentNodesCount
-
-    class : public
-    desc : return the current nodes count of the cluster
-
-=cut
-
 sub getCurrentNodesCount {
     my $self = shift;
-    my $nodes = $self->{_dbix}->parent->nodes;
-    if ($nodes) {
-    return $nodes->count;}
-    else {
-        return 0;
-    }
+
+    my @nodes = $self->nodes;
+    return scalar(@nodes);
 }
-
-=head2 getQoSConstraints
-
-    Class : Public
-
-    Desc :
-
-=cut
 
 sub getQoSConstraints {
     my $self = shift;
@@ -805,9 +757,6 @@ sub isLoadBalanced {
     return $is_loadbalanced;
 }
 
-=head2 addNode
-
-=cut
 
 sub addNode {
     my $self = shift;
@@ -822,10 +771,6 @@ sub addNode {
         }
     );
 }
-
-=head2 removeNode
-
-=cut
 
 sub removeNode {
     my $self = shift;
@@ -846,10 +791,6 @@ sub removeNode {
      );
 }
 
-=head2 start
-
-=cut
-
 sub start {
     my $self = shift;
 
@@ -858,10 +799,6 @@ sub start {
     # Enqueue operation AddNode.
     return $self->addNode();
 }
-
-=head2 stop
-
-=cut
 
 sub stop {
     my $self = shift;
@@ -878,19 +815,11 @@ sub stop {
     );
 }
 
-=head2 getState
-
-=cut
-
 sub getState {
     my $self = shift;
     my $state = $self->cluster_state;
     return wantarray ? split(/:/, $state) : $state;
 }
-
-=head2 setState
-
-=cut
 
 sub setState {
     my $self = shift;
@@ -931,13 +860,6 @@ sub getNewNodeNumber {
 
     return $counter;
 }
-
-=head2 getNodesMetrics
-
-    Desc: call collector manager to retrieve nodes metrics values.
-    return \%data;
-
-=cut
 
 sub getNodesMetrics {
     my ($self, %args) = @_;
@@ -1079,10 +1001,6 @@ sub initCollectorManager {
         }
     }
 }
-
-=head2 getMonthlyConsommation
-
-=cut
 
 sub getMonthlyConsommation {
     my $self = shift;
