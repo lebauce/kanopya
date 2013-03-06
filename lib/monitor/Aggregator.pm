@@ -11,6 +11,39 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+=pod
+
+=begin classdoc
+
+Main task of Aggregator is to compute and store cluster metrics
+(i.e aggregation of indicator values for all nodes) at regular time.
+
+Optionnaly, Aggregator can store indicator values for each individual nodes
+for optimisation when we need intensive access to these data (graphing, analysis,...).
+This option avoids frequent requests on the collector manager (monitoring tool relief),
+accelerates data access, but needs more storage space.
+
+For each service provider, Aggregator retrieves values for indicators used at both level:
+- service level, i.e. in ClusterMetric
+- node level, i.e in NodeMetricCombination
+using the linked collector manager (which could be an external monitoring tool or the kanopya collector).
+Then Aggregator will:
+- check data (raising Alert if missing data)
+- store values for each indicator for each nodes
+- compute and store ClusterMetric
+
+Aggregator used RRDTimeData to store data and expose methods to retrieve stored data (service and node level)
+
+@see <package>Entity::Combination::NodeMetricCombination</package>
+@see <package>Entity::ClusterMetric</package>
+@see <package>Entity::TimeData::RRDTimeData</package>
+@see <package>Entity::Manager::CollectorManager</package>
+
+=end classdoc
+
+=cut
+
 package Aggregator;
 
 use strict;
@@ -30,6 +63,10 @@ use Alert;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
+# Flag to activate/deactivate nodes metrics values storage
+# TODO conf by service provider or collector manager (?)
+my $STORE_NODEMETRIC = 1;
+
 use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
@@ -47,7 +84,16 @@ sub getMethods {
   }
 }
 
-# Constructor
+=pod
+=begin classdoc
+
+Load aggregator configuration and do the BaseDB authentication.
+
+@constructor
+
+=end classdoc
+=cut
+
 sub new {
     my $class = shift;
     my $self = {};
@@ -61,21 +107,43 @@ sub new {
     return $self;
 };
 
-=head2 _contructRetrieverOutput
+=pod
+=begin classdoc
 
-    Desc : This function build the variable to be given to a Data Collector
-    args: cluster_id,
-    return : \%rep (containing the indicator list and the timespan requested)
+Build the list of Indicators used by a service provider.
+Indicators can be used by ClusterMetric and by NodeMetricCombination linked to the service provider
 
+@param service_provider The manipulated service provider
+@optionnal include_nodemetric Include Indicators used by NodeMetricCombination.
+    Default is only Indicators used by ClusterMetrics
+
+@return An hash ref with 2 keys:
+    'indicators': map indicator_oid with indicator instance
+    'time_span' : max time_span used by clustermetrics
+
+=end classdoc
 =cut
 
-sub _contructRetrieverOutput {
-    my $self = shift;
-    my %args = @_;
+sub _getUsedIndicators {
+    my ($self, %args) = @_;
 
     my $indicators = { };
-    my $time_span = 0;
+    my $time_span  = 0;
 
+    # Get indicators used by node metric combinations
+    if ($args{include_nodemetric}) {
+        my @nmc = Entity::Combination::NodemetricCombination->search(
+                      hash => {service_provider_id => $args{service_provider}->id}
+                  );
+        for my $nodemetriccombination (@nmc) {
+            for my $indicator_id ($nodemetriccombination->getDependentIndicatorIds()) {
+                my $indicator = Entity::Indicator->get(id => $indicator_id);
+                $indicators->{$indicator->indicator_oid} = $indicator;
+            }
+        }
+    }
+
+    # Get indicators used by cluster metrics
     for my $clustermetric ($args{service_provider}->clustermetrics) {
         my $clustermetric_time_span = $clustermetric->clustermetric_window_time;
         my $indicator = $clustermetric->getIndicator();
@@ -97,15 +165,14 @@ sub _contructRetrieverOutput {
     };
 };
 
-=head2 update
+=pod
+=begin classdoc
 
-    Desc : This function containt the main aggregator loop. For every service
-           provider that has a collector manager,  it build a valid input,
-           retrieve the data, check them, and then store them in a TimeDB after
-           having compute the clustermetric combinations.
-    args: service_provider_id,
-    return : \%rep (containing the indicator list and the timespan requested)
+Main aggregator loop. For every service provider that has a collector manager, get required Indicators,
+retrieves the data for all nodes, check them, and then store them in a TimeDB
+after having computed the clustermetric combinations.
 
+=end classdoc
 =cut
 
 sub update {
@@ -124,28 +191,40 @@ sub update {
 
                 $log->info('Aggregator collecting for service provider '.  $service_provider->id);
 
-                # Construct input of the collector retriever
-                my $host_indicator_for_retriever = $self->_contructRetrieverOutput(
-                                                       service_provider => $service_provider
+                # Get all indicators used by the service
+                my $wanted_indicators = $self->_getUsedIndicators(
+                                                       service_provider     => $service_provider,
+                                                       include_nodemetric   => $STORE_NODEMETRIC
                                                    );
 
                 # Call the retriever to get monitoring data
+                my $timestamp        = time();
                 my $monitored_values = $service_provider->getNodesMetrics(
-                                           indicators => $host_indicator_for_retriever->{indicators},
-                                           time_span  => $host_indicator_for_retriever->{time_span}
+                                           indicators => $wanted_indicators->{indicators},
+                                           time_span  => $wanted_indicators->{time_span}
                                        );
 
-                # Verify answers received from SCOM to detect metrics anomalies
+                # Verify answers received from collector manager to detect metrics anomalies
                 my $checker = $self->_checkNodesMetrics(
                                   service_provider_id => $service_provider->id,
-                                  asked_indicators    => $host_indicator_for_retriever->{indicators},
+                                  asked_indicators    => $wanted_indicators->{indicators},
                                   received            => $monitored_values
                               );
+
+                # Store nodes metrics values
+                if ($STORE_NODEMETRIC) {
+                    $self->_storeNodeMetricsValues(
+                        indicators          => $wanted_indicators->{indicators},
+                        values              => $monitored_values,
+                        timestamp           => $timestamp
+                    );
+                }
 
                 # Parse retriever return, compute clustermetric values and store in DB
                 if ($checker == 1) {
                     $self->_computeCombinationAndFeedTimeDB(
                         values           => $monitored_values,
+                        timestamp        => $timestamp,
                         service_provider => $service_provider
                     );
                 }
@@ -155,6 +234,24 @@ sub update {
         if ($@) {
             $log->error("An error occurred : " . $@);
             next CLUSTER;
+        }
+    }
+}
+
+sub _storeNodeMetricsValues {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['indicators', 'values', 'timestamp']);
+
+    while (my ($node_name, $indicators_values) = each %{$args{values}}) {
+        while (my ($indicators_oid, $value) = each %$indicators_values) {
+            my $metric_uid = $args{indicators}->{$indicators_oid}->id . '_' . $node_name;
+            RRDTimeData::createTimeDataStore(name => $metric_uid, skip_if_exists => 1);
+            RRDTimeData::updateTimeDataStore(
+                clustermetric_id => $metric_uid,
+                time             => $args{timestamp},
+                value            => $value,
+            );
         }
     }
 }
@@ -218,7 +315,7 @@ sub _computeCombinationAndFeedTimeDB {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['values']);
+    General::checkParams(args => \%args, required => ['values', 'timestamp']);
 
     my $values = $args{values};
     my @clustermetrics = $args{service_provider}->clustermetrics;
@@ -247,7 +344,7 @@ sub _computeCombinationAndFeedTimeDB {
             # Store in DB and time stamp
             RRDTimeData::updateTimeDataStore(
                 clustermetric_id => $clustermetric_id,
-                time             => time(),
+                time             => $args{timestamp},
                 value            => $statValue,
             );
             if (!defined $statValue) {
@@ -259,7 +356,7 @@ sub _computeCombinationAndFeedTimeDB {
             $log->debug("*** [WARNING] No datas received for clustermetric " . $clustermetric_id);
             RRDTimeData::updateTimeDataStore(
                 clustermetric_id => $clustermetric_id,
-                time             => time(),
+                time             => $args{timestamp},
                 value            => undef,
             );
         }

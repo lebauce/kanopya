@@ -231,7 +231,7 @@ sub getDependentCollectorIndicatorIds{
 
 Return an array of the Indicator ids of the formula
 
-@return an array of the CollectorIndicator ids of the formula
+@return an array of the Indicator ids of the formula
 
 =end classdoc
 
