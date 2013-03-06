@@ -42,7 +42,7 @@ use List::Util;
 use Aggregator;
 use Executor;
 
-my $testing = 0;
+my $testing = 1;
 
 my $service_provider;
 my $external_cluster_mockmonitor;
