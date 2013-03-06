@@ -1360,10 +1360,10 @@ sub registerKanopyaMaster {
         {
             name => "Openiscsi"
         },
-        {
-            name => "Physicalhoster",
-            manager => "HostManager"
-        },
+#        {
+#            name => "Physicalhoster",
+#            manager => "HostManager"
+#        },
         {
             name => "Kanopyacollector",
             conf => {
@@ -1387,57 +1387,9 @@ sub registerKanopyaMaster {
         }
     ];
 
-    my $installed = {};
-    for my $component (@{$components}) {
-        my $name = $component->{name};
-
-        # Get the template if exists
-        my $component_template;
-        eval {
-            $component_template = ComponentTemplate->find(hash => { component_template_name => lc $name })->id;
-        };
-
-        # Get the component type
-        my $component_type = ClassType::ComponentType->find(hash => {
-                                 component_name => $name
-                             });
-
-        # Add the component
-        my $comp = $admin_cluster->addComponent(component_type_id       => $component_type->id,
-                                                component_template_id   => $component_template,
-                                                component_configuration => $component->{conf});
-
-        if (defined $component->{manager}) {
-            # Add the manager
-            $admin_cluster->addManager(manager_id => $comp->id, manager_type => $component->{manager});
-        }
-        $installed->{$component->{name}} = $comp;
-    }
-
-    # Collect some indicators for admin cluster
-    $installed->{'Kanopyacollector'}->collectSets(
-        sets_name           => ['mem', 'cpu'],
-        service_provider_id => $admin_cluster->id
-    );
-
-    my $vg = Entity::Component::Lvm2::Lvm2Vg->new(
-        lvm2_id           => $installed->{"Lvm"}->id,
-        lvm2_vg_name      => $args{kanopya_vg_name},
-        lvm2_vg_freespace => $args{kanopya_vg_free_space},
-        lvm2_vg_size      => $args{kanopya_vg_size}
-    );
-
-    $args{db}->resultset('Lvm2Pv')->create( {
-        lvm2_vg_id   => $vg->id,
-        lvm2_pv_name => $args{kanopya_pvs}->[0]
-    } );
-
-    $args{db}->resultset('Dhcpd3Subnet')->create( {
-        dhcpd3_id             => $installed->{"Dhcpd"}->id,
-        dhcpd3_subnet_net     => $args{ipv4_internal_network_ip},
-        dhcpd3_subnet_mask    => $args{poolip_netmask},
-        dhcpd3_subnet_gateway => $args{poolip_gateway}
-    } );
+    # Firtly install the PhysicalHoster on kanopya master as it is
+    # required for creation the host.
+    installComponent(cluster => $admin_cluster, name => 'Physicalhoster', manager => 'HostManager');
 
     # Create the host for the Kanopya master
     my ( $sysname, $nodename, $release, $version, $machine ) = POSIX::uname();
@@ -1465,7 +1417,7 @@ sub registerKanopyaMaster {
                               service_provider_id => $admin_cluster->id,
                           );
 
-    my $physical_hoster = Entity::Component::Physicalhoster0->find(hash => { });
+    my $physical_hoster = $admin_cluster->getComponent(name => 'Physicalhoster');
     my $admin_host = Entity::Host->new(
                          host_manager_id    => $physical_hoster->id,
                          kernel_id          => $master_kernel->id,
@@ -1508,6 +1460,43 @@ sub registerKanopyaMaster {
                                  number           => 1,
                                  monitoring_state => 'disabled');
 
+    for my $component (@{$components}) {
+        installComponent(cluster => $admin_cluster,
+                         name    => $component->{name},
+                         manager => $component->{manager},
+                         conf    => $component->{conf});
+    }
+
+    # Configure components on kanopya master
+    my $kanopyacollector = $admin_cluster->getComponent(name => 'Kanopyacollector');
+    my $lvm = $admin_cluster->getComponent(name => 'Lvm');
+    my $dhcp = $admin_cluster->getComponent(name => 'Dhcpd');
+
+    # Collect some indicators for admin cluster
+    $kanopyacollector->collectSets(
+        sets_name           => ['mem', 'cpu'],
+        service_provider_id => $admin_cluster->id
+    );
+
+    my $vg = Entity::Component::Lvm2::Lvm2Vg->new(
+        lvm2_id           => $lvm->id,
+        lvm2_vg_name      => $args{kanopya_vg_name},
+        lvm2_vg_freespace => $args{kanopya_vg_free_space},
+        lvm2_vg_size      => $args{kanopya_vg_size}
+    );
+
+    $args{db}->resultset('Lvm2Pv')->create( {
+        lvm2_vg_id   => $vg->id,
+        lvm2_pv_name => $args{kanopya_pvs}->[0]
+    } );
+
+    $args{db}->resultset('Dhcpd3Subnet')->create( {
+        dhcpd3_id             => $dhcp->id,
+        dhcpd3_subnet_net     => $args{ipv4_internal_network_ip},
+        dhcpd3_subnet_mask    => $args{poolip_netmask},
+        dhcpd3_subnet_gateway => $args{poolip_gateway}
+    } );
+
     # TODO: insert IscsiPortals...
 
     my $ehost = EEntity->new(entity => $admin_host);
@@ -1520,6 +1509,31 @@ sub registerKanopyaMaster {
     $admin_host->save();
 
     return $admin_cluster;
+}
+
+sub installComponent {
+    my %args = @_;
+
+    # Get the template if exists
+    my $component_template;
+    eval {
+        $component_template = ComponentTemplate->find(hash => { component_template_name => lc $args{name} })->id;
+    };
+
+    # Get the component type
+    my $component_type = ClassType::ComponentType->find(hash => {
+                             component_name => $args{name}
+                         });
+
+    # Add the component
+    my $comp = $args{cluster}->addComponent(component_type_id       => $component_type->id,
+                                            component_template_id   => $component_template,
+                                            component_configuration => $args{conf});
+
+    if (defined $args{manager}) {
+        # Add the manager
+        $args{cluster}->addManager(manager_id => $comp->id, manager_type => $args{manager});
+    }
 }
 
 sub registerScopes {
