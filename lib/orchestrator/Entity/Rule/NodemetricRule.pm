@@ -160,7 +160,10 @@ sub evaluate {
     General::checkParams(args => \%args, optional => { 'nodes' => undef });
 
     my @nodes = (defined $args{nodes}) ? @{$args{nodes}}
-                                          : $self->service_provider->nodes;
+                                       : $self->service_provider->searchRelated(
+                                            filters => ['nodes'],
+                                            hash    => {-not => {monitoring_state => 'disabled'}}
+                                         );
 
     if (@nodes == 0) {
         return {};
