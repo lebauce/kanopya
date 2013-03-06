@@ -243,7 +243,6 @@ sub getServiceTemplateDef {
     }
 
     for my $policy_type (@$POLICY_TYPES) {
-        $log->info($policy_type);
         my $policy_class = 'Entity::Policy::' . ucfirst($policy_type) . 'Policy';
 
         # For instance, set all all policy types mandatory
