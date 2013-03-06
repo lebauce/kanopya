@@ -243,6 +243,7 @@ sub getServiceTemplateDef {
     }
 
     for my $policy_type (@$POLICY_TYPES) {
+        $log->info($policy_type);
         my $policy_class = 'Entity::Policy::' . ucfirst($policy_type) . 'Policy';
 
         # For instance, set all all policy types mandatory
@@ -261,7 +262,7 @@ sub getServiceTemplateDef {
         else {
             # Add the policy select box for the current policy type with options
             my @policies;
-            for my $policy ($policy_class->search(hash => {})) {
+            for my $policy ($policy_class->search(hash => { policy_type => $policy_type })) {
                 push @policies, $policy->toJSON();
             }
             $attributes->{attributes}->{$policy_type . '_policy_id'}->{options} = \@policies;
