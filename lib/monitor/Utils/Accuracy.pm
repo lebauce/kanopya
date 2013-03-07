@@ -104,7 +104,7 @@ sub _checkLength {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => ['theorical_data_ref', 'real_data_ref']
+                         required => ['theorical_data_ref', 'real_data_ref'],
                          );
 
     my $theorical_length    = scalar(@{$args{theorical_data_ref}});

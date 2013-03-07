@@ -126,7 +126,8 @@ sub convertRForecast{
 Print the R forecast object with a table representation.
 
 @param R_forecast_ref A ref to the forecast object extracted from R.
-@param no_print If defined and true, the method will not print anything (used for testing that there is
+
+@optional no_print If defined and true, the method will not print anything (used for testing that there is
                 no execution bug in the method without filling the console up with useless informations).
 
 =end classdoc

@@ -31,6 +31,11 @@ use warnings;
 use strict;
 use Data::Dumper;
 use BaseDB;
+use Utils::Accuracy;
+
+use constant {
+    DEFAULT_TRAINING_PERCENTAGE => 80,
+};
 
 use Statistics::R;
 use Utils::R;
@@ -40,7 +45,9 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 my @model_classes = ('Entity::DataModel::LinearRegression',
-                     'Entity::DataModel::LogarithmicRegression');
+                     'Entity::DataModel::LogarithmicRegression',
+                     'Entity::DataModel::AutoArima',
+                    );
 
 =pod
 
@@ -116,7 +123,6 @@ sub selectDataModel {
     return $max_model;
 }
 
-
 =pod
 
 =begin classdoc
@@ -162,7 +168,7 @@ Computes the autocorrelation by making a call to R (Project for Statistical Comp
 @param data_values the values of the historical data
 @param lag defines the maximum lag for which the acf is computed
 
-@return an array reference which contains the values of the autocorrelation (acf)
+@return an array reference which contains the values of the autocorrelation (acf) 
 
 =end classdoc
 
@@ -552,4 +558,92 @@ sub findSeasonality {
 
     return \@season;
 }
+
+
+=pod
+
+=begin classdoc
+
+Evaluates the accuracy of a data model using the following protocol : Takes a certain amount of the available 
+data to train and fit the model (80% by default), then use it to forecast the remaining data and computes the
+accuracy of the forecasted data according to the measures provided by the Utils::Accuracy utility class.
+
+@param data_model_class The class name of the evaluated data model.
+@param data A reference to a hash containing the available {timestamp => value}.
+@param combination the combination to model.
+
+@optional node_id modeled node in case of NodemetricCombination.
+@optional freq The frequence (or seasonality) to use, if needed by the model.
+@optional training_percentage The amount in percentage of data to use for training the model (80% by default).
+@return A reference to an array containing all the accuracy measures computed.
+
+=end classdoc
+
+=cut
+
+sub evaluateDataModelAccuracy {
+    my ($class, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => ['data_model_class', 'data', 'combination'],
+                         optional => {'node_id'             => undef,
+                                      'freq'                => undef,
+                                      'training_percentage' => 80,
+                                      });
+
+    # Adjust the training percentage if incorrect
+    my $training_percentage = $args{training_percentage};
+    if ( ($training_percentage <= 0) || ($training_percentage >= 100) ) {
+        $training_percentage = DEFAULT_TRAINING_PERCENTAGE;
+    }
+
+    my %data = %{$args{data}};
+
+    # Extract data hash into two sorted arrays
+    my @timestamps = sort {$a <=> $b} keys(%data);
+    my @values;
+    for my $key (@timestamps) {
+        push (@values, $args{data}->{$key});
+    }
+
+    # Segment the data
+    my $last_training_index = int( ((keys(%data) - 1) * $training_percentage) / 100 );
+
+    my %training_data;
+    for my $i (0..$last_training_index) {
+        $training_data{$timestamps[$i]} = $values[$i];
+    }
+
+    # Load and instanciate the data model
+    my $data_model_class = $args{data_model_class};
+
+    BaseDB::requireClass($data_model_class);
+
+    my $model = $data_model_class->new(
+        node_id        => $args{node_id},
+        combination_id => $args{combination}->id,
+    );
+
+    # Configure 
+    $model->configure(
+        data => \%training_data,
+        freq => $args{freq},
+    );
+
+    # Forecast the test part of the data
+    my $forecasted_ref = $model->predict(
+        data            => \%training_data,
+        freq            => $args{freq},
+        timestamps      => [@timestamps[ ($last_training_index + 1)..$#timestamps ]],
+        end_time        => $timestamps[-1],
+    );
+
+    my @forecast = @{$forecasted_ref->{values}};
+
+    return Utils::Accuracy->accuracy(
+        theorical_data_ref => \@forecast,
+        real_data_ref      => [@values[ ($last_training_index + 1)..$#timestamps ]],
+    );
+}
+
 1;

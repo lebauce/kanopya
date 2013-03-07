@@ -58,10 +58,11 @@ sub configure {
 
 See super method's doc.
 
-@param data_ref A reference to the data hash to use for the extraction (timestamp => value). 
+@param data A reference to the data hash to use for the extraction (timestamp => value). 
 @param freq The frequence (ie seasonality) of the time serie.
 @param end_time The horizon of the forecast.
-@param data_format See super method's doc.
+
+@optional data_format See super method's doc.
 
 @return See super method's doc.
 
@@ -73,11 +74,11 @@ sub predict {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => ['data_ref', 'freq', 'end_time'],
-                         optional => { 'data_format' => undef});
+                         required => ['data', 'freq', 'end_time'],
+                         optional => {'data_format' => undef});
 
 # 0- Extract and sort arrays
-    my %extracted  = %{$self->_extractAndSort(data_ref => $args{data_ref})};
+    my %extracted  = %{$self->_extractAndSort(data => $args{data})};
 
     my @timestamps = @{$extracted{timestamps_ref}}; 
     my @timeserie  = @{$extracted{timeserie_ref}};
@@ -90,8 +91,8 @@ sub predict {
     );
 
 # 2- Compute horizon and granularity
-    my %temp = %{$self->_computeHorizon(timestamps_ref => \@timestamps,
-                                         end_time      => $args{end_time},
+    my %temp = %{$self->_computeHorizonAndGranularity(timestamps_ref => \@timestamps,
+                                                      end_time      => $args{end_time},
     )};
     my $granularity = $temp{granularity};
     my $horizon     = $temp{horizon};
@@ -142,7 +143,7 @@ sub isSeasonal {
 
 Extract and sort the time serie from a given hash (timestamp => data).
 
-@param data_ref A reference to the data to use for the extraction.
+@param data A reference to the data to use for the extraction.
 
 @return the timestamps and value as array references ('timestamps_ref' && 'timeserie_ref').
 
@@ -154,15 +155,15 @@ sub _extractAndSort {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => ['data_ref']);
+                         required => ['data']);
 
     # Extract the time serie from the data param (and sort it too)
-    my @timestamps = sort {$a <=> $b} keys(%{$args{data_ref}});
+    my @timestamps = sort {$a <=> $b} keys(%{$args{data}});
 
     # Declaration and construction of the time serie
     my @values;
     for my $key (@timestamps) {
-        push (@values, $args{data_ref}->{$key});
+        push (@values, $args{data}->{$key});
     }
 
     return {
@@ -221,7 +222,7 @@ Compute the granularity of the timeserie and the horizon in terms of points.
 
 =cut
 
-sub _computeHorizon {
+sub _computeHorizonAndGranularity {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,

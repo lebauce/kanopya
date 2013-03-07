@@ -10,7 +10,6 @@ use strict;
 use warnings;
  
 use Test::More 'no_plan';
-use Kanopya::Tools::TestUtils 'expectedException';
 use Test::Exception;
 
 use Utils::Accuracy;

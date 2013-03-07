@@ -50,7 +50,7 @@ sub checkPredict {
         my @expected_values = (5, 12, 13, 15, 13);
 
         # Data format 1 (hash)
-        my $forecast_1 = Entity::DataModel::AutoArima->predict(data_ref => \%data,
+        my $forecast_1 = Entity::DataModel::AutoArima->predict(data => \%data,
                                                                freq     => 6,
                                                                end_time => 23,
                                                        );
@@ -63,7 +63,7 @@ sub checkPredict {
         }
 
         # Data format 2 (pairs)
-        my $forecast_2 = Entity::DataModel::AutoArima->predict(data_ref    => \%data,
+        my $forecast_2 = Entity::DataModel::AutoArima->predict(data    => \%data,
                                                                freq        => 6,
                                                                end_time    => 23,
                                                                data_format => 'pair',
@@ -91,7 +91,7 @@ sub checkExceptions {
             6 => 12,
         );
         Entity::DataModel::AutoArima->predict(
-            data_ref => \%data,
+            data => \%data,
             freq     => 6,
             end_time => 8,
         );
@@ -120,7 +120,7 @@ sub checkExceptions {
             18 => 12,
         );
         Entity::DataModel::AutoArima->predict(
-            data_ref => \%data,
+            data => \%data,
             freq     => 6,
             end_time => 8,
         );
