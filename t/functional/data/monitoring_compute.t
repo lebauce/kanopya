@@ -144,7 +144,7 @@ sub testClusterMetric {
 
         $aggregator->update();
 
-        if (defined $cm->evaluate()) {die 'Store values while undef'};
+        if (defined $cm->lastValue()) {die 'Store values while undef'};
 
         # All node responds
         $service_provider->addManagerParameter(
@@ -156,7 +156,7 @@ sub testClusterMetric {
         sleep 1; # Avoid updating rrd at same time
         $aggregator->update();
 
-        if ($cm->evaluate() != 75) {die 'Wrong value aggregated, stored and retrieved'};
+        if ($cm->lastValue() != 75) {die 'Wrong value aggregated, stored and retrieved'};
 
         # One node doesn't respond
         $service_provider->addManagerParameter(
@@ -167,7 +167,7 @@ sub testClusterMetric {
         sleep 1; # Avoid updating rrd at same time
         $aggregator->update();
 
-        if ($cm->evaluate() != 50) {die 'Fail in aggregate only defined values (ignore undef)'}
+        if ($cm->lastValue() != 50) {die 'Fail in aggregate only defined values (ignore undef)'}
 
         # Float values
         $service_provider->addManagerParameter(
@@ -178,7 +178,7 @@ sub testClusterMetric {
         sleep 1; # Avoid updating rrd at same time
         $aggregator->update();
 
-        if ($cm->evaluate() - 25.5 > 10**-8) {die 'Wrongly aggregate float'}
+        if ($cm->lastValue() - 25.5 > 10**-8) {die 'Wrongly aggregate float'}
 
     } 'Clustermetrics computing';
 }
@@ -237,7 +237,7 @@ sub testAggregateCombination {
 
         if (defined $acomb1->evaluate()) {die 'Combination defined while one metric value is undef'};
 
-        if (! ($acomb_ident->evaluate() eq $cm1->evaluate())) { die 'Identity combination as same value than stored metric value'}
+        if (! ($acomb_ident->evaluate() eq $cm1->lastValue())) { die 'Identity combination as same value than stored metric value'}
 
         # More complex config:
         #        node1 node2
@@ -414,7 +414,7 @@ sub testBigAggregation {
         );
         $aggregator->update();
 
-        if (! ($cm->evaluate() == 12*$nodes_count)) {die 'Wrongly aggregated when values for all nodes'}
+        if (! ($cm->lastValue() == 12*$nodes_count)) {die 'Wrongly aggregated when values for all nodes'}
 
         my $mock_conf   = "{'default':{'const':12},"
                         . "'nodes':{'node_1':{'const':null},'node_10':{'const':null},'node_100':{'const':null} }}";
@@ -426,7 +426,7 @@ sub testBigAggregation {
         sleep 1; # Avoid updating rrd at same time
         $aggregator->update();
 
-        if (! ($cm->evaluate() == 12*$nodes_count - 3*12)) {die 'Wrongly aggregated when few undef values'};
+        if (! ($cm->lastValue() == 12*$nodes_count - 3*12)) {die 'Wrongly aggregated when few undef values'};
 
         $mock_conf  = "{'default':{'const':null},"
                     . "'nodes':{'node_2':{'const':23},'node_20':{'const':24},'node_90':{'const':25} }}";
@@ -438,7 +438,7 @@ sub testBigAggregation {
         sleep 1; # Avoid updating rrd at same time
         $aggregator->update();
 
-        if (! ($cm->evaluate() == 23+24+25)) {'Wrongly aggregated when lot of undef values'};
+        if (! ($cm->lastValue() == 23+24+25)) {'Wrongly aggregated when lot of undef values'};
     } 'Aggregation on big cluster (' . $nodes_count . ' nodes)'
 }
 
