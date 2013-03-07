@@ -1043,7 +1043,10 @@ var KanopyaFormWizard = (function() {
         // a possibly defined td for the error label
         var errortd = this.form.find('td.error_' + element.attr('name')).get(0);
         if (errortd) {
-            error.appendTo(errortd);
+            // If an error already exists for this column, do not add it.
+            if ($(errortd).find('label').length <= 0) {
+                error.appendTo(errortd);
+            }
         } else {
             error.insertBefore(element);
         }
