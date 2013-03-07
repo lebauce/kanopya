@@ -408,7 +408,7 @@ function workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
     }
 
     $.ajax({
-        url         : '/api/serviceprovider/' + serviceprovider_id + '/service_provider_managers?manager_type=workflow_manager',
+        url         : '/api/serviceprovider/' + serviceprovider_id + '/service_provider_managers?custom.category=WorkflowManager',
         type        : 'GET',
         success     : function(data) {
             manager = data[0];
@@ -468,7 +468,7 @@ function workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
 
 function workflowRuleDeassociation(cid, rule_id, wfdef_id, serviceprovider_id) {
     $.ajax({
-        url         : '/api/serviceprovider/' + serviceprovider_id + '/service_provider_managers?manager_type=workflow_manager',
+        url         : '/api/serviceprovider/' + serviceprovider_id + '/service_provider_managers?custom.category=WorkflowManager',
         type        : 'GET',
         success     : function(managers) {
             var params = {
