@@ -27,7 +27,8 @@ function networks_list(cid) {
             onSelectRow : network_addbutton_action
         }
     });
-    var addButton   = $('<a>', { text : 'Add a Network' }).appendTo('#' + cid)
+     var action_div=$('#' + cid).prevAll('.action_buttons'); 
+    var addButton   = $('<a>', { text : 'Add a Network' }).appendTo(action_div)
                         .button({ icons : { primary : 'ui-icon-plusthick' } });
     $(addButton).bind('click', network_addbutton_action);
 }

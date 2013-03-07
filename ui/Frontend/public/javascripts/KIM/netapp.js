@@ -56,8 +56,9 @@ function netapp_list(cid) {
             });
         }
     });
-    
-    var netapp_addbutton    = $('<a>', { text : 'Create a NetApp' }).appendTo('#' + cid)
+    var action_div=$('#' + cid).prevAll('.action_buttons'); 
+    action_div.empty();
+    var netapp_addbutton    = $('<a>', { text : 'Create a NetApp' }).appendTo(action_div)
                                 .button({ icons : { primary : 'ui-icon-plusthick' } });
     $(netapp_addbutton).bind('click', netapp_addbutton_action);
 }

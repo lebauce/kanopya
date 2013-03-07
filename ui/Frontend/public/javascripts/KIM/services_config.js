@@ -35,8 +35,8 @@ function loadServicesConfig(cid, eid) {
                 }
             }
         });
-
-    var addButton   = $('<a>', { text : 'Add component' }).appendTo('#' + cid)
+	var action_div=$('#' + cid).prevAll('.action_buttons');
+    var addButton   = $('<a>', { text : 'Add component' }).appendTo(action_div)
                         .button({ icons : { primary : 'ui-icon-plusthick' } });
     $(addButton).bind('click', function (e) {
         (new KanopyaFormWizard({

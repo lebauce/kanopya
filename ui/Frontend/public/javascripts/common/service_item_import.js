@@ -136,12 +136,11 @@ function importItemButton(container_id, sp_id, obj_info, grid_ids) {
                         title   : 'Import ' + obj_info.name + 's',
                         modal   : true,
                         width   : '400px',
-                        buttons : {
-                            'Import' : importChecked,
-                            'Cancel' : function () {
-                                $(this).dialog("close");
-                            }
-                        },
+                        buttons : [
+                            {id:'button-import',text:'Import',click : importChecked},
+                            {id:'button-cancel',text:'Cancel' ,click: function () {$(this).dialog("close");}}
+                        ]    
+                        ,
                         close: function (event, ui) {
                             $(this).remove();
                         }

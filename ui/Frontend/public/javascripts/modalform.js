@@ -464,10 +464,10 @@ var ModalForm = (function() {
     }
     
     ModalForm.prototype.openDialog = function() {
-        var buttons = {
-            'Cancel'    : $.proxy(this.cancel, this),
-            'Ok'        : $.proxy(this.validateForm, this)
-        };
+        var buttons = [
+        {id:'button-cancel',text:'Cancel',click: $.proxy(this.cancel, this)},
+        {id:'button-ok',text:'Ok',click: $.proxy(this.validateForm, this)}
+        ];
         if (this.skippable) {
             buttons['Skip'] = $.proxy(function() {
                 this.closeDialog();

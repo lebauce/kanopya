@@ -24,7 +24,8 @@ function vlans_list(cid) {
             onSelectRow : vlan_addbutton_action
         }
     });
-    var addButton   = $('<a>', { text : 'Add a VLAN' }).appendTo('#' + cid)
+    var action_div=$('#' + cid).prevAll('.action_buttons'); 
+    var addButton   = $('<a>', { text : 'Add a VLAN' }).appendTo(action_div)
                         .button({ icons : { primary : 'ui-icon-plusthick' } });
     $(addButton).bind('click', vlan_addbutton_action);
 }

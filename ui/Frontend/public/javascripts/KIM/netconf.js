@@ -23,7 +23,8 @@ function netconfs_list(cid) {
             onSelectRow : netconf_addbutton_action
         }
     });
-    var addButton   = $('<a>', { text : 'Add a Network Configuration' }).appendTo('#' + cid)
+    var action_div=$('#' + cid).prevAll('.action_buttons'); 
+    var addButton   = $('<a>', { text : 'Add a Network Configuration' }).appendTo(action_div)
                         .button({ icons : { primary : 'ui-icon-plusthick' } });
     $(addButton).bind('click', netconf_addbutton_action);
 }

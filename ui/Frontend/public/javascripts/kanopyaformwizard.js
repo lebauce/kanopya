@@ -25,6 +25,10 @@ var KanopyaFormWizard = (function() {
             action += '/' + this.id;
         }
 
+        if (args.prependElement !== undefined) {
+            this.content.prepend($(args.prependElement));
+        }
+
         // Initialize the from
         this.data = {};
         this.form = $("<form>", { method : method, action : action });
@@ -33,41 +37,13 @@ var KanopyaFormWizard = (function() {
         // Load the form contents
         this.steps = {};
         this.load();
-
-        // Add raw steps divs if defined
-        for (var name in this.rawsteps) {
-            // Ignore all the raw step inputs
-            this.rawsteps[name].find(":input").addClass("wizard-ignore");
-            this.addStep(name, this.rawsteps[name]);
-        }
-
-        // We add buttons at end of the form
-        var buttons = this.actionsCallback();
-        if (buttons) {
-            var actionsTable = $("<table>");
-            var tr = $('<tr>');
-            for (var i in buttons) {
-                // To make wizard ignore them
-                var button = buttons[i].addClass('wizard-ignore');
-                // A new column for each action button
-                var td = $('<td>');
-                td.append(button);
-                tr.append(td);
-            }
-            actionsTable.append(tr);
-            var fieldset = $("<fieldset>").appendTo(this.form);
-            var legend   = $("<legend>", { text : 'Actions' }).css('font-weight', 'bold');
-            fieldset.append(legend);
-            fieldset.append(actionsTable);
-            this.form.appendTo(this.content).append(fieldset);
-        }
     }
 
-    KanopyaFormWizard.prototype.load = function(trigger) {
+    KanopyaFormWizard.prototype.load = function() {
         this.attributedefs = {};
 
         // Retrieve data structure and values from api
-        var response = this.attrsCallback(this.type, this.data, trigger);
+        var response = this.attrsCallback(this.type, this.data);
         if (response == undefined) {
             throw new Error("KanopyaFormWizard: Could not get attributes of: " + this.type);
         }
@@ -113,7 +89,7 @@ var KanopyaFormWizard = (function() {
             if (attributes[relation_name] !== undefined && attributes[relation_name].attributes !== undefined) {
                 response = attributes[relation_name].attributes;
             } else {
-                response = this.attrsCallback(relationdef.resource, this.data, trigger);
+                response = this.attrsCallback(relationdef.resource, this.data);
             }
             if (response == undefined) {
                 throw new Error("KanopyaFormWizard: Could not get attributes of: " + relationdef.resource);
@@ -186,33 +162,34 @@ var KanopyaFormWizard = (function() {
             }
         }
 
-        // Insert the step divs to the form content
-        for (var step in this.steps) {
-            $(this.steps[step].div).attr('id', this.name + '_step_' + step);
+        // Add raw steps divs if defined
+        for (var name in this.rawsteps) {
+            // Ignore all the raw step inputs
+            this.rawsteps[name].find(":input").addClass("wizard-ignore");
 
-            var div = $(this.form).find('#' + this.name + '_step_' + step).get(0);
-            if (div === undefined) {
-                $(this.steps[step].div).appendTo(this.form);
-            } else {
-                var old = $(div).replaceWith($(this.steps[step].div));
-                $(old).find('tr').remove();
-                $(old).remove();
-            }
+            this.addStep(name, this.rawsteps[name]);
         }
-        this.steps = {};
 
-        // Update the step to hide non visible steps
-        $(this.form).formwizard("update_steps");
-
-        // Use jQuery.mutiselect (after DOM loaded)
-        this.content.find('select[multiple="multiple"]').multiselect({selectedList: 4});
-        this.content.find('select[multiple!="multiple"]').not('.unit').multiselect({
-            multiple: false,
-            header: false,
-            selectedList: 1
-        });
-
-        this.resizeDialog();
+        // We add buttons at end of the form
+        var buttons = this.actionsCallback();
+        if (buttons) {
+            var actionsTable = $("<table>");
+            var tr = $('<tr>');
+            for (var i in buttons) {
+                // To make wizard ignore them
+                var button = buttons[i].addClass('wizard-ignore');
+                // A new column for each action button
+                var td = $('<td>');
+                td.append(button);
+                tr.append(td);
+            }
+            actionsTable.append(tr);
+            var fieldset = $("<fieldset>").appendTo(this.form);
+            var legend   = $("<legend>", { text : 'Actions' }).css('font-weight', 'bold');
+            fieldset.append(legend);
+            fieldset.append(actionsTable);
+            this.form.appendTo(this.content).append(fieldset);
+        }
     }
 
     KanopyaFormWizard.prototype.buildFromAttrDef = function(attributes, displayed, values, relations, listing) {
@@ -257,6 +234,16 @@ var KanopyaFormWizard = (function() {
                 this.newFormInput(name, value, listing);
             }
         }
+
+        // Use jQuery.mutiselect (after DOM loaded)
+        this.content.find('select[multiple="multiple"]').multiselect({selectedList: 4});
+        this.content.find('select[multiple!="multiple"]').not('.unit').multiselect({
+            multiple: false,
+            header: false,
+            selectedList: 1
+        });
+
+        this.resizeDialog();
     };
 
     KanopyaFormWizard.prototype.getOptions = function(name, value, relations) {
@@ -340,11 +327,6 @@ var KanopyaFormWizard = (function() {
                 });
             }
 
-            // insert yes/no values for boolean select
-            if (attr.type === 'boolean') {
-                attr.options = { 0 : 'No', 1 : 'Yes' };
-            }
-
             // Inserting select options
             for (var i in attr.options) if (attr.options.hasOwnProperty(i)) {
                 var optiontext  = attr.options[i].label || attr.options[i].pk || attr.options[i];
@@ -388,7 +370,7 @@ var KanopyaFormWizard = (function() {
             }
 
         } else if ((toInputType(attr.type) === 'select' && attr.relation === 'single') ||
-                   ((attr.type === 'enum' || attr.type === 'boolean') && attr.relation !== 'multi')) {
+                   (attr.type === 'enum' && attr.relation !== 'multi')) {
             var option = $("<option>", { value : '', text : '-' }).prependTo(input);
             if (value === undefined) {
                 $(option).attr('selected', 'selected');
@@ -659,19 +641,25 @@ var KanopyaFormWizard = (function() {
         $(input).addClass('wizard-ignore').addClass("ui-state-disabled");
     }
 
-    KanopyaFormWizard.prototype.reload = function(event) {
-        // Enable fields in non visible steps as the same way while submiting
-        if (Object.keys(this.steps).length > 1) {
-            $(this.form).find(":input").not(".wizard-ignore").removeAttr("disabled");
-        }
+    KanopyaFormWizard.prototype.reload = function() {
         this.beforeSerialize($(this.form));
 
         // Update the data hash as it will be given in parameter
         // to the attributtes request at reload
         this.data = this.serialize($(this.form).serializeArray());
 
+        // Remove table of the current step
+        for (var step in this.steps) {
+            for (var table in this.steps[step]) {
+                $(this.steps[step][table]).find('tr').remove();
+                if (this.steps[step][table].parent().is('fieldset')) {
+                    this.steps[step][table].parent().css('display', 'none');
+                }
+            }
+        }
+
         // Then reload the form
-        this.load($(event.target).attr('name'));
+        this.load();
     }
 
     KanopyaFormWizard.prototype.mustDisableField = function(name, value) {
@@ -833,10 +821,7 @@ var KanopyaFormWizard = (function() {
         return values;
     }
 
-    KanopyaFormWizard.prototype.getAttributes = function(resource, data, trigger) {
-        if (trigger) {
-            data['trigger'] = trigger;
-        }
+    KanopyaFormWizard.prototype.getAttributes = function(resource, data) {
         return ajax('GET', '/api/attributes/' + resource, data);
     }
 
@@ -855,34 +840,41 @@ var KanopyaFormWizard = (function() {
         var table = tag || step;
 
         // If the div for the step does not exists, create it
+        var stepdiv;
         if (this.steps[step] === undefined) {
-            this.addStep(step, $("<div>"));
+            stepdiv = $("<div>");
+            this.addStep(step, stepdiv);
 
+        } else {
+            stepdiv = $(this.form).find('#' + this.name + '_step_' + step);
         }
 
         // If the table does not exists, create it
-        if (this.steps[step].tables[table] === undefined) {
-            this.steps[step].tables[table] = $("<table>");
+        if (this.steps[step][table] === undefined) {
+            this.steps[step][table] = $("<table>");
             if (tag) {
-                this.steps[step].tables[table].css('width', this.width).css('width', this.width - 50);
+                this.steps[step][table].css('width', this.width).css('width', this.width - 50);
                 var fieldset = $("<fieldset>").css('border-color', '#ddd').css('display', 'none');
                 fieldset.append($("<legend>", { text : tag }).css('font-weight', 'bold'));
-                fieldset.append(this.steps[step].tables[table]);
-                fieldset.appendTo(this.steps[step].div);
+                fieldset.append(this.steps[step][table]);
+                fieldset.appendTo(stepdiv);
 
             } else {
-                this.steps[step].tables[table].css('width', this.width);
-                this.steps[step].tables[table].appendTo(this.steps[step].div);
+                this.steps[step][table].css('width', this.width);
+                this.steps[step][table].appendTo(stepdiv);
             }
         }
-        return this.steps[step].tables[table];
+        return this.steps[step][table];
     }
 
     KanopyaFormWizard.prototype.addStep = function(name, div) {
+        $(div).attr('id', this.name + '_step_' + name);
+        $(div).appendTo(this.form);
+
         if (name !== this.type) {
             $(div).addClass('step').attr('rel', name);
         }
-        this.steps[name] = { 'div' : $(div), 'tables' : {} };
+        this.steps[name] = {};
     }
 
     KanopyaFormWizard.prototype.start = function() {
@@ -915,7 +907,7 @@ var KanopyaFormWizard = (function() {
         this.submitCallback  = args.submitCallback  || this.submit;
         this.valuesCallback  = args.valuesCallback  || this.getValues;
         this.attrsCallback   = args.attrsCallback   || this.getAttributes;
-        this.optionsCallback = args.optionsCallback || function () { return false };
+        this.optionsCallback = args.optionsCallback || function () { return false } ;
         this.actionsCallback = args.actionsCallback || $.noop;
         this.cancelCallback  = args.cancelCallback  || $.noop;
         this.error           = args.error           || $.noop;
@@ -1185,6 +1177,8 @@ var KanopyaFormWizard = (function() {
         }
         if ($(this.content).width() > $(window).innerWidth() - 50) {
             $(this.content).css('width', $(this.content).innerWidth() - 50);
+        } else {
+            $(this.content).css('width', $(this.content).width() + 15);
         }
         $(this.content).dialog('option', 'position', 'top');
     }
