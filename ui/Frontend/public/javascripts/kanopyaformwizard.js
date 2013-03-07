@@ -34,13 +34,6 @@ var KanopyaFormWizard = (function() {
         this.steps = {};
         this.load();
 
-        // Add raw steps divs if defined
-        for (var name in this.rawsteps) {
-            // Ignore all the raw step inputs
-            this.rawsteps[name].find(":input").addClass("wizard-ignore");
-            this.addStep(name, this.rawsteps[name]);
-        }
-
         // We add buttons at end of the form
         var buttons = this.actionsCallback();
         if (buttons) {
@@ -186,6 +179,13 @@ var KanopyaFormWizard = (function() {
                 this.buildFromAttrDef(rel_attributedefs, this.relations[relation_name], entries[entry], rel_relationdefs,
                                       this.attributedefs[relation_name].label || relation_name);
             }
+        }
+
+        // Add raw steps divs if defined
+        for (var name in this.rawsteps) {
+            // Ignore all the raw step inputs
+            this.rawsteps[name].find(":input").addClass("wizard-ignore");
+            this.addStep(name, this.rawsteps[name]);
         }
 
         // Insert the step divs to the form content
