@@ -180,6 +180,23 @@ sub label {
     throw Kanopya::Exception(error => 'Method not implemented');
 }
 
+=pod
+
+=begin classdoc
+
+Indicates whether the model is seasonal or not, ie if the model need a seasonality value to be able to
+configure itself and forecast.
+
+@return true if the model needs a seasonality value to configure or/and forecast, false else.
+
+=end classdoc
+
+=cut
+
+sub isSeasonal {
+    throw Kanopya::Exception(error => 'Method not implemented');
+}
+
 
 =pod
 

@@ -132,6 +132,10 @@ sub label {
     return 'Auto Arima ' . $self->time_label();
 }
 
+sub isSeasonal {
+    return 1;
+}
+
 =pod
 
 =begin classdoc

@@ -283,4 +283,8 @@ sub label {
     return 'Logarithmic regression '.$self->time_label()." (R = $r_rounded)";
 }
 
+sub isSeasonal {
+    return 0;
+}
+
 1;
