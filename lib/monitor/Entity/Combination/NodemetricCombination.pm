@@ -303,23 +303,36 @@ sub computeValueFromMonitoredValues {
 
 sub evaluate {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'nodes' ]);
+    General::checkParams(args => \%args, optional => { 'format' => 'id', 'nodes' => undef});
+
+    my @nodes = (defined $args{nodes}) ? @{$args{nodes}}
+                                       : $self->service_provider->searchRelated(
+                                            filters => ['nodes'],
+                                            hash    => {-not => {monitoring_state => 'disabled'}}
+                                         );
 
     my @col_ind_ids = ($self->nodemetric_combination_formula =~ m/id(\d+)/g);
 
     my %values = map {$_ => Entity::CollectorIndicator->get(id => $_)
-                            ->lastValue(nodes => $args{nodes}, service_provider => $self->service_provider)
+                            ->lastValue(nodes => \@nodes, service_provider => $self->service_provider)
                  } @col_ind_ids;
 
     my %evaluation_for_each_node;
 
-    for my $node (@{$args{nodes}}) {
+    for my $node (@nodes) {
         my %values_node = map { $_ => $values{$_}{$node->id} } @col_ind_ids;
         my $formula = $self->nodemetric_combination_formula;
         $formula =~ s/id(\d+)/$values_node{$1}/g;
-        $evaluation_for_each_node{$node->id} = eval $formula;
-    }
 
+        my $value = eval $formula;
+        if ($args{format} eq 'host_name') {
+            $evaluation_for_each_node{$node->node_hostname} = $value;
+        }
+        else {
+            $evaluation_for_each_node{$node->id} = $value;
+        }
+    }
+    $log->debug('output = '.Dumper \%evaluation_for_each_node);
     return \%evaluation_for_each_node;
 }
 
