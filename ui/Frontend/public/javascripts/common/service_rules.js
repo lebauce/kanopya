@@ -438,7 +438,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
     $("<p>").appendTo('#node_accordion_container');
     create_grid( {
         caption: 'Rules',
-        url: '/api/serviceprovider/' + elem_id + '/nodemetric_rules',
+        url: '/api/nodemetricrule?service_provider_id=' + elem_id,
         content_container_id: 'node_accordion_container',
         grid_id: serviceNodemetricRulesGridId,
         grid_class: 'service_resources_nodemetric_rules',
@@ -455,10 +455,10 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         colNames: [ 'id', 'name', 'enabled', 'formula', 'description', 'trigger', 'Alert' ],
         colModel: [
             { name: 'pk', index: 'pk', sorttype: 'int', hidden: true, key: true },
-            { name: 'nodemetric_rule_label', index: 'nodemetric_rule_label', width: 120 },
-            { name: 'nodemetric_rule_state', index: 'nodemetric_rule_state', width: 60,},
+            { name: 'label', index: 'label', width: 120 },
+            { name: 'state', index: 'state', width: 60,},
             { name: 'formula_label', index: 'formula_label', width: 120 },
-            { name: 'nodemetric_rule_description', index: 'nodemetric_rule_description', width: 120 },
+            { name: 'description', index: 'description', width: 120 },
             { name: 'workflow_def_id', index: 'workflow_def_id', width: 120 },
             { name: 'alert', index: 'alert', width: 40, align: 'center', nodetails: true }
         ],
@@ -469,7 +469,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                         }},
                         { label : 'Nodes', id : 'nodes', onLoad : function(cid, eid) { rule_nodes_tab(cid, eid, elem_id); }, hidden : mode_policy },
                     ],
-            title : { from_column : 'nodemetric_rule_label' },
+            title : { from_column : 'label' },
             onClose : function() {$('#'+serviceNodemetricRulesGridId).trigger('reloadGrid')}
         },
         action_delete: {
@@ -484,8 +484,9 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                 elem_id,
                 {
                     name        : 'node rule',
-                    label_attr  : 'nodemetric_rule_label',
-                    desc_attr   : 'nodemetric_rule_description',
+                    relation    : 'nodemetric_rules',
+                    label_attr  : 'label',
+                    desc_attr   : 'description',
                     type        : 'nodemetric_rule'
                 },
                 [serviceNodemetricConditionsGridId, serviceNodemetricRulesGridId]
@@ -534,18 +535,18 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
     $("<p>").appendTo('#service_accordion_container');
     create_grid( {
         caption: 'Rules',
-        url: '/api/serviceprovider/' + elem_id + '/aggregate_rules',
+        url: '/api/aggregaterule?service_provider_id=' + elem_id,
         grid_class: 'service_resources_aggregate_rules',
         content_container_id: 'service_accordion_container',
         grid_id: serviceAggregateRulesGridId,
         colNames: ['id','name', 'enabled', 'last eval', 'formula', 'description', 'trigger', 'alert'],
-        colModel: [ 
+        colModel: [
              {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
-             {name:'aggregate_rule_label',index:'aggregate_rule_label', width:90,},
-             {name:'aggregate_rule_state',index:'aggregate_rule_state', width:90,},
+             {name:'label',index:'label', width:90,},
+             {name:'state',index:'state', width:90,},
              {name:'aggregate_rule_last_eval',index:'aggregate_rule_last_eval', width:90, formatter : lastevalStateFormatter, hidden:mode_policy},
              {name:'formula_label',index:'formula_label', width:90,},
-             {name:'aggregate_rule_description',index:'aggregate_rule_description', width:200,},
+             {name:'description',index:'description', width:200,},
              {name: 'workflow_def_id', index: 'workflow_def_id', width: 120 },
              {name: 'alert', index: 'alert', width: 40, align: 'center', nodetails: true }
            ],
@@ -565,7 +566,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                     ruleDetails(cid, eid, 'aggregate_rule');
                }},
             ],
-            title   : { from_column : 'aggregate_rule_label' },
+            title   : { from_column : 'label' },
             onClose : function() {$('#'+serviceAggregateRulesGridId).trigger('reloadGrid')}
         },
         action_delete: {
@@ -579,8 +580,9 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                 elem_id,
                 {
                     name        : 'service rule',
-                    label_attr  : 'aggregate_rule_label',
-                    desc_attr   : 'aggregate_rule_description',
+                    relation    : 'aggregate_rules',
+                    label_attr  : 'label',
+                    desc_attr   : 'description',
                     type        : 'aggregate_rule'
                 },
                 [serviceAggregateConditionsGridId, serviceAggregateRulesGridId]
