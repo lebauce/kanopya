@@ -105,8 +105,8 @@ sub new {
     my $self = $class->SUPER::new(%args);
 
     my $toString = $self->toString();
-    if ((! defined $args{label}) || $args{label} eq '') {
-        $self->setAttr(name=>'label', value => $toString);
+    if ((! defined $args{rule_name}) || $args{rule_name} eq '') {
+        $self->setAttr(name=>'rule_name', value => $toString);
     }
     $self->setAttr(name=>'formula_string', value => $toString);
     $self->save();
@@ -115,10 +115,10 @@ sub new {
 
 sub setLabel{
     my ($self,%args) = @_;
-    if((!defined $args{label}) || $args{label} eq ''){
-        $self->setAttr(name=>'label', value => $self->toString());
+    if((!defined $args{rule_name}) || $args{rule_name} eq ''){
+        $self->setAttr(name=>'rule_name', value => $self->toString());
     }else{
-        $self->setAttr(name=>'label', value => $args{label});
+        $self->setAttr(name=>'rule_name', value => $args{rule_name});
     }
     $self->save();
 }
@@ -256,7 +256,7 @@ sub clone {
     my $clone = $self->_importToRelated(
         dest_obj_id         => $args{'dest_service_provider_id'},
         relationship        => 'service_provider',
-        label_attr_name     => 'label',
+        label_attr_name     => 'rule_name',
         attrs_clone_handler => $attrs_cloner
     );
 

@@ -263,7 +263,7 @@ sub getDependencies {
 
     my %dependencies;
     for my $rule (@rules) {
-        $dependencies{$rule->label} = {};
+        $dependencies{$rule->rule_name} = {};
     }
     return \%dependencies;
 }

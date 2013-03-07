@@ -107,7 +107,7 @@ sub testNodeRuleImport {
         Entity::Rule::NodemetricRule->find(
             hash => {
                 service_provider_id => $sp_dest->id,
-                label               => 'node rule label',
+                rule_name           => 'node rule label',
                 formula             => 'id'.$cloned_ncond->id,
                 state               => 'enabled',
                 description         => 'node rule description',
@@ -176,7 +176,7 @@ sub testServiceRuleImport {
         $cloned_ar = Entity::Rule::AggregateRule->find(
             hash => {
                 service_provider_id  => $sp_dest->id,
-                label                => 'service rule label',
+                rule_name            => 'service rule label',
                 formula              => 'id'.$cloned_acond->id,
                 state                => 'enabled',
                 aggregate_rule_last_eval            => undef, # this attr is not cloned
@@ -299,7 +299,7 @@ sub init {
     # Nodemetric rule
    $nr = Entity::Rule::NodemetricRule->new(
         service_provider_id => $sp_src->id,
-        label               => 'node rule label',
+        rule_name           => 'node rule label',
         formula             => 'id'.$ncond->id,
         state               => 'enabled',
         description         => 'node rule description',
@@ -332,7 +332,7 @@ sub init {
     # Aggregate rule
    $ar = Entity::Rule::AggregateRule->new(
         service_provider_id  => $sp_src->id,
-        label                => 'service rule label',
+        rule_name            => 'service rule label',
         formula              => 'id'.$acond->id,
         state                => 'enabled',
         aggregate_rule_last_eval            => '1',

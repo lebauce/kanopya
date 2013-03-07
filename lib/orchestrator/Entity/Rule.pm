@@ -41,7 +41,7 @@ use constant ATTR_DEF   => {
         is_extended     => 0,
         is_editable     => 1,
     },
-    label => {
+    rule_name => {
         pattern         => '^.*$',
         is_mandatory    => 0,
         is_extended     => 0,

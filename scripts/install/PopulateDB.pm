@@ -2031,7 +2031,7 @@ sub configureDefaultOrchestrationPolicyService {
             # Node rule
             Entity::Rule::NodemetricRule->new(
                 formula             => 'id'.$nmcond->id,
-                label               => $noderule_conf->{$indic_label}->{rule_label},
+                rule_name           => $noderule_conf->{$indic_label}->{rule_label},
                 description         => $noderule_conf->{$indic_label}->{rule_description},
                 state               => 'enabled',
                 service_provider_id => $sp->id,
@@ -2063,7 +2063,7 @@ sub configureDefaultOrchestrationPolicyService {
                 # Service rule
                 Entity::Rule::AggregateRule->new(
                     formula             => 'id'.$acond->id,
-                    label               => $clusterrule_conf->{$indic_label}{$func}->{rule_label},
+                    rule_name           => $clusterrule_conf->{$indic_label}{$func}->{rule_label},
                     description         => $clusterrule_conf->{$indic_label}{$func}->{rule_description},
                     state               => 'enabled',
                     service_provider_id => $sp->id,

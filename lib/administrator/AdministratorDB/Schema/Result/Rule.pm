@@ -53,7 +53,7 @@ __PACKAGE__->table("rule");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 label
+=head2 rule_name
 
   data_type: 'char'
   is_nullable: 1
@@ -111,7 +111,7 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "label",
+  "rule_name",
   { data_type => "char", is_nullable => 1, size => 255 },
   "formula",
   { data_type => "char", is_nullable => 0, size => 255 },
@@ -191,6 +191,20 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 ruleconditions
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Rulecondition>
+
+=cut
+
+__PACKAGE__->has_many(
+  "ruleconditions",
+  "AdministratorDB::Schema::Result::Rulecondition",
+  { "foreign.rule_id" => "self.rule_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 =head2 service_provider
 
@@ -208,6 +222,8 @@ __PACKAGE__->belongs_to(
 );
 
 =head2 workflow_def
+
+Type: belongs_to
 
 Related object: L<AdministratorDB::Schema::Result::WorkflowDef>
 

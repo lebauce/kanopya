@@ -1194,7 +1194,7 @@ CREATE TABLE `rulecondition` (
 CREATE TABLE `rule` (
   `rule_id` int(8) unsigned NOT NULL,
   `service_provider_id` int(8) unsigned NOT NULL,
-  `label` char(255),
+  `rule_name` char(255),
   `formula` char(255) NOT NULL,
   `formula_string` TEXT,
   `timestamp` int(8) unsigned NULL DEFAULT NULL ,

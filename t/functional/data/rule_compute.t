@@ -524,7 +524,6 @@ sub test_nodemetric_rules {
             service_provider_id => $service_provider->id,
             formula => 'id'.$nc_t->id,
             state => 'enabled',
-            label => 'nr_t',
         );
 
         $rulesengine->oneRun();
@@ -810,7 +809,6 @@ sub test_and_n {
         service_provider_id => $service_provider->id,
         formula => 'id'.$nc_t->id.' && '.'id'.$nc_f->id,
         state => 'enabled',
-        label => 'r3',
     );
 
     my $r4 = Entity::Rule::NodemetricRule->new(
