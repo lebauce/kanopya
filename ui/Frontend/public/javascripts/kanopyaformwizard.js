@@ -1182,8 +1182,8 @@ var KanopyaFormWizard = (function() {
 
     KanopyaFormWizard.prototype.prettifyInputs = function() {
         // Use jQuery.mutiselect (after DOM loaded)
-        this.content.find('select[multiple="multiple"]').multiselect({selectedList: 4});
-        this.content.find('select[multiple!="multiple"]').not('.unit').multiselect({
+        this.content.find('select[multiple="multiple"]').not('.multiselect').addClass('multiselect').multiselect({selectedList: 4});
+        this.content.find('select[multiple!="multiple"]').not('.multiselect').not('.unit').addClass('multiselect').multiselect({
             multiple: false,
             header: false,
             selectedList: 1
