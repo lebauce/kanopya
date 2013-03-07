@@ -211,6 +211,14 @@ sub getPolicyDef {
             }
         }
     }
+    # Remove possibly defined value of attributes that depends on disk_manager_id.
+    # (It is probably a first implementation of the full generic version of
+    # manager management in policies...)
+    else {
+        for my $dependency (@{ $self->getPolicySelectorMap->{disk_manager_id} }) {
+            delete $args{params}->{$dependency};
+        }
+    }
 
     $self->setValues(attributes          => $attributes,
                      values              => $args{params},
@@ -242,7 +250,7 @@ sub getNonEditableAttributes {
     my $definition = $self->SUPER::getNonEditableAttributes();
 
     # Add the storage_provider_id as a non editable attr if disk_manager_id
-    # or export_manager_id defined as as a non editable attr.
+    # or export_manager_id defined as a non editable attr.
     if (defined $definition->{disk_manager_id} or defined $definition->{export_manager_id}) {
         $definition->{storage_provider_id} = 1;
     }
