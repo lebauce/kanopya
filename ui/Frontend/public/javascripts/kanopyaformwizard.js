@@ -171,6 +171,8 @@ var KanopyaFormWizard = (function() {
                 add_button.bind('click', fixed_params, function(event) {
                     _this.buildFromAttrDef(event.data.attributes, event.data.displayed,
                                            event.data.values, event.data.relations, event.data.listing);
+                    _this.prettifyInputs();
+                    _this.resizeDialog();
                 });
                 add_button.button({ icons : { primary : 'ui-icon-plusthick' } });
                 add_button.val('Add');
@@ -193,24 +195,19 @@ var KanopyaFormWizard = (function() {
             var div = $(this.form).find('#' + this.name + '_step_' + step).get(0);
             if (div === undefined) {
                 $(this.steps[step].div).appendTo(this.form);
+
             } else {
                 var old = $(div).replaceWith($(this.steps[step].div));
                 $(old).find('tr').remove();
                 $(old).remove();
             }
+            delete this.steps[step].div;
         }
-        this.steps = {};
+
+        this.prettifyInputs();
 
         // Update the step to hide non visible steps
         $(this.form).formwizard("update_steps");
-
-        // Use jQuery.mutiselect (after DOM loaded)
-        this.content.find('select[multiple="multiple"]').multiselect({selectedList: 4});
-        this.content.find('select[multiple!="multiple"]').not('.unit').multiselect({
-            multiple: false,
-            header: false,
-            selectedList: 1
-        });
 
         this.resizeDialog();
     }
@@ -682,7 +679,7 @@ var KanopyaFormWizard = (function() {
             !(this.attributedefs[name].is_primary == true && this.attributedefs[name].belongs_to != undefined)) {
             return true;
         }
-        if (this.attributedefs[name].is_editable != true && value !== undefined){
+        if (this.attributedefs[name].is_editable != true && value !== undefined) {
             return true;
         }
         if (this.attributedefs[name].belongs_to &&
@@ -854,10 +851,14 @@ var KanopyaFormWizard = (function() {
         }
         var table = tag || step;
 
-        // If the div for the step does not exists, create it
-        if (this.steps[step] === undefined) {
-            this.addStep(step, $("<div>"));
+        // Workaround to get the currently in dom table when 'Add' button of listings clicked
+        if (tag && this.steps[step] != undefined && this.steps[step].tables[tag] != undefined) {
+            return this.steps[step].tables[tag];
+        }
 
+        // If the div for the step does not exists, create it
+        if (this.steps[step] === undefined || this.steps[step].div === undefined) {
+            this.addStep(step, $("<div>"));
         }
 
         // If the table does not exists, create it
@@ -1177,6 +1178,16 @@ var KanopyaFormWizard = (function() {
             $(this.form).formwizard("destroy");
             $(this.content).remove();
         }, this), 10);
+    }
+
+    KanopyaFormWizard.prototype.prettifyInputs = function() {
+        // Use jQuery.mutiselect (after DOM loaded)
+        this.content.find('select[multiple="multiple"]').multiselect({selectedList: 4});
+        this.content.find('select[multiple!="multiple"]').not('.unit').multiselect({
+            multiple: false,
+            header: false,
+            selectedList: 1
+        });
     }
 
     KanopyaFormWizard.prototype.resizeDialog = function() {
