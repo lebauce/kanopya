@@ -31,22 +31,17 @@ use strict;
 use warnings;
 use General;
 
-use constant {
-    ME  => 'me',
-    MAE => 'mae',
-};
-
 =pod
 
 =begin classdoc
 
-Measure the accuracy of a theorical dataset compared to real/experimental values (so they must be known).
+Measure the accuracy of a theorical dataset compared to real/experimental values (so they must be known), 
+using different kinds of measures.
 
 @param theorical_data_ref A reference to the theorical dataset (must be stored in an array). 
 @param real_data_ref A reference to the real dataset (must be stored in an array).
-@param measure The measure used ('mae', 'mse', 'rmse', )
 
-@return The accuracy measured.
+@return A ref to a hash containing several accuracy measures ('me', 'mae', 'mse', 'rmse').
 
 =end classdoc
 
@@ -56,86 +51,37 @@ sub accuracy {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => ['theorical_data_ref', 'real_data_ref'],
-                         optional => { 'measure' => ME});
-
-    $self->_checkLength(theorical_data_ref => $args{theorical_data_ref},
-                        real_data_ref      => $args{real_data_ref});
-
-    my $accuracy = ($args{measure} eq ME)  ? $self->_me(theorical_data_ref => $args{theorical_data_ref},
-                                                         real_data_ref     => $args{real_data_ref})
-
-                 : ($args{measure} eq MAE) ? $self->_mae(theorical_data_ref => $args{theorical_data_ref},
-                                                         real_data_ref      => $args{real_data_ref})
-
-                 :                           undef
-                 ;
-}
-
-=pod
-
-=begin classdoc
-
-Measure the accuracy performing the ME (Mean Error).
-
-@param theorical_data_ref A reference to the theorical dataset (must be stored in an array). 
-@param real_data_ref A reference to the real dataset (must be stored in an array).
-
-@return The MAE.
-
-=end classdoc
-
-=cut
-
-sub _me {
-    my ($self, %args) = @_;
-
-    General::checkParams(args     => \%args,
                          required => ['theorical_data_ref', 'real_data_ref']);
+
+    my $datasets_length = $self->_checkLength(theorical_data_ref => $args{theorical_data_ref},
+                                              real_data_ref      => $args{real_data_ref});
 
     my @theorical = @{$args{theorical_data_ref}};
     my @real      = @{$args{real_data_ref}};
 
-    my $total     = 0;
+    my $e_total  = 0;
+    my $ae_total = 0;
+    my $se_total = 0;
 
     for my $i (0..$#theorical) {
-        $total += $real[$i] - $theorical[$i];
+        my $e = $real[$i] - $theorical[$i];
+        $e_total  += $e;
+        $ae_total += abs($e);
+        $se_total += $e ** 2;
     }
 
-    return $total / scalar(@theorical);
-}
+    my $me   = $e_total / $datasets_length;
+    my $mae  = $ae_total / $datasets_length;
+    my $mse  = $se_total / $datasets_length;
+    my $rmse = sqrt($mse);
 
-=pod
-
-=begin classdoc
-
-Measure the accuracy performing the MAE (Mean Absolute Error).
-
-@param theorical_data_ref A reference to the theorical dataset (must be stored in an array). 
-@param real_data_ref A reference to the real dataset (must be stored in an array).
-
-@return The MAE.
-
-=end classdoc
-
-=cut
-
-sub _mae {
-    my ($self, %args) = @_;
-
-    General::checkParams(args     => \%args,
-                         required => ['theorical_data_ref', 'real_data_ref']);
-
-    my @theorical = @{$args{theorical_data_ref}};
-    my @real      = @{$args{real_data_ref}};
-
-    my $total     = 0;
-
-    for my $i (0..$#theorical) {
-        $total += abs($real[$i] - $theorical[$i]);
-    }
-
-    return $total / scalar(@theorical);
+    my %measures = (
+        me   => $me,
+        mae  => $mae,
+        mse  => $mse,
+        rmse => $rmse,
+    );
+    return \%measures;
 }
 
 =pod
@@ -143,10 +89,12 @@ sub _mae {
 =begin classdoc
 
 Ensure that a theorical dataset and a experimental one have the same length (otherwise the accuracy of the 
-theorical one cannot be measured). If they don't, throws an exception.
+theorical one cannot be measured). If they do, returns this length, else throws an exception.
 
 @param theorical_data_ref A reference to the theorical dataset (must be stored in an array). 
 @param real_data_ref A reference to the real dataset (must be stored in an array).
+
+@return The datasets length, if it is the same.
 
 =end classdoc
 
@@ -164,6 +112,9 @@ sub _checkLength {
 
     if ($theorical_length != $experimental_length) {
         throw Kanopya::Exception(error => 'Accuracy : trying to compare two different-sized dataset.');
+    }
+    else {
+        return $theorical_length;
     }
 }
 
