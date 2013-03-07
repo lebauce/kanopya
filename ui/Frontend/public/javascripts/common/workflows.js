@@ -476,7 +476,7 @@ function workflowRuleDeassociation(cid, rule_id, wfdef_id, serviceprovider_id) {
                     rule_id         : rule_id
             };
             $.ajax({
-                url         : '/api/coponent/' + managers[0].manager_id + '/deassociateWorkflow',
+                url         : '/api/component/' + managers[0].manager_id + '/deassociateWorkflow',
                 type        : 'POST',
                 contentType : 'application/json',
                 data        : JSON.stringify(params),
