@@ -917,6 +917,33 @@ sub get {
 
 =begin classdoc
 
+Return the object that matches the criterias
+or creates it if it doesn't exist
+
+@param args the criterias
+
+@return the object found or created
+
+=cut
+
+sub findOrCreate {
+    my ($class, %args) = @_;
+
+    my $obj;
+    eval {
+        $obj = $class->find(hash => \%args);
+    };
+    if ($@) {
+        $obj = $class->new(%args);
+    }
+
+    return $obj;
+}
+
+=pod
+
+=begin classdoc
+
 Return the class type name from a class type id, at the first call,
 get all the entries and cache them into a hash for *LOT* faster accesses.
 
