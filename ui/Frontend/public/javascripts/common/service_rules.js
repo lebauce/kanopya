@@ -361,8 +361,8 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
             success : function(data) {
                 var container   = $('#' + cid);
                 var detail_div   = $('<div>').appendTo(container);
-                if (data[type+'_description']) {
-                    $('<p>', { text : data[type+'_description'], 'class':'ui-state-highlight' }).appendTo(detail_div);
+                if (data['description']) {
+                    $('<p>', { text : data['description'], 'class':'ui-state-highlight' }).appendTo(detail_div);
                 }
                 $('<p>', { text : 'Formula : ' + data.formula_label }).appendTo(detail_div);
 
