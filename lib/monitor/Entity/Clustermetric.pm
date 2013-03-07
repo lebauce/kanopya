@@ -121,44 +121,32 @@ sub getIndicator {
 }
 
 sub compute{
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
+    General::checkParams args => \%args, required => ['values'];
 
-    General::checkParams args => \%args, required => [
-        'values',
-    ];
-
-    my $values  = $args{values};
     #my $stat = Statistics::Descriptive::Full->new();
     my $stat = DescriptiveStatisticsFunction->new();
-    $stat->add_data($values);
+    $stat->add_data($args{values});
 
-    my $funcname = $self->getAttr(name => 'clustermetric_statistics_function_name');
-    my $mean = $stat->$funcname();
-    return $mean;
+    my $funcname = $self->clustermetric_statistics_function_name;
+    return $stat->$funcname();
 }
 
-
-sub getValuesFromDB{
-    my $self = shift;
-    my %args = @_;
-    General::checkParams args => \%args, required => ['start_time','stop_time'];
-
-    my $id = $self->getAttr(name=>'clustermetric_id');
+sub fetch {
+    my ($self, %args) = @_;
+    General::checkParams args => \%args, required => ['start_time', 'stop_time'];
 
     my %rep = RRDTimeData::fetchTimeDataStore(
-                                            name         => $id,
-                                            start        => $args{start_time},
-                                            end          => $args{stop_time}
-                                          );
+                  name   => $self->id,
+                  start  => $args{start_time},
+                  end    => $args{stop_time}
+              );
     return \%rep;
 }
 
-
-sub evaluate {
+sub lastValue {
     my $self = shift;
-	my $id = $self->getAttr(name=>'clustermetric_id');
-    my %last_value = RRDTimeData::getLastUpdatedValue(clustermetric_id => $id);
+    my %last_value = RRDTimeData::getLastUpdatedValue(clustermetric_id => $self->id);
     my @indicator = (values %last_value);
     return $indicator[0];
 }

@@ -227,7 +227,7 @@ sub toString {
 
 =begin classdoc
 
-Compute the combination value between two dates. Use getValuesFromDB() method of Clustermetric.
+Compute the combination value between two dates. Use evaluate() method of Clustermetric.
 
 @param start_time the begining date
 @param stop_time the ending date
@@ -238,7 +238,7 @@ Compute the combination value between two dates. Use getValuesFromDB() method of
 
 =cut
 
-sub computeValues{
+sub evaluateTimeSerie {
     my $self = shift;
     my %args = @_;
 
@@ -248,9 +248,9 @@ sub computeValues{
     my %allTheCMValues;
     foreach my $cm_id (@cm_ids){
         my $cm = Entity::Clustermetric->get('id' => $cm_id);
-        $allTheCMValues{$cm_id} = $cm->getValuesFromDB(%args);
+        $allTheCMValues{$cm_id} = $cm->fetch(%args);
     }
-    return $self->computeFromArrays(%allTheCMValues);
+    return $self->_computeFromArrays(%allTheCMValues);
 }
 
 =pod
@@ -278,7 +278,7 @@ sub evaluate {
     for my $element (@array) {
         if ($element =~ m/id\d+/) {
             #Remove "id" from the begining of $element, get the corresponding aggregator
-            $element = Entity::Clustermetric->get('id'=>substr($element,2))->evaluate();
+            $element = Entity::Clustermetric->get('id'=>substr($element,2))->lastValue();
             if (not defined $element) {
                 return undef;
             }
@@ -407,7 +407,7 @@ May be deprecated.
 
 =cut
 
-sub computeFromArrays{
+sub _computeFromArrays{
     my $self = shift;
     my %args = @_;
 

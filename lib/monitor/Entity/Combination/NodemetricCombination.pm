@@ -308,7 +308,7 @@ sub evaluate {
     my @col_ind_ids = ($self->nodemetric_combination_formula =~ m/id(\d+)/g);
 
     my %values = map {$_ => Entity::CollectorIndicator->get(id => $_)
-                            ->evaluate(nodes => $args{nodes}, service_provider => $self->service_provider)
+                            ->lastValue(nodes => $args{nodes}, service_provider => $self->service_provider)
                  } @col_ind_ids;
 
     my %evaluation_for_each_node;

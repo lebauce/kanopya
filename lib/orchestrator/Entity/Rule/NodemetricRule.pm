@@ -176,13 +176,13 @@ sub evaluate {
 
 
     my %evaluation_for_each_node;
-    NODE_ID:
+    NODE:
     for my $node (@nodes) {
         my %values_node = map { $_ => $values{$_}{$node->id}} @nm_cond_ids;
 
         for my $value (values %values_node) {
             if (!defined $value) {
-                $evaluation_for_each_node{$node->id} = undef; next NODE_ID;
+                $evaluation_for_each_node{$node->id} = undef; next NODE;
             }
         }
 

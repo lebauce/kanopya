@@ -57,7 +57,7 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub evaluate {
+sub lastValue {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['nodes', 'service_provider']);
 
