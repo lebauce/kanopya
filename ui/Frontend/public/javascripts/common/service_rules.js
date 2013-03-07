@@ -256,26 +256,26 @@ function ruleForm(sp_id, type, editid, onClose, values) {
     $.extend(def_values, values);
 
     var rule_fields  = {};
-    rule_fields[type + '_label'] = {
+    rule_fields['rule_name'] = {
         label   : 'Name',
         type    : 'text',
-        value   : def_values[type + '_label'],
+        value   : def_values['rule_name'],
     };
-    rule_fields[type + '_description'] = {
+    rule_fields['description'] = {
         label   : 'Description',
         type    : 'textarea',
     };
-    rule_fields[type + '_formula'] = {
+    rule_fields['formula'] = {
         label   : 'Formula',
         type    : 'text',
-        value   : def_values[type + '_formula'],
+        value   : def_values['formula'],
     };
-    rule_fields[type + '_state'] = {
+    rule_fields['state'] = {
         label   : 'Enabled',
         type    : 'select',
         options : rulestates,
     };
-    rule_fields[type + '_service_provider_id'] = {
+    rule_fields['service_provider_id'] = {
         type    : 'hidden',
         value   : sp_id,
     };
