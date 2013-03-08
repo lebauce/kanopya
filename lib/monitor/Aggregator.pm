@@ -187,14 +187,13 @@ sub update {
                 $service_provider->getManager(manager_type => "CollectorManager");
             };
             if (not $@){
-                next CLUSTER if (0 == $service_provider->nodes);
-
+                next CLUSTER if ( 0 == $service_provider->nodes);
                 $log->info('Aggregator collecting for service provider '.  $service_provider->id);
 
                 # Get all indicators used by the service
                 my $wanted_indicators = $self->_getUsedIndicators(
                                                        service_provider     => $service_provider,
-                                                       include_nodemetric   => $STORE_NODEMETRIC
+                                                       include_nodemetric   => 1
                                                    );
 
                 # Call the retriever to get monitoring data
