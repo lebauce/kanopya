@@ -12,7 +12,7 @@ use warnings;
 use Test::More 'no_plan';
 use Test::Exception;
 
-use Utils::Accuracy;
+use Utils::TimeSerieAnalysis;
 
 main();
 
@@ -40,10 +40,10 @@ sub testDifferentSizedDatasets {
             6,
         );
 
-        Utils::Accuracy->accuracy(theorical_data_ref => \@theorical,
-                                  real_data_ref      => \@real);
+        Utils::TimeSerieAnalysis->accuracy(theorical_data_ref => \@theorical,
+                                           real_data_ref      => \@real);
     } 'Kanopya::Exception',
-      'Accuracy : accuracy method called with two different-sized datasets';
+      'TimeSerieAnalysis : accuracy method called with two different-sized datasets';
 }
 
 # Check every accuracy measure using the same datasets, expected values have been computed from R
@@ -81,46 +81,46 @@ sub testAccuracyMeasures {
     my $delta = 0.001;
 
     # Computed measures
-        my %measure = %{Utils::Accuracy->accuracy(theorical_data_ref => \@theorical,
-                                                real_data_ref      => \@real)};
+        my %measure = %{Utils::TimeSerieAnalysis->accuracy(theorical_data_ref => \@theorical,
+                                                           real_data_ref      => \@real)};
 
     # ME
     lives_ok {
         my $expected_me = 0.80;
         my $computed_me = $measure{me};
         if (abs($expected_me - $computed_me) > $delta) {
-            die ("Accuracy : Wrong value returned by ME measure ($expected_me expected, $computed_me 
+            die ("TimeSerieAnalysis : Wrong value returned by ME measure ($expected_me expected, $computed_me 
                   computed)");
         }
-    } "Accuracy : testing ME accuracy measure";
+    } "TimeSerieAnalysis : testing ME accuracy measure";
 
     # MAE
     lives_ok {
         my $expected_mae = 2.80;
         my $computed_mae = $measure{mae};
         if (abs($expected_mae - $computed_mae) > $delta) {
-            die ("Accuracy : Wrong value returned by MAE measure ($expected_mae expected, $computed_mae 
-                  computed)");
+            die ("TimeSerieAnalysis : Wrong value returned by MAE measure ($expected_mae expected," . 
+                 "$computed_mae computed)");
         }
-    } "Accuracy : testing MAE accuracy measure";
+    } "TimeSerieAnalysis : testing MAE accuracy measure";
 
     # MSE
     lives_ok {
         my $expected_mse = 10.8;
         my $computed_mse = $measure{mse};
         if (abs($expected_mse - $computed_mse) > $delta) {
-            die ("Accuracy : Wrong value returned by MSE measure ($expected_mse expected, $computed_mse 
-                  computed)");
+            die ("TimeSerieAnalysis : Wrong value returned by MSE measure ($expected_mse expected, " . 
+                 "$computed_mse computed)");
         }
-    } "Accuracy : testing MSE accuracy measure";
+    } "TimeSerieAnalysis : testing MSE accuracy measure";
 
     # RMSE
     lives_ok {
         my $expected_rmse = 3.286335;
         my $computed_rmse = $measure{rmse};
         if (abs($expected_rmse - $computed_rmse) > $delta) {
-            die ("Accuracy : Wrong value returned by RMSE measure ($expected_rmse expected, $computed_rmse 
-                  computed)");
+            die ("TimeSerieAnalysis : Wrong value returned by RMSE measure ($expected_rmse expected, " .
+                 "$computed_rmse computed)");
         }
-    } "Accuracy : testing RMSE accuracy measure";
+    } "TimeSerieAnalysis : testing RMSE accuracy measure";
 }

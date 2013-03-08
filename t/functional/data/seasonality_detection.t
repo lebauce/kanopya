@@ -14,7 +14,7 @@ use warnings;
 use Test::More 'no_plan';
 use Test::Exception;
 use Data::Dumper;
-use DataModelSelector;
+use Utils::TimeSerieAnalysis;
 use Kanopya::Tools::TimeSerie;
 
 use Log::Log4perl qw(:easy);
@@ -52,7 +52,7 @@ sub data_model_split_data {
         my $file = $path.'test_split_data.csv';
         my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
 
-        my ($times, $data_values) = DataModelSelector->splitData('data' => $data);
+        my ($times, $data_values) = Utils::TimeSerieAnalysis->splitData('data' => $data);
 
         #Expected values
         my @expected_values = ( 315.42, 316.31, 316.50, 317.56, 318.13);
@@ -88,7 +88,7 @@ sub data_model_compute_ACF {
 
         my $lag = int (($#$data_values+1)/2 + 1);
 
-        my $acf = DataModelSelector->computeACF('data_values' => $data_values,'lag'=> $lag);
+        my $acf = Utils::TimeSerieAnalysis->computeACF('data_values' => $data_values,'lag'=> $lag);
 
         #We expect 235 values
         if ($#{$acf}+1 == 235) {
@@ -116,7 +116,7 @@ sub data_model_confidence_autocorrelation {
         my $file        = $path.'data_values_co2.csv';
         my $data_values = Kanopya::Tools::TimeSerie->getValuesfromCSV ('file' => $file);
 
-        my $IC = DataModelSelector->confidenceAutocorrelation('data_values' => $data_values);
+        my $IC = Utils::TimeSerieAnalysis->confidenceAutocorrelation('data_values' => $data_values);
 
         #Test the value of the confidence interval IC
         if (abs($IC - 0.09245003) > 10**(-5)) {
@@ -138,7 +138,7 @@ sub data_model_detect_peaks {
         #The confidence interval
         my $IC = 0.09245003;
 
-        my $peaks = DataModelSelector->detectPeaks ('IC' => $IC,'tab' => $tab);
+        my $peaks = Utils::TimeSerieAnalysis->detectPeaks ('IC' => $IC,'tab' => $tab);
 
         my @expected_values = (10, 22, 34, 46, 58, 69, 81, 93, 105, 129, 141);
 
@@ -173,7 +173,7 @@ sub data_model_detect_periodicity {
         my $pos = 0;
 
         my ($multiple, $min_max, $peak)=
-        DataModelSelector->detectPeriodicity ('pos' => $pos,'acf' => $acf, 'peaks' => \@peaks);
+        Utils::TimeSerieAnalysis->detectPeriodicity ('pos' => $pos,'acf' => $acf, 'peaks' => \@peaks);
 
         if ($multiple != 9 || abs ($min_max - 0.349859183) > 10**(-5) || $peak != 12) {
             diag ($multiple.' != 9')          if ($multiple != 9);
@@ -192,7 +192,7 @@ sub data_model_find_seasonality_DSP {
         #data values
         my $file        = $path.'data_values_co2.csv';
         my $data_values = Kanopya::Tools::TimeSerie->getValuesfromCSV ('file' => $file);
-        my $seasonal    = DataModelSelector->findSeasonalityDSP('data_values' => $data_values);
+        my $seasonal    = Utils::TimeSerieAnalysis->findSeasonalityDSP('data_values' => $data_values);
 
         if ( $seasonal != 12 ) {
             diag ($seasonal.' != 12');
@@ -210,7 +210,7 @@ sub data_model_find_seasonality_ACF {
         my $file = $path.'data_values_co2.csv';
         my $data_values = Kanopya::Tools::TimeSerie->getValuesfromCSV ('file' => $file);
 
-        my $seasons = DataModelSelector->findSeasonalityACF('data_values' => $data_values);
+        my $seasons = Utils::TimeSerieAnalysis->findSeasonalityACF('data_values' => $data_values);
 
         #The expected values of the seasonalities
         my @expected_values  = (82, 94, 12, 106, 130, 23, 35, 142, 70, 47);
@@ -242,7 +242,7 @@ sub data_model_find_seasonality {
         my $file = $path.'data_no_seasonality.csv';
         my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
 
-        my $seasons = DataModelSelector->findSeasonality('data' => $data);
+        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
 
         #There is no seasonality for this example
         if ($#$seasons+1 != 0) {
@@ -258,7 +258,7 @@ sub data_model_find_seasonality {
         my $file = $path.'data_seasonality=6.csv';
         my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
 
-        my $seasons = DataModelSelector->findSeasonality('data' => $data);
+        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
         my $expected_value = 6;
 
         if ($#$seasons+1 != 1 || $seasons->[0] != $expected_value) {
@@ -274,7 +274,7 @@ sub data_model_find_seasonality {
         my $file = $path.'data_seasonality=10.csv';
         my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
 
-        my $seasons        = DataModelSelector->findSeasonality('data' => $data);
+        my $seasons        = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
         my $expected_value = 10;
 
         if ( $#{$seasons}+1 != 1 || $seasons->[0] != $expected_value ) {
@@ -290,7 +290,7 @@ sub data_model_find_seasonality {
         my $file = $path.'data_seasonality=53.csv';
         my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
 
-        my $seasons = DataModelSelector->findSeasonality('data' => $data);
+        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
         my $expected_value = 53;
 
         #We have only one seasonality (equal to 53)
@@ -309,7 +309,7 @@ sub data_model_find_seasonality {
         my $file = $path.'data_co2.csv';
         my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
 
-        my $seasons=DataModelSelector->findSeasonality('data' => $data);
+        my $seasons=Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
 
         #The expected values of the seasonalities
         my $expected_value = 12;
@@ -327,7 +327,7 @@ sub data_model_find_seasonality {
         my $file = $path.'data_seasonality=132.csv';
         my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
 
-        my $seasons = DataModelSelector->findSeasonality('data' => $data);
+        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
 
         my @expected_values = (3, 132);
 
