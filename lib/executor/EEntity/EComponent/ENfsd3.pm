@@ -44,7 +44,7 @@ sub createExport {
 
     # Check if the given container is provided by the same
     # storage provider than the nfsd storage provider.
-    if ($args{container}->disk_manager->service_provider->id != $self->service_provider_id) {
+    if ($args{container}->disk_manager->getMasterNode->host->id != $self->getMasterNode->host->id) {
         throw Kanopya::Exception::Execution(
                   error => "Only local containers can be exported through NFS"
               );
