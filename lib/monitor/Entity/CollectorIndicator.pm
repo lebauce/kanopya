@@ -28,12 +28,16 @@ A service can only use indicators linked with its collector manager.
 
 package Entity::CollectorIndicator;
 
-use Alert;
+use base 'Entity';
 
 use strict;
 use warnings;
-use base 'Entity';
 use Data::Dumper;
+
+use Alert;
+use DataCache;
+
+
 use constant ATTR_DEF => {
     collector_indicator_id => {
         pattern      => '^.*$',
@@ -61,25 +65,20 @@ sub lastValue {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['nodes', 'service_provider']);
 
-    my $cmg = $self->collector_manager;
-
-    my $mparams = $args{service_provider}->getManagerParameters(manager_type => 'CollectorManager');
-
     my @node_hostnames = map {$_->node_hostname} @{$args{nodes}};
 
-    my $data = $cmg->retrieveData(
-                   nodelist   => \@node_hostnames,
-                   indicators => {$self->indicator->indicator_oid => undef},
-                   time_span  =>  1200,
-                   %$mparams
+    my $data = DataCache::nodeMetricLastValue(
+                   collector_indicator => $self,
+                   node_names          => \@node_hostnames,
+                   service_provider    => $args{service_provider}
                );
 
     my %id_values;
     my %hostname_values;
 
     for my $node (@{$args{nodes}}) {
-       $id_values{$node->id} = $data->{$node->node_hostname}->{$self->indicator->indicator_oid};
-       $hostname_values{$node->node_hostname} = $data->{$node->node_hostname}->{$self->indicator->indicator_oid};
+       $id_values{$node->id} = $data->{$node->node_hostname};
+       $hostname_values{$node->node_hostname} = $data->{$node->node_hostname};
     }
 
     $self->throwUndefAlert(hostname_values => \%hostname_values, service_provider => $args{service_provider});
