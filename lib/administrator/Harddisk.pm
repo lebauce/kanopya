@@ -41,7 +41,7 @@ use constant ATTR_DEF => {
         pattern      => '^.*$',
         default      => 'autodetect',
         is_mandatory => 1,
-        is_extended  => 0
+        is_editable  => 1,
     },
     harddisk_size => {
         label        => 'Hard disk size',
