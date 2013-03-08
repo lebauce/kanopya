@@ -44,8 +44,8 @@ function conditionDialog(sp_id, condition_type, fields, editid) {
                 if (form.find('#create_rule_check').attr('checked')) {
                     var field_prefix = condition_type.replace('condition', '_rule');
                     var values = {};
-                    values[field_prefix + '_label']   = condition[fields.name];
-                    values[field_prefix + '_formula'] = 'id' + condition.pk;
+                    values['rule_name'] = condition[fields.name];
+                    values['formula']   = 'id' + condition.pk;
                     ruleForm(sp_id, field_prefix, null, $.noop, values);
                 }
             }
@@ -316,7 +316,7 @@ function ruleForm(sp_id, type, editid, onClose, values) {
                 });
             }
         });
-        makeAutocompleteAndTranslate($( '#input_'+ type +'_formula' ), availableTags);
+        makeAutocompleteAndTranslate($( '#input_formula' ), availableTags);
     });
 }
 
@@ -543,11 +543,11 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         colModel: [
              {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
              {name:'label',index:'label', width:90,},
-             {name:'state',index:'state', width:90,},
-             {name:'aggregate_rule_last_eval',index:'aggregate_rule_last_eval', width:90, formatter : lastevalStateFormatter, hidden:mode_policy},
-             {name:'formula_label',index:'formula_label', width:90,},
+             {name:'state',index:'state', width:50,},
+             {name:'aggregate_rule_last_eval',index:'aggregate_rule_last_eval', width:50, formatter : lastevalStateFormatter, hidden:mode_policy},
+             {name:'formula_label',index:'formula_label', width:150,},
              {name:'description',index:'description', width:200,},
-             {name: 'workflow_def_id', index: 'workflow_def_id', width: 120 },
+             {name: 'workflow_def_id', index: 'workflow_def_id', width: 100 },
              {name: 'alert', index: 'alert', width: 40, align: 'center', nodetails: true }
            ],
         afterInsertRow: function(grid, rowid, rowdata, rowelem) {
