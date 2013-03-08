@@ -78,9 +78,9 @@ sub testDataModelAccuracyEvaluation {
         46 => 15 , 47 => 13 , 48 => 12 , 49 => 5  , 50 => 12 ,
     );
 
-my %accuracy_linear_regression;
-my %accuracy_logarithmic_regression;
-my %accuracy_auto_arima;
+    my %accuracy_linear_regression;
+    my %accuracy_logarithmic_regression;
+    my %accuracy_auto_arima;
 
     lives_ok {
         %accuracy_linear_regression = %{DataModelSelector->evaluateDataModelAccuracy(
@@ -106,6 +106,7 @@ my %accuracy_auto_arima;
             freq             => 6,
         )};
     } 'DataModelSelector : Testing accuracy evaluation for AutoArima DataModel';
+
     for my $strategy ('RMSE', 'MSE', 'MAE', 'ME', 'DEMOCRACY') {
         my $best_model;
         lives_ok {
@@ -131,6 +132,15 @@ my %accuracy_auto_arima;
             choice_strategy   => 'Are you kidding me ?!',
         );
     } 'Kanopya::Exception', 'DataModelSelector : Testing best model choice with incorrect strategy argument';
+
+    lives_ok {
+        my $best_model = DataModelSelector->selectDataModel(
+            data             => \%data,
+            combination      => $comb,
+            start_time       => 10,
+            end_time         => 10,
+        );
+    } "DataModelSelector : Testing selectDataModel method";
 }
 
 sub setup {

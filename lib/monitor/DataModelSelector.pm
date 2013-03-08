@@ -66,13 +66,13 @@ Save and returns the model which has the highest R squared error.
 @optional node_id modeled node in case of NodemetricCombination
 @optional model_list  : The list of the available models for the selection. By default all existing models are
                         used. 
+@optional data A reference to a hash containing the available {timestamp => value}.
 
 @return the selected model
 
 =end classdoc
 
 =cut
-
 
 sub selectDataModel {
     my ($class, %args) = @_;
@@ -81,11 +81,14 @@ sub selectDataModel {
                          required => ['combination', 'start_time', 'end_time'],
                          optional => {'node_id'       => undef, 
                                       'model_list'    => MODEL_CLASSES,
+                                      'data'          => undef,
                          });
 
-    my %data = $args{combination}->evaluateTimeSerie(start_time => $args{start_time},
-                                                     stop_time  => $args{end_time},
-                                                     node_id    => $args{node_id});
+    my %data = defined($args{data}) ? %{$args{data}}
+             :                        $args{combination}->computeValues(start_time => $args{start_time},
+                                                                        stop_time  => $args{end_time},
+                                                                        node_id    => $args{node_id})
+             ;
 
     my @data_model_classes = @{$args{model_list}};
     for my $i (0..$#data_model_classes) {
@@ -94,7 +97,7 @@ sub selectDataModel {
 
     # Compute the possible seasonality values
     #TODO
-    my @freqs = (1,2,3,4);
+    my @freqs = @{Utils::TimeSerieAnalysis->findSeasonality(data => {%data})};
 
     # Models with the best freq found {class_name => $freq}
     my %freq_hash;
@@ -103,6 +106,7 @@ sub selectDataModel {
     my %accuracy_hash;
 
     for my $data_model_class (@data_model_classes) {
+        BaseDB::requireClass($data_model_class);
 
         # If the model is a seasonal one, try each possible seasonality value and only retain the best one
         if ($data_model_class->isSeasonal()) {
@@ -144,47 +148,6 @@ sub selectDataModel {
         best_model => $best_data_model,
         best_freq  => $best_freq,
     }
-#    my @models;
-#    my @RSquareds;
-#
-#    # Configure all DataModels available
-#    for my $data_model_class (@model_classes) {
-#
-#        BaseDB::requireClass($data_model_class);
-#
-#        my $model = $data_model_class->new(
-#                        node_id        => $args{node_id},
-#                        combination_id => $args{combination}->id,
-#                    );
-#
-#        $model->configure(data       => \%data,
-#                          start_time => $args{start_time},
-#                          end_time   => $args{end_time});
-#
-#        push @models, $model;
-#        push @RSquareds, $model->getRSquared();
-#        $log->info("$data_model_class -> R = ".($model->getRSquared())."\n");
-#    }
-#
-#    my $max_model    = shift @models;
-#    my $max_RSquared = shift @RSquareds;
-#
-#    # Choose the DataModem with maximal RSquared, delete all the others
-#    while (my $current_model = shift @models) {
-#
-#        my $current_RSquare = shift @RSquareds;
-#
-#        if ($current_RSquare > $max_RSquared) {
-#             $max_RSquared = $current_RSquare;
-#             $max_model->delete();
-#             $max_model = $current_model;
-#        }
-#        else {
-#            $current_model->delete();
-#        }
-#    }
-#    $log->info('Best model id '.($max_model->id));
-#    return $max_model;
 }
 
 =pod
