@@ -75,9 +75,8 @@ sub createTimeDataStore{
     #                             );
 
     my %args = @_;
-    $log->debug(Dumper(\%args));
 
-    General::checkParams(args => \%args, required => ['name']);
+    General::checkParams(args => \%args, required => ['name'], optional => {'skip_if_exists' => undef});
 
     my $name = _formatName(name => $args{'name'});
 
@@ -326,7 +325,7 @@ sub updateTimeDataStore {
 
     <Class>   : Public
     <Desc>    : This method get the last updated value into a RRD file.
-    <args>    : clustermetric_id
+    <args>    : metric_uid
     <Return>  : %values
     <throws>  : 'RRD fetch failed for last updated value' if the fetch is a failure 
     §WARNING§: the code only catch the keyword 'ERROR' in the command return...
@@ -335,9 +334,9 @@ sub updateTimeDataStore {
 
 sub getLastUpdatedValue {
     my %args = @_;
-    General::checkParams(args => \%args, required => ['clustermetric_id']);
+    General::checkParams(args => \%args, required => ['metric_uid']);
 
-    my $name = _formatName(name => $args{'clustermetric_id'});
+    my $name = _formatName(name => $args{'metric_uid'});
 
     my $cmd = $rrd.' lastupdate '.$dir.$name;
     $log->info($cmd);

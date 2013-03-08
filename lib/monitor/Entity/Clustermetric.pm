@@ -146,7 +146,7 @@ sub fetch {
 
 sub lastValue {
     my $self = shift;
-    my %last_value = RRDTimeData::getLastUpdatedValue(clustermetric_id => $self->id);
+    my %last_value = RRDTimeData::getLastUpdatedValue(metric_uid => $self->id);
     my @indicator = (values %last_value);
     return $indicator[0];
 }
