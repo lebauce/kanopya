@@ -178,7 +178,7 @@ after having computed the clustermetric combinations.
 sub update {
     my $self = shift;
 
-    my @service_providers = Entity::ServiceProvider->search(hash => { });
+    my @service_providers = Entity::ServiceProvider->search(hash => { service_provider_type_id => { not => undef }});
 
     CLUSTER:
     for my $service_provider (@service_providers) {
