@@ -78,8 +78,12 @@ sub testDataModelAccuracyEvaluation {
         46 => 15 , 47 => 13 , 48 => 12 , 49 => 5  , 50 => 12 ,
     );
 
+my %accuracy_linear_regression;
+my %accuracy_logarithmic_regression;
+my %accuracy_auto_arima;
+
     lives_ok {
-        my %accuracy = %{DataModelSelector->evaluateDataModelAccuracy(
+        %accuracy_linear_regression = %{DataModelSelector->evaluateDataModelAccuracy(
             data_model_class => 'Entity::DataModel::LinearRegression',
             data             => \%data,
             combination      => $comb,
@@ -87,7 +91,7 @@ sub testDataModelAccuracyEvaluation {
     } 'DataModelSelector : Testing accuracy evaluation for Linear Regression DataModel';
 
     lives_ok {
-        my %accuracy = %{DataModelSelector->evaluateDataModelAccuracy(
+        %accuracy_logarithmic_regression = %{DataModelSelector->evaluateDataModelAccuracy(
             data_model_class => 'Entity::DataModel::LogarithmicRegression',
             data             => \%data,
             combination      => $comb,
@@ -95,13 +99,38 @@ sub testDataModelAccuracyEvaluation {
     } 'DataModelSelector : Testing accuracy evaluation for Logarithmic Regression DataModel';
 
     lives_ok {
-        my %accuracy = %{DataModelSelector->evaluateDataModelAccuracy(
+        %accuracy_auto_arima = %{DataModelSelector->evaluateDataModelAccuracy(
             data_model_class => 'Entity::DataModel::AutoArima',
             data             => \%data,
             combination      => $comb,
             freq             => 6,
         )};
     } 'DataModelSelector : Testing accuracy evaluation for AutoArima DataModel';
+    for my $strategy ('RMSE', 'MSE', 'MAE', 'ME', 'DEMOCRACY') {
+        my $best_model;
+        lives_ok {
+            $best_model = DataModelSelector->chooseBestDataModel(
+                accuracy_measures => {
+                    'Entity::DataModel::LinearRegression'      => {%accuracy_linear_regression},
+                    'Entity::DataModel::LogarithmicRegression' => {%accuracy_logarithmic_regression},
+                    'Entity::DataModel::AutoArima'             => {%accuracy_auto_arima},
+                },
+                choice_strategy   => $strategy,
+            );
+        } "DataModelSelector : Testing best model choice with $strategy strategy";
+        diag("\t\t\t\t\t\t\t\t(Best chosen : $best_model)");
+    }
+
+    throws_ok {
+        my $best_model = DataModelSelector->chooseBestDataModel(
+            accuracy_measures => {
+                'Entity::DataModel::LinearRegression'      => {%accuracy_linear_regression},
+                'Entity::DataModel::LogarithmicRegression' => {%accuracy_logarithmic_regression},
+                'Entity::DataModel::AutoArima'             => {%accuracy_auto_arima},
+            },
+            choice_strategy   => 'Are you kidding me ?!',
+        );
+    } 'Kanopya::Exception', 'DataModelSelector : Testing best model choice with incorrect strategy argument';
 }
 
 sub setup {
