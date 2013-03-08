@@ -84,7 +84,6 @@ sub testDataModelAccuracyEvaluation {
             data             => \%data,
             combination      => $comb,
         )};
-        print Dumper(%accuracy);
     } 'DataModelSelector : Testing accuracy evaluation for Linear Regression DataModel';
 
     lives_ok {
@@ -93,7 +92,6 @@ sub testDataModelAccuracyEvaluation {
             data             => \%data,
             combination      => $comb,
         )};
-        print Dumper(%accuracy);
     } 'DataModelSelector : Testing accuracy evaluation for Logarithmic Regression DataModel';
 
     lives_ok {
@@ -103,7 +101,6 @@ sub testDataModelAccuracyEvaluation {
             combination      => $comb,
             freq             => 6,
         )};
-        print Dumper(%accuracy);
     } 'DataModelSelector : Testing accuracy evaluation for AutoArima DataModel';
 }
 

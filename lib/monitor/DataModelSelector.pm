@@ -32,13 +32,21 @@ use strict;
 use Data::Dumper;
 use BaseDB;
 use Utils::Accuracy;
+use Statistics::R;
+use Utils::R;
 
 use constant {
     DEFAULT_TRAINING_PERCENTAGE => 80,
 };
 
-use Statistics::R;
-use Utils::R;
+
+use constant CHOICE_STRATEGY => {
+    DEMOCRACY => 'democracy',
+    ME        => 'me',
+    MAE       => 'mae',
+    MSE       => 'mse',
+    RMSE      => 'rmse',
+};
 
 # logger
 use Log::Log4perl "get_logger";
@@ -644,6 +652,116 @@ sub evaluateDataModelAccuracy {
         theorical_data_ref => \@forecast,
         real_data_ref      => [@values[ ($last_training_index + 1)..$#timestamps ]],
     );
+}
+
+=pod
+
+=begin classdoc
+
+Choose the best DataModel given a set a accuracy measure for each one.
+
+@param accuracy_measures A hash containing datamodel class and their accuracy measures 
+                         { data_model_class => {measure_name ('mae', 'mse', ...) => measure} }.
+
+@optional choice_strategy The strategy to adopt for choosing the best model : 
+
+                          'democracy' -> For each model, count the times where it is the best one according to
+                                         available accuracy measures and finally choose the one having the 
+                                         most counts. If two models reach the same score, the one with the 
+                                         lowest ME is choosen (arbitrary).
+
+                          'rmse'      -> Select the datamodel with the lowest RMSE.  
+
+                          'mse'       -> Select the datamodel with the lowest MSE.
+
+                          'mae'       -> Select the datamodel with the lowest MAE.
+
+                          'me'        -> Select the datamodel with the lowest ME.
+
+@return The best DataModel classname choosen according to the selected strategy.
+
+=end classdoc
+
+=cut
+
+sub _chooseBestDataModel {
+    my ($class, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => ['accuracy_measures'],
+                         optional => {'choice_strategy' => CHOICE_STRATEGY->{DEMOCRACY}});
+
+    my %accuracy_measures     = %{$args{accuracy_measures}};
+    my $strategy = $args{choice_strategy};
+
+    my $best_rmse = undef;
+    my $best_mse  = undef;
+    my $best_mae  = undef;
+    my $best_me   = undef;
+
+    my $best_rmse_model = undef;
+    my $best_mse_model  = undef;
+    my $best_mae_model  = undef;
+    my $best_me_model   = undef;
+
+    while (my ($data_model_class, $accuracy_ref) = each(%accuracy_measures)) {
+        my $current_rmse = $accuracy_ref->{rmse};
+        my $current_mse  = $accuracy_ref->{mse};
+        my $current_mae  = $accuracy_ref->{mae};
+        my $current_me   = $accuracy_ref->{me};
+
+        if (!defined($best_rmse_model) || $current_rmse < $best_rmse) {
+            $best_rmse_model = $data_model_class;
+            $best_rmse       = $current_rmse;
+        }
+        if (!defined($best_mse_model)  || $current_mse  < $best_mse ) {
+            $best_mse_model = $data_model_class;
+            $best_mse       = $current_mse;
+        }
+        if (!defined($best_mae_model)  || $current_mae  < $best_mae) {
+            $best_mae_model = $data_model_class;
+            $best_mae       = $current_mae;
+        }
+        if (!defined($best_me_model)   || $current_me   < $best_me) {
+            $best_me_model  = $data_model_class;
+            $best_me        = $current_me;
+        }
+    }
+
+    if ($strategy eq CHOICE_STRATEGY->{DEMOCRACY}) {
+        my $president          = undef;
+        my $votes              = -1;
+        my $shortest_straw     = undef;
+
+        for my $data_model_class (keys(%accuracy_measures)) {
+            my $score = 0;
+            my $straw = $accuracy_measures{$data_model_class}->{me};
+
+            for my $best ($best_rmse_model, $best_mse_model, $best_mae_model, $best_me_model) {
+                if ($best eq $data_model_class) {
+                    $score ++;
+                }
+            }
+            if (($score > $votes) || (($score == $votes) && ($straw < $shortest_straw))) {
+                $president      = $data_model_class;
+                $votes          = $score;
+                $shortest_straw = $straw;
+            }
+        }
+        return $president;
+    }
+    elsif ($strategy eq CHOICE_STRATEGY->{RMSE}) {
+        return $best_mse_model;
+    }
+    elsif ($strategy eq CHOICE_STRATEGY->{MSE}) {
+        return $best_mse_model;
+    }
+    elsif ($strategy eq CHOICE_STRATEGY->{MAE}) {
+        return $best_mae_model;
+    }
+    elsif ($strategy eq CHOICE_STRATEGY->{ME}) {
+        return $best_me_model;
+    }
 }
 
 1;
