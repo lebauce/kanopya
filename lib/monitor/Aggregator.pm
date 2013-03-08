@@ -33,7 +33,8 @@ Then Aggregator will:
 - store values for each indicator for each nodes
 - compute and store ClusterMetric
 
-Aggregator used RRDTimeData to store data and expose methods to retrieve stored data (service and node level)
+Aggregator uses RRDTimeData to store data at service level
+and uses DataCache to (possibly) store data at node level.
 
 @see <package>Entity::Combination::NodeMetricCombination</package>
 @see <package>Entity::ClusterMetric</package>
@@ -59,13 +60,10 @@ use Entity::Clustermetric;
 use Kanopya::Config;
 use Message;
 use Alert;
+use DataCache;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
-
-# Flag to activate/deactivate nodes metrics values storage
-# TODO conf by service provider or collector manager (?)
-my $STORE_NODEMETRIC = 1;
 
 use constant ATTR_DEF => {};
 
@@ -114,7 +112,7 @@ Build the list of Indicators used by a service provider.
 Indicators can be used by ClusterMetric and by NodeMetricCombination linked to the service provider
 
 @param service_provider The manipulated service provider
-@optionnal include_nodemetric Include Indicators used by NodeMetricCombination.
+@optional include_nodemetric Include Indicators used by NodeMetricCombination.
     Default is only Indicators used by ClusterMetrics
 
 @return An hash ref with 2 keys:
@@ -210,14 +208,12 @@ sub update {
                                   received            => $monitored_values
                               );
 
-                # Store nodes metrics values
-                if ($STORE_NODEMETRIC) {
-                    $self->_storeNodeMetricsValues(
-                        indicators          => $wanted_indicators->{indicators},
-                        values              => $monitored_values,
-                        timestamp           => $timestamp
-                    );
-                }
+                # Nodes metrics values cache
+                DataCache::storeNodeMetricsValues(
+                    indicators          => $wanted_indicators->{indicators},
+                    values              => $monitored_values,
+                    timestamp           => $timestamp
+                );
 
                 # Parse retriever return, compute clustermetric values and store in DB
                 if ($checker == 1) {
@@ -227,30 +223,13 @@ sub update {
                         service_provider => $service_provider
                     );
                 }
+
                 1;
             }
         };
         if ($@) {
             $log->error("An error occurred : " . $@);
             next CLUSTER;
-        }
-    }
-}
-
-sub _storeNodeMetricsValues {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => ['indicators', 'values', 'timestamp']);
-
-    while (my ($node_name, $indicators_values) = each %{$args{values}}) {
-        while (my ($indicators_oid, $value) = each %$indicators_values) {
-            my $metric_uid = $args{indicators}->{$indicators_oid}->id . '_' . $node_name;
-            RRDTimeData::createTimeDataStore(name => $metric_uid, skip_if_exists => 1);
-            RRDTimeData::updateTimeDataStore(
-                clustermetric_id => $metric_uid,
-                time             => $args{timestamp},
-                value            => $value,
-            );
         }
     }
 }
