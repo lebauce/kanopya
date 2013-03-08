@@ -286,7 +286,7 @@ sub linkToMetric {
 Read the data from a CSV file. The CSV contains two columns with headers,
 one for the times corresponding to the keys and the other for the values.
 
-@param file Name file
+@param file File name
 
 @param sep Char separator
 
@@ -329,7 +329,7 @@ sub getTimeserieDatafromCSV {
 
 Read the data values from a CSV file. The CSV contains one column with header
 
-@param file Name file
+@param file File name
 
 @param sep Char separator
 
@@ -350,7 +350,7 @@ sub getValuesfromCSV {
     my $file = $args{'file'};
 
     #sep_char used is ;
-    my $csv = Text::CSV->new ();
+    my $csv = Text::CSV->new();
     open my $io, "<", $file or die "$file: $!";
 
     my $index= 0;
@@ -365,5 +365,4 @@ sub getValuesfromCSV {
 
     return \@data;
 }
-
 1;
