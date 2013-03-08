@@ -88,9 +88,9 @@ sub selectDataModel {
                                       'model_list'    => MODEL_CLASSES,
                          });
 
-    my %data = $args{combination}->computeValues(start_time => $args{start_time},
-                                                 stop_time  => $args{end_time},
-                                                 node_id    => $args{node_id});
+    my %data = $args{combination}->evaluateTimeSerie(start_time => $args{start_time},
+                                                     stop_time  => $args{end_time},
+                                                     node_id    => $args{node_id});
 
     my @data_model_classes = @{$args{model_list}};
     for my $i (0..$#data_model_classes) {
