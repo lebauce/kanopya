@@ -1743,22 +1743,13 @@ sub getRelationship {
     General::checkParams(args => \%args, required => [ 'relation' ]);
 
     my $relation = $args{relation};
+    my $attrdef  = $class->getAttrDefs->{$relation};
 
-    my $attrdef = $class->getAttrDefs->{$relation};
+    my $source_infos = $self->getRelatedSource($relation);
 
-    my $dbix = $self->{_dbix};
-    while ($dbix and (not $dbix->has_relationship($relation))) {
-        $dbix = $dbix->parent;
-    }
+    my $dbix = $source_infos->{dbix};
+    my $relation_schema = $source_infos->{source};
 
-    my $relation_schema;
-    if ($attrdef->{type} eq 'relation' and defined ($attrdef->{link_to})) {
-        my $class = normalizeName($attrdef->{link_to});
-        $relation_schema = BaseDB->_adm->{schema}->source($class);
-    }
-    else {
-        $relation_schema = $self->getRelatedSource($relation);
-    }
 
     my $relation_class = classFromDbix($relation_schema);
     $relation_class = $class->getClassType(class => $relation_class) || $relation_class;
@@ -2313,7 +2304,7 @@ sub getRelatedSource {
         $dbix = $dbix->parent;
     }
 
-    return $dbix->result_source->related_source($relation);
+    return { dbix => $dbix, source => $dbix->result_source->related_source($relation) };
 }
 
 =pod
