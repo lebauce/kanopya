@@ -31,9 +31,12 @@ use strict;
 use warnings;
 
 use JSON;
+use General;
 use OpenStack::API;
 use NetAddr::IP;
 use Data::Dumper;
+use IO::Handle;
+use File::Temp qw/ tempfile /;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -247,26 +250,44 @@ sub startHost {
     }
 
     my $api = $self->api;
-    my $image_id = $self->registerSystemImage(host    => $args{host},
-                                              cluster => $args{cluster});
+    my $image_id;
 
-    my $image = $args{host}->getNodeSystemimage();
-    my $flavor_id = $api->tenant(id => $api->{tenant_id})->flavors->post(
-        target => 'compute',
+    if ($args{cluster}->cluster_boot_policy eq Manager::HostManager->BOOT_POLICIES->{virtual_disk}) {
+        # Register system image
+        $image_id = $self->registerSystemImage(host    => $args{host},
+                                               cluster => $args{cluster});
+    }
+    else {
+        $image_id = $self->registerPXEImage();
+    }
+
+    my $flavor = $api->tenant(id => $api->{tenant_id})->flavors(id => $args{cluster}->id)
+                     ->get(target => 'compute')->{flavor};
+
+    if ($flavor->{id}) {
+        $api->tenant(id => $api->{tenant_id})->flavors(id => $flavor->{id})
+            ->delete(target => 'compute');
+    }
+
+    $flavor = $api->tenant(id => $api->{tenant_id})->flavors->post(
+        target  => 'compute',
         content => {
             flavor => {
                 'name'                        => 'flavor_' . $args{host}->node->node_hostname,
                 'ram'                         => $args{host}->host_ram / 1024 / 1024,
                 'vcpus'                       => $args{host}->host_core,
-                'disk'                        => $image->getContainer->container_size / 1024 / 1024,
                 'id'                          => $args{cluster}->id,
                 'swap'                        => 0,
                 'os-flavor-access:is_public'  => JSON::true,
                 'rxtx_factor'                 => 1,
-                'OS-FLV-EXT-DATA:ephemeral'   => 0
-            }
+                'OS-FLV-EXT-DATA:ephemeral'   => 0,
+                $image_id ? ("disk", $args{host}->getNodeSystemimage->
+                                                  getContainer->container_size / 1024 / 1024) : ()
+            },
         }
-    )->{flavor}->{id};
+    );
+
+    $log->debug("Nova returned " . (Dumper $flavor));
 
     # register network
     my $interfaces = $self->registerNetwork(host => $args{host});
@@ -283,9 +304,9 @@ sub startHost {
         content => {
             server => {
                 flavorRef   => $flavor->{flavor}->{id},
-                imageRef    => $image_id,
                 name        => $args{host}->node->node_hostname,
                 networks    => $ports,
+                $image_id ? ("imageRef", $image_id) : ()
             }
         }
     );
@@ -304,7 +325,7 @@ sub startHost {
 
 =begin classdoc
 
-Upload an image to Glance
+Upload a system image to Glance
 
 @return $response->{image}->{id}  the id of the uploaded image
 
@@ -346,9 +367,54 @@ sub registerSystemImage {
 
 =begin classdoc
 
+Return the image to use for PXE boot.
+If the PXE boot does not exist in Glance, register an empty one
+
+@return $response->{image}->{id}  the id of the uploaded image
+
+=end classdoc
+
+=cut
+
+sub registerPXEImage {
+    my ($self, %args) = @_;
+
+    my $images = $self->api->images->get(target => "image")->{images};
+    my ($pxe_image) = grep { $_->{name} eq "__PXE__" } @{$images};
+
+    if (!$pxe_image) {
+        my ($fh, $filename) = tempfile(UNLINK => 1);
+        print $fh " ";
+        $fh->autoflush();
+
+        my $response = $self->api->images->post(
+            target          => 'image',
+            headers         => {
+                'x-image-meta-name'             => '__PXE__',
+                'x-image-meta-disk_format'      => 'raw',
+                'x-image-meta-container_format' => 'bare',
+                'x-image-meta-is_public'        => 'True'
+            },
+            content         => $filename,
+            content_type    => 'application/octet-stream'
+        );
+
+        $log->debug("Glance returned : " . (Dumper $response));
+        $pxe_image = $response->{image};
+    }
+
+    return $pxe_image->{id};
+}
+
+=pod
+
+=begin classdoc
+
 Register a network to Quantum
 
-@return @interfaces a list of created networks
+@param $host host whose netconf to be registered
+
+@returnlist list of created networks
 
 =end classdoc
 
