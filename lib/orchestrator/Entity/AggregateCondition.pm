@@ -199,13 +199,13 @@ Evaluate the condition. Call evaluation of both dependant combinations then eval
 =cut
 
 sub evaluate{
-    my $self = shift;
+    my ($self, %args) = @_;
 
     my $comparator  = $self->getAttr(name => 'comparator');
 
     # Evaluate both conditions
-    my $left_value  = $self->left_combination->evaluate();
-    my $right_value = $self->right_combination->evaluate();
+    my $left_value  = $self->left_combination->evaluate(%args);
+    my $right_value = $self->right_combination->evaluate(%args);
 
     if (defined $left_value && defined $right_value) {
         my $evalString = $left_value.$comparator.$right_value;

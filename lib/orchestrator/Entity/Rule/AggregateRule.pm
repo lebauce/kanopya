@@ -170,7 +170,7 @@ of the rule according to conditions evaluation.
 =cut
 
 sub evaluate {
-    my $self = shift;
+    my ($self, %args) = @_;
 
     # Split aggregate_rule id from $formula
     my @array = split(/(id\d+)/,$self->formula);
@@ -178,7 +178,7 @@ sub evaluate {
     # Replace each rule id by its evaluation
     for my $element (@array) {
         if ($element =~ m/id(\d+)/) {
-            $element = Entity::AggregateCondition->get ('id'=>substr($element,2))->evaluate();
+            $element = Entity::AggregateCondition->get ('id'=>substr($element,2))->evaluate(%args);
             if (! defined $element) {
                 $self->setAttr(name => 'aggregate_rule_last_eval', value=>undef);
                 $self->save();

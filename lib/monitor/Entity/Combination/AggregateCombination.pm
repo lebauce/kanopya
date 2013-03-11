@@ -34,6 +34,7 @@ use base 'Entity::Combination';
 use Entity::Clustermetric;
 use Kanopya::Exceptions;
 use List::Util qw {reduce};
+use DataModelSelector;
 
 # logger
 use Log::Log4perl "get_logger";
@@ -253,6 +254,40 @@ sub evaluateTimeSerie {
     return $self->_computeFromArrays(%allTheCMValues);
 }
 
+sub evaluate {
+    my ($self, %args) = @_;
+     General::checkParams(args => \%args, optional => {'nodes' => undef, 'timestamp' => 0});
+
+    if ($args{timestamp} > time()) {
+        return $self->_predict(%args);
+    }
+
+    return $self->_evaluateLastValue(%args);
+}
+
+sub _predict {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['timestamp'], optional => {'nodes' => undef});
+    my $time = time();
+    my $model = DataModelSelector->selectDataModel(
+                    combination => $self,
+                    start_time  => 2 * $time - $args{timestamp},
+                    end_time    => $time,
+                );
+    my $prediction = $model->predict(timestamps => [$args{timestamp}]);
+    $model->delete();
+
+    my $res = $prediction->{values}->[0];
+
+    if (defined $args{nodes}) {
+        my %hash = map {$_->id => $res} @{$args{nodes}};
+        return \%hash;
+    }
+
+    return $res;
+}
+
+
 =pod
 
 =begin classdoc
@@ -266,7 +301,7 @@ Use evaluate() method of Clustermetric.
 
 =cut
 
-sub evaluate {
+sub _evaluateLastValue {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, optional => {'nodes' => undef});
 
@@ -296,7 +331,6 @@ sub evaluate {
         my %hash = map {$_->id => $res} @{$args{nodes}};
         return \%hash;
     }
-
     return $res;
 }
 
