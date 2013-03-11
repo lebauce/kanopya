@@ -128,7 +128,20 @@ sub request {
 
     my $response = `curl -X $method_type $request $complete_url`;
 
-    return from_json($response);
+    my $json;
+    eval {
+        $json = from_json($response);
+    };
+    if ($@) {
+        if ($response) {
+            $log->debug("Invalid response from API : $response");
+        }
+        else {
+            $log->debug("API returned no response");
+        }
+    }
+
+    return $json;
 }
 
 sub DESTROY {
