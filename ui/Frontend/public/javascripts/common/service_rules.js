@@ -484,7 +484,6 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                 elem_id,
                 {
                     name        : 'node rule',
-                    relation    : 'nodemetric_rules',
                     label_attr  : 'label',
                     desc_attr   : 'description',
                     type        : 'nodemetric_rule'
@@ -580,7 +579,6 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                 elem_id,
                 {
                     name        : 'service rule',
-                    relation    : 'aggregate_rules',
                     label_attr  : 'label',
                     desc_attr   : 'description',
                     type        : 'aggregate_rule'
