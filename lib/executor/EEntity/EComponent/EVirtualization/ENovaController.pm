@@ -333,9 +333,10 @@ sub startHost {
         target => 'compute',
         content => {
             server => {
-                flavorRef   => $flavor->{flavor}->{id},
-                name        => $args{host}->node->node_hostname,
-                networks    => $ports,
+                availability_zone => 'nova:' . $args{hypervisor}->node->node_hostname,
+                flavorRef         => $flavor->{flavor}->{id},
+                name              => $args{host}->node->node_hostname,
+                networks          => $ports,
                 $image_id ? ("imageRef", $image_id) : ()
             }
         }
