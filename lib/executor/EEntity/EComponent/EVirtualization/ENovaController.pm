@@ -117,18 +117,37 @@ sub unregisterHypervisor {
 
 =begin classdoc
 
-Migrate an host from one hypervisor to another
+Migrate an openstack vm from one hypervisor to another
+
+@params host the vm to migrate
+@params hypervisor_dst the destination hypervisor
 
 =end classdoc
 
 =cut
 
 sub migrateHost {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
-    General::checkParams(args     => \%args,
-                         required => [ 'host', 'hypervisor_dst', 'hypervisor_cluster' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'hypervisor_dst' ]);
+
+    my $host = $args{host};
+    my $hv   = $args{hypervisor_dst};
+    my $uuid = $host->openstack_vm_uuid;
+    my $api = $self->api;
+
+    $log->info('migrating host <' . $host->id . '> on hypervisor < ' . $hv->id . '>');
+
+    $api->tenant(id => $api->{tenant_id})->servers(id => $uuid)->action->post(
+        target  => 'compute',
+        content => {
+            'os-migrateLive'  => {
+                disk_over_commit => JSON::false,
+                block_migration  => JSON::false,
+                host             => $hv->node->node_hostname,
+            }
+        }
+    );
 }
 
 =pod
