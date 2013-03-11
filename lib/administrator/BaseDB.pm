@@ -1642,8 +1642,8 @@ sub getRelationship {
     }
 
     my $relation_schema;
-    if ($attrdef->{type} eq 'relation' and defined ($attrdef->{link_to})) {
-        my $class = normalizeName($attrdef->{link_to});
+    if ($attrdef->{type} eq 'relation' and defined ($attrdef->{specialized})) {
+        my $class = normalizeName($attrdef->{specialized});
         $relation_schema = BaseDB->_adm->{schema}->source($class);
     }
     else {

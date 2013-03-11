@@ -45,7 +45,7 @@ use constant ATTR_DEF => {
         type        => 'relation',
         relation    => 'single_multi',
         is_editable => 1,
-        link_to     => 'openstack_repository'
+        specialized => 'openstack_repository'
     },
     host_type => {
         is_virtual => 1
