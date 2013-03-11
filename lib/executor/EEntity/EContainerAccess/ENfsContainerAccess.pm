@@ -50,7 +50,9 @@ sub mount {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'econtext' ],
+                         optional => { 'mountpoint' => $self->getMountPoint } );
 
     my $target = $self->_getEntity->getAttr(name => 'container_access_export');
     #my $ip     = $self->_getEntity->getAttr(name => 'container_access_ip');
@@ -77,6 +79,8 @@ sub mount {
             parameters => [ $self, "mountpoint", $args{mountpoint}, "econtext", $args{econtext} ]
         );
     }
+
+    return $args{mountpoint};
 }
 
 =head2 connect
