@@ -582,6 +582,7 @@ CREATE TABLE `operation` (
 
 CREATE TABLE `old_operation` (
   `old_operation_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `operation_id` int(8) unsigned NULL DEFAULT NULL,
   `type` char(64) NOT NULL,
   `workflow_id` int(8) unsigned NOT NULL,
   `user_id` int(8) unsigned NOT NULL,

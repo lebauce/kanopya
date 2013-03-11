@@ -278,6 +278,7 @@ sub delete {
 
     # Then create the old_operation from the operation
     OldOperation->new(
+        operation_id             => $self->id,
         type                     => $self->type,
         workflow_id              => $self->workflow_id,
         user_id                  => $self->user_id,
@@ -291,7 +292,7 @@ sub delete {
     );
     $self->SUPER::delete();
 
-    $log->debug(ref($self)." <" . $self->id . "> deleted from database (removed from execution list)");
+    $log->info(ref($self)." <" . $self->id . "> deleted from database (removed from execution list)");
 }
 
 sub getWorkflow {
