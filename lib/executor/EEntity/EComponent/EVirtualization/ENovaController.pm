@@ -751,4 +751,104 @@ sub _registerPort {
     return $port_id;
 }
 
+=pod
+
+=begin classdoc
+
+Register a new flavor
+@return the flavor id
+
+=end classdoc
+
+=cut
+
+sub registerFlavor {
+    my ($self, %args) = @_;
+
+    General::checkParams(
+        args => \%args,
+        required => [ 'name', 'ram', 'vcpus', 'disk', 'id' ]
+    );
+
+    my $api = $self->api;
+    my $id = $api->tenant(id => $api->{tenant_id})->flavors->post(
+        target => 'compute',
+        content => {
+            flavor => {
+                'name'                        => $args{name},
+                'ram'                         => $args{ram},
+                'vcpus'                       => $args{vcpus},
+                'disk'                        => $args{disk},
+                'id'                          => $args{id},
+                'swap'                        => 0,
+                'os-flavor-access:is_public'  => JSON::true,
+                'rxtx_factor'                 => 1,
+                'OS-FLV-EXT-DATA:ephemeral'   => 0
+            }
+        }
+    )->{flavor}->{id};
+    return $id;
+}
+
+=pod
+
+=begin classdoc
+
+Generale scaling method (called by scaleCpu or scalememory)
+Takes host and new memory / cpu count in parameter
+Update host's flavor and resize host on the new flavor
+
+=end classdoc
+
+=cut
+
+sub _scaleHost {
+    my ($self, %args) = @_;
+
+    General::checkParams(
+        args     => \%args,
+        required => [ 'host' ],
+        optional => { memory => undef, cpu_number => undef }
+    );
+
+    my $api          = $self->api;
+    my $node         = $args{host}->node;
+    my $uuid         = $args{host}->openstack_vm_uuid;
+    my $flavor       = $api->tenant(id => $api->{tenant_id})->servers(id => $uuid)->get(target => 'compute')->{server}->{flavor};
+    $flavor          = $api->tenant(id => $api->{tenant_id})->flavors(id => $flavor->{id})->get(target => 'compute')->{flavor};
+
+    my $newFlavor_id = undef;
+    if ($flavor->{id} eq $args{host}->id) {
+        $api->tenant(id => $api->{tenant_id})->flavors(id => $flavor->{id})->delete(target => 'compute');
+        $newFlavor_id = $flavor->{id};
+    }
+    else {
+        $newFlavor_id = $args{host}->id;
+    }
+
+    $newFlavor_id = $self->registerFlavor(
+        id    => $newFlavor_id,
+        name  => $node->node_hostname,
+        ram   => (($args{memory} != undef) ? $args{memory} / 1024 / 1024 : $flavor->{ram}),
+        vcpus => ($args{cpu_number} or $flavor->{vcpus}),
+        disk  => $flavor->{disk}
+    );
+
+    # resize vm and confirm it
+    $api->tenant(id => $api->{tenant_id})->servers(id => $uuid)->action->post(
+        target  => 'compute',
+        content => {
+            resize  => {
+                flavorRef   => $newFlavor_id
+            }
+        }
+    );
+    $api->tenant(id => $api->{tenant_id})->servers(id => $uuid)->action->post(
+        target  => 'compute',
+        content => {
+            confirmResize => undef
+        }
+    );
+}
+
 1;
