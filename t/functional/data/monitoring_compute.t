@@ -320,12 +320,15 @@ sub testNodemetricCombination {
             value           => $mock_conf
         );
 
+        $aggregator->update();
+
         if (defined $ncomb_ident->evaluate(nodes => [$node_1])->{$node_1->id}) {
-            die 'Identity combination defined while no value for indicator'
+            die 'Identity combination defined while no value for indicator'.($ncomb_ident->evaluate(nodes => [$node_1])->{$node_1->id});
         }
 
+
         if (defined $ncomb2->evaluate(nodes => [$node_1])->{$node_1->id}) {
-            die 'Combination defined while all indicator values are undef'
+            die 'Combination defined while all indicator values are undef =>'.($ncomb2->evaluate(nodes => [$node_1])->{$node_1->id});
         }
 
         # More complex config:
@@ -341,6 +344,8 @@ sub testNodemetricCombination {
             value           => $mock_conf
         );
 
+        $aggregator->update();
+
         if (! ($ncomb_ident->evaluate(nodes => [$node_1])->{$node_1->id} == 42)) {
             die 'Identity combination as same value than indicator';
         }
@@ -351,6 +356,8 @@ sub testNodemetricCombination {
             name            => 'mockmonit_config',
             value           => $mock_conf
         );
+
+        $aggregator->update();
 
         if (defined $ncomb2->evaluate(nodes => [$node_2])->{$node_2->id}) {
             die 'Combination defined while one indicator value is undef'
@@ -365,6 +372,8 @@ sub testNodemetricCombination {
             value           => $mock_conf
         );
 
+        $aggregator->update();
+
         if (! ($ncomb2->evaluate(nodes => [$node_1])->{$node_1->id} == (42 + 5)*12)) {
             die 'Combination correctly computed';
         }
@@ -375,6 +384,8 @@ sub testNodemetricCombination {
             name            => 'mockmonit_config',
             value           => $mock_conf
         );
+
+        $aggregator->update();
 
         if ($ncomb2->evaluate(nodes => [$node_1])->{$node_1->id} - (1.2 + 5)*42.42 > 10**-8) {
             die 'Combination correctly computed with float values';
