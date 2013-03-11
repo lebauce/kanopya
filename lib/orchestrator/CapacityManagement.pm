@@ -127,12 +127,12 @@ sub new {
 
         my @vm_ids = keys %{$self->{_infra}->{vms}};
         for my $vm_id (@vm_ids) {
-            $log->debug("try to get vm Entity $vm_id");
-            my $vm   = Entity->get(id => $vm_id);
-            my $e_vm = EFactory::newEEntity(data => $vm);
+            my $vm = EEntity->new(entity => Entity->get(id => $vm_id));
+            my $hypervisor = EEntity->new(entity => $vm->hypervisor);
             #TODO: This can take some time => need a method whichs retrieve information in one shot
             eval {
-	            $self->{_infra}->{vms}->{$vm_id}->{ram_effective} = $e_vm->getRamUsedByVm->{total};
+	            $self->{_infra}->{vms}->{$vm_id}->{ram_effective} =
+	                $hypervisor->getRamUsedByVm(host => $vm)->{total};
             };
             if ($@) {
                 my $error = $@;

@@ -19,7 +19,13 @@ use strict;
 use warnings;
 
 use EEntity;
+use Hash::Merge qw(merge);
 use OpenStack::API;
+
+my $resources_keys = {
+    ram => { name => 'ram' },
+    cpu => { name => 'vcpus' },
+};
 
 sub postStartNode {
     my ($self, %args) = @_;
@@ -44,6 +50,18 @@ sub postStartNode {
     $self->SUPER::postStartNode(%args);
 }
 
+=pod
+
+=begin classdoc
+
+Return the amount of available memory on a given hypervisor
+
+@param host the pondered hypervisor
+
+@return the available memory
+
+=cut
+
 sub getAvailableMemory {
     my ($self, %args) = @_;
  
@@ -51,20 +69,37 @@ sub getAvailableMemory {
 
     my $host = $args{host};
     my $hostname = $host->node->node_hostname;
+	my $e_controller = EEntity->new(entity => $self->nova_controller);
 
-    my $host_details = $self->api->tenant(id => $self->api->{tenant_id} . '/os-hypervisors/detail')
+    my $host_details = $e_controller->api->tenant(id => $e_controller->api->{tenant_id} . '/os-hypervisors/detail')
                            ->get(target => 'compute')->{hypervisors};
 
     my ($hypervisor) = grep { $_->{hypervisor_hostname} eq $host->fqdn } @$host_details;
 
     my $memory = {
         mem_effectively_available   => $hypervisor->{free_ram_mb} * 1025 * 1024,
-        mem_theoretically_available => ($host->host_ram * $self->overcommitment_memory_factor) -
+        mem_theoretically_available => ($host->host_ram * $e_controller->overcommitment_memory_factor) -
                                        ($hypervisor->{memory_mb_used} * 1024 * 1024),
     };
 
     return $memory;
 }
+
+=pod
+
+=begin classdoc
+
+Retrieve resources attributed to a vm
+
+@param host an hypervisor hosting vms
+@optional resources the list of desired resources
+@optional vm the vm to probe
+
+@return vms_resources a hash listing the resources per vm
+
+=end classdoc
+
+=cut
 
 sub getVmResources {
     my ($self, %args) = @_;
@@ -87,27 +122,67 @@ sub getVmResources {
 
     for my $vm (@vms) {
         # we get the flavor of the vm
-        my $uuid = $args{host}->openstack_vm_uuid;
-        my $controller = $self->nova_controller;
-        my $details = $controller->api->tenant(id => $controller->api->{tenant_id})
+        my $uuid = $vm->openstack_vm_uuid;
+        my $e_controller = EEntity->new(entity=> $self->nova_controller);
+ 
+        my $details = $e_controller->api->tenant(id => $e_controller->api->{tenant_id})
                           ->servers(id => $uuid)
                           ->get(target => 'compute');
 
-        my $flavor = $details->{server}->{flavor};
+        my $flavor = $details->{server}->{flavor}->{id};
 
         #get the flavor's details
-        my $f_details = $controller->api->tenant(id => $controller->api->{tenant_id})
-                          ->flavors(id => $flavor->id)
+        my $f_details = $e_controller->api->tenant(id => $e_controller->api->{tenant_id})
+                          ->flavors(id => $flavor)
                           ->get(target => 'compute');
    
-        my $vm_resource = {};
+        my $vm_resources = {};
         for my $resource (@{ $args{resources} }) {
-
+			$vm_resources->{$vm->id}->{$resource} =
+				$f_details->{flavor}->{$resources_keys->{$resource}->{name}};
         }
 
+		$vms_resources = merge($vms_resources, $vm_resources);
     }
 
     return $vms_resources;
+}
+
+=pod
+
+=begin classdoc
+
+Return the amount of ram used by a given openstack vm
+
+@param host the desired vm
+
+@return detail of used, swaped and total RAM
+
+=end classdoc
+
+=cut
+
+sub getRamUsedByVm {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host', 'hypervisor' ]);
+
+    my $vm = $args{host};
+    my $e_hypervisor = $args{hypervisor};
+    my $vm_uuid = $vm->openstack_vm_uuid;
+    my $e_controller = EEntity->new(entity=> $self->nova_controller);
+
+    my $details = $e_controller->api->tenant(id => $e_controller->api->{tenant_id})
+                      ->servers(id => $vm_uuid)
+                      ->diagnostics
+                      ->get(target => 'compute');
+
+	#TODO find a way to retrieve swapped memory for the vm
+    return {
+        mem_ram  => $details->{'memory-rss'},
+        mem_swap => undef,
+        total    => $details->{'memory-rss'},
+    }
 }
 
 1;

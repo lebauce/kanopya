@@ -513,6 +513,27 @@ sub checkUp {
     $log->info('VM <' . $host->id . '> openstack status <' . $vm_state . '>');
 
     if ($vm_state eq 'SHUTOFF') {
+        $log->info('vm powered off');
+        return 0;
+    }
+    elsif ($vm_state eq 'BUILD') {
+        $log->info('vm is building');
+        return 0;
+    }
+    elsif ($vm_state eq 'ACTIVE') {
+        $log->info('vm is active');
+        return 2;
+    }
+    elsif ($vm_state eq 'ERROR') {
+        $log->info('vm is in error state');
+        return 0;
+    }
+    elsif ($vm_state eq 'MIGRATING') {
+        $log->info('vm is migrating');
+        return 0;
+    }
+    else {
+        throw Kanopya::Exception(error => 'unknown state: ' . $vm_state);
     }
 
     return 0;

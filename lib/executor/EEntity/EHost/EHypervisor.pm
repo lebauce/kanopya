@@ -78,4 +78,12 @@ sub getMinEffectiveRamVm {
                                             %args);
 }
 
+sub getRamUsedByVm {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    return $self->vmm->getRamUsedByVm(host => EFactory::newEEntity(data => $args{host}->hypervisor));
+}
+            
 1;
