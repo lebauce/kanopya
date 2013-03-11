@@ -227,6 +227,13 @@ sub halt {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'host' ]);
+    my $uuid = $args{host}->openstack_vm_uuid;
+    my $api = $self->api;
+
+    $api->tenant(id => $api->{tenant_id})->servers(id => $uuid)->action->post(
+        target  => 'compute',
+        content => { 'os-stop' => undef }
+    );
 }
 
 =pod
@@ -503,6 +510,30 @@ sub stopHost {
     my %args = @_;
 
     General::checkParams(args => \%args, required => [ 'host' ]);
+
+    my $host = $args{host};
+    my $api = $self->api;
+    my $image_name = $host->getNodeSystemimage()->systemimage_name;
+    my $uuid = $host->openstack_vm_uuid;
+
+    # get image id from openstack
+    my $os_images = $api->images->get(target => "image")->{images};
+    my ($image) = grep { $_->{name} eq $image_name } @{$os_images};
+
+    # delete image : set 'protected' attribute to false, then delete image
+    $api->images(id => $image->{id})->put(
+        target => 'image',
+        headers => { 'x-image-meta-protected' => 'False' }
+    );
+    $api->images(id => $image->{id})->delete(target => 'image');
+
+    # delete vm
+    $api->tenant(id => $api->{tenant_id})->servers(id => $uuid)->delete(target => 'compute');
+
+    # delete host
+    $host->setAttr(name  => 'active', value => '0');
+    $host->save;
+    $host->remove;
 }
 
 sub postStart {
