@@ -1,3 +1,4 @@
+
 =head1 SCOPE
 
 DataModel
@@ -22,8 +23,6 @@ use Entity::Combination::AggregateCombination;
 use Entity::Combination::NodemetricCombination;
 
 use Entity::DataModel;
-use Entity::DataModel::LinearRegression;
-use Entity::DataModel::LogarithmicRegression;
 
 use List::MoreUtils;
 use List::Util;
@@ -31,7 +30,13 @@ use List::Util;
 use Aggregator;
 use Executor;
 
+use Kanopya::Tools::TimeSerie;
+use Kanopya::Tools::Execution;
+
 use DataModelSelector;
+
+#use Log::Log4perl ":easy";
+#Log::Log4perl->easy_init($DEBUG);
 
 my $testing = 1;
 my $service_provider;
@@ -56,14 +61,41 @@ sub main {
 
     setup();
 
-    testDataModelAccuracyEvaluation();
+    testDataModelSelector();
+    testAutoPredict();
 
     if ($testing == 1) {
         BaseDB->rollbackTransaction;
     }
 }
 
-sub testDataModelAccuracyEvaluation {
+sub testAutoPredict {
+    lives_ok {
+
+        my %data = (
+            1  => 5  , 2  => 12 , 3  => 13 , 4  => 15 , 5  => 13 ,
+            6  => 12 , 7  => 5  , 8  => 12 , 9  => 13 , 10 => 15 ,
+            11 => 13 , 12 => 12 , 13 => 5  , 14 => 12 , 15 => 13 ,
+            16 => 15 , 17 => 13 , 18 => 12 , 19 => 5  , 20 => 12 ,
+            21 => 13 , 22 => 15 , 23 => 13 , 24 => 12 , 25 => 5  ,
+            26 => 12 , 27 => 13 , 28 => 15 , 29 => 13 , 30 => 12 ,
+            31 => 5  , 32 => 12 , 33 => 13 , 34 => 15 , 35 => 13 ,
+            36 => 12 , 37 => 5  , 38 => 12 , 39 => 13 , 40 => 15 ,
+            41 => 13 , 42 => 12 , 43 => 5  , 44 => 12 , 45 => 13 ,
+            46 => 15 , 47 => 13 , 48 => 12 , 49 => 5  , 50 => 12 ,
+        );
+        my %forecast = %{DataModelSelector->autoPredict(
+            combination_id => $comb->id,
+            start_time     => 1,
+            end_time       => 50,
+            horizon        => 70,
+            data           => \%data,
+        )};
+        my @values = @{$forecast{values}};
+    } 'DataModelSelector : Testing autoPredict Method';
+}
+
+sub testDataModelSelector {
 
     my %data = (
         1  => 5  , 2  => 12 , 3  => 13 , 4  => 15 , 5  => 13 ,
@@ -147,11 +179,11 @@ sub setup {
 
     srand(1);
     $service_provider = Entity::ServiceProvider::Externalcluster->new(
-                            externalcluster_name => 'Test Service Provider',
+                            externalcluster_name => 'Test Service Provider 9',
                         );
 
     $external_cluster_mockmonitor = Entity::ServiceProvider::Externalcluster->new(
-                                        externalcluster_name => 'Test Monitor',
+                                        externalcluster_name => 'Test Monitor 9',
                                     );
 
     my $mock_monitor = Entity::Component::MockMonitor->new(
@@ -198,4 +230,5 @@ sub setup {
                     service_provider_id            => $service_provider->id,
                     nodemetric_combination_formula => 'id'.($indic_1->id),
                 );
+
 }

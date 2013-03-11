@@ -32,6 +32,7 @@ use warnings;
 use strict;
 use Data::Dumper;
 use BaseDB;
+use Entity::DataModel;
 use Utils::TimeSerieAnalysis;
 
 use constant {
@@ -51,6 +52,113 @@ use constant CHOICE_STRATEGY => {
     MSE       => 'MSE',
     RMSE      => 'RMSE',
 };
+
+=pod
+
+=begin classdoc
+
+Proceed a forecast with an automatic selection of the model and his parameters.
+
+@param combination_id The id of the combination to model.
+@param start_time Define the start time of historical data taken to configure.
+@param end_time Define the end time of historical data taken to configure.
+
+@optional horizon The horizon of the forecast (when this forecast mode is selected).
+@optional timestamps The timestamps to forecast (when this forecast mode is selected).
+@optional node_id Modeled node in case of NodemetricCombination.
+@optional model_list  : The list of the available models for the selection. By default all existing models are
+                        used. 
+@optional data A reference to a hash containing the available {timestamp => value}.
+@optional data_format The format wished for the forecast (default : Hash containing a reference to an array
+                      of timestamps ('timestamps'), and a reference to an array of values ('values').
+                      'pairs' : An array where each value is a reference to an array containing a timestamp
+                      and the corresponding value).
+
+@return A reference to the forecast, with the selected format (default : Hash containing a reference to an 
+        array of timestamps ('timestamps'), and a reference to an array of values ('values').
+        'pairs' : An array where each value is a reference to an array containing a timestamp and the 
+        corresponding value).
+
+=end classdoc
+
+=cut
+
+sub autoPredict {
+    my ($class, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => ['combination_id', 'start_time', 'end_time'],
+                         optional => {'horizon'       => undef,
+                                      'timestamps'    => undef,
+                                      'node_id'       => undef, 
+                                      'model_list'    => MODEL_CLASSES,
+                                      'data'          => undef,
+                                      'data_format'   => undef,
+                         });
+
+    if (!defined($args{horizon}) && !defined($args{timestamps})) {
+        throw Kanopya::Exception(error => 'SelectDataModel : An horizon or an array of timestamps must be'
+                                          . 'defined.');
+    }
+
+    # Get the combination from the given id
+    my $combination = Entity::Combination->get(id => $args{combination_id});
+
+    # Extract the data
+    my %data = defined($args{data}) ? %{$args{data}}
+             :                        $combination->computeValues(start_time => $args{start_time},
+                                                                  stop_time  => $args{end_time},
+                                                                  node_id    => $args{node_id})
+             ;
+
+    # If horizon or timestamps undefined, construct the undefined one
+    if (!defined($args{horizon})) {
+        my @timestamps = @{$args{timestamps}};
+        $args{horizon} = $timestamps[-1];
+    }
+    if (!defined($args{timestamps})) {
+        my @timestamps = keys(%data);
+        my $samperiod = ($timestamps[-1] -$timestamps[0]) / (@timestamps - 1);
+        my @n_timestamps;
+        my $end = int($args{horizon} / $samperiod) * $samperiod;
+        my $i = 0;
+        for my $timestamp ($timestamps[-1] + $samperiod..$end) {
+            $n_timestamps[$i] = $timestamp;
+        }
+        $args{timestamps} = \@n_timestamps;
+    }
+
+    # Select DataModel
+    my %best = %{$class->selectDataModel(
+        combination => $combination,
+        start_time  => $args{start_time},
+        end_time    => $args{end_time},
+        node_id     => $args{node_id},
+        model_list  => $args{model_list},
+        data        => $args{data},
+    )};
+
+    my $best_model = $best{best_model};
+    my $best_freq  = $best{best_freq};
+
+    # Instanciate and configure the best found model
+    my $datamodel = $best_model->new(
+        node_id        => $args{node_id},
+        combination_id => $args{combination_id},
+    );
+    $datamodel->configure(
+        data => \%data,
+        freq => $best_freq,
+    );
+
+    # Return the forecast
+    return $datamodel->predict(
+        data            => \%data,
+        freq            => $best_freq,
+        timestamps      => $args{timestamps},
+        end_time        => $args{horizon},
+    );
+}
 
 =pod
 
@@ -84,6 +192,7 @@ sub selectDataModel {
                                       'data'          => undef,
                          });
 
+    # Extract the data
     my %data = defined($args{data}) ? %{$args{data}}
              :                        $args{combination}->computeValues(start_time => $args{start_time},
                                                                         stop_time  => $args{end_time},
@@ -96,7 +205,6 @@ sub selectDataModel {
     }
 
     # Compute the possible seasonality values
-    #TODO
     my @freqs = @{Utils::TimeSerieAnalysis->findSeasonality(data => {%data})};
 
     # Models with the best freq found {class_name => $freq}
