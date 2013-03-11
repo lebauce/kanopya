@@ -20,6 +20,8 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
+use Entity::ServiceProvider::Cluster;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use General;
@@ -228,6 +230,17 @@ sub getPuppetDefinition {
     my ($self, %args) = @_;
 
     return "class { 'kanopya::dhcpd': }\n";
+}
+
+sub getHostsEntries {
+    my $self = shift;
+
+    my @entries;
+    for my $cluster (Entity::ServiceProvider::Cluster->search()) {
+        @entries = (@entries, $cluster->getHostEntries());
+    }
+
+    return \@entries;
 }
 
 1;
