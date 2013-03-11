@@ -342,7 +342,12 @@ sub registerSystemImage {
     my $disk_params = $args{cluster}->getManagerParameters(manager_type => 'DiskManager');
     my $image_name = $image->systemimage_name;
     my $image_type = $disk_params->{image_type};
-    my $image_source = '/nfsexports/test_image_repository/' . $image->getContainer->container_device;
+
+    my $econtext = $self->getExecutorEContext;
+    my $container_access = $image->getContainer->container_access;
+    my $mount_point = EEntity->new(entity => $container_access)->mount(econtext => $econtext);
+
+    my $image_source = $mount_point . '/' . $image->getContainer->container_device;
     my $image_container_format = 'bare'; # bare => no container or metadata envelope for the image
     my $image_is_public = 'True'; # accessible by all tenants
 
@@ -359,6 +364,8 @@ sub registerSystemImage {
     );
 
     $log->debug("Glance returned : " . (Dumper $response));
+
+    EEntity->new(entity => $container_access)->umount(econtext => $econtext);
 
     return $response->{image}->{id};
 }
