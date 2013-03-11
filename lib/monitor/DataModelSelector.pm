@@ -117,13 +117,15 @@ sub autoPredict {
         $args{horizon} = $timestamps[-1];
     }
     if (!defined($args{timestamps})) {
-        my @timestamps = keys(%data);
-        my $samperiod = ($timestamps[-1] -$timestamps[0]) / (@timestamps - 1);
+        my @timestamps = sort {$a <=> $b} keys(%data);
+        my $granularity      = int($timestamps[-1] -$timestamps[0]) / (@timestamps - 1);
+        my $relative_end     = ($args{horizon} - $timestamps[0]);
+        my $relative_horizon = ($relative_end % $granularity) == 0 ? $relative_end / $granularity
+                             :                                       int($relative_end / $granularity) + 1
+                             ;
         my @n_timestamps;
-        my $end = int($args{horizon} / $samperiod) * $samperiod;
-        my $i = 0;
-        for my $timestamp ($timestamps[-1] + $samperiod..$end) {
-            $n_timestamps[$i] = $timestamp;
+        for my $i (1..$relative_horizon) {
+            push @n_timestamps, $timestamps[-1] + ($i * $granularity);
         }
         $args{timestamps} = \@n_timestamps;
     }
