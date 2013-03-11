@@ -739,9 +739,14 @@ sub getAttr {
                 my $camelcased_method = normalizeMethod($method);
                 $value = $self->$camelcased_method();
             };
-            if ($@) {
+            if ($@ and $self->can($method)) {
                 # If failled with camel-cased, try the original attr name as method
-                $value = $self->$method();
+                eval {
+                    $value = $self->$method();
+                };
+                if ($@) {
+                    $value = $@;
+                }
             }
             last;
         }
