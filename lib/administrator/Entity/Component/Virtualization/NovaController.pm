@@ -117,10 +117,6 @@ sub supportHotConfiguration {
     return 0;
 }
 
-sub hostType {
-    return "OpenStack VM";
-}
-
 =pod
 
 =begin classdoc
