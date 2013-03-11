@@ -91,7 +91,7 @@ function host_addbutton_action(e) {
                 // Find the input corresponding to defined ifaces,
                 // and build an options list with.
                 var options = [];
-                this.form.find('#input_iface_name').each(function() {
+                this.form.find('input[name="iface_name"]').each(function() {
                     if ($(this).val() != "") {
                         options.push({ label : $(this).val(), pk : $(this).val() });
                     }

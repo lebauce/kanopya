@@ -1,16 +1,17 @@
 //require('kanopyaformwizard.js');
 
-function vlan_addbutton_action(e) {
+function vlan_addbutton_action(e, grid) {
     (new KanopyaFormWizard({
         title      : 'Create a VLAN',
         type       : 'vlan',
         id         : (!(e instanceof Object)) ? e : undefined,
-        displayed  : [ 'vlan_name', 'vlan_number' ]
+        displayed  : [ 'vlan_name', 'vlan_number' ],
+        callback   : function () { if (grid !== undefined ) { $(grid).trigger("reloadGrid"); } }
     })).start();
 }
 
 function vlans_list(cid) {
-    create_grid({
+    var grid = create_grid({
         url                     : '/api/vlan',
         content_container_id    : cid,
         grid_id                 : 'vlans_list',
@@ -26,5 +27,7 @@ function vlans_list(cid) {
     });
     var addButton   = $('<a>', { text : 'Add a VLAN' }).appendTo('#' + cid)
                         .button({ icons : { primary : 'ui-icon-plusthick' } });
-    $(addButton).bind('click', vlan_addbutton_action);
+    $(addButton).bind('click', function (e) {
+        vlan_addbutton_action(e, grid);
+    });
 }
