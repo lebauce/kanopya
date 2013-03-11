@@ -78,12 +78,29 @@ sub getMinEffectiveRamVm {
                                             %args);
 }
 
+=pod
+
+=begin classdoc
+
+prompt an Openstack host for ram used by a given vm
+
+@param $host the desired vm
+
+@return ram used by vm
+
+=end classdoc
+
+=cut
+
 sub getRamUsedByVm {
-    my ($self, %args) = @_;
+    my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    return $self->vmm->getRamUsedByVm(host => EFactory::newEEntity(data => $args{host}->hypervisor));
+    return $self->vmm->getRamUsedByVm(
+        host       => $args{host},
+        hypervisor => $self
+    );
 }
             
 1;
