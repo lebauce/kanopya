@@ -244,10 +244,17 @@ var KanopyaFormWizard = (function() {
                 var value = this.attributedefs[name].value || values[name] || undefined;
 
                 // Get options for select inputs
-                if (!this.attributedefs[name].hidden && this.attributedefs[name].type === 'relation' &&
+                if (this.attributedefs[name].type === 'relation' &&
                     (this.attributedefs[name].options === undefined || this.attributedefs[name].reload_options == true) &&
                     (this.attributedefs[name].relation === 'single' || this.attributedefs[name].relation === 'multi')) {
-                    this.attributedefs[name].options = this.getOptions(name, value, relations);
+
+                    // For hidden fields, do not get possible values, add the value as option only
+                    if (this.attributedefs[name].hidden && value !== undefined) {
+                        this.attributedefs[name].options = [ value ];
+
+                    } else {
+                        this.attributedefs[name].options = this.getOptions(name, value, relations);
+                    }
                 }
 
                 // Finally create the input field with label
@@ -285,6 +292,7 @@ var KanopyaFormWizard = (function() {
             options = ajax('GET', '/api/' + resource);
         }
 
+        // TODO: check if we can remove this block as the case is handled in buildFromAttrDef
         // If there is no options but a fixed value,
         // add the value to options.
         if (options === undefined && value !== undefined) {
@@ -354,7 +362,7 @@ var KanopyaFormWizard = (function() {
                 }
 
                 // Set current option to value if defined
-                if (optionvalue === value || ($.isArray(value) && $.inArray(optionvalue, value) >= 0)) {
+                if (optionvalue == value || ($.isArray(value) && $.inArray(optionvalue, value) >= 0)) {
                     $(option).attr('selected', 'selected');
                 }
             }
@@ -425,7 +433,8 @@ var KanopyaFormWizard = (function() {
             }
         }
 
-        /* Set the field as hidden if defined.
+        /*
+         * Set the field as hidden if defined.
          * Be carefull to not move this block before the previous
          * tests on the input type, has we change the type to hidden.
          */
@@ -679,11 +688,11 @@ var KanopyaFormWizard = (function() {
             !(this.attributedefs[name].is_primary == true && this.attributedefs[name].belongs_to != undefined)) {
             return true;
         }
-        if (this.attributedefs[name].is_editable != true && value !== undefined) {
+        if (this.attributedefs[name].is_editable != true && value !== undefined &&
+            (this.attributedefs[name].belongs_to === undefined || this.attributedefs[name].is_mandatory == true)) {
             return true;
         }
-        if (this.attributedefs[name].belongs_to &&
-            this.attributedefs[this.attributedefs[name].belongs_to].is_editable != true) {
+        if (this.attributedefs[name].belongs_to && this.attributedefs[this.attributedefs[name].belongs_to].is_editable != true) {
             return true;
         }
         return false;
@@ -727,6 +736,17 @@ var KanopyaFormWizard = (function() {
     KanopyaFormWizard.prototype.serialize = function(arr) {
         // Building a hash representing the object with its relations
         var data = {};
+
+        // Prepare an empty array for relations, because if all entries
+        // for this relation has been removed, we need to send an empty list
+        // to known we need to remove all entries for this relation form db.
+        for (var index in this.displayed) {
+            var attr = this.attributedefs[this.displayed[index]];
+            if (attr.type === 'relation' && attr.relation != 'single') {
+                data[this.displayed[index]] = [];
+            }
+        }
+
         var rel_attr_names = {};
         for (var index in arr) {
             var attr = arr[index];
