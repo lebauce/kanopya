@@ -110,6 +110,23 @@ sub methods {
     };
 }
 
+
+=pod
+
+=begin classdoc
+
+@constructor
+
+Create a new instance of the class.
+Transforms thresholds into ConstantCombinations
+Update formula_string with toString() methods and the label if not provided in attribute.
+
+@return a class instance
+
+=end classdoc
+
+=cut
+
 sub new {
     my $class = shift;
     my %args = @_;
@@ -147,9 +164,14 @@ sub label {
     return $self->aggregate_condition_label;
 }
 
-=head2 updateName
 
-    desc: set entity's name to .toString() return value
+=pod
+
+=begin classdoc
+
+set label to human readable version of the formula
+
+=end classdoc
 
 =cut
 
@@ -160,10 +182,16 @@ sub updateName {
     $self->save;
 }
 
-=head2 toString
 
-    desc: return a string representation of the entity
-            add unit only if right combi is a constant
+=pod
+
+=begin classdoc
+
+Transform formula to human readable String
+
+@return human readable String of the formula
+
+=end classdoc
 
 =cut
 
@@ -233,6 +261,19 @@ sub evaluate{
     return undef;
 }
 
+
+=pod
+
+=begin classdoc
+
+Find all the rules which depends on the AggregateCondition
+
+@return array of rules
+
+=end classdoc
+
+=cut
+
 sub getDependentRules {
     my $self = shift;
     my @rules_from_same_service = Entity::Rule::AggregateRule->search(
@@ -256,6 +297,19 @@ sub getDependentRules {
     return @rules;
 }
 
+
+=pod
+
+=begin classdoc
+
+Find all the rules which depends on the AggregateCondition
+
+@return hashref of rule_names
+
+=end classdoc
+
+=cut
+
 sub getDependencies {
     my $self = shift;
 
@@ -267,6 +321,17 @@ sub getDependencies {
     }
     return \%dependencies;
 }
+
+
+=pod
+
+=begin classdoc
+
+Delete instance and delete dependant object on cascade.
+
+=end classdoc
+
+=cut
 
 sub delete {
     my $self = shift;
@@ -290,6 +355,17 @@ sub delete {
     $comb_left->deleteIfConstant();
     $comb_right->deleteIfConstant();
 }
+
+
+=pod
+
+=begin classdoc
+
+Update instance attributes. Manage update of related objects and formula_string.
+
+=end classdoc
+
+=cut
 
 sub update {
     my ($self, %args) = @_;
@@ -384,6 +460,17 @@ sub clone {
         attrs_clone_handler => $attrs_cloner
     );
 }
+
+
+=pod
+
+=begin classdoc
+
+Update formula string and call update formula string of dependant objects.
+
+=end classdoc
+
+=cut
 
 sub updateFormulaString {
     my $self = shift;

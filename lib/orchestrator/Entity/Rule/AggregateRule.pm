@@ -89,6 +89,22 @@ sub formula_label {
     return $self->formula_string;
 }
 
+
+=pod
+
+=begin classdoc
+
+@constructor
+
+Create a new instance of the class. Verify that the formula contains only AggregateCondition ids.
+Update formula_string with toString() methods and the rule_name if not provided in attribute.
+
+@return a class instance
+
+=end classdoc
+
+=cut
+
 sub new {
     my ($class, %args) = @_;
 
@@ -113,15 +129,17 @@ sub new {
     return $self;
 }
 
-sub setLabel{
-    my ($self,%args) = @_;
-    if((!defined $args{rule_name}) || $args{rule_name} eq ''){
-        $self->setAttr(name=>'rule_name', value => $self->toString());
-    }else{
-        $self->setAttr(name=>'rule_name', value => $args{rule_name});
-    }
-    $self->save();
-}
+
+=pod
+
+=begin classdoc
+
+Verify that the formula contains only AggregateCondition ids. throw
+Kanopya::Exception::Internal::WrongValue if an id of the formula is not an AggregateCondition id
+
+=end classdoc
+
+=cut
 
 sub _verify {
 
@@ -140,6 +158,19 @@ sub _verify {
         }
     }
 }
+
+
+=pod
+
+=begin classdoc
+
+Transform formula to human readable String
+
+@return human readable String of the formula
+
+=end classdoc
+
+=cut
 
 sub toString {
     my $self = shift;
@@ -202,11 +233,16 @@ sub evaluate {
 
 }
 
-sub getDependentConditionIds {
-    my $self = shift;
-    my %ids = map { $_ => undef } ($self->formula =~ m/id(\d+)/g);
-    return keys %ids;
-}
+
+=pod
+
+=begin classdoc
+
+Override setAttr to check the formula before updating
+
+=end classdoc
+
+=cut
 
 sub setAttr {
     my $class = shift;
@@ -458,7 +494,5 @@ sub manageWorkflows {
         my $errmsg = "Unkown rule evaluation value <$evaluation>";
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-
-
 }
 1;

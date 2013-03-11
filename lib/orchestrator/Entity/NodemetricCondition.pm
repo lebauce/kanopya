@@ -146,10 +146,15 @@ sub updateName {
     $self->save;
 }
 
-=head2 toString
+=pod
 
-    desc: return a string representation of the entity
-            add unit only if right combi is a constant
+=begin classdoc
+
+Transform formula to human readable String
+
+@return human readable String of the formula
+
+=end classdoc
 
 =cut
 

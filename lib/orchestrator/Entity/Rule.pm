@@ -242,9 +242,38 @@ sub delete {
     if (defined $workflow_def) { $workflow_def->delete(); };
 }
 
+=pod
+
+=begin classdoc
+
+Update formula_string attribute with toString() method value
+
+=end classdoc
+
+=cut
+
 sub updateFormulaString {
     my $self = shift;
     $self->setAttr(name=>'formula_string', value => $self->toString());
     $self->save();
 }
+
+=pod
+
+=begin classdoc
+
+Find the AggregateConditions ids contained in the rule formula without doublon.
+ 
+@return array of AggregateConditions ids
+
+=end classdoc
+
+=cut
+
+sub getDependentConditionIds {
+    my $self = shift;
+    my %ids = map { $_ => undef } ($self->formula =~ m/id(\d+)/g);
+    return keys %ids;
+}
+
 1;

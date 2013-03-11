@@ -75,6 +75,23 @@ sub formula_label {
     return $self->formula_string;
 }
 
+
+=pod
+
+=begin classdoc
+
+@constructor
+
+Create a new instance of the class.
+Update formula_string with toString() methods and the rule_name if not provided in attribute.
+Set rule evaluation 'undef' for each nodes of the service provider when rule is enabled.
+
+@return a class instance
+
+=end classdoc
+
+=cut
+
 sub new {
     my $class = shift;
     my %args = @_;
@@ -105,6 +122,16 @@ sub new {
 }
 
 
+=pod
+
+=begin classdoc
+
+For each nodes of the service provider, insert a VerifiedNodeRule entry with state 'undef'.
+
+=end classdoc
+
+=cut
+
 sub setUndefForEachNode{
     my ($self) = @_;
     #ADD A ROW IN VERIFIED_NODERULE TABLE indicating undef data
@@ -121,6 +148,19 @@ sub setUndefForEachNode{
     }
 }
 
+
+=pod
+
+=begin classdoc
+
+Transform formula to human readable String
+
+@return human readable String of the formula
+
+=end classdoc
+
+=cut
+
 sub toString {
     my $self = shift;
 
@@ -132,12 +172,6 @@ sub toString {
      }
      return "@array";
 };
-
-sub getDependentConditionIds {
-    my $self = shift;
-    my %ids = map { $_ => undef } ($self->formula =~ m/id(\d+)/g);
-    return keys %ids
-}
 
 
 =pod
@@ -159,6 +193,7 @@ sub evaluate {
 
     General::checkParams(args => \%args, optional => { 'nodes' => undef });
 
+    # If @nodes not provided, get all non-disabled nodes of the service provider
     my @nodes = (defined $args{nodes}) ? @{$args{nodes}}
                                        : $self->service_provider->searchRelated(
                                             filters => ['nodes'],
@@ -169,12 +204,14 @@ sub evaluate {
         return {};
     }
 
+    # Get values of each NodemetricConditions
     my @nm_cond_ids = ($self->formula =~ m/id(\d+)/g);
 
     my %values = map { $_ => Entity::NodemetricCondition->get('id'=>$_)->evaluate(nodes => \@nodes)
                  } @nm_cond_ids;
 
 
+    # Evaluate conditionfor each node
     my %evaluation_for_each_node;
     NODE:
     for my $node (@nodes) {
@@ -193,6 +230,17 @@ sub evaluate {
     }
     return \%evaluation_for_each_node;
 }
+
+
+=pod
+
+=begin classdoc
+
+Check if the rule is verified in database for a given node
+
+=end classdoc
+
+=cut
 
 sub isVerifiedForANode{
     my ($self, %args) = @_;
@@ -223,6 +271,17 @@ sub isVerifiedForANode{
     $verified_noderule_state.' for rule <'.$self->id.'> and node <'.($node_id).'>');
 };
 
+
+=pod
+
+=begin classdoc
+
+Set the rule state for a given node
+
+=end classdoc
+
+=cut
+
 sub setVerifiedRule{
     my ($self, %args) = @_;
 
@@ -238,6 +297,17 @@ sub setVerifiedRule{
     });
 }
 
+
+=pod
+
+=begin classdoc
+
+Disable the rule
+
+=end classdoc
+
+=cut
+
 sub disable {
     my $self = shift;
 
@@ -246,12 +316,34 @@ sub disable {
     $self->save();
 };
 
+
+=pod
+
+=begin classdoc
+
+Enable the rule and set it undef for each nodes of the service provider
+
+=end classdoc
+
+=cut
+
 sub enable {
     my $self = shift;
     $self->setUndefForEachNode();
     $self->setAttr(name => 'state', value => 'enabled');
     $self->save();
 }
+
+
+=pod
+
+=begin classdoc
+
+Set the rule undef for each nodes of the service provider
+
+=end classdoc
+
+=cut
 
 sub setAllRulesUndefForANode{
     my (%args) = @_;
