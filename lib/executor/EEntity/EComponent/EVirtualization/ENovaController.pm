@@ -436,8 +436,8 @@ sub registerNetwork {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
+    my $host = $args{host};
     my $api = $self->api;
-    my $hostname = $args{host}->node->node_hostname;
 
     my $interfaces = [];
     IFACE:
@@ -455,15 +455,15 @@ sub registerNetwork {
             $vlan = pop @vlans;
         }
 
-        my $network_id = $self->_getOrRegisterNetwork(hostname => $hostname, vlan => $vlan);
+        my $network_id = $self->_getOrRegisterNetwork(vlan => $vlan);
         my $subnet_id = $self->_getOrRegisterSubnet(
-            hostname    => $hostname,
+            host        => $host,
             iface       => $iface,
             network_id  => $network_id
         );
         # create port to assign IP address
         my $port_id = $self->_registerPort(
-            hostname    => $hostname,
+            host        => $host,
             iface       => $iface,
             network_id  => $network_id,
             subnet_id   => $subnet_id
@@ -471,7 +471,7 @@ sub registerNetwork {
 
         push @$interfaces, {
             mac     => $iface->iface_mac_addr,
-            network => $hostname . '-' . $iface->iface_name,
+            network => $host->node->node_hostname . '-' . $iface->iface_name,
             port    => $port_id
         };
     }
@@ -591,12 +591,7 @@ Search for an openstack network registered (for a flat or a specific vlan networ
 sub _getOrRegisterNetwork {
     my ($self, %args) = @_;
 
-    General::checkParams(
-        args => \%args,
-        required => [ 'hostname' ],
-        optional => { vlan => undef }
-    );
-    my $hostname = $args{hostname};
+    General::checkParams(args => \%args, optional => { vlan => undef });
     my $vlan = $args{vlan};
 
     my $api = $self->api;
@@ -625,9 +620,9 @@ sub _getOrRegisterNetwork {
     if (not defined $network_id) {
          my $network_conf = {
             'network' => {
-                'name'                      => $hostname . '-network',
-                'admin_state_up'            => JSON::true,
-                'provider:network_type'     => defined $vlan ? 'vlan' : 'flat',
+                'name' => defined $vlan ? 'network-vlan' . $vlan->vlan_number : 'network-flat',
+                'admin_state_up' => JSON::true,
+                'provider:network_type' => defined $vlan ? 'vlan' : 'flat',
                 'provider:physical_network' => defined $vlan ? 'physnetvlan' : 'physnetflat',# mappings for bridge interfaces
             }
         };
@@ -660,8 +655,8 @@ Search for an openstack subnet registered (for a flat or a specific vlan network
 sub _getOrRegisterSubnet {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'hostname', 'iface', 'network_id' ]);
-    my $hostname = $args{hostname};
+    General::checkParams(args => \%args, required => [ 'host', 'iface', 'network_id' ]);
+    my $cluster_name = $args{host}->node->service_provider->cluster_name;
     my $iface = $args{iface};
     my $network_id = $args{network_id};
 
@@ -688,7 +683,7 @@ sub _getOrRegisterSubnet {
             target  => 'network',
             content => {
                 'subnet' => {
-                    'name'              => $hostname . '-subnet',
+                    'name'              => $cluster_name . '-subnet',
                     'network_id'        => $network_id,
                     'ip_version'        => 4,
                     'cidr'              => $network_addr->cidr(),
@@ -727,8 +722,8 @@ Register a port in OpenStack
 sub _registerPort {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'hostname', 'iface', 'network_id', 'subnet_id' ]);
-    my $hostname    = $args{hostname};
+    General::checkParams(args => \%args, required => [ 'host', 'iface', 'network_id', 'subnet_id' ]);
+    my $hostname    = $args{host}->node->node_hostname;
     my $iface       = $args{iface};
     my $network_id  = $args{network_id};
     my $subnet_id   = $args{subnet_id};
