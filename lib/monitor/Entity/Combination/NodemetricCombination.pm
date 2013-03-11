@@ -301,6 +301,22 @@ sub computeValueFromMonitoredValues {
     return $res;
 }
 
+
+=pod
+
+=begin classdoc
+
+Evaluate last value of the NodemetricCombination
+
+@optional format. If format = 'host_name', return hash with host_name key otherwise with node_id.
+
+@return hashref {node_id or node_hostname => value}
+
+=end
+
+=cut
+
+
 sub evaluate {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, optional => { 'format' => 'id', 'nodes' => undef});
