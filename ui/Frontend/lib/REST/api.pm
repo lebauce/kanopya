@@ -113,6 +113,7 @@ my %resources = (
     "opennebula3vm"            => "Entity::Host::VirtualMachine::Opennebula3Vm",
     "openstackrepository"      => "Entity::Component::Openstack::OpenstackRepository",
     "openssh5"                 => "Entity::Component::Openssh5",
+    "oldoperation"             => "OldOperation",
     "operation"                => "Entity::Operation",
     "operationtype"            => "Operationtype",
     "orchestrator"             => "Orchestrator",
