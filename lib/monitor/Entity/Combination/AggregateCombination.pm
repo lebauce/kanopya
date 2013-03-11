@@ -98,6 +98,7 @@ sub methods {
     }
 }
 
+
 =pod
 
 =begin classdoc
@@ -112,6 +113,7 @@ sub label {
     my $self = shift;
     return $self->aggregate_combination_label;
 }
+
 
 =pod
 
@@ -254,6 +256,24 @@ sub evaluateTimeSerie {
     return $self->_computeFromArrays(%allTheCMValues);
 }
 
+
+=pod
+
+=begin classdoc
+
+Evaluate current or predicted combination value.
+
+@optional timestamp if timestamp > actual time, the method evaluate predicted value at timestamp() using
+       DataModelSelector of the combinations. Otherwise evaluate with the lastValue.
+
+@optional nodes array used to return a hashref of the same value for each node
+
+@return evaluation (value or hashref depending on the context (noderule or aggregaterule)
+
+=end classdoc
+
+=cut
+
 sub evaluate {
     my ($self, %args) = @_;
      General::checkParams(args => \%args, optional => {'nodes' => undef, 'timestamp' => 0});
@@ -264,6 +284,22 @@ sub evaluate {
 
     return $self->_evaluateLastValue(%args);
 }
+
+
+=pod
+
+=begin classdoc
+
+Evaluate predicted combination value.
+
+@param timestamp assume that timestamp > actual time. Compute predicted value at timestamp with best DataModel.
+       Use same the delta time between actual time and timestamp for training data.
+
+@return evaluation
+
+=end classdoc
+
+=cut
 
 sub _predict {
     my ($self, %args) = @_;
