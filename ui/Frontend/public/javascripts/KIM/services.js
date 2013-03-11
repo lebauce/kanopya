@@ -1,6 +1,7 @@
 // KIM services
 require('common/service_common.js');
 require('common/model.js');
+require('common/general.js');
 
 // Must progressively move functions in the Service class
 var Service = (function(_super) {
@@ -182,7 +183,9 @@ function servicesList (container_id, elem_id) {
                         return false;
                     }
                 },
-                callback : function () { $(grid).trigger("reloadGrid"); }
+                callback : function (data) {
+                    handleCreateOperation(data, grid);
+                }
             })).start();
         });
 
