@@ -96,6 +96,18 @@ sub getDependencies {
 }
 
 
+=pod
+
+=begin classdoc
+
+Find AggregateConditions and NodemetricConditions which depends on the combination.
+
+@return array of AggregateConditions and NodemetricConditions
+
+=end classdoc
+
+=cut
+
 sub getDependentConditions {
     my $self = shift;
 
@@ -108,6 +120,7 @@ sub getDependentConditions {
 
     return @conditions;
 }
+
 
 =pod
 

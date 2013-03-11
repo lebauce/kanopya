@@ -109,16 +109,53 @@ sub methods {
   }
 }
 
+
+=pod
+
+=begin classdoc
+
+Return related indicator label
+@return Return related indicator label
+
+=end classdoc
+
+=cut
+
 sub indicator_label {
     my $self = shift;
-
     return $self->getIndicator()->indicator_label;
 }
 
+
+=pod
+
+=begin classdoc
+
+Return related indicator
+@return Return related indicator
+
+=end classdoc
+
+=cut
+
 sub getIndicator {
     my $self = shift;
-    return Entity::CollectorIndicator->get(id => $self->clustermetric_indicator_id)->indicator;
+    return $self->clustermetric_indicator->indicator;
 }
+
+
+=pod
+
+=begin classdoc
+
+Aggregate values according to the related function of the clustermetric
+
+@param all the values to aggregate
+@return computed value
+
+=end classdoc
+
+=cut
 
 sub compute{
     my ($self, %args) = @_;
@@ -132,6 +169,22 @@ sub compute{
     return $stat->$funcname();
 }
 
+
+=pod
+
+=begin classdoc
+
+Returns clustermetric values between start_time and stop_time
+
+@param start_time start time in epoch
+@param stop_time stop time in epoch
+
+@return hashref {timestamp => value}
+
+=end classdoc
+
+=cut
+
 sub fetch {
     my ($self, %args) = @_;
     General::checkParams args => \%args, required => ['start_time', 'stop_time'];
@@ -144,6 +197,19 @@ sub fetch {
     return \%rep;
 }
 
+
+=pod
+
+=begin classdoc
+
+Returns clustermetric last value
+
+@return clustermetric last value
+
+=end classdoc
+
+=cut
+
 sub lastValue {
     my $self = shift;
     my %last_value = RRDTimeData::getLastUpdatedValue(metric_uid => $self->id);
@@ -152,12 +218,13 @@ sub lastValue {
 }
 
 
-=head2 regenTimeDataStores
+=pod
 
-    Class: Public
-    Desc: delete and create again every time data store for the clustermetrics
-    Args: none
-    Return: none
+=begin classdoc
+
+Delete and create again every time data store for the clustermetrics
+
+=end classdoc
 
 =cut
 
@@ -173,12 +240,16 @@ sub regenTimeDataStores {
     }
 }
 
-=head2 resizeTimeDataStores
 
-    Class: Public
-    Desc: resize every time data store for the clustermetrics
-    Args: storage_duration in seconds
-    Return: none
+=pod
+
+=begin classdoc
+
+Resize every time data store for the clustermetrics
+
+@param storage_duration
+
+=end classdoc
 
 =cut
 
