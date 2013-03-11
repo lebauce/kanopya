@@ -219,7 +219,7 @@ sub activeHypervisors {
     my $self = shift;
 
     my @hypervisors = $self->searchRelated(
-                          filters => [ 'hypervisors' ],
+                          filters => [ 'openstack_hypervisors' ],
                           hash    => { active => 1 }
                       );
 
