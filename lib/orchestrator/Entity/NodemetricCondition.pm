@@ -93,6 +93,23 @@ sub methods {
     };
 }
 
+
+=pod
+
+=begin classdoc
+
+@constructor
+
+Create a new instance of the class.
+Transforms thresholds into ConstantCombinations
+Update formula_string with toString() methods and the label if not provided in attribute.
+
+@return a class instance
+
+=end classdoc
+
+=cut
+
 sub new {
     my $class = shift;
     my %args = @_;
@@ -133,9 +150,14 @@ sub label {
     return $self->nodemetric_condition_label;
 }
 
-=head2 updateName
 
-    desc: set entity's name to .toString() return value
+=pod
+
+=begin classdoc
+
+set label to human readable version of the formula
+
+=end classdoc
 
 =cut
 
@@ -175,6 +197,17 @@ sub toString {
            .$self->right_combination->combination_formula_string;
 };
 
+=pod
+
+=begin classdoc
+
+Evaluate the condition. Call evaluation of both dependant combinations then evaluate the condition
+
+@return hashref { node_id => value} where value = 1 if condition is true, value = 0 if condition is false
+
+=end classdoc
+
+=cut
 
 sub evaluate {
     my ($self, %args) = @_;
@@ -203,6 +236,19 @@ sub evaluate {
     return \%evaluation_for_each_node;
 }
 
+
+=pod
+
+=begin classdoc
+
+Find all the rules which depends on the NodemetricCondition
+
+@return array of rules
+
+=end classdoc
+
+=cut
+
 sub getDependentRules {
     my $self = shift;
     my @rules_from_same_service = Entity::Rule::NodemetricRule->search(
@@ -226,6 +272,19 @@ sub getDependentRules {
     return @rules;
 }
 
+
+=pod
+
+=begin classdoc
+
+Find all the rules which depends on the NodemetricCondition
+
+@return hashref of rule_names
+
+=end classdoc
+
+=cut
+
 sub getDependencies {
     my $self = shift;
 
@@ -237,6 +296,17 @@ sub getDependencies {
     }
     return \%dependencies;
 }
+
+
+=pod
+
+=begin classdoc
+
+Delete instance and delete dependant object on cascade.
+
+=end classdoc
+
+=cut
 
 sub delete {
     my $self = shift;
@@ -260,10 +330,34 @@ sub delete {
     $comb_right->deleteIfConstant();
 }
 
+
+=pod
+
+=begin classdoc
+
+Search indicators used by the NodemetricCondition
+
+@return array of indicator ids
+
+=end classdoc
+
+=cut
+
 sub getDependentIndicatorIds {
     my $self = shift;
     return ($self->left_combination->getDependentIndicatorIds(), $self->right_combination->getDependentIndicatorIds());
 }
+
+
+=pod
+
+=begin classdoc
+
+Update instance attributes. Manage update of related objects and formula_string.
+
+=end classdoc
+
+=cut
 
 sub update {
     my ($self, %args) = @_;
