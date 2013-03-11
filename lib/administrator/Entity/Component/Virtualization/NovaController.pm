@@ -108,7 +108,9 @@ Return the boot policies for the host ruled by this host manager
 =cut
 
 sub getBootPolicies {
-    return (Manager::HostManager->BOOT_POLICIES->{virtual_disk}, );
+    return (Manager::HostManager->BOOT_POLICIES->{virtual_disk},
+            Manager::HostManager->BOOT_POLICIES->{pxe_iscsi},
+            Manager::HostManager->BOOT_POLICIES->{pxe_nfs});
 }
 
 sub supportHotConfiguration {
