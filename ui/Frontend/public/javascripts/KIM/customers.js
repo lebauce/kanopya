@@ -22,7 +22,7 @@ function Customers() {
 
             var displayed = [ 'user_firstname', 'user_lastname', 'user_email',
                               'user_desc', 'user_login', 'user_password', 'user_sshkey' ];
-            var relations = { 'quotas' : [ 'resource', 'current', 'quota' ] };
+            var relations = { 'quotas' : [ 'resource', 'quota' ] };
 
             var user_opts = {
                 title      : 'Add a customer',
