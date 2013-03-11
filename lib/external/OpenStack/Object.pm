@@ -25,7 +25,7 @@ my $log = get_logger("");
 
 sub AUTOLOAD {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, optional => {'id' => undef});
+    General::checkParams(args => \%args, optional => { 'id' => undef, 'filter' => undef });
 
     my @autoload = split(/::/, $AUTOLOAD);
     my $method = $autoload[-1];
@@ -44,6 +44,7 @@ sub AUTOLOAD {
     else {
         $object->{path} = $self->{path} . '/' . $method;
     }
+    $object->{path} .= '?' . $args{filter} if ( defined $args{filter} );
 
     bless $object, 'OpenStack::Object';
     return $object;
