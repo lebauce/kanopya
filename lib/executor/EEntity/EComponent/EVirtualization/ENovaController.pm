@@ -92,15 +92,6 @@ sub addNode {
     );
 }
 
-sub postStartNode {
-    my ($self, %args) = @_;
-
-    General::checkParams(
-        args     => \%args,
-        required => [ 'cluster', 'host' ]
-    );
-}
-
 sub registerHypervisor {
     my ($self, %args) = @_;
 
