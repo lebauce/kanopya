@@ -17,5 +17,12 @@ class kanopya::fileimagemanager {
     package { 'libguestfs-tools':
         name => 'libguestfs-tools',
         ensure => present,
+        notify => Exec['update-guestfs-appliance']
+    }
+
+    exec { 'update-guestfs-appliance':
+        path => "/usr/bin:/usr/sbin:/bin:/sbin",
+        subscribe => Package['libguestfs0'],
+        require => Package['libguestfs0'],
     }
 }
