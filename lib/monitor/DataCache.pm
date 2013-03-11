@@ -62,6 +62,21 @@ sub getMethods {
 =pod
 =begin classdoc
 
+Allow to activate/deactivate node metric cache.
+
+WARNING: Configuration only for the current process, can lead to inconsistency between sereval services.
+         Useful for test purpose.
+
+=end classdoc
+=cut
+sub cacheActive {
+    my $activate = shift;
+    $NODEMETRIC_STORAGE_ACTIVE = $activate;
+}
+
+=pod
+=begin classdoc
+
 Store provided indicators values by nodes, for a specified time.
 Do not store if cache is not activated.
 

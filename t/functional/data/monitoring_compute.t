@@ -13,6 +13,8 @@ use Test::More 'no_plan';
 use Test::Exception;
 use Test::Pod;
 use Data::Dumper;
+use DataCache;
+DataCache::cacheActive(0);
 
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'monitor_test.log', layout=>'%F %L %p %m%n'});
