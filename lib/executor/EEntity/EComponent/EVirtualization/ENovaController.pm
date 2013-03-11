@@ -172,6 +172,8 @@ sub scaleMemory {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'host', 'memory' ]);
+
+    $self->_scaleHost(host => $args{host}, memory => $args{memory});
 }
 
 =pod
@@ -188,6 +190,8 @@ sub scaleCpu {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'host', 'cpu_number' ]);
+
+    $self->_scaleHost(host => $args{host}, cpu_number => $args{cpu_number});
 }
 
 =pod
