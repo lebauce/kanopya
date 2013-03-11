@@ -432,77 +432,43 @@ sub registerNetwork {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
+    my $api = $self->api;
     my $hostname = $args{host}->node->node_hostname;
 
     my $interfaces = [];
+    IFACE:
     for my $iface ($args{host}->getIfaces()) {
+        # skip ifaces with no ip address
+        eval{
+            $iface->getIPAddr();
+        };
+        next IFACE if ($@);
+
+        # get iface vlan
         my $vlan = undef;
         my @vlans = $iface->getVlans();
         if (scalar @vlans) {
             $vlan = pop @vlans;
         }
 
-        # create a network
-        my $network_conf = {
-            network => {
-                'name'                      => $hostname . '-network',
-                'admin_state_up'            => JSON::true,
-                'provider:network_type'     => defined $vlan ? 'vlan' : 'flat',
-                'provider:physical_network' => defined $vlan ? 'physnetvlan' : 'physnetflat'
-            }
-        };
-        $network_conf->{network}->{'provider:segmentation_id'} = $vlan->vlan_number if (defined $vlan);
-        my $network = $self->api->networks->post(
-            target  => 'network',
-            content => $network_conf
+        my $network_id = $self->_getOrRegisterNetwork(hostname => $hostname, vlan => $vlan);
+        my $subnet_id = $self->_getOrRegisterSubnet(
+            hostname    => $hostname,
+            iface       => $iface,
+            network_id  => $network_id
         );
-
-        # create a subnet
-        my $poolip = $iface->getPoolip();
-        my $ip_network = NetAddr::IP->new(
-            $poolip->poolip_first_addr,
-            $poolip->network->network_netmask
-        );
-        # TODO : search existing poolip and use it when exists
-        my $subnet = $self->api->subnets->post(
-            target  => 'network',
-            content => {
-                subnet => {
-                    'network_id'        => $network->{network}->{id},
-                    'ip_version'        => 4,
-                    'cidr'              => $ip_network->network->cidr(),
-                    'allocation_pools'  => [
-                        {
-                            start   => $ip_network->addr(),
-                            end     => ($ip_network + $poolip->poolip_size - 1)->addr()
-                        }
-                    ]
-                }
-            }
-        );
-
         # create port to assign IP address
-        my $port = $self->api->ports->post(
-            target  => 'network',
-            content => {
-                port => {
-                    'name'          => $hostname . '-' . $iface->iface_name,
-                    'mac_address'   => $iface->iface_mac_addr,
-                    'fixed_ips'     => [
-                        {
-                            "ip_address"    => $iface->getIPAddr(),
-                            "subnet_id"     => $subnet->{subnet}->{id}
-                        }
-                    ],
-                    'network_id'  => $network->{network}->{id},
-                }
-            }
+        my $port_id = $self->_registerPort(
+            hostname    => $hostname,
+            iface       => $iface,
+            network_id  => $network_id,
+            subnet_id   => $subnet_id
         );
 
         push @$interfaces, {
             mac     => $iface->iface_mac_addr,
             network => $hostname . '-' . $iface->iface_name,
-            port    => $port->{port}->{id}
+            port    => $port_id
         };
     }
 
@@ -601,6 +567,188 @@ sub checkUp {
     }
 
     return 0;
+}
+
+=pod
+
+=begin classdoc
+
+Search for an openstack network registered (for a flat or a specific vlan network) and create it not found
+
+@param $hostname name of node whose netconf must be registered
+@optional $vlan vlan of iface
+
+@return ID of openstack network found/created
+
+=end classdoc
+
+=cut
+
+sub _getOrRegisterNetwork {
+    my ($self, %args) = @_;
+
+    General::checkParams(
+        args => \%args,
+        required => [ 'hostname' ],
+        optional => { vlan => undef }
+    );
+    my $hostname = $args{hostname};
+    my $vlan = $args{vlan};
+
+    my $api = $self->api;
+    my $network_id = undef;
+    my $networks = $api->networks->get(target => 'network');
+    if (defined $vlan) { # check if a network has already been created for physical vlan interface
+        VLAN:
+        for my $network (@{ $networks->{networks} }) {
+            if ($network->{'provider:segmentation_id'} == $vlan->vlan_number) {
+                $network_id = $network->{id};
+                last VLAN;
+            }
+        }
+    }
+    else { # check if a network has already been created for physical flat (no vlan) interface
+        NETWORK:
+        for my $network (@{ $networks->{networks} }) {
+            if ( not defined $network->{'provider:segmentation_id'} ) { # no vlan network
+                $network_id = $network->{id};
+                last NETWORK;
+            }
+        }
+    }
+
+    # create a network if no network found
+    if (not defined $network_id) {
+         my $network_conf = {
+            'network' => {
+                'name'                      => $hostname . '-network',
+                'admin_state_up'            => JSON::true,
+                'provider:network_type'     => defined $vlan ? 'vlan' : 'flat',
+                'provider:physical_network' => defined $vlan ? 'physnetvlan' : 'physnetflat',# mappings for bridge interfaces
+            }
+        };
+        $network_conf->{network}->{'provider:segmentation_id'} = $vlan->vlan_number if (defined $vlan);
+        $network_id = $api->networks->post(
+            target  => 'network',
+            content => $network_conf
+        )->{network}->{id};
+    }
+
+    return $network_id;
+}
+
+=pod
+
+=begin classdoc
+
+Search for an openstack subnet registered (for a flat or a specific vlan network) and create it not found
+
+@param $hostname name of node whose netconf must be registered
+@param $iface iface to be registered
+@param $network_id ID of network on which subnet will be created
+
+@return ID of openstack subnet found/created
+
+=end classdoc
+
+=cut
+
+sub _getOrRegisterSubnet {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'hostname', 'iface', 'network_id' ]);
+    my $hostname = $args{hostname};
+    my $iface = $args{iface};
+    my $network_id = $args{network_id};
+
+    my $api = $self->api;
+
+    my $poolip = $iface->getPoolip();
+    my $network_addr = NetAddr::IP->new($poolip->network->network_addr,
+                                      $poolip->network->network_netmask);
+    # check if kanopya.network already registered in openstack.subnet (for openstack.network previously created)
+    my $subnet_id = undef;
+    my $subnets = $api->subnets(filter => "network-id=$network_id")->get(target => 'network');
+    SUBNET:
+    for my $subnet ( @{$subnets->{subnets}} ) {
+        if ( $subnet->{'cidr'} eq $network_addr->cidr() ) { # network already registered
+            $subnet_id = $subnet->{id};
+            last SUBNET;
+        }
+    }
+
+    # create a new subnet if no subnet found
+    # one allocation_pool is created with all ip usable
+    if (not defined $subnet_id) {
+        $subnet_id = $api->subnets->post(
+            target  => 'network',
+            content => {
+                'subnet' => {
+                    'name'              => $hostname . '-subnet',
+                    'network_id'        => $network_id,
+                    'ip_version'        => 4,
+                    'cidr'              => $network_addr->cidr(),
+                    'gateway_ip'        => $poolip->network->network_gateway,
+                    'allocation_pools'  => [
+                        {
+                            start   => $network_addr->first(),
+                            end     => $network_addr->last()
+                        },
+                    ]
+                }
+            }
+        )->{subnet}->{id};
+    }
+
+    return $subnet_id;
+}
+
+=pod
+
+=begin classdoc
+
+Register a port in OpenStack
+
+@param $hostname name of node whose netconf must be registered
+@param $iface iface to be registered
+@param $network_id ID of network on which subnet will be created
+@param $subnet_id ID of subnet on which port will be created
+
+@return ID of port created
+
+=end classdoc
+
+=cut
+
+sub _registerPort {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'hostname', 'iface', 'network_id', 'subnet_id' ]);
+    my $hostname    = $args{hostname};
+    my $iface       = $args{iface};
+    my $network_id  = $args{network_id};
+    my $subnet_id   = $args{subnet_id};
+
+    my $api = $self->api;
+
+    my $port_id = $api->ports->post(
+        target  => 'network',
+        content => {
+            'port' => {
+                'name'          => $hostname . '-' . $iface->iface_name,
+                'mac_address'   => $iface->iface_mac_addr,
+                'fixed_ips'     => [
+                    {
+                        "ip_address"    => $iface->getIPAddr(),
+                        "subnet_id"     => $subnet_id,
+                    }
+                ],
+                'network_id'    => $network_id,
+            }
+        }
+    )->{port}->{id};
+
+    return $port_id;
 }
 
 1;
