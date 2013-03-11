@@ -9,7 +9,6 @@
  * @param obj_info     hash of type info of objects to import :
  *      type        : object type (format as table name). Used also to compute object api route (by removing '_')
  *      name        : object user friendly name
- *      relation    : relationship name from service provider to object type
  *      label_attr  : name of the object label attr
  *      desc_attr   : name of the object description attr
  * @param grid_ids     list of id of grid to refresh after import
@@ -32,7 +31,7 @@ function importItemButton(container_id, sp_id, obj_info, grid_ids) {
                 .success(function(manager) {
                     if (manager.length > 0 && manager[0].manager_id === collector_manager_id) {
                         // Get related items and add them to the tree
-                        $.get('/api/serviceprovider/' + sp.pk + '/' + obj_info.relation).success( function(related) {
+                        $.get('/api/' + obj_info.type.replace(/_/g,'') + '?service_provider_id=' + sp.pk).success( function(related) {
                             var items = [];
                             $.each(related, function(i,item) {
                                 items.push({

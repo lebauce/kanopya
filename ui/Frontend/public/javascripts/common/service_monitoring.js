@@ -297,7 +297,6 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
                 elem_id,
                 {
                     name        : 'combination',
-                    relation    : 'nodemetric_combinations',
                     label_attr  : 'nodemetric_combination_label',
                     desc_attr   : 'formula_label',
                     type        : 'nodemetric_combination'
@@ -366,7 +365,6 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
                 elem_id,
                 {
                     name        : 'combination',
-                    relation    : 'aggregate_combinations',
                     label_attr  : 'aggregate_combination_label',
                     desc_attr   : 'formula_label',
                     type        : 'aggregate_combination'
