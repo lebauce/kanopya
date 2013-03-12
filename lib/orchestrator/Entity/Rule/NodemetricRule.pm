@@ -200,6 +200,7 @@ sub evaluate {
                                             hash    => {-not => {monitoring_state => 'disabled'}}
                                          );
 
+    $args{nodes} = \@nodes;
     if (@nodes == 0) {
         return {};
     }
@@ -207,7 +208,7 @@ sub evaluate {
     # Get values of each NodemetricConditions
     my @nm_cond_ids = ($self->formula =~ m/id(\d+)/g);
 
-    my %values = map { $_ => Entity::NodemetricCondition->get('id'=>$_)->evaluate(nodes => \@nodes)
+    my %values = map { $_ => Entity::NodemetricCondition->get('id'=>$_)->evaluate(%args)
                  } @nm_cond_ids;
 
 
@@ -228,6 +229,7 @@ sub evaluate {
         $evaluation_for_each_node{$node->id} = (eval $formula) ? 1 : 0;
         $log->debug('NM rule evaluation for node <'.$node->id.">: $formula => ".$evaluation_for_each_node{$node->id});
     }
+
     return \%evaluation_for_each_node;
 }
 
@@ -511,12 +513,19 @@ sub manageWorkflows {
     General::checkParams(args => \%args, required => ['evaluation']);
 
     my $workflow_manager;
+    my $sp = $self->service_provider;
     eval{
-        $workflow_manager = $self->service_provider->getManager(manager_type => 'WorkflowManager');
+        if (defined $args{memoization}->{$sp->id}->{'WorkflowManager'}) {
+            $workflow_manager = $args{memoization}->{$sp->id}->{'WorkflowManager'}
+        }
+        else {
+            $workflow_manager = $sp->getManager(manager_type => 'WorkflowManager');
+            $args{memoization}->{$sp->id}->{'WorkflowManager'} = $workflow_manager;
+        }
     };
     if($@){
         # Skip workflow management when service provider has no workflow manager
-        $log->info('No workflow manager in service provider <'.$self->service_provider->id.'>');
+        $log->info('No workflow manager in service provider <'.$sp->id.'>');
         return;
     }
 

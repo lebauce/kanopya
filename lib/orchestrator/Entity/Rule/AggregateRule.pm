@@ -433,12 +433,19 @@ sub manageWorkflows {
     General::checkParams(args => \%args, required => ['evaluation']);
 
     my $workflow_manager;
+    my $sp = $self->service_provider;
     eval{
-        $workflow_manager = $self->service_provider->getManager(manager_type => 'WorkflowManager');
+        if (defined $args{memoization}->{$sp->id}->{'WorkflowManager'}) {
+            $workflow_manager = $args{memoization}->{$sp->id}->{'WorkflowManager'}
+        }
+        else {
+            $workflow_manager = $sp->getManager(manager_type => 'WorkflowManager');
+            $args{memoization}->{$sp->id}->{'WorkflowManager'} = $workflow_manager;
+        }
     };
     if($@){
         # Skip workflow management when service provider has no workflow manager
-        $log->info('No workflow manager in service provider <' . $self->service_provider->id . '>');
+        $log->info('No workflow manager in service provider <' . $sp->id . '>');
         return;
     }
 
@@ -470,7 +477,7 @@ sub manageWorkflows {
             my $workflow = $workflow_manager->runWorkflow(
                                workflow_def_id     => $workflow_def_id,
                                rule_id             => $self->id,
-                               service_provider_id => $self->service_provider->id
+                               service_provider_id => $sp->id
                            );
 
             $self->setAttr(name => 'state', value => 'triggered');

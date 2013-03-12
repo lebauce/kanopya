@@ -153,11 +153,12 @@ sub evalRules {
 
     General::checkParams(args => \%args, required => [ 'rules' ]);
 
+    my $memoization= {};
     for my $rule (@{$args{rules}}) {
         $log->info('Evaluation rule <'.($rule->id).'> <'.($rule->formula_string).'>');
-        my $evaluation = $rule->evaluate();
-        $rule->setEvaluation(evaluation => $evaluation);
-        $rule->manageWorkflows(evaluation => $evaluation);
+        my $evaluation = $rule->evaluate(memoization => $memoization);
+        $rule->setEvaluation(evaluation => $evaluation, memoization => $memoization);
+        $rule->manageWorkflows(evaluation => $evaluation, memoization => $memoization);
     }
 }
 

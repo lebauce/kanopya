@@ -65,6 +65,10 @@ sub lastValue {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['nodes', 'service_provider']);
 
+    if (defined $args{memoization}->{$self->id}) {
+        return $args{memoization}->{$self->id};
+    }
+
     my @node_hostnames = map {$_->node_hostname} @{$args{nodes}};
 
     my $data = DataCache::nodeMetricLastValue(
@@ -82,6 +86,11 @@ sub lastValue {
     }
 
     $self->throwUndefAlert(hostname_values => \%hostname_values, service_provider => $args{service_provider});
+
+    if (defined $args{memoization}) {
+        $args{memoization}->{$self->id} = \%id_values;
+    }
+
     return \%id_values;
 }
 
@@ -124,9 +133,11 @@ sub throwUndefAlert {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['hostname_values', 'service_provider']);
 
+    my $indicator = $self->indicator;
+
     while (my ($node_hostname, $value) = each(%{$args{hostname_values}})) {
-        my $msg = "Indicator " . $self->indicator->indicator_name . ' (' .
-                   $self->indicator->indicator_oid . ')' .' was not retrieved by collector for node '.
+        my $msg = "Indicator " . $indicator->indicator_name . ' (' .
+                   $indicator->indicator_oid . ')' .' was not retrieved by collector for node '.
                    $node_hostname;
 
         my $alert = eval { Alert->find(hash => {alert_message => $msg,

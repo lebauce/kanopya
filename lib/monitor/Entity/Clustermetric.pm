@@ -211,9 +211,19 @@ Returns clustermetric last value
 =cut
 
 sub lastValue {
-    my $self = shift;
+    my ($self, %args) = @_;
+
+    if (defined $args{memoization}->{$self->id}) {
+        return $args{memoization}->{$self->id};
+    }
+
     my %last_value = RRDTimeData::getLastUpdatedValue(metric_uid => $self->id);
     my @indicator = (values %last_value);
+
+    if (defined $args{memoization}) {
+        $args{memoization}->{$self->id} = $indicator[0];
+    }
+
     return $indicator[0];
 }
 

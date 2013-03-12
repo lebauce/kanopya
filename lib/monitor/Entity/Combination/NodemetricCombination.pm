@@ -321,6 +321,10 @@ sub evaluate {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, optional => { 'format' => 'id', 'nodes' => undef});
 
+    if (defined $args{memoization}->{$self->id}) {
+        return $args{memoization}->{$self->id};
+    }
+
     my @nodes = (defined $args{nodes}) ? @{$args{nodes}}
                                        : $self->service_provider->searchRelated(
                                             filters => ['nodes'],
@@ -330,7 +334,7 @@ sub evaluate {
     my @col_ind_ids = ($self->nodemetric_combination_formula =~ m/id(\d+)/g);
 
     my %values = map {$_ => Entity::CollectorIndicator->get(id => $_)
-                            ->lastValue(nodes => \@nodes, service_provider => $self->service_provider)
+                            ->lastValue(nodes => \@nodes, service_provider => $self->service_provider, %args)
                  } @col_ind_ids;
 
     my %evaluation_for_each_node;
@@ -349,6 +353,11 @@ sub evaluate {
         }
     }
     $log->debug('output = '.Dumper \%evaluation_for_each_node);
+
+    if (defined $args{memoization}) {
+        $args{memoization}->{$self->id} = \%evaluation_for_each_node;
+    }
+
     return \%evaluation_for_each_node;
 }
 

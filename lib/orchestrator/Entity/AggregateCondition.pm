@@ -229,6 +229,10 @@ Evaluate the condition. Call evaluation of both dependant combinations then eval
 sub evaluate{
     my ($self, %args) = @_;
 
+    if (defined $args{memoization}->{$self->id}) {
+        return $args{memoization}->{$self->id};
+    }
+
     my $comparator  = $self->getAttr(name => 'comparator');
 
     # Evaluate both conditions
@@ -242,12 +246,18 @@ sub evaluate{
 
         if (eval $evalString) {
             $log->debug($evalString."=> true");
+            if (defined $args{memoization}) {
+                $args{memoization}->{$self->id} = 1;
+            }
             $self->setAttr(name => 'last_eval', value => 1);
             $self->save();
             return 1;
         }
         else {
             $log->debug($evalString."=> false");
+            if (defined $args{memoization}) {
+                $args{memoization}->{$self->id} = 0;
+            }
             $self->setAttr(name => 'last_eval', value => 0);
             $self->save();
             return 0;

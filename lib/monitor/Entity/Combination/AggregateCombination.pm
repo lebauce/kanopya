@@ -278,11 +278,18 @@ sub evaluate {
     my ($self, %args) = @_;
      General::checkParams(args => \%args, optional => {'nodes' => undef, 'timestamp' => 0});
 
-    if ($args{timestamp} > time()) {
-        return $self->_predict(%args);
+    if (defined $args{memoization}->{$self->id}) {
+        return $args{memoization}->{$self->id};
     }
 
-    return $self->_evaluateLastValue(%args);
+    my $value = ($args{timestamp} > time()) ? $self->_predict(%args)
+                                            : $self->_evaluateLastValue(%args);
+
+    if (defined $args{memoization}) {
+        $args{memoization}->{$self->id} = $value;
+    }
+
+    return $value;
 }
 
 
@@ -349,7 +356,7 @@ sub _evaluateLastValue {
     for my $element (@array) {
         if ($element =~ m/id\d+/) {
             #Remove "id" from the begining of $element, get the corresponding aggregator
-            $element = Entity::Clustermetric->get('id'=>substr($element,2))->lastValue();
+            $element = Entity::Clustermetric->get('id'=>substr($element,2))->lastValue(%args);
             if (not defined $element) {
                 return undef;
             }

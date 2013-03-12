@@ -213,12 +213,16 @@ sub evaluate {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['nodes']);
 
+    if (defined $args{memoization}->{$self->id}) {
+        return $args{memoization}->{$self->id};
+    }
+
     my $comparator        = $self->nodemetric_condition_comparator;
     my $left_combination  = $self->left_combination;
     my $right_combination = $self->right_combination;
 
-    my $left_value  = $left_combination->evaluate(nodes => $args{nodes});
-    my $right_value = $right_combination->evaluate(nodes => $args{nodes});
+    my $left_value  = $left_combination->evaluate(%args);
+    my $right_value = $right_combination->evaluate(%args);
 
 
     my %evaluation_for_each_node;
@@ -233,6 +237,10 @@ sub evaluate {
     }
     $log->debug('nm condition <'.($self->id).'> <'.$self->nodemetric_condition_formula_string.'>'.
                (Dumper \%evaluation_for_each_node));
+
+    if (defined $args{memoization}) {
+        $args{memoization}->{$self->id} = \%evaluation_for_each_node;
+    }
     return \%evaluation_for_each_node;
 }
 
