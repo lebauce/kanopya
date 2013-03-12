@@ -67,6 +67,8 @@ sub startHost {
     }
 }
 
+sub stopHost {
+}
 
 =pod
 
