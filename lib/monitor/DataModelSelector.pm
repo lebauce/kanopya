@@ -241,7 +241,10 @@ sub selectDataModel {
     }
 
     # Compute the possible seasonality values
-    my @freqs = @{Utils::TimeSerieAnalysis->findSeasonality(data => \%data)} || (1);
+    my @freqs = @{Utils::TimeSerieAnalysis->findSeasonality(data => \%data)};
+    if (scalar(@freqs) == 0) {
+        @freqs = (1);
+    }
     $log->debug("selectDataModel - possible frequencies computed : @freqs .");
 
     # Models with the best freq found {class_name => $freq}
@@ -275,7 +278,7 @@ sub selectDataModel {
             $accuracy_hash{$data_model_class} = $temp_accuracy_hash{$best_freq};
         }
         else {
-            $freq_hash{$data_model_class}     = undef;
+            $freq_hash{$data_model_class}     = 1;
             $accuracy_hash{$data_model_class} = $class->evaluateDataModelAccuracy(
                 data_model_class => $data_model_class,
                 data             => {%data},
