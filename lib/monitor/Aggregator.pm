@@ -131,8 +131,9 @@ sub _getUsedIndicators {
     # Get indicators used by node metric combinations
     if ($args{include_nodemetric}) {
         my @nmc = Entity::Combination::NodemetricCombination->search(
-                      hash => {service_provider_id => $args{service_provider}->id}
+                      hash => {service_provider_id => $args{service_provider}->id},
                   );
+
         for my $nodemetriccombination (@nmc) {
             for my $indicator_id ($nodemetriccombination->getDependentIndicatorIds()) {
                 my $indicator = Entity::Indicator->get(id => $indicator_id);
@@ -143,7 +144,12 @@ sub _getUsedIndicators {
 
     my $collector_indicators;
     # Get indicators used by cluster metrics
-    for my $clustermetric ($args{service_provider}->clustermetrics) {
+
+    my @cms = $args{service_provider}->searchRelated(hash     => {},
+                                                     filters  => ['clustermetrics'],
+                                                     prefetch => [ 'clustermetric_indicator.indicator' ]);
+
+    for my $clustermetric (@cms) {
         my $clustermetric_time_span = $clustermetric->clustermetric_window_time;
 
         my $indicator = $clustermetric->clustermetric_indicator;
