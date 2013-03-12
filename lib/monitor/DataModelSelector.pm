@@ -111,6 +111,9 @@ sub autoPredict {
                                                                   node_id    => $args{node_id})
              ;
 
+    # Fix the data
+    %data = %{Utils::TimeSerieAnalysis->fixTimeSerie(data => \%data)};
+
     # If horizon or timestamps undefined, construct the undefined one
     if (!defined($args{horizon})) {
         my @timestamps = @{$args{timestamps}};

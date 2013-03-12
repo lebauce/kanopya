@@ -61,7 +61,7 @@ sub main {
 
     setup();
 
-    testDataModelSelector();
+#    testDataModelSelector();
     testAutoPredict();
 
     if ($testing == 1) {

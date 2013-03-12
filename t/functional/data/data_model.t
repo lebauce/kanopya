@@ -17,12 +17,14 @@ use Kanopya::Tools::Execution;
 use Kanopya::Tools::TimeSerie;
 use Kanopya::Tools::TestUtils 'expectedException';
 
-use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({
-    level=>'DEBUG',
-    file=>'data_model.log',
-    layout=>'%F %L %p %m%n'
-});
+use Log::Log4perl ":easy";
+Log::Log4perl->easy_init($DEBUG);
+#use Log::Log4perl qw(:easy);
+#Log::Log4perl->easy_init({
+#    level=>'DEBUG',
+#    file=>'data_model.log',
+#    layout=>'%F %L %p %m%n'
+#});
 
 use BaseDB;
 use Entity::ServiceProvider::Externalcluster;

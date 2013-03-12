@@ -29,6 +29,7 @@ use warnings;
 use General;
 use Statistics::R;
 use Utils::R;
+use Data::Dumper;
 
 # logger
 use Log::Log4perl "get_logger";
@@ -120,6 +121,111 @@ sub _checkLength {
     else {
         return $theorical_length;
     }
+}
+
+=pod
+
+=begin classdoc
+
+Take a time serie and generate a fixed one from it. Remove the undef values at the beginning or the end and 
+replace those at the middle by the average of the total time serie.
+
+@param data A hash containing the data ('timestamp' => value). 
+
+@return a fixed version of the data.
+
+=end classdoc
+
+=cut
+
+sub fixTimeSerie {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => ['data'],
+    );
+
+    # Split and sort the data
+    my @timestamps = sort {$a <=> $b} keys(%{$args{data}});
+    my @values;
+    for my $key (@timestamps) {
+        push (@values, $args{data}->{$key});
+    }
+
+    # Compute the average of the time serie
+    my $average = $self->computeAverage('values' => \@values);
+
+    # Fix the undef first values
+    my $isInside = 0;
+    my $i = 0;
+    while ( !$isInside && ($i <= $#timestamps) ) {
+        if (!defined($values[$i])) {
+            shift @timestamps;
+            shift @values;
+        }
+        else {
+            $isInside = 1;
+        }
+        $i++;
+    }
+
+    # Fix the undef last values
+    $isInside = 0;
+    $i = $#timestamps;
+    while ( !$isInside && ($i >= 0) ) {
+        if (!defined($values[$i])) {
+            pop @timestamps;
+            pop @values;
+        }
+        else {
+            $isInside = 1;
+        }
+        $i--;
+    }
+
+    # Fix the undef inside values
+    for my $j (0..$#timestamps) {
+        if (!defined($values[$i])) {
+            $values[$i] = $average;
+        }
+    }
+
+    my %hash;
+    for my $j (0..$#timestamps) {
+        $hash{$timestamps[$j]} = $values[$j];
+    }
+
+    return {%hash};
+}
+
+=pod
+
+=begin classdoc
+
+Compute the average of a time serie, ignore the undef values.
+
+@param values An array containing the values of the time serie. 
+
+@return a fixed version of the data.
+
+=end classdoc
+
+=cut
+
+sub computeAverage {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => ['values'],
+    );
+
+    my @values = @{$args{values}};
+    my $average = 0;
+    for my $value (@values) {
+        $average += $value;
+    }
+
+    return $average / scalar(@values);
 }
 
 =pod

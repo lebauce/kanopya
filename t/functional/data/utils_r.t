@@ -27,8 +27,6 @@ my $hor  = 5;
 # Expected values (manually computed from R)
 my @expected_values = (5, 12, 13, 15, 13);
 
-
-
 main();
 
 sub main {
