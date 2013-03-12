@@ -36,6 +36,9 @@ use BaseDB;
 use Entity::DataModel;
 use Utils::TimeSerieAnalysis;
 
+use Log::Log4perl "get_logger";
+my $log = get_logger("");
+
 use constant {
     DEFAULT_TRAINING_PERCENTAGE => 80,
     BASE_NAME => 'Entity::DataModel::',
@@ -111,6 +114,8 @@ sub autoPredict {
                                           . 'defined.');
     }
 
+    $log->debug('autoPredict - Loading the data from the combination.');
+
     # Get the combination from the given id
     my $combination = Entity::Combination->get(id => $args{combination_id});
 
@@ -121,8 +126,13 @@ sub autoPredict {
                                                                             node_id    => $args{node_id})
              ;
 
+    $log->debug('autoPredict - Fixing the data.');
+
     # Fix the data
     my %data = %{Utils::TimeSerieAnalysis->fixTimeSerie(data => \%raw_data)};
+
+    $log->debug("autoPredict - unfixed data size = " . scalar(keys(%raw_data)) . '.');
+    $log->debug("autoPredict - fixed data size = " . scalar(keys(%data)) . '.');
 
     # If horizon or timestamps undefined, construct the undefined one
     if (!defined($args{horizon})) {
@@ -143,6 +153,8 @@ sub autoPredict {
         $args{timestamps} = \@n_timestamps;
     }
 
+    $log->debug("autoPredict - Selecting best model among @{$args{model_list}} .");
+
     # Select DataModel
     my %best = %{$class->selectDataModel(
         combination => $combination,
@@ -150,11 +162,16 @@ sub autoPredict {
         end_time    => $args{end_time},
         node_id     => $args{node_id},
         model_list  => $args{model_list},
-        data        => {%data},
+        data        => \%data,
     )};
 
     my $best_model = $best{best_model};
-    my $best_freq  = $best{best_freq} || 1;
+    my $best_freq  = $best{best_freq};
+
+    $log->debug("autoPredict - best found model : $best_model with freq : $best_freq . Will now proceed " .
+                              'the forecast.');
+
+    $log->info("Automatic Prediction : $best_model chosen, with freq : $best_freq.");
 
     # Instanciate and configure the best found model
     my $datamodel = $best_model->new(
@@ -173,6 +190,9 @@ sub autoPredict {
         timestamps      => $args{timestamps},
         end_time        => $args{horizon},
     );
+
+    $log->debug("autoPredict - forecasted values : @{${$prediction}{values}}");
+
     return $prediction;
 }
 
@@ -221,7 +241,8 @@ sub selectDataModel {
     }
 
     # Compute the possible seasonality values
-    my @freqs = @{Utils::TimeSerieAnalysis->findSeasonality(data => {%data})};
+    my @freqs = @{Utils::TimeSerieAnalysis->findSeasonality(data => \%data)} || (1);
+    $log->debug("selectDataModel - possible frequencies computed : @freqs .");
 
     # Models with the best freq found {class_name => $freq}
     my %freq_hash;
