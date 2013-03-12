@@ -46,6 +46,7 @@ my %resources = (
     "customer"                 => "Entity::User::Customer",
     "dashboard"                => "Dashboard",
     "datamodel"                => "Entity::DataModel",
+    "datamodelselector"        => "DataModelSelector",
     "debian"                   => "Entity::Component::Linux::Debian",
     "entity"                   => "Entity",
     "entitycomment"            => "EntityComment",

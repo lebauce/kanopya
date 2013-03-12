@@ -27,6 +27,8 @@ DataModel for a given dataset.
 
 package DataModelSelector;
 
+use base 'BaseDB';
+
 use warnings;
 use strict;
 use Data::Dumper;
@@ -51,6 +53,15 @@ use constant CHOICE_STRATEGY => {
     MSE       => 'MSE',
     RMSE      => 'RMSE',
 };
+
+sub methods {
+    return {
+        autoPredict => {
+            description => 'Find best model and predict metric values.',
+            perm_holder => 'entity',
+        }
+    };
+}
 
 =pod
 
