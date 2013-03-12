@@ -51,7 +51,7 @@ sub getPuppetDefinition {
     $definition = "if \$kanopya_openstack_repository == undef {
                        class { 'kanopya::openstack::repository': }
                        \$kanopya_openstack_repository = 1
-                   }
+                   }\n
                    class { 'keystone':
                          verbose        => true,
                          debug          => true,

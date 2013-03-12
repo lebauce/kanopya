@@ -285,7 +285,8 @@ function runScaleWorkflow(type, eid, spid) {
                     amount = getRawValue(amount, 'scale_amount_unit');
                     $.ajax({
                         async       : false,
-                        url         : '/api/serviceprovider/' + spid + '/service_provider_managers?manager_type=host_manager',
+                        url         : '/api/serviceprovider/' + spid + '/service_provider_managers?' +
+                                      'manager_category.parent.category_name=HostManager&expand=manager_category',
                         type        : 'GET',
                         success     : function(hmgr) {
                             $.ajax({
@@ -314,7 +315,8 @@ function migrate(spid, eid) {
     var sel     = $('<select>').appendTo(cont);
     $.ajax({
         async       : false,
-        url         : '/api/serviceprovider/' + spid + '/service_provider_managers?manager_type=host_manager',
+        url         : '/api/serviceprovider/' + spid + '/service_provider_managers?' +
+                      'manager_category.parent.category_name=HostManager&expand=manager_category',
         type        : 'GET',
         success     : function(hmgr) {
             $.ajax({

@@ -1,4 +1,4 @@
-#    Copyright © 2012 Hedera Technology SAS
+#    Copyright © 2013 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -61,7 +61,7 @@ sub logout {
 # First AUTOLOAD() doesn't include args, they will be transmitted to OsObject.AUTOLOAD()
 sub AUTOLOAD {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, optional => {'id' => undef});
+    General::checkParams(args => \%args, optional => { 'id' => undef, 'filter' => undef });
 
     my @autoload = split(/::/, $AUTOLOAD);
     my $method = $autoload[-1];
@@ -80,13 +80,15 @@ sub AUTOLOAD {
     else {
         $object->{path} = $method;
     }
+    $object->{path} .= '?' . $args{filter} if ( defined $args{filter} );
+
     bless $object, 'OpenStack::Object';
 
     return $object;
 }
 
 # $os_api->tenant(id => '2abdf3')->servers->detail <---> 2abdf3/servers/detail
-# to avoid method starting with digit
+# tenant(id) is replaced by id of tenant
 sub tenant {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'id' ]);

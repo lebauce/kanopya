@@ -101,7 +101,7 @@ sub _init {
         master_opts => [
          -o => "StrictHostKeyChecking=no"
         ],
-        timeout => 30,
+        timeout => $self->{timeout},
         #kill_ssh_on_timeout => 1
     );
 

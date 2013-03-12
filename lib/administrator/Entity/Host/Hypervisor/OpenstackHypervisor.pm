@@ -33,12 +33,6 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_extended  => 0
     },
-    openstack_hypervisor_uuid => {
-        pattern      => '^[0-9a-f]*$',
-        type         => 'integer',
-        is_mandatory => 0,
-        is_extended  => 0
-    }
 };
 
 sub getAttrDef { return ATTR_DEF; }

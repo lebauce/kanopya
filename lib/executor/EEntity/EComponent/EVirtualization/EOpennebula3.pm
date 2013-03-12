@@ -22,8 +22,8 @@ TODO
 
 =cut
 
-package EEntity::EComponent::EOpennebula3;
-use base "EEntity::EComponent";
+package EEntity::EComponent::EVirtualization::EOpennebula3;
+use base "EEntity::EComponent::EVirtualization";
 use base "EManager::EHostManager::EVirtualMachineManager";
 
 use strict;
@@ -39,6 +39,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use NetAddr::IP;
 use File::Copy;
+use Entity::Repository::Opennebula3Repository;
 
 my $log = get_logger("");
 my $errmsg;
@@ -159,9 +160,11 @@ sub postStartNode {
                     $dsid = $self->onedatastore_create(file => $ds_template);
 
                     # update the datastore id in db
-                    $comp->{_dbix}->opennebula3_repositories->search(
-                        {repository_name => $ds_name}
-                    )->single->update({datastore_id => $dsid});
+                    my $_repo = Entity::Repository::Opennebula3Repository->find(
+                        hash => { repository_name => $ds_name }
+                    );
+                    $_repo->setAttr(name => 'datastore_id', value => $dsid);
+                    $_repo->save;
                 }
 
                 # Give rights to the 'oneadmin' user
@@ -498,19 +501,19 @@ sub startHost {
     my $image = $args{host}->getNodeSystemimage();
     my $image_name = $image->systemimage_name;
 
-    my %repo = $self->_getEntity()->getImageRepository(
+    my $repo = $self->_getEntity()->getImageRepository(
                    container_access_id => $disk_params->{container_access_id}
                );
 
     my $image_templatefile = $self->generateImageTemplate(
         image_name        => $image_name,
-        image_source      => $repo{datastore_id} . '/' . $image->getContainer->container_device,
+        image_source      => $repo->datastore_id . '/' . $image->getContainer->container_device,
         image_type        => $disk_params->{image_type}
     );
 
     my $imageid = $self->oneimage_create(
         file               => $image_templatefile,
-        datastore_nameorid => $repo{datastore_id}
+        datastore_nameorid => $repo->datastore_id
     );
 
     # generate template in opennebula master node

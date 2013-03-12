@@ -25,7 +25,7 @@ OpenStack component, used as host manager by Kanopya
 
 =cut
 
-package  Entity::Component::Openstack::NovaController;
+package  Entity::Component::Virtualization::NovaController;
 
 use base "Entity::Component";
 use base "Manager::HostManager::VirtualMachineManager";
@@ -40,11 +40,12 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
-    openstack_repositories => {
+    repositories => {
         label       => 'Virtual machine images repositories',
         type        => 'relation',
         relation    => 'single_multi',
         is_editable => 1,
+        specialized => 'openstack_repository'
     },
     host_type => {
         is_virtual => 1
@@ -107,15 +108,13 @@ Return the boot policies for the host ruled by this host manager
 =cut
 
 sub getBootPolicies {
-    return (Manager::HostManager->BOOT_POLICIES->{virtual_disk}, );
+    return (Manager::HostManager->BOOT_POLICIES->{virtual_disk},
+            Manager::HostManager->BOOT_POLICIES->{pxe_iscsi},
+            Manager::HostManager->BOOT_POLICIES->{pxe_nfs});
 }
 
 sub supportHotConfiguration {
     return 0;
-}
-
-sub hostType {
-    return "OpenStack VM";
 }
 
 =pod
@@ -147,8 +146,12 @@ sub getPuppetDefinition {
 
     my $sql        = $self->mysql5;
     my $keystone   = $self->keystone;
-    my $quantum    = $self->quantum;
+    my $quantum    = ($self->quantums)[0];
     my $glance     = join(",", map { $_->service_provider->getMasterNode->fqdn . ":9292" } $self->nova_controller->glances);
+
+    if (not ($sql and $keystone and $quantum)) {
+        return;
+    }
 
     my $definition = "if \$kanopya_openstack_repository == undef {\n" .
                      "\tclass { 'kanopya::openstack::repository': }\n" .
@@ -214,7 +217,7 @@ sub activeHypervisors {
     my $self = shift;
 
     my @hypervisors = $self->searchRelated(
-                          filters => [ 'hypervisors' ],
+                          filters => [ 'openstack_hypervisors' ],
                           hash    => { active => 1 }
                       );
 
@@ -237,12 +240,11 @@ sub addHypervisor {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'host', 'uuid' ]);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
     return Entity::Host::Hypervisor::OpenstackHypervisor->promote(
                promoted                  => $args{host},
                nova_controller_id        => $self->id,
-               openstack_hypervisor_uuid => $args{uuid},
            );
 }
 
@@ -265,6 +267,50 @@ sub removeHypervisor {
     General::checkParams(args => \%args, required => [ 'host' ]);
 
     Entity::Host->demote(demoted => $args{host}->_getEntity);
+}
+
+=pod
+
+=begin classdoc
+
+Set the configuration of the component.
+
+If repositories are specified, update the mount entries of all compute nodes
+
+=end classdoc
+
+=cut
+
+sub setConf {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'conf' ]);
+
+    $self->SUPER::setConf(%args);
+
+    # update linux mount table
+    my @mountentries;
+    for my $repository ($self->repositories) {
+        push @mountentries, {
+             linux_mount_dumpfreq   => 0,
+             linux_mount_filesystem => 'nfs',
+             linux_mount_point      => "/var/lib/nova/instances",
+             linux_mount_device     => $repository->container_access->container_access_export,
+             linux_mount_options    => 'rw,sync,vers=3',
+             linux_mount_passnum    => 0,
+        };
+
+        # Don't know how to support multiple shared repositories
+        last;
+    }
+
+    for my $vmm ($self->vmms) {
+        my $linux = $vmm->service_provider->getComponent(category => "System");
+        my $oldconf = $linux->getConf();
+        my @mounts = (@{$oldconf->{linuxes_mount}}, @mountentries);
+        $linux->setConf(conf => { linuxes_mount => \@mounts });
+        $vmm->service_provider->update();
+    }
 }
 
 1;

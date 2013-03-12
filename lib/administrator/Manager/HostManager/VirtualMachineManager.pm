@@ -82,7 +82,7 @@ sub createVirtualHost {
         $vm->addIface(
             iface_name     => 'eth' . $_,
             iface_mac_addr => Entity::Iface->generateMacAddress(),
-            iface_pxe      => 0,
+            iface_pxe      => ($_ == 0),
         );
     }
 

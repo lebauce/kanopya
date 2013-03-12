@@ -124,14 +124,14 @@ __PACKAGE__->belongs_to(
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Component>
+Related object: L<AdministratorDB::Schema::Result::Vmm>
 
 =cut
 
 __PACKAGE__->belongs_to(
   "nova_compute",
-  "AdministratorDB::Schema::Result::Component",
-  { component_id => "nova_compute_id" },
+  "AdministratorDB::Schema::Result::Vmm",
+  { vmm_id => "nova_compute_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
@@ -161,8 +161,8 @@ __PACKAGE__->belongs_to(
 
 __PACKAGE__->belongs_to(
   "parent",
-  "AdministratorDB::Schema::Result::Component",
-    { "foreign.component_id" => "self.nova_compute_id" },
+  "AdministratorDB::Schema::Result::Vmm",
+    { "foreign.vmm_id" => "self.nova_compute_id" },
     { cascade_copy => 0, cascade_delete => 1 });
 
 1;

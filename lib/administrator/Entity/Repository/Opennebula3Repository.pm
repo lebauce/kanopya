@@ -1,4 +1,4 @@
-#    Copyright © 2013 Hedera Technology SAS
+#    Copyright © 2011 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -13,25 +13,12 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package Entity::Component::Openstack::OpenstackRepository;
-use base 'BaseDB';
+# Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-use constant ATTR_DEF => {
-    repository_name => {
-        label        => 'Name',
-        type         => 'string',
-        pattern      => '^.*$',
-        is_mandatory => 1,
-        is_editable  => 1,
-    },
-    container_access_id => {
-        label        => 'Container access',
-        type         => 'relation',
-        relation     => 'single',
-        is_mandatory => 1,
-        is_editable  => 1,
-    },
-};
+package Entity::Repository::Opennebula3Repository;
+use base 'Entity::Repository';
+
+use constant ATTR_DEF => { };
 
 sub getAttrDef { return ATTR_DEF; }
 

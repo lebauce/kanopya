@@ -42,9 +42,12 @@ sub getPuppetDefinition {
            "}\n" .
            "class { 'kanopya::quantum_':\n" .
            "\tamqpserver => '" . $amqp . "',\n" .
-           "\tkeystone => '" . $keystone . "',\n" .
-           "\tpassword => 'quantum'," .
-           "\tdbserver => '" . $sql . "'\n" .
+           "\tkeystone   => '" . $keystone . "',\n" .
+           "\tpassword   => 'quantum'," .
+           "\tbridge_flat => 'br-flat'," .
+           "\tbridge_vlan => 'br-vlan'," .
+           "\temail      => '" . $self->service_provider->user->user_email . "',\n" .
+           "\tdbserver   => '" . $sql . "'\n" .
            "}";
 }
 

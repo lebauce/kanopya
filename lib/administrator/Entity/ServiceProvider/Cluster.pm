@@ -212,6 +212,10 @@ sub methods {
         forceStop => {
             description => 'force stop this cluster',
         },
+        update => {
+            description => 'reconfigure the cluster',
+            perm_holder => 'entity',
+        }
     };
 }
 
@@ -1166,17 +1170,17 @@ sub update {
             $self->addComponentFromType(component_type_id => $component->{component_type_id});
         }
         delete $args{components};
-
-        Entity::Operation->enqueue(
-            priority => 200,
-            type     => 'UpdatePuppetCluster',
-            params   => {
-                context => {
-                    cluster => $self,
-                },
-            },
-        );
     }
+
+    Entity::Operation->enqueue(
+        priority => 200,
+        type     => 'UpdatePuppetCluster',
+        params   => {
+            context => {
+                cluster => $self,
+            },
+        },
+    );
 }
 
 

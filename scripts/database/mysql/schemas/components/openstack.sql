@@ -57,7 +57,7 @@ CREATE TABLE `nova_controller` (
   `amqp_id` int(8) unsigned NULL DEFAULT NULL,
   `keystone_id` int(8) unsigned NULL DEFAULT NULL,
   PRIMARY KEY (`nova_controller_id`),
-  CONSTRAINT `fk_nova_controller_1` FOREIGN KEY (`nova_controller_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_nova_controller_1` FOREIGN KEY (`nova_controller_id`) REFERENCES `virtualization` (`virtualization_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY(`mysql5_id`),
   FOREIGN KEY (`mysql5_id`) REFERENCES `mysql5` (`mysql5_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY(`amqp_id`),
@@ -89,7 +89,6 @@ CREATE TABLE `quantum` (
 CREATE TABLE `openstack_hypervisor` (
   `openstack_hypervisor_id` int(8) unsigned NOT NULL,
   `nova_controller_id` int(8) unsigned NOT NULL,
-  `openstack_hypervisor_uuid` int(8) unsigned NULL DEFAULT NULL,
   PRIMARY KEY (`openstack_hypervisor_id`),
   FOREIGN KEY (`openstack_hypervisor_id`) REFERENCES `hypervisor` (`hypervisor_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`nova_controller_id`),
@@ -114,13 +113,9 @@ CREATE TABLE `openstack_vm` (
 --
 
 CREATE TABLE `openstack_repository` (
-  `openstack_repository_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `nova_controller_id` int(8) unsigned NOT NULL,
-  `repository_name` char(255) NOT NULL,
-  `container_access_id` int(8) unsigned NOT NULL,
+  `openstack_repository_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`openstack_repository_id`),
-  FOREIGN KEY (`nova_controller_id`) REFERENCES `nova_controller` (`nova_controller_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`container_access_id`) REFERENCES `container_access` (`container_access_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`openstack_repository_id`) REFERENCES `repository` (`repository_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks=1;

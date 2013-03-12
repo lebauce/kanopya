@@ -40,10 +40,12 @@ Keep the source ip whatever the concrete type of EContext.
 sub new {
     my ($class, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'local' ]);
+    General::checkParams(args => \%args, required => [ 'local' ],
+                                         optional => { timeout => 30 });
 
     my $self = {
         local_ip => $args{local},
+        timeout  => $args{timeout}
     };
 
     bless $self, $class;

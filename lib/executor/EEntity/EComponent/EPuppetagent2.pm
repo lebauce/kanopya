@@ -111,8 +111,14 @@ sub generatePuppetDefinitions {
     my $puppet_definitions = "";
     my $cluster_components = $args{cluster}->getComponents(category => "all", order_by => "priority");
     foreach my $component (@{ $cluster_components }) {
+        my $ecomponent = EEntity->new(entity => $component);
+        $ecomponent->generateConfiguration(
+            cluster => $args{cluster},
+            host    => $args{host}
+        );
+
         # retrieve puppet definition to create manifest
-        $puppet_definitions .= $component->getPuppetDefinition(
+        $puppet_definitions .= $ecomponent->getPuppetDefinition(
             host    => $args{host},
             cluster => $args{cluster},
         );
@@ -177,6 +183,7 @@ sub applyManifest {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['host']);
     my $econtext = $args{host}->getEContext;
+    $econtext->{timeout} = 180;
     $econtext->execute(command => 'puppet agent --test');
 }
 

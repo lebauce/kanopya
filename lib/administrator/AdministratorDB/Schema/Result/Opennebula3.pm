@@ -157,22 +157,6 @@ __PACKAGE__->add_columns(
     extra => { list => [0 .. 3] },
     is_nullable => 0,
   },
-  "overcommitment_cpu_factor",
-  {
-    data_type => "double",
-    default_value => 1,
-    extra => { unsigned => 1 },
-    is_nullable => 0,
-  },
-  "overcommitment_memory_factor",
-  {
-    data_type => "double",
-    default_value => 1,
-    extra => { unsigned => 1 },
-    is_nullable => 0,
-  },
-
-
 );
 __PACKAGE__->set_primary_key("opennebula3_id");
 
@@ -188,8 +172,8 @@ Related object: L<AdministratorDB::Schema::Result::Component>
 
 __PACKAGE__->belongs_to(
   "opennebula3",
-  "AdministratorDB::Schema::Result::Component",
-  { component_id => "opennebula3_id" },
+  "AdministratorDB::Schema::Result::Virtualization",
+  { virtualization_id => "opennebula3_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
@@ -204,21 +188,6 @@ Related object: L<AdministratorDB::Schema::Result::Opennebula3Hypervisor>
 __PACKAGE__->has_many(
   "opennebula3_hypervisors",
   "AdministratorDB::Schema::Result::Opennebula3Hypervisor",
-  { "foreign.opennebula3_id" => "self.opennebula3_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 opennebula3_repositories
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Opennebula3Repository>
-
-=cut
-
-__PACKAGE__->has_many(
-  "opennebula3_repositories",
-  "AdministratorDB::Schema::Result::Opennebula3Repository",
   { "foreign.opennebula3_id" => "self.opennebula3_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -244,8 +213,8 @@ __PACKAGE__->has_many(
 
 __PACKAGE__->belongs_to(
   "parent",
-  "AdministratorDB::Schema::Result::Component",
-    { "foreign.component_id" => "self.opennebula3_id" },
+  "AdministratorDB::Schema::Result::Virtualization",
+    { "foreign.virtualization_id" => "self.opennebula3_id" },
     { cascade_copy => 0, cascade_delete => 1 }
 );
 

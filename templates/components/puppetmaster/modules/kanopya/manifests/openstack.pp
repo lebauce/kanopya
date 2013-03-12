@@ -138,10 +138,15 @@ class kanopya::novacontroller($password, $dbserver, $amqpserver, $keystone, $ema
             tag      => "${dbserver}",
     }
 
+    exec { "/usr/bin/nova-manage db sync":
+        path => "/usr/bin:/usr/sbin:/bin:/sbin",
+    }
+
     class { 'nova::api':
             enabled        => true,
             admin_password => "${password}",
             auth_host      => "${keystone}",
+            require        => Exec["/usr/bin/nova-manage db sync"]
     }
 
     class { 'nova':
@@ -168,6 +173,10 @@ class kanopya::novacontroller($password, $dbserver, $amqpserver, $keystone, $ema
 }
 
 class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone, $password) {
+    file { "/run/iscsid.pid":
+        content => "1",
+    }
+
     class { 'nova':
         # set sql and rabbit to false so that the resources will be collected
         sql_connection     => "mysql://nova:${password}@${dbserver}/nova",
@@ -222,17 +231,16 @@ class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone, $password
     Class['kanopya::openstack::repository'] -> Class['kanopya::novacompute']
 }
 
-class kanopya::quantum_($amqpserver, $dbserver, $keystone, $password) {
+class kanopya::quantum_($amqpserver, $dbserver, $keystone, $password, $email, $bridge_flat, $bridge_vlan) {
     class { 'quantum':
         rabbit_password => "${password}",
         rabbit_host     => "${amqpserver}",
         rabbit_user     => 'quantum',
-        sql_connection  => "mysql://quantum:${password}@${dbserver}/quantum",
     }
 
     class { 'quantum::server':
         auth_password => $password,
-        auth_host     => "${keystone}"
+        auth_host     => "${keystone}",
     }
 
     @@mysql::db { 'quantum':
@@ -260,7 +268,7 @@ class kanopya::quantum_($amqpserver, $dbserver, $keystone, $password) {
     @@keystone_user { 'quantum':
         ensure   => present,
         password => "${password}",
-        email    => "quantum@localhost",
+        email    => "${email}",
         tenant   => "services",
         tag      => "${keystone}"
     }
@@ -284,6 +292,13 @@ class kanopya::quantum_($amqpserver, $dbserver, $keystone, $password) {
         admin_url    => "http://${fqdn}:9696",
         internal_url => "http://${fqdn}:9696",
         tag          => "${keystone}"
+    }
+
+    class { 'quantum::plugins::ovs':
+        sql_connection => "mysql://quantum:${password}@${dbserver}/quantum",
+        tenant_network_type => 'vlan',
+        network_vlan_ranges => 'physnetflat,physnetvlan:1:4094',
+        bridge_mappings => ["physnetflat:${bridge_flat}","physnetvlan:${bridge_vlan}"]
     }
 
     Class['kanopya::openstack::repository'] -> Class['kanopya::quantum_']

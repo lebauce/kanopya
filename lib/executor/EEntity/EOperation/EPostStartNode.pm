@@ -91,10 +91,6 @@ sub execute {
 
     $self->SUPER::execute();
 
-    if (not $self->{context}->{cluster}->getMasterNode) {
-        $self->{context}->{host}->becomeMasterNode();
-    }
-
     $self->{context}->{cluster}->postStartNode(
         host      => $self->{context}->{host},
         erollback => $self->{erollback},

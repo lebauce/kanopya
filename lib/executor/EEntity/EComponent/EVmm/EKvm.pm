@@ -270,13 +270,13 @@ sub getMinEffectiveRamVm {
         required    => [ 'host' ]
     );
 
-    my @virtual_machines = $args{host}->virtual_machines;
+    my @virtual_machines = map { EEntity->new(entity => $_); } $args{host}->virtual_machines;
 
-    my $min_vm  = shift @virtual_machines;
-    my $min_ram = EFactory::newEEntity(data => $min_vm)->getRamUsedByVm->{total};
+    my $min_vm  = EEntity->new(entity => shift @virtual_machines);
+    my $min_ram = $self->getRamUsedByVm(host => $min_vm)->{total};
 
     for my $virtual_machine (@virtual_machines) {
-        my $ram = EFactory::newEEntity(data => $virtual_machine)->getRamUsedByVm->{total};
+        my $ram = $self->getRamUsedByVm(host => $virtual_machine)->{total};
         if ($ram < $min_ram) {
             $min_ram = $ram;
             $min_vm  = $virtual_machine;
@@ -286,6 +286,33 @@ sub getMinEffectiveRamVm {
     return {
         vm  => $min_vm,
         ram => $min_ram,
+    }
+}
+
+sub getRamUsedByVm {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    my $vm = $args{host};
+    my $e_hypervisor = EFactory::newEEntity(data => $vm->hypervisor);
+
+    # This command get the pid of the kvm process then get the RAM used and SWAP used by this process
+    my $cmd = 'cat /proc/$(cat /var/run/libvirt/qemu/one-' . ($vm->onevm_id) . '.pid)/status | grep "VmRSS\|VmSwap"';
+
+    my $mem;
+    my $stdout = $e_hypervisor->getEContext->execute(command => "$cmd")->{stdout};
+    my @lines = split('\n', $stdout);
+
+    for my $line (@lines) {
+        my @line_split = split('\s+', $line);
+        $mem->{$line_split[0]} = $line_split[1] * 1024; # Convert kB to bytes
+    }
+
+    return {
+        mem_ram  => $mem->{'VmRSS:'},
+        mem_swap => $mem->{'VmSwap:'},
+        total    => $mem->{'VmRSS:'} + $mem->{'VmSwap:'},
     }
 }
 

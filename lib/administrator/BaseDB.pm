@@ -406,8 +406,15 @@ sub getAttrDefs {
         if ($modulename ne "BaseDB") {
             eval {
                 requireClass($modulename);
-                $attr_def = clone($modulename->getAttrDef());
             };
+            if ($@) {
+                # For component internal classes
+                my $source = BaseDB->_adm->{schema}->source(_buildClassNameFromString($modulename));
+                $modulename = classFromDbix($source);
+                requireClass($modulename);
+            }
+
+            $attr_def = clone($modulename->getAttrDef());
 
             my $schema;
             eval {
@@ -769,9 +776,14 @@ sub getAttr {
                 my $camelcased_method = normalizeMethod($method);
                 $value = $self->$camelcased_method();
             };
-            if ($@) {
+            if ($@ and $self->can($method)) {
                 # If failled with camel-cased, try the original attr name as method
-                $value = $self->$method();
+                eval {
+                    $value = $self->$method();
+                };
+                if ($@) {
+                    $value = $@;
+                }
             }
             last;
         }
@@ -1687,75 +1699,104 @@ sub populateRelations {
 
     # For each relations type
     for my $relation (keys %{$args{relations}}) {
-        my $attrdef = $class->getAttrDefs->{$relation};
-        my $reldef  = $self->{_dbix}->relationship_info($relation);
+        my @entries = $self->searchRelated(filters => [ $relation ]);
+        my $existing = {};
 
-        # Deduce the foreign key from relation def
-        my @conds = keys %{$reldef->{cond}};
-        my $fk = getForeignKeyFromCond(cond => $conds[0]);
-
-        my $relation_schema = $self->{_dbix}->$relation->result_source;
-        my $relationclass = classFromDbix($relation_schema);
-
-        $relationclass = $class->getClassType(class => $relationclass) || $relationclass;
-        requireClass($relationclass);
-
-        # Deduce the foreign key attr for link entries in relations multi
-        my $linkfk;
-        my $exsting = {};
-        if ($attrdef->{relation} eq 'single_multi') {
-            my @entries = $relationclass->search(hash => { $fk => $self->id });
-            %$exsting = map { $_->id => $_ } @entries;
-        }
-        elsif ($attrdef->{relation} eq 'multi') {
-            my $linked_reldef = $relation_schema->relationship_info($attrdef->{link_to});
-
-            my @conds = values %{$linked_reldef->{cond}};
-            $linkfk = getKeyFromCond(cond => $conds[0]);
-
-            my @entries = $relationclass->search(hash => { $fk => $self->id });
-            %$exsting = map { $_->$linkfk => $_ } @entries;
-        }
+        my $rel_infos = $self->getRelationship(relation => $relation);
+        my $relation_class = $rel_infos->{class};
+        my $relation_schema = $rel_infos->{schema};
+        my $key = $rel_infos->{linkfk} || "id";
+        %$existing = map { $_->$key => $_ } @entries;
 
         # Create/update all entries
         for my $entry (@{$args{relations}->{$relation}}) {
-            if ($attrdef->{relation} eq 'single_multi') {
+            if ($rel_infos->{relation} eq 'single_multi') {
                 my $id = delete $entry->{@{$relation_schema->_primaries}[0]};
                 if ($id) {
                     # We have the relation id, it is a relation update
-                    $relationclass->get(id => $id)->update(%$entry);
-                    delete $exsting->{$id};
+                    $relation_class->get(id => $id)->update(%$entry);
+                    delete $existing->{$id};
                 }
                 else {
                     # Create the new relationships
-                    $entry->{$fk} = $self->id;
+                    $entry->{$rel_infos->{fk}} = $self->id;
                     # Id do not exists, it is a relation creation
-                    $relationclass->create(%$entry);
+                    $relation_class->create(%$entry);
                 }
             }
-            elsif ($attrdef->{relation} eq 'multi') {
+            elsif ($rel_infos->{relation} eq 'multi') {
                 # If instances are given in parameters instead of ids, use the ids
                 if (ref($entry)) {
                     $entry = $entry->id;
                 }
 
-                my $exists = delete $exsting->{$entry};
+                my $exists = delete $existing->{$entry};
                 if (not $exists) {
                     # Create entries in the link table
-                    $relationclass->create($fk => $self->id, $linkfk => $entry);
+                    $relation_class->create($rel_infos->{fk}     => $self->id,
+                                            $rel_infos->{linkfk} => $entry);
                 }
             }
         }
 
         # Finally delete remaining entries
         if ($args{override}) {
-            for my $remaning (values %$exsting) {
+            for my $remaning (values %$existing) {
                 $remaning->remove();
             }
         }
     }
 }
 
+sub getRelationship {
+    my ($self, %args) = @_;
+    my $class = ref($self) || $self;
+
+    General::checkParams(args => \%args, required => [ 'relation' ]);
+
+    my $relation = $args{relation};
+
+    my $attrdef = $class->getAttrDefs->{$relation};
+
+    my $dbix = $self->{_dbix};
+    while ($dbix and (not $dbix->has_relationship($relation))) {
+        $dbix = $dbix->parent;
+    }
+
+    my $relation_schema;
+    if ($attrdef->{type} eq 'relation' and defined ($attrdef->{specialized})) {
+        my $class = normalizeName($attrdef->{specialized});
+        $relation_schema = BaseDB->_adm->{schema}->source($class);
+    }
+    else {
+        $relation_schema = $self->getRelatedSource($relation);
+    }
+
+    my $relation_class = classFromDbix($relation_schema);
+    $relation_class = $class->getClassType(class => $relation_class) || $relation_class;
+    requireClass($relation_class);
+
+    # Deduce the foreign key from relation def
+    my $reldef = $dbix->relationship_info($relation);
+    my @conds = keys %{$reldef->{cond}};
+    my $fk = getForeignKeyFromCond(cond => $conds[0]);
+
+    my $infos = {
+        class    => $relation_class,
+        schema   => $relation_schema,
+        fk       => $fk,
+        relation => $attrdef->{relation}
+    };
+
+    if ($attrdef->{relation} eq 'multi') {
+        # Deduce the foreign key attr for link entries in relations multi
+        my $linked_reldef = $relation_schema->relationship_info($attrdef->{link_to});
+        my @conds = values %{$linked_reldef->{cond}};
+        $infos->{linkfk} = getKeyFromCond(cond => $conds[0]);
+    }
+
+    return $infos;
+}
 
 =pod
 
@@ -2182,11 +2223,8 @@ the characters that follows.
 =cut
 
 sub normalizeName {
-    my $name = shift;
-    $name = normalizeMethod($name);
-
-    return ucfirst($name);
-};
+    join('', map(ucfirst, split('_', shift)));
+}
 
 
 =pod
@@ -2205,17 +2243,8 @@ the characters that follows, excepted the first character.
 =cut
 
 sub normalizeMethod {
-    my $name = shift;
-    my $i = 0;
-    while ($i < length($name)) {
-        if (substr($name, $i, 1) eq "_") {
-            $name = substr($name, 0, $i) . ucfirst(substr($name, $i + 1, 1)) . substr($name, $i + 2)
-        }
-        $i += 1;
-    }
-
-    return $name;
-};
+    lcfirst(normalizeName(shift));
+}
 
 
 =pod
@@ -2265,6 +2294,26 @@ sub getResultSource {
 
     $class = join("::", getClassHierarchy($class));
     return BaseDB->_adm->{schema}->source(_buildClassNameFromString($class));
+}
+
+=begin classdoc
+
+Return the related source for a relation
+
+=end classdoc
+
+=cut
+
+sub getRelatedSource {
+    my ($self, $relation) = @_;
+    my $class = ref($self) || $self;
+
+    my $dbix = $self->{_dbix};
+    while ($dbix and (not $dbix->has_relationship($relation))) {
+        $dbix = $dbix->parent;
+    }
+
+    return $dbix->result_source->related_source($relation);
 }
 
 =pod

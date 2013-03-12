@@ -763,6 +763,8 @@ sub generatePuppetConfiguration {
 
 sub genConf {
     mkdir $conf_vars->{conf_dir} unless ( -d $conf_vars->{conf_dir} );
+    `mkdir -p $conf_vars->{rrd_dir}` unless ( -d $conf_vars->{rrd_dir} );
+
     my %datas;
     foreach my $files (keys %$conf_files){
         foreach my $d (keys %{$conf_files->{$files}->{datas}}){

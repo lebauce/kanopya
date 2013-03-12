@@ -30,7 +30,9 @@ sub postStartNode {
     $self->SUPER::postStartNode(%args);
 
     # We ask the database cluster to create databases and users
-    EEntity->new(entity => $self->mysql5->getServiceProvider)->reconfigure();
+    if ($self->mysql5) {
+        EEntity->new(entity => $self->mysql5->service_provider)->reconfigure();
+    }
 
     # Now that the database is created, apply the manifest again
     $self->SUPER::postStartNode(%args);
