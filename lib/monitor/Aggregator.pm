@@ -141,12 +141,13 @@ sub _getUsedIndicators {
         }
     }
 
+    my $collector_indicators;
     # Get indicators used by cluster metrics
     for my $clustermetric ($args{service_provider}->clustermetrics) {
         my $clustermetric_time_span = $clustermetric->clustermetric_window_time;
-        my $indicator = $clustermetric->getIndicator();
-        $indicators->{$indicator->indicator_oid} = $indicator;
 
+        my $indicator = $clustermetric->clustermetric_indicator;
+        $collector_indicators->{$indicator->id} = $indicator;
         if (! defined $time_span) {
             $time_span = $clustermetric_time_span;
         }
@@ -155,6 +156,11 @@ sub _getUsedIndicators {
         }
 
         $time_span = ($clustermetric_time_span > $time_span) ? $clustermetric_time_span : $time_span;
+    }
+
+    for my $collector_indicator (values %{$collector_indicators}) {
+         my $indicator = $collector_indicator->indicator;
+         $indicators->{$indicator->indicator_oid} = $indicator;
     }
 
     return {
