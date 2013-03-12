@@ -359,6 +359,15 @@ function confirmDeleteWithDependencies(url, id, grid_ids) {
     );
 }
 
+function handleCreate (grid) {
+    if (grid !== undefined) {
+        // Reload to handle the new element
+        // TODO: If the new element is display alone on a new last page,
+        //       the reload grib will display the last page but before adding the new element.
+        $(grid).trigger("reloadGrid", [{ page :  $(grid).getGridParam("lastpage") }]);
+    }
+}
+
 function handleCreateOperation (data, grid) {
     if (grid !== undefined && data !== undefined && data.operation_id !== undefined) {
         setTimeout(function() {

@@ -1,4 +1,4 @@
-//require('kanopyaformwizard.js');
+require('common/general.js');
 
 function vlan_addbutton_action(e, grid) {
     (new KanopyaFormWizard({
@@ -6,7 +6,7 @@ function vlan_addbutton_action(e, grid) {
         type       : 'vlan',
         id         : (!(e instanceof Object)) ? e : undefined,
         displayed  : [ 'vlan_name', 'vlan_number' ],
-        callback   : function () { if (grid !== undefined ) { $(grid).trigger("reloadGrid"); } }
+        callback   : function (data) { handleCreate(grid); }
     })).start();
 }
 

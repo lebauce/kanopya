@@ -1,4 +1,5 @@
 //require('kanopyaformwizard.js');
+require('common/general.js');
 
 function network_addbutton_action(e, grid) {
     (new KanopyaFormWizard({
@@ -7,7 +8,7 @@ function network_addbutton_action(e, grid) {
         id         : (!(e instanceof Object)) ? e : undefined,
         displayed  : [ 'network_name', 'network_addr', 'network_netmask', 'network_gateway' ],
         relations  : { 'poolips' : [ 'poolip_name', 'poolip_first_addr', 'poolip_size' ] },
-        callback   : function () { if (grid !== undefined ) { $(grid).trigger("reloadGrid"); } }
+        callback   : function () { handleCreate(grid); }
     })).start();
 }
 

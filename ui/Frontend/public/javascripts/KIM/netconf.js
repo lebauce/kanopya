@@ -1,4 +1,5 @@
 //require('kanopyaformwizard.js');
+require('common/general.js');
 
 function netconf_addbutton_action(e, grid) {
     (new KanopyaFormWizard({
@@ -6,7 +7,7 @@ function netconf_addbutton_action(e, grid) {
         type       : 'netconf',
         id         : (!(e instanceof Object)) ? e : undefined,
         displayed  : [ 'netconf_name', 'netconf_vlans', 'netconf_poolips', 'netconf_role_id' ],
-        callback   : function () { if (grid !== undefined ) { $(grid).trigger("reloadGrid"); } }
+        callback   : function () { handleCreate(grid); }
     })).start();
 }
 
