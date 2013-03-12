@@ -42,7 +42,7 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
-use EFactory;
+use EEntity;
 use CapacityManagement;
 #use Entity::ServiceProvider::Cluster;
 #use Entity::Host;

@@ -371,9 +371,7 @@ sub subscribe {
                                        'validation'          => 0 });
 
     if (not defined $args{service_provider_id}) {
-        $args{service_provider_id} = Entity::ServiceProvider::Cluster->find(
-                                         hash => { cluster_name => 'Kanopya' }
-                                     )->id;
+        $args{service_provider_id} = Entity::ServiceProvider::Cluster->getKanopyaCluster();
     }
 
     my $operationtype = Operationtype->find(hash => { operationtype_name => $args{operationtype} });

@@ -46,7 +46,7 @@ use CapacityManagement;
 use Kanopya::Exceptions;
 use Entity::ServiceProvider::Cluster;
 use Entity::Host;
-use EFactory;
+use EEntity;
 
 my $log = get_logger("");
 my $errmsg;

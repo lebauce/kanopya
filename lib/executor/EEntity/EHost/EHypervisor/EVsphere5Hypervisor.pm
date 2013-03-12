@@ -27,7 +27,7 @@ EVsphere5Hypervisor
 package EEntity::EHost::EHypervisor::EVsphere5Hypervisor;
 use base "EEntity::EHost::EHypervisor";
 
-use EFactory;
+use EEntity;
 
 use strict;
 use warnings;

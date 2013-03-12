@@ -43,7 +43,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
 use Entity::Systemimage;
-use EFactory;
+use EEntity;
 
 my $log = get_logger("");
 my $errmsg;

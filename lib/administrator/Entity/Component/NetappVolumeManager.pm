@@ -202,8 +202,8 @@ sub synchronize {
     my $self = shift;
     my %args = @_;
     my $aggregates = {};
-    my $manager_ip = $self->service_provider->getMasterNodeIp;
-    my $netapp_id = $self->getAttr(name => "service_provider_id");
+    my $manager_ip = $self->getMasterNode->adminIp;
+    my $netapp_id = $self->service_provider->id;
 
     foreach my $aggregate ($self->aggregates) {
         my $aggr;

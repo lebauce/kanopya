@@ -1,5 +1,3 @@
-# Local.pm - EContext::Local for local execution using system buitin function
-
 #    Copyright © 2011-2012 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -15,28 +13,26 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
+=pod
 
-=head1 NAME
+=begin classdoc
 
-EContext::Local  
+The local econtext offers execute method via system builtin function.
 
-=head1 SYNOPSIS
+@since    2010-Nov-23
+@instance hash
+@self     $self
 
-
-
-=head1 DESCRIPTION
-
-EContext::Local offers execute method via system builtin function
-
-=head1 METHODS
+=end classdoc
 
 =cut
+
 package EContext::Local;
 use base "EContext";
 
 use strict;
 use warnings;
+
 use Kanopya::Exceptions;
 use General;
 
@@ -44,20 +40,22 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("command");
 my $errmsg;
 
-our $VERSION = "1.00";
-
-=head2 $localcontext
-
-$localcontext use to make this class a singleton
-
-=cut
 
 my $localcontext;
 
-=head2 new
 
+=pod
 
-    
+=begin classdoc
+
+@constructor
+
+Return the local econtext singleton if defined, instanciate it instead.
+
+@return a class instance
+
+=end classdoc
+
 =cut
 
 sub new {
@@ -67,30 +65,35 @@ sub new {
     if(defined $localcontext) {
         return $localcontext;
     }
+    my $self = {};
 
-    my $self = $class->SUPER::new(%args);
     bless $self, $class;
     $localcontext = $self;
 
     return $self;
 }
 
-=head2 execute
 
-execute ( command )
-    desc: execute a command in shell
-    args:
-        command : string: command to execute
-    return:
-        result ref hash containing resulting stdout and stderr  
-    
-    WARNING: in your command, don't use stderr redirection ( 2> )
-    
+=cut
+
+=pod
+
+=begin classdoc
+
+Use the builtin function to execute local commands.
+NOTE: don't use stderr redirection ( 2> ) in your command.
+
+@param command the command to execute
+
+@return the command result
+
+=end classdoc
+
 =cut
 
 sub execute {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['command']);
+    General::checkParams(args => \%args, required => [ 'command' ]);
     
     # command must no contain stderr redirection !
     if($args{command} =~ m/2>/) {
@@ -117,21 +120,27 @@ sub execute {
     return $result;    
 }
 
-=head2 send
 
-send(src => $srcfullpath, dest => $destfullpath)
-    desc: send a file to a specific directory
-    args:
-        src : string: complete path to the file to send
-        dest : string: complete path to the destination directory/file
-    return:
-        result ref hash containing resulting stdout and stderr  
-    
+=cut
+
+=pod
+
+=begin classdoc
+
+Use the cp command to copu the file.
+
+@param src the source file to copy
+@param dest the destionation to copy file
+
+@return the command result
+
+=end classdoc
+
 =cut
 
 sub send {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['src','dest']);
+    General::checkParams(args => \%args, required => [ 'src', 'dest' ]);
     
     if(not -e $args{src}) {
         $errmsg = "EContext::Local->execute src file $args{src} no found";
@@ -155,10 +164,17 @@ sub send {
     return $result;
 }
 
-=head2 DESTROY
 
-    destructor : remove stored instance    
-    
+=cut
+
+=pod
+
+=begin classdoc
+
+Unvalidate the local econtext singleton.
+
+=end classdoc
+
 =cut
 
 sub DESTROY {
@@ -166,12 +182,3 @@ sub DESTROY {
 }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut

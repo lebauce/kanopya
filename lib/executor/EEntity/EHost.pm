@@ -36,7 +36,6 @@ use strict;
 use warnings;
 
 use Entity;
-use EFactory;
 
 use String::Random;
 use Template;
@@ -50,7 +49,7 @@ my $errmsg;
 sub getHostManager {
     my $self = shift;
 
-    return EFactory::newEEntity(data => $self->SUPER::getHostManager);
+    return EEntity->new(data => $self->SUPER::getHostManager);
 }
 
 sub start {
@@ -65,7 +64,7 @@ sub start {
 
     # Sommetimes a host can be promoted to another object type
     # So reload the object to be sure to have the good type.
-    return EFactory::newEEntity(data => Entity->get(id => $self->id));
+    return EEntity->new(data => Entity->get(id => $self->id));
 }
 
 sub halt {
@@ -94,13 +93,6 @@ sub checkUp {
     my ($self, %args) = @_;
 
     return $self->getHostManager->checkUp(host => $self);
-}
-
-sub getEContext {
-    my $self = shift;
-
-    return EFactory::newEContext(ip_source      => $self->{_executor}->getMasterNodeIp,
-                                 ip_destination => $self->adminIp);
 }
 
 sub timeOuted {
@@ -155,6 +147,12 @@ sub getTotalCpu {
     my $self = shift;
 
     return $self->getSystemComponent->getTotalCpu(host => $self);
+}
+
+sub getEContext {
+    my $self = shift;
+
+    return $self->SUPER::getEContext(dst_host => $self);
 }
 
 1;

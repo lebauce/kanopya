@@ -72,7 +72,7 @@ sub execute{
 
     # set host active in db
     $self->{context}->{host_to_deactivate}->setAttr(name => 'active', value => 0);
-    $self->{context}->{host_to_deactivate}->_getEntity->save();
+    $self->{context}->{host_to_deactivate}->_entity->save();
     $log->info("Host <" . $self->{context}->{host_to_deactivate}->id . "> deactivated");
 }
 

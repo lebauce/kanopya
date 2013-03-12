@@ -54,9 +54,9 @@ sub mount {
                          required => [ 'econtext' ],
                          optional => { 'mountpoint' => $self->getMountPoint } );
 
-    my $target = $self->_getEntity->getAttr(name => 'container_access_export');
-    #my $ip     = $self->_getEntity->getAttr(name => 'container_access_ip');
-    #my $port   = $self->_getEntity->getAttr(name => 'container_access_port');
+    my $target = $self->_entity->getAttr(name => 'container_access_export');
+    #my $ip     = $self->_entity->getAttr(name => 'container_access_ip');
+    #my $port   = $self->_entity->getAttr(name => 'container_access_port');
 
     my $mkdir_cmd = "mkdir -p $args{mountpoint}; chmod 777 $args{mountpoint}";
     $args{econtext}->execute(command => $mkdir_cmd);
@@ -95,7 +95,7 @@ sub connect {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    #$self->_getEntity->setAttr(name  => 'device_connected',
+    #$self->_entity->setAttr(name  => 'device_connected',
     #                           value => '');
     return undef;
 }
@@ -112,7 +112,7 @@ sub disconnect {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    #$self->_getEntity->setAttr(name  => 'device_connected',
+    #$self->_entity->setAttr(name  => 'device_connected',
     #                           value => '');
     return undef;
 }

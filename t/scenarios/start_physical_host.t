@@ -40,7 +40,7 @@ use Kanopya::Tools::Register;
 use Kanopya::Tools::Retrieve;
 use Kanopya::Tools::Create;
 
-my $testing = 0;
+my $testing = 1;
 my $NB_HYPERVISORS = 1;
 
 main();

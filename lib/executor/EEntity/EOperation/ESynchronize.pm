@@ -34,7 +34,7 @@ use base "EEntity::EOperation";
 use strict;
 use warnings;
 
-use EFactory;
+use EEntity;
 use Kanopya::Exceptions;
 
 use Entity::ServiceProvider;

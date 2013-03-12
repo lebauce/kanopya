@@ -204,6 +204,21 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 component_nodes
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ComponentNode>
+
+=cut
+
+__PACKAGE__->has_many(
+  "component_nodes",
+  "AdministratorDB::Schema::Result::ComponentNode",
+  { "foreign.component_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 component_template
 
 Type: belongs_to
@@ -859,9 +874,8 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-02-21 17:12:33
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:bOY2JM/wxXUncEHOmVmocg
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-02-28 14:52:06
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:2KnacZkgc6ED5TxPt0Ys/Q
 
 __PACKAGE__->belongs_to(
   "parent",

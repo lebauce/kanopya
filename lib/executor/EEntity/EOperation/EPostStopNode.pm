@@ -26,7 +26,7 @@ use Data::Dumper;
 use Kanopya::Exceptions;
 use Entity::ServiceProvider::Cluster;
 use Entity::Systemimage;
-use EFactory;
+use EEntity;
 use String::Random;
 
 my $log = get_logger("");
@@ -76,7 +76,7 @@ sub prerequisites {
             my $component_name = $component->component_type->component_name;
             $log->debug("Browse component: " . $component_name);
     
-            my $ecomponent = EFactory::newEEntity(data => $component);
+            my $ecomponent = EEntity->new(data => $component);
     
             if ($ecomponent->isUp(host => $self->{context}->{host}, cluster => $self->{context}->{cluster})) {
                 $log->debug("Component <$component_name> on host <$host_id> from cluster <$cluster_id> up.");
@@ -102,11 +102,11 @@ sub prepare {
     $self->SUPER::prepare();
 
     # Instanciate bootserver Cluster
-    my $bootserver = Entity::ServiceProvider->get(id => $self->{config}->{cluster}->{bootserver});
+    my $bootserver = Entity::ServiceProvider::Cluster->getKanopyaCluster;
 
     # Instanciate dhcpd component
     $self->{context}->{component_dhcpd}
-        = EFactory::newEEntity(data => $bootserver->getComponent(name => "Dhcpd", version => "3"));
+        = EEntity->new(data => $bootserver->getComponent(name => "Dhcpd", version => "3"));
 }
 
 sub execute {
@@ -162,7 +162,7 @@ sub execute {
         amount   => $self->{context}->{host}->host_core,
     );
 
-    $self->{context}->{host}->stopToBeNode();
+    $self->{context}->{cluster}->unregisterNode(node => $self->{context}->{host}->node);
 
     $log->info('Processing cluster components configuration for this node');
     $self->{context}->{cluster}->postStopNode(host => $self->{context}->{host});
@@ -172,7 +172,7 @@ sub execute {
         $log->info("cluster image persistence is not set, deleting $systemimage_name");
         eval {
             my $entity = Entity::Systemimage->find(hash => { systemimage_name => $systemimage_name });
-            $self->{context}->{systemimage} = EFactory::newEEntity(data => $entity);   
+            $self->{context}->{systemimage} = EEntity->new(data => $entity);   
         };
         if ($@) {
             $log->debug("Could not find systemimage with name <$systemimage_name> for removal.");
@@ -194,73 +194,6 @@ sub finish {
     if ($nbnodes == 0) {
         $self->{context}->{cluster}->setState(state => "down");
     }
-
-    # If a stoping cluster has one node left, this is must be the master node
-    if ($cluster_state[0] eq 'stopping' and $nbnodes == 1) {
-        $self->{context}->{cluster}->removeNode(
-            host_id => $self->{context}->{cluster}->getMasterNode->id
-        );
-    }
 }
-
-
-=head1 DIAGNOSTICS
-
-Exceptions are thrown when mandatory arguments are missing.
-Exception : Kanopya::Exception::Internal::IncorrectParam
-
-=head1 CONFIGURATION AND ENVIRONMENT
-
-This module need to be used into Kanopya environment. (see Kanopya presentation)
-This module is a part of Administrator package so refers to Administrator configuration
-
-=head1 DEPENDENCIES
-
-This module depends of 
-
-=over
-
-=item KanopyaException module used to throw exceptions managed by handling programs
-
-=item Entity::Component module which is its mother class implementing global component method
-
-=back
-
-=head1 INCOMPATIBILITIES
-
-None
-
-=head1 BUGS AND LIMITATIONS
-
-There are no known bugs in this module.
-
-Please report problems to <Maintainer name(s)> (<contact address>)
-
-Patches are welcome.
-
-=head1 AUTHOR
-
-<HederaTech Dev Team> (<dev@hederatech.com>)
-
-=head1 LICENCE AND COPYRIGHT
-
-Kanopya Copyright (C) 2009-2012 Hedera Technology.
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 3, or (at your option)
-any later version.
-
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; see the file COPYING.  If not, write to the
-Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-Boston, MA 02110-1301 USA.
-
-=cut
 
 1;

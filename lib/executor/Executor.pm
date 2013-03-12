@@ -48,8 +48,8 @@ use General;
 use BaseDB;
 use Kanopya::Config;
 use Kanopya::Exceptions;
-use EFactory;
 use Entity::Operation;
+use EEntity::EOperation;
 use Message;
 
 use XML::Simple;
@@ -124,7 +124,7 @@ sub oneRun {
     if ($operation){
         $log->info("\n\n");
 
-        $workflow = EFactory::newEEntity(data => $operation->getWorkflow);
+        $workflow = EEntity->new(data => $operation->getWorkflow);
 
         # init log appender for this workflow if this one is not the same as the last executed
         if($workflow->id != $self->{last_workflow_id}) {
@@ -134,8 +134,7 @@ sub oneRun {
                 $log->eradicate_appender('WORKFLOW');
             }
             my $layout = Log::Log4perl::Layout::PatternLayout->new("%d %c %p> %M - %m%n");
-            my $file_appender = Log::Log4perl::Appender->new(
-                                    "Log::Dispatch::File",
+            my $file_appender = Log::Log4perl::Appender->new("Log::Dispatch::File",
                                     name      => "WORKFLOW",
                                     filename  => $self->{config}->{logdir} . "workflows/" . $workflow->id . ".log"
                                 );
@@ -147,7 +146,7 @@ sub oneRun {
 
         # Initialize EOperation and context
         eval {
-            $op = EFactory::newEOperation(op => $operation);
+            $op = EEntity::EOperation->new(op => $operation);
             $logprefix = "[" . $workflow->workflow_name . " workflow <" . $workflow->id .
                          "> - Operation " . $op->type  . " <" . $op->id . ">]";
 

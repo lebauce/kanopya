@@ -1,17 +1,19 @@
 //require('kanopyaformwizard.js');
+require('common/general.js');
 
-function network_addbutton_action(e) {
+function network_addbutton_action(e, grid) {
     (new KanopyaFormWizard({
         title      : 'Create a Network',
         type       : 'network',
         id         : (!(e instanceof Object)) ? e : undefined,
         displayed  : [ 'network_name', 'network_addr', 'network_netmask', 'network_gateway' ],
-        relations  : { 'poolips' : [ 'poolip_name', 'poolip_first_addr', 'poolip_size' ] }
+        relations  : { 'poolips' : [ 'poolip_name', 'poolip_first_addr', 'poolip_size' ] },
+        callback   : function () { handleCreate(grid); }
     })).start();
 }
 
 function networks_list(cid) {
-    create_grid({
+    var grid = create_grid({
         url                     : '/api/network',
         content_container_id    : cid,
         grid_id                 : 'networks_list',
@@ -29,5 +31,7 @@ function networks_list(cid) {
     });
     var addButton   = $('<a>', { text : 'Add a Network' }).appendTo('#' + cid)
                         .button({ icons : { primary : 'ui-icon-plusthick' } });
-    $(addButton).bind('click', network_addbutton_action);
+    $(addButton).bind('click', function (e) {
+        network_addbutton_action(e, grid);
+    });
 }

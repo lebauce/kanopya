@@ -25,7 +25,7 @@ my $errmsg;
 sub preStartNode {
     my $self = shift;
     my %args = @_;
-    my $pleskpanel = $self->_getEntity();
+    my $pleskpanel = $self->_entity;
     my $conf = $pleskpanel->getConf();
 
     $args{host}->node->setAttr(

@@ -22,7 +22,7 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use EFactory;
+use EEntity;
 use Entity::ServiceProvider;
 use Entity::ServiceProvider::Cluster;
 use Entity::Host;
@@ -116,8 +116,8 @@ sub finish {
 
     # Add another node if required
     if (scalar(@nodes) < $self->{context}->{cluster}->cluster_min_node) {
-        # _getEntity is important here, cause we want to enqueue AddNode operation.
-        $self->{context}->{cluster}->_getEntity->addNode();
+        # _entity is important here, cause we want to enqueue AddNode operation.
+        $self->{context}->{cluster}->_entity->addNode();
     }
     else {
         my $nodes_states = 1;
@@ -147,7 +147,7 @@ sub _cancel {
                $self->{context}->{host} . ">");
 
     eval {
-        $self->{context}->{host}->stopToBeNode();
+        $self->{context}->{cluster}->unregisterNode(node => $self->{context}->{host}->node);
     };
     if ($@) {
         $log->debug($@);

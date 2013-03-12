@@ -46,7 +46,7 @@ use Kanopya::Exceptions;
 use Entity::Masterimage;
 use Entity::ServiceProvider::Cluster;
 use Entity::Gp;
-use EFactory;
+use EEntity;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");

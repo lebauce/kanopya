@@ -21,7 +21,7 @@ use strict;
 use warnings;
 
 use General;
-use EFactory;
+use EEntity;
 use Entity::ContainerAccess::IscsiContainerAccess;
 use Entity::Component::Iscsi::IscsiPortal;
 
@@ -56,7 +56,7 @@ sub createExport {
         $params->{container_id} = $args{container}->id;
     }
 
-    return EFactory::newEEntity(data => Entity::ContainerAccess::IscsiContainerAccess->new(%$params));
+    return EEntity->new(data => Entity::ContainerAccess::IscsiContainerAccess->new(%$params));
 }
 
 sub removeExport {
@@ -79,7 +79,7 @@ sub getLunId {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'lun', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'lun' ]);
 
     return $args{lun}->lun_name;
 }

@@ -1,16 +1,18 @@
 //require('kanopyaformwizard.js');
+require('common/general.js');
 
-function netconf_addbutton_action(e) {
+function netconf_addbutton_action(e, grid) {
     (new KanopyaFormWizard({
         title      : 'Create a Network Configuration',
         type       : 'netconf',
         id         : (!(e instanceof Object)) ? e : undefined,
-        displayed  : [ 'netconf_name', 'netconf_vlans', 'netconf_poolips', 'netconf_role_id' ]
+        displayed  : [ 'netconf_name', 'netconf_vlans', 'netconf_poolips', 'netconf_role_id' ],
+        callback   : function () { handleCreate(grid); }
     })).start();
 }
 
 function netconfs_list(cid) {
-    create_grid({
+    var grid = create_grid({
         url                     : '/api/netconf',
         content_container_id    : cid,
         grid_id                 : 'netconfs_list',
@@ -25,5 +27,7 @@ function netconfs_list(cid) {
     });
     var addButton   = $('<a>', { text : 'Add a Network Configuration' }).appendTo('#' + cid)
                         .button({ icons : { primary : 'ui-icon-plusthick' } });
-    $(addButton).bind('click', netconf_addbutton_action);
+    $(addButton).bind('click', function (e) {
+        netconf_addbutton_action(e, grid);
+    });
 }

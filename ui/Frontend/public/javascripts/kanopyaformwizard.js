@@ -34,13 +34,6 @@ var KanopyaFormWizard = (function() {
         this.steps = {};
         this.load();
 
-        // Add raw steps divs if defined
-        for (var name in this.rawsteps) {
-            // Ignore all the raw step inputs
-            this.rawsteps[name].find(":input").addClass("wizard-ignore");
-            this.addStep(name, this.rawsteps[name]);
-        }
-
         // We add buttons at end of the form
         var buttons = this.actionsCallback();
         if (buttons) {
@@ -171,6 +164,8 @@ var KanopyaFormWizard = (function() {
                 add_button.bind('click', fixed_params, function(event) {
                     _this.buildFromAttrDef(event.data.attributes, event.data.displayed,
                                            event.data.values, event.data.relations, event.data.listing);
+                    _this.prettifyInputs();
+                    _this.resizeDialog();
                 });
                 add_button.button({ icons : { primary : 'ui-icon-plusthick' } });
                 add_button.val('Add');
@@ -186,6 +181,13 @@ var KanopyaFormWizard = (function() {
             }
         }
 
+        // Add raw steps divs if defined
+        for (var name in this.rawsteps) {
+            // Ignore all the raw step inputs
+            this.rawsteps[name].find(":input").addClass("wizard-ignore");
+            this.addStep(name, this.rawsteps[name]);
+        }
+
         // Insert the step divs to the form content
         for (var step in this.steps) {
             $(this.steps[step].div).attr('id', this.name + '_step_' + step);
@@ -193,24 +195,19 @@ var KanopyaFormWizard = (function() {
             var div = $(this.form).find('#' + this.name + '_step_' + step).get(0);
             if (div === undefined) {
                 $(this.steps[step].div).appendTo(this.form);
+
             } else {
                 var old = $(div).replaceWith($(this.steps[step].div));
                 $(old).find('tr').remove();
                 $(old).remove();
             }
+            delete this.steps[step].div;
         }
-        this.steps = {};
+
+        this.prettifyInputs();
 
         // Update the step to hide non visible steps
         $(this.form).formwizard("update_steps");
-
-        // Use jQuery.mutiselect (after DOM loaded)
-        this.content.find('select[multiple="multiple"]').multiselect({selectedList: 4});
-        this.content.find('select[multiple!="multiple"]').not('.unit').multiselect({
-            multiple: false,
-            header: false,
-            selectedList: 1
-        });
 
         this.resizeDialog();
     }
@@ -247,10 +244,17 @@ var KanopyaFormWizard = (function() {
                 var value = this.attributedefs[name].value || values[name] || undefined;
 
                 // Get options for select inputs
-                if (!this.attributedefs[name].hidden && this.attributedefs[name].type === 'relation' &&
+                if (this.attributedefs[name].type === 'relation' &&
                     (this.attributedefs[name].options === undefined || this.attributedefs[name].reload_options == true) &&
                     (this.attributedefs[name].relation === 'single' || this.attributedefs[name].relation === 'multi')) {
-                    this.attributedefs[name].options = this.getOptions(name, value, relations);
+
+                    // For hidden fields, do not get possible values, add the value as option only
+                    if (this.attributedefs[name].hidden && value !== undefined) {
+                        this.attributedefs[name].options = [ value ];
+
+                    } else {
+                        this.attributedefs[name].options = this.getOptions(name, value, relations);
+                    }
                 }
 
                 // Finally create the input field with label
@@ -288,6 +292,7 @@ var KanopyaFormWizard = (function() {
             options = ajax('GET', '/api/' + resource);
         }
 
+        // TODO: check if we can remove this block as the case is handled in buildFromAttrDef
         // If there is no options but a fixed value,
         // add the value to options.
         if (options === undefined && value !== undefined) {
@@ -357,7 +362,7 @@ var KanopyaFormWizard = (function() {
                 }
 
                 // Set current option to value if defined
-                if (optionvalue === value || ($.isArray(value) && $.inArray(optionvalue, value) >= 0)) {
+                if (optionvalue == value || ($.isArray(value) && $.inArray(optionvalue, value) >= 0)) {
                     $(option).attr('selected', 'selected');
                 }
             }
@@ -428,7 +433,8 @@ var KanopyaFormWizard = (function() {
             }
         }
 
-        /* Set the field as hidden if defined.
+        /*
+         * Set the field as hidden if defined.
          * Be carefull to not move this block before the previous
          * tests on the input type, has we change the type to hidden.
          */
@@ -682,11 +688,11 @@ var KanopyaFormWizard = (function() {
             !(this.attributedefs[name].is_primary == true && this.attributedefs[name].belongs_to != undefined)) {
             return true;
         }
-        if (this.attributedefs[name].is_editable != true && value !== undefined){
+        if (this.attributedefs[name].is_editable != true && value !== undefined &&
+            (this.attributedefs[name].belongs_to === undefined || this.attributedefs[name].is_mandatory == true)) {
             return true;
         }
-        if (this.attributedefs[name].belongs_to &&
-            this.attributedefs[this.attributedefs[name].belongs_to].is_editable != true) {
+        if (this.attributedefs[name].belongs_to && this.attributedefs[this.attributedefs[name].belongs_to].is_editable != true) {
             return true;
         }
         return false;
@@ -730,6 +736,17 @@ var KanopyaFormWizard = (function() {
     KanopyaFormWizard.prototype.serialize = function(arr) {
         // Building a hash representing the object with its relations
         var data = {};
+
+        // Prepare an empty array for relations, because if all entries
+        // for this relation has been removed, we need to send an empty list
+        // to known we need to remove all entries for this relation form db.
+        for (var index in this.displayed) {
+            var attr = this.attributedefs[this.displayed[index]];
+            if (attr.type === 'relation' && attr.relation != 'single') {
+                data[this.displayed[index]] = [];
+            }
+        }
+
         var rel_attr_names = {};
         for (var index in arr) {
             var attr = arr[index];
@@ -854,10 +871,14 @@ var KanopyaFormWizard = (function() {
         }
         var table = tag || step;
 
-        // If the div for the step does not exists, create it
-        if (this.steps[step] === undefined) {
-            this.addStep(step, $("<div>"));
+        // Workaround to get the currently in dom table when 'Add' button of listings clicked
+        if (tag && this.steps[step] != undefined && this.steps[step].tables[tag] != undefined) {
+            return this.steps[step].tables[tag];
+        }
 
+        // If the div for the step does not exists, create it
+        if (this.steps[step] === undefined || this.steps[step].div === undefined) {
+            this.addStep(step, $("<div>"));
         }
 
         // If the table does not exists, create it
@@ -1042,7 +1063,10 @@ var KanopyaFormWizard = (function() {
         // a possibly defined td for the error label
         var errortd = this.form.find('td.error_' + element.attr('name')).get(0);
         if (errortd) {
-            error.appendTo(errortd);
+            // If an error already exists for this column, do not add it.
+            if ($(errortd).find('label').length <= 0) {
+                error.appendTo(errortd);
+            }
         } else {
             error.insertBefore(element);
         }
@@ -1177,6 +1201,16 @@ var KanopyaFormWizard = (function() {
             $(this.form).formwizard("destroy");
             $(this.content).remove();
         }, this), 10);
+    }
+
+    KanopyaFormWizard.prototype.prettifyInputs = function() {
+        // Use jQuery.mutiselect (after DOM loaded)
+        this.content.find('select[multiple="multiple"]').not('.multiselect').addClass('multiselect').multiselect({selectedList: 4});
+        this.content.find('select[multiple!="multiple"]').not('.multiselect').not('.unit').addClass('multiselect').multiselect({
+            multiple: false,
+            header: false,
+            selectedList: 1
+        });
     }
 
     KanopyaFormWizard.prototype.resizeDialog = function() {

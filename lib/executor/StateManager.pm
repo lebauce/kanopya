@@ -27,7 +27,7 @@ use Entity::ServiceProvider::Cluster;
 use BaseDB;
 use Message;
 use Alert;
-use EFactory;
+use EEntity;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -106,7 +106,7 @@ sub oneRun {
         $log->info('---------------------------------------------');
         $log->info('***** Check ['.$cluster->cluster_name.'] service availability on ' . scalar(@nodes) . ' nodes *****');
         foreach my $node (@nodes) {
-            my $ehost = EFactory::newEEntity(data => $node);
+            my $ehost = EEntity->new(data => $node);
 
             $cluster->beginTransaction;
 
@@ -164,7 +164,7 @@ sub oneRun {
             my $node_available = 1;
             my @components = $cluster->getComponents(category => "all");
             foreach my $component (@components) {
-                my $ecomponent = EFactory::newEEntity(data => $component);
+                my $ecomponent = EEntity->new(data => $component);
                 my $component_name = $component->component_type->component_name;
 
                 $log->debug("Check component availability : " . $component_name);

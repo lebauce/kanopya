@@ -40,7 +40,7 @@ use warnings;
 use Kanopya::Exceptions;
 use Entity::ServiceProvider;
 use Entity::Container;
-use EFactory;
+use EEntity;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;

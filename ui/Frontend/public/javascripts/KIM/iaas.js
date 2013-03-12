@@ -211,10 +211,18 @@ function load_iaas_content (container_id) {
     for (var i in iaases) {
         for (var component in iaases[i].components) {
             var component = iaases[i].components[component];
-            if (component.component_type.component_category === 'HostManager' &&
-                component.host_type === 'Virtual Machine') {
-                iaases[i].cloudmanager = component;
-                iaas.push(iaases[i]);
+            if (component.host_type === undefined) {
+                continue;
+            } 
+            if (component.host_type === 'Virtual Machine') {
+                for (var index in component.component_type.component_type_categories) {
+                    var category = component.component_type.component_type_categories[index];
+                    if (category.component_category.category_name === 'HostManager') {
+                        iaases[i].cloudmanager = component;
+                        iaas.push(iaases[i]);
+                        break;
+                    }
+                } 
             }
         }
     }

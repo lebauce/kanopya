@@ -314,11 +314,10 @@ sub updateNodes {
     # Add new nodes
     my $added_node_count = 0;
     for my $node_name (keys %nodes_to_add) {
-        Node->new(
-            node_hostname       => $node_name,
-            monitoring_state    => 'down',
-            service_provider_id => $self->id,
-        );
+        $self->registerNode(hostname         => $node_name,
+                            number           => $added_node_count,
+                            state            => 'in',
+                            monitoring_state => 'down');
         $added_node_count++;
     }
 

@@ -147,7 +147,7 @@ sub getPuppetDefinition {
     my $sql        = $self->mysql5;
     my $keystone   = $self->keystone;
     my $quantum    = ($self->quantums)[0];
-    my $glance     = join(",", map { $_->service_provider->getMasterNode->fqdn . ":9292" } $self->nova_controller->glances);
+    my $glance     = join(",", map { $_->getMasterNode->fqdn . ":9292" } $self->nova_controller->glances);
 
     if (not ($sql and $keystone and $quantum)) {
         return;
@@ -158,13 +158,13 @@ sub getPuppetDefinition {
                      "\t\$kanopya_openstack_repository = 1\n" .
                      "}\n" .
                      "class { 'kanopya::novacontroller':\n" .
-                     "\tdbserver => '" . $sql->service_provider->getMasterNode->fqdn . "',\n" .
-                     "\tamqpserver => '" . $self->amqp->service_provider->getMasterNode->fqdn . "',\n" .
+                     "\tdbserver => '" . $sql->getMasterNode->fqdn . "',\n" .
+                     "\tamqpserver => '" . $self->amqp->getMasterNode->fqdn . "',\n" .
                      "\tpassword => 'nova',\n" .
-                     "\tkeystone => '" . $keystone->service_provider->getMasterNode->fqdn . "',\n" .
+                     "\tkeystone => '" . $keystone->getMasterNode->fqdn . "',\n" .
                      "\temail => '" . $self->service_provider->user->user_email . "',\n" .
                      "\tglance => '" . $glance . "',\n" .
-                     "\tquantum => '" . $quantum->service_provider->getMasterNode->fqdn . "',\n" .
+                     "\tquantum => '" . $quantum->getMasterNode->fqdn . "',\n" .
                      "}\n";
 
     return $definition;
@@ -230,7 +230,7 @@ sub activeHypervisors {
 
 Promote a host to the Entity::Host::Hypervisor::OpenstackHypervisor- class
 
-àreturn OpenstackHypervisor instance of OpenstackHypervisor
+@return OpenstackHypervisor instance of OpenstackHypervisor
 
 =end classdoc
 
@@ -266,7 +266,7 @@ sub removeHypervisor {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    Entity::Host->demote(demoted => $args{host}->_getEntity);
+    Entity::Host->demote(demoted => $args{host}->_entity);
 }
 
 =pod

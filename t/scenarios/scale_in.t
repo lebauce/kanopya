@@ -289,7 +289,7 @@ sub _check_vm_ram {
         throw Kanopya::Exception(error => 'vm ram value in DB is wrong');
     }
 
-    my $evm = EFactory::newEEntity(data => $vm);
+    my $evm = EEntity->new(data => $vm);
 
     if (!($evm->getTotalMemory == $ram)) {
         throw Kanopya::Exception(error => 'vm real ram value is wrong');
@@ -306,7 +306,7 @@ sub _check_vm_core {
         throw Kanopya::Exception(error => 'vm core value in DB is wrong');
     }
 
-    my $evm = EFactory::newEEntity(data => $vm);
+    my $evm = EEntity->new(data => $vm);
     my $real_core =  $evm->getTotalCpu;
     if (!( $real_core == $core)) {
         throw Kanopya::Exception(error => $vm->node->node_hostname.' real core value is '.$real_core.' expected value: '.$core);

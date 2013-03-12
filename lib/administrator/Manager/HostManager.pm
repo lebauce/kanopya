@@ -71,12 +71,10 @@ sub addHost {
     General::checkParams(args     => \%args,
                          required => [ "host_core", "host_serial_number", "host_ram" ]);
 
-    my $host_manager_id = $self->getAttr(name => 'entity_id');
-
     # Instanciate new Host Entity
     my $host;
     eval {
-        $host = Entity::Host->new(host_manager_id => $host_manager_id, %args);
+        $host = Entity::Host->new(host_manager_id => $self->id, %args);
     };
     if($@) {
         my $errmsg = "Wrong host attributes detected\n" . $@;

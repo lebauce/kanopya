@@ -44,7 +44,7 @@ use Data::Dumper;
 use Kanopya::Exceptions;
 use Entity::ServiceProvider::Cluster;
 use Entity::Host;
-use EFactory;
+use EEntity;
 use CapacityManagement;
 
 my $log = get_logger("");

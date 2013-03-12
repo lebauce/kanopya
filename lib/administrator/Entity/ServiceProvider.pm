@@ -55,6 +55,9 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
+        registerNode => {
+            description => 'add a node to this service provider.',
+        },
         addComponent => {
             description => 'add a component to this service provider.',
         },
@@ -89,7 +92,6 @@ sub methods {
 
 @constructor
 
-
 Override the constructor to set the proper service provider type.
 
 @return the service provider instance
@@ -109,6 +111,67 @@ sub new {
     }
 
     return $class->SUPER::new(%args);
+}
+
+
+=pod
+
+=begin classdoc
+
+Register a new node in the servie provider.
+Also reconfigure the components about the node registration.
+
+@return the registered node
+
+=end classdoc
+
+=cut
+
+sub registerNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'hostname', 'number' ],
+                         optional => { 'host'             => undef,
+                                       'systemimage'      => undef,
+                                       'state'            => undef,
+                                       'monitoring_state' => 'enabled' });
+
+    my $node = Node->new(
+                   service_provider_id => $self->id,
+                   node_hostname       => $args{hostname},
+                   host_id             => $args{host} ? $args{host}->id : undef,
+                   node_state          => $args{state} . ':' . time(),
+                   monitoring_state    => $args{monitoring_state},
+                   node_number         => $args{number},
+                   systemimage_id      => $args{systemimage} ? $args{systemimage}->id : undef,
+               );
+
+    # Link the service provider components to the new node
+    # TODO: Handle heterogeneous component configuration
+    for my $component ($self->components) {
+        $component->registerNode(node => $node, master_node => ($node->node_number == 1) ? 1 : 0);
+    }
+    return $node;
+}
+
+sub unregisterNode {
+    my $self = shift;
+
+    General::checkParams(args => \%args, required => [ 'node' ]);
+
+    if (defined $args{node}->host) {
+        # Free assigned ips
+        my @ifaces = $args{node}->host->getIfaces;
+        for my $iface (@ifaces) {
+            my @ips = $iface->ips;
+            for my $ip (@ips) {
+                $ip->delete();
+            }
+        }
+        $args{node}->host->setState(state => 'down');
+    }
+    $args{node}->remove();
 }
 
 
@@ -243,7 +306,7 @@ Add a manager to a service provider
 sub addManager {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'manager_id', "manager_type" ]);
+    General::checkParams(args => \%args, required => [ 'manager_id', 'manager_type' ]);
 
     my $category = ComponentCategory::ManagerCategory->find(hash => {
                        category_name => $args{manager_type}
@@ -431,46 +494,6 @@ sub getLimit {
     } 
 }
 
-=cut
-
-=pod
-
-=begin classdoc
-
-Link a existing component with the service provider. Also
-check compatibility with the component type and the service provider type.
-
-@param component the component to link with the service provider
-
-@return the linked component
-
-=end classdoc
-
-=cut
-
-sub addComponent {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'component' ]);
-
-    # Check if the type of the given component is installable on this type
-    # of service provider.
-    my $component_type = $args{component}->component_type;
-    my @service_provider_types = $component_type->service_provider_types;
-    if (scalar (grep { $_->id == $self->service_provider_type_id } @service_provider_types) <= 0) {
-        throw Kanopya::Exception::Internal(
-                  error => "Component type <" . $component_type->component_name .
-                           "> can not be installed on a service provider of type <" .
-                           $self->service_provider_type->service_provider_name . ">."
-              );
-    }
-
-    $args{component}->setAttr(name  => 'service_provider_id',
-                              value => $self->id,
-                              save  => 1);
-
-    return $args{component};
-}
 
 =pod
 
@@ -487,35 +510,66 @@ Create a new componant and link it to the cluster
 
 =cut
 
-sub addComponentFromType {
+sub addComponent {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
                          required => [ 'component_type_id' ],
-                         optional => { 'component_configuration' => undef });
+                         optional => { 'component_configuration' => undef,
+                                       'component_template_id'   => undef });
 
-    my $comp_type = ClassType::ComponentType->get(id => $args{component_type_id});
+    # Check if the type of the given component is installable on this type
+    # of service provider.
+    my $component_type = ClassType::ComponentType->get(id => $args{component_type_id});
 
-    # If the component is already installed, just return it
-    my @components = Entity::Component->search(hash => { service_provider_id => $self->id,
-                                                         component_type_id   => $args{component_type_id} });
-    if (scalar @components) {
-        return $components[0];
+    # For instance, allow the addiction of component on generic service providers
+    if (defined $self->service_provider_type) {
+        my @service_provider_types = $component_type->service_provider_types;
+        if (scalar (grep { $_->id == $self->service_provider_type_id } @service_provider_types) <= 0) {
+            throw Kanopya::Exception::Internal(
+                      error => "Component type <" . $component_type->component_name .
+                               "> can not be installed on a service provider of type <" .
+                               $self->service_provider_type->service_provider_name . ">."
+                  );
+        }
     }
 
-    my $comp_class = $comp_type->class_type;
+    # If the component is already installed, just return it
+    my $installed;
+    eval {
+        $installed = $self->findRelated(filters => [ 'components' ],
+                                        hash    => { component_type_id   => $args{component_type_id} });
+    };
+    if (not $@) {
+        return $installed;
+    }
+
+    my $comp_class = $component_type->class_type;
     my $location = General::getLocFromClass(entityclass => $comp_class);
     require $location;
 
     # set component's configuration or use default
     my $component;
     if (defined $args{component_configuration}) {
-        $component = $comp_class->new(%{$args{component_configuration}});
+        $component = $comp_class->new(service_provider_id   => $self->id,
+                                      component_template_id => $args{component_template_id},
+                                      %{ $args{component_configuration} });
     }
     else {
-        $component = $comp_class->new();
+        $component = $comp_class->new(service_provider_id   => $self->id,
+                                      component_template_id => $args{component_template_id});
     }
-    return $self->addComponent(component => $component);
+
+    # For instance install the component on all node of the service provider,
+    # use the first started node as master node for the component.
+    for my $node ($self->nodes) {
+        $component->registerNode(node => $node, master_node => ($node->node_number == 1));
+    }
+
+    # Insert default configuration for tables linked to component (when exists)
+    $component->insertDefaultExtendedConfiguration();
+
+    return $component;
 }
 
 =head2 getComponents

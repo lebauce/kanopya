@@ -32,9 +32,9 @@ sub getAttrDef { return ATTR_DEF; }
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    my $keystone = $self->nova_controller->keystone->service_provider->getMasterNode->fqdn;
-    my $amqp = $self->nova_controller->amqp->service_provider->getMasterNode->fqdn;
-    my $sql = $self->mysql5->service_provider->getMasterNode->fqdn;
+    my $keystone = $self->nova_controller->keystone->getMasterNode->fqdn;
+    my $amqp = $self->nova_controller->amqp->getMasterNode->fqdn;
+    my $sql = $self->mysql5->getMasterNode->fqdn;
 
     return "if \$kanopya_openstack_repository == undef {\n" .
            "\tclass { 'kanopya::openstack::repository': }\n" .

@@ -46,7 +46,7 @@ sub prerequisites {
 
     if ($host_type eq 'Virtual Machine') {
 
-        $self->{context}->{host_manager} = EFactory::newEEntity(
+        $self->{context}->{host_manager} = EEntity->new(
                                                data => $cluster->getManager(manager_type => 'HostManager'),
                                            );
 
@@ -112,11 +112,11 @@ sub prepare {
 
     # Get the disk manager for disk creation
     my $disk_manager = $self->{context}->{cluster}->getManager(manager_type => 'DiskManager');
-    $self->{context}->{disk_manager} = EFactory::newEEntity(data => $disk_manager);
+    $self->{context}->{disk_manager} = EEntity->new(data => $disk_manager);
 
     # Get the export manager for disk creation
     my $export_manager = $self->{context}->{cluster}->getManager(manager_type => 'ExportManager');
-    $self->{context}->{export_manager} = EFactory::newEEntity(data => $export_manager);
+    $self->{context}->{export_manager} = EEntity->new(data => $export_manager);
 
     # Get the masterimage for node systemimage creation.
     if ($self->{context}->{cluster}->masterimage) {
@@ -161,7 +161,7 @@ sub prepare {
     if (not $self->{context}->{systemimage}) {
         if ($existing_image) {
             $log->info("Using existing systemimage instance <$systemimage_name>");
-            $self->{context}->{systemimage} = EFactory::newEEntity(data => $existing_image);
+            $self->{context}->{systemimage} = EEntity->new(data => $existing_image);
         }
         # Else if it is the first node, or the cluster si policy is dedicated, create a new one.
         elsif (($self->{params}->{node_number} == 1) or (not $self->{context}->{cluster}->cluster_si_shared)) {
@@ -173,17 +173,16 @@ sub prepare {
             eval {
                my $entity = Entity::Systemimage->new(systemimage_name => $systemimage_name,
                                                      systemimage_desc => $systemimage_desc);
-               $self->{context}->{systemimage} = EFactory::newEEntity(data => $entity);
+               $self->{context}->{systemimage} = EEntity->new(data => $entity);
             };
             if($@) {
                 throw Kanopya::Exception::Internal::WrongValue(error => $@);
             }
             $self->{params}->{create_systemimage} = 1;
         }
-        # Else if it is the firest node, or the cluster si policy is dedicated, create a new one.
         else {
-            $self->{context}->{systemimage} = EFactory::newEEntity(
-                                                  data => $self->{context}->{cluster}->getMasterNodeSystemimage
+            $self->{context}->{systemimage} = EEntity->new(
+                                                  data => $self->{context}->{cluster}->getSharedSystemimage
                                               );
         }
     }

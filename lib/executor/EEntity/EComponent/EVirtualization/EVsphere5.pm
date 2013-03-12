@@ -156,7 +156,7 @@ sub startHost {
 
     #Declare the vsphere5 vm in Kanopya
     $self->addVM(
-        host     => $host->_getEntity(),
+        host     => $host->_entity,
         guest_id => $guest_id,
     );
 

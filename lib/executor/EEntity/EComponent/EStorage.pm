@@ -21,7 +21,7 @@ use strict;
 use warnings;
 
 use General;
-use EFactory;
+use EEntity;
 
 use Data::Dumper;
 use Log::Log4perl "get_logger";

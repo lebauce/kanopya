@@ -31,19 +31,7 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
-=head2 _getEntityIds
-
-    Class : Protected
-    
-    Desc : return an array reference containing entity id and its groups entity ids
-    
-    args :
-            entity_id : entity_id about an entity object
-    return : array reference of entity_id 
-
-=cut
-
-sub _getEntityIds {
+sub _getEntityGroups {
     my $class = shift;
     my %args = @_;
  
@@ -70,8 +58,8 @@ sub match {
     General::checkParams(args     => \%args,
                          required => [ 'consumer_id', 'consumed_id', 'method' ]);
 
-    my $consumer_ids = $class->_getEntityIds(entity_id => $args{consumer_id});
-    my $consumed_ids = $class->_getEntityIds(entity_id => $args{consumed_id});
+    my $consumer_ids = $class->_getEntityGroups(entity_id => $args{consumer_id});
+    my $consumed_ids = $class->_getEntityGroups(entity_id => $args{consumed_id});
 
     return $class->find(hash => {
                entityright_consumer_id => $consumer_ids,

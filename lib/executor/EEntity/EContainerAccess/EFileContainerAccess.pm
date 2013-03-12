@@ -35,7 +35,7 @@ use base "EEntity::EContainerAccess";
 use strict;
 use warnings;
 
-use EFactory;
+use EEntity;
 use Entity::ContainerAccess;
 
 use Log::Log4perl "get_logger";
@@ -52,7 +52,7 @@ sub connect {
                                    name => 'container_access_id'
                                );
 
-    my $eunderlying_access = EFactory::newEEntity(
+    my $eunderlying_access = EEntity->new(
                                  data => Entity::ContainerAccess->get(id => $underlying_access_id)
                              );
 
@@ -89,7 +89,7 @@ sub disconnect {
                                    name => 'container_access_id'
                                );
 
-    my $eunderlying_access = EFactory::newEEntity(
+    my $eunderlying_access = EEntity->new(
                                  data => Entity::ContainerAccess->get(id => $underlying_access_id)
                              );
 

@@ -80,8 +80,8 @@ sub new {
 
     my $self = $class->SUPER::new(%args);
 
-    my $component = Entity::Component::UcsManager->new();
-    $self->addComponent(component => $component);
+    my $ucsmanager = ClassType::ComponentType->find(hash => { component_name => 'UcsManager' });
+    $self->addComponent(component_type_id => $ucsmanager->id);
 
     return $self;
 }
@@ -91,10 +91,6 @@ sub remove {
     $self->SUPER::delete(); 
 };
 
-sub getMasterNodeIp {
-    my $self = shift;
-    return $self->ucs_addr;
-}
 
 sub toString {
     my $self = shift;

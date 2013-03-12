@@ -50,7 +50,7 @@ sub createDisk {
                          required => [ "name", "size", "filesystem", "aggregate_id" ]);
 
     my $aggregate = Entity->get(id => $args{aggregate_id});
-    my $api = $self->_getEntity();
+    my $api = $self->_entity;
     $api->volume_create("containing-aggr-name" => $aggregate->getAttr(name => 'name'),
                         volume => "/" . $args{name},
                         size   => $args{size});
@@ -58,7 +58,7 @@ sub createDisk {
     delete $args{noformat};
 
     my $entity = Entity::Container::NetappVolume->new(
-                     disk_manager_id      => $self->_getEntity->getAttr(name => 'entity_id'),
+                     disk_manager_id      => $self->_entity->getAttr(name => 'entity_id'),
                      container_name       => $args{name},
                      container_size       => $args{size},
                      container_filesystem => $args{filesystem},
@@ -66,7 +66,7 @@ sub createDisk {
                      container_device     => $args{name},
                      aggregate_id         => $args{aggregate_id}
                  );
-    my $container = EFactory::newEEntity(data => $entity);
+    my $container = EEntity->new(data => $entity);
 
     if (exists $args{erollback} and defined $args{erollback}){
         $args{erollback}->add(
@@ -100,8 +100,8 @@ sub removeDisk {
 
     my $container_name = $args{container}->getAttr(name => 'container_name');
 
-    $self->_getEntity()->volume_offline(name => $container_name);
-    $self->_getEntity()->volume_destroy(name  => $container_name,
+    $self->_entity->volume_offline(name => $container_name);
+    $self->_entity->volume_destroy(name  => $container_name,
                                         force => "true");
 
     $args{container}->delete();
@@ -126,16 +126,15 @@ sub createExport {
     # Check if the disk is not already exported
     $self->SUPER::createExport(%args);
 
-    my $manager_ip = $self->service_provider->getMasterNodeIp;
-    my $entity = Entity::ContainerAccess::NfsContainerAccess->new(
-                     container_id            => $args{container}->getAttr(name => 'container_id'),
-                     export_manager_id       => $self->_getEntity->getAttr(name => 'entity_id'),
-                     container_access_export => $manager_ip . ':/vol/' . $args{export_name},
-                     container_access_ip     => $manager_ip,
-                     container_access_port   => 2049,
-                     options                 => $args{client_options},
-                 );
-    my $container_access = EFactory::newEEntity(data => $entity);
+    my $manager_ip = $self->getMasterNode->adminIp;
+    my $container_access = EEntity->new(entity => Entity::ContainerAccess::NfsContainerAccess->new(
+                               container_id            => $args{container}->getAttr(name => 'container_id'),
+                               export_manager_id       => $self->_entity->getAttr(name => 'entity_id'),
+                               container_access_export => $manager_ip . ':/vol/' . $args{export_name},
+                               container_access_ip     => $manager_ip,
+                               container_access_port   => 2049,
+                               options                 => $args{client_options},
+                           ));
 
     $log->info("Added NFS export for volume " . $args{container}->getAttr(name => "container_name"));
 
@@ -188,7 +187,7 @@ sub addExportClient {
     my $volume = $args{export}->getContainer;
 
     eval {
-        $self->_getEntity()->nfs_exportfs_append_rules(
+        $self->_entity->nfs_exportfs_append_rules(
             persistent => [ "true" ],
             rules => {
                 "exports-rule-info" => [ {

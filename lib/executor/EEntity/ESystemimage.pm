@@ -37,7 +37,7 @@ use strict;
 use warnings;
 
 use General;
-use EFactory;
+use EEntity;
 use Entity::Container::LocalContainer;
 
 use Data::Dumper;
@@ -107,8 +107,8 @@ sub deactivate {
     $log->info("Remove all container accesses");
     eval {
         for my $container_access ($self->container_accesses) {
-            my $export_manager = EFactory::newEEntity(data => $container_access->getExportManager);
-            $container_access  = EFactory::newEEntity(data => $container_access);
+            my $export_manager = EEntity->new(data => $container_access->getExportManager);
+            $container_access  = EEntity->new(data => $container_access);
 
             $export_manager->removeExport(container_access => $container_access,
                                           erollback        => $args{erollback});
@@ -144,7 +144,7 @@ sub remove {
 
     General::checkParams(args => \%args, required => [ "erollback" ]);
 
-    my $container = EFactory::newEEntity(data => $self->getContainer);
+    my $container = EEntity->new(data => $self->getContainer);
 
     if ($self->active) {
         $self->deactivate(erollback => $args{erollback});
@@ -155,7 +155,7 @@ sub remove {
         $log->info("Systemimage container deletion");
 
         # Get the disk manager of the current container
-        my $disk_manager = EFactory::newEEntity(data => $container->getDiskManager);
+        my $disk_manager = EEntity->new(data => $container->getDiskManager);
         $disk_manager->removeDisk(container => $container);
     };
     if($@) {

@@ -44,7 +44,7 @@ use Data::Dumper;
 use Kanopya::Exceptions;
 use Entity::ServiceProvider::Cluster;
 use Entity::Systemimage;
-use EFactory;
+use EEntity;
 
 my $log = get_logger("");
 my $errmsg;
@@ -75,7 +75,7 @@ sub execute {
 
     # set cluster active in db
     $self->{context}->{cluster}->setAttr(name => 'active', value => 1);
-    $self->{context}->{cluster}->_getEntity->save();
+    $self->{context}->{cluster}->_entity->save();
 
     $log->info("Cluster <" . $self->{context}->{cluster}->getAttr(name => "cluster_name") ."> is now active");
 

@@ -65,23 +65,21 @@ sub api {
     my $config = {
         verify_ssl => 0,
         identity => {
-            url     => 'http://' . $keystone->service_provider->getMasterNode->fqdn . ':5000/v2.0'
+            url     => 'http://' . $keystone->getMasterNode->fqdn . ':5000/v2.0'
         },
         image => {
-            url     => 'http://' . $glance->service_provider->getMasterNode->fqdn  . ':9292/v1'
+            url     => 'http://' . $glance->getMasterNode->fqdn  . ':9292/v1'
         },
         compute => {
-            url     => 'http://' . $compute->service_provider->getMasterNode->fqdn . ':8774/v2'
+            url     => 'http://' . $compute->getMasterNode->fqdn . ':8774/v2'
         },
         network => {
-            url     => 'http://' . $quantum->service_provider->getMasterNode->fqdn . ':9696/v2.0'
+            url     => 'http://' . $quantum->getMasterNode->fqdn . ':9696/v2.0'
         }
     };
 
-    my $os_api = OpenStack::API->new(
-        credentials => $credentials,
-        config      => $config,
-    );
+    my $os_api = OpenStack::API->new(credentials => $credentials,
+                                     config      => $config);
 
     return $os_api;
 }
@@ -345,7 +343,7 @@ sub startHost {
     $log->debug("Nova returned : " . (Dumper $response));
 
     $args{host} = Entity::Host::VirtualMachine::OpenstackVm->promote(
-                      promoted           => $args{host}->_getEntity,
+                      promoted           => $args{host}->_entity,
                       nova_controller_id => $self->id,
                       openstack_vm_uuid  => $response->{server}->{id},
                       hypervisor_id      => $args{hypervisor}->id
@@ -374,7 +372,7 @@ sub registerSystemImage {
     my $image_name = $image->systemimage_name;
     my $image_type = $disk_params->{image_type};
 
-    my $econtext = $self->getExecutorEContext;
+    my $econtext = $self->_host->getEContext;
     my $container_access = $image->getContainer->container_access;
     my $mount_point = EEntity->new(entity => $container_access)->mount(econtext => $econtext);
 

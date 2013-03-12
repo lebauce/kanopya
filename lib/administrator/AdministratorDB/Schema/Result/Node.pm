@@ -60,12 +60,6 @@ __PACKAGE__->table("node");
   is_foreign_key: 1
   is_nullable: 1
 
-=head2 master_node
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_nullable: 1
-
 =head2 node_number
 
   data_type: 'integer'
@@ -100,7 +94,8 @@ __PACKAGE__->table("node");
 =head2 monitoring_state
 
   data_type: 'char'
-  is_nullable: 1
+  default_value: 'enabled'
+  is_nullable: 0
   size: 32
 
 =cut
@@ -127,8 +122,6 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 1,
   },
-  "master_node",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "node_number",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "node_hostname",
@@ -145,7 +138,12 @@ __PACKAGE__->add_columns(
   "node_prev_state",
   { data_type => "char", is_nullable => 1, size => 32 },
   "monitoring_state",
-  { data_type => "char", is_nullable => 1, size => 32 },
+  {
+    data_type => "char",
+    default_value => "enabled",
+    is_nullable => 0,
+    size => 32,
+  },
 );
 
 =head1 PRIMARY KEY
@@ -189,6 +187,21 @@ __PACKAGE__->add_unique_constraint("host_id", ["host_id"]);
 __PACKAGE__->add_unique_constraint("node_hostname", ["node_hostname", "service_provider_id"]);
 
 =head1 RELATIONS
+
+=head2 component_nodes
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ComponentNode>
+
+=cut
+
+__PACKAGE__->has_many(
+  "component_nodes",
+  "AdministratorDB::Schema::Result::ComponentNode",
+  { "foreign.node_id" => "self.node_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 =head2 data_models
 
@@ -291,8 +304,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-02-04 16:24:52
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:mo7SrgiB8DekwKYUkZLbKQ
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-02-28 14:52:06
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:m497yb3OpA0l2GyZfvEXoQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

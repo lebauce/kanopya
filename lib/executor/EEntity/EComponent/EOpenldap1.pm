@@ -30,7 +30,7 @@ sub addNode {
     General::checkParams(args => \%args, required => ['host', 'mount_point']);
 
     my $cluster = $self->service_provider;
-    my $data = $self->_getEntity()->getConf();
+    my $data = $self->_entity->getConf();
     my $data1={};
    
     foreach my $key ('openldap1_suffix','openldap1_directory','openldap1_rootdn','openldap1_rootpw'){
@@ -51,7 +51,7 @@ sub addNode {
         data          => $data1
     );
     
-    $self->getExecutorEContext->send(
+    $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc/ldap'
     );
@@ -66,7 +66,7 @@ sub addNode {
         data          => $data2
     );
 
-    $self->getExecutorEContext->send(
+    $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc/ldap'
     );
@@ -81,7 +81,7 @@ sub addNode {
         data          => $data3
     );
     
-    $self->getExecutorEContext->send(
+    $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc/default'
     );

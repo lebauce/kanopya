@@ -261,7 +261,7 @@ sub getServiceTemplateDef {
         else {
             # Add the policy select box for the current policy type with options
             my @policies;
-            for my $policy ($policy_class->search(hash => {})) {
+            for my $policy ($policy_class->search(hash => { policy_type => $policy_type })) {
                 push @policies, $policy->toJSON();
             }
             $attributes->{attributes}->{$policy_type . '_policy_id'}->{options} = \@policies;

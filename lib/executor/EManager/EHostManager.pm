@@ -57,7 +57,7 @@ sub createHost {
 
     if (defined $args{erollback}) { delete $args{erollback}; }
 
-    my $host = $self->_getEntity()->addHost(%args);
+    my $host = $self->_entity->addHost(%args);
 
     #TODO: insert erollback ?
     return $host;
@@ -73,7 +73,7 @@ sub removeHost {
 
     General::checkParams(args => \%args, required => [ "host" ]);
 
-    my $host = $self->_getEntity()->delHost(host => $args{host}->_getEntity);
+    my $host = $self->_entity->delHost(host => $args{host}->_entity);
 
     #TODO: insert erollback ?
 }

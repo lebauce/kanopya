@@ -39,7 +39,7 @@ use warnings;
 use Data::Dumper;
 use Clone qw(clone);
 use List::Util;
-use EFactory;
+use EEntity;
 use Message;
 use Entity::ServiceProvider::Cluster;
 # logger
@@ -102,7 +102,7 @@ sub new {
         }
 
         for my $hypervisor (@hypervisors) {
-            my $ehypervisor = EFactory::newEEntity(data => $hypervisor);
+            my $ehypervisor = EEntity->new(data => $hypervisor);
             my $hypervisor_available_memory;
 
             eval {

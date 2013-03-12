@@ -1,6 +1,4 @@
-# EContext.pm - Abstract Class for EContext Classes 
-
-#    Copyright © 2011-2012 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -15,61 +13,92 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
+=pod
 
-=head1 NAME
+=begin classdoc
 
-EContext : Abstract class for EContext Classes
+Factory to create local/remote econtext for command execution.
+
+@since    2010-Nov-23
+@instance hash
+@self     $self
+
+=end classdoc
 
 =cut
 
 package EContext;
 
+use EContext::Local;
+use EContext::SSH;
+
 use strict;
 use warnings;
 
-our $VERSION = "1.00";
 
-=head2 new
+=pod
 
-Keep the source ip whatever the concrete type of EContext.
+=begin classdoc
+
+@constructor
+
+Create an EContext object to execute local/remote commands on hosts.
+The constructir a the base class is a factory that instanciate the
+proper type in function of sourec host ans dest host paramaters.
+
+@param src_host the source host that from which commands are executed
+@param dst_host the destination host that on which commands are executed
+
+@return a class instance
+
+=end classdoc
 
 =cut
 
 sub new {
     my ($class, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'local' ],
+    General::checkParams(args => \%args, required => [ 'src_host', 'dst_host' ],
                                          optional => { timeout => 30 });
 
-    my $self = {
-        local_ip => $args{local},
-        timeout  => $args{timeout}
-    };
-
-    bless $self, $class;
-    return $self;
+    # If the destination host is different then the source one,
+    # use a SSH econtext to excecute remote commands.
+    if ($args{src_host}->id != $args{dst_host}->id) {
+        return EContext::SSH->new(ip      => $args{dst_host}->adminIp,
+                                  timeout => $args{timeout});
+    }
+    # Use a local econtext instead.
+    else {
+        return EContext::Local->new();
+    }
 }
 
-sub getLocalIp {
-    my ($self) = @_;
-    return $self->{local_ip};
-}
+=cut
 
-=head2 execute
+=pod
 
-execute(command => $command)
+=begin classdoc
+
+Execute a command on a host.
 This method must be implemented in child classes
+
+=end classdoc
 
 =cut
 
 sub execute {}
 
-=head2 send
 
-send(src => $srcfullpath, dest => $destfullpath)
+=cut
+
+=pod
+
+=begin classdoc
+
+Send (copy) a file on a host.
 This method must be implemented in child classes
+
+=end classdoc
 
 =cut
 

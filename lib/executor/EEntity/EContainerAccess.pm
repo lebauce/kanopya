@@ -39,7 +39,7 @@ use strict;
 use warnings;
 
 use General;
-use EFactory;
+use EEntity;
 use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";

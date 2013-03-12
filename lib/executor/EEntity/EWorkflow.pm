@@ -23,8 +23,8 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Entity::Operation;
+use EEntity::EOperation;
 use EntityLock;
-use EFactory;
 
 use Log::Log4perl "get_logger";
 
@@ -46,7 +46,7 @@ sub cancel {
         if ($operation->getAttr(name => 'state') ne 'pending') {
             eval {
                 $operation->unlockContext();
-                EFactory::newEOperation(op => $operation)->cancel();
+                EEntity::EOperation->new(op => $operation)->cancel();
             };
             if ($@){
                 $log->error("Error during operation cancel :\n$@");
@@ -88,13 +88,6 @@ sub pepareNextOp {
         $next->lockContext();
         $next->setState(state => 'ready');
     }
-}
-
-sub getEContext {
-    my ($self) = @_;
-
-    return EFactory::newEContext(ip_source      => $self->{_executor}->getMasterNodeIp(),
-                                 ip_destination => $self->{_executor}->getMasterNodeIp());
 }
 
 1;

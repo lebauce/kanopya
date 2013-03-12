@@ -170,7 +170,7 @@ sub preconfigureSystemimage {
     General::checkParams(args     => \%args,
                          required => [ 'files', 'cluster', 'host', 'mount_point' ]);
 
-    my $econtext = $self->getExecutorEContext;
+    my $econtext = $self->_host->getEContext;
     
     # send generated files to the image mount directory                    
     for my $file (@{$args{files}}) {
@@ -280,7 +280,7 @@ sub _generateUdevPersistentNetRules {
 
     my @interfaces = ();
     
-    for my $iface ($args{host}->_getEntity()->getIfaces()) {
+    for my $iface ($args{host}->_entity->getIfaces()) {
         my $tmp = {
             mac_address   => lc($iface->getAttr(name => 'iface_mac_addr')),
             net_interface => $iface->getAttr(name => 'iface_name')
@@ -350,37 +350,38 @@ sub _generateNtpdateConf {
     General::checkParams(args     => \%args,
                          required => [ 'cluster', 'host', 'mount_point', 'econtext' ]);
 
-    my $econtext = $args{econtext};
+    # TODO: Implement the ntp component. Use the system component for instance.
+    my $ntp = $self->service_provider->getKanopyaCluster->getComponent(category => 'System');
     my $file = $self->generateNodeFile(
-        cluster       => $args{cluster},
-        host          => $args{host},
-        file          => '/etc/default/ntpdate',
-        template_dir  => '/templates/components/linux',
-        template_file => 'ntpdate.tt',
-        data          => { ntpservers => $self->{_executor}->getMasterNodeIp() }
-    );
+                   cluster       => $args{cluster},
+                   host          => $args{host},
+                   file          => '/etc/default/ntpdate',
+                   template_dir  => '/templates/components/linux',
+                   template_file => 'ntpdate.tt',
+                   data          => { ntpservers => $ntp->getMasterNode->adminIp }
+               );
 
-    $econtext->send(
+    $args{econtext}->send(
         src  => $file,
         dest => "$args{mount_point}/etc/default/ntpdate"
     );
 
     # send ntpdate init script
     $file = $self->generateNodeFile(
-        cluster       => $args{cluster},
-        host          => $args{host},
-        file          => '/etc/init.d/ntpdate',
-        template_dir  => '/templates/components/linux',
-        template_file => 'ntpdate',
-        data          => { }
-    );
+                cluster       => $args{cluster},
+                host          => $args{host},
+                file          => '/etc/init.d/ntpdate',
+                template_dir  => '/templates/components/linux',
+                template_file => 'ntpdate',
+                data          => { }
+            );
 
-    $econtext->send(
+    $args{econtext}->send(
         src  => $file,
         dest => "$args{mount_point}/etc/init.d/ntpdate"
     );
 
-    $econtext->execute(command => "chmod +x $args{mount_point}/etc/init.d/ntpdate");
+    $args{econtext}->execute(command => "chmod +x $args{mount_point}/etc/init.d/ntpdate");
 
     $self->service(services    => [ "ntpdate" ],
                    state       => "on",
@@ -415,7 +416,7 @@ sub _generateNetConf {
             $ip         = $iface->getIPAddr;
 
             if ($is_loadbalanced and not $is_masternode) {
-                $gateway = $args{cluster}->getMasterNodeIp;
+                $gateway = $args{cluster}->getComponent(category => 'LoadBalancer')->getMasterNode->adminIp;
             }
             else {
                 $gateway = ($network->id == $args{cluster}->default_gateway_id) ? $network->network_gateway : undef;
@@ -477,7 +478,7 @@ sub extractInitramfs {
     General::checkParams(args     =>\%args,
                          required => ['src_file']);
     
-    my $econtext = $self->getExecutorEContext;
+    my $econtext = $self->_host->getEContext;
     my $initrd = $args{src_file};
     
     my $cmd = "[ -f $args{src_file} ] && echo -n found";
@@ -536,7 +537,7 @@ sub customizeInitramfs {
     General::checkParams(args     =>\%args,
                          required => [ 'initrd_dir','cluster', 'host' ]);
     
-    my $econtext = $self->getExecutorEContext;
+    my $econtext = $self->_host->getEContext;
     my $initrddir = $args{initrd_dir};
 
     $log->info("customize initramfs $initrddir");
@@ -571,7 +572,7 @@ sub buildInitramfs {
     General::checkParams(args     =>\%args,
                          required => ['initrd_dir','compress_type', 'new_initrd_file']);
     
-    my $econtext = $self->getExecutorEContext;
+    my $econtext = $self->_host->getEContext;
     my $initrddir = $args{initrd_dir};
     my $newinitrd = $args{new_initrd_file};
     my $compress = $args{compress_type};

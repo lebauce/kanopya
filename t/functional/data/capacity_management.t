@@ -40,15 +40,11 @@ sub main {
         BaseDB->beginTransaction;
     }
 
-    $service_provider = Entity::ServiceProvider::Externalcluster->new(
-            externalcluster_name => 'Test Service Provider',
-    );
+    $service_provider = Entity::ServiceProvider->new();
 
-    $service_provider_hypervisors = Entity::ServiceProvider::Externalcluster->new(
-            externalcluster_name => 'Test Hypervisor Externacluster',
-    );
+    $service_provider_hypervisors = Entity::ServiceProvider->new();
 
-    $one = $service_provider_hypervisors->addComponentFromType(
+    $one = $service_provider_hypervisors->addComponent(
         component_type_id => ClassType::ComponentType->find(
             hash => {
                 component_name => 'Opennebula',
