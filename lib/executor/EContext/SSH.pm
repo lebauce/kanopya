@@ -68,9 +68,12 @@ Instanciate a SSH econtext using the ip of the destination host.
 sub new {
     my ($class, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'ip' ]);
+    General::checkParams(args => \%args, required => [ 'ip', 'timeout' ]);
 
-    my $self = { ip => $args{ip} };
+    my $self = {
+        ip      => $args{ip},
+        timeout => $args{timeout}
+    };
 
     # is the host available on ssh port 22
     my $p = Net::Ping->new();
