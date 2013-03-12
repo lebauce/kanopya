@@ -152,9 +152,6 @@ sub fixTimeSerie {
         push (@values, $args{data}->{$key});
     }
 
-    # Compute the average of the time serie
-    my $average = $self->computeAverage('values' => \@values);
-
     # Fix the undef first values
     my $isInside = 0;
     my $i = 0;
@@ -182,6 +179,9 @@ sub fixTimeSerie {
         }
         $i--;
     }
+
+    # Compute the average of the time serie
+    my $average = $self->computeAverage('values' => \@values);
 
     # Fix the undef inside values
     for my $j (0..$#timestamps) {
