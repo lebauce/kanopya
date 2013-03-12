@@ -521,13 +521,17 @@ sub addComponent {
     # Check if the type of the given component is installable on this type
     # of service provider.
     my $component_type = ClassType::ComponentType->get(id => $args{component_type_id});
-    my @service_provider_types = $component_type->service_provider_types;
-    if (scalar (grep { $_->id == $self->service_provider_type_id } @service_provider_types) <= 0) {
-        throw Kanopya::Exception::Internal(
-                  error => "Component type <" . $component_type->component_name .
-                           "> can not be installed on a service provider of type <" .
-                           $self->service_provider_type->service_provider_name . ">."
-              );
+
+    # For instance, allow the addiction of component on generic service providers
+    if (defined $self->service_provider_type) {
+        my @service_provider_types = $component_type->service_provider_types;
+        if (scalar (grep { $_->id == $self->service_provider_type_id } @service_provider_types) <= 0) {
+            throw Kanopya::Exception::Internal(
+                      error => "Component type <" . $component_type->component_name .
+                               "> can not be installed on a service provider of type <" .
+                               $self->service_provider_type->service_provider_name . ">."
+                  );
+        }
     }
 
     # If the component is already installed, just return it
