@@ -143,7 +143,7 @@ sub autoPredict {
     )};
 
     my $best_model = $best{best_model};
-    my $best_freq  = $best{best_freq};
+    my $best_freq  = $best{best_freq} || 1;
 
     # Instanciate and configure the best found model
     my $datamodel = $best_model->new(
