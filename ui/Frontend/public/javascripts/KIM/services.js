@@ -389,7 +389,7 @@ function nodedetailsaction(cid, eid) {
                 },
                 {
                     label   : 'Resubmit node',
-                    sprite  : 'resubmit',
+                    sprite  : 'refresh',
                     condition : isVirtual,
                     action  : '/api/host/' + data.host.pk + '/resubmit',
                     confirm : 'The node will be stopped and restarted'

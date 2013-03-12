@@ -67,7 +67,7 @@ td.action-cell .ui-button {margin-top : 15px;width: 200px;}
 
 .ui-jqgrid-btable .ui-state-hover td,.ui-jqgrid-btable tr.ui-state-hover:nth-child(even) td{background:#CCCCCC;color:white;}
 .ui-jqgrid-btable tr:nth-child(even) td{background:#f6f6f6;}
-#mainmenu-container li {padding-top: 2px;padding-left:16px;position:relative;}
+#mainmenu-container li {padding-top: 2px;padding-left:16px;position:relative;margin-left:10px;}
 
 .kanopya-sprite {
   height: 20px;
@@ -91,6 +91,7 @@ a.view_link{font-weight:normal;}
 
 .ui-widget{font-family:Arial, Helvetica, sans-serif;font-size:14.7px;font-weight:bold;}
 .ui-widget .ui-icon{background-image:url('/images/kanopya-sprites.png');background-repeat:no-repeat;margin-top:-10px;}
+.dashboard .ui-widget .ui-widget-header .ui-icon{margin-top:0px;background-image:url('theme/kanopya-theme04/images/ui-icons_ffffff_256x240.png');}
 .ui-widget .ui-state-default .ui-icon-plusthick,.ui-widget .ui-state-hover .ui-icon-plusthick{background-position:-163px -40px;}
 .ui-widget .ui-state-default .ui-icon-closethick,.ui-widget .ui-state-hover .ui-icon-closethick{background-position:-142px -22px;}
 .ui-icon-refresh{background-position:-82px -42px;}
@@ -127,7 +128,7 @@ display:inline-block;zoom:1;*display:block;float:none;
 .ui-dialog-titlebar{background:none;-moz-border-radius: 0px; -webkit-border-radius: 0px; -khtml-border-radius: 0px; border-radius: 0px;border:none;border-bottom:1px solid #964e98;/*color:#7e388a;*/color:white;padding:0.4em 0;}
 .ui-dialog-titlebar span{color:white;}
 .ui-dialog .ui-dialog-titlebar{padding:10px 10px 10px 20px;margin:-3px -3px 3px;background:white;background:url(../images/element-current.png) repeat-x left bottom #B68EBC;}
-.ui-dialog-titlebar-close .ui-icon {background-image:url('/images/kanopya-sprites.png');background-position:-142px -43px;}
+.ui-dialog-titlebar-close .ui-icon {background-image:url('/images/kanopya-sprites.png');background-position:-142px -43px;width:16px;height:16px;}
 .ui-state-hover .ui-icon-closethick{background-position:-142px -22px;cursor: pointer;}
 .ui-dialog{box-shadow:0 7px 11px #999;}
 ul#Services >li{cursor:pointer;}
@@ -192,7 +193,7 @@ button.ui-multiselect,.ui-multiselect-menu li label{cursor:pointer;}
 #users_list .ui-state-hover{margin-left:5px!important;}
 .ui-widget .ui-icon-key{background-image:url(theme/images/ui-icons_7e388a_256x240.png);margin-top:2px;}
 .ui-state-hover .ui-icon-key{background-image:url(theme/images/ui-icons_ffffff_256x240.png);}
-
+.ui-widget .ui-icon-clock{margin-top:0;background-image:url(theme/images/ui-icons_7e388a_256x240.png);}
 
 .DelButton,.ui-dialog-buttonset{padding-top:2px!important;}
 .DelButton .fm-button{text-indent:-9999999em;background-clip:content-box;padding:0px;height:20px;width:20px;}

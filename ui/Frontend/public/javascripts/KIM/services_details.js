@@ -113,7 +113,7 @@ function createbutton(button) {
     return $('<span class="'+class_span_button+'"></span>').append(
                $('<span class="' +
                  (button.sprite ?
-                     'kanopya-sprite kanopya-button-sprite sprite-kanopya-' + button.sprite :
+                     'kanopya-sprite kanopya-button-sprite ui-icon-' + button.sprite :
                      'ui-icon-' + button.icon) + '"></span>')
            ).append(
                $('<a>', { text : button.label })

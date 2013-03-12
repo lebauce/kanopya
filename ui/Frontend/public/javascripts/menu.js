@@ -17,7 +17,7 @@ function add_menu(container, label, submenu_links, elem_id) {
     
     if (container.index() == 1 && !elem_id) {
         link_li.append(
-            $('<span class="kanopya-sprite kanopya-menu-sprite sprite-kanopya-' + label.replace(/ /g, '-').toLowerCase() + '"></span>')
+            $('<span class="kanopya-sprite kanopya-menu-sprite ui-icon-' + label.replace(/ /g, '-').toLowerCase() + '"></span>')
         );
     }else{
     	link_li.append(
@@ -227,7 +227,7 @@ function build_submenu(container, view_id, links, elem_id) {
         var content = $('<div id="' + content_id + '"></div>');
         view.append(content);
         view.tabs('add', '#' + content_id ,
-                  (links[smenu]['icon'] ? "<span class='kanopya-tab-sprite kanopya-sprite sprite-kanopya-" + links[smenu]['icon'] + "'></span>" : "" ) +
+                  (links[smenu]['icon'] ? "<span class='kanopya-tab-sprite kanopya-sprite ui-icon-" + links[smenu]['icon'] + "'></span>" : "" ) +
                   links[smenu]['label']);
         
         if (links[smenu]['onLoad']) {
