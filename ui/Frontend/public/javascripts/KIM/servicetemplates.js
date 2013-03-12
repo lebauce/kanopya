@@ -35,7 +35,8 @@ function load_service_template_content (container_id) {
                 callback : function () { grid.trigger("reloadGrid"); }
             })).start();
         });
-        $('#' + cid).append(button);
+        var action_div=$('#' + cid).prevAll('.action_buttons');
+        action_div.append(button);
     };
 
     var container = $('#' + container_id);

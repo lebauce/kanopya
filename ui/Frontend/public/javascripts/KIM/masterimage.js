@@ -81,10 +81,10 @@ var MasterImage = (function(_super) {
             resizable   : false,
             modal       : true,
             close       : function() { $(this).remove(); },
-            buttons     : {
-                'Ok'        : function() { $(form).submit(); },
-                'Cancel'    : function() { $(this).dialog('close'); }
-            }
+            buttons     : [
+            	{id:'button-cancel',text:'Cancel',click: function() { $(this).dialog('close'); }},
+            	{id:'button-ok',text:'Ok',click: function() { $(form).submit(); }}  
+            ]
         });
     };
 
@@ -94,7 +94,8 @@ var MasterImage = (function(_super) {
 
 function masterimagesMainView(cid) {
     MasterImage.list(cid);
-    var addMasterImageButton    = $('<a>', { text : 'Upload a master image' }).appendTo('#' + cid);
+    var action_div=$('#' + cid).prevAll('.action_buttons'); 
+    var addMasterImageButton    = $('<a>', { text : 'Upload a master image' }).appendTo(action_div);
     $(addMasterImageButton).button({ icons : { primary : 'ui-icon-arrowthickstop-1-n' } });
     $(addMasterImageButton).bind('click', MasterImage.openUpload);
 }

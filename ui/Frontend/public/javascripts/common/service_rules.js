@@ -194,13 +194,10 @@ function conditionDialog(sp_id, condition_type, fields, editid) {
                 modal       : true,
                 resizable   : false,
                 close       : function() { $(this).remove() },
-                buttons     : {
-                    'Cancel' : function() { $(this).dialog("close"); },
-                    'Ok'     : function() {
-                        form.submit();
-                        $(this).dialog("close");
-                    }
-                }
+                buttons     : [
+        			{id:'button-cancel',text:'Cancel',click: function() { $(this).dialog("close"); }},
+        			{id:'button-ok',text:'Ok',click: function() {form.submit();$(this).dialog("close");}}
+        		]
             });
         }
     }

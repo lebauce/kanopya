@@ -27,7 +27,8 @@ function poolips_list(cid) {
             onSelectRow : poolip_addbutton_action
         }
     });
-    var addButton   = $('<a>', { text : 'Add a Pool IP' }).appendTo('#' + cid)
+    var action_div=$('#' + cid).prevAll('.action_buttons'); 
+    var addButton   = $('<a>', { text : 'Add a Pool IP' }).appendTo(action_div)
                         .button({ icons : { primary : 'ui-icon-plusthick' } });
     $(addButton).bind('click', function (e) {
         poolip_addbutton_action(e, grid);

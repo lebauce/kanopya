@@ -33,7 +33,8 @@ function load_policy_content (container_id) {
                 addOrchestrationPolicy(grid);
             }
         });
-        $('#' + cid).append(button);
+        var action_div=$('#' + cid).prevAll('.action_buttons');
+        $(action_div).append(button);
     };
 
     var container = $('#' + container_id);

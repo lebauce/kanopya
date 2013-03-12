@@ -24,5 +24,5 @@ var SystemImage = (function(_super) {
 })(Model);
 
 function systemimagesMainView(cid) {
-    SystemImage.list(cid);
+    SystemImage.list(cid); 
 }

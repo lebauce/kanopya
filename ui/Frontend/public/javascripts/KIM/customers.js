@@ -38,7 +38,8 @@ function Customers() {
                 new KanopyaFormWizard(user_opts).start();
                 grid.trigger("reloadGrid");
             });
-            container.append(button);
+            var action_div=$('#' + cid).prevAll('.action_buttons');
+            action_div.append(button);
         };
         
         createAddCustomerButton(container_id);
