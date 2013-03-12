@@ -154,31 +154,30 @@ sub fixTimeSerie {
 
     # Fix the undef first values
     my $isInside = 0;
-    my $i = 0;
+    my $i        = 0;
+    my $begin;
     while ( !$isInside && ($i <= $#timestamps) ) {
-        if (!defined($values[$i])) {
-            shift @timestamps;
-            shift @values;
-        }
-        else {
+        if (defined($values[$i])) {
             $isInside = 1;
+            $begin    = $i;
         }
         $i++;
     }
 
     # Fix the undef last values
     $isInside = 0;
-    $i = $#timestamps;
+    $i        = $#timestamps;
+    my $end;
     while ( !$isInside && ($i >= 0) ) {
-        if (!defined($values[$i])) {
-            pop @timestamps;
-            pop @values;
-        }
-        else {
+        if (defined($values[$i])) {
             $isInside = 1;
+            $end      = $i;
         }
         $i--;
     }
+
+    @timestamps = @timestamps[$begin..$end];
+    @values     = @values[$begin..$end];
 
     # Compute the average of the time serie
     my $average = $self->computeAverage('values' => \@values);
