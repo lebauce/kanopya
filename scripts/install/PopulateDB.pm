@@ -5,6 +5,7 @@
 use lib qw(/opt/kanopya/lib/common/ /opt/kanopya/lib/administrator/ /opt/kanopya/lib/executor/ /opt/kanopya/lib/monitor/ /opt/kanopya/lib/orchestrator/ /opt/kanopya/lib/external);
 
 use BaseDB;
+use Class::ISA;
 use Kanopya::Config;
 use Entity::Component;
 use Entity::WorkflowDef;
@@ -382,7 +383,11 @@ sub registerUsers {
     for my $classtype (@classes) {
         BaseDB::requireClass($classtype);
 
-        my $methods    = $classtype->getMethods(depth => 1);
+        my ($parenttype) = Class::ISA::super_path($classtype);
+        my $methods    = $classtype->getMethods();
+        for my $parentmethod (keys %{$parenttype->getMethods()}) {
+            delete $methods->{$parentmethod};
+        }
 
         my @methodlist = keys %$methods;
         if (scalar (@methodlist)) {
