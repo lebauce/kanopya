@@ -185,8 +185,8 @@ sub fixTimeSerie {
 
     # Fix the undef inside values
     for my $j (0..$#timestamps) {
-        if (!defined($values[$i])) {
-            $values[$i] = $average;
+        if (!defined($values[$j])) {
+            $values[$j] = $average;
         }
     }
 

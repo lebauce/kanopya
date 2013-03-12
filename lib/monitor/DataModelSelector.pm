@@ -25,7 +25,6 @@ DataModel for a given dataset.
 
 =cut
 
-
 package DataModelSelector;
 
 use warnings;
@@ -105,14 +104,14 @@ sub autoPredict {
     my $combination = Entity::Combination->get(id => $args{combination_id});
 
     # Extract the data
-    my %data = defined($args{data}) ? %{$args{data}}
-             :                        $combination->computeValues(start_time => $args{start_time},
-                                                                  stop_time  => $args{end_time},
-                                                                  node_id    => $args{node_id})
+    my %raw_data = defined($args{data}) ? %{$args{data}}
+             :                              $combination->evaluateTimeSerie(start_time => $args{start_time},
+                                                                            stop_time  => $args{end_time},
+                                                                            node_id    => $args{node_id})
              ;
 
     # Fix the data
-    %data = %{Utils::TimeSerieAnalysis->fixTimeSerie(data => \%data)};
+    my %data = %{Utils::TimeSerieAnalysis->fixTimeSerie(data => \%raw_data)};
 
     # If horizon or timestamps undefined, construct the undefined one
     if (!defined($args{horizon})) {
@@ -140,7 +139,7 @@ sub autoPredict {
         end_time    => $args{end_time},
         node_id     => $args{node_id},
         model_list  => $args{model_list},
-        data        => $args{data},
+        data        => {%data},
     )};
 
     my $best_model = $best{best_model};
@@ -157,12 +156,13 @@ sub autoPredict {
     );
 
     # Return the forecast
-    return $datamodel->predict(
+    my $prediction = $datamodel->predict(
         data            => \%data,
         freq            => $best_freq,
         timestamps      => $args{timestamps},
         end_time        => $args{horizon},
     );
+    return $prediction;
 }
 
 =pod

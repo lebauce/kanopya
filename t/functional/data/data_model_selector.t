@@ -60,8 +60,7 @@ sub main {
     }
 
     setup();
-
-#    testDataModelSelector();
+    testDataModelSelector();
     testAutoPredict();
 
     if ($testing == 1) {
@@ -71,9 +70,8 @@ sub main {
 
 sub testAutoPredict {
     lives_ok {
-
         my %data = (
-            1  => 5  , 2  => 12 , 3  => 13 , 4  => 15 , 5  => 13 ,
+            1  => undef , 2  => 12 , 3  => 13 , 4  => 15 , 5  => 13 ,
             6  => 12 , 7  => 5  , 8  => 12 , 9  => 13 , 10 => 15 ,
             11 => 13 , 12 => 12 , 13 => 5  , 14 => 12 , 15 => 13 ,
             16 => 15 , 17 => 13 , 18 => 12 , 19 => 5  , 20 => 12 ,
@@ -82,7 +80,7 @@ sub testAutoPredict {
             31 => 5  , 32 => 12 , 33 => 13 , 34 => 15 , 35 => 13 ,
             36 => 12 , 37 => 5  , 38 => 12 , 39 => 13 , 40 => 15 ,
             41 => 13 , 42 => 12 , 43 => 5  , 44 => 12 , 45 => 13 ,
-            46 => 15 , 47 => 13 , 48 => 12 , 49 => 5  , 50 => 12 ,
+            46 => 15 , 47 => 13 , 48 => 12 , 49 => 5  , 50 => undef ,
         );
         my %forecast = %{DataModelSelector->autoPredict(
             combination_id => $comb->id,
@@ -90,6 +88,7 @@ sub testAutoPredict {
             end_time       => 50,
             horizon        => 70,
             data           => \%data,
+            model_list     => ['AutoArima'],
         )};
         my @values = @{$forecast{values}};
     } 'DataModelSelector : Testing autoPredict Method';
