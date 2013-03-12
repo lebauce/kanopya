@@ -1,1 +1,0 @@
-lvremove -f /dev/vg1/etc_00_27_oe_14_39_7b /dev/vg1/etc_00_1c_c0_c1_a5_81 /dev/vg1/etc_00_1c_c0_d1_18_46 /dev/vg1/etc_00_1c_c0_c1_a5_42  /dev/vg1/etc_00_1c_c0_d1_1a_8e  /dev/vg1/etc_00_1c_c0_c1_a6_02 
