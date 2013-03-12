@@ -130,7 +130,7 @@ sub execute {
             $iface->assignIp();
 
             # Apply VLAN's
-            my $ehost_manager = EEntity->new(entity => $self->{context}->{host}->getHostManager);
+            my $ehost_manager = $self->{context}->{host}->getHostManager;
             for my $netconf ($iface->netconfs) {
                 for my $vlan ($netconf->vlans) {
                     $log->info("Apply VLAN on " . $iface->iface_name);
@@ -158,9 +158,9 @@ sub execute {
                              options     => $mount_options);
 
     # Update kanopya etc hosts
-    my $agent = $self->{_executor}->getComponent(category => "Configurationagent");
+    my $agent = $self->{context}->{bootserver}->getComponent(category => "Configurationagent");
     my $eagent = EEntity->new(data => $agent);
-    $eagent->applyConfiguration(cluster => $self->{_executor});
+    $eagent->applyConfiguration(cluster => $self->{context}->{bootserver});
 
     # Umount system image container
     if ($self->{params}->{mountpoint}) {

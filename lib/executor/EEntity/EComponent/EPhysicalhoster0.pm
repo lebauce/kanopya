@@ -49,7 +49,7 @@ sub startHost {
         $log->error($errmsg);
         throw Kanopya::Exception::Execution(error => $errmsg);
     }
-    my $iface = $self-->getMasterNode->getAdminIface->iface_name;
+    my $iface = $self->getMasterNode->host->getAdminIface->iface_name;
     my $command = "/usr/sbin/etherwake -i " . $iface . " " . $args{host}->getPXEIface->iface_mac_addr;
     my $result = $self->_host->getEContext->execute(command => $command);
 

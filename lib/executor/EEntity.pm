@@ -61,6 +61,10 @@ sub new {
                          required => [ 'entity' ],
                          optional => { 'eclass' => $class->eclass(class => ref($args{entity})) });
 
+    if (not $args{entity}->isa("Entity")) {
+        throw Kanopya::Exception::Internal(error => "$args{entity} is not an Entity");
+    }
+
     # Use a possibly defined mock for this execution class
     $args{eclass} = $mocks_classes->{$args{eclass}}
                         ? $args{eclass} . '::' . $mocks_classes->{$args{eclass}} : $args{eclass};

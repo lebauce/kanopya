@@ -37,6 +37,7 @@ use Log::Log4perl 'get_logger';
 use Data::Dumper;
 use Message;
 use EEntity;
+use Entity::ServiceProvider::Cluster;
 
 my $log = get_logger("");
 my $errmsg;
@@ -151,12 +152,13 @@ sub generateConfiguration {
                          required => [ 'cluster', 'host' ]);
      
     my $generated_files = [];
+    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
                          
     push @$generated_files, $self->_generateHostname(%args);
     push @$generated_files, $self->_generateResolvconf(%args);
     push @$generated_files, $self->_generateUdevPersistentNetRules(%args);
     push @$generated_files, $self->_generateHosts(
-                                kanopya_domainname => $self->{_executor}->cluster_domainname,
+                                kanopya_domainname => $kanopya->cluster_domainname,
                                 %args
                             );
 

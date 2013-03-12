@@ -156,7 +156,7 @@ sub registerNode {
 }
 
 sub unregisterNode {
-    my $self = shift;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'node' ]);
 
