@@ -740,11 +740,10 @@ sub _getOrRegisterSubnet {
                     'network_id'        => $network_id,
                     'ip_version'        => 4,
                     'cidr'              => $network_addr->cidr(),
-                    'gateway_ip'        => $poolip->network->network_gateway,
                     'allocation_pools'  => [
                         {
-                            start   => $network_addr->first(),
-                            end     => $network_addr->last()
+                            start   => ($network_addr->first() + 1)->addr(),
+                            end     => $network_addr->last()->addr()
                         },
                     ]
                 }
