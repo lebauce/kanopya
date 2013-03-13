@@ -664,7 +664,14 @@ sub addComponent {
 
     my $component = $self->SUPER::addComponent(%args);
     for my $method ('getConf', 'setConf') {
-        $component->addPerm(consumer => $self->user, method => $method);
+        # TODO: probably should not occurs.
+        eval {
+            $component->addPerm(consumer => $self->user, method => $method);
+        };
+        if ($@) {
+            $log->warn("Unable to set permissions on component <$component>, " .
+                       "it is probably already installed.");
+        }
     }
     return $component;
 }
