@@ -635,7 +635,7 @@ sub registerOperations {
         [ 'ScaleMemoryHost', 'Scaling node memory' ],
         [ 'CancelWorkflow', 'Canceling wokflow' ],  
         [ 'LaunchSCOWorkflow' ],
-        [ 'UpdatePuppetCluster' ],
+        [ 'UpdatePuppetCluster', 'Reconfigure cluster' ],
         [ 'UpdateComponent' ],
         [ 'LaunchScaleInWorkflow', 'Configuring scale in node' ],
         [ 'LaunchOptimiaasWorkflow' ],
