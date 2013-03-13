@@ -135,7 +135,8 @@ sub registerNode {
                          optional => { 'host'             => undef,
                                        'systemimage'      => undef,
                                        'state'            => undef,
-                                       'monitoring_state' => 'enabled' });
+                                       'monitoring_state' => 'enabled',
+                                       'components'       => $self->components });
 
     my $node = Node->new(
                    service_provider_id => $self->id,
@@ -149,7 +150,12 @@ sub registerNode {
 
     # Link the service provider components to the new node
     # TODO: Handle heterogeneous component configuration
-    for my $component ($self->components) {
+    for my $component (@{ $args{components} }) {
+        if ($component->service_provider->id != $self->id) {
+            throw Kanopya::Exception::Internal(
+                      error => "Component <$component> do not come from this service provider <" . $self->id . ">"
+                  );
+        }
         $component->registerNode(node => $node, master_node => ($node->node_number == 1) ? 1 : 0);
     }
     return $node;
@@ -516,7 +522,8 @@ sub addComponent {
     General::checkParams(args     => \%args,
                          required => [ 'component_type_id' ],
                          optional => { 'component_configuration' => undef,
-                                       'component_template_id'   => undef });
+                                       'component_template_id'   => undef,
+                                       'nodes'                   => $self->nodes });
 
     # Check if the type of the given component is installable on this type
     # of service provider.
@@ -562,7 +569,12 @@ sub addComponent {
 
     # For instance install the component on all node of the service provider,
     # use the first started node as master node for the component.
-    for my $node ($self->nodes) {
+    for my $node (@{ $args{nodes} }) {
+        if ($node->service_provider->id != $self->id) {
+            throw Kanopya::Exception::Internal(
+                      error => "Node <$node> do not come from this service provider <" . $self->id . ">"
+                  );
+        }
         $component->registerNode(node => $node, master_node => ($node->node_number == 1));
     }
 
