@@ -124,9 +124,11 @@ function showCombinationGraph(curobj,combi_id,label,start,stop, sp_id) {
 
 }
 
-// Allow user to click on the graph to select start and end date
-// Selected range will be highlighted on the graph (using overlays, keeping existing one)
-// Callback will be called with start and stop params
+/*
+ * Allow user to click on the graph to select start and end date
+ * Selected range will be highlighted on the graph (using overlays, keeping existing one)
+ * Callback will be called with start and stop params
+ */
 function pickTimeRange(params, overlays, callback) {
     var selected_start_time;
     var selected_end_time;
@@ -157,6 +159,77 @@ function pickTimeRange(params, overlays, callback) {
   });
 }
 
+function elem_loading_start( elem ) {
+    var loadingHtml = '<div class="loading"><img alt="Loading, please wait" src="/css/theme/loading.gif" /><p>Loading...</p></div>';
+    $(loadingHtml).appendTo(elem);
+    $('*').addClass('cursor-wait');
+}
+
+function elem_loading_stop( elem ) {
+    elem.find('.loading').remove();
+    $('*').removeClass('cursor-wait');
+}
+
+/*
+ * Transform time series format from API : {timestamps: [t1, t2], values: [v1,v2]}
+ * to jqplot expected format : [[t1*1000, v1], [t2*1000, v2]]
+ */
+function _formatTimeSerie(ts) {
+    var formatted_ts = [];
+    for (var i=0; i< ts.timestamps.length; i++) {
+        // We multiply value by 1 to force number
+        formatted_ts.push([ts.timestamps[i] * 1000, 1 * ts.values[i]]);
+    }
+    return formatted_ts;
+}
+
+/*
+ * Allow user to click on graph to select start and end date for data learning
+ * Then click on predict button to launch data model selector autoPredict
+ * Display the prediction with an horizon corresponding to last date visible on the graph
+ */
+function setAutoPredictControl(params) {
+    pickTimeRange(params, [], function(start, end) {
+        var graph_container = params.graph_container;
+        var graph_div = $('<div>', {id: params.graph_div_id});
+
+        params.model_container.find('.instant_predict').prop('disabled', false).unbind().click(function() {
+            graph_container.children().remove();
+            graph_container.append(graph_div);
+            elem_loading_start(graph_container);
+
+            var time_settings = getPickedDate(graph_container.parent());
+            $.ajax({
+                url         : '/api/datamodelselector/autoPredict',
+                type        : 'POST',
+                contentType : 'application/json',
+                data        : JSON.stringify(
+                        {
+                            //model_list      : ['LinearRegression'],
+                            combination_id  : params.combi_id,
+                            start_time      : start,
+                            end_time        : end,
+                            horizon         : parseInt(new Date(time_settings.end).getTime() / 1000),
+                        }
+                ),
+                success     : function (prediction_data) {
+                    elem_loading_stop(graph_container);
+                    timedGraph(
+                            [params.histovalues, _formatTimeSerie(prediction_data)],
+                            params.min, params.max,
+                            params.label, params.unit,
+                            params.graph_div_id,
+                            []
+                    );
+                },
+                error       : function(error) {
+                    graph_container.append('<br>').append($('<div>', {'class' : 'ui-state-highlight ui-corner-all', html: error.responseText}));
+                }
+            });
+        });
+    });
+}
+
 function dataModelManagement(e) {
     var graph_info      = e.data;
     var model_container = e.data.model_container;
@@ -167,6 +240,9 @@ function dataModelManagement(e) {
     if (selected_model_id === 'model_default') {
         model_container.find('.forcast_config').hide();
         model_container.find('.new_model_config').hide();
+
+        setAutoPredictControl(e.data);
+
         return;
     }
 
@@ -215,11 +291,11 @@ function dataModelManagement(e) {
 
         widget_loading_start( graph_info.widget );
         $.ajax({
-          url         : '/api/datamodel/'+selected_model_id+'/predict',
-          async       : false,
-          type        : 'POST',
-          contentType : 'application/json',
-          data        : JSON.stringify(
+            url         : '/api/datamodel/'+selected_model_id+'/predict',
+            async       : false,
+            type        : 'POST',
+            contentType : 'application/json',
+            data        : JSON.stringify(
                   {
                       start_time      : dateTimeToEpoch(time_settings.start),
                       end_time        : dateTimeToEpoch(time_settings.end),
@@ -227,20 +303,20 @@ function dataModelManagement(e) {
                       data_format     :'pair',
                       time_format     :'ms'
                   }
-          ),
-          success     : function (prediction_data) {
-              timedGraph(
+            ),
+            success     : function (prediction_data) {
+                timedGraph(
                       [graph_info.histovalues, prediction_data],
                       graph_info.min, graph_info.max,
                       graph_info.label, graph_info.unit,
                       graph_info.graph_div_id,
                       overlays
-              );
-          },
-          complete    : function () {
-             widget_loading_stop( graph_info.widget );
-          }
-      });
+                );
+            },
+            complete    : function () {
+                widget_loading_stop( graph_info.widget );
+            }
+        });
     }
 }
 
