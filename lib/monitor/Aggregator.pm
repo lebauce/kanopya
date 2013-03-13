@@ -257,23 +257,22 @@ sub _checkNodesMetrics {
     my $received            = $args{received};
     my $service_provider_id = $args{service_provider_id};
 
+    # Avoid Alert->find in for+while loops
+    my @alerts = Alert->search(hash => { entity_id     => $service_provider_id,
+                            alert_message =>
+                                {-like => 'Indicator %(%) was not retrieved by collector for node %'}});
+
+    my %alert_hash = map {$_->alert_message => $_} @alerts;
+
     foreach my $indicator (values %$asked_indicators) {
         while (my ($node_name, $metrics) = each(%$received)) {
             my $msg = "Indicator " . $indicator->indicator_name . "(" . $indicator->indicator_oid . ") " .
                       "was not retrieved by collector for node $node_name";
 
-            my $alert;
-            eval {
-                $alert = Alert->find(hash => {
-                             alert_message => $msg,
-                             entity_id     => $service_provider_id
-                         });
-            };
-
             if (! defined $metrics->{$indicator->indicator_oid}) {
                 $log->debug($msg);
 
-                if ((! defined $alert) || ($alert->alert_active == 0) ) {
+                if ((! defined $alert_hash{$msg}) || ($alert_hash{$msg}->alert_active == 0) ) {
                     Alert->new(
                         entity_id       => $service_provider_id,
                         alert_message   => $msg,
@@ -281,12 +280,11 @@ sub _checkNodesMetrics {
                     );
                 }
             }
-            elsif (defined $alert && $alert->alert_active == 1) {
-                $alert->mark_resolved;
+            elsif (defined $alert_hash{$msg} && $alert_hash{$msg}->alert_active == 1) {
+                $alert_hash{$msg}->mark_resolved;
             }
         }
     }
-
     return 1;
 }
 
