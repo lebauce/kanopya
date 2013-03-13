@@ -27,7 +27,7 @@ sub postStartNode {
 
     # The Puppet manifest is compiled a first time and requests the creation
     # of resources on the other clusters
-    $self->SUPER::postStartNode(%args);
+    $args{cluster}->reconfigure();
 
     # We ask :
     # - the database cluster to create databases and users
@@ -39,7 +39,7 @@ sub postStartNode {
     }
 
     # Now apply the manifest again
-    $self->SUPER::postStartNode(%args);
+    $args{cluster}->reconfigure();
 }
 
 1;
