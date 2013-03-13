@@ -279,8 +279,9 @@ sub startHost {
 
     my $api = $self->api;
     my $image_id;
+    my $diskless = $args{cluster}->cluster_boot_policy ne Manager::HostManager->BOOT_POLICIES->{virtual_disk};
 
-    if ($args{cluster}->cluster_boot_policy eq Manager::HostManager->BOOT_POLICIES->{virtual_disk}) {
+    if (not $diskless) {
         # Register system image
         $image_id = $self->registerSystemImage(host    => $args{host},
                                                cluster => $args{cluster});
@@ -309,8 +310,9 @@ sub startHost {
                 'os-flavor-access:is_public'  => JSON::true,
                 'rxtx_factor'                 => 1,
                 'OS-FLV-EXT-DATA:ephemeral'   => 0,
-                $image_id ? ("disk", $args{host}->getNodeSystemimage->
-                                                  getContainer->container_size / 1024 / 1024) : ()
+                'disk'                        => $diskless ?
+                                                 0 : $args{host}->getNodeSystemimage
+                                                                ->getContainer->container_size / 1024 / 1024
             },
         }
     );
@@ -335,7 +337,7 @@ sub startHost {
                 flavorRef         => $flavor->{flavor}->{id},
                 name              => $args{host}->node->node_hostname,
                 networks          => $ports,
-                $image_id ? ("imageRef", $image_id) : ()
+                imageRef          => $image_id
             }
         }
     );
