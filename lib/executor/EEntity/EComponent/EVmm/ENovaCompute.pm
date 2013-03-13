@@ -23,8 +23,8 @@ use Hash::Merge qw(merge);
 use OpenStack::API;
 
 my $resources_keys = {
-    ram => { name => 'ram' },
-    cpu => { name => 'vcpus' },
+    ram => { name => 'ram', factor => 1024 * 1024 },
+    cpu => { name => 'vcpus', factor => 1 },
 };
 
 sub postStartNode {
@@ -138,11 +138,12 @@ sub getVmResources {
    
         my $vm_resources = {};
         for my $resource (@{ $args{resources} }) {
-			$vm_resources->{$vm->id}->{$resource} =
-				$f_details->{flavor}->{$resources_keys->{$resource}->{name}};
+            $vm_resources->{$vm->id}->{$resource} =
+                $f_details->{flavor}->{$resources_keys->{$resource}->{name}} *
+                $resources_keys->{$resource}->{factor};
         }
 
-		$vms_resources = merge($vms_resources, $vm_resources);
+        $vms_resources = merge($vms_resources, $vm_resources);
     }
 
     return $vms_resources;
