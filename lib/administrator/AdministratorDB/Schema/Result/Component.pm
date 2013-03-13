@@ -112,6 +112,25 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->set_primary_key("component_id");
 
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<service_provider_id>
+
+=over 4
+
+=item * L</service_provider_id>
+
+=item * L</component_type_id>
+
+=back
+
+=cut
+
+__PACKAGE__->add_unique_constraint(
+  "service_provider_id",
+  ["service_provider_id", "component_type_id"],
+);
+
 =head1 RELATIONS
 
 =head2 active_directory
@@ -569,6 +588,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 nova_compute
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::NovaCompute>
+
+=cut
+
+__PACKAGE__->might_have(
+  "nova_compute",
+  "AdministratorDB::Schema::Result::NovaCompute",
+  { "foreign.nova_compute_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 openiscsi2
 
 Type: might_have
@@ -874,8 +908,9 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-02-28 14:52:06
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:2KnacZkgc6ED5TxPt0Ys/Q
+
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-03-13 12:11:41
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:XJbYY/5aTno0sctlMSn/aQ
 
 __PACKAGE__->belongs_to(
   "parent",

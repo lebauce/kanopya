@@ -1019,6 +1019,7 @@ CREATE TABLE `component` (
   `service_provider_id` int(8) unsigned,
   `component_type_id` int(8) unsigned NOT NULL,
   `component_template_id` int(8) unsigned DEFAULT NULL,
+  UNIQUE KEY (`service_provider_id`, `component_type_id`),
   PRIMARY KEY (`component_id`),
   FOREIGN KEY (`component_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
