@@ -350,6 +350,8 @@ sub startHost {
                       openstack_vm_uuid  => $response->{server}->{id},
                       hypervisor_id      => $args{hypervisor}->id
                   );
+
+    $args{host}->hypervisor_id($args{hypervisor}->id);
 }
 
 =pod
