@@ -46,7 +46,7 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF };
 
-sub getBaseConfigurtation {
+sub getBaseConfiguration {
     return {
         overcommitment_cpu_factor => '1',
         overcommitment_memory_factor => '1'
