@@ -77,7 +77,7 @@ sub getAvailableMemory {
     my ($hypervisor) = grep { $_->{hypervisor_hostname} eq $host->fqdn } @$host_details;
 
     my $memory = {
-        mem_effectively_available   => $hypervisor->{free_ram_mb} * 1025 * 1024,
+        mem_effectively_available   => $hypervisor->{free_ram_mb} * 1024 * 1024,
         mem_theoretically_available => ($host->host_ram * $e_controller->overcommitment_memory_factor) -
                                        ($hypervisor->{memory_mb_used} * 1024 * 1024),
     };
