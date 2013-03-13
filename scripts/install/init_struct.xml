@@ -47,10 +47,6 @@
                internal_net_mask="internal_net_mask"/>
     </monitor.conf>
 
-    <orchestrator.conf template="orchestrator.conf.tt">
-        <datas admin_password="dbpassword1"/>
-    </orchestrator.conf>
-
     <rulesengine.conf template="rulesengine.conf.tt">
         <datas admin_password="dbpassword1"/>
     </rulesengine.conf>
@@ -76,10 +72,6 @@
     <aggregator-log.conf template="aggregator-log.conf.tt">
         <datas logdir="log_directory"/>
     </aggregator-log.conf>
-
-    <orchestrator-log.conf template="orchestrator-log.conf.tt">
-        <datas logdir="log_directory"/>
-    </orchestrator-log.conf>
 
     <rulesengine-log.conf template="rulesengine-log.conf.tt">
         <datas logdir="log_directory"/>
