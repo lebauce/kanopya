@@ -422,7 +422,7 @@ sub registerPXEImage {
 
     if (!$pxe_image) {
         my ($fh, $filename) = tempfile(UNLINK => 1);
-        print $fh " ";
+        print $fh " " x 512;
         $fh->autoflush();
 
         my $response = $self->api->images->post(
