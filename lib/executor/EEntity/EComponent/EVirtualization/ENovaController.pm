@@ -98,7 +98,7 @@ sub registerHypervisor {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    return $self->addHypervisor(host => $args{host}->_getEntity);
+    return $self->addHypervisor(host => $args{host}->_entity);
 }
 
 sub unregisterHypervisor {
@@ -106,7 +106,7 @@ sub unregisterHypervisor {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    return $self->removeHypervisor(host => $args{host}->_getEntity);
+    return $self->removeHypervisor(host => $args{host}->_entity);
 }
 
 =pod
