@@ -46,7 +46,9 @@ sub getPuppetDefinition {
            "\tdbserver => '" . $sql . "',\n" .
            "\tglance => '" . $glance . "',\n" .
            "\tkeystone => '" . $keystone . "',\n" .
-           "\tpassword => 'nova'" .
+           "\temail => '" . $self->nova_controller->service_provider->user->user_email . "',\n" .
+           "\tpassword => 'nova',\n" .
+           "\tlibvirt_type => 'kvm'\n" .
            "}\n";
 }
 

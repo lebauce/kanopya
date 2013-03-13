@@ -4,6 +4,11 @@ class kanopya::openstack::repository {
             name => 'ubuntu-cloud-keyring',
             ensure => present,
         }
+
+        class { 'apt':
+            always_apt_update => true,
+        }
+
         apt::source { 'ubuntu-cloud-repository':
             location => 'http://ubuntu-cloud.archive.canonical.com/ubuntu',
             release  => 'precise-updates/folsom',
@@ -82,6 +87,7 @@ class kanopya::glance($dbserver, $password, $keystone, $email) {
         keystone_user     => 'glance',
         keystone_password => 'glance',
         sql_connection    => "mysql://glance:${password}@${dbserver}/glance",
+        require           => Class['kanopya::openstack::repository']
     }
 
     class { 'glance::registry':
@@ -92,6 +98,7 @@ class kanopya::glance($dbserver, $password, $keystone, $email) {
         keystone_user     => 'glance',
         keystone_password => 'glance',
         sql_connection    => "mysql://glance:${password}@${dbserver}/glance",
+        require           => Class['kanopya::openstack::repository']
     }
 
     class { 'glance::backend::file': }
@@ -100,59 +107,27 @@ class kanopya::glance($dbserver, $password, $keystone, $email) {
 }
 
 class kanopya::novacontroller($password, $dbserver, $amqpserver, $keystone, $email, $glance, $quantum) {
-    @@rabbitmq_user { 'nova':
-        admin    => true,
-        password => "${password}",
-        provider => 'rabbitmqctl',
-        tag      => "${amqpserver}",
-    }
-
-    @@rabbitmq_user_permissions { "nova@/":
-        configure_permission => '.*',
-        write_permission     => '.*',
-        read_permission      => '.*',
-        provider             => 'rabbitmqctl',
-        tag                  => "${amqpserver}",
-    }
-
-    @@keystone_user { 'nova':
-        ensure   => present,
-        password => "${password}",
-        email    => "${email}",
-        tenant   => 'services',
-        tag      => "${keystone}",
-    }
-
-    @@keystone_user_role { 'nova@services':
-        ensure  => present,
-        roles   => 'admin',
-        tag     => "${keystone}",
-    }
-
-    @@mysql::db { 'nova':
-            user     => 'nova',
-            password => "${password}",
-            host     => "${ipaddress}",
-            grant    => ['all'],
-            charset  => 'latin1',
-            tag      => "${dbserver}",
-    }
-
     exec { "/usr/bin/nova-manage db sync":
         path => "/usr/bin:/usr/sbin:/bin:/sbin",
     }
 
     class { 'nova::api':
-            enabled        => true,
-            admin_password => "${password}",
-            auth_host      => "${keystone}",
-            require        => Exec["/usr/bin/nova-manage db sync"]
+        enabled        => true,
+        admin_password => "${password}",
+        auth_host      => "${keystone}",
+        require        => [ Exec["/usr/bin/nova-manage db sync"],
+                            Class['kanopya::openstack::repository'] ]
     }
 
-    class { 'nova':
-        sql_connection      => "mysql://nova:${password}@${dbserver}/nova",
-        rabbit_host         => "${amqpserver}",
-        glance_api_servers  => "${glance}",
+    if ! defined(Class['kanopya::nova::common']) {
+        class { 'kanopya::nova::common':
+            amqpserver => "${amqpserver}",
+            dbserver   => "${dbserver}",
+            glance     => "${glance}",
+            keystone   => "${keystone}",
+            email      => "${email}",
+            password   => "${password}"
+        }
     }
 
     class { 'nova::network::quantum':
@@ -161,46 +136,67 @@ class kanopya::novacontroller($password, $dbserver, $amqpserver, $keystone, $ema
         quantum_url               => "http://${quantum}:9696",
         quantum_admin_tenant_name => 'services',
         quantum_admin_auth_url    => "http://${keystone}:35357/v2.0",
+        require                   => Class['kanopya::openstack::repository']
     }
 
-    class { 'nova::scheduler': enabled => true, }
-    class { 'nova::objectstore': enabled => true, }
-    class { 'nova::cert': enabled => true, }
-    class { 'nova::vncproxy': enabled => true, }
-    class { 'nova::consoleauth': enabled => true, }
+    class { 'nova::scheduler':
+        enabled => true,
+        require => Class['kanopya::openstack::repository']
+    }
+
+    class { 'nova::objectstore':
+        enabled => true,
+        require => Class['kanopya::openstack::repository']
+    }
+
+    class { 'nova::cert':
+        enabled => true,
+        require => Class['kanopya::openstack::repository']
+    }
+
+    class { 'nova::vncproxy':
+        enabled => true,
+        require => Class['kanopya::openstack::repository']
+    }
+
+    class { 'nova::consoleauth':
+        enabled => true,
+        require => Class['kanopya::openstack::repository']
+    }
 
     Class['kanopya::openstack::repository'] -> Class['kanopya::novacontroller']
 }
 
-class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone, $password) {
+class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone, $email, $password, $libvirt_type) {
     file { "/run/iscsid.pid":
         content => "1",
     }
 
-    class { 'nova':
-        # set sql and rabbit to false so that the resources will be collected
-        sql_connection     => "mysql://nova:${password}@${dbserver}/nova",
-        rabbit_host        => "${amqpserver}",
-        image_service      => 'nova.image.glance.GlanceImageService',
-        glance_api_servers => "${glance}",
-        rabbit_userid      => "nova",
-        rabbit_password    => "nova"
-    }
-
-    class { 'nova::api':
-        enabled        => true,
-        admin_password => "nova",
-        auth_host      => "${keystone}",
+    if ! defined(Class['kanopya::nova::common']) {
+        class { 'kanopya::nova::common':
+            amqpserver => "${amqpserver}",
+            dbserver   => "${dbserver}",
+            glance     => "${glance}",
+            keystone   => "${keystone}",
+            email      => "${email}",
+            password   => "${password}"
+        }
     }
 
     class { 'nova::compute':
         enabled => true,
+        require => Class['kanopya::openstack::repository']
     }
 
-    class { 'nova::compute::quantum': }
+    class { 'nova::compute::quantum':
+        libvirt_vif_driver => 'nova.virt.libvirt.vif.LibvirtHybridOVSBridgeDriver',
+        require            => Class['kanopya::openstack::repository']
+    }
 
     class { 'nova::compute::libvirt':
-        libvirt_type => 'qemu',
+        libvirt_type      => "${libvirt_type}",
+        migration_support => true,
+        vncserver_listen  => '0.0.0.0'
     }
 
     @@keystone_service { 'compute':
@@ -218,14 +214,10 @@ class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone, $password
         tag          => "${keystone}"
     }
 
-    @@database_user { "nova@${ipaddress}":
-        password_hash => mysql_password("${password}"),
-        tag           => "${dbserver}",
-    }
-
-    @@database_grant { "nova@${ipaddress}/nova":
-        privileges => ['all'] ,
-        tag        => "${dbserver}"
+    class { 'quantum::agents::ovs':
+        integration_bridge  => 'br-int',
+        bridge_mappings     => [ 'physflat:br-flat', 'physvlan:br-vlan' ],
+        bridge_uplinks      => [ 'br-flat:eth1' ]
     }
 
     Class['kanopya::openstack::repository'] -> Class['kanopya::novacompute']
@@ -241,6 +233,7 @@ class kanopya::quantum_($amqpserver, $dbserver, $keystone, $password, $email, $b
     class { 'quantum::server':
         auth_password => $password,
         auth_host     => "${keystone}",
+        require       => Class['kanopya::openstack::repository']
     }
 
     @@mysql::db { 'quantum':
@@ -295,11 +288,73 @@ class kanopya::quantum_($amqpserver, $dbserver, $keystone, $password, $email, $b
     }
 
     class { 'quantum::plugins::ovs':
-        sql_connection => "mysql://quantum:${password}@${dbserver}/quantum",
+        sql_connection      => "mysql://quantum:${password}@${dbserver}/quantum",
         tenant_network_type => 'vlan',
         network_vlan_ranges => 'physnetflat,physnetvlan:1:4094',
-        bridge_mappings => ["physnetflat:${bridge_flat}","physnetvlan:${bridge_vlan}"]
+        bridge_mappings     => [ "physnetflat:${bridge_flat}", "physnetvlan:${bridge_vlan}" ],
+        require             => Class['kanopya::openstack::repository']
     }
 
     Class['kanopya::openstack::repository'] -> Class['kanopya::quantum_']
 }
+
+class kanopya::nova::common($amqpserver, $dbserver, $glance, $keystone, $email, $password) {
+    @@rabbitmq_user { 'nova':
+        admin    => true,
+        password => "${password}",
+        provider => 'rabbitmqctl',
+        tag      => "${amqpserver}",
+    }
+
+    @@rabbitmq_user_permissions { "nova@/":
+        configure_permission => '.*',
+        write_permission     => '.*',
+        read_permission      => '.*',
+        provider             => 'rabbitmqctl',
+        tag                  => "${amqpserver}",
+    }
+
+    @@keystone_user { 'nova':
+        ensure   => present,
+        password => "${password}",
+        email    => "${email}",
+        tenant   => 'services',
+        tag      => "${keystone}",
+    }
+
+    @@keystone_user_role { 'nova@services':
+        ensure  => present,
+        roles   => 'admin',
+        tag     => "${keystone}",
+    }
+
+    @@mysql::db { 'nova':
+            user     => 'nova',
+            password => "${password}",
+            host     => "${ipaddress}",
+            grant    => ['all'],
+            charset  => 'latin1',
+            tag      => "${dbserver}",
+    }
+
+    @@database_user { "nova@${fqdn}":
+        password_hash => mysql_password("${password}"),
+        tag           => "${dbserver}",
+    }
+
+    @@database_grant { "nova@${fqdn}/nova":
+        privileges => ['all'] ,
+        tag        => "${dbserver}"
+    }
+
+    class { 'nova':
+        # set sql and rabbit to false so that the resources will be collected
+        sql_connection     => "mysql://nova:${password}@${dbserver}/nova",
+        rabbit_host        => "${amqpserver}",
+        image_service      => 'nova.image.glance.GlanceImageService',
+        glance_api_servers => "${glance}",
+        rabbit_userid      => "nova",
+        rabbit_password    => "nova"
+    }
+}
+
