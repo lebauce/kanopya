@@ -79,25 +79,6 @@ sub configureNode {
     }
 }
 
-sub postStartNode {
-    my ($self, %args) = @_;
-
-    General::checkParams(
-        args     => \%args,
-        required => [ 'cluster', 'host' ]
-    );
-
-    $self->iaas->registerHypervisor(host => $args{host});
-}
-
-sub stopNode {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'host' ]);
-
-    $self->iaas->unregisterHypervisor(host => $args{host});
-}
-
 sub isUp {
     my ($self, %args) = @_;
 
@@ -312,12 +293,6 @@ sub getRamUsedByVm {
         mem_swap => $mem->{'VmSwap:'},
         total    => $mem->{'VmRSS:'} + $mem->{'VmSwap:'},
     }
-}
-
-sub iaas {
-    my ($self, %args) = @_;
-
-    return EEntity->new(data => $self->getAttr(name => "iaas", deep => 1));
 }
 
 1;

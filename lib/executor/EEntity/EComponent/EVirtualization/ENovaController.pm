@@ -96,19 +96,17 @@ sub addNode {
 sub registerHypervisor {
     my ($self, %args) = @_;
 
-    General::checkParams(
-        args     => \%args,
-        required => [ 'host' ]
-    );
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    return $self->addHypervisor(host => $args{host}->_getEntity);
 }
 
 sub unregisterHypervisor {
     my ($self, %args) = @_;
 
-    General::checkParams(
-        args     => \%args,
-        required => [ 'host' ]
-    );
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    return $self->removeHypervisor(host => $args{host}->_getEntity);
 }
 
 =pod
