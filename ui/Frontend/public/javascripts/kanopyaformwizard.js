@@ -483,7 +483,7 @@ var KanopyaFormWizard = (function() {
                 $(input).width($(input).width() - 50);
             } else {
                 // TODO: Get the real length of the unit select box.
-                $(input).width($(input).width() - 45);
+                $(input).width($(input).width() - 55);
             }
             current_unit = attr.unit;
 
@@ -786,6 +786,22 @@ var KanopyaFormWizard = (function() {
 
             } else {
                 hash_to_fill[attr.name] = attr.value;
+            }
+        }
+
+        // Once data has been serialized, browse the relation to initialize lists of
+        // relations of relations if not defined.
+        for (var relation in this.relations) {
+            for (var index in this.relations[relation]) {
+                var attr = this.attributedefs[this.relations[relation][index]];
+
+                if (attr !== undefined && attr.type === 'relation' && attr.relation != 'single') {
+                    for (var entryindex in data[relation]) {
+                        if (data[relation][entryindex][this.relations[relation][index]] === undefined) {
+                            data[relation][entryindex][this.relations[relation][index]] = [];
+                        }
+                    }
+                }
             }
         }
         return data;
