@@ -69,7 +69,7 @@ sub execute {
 
         eval {
             # Update Dhcp component conf
-            my $host_mac = $node->getPXEIface->giface_mac_addr;
+            my $host_mac = $node->getPXEIface->iface_mac_addr;
             if ($host_mac) {
 	            my $hostid = $self->{context}->{component_dhcpd}->getHostId(
 	                             dhcpd3_subnet_id         => $subnet,
