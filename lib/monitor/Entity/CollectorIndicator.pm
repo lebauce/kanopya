@@ -85,6 +85,41 @@ sub lastValue {
     return \%id_values;
 }
 
+=pod
+=begin classdoc
+
+Return values between start_time and stop_time for several nodes
+
+@param nodes Array ref of nodes for which we want fetch values
+@param start_time Start time in epoch
+@param end_time Stop time in epoch
+
+@return hashref { node_id => {timestamp => value} }
+
+=end classdoc
+=cut
+
+sub fetch {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['nodes', 'start_time', 'end_time']);
+
+    my @node_hostnames = map {$_->node_hostname} @{$args{nodes}};
+
+    my $data = DataCache::nodeMetricFetch(
+                   indicator    => $self->indicator,
+                   node_names   => \@node_hostnames,
+                   start_time   => $args{start_time},
+                   end_time     => $args{end_time},
+               );
+
+     my %id_values;
+     for my $node (@{$args{nodes}}) {
+       $id_values{$node->id} = $data->{$node->node_hostname};
+    }
+
+    return \%id_values;
+}
+
 sub throwUndefAlert {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['hostname_values', 'service_provider']);

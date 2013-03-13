@@ -42,7 +42,7 @@ use warnings;
 use Data::Dumper;
 use TimeData::RRDTimeData;
 use Kanopya::Config;
-
+use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -132,7 +132,7 @@ sub nodeMetricLastValue {
     my $value_by_nodes;
     if ($NODEMETRIC_STORAGE_ACTIVE) {
         $value_by_nodes = _nodeMetricLastValueFromStorage(
-                               indicator                => $indicator,
+                              indicator                => $indicator,
                               monitored_objects_names  => $args{node_names}
                           );
     } else {
@@ -166,4 +166,48 @@ sub _nodeMetricLastValueFromStorage {
     return \%value_by_objects;
 }
 
+=pod
+=begin classdoc
+
+Allows to retrieve indicator values between start_time and stop_time for several nodes
+If cache is activated then get values from cache (rrd) else throw an exception (not implemented)
+
+TODO Allow fetch directly from collector manager
+
+@param collector_indicator CollectorIndicator instance for which we want the value
+@param node_names Array ref of nodes name for which we want fetch values
+@param start_time Start time in epoch
+@param end_time Stop time in epoch
+
+@return hashref { node_name => {timestamp => value} }
+
+=end classdoc
+=cut
+
+sub nodeMetricFetch {
+    my ($self, %args) = @_;
+
+    General::checkParams args => \%args, required => ['indicator', 'node_names', 'start_time', 'end_time'];
+
+    my $indicator = $args{collector_indicator}->indicator;
+
+    my %values_by_nodes;
+    if ($NODEMETRIC_STORAGE_ACTIVE) {
+        for my $object_name (@{$args{node_names}}) {
+            my $metric_uid = $args{indicator}->id . '_' . $object_name;
+            my %data = RRDTimeData::fetchTimeDataStore(
+                          name   => $metric_uid,
+                          start  => $args{start_time},
+                          end    => $args{end_time}
+                      );
+            $values_by_nodes{$object_name} = \%data;
+        }
+    } else {
+        throw Kanopya::Exception::NotImplemented(
+                  error => 'Can not fetch historical data of node metric when data cache is not active'
+              );
+    }
+
+    return \%values_by_nodes;
+}
 1;
