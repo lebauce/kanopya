@@ -46,7 +46,7 @@ use CapacityManagement;
 use Kanopya::Exceptions;
 use Entity::ServiceProvider::Cluster;
 use Entity::Host;
-use EFactory;
+use EEntity;
 
 my $log = get_logger("");
 my $errmsg;
@@ -82,7 +82,7 @@ sub prepare {
                     wanted_resource => $self->{params}->{cpu_number},
                 );
 
-    my $cpu_limit = $self->{context}->{host}->node->parent->service_provider->getLimit(type => 'cpu');
+    my $cpu_limit = $self->{context}->{host}->node->service_provider->getLimit(type => 'cpu');
 
     if ($cpu_limit && ($check == 0 || $self->{params}->{cpu_number} > $cpu_limit)) {
         my $errmsg = "Not enough CPU in HV $hv_id for VM $vm_id. Infrastructure may have change between operation queing and its execution";

@@ -40,7 +40,7 @@ sub getPuppetDefinition {
 
     if (ref($sql) eq 'Entity::Component::Mysql5') {
         $sqlconnection  = 'mysql://keystone:keystone@';
-        $sqlconnection .= $sql->service_provider->getMasterNodeIp;
+        $sqlconnection .= $sql->getMasterNode->adminIp;
         $sqlconnection .= '/keystone';
     }
     else {
@@ -51,7 +51,7 @@ sub getPuppetDefinition {
     $definition = "if \$kanopya_openstack_repository == undef {
                        class { 'kanopya::openstack::repository': }
                        \$kanopya_openstack_repository = 1
-                   }
+                   }\n
                    class { 'keystone':
                          verbose        => true,
                          debug          => true,
@@ -70,7 +70,7 @@ sub getPuppetDefinition {
                         require => Exec['/usr/bin/keystone-manage db_sync'],
                     }\n";
     $definition .= "class { 'kanopya::keystone': dbserver => \"" .
-                   $sql->service_provider->getMasterNode->fqdn .
+                   $sql->getMasterNode->fqdn .
                    "\", password => \"keystone\" }\n";
 
     return $definition;

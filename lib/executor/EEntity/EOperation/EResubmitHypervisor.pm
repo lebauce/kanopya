@@ -68,7 +68,7 @@ sub prepare {
 sub execute {
     my $self = shift;
 
-    $self->{context}->{cloud_manager} = EFactory::newEEntity(
+    $self->{context}->{cloud_manager} = EEntity->new(
                                             data => $self->{context}->{host}->getCloudManager(),
                                         );
 

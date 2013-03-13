@@ -729,8 +729,7 @@ sub generatePuppetConfiguration {
     use Kanopya::Config;
     use EEntity;
 
-    my $config = Kanopya::Config::get('executor');
-    my $kanopya = Entity->get(id => $config->{cluster}->{executor});
+    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
     my $linux = $kanopya->getComponent(category => "System");
     
     my @hosts = $kanopya->getHosts();
@@ -763,6 +762,8 @@ sub generatePuppetConfiguration {
 
 sub genConf {
     mkdir $conf_vars->{conf_dir} unless ( -d $conf_vars->{conf_dir} );
+    `mkdir -p $conf_vars->{rrd_dir}` unless ( -d $conf_vars->{rrd_dir} );
+
     my %datas;
     foreach my $files (keys %$conf_files){
         foreach my $d (keys %{$conf_files->{$files}->{datas}}){

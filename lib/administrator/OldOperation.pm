@@ -22,12 +22,18 @@ use strict;
 use warnings;
 
 use Log::Log4perl 'get_logger';
+use Data::Dumper;
 
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
     type => {
         pattern      => '^.*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    operation_id => {
+        pattern      => '^\d+$',
         is_mandatory => 0,
         is_extended  => 0
     },

@@ -1,4 +1,4 @@
-#    Copyright © 2012 Hedera Technology SAS
+#    Copyright © 2013 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -25,7 +25,7 @@ my $log = get_logger("");
 
 sub AUTOLOAD {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, optional => {'id' => undef});
+    General::checkParams(args => \%args, optional => { 'id' => undef, 'filter' => undef });
 
     my @autoload = split(/::/, $AUTOLOAD);
     my $method = $autoload[-1];
@@ -35,16 +35,18 @@ sub AUTOLOAD {
         token               => $self->{token} || undef,
         token_expiration    => $self->{token_expiration} || undef,
     };
+
     # $args{id} is used to avoid methods starting with digit
     # abc->images(id => '022efa')->members <---> abc/images/022efa/members
-    if ( defined $args{id} ) {
+    if ( defined $args{id} || defined $args{varchar} ) {
         $object->{path} = $self->{path} . '/' . $method . '/' . $args{id};
     }
     else {
         $object->{path} = $self->{path} . '/' . $method;
     }
-    bless $object, 'OpenStack::Object';
+    $object->{path} .= '?' . $args{filter} if ( defined $args{filter} );
 
+    bless $object, 'OpenStack::Object';
     return $object;
 }
 
@@ -126,7 +128,20 @@ sub request {
 
     my $response = `curl -X $method_type $request $complete_url`;
 
-    return from_json($response);
+    my $json;
+    eval {
+        $json = from_json($response);
+    };
+    if ($@) {
+        if ($response) {
+            $log->debug("Invalid response from API : $response");
+        }
+        else {
+            $log->debug("API returned no response");
+        }
+    }
+
+    return $json;
 }
 
 sub DESTROY {

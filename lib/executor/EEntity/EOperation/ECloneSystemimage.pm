@@ -45,7 +45,7 @@ use Date::Simple (':all');
 
 use Kanopya::Exceptions;
 use Entity;
-use EFactory;
+use EEntity;
 use Entity::ServiceProvider;
 use Entity::ServiceProvider::Cluster;
 use Entity::Host;
@@ -98,7 +98,7 @@ sub prepare {
     eval {
         my $entity = Entity::Systemimage->new(systemimage_name => $self->{params}->{systemimage_name},
                                               systemimage_desc => $self->{params}->{systemimage_desc});
-        $self->{context}->{systemimage} = EFactory::newEEntity(data => $entity);
+        $self->{context}->{systemimage} = EEntity->new(data => $entity);
     };
     if($@) {
         throw Kanopya::Exception::Internal::WrongValue(error => $@);

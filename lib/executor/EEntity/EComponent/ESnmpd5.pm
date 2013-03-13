@@ -28,7 +28,7 @@ sub addNode {
     General::checkParams(args     => \%args,
                          required => ['cluster','host','mount_point']);
 
-    my $conf = $self->_getEntity()->getConf();
+    my $conf = $self->_entity->getConf();
 
     # generation of /etc/default/snmpd 
     my $data = {};
@@ -44,7 +44,7 @@ sub addNode {
         data          => $data
     );
     
-    $self->getExecutorEContext->send(
+    $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc/default',
     );
@@ -62,7 +62,7 @@ sub addNode {
         data          => $data
     );
     
-    $self->getExecutorEContext->send(
+    $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc/snmp',
     );

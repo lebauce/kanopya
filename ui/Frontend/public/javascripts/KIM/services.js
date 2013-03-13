@@ -1,6 +1,7 @@
 // KIM services
 require('common/service_common.js');
 require('common/model.js');
+require('common/general.js');
 
 // Must progressively move functions in the Service class
 var Service = (function(_super) {
@@ -182,13 +183,15 @@ function servicesList (container_id, elem_id) {
                         return false;
                     }
                 },
-                callback : function () { $(grid).trigger("reloadGrid"); }
+                callback : function (data) {
+                    handleCreateOperation(data, grid);
+                }
             })).start();
         });
-
+        
         $('#' + cid).append(button);
     };
-
+	
     createAddServiceButton(container_id, grid);
 }
 
@@ -278,14 +281,16 @@ function runScaleWorkflow(type, eid, spid) {
         resizable       : false,
         modal           : true,
         close           : function() { $(this).remove(); },
-        buttons         : {
-            'Ok'        : function() {
+        buttons         :[
+            {id:'button-cancel',text:'Cancel',click: function() { $(this).dialog('close');}},
+            {id:'button-ok',text:'Ok',click: function() {
                 var amount  = $(inp).val();
                 if (amount != null && amount !== "") {
                     amount = getRawValue(amount, 'scale_amount_unit');
                     $.ajax({
                         async       : false,
-                        url         : '/api/serviceprovider/' + spid + '/service_provider_managers?manager_type=host_manager',
+                        url         : '/api/serviceprovider/' + spid + '/service_provider_managers?' +
+                                      'manager_category.parent.category_name=HostManager&expand=manager_category',
                         type        : 'GET',
                         success     : function(hmgr) {
                             $.ajax({
@@ -302,9 +307,8 @@ function runScaleWorkflow(type, eid, spid) {
                         }
                     });
                 }
-            },
-            'Cancel'    : function() { $(this).dialog('close'); }
-        }
+            }}
+        ]
     });
 }
 
@@ -314,7 +318,8 @@ function migrate(spid, eid) {
     var sel     = $('<select>').appendTo(cont);
     $.ajax({
         async       : false,
-        url         : '/api/serviceprovider/' + spid + '/service_provider_managers?manager_type=host_manager',
+        url         : '/api/serviceprovider/' + spid + '/service_provider_managers?' +
+                      'manager_category.parent.category_name=HostManager&expand=manager_category',
         type        : 'GET',
         success     : function(hmgr) {
             $.ajax({
@@ -429,7 +434,8 @@ function nodedetailsaction(cid, eid) {
                 },
             ]
             require('KIM/services_details.js');
-            createallbuttons(buttons, $('#' + cid));
+            var action_div=$('#' + cid).prevAll('.action_buttons');
+            createallbuttons(buttons, action_div);
         }
     });
 }

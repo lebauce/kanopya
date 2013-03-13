@@ -50,7 +50,8 @@ function Users() {
                 { name: 'user_email', index: 'user_email', width: 200}
             ]
         });
-        var user_addbutton  = $('<a>', { text : 'Add a user' }).appendTo('#' + container_id)
+        var action_div=$('#' + container_id).prevAll('.action_buttons');
+        var user_addbutton  = $('<a>', { text : 'Add a user' }).appendTo(action_div)
                                   .button({ icons : { primary : 'ui-icon-plusthick' } });
 
         var creation_attrs = [ 'user_firstname', 'user_lastname', 'user_email', 'user_desc',
@@ -110,8 +111,9 @@ function groupsList (container_id, elem_id) {
         });
         button.bind('click', function() {
             new ModalForm(group_opts).start();
-        });   
-        $('#' + cid).append(button);
+        });  
+        var action_div=$('#' + cid).prevAll('.action_buttons'); 
+        action_div.append(button);
     };
     
     var container = $('#' + container_id);

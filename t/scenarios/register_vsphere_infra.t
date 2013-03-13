@@ -70,13 +70,13 @@ eval {
 
     my $vsphereInstance;
     lives_ok {
-        $vsphereInstance = $cluster->addComponentFromType(
+        $vsphereInstance = $cluster->addComponent(
                                component_type_id => ClassType::ComponentType->find(hash => {
                                                         component_name => 'Vsphere'})->id,
                            );
     } 'register Vsphere component';
 
-    isa_ok($vsphereInstance, 'Entity::Component::Vsphere5');
+    isa_ok($vsphereInstance, 'Entity::Component::Virtualization::Vsphere5');
 
     my $vsphere;
     lives_ok {
@@ -84,7 +84,7 @@ eval {
                                           version => 5);
     } 'retrieve Vsphere component';
 
-    isa_ok($vsphere, 'Entity::Component::Vsphere5');
+    isa_ok($vsphere, 'Entity::Component::Virtualization::Vsphere5');
 
     lives_ok {
         $vsphere->setConf(

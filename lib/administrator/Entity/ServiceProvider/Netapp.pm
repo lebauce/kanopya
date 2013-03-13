@@ -69,11 +69,11 @@ sub new {
 
     my $self = $class->SUPER::new(%args);
 
-    my $component = Entity::Component::NetappLunManager->new();
-    $self->addComponent(component => $component);
+    my $lunmanager = ClassType::ComponentType->find(hash => { component_name => 'NetappLunManager' });
+    $self->addComponent(component_type_id => $lunmanager->id);
 
-    $component = Entity::Component::NetappVolumeManager->new();
-    $self->addComponent(component => $component);
+    my $volmanager = ClassType::ComponentType->find(hash => { component_name => 'NetappVolumeManager' });
+    $self->addComponent(component_type_id => $volmanager->id);
 
     return $self;
 }
@@ -82,12 +82,6 @@ sub remove {
     my $self = shift;
     $self->SUPER::delete();
 };
-
-sub getMasterNodeIp {
-    my $self = shift;
-
-    return $self->netapp_addr;
-}
 
 sub toString {
     my $self = shift;

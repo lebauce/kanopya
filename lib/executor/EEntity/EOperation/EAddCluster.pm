@@ -22,7 +22,7 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use EFactory;
+use EEntity;
 
 use Entity::ServiceProvider::Cluster;
 use Entity::Systemimage;
@@ -70,7 +70,7 @@ sub prepare {
     # Cluster creation
     eval {
         my $cluster = Entity::ServiceProvider::Cluster->new(%{$self->{params}->{cluster_params}});
-        $self->{context}->{cluster} = EFactory::newEEntity(data => $cluster);
+        $self->{context}->{cluster} = EEntity->new(data => $cluster);
     };
     if($@) {
         $errmsg = "Cluster instanciation failed because : " . $@;

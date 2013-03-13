@@ -59,8 +59,7 @@ eval {
     my $kanopya_cluster;
     my $physical_hoster;
     lives_ok {
-        $kanopya_cluster = Entity::ServiceProvider::Cluster->find(
-                               hash => { cluster_name => 'kanopya' });
+        $kanopya_cluster = Entity::ServiceProvider::Cluster->getKanopyaCluster;
         $physical_hoster = $kanopya_cluster->getHostManager();
     } 'Retrieve Kanopya cluster';
 
@@ -69,39 +68,39 @@ eval {
 
     my $disk_manager;
     lives_ok {
-        $disk_manager = EFactory::newEEntity(
+        $disk_manager = EEntity->new(
                             data => $kanopya_cluster->getComponent(name    => "Lvm",
                                                                    version => 2)
                         );
     } 'Retrieving LVM component';
 
-    isa_ok ($disk_manager->_getEntity, 'Manager::DiskManager');
+    isa_ok ($disk_manager->_entity, 'Manager::DiskManager');
 
     my $export_manager;
     lives_ok {
-        $export_manager = EFactory::newEEntity(
+        $export_manager = EEntity->new(
                               data => $kanopya_cluster->getComponent(name    => "Iscsitarget",
                                                                      version => 1)
                           );
     } 'Retrieving iSCSI component';
 
-    isa_ok ($export_manager->_getEntity, 'Manager::ExportManager');
+    isa_ok ($export_manager->_entity, 'Manager::ExportManager');
 
     my $nfs_manager;
     lives_ok {
-        $nfs_manager = EFactory::newEEntity(
+        $nfs_manager = EEntity->new(
                            data => $kanopya_cluster->getComponent(name    => "Nfsd",
                                                                   version => 3)
                        );
     } 'Retrieving NFS server component';
 
-    isa_ok ($nfs_manager->_getEntity, 'Manager::ExportManager');
+    isa_ok ($nfs_manager->_entity, 'Manager::ExportManager');
 
     my $nfs;
     eval {
         $nfs = Entity::ContainerAccess::NfsContainerAccess->find (hash => {
-            container_access_ip     => $kanopya_cluster->getMasterNodeIp,
-            container_access_export => $kanopya_cluster->getMasterNodeIp . ":/nfsexports/new_img_repo"
+            container_access_ip     => $nfs_manager->getMasterNode->adminIp,
+            container_access_export => $nfs_manager->getMasterNode->adminIp . ":/nfsexports/new_img_repo"
         });
     };
     
@@ -113,7 +112,7 @@ eval {
                 size         => 6 * 1024 * 1024 * 1024,
                 filesystem   => "ext3",
                 vg_id        => 1
-            )->_getEntity;
+            )->_entity;
         } 'Creating disk for image repository';
       
     	lives_ok {

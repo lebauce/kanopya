@@ -164,7 +164,7 @@ sub postrequisites {
         if ($migr_state->{hypervisor} eq $self->{context}->{host}->node->node_hostname) {
 
             # After checking migration -> store migration in DB
-            $self->{context}->{cloudmanager_comp}->_getEntity->migrateHost(
+            $self->{context}->{cloudmanager_comp}->_entity->migrateHost(
                 host               => $self->{context}->{vm},
                 hypervisor_dst     => $self->{context}->{host},
                 hypervisor_cluster => $self->{context}->{cluster}

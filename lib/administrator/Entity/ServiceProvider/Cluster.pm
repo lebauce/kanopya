@@ -212,14 +212,12 @@ sub methods {
         forceStop => {
             description => 'force stop this cluster',
         },
+        update => {
+            description => 'reconfigure the cluster',
+            perm_holder => 'entity',
+        }
     };
 }
-
-=head2
-
-    BaseDB label virtual attribute getter
-
-=cut
 
 sub label {
     my $self = shift;
@@ -380,12 +378,10 @@ sub applyPolicies {
         if ($name eq 'components') {
             for my $component (values %$value) {
                 # TODO: Check if the component is already installed
-                my $instance = $self->addComponentFromType(
+                $self->addComponent(
                     component_type_id       => $component->{component_type},
                     component_configuration => $component->{component_configuration}
                 );
-                # Insert default configuration for tables linked to component (when exists)
-                $instance->insertDefaultExtendedConfiguration();
             }
         }
         # Handle network interfaces cluster config
@@ -411,7 +407,8 @@ sub configureManagers {
 
     General::checkParams(args => \%args, optional => { 'managers' => undef });
 
-    my $kanopya = Entity->get(id => Kanopya::Config::get("executor")->{cluster}->{executor});
+    # Find the kanopya cluster
+    my $kanopya = $self->getKanopyaCluster();
 
     # Install new managers or/and new managers params if required
     if (defined $args{managers}) {
@@ -473,7 +470,7 @@ sub configureManagers {
     }
     
     if ($self->cluster_boot_policy eq Manager::HostManager->BOOT_POLICIES->{pxe_iscsi}) {
-        $self->addComponentFromType(
+        $self->addComponent(
             component_type_id => ClassType::ComponentType->find(hash => { component_name => "Openiscsi" })->id
         );
     }
@@ -582,10 +579,6 @@ sub configureOrchestration {
     }
 }
 
-=head2 remove
-
-=cut
-
 sub remove {
     my $self = shift;
 
@@ -646,12 +639,6 @@ sub deactivate {
     );
 }
 
-=head2 toString
-
-    desc: return a string representation of the entity
-
-=cut
-
 sub toString {
     my $self = shift;
     my $string = $self->{_dbix}->get_column('cluster_name');
@@ -677,46 +664,28 @@ sub addComponent {
 
     my $component = $self->SUPER::addComponent(%args);
     for my $method ('getConf', 'setConf') {
-        $component->addPerm(consumer => $self->user, method => $method);
+        # TODO: probably should not occurs.
+        eval {
+            $component->addPerm(consumer => $self->user, method => $method);
+        };
+        if ($@) {
+            $log->warn("Unable to set permissions on component <$component>, " .
+                       "it is probably already installed.");
+        }
     }
     return $component;
 }
 
-sub getMasterNode {
+sub getSharedSystemimage {
     my $self = shift;
-    my $masternode;
 
-    eval {
-        $masternode = Node->find(hash => {
-                          service_provider_id => $self->id,
-                          master_node         => 1
-                      });
-    };
-    if ($@) {
-        return undef;
+    # Use the systemimage of the first found node
+    if (not $self->cluster_si_shared) {
+        throw Kanopya::Exception::Internal(
+                  error => "Should not get shared systemimage in a non si_shared cluster."
+              );
     }
-
-    return $masternode->host;
-}
-
-sub getMasterNodeIp {
-    my $self = shift;
-    my $master;
-
-    $master = $self->getMasterNode();
-    if (defined ($master)) {
-        return $master->adminIp;
-    }
-
-    return;
-}
-
-sub getMasterNodeSystemimage {
-    my $self = shift;
-
-    my $node = $self->findRelated(filters => ['nodes'], hash => { master_node => 1 });
-
-    return $node->systemimage;
+    return $self->findRelated(filters => ['nodes'])->systemimage;
 }
 
 
@@ -727,29 +696,23 @@ sub getHosts {
     return wantarray ? @hosts : \@hosts;
 }
 
-=head2 getHostEntries
-
-    Desc : This function returns all the host entries (ip, fqdn, aliases)
-           for a cluster.
-    return : a list of hashref
-
-=cut
-
 sub getHostEntries {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, optional => { "components" => undef });
 
-    my $executor = Entity->get(id => Kanopya::Config::get("executor")->{cluster}->{executor});
+    my $kanopya = $self->getKanopyaCluster();
     my @host_entries;
 
     # we add each nodes
     foreach my $host ($self->getHosts()) {
         push @host_entries, {
-            fqdn    => $host->fqdn,
-            aliases => [ $host->node->node_hostname . "." . $executor->cluster_domainname,
-                         $host->node->node_hostname ],
-            ip      => $host->adminIp
+            fqdn    => $host->node->fqdn,
+            ip      => $host->adminIp,
+            aliases => [
+                $host->node->node_hostname . "." . $kanopya->cluster_domainname,
+                $host->node->node_hostname
+            ],
         };
     }
 
@@ -765,15 +728,8 @@ sub getHostEntries {
             }
         }
     }
-
     return @host_entries;
 }
-
-=head2 getHostManager
-
-    desc: Return the component/conector that manage this cluster.
-
-=cut
 
 sub getHostManager {
     my $self = shift;
@@ -781,30 +737,12 @@ sub getHostManager {
     return $self->getManager(manager_type => 'HostManager');
 }
 
-=head2 getCurrentNodesCount
-
-    class : public
-    desc : return the current nodes count of the cluster
-
-=cut
-
 sub getCurrentNodesCount {
     my $self = shift;
-    my $nodes = $self->{_dbix}->parent->nodes;
-    if ($nodes) {
-    return $nodes->count;}
-    else {
-        return 0;
-    }
+
+    my @nodes = $self->nodes;
+    return scalar(@nodes);
 }
-
-=head2 getQoSConstraints
-
-    Class : Public
-
-    Desc :
-
-=cut
 
 sub getQoSConstraints {
     my $self = shift;
@@ -817,9 +755,9 @@ sub getQoSConstraints {
 sub isLoadBalanced {
     my $self = shift;
 
-    # search for an potential 'loadbalanced' component
-    my $cluster_components = $self->getComponents(category => "all");
+    # Search for a potential 'loadbalanced' component
     my $is_loadbalanced = 0;
+    my $cluster_components = $self->getComponents(category => "all");
     foreach my $component (@{ $cluster_components }) {
         my $clusterization_type = $component->getClusterizationType();
         if ($clusterization_type && ($clusterization_type eq 'loadbalanced')) {
@@ -827,13 +765,9 @@ sub isLoadBalanced {
             last;
         }
     }
-
     return $is_loadbalanced;
 }
 
-=head2 addNode
-
-=cut
 
 sub addNode {
     my $self = shift;
@@ -848,10 +782,6 @@ sub addNode {
         }
     );
 }
-
-=head2 removeNode
-
-=cut
 
 sub removeNode {
     my $self = shift;
@@ -872,10 +802,6 @@ sub removeNode {
      );
 }
 
-=head2 start
-
-=cut
-
 sub start {
     my $self = shift;
 
@@ -884,10 +810,6 @@ sub start {
     # Enqueue operation AddNode.
     return $self->addNode();
 }
-
-=head2 stop
-
-=cut
 
 sub stop {
     my $self = shift;
@@ -904,19 +826,11 @@ sub stop {
     );
 }
 
-=head2 getState
-
-=cut
-
 sub getState {
     my $self = shift;
     my $state = $self->cluster_state;
     return wantarray ? split(/:/, $state) : $state;
 }
-
-=head2 setState
-
-=cut
 
 sub setState {
     my $self = shift;
@@ -958,13 +872,6 @@ sub getNewNodeNumber {
     return $counter;
 }
 
-=head2 getNodesMetrics
-
-    Desc: call collector manager to retrieve nodes metrics values.
-    return \%data;
-
-=cut
-
 sub getNodesMetrics {
     my ($self, %args) = @_;
 
@@ -991,20 +898,20 @@ sub generateOverLoadNodemetricRules {
     my $service_provider_id = $self->getId();
 
     my $creation_conf = {
-        'memory' => {
-             formula         => 'id2 / id1',
-             comparator      => '>',
-             threshold       => 70,
-             rule_label      => '%MEM used too high',
-             rule_description => 'Percentage memory used is too high',
+        memory => {
+            formula          => 'id2 / id1',
+            comparator       => '>',
+            threshold        => 70,
+            rule_label       => '%MEM used too high',
+            rule_description => 'Percentage memory used is too high',
         },
-        'cpu' => {
+        cpu => {
             #User+Idle+Wait+Nice+Syst+Kernel+Interrupt
-             formula         => '(id5 + id6 + id7 + id8 + id9 + id10) / (id5 + id6 + id7 + id8 + id9 + id10 + id11)',
-             comparator      => '>',
-             threshold       => 70,
-             rule_label      => '%CPU used too high',
-             rule_description => 'Percentage processor used is too high',
+            formula          => '(id5 + id6 + id7 + id8 + id9 + id10) / (id5 + id6 + id7 + id8 + id9 + id10 + id11)',
+            comparator       => '>',
+            threshold        => 70,
+            rule_label       => '%CPU used too high',
+            rule_description => 'Percentage processor used is too high',
         },
     };
 
@@ -1014,7 +921,7 @@ sub generateOverLoadNodemetricRules {
             service_provider_id             => $service_provider_id,
         };
 
-        my $comb  = Entity::Combination::NodemetricCombination->new(%$combination_param);
+        my $comb = Entity::Combination::NodemetricCombination->new(%$combination_param);
 
         my $condition_param = {
             left_combination_id      => $comb->getAttr(name=>'nodemetric_combination_id'),
@@ -1041,7 +948,6 @@ sub generateOverLoadNodemetricRules {
     Desc: create default nodemetric combination and clustermetric for the service provider
 
 =cut
-
 
 sub generateDefaultMonitoringConfiguration {
     my ($self, %args) = @_;
@@ -1107,10 +1013,6 @@ sub initCollectorManager {
     }
 }
 
-=head2 getMonthlyConsommation
-
-=cut
-
 sub getMonthlyConsommation {
     my $self = shift;
 
@@ -1163,21 +1065,28 @@ sub update {
 
     if (defined ($args{components})) {
         for my $component (@{$args{components}}) {
-            $self->addComponentFromType(component_type_id => $component->{component_type_id});
+            $self->addComponent(component_type_id => $component->{component_type_id});
         }
         delete $args{components};
-
-        Entity::Operation->enqueue(
-            priority => 200,
-            type     => 'UpdatePuppetCluster',
-            params   => {
-                context => {
-                    cluster => $self,
-                },
-            },
-        );
     }
+
+    Entity::Operation->enqueue(
+        priority => 200,
+        type     => 'UpdatePuppetCluster',
+        params   => {
+            context => {
+                cluster => $self,
+            },
+        },
+    );
 }
 
+sub getKanopyaCluster {
+    my $self  = shift;
+    my $class = ref($self) || $self;
+
+    # Centralize this ugly way to get the Kanopya cluster
+    return $class->find(hash => { cluster_name => 'Kanopya' });
+}
 
 1;

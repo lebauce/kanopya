@@ -20,7 +20,7 @@ use warnings;
 
 use Entity;
 use Entity::ContainerAccess;
-use EFactory;
+use EEntity;
 use General;
 use CapacityManagement;
 use XML::Simple;
@@ -33,13 +33,12 @@ use Hash::Merge qw(merge);
 my $log = get_logger("");
 my $errmsg;
 
-my $resources_keys = {
-    ram => { name => 'currentMemory/0/content', factor => 1024 },
-    cpu => { name => 'vcpu/0/content', factor => 1 }
-};
+my $resources_keys = { ram => { name => 'currentMemory/0/content', factor => 1024 },
+                       cpu => { name => 'vcpu/0/content', factor => 1 } };
 
 sub addNode {
     my ($self, %args) = @_;
+
     General::checkParams(
         args     => \%args,
         required => [ 'host', 'mount_point', 'cluster' ]
@@ -50,12 +49,11 @@ sub addNode {
 
 sub configureNode {
     my ($self, %args) = @_;
+
     General::checkParams(
         args     => \%args,
         required => ['cluster', 'host', 'mount_point']
     );
-
-    my $masternodeip = $args{cluster}->getMasterNodeIp();
 
     $log->debug('generate /lib/udev/rules.d/60-qemu-kvm.rules');
     $self->_generateQemuKvmUdev(%args);
@@ -76,28 +74,9 @@ sub configureNode {
         if (defined $repo->{datastore_id}) {
             my $dir = $args{mount_point} . '/var/lib/one/datastores/' . $repo->{datastore_id};
             my $cmd = "mkdir -p $dir";
-            $self->getExecutorEContext->execute(command => $cmd);
+            $self->_host->getEContext->execute(command => $cmd);
         }
     }
-}
-
-sub postStartNode {
-    my ($self, %args) = @_;
-
-    General::checkParams(
-        args     => \%args,
-        required => [ 'cluster', 'host' ]
-    );
-
-    $self->iaas->registerHypervisor(host => $args{host});
-}
-
-sub stopNode {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'host' ]);
-
-    $self->iaas->unregisterHypervisor(host => $args{host});
 }
 
 sub isUp {
@@ -118,7 +97,7 @@ sub _generateQemuKvmUdev {
 
     my $command = "echo 'KERNEL==\"kvm\", OWNER==\"oneadmin\", GROUP==\"kvm\", " .
                   "MODE==\"0660\"' > $args{mount_point}/lib/udev/rules.d/60-qemu-kvm.rules";
-    $self->getExecutorEContext->execute(command => $command);
+    $self->_host->getEContext->execute(command => $command);
 }
 
 =head2 getAvailableMemory
@@ -270,13 +249,13 @@ sub getMinEffectiveRamVm {
         required    => [ 'host' ]
     );
 
-    my @virtual_machines = $args{host}->virtual_machines;
+    my @virtual_machines = map { EEntity->new(entity => $_); } $args{host}->virtual_machines;
 
-    my $min_vm  = shift @virtual_machines;
-    my $min_ram = EFactory::newEEntity(data => $min_vm)->getRamUsedByVm->{total};
+    my $min_vm  = EEntity->new(entity => shift @virtual_machines);
+    my $min_ram = $self->getRamUsedByVm(host => $min_vm)->{total};
 
     for my $virtual_machine (@virtual_machines) {
-        my $ram = EFactory::newEEntity(data => $virtual_machine)->getRamUsedByVm->{total};
+        my $ram = $self->getRamUsedByVm(host => $virtual_machine)->{total};
         if ($ram < $min_ram) {
             $min_ram = $ram;
             $min_vm  = $virtual_machine;
@@ -289,10 +268,31 @@ sub getMinEffectiveRamVm {
     }
 }
 
-sub iaas {
+sub getRamUsedByVm {
     my ($self, %args) = @_;
 
-    return EFactory::newEEntity(data => $self->getAttr(name => "iaas", deep => 1));
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    my $vm = $args{host};
+    my $e_hypervisor = EFactory::newEEntity(data => $vm->hypervisor);
+
+    # This command get the pid of the kvm process then get the RAM used and SWAP used by this process
+    my $cmd = 'cat /proc/$(cat /var/run/libvirt/qemu/one-' . ($vm->onevm_id) . '.pid)/status | grep "VmRSS\|VmSwap"';
+
+    my $mem;
+    my $stdout = $e_hypervisor->getEContext->execute(command => "$cmd")->{stdout};
+    my @lines = split('\n', $stdout);
+
+    for my $line (@lines) {
+        my @line_split = split('\s+', $line);
+        $mem->{$line_split[0]} = $line_split[1] * 1024; # Convert kB to bytes
+    }
+
+    return {
+        mem_ram  => $mem->{'VmRSS:'},
+        mem_swap => $mem->{'VmSwap:'},
+        total    => $mem->{'VmRSS:'} + $mem->{'VmSwap:'},
+    }
 }
 
 1;

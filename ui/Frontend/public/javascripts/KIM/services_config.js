@@ -27,6 +27,7 @@ function loadServicesConfig(cid, eid) {
                     // Work around to handle components without version number
                     if (window[componentName.ucfirst()] == undefined) {
                         componentName = componentName.substring(0, componentName.length - 1);
+                        require('KIM/components/' + componentName + '.js');
                     }
                     if (componentClass = window[componentName.ucfirst()]) {
                         // Open the configuration modal
@@ -35,8 +36,8 @@ function loadServicesConfig(cid, eid) {
                 }
             }
         });
-
-    var addButton   = $('<a>', { text : 'Add component' }).appendTo('#' + cid)
+	var action_div=$('#' + cid).prevAll('.action_buttons');
+    var addButton   = $('<a>', { text : 'Add component' }).appendTo(action_div)
                         .button({ icons : { primary : 'ui-icon-plusthick' } });
     $(addButton).bind('click', function (e) {
         (new KanopyaFormWizard({

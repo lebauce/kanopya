@@ -13,8 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-
 package EEntity::EOperation;
 use base 'EEntity';
 
@@ -27,7 +25,7 @@ use Data::Dumper;
 use General;
 use Entity;
 use ERollback;
-use EFactory;
+use EEntity;
 use Entity::Operation;
 use Operationtype;
 use Entity::ServiceProvider::Cluster;
@@ -37,7 +35,6 @@ use Kanopya::Exceptions;
 
 my $log = get_logger("");
 my $errmsg;
-our $VERSION = '1.00';
 
 use vars qw ( $AUTOLOAD );
 
@@ -45,16 +42,14 @@ sub new {
     my $class = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'data' ]);
+    General::checkParams(args => \%args, required => [ 'op' ]);
 
-    my $params  = $args{data}->getParams;
-    my $context = $params->{context};
-    delete $params->{context};
+    my $self = $class->SUPER::new(entity => $args{op},
+                                  eclass => "EEntity::EOperation::E" . $args{op}->type);
 
-    my $self = $class->SUPER::new(%args);
-
-    $self->{params} = $params;
-    $self->{context} = $context;
+    my $params = $args{op}->getParams;
+    $self->{context} = delete $params->{context};
+    $self->{params}  = $params;
 
     return $self;
 }
@@ -121,7 +116,7 @@ sub validation {
                                     manager_type => 'NotificationManager'
                                 );
 
-                $notifier = EFactory::newEEntity(data => $component);
+                $notifier = EEntity->new(data => $component);
             };
             if ($@) {
                 $log->debug("Unable to get the notification manager for service provider <" .
@@ -134,16 +129,16 @@ sub validation {
             my $templatedata = { operation  => $self->label };
 
             # TODO: We do not have a mechanism to retreive the url of the web ui...
-            #       So try to get the public ip of the kanopya master node, but the port is still hard core.
-            my $kanopya = Entity::ServiceProvider::Cluster->find(hash => { cluster_name => 'Kanopya' });
+            #       So try to get the public ip of the kanopya front master node, but the port is still hard coded.
+            my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster;
 
             my $ip;
             eval {
-                $ip = $kanopya->getMasterNode->getPublicIp;
+                $ip = $kanopya->getComponent(category => 'KanopyaFront')->getMasterNode->getPublicIp;
             };
             if ($@) {
                 $log->warn("Unable to get the master kanopya public ip, use the admin ip.");
-                $ip = $kanopya->getMasterNode->adminIp;
+                $ip = $kanopya->getComponent(category => 'KanopyaFront')->getMasterNode->adminIp;
             }
 
             my $input;
@@ -167,8 +162,8 @@ sub validation {
             }
             else {
                 $input      = "notificationmail";
-                my $eentity = EFactory::newEEntity(data => $entity);
-                $message    = $eentity->notificationMessage(operation => $self->_getEntity);
+                my $eentity = EEntity->new(data => $entity);
+                $message    = $eentity->notificationMessage(operation => $self->_entity);
             }
 
             my $subject = '';
@@ -208,10 +203,9 @@ sub report {
 }
 
 sub getEContext {
-    my $self = shift;
+    my ($self, %args) = @_;
 
-    return EFactory::newEContext(ip_source      => $self->{_executor}->getMasterNodeIp(),
-                                 ip_destination => $self->{_executor}->getMasterNodeIp());
+    return $self->_host->getEContext;
 }
 
 1;

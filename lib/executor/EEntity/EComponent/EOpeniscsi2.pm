@@ -41,17 +41,17 @@ sub addNode {
         data          => $data
     );
     
-    $self->getExecutorEContext->send(
+    $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point} . '/etc/iscsi',
     );
 
-    $self->getExecutorEContext->execute(
+    $self->_host->getEContext->execute(
         command => "touch $args{mount_point}/etc/iscsi.initramfs"
     );
 
     my $initiatorname = $args{host}->host_initiatorname;
-    $self->getExecutorEContext->execute(
+    $self->_host->getEContext->execute(
         command => "echo \"InitiatorName=$initiatorname\" > " .
         "$args{mount_point}/etc/initiatorname.iscsi"
     );
@@ -81,24 +81,24 @@ sub _generateKanopyaHalt {
         data          => $vars
     );
 
-    $self->getExecutorEContext->send(src  => $file,
-                                     dest => "$args{mount_point}/etc/init.d/Kanopya_halt");
+    $self->_host->getEContext->send(src  => $file,
+                                    dest => "$args{mount_point}/etc/init.d/Kanopya_halt");
 
-    $self->getExecutorEContext->execute(
+    $self->_host->getEContext->execute(
         command => "chmod 755 $args{mount_point}/etc/init.d/Kanopya_halt"
     );
 
     $log->debug("Generate omitted file <$omitted_file>");
-    $self->getExecutorEContext->execute(
+    $self->_host->getEContext->execute(
         command => "cp /templates/internal/$omitted_file /tmp/"
     );
-    $self->getExecutorEContext->send(
+    $self->_host->getEContext->send(
         src  => "/tmp/$omitted_file",
         dest => "$args{mount_point}/etc/init.d/Kanopya_omitted_iscsid"
     );
     unlink "/tmp/$omitted_file";
 
-    $self->getExecutorEContext->execute(
+    $self->_host->getEContext->execute(
         command => "chmod 755 $args{mount_point}/etc/init.d/Kanopya_omitted_iscsid"
     );
 }

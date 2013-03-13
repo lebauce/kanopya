@@ -36,7 +36,8 @@ function reload_content(container_id, elem_id, keep_last) {
 
             // Tag this container as current
             $('#' + container_id).addClass('current_content');
-
+			var action_div=$('#' + container_id).prevAll('.action_buttons'); 
+    		action_div.empty();
             // Fill container using related handler
             var handler = _content_handlers[container_id]['onLoad'];
             handler(container_id, elem_id);
@@ -63,7 +64,6 @@ function create_all_content() {
 function show_detail(grid_id, grid_class, elem_id, row_data, details) {
 
     var details_info = details || details_def[grid_class];
-    
     // Not defined details menu
     if (details_info === undefined) {
         //console.log('No details for grid ' +  grid_class);
@@ -108,16 +108,10 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
                 $('.last_content').addClass('current_content').removeClass('last_content');
                 $(this).remove(); // detail modals are never closed, they are destroyed
             },
-            buttons: {
-                Ok: function() {
-                    if (details_info.onOk) {details_info.onOk()}
-                    $(this).dialog('close');
-                    
-                },
-                Cancel: function() {
-                    $(this).dialog('close');
-                }
-            },
+            buttons: [
+       			{id:'button-cancel',text:'Cancel',click: function() {$(this).dialog('close');}},
+        		{id:'button-ok',text:'Ok',click: function() {if (details_info.onOk) {details_info.onOk()}$(this).dialog('close');}}
+        	],
         });
         // Remove dialog title if wanted
         if (details_info.title == 'none') {

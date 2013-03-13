@@ -78,8 +78,8 @@ function createPolicyServiceProvider() {
        }
     });
 
-    associateAdminManager(sp_id, 'Collectormanager', 'CollectorManager');
-    associateAdminManager(sp_id, 'Workflowmanager', 'WorkflowManager');
+    associateAdminManager(sp_id, 'CollectorManager', 'CollectorManager');
+    associateAdminManager(sp_id, 'WorkflowManager', 'WorkflowManager');
 
     return sp_id;
 }

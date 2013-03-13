@@ -112,6 +112,25 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->set_primary_key("component_id");
 
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<service_provider_id>
+
+=over 4
+
+=item * L</service_provider_id>
+
+=item * L</component_type_id>
+
+=back
+
+=cut
+
+__PACKAGE__->add_unique_constraint(
+  "service_provider_id",
+  ["service_provider_id", "component_type_id"],
+);
+
 =head1 RELATIONS
 
 =head2 active_directory
@@ -202,6 +221,21 @@ __PACKAGE__->belongs_to(
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "component_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 component_nodes
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ComponentNode>
+
+=cut
+
+__PACKAGE__->has_many(
+  "component_nodes",
+  "AdministratorDB::Schema::Result::ComponentNode",
+  { "foreign.component_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 =head2 component_template
@@ -569,21 +603,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 nova_controller
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::NovaController>
-
-=cut
-
-__PACKAGE__->might_have(
-  "nova_controller",
-  "AdministratorDB::Schema::Result::NovaController",
-  { "foreign.nova_controller_id" => "self.component_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 openiscsi2
 
 Type: might_have
@@ -611,21 +630,6 @@ __PACKAGE__->might_have(
   "openldap1",
   "AdministratorDB::Schema::Result::Openldap1",
   { "foreign.openldap1_id" => "self.component_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 opennebula3
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Opennebula3>
-
-=cut
-
-__PACKAGE__->might_have(
-  "opennebula3",
-  "AdministratorDB::Schema::Result::Opennebula3",
-  { "foreign.opennebula3_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -844,6 +848,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 virtualization
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Virtualization>
+
+=cut
+
+__PACKAGE__->might_have(
+  "virtualization",
+  "AdministratorDB::Schema::Result::Virtualization",
+  { "foreign.virtualization_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 vmm_iaas
 
 Type: has_many
@@ -874,21 +893,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 vsphere5
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Vsphere5>
-
-=cut
-
-__PACKAGE__->might_have(
-  "vsphere5",
-  "AdministratorDB::Schema::Result::Vsphere5",
-  { "foreign.vsphere5_id" => "self.component_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 workflow_def_managers
 
 Type: has_many
@@ -905,8 +909,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-02-20 20:23:22
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:k+9DTIBGdWoI4A6o69tnPg
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-03-13 12:11:41
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:XJbYY/5aTno0sctlMSn/aQ
 
 __PACKAGE__->belongs_to(
   "parent",

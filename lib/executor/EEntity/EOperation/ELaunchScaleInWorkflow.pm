@@ -42,7 +42,7 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
-use EFactory;
+use EEntity;
 use CapacityManagement;
 #use Entity::ServiceProvider::Cluster;
 #use Entity::Host;
@@ -87,7 +87,7 @@ sub execute{
 
     # Do not call getServiceProvider() method, because it returns HV Cluster
     # Here we need VM Cluster
-    my $service_provider = $self->{context}->{host}->node->parent->service_provider;
+    my $service_provider = $self->{context}->{host}->node->service_provider;
 
     my $operation_plan;
     $log->info('Launch Scale type <'.($scalein_type).'>');

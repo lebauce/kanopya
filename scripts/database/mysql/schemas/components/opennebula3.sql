@@ -17,10 +17,8 @@ CREATE TABLE `opennebula3` (
   `port` int unsigned NOT NULL DEFAULT 2633,
   `hypervisor` char(255) NOT NULL DEFAULT 'xen',
   `debug_level` enum('0','1','2','3') NOT NULL DEFAULT '3',
-  `overcommitment_cpu_factor` double unsigned NOT NULL DEFAULT '1',
-  `overcommitment_memory_factor` double unsigned NOT NULL DEFAULT '1',
   PRIMARY KEY (`opennebula3_id`),
-  CONSTRAINT FOREIGN KEY (`opennebula3_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  CONSTRAINT FOREIGN KEY (`opennebula3_id`) REFERENCES `virtualization` (`virtualization_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -76,16 +74,10 @@ CREATE TABLE `opennebula3_vm` (
 --
 
 CREATE TABLE `opennebula3_repository` (
-  `opennebula3_repository_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `opennebula3_id` int(8) unsigned NOT NULL,
-  `repository_name` char(255) NOT NULL,
-  `container_access_id` int(8) unsigned NOT NULL,
+  `opennebula3_repository_id` int(8) unsigned NOT NULL,
   `datastore_id` int(8) unsigned NULL DEFAULT NULL,
-  PRIMARY KEY (`opennebula3_repository_id`),
-  KEY `fk_opennebula3repository_1` (`opennebula3_id`),
-  KEY `fk_opennebula3repository_2` (`container_access_id`),
-  CONSTRAINT `fk_opennebula3repository_1` FOREIGN KEY (`opennebula3_id`) REFERENCES `opennebula3` (`opennebula3_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_opennebula3repository_2` FOREIGN KEY (`container_access_id`) REFERENCES `container_access` (`container_access_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  PRIMARY KEY `fk_opennabula3repository_1` (`opennebula3_repository_id`),
+  CONSTRAINT `fk_opennebula3repository_1` FOREIGN KEY (`opennebula3_repository_id`) REFERENCES `repository` (`repository_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

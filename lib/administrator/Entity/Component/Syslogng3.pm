@@ -41,36 +41,33 @@ sub getConf {
     my @logs = ();
     my @entries = ();
     my $confindb = $self->{_dbix};
-    if($confindb) {
+    if ($confindb) {
         # Get entries
-           my $entry_rs = $confindb->syslogng3_entries;
-           while (my $entry_row = $entry_rs->next){
-               my $param_rs = $entry_row->syslogng3_entry_params;
+        my $entry_rs = $confindb->syslogng3_entries;
+        while (my $entry_row = $entry_rs->next) {
+            my $param_rs = $entry_row->syslogng3_entry_params;
             my @params = ();
             while (my $param_row = $param_rs->next) {
-                push @params, {
-                                'content' => $param_row->get_column('syslogng3_entry_param_content') } ;
+                push @params, { content => $param_row->get_column('syslogng3_entry_param_content') };
             }
-            push @entries, { 
-                                type => $entry_row->get_column('syslogng3_entry_type'),
-                                name => $entry_row->get_column('syslogng3_entry_name'),
-                                params => \@params };
-           }
+            push @entries, { type => $entry_row->get_column('syslogng3_entry_type'),
+                             name => $entry_row->get_column('syslogng3_entry_name'),
+                             params => \@params };
+        }
         
-           # Get logs
-           my $log_rs = $confindb->syslogng3_logs;
-           while (my $log_row = $log_rs->next){
-               my $log_param_rs = $log_row->syslogng3_log_params;
-               my @log_params = ();
-               while (my $log_param_row = $log_param_rs->next){
-                push @log_params, { 
-                                    type => $log_param_row->get_column('syslogng3_log_param_entrytype'),
-                                    name => $log_param_row->get_column('syslogng3_log_param_entryname') };
-               
-               }
-               push @logs, { params => \@log_params };
-       }
-    
+        # Get logs
+        my $log_rs = $confindb->syslogng3_logs;
+        while (my $log_row = $log_rs->next) {
+            my $log_param_rs = $log_row->syslogng3_log_params;
+            my @log_params = ();
+            while (my $log_param_row = $log_param_rs->next) {
+                 push @log_params, {
+                     type => $log_param_row->get_column('syslogng3_log_param_entrytype'),
+                     name => $log_param_row->get_column('syslogng3_log_param_entryname')
+                 };
+            }
+            push @logs, { params => \@log_params };
+        }
     }
 
     $conf->{entries} = \@entries;
@@ -115,56 +112,48 @@ sub getNetConf {
     #return { 514 => ['udp'] };
 }
 
-=head2 insertDefaultConfiguration
-	
-	Class : Public
-	
-	Desc : The default syslog-ng configuration for a node is to send all logs to kanopya admin 
-	
-	
-=cut
 
 sub insertDefaultExtendedConfiguration {
     my $self = shift;
     my %args = @_;
-    
-    # Retrieve admin ip
-    my $config = Kanopya::Config::get('executor');
-    my $kanopya_cluster = Entity->get(id => $config->{cluster}->{executor});
-    my $admin_ip = $kanopya_cluster->getMasterNodeIp();
 
-    # Conf to send all node logs to admin
-    $self->{_dbix}->syslogng3_logs->populate([ 
-		{ syslogng3_log_params => [
+    # Retrieve admin ip
+    my $kanopya = $self->service_provider->getKanopyaCluster();
+    my $syslog  = $kanopya->getComponent(name => "Syslogng", version => "3");
+
+    # If no kanopya syslogng nodes found, this component has just
+    # been installed on the kanopya cluster, the configuration
+    # will be updated at the fisrt node of the kanopya cluster registration.
+    my @nodes = $syslog->component_nodes;
+    if (scalar @nodes) {
+        my $fqdn = $syslog->getMasterNode->fqdn();
+
+        # Conf to send all node logs to admin
+        $self->{_dbix}->syslogng3_logs->populate([
+            { syslogng3_log_params => [
                 { syslogng3_log_param_entrytype => "source",
-                  syslogng3_log_param_entryname => "s_all_local"
-                },
+                  syslogng3_log_param_entryname => "s_all_local" },
                 { syslogng3_log_param_entrytype => "destination",
-                  syslogng3_log_param_entryname => "d_kanopya_admin"
-                },
-            ],
-        }
-     ]);
-     
-     $self->{_dbix}->syslogng3_entries->populate([  
-		{ syslogng3_entry_name => 's_all_local',
-		  syslogng3_entry_type => 'source',
-		  syslogng3_entry_params => [
-				{ syslogng3_entry_param_content => 'internal()' },
-				{ syslogng3_entry_param_content => 'unix-stream("/dev/log")' },
-				
-				# Kernel logs: this conf doesn't work for current version of syslog-ng
-				#{ syslogng3_entry_param_content => 'file("/proc/kmsg" program_override("kernel"))' },
-			]
-		},
-		{
-			syslogng3_entry_name => 'd_kanopya_admin',
-			syslogng3_entry_type => 'destination',
-			syslogng3_entry_params => [{
-				  syslogng3_entry_param_content => "udp('$admin_ip')",
-			}]
-		},
-	]);
+                  syslogng3_log_param_entryname => "d_kanopya_admin" },
+            ]}
+        ]);
+
+        $self->{_dbix}->syslogng3_entries->populate([
+            { syslogng3_entry_name   => 's_all_local',
+              syslogng3_entry_type   => 'source',
+              syslogng3_entry_params => [
+                  { syslogng3_entry_param_content => 'internal()' },
+                  { syslogng3_entry_param_content => 'unix-stream("/dev/log")' },
+                  # Kernel logs: this conf doesn't work for current version of syslog-ng
+                  #{ syslogng3_entry_param_content => 'file("/proc/kmsg" program_override("kernel"))' },
+              ]},
+            { syslogng3_entry_name   => 'd_kanopya_admin',
+              syslogng3_entry_type   => 'destination',
+              syslogng3_entry_params => [
+                  { syslogng3_entry_param_content => "udp('$fqdn')" }
+              ]},
+        ]);
+    }
 }
 
 sub getKanopyaAdmLogDirectories {

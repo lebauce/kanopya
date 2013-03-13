@@ -110,66 +110,6 @@ __PACKAGE__->set_primary_key("policy_id");
 
 =head1 RELATIONS
 
-=head2 billing_policy
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::BillingPolicy>
-
-=cut
-
-__PACKAGE__->might_have(
-  "billing_policy",
-  "AdministratorDB::Schema::Result::BillingPolicy",
-  { "foreign.billing_policy_id" => "self.policy_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 hosting_policy
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::HostingPolicy>
-
-=cut
-
-__PACKAGE__->might_have(
-  "hosting_policy",
-  "AdministratorDB::Schema::Result::HostingPolicy",
-  { "foreign.hosting_policy_id" => "self.policy_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 network_policy
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::NetworkPolicy>
-
-=cut
-
-__PACKAGE__->might_have(
-  "network_policy",
-  "AdministratorDB::Schema::Result::NetworkPolicy",
-  { "foreign.network_policy_id" => "self.policy_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 orchestration_policy
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::OrchestrationPolicy>
-
-=cut
-
-__PACKAGE__->might_have(
-  "orchestration_policy",
-  "AdministratorDB::Schema::Result::OrchestrationPolicy",
-  { "foreign.orchestration_policy_id" => "self.policy_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 param_preset
 
 Type: belongs_to
@@ -205,54 +145,114 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 scalability_policy
+=head2 service_template_billing_policies
 
-Type: might_have
+Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::ScalabilityPolicy>
+Related object: L<AdministratorDB::Schema::Result::ServiceTemplate>
 
 =cut
 
-__PACKAGE__->might_have(
-  "scalability_policy",
-  "AdministratorDB::Schema::Result::ScalabilityPolicy",
+__PACKAGE__->has_many(
+  "service_template_billing_policies",
+  "AdministratorDB::Schema::Result::ServiceTemplate",
+  { "foreign.billing_policy_id" => "self.policy_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 service_template_hosting_policies
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ServiceTemplate>
+
+=cut
+
+__PACKAGE__->has_many(
+  "service_template_hosting_policies",
+  "AdministratorDB::Schema::Result::ServiceTemplate",
+  { "foreign.hosting_policy_id" => "self.policy_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 service_template_network_policies
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ServiceTemplate>
+
+=cut
+
+__PACKAGE__->has_many(
+  "service_template_network_policies",
+  "AdministratorDB::Schema::Result::ServiceTemplate",
+  { "foreign.network_policy_id" => "self.policy_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 service_template_orchestration_policies
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ServiceTemplate>
+
+=cut
+
+__PACKAGE__->has_many(
+  "service_template_orchestration_policies",
+  "AdministratorDB::Schema::Result::ServiceTemplate",
+  { "foreign.orchestration_policy_id" => "self.policy_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 service_template_scalability_policies
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ServiceTemplate>
+
+=cut
+
+__PACKAGE__->has_many(
+  "service_template_scalability_policies",
+  "AdministratorDB::Schema::Result::ServiceTemplate",
   { "foreign.scalability_policy_id" => "self.policy_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 storage_policy
+=head2 service_template_storage_policies
 
-Type: might_have
+Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::StoragePolicy>
+Related object: L<AdministratorDB::Schema::Result::ServiceTemplate>
 
 =cut
 
-__PACKAGE__->might_have(
-  "storage_policy",
-  "AdministratorDB::Schema::Result::StoragePolicy",
+__PACKAGE__->has_many(
+  "service_template_storage_policies",
+  "AdministratorDB::Schema::Result::ServiceTemplate",
   { "foreign.storage_policy_id" => "self.policy_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 system_policy
+=head2 service_template_system_policies
 
-Type: might_have
+Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::SystemPolicy>
+Related object: L<AdministratorDB::Schema::Result::ServiceTemplate>
 
 =cut
 
-__PACKAGE__->might_have(
-  "system_policy",
-  "AdministratorDB::Schema::Result::SystemPolicy",
+__PACKAGE__->has_many(
+  "service_template_system_policies",
+  "AdministratorDB::Schema::Result::ServiceTemplate",
   { "foreign.system_policy_id" => "self.policy_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-12-06 10:18:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:b6ZTqFHVsQQNKg+FWwC4MA
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-03-06 17:03:32
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:iiQNrM/CIrqI52iya+59tA
 
 __PACKAGE__->belongs_to(
   "parent",

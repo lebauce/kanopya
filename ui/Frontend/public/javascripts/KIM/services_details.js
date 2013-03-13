@@ -54,8 +54,9 @@ function loadServicesDetails(cid, eid, is_iaas) {
         });
     }
 
-    var actioncell  = $('<td>', {'class' : 'action-cell'}).css('text-align', 'right').appendTo(table);
-    $(actioncell).append($('<div>').append($('<h4>', { text : 'Actions' })));
+    //var actioncell  = $('<td>', {'class' : 'action-cell'}).css('text-align', 'right').appendTo(table);
+    var actioncell=$('#' + cid).prevAll('.action_buttons'); 
+    //$(actioncell).append($('<div>').append($('<h4>', { text : 'Actions' })));
     $.ajax({
         url     : '/api/serviceprovider/' + eid,
         success : function(data) {
@@ -102,13 +103,14 @@ function createallbuttons(buttons, container) {
     for (var i in buttons) if (buttons.hasOwnProperty(i)) {
         if (buttons[i].condition === undefined || buttons[i].condition) {
             $(container).append(createbutton(buttons[i]));
-            $(container).append($('<br />'));
+            
         }
     }
 }
 
 function createbutton(button) {
-    return $('<span></span>').append(
+    var class_span_button=(button.sprite ?'button-with-sprite':'button-without-sprite');
+    return $('<span class="'+class_span_button+'"></span>').append(
                $('<span class="' +
                  (button.sprite ?
                      'kanopya-sprite kanopya-button-sprite sprite-kanopya-' + button.sprite :

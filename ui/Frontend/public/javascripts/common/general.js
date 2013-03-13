@@ -359,6 +359,40 @@ function confirmDeleteWithDependencies(url, id, grid_ids) {
     );
 }
 
+function handleCreate (grid) {
+    if (grid !== undefined) {
+        // Reload to handle the new element
+        // TODO: If the new element is display alone on a new last page,
+        //       the reload grib will display the last page but before adding the new element.
+        $(grid).trigger("reloadGrid", [{ page :  $(grid).getGridParam("lastpage") }]);
+    }
+}
+
+function handleCreateOperation (data, grid) {
+    if (grid !== undefined && data !== undefined && data.operation_id !== undefined) {
+        setTimeout(function() {
+            checkOperation(grid, data.operation_id);
+        }, 3000);
+    }
+}
+
+function checkOperation (grid, operation_id) {
+    var oldop = ajax('GET', '/api/oldoperation?operation_id=' + operation_id);
+    if (oldop != undefined && oldop.length > 0 && oldop[0].execution_status == 'succeeded') {
+        // Reload to handle the new element
+        // TODO: If the new element is display alone on a new last page,
+        //       the reload grib will display the last page but before adding the new element.
+        $(grid).trigger("reloadGrid", [{ page :  $(grid).getGridParam("lastpage") }]);
+    }
+    else {
+        if ($(grid).is(':visible')) {
+            setTimeout(function() {
+                checkOperation(grid, operation_id);
+            }, 5000);
+        }
+    }
+}
+
 // On load we bind keydown event
 // If 'enter' is pressed we trigger click on 'Ok' button
 $(document).ready(function () {

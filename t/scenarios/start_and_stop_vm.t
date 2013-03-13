@@ -29,7 +29,7 @@ Log::Log4perl->easy_init({
 
 use BaseDB;
 use Entity;
-use Entity::Component::Opennebula3;
+use Entity::Component::Virtualization::Opennebula3;
 use Entity::Workflow;
 use Entity::WorkflowDef;
 use Kanopya::Config;
@@ -233,7 +233,7 @@ sub stop_vm_cluster {
 }
 
 sub _check_init {
-    $one = Entity::Component::Opennebula3->find(hash => {});
+    $one = Entity::Component::Virtualization::Opennebula3->find(hash => {});
 
     my @hvs = $one->hypervisors;
     my $hv_num = scalar @hvs;
@@ -247,7 +247,7 @@ sub _check_init {
 
     $hv_cluster = $hv1->node->inside;
 
-    my $hv_ecluster = EFactory::newEEntity(data => $hv_cluster);
+    my $hv_ecluster = EEntity->new(data => $hv_cluster);
     my $host = $hv_ecluster->addNode;
     my @spms = $one->service_provider_managers;
 
@@ -275,7 +275,7 @@ sub _check_vm_ram {
         throw Kanopya::Exception(error => 'vm ram value in DB is wrong');
     }
 
-    my $evm = EFactory::newEEntity(data => $vm);
+    my $evm = EEntity->new(data => $vm);
 
     if (!($evm->getTotalMemory == $ram)) {
         throw Kanopya::Exception(error => 'vm real ram value is wrong');

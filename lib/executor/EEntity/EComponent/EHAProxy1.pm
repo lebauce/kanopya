@@ -50,13 +50,13 @@ sub configureNode {
         data          => \%data 
     );
     
-     $self->getExecutorEContext->send(
+     $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc/haproxy'
     );
     
     # send default haproxy conf (allowing haproxy to be started with init script)
-    $self->getExecutorEContext->send(
+    $self->_host->getEContext->send(
         src  => '/templates/components/haproxy/haproxy_default', 
         dest => $args{mount_point} . '/etc/default/haproxy'
     );
@@ -65,12 +65,10 @@ sub configureNode {
 sub addNode {
     my ($self, %args) = @_;
     
-    General::checkParams(args => \%args, required => ['host', 'mount_point', 'cluster']);
-    
-    my $masternodeip = $args{cluster}->getMasterNodeIp();
-    
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
+
     # Run only on master node
-    if(not defined $masternodeip) {
+    if (not defined $self->getMasterNode) {
 	    $self->configureNode(%args);
         	    
 	    $self->addInitScripts(

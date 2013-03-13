@@ -45,7 +45,7 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Entity::Host;
-use EFactory;
+use EEntity;
 
 use String::Random;
 use Date::Simple (':all');
@@ -59,6 +59,7 @@ my $errmsg;
 
 sub prerequisites {
     my ($self, %args) = @_;
+
     General::checkParams(args => $self->{context}, required => []);
 
     my $delay = 10;
@@ -67,16 +68,16 @@ sub prerequisites {
     if ((not defined $self->{context}->{host}) && (defined $self->{context}->{cluster})) {
         $log->info('No node selected, select a random node');
 
-        my @nodes = $self->{context}->{cluster}->searchRelated(filters => [ 'nodes' ], hash => { master_node => 0 });
-        if (scalar (@nodes) == 0) {
-            throw Kanopya::Exception(error => 'Cannot remove a node from cluster <'.($self->{context}->{cluster}->getId()).'> only one master left');
+        my @nodes = $self->{context}->{cluster}->nodes;
+        if (scalar (@nodes) <= 1) {
+            throw Kanopya::Exception(error => 'Cannot remove a node from cluster <'.($self->{context}->{cluster}->id).'> only one left');
         }
         my $random_int = int(scalar (@nodes) * rand);
         my $node = $nodes[$random_int];
 
         $log->info('Node <' . $node->id . '> selected to be removed between <' . (scalar @nodes) . '> nodes');
 
-        $self->{context}->{host} = EFactory::newEEntity(data => $node->host);
+        $self->{context}->{host} = EEntity->new(data => $node->host);
     }
 
     if ($self->{context}->{host}->checkStoppable == 0) {
@@ -100,29 +101,6 @@ sub prerequisites {
     return 0;
 }
 
-
-=head2 prepare
-
-=cut
-
-sub prepare {
-
-    my $self = shift;
-    my %args = @_;
-    $self->SUPER::prepare();
-    General::checkParams(args => $self->{context}, required => [ 'host', 'cluster' ]);
-
-    my $master_node = $self->{context}->{cluster}->getMasterNode;
-    my $node_count  = $self->{context}->{cluster}->getCurrentNodesCount();
-    my $host_id     = $self->{context}->{host}->id;
-
-    if ($master_node && $node_count > 1 && $master_node->id == $host_id) {
-        $errmsg = "Node <$host_id> is master node and not alone";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg, hidden => 1);
-    }
-}
-
 sub execute {
     my $self = shift;
     $self->SUPER::execute();
@@ -131,7 +109,7 @@ sub execute {
     $log->info('Inform cluster components about node removal');
 
     foreach my $component (@components) {
-        EFactory::newEEntity(data => $component)->preStopNode(
+        EEntity->new(data => $component)->preStopNode(
             host      => $self->{context}->{host},
             cluster   => $self->{context}->{cluster},
             erollback => $self->{erollback}
@@ -141,11 +119,3 @@ sub execute {
 }
 
 1;
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut

@@ -77,7 +77,7 @@ sub addNode {
                         "cat /root/.ssh/kanopya_rsa.pub > " .
                         "$args{mount_point}/root/.ssh/authorized_keys";
 
-    $self->getExecutorEContext->execute(command => $rsapubkey_cmd);
+    $self->_host->getEContext->execute(command => $rsapubkey_cmd);
 }
 
 1;

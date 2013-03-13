@@ -52,7 +52,7 @@ sub customizeInitramfs {
 
     my $kanopya_dir = Kanopya::Config::getKanopyaDir();
     my $cmd = "cp -R $kanopya_dir/tools/deployment/system/initramfs-tools/scripts/* " . $args{initrd_dir} . "/scripts";
-    $self->getExecutorEContext->execute(command => $cmd);
+    $self->_host->getEContext->execute(command => $cmd);
 }
 
 sub _writeNetConf {

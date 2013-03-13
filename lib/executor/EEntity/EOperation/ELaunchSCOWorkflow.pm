@@ -37,7 +37,7 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
-use EFactory;
+use EEntity;
 use Template;
 
 my $log = get_logger("");

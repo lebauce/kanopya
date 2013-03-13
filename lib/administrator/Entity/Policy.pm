@@ -520,7 +520,7 @@ sub setValues {
                                        'set_params_editable' => 0 });
 
     # If set_params_editable defined, we must to set non editable all
-    # attributes that come from the policy instance only, all others are
+    # attributes that comme from the policy instance only, all others are
     # some parameters added to the original policy definition.
     my $noneditable = {};
     if (ref($self) and $args{set_params_editable}) {
@@ -529,7 +529,7 @@ sub setValues {
 
     # Set the values
     for my $attrname (keys %{ $args{attributes}->{attributes} }) {
-        if (defined $args{values}->{$attrname} and "$args{values}->{$attrname}" ne "") {
+        if (defined ($args{values}->{$attrname}) && "$args{values}->{$attrname}" ne "") {
             $args{attributes}->{attributes}->{$attrname}->{value} = $args{values}->{$attrname};
 
             # Set attributes editable in function of parameters

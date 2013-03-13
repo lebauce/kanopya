@@ -25,4 +25,29 @@ use General;
 my $log = get_logger("");
 my $errmsg;
 
+sub postStartNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(
+        args     => \%args,
+        required => [ 'cluster', 'host' ]
+    );
+
+    $self->iaas->registerHypervisor(host => $args{host});
+}
+
+sub stopNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    $self->iaas->unregisterHypervisor(host => $args{host});
+}
+
+sub iaas {
+    my ($self, %args) = @_;
+
+    return EEntity->new(data => $self->getAttr(name => "iaas", deep => 1));
+}
+
 1;

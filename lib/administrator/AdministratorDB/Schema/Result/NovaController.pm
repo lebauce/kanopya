@@ -130,7 +130,7 @@ __PACKAGE__->belongs_to(
     is_deferrable => 1,
     join_type     => "LEFT",
     on_delete     => "CASCADE",
-    on_update     => "CASCADE",
+    on_update     => "NO ACTION",
   },
 );
 
@@ -165,7 +165,7 @@ __PACKAGE__->belongs_to(
     is_deferrable => 1,
     join_type     => "LEFT",
     on_delete     => "CASCADE",
-    on_update     => "CASCADE",
+    on_update     => "NO ACTION",
   },
 );
 
@@ -185,7 +185,7 @@ __PACKAGE__->belongs_to(
     is_deferrable => 1,
     join_type     => "LEFT",
     on_delete     => "CASCADE",
-    on_update     => "CASCADE",
+    on_update     => "NO ACTION",
   },
 );
 
@@ -193,15 +193,15 @@ __PACKAGE__->belongs_to(
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Component>
+Related object: L<AdministratorDB::Schema::Result::Virtualization>
 
 =cut
 
 __PACKAGE__->belongs_to(
   "nova_controller",
-  "AdministratorDB::Schema::Result::Component",
-  { component_id => "nova_controller_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  "AdministratorDB::Schema::Result::Virtualization",
+  { virtualization_id => "nova_controller_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
 =head2 novas_compute
@@ -230,51 +230,6 @@ Related object: L<AdministratorDB::Schema::Result::OpenstackHypervisor>
 __PACKAGE__->has_many(
   "openstack_hypervisors",
   "AdministratorDB::Schema::Result::OpenstackHypervisor",
-  { "foreign.nova_controller_id" => "self.nova_controller_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 openstack_repositories
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::OpenstackRepository>
-
-=cut
-
-__PACKAGE__->has_many(
-  "openstack_repositories",
-  "AdministratorDB::Schema::Result::OpenstackRepository",
-  { "foreign.nova_controller_id" => "self.nova_controller_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 openstack_repositories
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::OpenstackRepository>
-
-=cut
-
-__PACKAGE__->has_many(
-  "openstack_repositories",
-  "AdministratorDB::Schema::Result::OpenstackRepository",
-  { "foreign.nova_controller_id" => "self.nova_controller_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 openstack_repositories
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::OpenstackRepository>
-
-=cut
-
-__PACKAGE__->has_many(
-  "openstack_repositories",
-  "AdministratorDB::Schema::Result::OpenstackRepository",
   { "foreign.nova_controller_id" => "self.nova_controller_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -310,13 +265,13 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-02-14 19:04:08
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Ho4hGqTN2fe8D5SPOkySBQ
+# Created by DBIx::Class::Schema::Loader v0.07035 @ 2013-03-01 11:52:49
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dk/hziCY1pIT7EoADgwFog
 
 __PACKAGE__->belongs_to(
   "parent",
-  "AdministratorDB::Schema::Result::Component",
-    { "foreign.component_id" => "self.nova_controller_id" },
+  "AdministratorDB::Schema::Result::Virtualization",
+    { "foreign.virtualization_id" => "self.nova_controller_id" },
     { cascade_copy => 0, cascade_delete => 1 });
 
 1;

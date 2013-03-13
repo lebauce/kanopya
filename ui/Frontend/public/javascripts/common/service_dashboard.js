@@ -19,10 +19,10 @@ function initServiceDashboard() {
     dash_div.append(dash_layout_div);
 
     // Dashboard actions
-    dash_header = $('<div class="headerlinks"></div>');
-    dash_header.append($('<button>', { 'class' : 'openaddwidgetdialog', html : 'Add Widget'}));
+    //dash_header = $('<div class="headerlinks"></div>');
+    //dash_header.append($('<button>', { 'class' : 'openaddwidgetdialog', html : 'Add Widget'}));
 //    dash_header.append($('<button>', { 'class' : 'editlayout', html : 'Edit layout'}));
-    dash_header.append($('<button>', { 'class' : 'savedashboard', html : 'Save Dashboard'}));
+    //dash_header.append($('<button>', { 'class' : 'savedashboard', html : 'Save Dashboard'}));
 
     //$('#view-container').append(dash_header);
     $('#view-container').append(dash_div);
@@ -154,11 +154,14 @@ function loadServicesOverview (container_id, elem_id) {
     if (service_dashboard === undefined) {
         initServiceDashboard();
     }
+var action_div=$('#' + container_id).prevAll('.action_buttons'); 
+action_div.append($('<button>', { 'class' : 'openaddwidgetdialog', html : 'Add Widget'}));
+action_div.append($('<button>', { 'class' : 'savedashboard', html : 'Save Dashboard'}));
 
     service_id = elem_id;
 
     dash_div.hide();
-    container.append(dash_header);
+    //container.append(dash_header);
     container.append(dash_div);
     //container.append(dash_template);
 

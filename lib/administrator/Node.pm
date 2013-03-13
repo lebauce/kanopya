@@ -21,6 +21,7 @@ use base 'BaseDB';
 use strict;
 use warnings;
 
+use ComponentNode;
 use Entity::Indicator;
 
 use Log::Log4perl 'get_logger';
@@ -43,11 +44,6 @@ use constant ATTR_DEF => {
         pattern      => '^[\w\d\-\.]*$',
         is_mandatory => 0,
         is_editable  => 0,
-    },
-    master_node => {
-        pattern      => '^\d+$',
-        is_mandatory => 0,
-        is_extended  => 0
     },
     node_number => {
         pattern      => '^\d+$',
@@ -103,9 +99,9 @@ sub _undefRules {
 
     foreach my $nm_rule ($self->service_provider->nodemetric_rules) {
         VerifiedNoderule->new(
-            verified_noderule_node_id       => $self->id,
-            verified_noderule_state                 => 'undef',
-            verified_noderule_nodemetric_rule_id    => $nm_rule->id,
+            verified_noderule_node_id            => $self->id,
+            verified_noderule_state              => 'undef',
+            verified_noderule_nodemetric_rule_id => $nm_rule->id,
         );
     }
 }
@@ -117,15 +113,14 @@ sub disable {
     while(@verified_noderules) {
         (pop @verified_noderules)->delete();
     }
-
-    $self->setAttr(name => 'monitoring_state', value => 'disabled', save => 1);
+    $self->monitoring_state('disabled');
 }
 
 sub enable {
     my $self = shift;
 
     $self->_undefRules();
-    $self->setAttr(name => 'monitoring_state', value => 'enabled', save => 1);
+    $self->monitoring_state('enabled');
 }
 
 =head2 getMonitoringData
@@ -167,6 +162,18 @@ sub remove {
     my $self = shift;
 
     $self->service_provider->removeNode('host_id' => $self->host_id);
+}
+
+sub adminIp {
+    my $self = shift;
+
+    return $self->host->adminIp;
+}
+
+sub fqdn {
+    my $self = shift;
+
+    return $self->node_hostname . '.' . $self->service_provider->cluster_domainname;
 }
 
 sub getDelegatee {

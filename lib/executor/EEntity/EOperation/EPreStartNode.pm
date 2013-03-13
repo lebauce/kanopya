@@ -19,7 +19,7 @@ package EEntity::EOperation::EPreStartNode;
 use base "EEntity::EOperation";
 
 use Kanopya::Exceptions;
-use EFactory;
+use EEntity;
 use Entity::Host;
 use strict;
 use warnings;
@@ -33,34 +33,16 @@ use Template;
 my $log = get_logger("");
 my $errmsg;
 
-
-sub prepare {
-    my $self = shift;
-    my %args = @_;
-    $self->SUPER::prepare();
-
-    General::checkParams(args => $self->{context}, required => [ "cluster", "host", "systemimage" ]);
-
-    General::checkParams(args => $self->{params}, required => [ "node_number" ]);
-
-    my $master_node = $self->{context}->{cluster}->getMasterNode;
-    my $node_count = $self->{context}->{cluster}->getCurrentNodesCount();
-    if (! $master_node && $node_count){
-        $errmsg = "No master node when host <" . $self->{context}->{host}->id . "> migrating, pls wait...";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-}
-
 sub execute {
     my $self = shift;
     $self->SUPER::execute();
 
     my @components = $self->{context}->{cluster}->getComponents(category => "all",
                                                                 order_by => "priority");
+
     $log->info('Inform cluster components about node addition');
     foreach my $component (@components) {
-        EFactory::newEEntity(data => $component)->preStartNode(
+        EEntity->new(data => $component)->preStartNode(
             host    => $self->{context}->{host},
             cluster => $self->{context}->{cluster},
         );
@@ -72,12 +54,12 @@ sub execute {
         $hostname .=  $self->{params}->{node_number};
     }
 
-    $self->{context}->{host}->becomeNode(
-        service_provider_id => $self->{context}->{cluster}->id,
-        master_node         => 0,
-        systemimage_id      => $self->{context}->{systemimage}->id,
-        node_number         => $self->{params}->{node_number},
-        hostname            => $hostname
+    # Register the node in the cluster
+    $self->{context}->{cluster}->registerNode(
+        host        => $self->{context}->{host},
+        systemimage => $self->{context}->{systemimage},
+        number      => $self->{params}->{node_number},
+        hostname    => $hostname
     );
 
     # Create the node working directory where generated files will be
@@ -87,8 +69,6 @@ sub execute {
     $dir .= '/' . $hostname;
     my $econtext = $self->getEContext();
     $econtext->execute(command => "mkdir -p $dir");
-
-    $log->debug('Giving access to the system image to the node');
 
     # Here we compute an iscsi initiator name for the node
     my $date = today();
@@ -110,8 +90,8 @@ sub execute {
     # For each container accesses of the system image, add an export client
     my $options = $self->{context}->{cluster}->cluster_si_shared ? "ro" : "rw";
     for my $container_access ($self->{context}->{systemimage}->container_accesses) {
-        my $export_manager = EFactory::newEEntity(data => $container_access->getExportManager);
-        my $export         = EFactory::newEEntity(data => $container_access);
+        my $export_manager = EEntity->new(data => $container_access->getExportManager);
+        my $export         = EEntity->new(data => $container_access);
 
         $export_manager->addExportClient(
             export  => $export,

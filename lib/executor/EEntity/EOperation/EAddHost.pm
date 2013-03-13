@@ -22,7 +22,7 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use EFactory;
+use EEntity;
 use Template;
 
 use Entity;

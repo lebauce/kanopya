@@ -39,7 +39,7 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
-use EFactory;
+use EEntity;
 
 use Entity::ServiceProvider;
 use Entity::Host;
@@ -70,7 +70,7 @@ sub prepare {
 
     eval {
         $self->{context}->{host_manager} =
-            EFactory::newEEntity(data => $self->{context}->{host}->getHostManager);
+            EEntity->new(data => $self->{context}->{host}->getHostManager);
     };
     if($@) {
         throw Kanopya::Exception::Internal::WrongValue(error => $@);

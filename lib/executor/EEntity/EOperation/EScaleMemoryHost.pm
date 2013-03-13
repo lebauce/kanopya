@@ -44,7 +44,7 @@ use Data::Dumper;
 use Kanopya::Exceptions;
 use Entity::ServiceProvider::Cluster;
 use Entity::Host;
-use EFactory;
+use EEntity;
 use CapacityManagement;
 
 my $log = get_logger("");
@@ -81,7 +81,7 @@ sub prepare {
                     wanted_resource => $self->{params}->{memory},
                 );
 
-    my $mem_limit = $self->{context}->{host}->node->parent->service_provider->getLimit(type => 'ram');
+    my $mem_limit = $self->{context}->{host}->node->service_provider->getLimit(type => 'ram');
 
     if ($mem_limit && ($check == 0 || $self->{params}->{memory} > $mem_limit)) {
         $errmsg = "Not enough memory in HV $hv_id for VM $vm_id. Infrastructure may have change between operation queing and its execution";
@@ -89,7 +89,7 @@ sub prepare {
     }
 
     # Check if the given ram amount is not bellow the initial ram.
-    my $host_manager_params = $self->{context}->{host}->node->parent->service_provider->getManagerParameters(manager_type => 'HostManager');
+    my $host_manager_params = $self->{context}->{host}->node->service_provider->getManagerParameters(manager_type => 'HostManager');
     if ($host_manager_params->{ram} > $self->{params}->{memory}) {
         $errmsg = "Could not scale memory bellow the initial ram amount <" .
                   ($host_manager_params->{ram} / 1024 / 1024) . "Mo >";

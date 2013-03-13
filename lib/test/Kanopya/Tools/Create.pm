@@ -200,7 +200,7 @@ sub createCluster {
             my %tmp = (
                 managers => { 
                     $manager => {
-                        manager_type => $manager,
+                        manager_type => BaseDB::normalizeName($manager),
                         %$mgr_conf
                     }
                 }
@@ -329,7 +329,7 @@ sub createIaasCluster {
                        size         => 20 * 1024 * 1024 * 1024,
                        filesystem   => "ext3",
                        vg_id        => 1
-                   )->_getEntity;
+                   )->_entity;
 
         my $nfs = $nfs_manager->createExport(
                       container      => $disk,

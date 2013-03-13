@@ -39,48 +39,36 @@ my $log = get_logger("");
 my $errmsg;
 
 
-=head2 startHost
-
-=cut
-
 sub startHost {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ "host" ]);
 
-    my $host = $args{host};
-    
-    
     if (not -e '/usr/sbin/etherwake') {
         $errmsg = "EOperation::EStartNode->startNode : /usr/sbin/etherwake not found";
         $log->error($errmsg);
         throw Kanopya::Exception::Execution(error => $errmsg);
     }
-    my $iface = $self->service_provider->getMasterNode->getAdminIface->iface_name;
-    my $command = "/usr/sbin/etherwake -i " . $iface . " " .
-                  $host->getPXEIface->getAttr(name => 'iface_mac_addr');
-    my $result = $self->getExecutorEContext->execute(command => $command);
-    
-    my $current_state = $host->getState();
+    my $iface = $self->getMasterNode->host->getAdminIface->iface_name;
+    my $command = "/usr/sbin/etherwake -i " . $iface . " " . $args{host}->getPXEIface->iface_mac_addr;
+    my $result = $self->_host->getEContext->execute(command => $command);
+
+    my $current_state = $args{host}->getState();
 
     if (exists $args{erollback}) {
         $args{erollback}->add(
-            function   => $host->can('save'),
-            parameters => [ $host ]
+            function   => $args{host}->can('save'),
+            parameters => [ $args{host} ]
         );
         $args{erollback}->add(
-            function   => $host->can('setAttr'),
-            parameters => [ $host, "name" ,"host_state", "value", $current_state ]
+            function   => $args{host}->can('setAttr'),
+            parameters => [ $args{host}, "name" ,"host_state", "value", $current_state ]
         );
     }
 }
 
-=head2 stopHost
-
-=cut
-
-sub stopHost {}
-
+sub stopHost {
+}
 
 =pod
 

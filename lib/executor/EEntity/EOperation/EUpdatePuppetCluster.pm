@@ -23,7 +23,7 @@ use base "EEntity::EOperation";
 use Kanopya::Exceptions;
 use strict;
 use warnings;
-use EFactory;
+use EEntity;
 
 use Log::Log4perl 'get_logger';
 
@@ -43,7 +43,7 @@ sub prepare {
         $log->error($errmsg);
         thow Kanopya::Exception::Internal(error => $errmsg);
     } else {
-        $self->{context}->{puppetagent} = EFactory::newEEntity(
+        $self->{context}->{puppetagent} = EEntity->new(
             data => $puppetagent
         );
     }

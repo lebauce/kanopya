@@ -34,7 +34,7 @@ sub startHost {
 
     General::checkParams(args => \%args, required => [ "host" ]);
 
-    my $ucs = $self->_getEntity();
+    my $ucs = $self->_entity;
     $ucs->init();
     my $blade = $ucs->{api}->get(dn      => $args{host}->getAttr(name => "host_serial_number"),
                                  classId => "computeBlade");
@@ -48,7 +48,7 @@ sub stopHost {
 
     General::checkParams(args => \%args, required => [ "host" ]);
 
-    my $ucs = $self->_getEntity();
+    my $ucs = $self->_entity;
     $ucs->init();
     my $blade = $ucs->{api}->get(dn      => $args{host}->getAttr(name => "host_serial_number"),
                                  classId => "computeBlade");
@@ -69,13 +69,13 @@ sub getFreeHost {
 
     General::checkParams(args => \%args, required => [ "service_profile_template_id", "ifaces" ]);
 
-    my $ucs = $self->_getEntity();
+    my $ucs = $self->_entity;
     $ucs->init();
 
     my $ou = $ucs->{ucs}->getAttr(name => "ucs_ou");
 
     # Get all free hosts of the specified host manager
-    my @free_hosts = $self->_getEntity()->getFreeHosts();
+    my @free_hosts = $self->_entity->getFreeHosts();
 
     # Do not apply the 'ifaces' constraint as we can create (almost) as
     # many network interfaces as we want on a service profile
@@ -188,7 +188,7 @@ sub applyVLAN {
     General::checkParams(args => \%args, required => [ 'iface', 'vlan' ]);
 
     my $host = Entity->get(id => $args{iface}->getAttr(name => "host_id"));
-    my $api = $self->_getEntity()->init();
+    my $api = $self->_entity->init();
     my $blade = $api->get(dn => $host->getAttr(name => "host_serial_number"));
     my $sp = $api->get(dn => $blade->{assignedToDn});
 

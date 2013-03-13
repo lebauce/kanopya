@@ -4,6 +4,11 @@ class kanopya::openstack::repository {
             name => 'ubuntu-cloud-keyring',
             ensure => present,
         }
+
+        class { 'apt':
+            always_apt_update => true,
+        }
+
         apt::source { 'ubuntu-cloud-repository':
             location => 'http://ubuntu-cloud.archive.canonical.com/ubuntu',
             release  => 'precise-updates/folsom',
@@ -82,6 +87,7 @@ class kanopya::glance($dbserver, $password, $keystone, $email) {
         keystone_user     => 'glance',
         keystone_password => 'glance',
         sql_connection    => "mysql://glance:${password}@${dbserver}/glance",
+        require           => Class['kanopya::openstack::repository']
     }
 
     class { 'glance::registry':
@@ -92,6 +98,7 @@ class kanopya::glance($dbserver, $password, $keystone, $email) {
         keystone_user     => 'glance',
         keystone_password => 'glance',
         sql_connection    => "mysql://glance:${password}@${dbserver}/glance",
+        require           => Class['kanopya::openstack::repository']
     }
 
     class { 'glance::backend::file': }
@@ -100,6 +107,198 @@ class kanopya::glance($dbserver, $password, $keystone, $email) {
 }
 
 class kanopya::novacontroller($password, $dbserver, $amqpserver, $keystone, $email, $glance, $quantum) {
+    exec { "/usr/bin/nova-manage db sync":
+        path => "/usr/bin:/usr/sbin:/bin:/sbin",
+    }
+
+    class { 'nova::api':
+        enabled        => true,
+        admin_password => "${password}",
+        auth_host      => "${keystone}",
+        require        => [ Exec["/usr/bin/nova-manage db sync"],
+                            Class['kanopya::openstack::repository'] ]
+    }
+
+    if ! defined(Class['kanopya::nova::common']) {
+        class { 'kanopya::nova::common':
+            amqpserver => "${amqpserver}",
+            dbserver   => "${dbserver}",
+            glance     => "${glance}",
+            keystone   => "${keystone}",
+            email      => "${email}",
+            password   => "${password}"
+        }
+    }
+
+    class { 'nova::network::quantum':
+        quantum_admin_password    => "quantum",
+        quantum_auth_strategy     => 'keystone',
+        quantum_url               => "http://${quantum}:9696",
+        quantum_admin_tenant_name => 'services',
+        quantum_admin_auth_url    => "http://${keystone}:35357/v2.0",
+        require                   => Class['kanopya::openstack::repository']
+    }
+
+    class { 'nova::scheduler':
+        enabled => true,
+        require => Class['kanopya::openstack::repository']
+    }
+
+    class { 'nova::objectstore':
+        enabled => true,
+        require => Class['kanopya::openstack::repository']
+    }
+
+    class { 'nova::cert':
+        enabled => true,
+        require => Class['kanopya::openstack::repository']
+    }
+
+    class { 'nova::vncproxy':
+        enabled => true,
+        require => Class['kanopya::openstack::repository']
+    }
+
+    class { 'nova::consoleauth':
+        enabled => true,
+        require => Class['kanopya::openstack::repository']
+    }
+
+    Class['kanopya::openstack::repository'] -> Class['kanopya::novacontroller']
+}
+
+class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone, $email, $password, $libvirt_type) {
+    file { "/run/iscsid.pid":
+        content => "1",
+    }
+
+    if ! defined(Class['kanopya::nova::common']) {
+        class { 'kanopya::nova::common':
+            amqpserver => "${amqpserver}",
+            dbserver   => "${dbserver}",
+            glance     => "${glance}",
+            keystone   => "${keystone}",
+            email      => "${email}",
+            password   => "${password}"
+        }
+    }
+
+    class { 'nova::compute':
+        enabled => true,
+        require => Class['kanopya::openstack::repository']
+    }
+
+    class { 'nova::compute::quantum':
+        libvirt_vif_driver => 'nova.virt.libvirt.vif.LibvirtHybridOVSBridgeDriver',
+        require            => Class['kanopya::openstack::repository']
+    }
+
+    class { 'nova::compute::libvirt':
+        libvirt_type      => "${libvirt_type}",
+        migration_support => true,
+        vncserver_listen  => '0.0.0.0'
+    }
+
+    @@keystone_service { 'compute':
+        ensure      => present,
+        type        => "compute",
+        description => "Nova Compute Service",
+        tag         => "${keystone}"
+    }
+
+    @@keystone_endpoint { "RegionOne/compute":
+        ensure       => present,
+        public_url   => "http://${fqdn}:8774/v2/\$(tenant_id)s",
+        admin_url    => "http://${fqdn}:8774/v2/\$(tenant_id)s",
+        internal_url => "http://${fqdn}:8774/v2/\$(tenant_id)s",
+        tag          => "${keystone}"
+    }
+
+    class { 'quantum::agents::ovs':
+        integration_bridge  => 'br-int',
+        bridge_mappings     => [ 'physflat:br-flat', 'physvlan:br-vlan' ],
+        bridge_uplinks      => [ 'br-flat:eth1' ]
+    }
+
+    Class['kanopya::openstack::repository'] -> Class['kanopya::novacompute']
+}
+
+class kanopya::quantum_($amqpserver, $dbserver, $keystone, $password, $email, $bridge_flat, $bridge_vlan) {
+    class { 'quantum':
+        rabbit_password => "${password}",
+        rabbit_host     => "${amqpserver}",
+        rabbit_user     => 'quantum',
+    }
+
+    class { 'quantum::server':
+        auth_password => $password,
+        auth_host     => "${keystone}",
+        require       => Class['kanopya::openstack::repository']
+    }
+
+    @@mysql::db { 'quantum':
+        user     => 'quantum',
+        password => "${password}",
+        host     => "${ipaddress}",
+        tag      => "${dbserver}"
+    }
+
+    @@rabbitmq_user { 'quantum':
+        admin    => true,
+        password => "${password}",
+        provider => 'rabbitmqctl',
+        tag      => "${amqpserver}"
+    }
+
+    @@rabbitmq_user_permissions { "quantum@/":
+        configure_permission => '.*',
+        write_permission     => '.*',
+        read_permission      => '.*',
+        provider             => 'rabbitmqctl',
+        tag                  => "${amqpserver}"
+    }
+
+    @@keystone_user { 'quantum':
+        ensure   => present,
+        password => "${password}",
+        email    => "${email}",
+        tenant   => "services",
+        tag      => "${keystone}"
+    }
+
+    @@keystone_user_role { "quantum@services":
+        ensure  => present,
+        roles   => 'admin',
+        tag     => "${keystone}"
+    }
+
+    @@keystone_service { 'quantum':
+        ensure      => present,
+        type        => "network",
+        description => "Quantum Networking Service",
+        tag         => "${keystone}"
+    }
+
+    @@keystone_endpoint { "RegionOne/quantum":
+        ensure       => present,
+        public_url   => "http://${fqdn}:9696",
+        admin_url    => "http://${fqdn}:9696",
+        internal_url => "http://${fqdn}:9696",
+        tag          => "${keystone}"
+    }
+
+    class { 'quantum::plugins::ovs':
+        sql_connection      => "mysql://quantum:${password}@${dbserver}/quantum",
+        tenant_network_type => 'vlan',
+        network_vlan_ranges => 'physnetflat,physnetvlan:1:4094',
+        bridge_mappings     => [ "physnetflat:${bridge_flat}", "physnetvlan:${bridge_vlan}" ],
+        require             => Class['kanopya::openstack::repository']
+    }
+
+    Class['kanopya::openstack::repository'] -> Class['kanopya::quantum_']
+}
+
+class kanopya::nova::common($amqpserver, $dbserver, $glance, $keystone, $email, $password) {
     @@rabbitmq_user { 'nova':
         admin    => true,
         password => "${password}",
@@ -138,36 +337,16 @@ class kanopya::novacontroller($password, $dbserver, $amqpserver, $keystone, $ema
             tag      => "${dbserver}",
     }
 
-    class { 'nova::api':
-            enabled        => true,
-            admin_password => "${password}",
-            auth_host      => "${keystone}",
+    @@database_user { "nova@${fqdn}":
+        password_hash => mysql_password("${password}"),
+        tag           => "${dbserver}",
     }
 
-    class { 'nova':
-        sql_connection      => "mysql://nova:${password}@${dbserver}/nova",
-        rabbit_host         => "${amqpserver}",
-        glance_api_servers  => "${glance}",
+    @@database_grant { "nova@${fqdn}/nova":
+        privileges => ['all'] ,
+        tag        => "${dbserver}"
     }
 
-    class { 'nova::network::quantum':
-        quantum_admin_password    => "quantum",
-        quantum_auth_strategy     => 'keystone',
-        quantum_url               => "http://${quantum}:9696",
-        quantum_admin_tenant_name => 'services',
-        quantum_admin_auth_url    => "http://${keystone}:35357/v2.0",
-    }
-
-    class { 'nova::scheduler': enabled => true, }
-    class { 'nova::objectstore': enabled => true, }
-    class { 'nova::cert': enabled => true, }
-    class { 'nova::vncproxy': enabled => true, }
-    class { 'nova::consoleauth': enabled => true, }
-
-    Class['kanopya::openstack::repository'] -> Class['kanopya::novacontroller']
-}
-
-class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone, $password) {
     class { 'nova':
         # set sql and rabbit to false so that the resources will be collected
         sql_connection     => "mysql://nova:${password}@${dbserver}/nova",
@@ -177,114 +356,5 @@ class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone, $password
         rabbit_userid      => "nova",
         rabbit_password    => "nova"
     }
-
-    class { 'nova::api':
-        enabled        => true,
-        admin_password => "nova",
-        auth_host      => "${keystone}",
-    }
-
-    class { 'nova::compute':
-        enabled => true,
-    }
-
-    class { 'nova::compute::quantum': }
-
-    class { 'nova::compute::libvirt':
-        libvirt_type => 'qemu',
-    }
-
-    @@keystone_service { 'compute':
-        ensure      => present,
-        type        => "compute",
-        description => "Nova Compute Service",
-        tag         => "${keystone}"
-    }
-
-    @@keystone_endpoint { "RegionOne/compute":
-        ensure       => present,
-        public_url   => "http://${fqdn}:8774/v2/\$(tenant_id)s",
-        admin_url    => "http://${fqdn}:8774/v2/\$(tenant_id)s",
-        internal_url => "http://${fqdn}:8774/v2/\$(tenant_id)s",
-        tag          => "${keystone}"
-    }
-
-    @@database_user { "nova@${ipaddress}":
-        password_hash => mysql_password("${password}"),
-        tag           => "${dbserver}",
-    }
-
-    @@database_grant { "nova@${ipaddress}/nova":
-        privileges => ['all'] ,
-        tag        => "${dbserver}"
-    }
-
-    Class['kanopya::openstack::repository'] -> Class['kanopya::novacompute']
 }
 
-class kanopya::quantum_($amqpserver, $dbserver, $keystone, $password) {
-    class { 'quantum':
-        rabbit_password => "${password}",
-        rabbit_host     => "${amqpserver}",
-        rabbit_user     => 'quantum',
-        sql_connection  => "mysql://quantum:${password}@${dbserver}/quantum",
-    }
-
-    class { 'quantum::server':
-        auth_password => $password,
-        auth_host     => "${keystone}"
-    }
-
-    @@mysql::db { 'quantum':
-        user     => 'quantum',
-        password => "${password}",
-        host     => "${ipaddress}",
-        tag      => "${dbserver}"
-    }
-
-    @@rabbitmq_user { 'quantum':
-        admin    => true,
-        password => "${password}",
-        provider => 'rabbitmqctl',
-        tag      => "${amqpserver}"
-    }
-
-    @@rabbitmq_user_permissions { "quantum@/":
-        configure_permission => '.*',
-        write_permission     => '.*',
-        read_permission      => '.*',
-        provider             => 'rabbitmqctl',
-        tag                  => "${amqpserver}"
-    }
-
-    @@keystone_user { 'quantum':
-        ensure   => present,
-        password => "${password}",
-        email    => "quantum@localhost",
-        tenant   => "services",
-        tag      => "${keystone}"
-    }
-
-    @@keystone_user_role { "quantum@services":
-        ensure  => present,
-        roles   => 'admin',
-        tag     => "${keystone}"
-    }
-
-    @@keystone_service { 'quantum':
-        ensure      => present,
-        type        => "network",
-        description => "Quantum Networking Service",
-        tag         => "${keystone}"
-    }
-
-    @@keystone_endpoint { "RegionOne/quantum":
-        ensure       => present,
-        public_url   => "http://${fqdn}:9696",
-        admin_url    => "http://${fqdn}:9696",
-        internal_url => "http://${fqdn}:9696",
-        tag          => "${keystone}"
-    }
-
-    Class['kanopya::openstack::repository'] -> Class['kanopya::quantum_']
-}

@@ -198,7 +198,7 @@ sub _create_and_configure_cluster {
     # configure export_manager with 2 portals #
     ###########################################
     diag('Retrieving generic iSCSI component');
-    my $export_manager = EFactory::newEEntity(
+    my $export_manager = EEntity->new(
                           data => $kanopya_cluster->getComponent(name => "Iscsi")
     );
 
@@ -229,7 +229,7 @@ sub _create_and_configure_cluster {
     }
 
     diag('Retrieve disk manager');
-    my $disk_manager = EFactory::newEEntity(
+    my $disk_manager = EEntity->new(
                         data => $kanopya_cluster->getComponent(name => "Storage")
     );
 

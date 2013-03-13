@@ -47,9 +47,9 @@ sub getPuppetDefinition {
            "\t\$kanopya_openstack_repository = 1\n" .
            "}\n" .
            "class { 'kanopya::glance':\n" .
-           "\tdbserver => '" . $sql->service_provider->getMasterNode->fqdn . "',\n" .
+           "\tdbserver => '" . $sql->getMasterNode->fqdn . "',\n" .
            "\tpassword => 'glance',\n" .
-           "\tkeystone => '" . $keystone->service_provider->getMasterNode->fqdn . "',\n" .
+           "\tkeystone => '" . $keystone->getMasterNode->fqdn . "',\n" .
            "\temail    => '" . $self->service_provider->user->user_email . "'\n" .
            "}\n";
     ;

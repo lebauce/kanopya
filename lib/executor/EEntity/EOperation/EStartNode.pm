@@ -23,7 +23,7 @@ use String::Random;
 use Date::Simple (':all');
 
 use Kanopya::Exceptions;
-use EFactory;
+use EEntity;
 use EEntity;
 use Entity::ServiceProvider;
 use Entity::ServiceProvider::Cluster;
@@ -76,9 +76,8 @@ sub prepare {
     $self->SUPER::prepare();
 
     # Instanciate the bootserver Cluster
-    $self->{context}->{bootserver} = EEntity->new(
-                                         entity => Entity->get(id => $self->{config}->{cluster}->{bootserver})
-                                     );
+    $self->{context}->{bootserver}
+        = EEntity->new(entity => Entity::ServiceProvider::Cluster->getKanopyaCluster);
 
     # Instanciate dhcpd
     my $dhcpd = $self->{context}->{bootserver}->getComponent(name => "Dhcpd", version => 3);
@@ -131,7 +130,7 @@ sub execute {
             $iface->assignIp();
 
             # Apply VLAN's
-            my $ehost_manager = EEntity->new(entity => $self->{context}->{host}->getHostManager);
+            my $ehost_manager = $self->{context}->{host}->getHostManager;
             for my $netconf ($iface->netconfs) {
                 for my $vlan ($netconf->vlans) {
                     $log->info("Apply VLAN on " . $iface->iface_name);
@@ -159,9 +158,9 @@ sub execute {
                              options     => $mount_options);
 
     # Update kanopya etc hosts
-    my $agent = $self->{_executor}->getComponent(category => "Configurationagent");
-    my $eagent = EFactory::newEEntity(data => $agent);
-    $eagent->applyConfiguration(cluster => $self->{_executor});
+    my $agent = $self->{context}->{bootserver}->getComponent(category => "Configurationagent");
+    my $eagent = EEntity->new(data => $agent);
+    $eagent->applyConfiguration(cluster => $self->{context}->{bootserver});
 
     # Umount system image container
     if ($self->{params}->{mountpoint}) {
@@ -187,7 +186,7 @@ sub _cancel {
     $log->info("Cancel start node, we will try to remove node link for <" .
                $self->{context}->{host}->id . ">");
 
-    $self->{context}->{host}->stopToBeNode();
+    $self->{context}->{cluster}->unregisterNode(node => $self->{context}->{host}->node);
 
     if (! scalar(@{ $self->{context}->{cluster}->getHosts() })) {
         $self->{context}->{cluster}->setState(state => "down");
@@ -244,7 +243,7 @@ sub _generateBootConf {
         # create the final storing directory
         my $path = "$tftpdir/$clustername/$hostname";
         my $cmd = "mkdir -p $path";
-        $self->getExecutorEContext->execute(command => $cmd);
+        $self->_host->getEContext->execute(command => $cmd);
         my $newinitrd = $path . "/initrd_$kernel_version";
 
         $log->info("Build initramfs $newinitrd");
@@ -331,12 +330,14 @@ sub _generatePXEConf {
     my $tmp_kernel_id = $self->{context}->{cluster}->kernel_id;
     my $host_kernel_id = $tmp_kernel_id ? $tmp_kernel_id : $self->{context}->{host}->kernel_id;
 
+    my $ntpserver = $self->{context}->{bootserver}->getComponent(category => 'System');
     $self->{context}->{dhcpd_component}->addHost(
         dhcpd3_subnet_id                => $subnet,
         dhcpd3_hosts_ipaddr             => $pxeiface->getIPAddr,
         dhcpd3_hosts_mac_address        => $pxeiface->iface_mac_addr,
         dhcpd3_hosts_hostname           => $hostname,
-        dhcpd3_hosts_ntp_server         => $self->{context}->{bootserver}->getMasterNodeIp(),
+        # While we do not have a ntp or bootserver component, use the system component on kanopya master
+        dhcpd3_hosts_ntp_server         => $ntpserver->getMasterNode->adminIp,
         dhcpd3_hosts_domain_name        => $self->{context}->{cluster}->cluster_domainname,
         dhcpd3_hosts_domain_name_server => $self->{context}->{cluster}->cluster_nameserver1,
         dhcpd3_hosts_gateway            => $gateway,

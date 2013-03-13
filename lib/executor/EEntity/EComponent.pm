@@ -42,7 +42,7 @@ use String::Random;
 use Template;
 use Log::Log4perl "get_logger";
 use General;
-use EFactory;
+use EEntity;
 
 our $VERSION = '1.00';
 
@@ -61,7 +61,7 @@ sub addInitScripts {
     General::checkParams(args => \%args, required => [ 'mountpoint', 'scriptname' ]);
 
     my $cmd = "chroot $args{mountpoint} /sbin/insserv -d $args{scriptname}";
-    $self->getExecutorEContext->execute(command => $cmd);
+    $self->_host->getEContext->execute(command => $cmd);
 }
 
 =head2 generateFile
@@ -79,11 +79,11 @@ sub generateFile {
     General::checkParams( args => \%args, required => ['mount_point','input_file','data','output'] );
 
     if (not defined $args{econtext}) {
-        $args{econtext} = $self->getExecutorEContext;
+        $args{econtext} = $self->_host->getEContext;
     }
 
     my $template_dir = defined $args{template_dir} ? $args{template_dir}
-                                                   : $self->_getEntity()->getTemplateDirectory();
+                                                   : $self->_entity->getTemplateDirectory();
 
     my $config = {
         INCLUDE_PATH => $template_dir,
@@ -108,6 +108,9 @@ sub generateFile {
     unlink "/tmp/$tmpfile";
 }
 
+sub generateConfiguration {
+}
+
 sub addNode {}
 sub stopNode {}
 sub postStartNode {}
@@ -129,11 +132,12 @@ sub cleanNode {
 
 sub isUp {
     my ($self, %args) = @_;
-    General::checkParams( args => \%args, required => ['cluster', 'host' ] );
+
+    General::checkParams( args => \%args, required => [ 'cluster', 'host' ] );
     
     my $availability = 1;
-    my $execution_list = $self->{_entity}->getExecToTest();
-    my $net_conf = $self->{_entity}->getNetConf();
+    my $execution_list = $self->_entity->getExecToTest();
+    my $net_conf = $self->_entity->getNetConf();
 
     # Test executable
     foreach my $i (keys %$execution_list) {
@@ -146,10 +150,8 @@ sub isUp {
         }
     }
 
-    my $ip = $args{host}->adminIp;
-    my $econtext = $self->getExecutorEContext;
-
     # Test Services
+    my $ip = $args{host}->adminIp;
     while(my ($port, $protocols) = each %$net_conf) {
         my $cmd = "nmap -n ";
         PROTO:
@@ -162,10 +164,10 @@ sub isUp {
                 $cmd .= "-sT ";
             }
             $cmd .= "-p $port $ip | grep $port | cut -d\" \" -f2";
-            my $result = $econtext->execute(command => $cmd);
+            my $result = $self->_host->getEContext->execute(command => $cmd);
             my $port_state = $result->{stdout};
             chomp($port_state);
-            if ($port_state eq "closed"){
+            if ($port_state eq "closed") {
                 return 0;
             }
         }
@@ -176,8 +178,7 @@ sub isUp {
 sub getEContext {
     my ($self) = @_;
 
-    return EFactory::newEContext(ip_source      => $self->{_executor}->getMasterNodeIp(),
-                                 ip_destination => $self->service_provider->getMasterNodeIp());
+    return $self->SUPER::getEContext(dst_host => $self->getMasterNode->host);
 }
 
 1;

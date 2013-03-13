@@ -26,7 +26,7 @@ use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
-use EFactory;
+use EEntity;
 
 my $log = get_logger("");
 my $errmsg;
@@ -314,7 +314,7 @@ sub readyNodeRemoving {
     
     my $host = Entity::Host->find(hash => {host_id => $args{host_id}});
     
-    my $EKeepalived = EFactory::newEEntity(data => $self);
+    my $EKeepalived = EEntity->new(data => $self);
 
     my $context = $EKeepalived->getEContext();
     my $result = $context->execute(command => "ipvsadm -L -n | grep " . $host->adminIp);

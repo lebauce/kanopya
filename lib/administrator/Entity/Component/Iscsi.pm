@@ -155,22 +155,16 @@ sub setConf {
 }
 
 # Insert default configuration in db for this component 
-sub insertDefaultConfiguration {
+sub insertDefaultExtendedConfiguration {
     my $self = shift;
 
-    my $ip = $self->service_provider->getMasterNodeIp;
-    if (not $ip) {
-        throw Kanopya::Exception::Internal(
-                  error => "Could not find master not ip while " .
-                           "inserting default configuration"
-              );
+    for my $node ($self->component_nodes) {
+        Entity::Component::Iscsi::IscsiPortal->new(
+            iscsi_id          => $self->id,
+            iscsi_portal_ip   => $node->node->host->adminIp,
+            iscsi_portal_port => 3260
+        );
     }
-
-    Entity::Component::Iscsi::IscsiPortal->new(
-        iscsi_id          => $self->id,
-        iscsi_portal_ip   => $ip,
-        iscsi_portal_port => 3260
-    );
 }
 
 sub getNetConf {

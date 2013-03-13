@@ -154,12 +154,12 @@ sub _create_and_configure_cluster {
     my $physical_hoster = $kanopya_cluster->getHostManager();
 
     diag('Retrieve disk manager');
-    my $disk_manager = EFactory::newEEntity(
+    my $disk_manager = EEntity->new(
                            data => $kanopya_cluster->getComponent(name => "Storage")
                        );
 
     diag('Retrieving generic iSCSI component');
-    my $export_manager = EFactory::newEEntity(
+    my $export_manager = EEntity->new(
                              data => $kanopya_cluster->getComponent(name => "Iscsi")
                          );
 

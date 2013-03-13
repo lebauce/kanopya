@@ -44,8 +44,7 @@ sub createExport {
 
     # Check if the given container is provided by the same
     # storage provider than the nfsd storage provider.
-    if ($args{container}->disk_manager->service_provider->getAttr(name => "service_provider_id") !=
-        $self->_getEntity()->getAttr(name => "service_provider_id")) {
+    if ($args{container}->disk_manager->getMasterNode->host->id != $self->getMasterNode->host->id) {
         throw Kanopya::Exception::Execution(
                   error => "Only local containers can be exported through NFS"
               );
@@ -85,26 +84,26 @@ sub createExport {
 
     $mounttable->setConf(conf => { linuxes_mount => \@mountentries });
 
-    #my $emounttable = EFactory::newEEntity(data => $mounttable);
+    #my $emounttable = EEntity->new(data => $mounttable);
     #$emounttable->_generateFstab(cluster => $cluster, host => $cluster->getMasterNode);
 
     my $agent = $cluster->getComponent(category => "Configurationagent");
-    my $eagent = EFactory::newEEntity(data => $agent);
+    my $eagent = EEntity->new(data => $agent);
     $eagent->applyConfiguration(cluster => $cluster);
 
-    my $manager_ip = $self->service_provider->getMasterNodeIp;
+    my $manager_ip = $self->getMasterNode->adminIp;
     my $mount_dir  = $self->getMountDir(device => $args{container}->getAttr(name => 'container_device'));
 
     my $entity = Entity::ContainerAccess::NfsContainerAccess->new(
                      container_id            => $args{container}->getAttr(name => 'container_id'),
-                     export_manager_id       => $self->_getEntity->getAttr(name => 'entity_id'),
+                     export_manager_id       => $self->_entity->getAttr(name => 'entity_id'),
                      container_access_export => $manager_ip . ':' . $mount_dir,
                      container_access_ip     => $manager_ip,
                      container_access_port   => 2049,
                      options                 =>  $args{client_options},
                  );
 
-    my $container_access = EFactory::newEEntity(data => $entity);
+    my $container_access = EEntity->new(data => $entity);
     my $client = $self->addExportClient(export  => $container_access,
                                         host    => $args{client_name},
                                         options => $args{client_options});
@@ -189,7 +188,7 @@ sub addExportClient {
     General::checkParams(args     => \%args,
                          required => [ 'export', 'host', 'options' ]);
 
-    return $self->_getEntity()->addExportClient(
+    return $self->_entity->addExportClient(
                export_id      => $args{export}->getAttr(name => "container_access_id"),
                client_name    => $args{host},
                client_options => $args{options}

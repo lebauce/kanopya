@@ -23,6 +23,7 @@ use warnings;
 
 use General;
 use Node;
+use Harddisk;
 use Entity::Iface;
 use Entity::Operation;
 use Entity::Workflow;
@@ -170,10 +171,6 @@ sub methods {
     };
 }
 
-=head2 create
-
-=cut
-
 sub create {
     my $class = shift;
     my %args  = @_;
@@ -203,10 +200,6 @@ sub getHostManager {
     return $self->host_manager;
 }
 
-=head2 getState
-
-=cut
-
 sub getState {
     my $self = shift;
     my $state = $self->host_state;
@@ -218,10 +211,6 @@ sub getPrevState {
     my $state = $self->host_prev_state;
     return wantarray ? split(/:/, $state) : $state;
 }
-
-=head2 setState
-
-=cut
 
 sub setState {
     my $self = shift;
@@ -236,28 +225,17 @@ sub setState {
     $self->save();
 }
 
-=head2 getNodeState
-
-=cut
-
 sub getNodeState {
     my $self = shift;
     my $state = $self->node->node_state;
     return wantarray ? split(/:/, $state) : $state;
 }
 
-=head2 getNodeNumber
-
-=cut
 sub getNodeNumber {
     my $self = shift;
     my $node_number = $self->node->node_number;
     return $node_number;
 }
-
-=head2 getNodeSystemimage
-
-=cut
 
 sub getNodeSystemimage {
     my $self = shift;
@@ -275,10 +253,6 @@ sub getPrevNodeState {
     return wantarray ? split(/:/, $state) : $state;
 }
 
-=head2 setNodeState
-
-=cut
-
 sub setNodeState {
     my $self = shift;
     my %args = @_;
@@ -294,9 +268,6 @@ sub setNodeState {
     $node->save();
 }
 
-=head2 updateCPU
-
-=cut
 
 sub updateCPU {
     my ($self, %args) = @_;
@@ -321,10 +292,6 @@ sub updateCPU {
     $self->save();
 }
 
-=head2 updateMemory
-
-=cut
-
 sub updateMemory {
     my ($self, %args) = @_;
 
@@ -346,62 +313,6 @@ sub updateMemory {
 
     $self->setAttr(name => "host_ram", value => $args{memory});
     $self->save();
-}
-
-sub becomeNode {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ 'service_provider_id', 'master_node', 'node_number' ],
-                         optional => { 'systemimage_id' => undef, 'hostname' => undef });
-
-    return Node->new(
-               host_id             => $self->id,
-               service_provider_id => $args{service_provider_id},
-               master_node         => $args{master_node},
-               node_number         => $args{node_number},
-               systemimage_id      => $args{systemimage_id},
-               node_hostname       => $args{hostname},
-           );
-}
-
-sub becomeMasterNode {
-    my $self = shift;
-    my $node = $self->node;
-
-    if (not defined $node) {
-        $errmsg = "Entity::Host->becomeMasterNode :Host " . $self->id . " is not a node!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::DB(error => $errmsg);
-    }
-
-    $node->setAttr(name => 'master_node', value => 1);
-    $node->save();
-}
-
-sub stopToBeNode {
-    my $self = shift;
-
-    if (not defined $self->node) {
-        $errmsg = "Host " . $self->id . " is not a node!";
-        $log->error($errmsg);
-        #throw Kanopya::Exception::DB(error => $errmsg);
-    }
-    else {
-        my @ifaces = $self->getIfaces;
-        for my $iface (@ifaces) {
-            my @ips = $iface->ips;
-            for my $ip (@ips) {
-                $ip->delete();
-            }
-        }
-
-        $self->node->delete();
-    }
-
-    # Remove node entry
-    $self->setState(state => 'down');
 }
 
 sub configuredIfaces {
@@ -440,22 +351,6 @@ sub configureIfaces {
     }
 }
 
-=head2 Entity::Host->addIface (%args)
-
-    Class : Public
-
-    Desc : Create a new iface instance in db.
-
-    args:
-        iface_name : Char : interface identifier
-        iface_mac_addr : Char : the mac address linked to iface
-        iface_pxe:Int :0 or 1
-        host_id: Int
-
-    return: iface identifier
-
-=cut
-
 sub addIface {
     my $self = shift;
     my %args = @_;
@@ -470,10 +365,6 @@ sub addIface {
                                    host_id        => $self->id);
     return $iface;
 }
-
-=head2 getIfaces
-
-=cut
 
 sub getIfaces {
     my $self = shift;
@@ -515,10 +406,6 @@ sub getIfaces {
     }
     return wantarray ? @ifaces : \@ifaces;
 }
-
-=head2 getPXEIface
-
-=cut
 
 sub getPXEIface {
     my $self = shift;
@@ -574,22 +461,6 @@ sub adminIp {
     }
 }
 
-sub getHost {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['hash']);
-
-    return  $class->find(%args)
-}
-
-sub getHostFromIP {
-    my $class = shift;
-    my %args = @_;
-
-    throw Kanopya::Exception::NotImplemented();
-}
-
 sub getFreeHosts {
     my $class = shift;
     my %args = @_;
@@ -610,10 +481,6 @@ sub getFreeHosts {
     return @free;
 }
 
-=head2 remove
-
-=cut
-
 sub remove {
     my $self = shift;
 
@@ -630,34 +497,14 @@ sub remove {
     );
 }
 
-sub extension {
-    return "hostdetails";
-}
-
-sub getHarddisks {
-    my $self = shift;
-    my $hds = [];
-    my $harddisks = $self->{_dbix}->harddisks;
-    while(my $hd = $harddisks->next) {
-        my $tmp = {};
-        $tmp->{harddisk_id} = $hd->get_column('harddisk_id');
-        $tmp->{harddisk_device} = $hd->get_column('harddisk_device');
-        push @$hds, $tmp;
-    }
-    return $hds;
-
-}
-
 sub addHarddisk {
     my $self = shift;
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['device']);
 
-    $self->{_dbix}->harddisks->create({
-        harddisk_device => $args{device},
-        host_id => $self->getAttr(name => 'host_id'),
-    });
+    return Harddisk->create(host_id         => $self->id,
+                            harddisk_device => $args{device});
 }
 
 sub removeHarddisk {
@@ -666,8 +513,7 @@ sub removeHarddisk {
 
     General::checkParams(args => \%args, required => ['harddisk_id']);
 
-    my $hd = $self->{_dbix}->harddisks->find($args{harddisk_id});
-    $hd->delete();
+    $self->findRelated(filters => [ 'harddisks' ], hash => { harddisk_id => $args{harddisk_id} })->remove();
 }
 
 sub activate{
@@ -741,12 +587,6 @@ sub remoteSessionUrl {
 
 sub checkStoppable {
     return 1;
-}
-
-sub fqdn {
-    my $self = shift;
-
-    return $self->node->node_hostname . '.' . $self->getCluster->cluster_domainname;
 }
 
 1;

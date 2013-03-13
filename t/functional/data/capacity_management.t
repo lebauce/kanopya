@@ -19,7 +19,7 @@ use Entity::Kernel;
 use Entity::Component;
 use Entity::ServiceProvider::Externalcluster;
 use CapacityManagement;
-use Entity::Component::Opennebula3;
+use Entity::Component::Virtualization::Opennebula3;
 use ClassType::ComponentType;
 
 BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
@@ -40,15 +40,11 @@ sub main {
         BaseDB->beginTransaction;
     }
 
-    $service_provider = Entity::ServiceProvider::Externalcluster->new(
-            externalcluster_name => 'Test Service Provider',
-    );
+    $service_provider = Entity::ServiceProvider->new();
 
-    $service_provider_hypervisors = Entity::ServiceProvider::Externalcluster->new(
-            externalcluster_name => 'Test Hypervisor Externacluster',
-    );
+    $service_provider_hypervisors = Entity::ServiceProvider->new();
 
-    $one = $service_provider_hypervisors->addComponentFromType(
+    $one = $service_provider_hypervisors->addComponent(
         component_type_id => ClassType::ComponentType->find(
             hash => {
                 component_name => 'Opennebula',

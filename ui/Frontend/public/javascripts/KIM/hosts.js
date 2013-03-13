@@ -1,9 +1,10 @@
 require('common/formatters.js');
+require('common/general.js');
 //require('kanopyaformwizard.js');
 
 var g_host_manager_id = undefined;
 
-function host_addbutton_action(e) {
+function host_addbutton_action(e, grid) {
     (new KanopyaFormWizard({
         title      : 'Create a host',
         type       : 'host',
@@ -91,7 +92,7 @@ function host_addbutton_action(e) {
                 // Find the input corresponding to defined ifaces,
                 // and build an options list with.
                 var options = [];
-                this.form.find('#input_iface_name').each(function() {
+                this.form.find('input[name="iface_name"]').each(function() {
                     if ($(this).val() != "") {
                         options.push({ label : $(this).val(), pk : $(this).val() });
                     }
@@ -170,13 +171,16 @@ function host_addbutton_action(e) {
 
             return ajax($(this.form).attr('method').toUpperCase(),
                         $(this.form).attr('action'), data, onsuccess, onerror);
+        },
+        callback : function (data) {
+            handleCreateOperation(data, grid);
         }
     })).start();
 }
 
 function hosts_list(cid, host_manager_id) {
     g_host_manager_id = host_manager_id;
-    create_grid({
+    var grid = create_grid({
         content_container_id    : cid,
         grid_id                 : 'hosts_list',
         url                     : '/api/host?host_manager_id=' + g_host_manager_id,
@@ -190,7 +194,12 @@ function hosts_list(cid, host_manager_id) {
         ],
         details                 : { onSelectRow : host_addbutton_action }
     });
-    var host_addbutton  = $('<a>', { text : 'Add a host' }).appendTo('#' + cid)
+    /*var host_addbutton  = $('<a>', { text : 'Add a host' }).appendTo('#' + cid)
+                            .button({ icons : { primary : 'ui-icon-plusthick' } });*/
+    var action_div=$('#' + cid).prevAll('.action_buttons');                     
+    var host_addbutton  = $('<a>', { text : 'Add a host' }).appendTo(action_div)
                             .button({ icons : { primary : 'ui-icon-plusthick' } });
-    $(host_addbutton).bind('click', host_addbutton_action);
+    $(host_addbutton).bind('click', function (e) {
+        host_addbutton_action(e, grid);
+    });
 }

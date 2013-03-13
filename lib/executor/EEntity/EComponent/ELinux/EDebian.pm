@@ -36,7 +36,7 @@ sub addNode {
 
     $self->SUPER::addNode(%args);
 
-    my $econtext = $self->getExecutorEContext;
+    my $econtext = $self->_host->getEContext;
     my $grep_result = $econtext->execute(
                          command => "grep \"NETDOWN=no\" $args{mount_point}/etc/default/halt"
                       );
@@ -48,7 +48,7 @@ sub addNode {
     }
 
     # adjust some requirements on the image
-    my $data = $self->_getEntity()->getConf();
+    my $data = $self->_entity->getConf();
     my $automountnfs = 0;
     for my $mountdef (@{$data->{linuxes_mount}}) {
         my $mountpoint = $mountdef->{linux_mount_point};
@@ -125,7 +125,7 @@ sub customizeInitramfs {
 
     my $kanopya_dir = Kanopya::Config::getKanopyaDir();
     my $cmd = "cp -R $kanopya_dir/tools/deployment/system/initramfs-tools/scripts/* " . $args{initrd_dir} . "/scripts";
-    $self->getExecutorEContext->execute(command => $cmd);
+    $self->_host->getEContext->execute(command => $cmd);
 }
             
 1;

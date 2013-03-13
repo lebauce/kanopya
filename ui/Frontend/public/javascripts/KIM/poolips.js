@@ -1,16 +1,18 @@
 //require('kanopyaformwizard.js');
+require('common/general.js');
 
-function poolip_addbutton_action(e) {
+function poolip_addbutton_action(e, grid) {
     (new KanopyaFormWizard({
         title      : 'Create a Pool IP',
         type       : 'poolip',
         id         : (!(e instanceof Object)) ? e : undefined,
-        displayed  : [ 'poolip_name', 'poolip_first_addr', 'poolip_size', 'network_id' ]
+        displayed  : [ 'poolip_name', 'poolip_first_addr', 'poolip_size', 'network_id' ],
+        callback   : function () { handleCreate(grid); }
     })).start();
 }
 
 function poolips_list(cid) {
-    create_grid({
+    var grid = create_grid({
         url                     : '/api/poolip',
         content_container_id    : cid,
         grid_id                 : 'poolips_list',
@@ -25,7 +27,10 @@ function poolips_list(cid) {
             onSelectRow : poolip_addbutton_action
         }
     });
-    var addButton   = $('<a>', { text : 'Add a Pool IP' }).appendTo('#' + cid)
+    var action_div=$('#' + cid).prevAll('.action_buttons'); 
+    var addButton   = $('<a>', { text : 'Add a Pool IP' }).appendTo(action_div)
                         .button({ icons : { primary : 'ui-icon-plusthick' } });
-    $(addButton).bind('click', poolip_addbutton_action);
+    $(addButton).bind('click', function (e) {
+        poolip_addbutton_action(e, grid);
+    });
 }

@@ -29,7 +29,7 @@ sub configureNode {
     General::checkParams(args     => \%args,
                          required => ['cluster','host','mount_point']);
     
-    my $conf = $self->_getEntity()->getConf();
+    my $conf = $self->_entity->getConf();
 
     # Generation of /etc/default/puppet
     my $data = { 
@@ -46,7 +46,7 @@ sub configureNode {
         data          => $data
     );
     
-    $self->getExecutorEContext->send(
+    $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc/default'
     );
@@ -65,7 +65,7 @@ sub configureNode {
         data         => $data
     );
 
-     $self->getExecutorEContext->send(
+     $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc/puppet'
     );
@@ -83,7 +83,7 @@ sub addNode {
 
         $puppetmaster->createHostCertificate(
             mount_point => $args{mount_point},
-            host_fqdn   => $args{host}->fqdn
+            host_fqdn   => $args{host}->node->fqdn
         );
     }
 
@@ -107,12 +107,18 @@ sub generatePuppetDefinitions {
     General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
 
     my $puppetmaster = EEntity->new(entity => $self->getPuppetMaster);
-    my $fqdn = $args{host}->fqdn;
+    my $fqdn = $args{host}->node->fqdn;
     my $puppet_definitions = "";
     my $cluster_components = $args{cluster}->getComponents(category => "all", order_by => "priority");
     foreach my $component (@{ $cluster_components }) {
+        my $ecomponent = EEntity->new(entity => $component);
+        $ecomponent->generateConfiguration(
+            cluster => $args{cluster},
+            host    => $args{host}
+        );
+
         # retrieve puppet definition to create manifest
-        $puppet_definitions .= $component->getPuppetDefinition(
+        $puppet_definitions .= $ecomponent->getPuppetDefinition(
             host    => $args{host},
             cluster => $args{cluster},
         );
@@ -124,7 +130,7 @@ sub generatePuppetDefinitions {
         my $puppetmaster = EEntity->new(entity => $self->getPuppetMaster);
 
         $puppetmaster->createHostManifest(
-            host_fqdn          => $args{host}->fqdn,
+            host_fqdn          => $args{host}->node->fqdn,
             puppet_definitions => $puppet_definitions
         );
     }
@@ -177,6 +183,7 @@ sub applyManifest {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['host']);
     my $econtext = $args{host}->getEContext;
+    $econtext->{timeout} = 180;
     $econtext->execute(command => 'puppet agent --test');
 }
 

@@ -13,11 +13,15 @@ function add_menu(container, label, submenu_links, elem_id) {
     };
     
     var link_li = $('<li id="' + link_id + '" class="view_link_cont alive_link"></li>');
-    var link_a = $('<a class="view_link" style="white-space: nowrap" href="#' + view_id + '">' + label + '</a>');
+    var link_a = $('<a class="view_link" href="#' + view_id + '">' + label + '</a>');
     
     if (container.index() == 1 && !elem_id) {
         link_li.append(
             $('<span class="kanopya-sprite kanopya-menu-sprite sprite-kanopya-' + label.replace(/ /g, '-').toLowerCase() + '"></span>')
+        );
+    }else{
+    	link_li.append(
+            $('<span class="arrow"></span>')
         );
     }
 
@@ -25,13 +29,13 @@ function add_menu(container, label, submenu_links, elem_id) {
     container.append(link_li);
     build_submenu($('#view-container'), view_id, submenu_links, elem_id);
     //link_li.find('a').click( function() {onViewLinkSelect($(this), elem_id)} );
-    link_li.find('.view_link').click( {view_id: view_id, elem_id: elem_id}, onViewLinkSelect);
+    link_li.find('.view_link').click( {view_id: view_id, elem_id: elem_id,label:label}, onViewLinkSelect);
 }
 
 function add_menutree(container, label, menu_info, elem_id) {
     
     var link_li = $('<li>');
-    var link_a = $('<a class="view_link" style="white-space: nowrap">' + label + '</a>');
+    var link_a = $('<span class="arrow"></span><a class="view_link">' + label + '</a>');
     link_a.bind('click', function(event) {
         
         $(this).next().toggle();
@@ -131,10 +135,10 @@ function build_mainmenu() {
     for (var label in mainmenu_def) {
         if ($.inArray(label, menu_elements) < 0) {
             var menu_head = $('<h3 id="menuhead_' + label.replace(/ /g, '_') + '"><a href="#">' + label + '</a></h3>');
-            var content = $('<ul></ul>');
+            var content = $('<ul id="'+label+'"></ul>');
             container.append(menu_head);
             container.append(content);
-
+			jQuery.data(container,'section',label);
             if (mainmenu_def[label]['onLoad']) {
                 // Custom menu
                 menu_head.click(mainmenu_def[label]['onLoad']);
@@ -157,7 +161,7 @@ function build_mainmenu() {
             if (mainmenu_def[label]['masterView']) {
                 var view_id = 'view_' + label.replace(/ /g, '_');
                 build_submenu($('#view-container'), view_id, mainmenu_def[label]['masterView']);
-                menu_head.click( {view_id: view_id}, onViewLinkSelect);
+                menu_head.click( {view_id: view_id,category:label}, onViewLinkSelect);
             }
         }
     }
@@ -206,9 +210,10 @@ function get_user_profiles () {
 function build_submenu(container, view_id, links, elem_id) {
     // Create the div container for this view
     var view = $('<div class="master_view" id="' + view_id + '"></div>').appendTo(container);
+    var class_menu=(links.length>1?'':'invisible');
     // Tab container of the view
-    var submenu_cont = $('<ul></ul>').appendTo(view);
-
+    var submenu_cont = $('<ul class="'+class_menu+'"></ul>').appendTo(view);
+	
     view.tabs({});
 
     for (var smenu in links) {
@@ -239,6 +244,7 @@ function build_submenu(container, view_id, links, elem_id) {
         var link = String(ui.tab);
         reload_content(link.split('#')[1], elem_id);
     });
+   
     view.hide();
 }
 
@@ -272,14 +278,37 @@ function build_detailmenu(container, view_id, links, elem_id) {
 function onViewLinkSelect(event) {
     var view_id = event.data.view_id;
     var elem_id = event.data.elem_id;
+    var category= event.data.category;
     
+    var breadcrumb=$('h2#breadcrump');
+    var id_actions='';
     // Hide all view div
     $('#view-container .master_view').hide();
     
-    // Show div corresponding to this link 
-    //$($(this).attr('href')).show(0, function(){alert('end show')});
-    //var view = $(view_link.attr('href'));
+    if (typeof category != 'undefined') {
+    	var breadcrumb_html= category;	
+    	id_actions=category;
+    }else{	
+    	var link_active=$('#link_'+view_id);
+    	var element_parents=link_active.parents('ul');
+    	var title_link_active=link_active.children('a').text();
+    	var nombre_parents=element_parents.length;
+    	id_actions=title_link_active;
+    	if(nombre_parents==1){
+    		var title_section_active=element_parents.attr('id');
+    		var breadcrumb_html= title_section_active+' <span> &gt; '+title_link_active+'</span>';
+   		}else{
+   			var title_section_active=element_parents.parent('li').children('a').text();
+   			var breadcrumb_html= 'Services &gt; '+title_section_active+' <span> &gt; '+title_link_active+'</span>';
+   		}
+   	}
+   	breadcrumb.html(breadcrumb_html);		
     var view = $('#'+view_id);
+    var tabs_view=$('#'+view_id+' > ul.ui-tabs-nav');
+    if(tabs_view.nextAll('.action_buttons"').length == 0){
+     tabs_view.after('<div class="action_buttons"></div>');	
+    }
+   
     view.show();
     
     //var selected_tab_idx = view.tabs('option', 'selected');

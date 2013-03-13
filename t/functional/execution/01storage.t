@@ -6,7 +6,7 @@ use Test::Pod;
 
 use Kanopya::Exceptions;
 use EContext::Local;
-use EFactory;
+use EEntity;
 use Entity::User;
 use ERollback;
 
@@ -58,7 +58,7 @@ sub testDiskManager {
 
     my ($edisk_manager, $eexport_manager);
     lives_ok {
-        $edisk_manager = EFactory::newEEntity(data => $disk_manager);
+        $edisk_manager = EEntity->new(data => $disk_manager);
 
     } "Retrieve disk manager $disk_manager";
 
@@ -80,7 +80,7 @@ sub testDiskManager {
         my $exportcomponents = $disk_manager->getExportManagers;
         for my $export_manager (@$exportcomponents) {
             lives_ok {
-                $eexport_manager = EFactory::newEEntity(data => $export_manager);
+                $eexport_manager = EEntity->new(data => $export_manager);
             } "Retrieve export manager $export_manager";
 
             my $export;
@@ -171,7 +171,7 @@ eval {
                     if ($export_manager) {
                         my $eexport_manager;
                         lives_ok {
-                            $eexport_manager = EFactory::newEEntity(data => $export_manager);
+                            $eexport_manager = EEntity->new(data => $export_manager);
                         } "Retrieve export manager $export_manager";
 
                         lives_ok {
@@ -252,7 +252,7 @@ eval {
         for my $export (reverse @exports) {
             if (not $handlefilecontainer or $export->isa('EEntity::EContainerAccess::EFileContainerAccess')) {
                 lives_ok {
-                    my $eexport_manager = EFactory::newEEntity(data => $export->getExportManager);
+                    my $eexport_manager = EEntity->new(data => $export->getExportManager);
                     $eexport_manager->removeExport(container_access => $export, econtext => $econtext);
         
                 } "Remove export $export";   
@@ -264,7 +264,7 @@ eval {
         for my $disk (reverse @disks) {
             if (not $handlefilecontainer or $disk->isa('EEntity::EContainer::EFileContainer')) {
                 lives_ok {
-                    my $edisk_manager = EFactory::newEEntity(data => $disk->getDiskManager);
+                    my $edisk_manager = EEntity->new(data => $disk->getDiskManager);
                     $edisk_manager->removeDisk(container => $disk, econtext => $econtext);
     
                 } "Remove disk $disk";
@@ -274,7 +274,7 @@ eval {
                     # Try to remove disks still exported
                     throws_ok {
                         eval {
-                            my $edisk_manager = EFactory::newEEntity(data => $disk->getDiskManager);
+                            my $edisk_manager = EEntity->new(data => $disk->getDiskManager);
                             $edisk_manager->removeDisk(container => $disk, econtext => $econtext, erollback => $erollback);
                         };
                         if ($@) {

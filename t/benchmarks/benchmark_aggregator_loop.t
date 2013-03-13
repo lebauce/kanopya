@@ -82,11 +82,10 @@ sub addNode {
                });
 
     # Make the host node for the new service
-    $host->becomeNode(
-        service_provider_id => $args{cluster}->id,
-        master_node         => ($args{number} == 1) ? 1 : 0,
-        node_number         => $args{number},
-        hostname            => 'hostname' . $args{cluster}->cluster_name . 'node' . $args{number}
+    $args{cluster}->registerNode(
+        host     => $host,
+        number   => $args{number},
+        hostname => 'hostname' . $args{cluster}->cluster_name . 'node' . $args{number}
     );
     $host->setState(state => 'up');
     $host->setNodeState(state => 'in');

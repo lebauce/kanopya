@@ -42,7 +42,7 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
-use EFactory;
+use EEntity;
 
 use Entity::ServiceProvider::Cluster;
 use Entity::Host;
@@ -76,7 +76,7 @@ sub execute{
 
     # set host active in db
     $self->{context}->{host}->setAttr(name => 'active', value => 1);
-    $self->{context}->{host}->_getEntity->save();
+    $self->{context}->{host}->_entity->save();
     $log->info("Host <" . $self->{context}->{host}->getAttr(name => "entity_id") . "> is now active");
 }
 

@@ -20,6 +20,8 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
+use Entity::ServiceProvider::Cluster;
+
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use General;
@@ -91,7 +93,7 @@ sub getConf {
     $data->{domain_name}        = $dhcpd3->get_column('dhcpd3_domain_name');
     $data->{domain_name_server} = $dhcpd3->get_column('dhcpd3_domain_server');
     $data->{server_name}        = $dhcpd3->get_column('dhcpd3_servername');
-    $data->{server_ip}          = $self->service_provider->getMasterNodeIp;
+    $data->{server_ip}          = $self->getMasterNode->adminIp;
 
     my $subnets = $dhcpd3->dhcpd3_subnets;
     my @data_subnets = ();
@@ -228,6 +230,17 @@ sub getPuppetDefinition {
     my ($self, %args) = @_;
 
     return "class { 'kanopya::dhcpd': }\n";
+}
+
+sub getHostsEntries {
+    my $self = shift;
+
+    my @entries;
+    for my $cluster (Entity::ServiceProvider::Cluster->search()) {
+        @entries = (@entries, $cluster->getHostEntries());
+    }
+
+    return \@entries;
 }
 
 1;
