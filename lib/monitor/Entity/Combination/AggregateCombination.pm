@@ -425,10 +425,8 @@ sub compute {
     my $arrayString = '$res = '."@array";
 
     #Evaluate the logic formula
-
-    #$log->info('Evaluate combination :'.($self->toString()));
     eval $arrayString;
-    $log->info("$arrayString");
+
     return $res;
 }
 
