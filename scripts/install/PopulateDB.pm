@@ -963,7 +963,7 @@ sub registerComponents {
         {
             component_name         => 'NovaCompute',
             component_version      => 6,
-            component_categories   => [ ],
+            component_categories   => [ 'Hypervisor' ],
             service_provider_types => [ 'Cluster' ],
         },
         {
