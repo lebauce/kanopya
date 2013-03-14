@@ -273,6 +273,12 @@ sub registerUsers {
               'Sales' => [ 'create', 'update', 'remove', 'get' ],
           }
         },
+        { name    => 'Guest',
+          type    => 'User',
+          desc    => 'Guest group',
+          system  => 0,
+          profile => [ 'Guest', 'guest profile' ],
+        },
         { name    => 'User',
           type    => 'User',
           desc    => 'User master group containing all users',
@@ -374,7 +380,8 @@ sub registerUsers {
           desc    => 'Entity master group containing all entities',
           system  => 1,
           methods => {
-              'Administrator' => [ 'create', 'update', 'remove', 'get', 'addPerm', 'removePerm', 'subscribe' ]
+              'Administrator' => [ 'create', 'update', 'remove', 'get', 'addPerm', 'removePerm', 'subscribe' ],
+              'Guest'         => [ 'get' ]
           }
         },
     ];
