@@ -150,7 +150,9 @@ sub getBaseConfiguration {
 
 sub hypervisors {
     my $self = shift;
-    return $self->opennebula3_hypervisors;
+
+    my @hypervisors = $self->opennebula3_hypervisors;
+    return \@hypervisors;
 }
 
 sub activeHypervisors {

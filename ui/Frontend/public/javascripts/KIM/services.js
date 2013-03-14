@@ -323,8 +323,8 @@ function migrate(spid, eid) {
         type        : 'GET',
         success     : function(hmgr) {
             $.ajax({
-                url     : '/api/opennebula3/' + hmgr[0].manager_id + '/opennebula3_hypervisors',
-                type    : 'GET',
+                url     : '/api/virtualization/' + hmgr[0].manager_id + '/hypervisors',
+                type    : 'POST',
                 success : function(data) {
                     for (var i in data) if (data.hasOwnProperty(i)) {
                         $(sel).append($('<option>', { text : data[i].host_hostname, value : data[i].pk }));
@@ -338,7 +338,7 @@ function migrate(spid, eid) {
                                 var hyp = $(sel).val();
                                 if (hyp != null && hyp != "") {
                                     $.ajax({
-                                        url         : '/api/opennebula3/' + hmgr[0].manager_id + '/migrate',
+                                        url         : '/api/virtualization/' + hmgr[0].manager_id + '/migrate',
                                         type        : 'POST',
                                         contentType : 'application/json',
                                         data        : JSON.stringify({
@@ -372,7 +372,7 @@ function nodedetailsaction(cid, eid) {
             var isUp        = (/^up:/).test(data.host.host_state);
             var isVirtual   = false;
             $.ajax({    
-                url     : '/api/entity/' + data.host.host_manager_id,
+                url     : '/api/component/' + data.host.host_manager_id,
                 type    : 'GET',
                 async   : false,
                 success : function(ret) {

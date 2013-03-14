@@ -198,7 +198,9 @@ Return a list of hypervisors under the rule of this instance of manager
 
 sub hypervisors {
     my $self = shift;
-    return $self->openstack_hypervisors;
+
+    my @hypervisors = $self->openstack_hypervisors;
+    return \@hypervisors;
 }
 
 =pod

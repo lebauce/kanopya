@@ -30,7 +30,7 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
         return;
     }
     $.ajax({
-        url     : '/api/entity/' + cloudmanagerid + '/hypervisors',
+        url     : '/api/virtualization/' + cloudmanagerid + '/hypervisors',
         type    : 'POST',
         success : function(data) {
             var topush  = [];

@@ -1477,9 +1477,10 @@ sub hypervisors {
     my $self = shift;
 
     my @hypervisors = Entity::Host::Hypervisor::Vsphere5Hypervisor->search(
-                          hash => { vsphere5_id => $self->id} );
+                          hash => { vsphere5_id => $self->id }
+                      );
 
-    return wantarray ? @hypervisors : \@hypervisors;
+    return \@hypervisors;
 }
 
 =pod
