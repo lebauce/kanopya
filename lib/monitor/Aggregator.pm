@@ -108,7 +108,7 @@ sub _contructRetrieverOutput {
 
 =cut
 
-sub update() {
+sub update {
     my $self = shift;
 
     my @service_providers = Entity::ServiceProvider->search(hash => { });
@@ -120,6 +120,8 @@ sub update() {
                 $service_provider->getManager(manager_type => "CollectorManager");
             };
             if (not $@){
+                next CLUSTER if (0 == $service_provider->nodes);
+
                 $log->info('Aggregator collecting for service provider '.  $service_provider->id);
 
                 # Construct input of the collector retriever
