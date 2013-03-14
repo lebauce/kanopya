@@ -135,8 +135,7 @@ sub registerNode {
                          optional => { 'host'             => undef,
                                        'systemimage'      => undef,
                                        'state'            => undef,
-                                       'monitoring_state' => 'enabled',
-                                       'components'       => $self->components });
+                                       'monitoring_state' => 'enabled' });
 
     my $node = Node->new(
                    service_provider_id => $self->id,
@@ -150,7 +149,7 @@ sub registerNode {
 
     # Link the service provider components to the new node
     # TODO: Handle heterogeneous component configuration
-    for my $component (@{ $args{components} }) {
+    for my $component ($self->components) {
         if ($component->service_provider->id != $self->id) {
             throw Kanopya::Exception::Internal(
                       error => "Component <$component> do not come from this service provider <" . $self->id . ">"
@@ -522,8 +521,7 @@ sub addComponent {
     General::checkParams(args     => \%args,
                          required => [ 'component_type_id' ],
                          optional => { 'component_configuration' => undef,
-                                       'component_template_id'   => undef,
-                                       'nodes'                   => $self->nodes });
+                                       'component_template_id'   => undef });
 
     # Check if the type of the given component is installable on this type
     # of service provider.
@@ -569,7 +567,7 @@ sub addComponent {
 
     # For instance install the component on all node of the service provider,
     # use the first started node as master node for the component.
-    for my $node (@{ $args{nodes} }) {
+    for my $node ($self->nodes) {
         if ($node->service_provider->id != $self->id) {
             throw Kanopya::Exception::Internal(
                       error => "Node <$node> do not come from this service provider <" . $self->id . ">"
