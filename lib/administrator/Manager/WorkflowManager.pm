@@ -37,6 +37,7 @@ use Entity::WorkflowDef;
 use WorkflowDefManager;
 use ParamPreset;
 use Scope;
+use ScopeParameter;
 use NotificationSubscription;
 
 sub methods {
