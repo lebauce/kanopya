@@ -37,6 +37,10 @@ var Lvm2 = (function(_super) {
     Lvm2.prototype.valuesCallback = function(type, id) {
         var conf = ajax('POST', '/api/' + type + '/' + id + '/getConf');
 
+        // Set the primary key.
+        // TODO: Check if we must set it for all components.
+        conf['lvm2_id'] = id;
+
         // Get the values from getConf, add build a new values hash
         // according to the attrdef builded in the attrsCallback.
         conf.lvm2_lvs = [];
@@ -62,16 +66,16 @@ var Lvm2 = (function(_super) {
                 label       : 'Logical volumes',
                 type        : 'relation',
                 relation    : 'single_multi',
-                is_editable : true,
+                is_editable : true
             };
             response.relations['lvm2_lvs'] = {
                 attrs : {
-                    accessor : 'multi',
+                    accessor : 'multi'
                 },
                 cond : {
-                    'foreign.lvm2_id' : 'self.lvm2_id',
+                    'foreign.lvm2_id' : 'self.lvm2_id'
                 },
-                resource: 'lvm2lv',
+                resource: 'lvm2lv'
             };
             return response;
     
@@ -80,37 +84,37 @@ var Lvm2 = (function(_super) {
             var attributes = {
                 lvm2_lv_id : {
                     is_primary   : true,
-                    is_mandatory : false,
+                    is_mandatory : false
                 },
                 lvm2_id : {
                     type         : 'relation',
                     relation     : 'single',
-                    is_mandatory : false,
+                    is_mandatory : false
                 },
                 lvm2_lv_name : {
                     label        : 'Name',
                     type         : 'string',
                     is_mandatory : true,
-                    is_editable  : true,
+                    is_editable  : true
                 },
                 lvm2_lv_size : {
                     label        : 'Size',
                     type         : 'string',
                     unit         : 'byte',
                     is_mandatory : true,
-                    is_editable  : true,
+                    is_editable  : true
                 },
                 constainer_access_device : {
                     label        : 'Device',
                     type         : 'string',
                     is_mandatory : true,
-                    is_editable  : false,
+                    is_editable  : false
                 },
                 lvm2_lv_filesystem : {
                     label        : 'File system',
                     type         : 'string',
                     is_mandatory : true,
-                    is_editable  : true,
+                    is_editable  : true
                 },
                 lvm2_vg : {
                     label        : 'Volume group',
@@ -118,8 +122,8 @@ var Lvm2 = (function(_super) {
                     relation     : 'single',
                     is_mandatory : true,
                     is_editable  : true,
-                    options      : vgs,
-                },
+                    options      : vgs
+                }
             };
         } else {
             return ajax('GET', '/api/attributes/' + resource);
