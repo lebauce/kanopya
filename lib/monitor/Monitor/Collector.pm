@@ -366,7 +366,7 @@ sub update {
     my $start_time = time();
     
     eval {
-        my $monitor_manager = $self->{_admin}->{manager}{monitor};
+        my $monitor_manager = $self->{monitormanager};
 
         ############################
         # Update data for each host #
