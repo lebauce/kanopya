@@ -28,6 +28,14 @@ use base 'BaseDB';
 use strict;
 use warnings;
 
+use Entity::User;
+
+use Log::Log4perl "get_logger";
+use Data::Dumper;
+
+my $log = get_logger("");
+my $errmsg;
+
 use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
@@ -51,7 +59,9 @@ sub new {
 
     # Automatically add the user in the groups associated to this profile
     for my $group ($self->profile->gps) {
-        $group->appendEntity(entity => $self->user);
+        # TODO: Very strange behavior, $self->user->id do not return the proper suer id as given in $args{user_id}...
+        my $user = Entity::User->get(id => $args{user_id});
+        $group->appendEntity(entity => $user);
     }
     return $self;
 }
