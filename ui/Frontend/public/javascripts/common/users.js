@@ -9,9 +9,14 @@ function user_addbutton_action(e) {
     // When called from user details, e is the user id, event instead.
     var displayed;
     var relations;
-    if (e instanceof Object && e.data.displayed !== undefined) {
-        displayed = e.data.displayed;
-        relations = e.data.relations;
+    var grid;
+    if (e instanceof Object) {
+        if (e.data.displayed !== undefined) {
+            displayed = e.data.displayed;
+            relations = e.data.relations;
+        }
+        grid = e.data.grid;
+
     } else {
         displayed = [ 'user_firstname', 'user_lastname', 'user_email',
                       'user_desc', 'user_login', 'user_password',
@@ -27,6 +32,7 @@ function user_addbutton_action(e) {
         id         : (!(e instanceof Object)) ? e : undefined,
         displayed  : displayed,
         relations  : relations,
+        callback   : function () { handleCreate(grid); }
     })).start();
 }
 
@@ -34,7 +40,7 @@ function user_addbutton_action(e) {
 function Users() {
     Users.prototype.load_content = function(container_id, elem_id) {
         g_user_id = elem_id;
-        create_grid({
+        var grid = create_grid({
             url: '/api/user',
             elem_name: 'user',
             rights: true,
@@ -57,7 +63,7 @@ function Users() {
         var creation_attrs = [ 'user_firstname', 'user_lastname', 'user_email', 'user_desc',
                                'user_login', 'user_password', 'user_system', 'user_sshkey', 'user_profiles' ];
         var creation_relations = { 'quotas' : [ 'resource', 'quota' ] };
-        $(user_addbutton).bind('click', { displayed : creation_attrs, relations : creation_relations }, user_addbutton_action);
+        $(user_addbutton).bind('click', { displayed : creation_attrs, relations : creation_relations, grid : grid }, user_addbutton_action);
     };
 }
   

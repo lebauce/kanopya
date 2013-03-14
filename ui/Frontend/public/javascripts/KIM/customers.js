@@ -17,6 +17,7 @@ function Customers() {
             rights: true
         });
 
+        var _this = this;
         function createAddCustomerButton(cid) {
             var container = $('#' + cid);
 
@@ -28,7 +29,8 @@ function Customers() {
                 title      : 'Add a customer',
                 type       : 'customer',
                 displayed  : displayed,
-                relations  : relations
+                relations  : relations,
+                callback   : function () { handleCreate(_this.grid); }
             };
 
             var button = $("<button>", {html : 'Add a customer'}).button({
@@ -36,12 +38,11 @@ function Customers() {
             });
             button.bind('click', function() {
                 new KanopyaFormWizard(user_opts).start();
-                grid.trigger("reloadGrid");
             });
             var action_div=$('#' + cid).prevAll('.action_buttons');
             action_div.append(button);
         };
-        
+
         createAddCustomerButton(container_id);
     }
     
