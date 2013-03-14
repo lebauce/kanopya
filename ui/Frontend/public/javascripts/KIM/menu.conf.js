@@ -71,7 +71,7 @@ var mainmenu_def = {
             id_key           : 'pk',
             submenu          : [
                 { label : 'Overview',        id : 'service_overview',      onLoad : function(cid, eid) { require('common/service_dashboard.js'); loadServicesOverview(cid, eid); }, icon : 'dashboard' },
-                { label : 'Details',         id : 'service_details',       onLoad : function(cid, eid) { require('KIM/services_details.js'); loadServicesDetails(cid, eid); }, icon : 'details' },
+                { label : 'Details',         id : 'service_details',       onLoad : function(cid, eid) { require('KIM/services_details.js'); loadServicesDetails(cid, eid); }, icon : 'search' },
                 { label : 'Configuration',   id : 'service_configuration', onLoad : function(cid, eid) { require('KIM/services_config.js'); loadServicesConfig(cid, eid); }, icon : 'system' },
                 { label : 'Resources',       id : 'service_resources',     onLoad : function(cid, eid) { require('KIM/services.js'); loadServicesResources(cid, eid); }, icon : 'resources' },
                 { label : 'Monitoring',      id : 'service_monitoring',    onLoad : function(cid, eid) { require('common/service_monitoring.js'); loadServicesMonitoring(cid, eid); }, icon : 'monitoring' },

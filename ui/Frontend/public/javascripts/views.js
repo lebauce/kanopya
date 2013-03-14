@@ -36,8 +36,8 @@ function reload_content(container_id, elem_id, keep_last) {
 
             // Tag this container as current
             $('#' + container_id).addClass('current_content');
-			var action_div=$('#' + container_id).prevAll('.action_buttons'); 
-    		action_div.empty();
+            var action_div=$('#' + container_id).prevAll('.action_buttons');
+            action_div.empty();
             // Fill container using related handler
             var handler = _content_handlers[container_id]['onLoad'];
             handler(container_id, elem_id);
@@ -94,6 +94,12 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
     // Set dialog title using column defined in conf
     var title = details_info.title && details_info.title.from_column && row_data[details_info.title.from_column];
 
+    if (row_data.cluster_name) {
+        var breadcrumb = $('h2#breadcrump');
+        var breadcrumb_html = breadcrumb.html();
+        breadcrumb.html(breadcrumb_html + ' <span> &gt; ' + row_data.cluster_name + '</span>');
+    }
+
     if (!(details_info.noDialog)) {
         var dialog = $(view_detail_container)
         .dialog({
@@ -109,9 +115,9 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
                 $(this).remove(); // detail modals are never closed, they are destroyed
             },
             buttons: [
-       			{id:'button-cancel',text:'Cancel',click: function() {$(this).dialog('close');}},
-        		{id:'button-ok',text:'Ok',click: function() {if (details_info.onOk) {details_info.onOk()}$(this).dialog('close');}}
-        	],
+                {id:'button-cancel',text:'Cancel',click: function() {$(this).dialog('close');}},
+                {id:'button-ok',text:'Ok',click: function() {if (details_info.onOk) {details_info.onOk()}$(this).dialog('close');}}
+            ],
         });
         // Remove dialog title if wanted
         if (details_info.title == 'none') {
@@ -120,6 +126,7 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
     }
     else {
         var masterview  = $('#' + grid_id).parents('div.master_view');
+
         $(masterview).hide();
         $(masterview).after($(view_detail_container).find('div.master_view').addClass('toRemove'));
     }

@@ -2,6 +2,9 @@ function loadServicesDetails(cid, eid, is_iaas) {
         
     var divId = 'service_details';
     var container = $('#'+ cid);
+    if (container.prevAll('.action_buttons').length === 0) {
+        container.before('<div class="action_buttons"></div>');
+    }
     var table       = $("<tr>").appendTo($("<table>").css('width', '100%').appendTo(container));
     var div = $('<div>', { id: divId}).appendTo($("<td>").appendTo(table));
      $('<h4>Details</h4>').appendTo(div);
@@ -56,6 +59,7 @@ function loadServicesDetails(cid, eid, is_iaas) {
 
     //var actioncell  = $('<td>', {'class' : 'action-cell'}).css('text-align', 'right').appendTo(table);
     var actioncell=$('#' + cid).prevAll('.action_buttons'); 
+
     //$(actioncell).append($('<div>').append($('<h4>', { text : 'Actions' })));
     $.ajax({
         url     : '/api/serviceprovider/' + eid,

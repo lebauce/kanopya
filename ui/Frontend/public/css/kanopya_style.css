@@ -91,6 +91,8 @@ a.view_link{font-weight:normal;}
 
 .ui-widget{font-family:Arial, Helvetica, sans-serif;font-size:14.7px;font-weight:bold;}
 .ui-widget .ui-icon{background-image:url('/images/kanopya-sprites.png');background-repeat:no-repeat;margin-top:-10px;}
+.ui-widget .ui-icon-info{background-image:url(theme/images/ui-icons_7e388a_256x240.png);}
+#managerslist .ui-icon-trash{top: 0.5em;}
 .dashboard .ui-widget .ui-widget-header .ui-icon{margin-top:0px;background-image:url('theme/kanopya-theme04/images/ui-icons_ffffff_256x240.png');}
 .ui-widget .ui-state-default .ui-icon-plusthick,.ui-widget .ui-state-hover .ui-icon-plusthick{background-position:-163px -40px;}
 .ui-widget .ui-state-default .ui-icon-closethick,.ui-widget .ui-state-hover .ui-icon-closethick{background-position:-142px -22px;}
@@ -148,6 +150,7 @@ ul#Services >li{cursor:pointer;}
 .action_buttons .ui-state-hover,.action_buttons .ui-button:hover,.action_buttons button:hover{background:white;border:1px solid #b2b2b2;}
 .action_buttons .ui-state-default, .action_buttons .ui-widget-content .ui-state-default, .action_buttons .ui-widget-header .ui-state-default,.action_buttons button{background:none;border:1px solid white;padding:0;}
 .action_buttons button{-moz-border-radius: 6px; -webkit-border-radius: 6px; -khtml-border-radius: 6px; border-radius: 6px;}
+#service_dashboard .action_buttons{padding-bottom:10px;}
 
 #accordionrule button,
 #accordion_monitoring_rule button{background:none;border:1px solid white;padding:0;margin:10px 10px 0 0;}

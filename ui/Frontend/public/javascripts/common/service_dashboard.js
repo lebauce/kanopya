@@ -12,6 +12,10 @@ var dash_template;
 function initServiceDashboard() {
     // Dashboard
     dash_div = $('<div id="service_dashboard" class="dashboard"></div>');
+    if (dash_div.nextAll('.action_buttons"').length == 0){
+        dash_div.append('<div class="action_buttons"></div>');
+    }
+
     var dash_layout_div = $('<div class="layout">');
     dash_layout_div.append('<div class="column first column-first"></div>');
     dash_layout_div.append('<div class="column second column-second"></div>');
@@ -154,9 +158,6 @@ function loadServicesOverview (container_id, elem_id) {
     if (service_dashboard === undefined) {
         initServiceDashboard();
     }
-var action_div=$('#' + container_id).prevAll('.action_buttons'); 
-action_div.append($('<button>', { 'class' : 'openaddwidgetdialog', html : 'Add Widget'}));
-action_div.append($('<button>', { 'class' : 'savedashboard', html : 'Save Dashboard'}));
 
     service_id = elem_id;
 
@@ -223,5 +224,9 @@ action_div.append($('<button>', { 'class' : 'savedashboard', html : 'Save Dashbo
         });
         dash_div.show();
     });
+    var action_div=jQuery('#' + container_id).find('div.dashboard').find('div.action_buttons');
 
+    action_div.html('');
+    action_div.append($('<button>', { 'class' : 'openaddwidgetdialog', html : 'Add Widget'}));
+    action_div.append($('<button>', { 'class' : 'savedashboard', html : 'Save Dashboard'}));
 }
