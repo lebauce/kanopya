@@ -161,7 +161,7 @@ function importItemButton(container_id, sp_id, obj_info, grid_ids) {
 
             // Create and bind import button
             $("<button>", {html : 'Import ' + obj_info.name + 's'})
-            .button({ icons : { primary : 'ui-icon-plusthick' } })
+            .button({ icons : { primary : 'ui-icon-import' } })
             .appendTo('#' + container_id)
             .click( loadItemTree );
         }

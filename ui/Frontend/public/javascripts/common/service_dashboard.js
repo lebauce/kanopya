@@ -177,7 +177,7 @@ function loadServicesOverview (container_id, elem_id) {
     );
     action_div.append(
             $('<button>', { 'class' : 'savedashboard', html : 'Save Dashboard'})
-            .button({ icons : { primary : 'ui-icon-disk' } })
+            .button({ icons : { primary : 'ui-icon-import' } })
     );
 
     //service_dashboard.setLayout(undefined);
