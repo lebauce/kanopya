@@ -26,7 +26,7 @@ function displayRulesGraph(widget, sp_id) {
     var srules_graph_div_id = 'srules_state_graph_' + widget_id;
     serv_graph_cont.append($('<div>', {id : srules_graph_div_id}));
     $.get(
-            '/api/serviceprovider/' + sp_id + '/aggregate_rules',
+            '/api/aggregaterule?service_provider_id=' + sp_id,
             function (rules) {
                 if (rules.length == 0) {
                     serv_graph_cont.find('.title').html('No service rules');
@@ -73,7 +73,7 @@ function displayRulesGraph(widget, sp_id) {
                 function manageEndCounting() {
                     if (total_nodes === checked_nodes) {
                         $.get(
-                                '/api/serviceprovider/' + sp_id + '/nodemetric_rules',
+                                '/api/nodemetricrule?service_provider_id=' + sp_id,
                                 function(node_rules) {
                                     master_cont.hide();
                                     if (total_nodes == 0) {
