@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
-# kanopya-orchestrator.pl - This is the main script to run kanopya orchestration rules engine.
+# kanopya-rulesengine.pl - This is the main script to run kanopya orchestration rules engine.
 
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2013 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -16,20 +16,20 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
+# Created 04 March 2013
 
 =head1 NAME
 
-kanopya-orchestrator - Orchestrator
+kanopya-rulesengine - Rules Engine
 
-=head1 SYNOPSIS	    
+=head1 SYNOPSIS
 
-	$ ./kanopya-orchestrator
+	$ ./kanopya-rulesengine
 
 =head1 DESCRIPTION
 
-Orchestrator is the main script to run orchestration rules engine.
-Orchestrator detect valid conditions and apply associated action.
+rulesengine is the main script to run Kanopya rules engine.
+Rules Engine evaluate rules and apply associated workflow.
 
 =head1 METHODS
 
@@ -37,12 +37,12 @@ Orchestrator detect valid conditions and apply associated action.
 
 use strict;
 use warnings;
-use Orchestrator;
+use RulesEngine;
 use Kanopya::Config;
 use Log::Log4perl "get_logger";
 
 my $dir = Kanopya::Config::getKanopyaDir();
-Log::Log4perl->init($dir . '/conf/orchestrator-log.conf');
+Log::Log4perl->init($dir . '/conf/rulesengine-log.conf');
 my $log = get_logger("");
 
 
@@ -55,21 +55,21 @@ sub signalHandler {
 }
 
 $SIG{TERM} = \&signalHandler;
-	
+
 
 eval	{
-	my $orchestrator = Orchestrator->new();
+	my $rulesengine = RulesEngine->new();
 	$log->info("Starting main loop");
 	# enter in the main loop and continue while $$running is true
-	$orchestrator->run(\$running);
+	$rulesengine->run(\$running);
 };
 if ($@) {
 	my $ex = $@;
-	$log->error("error in orchestrator instanciation: $ex");
-	die "Catch error in Orchestrator instanciation: $ex";
+	$log->error("error in rulesengine instanciation: $ex");
+	die "Catch error in rulesengine instanciation: $ex";
 };
 
-$log->info("kanopya-orchestrator end.");
+$log->info("kanopya-rulesengine end.");
 
 
 __END__

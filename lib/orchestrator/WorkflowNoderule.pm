@@ -45,7 +45,7 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub workflowState{
+sub manageWorkflowState {
     my ($class, %args) = @_;
     General::checkParams(args => \%args, required => [ 'node_id',
                                                        'nodemetric_rule_id',

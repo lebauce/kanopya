@@ -32,6 +32,7 @@ package Kanopya::Tools::TimeSerie;
 use strict;
 use warnings;
 
+use Text::CSV;
 use RRDTool::OO;
 
 =pod
@@ -276,4 +277,92 @@ sub linkToMetric {
     `cp $rrd_file $metric_rrd_path/$metric_rrd_filename`;
 }
 
+
+
+=pod
+
+=begin classdoc
+
+Read the data from a CSV file. The CSV contains two columns with headers,
+one for the times corresponding to the keys and the other for the values.
+
+@param file File name
+
+@param sep Char separator
+
+@return a hash reference of the historical data
+
+=end classdoc
+
+=cut
+
+
+sub getTimeserieDatafromCSV {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => ['file','sep']
+                        );
+    my %data;
+
+    my $file = $args{'file'};
+    my $sep  = $args{'sep'};
+
+    #sep_char used is ';'
+    my $csv = Text::CSV->new ({sep_char => $sep});
+    open my $io, "<", $file or die "$file: $!";
+
+    LINE:
+    while (my $row = $csv->getline($io)) {
+        next LINE if ($. == 1);
+        die("Exception file : first column not a key") if ( exists $data{$row->[0]} );
+        $data{$row->[0]} = $row->[1];
+    }
+    close $io;
+
+    return \%data;
+}
+
+=pod
+
+=begin classdoc
+
+Read the data values from a CSV file. The CSV contains one column with header
+
+@param file File name
+
+@param sep Char separator
+
+@return an array reference of the data values
+
+=end classdoc
+
+=cut
+
+sub getValuesfromCSV {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => ['file']
+                        );
+    my @data;
+
+    my $file = $args{'file'};
+
+    #sep_char used is ;
+    my $csv = Text::CSV->new();
+    open my $io, "<", $file or die "$file: $!";
+
+    my $index= 0;
+
+    LINE:
+    while (my $row = $csv->getline($io)) {
+        next LINE if ($. == 1);
+        $data[$index] = $row->[0];
+        $index++;
+    }
+    close $io;
+
+    return \@data;
+}
 1;

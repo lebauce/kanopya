@@ -218,4 +218,8 @@ sub label {
     return 'Linear regression '.$self->time_label()." (R = $r_rounded)";
 }
 
+sub isSeasonal {
+    return 0;
+}
+
 1;

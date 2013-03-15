@@ -59,10 +59,10 @@ sub _loadconfig {
         monitor_path      => $kanopya_dir . '/conf/monitor.conf',
         libkanopya        => XMLin($kanopya_dir . '/conf/libkanopya.conf'),
         libkanopya_path   => $kanopya_dir . '/conf/libkanopya.conf',
-        orchestrator      => XMLin($kanopya_dir . '/conf/monitor.conf'),
-        orchestrator_path => $kanopya_dir . '/conf/monitor.conf',
         aggregator        => XMLin($kanopya_dir . '/conf/aggregator.conf'),
         aggregator_path   => $kanopya_dir . '/conf/aggregator.conf',
+        rulesengine       => XMLin($kanopya_dir . '/conf/rulesengine.conf'),
+        rulesengine_path  => $kanopya_dir . '/conf/rulesengine.conf',
     }
 }
 

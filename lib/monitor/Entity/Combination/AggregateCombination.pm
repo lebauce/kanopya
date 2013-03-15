@@ -34,6 +34,7 @@ use base 'Entity::Combination';
 use Entity::Clustermetric;
 use Kanopya::Exceptions;
 use List::Util qw {reduce};
+use DataModelSelector;
 
 # logger
 use Log::Log4perl "get_logger";
@@ -97,6 +98,7 @@ sub methods {
     }
 }
 
+
 =pod
 
 =begin classdoc
@@ -111,6 +113,7 @@ sub label {
     my $self = shift;
     return $self->aggregate_combination_label;
 }
+
 
 =pod
 
@@ -227,7 +230,7 @@ sub toString {
 
 =begin classdoc
 
-Compute the combination value between two dates. Use getValuesFromDB() method of Clustermetric.
+Compute the combination value between two dates. Use evaluate() method of Clustermetric.
 
 @param start_time the begining date
 @param stop_time the ending date
@@ -238,7 +241,7 @@ Compute the combination value between two dates. Use getValuesFromDB() method of
 
 =cut
 
-sub computeValues{
+sub evaluateTimeSerie {
     my $self = shift;
     my %args = @_;
 
@@ -248,16 +251,92 @@ sub computeValues{
     my %allTheCMValues;
     foreach my $cm_id (@cm_ids){
         my $cm = Entity::Clustermetric->get('id' => $cm_id);
-        $allTheCMValues{$cm_id} = $cm->getValuesFromDB(%args);
+        $allTheCMValues{$cm_id} = $cm->fetch(%args);
     }
-    return $self->computeFromArrays(%allTheCMValues);
+    return $self->_computeFromArrays(%allTheCMValues);
 }
+
 
 =pod
 
 =begin classdoc
 
-Compute the combination value using the last Clustermetric values. Use getLastValueFromDB() method of Clustermetric.
+Evaluate current or predicted combination value.
+
+@optional timestamp if timestamp > actual time, the method evaluate predicted value at timestamp() using
+       DataModelSelector of the combinations. Otherwise evaluate with the lastValue.
+
+@optional nodes array used to return a hashref of the same value for each node
+
+@return evaluation (value or hashref depending on the context (noderule or aggregaterule)
+
+=end classdoc
+
+=cut
+
+sub evaluate {
+    my ($self, %args) = @_;
+     General::checkParams(args => \%args, optional => {'nodes' => undef, 'timestamp' => 0});
+
+    if (defined $args{memoization}->{$self->id}) {
+        return $args{memoization}->{$self->id};
+    }
+
+    my $value = ($args{timestamp} > time()) ? $self->_predict(%args)
+                                            : $self->_evaluateLastValue(%args);
+
+    if (defined $args{memoization}) {
+        $args{memoization}->{$self->id} = $value;
+    }
+
+    return $value;
+}
+
+
+=pod
+
+=begin classdoc
+
+Evaluate predicted combination value.
+
+@param timestamp assume that timestamp > actual time. Compute predicted value at timestamp with best DataModel.
+       Use same the delta time between actual time and timestamp for training data.
+
+@return evaluation
+
+=end classdoc
+
+=cut
+
+sub _predict {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['timestamp'], optional => {'nodes' => undef});
+    my $time = time();
+    my $model = DataModelSelector->selectDataModel(
+                    combination => $self,
+                    start_time  => 2 * $time - $args{timestamp},
+                    end_time    => $time,
+                );
+    my $prediction = $model->predict(timestamps => [$args{timestamp}]);
+    $model->delete();
+
+    my $res = $prediction->{values}->[0];
+
+    if (defined $args{nodes}) {
+        my %hash = map {$_->id => $res} @{$args{nodes}};
+        return \%hash;
+    }
+
+    return $res;
+}
+
+
+=pod
+
+=begin classdoc
+
+Compute the combination value using the last Clustermetric values.
+Use evaluate() method of Clustermetric.
 
 @return the computed value or undef if one Clustermetric is undef
 
@@ -265,8 +344,10 @@ Compute the combination value using the last Clustermetric values. Use getLastVa
 
 =cut
 
-sub computeLastValue{
-    my $self = shift;
+sub _evaluateLastValue {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, optional => {'nodes' => undef});
+
     my $formula = $self->aggregate_combination_formula;
 
     #Split aggregate_rule id from $formula
@@ -274,8 +355,8 @@ sub computeLastValue{
     #replace each rule id by its evaluation
     for my $element (@array) {
         if ($element =~ m/id\d+/) {
-            #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
-            $element = Entity::Clustermetric->get('id'=>substr($element,2))->getLastValueFromDB();
+            #Remove "id" from the begining of $element, get the corresponding aggregator
+            $element = Entity::Clustermetric->get('id'=>substr($element,2))->lastValue(%args);
             if (not defined $element) {
                 return undef;
             }
@@ -284,13 +365,15 @@ sub computeLastValue{
 
     my $res = undef;
     my $arrayString = '$res = '."@array";
-
+    eval $arrayString;
     #Evaluate the logic formula
 
-    #$log->info('Evaluate combination :'.($self->toString()));
-    eval $arrayString;
+    # $log->debug('Evaluate combination :'.($self->toString()));
 
-    $log->info("$arrayString");
+    if (defined $args{nodes}) {
+        my %hash = map {$_->id => $res} @{$args{nodes}};
+        return \%hash;
+    }
     return $res;
 }
 
@@ -310,7 +393,7 @@ May be deprecated.
 
 =cut
 
-sub compute{
+sub compute {
     my $self = shift;
     my %args = @_;
 
@@ -342,10 +425,8 @@ sub compute{
     my $arrayString = '$res = '."@array";
 
     #Evaluate the logic formula
-
-    #$log->info('Evaluate combination :'.($self->toString()));
     eval $arrayString;
-    $log->info("$arrayString");
+
     return $res;
 }
 
@@ -401,7 +482,7 @@ May be deprecated.
 
 =cut
 
-sub computeFromArrays{
+sub _computeFromArrays{
     my $self = shift;
     my %args = @_;
 
@@ -558,24 +639,6 @@ sub clone {
         label_attr_name     => 'aggregate_combination_label',
         attrs_clone_handler => $attrs_cloner
     );
-}
-
-
-=pod
-
-=begin classdoc
-
-Method from NodemetricCombination call from mother class. Return the same value than >computeLastValue()
-
-@return computeLastValue() method
-
-=end classdoc
-
-=cut
-
-sub computeValueFromMonitoredValues {
-    my $self = shift;
-    return $self->computeLastValue()
 }
 
 # Virtual attribute

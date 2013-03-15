@@ -28,9 +28,16 @@ A service can only use indicators linked with its collector manager.
 
 package Entity::CollectorIndicator;
 
+use base 'Entity';
+
 use strict;
 use warnings;
-use base 'Entity';
+use Data::Dumper;
+
+use Alert;
+use DataCache;
+
+
 use constant ATTR_DEF => {
     collector_indicator_id => {
         pattern      => '^.*$',
@@ -54,4 +61,99 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub lastValue {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['nodes', 'service_provider']);
+
+    if (defined $args{memoization}->{$self->id}) {
+        return $args{memoization}->{$self->id};
+    }
+
+    my @node_hostnames = map {$_->node_hostname} @{$args{nodes}};
+
+    my $data = DataCache::nodeMetricLastValue(
+                   collector_indicator => $self,
+                   node_names          => \@node_hostnames,
+                   service_provider    => $args{service_provider}
+               );
+
+    my %id_values;
+    my %hostname_values;
+
+    for my $node (@{$args{nodes}}) {
+       $id_values{$node->id} = $data->{$node->node_hostname};
+       $hostname_values{$node->node_hostname} = $data->{$node->node_hostname};
+    }
+
+    $self->throwUndefAlert(hostname_values => \%hostname_values, service_provider => $args{service_provider});
+
+    if (defined $args{memoization}) {
+        $args{memoization}->{$self->id} = \%id_values;
+    }
+
+    return \%id_values;
+}
+
+=pod
+=begin classdoc
+
+Return values between start_time and stop_time for several nodes
+
+@param nodes Array ref of nodes for which we want fetch values
+@param start_time Start time in epoch
+@param end_time Stop time in epoch
+
+@return hashref { node_id => {timestamp => value} }
+
+=end classdoc
+=cut
+
+sub fetch {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['nodes', 'start_time', 'end_time']);
+
+    my @node_hostnames = map {$_->node_hostname} @{$args{nodes}};
+
+    my $data = DataCache::nodeMetricFetch(
+                   indicator    => $self->indicator,
+                   node_names   => \@node_hostnames,
+                   start_time   => $args{start_time},
+                   end_time     => $args{end_time},
+               );
+
+     my %id_values;
+     for my $node (@{$args{nodes}}) {
+       $id_values{$node->id} = $data->{$node->node_hostname};
+    }
+
+    return \%id_values;
+}
+
+sub throwUndefAlert {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['hostname_values', 'service_provider']);
+
+    my $indicator = $self->indicator;
+
+    while (my ($node_hostname, $value) = each(%{$args{hostname_values}})) {
+        my $msg = "Indicator " . $indicator->indicator_name . ' (' .
+                   $indicator->indicator_oid . ')' .' was not retrieved by collector for node '.
+                   $node_hostname;
+
+        my $alert = eval { Alert->find(hash => {alert_message => $msg,
+                                                entity_id => $args{service_provider}->id });
+                    };
+
+        if (! defined $value) {
+            if ((! defined $alert) || ($alert->alert_active == 0)) {
+                Alert->new(entity_id       => $args{service_provider}->id,
+                           alert_message   => $msg,
+                           alert_signature => $msg.' '.time(),);
+            }
+        }
+        elsif (defined $alert && $alert->alert_active == 1) {
+            $alert->mark_resolved;
+        }
+    }
+}
 1;

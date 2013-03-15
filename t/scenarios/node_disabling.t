@@ -23,7 +23,7 @@ Log::Log4perl->easy_init({
 });
 
 use BaseDB;
-use Orchestrator;
+use RulesEngine;
 use Aggregator;
 use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
@@ -63,7 +63,7 @@ sub main {
 
 sub node_disabling {
     my $aggregator = Aggregator->new();
-    my $orchestrator = Orchestrator->new();
+    my $rulesengine = RulesEngine->new();
 
     # Create externalcluster with a mock monitor
     my $external_cluster_mockmonitor = Entity::ServiceProvider::Externalcluster->new(
@@ -108,7 +108,7 @@ sub node_disabling {
     my $node_rule_ids = _node_rule_objects_creation(indicators => \@indicators);
 
     diag('Check if no values before launching aggregator');
-    if ( not defined $acomb1->computeLastValue ) {
+    if ( not defined $acomb1->evaluate() ) {
         diag('## checked');
     }
     else {
@@ -118,7 +118,7 @@ sub node_disabling {
     $aggregator->update();
 
     diag('Check if 3 nodes in aggregator');
-    if ( $acomb1->computeLastValue == 3 ) {
+    if ( $acomb1->evaluate() == 3 ) {
         diag('## checked');
     }
     else {
@@ -139,7 +139,7 @@ sub node_disabling {
     }
 
     diag('Check if 2 nodes in aggregator');
-    if ( $acomb1->computeLastValue == 2 ) {
+    if ( $acomb1->evaluate() == 2 ) {
         diag('## checked');
     }
     else {
@@ -158,14 +158,14 @@ sub node_disabling {
 
     $aggregator->update();
     diag('Check if 3 nodes in aggregator');
-    if ( $acomb1->computeLastValue == 3 ) {
+    if ( $acomb1->evaluate() == 3 ) {
         diag('## checked');
     }
     else {
         die 'Not 3 nodes in aggregator';
     }
 
-    $orchestrator->manage_aggregates();
+    $rulesengine->oneRun();
 
     diag('Check nodes rule verification');
     check_rule_verification(
@@ -186,7 +186,7 @@ sub node_disabling {
     } 'Kanopya::Exception::Internal::NotFound',
     'Disabled node 3 and check rule not verified';
 
-    $orchestrator->manage_aggregates();
+    $rulesengine->oneRun();
 
     expectedException {
         VerifiedNoderule->find(hash => {
@@ -250,7 +250,7 @@ sub test_rrd_remove {
 
         diag('Check if all aggregrate rules have been deleted');
         my @ars = Entity::Rule::AggregateRule->search (hash => {
-            aggregate_rule_service_provider_id => $service_provider->id
+            service_provider_id => $service_provider->id
         });
         if ( scalar @ars == 0 ) {
             diag('## checked');
@@ -313,8 +313,8 @@ sub _node_rule_objects_creation {
     );
 
     $nrule1 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
-        nodemetric_rule_formula => 'id'.$nc1->id,
-        nodemetric_rule_state => 'enabled'
+        service_provider_id => $service_provider->id,
+        formula => 'id'.$nc1->id,
+        state => 'enabled'
     );
 }

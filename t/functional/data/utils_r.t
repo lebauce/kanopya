@@ -27,8 +27,6 @@ my $hor  = 5;
 # Expected values (manually computed from R)
 my @expected_values = (5, 12, 13, 15, 13);
 
-
-
 main();
 
 sub main {
@@ -57,7 +55,7 @@ sub testConvertRForecast {
                         )};
 
         if (scalar(@expected_values) == scalar(@forecast)) {
-            foreach my $index (0..scalar(@expected_values) - 1) {
+            for my $index (0..scalar(@expected_values) - 1) {
                 unless ($forecast[$index] == $expected_values[$index]) {
                     die ("Incorrect value returned in the forecast ($expected_values[$index] expected, 
                           got $forecast[$index])");

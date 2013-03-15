@@ -154,7 +154,7 @@ function loadServicesResources (container_id, elem_id) {
     }
 
     $.ajax({
-        url     : '/api/nodemetricrule?nodemetric_rule_service_provider_id=' + elem_id,
+        url     : '/api/nodemetricrule?service_provider_id=' + elem_id,
         success : function(data) {
             nodemetricrules   = data;
         }

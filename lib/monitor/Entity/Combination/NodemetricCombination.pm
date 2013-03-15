@@ -231,7 +231,7 @@ sub getDependentCollectorIndicatorIds{
 
 Return an array of the Indicator ids of the formula
 
-@return an array of the CollectorIndicator ids of the formula
+@return an array of the Indicator ids of the formula
 
 =end classdoc
 
@@ -247,15 +247,13 @@ sub getDependentIndicatorIds{
 
     #replace each rule id by its evaluation
     for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
+        if ($element =~ m/id\d+/) {
             my $collector_indicator_id = substr($element,2);
             push @indicator_ids, Entity::CollectorIndicator->get(id => $collector_indicator_id)->indicator_id;
         }
      }
      return @indicator_ids;
 }
-
 
 =pod
 
@@ -301,6 +299,66 @@ sub computeValueFromMonitoredValues {
 
     $log->info("NM Combination value = $arrayString");
     return $res;
+}
+
+
+=pod
+
+=begin classdoc
+
+Evaluate last value of the NodemetricCombination
+
+@optional format. If format = 'host_name', return hash with host_name key otherwise with node_id.
+
+@return hashref {node_id or node_hostname => value}
+
+=end
+
+=cut
+
+
+sub evaluate {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, optional => { 'format' => 'id', 'nodes' => undef});
+
+    if (defined $args{memoization}->{$self->id}) {
+        return $args{memoization}->{$self->id};
+    }
+
+    my @nodes = (defined $args{nodes}) ? @{$args{nodes}}
+                                       : $self->service_provider->searchRelated(
+                                            filters => ['nodes'],
+                                            hash    => {-not => {monitoring_state => 'disabled'}}
+                                         );
+
+    my @col_ind_ids = ($self->nodemetric_combination_formula =~ m/id(\d+)/g);
+
+    my %values = map {$_ => Entity::CollectorIndicator->get(id => $_)
+                            ->lastValue(nodes => \@nodes, service_provider => $self->service_provider, %args)
+                 } @col_ind_ids;
+
+    my %evaluation_for_each_node;
+
+    for my $node (@nodes) {
+        my %values_node = map { $_ => $values{$_}{$node->id} } @col_ind_ids;
+        my $formula = $self->nodemetric_combination_formula;
+        $formula =~ s/id(\d+)/$values_node{$1}/g;
+
+        my $value = eval $formula;
+        if ($args{format} eq 'host_name') {
+            $evaluation_for_each_node{$node->node_hostname} = $value;
+        }
+        else {
+            $evaluation_for_each_node{$node->id} = $value;
+        }
+    }
+    $log->debug('output = '.Dumper \%evaluation_for_each_node);
+
+    if (defined $args{memoization}) {
+        $args{memoization}->{$self->id} = \%evaluation_for_each_node;
+    }
+
+    return \%evaluation_for_each_node;
 }
 
 
@@ -411,7 +469,7 @@ sub clone {
     General::checkParams(args => \%args, required => ['dest_service_provider_id']);
 
     # Check that both services use the same collector manager
-    my $src_collector_manager = ServiceProviderManager->find( 
+    my $src_collector_manager = ServiceProviderManager->find(
                                     hash   => { service_provider_id => $self->service_provider_id },
                                     custom => { category => 'CollectorManager' }
                                 );

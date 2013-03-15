@@ -39,6 +39,8 @@ use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use List::Util;
+
+
 my $log = get_logger("");
 my $errmsg;
 
@@ -162,7 +164,7 @@ if the coefficient has not be computed yet
 
 sub getRSquared {
     my ($self, @args) = @_;
-    my $pp = $self->param_preset->load;
+    my $pp = $self->param_preset->load();
     return $pp->{rSquared};
 }
 
@@ -175,6 +177,23 @@ sub predict {
 }
 
 sub label {
+    throw Kanopya::Exception(error => 'Method not implemented');
+}
+
+=pod
+
+=begin classdoc
+
+Indicates whether the model is seasonal or not, ie if the model need a seasonality value to be able to
+configure itself and forecast.
+
+@return true if the model needs a seasonality value to configure or/and forecast, false else.
+
+=end classdoc
+
+=cut
+
+sub isSeasonal {
     throw Kanopya::Exception(error => 'Method not implemented');
 }
 
@@ -299,4 +318,5 @@ sub constructPrediction {
         return {timestamps => \@timestamps_temp, values => \@predictions};
     }
 }
+
 1;

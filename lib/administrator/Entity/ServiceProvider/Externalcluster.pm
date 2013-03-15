@@ -462,11 +462,11 @@ sub monitoringDefaultInit {
 
     if(defined $low_mean_cond_mem_id && $low_mean_cond_cpu_id && $low_mean_cond_net_id) {
         my $params_rule = {
-            aggregate_rule_service_provider_id  => $service_provider_id,
-            aggregate_rule_formula              => 'id'.$low_mean_cond_mem_id.'&&'.'id'.$low_mean_cond_cpu_id.'&&'.'id'.$low_mean_cond_net_id,
-            aggregate_rule_state                => 'enabled',
-            aggregate_rule_label                => 'Cluster load',
-            aggregate_rule_description          => 'Mem, cpu and network usages are low, your cluster may be oversized',
+            service_provider_id  => $service_provider_id,
+            formula              => 'id'.$low_mean_cond_mem_id.'&&'.'id'.$low_mean_cond_cpu_id.'&&'.'id'.$low_mean_cond_net_id,
+            state                => 'enabled',
+            rule_name            => 'Cluster load',
+            description          => 'Mem, cpu and network usages are low, your cluster may be oversized',
         };
         Entity::Rule::AggregateRule->new(%$params_rule);
     }
@@ -559,20 +559,20 @@ sub ruleGeneration{
    my $out_cond_id = $out_cond->getAttr(name => 'aggregate_condition_id');
 
    my $params_rule = {
-        aggregate_rule_service_provider_id  => $extcluster_id,
-        aggregate_rule_formula              => 'id'.$coef_cond_id.' && '.'id'.$std_cond_id,
-        aggregate_rule_state                => 'enabled',
-        aggregate_rule_label                => 'Cluster '.$label.' homogeneity',
-        aggregate_rule_description          => $label.' is not well balanced across the cluster',
+        service_provider_id  => $extcluster_id,
+        formula              => 'id'.$coef_cond_id.' && '.'id'.$std_cond_id,
+        state                => 'enabled',
+        rule_name            => 'Cluster '.$label.' homogeneity',
+        description          => $label.' is not well balanced across the cluster',
     };
     Entity::Rule::AggregateRule->new(%$params_rule);
 
    $params_rule = {
-        aggregate_rule_service_provider_id  => $extcluster_id,
-        aggregate_rule_formula              => 'id'.$out_cond_id,
-        aggregate_rule_state                => 'enabled',
-        aggregate_rule_label                => 'Cluster '.$label.' consistency',
-        aggregate_rule_description          => 'The '.$label.' usage of some nodes of the cluster is far from the average behavior',
+        service_provider_id  => $extcluster_id,
+        formula              => 'id'.$out_cond_id,
+        state                => 'enabled',
+        rule_name            => 'Cluster '.$label.' consistency',
+        description          => 'The '.$label.' usage of some nodes of the cluster is far from the average behavior',
     };
     Entity::Rule::AggregateRule->new(%$params_rule);
 
@@ -586,11 +586,11 @@ sub ruleGeneration{
    my $mean_cond = Entity::AggregateCondition->new(%$condition_params);
    my $mean_cond_id = $mean_cond->getAttr(name => 'aggregate_condition_id');
    $params_rule = {
-        aggregate_rule_service_provider_id  => $extcluster_id,
-        aggregate_rule_formula              => 'id'.$mean_cond_id,
-        aggregate_rule_state                => 'enabled',
-        aggregate_rule_label                => 'Cluster '.$label.' overload',
-        aggregate_rule_description          => 'Average '.$label.' is too high, your cluster may be undersized',
+        service_provider_id  => $extcluster_id,
+        formula              => 'id'.$mean_cond_id,
+        state                => 'enabled',
+        rule_name            => 'Cluster '.$label.' overload',
+        description          => 'Average '.$label.' is too high, your cluster may be undersized',
     };
     Entity::Rule::AggregateRule->new(%$params_rule);
 
@@ -623,11 +623,11 @@ sub generateAOutOfRangeRule {
     my $label = 'Isolated data - '.$aggregate_condition->left_combination->toString();
 
     my $params_rule = {
-        aggregate_rule_service_provider_id  => $extcluster_id,
-        aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
-        aggregate_rule_state                => 'enabled',
-        aggregate_rule_label                => $label,
-        aggregate_rule_description          => 'Check the indicators of the nodes generating isolated datas',
+        service_provider_id  => $extcluster_id,
+        formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
+        state                => 'enabled',
+        rule_name            => $label,
+        description          => 'Check the indicators of the nodes generating isolated datas',
     };
     Entity::Rule::AggregateRule->new(%$params_rule);
 };
@@ -648,13 +648,13 @@ sub generateOverRules {
    my $aggregate_condition = Entity::AggregateCondition->new(%$condition_params);
 
    my $params_rule = {
-        aggregate_rule_service_provider_id  => $extcluster_id,
-        aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
-        aggregate_rule_state                => 'enabled',
+        service_provider_id  => $extcluster_id,
+        formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
+        state                => 'enabled',
     };
 
-    $params_rule->{aggregate_rule_label}       = 'Cluster '.$aggregate_condition->left_combination->toString().' overloaded';
-    $params_rule->{aggregate_rule_description} = 'You may add a node';
+    $params_rule->{rule_name}       = 'Cluster '.$aggregate_condition->left_combination->toString().' overloaded';
+    $params_rule->{description} = 'You may add a node';
 
     Entity::Rule::AggregateRule->new(%$params_rule);
 };
@@ -676,13 +676,13 @@ sub generateUnderRules {
    my $aggregate_condition = Enity::AggregateCondition->new(%$condition_params);
 
    my $params_rule = {
-        aggregate_rule_service_provider_id  => $extcluster_id,
-        aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
-        aggregate_rule_state                => 'enabled',
+        service_provider_id  => $extcluster_id,
+        formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
+        state                => 'enabled',
     };
 
-    $params_rule->{aggregate_rule_label}       = 'Cluster '.$aggregate_condition->left_combination->toString().' underloaded';
-    $params_rule->{aggregate_rule_description} = 'You may add a node';
+    $params_rule->{rule_name}       = 'Cluster '.$aggregate_condition->left_combination->toString().' underloaded';
+    $params_rule->{description} = 'You may add a node';
 
     Entity::Rule::AggregateRule->new(%$params_rule);
 };
@@ -711,11 +711,11 @@ sub generateCoefficientOfVariationRules {
    my $aggregate_condition = Entity::AggregateCondition->new(%$condition_params);
 
    my $params_rule = {
-        aggregate_rule_service_provider_id  => $extcluster_id,
-        aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
-        aggregate_rule_state                => 'enabled',
-        aggregate_rule_label                => 'Heterogeneity detected with '.$aggregate_combination->toString(),
-        aggregate_rule_description          => 'All the datas seems homogenous please check the loadbalancer configuration',
+        service_provider_id  => $extcluster_id,
+        formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
+        state                => 'enabled',
+        rule_name            => 'Heterogeneity detected with '.$aggregate_combination->toString(),
+        description          => 'All the datas seems homogenous please check the loadbalancer configuration',
     };
     Entity::Rule::AggregateRule->new(%$params_rule);
 };
@@ -743,11 +743,11 @@ sub generateStandardDevRuleForNormalizedIndicatorsRules {
    my $aggregate_condition = Entity::AggregateCondition->new(%$condition_params);
 
    my $params_rule = {
-        aggregate_rule_service_provider_id  => $extcluster_id,
-        aggregate_rule_formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
-        aggregate_rule_state                => 'enabled',
-        aggregate_rule_label                => 'Data homogeneity',
-        aggregate_rule_description          => 'All the datas seems homogenous please check the loadbalancer configuration',
+        service_provider_id  => $extcluster_id,
+        formula              => 'id'.($aggregate_condition->getAttr(name => 'aggregate_condition_id')),
+        state                => 'enabled',
+        rule_name            => 'Data homogeneity',
+        description          => 'All the datas seems homogenous please check the loadbalancer configuration',
     };
     Entity::Rule::AggregateRule->new(%$params_rule);
 };
@@ -805,11 +805,11 @@ sub generateNodeMetricRules{
         my $condition = Entity::NodemetricCondition->new(%$condition_param);
         my $conditionid = $condition->getAttr(name => 'nodemetric_condition_id');
         my $prule = {
-            nodemetric_rule_formula             => 'id'.$conditionid,
-            nodemetric_rule_label               => $creation_conf->{$indicator_oid}->{rule_label},
-            nodemetric_rule_description         => $creation_conf->{$indicator_oid}->{rule_description},
-            nodemetric_rule_state               => 'enabled',
-            nodemetric_rule_service_provider_id => $extcluster_id,
+            formula             => 'id'.$conditionid,
+            rule_name               => $creation_conf->{$indicator_oid}->{rule_label},
+            description         => $creation_conf->{$indicator_oid}->{rule_description},
+            state               => 'enabled',
+            service_provider_id => $extcluster_id,
         };
         Entity::Rule::NodemetricRule->new(%$prule);
     }

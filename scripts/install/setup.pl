@@ -422,7 +422,7 @@ service([ 'kanopya-executor' ], 'restart');
 service([ 'kanopya-state-manager' ], 'restart');
 service([ 'kanopya-aggregator' ], 'restart');
 service([ 'kanopya-collector' ], 'restart');
-service([ 'kanopya-orchestrator' ], 'restart');
+service([ 'kanopya-rulesengine' ], 'restart');
 service([ 'kanopya-front' ], 'restart');
 
 print "\ninitial configuration: done.\n";

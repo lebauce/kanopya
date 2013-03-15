@@ -166,13 +166,9 @@ sub delete {
         # Node related hierarchy
         # Variables used more than once
 
-        my $collector_indicator_id  = $collector_indicator->id;
+        $log->debug("start processing ".$collector_indicator->id);
 
-        $log->info("start processing $collector_indicator_id");
-
-        my @dependent_clustermetric = Entity::Clustermetric->search(hash => {
-                                          clustermetric_indicator_id => $collector_indicator_id,
-                                      });
+        my @dependent_clustermetric = $collector_indicator->clustermetrics;
 
         while (@dependent_clustermetric){
             (pop @dependent_clustermetric)->delete();
@@ -181,14 +177,14 @@ sub delete {
         # Service related hierarchy
         $log->info("Entering nodemetric loop");
 
-        my @all_the_nodemetric_combinations = Entity::Combination::NodemetricCombination->search(hash => {});
+        my @all_the_nodemetric_combinations = Entity::Combination::NodemetricCombination->search();
         NODEMETRIC_COMBINATION:
         while (@all_the_nodemetric_combinations) {
             my $nm_combi  = pop @all_the_nodemetric_combinations;
             my @collector_indicator_ids = $nm_combi->getDependentCollectorIndicatorIds();
             for my $nm_indicator_id (@collector_indicator_ids) {
-                $log->info("$collector_indicator_id vs $nm_indicator_id");
-                if ($collector_indicator_id == $nm_indicator_id) {
+                $log->debug($collector_indicator->id.' vs '.$nm_indicator_id);
+                if ($collector_indicator->id == $nm_indicator_id) {
                     $nm_combi->delete();
                     next NODEMETRIC_COMBINATION;
                 }

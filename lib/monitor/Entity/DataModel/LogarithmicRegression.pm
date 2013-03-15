@@ -120,8 +120,8 @@ sub configure {
             next TIME;
         }
 
-        if ($min_time > $time) {$min_time = $time; $log->info('up min')}
-        if ($max_time < $time) {$max_time = $time; $log->info('up max')}
+        if ($min_time > $time) {$min_time = $time}
+        if ($max_time < $time) {$max_time = $time}
         push @time_filter, $time;
     }
 
@@ -281,6 +281,10 @@ sub label {
     my $self = shift;
     my $r_rounded = sprintf("%.2f", $self->getRSquared());
     return 'Logarithmic regression '.$self->time_label()." (R = $r_rounded)";
+}
+
+sub isSeasonal {
+    return 0;
 }
 
 1;

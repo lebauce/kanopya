@@ -34,7 +34,11 @@ use Node;
 use Entity::NodemetricCondition;
 use Entity::ServiceProvider;
 use VerifiedNoderule;
+use WorkflowNoderule;
+
 use List::MoreUtils qw {any} ;
+
+use Data::Dumper;
 
 # logger
 use Log::Log4perl "get_logger";
@@ -46,57 +50,6 @@ use constant ATTR_DEF => {
         is_mandatory    => 0,
         is_extended     => 0,
         is_editable     => 0,
-    },
-    nodemetric_rule_label => {
-        pattern         => '^.*$',
-        is_mandatory    => 0,
-        is_extended     => 0,
-        is_editable     => 1,
-    },
-    nodemetric_rule_formula => {
-        pattern         => '^((id\d+)|and|or|not|[ ()!&|])+$',
-        is_mandatory    => 1,
-        is_extended     => 0,
-        is_editable     => 1,
-        description     => "Construct a formula by condition's names with logical operators (and, or, not)."
-                           . " It's possible to use parenthesis with spaces between each element of the formula"
-                           . ". Press a letter key to obtain the available choice.",
-    },
-    nodemetric_rule_timestamp => {
-        pattern         => '^.*$',
-        is_mandatory    => 0,
-        is_extended     => 0,
-        is_editable     => 1,
-    },
-    nodemetric_rule_state => {
-        pattern         => '(enabled|disabled|disabled_temp)$',
-        is_mandatory    => 1,
-        is_extended     => 0,
-        is_editable     => 1,
-    },
-    nodemetric_rule_service_provider_id => {
-        pattern         => '^.*$',
-        is_mandatory    => 1,
-        is_extended     => 0,
-        is_editable     => 1,
-    },
-    workflow_def_id => {
-        pattern         => '^.*$',
-        is_mandatory    => 0,
-        is_extended     => 0,
-        is_editable     => 1,
-    },
-    nodemetric_rule_description => {
-        pattern         => '^.*$',
-        is_mandatory    => 0,
-        is_extended     => 0,
-        is_editable     => 1,
-    },
-    nodemetric_rule_formula_string => {
-        pattern         => '^.*$',
-        is_mandatory    => 0,
-        is_extended     => 0,
-        is_editable     => 1,
     },
     formula_label => {
         is_virtual      => 1,
@@ -119,8 +72,25 @@ sub methods {
 # Virtual attribute getter
 sub formula_label {
     my $self = shift;
-    return $self->nodemetric_rule_formula_string;
+    return $self->formula_string;
 }
+
+
+=pod
+
+=begin classdoc
+
+@constructor
+
+Create a new instance of the class.
+Update formula_string with toString() methods and the rule_name if not provided in attribute.
+Set rule evaluation 'undef' for each nodes of the service provider when rule is enabled.
+
+@return a class instance
+
+=end classdoc
+
+=cut
 
 sub new {
     my $class = shift;
@@ -137,14 +107,14 @@ sub new {
 
     my $toString = $self->toString();
 
-    $self->setAttr(name=>'nodemetric_rule_formula_string', value => $toString);
-    if (! defined $args{nodemetric_rule_label} || $args{nodemetric_rule_label} eq ''){
-        $self->setAttr(name=>'nodemetric_rule_label', value => $toString);
+    $self->setAttr(name=>'formula_string', value => $toString);
+    if (! defined $args{rule_name} || $args{rule_name} eq ''){
+        $self->setAttr(name=>'rule_name', value => $toString);
     }
     $self->save();
 
     # When enabled, set undef for each node (will be update next orchestrator loop)
-    if ($self->nodemetric_rule_state eq 'enabled'){
+    if ($self->state eq 'enabled'){
         $self->setUndefForEachNode();
     }
 
@@ -152,32 +122,49 @@ sub new {
 }
 
 
+=pod
+
+=begin classdoc
+
+For each nodes of the service provider, insert a VerifiedNodeRule entry with state 'undef'.
+
+=end classdoc
+
+=cut
+
 sub setUndefForEachNode{
     my ($self) = @_;
     #ADD A ROW IN VERIFIED_NODERULE TABLE indicating undef data
-#    my $extcluster = Entity::ServiceProvider::Externalcluster->get(
-#                        'id' => $self->getAttr(name => 'nodemetric_rule_service_provider_id'),
-#                     );
-    my $service_provider = Entity::ServiceProvider->get(
-                               'id' => $self->nodemetric_rule_service_provider_id,
-                           );
 
-    my $nodes = $service_provider->getNodes();
+    my @nodes = $self->service_provider->nodes;
 
-    foreach my $node (@$nodes) {
+    foreach my $node (@nodes) {
         $self->{_dbix}
         ->verified_noderules
         ->update_or_create({
-            verified_noderule_node_id    =>  $node->{'id'},
-            verified_noderule_state              => 'undef',
+            verified_noderule_node_id   => $node->id,
+            verified_noderule_state     => 'undef',
         });
     }
 }
 
+
+=pod
+
+=begin classdoc
+
+Transform formula to human readable String
+
+@return human readable String of the formula
+
+=end classdoc
+
+=cut
+
 sub toString {
     my $self = shift;
 
-    my @array = split(/(id\d+)/,$self->nodemetric_rule_formula);
+    my @array = split(/(id\d+)/,$self->formula);
     for my $element (@array) {
         if ($element =~ m/id(\d+)/) {
             $element = Entity::NodemetricCondition->get('id'=>substr($element,2))->nodemetric_condition_formula_string;
@@ -186,45 +173,76 @@ sub toString {
      return "@array";
 };
 
-sub getDependentConditionIds {
-    my $self = shift;
-    my %ids = map { $_ => undef } ($self->nodemetric_rule_formula =~ m/id(\d+)/g);
-    return keys %ids
+
+=pod
+
+=begin classdoc
+
+Evaluate the rule. Call evaluation of all depending conditions then evaluate the logical formula
+of the rule according to conditions evaluation.
+
+@return hash reference {node_id => 1} is rule is verified for node node_id
+                       {node_id => 0} otherwise
+
+=end classdoc
+
+=cut
+
+sub evaluate {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { 'nodes' => undef });
+
+    # If @nodes not provided, get all non-disabled nodes of the service provider
+    my @nodes = (defined $args{nodes}) ? @{$args{nodes}}
+                                       : $self->service_provider->searchRelated(
+                                            filters => ['nodes'],
+                                            hash    => {-not => {monitoring_state => 'disabled'}}
+                                         );
+
+    $args{nodes} = \@nodes;
+    if (@nodes == 0) {
+        return {};
+    }
+
+    # Get values of each NodemetricConditions
+    my @nm_cond_ids = ($self->formula =~ m/id(\d+)/g);
+
+    my %values = map { $_ => Entity::NodemetricCondition->get('id'=>$_)->evaluate(%args)
+                 } @nm_cond_ids;
+
+
+    # Evaluate conditionfor each node
+    my %evaluation_for_each_node;
+    NODE:
+    for my $node (@nodes) {
+        my %values_node = map { $_ => $values{$_}{$node->id}} @nm_cond_ids;
+
+        for my $value (values %values_node) {
+            if (!defined $value) {
+                $evaluation_for_each_node{$node->id} = undef; next NODE;
+            }
+        }
+
+        my $formula = $self->formula;
+        $formula =~ s/id(\d+)/$values_node{$1}/g;
+        $evaluation_for_each_node{$node->id} = (eval $formula) ? 1 : 0;
+        $log->debug('NM rule evaluation for node <'.$node->id.">: $formula => ".$evaluation_for_each_node{$node->id});
+    }
+
+    return \%evaluation_for_each_node;
 }
 
-sub evalOnOneNode{
-    my $self = shift;
-    my %args = @_;
 
-    my $monitored_values_for_one_node = $args{monitored_values_for_one_node};
+=pod
 
-    my $formula = $self->getAttr(name => 'nodemetric_rule_formula');
+=begin classdoc
 
-    #Split nodemetric_rule id from $formula
-    my @array = split(/(id\d+)/,$formula);
+Check if the rule is verified in database for a given node
 
-    #replace each id by its evaluation
-    for my $element (@array) {
-        if( $element =~ m/id(\d+)/){
-            $element = Entity::NodemetricCondition->get('id'=>substr($element,2))
-                                          ->evalOnOneNode(
-                                            'monitored_values_for_one_node' => $monitored_values_for_one_node
-                                          );
-            if(not defined $element){
-                return undef;
-            }
+=end classdoc
 
-        }
-    }
-    my $res = undef;
-    my $arrayString = '$res = '."(@array)";
-
-    $log->info("NM rule evaluation: $arrayString");
-    #Evaluate the logic formula
-    eval $arrayString;
-
-    return ($res)?1:0;
-};
+=cut
 
 sub isVerifiedForANode{
     my ($self, %args) = @_;
@@ -255,63 +273,16 @@ sub isVerifiedForANode{
     $verified_noderule_state.' for rule <'.$self->id.'> and node <'.($node_id).'>');
 };
 
-sub deleteVerifiedRule  {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'node_id' ]);
 
-    my $verified_noderule;
-    eval{
-        $verified_noderule = VerifiedNoderule->find(hash=>{
-            verified_noderule_node_id    => $args{node_id},
-            verified_noderule_nodemetric_rule_id => $self->getId(),
-        });
-    };
+=pod
 
-    if (defined $verified_noderule) {
-        $verified_noderule->delete();
-    }
-}
+=begin classdoc
 
-=head2 deleteVerifiedRuleWfDefId
-    Desc: delete the workflow def id indication in verified_noderule table to indicate
-          that the verified rule has no more running workflow
+Set the rule state for a given node
 
-    Args: $hostname, $service_provider_id
-
-    Return: $workflow_def_id or 0
+=end classdoc
 
 =cut
-
-sub deleteVerifiedRuleWfDefId {
-    my ($self,%args) = @_;
-
-    my $hostname            = $args{hostname};
-    my $service_provider_id = $args{service_provider_id};
-    my $rule_id             = $self->getAttr(name => 'nodemetric_rule_id');
-    my $service_provider    = Entity::ServiceProvider->get('id' => $service_provider_id);
-    my $nodes               = $service_provider->getNodes();
-    my $node_id;
-
-    foreach my $node (@$nodes) {
-        if($node->{hostname} eq $hostname) {
-            $node_id = $node->{id};
-        }
-    }
-
-    if(not defined $node_id){
-        my $errmsg = "unknown node $hostname in service provider $service_provider_id";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-    else {
-        my $verified_noderule = VerifiedNoderule->find(hash => {
-                                    verified_noderule_node_id    => $node_id,
-                                    verified_noderule_nodemetric_rule_id => $rule_id
-                                });
-        $verified_noderule->setAttr(name => 'workflow_def_id', value => 'null');
-        $verified_noderule->save();
-    }
-}
 
 sub setVerifiedRule{
     my ($self, %args) = @_;
@@ -323,25 +294,58 @@ sub setVerifiedRule{
     $self->{_dbix}
          ->verified_noderules
          ->update_or_create({
-               verified_noderule_node_id  => $args{node_id},
-               verified_noderule_state            => $args{state},
+               verified_noderule_node_id    => $args{node_id},
+               verified_noderule_state      => $args{state},
     });
 }
+
+
+=pod
+
+=begin classdoc
+
+Disable the rule
+
+=end classdoc
+
+=cut
 
 sub disable {
     my $self = shift;
 
     $self->{_dbix}->verified_noderules->delete_all;
-    $self->setAttr(name => 'nodemetric_rule_state', value => 'disabled');
+    $self->setAttr(name => 'state', value => 'disabled');
     $self->save();
 };
+
+
+=pod
+
+=begin classdoc
+
+Enable the rule and set it undef for each nodes of the service provider
+
+=end classdoc
+
+=cut
 
 sub enable {
     my $self = shift;
     $self->setUndefForEachNode();
-    $self->setAttr(name => 'nodemetric_rule_state', value => 'enabled');
+    $self->setAttr(name => 'state', value => 'enabled');
     $self->save();
 }
+
+
+=pod
+
+=begin classdoc
+
+Set the rule undef for each nodes of the service provider
+
+=end classdoc
+
+=cut
 
 sub setAllRulesUndefForANode{
     my (%args) = @_;
@@ -353,8 +357,8 @@ sub setAllRulesUndefForANode{
 
     my @nodemetric_rules = Entity::NodemetricRule->search(
                                hash => {
-                                   nodemetric_rule_service_provider_id => $cluster_id,
-                                   nodemetric_rule_state               => 'enabled',
+                                   service_provider_id => $cluster_id,
+                                   state               => 'enabled',
                                },
                            );
 
@@ -367,6 +371,7 @@ sub setAllRulesUndefForANode{
         });
     }
 }
+
 
 =pod
 
@@ -392,9 +397,9 @@ sub clone {
     my $attrs_cloner = sub {
         my %args = @_;
         my $attrs = $args{attrs};
-        $attrs->{nodemetric_rule_formula}  = $self->_cloneFormula(
-            dest_sp_id              => $attrs->{nodemetric_rule_service_provider_id},
-            formula                 => $attrs->{nodemetric_rule_formula},
+        $attrs->{formula}  = $self->_cloneFormula(
+            dest_sp_id              => $attrs->{service_provider_id},
+            formula                 => $attrs->{formula},
             formula_object_class    => 'Entity::NodemetricCondition'
         );
         $attrs->{workflow_def_id}   = undef;
@@ -404,8 +409,8 @@ sub clone {
     # Generic clone
     my $clone = $self->_importToRelated(
         dest_obj_id         => $args{'dest_service_provider_id'},
-        relationship        => 'nodemetric_rule_service_provider',
-        label_attr_name     => 'nodemetric_rule_label',
+        relationship        => 'service_provider',
+        label_attr_name     => 'rule_name',
         attrs_clone_handler => $attrs_cloner
     );
 
@@ -417,33 +422,160 @@ sub clone {
     return $clone;
 }
 
-sub updateFormulaString {
-    my $self = shift;
-    $self->setAttr(name=>'nodemetric_rule_formula_string', value => $self->toString());
-    $self->save();
-}
-
-sub update {
-    my ($self, %args) = @_;
-    my $rep = $self->SUPER::update (%args);
-    $self->updateFormulaString;
-    return $rep;
-}
-
-sub delete {
-    my $self = shift;
-    my $workflow_def = $self->workflow_def;
-    $self->SUPER::delete();
-    if (defined $workflow_def) { $workflow_def->delete(); };
-}
-
-sub serviceProvider {
-    my $self    = shift;
-    return $self->nodemetric_rule_service_provider;
-}
 
 sub notifyWorkflowName {
     return "NotifyWorkflow node";
 }
 
+
+=pod
+
+=begin classdoc
+
+Delete VerifiedNoderule entry corresponding to the node_id
+
+@param node_id
+
+=end classdoc
+
+=cut
+
+sub deleteVerifiedRule {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'node_id' ]);
+
+    my $verified_noderule;
+    eval{
+        $verified_noderule = VerifiedNoderule->find(hash=>{
+                                verified_noderule_node_id               => $args{node_id},
+                                verified_noderule_nodemetric_rule_id    => $self->id,
+                             });
+    };
+
+    if (defined $verified_noderule) {
+        $verified_noderule->delete();
+    }
+}
+
+=pod
+
+=begin classdoc
+
+Update the last evaluation of the rule in DB according to the given evaluation
+
+@param evaluation hash table with evaluation for each nodes (node_id => rule evaluation).
+
+=end classdoc
+
+=cut
+
+sub setEvaluation {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['evaluation']);
+
+    # Loop on each nodes and its evaluation
+    while (my ($node_id, $evaluation) = each(%{$args{evaluation}})) {
+        if (defined $evaluation) {
+            if ($evaluation eq 0) {
+                $self->deleteVerifiedRule(node_id => $node_id);
+            }
+            else {
+                $self->setVerifiedRule(
+                    node_id => $node_id,
+                    state   => 'verified',
+                );
+            }
+        }
+        else {
+            $self->setVerifiedRule(
+                node_id => $node_id,
+                state   => 'undef',
+            );
+        }
+    }
+}
+
+
+=pod
+
+=begin classdoc
+
+Launch a workflow when rule is linked to a WorkflowDef according to its evaluation.
+
+@param evaluation hash table (node_id => rule evaluation).
+
+=end classdoc
+
+=cut
+
+sub manageWorkflows {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['evaluation']);
+
+    my $workflow_manager;
+    my $sp = $self->service_provider;
+    eval{
+        if (defined $args{memoization}->{$sp->id}->{'WorkflowManager'}) {
+            $workflow_manager = $args{memoization}->{$sp->id}->{'WorkflowManager'}
+        }
+        else {
+            $workflow_manager = $sp->getManager(manager_type => 'WorkflowManager');
+            $args{memoization}->{$sp->id}->{'WorkflowManager'} = $workflow_manager;
+        }
+    };
+    if($@){
+        # Skip workflow management when service provider has no workflow manager
+        $log->info('No workflow manager in service provider <'.$sp->id.'>');
+        return;
+    }
+
+    while (my ($node_id, $evaluation) = each %{$args{evaluation}}) {
+
+        # Update last workflow possibly launched status before trying to trigger a new one
+        my $workflowState = WorkflowNoderule->manageWorkflowState(
+                                node_id            => $node_id,
+                                nodemetric_rule_id => $self->id,
+                            );
+
+        $log->debug('Managing workflow state of rule <'.$self->id."> for node <$node_id> <"
+                    .$workflowState->{state}.'>');
+
+        if (! (defined $self->workflow_def_id && defined $evaluation && $evaluation == 1)) {
+            # Skip workflow management when service provider has no workflow_def or rule
+            # is not verified for this node
+
+            $log->debug('Managing workflow state of rule <'.$self->id."> for node <$node_id> :
+                         WorkflowDefId <".$self->workflow_def_id.">
+                         Evaluation <$evaluation> => No worflow triggered");
+            return;
+        }
+
+        if ($workflowState->{state} eq 'ready_to_launch') {
+            $log->info('Trigger Workflow <'.$self->workflow_def_id.'>');
+
+            # Launch workflow
+            my $workflow = $workflow_manager->runWorkflow(
+                               workflow_def_id     => $self->workflow_def_id,
+                               service_provider_id => $self->service_provider_id,
+                               rule_id             => $self->id,
+                               host_name           => Node->get(id => $node_id)->node_hostname,
+                           );
+
+            WorkflowNoderule->new(node_id            => $node_id,
+                                  nodemetric_rule_id => $self->id,
+                                  workflow_id        => $workflow->id,);
+        }
+        elsif ($workflowState->{state} eq 'delayed') {
+           $log->info('Not trigger workflow <'.$self->workflow_def_id.'> : delayed');
+        }
+        elsif ($workflowState->{state} eq 'running') {
+           $log->info('Not trigger workflow <'.$self->workflow_def_id.'> : a workflow is still running');
+        }
+        else {
+            throw Kanopya::Exception(error => 'unkown case <'.$workflowState->{state}.'>');
+        }
+    } #End node loop while
+}
+
 1;
+

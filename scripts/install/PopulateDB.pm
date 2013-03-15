@@ -2030,11 +2030,11 @@ sub configureDefaultOrchestrationPolicyService {
             );
             # Node rule
             Entity::Rule::NodemetricRule->new(
-                nodemetric_rule_formula             => 'id'.$nmcond->id,
-                nodemetric_rule_label               => $noderule_conf->{$indic_label}->{rule_label},
-                nodemetric_rule_description         => $noderule_conf->{$indic_label}->{rule_description},
-                nodemetric_rule_state               => 'enabled',
-                nodemetric_rule_service_provider_id => $sp->id,
+                formula             => 'id'.$nmcond->id,
+                rule_name           => $noderule_conf->{$indic_label}->{rule_label},
+                description         => $noderule_conf->{$indic_label}->{rule_description},
+                state               => 'enabled',
+                service_provider_id => $sp->id,
             );
         }
 
@@ -2062,11 +2062,11 @@ sub configureDefaultOrchestrationPolicyService {
                 );
                 # Service rule
                 Entity::Rule::AggregateRule->new(
-                    aggregate_rule_formula             => 'id'.$acond->id,
-                    aggregate_rule_label               => $clusterrule_conf->{$indic_label}{$func}->{rule_label},
-                    aggregate_rule_description         => $clusterrule_conf->{$indic_label}{$func}->{rule_description},
-                    aggregate_rule_state               => 'enabled',
-                    aggregate_rule_service_provider_id => $sp->id,
+                    formula             => 'id'.$acond->id,
+                    rule_name           => $clusterrule_conf->{$indic_label}{$func}->{rule_label},
+                    description         => $clusterrule_conf->{$indic_label}{$func}->{rule_description},
+                    state               => 'enabled',
+                    service_provider_id => $sp->id,
                 );
             }
         }

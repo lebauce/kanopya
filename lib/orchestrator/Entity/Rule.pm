@@ -34,7 +34,59 @@ my $log = get_logger("");
 
 use Entity::WorkflowDef;
 
-use constant ATTR_DEF   => { };
+use constant ATTR_DEF   => {
+    service_provider_id => {
+        pattern         => '^.*$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
+    rule_name => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
+    formula => {
+        pattern         => '^((id\d+)|and|or|not|[ ()!&|])+$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1,
+        description     => "Construct a formula by condition's names with logical operators (and, or, not)."
+                           . " It's possible to use parenthesis with spaces between each element of the formula"
+                           . ". Press a letter key to obtain the available choice.",
+    },
+    timestamp => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
+    state => {
+        pattern         => '(enabled|disabled|disabled_temp|delayed|triggered)$',
+        is_mandatory    => 1,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
+    workflow_def_id => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
+    description => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
+    formula_string => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_extended     => 0,
+        is_editable     => 1,
+    },
+};
 
 sub getAttrDef { return ATTR_DEF; }
 
@@ -71,7 +123,7 @@ sub notifyWorkflowName {
 sub associateWithNotifyWorkflow {
     my $self        = shift;
 
-    my $wf_manager  = $self->serviceProvider->getManager(manager_type => "WorkflowManager");
+    my $wf_manager  = $self->service_provider->getManager(manager_type => "WorkflowManager");
     # TODO
     # Do not use a fake attribute to retrieve the fake workflow name but create only one
     # fake workflow and modify its scope_id dynamically
@@ -133,11 +185,11 @@ sub cloneAssociatedWorkflow {
         eval {
             my $src_workflow_manager = ServiceProviderManager->find( hash => {
                  manager_type        => 'WorkflowManager',
-                 service_provider_id => $self->serviceProvider()->id
+                 service_provider_id => $self->service_provider_id,
             });
             my $dest_workflow_manager = ServiceProviderManager->find( hash => {
                 manager_type        => 'WorkflowManager',
-                service_provider_id => $args{dest_rule}->serviceProvider()->id
+                service_provider_id => $args{dest_rule}->service_provider_id
             });
             if ($src_workflow_manager->manager_id != $dest_workflow_manager->manager_id) {
                 die 'Both linked service providers have not the same workflow manager';
@@ -153,6 +205,75 @@ sub cloneAssociatedWorkflow {
             $log->warn('Can not clone associated workflow : ' . $error);
         }
     }
+}
+
+
+=pod
+
+=begin classdoc
+
+Overridde update method to update formula_string
+
+=end classdoc
+
+=cut
+
+sub update {
+    my ($self, %args) = @_;
+    my $rep = $self->SUPER::update (%args);
+    $self->updateFormulaString();
+    return $rep;
+}
+
+=pod
+
+=begin classdoc
+
+Overridde delete method to delete possibly linked workflow_def
+
+=end classdoc
+
+=cut
+
+sub delete {
+    my $self = shift;
+    my $workflow_def = $self->workflow_def;
+    $self->SUPER::delete();
+    if (defined $workflow_def) { $workflow_def->delete(); };
+}
+
+=pod
+
+=begin classdoc
+
+Update formula_string attribute with toString() method value
+
+=end classdoc
+
+=cut
+
+sub updateFormulaString {
+    my $self = shift;
+    $self->setAttr(name=>'formula_string', value => $self->toString());
+    $self->save();
+}
+
+=pod
+
+=begin classdoc
+
+Find the AggregateConditions ids contained in the rule formula without doublon.
+ 
+@return array of AggregateConditions ids
+
+=end classdoc
+
+=cut
+
+sub getDependentConditionIds {
+    my $self = shift;
+    my %ids = map { $_ => undef } ($self->formula =~ m/id(\d+)/g);
+    return keys %ids;
 }
 
 1;

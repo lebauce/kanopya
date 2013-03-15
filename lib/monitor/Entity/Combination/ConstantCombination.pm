@@ -70,41 +70,6 @@ sub combination_formula_string {
     my $self = shift;
     return $self->value
 }
-=pod
-
-=begin classdoc
-
-Return the value attribute. Use to be compatible with other Combination subclasses.
-
-@return value attribute.
-
-=end classdoc
-
-=cut
-
-sub computeValueFromMonitoredValues {
-    my $self = shift;
-    return $self->value;
-}
-
-
-=pod
-
-=begin classdoc
-
-Return the value attribute. Use to be compatible with other Combination subclasses.
-
-@return value attribute.
-
-=end classdoc
-
-=cut
-
-sub computeLastValue {
-    my $self = shift;
-    return $self->value;
-}
-
 
 =pod
 
@@ -182,4 +147,26 @@ sub clone {
     );
 }
 
+=pod
+
+=begin classdoc
+
+Return the value attribute.
+
+=end classdoc
+
+=cut
+
+sub evaluate {
+    my ($self, %args) = @_;
+
+    if (defined $args{nodes}) {
+        my %rep;
+        for my $node (@{$args{nodes}}) { $rep{$node->id} = $self->value } ;
+        return \%rep;
+    }
+    else {
+        return $self->value;
+    }
+}
 1;

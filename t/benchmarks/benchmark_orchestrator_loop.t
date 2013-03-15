@@ -21,7 +21,7 @@ use Kanopya::Tools::Profiler;
 lives_ok {
     use BaseDB;
     use Aggregator;
-    use Orchestrator;
+    use RulesEngine;
 
     use Entity::ServiceProvider::Cluster;
     use Entity::Component::MockMonitor;
@@ -34,7 +34,7 @@ lives_ok {
 } 'All uses';
 
 my $aggregator   = Aggregator->new();
-my $orchestrator = Orchestrator->new();
+my $rulesengine  = RulesEngine->new();
 my $profiler     = Kanopya::Tools::Profiler->new(schema => BaseDB->_adm->{schema});
 
 BaseDB->beginTransaction;
@@ -114,9 +114,9 @@ sub addAggregateRule {
              );
 
     Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $args{cluster}->id,
-        aggregate_rule_formula             => 'id'.$ac->id,
-        aggregate_rule_state               => 'enabled'
+        service_provider_id => $args{cluster}->id,
+        formula             => 'id'.$ac->id,
+        state               => 'enabled'
     );
 }
 
@@ -128,7 +128,7 @@ sub benchmarkAggregatorUpdate {
     print "Benchmarking the aggregator update for $serviceload services, $ruleload agg rules each, $nodeload nodes each:\n";
     $profiler->start(print_queries => 0);
 
-    $orchestrator->manage_aggregates();
+    $rulesengine->oneRun();
 
     $profiler->stop();
 }

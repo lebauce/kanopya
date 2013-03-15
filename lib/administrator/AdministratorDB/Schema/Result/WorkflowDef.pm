@@ -13,7 +13,23 @@ AdministratorDB::Schema::Result::WorkflowDef
 use strict;
 use warnings;
 
-use base 'DBIx::Class::Core';
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
 
 =head1 TABLE: C<workflow_def>
 
@@ -106,36 +122,6 @@ __PACKAGE__->add_unique_constraint("workflow_def_name", ["workflow_def_name"]);
 
 =head1 RELATIONS
 
-=head2 aggregate_rules
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::AggregateRule>
-
-=cut
-
-__PACKAGE__->has_many(
-  "aggregate_rules",
-  "AdministratorDB::Schema::Result::AggregateRule",
-  { "foreign.workflow_def_id" => "self.workflow_def_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 nodemetric_rules
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::NodemetricRule>
-
-=cut
-
-__PACKAGE__->has_many(
-  "nodemetric_rules",
-  "AdministratorDB::Schema::Result::NodemetricRule",
-  { "foreign.workflow_def_id" => "self.workflow_def_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 param_preset
 
 Type: belongs_to
@@ -154,6 +140,21 @@ __PACKAGE__->belongs_to(
     on_delete     => "CASCADE",
     on_update     => "CASCADE",
   },
+);
+
+=head2 rules
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Rule>
+
+=cut
+
+__PACKAGE__->has_many(
+  "rules",
+  "AdministratorDB::Schema::Result::Rule",
+  { "foreign.workflow_def_id" => "self.workflow_def_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 =head2 workflow_def

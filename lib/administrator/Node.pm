@@ -97,7 +97,12 @@ sub new {
 sub _undefRules {
     my $self = shift;
 
-    foreach my $nm_rule ($self->service_provider->nodemetric_rules) {
+    # my @nm_rules = $self->service_provider->nodemetric_rules;
+    # TODO try to allow a direct relation
+
+    my @nm_rules = Entity::Rule::NodemetricRule->search(hash => {service_provider_id => $self->service_provider_id});
+
+    foreach my $nm_rule (@nm_rules) {
         VerifiedNoderule->new(
             verified_noderule_node_id            => $self->id,
             verified_noderule_state              => 'undef',

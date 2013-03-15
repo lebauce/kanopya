@@ -58,7 +58,7 @@ if ($^O eq 'MSWin32') {
 
     <Class>   : Public
     <Desc>    : This method create a RRD file.
-    <args>    : name, options, RRA, DS
+    <args>    : name, options, RRA, DS, skip_if_exists
     <Comment> : Only name is mandatory. Default RRD configuration are: step = 60, 1 RRA with 
                 1 PDP per CPD, and 1440 CDP (60x1x1440 = 86400scd/ 1 day). 
                 Standard is 1 RRA and 1 DS per RRD
@@ -75,11 +75,13 @@ sub createTimeDataStore{
     #                             );
 
     my %args = @_;
-    $log->debug(Dumper(\%args));
 
-    General::checkParams(args => \%args, required => ['name']);
+    General::checkParams(args => \%args, required => ['name'], optional => {'skip_if_exists' => undef});
 
     my $name = _formatName(name => $args{'name'});
+
+    # Do nothing if rrd already exists and skip_if_exists option is set
+    return if (-e $dir.$name && $args{'skip_if_exists'});
 
     my $RRA_chain;
     my $DS_chain;
@@ -323,7 +325,7 @@ sub updateTimeDataStore {
 
     <Class>   : Public
     <Desc>    : This method get the last updated value into a RRD file.
-    <args>    : clustermetric_id
+    <args>    : metric_uid
     <Return>  : %values
     <throws>  : 'RRD fetch failed for last updated value' if the fetch is a failure 
     §WARNING§: the code only catch the keyword 'ERROR' in the command return...
@@ -332,9 +334,9 @@ sub updateTimeDataStore {
 
 sub getLastUpdatedValue {
     my %args = @_;
-    General::checkParams(args => \%args, required => ['clustermetric_id']);
+    General::checkParams(args => \%args, required => ['metric_uid']);
 
-    my $name = _formatName(name => $args{'clustermetric_id'});
+    my $name = _formatName(name => $args{'metric_uid'});
 
     my $cmd = $rrd.' lastupdate '.$dir.$name;
     $log->info($cmd);

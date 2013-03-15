@@ -27,54 +27,56 @@
 
     <aggregator.conf template="aggregator.conf.tt">
     </aggregator.conf>
-    
+
     <libkanopya.conf template="libkanopya.conf.tt">
-        <datas db_user="dbuser" 
-               admin_password="dbpassword1" 
-               logdir="log_directory" 
-               internal_net_add="internal_net_add" 
-               internal_net_mask="internal_net_mask" 
-               dbport="dbport" 
-               dbip="dbip" 
-               dmz_net_add="dmz_net_add" 
+        <datas db_user="dbuser"
+               admin_password="dbpassword1"
+               logdir="log_directory"
+               internal_net_add="internal_net_add"
+               internal_net_mask="internal_net_mask"
+               dbport="dbport"
+               dbip="dbip"
+               dmz_net_add="dmz_net_add"
                dmz_net_mask="dmz_net_mask"
                crypt_salt="crypt_salt"/>
     </libkanopya.conf>
-    
+
     <monitor.conf template="monitor.conf.tt">
-        <datas admin_password="dbpassword1" 
-               internal_net_add="internal_net_add" 
+        <datas admin_password="dbpassword1"
+               internal_net_add="internal_net_add"
                internal_net_mask="internal_net_mask"/>
     </monitor.conf>
-    
-    <orchestrator.conf template="orchestrator.conf.tt">
+
+    <rulesengine.conf template="rulesengine.conf.tt">
         <datas admin_password="dbpassword1"/>
-    </orchestrator.conf>
-    
+    </rulesengine.conf>
+
+
     <components.conf template="components.conf.tt">
         <datas />
     </components.conf>
-    
-    
+
+
     <executor-log.conf template="executor-log.conf.tt">
         <datas logdir="log_directory"/>
     </executor-log.conf>
-    
+
     <state-manager-log.conf template="state-manager-log.conf.tt">
         <datas logdir="log_directory"/>
     </state-manager-log.conf>
-        
+
     <collector-log.conf template="collector-log.conf.tt">
         <datas logdir="log_directory"/>
     </collector-log.conf>
-    
+
     <aggregator-log.conf template="aggregator-log.conf.tt">
         <datas logdir="log_directory"/>
     </aggregator-log.conf>
-    
-    <orchestrator-log.conf template="orchestrator-log.conf.tt">
+
+    <rulesengine-log.conf template="rulesengine-log.conf.tt">
         <datas logdir="log_directory"/>
-    </orchestrator-log.conf>
+    </rulesengine-log.conf>
+
 
     <webui-log.conf template="webui-log.conf.tt">
         <datas logdir="log_directory"/>

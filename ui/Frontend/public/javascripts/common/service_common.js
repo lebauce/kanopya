@@ -18,7 +18,7 @@ function addServiceExtraData(grid, rowid, rowdata, rowelem, ext) {
     });
     // Rules State
     $.ajax({
-        url     : '/api/aggregaterule?aggregate_rule_service_provider_id=' + rowelem.pk,
+        url     : '/api/aggregaterule?service_provider_id=' + rowelem.pk,
         type    : 'GET',
         success : function(aggregaterules) {
             var verified    = 0;
@@ -112,15 +112,15 @@ function node_rules_tab(cid, eid, service_provider_id) {
 
     var loadNodeRulesTabGridId = 'node_rules_tabs';
     create_grid( {
-        url: '/api/nodemetricrule?nodemetric_rule_service_provider_id=' + service_provider_id,
+        url: '/api/nodemetricrule?service_provider_id=' + service_provider_id,
         content_container_id: cid,
         grid_id: loadNodeRulesTabGridId,
         grid_class: 'node_rules_tab',
         colNames: [ 'id', 'rule', 'state' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
-            { name: 'nodemetric_rule_label', index: 'nodemetric_rule_label', width: 90,},
-            { name: 'nodemetric_rule_state', index: 'nodemetric_rule_state', width: 200, formatter: verifiedNodeRuleStateFormatter },
+            { name: 'label', index: 'label', width: 90,},
+            { name: 'state', index: 'state', width: 200, formatter: verifiedNodeRuleStateFormatter },
         ],
         action_delete : 'no',
     } );

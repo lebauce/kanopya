@@ -27,7 +27,7 @@ Log::Log4perl->easy_init({
 
 use BaseDB;
 
-use Orchestrator;
+use RulesEngine;
 use Aggregator;
 use Entity::CollectorIndicator;
 use Entity::ServiceProvider::Externalcluster;
@@ -49,7 +49,7 @@ use Entity::Rule::AggregateRule;
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::TestUtils 'expectedException';
 
-my $testing = 1;
+my $testing = 0;
 
 my $service_provider;
 
@@ -63,7 +63,7 @@ sub main {
     }
 
     sco_workflow_triggered_by_rule();
-    clean_infra();
+#    clean_infra();
 
     if ($testing == 1) {
         BaseDB->rollbackTransaction;
@@ -99,7 +99,7 @@ sub sco_workflow_triggered_by_rule {
         no_default_conf => 1,
     );
 
-    my @indicators = Entity::CollectorIndicator->search (hash => {collector_manager_id => $mock_monitor->id});
+    my @indicators = Entity::CollectorIndicator->search(hash => {collector_manager_id => $mock_monitor->id});
 
     my $agg_rule_ids  = _service_rule_objects_creation(indicators => \@indicators);
     my $node_rule_ids = _node_rule_objects_creation(indicators => \@indicators);
@@ -107,8 +107,8 @@ sub sco_workflow_triggered_by_rule {
     $aggregator->update();
 
     # Launch orchestrator with no workflow to trigger
-    my $orchestrator = Orchestrator->new();
-    $orchestrator->manage_aggregates();
+    my $rulesengine = RulesEngine->new();
+    $rulesengine->oneRun();
 
     diag('Check rules verification');
     check_rule_verification(
@@ -179,7 +179,7 @@ sub sco_workflow_triggered_by_rule {
     );
 
     #Launch orchestrator a workflow must be enqueued
-    $orchestrator->manage_aggregates();
+    $rulesengine->oneRun();
 
     my ($node_workflow, $service_workflow, $sco_operation, $service_sco_operation);
     lives_ok {
@@ -220,7 +220,6 @@ sub sco_workflow_triggered_by_rule {
 
         #Execute operation 4 times (1 time per trigerred rule * 2 (op confirmation + op workflow))
         Kanopya::Tools::Execution->nRun(n => 4);
-
 
         #  Check node rule output
         diag('Check postreported operation');
@@ -334,16 +333,16 @@ sub sco_workflow_triggered_by_rule {
 
         # Modify node rule2 to avoid a new triggering
         my $node_rule2 = Entity::Rule::NodemetricRule->get(id => $node_rule_ids->{node_rule2_id});
-        $node_rule2->setAttr(name => 'nodemetric_rule_formula', value => '! ('.$node_rule2->nodemetric_rule_formula.')');
+        $node_rule2->setAttr(name => 'formula', value => '! ('.$node_rule2->formula.')');
         $node_rule2->save();
 
         # Modify service rule2 to avoid a new triggering
         my $agg_rule2 = Entity::Rule::AggregateRule->get(id => $agg_rule_ids->{agg_rule2_id});
-        $agg_rule2->setAttr(name => 'aggregate_rule_formula', value => 'not ('.$agg_rule2->aggregate_rule_formula.')');
+        $agg_rule2->setAttr(name => 'formula', value => 'not ('.$agg_rule2->formula.')');
         $agg_rule2->save();
 
         # Launch Orchestrator
-        $orchestrator->manage_aggregates();
+        $rulesengine->oneRun();
 
         expectedException {
             VerifiedNoderule->find(hash => {
@@ -451,7 +450,7 @@ sub clean_infra {
 
     diag('Check if all aggregrate rules have been deleted');
     my @ars = Entity::Rule::AggregateRule->search (hash => {
-        aggregate_rule_service_provider_id => $service_provider->id
+        service_provider_id => $service_provider->id
     });
     if ( scalar @ars == 0 ) {
         diag('## checked');
@@ -526,15 +525,15 @@ sub _service_rule_objects_creation {
     );
 
     $rule1 = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
-        aggregate_rule_formula => 'id'.$ac1->id.' && id'.$ac2->id,
-        aggregate_rule_state => 'enabled'
+        service_provider_id => $service_provider->id,
+        formula => 'id'.$ac1->id.' && id'.$ac2->id,
+        state => 'enabled'
     );
 
     $rule2 = Entity::Rule::AggregateRule->new(
-        aggregate_rule_service_provider_id => $service_provider->id,
-        aggregate_rule_formula => 'id'.$ac1->id.' || id'.$ac2->id,
-        aggregate_rule_state => 'enabled'
+        service_provider_id => $service_provider->id,
+        formula => 'id'.$ac1->id.' || id'.$ac2->id,
+        state => 'enabled'
     );
 
     return {
@@ -579,15 +578,15 @@ sub _node_rule_objects_creation {
     );
 
     $rule1 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
-        nodemetric_rule_formula => 'id'.$nc1->id.' && id'.$nc2->id,
-        nodemetric_rule_state => 'enabled'
+        service_provider_id => $service_provider->id,
+        formula => 'id'.$nc1->id.' && id'.$nc2->id,
+        state => 'enabled'
     );
 
     $rule2 = Entity::Rule::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $service_provider->id,
-        nodemetric_rule_formula => 'id'.$nc1->id.' || id'.$nc2->id,
-        nodemetric_rule_state => 'enabled'
+        service_provider_id => $service_provider->id,
+        formula => 'id'.$nc1->id.' || id'.$nc2->id,
+        state => 'enabled'
     );
 
     return {
