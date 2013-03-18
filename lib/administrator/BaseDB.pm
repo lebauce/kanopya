@@ -1302,7 +1302,7 @@ sub searchRelated {
                          required => [ 'filters' ],
                          optional => { 'hash' => { } });
 
-    my $source = BaseDB->_adm->{schema}->source(_buildClassNameFromString($class));
+    my $source = $class->getResultSource();
     my $join;
     eval {
         # If the function is called on a class that is only a base class of the
@@ -2049,7 +2049,7 @@ sub getKeyFromCond {
 
 =begin classdoc
 
-Build an array of the full class hierachy.
+Build an array of the base classes that have a schema
 
 @return the array containing all classes in the hierarchy.
 
