@@ -130,20 +130,6 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 nfsd3_exports
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Nfsd3Export>
-
-=cut
-
-__PACKAGE__->has_many(
-  "nfsd3_exports",
-  "AdministratorDB::Schema::Result::Nfsd3Export",
-  { "foreign.nfsd3_id" => "self.nfsd3_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
 
 
 # Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 16:29:02
