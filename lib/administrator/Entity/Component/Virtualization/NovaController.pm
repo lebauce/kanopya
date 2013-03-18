@@ -47,6 +47,12 @@ use constant ATTR_DEF => {
         is_editable => 1,
         specialized => 'openstack_repository'
     },
+    amqp_id => {
+        label       => 'Message queuing server',
+        type        => 'relation',
+        relation    => 'single',
+        is_editable => 1
+    },
     host_type => {
         is_virtual => 1
     }

@@ -27,6 +27,7 @@ my %resources = (
     "activedirectory"          => "Entity::Component::ActiveDirectory",
     "alert"                    => "Alert",
     "aggregator"               => "Aggregator",
+    "amqp"                     => "Entity::Component::Amqp",
     "atftpd0"                  => "Entity::Component::Atftpd0",
     "aggregatecombination"     => "Entity::Combination::AggregateCombination",
     "aggregatecondition"       => "Entity::AggregateCondition",
