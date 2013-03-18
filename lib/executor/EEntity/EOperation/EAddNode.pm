@@ -50,7 +50,7 @@ sub prerequisites {
                                                data => $cluster->getManager(manager_type => 'HostManager'),
                                            );
 
-        my @hvs   = $self->{context}->{host_manager}->hypervisors;
+        my @hvs   = @{ $self->{context}->{host_manager}->hypervisors };
         my @hv_in_ids;
         for my $hv (@hvs) {
             my ($state,$time_stamp) = $hv->getNodeState();

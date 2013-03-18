@@ -205,7 +205,8 @@ Return a list of hypervisors under the rule of this instance of manager
 sub hypervisors {
     my $self = shift;
 
-    my @hypervisors = $self->openstack_hypervisors;
+    my @hypervisors = $self->searchRelated(filters  => [ 'openstack_hypervisors' ],
+                                           prefetch => [ 'node' ]);
     return \@hypervisors;
 }
 

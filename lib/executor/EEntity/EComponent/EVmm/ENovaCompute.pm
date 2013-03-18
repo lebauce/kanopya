@@ -76,7 +76,7 @@ sub getAvailableMemory {
     my $host_details = $e_controller->api->tenant(id => $e_controller->api->{tenant_id} . '/os-hypervisors/detail')
                            ->get(target => 'compute')->{hypervisors};
 
-    my ($hypervisor) = grep { $_->{hypervisor_hostname} eq $host->fqdn } @$host_details;
+    my ($hypervisor) = grep { $_->{hypervisor_hostname} eq $host->node->fqdn } @$host_details;
 
     my $memory = {
         mem_effectively_available   => $hypervisor->{free_ram_mb} * 1024 * 1024,

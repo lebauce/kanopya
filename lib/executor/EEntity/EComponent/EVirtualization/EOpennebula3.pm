@@ -1413,7 +1413,7 @@ sub onevm_resubmit {
 
 sub getMaxRamFreeHV{
     my ($self, %args) = @_;
-    my @hypervisors = $self->hypervisors();
+    my @hypervisors = @{ $self->hypervisors() };
 
     my $max_hv  = shift @hypervisors;
     my $max_freeram = EEntity->new(data => $max_hv)->getAvailableMemory->{mem_effectively_available};

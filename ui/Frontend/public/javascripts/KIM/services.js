@@ -319,15 +319,15 @@ function migrate(spid, eid) {
     $.ajax({
         async       : false,
         url         : '/api/serviceprovider/' + spid + '/service_provider_managers?' +
-                      'manager_category.parent.category_name=HostManager&expand=manager_category',
+                      'custom.category=HostManager',
         type        : 'GET',
         success     : function(hmgr) {
             $.ajax({
-                url     : '/api/virtualization/' + hmgr[0].manager_id + '/hypervisors',
+                url     : '/api/virtualization/' + hmgr[0].manager_id + '/hypervisors?expand=node',
                 type    : 'POST',
                 success : function(data) {
                     for (var i in data) if (data.hasOwnProperty(i)) {
-                        $(sel).append($('<option>', { text : data[i].host_hostname, value : data[i].pk }));
+                        $(sel).append($('<option>', { text : data[i].node.node_hostname, value : data[i].pk }));
                     }
                     $(cont).dialog({
                         modal       : true,
