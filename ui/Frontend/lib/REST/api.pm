@@ -298,18 +298,18 @@ sub getResources {
 }
 
 sub jsonify {
-    my $var = shift;
+    my ($var, %args) = @_;
 
     # Jsonify the non scalar only
     if (ref($var) and (ref($var) ne "HASH") and (ref($var) ne "ARRAY")) {
         if ($var->can("toJSON")) {
             if ($var->isa("Entity::Operation")) {
-                return Entity::Operation->methodCall(method => 'get', params => { id => $var->id })->toJSON;
+                return Entity::Operation->methodCall(method => 'get', params => { id => $var->id })->toJSON(%args);
             }
             elsif ($var->isa("Entity::Workflow")) {
-                return Entity::Workflow->methodCall(method => 'get', params => { id => $var->id })->toJSON;
+                return Entity::Workflow->methodCall(method => 'get', params => { id => $var->id })->toJSON(%args);
             } else {
-                return $var->toJSON();
+                return $var->toJSON(%args);
             }
         }
     }
@@ -406,6 +406,7 @@ sub setupREST {
             }
 
             my $methods = $obj->getMethods();
+            my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
 
             if (not defined $methods->{$method}) {
                 throw Kanopya::Exception::NotImplemented(error => "Method not implemented");
@@ -423,11 +424,11 @@ sub setupREST {
             if (ref($ret) eq "ARRAY") {
                 my @jsons;
                 for my $elem (@{$ret}) {
-                    push @jsons, jsonify($elem);
+                    push @jsons, jsonify($elem, expand => \@expand);
                 }
                 $ret = \@jsons;
             } elsif ($ret) {
-                $ret = jsonify($ret);
+                $ret = jsonify($ret, expand => \@expand);
             } else {
                 $ret = jsonify({});
             }
