@@ -36,7 +36,7 @@ use constant ATTR_DEF => {
         is_editable  => 1
     },
     overcommitment_memory_factor => {
-        label        => '0vercommitment memory factor',
+        label        => 'Overcommitment memory factor',
         type         => 'string',
         pattern      => '^\d*$',
         is_mandatory => 1,
