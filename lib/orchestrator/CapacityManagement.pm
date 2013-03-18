@@ -185,11 +185,6 @@ sub _constructInfra {
 
     my ($hvs, $vms);
     for my $hypervisor (@hypervisors_r) {
-
-        if ($hypervisor->node->master_node == 1) {
-            $master_hv = $hypervisor->id;
-        }
-
         $hvs->{$hypervisor->id} = {
             hv_capa => {
                 ram => $hypervisor->host_ram,
@@ -210,8 +205,7 @@ sub _constructInfra {
 
     my $current_infra = {
         vms => $vms,
-        hvs => $hvs,
-        master_hv => $master_hv,
+        hvs => $hvs
     };
 
     return $current_infra;
@@ -386,44 +380,6 @@ sub _applyMigrationPlan{
     );
 
     my $plan = $args{plan};
-
-    # Trick to avoid empty master node (useless)
-    # TODO refactoring a better algorithm to avoid this configuration
-    my $replace_master_id;
-    my $master_hv_id = $self->{_infra}->{master_hv};
-
-    if ($args{empty_master_allowed} == 0) {
-
-        $log->info(Dumper $self->{_infra});
-
-        if( scalar (@{$self->{_infra}->{hvs}->{$master_hv_id}->{vm_ids}} ) == 0 ) {
-
-            $log->info('Master node seems empty, try to empty another HV');
-
-            my $hv_ids = $self->_separateEmptyHvIds()->{non_empty_hv_ids};
-
-            my $hvs = $self->{_infra}->{hvs};
-            for my $hv_id (@{$hv_ids}) {
-                if ($hvs->{$hv_id}->{hv_capa}->{cpu} <= $hvs->{$master_hv_id}->{hv_capa}->{cpu}
-                    && $hvs->{$hv_id}->{hv_capa}->{ram} <= $hvs->{$master_hv_id}->{hv_capa}->{ram}) {
-
-                    $replace_master_id = $hv_id;
-                }
-            }
-        }
-    }
-
-    if (defined $replace_master_id) {
-      $log->info("Master id <$master_hv_id> will replace <$replace_master_id> ");
-        my $vms_ids  = clone($self->{_infra}->{hvs}->{$replace_master_id}->{vm_ids});
-        for my $vm_id (@{$vms_ids}) {
-            push @$plan, {vm_id => $vm_id, hv_id => $master_hv_id};
-            $self->_migrateVmModifyInfra(
-                vm_id       => $vm_id,
-                hv_dest_id  => $master_hv_id,
-            );
-        }
-    }
 
     my @simplified_plan_order; # The order of VM migration
     my $simplified_plan_dest;  # The destination of the VM
