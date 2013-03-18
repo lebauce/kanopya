@@ -631,20 +631,19 @@ sub propagateVLAN {
 sub vmLoggedErrorMessage {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'opennebula3_vm' ]);
+    General::checkParams(args => \%args, required => [ 'vm' ]);
 
-    my $command = one_command('tail -n 10 /var/log/one/'.($args{opennebula3_vm}->onevm_id).'.log');
+    my $command = one_command('tail -n 10 /var/log/one/'.($args{vm}->onevm_id) . '.log');
 
     $log->debug("commande = $command");
     my $result  = $self->getEContext->execute(command => $command);
     my $output  = $result->{stdout};
     $log->debug($output);
 
-    my @lastmessage =  split '\n',$output;
+    my @lastmessage = split '\n', $output;
 
     $log->debug(@lastmessage);
     return $lastmessage[-1];
-
 }
 
 sub forceDeploy {
@@ -1431,48 +1430,6 @@ sub getMaxRamFreeHV{
         hypervisor  => $max_hv,
         ram => $max_freeram,
     }
-}
-
-=cut
-
-=begin classdoc
-
-Check the state of the vm
-
-@return boolean
-
-=end classdoc
-
-=cut
-
-sub checkUp {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ "host" ]);
-
-    my $host = $args{host};
-    my $vm_state = $self->getVMState(host => $host);
-
-    $log->info('VM <' . $host->id . '> opennebula status <' . ($vm_state->{state}) . '>');
-
-    if ($vm_state->{state} eq 'runn') {
-        $log->info('VM running try to contact it');
-        return 1;
-    }
-    elsif ($vm_state->{state} eq 'boot') {
-        $log->info('VM still booting');
-        return 0;
-    }
-    elsif ($vm_state->{state} eq 'fail' ) {
-        my $lastmessage = $self->vmLoggedErrorMessage(opennebula3_vm => $host);
-        throw Kanopya::Exception(error => 'VM fail on boot: ' . $lastmessage);
-    }
-    elsif ($vm_state->{state} eq 'pend' ) {
-        $log->info('VM still pending'); #TODO check HV state
-        return 0;
-    }
-
-    return 0;
 }
 
 1;

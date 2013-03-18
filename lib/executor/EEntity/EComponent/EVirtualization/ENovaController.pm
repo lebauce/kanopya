@@ -170,7 +170,18 @@ sub getVMState {
                        ->servers(id => $uuid)
                        ->get(target => 'compute');
 
-    return $details->{server}->{status};
+    my $state_map = {
+        'MIGRATING' => 'migr',
+        'BUILD'     => 'pend',
+        'ACTIVE'    => 'runn',
+        'ERROR'     => 'fail',
+        'SHUTOFF'   => 'shut'
+    };
+
+    return {
+        state      => $state_map->{$details->{server}->{status}} || 'fail',
+        hypervisor => $details->{server}->{"OS-EXT-SRV-ATTR:host"}
+    };
 }
 
 =pod
@@ -573,55 +584,6 @@ sub applyVLAN {
         args     => \%args,
         required => [ 'iface', 'vlan' ]
     );
-}
-
-=pod
-
-=begin classdoc
-
-Check the state of an OpenStack host
-
-return boolean
-
-=end classdoc
-
-=cut
-
-sub checkUp {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ "host" ]);
-
-    my $host = $args{host};
-    my $vm_state = $self->getVMState(host => $host);
-
-    $log->info('VM <' . $host->id . '> openstack status <' . $vm_state . '>');
-
-    if ($vm_state eq 'SHUTOFF') {
-        $log->info('vm powered off');
-        return 0;
-    }
-    elsif ($vm_state eq 'BUILD') {
-        $log->info('vm is building');
-        return 0;
-    }
-    elsif ($vm_state eq 'ACTIVE') {
-        $log->info('vm is active');
-        return 2;
-    }
-    elsif ($vm_state eq 'ERROR') {
-        $log->info('vm is in error state');
-        return 0;
-    }
-    elsif ($vm_state eq 'MIGRATING') {
-        $log->info('vm is migrating');
-        return 0;
-    }
-    else {
-        throw Kanopya::Exception(error => 'unknown state: ' . $vm_state);
-    }
-
-    return 0;
 }
 
 =pod

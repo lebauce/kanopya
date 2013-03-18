@@ -49,4 +49,50 @@ sub getFreeHost {
     return $host;
 }
 
+=cut
+
+=begin classdoc
+
+Check the state of the vm
+
+@return boolean
+
+=end classdoc
+
+=cut
+
+sub checkUp {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ "host" ]);
+
+    my $host = $args{host};
+    my $vm_state = $self->getVMState(host => $host);
+
+    $log->info('VM <' . $host->id . '> VM status <' . ($vm_state->{state}) . '>');
+
+    if ($vm_state->{state} eq 'runn') {
+        $log->info('VM running try to contact it');
+        return 1;
+    }
+    elsif ($vm_state->{state} eq 'boot') {
+        $log->info('VM still booting');
+        return 0;
+    }
+    elsif ($vm_state->{state} eq 'fail' ) {
+        my $lastmessage = $self->vmLoggedErrorMessage(vm => $host);
+        throw Kanopya::Exception(error => 'VM fail on boot: ' . $lastmessage);
+    }
+    elsif ($vm_state->{state} eq 'pend' ) {
+        $log->info('VM still pending'); #TODO check HV state
+        return 0;
+    }
+
+    return 0;
+}
+
+sub vmLoggedErrorMessage {
+    return "Unknown error";
+}
+
 1;
