@@ -34,6 +34,7 @@ sub getPuppetDefinition {
 
     my $glance = join(",", map { $_->getMasterNode->fqdn . ":9292" } $self->nova_controller->glances);
     my $keystone = $self->nova_controller->keystone->getMasterNode->fqdn;
+    my $quantum = ($self->nova_controller->quantums)[0];
     my $amqp = $self->nova_controller->amqp->getMasterNode->fqdn;
     my $sql = $self->mysql5->getMasterNode->fqdn;
 
@@ -46,6 +47,7 @@ sub getPuppetDefinition {
            "\tdbserver => '" . $sql . "',\n" .
            "\tglance => '" . $glance . "',\n" .
            "\tkeystone => '" . $keystone . "',\n" .
+           "\tquantum => '" . $quantum->getMasterNode->fqdn . "',\n" .
            "\temail => '" . $self->nova_controller->service_provider->user->user_email . "',\n" .
            "\tpassword => 'nova',\n" .
            "\tlibvirt_type => 'kvm'\n" .
