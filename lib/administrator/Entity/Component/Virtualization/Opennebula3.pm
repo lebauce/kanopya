@@ -428,19 +428,6 @@ sub optimiaas {
 
 }
 
-# Execute host migration to a new hypervisor
-sub migrateHost {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'host', 'hypervisor_dst', 'hypervisor_cluster' ]);
-
-    $log->info('Migrating host <' . $args{host}->getId . '> to hypervisor ' . $args{hypervisor_dst}->getId);
-
-    $args{host}->setAttr(name => 'hypervisor_id', value => $args{hypervisor_dst}->getId);
-    $args{host}->save();
-}
-
 sub getImageRepository {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['container_access_id']);

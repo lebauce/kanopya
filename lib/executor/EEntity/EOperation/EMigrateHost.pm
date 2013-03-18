@@ -45,6 +45,7 @@ use Data::Dumper;
 use Kanopya::Exceptions;
 use Entity::ServiceProvider;
 use Entity::Host;
+use CapacityManagement;
 
 my $log = get_logger("");
 my $errmsg;
@@ -87,8 +88,8 @@ sub prepare {
     }
 
     # Check if host is on the hypervisors cluster
-    if ($self->{context}->{'host'}->getClusterId() !=
-        $self->{context}->{'vm'}->host_manager->service_provider->id) {
+    if ($self->{context}->{host}->getClusterId() !=
+        $self->{context}->{vm}->hypervisor->getClusterId()) {
         throw Kanopya::Exception::Internal::WrongValue(error => "VM is not on the hypervisor cluster");
     }
 
