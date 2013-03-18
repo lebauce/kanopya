@@ -1,4 +1,4 @@
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2013 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -31,6 +31,12 @@ sub getPuppetDefinition {
     my $definitions = "class { 'kanopya::rabbitmq': }\n";
 
     return $definitions;
+}
+
+sub label {
+    my $self = shift;
+
+    return "RabbitMQ at " . $self->getMasterNode->adminIp;
 }
 
 1;
