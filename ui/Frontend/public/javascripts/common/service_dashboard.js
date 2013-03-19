@@ -231,4 +231,11 @@ function loadServicesOverview (container_id, elem_id) {
         });
         dash_div.show();
     });
+
+//    var action_div=jQuery('#' + container_id).find('div.dashboard').find('div.action_buttons');
+
+//    action_div.html('');
+//    action_div.append($('<button>', { 'class' : 'openaddwidgetdialog action_kanopya', html : '<span class="ui-button-text">Add Widget</span>'}).append('<span class="ui-button-icon-primary ui-icon ui-icon-plusthick"></span>'));
+//    action_div.append($('<button>', { 'class' : 'savedashboard action_kanopya', html : '<span class="ui-button-text">Save Dashboard</span>'}).append('<span class="ui-button-icon-primary ui-icon ui-icon-disk"></span>'));
+
 }

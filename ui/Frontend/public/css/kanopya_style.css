@@ -39,6 +39,8 @@
     font-size: 11px;
 }
 
+.ui-icon{cursor:pointer;}
+
 /* Action buttons */
 .ui-button {margin-top: 15px;}
 .ui-button.no-margin {margin: 0px;}
@@ -69,41 +71,42 @@ td.action-cell .ui-button {margin-top : 15px;width: 200px;}
 .ui-jqgrid-btable tr:nth-child(even) td{background:#f6f6f6;}
 #mainmenu-container li {padding-top: 2px;padding-left:16px;position:relative;margin-left:10px;}
 
-.kanopya-sprite {
+.kanopya-sprite, .action_buttons .ui-button-text span {
   height: 20px;
   width: 20px;
   overflow: hidden;
   background-repeat: no-repeat;
   display: inline-block;
-  vertical-align: middle;
+  vertical-align: text-top;
 }
 
 .kanopya-tab-sprite {margin-right: 5px;}
 .kanopya-button-sprite {margin-right: 5px;}
 .kanopya-menu-sprite {margin-right: 5px;}
 
-.ui-layout-west .ui-state-hover .ui-icon,.ui-layout-west .ui-state-focus .ui-icon,.ui-layout-west .ui-state-default .ui-icon,.ui-layout-west .ui-state-active .ui-icon, .ui-layout-west .ui-state-highlight .ui-icon,.ui-state-default .ui-icon-triangle-1-e,.ui-state-active .ui-icon-triangle-1-s, .ui-widget .ui-accordion-header .ui-icon {background-image:url(../images/arrows.png);height:11px;width:11px;background-repeat:no-repeat;}
-.ui-icon-triangle-1-e{background-position:0 0;}
-.ui-icon-triangle-1-s{background-position:-22px 0;}
-.ui-state-focus .ui-icon-triangle-1-e{background-position:-11px 0;}
+h3 .ui-icon-triangle-1-e, h3 .ui-icon-triangle-1-s
+{background-image:url(../images/arrows.png)!important;height:11px;width:11px;background-repeat:no-repeat;}
+h3 .ui-icon-triangle-1-e{background-position:0 0!important;}
+h3 .ui-icon-triangle-1-s{background-position:-22px 0!important;}
+h3.ui-state-focus .ui-icon-triangle-1-e{background-position:-11px 0!important;}
 
 a.view_link{font-weight:normal;}
 
 .ui-widget{font-family:Arial, Helvetica, sans-serif;font-size:14.7px;font-weight:bold;}
-.ui-widget .ui-icon{background-image:url('/images/kanopya-sprites.png');background-repeat:no-repeat;margin-top:-10px;}
-.ui-widget .ui-icon-info{background-image:url(theme/images/ui-icons_7e388a_256x240.png);}
-#managerslist .ui-icon-trash{top: 0.5em;}
+.action_buttons .ui-icon{background-image:url('/images/kanopya-sprites.png');background-repeat:no-repeat;}
+
+.action_kanopya{position:relative;padding:0 5px 0 15px!important;}
+.action_kanopya .ui-icon{position:absolute;top:2px;margin-top:0!important;left:-2px;background-image:url(theme/images/ui-icons_7e388a_256x240.png);}
+
+.action_buttons .ui-icon, #accordionrule button .ui-icon-plusthick, #accordion_monitoring_rule button .ui-icon-plusthick{margin-top:-10px;}
+
+#managerslist .ui-icon-trash{top: 13px;}
 .dashboard .ui-widget .ui-widget-header .ui-icon{margin-top:0px;background-image:url('theme/kanopya-theme04/images/ui-icons_ffffff_256x240.png');}
-.ui-widget .ui-state-default .ui-icon-plusthick,.ui-widget .ui-state-hover .ui-icon-plusthick{background-position:-163px -40px;}
-.ui-widget .ui-state-default .ui-icon-closethick,.ui-widget .ui-state-hover .ui-icon-closethick{background-position:-142px -22px;}
-.ui-icon-refresh{background-position:-82px -42px;}
-.ui-icon-search{background-position:-124px -120px;}
 
 .ui-layout-west ul.ui-accordion-content{padding:10px !important;}
 .ui-layout-west ul.ui-accordion-content li{padding:0px;}
 .ui-layout-west ul.ui-accordion-content li .arrow{display:inline-block;zoom:1;*display:block;width:11px;height:11px;background:url(../images/arrows.png) no-repeat 0 0;position:absolute;margin-top:3px;left:0px;}
-.ui-layout-west ul.ui-accordion-content li ul li .arrow{width:8px;background-position:-32px 0;top:3px;left:0;}
-
+.ui-layout-west ul.ui-accordion-content li.view_link_cont .arrow{width:8px;background-position:-32px 0;top:50%;left:0;margin-top:-3px;}
 .ui-layout-west ul.ui-accordion-content li ul{list-style:none; padding:0;}
 #mainmenu-container li ul li{padding:0 0 0 12px;position:relative;}
 .ui-layout-west ul.ui-accordion-content li ul li a{font-size:13px;font-weight:normal;}
@@ -127,11 +130,10 @@ display:inline-block;zoom:1;*display:block;float:none;
 .ui-jqgrid-labels th:last-child{border-right:0;}
 .ui-jqgrid tr.jqgrow td{line-height:22px;}
 
-.ui-dialog-titlebar{background:none;-moz-border-radius: 0px; -webkit-border-radius: 0px; -khtml-border-radius: 0px; border-radius: 0px;border:none;border-bottom:1px solid #964e98;/*color:#7e388a;*/color:white;padding:0.4em 0;}
+.ui-dialog-titlebar{background:none;-moz-border-radius: 0px; -webkit-border-radius: 0px; -khtml-border-radius: 0px; border-radius: 0px;border:none;border-bottom:1px solid #964e98;color:white;padding:0.4em 0;}
 .ui-dialog-titlebar span{color:white;}
 .ui-dialog .ui-dialog-titlebar{padding:10px 10px 10px 20px;margin:-3px -3px 3px;background:white;background:url(../images/element-current.png) repeat-x left bottom #B68EBC;}
-.ui-dialog-titlebar-close .ui-icon {background-image:url('/images/kanopya-sprites.png');background-position:-142px -43px;width:16px;height:16px;}
-.ui-state-hover .ui-icon-closethick{background-position:-142px -22px;cursor: pointer;}
+
 .ui-dialog{box-shadow:0 7px 11px #999;}
 ul#Services >li{cursor:pointer;}
 .invisible{display:none!important;}
@@ -162,7 +164,7 @@ ul#Services >li{cursor:pointer;}
 #accordion_monitoring_rule button .ui-button-text{padding:0 10px 0 20px !important;}
 
 #accordionrule button .ui-icon,
-#accordion_monitoring_rule button .ui-icon{left:3px!important;}
+#accordion_monitoring_rule button .ui-icon{left:0px!important;}
 
 .ui-multiselect-menu li label{background:none!important;border:none!important;font-weight:normal!important;color:black!important;font-size:13px!important;padding:2px 5px !important}
 .ui-multiselect-menu li label.ui-state-active span{color:#7e388a;}
@@ -172,53 +174,39 @@ button.ui-multiselect,.ui-multiselect-menu li label{cursor:pointer;}
 .ui-formwizard button.ui-state-active,#form_cluster button.ui-state-active{-moz-border-radius-bottomleft: 0px; -webkit-border-bottom-left-radius: 0px; -khtml-border-bottom-left-radius: 0px; border-bottom-left-radius: 0px;-moz-border-radius-bottomright: 0px; -webkit-border-bottom-right-radius: 0px; -khtml-border-bottom-right-radius: 0px; border-bottom-right-radius: 0px;}
 .ui-multiselect-checkboxes{height:auto!important;}
 .ui-multiselect-all .ui-icon,.ui-multiselect-none .ui-icon{margin-top:0!important;}
-.ui-multiselect-all .ui-icon-check{background-position:-104px -22px;}
-.ui-multiselect-none .ui-icon-closethick{background-position:-143px -22px ;}
-.ui-formwizard .ui-icon-closethick{margin-top:-8px!important;}
-.ui-widget .ui-icon-mail-closed{background-image:url(theme/images/ui-icons_7e388a_256x240.png);margin-top:-9px;}
-
-.widget_part .ui-icon{background-image:url(../images/arrows.png);height:11px;width:11px;background-repeat:no-repeat;margin-right:5px;margin-top:3px;}
-.widget_part  .ui-icon-triangle-1-s{background-position:-11px 0;}
+.ui-button-icon-only .ui-icon-closethick,.ui-button-icon-only .ui-icon-refresh{margin-top:-10px!important;}
 .clickable{cursor: pointer;}
 
 #button-cancel,#button-ok,.DelButton .fm-button{background:url(../images/element-normal.png) repeat-x left bottom #f6f6f6;box-shadow:0 2px 5px -2px #888888;}
 #button-cancel.ui-state-hover,#button-ok.ui-state-hover,.DelButton .ui-state-hover{background:url(../images/element-current.png) repeat-x left bottom #B68EBC;}
-#button-cancel .ui-button-text,#button-ok .ui-button-text{background:url('/images/kanopya-sprites.png') no-repeat; text-indent:-9999999em;width:20px;height:20px;background-clip:content-box;padding:5px;}
+
+#button-cancel .ui-button-text,
+#button-ok .ui-button-text, 
+#button-back .ui-button-text{text-indent:-9999999em;width:20px;height:20px;background-clip:content-box;background-repeat:no-repeat;padding:5px;}
+#button-cancel .ui-button-text{background-image:url('/images/kanopya-sprites.png');background-position:-135px -15px;}
+#button-cancel.ui-state-hover .ui-button-text{background-position:-135px -35px;}
+#button-ok .ui-button-text{background-image:url('/images/kanopya-sprites.png');background-position:-95px -15px;}
+#button-ok.ui-state-hover .ui-button-text{background-position:-95px -35px;}
+#button-ok.next-button .ui-button-text{background-image:url('../images/next-back.png');background-position:7px 5px;}
+#button-ok.next-button.ui-state-hover .ui-button-text{background-position:-13px 5px;}
+#button-back .ui-button-text{background-image:url('../images/next-back.png');background-position:-37px 5px;}
+#button-back.ui-state-hover .ui-button-text{background-position:-57px 5px;}
 
 .ui-jqdialog .ui-jqdialog-titlebar{margin: -10px -10px 0;padding: 10px 10px 0;}
 .ui-jqdialog .ui-jqdialog-titlebar-close{height: 20px;margin: -7px 0 0;right: 10px !important;width: 20px;background:none!important;border:none!important;}
 
-.ui-icon-closethick{background-position:-143px -43px;}
 #sync-ucs .ui-button-text,#edit-ucs .ui-button-text{text-indent:-9999999em;width:16px;height:16px;background-clip:content-box;padding:3px;}
 #sync-ucs.ui-widget .ui-icon,#edit-ucs.ui-widget .ui-icon{left:3px;margin-top:-8px;cursor:pointer!important;}
-#edit-ucs.ui-widget .ui-icon{background-image:url(theme/images/ui-icons_7e388a_256x240.png);background-position:-176px -113px;}
 #users_list .ui-pg-div{background:none!important;border:none!important;}
 #users_list .ui-state-hover{margin-left:5px!important;}
-.ui-widget .ui-icon-key{background-image:url(theme/images/ui-icons_7e388a_256x240.png);margin-top:2px;}
-.ui-state-hover .ui-icon-key{background-image:url(theme/images/ui-icons_ffffff_256x240.png);}
-.ui-widget .ui-icon-clock{margin-top:0;background-image:url(theme/images/ui-icons_7e388a_256x240.png);}
 
 .DelButton,.ui-dialog-buttonset{padding-top:2px!important;}
 .DelButton .fm-button{text-indent:-9999999em;background-clip:content-box;padding:0px;height:20px;width:20px;}
 .DelButton .fm-button span{margin:-7px 0 0;padding:0;}
-.DelButton .ui-icon{background:url('/images/kanopya-sprites.png') no-repeat;background-clip:content-box;padding:5px; }
-.DelButton .ui-icon-scissors{background-position:-103px -23px;}
-.DelButton .ui-state-hover .ui-icon-scissors{background-position:-103px -43px;}
-.DelButton .ui-icon-cancel{background-position:-143px -23px;}
-.DelButton .ui-state-hover .ui-icon-cancel{background-position:-143px -43px;}
-
-#button-cancel .ui-button-text{background-position:-135px -15px;}
-#button-cancel.ui-state-hover .ui-button-text{background-position:-135px -35px;}
-#button-ok .ui-button-text{background-position:-95px -15px;}
-#button-ok.ui-state-hover .ui-button-text{background-position:-95px -35px;}
-
-.ui-icon-triangle-2-n-s{background-position:0 -60px;width:20px !important;height:20px!important;margin-top:0!important;}
-.ui-state-active .ui-icon-triangle-2-n-s{background-position:-20px -60px;}
-
-.ui-icon-trash{margin-top:0px !important;background-position:0px -20px;width:20px!important;height:20px!important;}
-.ui-state-hover .ui-icon-trash{background-position:-20px -20px;}
 
 .ui-icon-arrowthickstop-1-n{background-position:-122px -80px;}
+.ui-icon-mail-closed,.ui-icon-clock,.action_buttons .ui-icon-arrowthick-2-e-w, .action_buttons .ui-icon-calculator{background-image:url(theme/images/ui-icons_7e388a_256x240.png)!important;width:16px!important;height:16px!important;}
+.action_buttons .ui-icon-arrowthick-2-e-w, .action_buttons .ui-icon-calculator{margin-right:5px;}
 
 /*les icones des messages*/
 .message-level{width:24px;height:24px;background:url(../images/messages.png) no-repeat;}
@@ -227,5 +215,3 @@ button.ui-multiselect,.ui-multiselect-menu li label{cursor:pointer;}
 .message-warning{background-position:-72px 0px;}
 .message-error{background-position:0px 0px;}
 .message-success{background-position:-48px 0px;}
-/*tourne page*/
-.ui-pg-table .ui-icon-seek-first,.ui-pg-table .ui-icon-seek-prev, .ui-pg-table .ui-icon-seek-next, .ui-pg-table .ui-icon-seek-end{background-image:url(theme/kanopya-theme04/images/ui-icons_000000_256x240.png);}

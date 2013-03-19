@@ -1012,9 +1012,11 @@ var KanopyaFormWizard = (function() {
 
         // Update buttons state
         if (! state.isLastStep) {
+            this.buttons['Ok'].addClass('next-button');
             this.buttons['Ok'].find('span').text('Next');
         }
         else {
+            this.buttons['Ok'].removeClass('next-button');
             this.buttons['Ok'].find('span').text('Ok');
         }
         this.enableButtons(state);
