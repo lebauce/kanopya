@@ -1046,6 +1046,7 @@ sub getJoinQuery {
     my $source = $class->getResultSource;
     my $on = "";
     my $relation;
+    my $where = {};
     my $accessor = "single";
 
     my @joins;
@@ -1095,6 +1096,8 @@ sub getJoinQuery {
             $accessor = "multi";
         }
 
+        $where = $relation->{attrs}->{where};
+
         $source = $source->related_source($comp);
         $i += 1;
     }
@@ -1118,7 +1121,8 @@ sub getJoinQuery {
     return { source   => $source,
              join     => $joins,
              on       => $on,
-             accessor => $accessor };
+             accessor => $accessor,
+             where    => $where };
 }
 
 
@@ -1169,8 +1173,10 @@ sub search {
     for my $relation (@{$args{prefetch}}) {
         my @comps = split(/\./, $relation);
         while (scalar @comps) {
-            $prefetch = $merge->merge($prefetch, $class->getJoinQuery(comps   => \@comps,
-                                                                      indepth => 1)->{join});
+            my $join_query = $class->getJoinQuery(comps   => \@comps,
+                                                  indepth => 1);
+            $prefetch = $merge->merge($prefetch, $join_query->{join});
+            $args{hash} = $merge->merge($args{hash}, $join_query->{where});
             pop @comps;
         }
     }
@@ -1196,8 +1202,10 @@ sub search {
 
             delete $args{hash}->{$filter};
 
-            $prefetch = $merge->merge($prefetch, $class->getJoinQuery(comps => \@comps)->{join});
+            my $join_query = $class->getJoinQuery(comps => \@comps);
+            $prefetch = $merge->merge($prefetch, $join_query->{join});
             $args{hash}->{$comps[-1] . '.' . $attr} = $value;
+            $args{hash} = $merge->merge($args{hash}, $join_query->{where});
         }
     }
 
@@ -1323,6 +1331,9 @@ sub searchRelated {
                            join('.', @{$args{filters}}) . " on $self"
               );
     }
+
+    my $merge = Hash::Merge->new('STORAGE_PRECEDENT');
+    $args{hash} = $merge->merge($args{hash}, $join->{where});
 
     my $searched_class = classFromDbix($join->{source});
     requireClass($searched_class);
