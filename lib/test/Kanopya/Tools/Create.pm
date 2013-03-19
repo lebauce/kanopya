@@ -34,6 +34,7 @@ package Kanopya::Tools::Create;
 use strict;
 use warnings;
 
+use Switch;
 use Test::More;
 use Test::Exception;
 
@@ -49,6 +50,8 @@ use Entity::ContainerAccess::NfsContainerAccess;
 use Entity::ServiceProvider::Cluster;
 use Hash::Merge qw(merge);
 use ClassType::ComponentType;
+use Kanopya::Tools::Execution;
+use Kanopya::Tools::Register;
 
 =pod
 
@@ -70,9 +73,10 @@ Create a cluster
 sub createCluster {
     my ($self,%args) = @_;
 
-    my $components = $args{components};
-    my $interfaces = $args{interfaces};
-    my $managers   = $args{managers};
+    my $components  = $args{components};
+    my $interfaces  = $args{interfaces};
+    my $managers    = $args{managers};
+    my $masterimage = $args{masterimage}; 
     my %cluster_conf;
 
     diag('Retrieve the Kanopya cluster');
@@ -98,12 +102,6 @@ sub createCluster {
 
     diag('Retrieve the admin user');
     my $admin_user = Entity::User->find(hash => { user_login => 'admin' });
-
-    diag('Retrieve master image');
-    my $masterimage;
-    eval {
-        $masterimage = Entity::Masterimage->find( hash => { } );
-    };
 
     diag('Retrieve admin NetConf');
     my $adminnetconf   = Entity::Netconf->find(hash => {
@@ -163,9 +161,13 @@ sub createCluster {
         }
     );
 
-    if (defined $masterimage) {
-        $default_conf{masterimage_id} =  $masterimage->id;
+    if (not defined $masterimage) {
+        diag('Retrieve master image');
+        eval {
+            $masterimage = Entity::Masterimage->find( hash => { } );
+        };
     }
+    $default_conf{masterimage_id} =  $masterimage->id;
 
     if (defined $args{cluster_conf}) {
         Hash::Merge::set_behavior('RIGHT_PRECEDENT');
@@ -310,6 +312,13 @@ call createCluster() with an admin interface an a single bridge interface
 sub createIaasCluster {
     my ($self, %args) = @_;
 
+    General::checkParams(args     => \%args,
+                         required => ['iaas_type'],
+                         optional => {
+                             'datastores'  => ['system_datastore', 'test_image_repository'],
+                             'masterimage' => undef
+                         } );
+
     my $kanopya_cluster = Kanopya::Tools::Retrieve->retrieveCluster();
 
     my $disk_manager = EEntity->new(
@@ -320,13 +329,13 @@ sub createIaasCluster {
                           entity => $kanopya_cluster->getComponent(name => "Nfsd")
                       );
 
-    for my $datastore ("system_datastore", "test_image_repository") {
+    for my $datastore (@{ $args{datastores} }) {
         eval { Entity::Container->find(hash => {container_name => $datastore}); };
         next if ! $@;
 
         my $disk = $disk_manager->createDisk(
                        name         => $datastore,
-                       size         => 20 * 1024 * 1024 * 1024,
+                       size         => 1 * 1024 * 1024 * 1024,
                        filesystem   => "ext3",
                        vg_id        => 1
                    )->_entity;
@@ -344,28 +353,69 @@ sub createIaasCluster {
     my $vms_role = Entity::NetconfRole->find(hash => { netconf_role_name => "vms" });
     my $vms_netconf = Entity::Netconf->create(netconf_name    => "vms",
                                               netconf_role_id => $vms_role->id);
+
     NetconfPoolip->new(netconf_id => $vms_netconf->id,
                        poolip_id  => $admin_poolip->id);
 
-    my $iaas = $self->createCluster (
-                   components => {
-                       opennebula => {
-                       },
-                       kvm => {
-                       }
-                   },
-                   interfaces => {
-                        vms => {
-                            interface_netconfs => {
-                                $vms_netconf->id => $vms_netconf->id
-                            }
-                        }
-                   },
-                   %args
-                 );
+    my $components;
+    my $masterimage;
+    switch ($args{iaas_type}) {
+        case 'opennebula' {
+            $components =
+                {
+                    opennebula            => {},
+                    kvm                   => {},
+                    fileimagemanager      => {},
+                };
+            if (not defined $args{masterimage}) {
+                $masterimage = Kanopya::Tools::Register::registerMasterImage();
+            }
+            elsif (ref $args{masterimage} eq 'Entity::MasterImage') {
+                $masterimage = $args{masterimage};
+            }
+        }
+        case 'openstack' {
+            $components =
+                {
+                    novaController => {
+                        overcommitment_memory_factor => 1,
+                        overcommitment_cpu_factor    => 1,
+                    },
+                    mysql          => {},
+                    novaCompute    => {},
+                    keystone       => {},
+                    quantum        => {},
+                    glance         => {},
+                    amqp           => {},
+                };
+            if (not defined $args{masterimage}) {
+                $masterimage = Kanopya::Tools::Register::registerMasterImage(
+                                   'sles-11-simple-host.tar.bz2'
+                );
+            }
+            elsif (ref $args{masterimage} eq 'Entity::MasterImage') {
+                $masterimage = $args{masterimage};
+            }
+        }
+        case 'vsphere' {
+        }
+    }
 
-    my $opennebula = $iaas->getComponent(name => "Opennebula");
-    my $kvm = $iaas->getComponent(name => "Kvm");
+    my $cluster_conf = {
+        components => $components,
+        interfaces => {
+            vms => {
+                interface_netconfs => {
+                    $vms_netconf->id => $vms_netconf->id
+                }
+            }
+        },
+        %args
+    };
+
+    $cluster_conf->{masterimage} = $masterimage;
+
+    my $iaas = $self->createCluster(%$cluster_conf);
 
     my $system_datastore = Kanopya::Tools::Retrieve->retrieveContainerAccess(
                                name => 'system_datastore',
@@ -375,22 +425,77 @@ sub createIaasCluster {
                                     name => 'test_image_repository',
                                     type => 'nfs'
                                 );
-    $kvm->setConf(conf => {
-        iaas_id => $opennebula->id,
-      } );
 
-    $opennebula->setConf(conf => {
-        image_repository_path    => "/srv/cloud/images",
-        opennebula3_id           => $opennebula->id,
-        opennebula3_repositories => [ {
-            container_access_id  => $test_image_repository->id,
-            repository_name      => 'image_repo'
-        }, {
-            container_access_id  => $system_datastore->id,
-            repository_name      => 'system'
-        } ],
-        hypervisor               => "kvm"
-    } );
+    my $virtualization;
+    my $vmm;
+    my $db;
+    switch ($args{iaas_type}) {
+        case 'opennebula' {
+            $virtualization = $iaas->getComponent(name => 'Opennebula');
+            $vmm = $iaas->getComponent(name => "Kvm");
+
+            $vmm->setConf(conf => {
+                iaas_id => $virtualization->id,
+            } );
+
+            $virtualization->setConf(conf => {
+                image_repository_path    => "/srv/cloud/images",
+                opennebula3_repositories => [ {
+                    container_access_id  => $test_image_repository->id,
+                    repository_name      => 'image_repo'
+                }, {
+                    container_access_id  => $system_datastore->id,
+                    repository_name      => 'system'
+                } ],
+                hypervisor               => "kvm"
+            } );
+        }
+        case 'openstack' {
+            $virtualization =  $iaas->getComponent(name => 'NovaController');
+            $vmm = $iaas->getComponent(name => 'NovaCompute');
+            $db = $iaas->getComponent(name => 'Mysql');
+
+            my $amqp = $iaas->getComponent(name => 'Amqp');
+            my $keystone = $iaas->getComponent(name => 'Keystone');
+            my $glance = $iaas->getComponent(name => 'Glance');
+            my $quantum = $iaas->getComponent(name => 'Quantum');
+
+            $keystone->setConf(conf => {
+                mysql5_id   => $db->id,
+             });
+
+            $glance->setConf(conf => {
+                mysql5_id          => $db->id,
+                nova_controller_id => $virtualization->id,
+            });
+
+            $quantum->setConf(conf => {
+                mysql5_id          => $db->id,
+                nova_controller_id => $virtualization->id,
+            });
+            
+            $vmm->setConf(conf => {
+                nova_controller_id => $virtualization->id,
+                iaas_id            => $virtualization->id,
+                mysql5_id          => $db->id,
+            });
+
+            $virtualization->setConf(conf => {
+                mysql5_id    => $db->id,
+                keystone_id  => $keystone->id,
+                amqp_id      => $amqp->id,
+                repositories => [ {
+                    container_access_id  => $test_image_repository->id,
+                    repository_name      => 'image_repo'
+                }, {
+                    container_access_id  => $system_datastore->id,
+                    repository_name      => 'system'
+                } ],
+            } );
+        }
+        case 'vsphere' {
+        }
+    }
 
     return $iaas;
 }
