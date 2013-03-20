@@ -330,6 +330,7 @@ sub evaluate {
                                             filters => ['nodes'],
                                             hash    => {-not => {monitoring_state => 'disabled'}}
                                          );
+    delete $args{nodes};
 
     my @col_ind_ids = ($self->nodemetric_combination_formula =~ m/id(\d+)/g);
 
