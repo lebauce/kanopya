@@ -150,6 +150,7 @@ my @classes = (
     'Entity::Component::Openstack::Keystone',
     'Entity::Component::Openstack::Glance',
     'Entity::Repository::OpenstackRepository',
+    'Entity::Repository::Opennebula3Repository',
     'Entity::Component::Physicalhoster0',
     'Entity::Component::Apache2::Apache2Virtualhost',
     'Entity::Component::Linux::LinuxMount',
