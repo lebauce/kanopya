@@ -73,10 +73,10 @@ Create a cluster
 sub createCluster {
     my ($self,%args) = @_;
 
-    my $components  = $args{components};
-    my $interfaces  = $args{interfaces};
-    my $managers    = $args{managers};
-    my $masterimage = $args{masterimage}; 
+    my $components     = $args{components};
+    my $interfaces     = $args{interfaces};
+    my $managers       = $args{managers};
+    my $masterimage_id = $args{masterimage_id}; 
     my %cluster_conf;
 
     diag('Retrieve the Kanopya cluster');
@@ -161,13 +161,13 @@ sub createCluster {
         }
     );
 
-    if (not defined $masterimage) {
+    if (not defined $masterimage_id) {
         diag('Retrieve master image');
         eval {
-            $masterimage = Entity::Masterimage->find( hash => { } );
+            $masterimage_id = Entity::Masterimage->find( hash => { } )->id;
         };
     }
-    $default_conf{masterimage_id} =  $masterimage->id;
+    $default_conf{masterimage_id} =  $masterimage_id;
 
     if (defined $args{cluster_conf}) {
         Hash::Merge::set_behavior('RIGHT_PRECEDENT');
@@ -316,9 +316,9 @@ sub createIaasCluster {
                          required => ['iaas_type'],
                          optional => {
                              'datastores'  => ['system_datastore', 'test_image_repository'],
-                             'masterimage' => undef
                          } );
 
+    my $iaas_type = delete $args{iaas_type};
     my $kanopya_cluster = Kanopya::Tools::Retrieve->retrieveCluster();
 
     my $disk_manager = EEntity->new(
@@ -358,8 +358,8 @@ sub createIaasCluster {
                        poolip_id  => $admin_poolip->id);
 
     my $components;
-    my $masterimage;
-    switch ($args{iaas_type}) {
+    my $masterimage_id;
+    switch ($iaas_type) {
         case 'opennebula' {
             $components =
                 {
@@ -367,11 +367,11 @@ sub createIaasCluster {
                     kvm                   => {},
                     fileimagemanager      => {},
                 };
-            if (not defined $args{masterimage}) {
-                $masterimage = Kanopya::Tools::Register::registerMasterImage();
+            if (not defined $args{cluster_conf}{masterimage_id}) {
+                $masterimage_id = Kanopya::Tools::Register::registerMasterImage()->id;
             }
-            elsif (ref $args{masterimage} eq 'Entity::MasterImage') {
-                $masterimage = $args{masterimage};
+            else {
+                $masterimage_id = $args{cluster_conf}{masterimage_id};
             }
         }
         case 'openstack' {
@@ -388,13 +388,13 @@ sub createIaasCluster {
                     glance         => {},
                     amqp           => {},
                 };
-            if (not defined $args{masterimage}) {
-                $masterimage = Kanopya::Tools::Register::registerMasterImage(
+            if (not defined $args{cluster_conf}{masterimage_id}) {
+                $masterimage_id = Kanopya::Tools::Register::registerMasterImage(
                                    'sles-11-simple-host.tar.bz2'
-                );
+                )->id;
             }
-            elsif (ref $args{masterimage} eq 'Entity::MasterImage') {
-                $masterimage = $args{masterimage};
+            else {
+                $masterimage_id = $args{cluster_conf}{masterimage_id};
             }
         }
         case 'vsphere' {
@@ -413,7 +413,7 @@ sub createIaasCluster {
         %args
     };
 
-    $cluster_conf->{masterimage} = $masterimage;
+    $cluster_conf->{masterimage_id} = $masterimage_id;
 
     my $iaas = $self->createCluster(%$cluster_conf);
 
@@ -429,7 +429,7 @@ sub createIaasCluster {
     my $virtualization;
     my $vmm;
     my $db;
-    switch ($args{iaas_type}) {
+    switch ($iaas_type) {
         case 'opennebula' {
             $virtualization = $iaas->getComponent(name => 'Opennebula');
             $vmm = $iaas->getComponent(name => "Kvm");
