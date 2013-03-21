@@ -9,8 +9,7 @@
         <button class='refresh_button hidden'>Refresh</button>
     </div>
     <div class="dropdown_container">
-        <select class="combination_list">
-            <option selected="selected" id="default">Select a combination</option>
+        <select class="combination_list" multiple="multiple">
         </select>
         
     </div>
@@ -19,18 +18,8 @@
 <br/>
 <span class='widget_part widget_part_forcasting disabled'>Forecasting</span>
 <div class='datamodel_fields hidden'>
+        <i>click on the graph to select start and end of training data</i><br/>
         <button class='instant_predict'>Predict</button><br/>
-        <select class="model_list" style='width:300px'></select><button class='icon-only-refresh-button refresh_models_button' />
-        <br/>
-        <div class='forcast_config'>
-            <br/>
-            Precision of <input class='model_sampling' value='5' size='4'/> minutes
-       </div>
-       <div class='new_model_config hidden'>
-            <br/>
-            <i>click on the graph to select start and end dates</i><br/>
-            <button class='learn_data'>Find the best model</button>
-       </div>
 </div>
 
 <div class="clusterCombinationView"></div>

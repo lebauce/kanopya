@@ -241,18 +241,23 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
     }
 
     // Clustermetric historical graph details handler
-    function clusterMetricDetailsHistorical(cid, clusterMetric_id) {
+    function clusterMetricDetailsHistorical(cid, clusterMetric_id, row_data) {
       // Use dashboard widget outside of the dashboard
       var cont = $('#' + cid);
       var graph_div = $('<div>', { 'class' : 'widgetcontent' });
       cont.addClass('widget');
       cont.append(graph_div);
       graph_div.load('/widgets/widget_historical_service_metric.html', function() {
-          $('.dropdown_container').remove();
+          graph_div.find('.dropdown_container').remove();
           widgetCommonInit(graph_div);
           setGraphDatePicker(graph_div);
-          setRefreshButton(graph_div, clusterMetric_id, '', elem_id);
-          showCombinationGraph(graph_div, clusterMetric_id, '', '', '', elem_id);
+          setRefreshButton(
+              graph_div,
+              [{id:clusterMetric_id, name:row_data.aggregate_combination_label, unit:row_data.combination_unit}],
+              elem_id,
+              {allow_forecast:true}
+          );
+          clickRefreshButton(graph_div);
       });
     }
 
@@ -378,11 +383,12 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
         url: '/api/aggregatecombination?service_provider_id=' + elem_id,
         content_container_id: 'service_metric_comb_container',
         grid_id: aggregatecombi_grid_id,
-        colNames: [ 'id', 'name', 'formula' ],
+        colNames: [ 'id', 'name', 'formula', 'unit' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
             { name: 'aggregate_combination_label', index: 'aggregate_combination_label', width: 90 },
             { name: 'formula_label', index: 'formula_label', width: 200 },
+            { name: 'combination_unit', index: 'combination_unit',  hidden: true },
         ],
         details: {
             tabs : [
