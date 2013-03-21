@@ -167,6 +167,31 @@ sub subscribe {
     return $result;
 }
 
+
+sub unsubscribe {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'notification_subscription_id' ]);
+
+    $self->SUPER::unsubscribe(%args);
+
+    # TODO workflow_def_origin should be named workflow_def_origin_id and workflow_def_origin should
+    # call directly the WorkflowDef object
+
+    my $wfdef_origin_id = $self->workflow_def->workflow_def_origin;
+
+    if (Entity->get(id => $wfdef_origin_id)->workflow_def_name eq $self->notifyWorkflowName) {
+        if ($self->notification_subscription_entities == 0) {
+            my $wf_manager  = $self->service_provider->getManager(manager_type => "WorkflowManager");
+
+            $wf_manager->deassociateWorkflow(
+                rule_id         => $self->id,
+                workflow_def_id => $self->workflow_def->id,
+            );
+        }
+    }
+}
+
+
 =pod
 =begin classdoc
 

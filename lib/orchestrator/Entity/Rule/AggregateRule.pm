@@ -375,6 +375,9 @@ sub _updateWorkflowStatus {
     }
     elsif ($workflow->state eq 'done') {
         $log->info('Workflow <'.$workflow->id.'> done');
+        $self->setAttr(name  => 'state', value => 'enabled' );
+        $self->setAttr(name  => 'workflow_id',  value => undef );
+        $self->save();
     }
     elsif ($workflow->state eq 'delayed') {
         # Manage delay between 2 workflows triggering

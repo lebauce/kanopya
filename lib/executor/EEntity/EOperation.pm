@@ -134,11 +134,11 @@ sub validation {
 
             my $ip;
             eval {
-                $ip = $kanopya->getComponent(category => 'KanopyaFront')->getMasterNode->getPublicIp;
+                $ip = $kanopya->getComponent(name => 'KanopyaFront')->getMasterNode->getPublicIp;
             };
             if ($@) {
                 $log->warn("Unable to get the master kanopya public ip, use the admin ip.");
-                $ip = $kanopya->getComponent(category => 'KanopyaFront')->getMasterNode->adminIp;
+                $ip = $kanopya->getComponent(name => 'KanopyaFront')->getMasterNode->adminIp;
             }
 
             my $input;
@@ -162,8 +162,7 @@ sub validation {
             }
             else {
                 $input      = "notificationmail";
-                my $eentity = EEntity->new(data => $entity);
-                $message    = $eentity->notificationMessage(operation => $self->_entity);
+                $message    = $entity->notificationMessage(operation => $self->_entity);
             }
 
             my $subject = '';
