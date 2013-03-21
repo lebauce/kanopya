@@ -160,7 +160,7 @@ function loadServicesResources (container_id, elem_id) {
         }
     });
     create_grid( {
-        url     : '/api/node?service_provider_id=' + elem_id,
+        url     : '/nodes?service_provider_id=' + elem_id + '&expand=verified_noderules',
         content_container_id: container_id,
         grid_id     : loadServicesResourcesGridId,
         grid_class  : 'service_resources_list',

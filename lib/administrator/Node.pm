@@ -70,11 +70,20 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_extended  => 0
     },
+    rulestate       => {
+        is_virtual   => 1
+    }
 };
 
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub rulestate {
+    my $self = shift;
+    my %args = @_;
+
+    return grep { $_->verified_noderule_state eq "verified" } $self->verified_noderules;
+}
 
 sub new {
     my $class = shift;

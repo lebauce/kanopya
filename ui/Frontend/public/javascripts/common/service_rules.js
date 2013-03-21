@@ -402,26 +402,16 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
     var serviceNodemetricRulesGridId = 'service_resources_nodemetric_rules_' + elem_id;
     create_grid( {
         caption: 'Conditions',
-        url: '/api/serviceprovider/' + elem_id + '/nodemetric_conditions',
+        url: '/api/serviceprovider/' + elem_id + '/nodemetric_conditions?expand=left_combination,right_combination',
         content_container_id: 'node_accordion_container',
         grid_id: serviceNodemetricConditionsGridId,
-        afterInsertRow: function(grid, rowid, rowdata) {
-            setCellWithRelatedValue(
-                    '/api/combination/' +  rowdata.left_combination_id,
-                    grid, rowid, 'left_combination_id', 'label'
-            );
-            setCellWithRelatedValue(
-                    '/api/combination/' +  rowdata.right_combination_id,
-                    grid, rowid, 'right_combination_id', 'label'
-            );
-        },
         colNames: [ 'id', 'name', 'left operand', 'comparator', 'right operand' ],
         colModel: [
             { name: 'pk', index: 'pk', sorttype: 'int', hidden: true, key: true },
             { name: 'nodemetric_condition_label', index: 'nodemetric_condition_label', width: 200 },
-            { name: 'left_combination_id', index: 'left_combination_id', width: 100 },
+            { name: 'left_combination.label', index: 'left_combination_id', width: 100 },
             { name: 'nodemetric_condition_comparator', index: 'nodemetric_condition_comparator', width: 50,},
-            { name: 'right_combination_id', index: 'right_combination_id', width: 100 },
+            { name: 'right_combination.label', index: 'right_combination_id', width: 100 },
         ],
         details: {
             onSelectRow : function(eid) { showNodeConditionModal(elem_id, eid); }
@@ -500,26 +490,16 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
     var serviceAggregateRulesGridId = 'service_resources_aggregate_rules_' + elem_id;
     create_grid( {
         caption: 'Conditions',
-        url: '/api/serviceprovider/' + elem_id + '/aggregate_conditions',
+        url: '/api/serviceprovider/' + elem_id + '/aggregate_conditions?expand=left_combination,right_combination',
         content_container_id: 'service_accordion_container',
         grid_id: serviceAggregateConditionsGridId,
-        afterInsertRow: function(grid, rowid, rowdata, rowelem) {
-            setCellWithRelatedValue(
-                    '/api/combination/' +  rowdata.left_combination_id,
-                    grid, rowid, 'left_combination_id', 'label'
-            );
-            setCellWithRelatedValue(
-                    '/api/combination/' +  rowdata.right_combination_id,
-                    grid, rowid, 'right_combination_id', 'label'
-            );
-        },
         colNames: ['id','name', 'left operand', 'comparator', 'right operand'],
         colModel: [ 
              {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
              {name:'aggregate_condition_label',index:'aggregate_condition_label', width:200,},
-             {name:'left_combination_id',index:'left_combination_id', width:100,},
+             {name:'left_combination.label',index:'left_combination_id', width:100,},
              {name:'comparator',index:'comparator', width:50,},
-             {name:'right_combination_id',index:'right_combination_id', width:100,},
+             {name:'right_combination.label',index:'right_combination_id', width:100,},
            ],
         details: { onSelectRow : function(eid) { showServiceConditionModal(elem_id, eid); } },
         action_delete: {
