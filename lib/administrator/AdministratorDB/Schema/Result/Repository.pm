@@ -123,6 +123,22 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "NO ACTION", on_update => "NO ACTION" },
 );
 
+=head2 opennebula_repository
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::OpenstackRepository>
+
+=cut
+
+__PACKAGE__->might_have(
+  "opennebula3_repository",
+  "AdministratorDB::Schema::Result::Opennebula3Repository",
+  { "foreign.opennebula3_repository_id" => "self.repository_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
 =head2 openstack_repository
 
 Type: might_have

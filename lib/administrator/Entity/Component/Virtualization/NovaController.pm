@@ -179,10 +179,18 @@ sub getPuppetDefinition {
 sub getHostsEntries {
     my $self = shift;
 
-    my @entries = ($self->keystone->service_provider->getHostEntries(),
-                   $self->amqp->service_provider->getHostEntries(),
-                   $self->mysql5->service_provider->getHostEntries());
+    my @entries;
 
+    if ($self->keystone) {
+        push @entries, $self->keystone->service_provider->getHostEntries();
+    }
+    if ($self->amqp) {
+        push @entries,$self->amqp->service_provider->getHostEntries();
+    }
+    if ($self->mysql5) {
+        push @entries, $self->mysql5->service_provider->getHostEntries();
+    }
+        
     for my $component (($self->novas_compute, $self->glances, $self->quantums)) {
         @entries = (@entries, $component->service_provider->getHostEntries());
     }

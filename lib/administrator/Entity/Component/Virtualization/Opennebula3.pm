@@ -290,7 +290,7 @@ sub setConf {
     foreach my $repo (@repos) {
         $repo->remove;
     }
-    foreach my $repo (@{$repos}) {
+    foreach my $repo (@{ $repos }) {
         if (exists $repo->{opennebula3_repository_id}) {
             delete $repo->{opennebula3_repository_id};
         }

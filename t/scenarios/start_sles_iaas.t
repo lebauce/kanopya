@@ -55,6 +55,7 @@ eval {
 
     diag ('create iaas cluster');
     my $iaas = Kanopya::Tools::Create->createIaasCluster(
+                   iaas_type    => 'opennebula',
                    cluster_conf => {
                        cluster_name         => 'OpenNebula',
                        cluster_basehostname => 'opennebula',
