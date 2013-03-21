@@ -335,8 +335,8 @@ sub createIaasCluster {
 
         my $disk = $disk_manager->createDisk(
                        name         => $datastore,
-                       size         => 1 * 1024 * 1024 * 1024,
-                       filesystem   => "ext3",
+                       size         => 20 * 1024 * 1024 * 1024,
+                       filesystem   => "ext4",
                        vg_id        => 1
                    )->_entity;
 
@@ -487,9 +487,6 @@ sub createIaasCluster {
                 repositories => [ {
                     container_access_id  => $test_image_repository->id,
                     repository_name      => 'image_repo'
-                }, {
-                    container_access_id  => $system_datastore->id,
-                    repository_name      => 'system'
                 } ],
             } );
         }
