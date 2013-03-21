@@ -313,7 +313,7 @@ sub registerUsers {
           desc    => 'Cluster master group containing all clusters',
           system  => 1,
           methods => {
-              'Sales' => [ 'subscribe' ],
+              'Sales' => [ 'subscribe' , 'unsubscribe' ],
           }
         },
         { name    => 'Kernel',
@@ -381,7 +381,7 @@ sub registerUsers {
           desc    => 'Entity master group containing all entities',
           system  => 1,
           methods => {
-              'Administrator' => [ 'create', 'update', 'remove', 'get', 'addPerm', 'removePerm', 'subscribe' ],
+              'Administrator' => [ 'create', 'update', 'remove', 'get', 'addPerm', 'removePerm', 'subscribe', 'unsubscribe' ],
               'Guest'         => [ 'get' ]
           }
         },
