@@ -52,6 +52,7 @@ use Hash::Merge qw(merge);
 use ClassType::ComponentType;
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::Register;
+use EEntity;
 
 =pod
 
