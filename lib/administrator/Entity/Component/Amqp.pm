@@ -36,7 +36,7 @@ sub getPuppetDefinition {
 sub label {
     my $self = shift;
 
-    return "RabbitMQ at " . $self->getMasterNode->adminIp;
+    return "RabbitMQ";
 }
 
 1;
