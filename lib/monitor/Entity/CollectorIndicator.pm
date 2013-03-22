@@ -137,22 +137,18 @@ sub throwUndefAlert {
 
     while (my ($node_hostname, $value) = each(%{$args{hostname_values}})) {
         my $msg = "Indicator " . $indicator->indicator_name . ' (' .
-                   $indicator->indicator_oid . ')' .' was not retrieved by collector for node '.
+                   $indicator->indicator_oid . ')' .' was not retrieved from DataCache for node '.
                    $node_hostname;
 
-        my $alert = eval { Alert->find(hash => {alert_message => $msg,
-                                                entity_id => $args{service_provider}->id });
-                    };
-
         if (! defined $value) {
-            if ((! defined $alert) || ($alert->alert_active == 0)) {
-                Alert->new(entity_id       => $args{service_provider}->id,
-                           alert_message   => $msg,
-                           alert_signature => $msg.' '.time(),);
-            }
+            Alert->throw(trigger_entity => $self,
+                         alert_message  => $msg,
+                         entity_id      => $args{service_provider}->id);
         }
-        elsif (defined $alert && $alert->alert_active == 1) {
-            $alert->mark_resolved;
+        else {
+            Alert->resolve(trigger_entity => $self,
+                           alert_message  => $msg,
+                           entity_id      => $args{service_provider}->id);
         }
     }
 }

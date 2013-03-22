@@ -12,22 +12,19 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'alert_on_undef_values.log', layout=>'%F %L %p %m%n'});
 my $log = get_logger("");
 
-
-lives_ok {
-    use BaseDB;
-    use Aggregator;
-    use RulesEngine;
-    use Entity::ServiceProvider::Externalcluster;
-    use Entity::Component::MockMonitor;
-    use Entity::Clustermetric;
-    use Entity::Combination::NodemetricCombination;
-} 'All uses';
+use BaseDB;
+use Aggregator;
+use RulesEngine;
+use Entity::ServiceProvider::Externalcluster;
+use Entity::Component::MockMonitor;
+use Entity::Clustermetric;
+use Entity::Combination::NodemetricCombination;
 
 BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
 
 BaseDB->beginTransaction;
 
-my ($indic1, $indic2);
+my ($coll_indic1, $coll_indic2);
 my $service_provider;
 my $aggregator;
 my $rulesengine;
@@ -48,13 +45,11 @@ eval{
             service_provider_id => $external_cluster_mockmonitor->id,
     );
 
-    lives_ok{
-        $service_provider->addManager(
-            manager_id      => $mock_monitor->id,
-            manager_type    => 'CollectorManager',
-            no_default_conf => 1,
-        );
-    } 'Add mock monitor to service provider';
+    $service_provider->addManager(
+        manager_id      => $mock_monitor->id,
+        manager_type    => 'CollectorManager',
+        no_default_conf => 1,
+    );
 
     # Create node 1
     Node->new(
@@ -71,14 +66,14 @@ eval{
     );
 
     # Get indicators
-    $indic1 = Entity::CollectorIndicator->find(
+    $coll_indic1 = Entity::CollectorIndicator->find(
         hash => {
             collector_manager_id        => $mock_monitor->id,
             'indicator.indicator_oid'   => 'Memory/PercentMemoryUsed',
         }
     );
 
-    $indic2 = Entity::CollectorIndicator->find(
+    $coll_indic2 = Entity::CollectorIndicator->find(
         hash => {
             collector_manager_id        => $mock_monitor->id,
             'indicator.indicator_oid'   => 'Memory/Pool Paged Bytes'
@@ -87,14 +82,14 @@ eval{
 
     my $cm = Entity::Clustermetric->new(
         clustermetric_service_provider_id => $service_provider->id,
-        clustermetric_indicator_id => ($indic1->id),
+        clustermetric_indicator_id => ($coll_indic1->id),
         clustermetric_statistics_function_name => 'mean',
         clustermetric_window_time => '1200',
     );
 
     my $cm2 = Entity::Clustermetric->new(
         clustermetric_service_provider_id => $service_provider->id,
-        clustermetric_indicator_id => ($indic2->id),
+        clustermetric_indicator_id => ($coll_indic2->id),
         clustermetric_statistics_function_name => 'sum',
         clustermetric_window_time => '1200',
     );
@@ -102,13 +97,13 @@ eval{
     # Create nodemetric rule objects
     my $ncomb1 = Entity::Combination::NodemetricCombination->new(
         service_provider_id => $service_provider->id,
-        nodemetric_combination_formula => 'id'.($indic1->id),
+        nodemetric_combination_formula => 'id'.($coll_indic1->id),
     );
 
     # Create nodemetric rule objects
     my $ncomb2 = Entity::Combination::NodemetricCombination->new(
         service_provider_id => $service_provider->id,
-        nodemetric_combination_formula => 'id'.($indic2->id),
+        nodemetric_combination_formula => 'id'.($coll_indic2->id),
     );
 
     my $nc1 = Entity::NodemetricCondition->new(
@@ -137,7 +132,7 @@ eval{
         state => 'enabled'
     );
 
-    test_alerts_aggregator();
+#    test_alerts_aggregator();
     test_alerts_orchestrator();
     test_rrd_remove();
     BaseDB->rollbackTransaction;
@@ -163,13 +158,13 @@ sub test_rrd_remove {
         service_provider_id => $service_provider->id
     });
 
-    is ((scalar @acs), 0, 'Check all aggregate combinations are deleted');
+    if (! (scalar @acs == 0)) {die 'Check all aggregate combinations are deleted';}
 
     my @ars = Entity::Rule::AggregateRule->search (hash => {
         service_provider_id => $service_provider->id
     });
 
-    is (scalar @acs, 0, 'Check all aggregate rules are deleted');
+    if (! (scalar @acs == 0)) {die 'Check all aggregate rules are deleted';}
 
     my $one_rrd_remove = 0;
     for my $cm_id (@cm_ids) {
@@ -178,182 +173,294 @@ sub test_rrd_remove {
         }
         close(FILE);
     }
-    ok ($one_rrd_remove == 0, "Check all have been removed, still $one_rrd_remove rrd");
+    if (! ($one_rrd_remove == 0)) {die "Check all have been removed, still $one_rrd_remove rrd";}
 }
 
 sub test_alerts_aggregator {
 
-    # More complex config:
-    #        node1 node2
-    # indic1  50    10
-    # indic2  50    null
+    lives_ok {
+        # More complex config:
+        #        node1 node2
+        # indic1  50    10
+        # indic2  50    null
 
-    my $mock_conf  = "{'default':{'const':10},"
-                . "'nodes':{'node_1':{'const':50}},'indics':{'Memory/Pool Paged Bytes':{'const':null}}}";
-    $service_provider->addManagerParameter (
-        manager_type    => 'CollectorManager',
-        name            => 'mockmonit_config',
-        value           => $mock_conf
-    );
+        my $mock_conf  = "{'default':{'const':10},"
+                    . "'nodes':{'node_1':{'const':50}},'indics':{'Memory/Pool Paged Bytes':{'const':null}}}";
 
-    my @alerts = Alert->search(hash=>{});
-    my $total_alert_before_test = scalar( @alerts );
+        $service_provider->addManagerParameter (
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => $mock_conf
+        );
 
-    sleep 2;
-    $aggregator->update ();
+        my @alerts = Alert->search(hash=>{
+            entity_id => $service_provider->id,
+        });
 
-    @alerts = Alert->search (hash=>{});
-    is (scalar @alerts, $total_alert_before_test + 1, 'Check one alert has been created');
-    my $first_alert = pop @alerts;
+        if (@alerts > 0) {
+            die 'Some alert already present';
+        }
 
-    my $alert_msg = "Indicator RAM pool paged(Memory/Pool Paged Bytes) was not retrieved by collector for node node_2";
-    is ($first_alert->alert_message, $alert_msg, 'Check alert message');
-    is ($first_alert->alert_active, 1, 'Check alert is active');
+        sleep 2;
+        $aggregator->update();
 
-    sleep 2;
-    $aggregator->update ();
+        @alerts = Alert->search (hash => { entity_id => $service_provider->id });
 
-    @alerts = Alert->search (hash=>{});
-    is (scalar @alerts, $total_alert_before_test + 1, 'Check no more alert created');
-    my $alert = pop @alerts;
+        if (! (scalar @alerts == 1)) { die 'No alert created' };
+        my $first_alert = pop @alerts;
+        my $alert_msg = "Indicator RAM pool paged (Memory/Pool Paged Bytes) was not retrieved from collector for node node_2";
 
-    is ($alert->alert_message,$alert_msg,'Check alert message');
-    is ($alert->alert_active,1,'Check alert is still active');
+        if (! ($first_alert->alert_message eq $alert_msg)) {die 'Wrong alert message'}
+        if (! ($first_alert->alert_active == 1)) {die 'Alert is not active'};
+        if (! ($first_alert->trigger_entity_id == $coll_indic2->indicator->id)) {die 'Wrong trigger entity'};
 
-    $mock_conf  = "{'default':{'const':10},"
-                . "'nodes':{'node_1':{'const':50}},'indics':{'Memory/Pool Paged Bytes':{'const':100}}}";
-    $service_provider->addManagerParameter (
-        manager_type    => 'CollectorManager',
-        name            => 'mockmonit_config',
-        value           => $mock_conf
-    );
+        sleep 2;
+        $aggregator->update();
 
-    sleep 2;
-    $aggregator->update ();
+        @alerts = Alert->search (hash => { entity_id => $service_provider->id });
 
-    @alerts = Alert->search (hash=>{});
-    is (scalar @alerts, $total_alert_before_test + 1, 'Check no more alert created');
-    $alert = pop @alerts;
+        if (! (scalar @alerts == 1)) { die 'Wrong alert number, got '.(scalar @alerts).' instead of 1' };
 
-    is ($alert->alert_message, $alert_msg, 'Check alert message');
-    is ($alert->alert_active, 0, 'Check alert not active anymore');
+        my $alert = pop @alerts;
 
-    $mock_conf  = "{'default':{'const':10},"
-                . "'nodes':{'node_1':{'const':50}},'indics':{'Memory/Pool Paged Bytes':{'const':null}}}";
-    $service_provider->addManagerParameter(
-        manager_type    => 'CollectorManager',
-        name            => 'mockmonit_config',
-        value           => $mock_conf
-    );
+        if (! ($alert->alert_message eq $alert_msg)) { die 'Wrong alert message'}
+        if (! ($alert->alert_active == 1)) { die 'Alert is not active'}
+        if (! ($alert->trigger_entity_id == $coll_indic2->indicator->id)) {die 'Wrong trigger entity'};
 
-    sleep(2);
-    $aggregator->update();
 
-    @alerts = Alert->search(hash=>{}, order_by => 'alert_id asc');
-    is (scalar @alerts, $total_alert_before_test + 2, 'Check one new alert created');
+        $mock_conf  = "{'default':{'const':10},"
+                    . "'nodes':{'node_1':{'const':50}},'indics':{'Memory/Pool Paged Bytes':{'const':100}}}";
 
-    $alert = pop @alerts;
-    is ($alert->alert_message,$alert_msg,'Check alert message');
-    is ($alert->alert_active,1,'Check new alert is active');
+        $service_provider->addManagerParameter(
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => $mock_conf
+        );
 
-    $alert = pop @alerts;
+        sleep 2;
+        $aggregator->update();
 
-    is ($alert->alert_message, $alert_msg, 'Check alert message');
-    is ($alert->alert_active, 0, 'Check old alert still not active');
-    is ($alert->alert_id, $first_alert->alert_id, 'Check first alert id');
+        @alerts = Alert->search (hash => { entity_id => $service_provider->id });
+
+        if (! (scalar @alerts == 1)) {die 'Check no more alert created (got '.(scalar @alerts).')'};
+        $alert = pop @alerts;
+
+        if (! ($alert->alert_message eq $alert_msg)) {die 'Wrong alert message'}
+        if (! ($alert->alert_active == 0)) {die 'Alert not unactive'};
+        if (! ($alert->trigger_entity_id == $coll_indic2->indicator->id)) {die 'Wrong trigger entity'};
+
+        $mock_conf  = "{'default':{'const':10},"
+                    . "'nodes':{'node_1':{'const':50}},'indics':{'Memory/Pool Paged Bytes':{'const':null}}}";
+
+        $service_provider->addManagerParameter(
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => $mock_conf
+        );
+
+        sleep(2);
+        $aggregator->update();
+
+        @alerts = Alert->search(hash => { entity_id => $service_provider->id }, order_by => 'alert_id asc');
+        if (! (scalar @alerts == 2)) {die 'One and only one alert must have been created';}
+
+        $alert = pop @alerts;
+        if ($alert->alert_id == $first_alert->alert_id) {die 'Not a new alert id';}
+        if (! ($alert->alert_message eq $alert_msg)) {die 'Wrong alert message';}
+        if (! ($alert->alert_active == 1)) {die 'Alert should be active ('.($alert->alert_active).')';}
+        if (! ($alert->trigger_entity_id == $coll_indic2->indicator->id)) {die 'Wrong trigger entity'};
+
+        $alert = pop @alerts;
+
+        if (! ($alert->alert_message eq $alert_msg)) {die 'Check alert message';}
+        if (! ($alert->alert_active == 0)) {die 'Check old alert still not active';}
+        if (! ($alert->alert_id == $first_alert->alert_id)) {die 'Check first alert id';}
+        if (! ($alert->trigger_entity_id == $coll_indic2->indicator->id)) {die 'Wrong trigger entity'};
+    } 'Triggering alert with aggregator';
 };
 
 sub test_alerts_orchestrator {
 
-    my @alerts = Alert->search (hash => {});
-    while (@alerts) { (pop @alerts)->delete() };
+    lives_ok {
+        my @alerts = Alert->search(hash => { entity_id => $service_provider->id });
+        while (@alerts) { (pop @alerts)->delete() };
 
-    @alerts = Alert->search (hash => {});
-    is (scalar @alerts, 0, 'Check no alerts');
+        @alerts = Alert->search(hash => { entity_id => $service_provider->id });
 
-    my $mock_conf  = "{'default':{'const':10},"
-                . "'nodes':{'node_1':{'const':50}},'indics':{'Memory/Pool Paged Bytes':{'const':100}}}";
+        my $agg_alert_msg = "Indicator RAM pool paged (Memory/Pool Paged Bytes) was not retrieved from collector for node node_2";
+        my $orch_alert_msg = "Indicator RAM pool paged (Memory/Pool Paged Bytes) was not retrieved from DataCache for node node_2";
 
-    $service_provider->addManagerParameter (
-        manager_type    => 'CollectorManager',
-        name            => 'mockmonit_config',
-        value           => $mock_conf
-    );
 
-    $rulesengine->oneRun();
+        if (! (scalar @alerts == 0)) {die 'Check no alerts';}
 
-    @alerts = Alert->search (hash => {});
-    is(scalar @alerts, 0, 'Check no alert after orchestrator');
+        my $mock_conf  = "{'default':{'const':10},"
+                         . "'nodes':{'node_1':{'const':50}},'indics':{'Memory/Pool Paged Bytes':{'const':100}}}";
 
-    $mock_conf  = "{'default':{'const':10},"
-                . "'nodes':{'node_1':{'const':50}},'indics':{'Memory/Pool Paged Bytes':{'const':null}}}";
+        $service_provider->addManagerParameter (
+            manager_type => 'CollectorManager',
+            name         => 'mockmonit_config',
+            value        => $mock_conf
+        );
 
-    $service_provider->addManagerParameter (
-        manager_type    => 'CollectorManager',
-        name            => 'mockmonit_config',
-        value           => $mock_conf
-    );
+        sleep(2);
+        $aggregator->update();
 
-    $rulesengine->oneRun();
+        @alerts = Alert->search(hash => { entity_id => $service_provider->id });
+        if (! (scalar @alerts == 0)) {
+            my $wrong_alert = pop @alerts;
+            die 'Some alerts after aggregator: '.$wrong_alert->alert_message;
+        }
 
-    @alerts = Alert->search (hash => {});
-    is (scalar @alerts, 1, 'Check one alert');
+        $rulesengine->oneRun();
 
-    my $first_alert = pop @alerts;
+        @alerts = Alert->search(hash => { entity_id => $service_provider->id });
 
-    my $alert_msg = "Indicator RAM pool paged (Memory/Pool Paged Bytes) was not retrieved by collector for node node_2";
-    is ($first_alert->alert_message, $alert_msg, 'Check alert message');
-    is ($first_alert->alert_active, 1, 'Check alert is active');
+        if (! (scalar @alerts == 0)) {
+            my $wrong_alert = pop @alerts;
+            die 'Some alerts after orchestrator: '.$wrong_alert->alert_message;
+        }
 
-    $rulesengine->oneRun();
+        $mock_conf  = "{'default':{'const':10},"
+                    . "'nodes':{'node_1':{'const':50}},'indics':{'Memory/Pool Paged Bytes':{'const':null}}}";
 
-    @alerts = Alert->search (hash=>{});
-    is (scalar @alerts, 1, 'Check no more alert created');
-    my $alert = pop @alerts;
+        $service_provider->addManagerParameter (
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => $mock_conf
+        );
 
-    is ($alert->alert_message, $alert_msg, 'Check alert message');
-    is ($alert->alert_active, 1, 'Check alert is still active');
+        sleep(2);
+        $aggregator->update();
 
-    $mock_conf  = "{'default':{'const':10},"
-                . "'nodes':{'node_1':{'const':50}},'indics':{'Memory/Pool Paged Bytes':{'const':100}}}";
+        @alerts = Alert->search(hash => { entity_id => $service_provider->id });
 
-    $service_provider->addManagerParameter (
-        manager_type    => 'CollectorManager',
-        name            => 'mockmonit_config',
-        value           => $mock_conf
-    );
+        if (! (scalar @alerts == 1)) {die 'One and only one alert';}
 
-    $rulesengine->oneRun();
+        my $agg_alert = pop @alerts;
 
-    @alerts = Alert->search (hash=>{});
-    is (scalar @alerts, 1, 'Check no more alert created');
-    $alert = pop @alerts;
+        if (! ($agg_alert->alert_message eq $agg_alert_msg)) {die 'Wrong alert message';}
+        if (! ($agg_alert->alert_active == 1)){die 'Alert should be active';}
+        if (! ($agg_alert->trigger_entity_id == $coll_indic2->indicator_id)) {die 'Wrong trigger entity';}
 
-    is ($alert->alert_message,$alert_msg,'Check alert message');
-    is ($alert->alert_active,0,'Check alert not active anymore');
+        $rulesengine->oneRun();
 
-    $mock_conf  = "{'default':{'const':10},"
-                . "'nodes':{'node_1':{'const':50}},'indics':{'Memory/Pool Paged Bytes':{'const':null}}}";
+        @alerts = Alert->search(hash => { entity_id => $service_provider->id }, order_by => 'alert_id asc');
 
-    $service_provider->addManagerParameter (
-        manager_type    => 'CollectorManager',
-        name            => 'mockmonit_config',
-        value           => $mock_conf
-    );
+        if (! (scalar @alerts == 2)) {die 'Two alerts';}
 
-    $rulesengine->oneRun();
+        my $orch_alert = pop @alerts;
 
-    @alerts = Alert->search (hash=>{}, order_by => 'alert_id asc');
-    is (scalar @alerts, 2, 'Check one new alert created');
+        if (! ($orch_alert->alert_message eq $orch_alert_msg)) {die 'Wrong alert message';}
+        if (! ($orch_alert->alert_active == 1)) {die 'Alert should be active';}
+        if (! ($orch_alert->trigger_entity_id == $coll_indic2->id)) {die 'Wrong trigger entity'};
 
-    $alert = pop @alerts;
-    is ($alert->alert_message, $alert_msg, 'Check alert message');
-    is ($alert->alert_active, 1, 'Check new alert is active');
+        my $alert = pop @alerts;
 
-    $alert = pop @alerts;
+        if (! ($alert->id eq $agg_alert->id)) {die 'Must be same alert id';}
+        if (! ($alert->alert_message eq $agg_alert_msg)) {die 'Wrong alert message';}
+        if (! ($alert->alert_active == 1)) {die 'Alert should be still active';}
+        if (! ($alert->trigger_entity_id == $coll_indic2->indicator_id)) {die 'Wrong trigger entity'};
 
-    is ($alert->alert_message, $alert_msg, 'Check alert message');
-    is ($alert->alert_active, 0, 'Check old alert still not active');
-    is ($alert->alert_id, $first_alert->alert_id, 'Check first alert id');
+        $rulesengine->oneRun();
+
+        @alerts = Alert->search(hash => { entity_id => $service_provider->id });
+        if (! (scalar @alerts == 2)) {die 'Check no more alert created'};
+
+        $alert = pop @alerts;
+        if (! ($alert->id == $orch_alert->id)) {die 'Check same id';}
+        if (! ($alert->alert_active == 1)) {die 'Check alert is still active';}
+
+        $alert = pop @alerts;
+        if (! ($alert->id == $agg_alert->id)) {die 'Check same id';}
+        if (! ($alert->alert_active == 1)) {die 'Check alert is still active';}
+
+        $mock_conf  = "{'default':{'const':10},"
+                    . "'nodes':{'node_1':{'const':50}},'indics':{'Memory/Pool Paged Bytes':{'const':100}}}";
+
+        $service_provider->addManagerParameter (
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => $mock_conf
+        );
+
+        sleep(2);
+        $aggregator->update();
+
+        @alerts = Alert->search(hash => { entity_id => $service_provider->id });
+        if (! (scalar @alerts == 2)) {die 'Check no more alert created'};
+
+        $alert = pop @alerts;
+        if (! ($alert->id == $orch_alert->id)) {die 'Check same id';}
+        if (! ($alert->alert_active == 1)) {die 'Check alert is still active';}
+
+        $alert = pop @alerts;
+        if (! ($alert->id == $agg_alert->id)) {die 'Check same id';}
+        if (! ($alert->alert_active == 0)) {die 'Check alert is still active';}
+
+        $rulesengine->oneRun();
+
+        @alerts = Alert->search(hash => { entity_id => $service_provider->id });
+        if (! (scalar @alerts == 2)) {die 'Check no more alert created'};
+
+        $alert = pop @alerts;
+        if (! ($alert->id == $orch_alert->id)) {die 'Check same id';}
+        if (! ($alert->alert_active == 0)) {die 'Check alert is still active';}
+
+        $alert = pop @alerts;
+        if (! ($alert->id == $agg_alert->id)) {die 'Check same id';}
+        if (! ($alert->alert_active == 0)) {die 'Check alert is still active';}
+
+        $mock_conf  = "{'default':{'const':10},"
+                    . "'nodes':{'node_1':{'const':50}},'indics':{'Memory/Pool Paged Bytes':{'const':null}}}";
+
+        $service_provider->addManagerParameter (
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => $mock_conf
+        );
+
+        sleep(2);
+        $aggregator->update();
+
+        @alerts = Alert->search(hash => { entity_id => $service_provider->id });
+        if (! (scalar @alerts == 3)) {die 'Check no more alert created'};
+
+        my $third_alert = pop @alerts;
+
+        if (! ($third_alert->alert_message eq $agg_alert_msg)) {die 'Wrong alert message';}
+        if (! ($third_alert->alert_active == 1)) {die 'Alert should be still active';}
+        if (! ($third_alert->trigger_entity_id == $coll_indic2->indicator_id)) {die 'Wrong trigger entity'};
+
+        $alert = pop @alerts;
+        if (! ($alert->id == $orch_alert->id)) {die 'Check same id';}
+        if (! ($alert->alert_active == 0)) {die 'Check alert is still active';}
+
+        $alert = pop @alerts;
+        if (! ($alert->id == $agg_alert->id)) {die 'Check same id';}
+        if (! ($alert->alert_active == 0)) {die 'Check alert is still active';}
+
+        $rulesengine->oneRun();
+
+        @alerts = Alert->search(hash => { entity_id => $service_provider->id });
+        if (! (scalar @alerts == 4)) {die 'Check no more alert created'};
+
+        my $fourth_alert = pop @alerts;
+
+        if (! ($fourth_alert->alert_message eq $orch_alert_msg)) {die 'Wrong alert message';}
+        if (! ($fourth_alert->alert_active == 1)) {die 'Alert should be still active';}
+        if (! ($fourth_alert->trigger_entity_id == $coll_indic2->id)) {die 'Wrong trigger entity'};
+
+        $alert = pop @alerts;
+        if (! ($alert->id == $third_alert->id)) {die 'Check same id';}
+        if (! ($alert->alert_active == 1)) {die 'Check alert is still active';}
+
+        $alert = pop @alerts;
+        if (! ($alert->id == $orch_alert->id)) {die 'Check same id';}
+        if (! ($alert->alert_active == 0)) {die 'Check alert is still active';}
+
+        $alert = pop @alerts;
+        if (! ($alert->id == $agg_alert->id)) {die 'Check same id';}
+        if (! ($alert->alert_active == 0)) {die 'Check alert is still active';}
+    } 'Triggering alert with aggregator and rules engine';
 };
 

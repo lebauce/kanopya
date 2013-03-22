@@ -112,17 +112,8 @@ sub oneRun {
 
             # Firstly try to ping the node
             my $pingable;
-            my $hostalert;
             my $hostname = $ehost->node->node_hostname;
             my $hostmsg  = "Host $hostname not reachable";
-            # search if an alert exists
-            eval {
-                $hostalert = Alert->find(hash => {
-                                 alert_active  => 1,
-                                 alert_message => $hostmsg,
-                                 entity_id     => $cluster->id
-                             });
-            };
 
             eval {
                $pingable = $ehost->checkUp();
@@ -130,16 +121,20 @@ sub oneRun {
 
             my ($hoststate, $hosttimestamp) = $ehost->getState;
 
-            if (! $pingable and $hoststate eq 'up') {
+            $log->debug("Host pingable status <$pingable>, state <$hoststate>");
+
+            if ((! $pingable) and $hoststate eq 'up') {
                 my $msg = "Node " . $node->node->node_hostname . " unreachable in cluster :" . $cluster->cluster_name;
                 $log->warn($msg);
                 Message->send(from => 'StateManager', level => 'info', content => $msg);
 
                 # create an alert if not already created
-                if(not $hostalert) {
-                    Alert->new(entity_id => $cluster->id, alert_message => $hostmsg, alert_signature => $hostmsg.' '.time());
-                    $log->warn($msg);
-                }
+                Alert->throw(entity_id      => $cluster->id,
+                             alert_message  => $hostmsg,
+                             trigger_entity => $node);
+
+                $log->warn($msg);
+
 
                 # Set the host and node states to broken
                 $ehost->setState(state => 'broken');
@@ -152,12 +147,13 @@ sub oneRun {
             elsif ($pingable and $hoststate eq 'broken') {
                 # Host has been repaired
                 my ($prevstate, $prevtimestamp) = $ehost->getPrevState;
+                $log->debug("Set host state to $prevstate");
                 $ehost->setState(state => $prevstate);
 
                 # disable the alert if it exists
-                if ($hostalert) {
-                    $hostalert->mark_resolved;
-                }
+                Alert->resolve(entity_id      => $cluster->id,
+                               alert_message  => $hostmsg,
+                               trigger_entity => $node);
             }
 
             # Then check the node component availability
@@ -169,40 +165,29 @@ sub oneRun {
 
                 $log->debug("Check component availability : " . $component_name);
 
-                # search if an alert exists
                 my $compmsg = "Component $component_name unreachable on Host $hostname";
-                my $compalert;
-                eval {
-                    $compalert = Alert->find(hash => {
-                                     alert_active  => 1,
-                                     alert_message => $compmsg,
-                                     entity_id     => $cluster->id
-                                 });
-                };
 
                 if (! $ecomponent->isUp(host => $ehost, cluster => $cluster)) {
                     my $msg = $component_name .
                               " not available on node (" . $node->node->node_hostname .
                               ") in cluster (" . $cluster->cluster_name . ")";
-                    #$log->warn($msg);
 
-                    #Message->send(from => 'StateManager', level => 'info', content => $msg);
+                    Alert->throw(entity_id      => $cluster->id,
+                                 alert_message  => $compmsg,
+                                 trigger_entity => $node);
 
-                    # create an alert if not already created
-                    if(not $compalert) {
-                        Alert->new(entity_id => $cluster->id, alert_message => $compmsg, alert_signature => $compmsg.' '.time());
-                        $log->warn($msg);
-                    }
+                    $log->warn($msg);
 
                     $node_available = 0;
                     $services_available = 0;
                     last;
 
-                } else {
+                }
+                else {
                     # disable the alert if it exists
-                    if ($compalert) {
-                        $compalert->mark_resolved;
-                    }
+                    Alert->resolve(entity_id      => $cluster->id,
+                                   alert_message  => $compmsg,
+                                   trigger_entity => $node);
                 }
             }
             my ($nodestate, $nodetimestamp) = $ehost->getNodeState;
