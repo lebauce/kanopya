@@ -16,9 +16,13 @@
 
 =begin classdoc
 
-Base class to configure a model for the data of a combination.
-Can be configured from a start time to a end time.
-Once configured, the DatamModel stores the parameters which allow data forecasting
+DataModel is an abstract class which represent any model able to perform a prediction (forecast) on a given
+dataset. A DataModel can need a configuration for being able to predict something (configure method), and
+predictions can be proceeded using the predict method. The label method must give a text representation of 
+the data model, and is generally used for debugging.
+
+The main target of that abstract class is to provide a standard interface for forecasting model in Kanopya,
+enabling a simple way to enrich the Kanopya's forecast module with new forecasting models.
 
 @since    2013-Feb-13
 @instance hash
@@ -37,9 +41,6 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
-use Data::Dumper;
-use List::Util;
-
 
 my $log = get_logger("");
 my $errmsg;
@@ -121,63 +122,66 @@ sub new {
     return $self;
 }
 
-
 =pod
 
 =begin classdoc
 
-Computes the coefficient of determination (or R squared) of a model.
+First method called when using a DataModel. All the operations required to configure a model or train it 
+before it is able to perform any prediction should be done in this method, especially the one that need to be
+stored in database.
 
-@param data array containing the real data
-@param data_model array containing the computed data
-
-@return coefficient of determination (or R squared)
-
-=end classdoc
-
-=cut
-
-sub computeRSquared {
-    my ($self, %args) = @_;
-    General::checkParams(args     => \%args, required => ['data', 'data_model']);
-
-    # Compute the coefficient of determination according to its formal definition
-    my $data_avg = List::Util::sum(@{$args{data}}) / @{$args{data}};
-    my $SSerr = List::Util::sum( List::MoreUtils::pairwise {($a - $b)**2} @{$args{data}}, @{$args{data_model}});
-    my $SStot = List::Util::sum( map {($_ - $data_avg)**2} @{$args{data}} );
-
-    return (1 - $SSerr / $SStot);
-}
-
-=pod
-
-=begin classdoc
-
-Returns the already computed coefficient of determination (or R squared) of a model. Return undef
-if the coefficient has not be computed yet
-
-@return coefficient of determination (or R squared)
+@param data A reference to an array containing the values of the time serie.
+@param freq The frequency (or seasonality) of the time serie.
+@param predict_start The starting point wished for the prediction (in points, and not in timestamps !).
+@param predict_end The ending point wished for the prediction (in points !).
+@param combination_id (optional) : The combination's id linked to the DataModel.
+@param node_id (optional) : The node's id linked to the DataModel.
 
 =end classdoc
 
 =cut
-
-sub getRSquared {
-    my ($self, @args) = @_;
-    my $pp = $self->param_preset->load();
-    return $pp->{rSquared};
-}
 
 sub configure {
-    throw Kanopya::Exception(error => 'Method not implemented');
+    throw Kanopya::Exception(error => 'DataModel : Method configure not implemented');
 }
+
+=pod
+
+=begin classdoc
+
+Method called to perform a prediction (forecast) using a DataModel.
+
+@param data A reference to an array containing the values of the time serie.
+@param freq The frequency (or seasonality) of the time serie.
+@param predict_start The starting point wished for the prediction (in points, and not in timestamps !).
+@param predict_end The ending point wished for the prediction (in points !).
+@param combination_id (optional) : The combination's id linked to the DataModel.
+@node_id (optional) : The node's id linked to the DataModel.
+
+@return A reference to an array containing the forecast values.
+
+=end classdoc
+
+=cut
 
 sub predict {
-    throw Kanopya::Exception(error => 'Method not implemented');
+    throw Kanopya::Exception(error => 'DataModel : Method predict not implemented');
 }
 
+=pod
+
+=begin classdoc
+
+Gives a human readable string representation of a DataModel (to implement using the time_label method).
+
+@return A human readable string representation of a DataModel.
+
+=end classdoc
+
+=cut
+
 sub label {
-    throw Kanopya::Exception(error => 'Method not implemented');
+    throw Kanopya::Exception(error => 'DataModel : Method label not implemented');
 }
 
 =pod
@@ -194,7 +198,7 @@ configure itself and forecast.
 =cut
 
 sub isSeasonal {
-    throw Kanopya::Exception(error => 'Method not implemented');
+    throw Kanopya::Exception(error => 'DataModel : Method isSeasonal not implemented');
 }
 
 
@@ -227,7 +231,6 @@ sub time_label {
 }
 
 
-
 =pod
 
 =begin classdoc
@@ -253,70 +256,6 @@ sub constructTimeStamps {
         push @timestamps, $ts;
     }
     return \@timestamps;
-}
-
-
-=pod
-
-=begin classdoc
-
-Method called from child class instance to compute the forcasting.
-By default the method return a hash with two keys 'timestamps' (reference to an array of timestamps)
-and 'values' (reference an array of forecasted values).
-
-@param function_args all the arguments of the forcasting function
-
-@optional time_format 'ms' returns time in milliseconds
-@optional data_format 'pair' returns an array of references of pair [timestamp, value]
-
-@return the timestamps and forecasted values with the chosen data_format.
-
-=end classdoc
-
-=cut
-
-sub constructPrediction {
-    my ($self, %args) = @_;
-
-    my $function_args = $args{function_args};
-
-    # Construct timestamps if not defined
-    if (! defined $args{timestamps}) {
-        $args{timestamps} = $self->constructTimeStamps(
-                                start_time      => $args{start_time},
-                                end_time        => $args{end_time},
-                                sampling_period => $args{sampling_period},
-                            );
-    }
-
-    my @predictions;
-    my @timestamps_temp;
-
-    # Compute prediction with good format
-    for my $ts (@{$args{timestamps}}) {
-
-        $function_args->{ts} = $ts;
-        my $value = $self->prediction_function(function_args => $function_args);
-
-        # Need to use a local variable in order to avoid input data (by ref) modification
-        my $ts_temp = ($args{time_format} eq 'ms') ? $ts * 1000 : $ts;
-
-        my $prediction;
-        if ($args{data_format} eq 'pair') {
-            $prediction = [$ts_temp, $value];
-        }
-        else {
-            push @timestamps_temp, $ts_temp;
-            $prediction = $value
-        }
-        push @predictions, $prediction;
-    }
-    if ($args{data_format} eq 'pair') {
-        return \@predictions;
-    }
-    else {
-        return {timestamps => \@timestamps_temp, values => \@predictions};
-    }
 }
 
 1;

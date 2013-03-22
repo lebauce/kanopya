@@ -1,6 +1,6 @@
 =head1 SCOPE
 
-DataModel
+Accuracy
 
 =head1 PRE-REQUISITE
 

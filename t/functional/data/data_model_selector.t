@@ -1,7 +1,7 @@
 
 =head1 SCOPE
 
-DataModel
+DataModelSelector
 
 =head1 PRE-REQUISITE
 
@@ -9,34 +9,16 @@ DataModel
 
 use strict;
 use warnings;
-use Data::Dumper;
  
 use Test::More 'no_plan';
 use Test::Exception;
 
 use BaseDB;
 use Entity::ServiceProvider::Externalcluster;
-use Node;
 use Entity::Component::MockMonitor;
-use Entity::Clustermetric;
-use Entity::Combination::AggregateCombination;
-use Entity::Combination::NodemetricCombination;
-
-use Entity::DataModel;
-
-use List::MoreUtils;
-use List::Util;
-
-use Aggregator;
-use Executor;
-
-use Kanopya::Tools::TimeSerie;
-use Kanopya::Tools::Execution;
 
 use DataModelSelector;
-
-#use Log::Log4perl ":easy";
-#Log::Log4perl->easy_init($DEBUG);
+use Utils::TimeSerieAnalysis;
 
 my $testing = 1;
 my $service_provider;
@@ -70,7 +52,7 @@ sub main {
 
 sub testAutoPredict {
     lives_ok {
-        my %data = (
+        my %timeserie = (
             1  => undef , 2  => undef , 3  => undef , 4  => 15 , 5  => 13 ,
             6  => 12 , 7  => 5  , 8  => 12 , 9  => 13 , 10 => 15 ,
             11 => 13 , 12 => 12 , 13 => 5  , 14 => 12 , 15 => 13 ,
@@ -83,22 +65,24 @@ sub testAutoPredict {
             46 => 15 , 47 => 13 , 48 => 12 , 49 => 5  , 50 => undef ,
         );
 
+        my %extracted  = %{Utils::TimeSerieAnalysis->splitData(data => \%timeserie)};
+        my @timestamps = @{$extracted{timestamps_ref}};
+        my @values     = @{$extracted{values_ref}};
+
         my %forecast = %{DataModelSelector->autoPredict(
-            combination_id => $comb->id,
-            start_time     => 1,
-            end_time       => 50,
-            horizon        => 70,
-            data           => \%data,
-            model_list     => ['AutoArima'],
+            predict_start_tstamps => 40,
+            predict_end_tstamps  => 65,
+            timeserie             => \%timeserie,
+            combination_id        => $comb->id,
         )};
-        my @values = @{$forecast{values}};
+        my @vals = @{$forecast{values}};
 
     } 'DataModelSelector : Testing autoPredict Method';
 }
 
 sub testDataModelSelector {
 
-    my %data = (
+    my %timeserie = (
         1  => 5  , 2  => 12 , 3  => 13 , 4  => 15 , 5  => 13 ,
         6  => 12 , 7  => 5  , 8  => 12 , 9  => 13 , 10 => 15 ,
         11 => 13 , 12 => 12 , 13 => 5  , 14 => 12 , 15 => 13 ,
@@ -111,31 +95,35 @@ sub testDataModelSelector {
         46 => 15 , 47 => 13 , 48 => 12 , 49 => 5  , 50 => 12 ,
     );
 
+    my %extracted  = %{Utils::TimeSerieAnalysis->splitData(data => \%timeserie)};
+    my @timestamps = @{$extracted{timestamps_ref}};
+    my @values     = @{$extracted{values_ref}};
+
     my %accuracy_linear_regression;
     my %accuracy_logarithmic_regression;
     my %accuracy_auto_arima;
 
     lives_ok {
         %accuracy_linear_regression = %{DataModelSelector->evaluateDataModelAccuracy(
-            data_model_class => 'Entity::DataModel::LinearRegression',
-            data             => \%data,
-            combination      => $comb,
+            data_model_class => 'Entity::DataModel::AnalyticRegression::LinearRegression',
+            data             => \@values,
+            combination_id   => $comb->id,
         )};
     } 'DataModelSelector : Testing accuracy evaluation for Linear Regression DataModel';
 
     lives_ok {
         %accuracy_logarithmic_regression = %{DataModelSelector->evaluateDataModelAccuracy(
-            data_model_class => 'Entity::DataModel::LogarithmicRegression',
-            data             => \%data,
-            combination      => $comb,
+            data_model_class => 'Entity::DataModel::AnalyticRegression::LogarithmicRegression',
+            data             => \@values,
+            combination_id   => $comb->id,
         )};
     } 'DataModelSelector : Testing accuracy evaluation for Logarithmic Regression DataModel';
 
     lives_ok {
         %accuracy_auto_arima = %{DataModelSelector->evaluateDataModelAccuracy(
-            data_model_class => 'Entity::DataModel::AutoArima',
-            data             => \%data,
-            combination      => $comb,
+            data_model_class => 'Entity::DataModel::RDataModel::AutoArima',
+            data             => \@values,
+            combination_id   => $comb->id,
             freq             => 6,
         )};
     } 'DataModelSelector : Testing accuracy evaluation for AutoArima DataModel';
@@ -145,9 +133,9 @@ sub testDataModelSelector {
         lives_ok {
             $best_model = DataModelSelector->chooseBestDataModel(
                 accuracy_measures => {
-                    'Entity::DataModel::LinearRegression'      => {%accuracy_linear_regression},
+                    'Entity::DataModel::AnalyticRegression::LinearRegression'      => {%accuracy_linear_regression},
                     'Entity::DataModel::LogarithmicRegression' => {%accuracy_logarithmic_regression},
-                    'Entity::DataModel::AutoArima'             => {%accuracy_auto_arima},
+                    'Entity::DataModel::RDataModel::AutoArima'             => {%accuracy_auto_arima},
                 },
                 choice_strategy   => $strategy,
             );
@@ -158,9 +146,9 @@ sub testDataModelSelector {
     throws_ok {
         my $best_model = DataModelSelector->chooseBestDataModel(
             accuracy_measures => {
-                'Entity::DataModel::LinearRegression'      => {%accuracy_linear_regression},
+                'Entity::DataModel::AnalyticRegression::LinearRegression'      => {%accuracy_linear_regression},
                 'Entity::DataModel::LogarithmicRegression' => {%accuracy_logarithmic_regression},
-                'Entity::DataModel::AutoArima'             => {%accuracy_auto_arima},
+                'Entity::DataModel::RDataModel::AutoArima'             => {%accuracy_auto_arima},
             },
             choice_strategy   => 'Are you kidding me ?!',
         );
@@ -168,10 +156,10 @@ sub testDataModelSelector {
 
     lives_ok {
         my $best_model = DataModelSelector->selectDataModel(
-            data             => \%data,
-            combination      => $comb,
-            start_time       => 10,
-            end_time         => 10,
+            data           => \@values,
+            combination_id => $comb->id,
+            start_time     => 10,
+            end_time       => 10,
         );
     } "DataModelSelector : Testing selectDataModel method";
 }

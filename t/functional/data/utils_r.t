@@ -1,6 +1,6 @@
 =head1 SCOPE
 
-DataModel
+Utils::R
 
 =head1 PRE-REQUISITE
 

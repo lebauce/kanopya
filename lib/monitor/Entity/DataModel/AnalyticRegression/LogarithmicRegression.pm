@@ -12,14 +12,13 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 =pod
 
 =begin classdoc
 
 Class which configures a logarithmic regression model for the data of a combination.
 Once configured, the LogarithmicRegression stores the parameters which allow data
-forecasting through the function: forcasted_data = zero + slopes * log (time - start_time)
+forecasting through the function: forcasted_data = zero + slopes * log (time)
 
 @since    2013-Feb-13
 @instance hash
@@ -29,21 +28,20 @@ forecasting through the function: forcasted_data = zero + slopes * log (time - s
 
 =cut
 
-package Entity::DataModel::LogarithmicRegression;
+package Entity::DataModel::AnalyticRegression::LogarithmicRegression;
 
-use base 'Entity::DataModel';
+use base 'Entity::DataModel::AnalyticRegression';
 
 use strict;
 use warnings;
 use Data::Dumper;
 
-use Entity::DataModel::LinearRegression;
+use Entity::DataModel::AnalyticRegression::LinearRegression;
 
 
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
-
 
 =pod
 
@@ -57,12 +55,11 @@ Store parameters in database
 The model use the first non-undef value as the logarithmic reference (1,0)
 The model does not implement incomplete time-shifted logarithmic functions
 
-@param data hash {timestamp => value} of datas to be modeled
+@param data A reference to an array containing the values of the time serie.
+@param combination_id : The combination's id linked to the DataModel.
+@param node_id : The node's id linked to the DataModel.
 
-@optional start_time model consider only time_stamp > start_time
-@optional end_time model consider only time_stamp < end_time
-
-@return hash time of store parameters
+@return hash time of store parameters.
 
 =end classdoc
 
@@ -72,14 +69,16 @@ sub configure {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => ['data'],
-                         optional => {'start_time' => undef, 'end_time' => undef });
-
-    $log->info('Input start time = ['.($args{start_time}).'], stop time = ['.($args{end_time}).']');
+                         required => ['data'],);
 
     # Convert time to log(time)
+    my @data_values = @{$args{data}};
+    my @times = (0..$#data_values);
 
-    my @times = keys %{$args{data}};
+    my %datash;
+    for my $i (0..$#data_values) {
+        $datash{$times[$i]} = $data_values[$i];
+    }
 
     my $min_time;
     my $max_time;
@@ -90,7 +89,7 @@ sub configure {
     TIME_INIT:
     while (@times) {
         $time = pop @times;
-        if (! (defined $args{data}->{$time})) {
+        if (! (defined $datash{$time})) {
             next TIME_INIT;
         }
         if ((defined $args{start_time}) && $time < $args{start_time}) {
@@ -110,7 +109,7 @@ sub configure {
     TIME:
     while (@times) {
         $time = pop @times;
-        if (! (defined $args{data}->{$time})) {
+        if (! (defined $datash{$time})) {
             next TIME;
         }
         if ((defined $args{start_time}) && $time < $args{start_time}) {
@@ -132,34 +131,35 @@ sub configure {
     $args{start_time} = $min_time;
     $args{end_time}   = $max_time;
 
-    my $min_value = $args{data}->{$args{start_time}};
+    my $min_value = $datash{$args{start_time}};
 
     # Transform time to log(time) in order to apply a linear regression
     my %log_data;
+    my @log_tstamps;
+    my @log_values;
     for my $time (@time_filter){
-        $log_data{ log($time - $args{start_time} + 1) } = $args{data}->{$time} - $min_value;
+        $log_tstamps[$time] = log($time - $args{start_time} + 1);
+        $log_values[$time]  = $datash{$time} - $min_value;
+        $log_data{ log($time - $args{start_time} + 1) } = $datash{$time} - $min_value;
     }
 
-    my $linreg = Entity::DataModel::LinearRegression->new(
+    my $linreg = Entity::DataModel::AnalyticRegression::LinearRegression->new(
                     combination_id => $self->combination_id,
                     node_id        => $self->node_id,
                  );
 
     my $linreg_preset = $linreg->configure(
-                            data       => \%log_data,
+                            data      => \@log_values,
+                            time_keys => \@log_tstamps,
                         );
 
     my $pp_lin = $linreg_preset->load;
     $pp_lin->{b} += $min_value;
-    $pp_lin->{offset_lin} = $linreg->start_time;
 
     my $preset = ParamPreset->new(params => $pp_lin);
 
     $self->setAttr(name => 'param_preset_id', value => $preset->id);
-    $self->setAttr(name => 'start_time',      value => $args{start_time});
-    $self->setAttr(name => 'end_time',        value => $args{end_time});
 
-    $log->info('Start_time = '.($args{start_time}).', end_time = '.($args{end_time}).')');
     $log->info('Learnt parameters = '.(Dumper $pp_lin));
 
     $self->save();
@@ -169,27 +169,21 @@ sub configure {
     return $preset;
 }
 
-
 =pod
 
 =begin classdoc
 
 Compute forecasted values from timestamps with logarithmic function and parameters.
-Model must have been configured first (see configure method)
-Timestamps can have 2 formats: either an array of (timestamps) or
-a (start_time, end_time, sampling period).
+Model must have been configured first (see configure method).
 
-By default the method return a hash with two keys 'timestamps' (reference to an array of timestamps)
-and 'values' (reference an array of forecasted values).
+@param data A reference to an array containing the values of the time serie.
+@param freq The frequency (or seasonality) of the time serie.
+@param predict_start The starting point wished for the prediction (in points, and not in timestamps !).
+@param predict_end The ending point wished for the prediction (in points !).
+@param combination_id (optional) : The combination's id linked to the DataModel.
+@node_id (optional) : The node's id linked to the DataModel.
 
-@optional timestamps array of timestamps when using the (timestamps) format
-@optional start_time start_time when using the format (start_time, end_time, sampling_period)
-@optional end_time end_time when using the format (start_time, end_time, sampling_period)
-@optional sampling_period sampling_period when using the format (start_time, end_time, sampling_period)
-@optional time_format 'ms' returns time in milliseconds
-@optional data_format 'pair' returns an array of references of pair [timestamp, value]
-
-@return the timestamps and forecasted values with the chosen data_format.
+@return A reference to an array containing the forecast values.
 
 =end classdoc
 
@@ -199,22 +193,12 @@ sub predict {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [],
-                         optional => { 'timestamps'      => undef,
-                                       'start_time'      => undef,
-                                       'end_time'        => undef,
-                                       'sampling_period' => undef,});
+                         required => ['predict_start', 'predict_end'],);
 
     my $pp     = $self->param_preset->load;
-    my $offset = $self->getAttr(name => 'start_time');
-
-    # configuration has been made with an offset value
-
 
     if ((! defined $pp->{a}) ||
-        (! defined $pp->{b}) ||
-        (! defined $pp->{offset_lin} ) ||
-        (! defined $offset) ) {
+        (! defined $pp->{b}) ) {
 
         throw Kanopya::Exception(error => 'DataModel LogarithmicRegression seems to have been badly configured');
     }
@@ -222,8 +206,6 @@ sub predict {
     my $function_args = {
         a          => $pp->{a},
         b          => $pp->{b},
-        offset_lin => $pp->{offset_lin},
-        offset     => $offset,
     };
 
     return $self->constructPrediction (
@@ -232,14 +214,13 @@ sub predict {
            );
 }
 
-
 =pod
 
 =begin classdoc
 
 Compute the regression function
 
-@param function_args hash which contains the parameters of the function (a, b, ts, offset, offset_lin) values.
+@param function_args hash which contains the parameters of the function (a, b, ts) values.
 
 @return evaluation of the function
 
@@ -253,16 +234,12 @@ sub prediction_function {
                          required => ['function_args'],);
 
     # (ts - offset + 1 > 0)
-    if ($args{function_args}->{ts} - $args{function_args}->{offset} + 1 > 0) {
-        # a * ( log (ts - offset + 1) - offset_lin) + b
-        return $args{function_args}->{a} *
-               (log ($args{function_args}->{ts} - $args{function_args}->{offset} + 1) -
-               $args{function_args}->{offset_lin}) +
-               $args{function_args}->{b}
+    if ($args{function_args}->{ts} + 1 > 0) {
+        # a * ( log (ts + 1) ) + b
+        return $args{function_args}->{a} * (log ($args{function_args}->{ts} + 1)) + $args{function_args}->{b};
     }
     return undef;
 }
-
 
 =pod
 
@@ -279,8 +256,7 @@ Construct a human readable label for the model:
 
 sub label {
     my $self = shift;
-    my $r_rounded = sprintf("%.2f", $self->getRSquared());
-    return 'Logarithmic regression '.$self->time_label()." (R = $r_rounded)";
+    return 'Logarithmic regression '.$self->time_label();
 }
 
 sub isSeasonal {
