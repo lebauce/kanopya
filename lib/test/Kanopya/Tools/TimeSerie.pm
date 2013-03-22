@@ -257,9 +257,7 @@ sub display {
 Link the time serie to the specified metric.
 Allow mocking historical values of a metric.
 
-Currently only works for ClusterMetric
-
-@param metric Metric object
+@param metric Metric object (Clustermetric)
 
 =end classdoc
 
@@ -268,16 +266,56 @@ Currently only works for ClusterMetric
 sub linkToMetric {
     my ($self, %args) = @_;
 
+    my $metric_uid = $args{metric}->id;
+
+    $self->_copyRRD(metric_uid => $metric_uid);
+}
+
+=pod
+
+=begin classdoc
+
+Link the time serie to the specified collector indicator for a node.
+Allow mocking historical values of a metric.
+
+@param metric Metric object (CollectorIndicator)
+@param node Node object
+
+=end classdoc
+
+=cut
+
+sub linkToCollectorIndicator {
+    my ($self, %args) = @_;
+
+    my $metric_uid = $args{metric}->id . '_' . $args{node}->node_hostname;
+
+    $self->_copyRRD(metric_uid => $metric_uid);
+}
+
+=pod
+
+=begin classdoc
+
+Copy the time serie rrd to replace existing data for a metric (Aggregator/DataCache)
+
+@param metric_uid uid to identify metric in Aggregator/DataCache system
+
+=end classdoc
+
+=cut
+
+sub _copyRRD {
+    my ($self, %args) = @_;
+
+    my $metric_rrd_filename = 'timeDB_' . $args{metric_uid} . '.rrd';
     my $rrd_file = $self->{rrd}->info()->{filename};
 
     #TODO get from TimeDB the name and path of rrd file
     my $metric_rrd_path     = '/var/cache/kanopya/monitor';
-    my $metric_rrd_filename = 'timeDB_' . $args{metric}->id . '.rrd';
 
     `cp $rrd_file $metric_rrd_path/$metric_rrd_filename`;
 }
-
-
 
 =pod
 
