@@ -86,17 +86,21 @@ function createPolicyServiceProvider() {
 
 // Edit existing policy
 function load_orchestration_policy_details(policy, grid_id) {
-    var sp_id;
+    $.get(
+            '/api/parampreset/' + policy.param_preset_id,
+            function (pp) {
+                var params = JSON.parse(pp.params);
+                var sp_id;
+                if (params.orchestration && params.orchestration.service_provider_id) {
+                    sp_id = params.orchestration.service_provider_id;
+                } else {
+                    // default orchestration policy is not linked to a sp, so we create it
+                    sp_id = createPolicyServiceProvider();
+                }
 
-    if (policy.orchestration && policy.orchestration.service_provider_id) {
-        sp_id = policy.orchestration.service_provider_id;
-
-    } else {
-        // default orchestration policy is not linked to a sp, so we create it
-        sp_id = createPolicyServiceProvider();
-    }
-
-    orchestrationPolicyForm(sp_id, policy, $('#' + grid_id));
+                orchestrationPolicyForm(sp_id, policy, $('#' + grid_id));
+            }
+    );
 }
 
 function addOrchestrationPolicy(grid) {
