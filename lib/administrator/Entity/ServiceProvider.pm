@@ -176,7 +176,7 @@ sub unregisterNode {
         }
         $args{node}->host->setState(state => 'down');
     }
-    $args{node}->remove();
+    $args{node}->delete();
 }
 
 
