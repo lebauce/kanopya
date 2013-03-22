@@ -732,7 +732,7 @@ sub generateDatastoreTemplate {
     my $template_file = 'datastore-' . $args{ds_name} . '.tt';
     my $file = $self->generateNodeFile(
         cluster       => $self->service_provider,
-        host          => $self->getMasterNode,
+        host          => $self->getMasterNode->host,
         file          => $template_file,
         template_dir  => '/templates/components/opennebula',
         template_file => 'datastore.tt',
@@ -776,7 +776,7 @@ sub generateImageTemplate {
     my $template_file = 'image-' . $args{image_name} . '.tt';
     my $file = $self->generateNodeFile(
         cluster       => $self->service_provider,
-        host          => $self->getMasterNode,
+        host          => $self->getMasterNode->host,
         file          => $template_file,
         template_dir  => '/templates/components/opennebula',
         template_file => 'image.tt',
@@ -813,7 +813,7 @@ sub generateVnetTemplate {
     my $template_file = 'vnet-' . $args{vnet_name} . '.tt';
     my $file = $self->generateNodeFile(
         cluster       => $self->service_provider,
-        host          => $self->getMasterNode,
+        host          => $self->getMasterNode->host,
         file          => $template_file,
         template_dir  => '/templates/components/opennebula',
         template_file => 'vnet.tt',
