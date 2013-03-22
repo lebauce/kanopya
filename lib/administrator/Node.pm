@@ -23,6 +23,7 @@ use warnings;
 
 use ComponentNode;
 use Entity::Indicator;
+use Entity::Rule::NodemetricRule;
 
 use Log::Log4perl 'get_logger';
 my $log = get_logger("");
