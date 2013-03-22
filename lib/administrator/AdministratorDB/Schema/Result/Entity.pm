@@ -115,7 +115,7 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 alerts
+=head2 alert_entities
 
 Type: has_many
 
@@ -124,9 +124,24 @@ Related object: L<AdministratorDB::Schema::Result::Alert>
 =cut
 
 __PACKAGE__->has_many(
-  "alerts",
+  "alert_entities",
   "AdministratorDB::Schema::Result::Alert",
   { "foreign.entity_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 alert_trigger_entities
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Alert>
+
+=cut
+
+__PACKAGE__->has_many(
+  "alert_trigger_entities",
+  "AdministratorDB::Schema::Result::Alert",
+  { "foreign.trigger_entity_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -830,7 +845,7 @@ __PACKAGE__->might_have(
   { "foreign.workflow_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
- 
+
 __PACKAGE__->might_have(
   "collector_indicator",
   "AdministratorDB::Schema::Result::CollectorIndicator",
@@ -844,5 +859,14 @@ __PACKAGE__->has_many(
   { "foreign.collector_manager_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
+
+# LEGACY
+__PACKAGE__->has_many(
+  "alerts",
+  "AdministratorDB::Schema::Result::Alert",
+  { "foreign.entity_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 
 1;

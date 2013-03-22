@@ -18,8 +18,16 @@
 package Alert;
 use parent 'BaseDB';
 
+use Log::Log4perl "get_logger";
+my $log = get_logger("");
+
 use constant ATTR_DEF => {
-    entity_id => {
+    service_provider_id => {
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    trigger_entity_id => {
         pattern      => '^\d*$',
         is_mandatory => 0,
         is_extended  => 0
@@ -29,7 +37,7 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_extended  => 0
     },
-    alert_message => {
+    alert_signature => {
         pattern      => '^.+$',
         is_mandatory => 0,
         is_extended  => 0

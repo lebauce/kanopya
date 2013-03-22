@@ -701,10 +701,12 @@ CREATE TABLE `alert` (
   `alert_message` char(255) NOT NULL,
   `alert_active` int(1) unsigned NOT NULL DEFAULT 1,
   `entity_id` int(8) unsigned NOT NULL,
+  `trigger_entity_id` int(8) unsigned ,
   `alert_signature` char(255) NOT NULL,
   PRIMARY KEY (`alert_id`),
   UNIQUE KEY (`alert_signature`),
-  FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`trigger_entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
