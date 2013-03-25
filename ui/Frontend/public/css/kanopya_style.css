@@ -215,3 +215,7 @@ button.ui-multiselect,.ui-multiselect-menu li label{cursor:pointer;}
 .message-warning{background-position:-72px 0px;}
 .message-error{background-position:0px 0px;}
 .message-success{background-position:-48px 0px;}
+
+.node-disabled {
+    background: darkgrey !important;
+}

@@ -76,7 +76,7 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
         //console.log('No details for grid ' +  grid_class);
         return;
     }
-    
+
     // Details accessible from menu (dynamic loaded menu)
     if (details_info.link_to_menu) {
         var view_link_id = 'link_view_' + row_data[details_info.label_key].replace(/ /g, '_') + '_' + elem_id;
@@ -143,31 +143,46 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
 }
 
 // Callback when click on remove icon for a row
-function removeGridEntry (grid_id, id, url, method) {
+function removeGridEntry (grid_id, rowid, url, method, extraParams) {
     var dialog_height   = 120;
     var dialog_width    = 300;
-    var delete_url      = url.split('?')[0] + '/' + id;
+    var delete_url      = url.split('?')[0] + '/' + rowid;
     var call_type       = 'DELETE';
     if (method) {
         delete_url += '/' + method;
         call_type = 'POST';
     }
-    $("#"+grid_id).jqGrid(
-            'delGridRow',
-            id,
-            {
-                url             : delete_url,
-                ajaxDelOptions  : { type : call_type },
-                modal           : true,
-                drag            : false,
-                resize          : false,
-                width           : dialog_width,
-                height          : dialog_height,
-                top             : ($(window).height() / 2) - (dialog_height / 2),
-                left            : ($(window).width() / 2) - (dialog_width / 2),
-                afterComplete   : function () {$("#"+grid_id).trigger('gridChange')}
-            }
-    );
+
+    extraParams = (extraParams === undefined) ? {} : extraParams;
+    extraParams.multiselect = (extraParams.multiselect === undefined) ? false : extraParams.multiselect;
+    if (! extraParams.multiselect) {
+        $("#"+grid_id).jqGrid(
+                'delGridRow',
+                rowid,
+                {
+                    url             : delete_url,
+                    ajaxDelOptions  : { type : call_type },
+                    modal           : true,
+                    drag            : false,
+                    resize          : false,
+                    width           : dialog_width,
+                    height          : dialog_height,
+                    top             : ($(window).height() / 2) - (dialog_height / 2),
+                    left            : ($(window).width() / 2) - (dialog_width / 2),
+                    afterComplete   : function () {$("#"+grid_id).trigger('gridChange')}
+                }
+        );
+    }
+    else { // to remove one entry without confirm dialog (already done one time in multiaction.confirm)
+       $.ajax({
+            url     : delete_url,
+            type    : call_type,
+            success : function () {
+                $("#"+grid_id).jqGrid('delRowData', rowid);
+            },
+            async   : true
+        });
+    }
 }
 
 function editEntityRights(grid, rowid, rowdata, rowelem, options) {
@@ -187,17 +202,99 @@ function editEntityRights(grid, rowid, rowdata, rowelem, options) {
     return false;
 }
 
-function create_grid(options) {
+// generic function for post call on grid. after success, afterAction() is called
+function gridGenericPost(grid_id, rowid, action_url, action_method, extraParams, afterAction) {
+    $.ajax({
+        type        : 'POST',
+        url         : action_url,
+        contentType : 'application/json',
+        data        : JSON.stringify( {
+            node_id : rowid
+        }),
+        success : function () {
+            afterAction(grid_id, rowid);
+        }
+    });
+}
 
+// generic dialog box for multi action confirm
+function multiActionGenericConfirm(grid_id, msg, actionHandler) {
+    var dialog_height   = 120;
+    var dialog_width    = 300;
+    var container       = $('<div>', { text : msg + ' ?' });
+    $("#"+grid_id).append(container);
+    container.dialog({
+        title       : msg,
+        modal       : true,
+        draggable   : false,
+        resizable   : false,
+        width       : dialog_width,
+        height      : dialog_height * 1.5,
+        position    : [
+            ($(window).width() / 2) - (dialog_width / 2),
+            ($(window).height() / 2) - (dialog_height / 2)
+        ],
+        buttons :   {
+            'No': function () {
+                $(this).dialog('close');
+            },
+            'Yes': function () {
+                actionHandler();
+                $(this).dialog('close');
+            },
+        },
+        close : function (event, ui) {
+            $(this).remove();
+        }
+    });
+
+}
+
+function create_grid(options) {
     var content_container = $('#' + options.content_container_id);
     var pager_id = options.grid_id + '_pager';
+
+    // multiselect buttons for multiactions
+    options.multiselect = (options.multiselect === undefined) ? false : options.multiselect;
+    options.multiactions = (options.multiactions === undefined) ? null : options.multiactions;
+
+    if (options.multiselect && options.multiactions) {
+        var action_div = (content_container.prevAll('.action_buttons').length != 0)
+            ? content_container.prevAll('.action_buttons')
+            : content_container.nextAll('.action_buttons');
+        $.each(options.multiactions, function(i, multiaction) {
+            // default values
+            multiaction.confirm = (multiaction.confirm === undefined)
+                ? multiActionGenericConfirm
+                : multiaction.confirm;
+            multiaction.action = (multiaction.action === undefined) ? $.noop : multiaction.action;
+            multiaction.afterAction = (multiaction.afterAction === undefined) ? $.noop : multiaction.afterAction;
+            multiaction.extraParams = (multiaction.extraParams === undefined) ? null : multiaction.extraParams;
+            multiaction.icon    = (multiaction.icon === undefined) ? '' : multiaction.icon;
+            // action button
+            var actionButton    = $('<a>', { text : multiaction.label })
+                .appendTo(action_div).button({ icons : { primary : multiaction.icon } });
+            actionButton.bind('click', function() {
+                var action_url = multiaction.url || options.url;
+                var action_method = multiaction.method || null;
+                if ( multiaction.confirm ) {
+                    var checkedItems = $("#" + options.grid_id).jqGrid('getGridParam','selarrrow');
+                    multiaction.confirm(options.grid_id, multiaction.label, function() {
+                        $.each(checkedItems, function(i, rowid) {
+                            multiaction.action(options.grid_id, rowid, action_url, action_method, multiaction.extraParams, multiaction.afterAction);
+                        });
+                        $("#" + options.grid_id).jqGrid('resetSelection');
+                    });
+                }
+            });
+        });
+    }
 
     // Grid class allow to manipulate grid (show_detail of a row) even if grid is associated to an instance (same grid logic but different id)
     var grid_class = options.grid_class || options.grid_id;
 
     if (! options.before_container) {
         content_container.append($("<table>", {'id' : options.grid_id, 'class' : grid_class}));
-
     } else {
         options.before_container.before($("<table>", {'id' : options.grid_id, 'class' : grid_class}));
     }
@@ -215,7 +312,7 @@ function create_grid(options) {
     options.gridComplete    = options.gridComplete || $.noop;
 
     var deleteHandler = $.noop;
-    var actions_col_idx = options.colNames.length;
+    var actions_col_idx = (options.multiselect) ? options.colNames.length + 1 : options.colNames.length;
     if (options.action_delete === undefined || options.action_delete != 'no' || options.rights) {
         // Delete handler
         var delete_url_base    = (options.action_delete && options.action_delete.url) || options.url;
@@ -264,7 +361,7 @@ function create_grid(options) {
         options.colModel.push({hidden : true});
     }
 
-    var grid = $('#' + options.grid_id).jqGrid({ 
+    var grid = $('#' + options.grid_id).jqGrid({
         jsonReader : {
             root: "rows",
             page: "page",
@@ -273,6 +370,8 @@ function create_grid(options) {
             repeatitems: false,
         },
 
+        multiselect     : options.multiselect,
+        multiboxonly    : options.multiselect, // to have an item checked only if there is a click on it's checkbox
         gridComplete    : options.gridComplete,
         treeGrid        : options.treeGrid      || false,
         treeGridModel   : options.treeGridModel || '',
@@ -304,7 +403,9 @@ function create_grid(options) {
 
         onCellSelect    : function(rowid, index, contents, target) {
             // Test if some options disable details
-            if (index != actions_col_idx && ! options.deactivate_details && ! options.colModel[index].nodetails) {
+            var idx = (options.multiselect) ? index - 1 : index;
+            if ( ((options.multiselect && index != 0) || ! options.multiselect)
+                && index != actions_col_idx && ! options.deactivate_details && ! options.colModel[idx].nodetails ) {
                 // Callback before show details, must return true if defined
                 if ((! options.beforeShowDetails) || options.beforeShowDetails(options.grid_id, rowid)) {
                     var row_data = $('#' + options.grid_id).getRowData(rowid);
@@ -315,7 +416,7 @@ function create_grid(options) {
 
         loadError       : function (xhr, status, error) {
             var error_msg = xhr.responseText;
-            alert('ERROR ' + error_msg + ' | status : ' + status + ' | error : ' + error); 
+            alert('ERROR ' + error_msg + ' | status : ' + status + ' | error : ' + error);
         },
 
         url             : options.url, // not used by jqGrid (handled by datatype option, see below) but we want this info in grid
@@ -380,13 +481,11 @@ function create_grid(options) {
 function reload_grid (grid_id,  data_route) {
     var grid = $('#' + grid_id);
     grid.jqGrid("clearGridData");
-    $.getJSON(data_route, {}, function(data) { 
+    $.getJSON(data_route, {}, function(data) {
         //alert(data);
         for(var i=0;i<=data.length;i++) grid.jqGrid('addRowData',i+1,data[i]);
         grid.trigger("reloadGrid");
-        
     });
-    
 }
 
 function createTreeGrid(params, pageSize) {
@@ -403,6 +502,3 @@ function createTreeGrid(params, pageSize) {
 $(document).ready(function () {
 
 });
-
-
-
