@@ -241,15 +241,15 @@ function fillDataModelTypeList(widget_div) {
     // TODO Do not hardcode, get it from server
     var data = [
                 {
-                    type : 'LinearRegression',
+                    type : 'AnalyticRegression::LinearRegression',
                     label: 'Linear regression'
                 },
                 {
-                    type : 'LogarithmicRegression',
+                    type : 'AnalyticRegression::LogarithmicRegression',
                     label: 'Logarithmic regression'
                 },
                 {
-                    type : 'AutoArima',
+                    type : 'RDataModel::AutoArima',
                     label: 'ARIMA'
                 }
     ];
@@ -291,11 +291,12 @@ function _autoPredict(params) {
         contentType : 'application/json',
         data        : JSON.stringify(
                 {
-                    model_list      : params.model_types,
-                    combination_id  : combination.id,
-                    start_time      : current_selected_start_time,
-                    end_time        : current_selected_end_time,
-                    horizon         : parseInt(new Date(time_settings.end).getTime() / 1000),
+                    model_list            : params.model_types,
+                    combination_id        : combination.id,
+                    data_start            : current_selected_start_time,
+                    data_end              : current_selected_end_time,
+                    predict_start_tstamps : parseInt(new Date(time_settings.start).getTime() / 1000),
+                    predict_end_tstamps   : parseInt(new Date(time_settings.end).getTime() / 1000),
                 }
         ),
         success     : function (prediction_data) {
