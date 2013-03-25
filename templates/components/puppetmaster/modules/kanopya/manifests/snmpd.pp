@@ -1,4 +1,12 @@
 class kanopya::snmpd::service {
+	file { '/etc/snmp/snmpd.conf':
+		path    => '/etc/snmp/snmpd.conf',
+		ensure  => present,
+		mode    => 0644,
+		source  => "puppet:///kanopyafiles/${sourcepath}/etc/snmp/snmpd.conf",
+		notify  => Service['snmpd']
+	}
+
 	service {
 		'snmpd':
 			name => $operatingsystem ? {
@@ -8,7 +16,8 @@ class kanopya::snmpd::service {
 			hasstatus => true,
 			hasrestart => true,
 			enable => true,
-			require => Class['kanopya::snmpd::install'],
+			require => [ Class['kanopya::snmpd::install'],
+			             File['/etc/snmp/snmpd.conf'] ]
 	}
 }
 
