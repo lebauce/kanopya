@@ -142,14 +142,14 @@ sub fixTimeSerie {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => ['data'],
+                         required => ['timeserie'],
     );
 
     # Split and sort the data
-    my @timestamps = sort {$a <=> $b} keys(%{$args{data}});
+    my @timestamps = sort {$a <=> $b} keys(%{$args{timeserie}});
     my @values;
     for my $key (@timestamps) {
-        push (@values, $args{data}->{$key});
+        push (@values, $args{timeserie}->{$key});
     }
 
     # Fix the undef first values
@@ -582,7 +582,7 @@ sub findSeasonalityACF {
 
 Computes the possible values of the seasonality by using the acf and spectral density approaches.
 
-@param data the historical data
+@param data the historical data (array of values)
 @return an array reference of the values of the seasonalities
 
 =end classdoc
@@ -600,7 +600,7 @@ sub findSeasonality {
                         );
 
     #Get the data values of the time serie in an array
-    my ($data_time, $data_values) = $class->splitData('data' => $args{'data'});
+    my $data_values = $args{'data'};
 
     my @season;
     my $seasonal_DSP = $class->findSeasonalityDSP('data_values' => $data_values);
@@ -653,7 +653,54 @@ sub splitData {
         push @sorted_data_values, $args{data}->{$key};
     }
 
-    return (\@sorted_all_time_keys, \@sorted_data_values);
+    return {
+        timestamps_ref => \@sorted_all_time_keys,
+        values_ref     => \@sorted_data_values,
+    };
+}
+
+=pod
+
+=begin classdoc
+
+Compute the granularity of the timeserie and the preduct times in points (predict_start and predict_end).
+
+@param timestamps A reference to the timestamps of the time serie.
+@param predict_start_tstamps The starting point wished for the prediction, in timestamps.
+@param predict_end_tstamps The ending point wished for the prediction, in timestamps.
+
+@return the granularity of the timeserie and the predicts times (in points) in a hash ('granularity' && 
+        'predict_start' && 'predict_end').
+
+=end classdoc
+
+=cut
+
+sub computePredictPointsAndGranularity {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => ['timestamps', 'predict_start_tstamps', 'predict_end_tstamps']);
+
+    # Compute the granularity
+    my $granularity = ($args{timestamps}[-1] - $args{timestamps}[0]) / (@{$args{timestamps}} - 1);
+
+    # Compute the horizons
+    my $start = ($args{predict_start_tstamps} - $args{timestamps}[0]);
+    my $predict_start  = ($start % $granularity) == 0 ? $start / $granularity
+                       :                                int($start / $granularity) + 1
+                       ;
+
+    my $end = ($args{predict_end_tstamps} - $args{timestamps}[0]);
+    my $predict_end  = ($end % $granularity) == 0 ? $end / $granularity
+                     :                              int($end / $granularity) + 1
+                     ;
+
+    return {
+        granularity   => $granularity,
+        predict_start => $predict_start,
+        predict_end   => $predict_end,
+    };
 }
 
 1;

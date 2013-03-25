@@ -52,7 +52,8 @@ sub data_model_split_data {
         my $file = $path.'test_split_data.csv';
         my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
 
-        my ($times, $data_values) = Utils::TimeSerieAnalysis->splitData('data' => $data);
+        my %temp = %{Utils::TimeSerieAnalysis->splitData('data' => $data)};
+        my ($times, $data_values) = ($temp{timestamps_ref}, $temp{values_ref});
 
         #Expected values
         my @expected_values = ( 315.42, 316.31, 316.50, 317.56, 318.13);
@@ -239,10 +240,10 @@ sub data_model_find_seasonality {
     lives_ok {
 
         #The data used for the test
-        my $file = $path.'data_no_seasonality.csv';
-        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-
-        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
+        my $file    = $path.'data_no_seasonality.csv';
+        my $data    = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
+        my $values  = Utils::TimeSerieAnalysis->splitData('data' => $data)->{values_ref};
+        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $values);
 
         #There is no seasonality for this example
         if ($#$seasons+1 != 0) {
@@ -255,10 +256,10 @@ sub data_model_find_seasonality {
     lives_ok {
 
         #The data used for the test
-        my $file = $path.'data_seasonality=6.csv';
-        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-
-        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
+        my $file    = $path.'data_seasonality=6.csv';
+        my $data    = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
+        my $values  = Utils::TimeSerieAnalysis->splitData('data' => $data)->{values_ref};
+        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $values);
         my $expected_value = 6;
 
         if ($#$seasons+1 != 1 || $seasons->[0] != $expected_value) {
@@ -271,10 +272,10 @@ sub data_model_find_seasonality {
     lives_ok {
 
         # The data used for the test
-        my $file = $path.'data_seasonality=10.csv';
-        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-
-        my $seasons        = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
+        my $file    = $path.'data_seasonality=10.csv';
+        my $data    = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
+        my $values  = Utils::TimeSerieAnalysis->splitData('data' => $data)->{values_ref};
+        my $seasons        = Utils::TimeSerieAnalysis->findSeasonality('data' => $values);
         my $expected_value = 10;
 
         if ( $#{$seasons}+1 != 1 || $seasons->[0] != $expected_value ) {
@@ -289,8 +290,8 @@ sub data_model_find_seasonality {
         #The data used for the test
         my $file = $path.'data_seasonality=53.csv';
         my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-
-        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
+        my $values  = Utils::TimeSerieAnalysis->splitData('data' => $data)->{values_ref};
+        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $values);
         my $expected_value = 53;
 
         #We have only one seasonality (equal to 53)
@@ -308,8 +309,8 @@ sub data_model_find_seasonality {
         #The data used for the test
         my $file = $path.'data_co2.csv';
         my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-
-        my $seasons=Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
+        my $values  = Utils::TimeSerieAnalysis->splitData('data' => $data)->{values_ref};
+        my $seasons=Utils::TimeSerieAnalysis->findSeasonality('data' => $values);
 
         #The expected values of the seasonalities
         my $expected_value = 12;
@@ -326,8 +327,8 @@ sub data_model_find_seasonality {
         #The data used for the test
         my $file = $path.'data_seasonality=132.csv';
         my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-
-        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
+        my $values  = Utils::TimeSerieAnalysis->splitData('data' => $data)->{values_ref};
+        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $values);
 
         my @expected_values = (3, 132);
 

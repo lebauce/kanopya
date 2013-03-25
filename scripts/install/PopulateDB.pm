@@ -220,9 +220,11 @@ my @classes = (
     'Entity::WorkflowDef',
     'Entity::Rule',
     'Entity::DataModel',
-    'Entity::DataModel::LinearRegression',
-    'Entity::DataModel::LogarithmicRegression',
-    'Entity::DataModel::AutoArima',
+    'Entity::DataModel::AnalyticRegression',
+    'Entity::DataModel::RDataModel',
+    'Entity::DataModel::AnalyticRegression::LinearRegression',
+    'Entity::DataModel::AnalyticRegression::LogarithmicRegression',
+    'Entity::DataModel::RDataModel::AutoArima',
 );
 
 sub registerClassTypes {
