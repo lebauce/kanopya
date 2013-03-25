@@ -495,25 +495,6 @@ sub registerUsers {
 #    $admin_group->appendEntity(entity => $executor_user);
 }
 
-sub registerKernels {
-    my %args = @_;
-
-    my @kernels = (
-        [ '2.6.32-5-xen-amd64' , '2.6.32-5-xen-amd64', 'Kernel for Xen hypervisors' ],
-        [ '3.2.6-xenvm', '3.2.6-xenvm', 'Kernel for xen virtual machines' ],
-        [ '2.6.32-279.5.1.el6.x86_64', '2.6.32-279.5.1.el6.x86_64', 'Kernel for KVM hypervisors' ],
-        [ '3.0.42-0.7-default', '3.0.42-0.7-default', 'Kernel for SLES 11' ]
-    );
-
-    for my $kernel (@kernels) {
-        Entity::Kernel->new(
-            kernel_name    => $kernel->[0],
-            kernel_version => $kernel->[1],
-            kernel_desc    => $kernel->[2]
-        );
-    }
-}
-
 sub registerProcessorModels {
     my %args = @_;
 
@@ -1280,8 +1261,6 @@ sub registerKanopyaMaster {
 
     my $admin = Entity::User->find(hash => { user_login => "admin" });
 
-    my $master_kernel = Entity::Kernel->find(hash => { });
-
     my $admin_cluster = Entity::ServiceProvider::Cluster->new(
                             cluster_name          => 'Kanopya',
                             cluster_desc          => 'Main Cluster hosting Administrator, Executor, Boot server and NAS',
@@ -1299,8 +1278,7 @@ sub registerKanopyaMaster {
                             cluster_basehostname  => 'kanopya_',
                             default_gateway_id    => $admin_network->id,
                             active                => 1,
-                            user_id               => $admin->id,
-                            kernel_id             => $master_kernel->id
+                            user_id               => $admin->id
                         );
 
 
@@ -1441,7 +1419,6 @@ sub registerKanopyaMaster {
     my $physical_hoster = $admin_cluster->getComponent(name => 'Physicalhoster');
     my $admin_host = Entity::Host->new(
                          host_manager_id    => $physical_hoster->id,
-                         kernel_id          => $master_kernel->id,
                          host_serial_number => "",
                          host_desc          => "Admin host",
                          active             => 1,
@@ -1894,14 +1871,12 @@ sub populate_policies {
     # system
     my $puppettypeid = ClassType::ComponentType->find(hash => { component_name => 'Puppetagent' })->id;
     my $keepalivedtypeid = ClassType::ComponentType->find(hash => { component_name => 'Keepalived' })->id;
-    my $kernel = Entity::Kernel->find(hash => {kernel_name => '2.6.32-5-xen-amd64'});
     $policies{'Standard physical cluster'}{system} = Entity::Policy::SystemPolicy->new(
         policy_name           => 'Default non persitent cluster',
         policy_desc           => 'System policy for default non persitent cluster',
         policy_type           => 'system',
         cluster_si_shared     => 0,
         cluster_si_persistent => 0,
-        kernel_id             => $kernel->id,
         systemimage_size      => 5 * (1024**3), # 5GB
         components            => [
             { component_type => $puppettypeid },
@@ -1918,7 +1893,6 @@ sub populate_policies {
         policy_type           => 'system',
         cluster_si_shared     => 0,
         cluster_si_persistent => 0,
-        kernel_id             => $kernel->id,
         systemimage_size      => 5 * (1024**3), # 5GB
         components            => [
             { component_type => $puppettypeid },
@@ -1932,7 +1906,6 @@ sub populate_policies {
         policy_type           => 'system',
         cluster_si_shared     => 0,
         cluster_si_persistent => 0,
-        kernel_id             => $kernel->id,
         systemimage_size      => 5 * (1024**3), # 5GB
         components            => [
             { component_type => $puppettypeid },
@@ -2126,7 +2099,6 @@ sub populateDB {
     registerManagerCategories(%args);
     registerUsers(%args);
 
-    registerKernels(%args);
     registerProcessorModels(%args);
     registerOperations(%args);
     registerServiceProviders(%args);
