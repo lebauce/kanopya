@@ -1381,10 +1381,9 @@ sub registerKanopyaMaster {
         {
             name => "Openiscsi"
         },
-#        {
-#            name => "Physicalhoster",
-#            manager => "HostManager"
-#        },
+        {
+            name => "Mysql"
+        },
         {
             name => "Kanopyacollector",
             conf => {
