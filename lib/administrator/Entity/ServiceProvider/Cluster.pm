@@ -788,7 +788,7 @@ sub removeNode {
 
     General::checkParams(args => \%args, required => ['node_id']);
 
-    my $host = Entity->get(id => $args{node_id})->host;
+    my $host = Node->get(id => $args{node_id})->host;
     Entity::Workflow->run(
         name       => 'StopNode',
         related_id => $self->id,
