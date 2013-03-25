@@ -435,7 +435,8 @@ sub _generateNetConf {
             address   => $ip,
             netmask   => $netmask,
             gateway   => $gateway,
-            iface_pxe => $iface->iface_pxe,
+            iface_pxe => $args{cluster}->cluster_boot_policy ne Manager::HostManager->BOOT_POLICIES->{virtual_disk} ?
+                         $iface->iface_pxe : 0
         };
 
         my @vlans;
