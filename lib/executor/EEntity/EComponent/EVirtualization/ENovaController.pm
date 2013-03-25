@@ -139,7 +139,7 @@ sub migrateHost {
         content => {
             'os-migrateLive'  => {
                 disk_over_commit => JSON::false,
-                block_migration  => JSON::true,
+                block_migration  => JSON::false,
                 host             => $hv->node->node_hostname,
             }
         }
