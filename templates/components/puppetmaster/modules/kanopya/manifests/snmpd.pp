@@ -24,6 +24,13 @@ class kanopya::snmpd::install {
 }
 
 class kanopya::snmpd {
-	include kanopya::snmpd::install, kanopya::snmpd::service
+    include kanopya::snmpd::install, kanopya::snmpd::service
+
+    file { '/etc/snmp/snmpd.conf':
+        path    => '/etc/snmp/snpmd.conf',
+        ensure  => present,
+        mode    => 0644,
+        source  => "puppet:///kanopyafiles/${sourcepath}/etc/snmp/snmpd.conf",
+    }
 }
 
