@@ -134,7 +134,8 @@ function createUpdateNodeButton(container, elem_id, grid) {
 
 function _buttonEnabling (grid, rowid, action_enable) {
     $('#' + rowid).find('.node_control .ui-button-text').html(action_enable ? 'Disable' : 'Enable');
-    $(grid).find('tr#' + rowid + ' td').css('background', action_enable ? '' : 'lightgrey');
+    var td = $(grid).find('tr#' + rowid + ' td');
+    action_enable ? td.removeClass('node-disabled') : td.addClass('node-disabled');
 }
 
 function loadServicesResources (container_id, elem_id) {
@@ -145,7 +146,7 @@ function loadServicesResources (container_id, elem_id) {
     function manageNodeEnabling(grid, rowid, rowdata, rowelem) {
         var node_disabled = rowelem.monitoring_state === 'disabled';
         if (node_disabled) {
-            $(grid).find('tr#' + rowid + ' td').css('background', 'lightgrey');
+            $(grid).find('tr#' + rowid + ' td').addClass('node-disabled');
         }
         var cell = $(grid).find('tr#' + rowid).find('td[aria-describedby="' + loadServicesResourcesGridId + '_activate_control"]');
         var activateButton  = $('<div>', {'class' : 'node_control', html : node_disabled ? 'Enable' : 'Disable', css : 'position:center'}).button().appendTo(cell);

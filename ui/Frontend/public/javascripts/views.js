@@ -275,7 +275,7 @@ function create_grid(options) {
             var actionButton    = $('<a>', { text : multiaction.label })
                 .appendTo(action_div).button({ icons : { primary : multiaction.icon } });
             actionButton.bind('click', function() {
-                var action_url = multiaction.url || options.url ;
+                var action_url = multiaction.url || options.url;
                 var action_method = multiaction.method || null;
                 if ( multiaction.confirm ) {
                     var checkedItems = $("#" + options.grid_id).jqGrid('getGridParam','selarrrow');
