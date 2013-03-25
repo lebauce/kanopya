@@ -376,7 +376,7 @@ function nodedetailsaction(cid, eid) {
                     label   : 'Stop node',
                     sprite  : 'stop',
                     action  : '/api/serviceprovider/' + data.service_provider_id + '/removeNode',
-                    data    : { host_id : data.host.pk },
+                    data    : { node_id : data.pk },
                     confirm : 'The node will be halted'
                 },
                 {

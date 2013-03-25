@@ -77,7 +77,7 @@ sub execute {
         my ($state, $timestamp) = $host->getState();
         if($state ne 'up') { next; }
 
-        $self->{context}->{cluster}->removeNode(host_id => $host->id);
+        $self->{context}->{cluster}->removeNode(node_id => $host->node->id);
     }
 
     $self->{context}->{cluster}->setState(state => 'stopping');

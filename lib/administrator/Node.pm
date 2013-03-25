@@ -176,7 +176,7 @@ sub getMonitoringData {
 sub remove {
     my $self = shift;
 
-    $self->service_provider->removeNode('host_id' => $self->host_id);
+    $self->service_provider->removeNode('node_id' => $self->id);
 }
 
 sub adminIp {

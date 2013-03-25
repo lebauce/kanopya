@@ -786,9 +786,9 @@ sub removeNode {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['host_id']);
+    General::checkParams(args => \%args, required => ['node_id']);
 
-    my $host = Entity->get(id => $args{host_id});
+    my $host = Entity->get(id => $args{node_id})->host;
     Entity::Workflow->run(
         name       => 'StopNode',
         related_id => $self->id,
