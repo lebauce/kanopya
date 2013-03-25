@@ -103,6 +103,8 @@ sub getPuppetDefinition {
                      $args{cluster}->cluster_name . '/' . $args{host}->node->node_hostname .
                      "\", stage => system }\n";
 
+    $definition .= "class { 'kanopya::ntp': }";
+
     # /etc/fstab et mounts
     foreach my $mount (@{$conf->{linuxes_mount}}) {
         $str .= "file {'$mount->{linux_mount_point}': ensure => directory }\n";

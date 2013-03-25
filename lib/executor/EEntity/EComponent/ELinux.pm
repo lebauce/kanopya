@@ -183,7 +183,7 @@ sub preconfigureSystemimage {
     }
 
     $self->_generateUserAccount(econtext => $econtext, %args);
-    $self->_generateNtpdateConf(econtext => $econtext, %args);
+    #$self->_generateNtpdateConf(econtext => $econtext, %args);
     $self->_generateNetConf(econtext => $econtext, %args);
 
     # Set up fastboot
