@@ -160,7 +160,13 @@ sub _nodeMetricLastValueFromStorage {
     my %value_by_objects;
     for my $object_name (@{$args{monitored_objects_names}}) {
         my $metric_uid = $args{indicator}->id . '_' . $object_name;
-        my ($timestamp, $value) = RRDTimeData::getLastUpdatedValue(metric_uid => $metric_uid);
+        my ($timestamp, $value);
+        eval {
+            ($timestamp, $value) = RRDTimeData::getLastUpdatedValue(metric_uid => $metric_uid);
+        };
+        if ($@) {
+            $value = undef;
+        }
         $value_by_objects{$object_name} = $value;
     }
     return \%value_by_objects;
