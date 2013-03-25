@@ -69,8 +69,7 @@ sub prepare {
     }
 
     eval {
-        $self->{context}->{host_manager} =
-            EEntity->new(data => $self->{context}->{host}->getHostManager);
+        $self->{context}->{host_manager} = $self->{context}->{host}->getHostManager;
     };
     if($@) {
         throw Kanopya::Exception::Internal::WrongValue(error => $@);
