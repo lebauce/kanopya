@@ -36,6 +36,16 @@ function scomManagement(cid, eid) {
             callback : function (id) {
                 confirmDeleteWithDependencies('/api/indicator/', id, [indicators_grid_id]);
             }
+        },
+        multiselect             : true,
+        multiactions : {
+            multiDelete : {
+                label       : 'Delete indicator(s)',
+                action      : removeGridEntry,
+                url         : '/api/indicator',
+                extraParams : {multiselect : true},
+                icon        : 'ui-icon-trash'
+            },
         }
     } );
 

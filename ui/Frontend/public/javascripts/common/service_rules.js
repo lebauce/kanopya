@@ -396,14 +396,23 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
 
     var divacc = $('<div id="accordionrule">').appendTo(container);
     $('<h3><a href="#">Node</a></h3>').appendTo(divacc);
-    $('<div id="node_accordion_container">').appendTo(divacc);
+
+    var  node_accordion_container = $('<div id="node_accordion_container">');
+    divacc.append(
+        node_accordion_container.append(
+            $('<div>')
+                .append( $('<div>', {id : 'service_nodemetric_conditions_container'}) )
+                .append( $('<div>', {class : 'action_buttons'}) )
+        )
+    );
+
     // Display nodemetric conditions
     var serviceNodemetricConditionsGridId = 'service_resources_nodemetric_conditions_' + elem_id;
     var serviceNodemetricRulesGridId = 'service_resources_nodemetric_rules_' + elem_id;
     create_grid( {
         caption: 'Conditions',
         url: '/api/serviceprovider/' + elem_id + '/nodemetric_conditions?expand=left_combination,right_combination',
-        content_container_id: 'node_accordion_container',
+        content_container_id: 'service_nodemetric_conditions_container',
         grid_id: serviceNodemetricConditionsGridId,
         colNames: [ 'id', 'name', 'left operand', 'comparator', 'right operand' ],
         colModel: [
@@ -421,15 +430,30 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                 confirmDeleteWithDependencies('/api/nodemetriccondition/', id, [serviceNodemetricConditionsGridId, serviceNodemetricRulesGridId]);
             }
         },
+        multiselect : true,
+        multiactions : {
+            multiDelete : {
+                label       : 'Delete node condition(s)',
+                action      : removeGridEntry,
+                url         : '/api/nodemetriccondition',
+                icon        : 'ui-icon-trash',
+                extraParams : {multiselect : true}
+            }
+        }
     } );
-    createNodemetricCondition('node_accordion_container', elem_id)
+    createNodemetricCondition('service_nodemetric_conditions_container', elem_id)
 
     // Display nodemetric rules
     $("<p>").appendTo('#node_accordion_container');
+    node_accordion_container.append(
+        $('<div>')
+            .append( $('<div>', {id : 'service_nodemetric_rules_container'}) )
+            .append( $('<div>', {class : 'action_buttons'}) )
+    );
     create_grid( {
         caption: 'Rules',
         url: '/api/nodemetricrule?service_provider_id=' + elem_id,
-        content_container_id: 'node_accordion_container',
+        content_container_id: 'service_nodemetric_rules_container',
         grid_id: serviceNodemetricRulesGridId,
         grid_class: 'service_resources_nodemetric_rules',
         afterInsertRow: function(grid, rowid, rowdata, rowelem) {
@@ -465,12 +489,22 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         action_delete: {
             url : '/api/nodemetricrule'
         },
+        multiselect : true,
+        multiactions : {
+            multiDelete : {
+                label       : 'Delete node rule(s)',
+                action      : removeGridEntry,
+                url         : '/api/nodemetricrule',
+                icon        : 'ui-icon-trash',
+                extraParams : {multiselect : true}
+            }
+        }
     } );
 
-    createRuleButton('node_accordion_container', elem_id, 'nodemetric_rule');
+    createRuleButton('service_nodemetric_rules_container', elem_id, 'nodemetric_rule');
     if (!mode_policy) {
         importItemButton(
-                'node_accordion_container',
+                'service_nodemetric_rules_container',
                 elem_id,
                 {
                     name        : 'node rule',
@@ -484,14 +518,23 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
 
     // Here's the second part of the accordion :
     $('<h3><a href="#">Service</a></h3>').appendTo(divacc);
-    $('<div id="service_accordion_container">').appendTo(divacc);
+
+    var  service_accordion_container = $('<div id="service_accordion_container">');
+    divacc.append(
+        service_accordion_container.append(
+            $('<div>')
+                .append( $('<div>', {id : 'service_resources_aggregate_conditions_container'}) )
+                .append( $('<div>', {class : 'action_buttons'}) )
+        )
+    );
+
     // Display service conditions :
     var serviceAggregateConditionsGridId = 'service_resources_aggregate_conditions_' + elem_id;
     var serviceAggregateRulesGridId = 'service_resources_aggregate_rules_' + elem_id;
     create_grid( {
         caption: 'Conditions',
         url: '/api/serviceprovider/' + elem_id + '/aggregate_conditions?expand=left_combination,right_combination',
-        content_container_id: 'service_accordion_container',
+        content_container_id: 'service_resources_aggregate_conditions_container',
         grid_id: serviceAggregateConditionsGridId,
         colNames: ['id','name', 'left operand', 'comparator', 'right operand'],
         colModel: [ 
@@ -507,16 +550,31 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                 confirmDeleteWithDependencies('/api/aggregatecondition/', id, [serviceAggregateConditionsGridId, serviceAggregateRulesGridId]);
             }
         },
+        multiselect : true,
+        multiactions : {
+            multiDelete : {
+                label       : 'Delete service condition(s)',
+                action      : removeGridEntry,
+                url         : '/api/aggregatecondition',
+                icon        : 'ui-icon-trash',
+                extraParams : {multiselect : true}
+            }
+        }
     } );
-    createServiceCondition('service_accordion_container', elem_id);
+    createServiceCondition('service_resources_aggregate_conditions_container', elem_id);
 
     // Display services rules :
     $("<p>").appendTo('#service_accordion_container');
+    service_accordion_container.append(
+        $('<div>')
+            .append( $('<div>', {id : 'service_resources_aggregate_rules_container'}) )
+            .append( $('<div>', {class : 'action_buttons'}) )
+    );
     create_grid( {
         caption: 'Rules',
         url: '/api/aggregaterule?service_provider_id=' + elem_id,
         grid_class: 'service_resources_aggregate_rules',
-        content_container_id: 'service_accordion_container',
+        content_container_id: 'service_resources_aggregate_rules_container',
         grid_id: serviceAggregateRulesGridId,
         colNames: ['id','name', 'enabled', 'last eval', 'formula', 'description', 'trigger', 'alert'],
         colModel: [
@@ -551,11 +609,21 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         action_delete: {
             url : '/api/aggregaterule',
         },
+        multiselect : true,
+        multiactions : {
+            multiDelete : {
+                label       : 'Delete service rule(s)',
+                action      : removeGridEntry,
+                url         : '/api/aggregaterule',
+                icon        : 'ui-icon-trash',
+                extraParams : {multiselect : true}
+            }
+        }
     } );
-    createRuleButton('service_accordion_container', elem_id, 'aggregate_rule');
+    createRuleButton('service_resources_aggregate_rules_container', elem_id, 'aggregate_rule');
     if (!mode_policy) {
         importItemButton(
-                'service_accordion_container',
+                'service_resources_aggregate_rules_container',
                 elem_id,
                 {
                     name        : 'service rule',

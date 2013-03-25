@@ -260,17 +260,24 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
 
     var divacc = $('<div id="accordion_monitoring_rule">').appendTo(container);
     $('<h3><a href="#">Node</a></h3>').appendTo(divacc);
-    $('<div id="node_monitoring_accordion_container">').appendTo(divacc);
-    var container = $("#" + container_id);
 
-    $("<p>", { html : "Nodemetric Combinations  : " }).appendTo('#service_monitoring_accordion_container');
+    var node_monitoring_accordion_container = $('<div>', {id : 'node_monitoring_accordion_container'});
+    divacc.append(
+        node_monitoring_accordion_container.append(
+            $('<div>')
+                .append( $('<div>', {id : 'node_metrics_container'}) )
+                .append( $('<div>', {class : 'action_buttons'}) )
+        )
+    );
+
     var nodemetriccombi_grid_id = 'service_resources_nodemetric_combination_' + elem_id;
     create_grid( {
+        caption : 'Nodemetric Combinations',
         url: '/api/nodemetriccombination?service_provider_id=' + elem_id,
-        content_container_id: 'node_monitoring_accordion_container',
+        content_container_id: 'node_metrics_container',
         grid_id: nodemetriccombi_grid_id,
         colNames: [ 'id', 'name', 'indicators formula', 'indicators formula brut' ],
-        colModel: [ 
+        colModel: [
             { name: 'pk', index: 'pk', width: 90, sorttype: 'int', hidden: true, key: true },
             { name: 'nodemetric_combination_label', index: 'nodemetric_combination_label', width: 120 },
             { name: 'formula_label', index: 'formula_label', width: 170 },
@@ -288,12 +295,22 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
             callback : function (id) {
                 confirmDeleteWithDependencies('/api/nodemetriccombination/', id, [nodemetriccombi_grid_id]);
             }
+        },
+        multiselect : true,
+        multiactions : {
+            multiDelete : {
+                label       : 'Delete node combination(s)',
+                action      : removeGridEntry,
+                url         : '/api/nodemetriccombination',
+                icon        : 'ui-icon-trash',
+                extraParams : {multiselect : true}
+            }
         }
     } );
-    createNodemetricCombination('node_monitoring_accordion_container', elem_id, (external !== '') ? true : false);
+    createNodemetricCombination('node_metrics_container', elem_id, (external !== '') ? true : false);
     if (!mode_policy) {
         importItemButton(
-                'node_monitoring_accordion_container',
+                'node_metrics_container',
                 elem_id,
                 {
                     name        : 'combination',
@@ -305,16 +322,23 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
         );
     }
 
-
     $('<h3><a href="#">Service</a></h3>').appendTo(divacc);
-    $('<div id="service_monitoring_accordion_container">').appendTo(divacc);
-   
+
     var clustermetric_grid_id = 'service_resources_clustermetrics_' + elem_id;
     var aggregatecombi_grid_id = 'service_resources_aggregate_combinations_' + elem_id;
+    var service_monitoring_accordion_container = $('<div>', {id : 'service_monitoring_accordion_container'});
+    divacc.append(
+        service_monitoring_accordion_container.append(
+            $('<div>')
+                .append( $('<div>', {id : 'service_metrics_container'}) )
+                .append( $('<div>', {class : 'action_buttons'}) )
+        )
+    );
+
     create_grid( {
         caption : 'Metrics',
         url: '/api/serviceprovider/' + elem_id + '/clustermetrics',
-        content_container_id: 'service_monitoring_accordion_container',
+        content_container_id: 'service_metrics_container',
         grid_id: clustermetric_grid_id,
         colNames: [ 'id', 'name', 'function', 'indicator' ],
         colModel: [
@@ -329,14 +353,30 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
             }
         },
         deactivate_details  : mode_policy,
+        multiselect : true,
+        multiactions : {
+            multiDelete : {
+                label       : 'Delete service metric(s)',
+                action      : removeGridEntry,
+                url         : '/api/clustermetric',
+                icon        : 'ui-icon-trash',
+                extraParams : {multiselect : true}
+            }
+        }
     } );
-    createServiceMetric('service_monitoring_accordion_container', elem_id, (external !== '') ? true : false);
-    
+    createServiceMetric('service_metrics_container', elem_id, (external !== '') ? true : false);
+
     $("<p>").appendTo('#service_monitoring_accordion_container');
+
+    service_monitoring_accordion_container.append(
+        $('<div>')
+            .append( $('<div>', {id : 'service_metric_comb_container'}) )
+            .append( $('<div>', {class : 'action_buttons'}) )
+    );
     create_grid( {
         caption: 'Metric combinations',
         url: '/api/aggregatecombination?service_provider_id=' + elem_id,
-        content_container_id: 'service_monitoring_accordion_container',
+        content_container_id: 'service_metric_comb_container',
         grid_id: aggregatecombi_grid_id,
         colNames: [ 'id', 'name', 'formula' ],
         colModel: [
@@ -357,11 +397,21 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
                 confirmDeleteWithDependencies('/api/aggregatecombination/', id, [aggregatecombi_grid_id]);
             }
         },
+        multiselect : true,
+        multiactions : {
+            multiDelete : {
+                label       : 'Delete service combination(s)',
+                action      : removeGridEntry,
+                url         : '/api/aggregatecombination',
+                icon        : 'ui-icon-trash',
+                extraParams : {multiselect : true}
+            }
+        }
     } );
-    createServiceConbination('service_monitoring_accordion_container', elem_id);
+    createServiceConbination('service_metric_comb_container', elem_id);
     if (!mode_policy) {
         importItemButton(
-                'service_monitoring_accordion_container',
+                'service_metric_comb_container',
                 elem_id,
                 {
                     name        : 'combination',

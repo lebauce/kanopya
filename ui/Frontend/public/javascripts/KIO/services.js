@@ -1,4 +1,3 @@
-
 require('modalform.js');
 require('common/service_common.js');
 require('common/formatters.js');
@@ -47,13 +46,13 @@ function createAddServiceButton(container) {
     button.bind('click', function() {
         mod = new ModalForm(service_opts);
         mod.start();
-    });   
+    });
     $(container).append(button);
 };
 
 function servicesList (container_id, elem_id) {
     var container = $('#' + container_id);
-    
+
     create_grid( {
         url: '/api/externalcluster?components.component_id=', // Only list externalcluster without connector
         content_container_id: container_id,
@@ -71,10 +70,19 @@ function servicesList (container_id, elem_id) {
         ],
         elem_name   : 'service',
         details     : { link_to_menu : 'yes', label_key : 'externalcluster_name'},
+        multiselect : true,
+        multiactions : {
+            multiDelete : {
+                label   : 'Delete service(s)',
+                action  : removeGridEntry,
+                extraParams : {multiselect : true},
+                icon    : 'ui-icon-trash'
+            },
+        }
     });
-    
+
     $("#services_list").on('gridChange', reloadServices);
-    
+
     createAddServiceButton(container);
 }
 
@@ -124,15 +132,20 @@ function createUpdateNodeButton(container, elem_id, grid) {
     $(container).append(synchro_button);
 }
 
+function _buttonEnabling (grid, rowid, action_enable) {
+    $('#' + rowid).find('.node_control .ui-button-text').html(action_enable ? 'Disable' : 'Enable');
+    $(grid).find('tr#' + rowid + ' td').css('background', action_enable ? '' : 'lightgrey');
+}
+
 function loadServicesResources (container_id, elem_id) {
     var loadServicesResourcesGridId = 'service_resources_list_' + elem_id;
     var nodemetricrules;
 
-    // Manage enable/disable nodes and add control button in grid 
+    // Manage enable/disable nodes and add control button in grid
     function manageNodeEnabling(grid, rowid, rowdata, rowelem) {
         var node_disabled = rowelem.monitoring_state === 'disabled';
         if (node_disabled) {
-            $(grid).find('tr#' + rowid).css('background', 'lightgrey');
+            $(grid).find('tr#' + rowid + ' td').css('background', 'lightgrey');
         }
         var cell = $(grid).find('tr#' + rowid).find('td[aria-describedby="' + loadServicesResourcesGridId + '_activate_control"]');
         var activateButton  = $('<div>', {'class' : 'node_control', html : node_disabled ? 'Enable' : 'Disable', css : 'position:center'}).button().appendTo(cell);
@@ -140,8 +153,7 @@ function loadServicesResources (container_id, elem_id) {
         $(activateButton).click(function() {
             var action          = $(this).find('.ui-button-text').html().toLowerCase();
             var action_enable   = (action  === 'enable');
-            $(this).find('.ui-button-text').html(action_enable ? 'Disable' : 'Enable')
-            $(grid).find('tr#' + rowid).css('background', action_enable ? '' : 'lightgrey');
+            _buttonEnabling(grid, rowid, action_enable);
             $.ajax({
                 type        : 'POST',
                 url         : '/api/serviceprovider/' + elem_id + '/' + action + 'Node',
@@ -202,6 +214,33 @@ function loadServicesResources (container_id, elem_id) {
                     ],
             title : { from_column : 'node_hostname' }
         },
+        action_delete: {url : '/api/node'},
+        multiselect : true,
+        multiactions : {
+            multiDelete : {
+                label   : 'Delete node(s)',
+                action  : removeGridEntry,
+                icon    : 'ui-icon-trash',
+                url     : '/api/node',
+                extraParams : {multiselect : true}
+            },
+            nodeEnable : {
+                label   : 'Enable node(s)',
+                action  : gridGenericPost,
+                url     : '/api/serviceprovider/' + elem_id + '/enableNode',
+                afterAction  : function(grid_id, rowid) {
+                    _buttonEnabling('#' + grid_id, rowid, true);
+                }
+            },
+            nodeDisable : {
+                label   : 'Disable node(s)',
+                action  : gridGenericPost,
+                url     : '/api/serviceprovider/' + elem_id + '/disableNode',
+                afterAction  : function(grid_id, rowid) {
+                    _buttonEnabling('#' + grid_id, rowid, false);
+                }
+            }
+        }
     } );
 
     createUpdateNodeButton($('#' + container_id), elem_id, $('#' + loadServicesResourcesGridId));
