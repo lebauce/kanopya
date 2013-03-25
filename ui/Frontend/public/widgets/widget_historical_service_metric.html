@@ -11,15 +11,17 @@
     <div class="dropdown_container">
         <select class="combination_list" multiple="multiple">
         </select>
-        
     </div>
     <!--input id="trendlineinput" type="checkbox" onclick="toggleTrendLine()" value="show"> Trend line</input-->
 </div>
 <br/>
 <span class='widget_part widget_part_forcasting disabled'>Forecasting</span>
 <div class='datamodel_fields hidden'>
-        <i>click on the graph to select start and end of training data</i><br/>
-        <button class='instant_predict'>Predict</button><br/>
+    <ol>
+        <li><i>Click on the graph to select start and end of training data</i></li>
+        <li><i>Choose models to use: </i><select class="datamodel_type_list" multiple="multiple"></select></li>
+        <li><button class='instant_predict'>Predict</button></li>
+    </ol>
 </div>
 
 <div class="clusterCombinationView"></div>

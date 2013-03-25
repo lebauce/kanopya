@@ -160,7 +160,10 @@ function showCombinationGraph(curobj,combinations,start,stop, sp_id, opts) {
                     predict_button
                         .prop('disabled', true).attr('title', 'You must select training data start and end date by clicking on the graph')
                         .unbind('click')
-                        .click({graph:graph, combination:combinations[0]}, _autoPredict);
+                        .click( function() {
+                            selected_model_types = $.map(model_container.find('.datamodel_type_list option:selected'),function(elem) {return $(elem).val()});
+                            _autoPredict({graph:graph, combination:combinations[0], model_types:selected_model_types});
+                        });
                 }
             }
             widget_loading_stop( widget );
@@ -233,14 +236,47 @@ function _pickTimeRange(graph, callback) {
   });
 }
 
+function fillDataModelTypeList(widget_div) {
+    // Available model type list
+    // TODO Do not hardcode, get it from server
+    var data = [
+                {
+                    type : 'LinearRegression',
+                    label: 'Linear regression'
+                },
+                {
+                    type : 'LogarithmicRegression',
+                    label: 'Logarithmic regression'
+                },
+                {
+                    type : 'AutoArima',
+                    label: 'ARIMA'
+                }
+    ];
+
+    var datamodel_type_list = widget_div.find('.datamodel_type_list');
+    $(data).each( function () {
+        datamodel_type_list.append($('<option>', {
+            value   : this.type,
+            text    : this.label,
+        }).prop('selected', true));
+    });
+    datamodel_type_list.multiselect({
+        noneSelectedText: 'Select model',
+        selectedText    : "# selected models",
+        selectedList    : 1,
+        header : false
+    });
+}
+
 /*
  * Request for auto prediction and display result on graph
  * Learning start and end time are retrieved from selected area on graph
  * Horizon is the last date visible on the graph
  */
-function _autoPredict(e) {
-    var graph       = e.data.graph;
-    var combination = e.data.combination;
+function _autoPredict(params) {
+    var graph       = params.graph;
+    var combination = params.combination;
     var area  = graph.plugins.canvasOverlay.getObject('selected_area');
 
     var current_selected_start_time = parseInt(area.options.start[0] / 1000);
@@ -255,7 +291,7 @@ function _autoPredict(e) {
         contentType : 'application/json',
         data        : JSON.stringify(
                 {
-                    //model_list      : ['LinearRegression'],
+                    model_list      : params.model_types,
                     combination_id  : combination.id,
                     start_time      : current_selected_start_time,
                     end_time        : current_selected_end_time,
@@ -273,6 +309,7 @@ function _autoPredict(e) {
         error       : function(error) {
             graph.target.parent().find('#predict_error_div').remove();
             graph.target.parent().prepend($('<div>', {id : 'predict_error_div', 'class' : 'ui-state-highlight ui-corner-all', html: error.responseText}));
+            elemLoadingStop(graph.target.parent());
         }
     });
 }

@@ -251,6 +251,7 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
           graph_div.find('.dropdown_container').remove();
           widgetCommonInit(graph_div);
           setGraphDatePicker(graph_div);
+          fillDataModelTypeList(graph_div);
           setRefreshButton(
               graph_div,
               [{id:clusterMetric_id, name:row_data.aggregate_combination_label, unit:row_data.combination_unit}],
