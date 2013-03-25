@@ -44,3 +44,21 @@ class kanopya::linux ($sourcepath) {
     }
 }
 
+define swap($ensure = present) {
+
+  Exec {
+    path => ['/bin', '/sbin', '/usr/bin', '/usr/sbin'],
+  }
+
+  if $ensure == present {
+    exec { 'swap-on':
+      command => 'swapon -a',
+      unless  => 'grep partition /proc/swaps',
+    }
+  } else {
+    exec { 'swap-off':
+      command => 'swapoff -a',
+      onlyif  => 'grep partition /proc/swaps',
+    }
+  }
+}

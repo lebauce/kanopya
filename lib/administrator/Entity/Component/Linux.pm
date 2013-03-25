@@ -103,21 +103,46 @@ sub getPuppetDefinition {
                      $args{cluster}->cluster_name . '/' . $args{host}->node->node_hostname .
                      "\", stage => system }\n";
 
+    my @swap_entries = grep { $_->{linux_mount_filesystem} eq 'swap' } @{$conf->{linuxes_mount}};
+    my @mount_entries = grep { $_->{linux_mount_filesystem} ne 'swap' } @{$conf->{linuxes_mount}};
+
     # /etc/fstab et mounts
-    foreach my $mount (@{$conf->{linuxes_mount}}) {
+    foreach my $mount (@mount_entries) {
         $str .= "file {'$mount->{linux_mount_point}': ensure => directory }\n";
         $str .= "mount {'$mount->{linux_mount_point}':\n";
-        $str .= "\tdevice => '$mount->{linux_mount_device}',\n";
+        $str .= "\tdevice => '$mount->{linux_mount_device}',\n";        
         $str .= "\tensure => mounted,\n";
+        $str .= "\trequire => File['$mount->{linux_mount_point}']\n";
         $str .= "\tfstype => '$mount->{linux_mount_filesystem}',\n";
         $str .= "\tname   => '$mount->{linux_mount_point}',\n";
         $str .= "\toptions => '$mount->{linux_mount_options}',\n";
         $str .= "\tdump   => '$mount->{linux_mount_dumpfreq}',\n";
         $str .= "\tpass   => '$mount->{linux_mount_passnum}',\n";
-        $str .= "\trequire => File['$mount->{linux_mount_point}']\n";
         $str .= "}\n";
 
         $nfs = $nfs || ($mount->{linux_mount_filesystem} eq "nfs");
+    }
+
+    # TODO find another method to manage swap devices
+    # current implementation (with mount resource) accept only one swap entry
+    # several entries invalidate the manifest due to name => 'none' repeats
+
+    foreach my $swap (@swap_entries) {
+        $str .= "mount {'$swap->{linux_mount_device}':\n";
+        $str .= "\tensure => present,\n";
+        $str .= "\tdevice => '$swap->{linux_mount_device}',\n";   
+        $str .= "\tname   => 'none',\n";     
+        $str .= "\tfstype => 'swap',\n";
+        $str .= "\toptions => 'sw',\n";
+        $str .= "\tdump   => '0',\n";
+        $str .= "\tpass   => '0',\n";
+        $str .= "}\n";
+    }
+    
+    if(@swap_entries) {
+        $str .= "swap {'swap' :\n";
+        $str .= "\tensure => present,\n";
+        $str .= "\trequire => Mount['".$swap_entries[0]->{linux_mount_device}."'] }\n";
     }
 
     if ($nfs) {
