@@ -815,6 +815,15 @@ sub generateNodeMetricRules{
     }
 }
 
+sub removeNode {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => ['node_id']);
+
+    my $node = Node->get(id => $args{node_id});
+    $self->unregisterNode(node => $node)
+}
 
 =head2 remove
 
