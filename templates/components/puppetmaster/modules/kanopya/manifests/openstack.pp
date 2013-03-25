@@ -263,6 +263,11 @@ class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone, $quantum,
             auth_host      => "${keystone}",
             require        => Class['kanopya::openstack::repository']
         }
+
+        nova_paste_api_ini {
+            'filter:ratelimit/paste.filter_factor': value => "nova.api.openstack.compute.limits:RateLimitingMiddleware.factory";
+            'filter:ratelimit/limits': value => '(POST, "*", .*, 100000, MINUTE);(POST, "*/servers", ^/servers, 500000, DAY);(PUT, "*", .*, 100000, MINUTE);(GET, "*changes-since*", .*changes-since.*, 3, MINUTE);(DELETE, "*", .*, 100000, MINUTE)';
+        }
     }
 
     @@database_user { "nova@${ipaddress}":
