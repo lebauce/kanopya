@@ -139,7 +139,8 @@ sub getConf {
 
     my $class = ref($self) || $self;
     my @relations;
-    while (my ($name, $attr) = each %{$class->getAttrDefs()}) {
+    my $attrdefs = $class->getAttrDefs();
+    while (my ($name, $attr) = each %{$attrdefs}) {
         if ($attr->{type} eq "relation") {
             push @relations, $name;
         }

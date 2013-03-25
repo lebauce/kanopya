@@ -394,7 +394,7 @@ sub getAttrDefs {
     my $attributedefs = {};
 
     if (exists $attr_defs_cache{$args{'group_by'}}{$class}) {
-        return $attr_defs_cache{$args{'group_by'}}{$class};
+        return clone($attr_defs_cache{$args{'group_by'}}{$class});
     }
 
     my @hierarchy = getClassHierarchy($class);
@@ -470,7 +470,7 @@ sub getAttrDefs {
 
     if ($args{group_by} eq 'module') {
         $attr_defs_cache{'module'}{$class} = $attributedefs;
-        return $attributedefs;
+        return clone($attributedefs);
     }
 
     # Finally merge all module attrs into one level hash
@@ -481,7 +481,7 @@ sub getAttrDefs {
 
     $attr_defs_cache{$args{'group_by'}}{$class} = $result;
 
-    return $result;
+    return clone($result);
 }
 
 
