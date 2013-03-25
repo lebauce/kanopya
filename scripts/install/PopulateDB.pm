@@ -1826,6 +1826,7 @@ sub populate_policies {
         policy_type     => 'hosting',
     );
     $policies{'Standard OpenNebula Xen IAAS'}{hosting} = $policies{'Standard OpenNebula KVM IAAS'}{hosting};
+    $policies{'Generic service'}{hosting} = $policies{'Standard OpenNebula KVM IAAS'}{hosting};
 
     # storage
     my $lvm_type_id = ClassType::ComponentType->find(hash => { component_name => 'Lvm' })->id;
@@ -1842,6 +1843,11 @@ sub populate_policies {
     );
     $policies{'Standard OpenNebula KVM IAAS'}{storage} = $policies{'Standard physical cluster'}{storage};
     $policies{'Standard OpenNebula Xen IAAS'}{storage} = $policies{'Standard physical cluster'}{storage};
+    $policies{'Generic service'}{storage} = Entity::Policy::StoragePolicy->new(
+        policy_name       => 'Generic storage',
+        policy_desc       => 'Storage policy for generic storage',
+        policy_type       => 'storage',
+    );
 
     # network
     my $netconf = Entity::Netconf->find(hash => { netconf_name => 'Kanopya admin' });
@@ -1877,6 +1883,11 @@ sub populate_policies {
         ],
     );
     $policies{'Standard OpenNebula Xen IAAS'}{network} = $policies{'Standard OpenNebula KVM IAAS'}{network};
+    $policies{'Generic service'}{network} = Entity::Policy::NetworkPolicy->new(
+        policy_name          => 'Generic network configuration',
+        policy_desc          => 'Network policy for generic network configuration',
+        policy_type          => 'network',
+    );
 
     # scalability
     $policies{'Standard physical cluster'}{scalability} = Entity::Policy::ScalabilityPolicy->new(
@@ -1889,6 +1900,11 @@ sub populate_policies {
     );
     $policies{'Standard OpenNebula KVM IAAS'}{scalability} = $policies{'Standard physical cluster'}{scalability};
     $policies{'Standard OpenNebula Xen IAAS'}{scalability} = $policies{'Standard physical cluster'}{scalability};
+    $policies{'Generic service'}{scalability} = Entity::Policy::ScalabilityPolicy->new(
+        policy_name      => 'Generic scalability',
+        policy_desc      => 'Scalability policy for generic service',
+        policy_type      => 'scalability',
+    );
 
     # system
     my $puppettypeid = ClassType::ComponentType->find(hash => { component_name => 'Puppetagent' })->id;
@@ -1939,6 +1955,11 @@ sub populate_policies {
             { component_type => $xen }
         ],
     );
+    $policies{'Generic service'}{system} = Entity::Policy::SystemPolicy->new(
+        policy_name           => 'Generic system',
+        policy_desc           => 'System policy for generic service',
+        policy_type           => 'system',
+    );
 
     # billing
     $policies{'Standard physical cluster'}{billing} = Entity::Policy::BillingPolicy->new(
@@ -1948,6 +1969,7 @@ sub populate_policies {
     );
     $policies{'Standard OpenNebula KVM IAAS'}{billing} = $policies{'Standard physical cluster'}{billing};
     $policies{'Standard OpenNebula Xen IAAS'}{billing} = $policies{'Standard physical cluster'}{billing};
+    $policies{'Generic service'}{billing} = $policies{'Standard physical cluster'}{billing};
 
     # orchestration
     my $orch_policy_sp = configureDefaultOrchestrationPolicyService( admin_cluster => $args{kanopya_master} );
@@ -1959,6 +1981,7 @@ sub populate_policies {
     );
     $policies{'Standard OpenNebula KVM IAAS'}{orchestration} = $policies{'Standard physical cluster'}{orchestration};
     $policies{'Standard OpenNebula Xen IAAS'}{orchestration} = $policies{'Standard physical cluster'}{orchestration};
+    $policies{'Generic service'}{orchestration} = $policies{'Standard physical cluster'}{orchestration};
 
     return \%policies;
 }

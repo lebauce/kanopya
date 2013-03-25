@@ -2,20 +2,20 @@
 var _content_handlers = {};
 
 var SQLops = {
-'eq' : '=',        // equal
-'ne' : '<>',       // not equal
-'lt' : '<',        // less than
-'le' : '<=',       // less than or equal
-'gt' : '>',        // greater than
-'ge' : '>=',       // greater than or equal
-'bw' : 'LIKE',     // begins with
-'bn' : 'NOT LIKE', // doesn't begin with
-'in' : 'LIKE',     // is in
-'ni' : 'NOT LIKE', // is not in
-'ew' : 'LIKE',     // ends with
-'en' : 'NOT LIKE', // doesn't end with
-'cn' : 'LIKE',     // contains
-'nc' : 'NOT LIKE'  // doesn't contain
+    'eq' : '=',        // equal
+    'ne' : '<>',       // not equal
+    'lt' : '<',        // less than
+    'le' : '<=',       // less than or equal
+    'gt' : '>',        // greater than
+    'ge' : '>=',       // greater than or equal
+    'bw' : 'LIKE',     // begins with
+    'bn' : 'NOT LIKE', // doesn't begin with
+    'in' : 'LIKE',     // is in
+    'ni' : 'NOT LIKE', // is not in
+    'ew' : 'LIKE',     // ends with
+    'en' : 'NOT LIKE', // doesn't end with
+    'cn' : 'LIKE',     // contains
+    'nc' : 'NOT LIKE'  // doesn't contain
 };
 
 var searchoptions = { sopt : $.map(SQLops, function(n) { return n; } ) };
