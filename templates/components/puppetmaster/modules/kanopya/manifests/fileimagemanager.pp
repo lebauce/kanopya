@@ -16,7 +16,7 @@ class kanopya::fileimagemanager {
         require => Package['libguestfs'],
         command => $operatingsystem ? {
             /(Red Hat|CentOS|Fedora)/ => 'true',
-            defualt => 'update-guestfs-appliance'
+            default => 'update-guestfs-appliance'
         }
     }
 }
