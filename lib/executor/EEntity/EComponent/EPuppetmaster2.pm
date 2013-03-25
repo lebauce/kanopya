@@ -127,7 +127,8 @@ sub createHostCertificate {
 
 sub createHostManifest {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'puppet_definitions', 'host_fqdn' ]);
+    General::checkParams(args => \%args,
+                         required => [ 'puppet_definitions', 'host_fqdn', 'sourcepath' ]);
 
     my $config = {
         INCLUDE_PATH => '/templates/components/puppetmaster',
@@ -143,7 +144,8 @@ sub createHostManifest {
 
     my $data = {
         host_fqdn          => $args{host_fqdn},
-        puppet_definitions => $args{puppet_definitions}
+        puppet_definitions => $args{puppet_definitions},
+        sourcepath         => $args{sourcepath}
     };
 
     my $template = Template->new($config);

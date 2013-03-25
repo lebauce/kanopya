@@ -73,12 +73,11 @@ sub execute {
             cluster => $self->{context}->{cluster},
         );
 
-        my $fqdn = $host->node->node_hostname;
-        $fqdn .= '.' . $self->{params}->{kanopya_domainname};
-
         $self->{context}->{component_puppetmaster}->createHostManifest(
-                host_fqdn          => $fqdn,
-                puppet_definitions => $puppet_definitions
+                host_fqdn          => $host->node->fqdn,
+                puppet_definitions => $puppet_definitions,
+                sourcepath         => $self->{context}->{cluster}->cluster_name
+                                      . '/' . $host->node->node_hostname
         );
 
         $self->{context}->{puppetagent}->applyManifest(host => $ehost);

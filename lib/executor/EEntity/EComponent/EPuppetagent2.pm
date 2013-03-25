@@ -131,7 +131,8 @@ sub generatePuppetDefinitions {
 
         $puppetmaster->createHostManifest(
             host_fqdn          => $args{host}->node->fqdn,
-            puppet_definitions => $puppet_definitions
+            puppet_definitions => $puppet_definitions,
+            sourcepath         => $args{cluster}->cluster_name . '/' . $args{host}->node->node_hostname
         );
     }
 }

@@ -1,3 +1,4 @@
 node '[% host_fqdn %]' {
+$sourcepath = '[% sourcepath %]'
 [% puppet_definitions %]
 }
