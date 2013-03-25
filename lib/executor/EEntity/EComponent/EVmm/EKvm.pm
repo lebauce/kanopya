@@ -274,7 +274,7 @@ sub getRamUsedByVm {
     General::checkParams(args => \%args, required => [ 'host' ]);
 
     my $vm = $args{host};
-    my $e_hypervisor = EFactory::newEEntity(data => $vm->hypervisor);
+    my $e_hypervisor = EEntity->new(entity => $vm->hypervisor);
 
     # This command get the pid of the kvm process then get the RAM used and SWAP used by this process
     my $cmd = 'cat /proc/$(cat /var/run/libvirt/qemu/one-' . ($vm->onevm_id) . '.pid)/status | grep "VmRSS\|VmSwap"';
