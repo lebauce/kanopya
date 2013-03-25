@@ -164,7 +164,8 @@ NOTE: don't use stderr redirection ( 2> ) in your command.
 sub execute {
     my ($self, %args) = @_;
     
-    General::checkParams(args => \%args, required => [ 'command' ]);
+    General::checkParams(args => \%args, required => [ 'command' ],
+                                         optional => { 'timeout' => $self->{timeout} });
     
     if ($args{command} =~ m/2>/) {
         $errmsg = "EContext::SSH->execute : command must not contain stderr redirection (2>)!";
@@ -179,7 +180,8 @@ sub execute {
     my $result = {};
     my $command = $args{command};
     $log->info("Running command on $self->{ip}: $command");
-    my ($stdout, $stderr) = $self->{ssh}->capture2($command);
+    my ($stdout, $stderr) = $self->{ssh}->capture2({ timeout => $args{timeout} },
+                                                   $command);
 
     $result->{stdout} = $stdout;
     $result->{stderr} = $stderr;

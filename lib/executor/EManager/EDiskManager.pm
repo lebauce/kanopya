@@ -47,7 +47,8 @@ sub mkfs {
                   "(virt-make-fs --format=raw --size=256M --type=$args{fstype} --partition -- \$TMPDIR \$TMPDISK;" .
                   "virt-resize --expand /dev/sda1 \$TMPDISK $args{device}; rm \$TMPDISK; rmdir \$TMPDIR)";
 
-    my $ret = $self->getEContext->execute(command => $command);
+    my $ret = $self->getEContext->execute(command => $command,
+                                          timeout => 3600);
     if($ret->{exitcode} != 0) {
         my $errmsg = "Error during execution of $command ; stderr is : $ret->{stderr}";
         $log->error($errmsg);
