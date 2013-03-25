@@ -426,7 +426,7 @@ function nodedetailsaction(cid, eid) {
                 },
             ]
             require('KIM/services_details.js');
-            var action_div=$('#' + cid).prevAll('.action_buttons');
+            var action_div=$('#' + cid);
             createallbuttons(buttons, action_div);
         }
     });
