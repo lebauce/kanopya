@@ -973,8 +973,8 @@ sub getClassType {
     if (not %class_type_cache) {
         my $class_types = $class->_getDbixFromHash(table => "ClassType", hash  => {});
         while (my $class_type = $class_types->next) {
-            $class_type_cache{$class_type->get_column("class_type_id")} =
-                $class_type->get_column("class_type");
+            $class_type_cache{$class_type->get_column("class_type_id")}
+                = $class_type->get_column("class_type");
         }
     }
 
@@ -1152,9 +1152,15 @@ sub search {
                                        'join' => undef, 'order_by' => undef, 'dataType' => undef,
                                        'prefetch' => [], 'raw_hash' => {}, 'presets' => {} });
 
+    my $merge = Hash::Merge->new('STORAGE_PRECEDENT');
+
     my $table = _buildClassNameFromString(join('::', getClassHierarchy($class)));
 
-    my $merge = Hash::Merge->new('STORAGE_PRECEDENT');
+    # If the table does not match the class, the conrete table does not exists,
+    # so filter on the class type.
+    if ($class =~ m/::/ and $class !~ m/::$table$/) {
+        $args{hash}->{'class_type.class_type'} = $class;
+    }
 
     my $prefetch = $class->getJoin() || {};
     $prefetch = $merge->merge($prefetch, $args{join});

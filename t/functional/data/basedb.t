@@ -11,7 +11,7 @@ use Data::Dumper;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
     level  => 'DEBUG',
-    file   => 'search_on_virtual_attributes.log',
+    file   => 'basedb.log',
     layout => '%F %L %p %m%n'
 });
 my $log = get_logger("");
@@ -19,7 +19,10 @@ my $log = get_logger("");
 my $testing = 1;
 
 use BaseDB;
+use General;
 use Entity::Host;
+use Entity::Policy::HostingPolicy;
+use Entity::Component::Lvm2::Lvm2Vg;
 use Entity::Component::Physicalhoster0;
 
 BaseDB->authenticate(login => 'admin', password => 'K4n0pY4');
@@ -30,6 +33,42 @@ sub main {
     if ($testing == 1) {
         BaseDB->beginTransaction;
     }
+
+    # Search on component inner classes
+
+    lives_ok {
+        for my $innnerclass (Entity::Component::Lvm2::Lvm2Vg->search()) {
+            if (not $innnerclass->isa("Entity::Component::Lvm2::Lvm2Vg")) {
+               throw Kanopya::Exception::Internal(
+                         error => "Search on component inner class Entity::Component::Lvm2::Lvm2Vg return wrong object type $innnerclass"
+                     );
+            }
+        }
+    } 'Search on component inner classes';
+
+    lives_ok {
+        for my $hostingpolicy (Entity::Policy::HostingPolicy->search()) {
+            if (not $hostingpolicy->isa("Entity::Policy::HostingPolicy")) {
+               throw Kanopya::Exception::Internal(
+                         error => "Search on concrete policy return wrong policy type $hostingpolicy"
+                     );
+            }
+        }
+    } 'Search on concrete classes without tables';
+
+    # Search on concrete classes without tables
+
+    lives_ok {
+        for my $hostingpolicy (Entity::Policy::HostingPolicy->search()) {
+            if (not $hostingpolicy->isa("Entity::Policy::HostingPolicy")) {
+               throw Kanopya::Exception::Internal(
+                         error => "Search on concrete policy return wrong policy type $hostingpolicy"
+                     );
+            }
+        }
+    } 'Search on concrete classes without tables';
+
+    # Search on virtual attributes
 
     # Test comparison operators for strings
     my $ip = Entity::Host->find()->admin_ip;
