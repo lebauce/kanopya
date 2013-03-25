@@ -194,6 +194,8 @@ sub autoPredict {
         push @n_timestamps, $i * $granularity + $timestamps[0];
     }
 
+    $datamodel->delete();
+
     return {
         'timestamps' => \@n_timestamps,
         'values'     => $prediction,
