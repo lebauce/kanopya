@@ -42,5 +42,11 @@ class kanopya::linux ($sourcepath) {
         name   => 'ntpdate',
         ensure => present,
     }
+
+    if $operatingsystem =~ /(?i)(debian|ubuntu)/ {
+        class { 'apt':
+            always_apt_update => true,
+        }
+    }
 }
 
