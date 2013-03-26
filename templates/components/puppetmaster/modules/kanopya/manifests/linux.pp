@@ -45,7 +45,7 @@ class kanopya::linux ($sourcepath) {
 
     file { '/etc/localtime':
         require => Package['tzdata'],
-        source  => 'file:///usr/share/zoneinfo/UTC'
+        source  => 'file:///usr/share/zoneinfo/CET'
     }
 }
 
