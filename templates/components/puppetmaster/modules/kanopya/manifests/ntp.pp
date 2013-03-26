@@ -5,7 +5,8 @@ class kanopya::ntp($server) {
     }
 
     exec { "ntpdate -b -u ${server}":
-        path    => '/usr/sbin'
+        path    => '/usr/sbin',
+        require => Class['::ntp']
     }
 
     cron { 'ntpdate':
