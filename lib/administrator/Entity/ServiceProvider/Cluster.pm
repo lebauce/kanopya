@@ -582,60 +582,60 @@ sub remove {
     my $self = shift;
 
     $log->debug("New Operation Remove Cluster with cluster id : " .  $self->id);
-    Entity::Operation->enqueue(
-        priority => 200,
-        type     => 'RemoveCluster',
-        params   => {
-            context => {
-                cluster => $self,
-            },
-        },
-    );
+    return Entity::Operation->enqueue(
+               priority => 200,
+               type     => 'RemoveCluster',
+               params   => {
+                   context => {
+                       cluster => $self,
+                   },
+               }
+           );
 }
 
 sub forceStop {
     my $self = shift;
 
     $log->debug("New Operation Force Stop Cluster with cluster: " . $self->id);
-    Entity::Operation->enqueue(
-        priority => 200,
-        type     => 'ForceStopCluster',
-        params   => {
-            context => {
-                cluster => $self,
-            },
-        },
-    );
+    return Entity::Operation->enqueue(
+               priority => 200,
+               type     => 'ForceStopCluster',
+               params   => {
+                   context => {
+                       cluster => $self,
+                   },
+               },
+           );
 }
 
 sub activate {
     my $self = shift;
 
     $log->debug("New Operation ActivateCluster with cluster_id : " . $self->id);
-    Entity::Operation->enqueue(
-        priority => 200,
-        type     => 'ActivateCluster',
-        params   => {
-            context => {
-                cluster => $self,
-            },
-        },
-    );
+    return Entity::Operation->enqueue(
+               priority => 200,
+               type     => 'ActivateCluster',
+               params   => {
+                   context => {
+                       cluster => $self,
+                   },
+               },
+           );
 }
 
 sub deactivate {
     my $self = shift;
 
     $log->debug("New Operation DeactivateCluster with cluster_id : " . $self->id);
-    Entity::Operation->enqueue(
-        priority => 200,
-        type     => 'DeactivateCluster',
-        params   => {
-            context => {
-                cluster => $self,
-            },
-        },
-    );
+    return Entity::Operation->enqueue(
+               priority => 200,
+               type     => 'DeactivateCluster',
+               params   => {
+                   context => {
+                       cluster => $self,
+                   },
+               },
+           );
 }
 
 sub toString {
