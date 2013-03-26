@@ -1,5 +1,5 @@
 class kanopya::ntp {
-    class { 'ntp':
+    class { '::ntp':
         ensure     => running,
         autoupdate => true
     }
