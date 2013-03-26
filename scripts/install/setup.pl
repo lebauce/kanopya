@@ -750,7 +750,8 @@ sub generatePuppetConfiguration {
 
     $epuppetmaster->createHostManifest(
         host_fqdn          => $fqdn,
-        puppet_definitions => $fstab_puppet_definitions
+        puppet_definitions => $fstab_puppet_definitions,
+        sourcepath         => $kanopya->cluster_name . '/' . $kanopya_master->node->node_hostname
     );
 
     system([ 'puppet' ], 'restart');
