@@ -35,6 +35,10 @@ use Exception::Class (
         isa         => 'Kanopya::Exception',
         description => 'Kanopya Database exception',
     },
+    Kanopya::Exception::DB::Cascade => {
+        isa         => 'Kanopya::Exception::DB',
+        description => 'Kanopya Database cascade exception',
+    },
     Kanopya::Exception::Network => {
         isa         => 'Kanopya::Exception',
         description => 'SSH communication exception',
