@@ -154,14 +154,16 @@ function loadServicesResources (container_id, elem_id) {
         $(activateButton).click(function() {
             var action          = $(this).find('.ui-button-text').html().toLowerCase();
             var action_enable   = (action  === 'enable');
-            _buttonEnabling(grid, rowid, action_enable);
             $.ajax({
                 type        : 'POST',
                 url         : '/api/serviceprovider/' + elem_id + '/' + action + 'Node',
                 contentType : 'application/json',
                 data        : JSON.stringify( {
                     node_id : rowid
-                })
+                }),
+                success     : function() {
+                    _buttonEnabling(grid, rowid, action_enable);
+                }
             });
         });
     }
