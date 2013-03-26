@@ -83,19 +83,35 @@ sub createWorkflow {
     General::checkParams(args => \%args, required => [ 'workflow_name' ]);
 
     my $workflow          = $self->SUPER::createWorkflow(%args);
-    my $operation_type    = Operationtype->find(
-                                hash => {operationtype_name => 'LaunchSCOWorkflow'}
-                            );
-    my $operation_type_id = $operation_type->getAttr(name => 'operationtype_id');
 
-    #we add a new step to the workflow
-    $workflow->addStep(operationtype_id => $operation_type_id);
+    if (! defined $args{workflow_def_origin}) {
+        my $operation_type  = Operationtype->find(
+                                  hash => {operationtype_name => 'LaunchSCOWorkflow'}
+                              );
+        my $operation_type_id = $operation_type->getAttr(name => 'operationtype_id');
 
+        #we add a new step to the workflow
+        $workflow->addStep(operationtype_id => $operation_type_id);
+    }
+    else {
+        my @steps = WorkflowStep->search(
+            hash => {
+                workflow_def_id => $args{workflow_def_origin},
+            }
+        );
+        for my $step (@steps) {
+            WorkflowStep->new(
+                workflow_def_id  => $workflow->id,
+                operationtype_id => $step->operationtype_id,
+            );
+        }
+
+    }
     return $workflow;
 }
 
 =head2 _getAutomaticValues
-    Desc: get the values for the workflow's specific params 
+    Desc: get the values for the workflow's specific params
 
     Args: \%automatic_params
 

@@ -235,7 +235,6 @@ sub update {
                         service_provider => $service_provider
                     );
                 }
-
                 1;
             }
         };
@@ -255,33 +254,22 @@ sub _checkNodesMetrics {
 
     my $asked_indicators    = $args{asked_indicators};
     my $received            = $args{received};
-    my $service_provider_id = $args{service_provider_id};
-
-    # Avoid Alert->find in for+while loops
-    my @alerts = Alert->search(hash => { entity_id     => $service_provider_id,
-                            alert_message =>
-                                {-like => 'Indicator %(%) was not retrieved by collector for node %'}});
-
-    my %alert_hash = map {$_->alert_message => $_} @alerts;
 
     foreach my $indicator (values %$asked_indicators) {
         while (my ($node_name, $metrics) = each(%$received)) {
-            my $msg = "Indicator " . $indicator->indicator_name . "(" . $indicator->indicator_oid . ") " .
-                      "was not retrieved by collector for node $node_name";
+            my $msg = "Indicator " . $indicator->indicator_name . " (" . $indicator->indicator_oid . ") " .
+                      "was not retrieved from collector for node $node_name";
 
             if (! defined $metrics->{$indicator->indicator_oid}) {
-                $log->debug($msg);
+                Alert->throw(trigger_entity => $indicator,
+                             alert_message  => $msg,
+                             entity_id      => $args{service_provider_id});
 
-                if ((! defined $alert_hash{$msg}) || ($alert_hash{$msg}->alert_active == 0) ) {
-                    Alert->new(
-                        entity_id       => $service_provider_id,
-                        alert_message   => $msg,
-                        alert_signature => $msg.' '.time()
-                    );
-                }
             }
-            elsif (defined $alert_hash{$msg} && $alert_hash{$msg}->alert_active == 1) {
-                $alert_hash{$msg}->mark_resolved;
+            else {
+                Alert->resolve(trigger_entity => $indicator,
+                               alert_message  => $msg,
+                               entity_id      => $args{service_provider_id});
             }
         }
     }

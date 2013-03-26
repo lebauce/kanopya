@@ -57,4 +57,9 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub getDelegatee {
+    my $self = shift;
+    return $self->entity;
+}
+
 1;

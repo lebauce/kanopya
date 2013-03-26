@@ -148,9 +148,10 @@ sub deassociateWorkflow {
 
     General::checkParams(args => \%args, required => [ 'rule_id', 'workflow_def_id' ]);
 
-    my $workflow_def    = Entity::WorkflowDef->find(hash => {workflow_def_id => $args{workflow_def_id}});
-    my $workflow_params = $workflow_def->paramPresets;
+    my $workflow_def = Entity::WorkflowDef->get(id => $args{workflow_def_id});
 
+    my $workflow_params = $workflow_def->paramPresets;
+    my $wf_def_origin_id = $workflow_def->workflow_def_origin;
     # Unlink workflow to rule
     $self->_linkWorkflowToRule(
                workflow => undef,
@@ -158,19 +159,24 @@ sub deassociateWorkflow {
                scope_id => $workflow_params->{internal}->{scope_id}
            );
 
+    # Delete workflow def
+    $workflow_def->delete();
+
     # Check if there's subscriptions on this rule
     my @notification_subscriptions  = NotificationSubscription->search(hash => {
             entity_id   => $args{rule_id}
     });
-    if ($#notification_subscriptions > -1) {
-        # If any, must re-associate the rule with the empty workflow
-        Entity::Rule->find(hash => {
-            rule_id => $args{rule_id}
-        })->associateWithNotifyWorkflow();
-    }
 
-    # Delete workflow def
-    $workflow_def->delete();
+
+    if (@notification_subscriptions > 0) {
+        my $rule      = Entity::Rule->get(id => $args{rule_id});
+        my $orig_name = Entity->get(id => $wf_def_origin_id)->workflow_def_name;
+
+        if (! ($orig_name eq $rule->notifyWorkflowName)) {
+            # If any, must re-associate the rule with the empty workflow
+            Entity::Rule->find(hash => {rule_id => $args{rule_id} })->associateWithNotifyWorkflow();
+        }
+    }
 }
 
 =head2 associateWorkflow
@@ -195,6 +201,7 @@ sub associateWorkflow {
     );
 
     my $rule    = Entity::Rule->find(hash => { rule_id => $args{rule_id} });
+
     if (defined $rule->workflow_def) {
         $self->deassociateWorkflow(
             rule_id         => $args{rule_id},

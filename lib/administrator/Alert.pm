@@ -18,8 +18,16 @@
 package Alert;
 use parent 'BaseDB';
 
+use Log::Log4perl "get_logger";
+my $log = get_logger("");
+
 use constant ATTR_DEF => {
-    entity_id => {
+    service_provider_id => {
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_extended  => 0
+    },
+    trigger_entity_id => {
         pattern      => '^\d*$',
         is_mandatory => 0,
         is_extended  => 0
@@ -29,7 +37,7 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_extended  => 0
     },
-    alert_message => {
+    alert_signature => {
         pattern      => '^.+$',
         is_mandatory => 0,
         is_extended  => 0
@@ -41,7 +49,7 @@ sub getAttrDef { return ATTR_DEF; }
 sub new {
     my ($class, %args) = @_;
 
-    General::checkParams(args     => \%args, 
+    General::checkParams(args     => \%args,
                          required => [ 'entity_id', 'alert_message', 'alert_signature' ]);
 
     return $class->SUPER::new(alert_date => \"CURRENT_DATE()",
@@ -55,4 +63,39 @@ sub mark_resolved {
     $self->setAttr(name => 'alert_active', value => 0, save => 1);
 }
 
+sub resolve {
+    my ($class, %args) = @_;
+    General::checkParams(args => \%args, required => ['trigger_entity', 'entity_id', 'alert_message']);
+
+    $log->debug('Try to resolve alert from entity <'.($args{trigger_entity}->id).'> with message: '.$args{alert_message});
+    eval {
+        my $alert = $args{trigger_entity}->findRelated(filters => ['alert_trigger_entities'],
+                                                       hash    => {
+                                                           alert_message => $args{alert_message},
+                                                           alert_active  => 1
+                                                       });
+        $alert->mark_resolved();
+    };
+}
+
+sub throw {
+    my ($class, %args) = @_;
+    General::checkParams(args => \%args, required => ['trigger_entity', 'entity_id', 'alert_message']);
+
+    $log->debug('Try to throw alert from entity <'.($args{trigger_entity}->id).'> with message: '.$args{alert_message});
+
+    eval {
+        my $alert = $args{trigger_entity}->findRelated(filters => ['alert_trigger_entities'],
+                                                       hash    => {
+                                                           alert_message => $args{alert_message},
+                                                           alert_active  => 1
+                                                       });
+    };
+    if ($@) {
+        Alert->new(entity_id         => $args{entity_id},
+                   alert_message     => $args{alert_message},
+                   alert_signature   => $args{alert_message}.' '.time(),
+                   trigger_entity_id => $args{trigger_entity}->id);
+    }
+}
 1;

@@ -81,6 +81,9 @@ sub methods {
         subscribe => {
             description => 'subscribe to notification about this entity.',
         },
+        unsubscribe => {
+            description => 'unsubscribe to notification about this entity.',
+        },
         addPerm => {
             description => 'add a permission for this entity.',
         },
@@ -382,6 +385,13 @@ sub subscribe {
         service_provider_id => $args{service_provider_id},
         validation          => $args{validation},
     );
+}
+
+sub unsubscribe {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'notification_subscription_id' ]);
+    my $ns = NotificationSubscription->get(id => $args{notification_subscription_id});
+    $ns->delete();
 }
 
 
