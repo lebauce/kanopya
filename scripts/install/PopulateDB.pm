@@ -344,7 +344,8 @@ sub registerUsers {
           system  => 1,
           methods => {
               'ServiceDeveloper' => [ 'get' ],
-              'Sales'            => [ 'get' ]
+              'Sales'            => [ 'get' ],
+              'Guest'            => [ 'getParamsDef' ]
           }
         },
         { name    => 'Policy',
