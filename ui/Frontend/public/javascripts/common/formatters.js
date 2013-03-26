@@ -66,12 +66,12 @@ function lastevalStateFormatter(cell, options, row) {
     }
 }
 
-function booleantostateformatter(val) {
-    if (val) {
-        return "<img src='/images/icons/up.png' title='up' />";
+function booleantostateformatter(val, yes, no) {
+    if (val == 1) {
+        return "<img src='/images/icons/up.png' title='" + (yes ? yes : 'up') + "' />";
     }
     else {
-        return "<img src='/images/icons/down.png' title='down' />";
+        return "<img src='/images/icons/down.png' title='" + (no ? no : 'down') + "' />";
     }
 }
 

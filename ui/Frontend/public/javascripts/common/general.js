@@ -368,26 +368,30 @@ function handleCreate (grid) {
     }
 }
 
-function handleCreateOperation (data, grid) {
+function handleCreateOperation (data, grid, id) {
     if (grid !== undefined && data !== undefined && data.operation_id !== undefined) {
         setTimeout(function() {
-            checkOperation(grid, data.operation_id);
+            checkOperation(grid, data.operation_id, id);
         }, 3000);
     }
 }
 
-function checkOperation (grid, operation_id) {
+function checkOperation (grid, operation_id, id) {
     var oldop = ajax('GET', '/api/oldoperation?operation_id=' + operation_id);
     if (oldop != undefined && oldop.length > 0 && oldop[0].execution_status == 'succeeded') {
         // Reload to handle the new element
         // TODO: If the new element is display alone on a new last page,
         //       the reload grib will display the last page but before adding the new element.
-        $(grid).trigger("reloadGrid", [{ page :  $(grid).getGridParam("lastpage") }]);
+        var page;
+        if (id) page = "page";
+        else    page = "lastpage";
+
+        $(grid).trigger("reloadGrid", [{ page : $(grid).getGridParam(page) }]);
     }
     else {
         if ($(grid).is(':visible')) {
             setTimeout(function() {
-                checkOperation(grid, operation_id);
+                checkOperation(grid, operation_id, id);
             }, 5000);
         }
     }

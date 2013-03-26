@@ -5,26 +5,31 @@ require('common/general.js');
 var g_host_manager_id = undefined;
 
 function host_addbutton_action(e, grid) {
+    var rawattrdef = {
+        host_manager_id : {
+            value : g_host_manager_id,
+            // Required to avoid the field disabled
+            is_editable : 1
+        }
+    };
+
+    if (e instanceof Object) {
+        rawattrdef['active'] = {
+            value : 1,
+            // Required to avoid the field disabled
+            is_editable : 1
+        };
+    }
+
     (new KanopyaFormWizard({
-        title      : 'Create a host',
+        title      : ((e instanceof Object)) ? 'Create a host' : 'Edit a host',
         type       : 'host',
         id         : (!(e instanceof Object)) ? e : undefined,
         displayed  : [ 'host_desc', 'host_core', 'host_ram', 'kernel_id', 'host_serial_number' ],
         relations  : { 'ifaces'         : [ 'iface_name', 'iface_mac_addr', 'iface_pxe', 'netconf_ifaces' ],
                        'bonding_ifaces' : [ 'bonding_iface_name', 'slave_ifaces' ],
                        'harddisks'      : [ 'harddisk_device' ] },
-        rawattrdef : {
-            host_manager_id : {
-                value : g_host_manager_id,
-                // Required to avoid the field disabled
-                is_editable : 1
-            },
-            active : {
-                value : 1,
-                // Required to avoid the field disabled
-                is_editable : 1
-            }
-        },
+        rawattrdef : rawattrdef,
         attrsCallback  : function (resource) {
             var attributes;
             var relations;
@@ -189,10 +194,11 @@ function hosts_list(cid, host_manager_id) {
             { name : 'pk', index : 'pk', hidden : true, key : true, sorttype : 'int' },
             { name : 'host_hostname', index : 'host_hostname' },
             { name : 'host_desc', index : 'host_desc' },
-            { name : 'active', index : 'active', width : 40, align : 'center', formatter : booleantostateformatter },
+            { name : 'active', index : 'active', width : 40, align : 'center', formatter : function(cell, formatopts, row) { return booleantostateformatter(cell, 'active', 'inactive') } },
             { name : 'host_state', index : 'host_state', width : 40, align : 'center', formatter : StateFormatter }
         ],
-        details                 : { onSelectRow : host_addbutton_action }
+        details                 : { onSelectRow : host_addbutton_action },
+        deactivate              : true
     });
     /*var host_addbutton  = $('<a>', { text : 'Add a host' }).appendTo('#' + cid)
                             .button({ icons : { primary : 'ui-icon-plusthick' } });*/

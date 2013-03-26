@@ -51,24 +51,25 @@ function servicesList (container_id, elem_id) {
         afterInsertRow: function (grid, rowid, rowdata, rowelem) {
             if (!servicesListFilter(rowelem)) {
                 $(grid).jqGrid('delRowData', rowid);
+
             } else {
                 addServiceExtraData(grid, rowid, rowdata, rowelem, '');
-
-                var name = serv_template ? serv_template.service_name : 'Internal';
             }
         },
         rowNum : 25,
-        colNames: [ 'ID', 'Service', 'Instance Name', 'State', 'Rules State', 'Node Number' ],
+        colNames: [ 'ID', 'Service', 'Instance Name', 'Active', 'State', 'Rules State', 'Node Number' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: "int", hidden: true, key: true },
             { name: 'service_template.service_name', index: 'service_template_name', width: 200 },
             { name: 'cluster_name', index: 'service_name', width: 200 },
+            { name: 'active', index: 'active', width : 40, align : 'center', formatter : function(cell, formatopts, row) { return booleantostateformatter(cell, 'active', 'inactive') } },
             { name: 'cluster_state', index: 'service_state', width: 90, formatter:StateFormatter },
             { name: 'rulesstate', index : 'rulesstate' },
             { name: 'node_number', index: 'node_number', width: 150 }
         ],
         elem_name   : 'service',
-        details     : { link_to_menu : 'yes', label_key : 'cluster_name'}
+        details     : { link_to_menu : 'yes', label_key : 'cluster_name'},
+        deactivate  : true
     });
     
     //$("#services_list").on('gridChange', reloadServices);
@@ -119,6 +120,11 @@ function servicesList (container_id, elem_id) {
                         welcome      : "Select a service type",
                         is_mandatory : true,
                         is_editable  : true
+                    },
+                    active : {
+                        value : 1,
+                        // Required to avoid the field disabled
+                        is_editable : 1
                     }
                 },
                 attrsCallback : function (resource, data, trigger) {
