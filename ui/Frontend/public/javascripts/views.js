@@ -172,7 +172,7 @@ function removeGridEntry (grid_id, rowid, url, method, extraParams) {
                 afterComplete   : function (response) {
                     var json = $.parseJSON(response.responseText);
                     if (json.operation_id != undefined) {
-                        handleCreateOperation(json, $("#"+grid_id), id);
+                        handleCreateOperation(json, $("#"+grid_id), rowid);
 
                     } else {
                         $("#"+grid_id).trigger('gridChange')
