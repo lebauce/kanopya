@@ -938,7 +938,7 @@ var KanopyaFormWizard = (function() {
         }
 
         this.id              = args.id;
-        this.width           = args.width           || 650;
+        this.width           = args.width           || 700;
         this.displayed       = args.displayed       || [];
         this.relations       = args.relations       || {};
         this.rawattrdef      = args.rawattrdef      || {};
@@ -1159,7 +1159,7 @@ var KanopyaFormWizard = (function() {
             resizable       : false,
             position        : 'top',
             width           : 'auto',
-            minWidth        : 700,
+            minWidth        : 800,
 //            maxHeight       : 550,
             buttons         : buttons,
             closeOnEscape   : false

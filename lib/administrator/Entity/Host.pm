@@ -484,17 +484,17 @@ sub getFreeHosts {
 sub remove {
     my $self = shift;
 
-    $log->debug("New Operation RemoveHost with host_id : <" . $self->getAttr(name => "host_id") . ">");
+    $log->debug("New Operation RemoveHost with host_id : <" . $self->id . ">");
 
-    Entity::Operation->enqueue(
-        priority => 200,
-        type     => 'RemoveHost',
-        params   => {
-            context  => {
-                host => $self,
-            },
-        },
-    );
+    return Entity::Operation->enqueue(
+               priority => 200,
+               type     => 'RemoveHost',
+               params   => {
+                   context  => {
+                       host => $self,
+                   },
+               },
+           );
 }
 
 sub addHarddisk {

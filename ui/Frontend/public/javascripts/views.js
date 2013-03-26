@@ -124,7 +124,7 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
             buttons: [
                 {id:'button-cancel',text:'Cancel',click: function() {$(this).dialog('close');}},
                 {id:'button-ok',text:'Ok',click: function() {if (details_info.onOk) {details_info.onOk()}$(this).dialog('close');}}
-            ],
+            ]
         });
         // Remove dialog title if wanted
         if (details_info.title == 'none') {
@@ -157,20 +157,28 @@ function removeGridEntry (grid_id, rowid, url, method, extraParams) {
     extraParams.multiselect = (extraParams.multiselect === undefined) ? false : extraParams.multiselect;
     if (! extraParams.multiselect) {
         $("#"+grid_id).jqGrid(
-                'delGridRow',
-                rowid,
-                {
-                    url             : delete_url,
-                    ajaxDelOptions  : { type : call_type },
-                    modal           : true,
-                    drag            : false,
-                    resize          : false,
-                    width           : dialog_width,
-                    height          : dialog_height,
-                    top             : ($(window).height() / 2) - (dialog_height / 2),
-                    left            : ($(window).width() / 2) - (dialog_width / 2),
-                    afterComplete   : function () {$("#"+grid_id).trigger('gridChange')}
+            'delGridRow',
+            rowid,
+            {
+                url             : delete_url,
+                ajaxDelOptions  : { type : call_type },
+                modal           : true,
+                drag            : false,
+                resize          : false,
+                width           : dialog_width,
+                height          : dialog_height,
+                top             : ($(window).height() / 2) - (dialog_height / 2),
+                left            : ($(window).width() / 2) - (dialog_width / 2),
+                afterComplete   : function (response) {
+                    var json = $.parseJSON(response.responseText);
+                    if (json.operation_id != undefined) {
+                        handleCreateOperation(json, $("#"+grid_id), rowid);
+
+                    } else {
+                        $("#"+grid_id).trigger('gridChange')
+                    }
                 }
+            }
         );
     }
     else { // to remove one entry without confirm dialog (already done one time in multiaction.confirm)
@@ -200,6 +208,37 @@ function editEntityRights(grid, rowid, rowdata, rowelem, options) {
     };
     show_detail('entity_rights', 'entity_rights', rowelem.pk, rowdata, details);
     return false;
+}
+
+// Callback when click on deactivate icon for a row
+function deactivateGridEntry (grid, id, url, active) {
+    var dialog_height   = 120;
+    var dialog_width    = 300;
+    var deactivate_url  = url.split('?')[0] + '/' + id + '/' + (active ? "deactivate" : "activate");
+    var call_type       = 'POST';
+
+    var mode = active ? "Deactivate" : "Activate"
+    $(grid).jqGrid(
+        'delGridRow',
+        id,
+        {
+            caption         : mode,
+            msg             : mode + " selected record(s)?",
+            bSubmit         : mode,
+            url             : deactivate_url,
+            ajaxDelOptions  : { type : call_type },
+            modal           : true,
+            drag            : false,
+            resize          : false,
+            width           : dialog_width,
+            height          : dialog_height,
+            top             : ($(window).height() / 2) - (dialog_height / 2),
+            left            : ($(window).width() / 2) - (dialog_width / 2),
+            afterComplete   : function (response) {
+                handleCreateOperation($.parseJSON(response.responseText), grid, id);
+            }
+        }
+    );
 }
 
 // generic function for post call on grid. after success, afterAction() is called
@@ -241,7 +280,7 @@ function multiActionGenericConfirm(grid_id, msg, actionHandler) {
             'Yes': function () {
                 actionHandler();
                 $(this).dialog('close');
-            },
+            }
         },
         close : function (event, ui) {
             $(this).remove();
@@ -326,7 +365,7 @@ function create_grid(options) {
         }
 
         options.colNames.push('');
-        options.colModel.push({index:'actions', width : '40px', formatter:
+        options.colModel.push({ name : 'actions', index:'actions', width : '40px', formatter:
             function(cell, formatopts, row) {
                 var action = '';
                 // Add delete action column (by default)
@@ -338,6 +377,15 @@ function create_grid(options) {
                     action += 'onmouseover="jQuery(this).addClass(\'ui-state-hover\');"';
                     action += ' style="float:left;margin-left:5px;" title="Delete this ' + (options.elem_name || 'element') + '">';
                     action += '<span class="ui-icon ui-icon-trash"></span>';
+                    action += '</div>';
+                }
+
+                if (options.deactivate) {
+                    action += '<div class="ui-pg-div ui-inline-active"';
+                    action += 'onmouseout="jQuery(this).removeClass(\'ui-state-hover\');"';
+                    action += 'onmouseover="jQuery(this).addClass(\'ui-state-hover\');"';
+                    action += ' style="float:left;margin-left:5px;" title="Deactivate this ' + (options.elem_name || 'element') + '">';
+                    action += '<span class="ui-icon ui-icon-locked"></span>';
                     action += '</div>';
                 }
 
@@ -367,7 +415,7 @@ function create_grid(options) {
             page: "page",
             total: "pages",
             records: "records",
-            repeatitems: false,
+            repeatitems: false
         },
 
         multiselect     : options.multiselect,
@@ -391,11 +439,27 @@ function create_grid(options) {
         autoencode      : true,
 
         afterInsertRow  : function(rowid, rowdata, rowelem) {
-            // Manage delete action callback
-            $(this).find('#'+rowid+' .ui-inline-del').click( function() { deleteHandler(rowid) } );
-
             // Manage permissions
             $(this).find('#'+rowid+' .ui-inline-perms').click( function() { editEntityRights(grid, rowid, rowdata, rowelem, options) } );
+
+            if (rowdata.active != undefined) {
+                if (rowdata.active == "1") {
+                    $(this).find('#'+rowid+' .ui-inline-active').attr('title', 'Deactivate this ' + (options.elem_name || 'element'));
+                    $(this).find('#'+rowid+' .ui-inline-active').find('span').removeClass('ui-icon-locked');
+                    $(this).find('#'+rowid+' .ui-inline-active').find('span').addClass('ui-icon-unlocked');
+                    $(this).find('#'+rowid+' .ui-inline-del').find('span').attr('disabled', 'disabled').addClass("ui-state-disabled");
+
+                } else {
+                    $(this).find('#'+rowid+' .ui-inline-active').attr('title', 'Activate this ' + (options.elem_name || 'element'));
+                    $(this).find('#'+rowid+' .ui-inline-active').find('span').removeClass('ui-icon-unlocked');
+                    $(this).find('#'+rowid+' .ui-inline-active').find('span').addClass('ui-icon-locked');
+
+                    // Manage delete action callback
+                    $(this).find('#'+rowid+' .ui-inline-del').click( function() { deleteHandler(rowid) } );
+                }
+
+                $(this).find('#'+rowid+' .ui-inline-active').click( function() { deactivateGridEntry(grid, rowid, options.url, rowdata.active == "1") } );
+            }
 
             // Callback custom handler
             return options.afterInsertRow(this, rowid, rowdata, rowelem);

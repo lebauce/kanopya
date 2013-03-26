@@ -4,6 +4,11 @@ require('common/formatters.js');
 // Add extra info to each row for specific columns
 // Extra columns are 'node_number' and 'rulesstate'
 function addServiceExtraData(grid, rowid, rowdata, rowelem, ext) {
+    // Set a generix service template name if not defined
+    if (rowdata['service_template.service_name'] == undefined) {
+        $(grid).setCell(rowid, 'service_template.service_name', 'Internal');
+    }
+
     var id  = $(grid).getCell(rowid, 'pk');
     $.ajax({
         url     : '/api/node?service_provider_id=' + id,
