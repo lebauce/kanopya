@@ -97,9 +97,6 @@ sub createCluster {
                                                                       version => 1)
                          );
 
-    diag('Get a kernel');
-    my $kernel = Entity::Kernel->find(hash => { kernel_name => $ENV{'KERNEL'} || "2.6.32-279.5.1.el6.x86_64" });
-
     diag('Retrieve the admin user');
     my $admin_user = Entity::User->find(hash => { user_login => 'admin' });
 

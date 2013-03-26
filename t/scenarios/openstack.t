@@ -44,9 +44,7 @@ sub main {
     diag('Register master image');
     my $masterimage;
     lives_ok {
-        #$masterimage = Kanopya::Tools::Register::registerMasterImage();
-	use Entity::Masterimage;
-	$masterimage = Entity::Masterimage->find;
+        $masterimage = Kanopya::Tools::Register::registerMasterImage();
     } 'Register master image';
 
     diag('Create and configure MySQL and RabbitMQ cluster');
