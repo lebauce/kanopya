@@ -45,7 +45,7 @@ function servicesList (container_id, elem_id) {
     }
 
     var grid = create_grid( {
-        url: '/api/cluster?expand=service_template',
+        url: '/api/cluster?expand=service_template,nodes,rules&deep=1',
         content_container_id: container_id,
         grid_id: 'services_list',
         afterInsertRow: function (grid, rowid, rowdata, rowelem) {
@@ -53,7 +53,7 @@ function servicesList (container_id, elem_id) {
                 $(grid).jqGrid('delRowData', rowid);
 
             } else {
-                addServiceExtraData(grid, rowid, rowdata, rowelem, '');
+                addServiceExtraData(grid, rowid, rowdata, rowelem);
             }
         },
         rowNum : 25,

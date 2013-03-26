@@ -3,57 +3,48 @@ require('common/formatters.js');
 // Callback for services grid
 // Add extra info to each row for specific columns
 // Extra columns are 'node_number' and 'rulesstate'
-function addServiceExtraData(grid, rowid, rowdata, rowelem, ext) {
+function addServiceExtraData(grid, rowid, rowdata, rowelem) {
     // Set a generix service template name if not defined
-    if (rowdata['service_template.service_name'] == undefined) {
+    if (rowelem.hasOwnProperty('service_template') && rowdata['service_template.service_name'] == undefined) {
         $(grid).setCell(rowid, 'service_template.service_name', 'Internal');
     }
 
-    var id  = $(grid).getCell(rowid, 'pk');
-    $.ajax({
-        url     : '/api/node?service_provider_id=' + id,
-        type    : 'GET',
-        success : function(data) {
-            var i   = 0;
-            $(data).each(function() {
-                ++i;
-            });
-            $(grid).setCell(rowid, 'node_number', i);
-        }
-    });
+    // Set the node number
+    $(grid).setCell(rowid, 'node_number', rowelem.nodes.length);
+
     // Rules State
-    $.ajax({
-        url     : '/api/aggregaterule?service_provider_id=' + rowelem.pk,
-        type    : 'GET',
-        success : function(aggregaterules) {
-            var verified    = 0;
-            var undef       = 0;
-            var ok          = 0;
-            for (var i in aggregaterules) if (aggregaterules.hasOwnProperty(i)) {
-                var lasteval    = aggregaterules[i].aggregate_rule_last_eval;
-                if (lasteval === '1') {
-                    ++verified;
-                } else if (lasteval === null) {
-                    ++undef;
-                } else if (lasteval === '0') {
-                    ++ok;
-                }
-                var cellContent = $('<div>');
-                if (ok > 0) {
-                    $(cellContent).append($('<img>', { src : '/images/icons/up.png' })).append(ok + "&nbsp;");
-                }
-                if (verified > 0) {
-                    $(cellContent).append($('<img>', { src : '/images/icons/broken.png' })).append(verified + "&nbsp;");
-                }
-                if (undef > 0) {
-                    $(cellContent).append($('<img>', { src : '/images/icons/down.png' })).append(undef);
-                }
-                $(grid).setGridParam({ autoencode : false });
-                $(grid).setCell(rowid, 'rulesstate', cellContent.html());
-                $(grid).setGridParam({ autoencode : true });
-            }
+    var verified = 0;
+    var undef    = 0;
+    var ok       = 0;
+    for (var index in rowelem.rules) {
+        var rule = rowelem.rules[index];
+
+        // Filter on rules concrete type in js (bad), because the api do not support it for instance.
+        if (! rule.hasOwnProperty('aggregate_rule_last_eval'))
+            continue;
+
+        var lasteval = rule.aggregate_rule_last_eval;
+        if (lasteval === '1') {
+            ++verified;
+        } else if (lasteval === null) {
+            ++undef;
+        } else if (lasteval === '0') {
+            ++ok;
         }
-    });
+        var cellContent = $('<div>');
+        if (ok > 0) {
+            $(cellContent).append($('<img>', { src : '/images/icons/up.png' })).append(ok + "&nbsp;");
+        }
+        if (verified > 0) {
+            $(cellContent).append($('<img>', { src : '/images/icons/broken.png' })).append(verified + "&nbsp;");
+        }
+        if (undef > 0) {
+            $(cellContent).append($('<img>', { src : '/images/icons/down.png' })).append(undef);
+        }
+        $(grid).setGridParam({ autoencode : false });
+        $(grid).setCell(rowid, 'rulesstate', cellContent.html());
+        $(grid).setGridParam({ autoencode : true });
+    }
 }
 
 //Callback for service resources grid

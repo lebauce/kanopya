@@ -457,8 +457,11 @@ function create_grid(options) {
                     // Manage delete action callback
                     $(this).find('#'+rowid+' .ui-inline-del').click( function() { deleteHandler(rowid) } );
                 }
-
                 $(this).find('#'+rowid+' .ui-inline-active').click( function() { deactivateGridEntry(grid, rowid, options.url, rowdata.active == "1") } );
+
+            } else {
+                // Manage delete action callback
+                $(this).find('#'+rowid+' .ui-inline-del').click( function() { deleteHandler(rowid) } );
             }
 
             // Callback custom handler

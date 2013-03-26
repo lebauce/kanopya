@@ -37,7 +37,6 @@ function add_menutree(container, label, menu_info, elem_id) {
     var link_li = $('<li>');
     var link_a = $('<span class="arrow"></span><a class="view_link">' + label + '</a>');
     link_a.bind('click', function(event) {
-        
         $(this).next().toggle();
 
         var add_button;
@@ -53,16 +52,16 @@ function add_menutree(container, label, menu_info, elem_id) {
         $(this).addClass('selected_viewlink');
 
         var container_id = 'content_services_overview_static';
-        
+
         create_grid( {
-            url: '/api/cluster?service_template_id='+elem_id,
+            url: '/api/cluster?expand=service_template,nodes,rules&deep=1&service_template_id='+elem_id,
             content_container_id: container_id,
             grid_id: 'services_list',
             afterInsertRow: function (grid, rowid, rowdata, rowelem) {
                 if (!servicesListFilter(rowelem)) {
                     $(grid).jqGrid('delRowData', rowid);
                 } else {
-                    addServiceExtraData(grid, rowid, rowdata, rowelem, '');
+                    addServiceExtraData(grid, rowid, rowdata, rowelem);
                 }
             },
             rowNum : 25,

@@ -53,12 +53,13 @@ function createAddServiceButton(container) {
 function servicesList (container_id, elem_id) {
     var container = $('#' + container_id);
 
+    // Only list externalcluster without connector
     create_grid( {
-        url: '/api/externalcluster?components.component_id=', // Only list externalcluster without connector
+        url: '/api/externalcluster?expand=nodes,rules&deep=1&components.component_id=',
         content_container_id: container_id,
         grid_id: 'services_list',
         afterInsertRow: function (grid, rowid, rowdata, rowelem) {
-            addServiceExtraData(grid, rowid, rowdata, rowelem, 'external');
+            addServiceExtraData(grid, rowid, rowdata, rowelem);
         },
         rowNum : 25,
         colNames: [ 'ID', 'Name', 'Rules State', 'Node Number' ],
