@@ -1,7 +1,16 @@
 class kanopya::ntp($server) {
     class { '::ntp':
-        ensure     => running,
-        autoupdate => true,
+        ensure     => stopped,
         servers    => [ $server ]
+    }
+
+    exec { "ntpdate -b -u ${server}":
+        path    => '/usr/sbin'
+    }
+
+    cron { 'ntpdate':
+        command => "/usr/sbin/ntpdate -b -u ${server}",
+        user    => root,
+        hour    => 2
     }
 }
