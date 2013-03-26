@@ -1,6 +1,7 @@
-class kanopya::ntp {
+class kanopya::ntp($server) {
     class { '::ntp':
         ensure     => running,
-        autoupdate => true
+        autoupdate => true,
+        servers    => [ $server ]
     }
 }
