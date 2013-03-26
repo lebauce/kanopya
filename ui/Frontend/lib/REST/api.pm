@@ -354,9 +354,7 @@ sub setupREST {
                 require (General::getLocFromClass(entityclass => $class));
 
                 my $obj = $class->get(id => params->{id});
-                $obj->methodCall(method => 'remove');
-
-                return to_json( { status => "success" } );
+                return to_json(jsonify($obj->methodCall(method => 'remove')));
             },
 
             update => sub {
