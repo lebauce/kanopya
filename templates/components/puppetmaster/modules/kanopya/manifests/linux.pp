@@ -38,9 +38,14 @@ class kanopya::linux ($sourcepath) {
         matches => [ $iscsiscript, $netscript ]
     }
 
-    package { 'ntpdate':
-        name   => 'ntpdate',
-        ensure => present,
+    package { 'tzdata':
+        name   => 'tzdata',
+        ensure => installed
+    }
+
+    file { '/etc/localtime':
+        require => Package['tzdata'],
+        source  => 'file:///usr/share/zoneinfo/CET'
     }
 
     if $operatingsystem =~ /(?i)(debian|ubuntu)/ {

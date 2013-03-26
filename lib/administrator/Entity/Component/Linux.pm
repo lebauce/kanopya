@@ -96,12 +96,17 @@ sub getPuppetDefinition {
 
     General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
 
+    my $ntp = $self->service_provider->getKanopyaCluster->getComponent(category => 'System');
     my $conf = $self->getConf();
     my $nfs;
     my $str = "";
     my $definition = "class { 'kanopya::linux': sourcepath => \"" .
                      $args{cluster}->cluster_name . '/' . $args{host}->node->node_hostname .
                      "\", stage => system }\n";
+
+    $definition .= "class { 'kanopya::ntp':\n";
+    $definition .= "\tserver => '" . $ntp->getMasterNode->adminIp . "'\n";
+    $definition .= "}\n";
 
     # /etc/fstab et mounts
     foreach my $mount (@{$conf->{linuxes_mount}}) {
