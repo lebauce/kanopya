@@ -56,15 +56,6 @@ use constant CHOICE_STRATEGY => {
     RMSE      => 'RMSE',
 };
 
-sub methods {
-    return {
-        autoPredict => {
-            description => 'Find best model and predict metric values.',
-            perm_holder => 'entity',
-        }
-    };
-}
-
 =pod
 
 =begin classdoc

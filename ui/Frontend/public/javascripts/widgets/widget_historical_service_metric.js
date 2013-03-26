@@ -286,13 +286,12 @@ function _autoPredict(params) {
     graph.target.hide();
     elemLoadingStart(graph.target.parent(), 'Forecasting data...');
     $.ajax({
-        url         : '/api/datamodelselector/autoPredict',
+        url         : '/api/combination/'+combination.id+'/autoPredict',
         type        : 'POST',
         contentType : 'application/json',
         data        : JSON.stringify(
                 {
                     model_list            : params.model_types,
-                    combination_id        : combination.id,
                     data_start            : current_selected_start_time,
                     data_end              : current_selected_end_time,
                     predict_start_tstamps : parseInt(new Date(time_settings.start).getTime() / 1000),
