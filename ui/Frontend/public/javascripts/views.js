@@ -316,12 +316,17 @@ function create_grid(options) {
                 var action_method = multiaction.method || null;
                 if ( multiaction.confirm ) {
                     var checkedItems = $("#" + options.grid_id).jqGrid('getGridParam','selarrrow');
-                    multiaction.confirm(options.grid_id, multiaction.label, function() {
-                        $.each(checkedItems, function(i, rowid) {
-                            multiaction.action(options.grid_id, rowid, action_url, action_method, multiaction.extraParams, multiaction.afterAction);
+                    if (checkedItems.length == 0) {
+                        alert("No item checked : check an item first !");
+                    }
+                    else {
+                        multiaction.confirm(options.grid_id, multiaction.label, function() {
+                            $.each(checkedItems, function(i, rowid) {
+                                multiaction.action(options.grid_id, rowid, action_url, action_method, multiaction.extraParams, multiaction.afterAction);
+                            });
+                            $("#" + options.grid_id).jqGrid('resetSelection');
                         });
-                        $("#" + options.grid_id).jqGrid('resetSelection');
-                    });
+                    }
                 }
             });
         });
