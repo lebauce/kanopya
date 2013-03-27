@@ -114,7 +114,6 @@ sub _checkParams {
                          required => ['timeserie_ref', 'freq', 'predict_end']);
 
     # Check that at least two periods are present in the timeserie
-
     if (@{$args{timeserie_ref}}/$args{freq} < 2) {
         throw Kanopya::Exception(error => 'Exponential Smoothing : bad parameters (there must be'
                                           .' at least two periods in the given data)');
@@ -125,8 +124,6 @@ sub _checkParams {
         throw Kanopya::Exception(error => 'Exponential Smoothing : bad parameters (trying to ' .
                                           'forecast the past...)');
     }
-
-    # For the moment we assume that there is the same period between every adjacent timestamp
 }
 
 =pod
@@ -163,7 +160,7 @@ sub _forecastFromR {
     # Run R commands
     $R->run(q`library(forecast);`                                            # Load the forecast package
             . qq`time_serie <- ts(dataset, start=1, frequency=$freq);`       # Create the time serie
-            . qq`forecast <- forecast(ets(time_serie), h=$hor);`);    # fit and forecast with arima
+            . qq`forecast <- forecast(ets(time_serie), h=$hor);`);           # fit and forecast with ets
 
     # Return the forecast computed by R
     return $R->get('forecast');

@@ -45,6 +45,7 @@ use constant {
                                     'AnalyticRegression::LogarithmicRegression',
                                     'RDataModel::AutoArima',
                                     'RDataModel::ExponentialSmoothing',
+                                    'RDataModel::StlForecast',
                                     ],
 };
 

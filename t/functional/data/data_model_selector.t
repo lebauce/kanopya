@@ -103,6 +103,7 @@ sub testDataModelSelector {
     my %accuracy_log_reg;
     my %accuracy_auto_arima;
     my %accuracy_exp_smoothing;
+    my %accuracy_stlf;
 
     lives_ok {
         %accuracy_lin_reg = %{DataModelSelector->evaluateDataModelAccuracy(
@@ -138,6 +139,15 @@ sub testDataModelSelector {
         )};
     } 'DataModelSelector : Testing accuracy evaluation for ExponentialSmoothing DataModel';
 
+    lives_ok {
+        %accuracy_stlf = %{DataModelSelector->evaluateDataModelAccuracy(
+            data_model_class => 'Entity::DataModel::RDataModel::StlForecast',
+            data             => \@values,
+            combination_id   => $comb->id,
+            freq             => 6,
+        )};
+    } 'DataModelSelector : Testing accuracy evaluation for StlForecast DataModel';
+
     for my $strategy ('RMSE', 'MSE', 'MAE', 'ME', 'DEMOCRACY') {
         my $best_model;
         lives_ok {
@@ -147,6 +157,7 @@ sub testDataModelSelector {
                     'Entity::DataModel::LogarithmicRegression'                => {%accuracy_log_reg},
                     'Entity::DataModel::RDataModel::AutoArima'                => {%accuracy_auto_arima},
                     'Entity::DataModel::RDataModel::ExponentialSmoothing'     => {%accuracy_exp_smoothing},
+                    'Entity::DataModel::RDataModel::StlForecast'              => {%accuracy_stlf},
                 },
                 choice_strategy   => $strategy,
             );
@@ -160,6 +171,7 @@ sub testDataModelSelector {
                     'Entity::DataModel::LogarithmicRegression'                => {%accuracy_log_reg},
                     'Entity::DataModel::RDataModel::AutoArima'                => {%accuracy_auto_arima},
                     'Entity::DataModel::RDataModel::ExponentialSmoothing'     => {%accuracy_exp_smoothing},
+                    'Entity::DataModel::RDataModel::StlForecast'              => {%accuracy_stlf},
             },
             choice_strategy   => 'Are you kidding me ?!',
         );
