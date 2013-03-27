@@ -44,6 +44,7 @@ use constant {
     MODEL_CLASSES               => ['AnalyticRegression::LinearRegression',
                                     'AnalyticRegression::LogarithmicRegression',
                                     'RDataModel::AutoArima',
+                                    'RDataModel::ExponentialSmoothing',
                                     ],
 };
 
@@ -108,14 +109,29 @@ sub autoPredict {
     $log->debug('autoPredict - Loading the data from the combination.');
 
     # Get the combination from the given id
-    my $combination = Entity::Combination->get(id => $args{combination_id});
+    my $combination;
+    if (defined($args{combination_id})) {
+        $combination = Entity::Combination->get(id => $args{combination_id});
+    }
+    else {
+        $combination = undef;
+    }
 
     # Extract the data
-    my %rawdata = defined($args{timeserie}) ? %{$args{timeserie}}
-                :                             $combination->evaluateTimeSerie(start_time => $args{data_start},
-                                                                              stop_time  => $args{data_end},
-                                                                              node_id    => $args{node_id})
-                ;
+    my %rawdata;
+    if (defined($args{timeserie})) {
+        %rawdata = %{$args{timeserie}};
+    }
+    elsif (defined($combination) && defined $args{data_start} && defined($args{data_end})) {
+        $combination->evaluateTimeSerie(start_time => $args{data_start},
+                                        stop_time  => $args{data_end},
+                                        node_id    => $args{node_id},
+        );
+    }
+    else {
+        throw Kanopya::Exception(error => 'SelecDataModel : Cannot call autoPredict method without data ' . 
+                                          'or without a combination_id with a data_start and a data_end}.');
+    }
 
     $log->debug('autoPredict - Fixing the data.');
 
@@ -193,6 +209,8 @@ sub autoPredict {
     for my $i ($predict_start..$predict_end) {
         push @n_timestamps, $i * $granularity + $timestamps[0];
     }
+
+    $datamodel->delete();
 
     return {
         'timestamps' => \@n_timestamps,

@@ -70,8 +70,8 @@ sub testAutoPredict {
         my @values     = @{$extracted{values_ref}};
 
         my %forecast = %{DataModelSelector->autoPredict(
-            predict_start_tstamps => 40,
-            predict_end_tstamps  => 65,
+            predict_start_tstamps => 45,
+            predict_end_tstamps  => 61,
             timeserie             => \%timeserie,
             combination_id        => $comb->id,
         )};
@@ -99,12 +99,13 @@ sub testDataModelSelector {
     my @timestamps = @{$extracted{timestamps_ref}};
     my @values     = @{$extracted{values_ref}};
 
-    my %accuracy_linear_regression;
-    my %accuracy_logarithmic_regression;
+    my %accuracy_lin_reg;
+    my %accuracy_log_reg;
     my %accuracy_auto_arima;
+    my %accuracy_exp_smoothing;
 
     lives_ok {
-        %accuracy_linear_regression = %{DataModelSelector->evaluateDataModelAccuracy(
+        %accuracy_lin_reg = %{DataModelSelector->evaluateDataModelAccuracy(
             data_model_class => 'Entity::DataModel::AnalyticRegression::LinearRegression',
             data             => \@values,
             combination_id   => $comb->id,
@@ -112,7 +113,7 @@ sub testDataModelSelector {
     } 'DataModelSelector : Testing accuracy evaluation for Linear Regression DataModel';
 
     lives_ok {
-        %accuracy_logarithmic_regression = %{DataModelSelector->evaluateDataModelAccuracy(
+        %accuracy_log_reg = %{DataModelSelector->evaluateDataModelAccuracy(
             data_model_class => 'Entity::DataModel::AnalyticRegression::LogarithmicRegression',
             data             => \@values,
             combination_id   => $comb->id,
@@ -128,27 +129,37 @@ sub testDataModelSelector {
         )};
     } 'DataModelSelector : Testing accuracy evaluation for AutoArima DataModel';
 
+    lives_ok {
+        %accuracy_exp_smoothing = %{DataModelSelector->evaluateDataModelAccuracy(
+            data_model_class => 'Entity::DataModel::RDataModel::ExponentialSmoothing',
+            data             => \@values,
+            combination_id   => $comb->id,
+            freq             => 6,
+        )};
+    } 'DataModelSelector : Testing accuracy evaluation for ExponentialSmoothing DataModel';
+
     for my $strategy ('RMSE', 'MSE', 'MAE', 'ME', 'DEMOCRACY') {
         my $best_model;
         lives_ok {
             $best_model = DataModelSelector->chooseBestDataModel(
                 accuracy_measures => {
-                    'Entity::DataModel::AnalyticRegression::LinearRegression'      => {%accuracy_linear_regression},
-                    'Entity::DataModel::LogarithmicRegression' => {%accuracy_logarithmic_regression},
-                    'Entity::DataModel::RDataModel::AutoArima'             => {%accuracy_auto_arima},
+                    'Entity::DataModel::AnalyticRegression::LinearRegression' => {%accuracy_lin_reg},
+                    'Entity::DataModel::LogarithmicRegression'                => {%accuracy_log_reg},
+                    'Entity::DataModel::RDataModel::AutoArima'                => {%accuracy_auto_arima},
+                    'Entity::DataModel::RDataModel::ExponentialSmoothing'     => {%accuracy_exp_smoothing},
                 },
                 choice_strategy   => $strategy,
             );
         } "DataModelSelector : Testing best model choice with $strategy strategy";
-        diag("\t\t\t\t\t\t\t\t(Best chosen : $best_model)");
     }
 
     throws_ok {
         my $best_model = DataModelSelector->chooseBestDataModel(
             accuracy_measures => {
-                'Entity::DataModel::AnalyticRegression::LinearRegression'      => {%accuracy_linear_regression},
-                'Entity::DataModel::LogarithmicRegression' => {%accuracy_logarithmic_regression},
-                'Entity::DataModel::RDataModel::AutoArima'             => {%accuracy_auto_arima},
+                    'Entity::DataModel::AnalyticRegression::LinearRegression' => {%accuracy_lin_reg},
+                    'Entity::DataModel::LogarithmicRegression'                => {%accuracy_log_reg},
+                    'Entity::DataModel::RDataModel::AutoArima'                => {%accuracy_auto_arima},
+                    'Entity::DataModel::RDataModel::ExponentialSmoothing'     => {%accuracy_exp_smoothing},
             },
             choice_strategy   => 'Are you kidding me ?!',
         );

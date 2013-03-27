@@ -225,6 +225,7 @@ my @classes = (
     'Entity::DataModel::AnalyticRegression::LinearRegression',
     'Entity::DataModel::AnalyticRegression::LogarithmicRegression',
     'Entity::DataModel::RDataModel::AutoArima',
+    'Entity::DataModel::RDataModel::ExponentialSmoothing',
 );
 
 sub registerClassTypes {
