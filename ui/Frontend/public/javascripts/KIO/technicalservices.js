@@ -97,7 +97,24 @@ function connectConnectorForm(eid, type, id, cb) {
                 name    : tmp,
                 fields  : fields,
                 cancel  : function() { deleteService(eid); },
-                callback: function() { $('#technicalserviceslistgrid').trigger('reloadGrid'); cb(); }
+                beforeSubmit: function() {
+                    setTimeout(function() {
+                        var dialog = $("<div>", { id : "waiting_default_insert", title : "Initializing configuration", text : "Please wait..." });
+                        dialog.css('text-align', 'center');
+                        dialog.appendTo("body").dialog({
+                            resizable   : false
+                        });
+                        $(dialog).parents('div.ui-dialog').find('span.ui-icon-closethick').remove();
+                    }, 10);
+                },
+                callback    : function(data) {
+                    $("div#waiting_default_insert").dialog("destroy");
+                    $('#technicalserviceslistgrid').trigger('reloadGrid');
+                    cb();
+                },
+                error       : function(data) {
+                    $("div#waiting_default_insert").dialog("destroy");
+                }
             });
             $(modal.form).remove();
             modal.form  = tmpmod.form;
