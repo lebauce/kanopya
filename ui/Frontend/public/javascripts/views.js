@@ -542,6 +542,9 @@ function create_grid(options) {
        grid.addClass('selectable_rows');
     }
 
+    // remove horizontal scrollbar
+    content_container.find('.ui-jqgrid-bdiv').css('overflow-x', 'hidden');
+
     return grid;
 }
 
