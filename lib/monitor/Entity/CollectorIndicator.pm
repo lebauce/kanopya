@@ -36,7 +36,7 @@ use Data::Dumper;
 
 use Alert;
 use DataCache;
-
+use Data::Dumper;
 
 use constant ATTR_DEF => {
     collector_indicator_id => {
@@ -114,7 +114,7 @@ sub fetch {
 
     my @node_hostnames = map {$_->node_hostname} @{$args{nodes}};
 
-    my $data = DataCache::nodeMetricFetch(
+    my $data = DataCache->nodeMetricFetch(
                    indicator    => $self->indicator,
                    node_names   => \@node_hostnames,
                    start_time   => $args{start_time},
