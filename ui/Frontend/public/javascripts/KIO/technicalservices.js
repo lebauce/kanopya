@@ -234,7 +234,9 @@ function technicalservicedetails(cid, eid) {
 }
 
 function technicalserviceslist(cid) {
-    var container   = $('#' + cid);
+    var action_buttons_container = $('#' + cid).prevAll('.action_buttons');
+
+    addTechnicalServiceButton(action_buttons_container);
     create_grid({
         url                     : '/api/externalcluster?components.component_id=<>,',
         content_container_id    : cid,
@@ -250,5 +252,4 @@ function technicalserviceslist(cid) {
             ]
         }
     });
-    addTechnicalServiceButton(container);
 }

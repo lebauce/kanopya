@@ -47,11 +47,12 @@ function createAddServiceButton(container) {
         mod = new ModalForm(service_opts);
         mod.start();
     });
-    $(container).append(button);
+    container.append(button);
 };
 
 function servicesList (container_id, elem_id) {
-    var container = $('#' + container_id);
+    var action_buttons_container = $('#' + container_id).prevAll('.action_buttons');
+    createAddServiceButton(action_buttons_container);
 
     // Only list externalcluster without connector
     create_grid( {
@@ -83,8 +84,6 @@ function servicesList (container_id, elem_id) {
     });
 
     $("#services_list").on('gridChange', reloadServices);
-
-    createAddServiceButton(container);
 }
 
 function createUpdateNodeButton(container, elem_id, grid) {
@@ -142,6 +141,9 @@ function _buttonEnabling (grid, rowid, action_enable) {
 function loadServicesResources (container_id, elem_id) {
     var loadServicesResourcesGridId = 'service_resources_list_' + elem_id;
     var nodemetricrules;
+    var action_buttons_container = $('#' + container_id).prevAll('.action_buttons');
+
+    createUpdateNodeButton(action_buttons_container, elem_id, $('#' + loadServicesResourcesGridId));
 
     // Manage enable/disable nodes and add control button in grid
     function manageNodeEnabling(grid, rowid, rowdata, rowelem) {
@@ -221,13 +223,6 @@ function loadServicesResources (container_id, elem_id) {
         action_delete: {url : '/api/node'},
         multiselect : true,
         multiactions : {
-            multiDelete : {
-                label   : 'Delete node(s)',
-                action  : removeGridEntry,
-                icon    : 'ui-icon-trash',
-                url     : '/api/node',
-                extraParams : {multiselect : true}
-            },
             nodeEnable : {
                 label   : 'Enable node(s)',
                 action  : gridGenericPost,
@@ -243,11 +238,17 @@ function loadServicesResources (container_id, elem_id) {
                 afterAction  : function(grid_id, rowid) {
                     _buttonEnabling('#' + grid_id, rowid, false);
                 }
+            },
+            multiDelete : {
+                label   : 'Delete node(s)',
+                action  : removeGridEntry,
+                icon    : 'ui-icon-trash',
+                url     : '/api/node',
+                extraParams : {multiselect : true}
             }
         }
     } );
 
-    createUpdateNodeButton($('#' + container_id), elem_id, $('#' + loadServicesResourcesGridId));
     //reload_grid(loadServicesResourcesGridId,'/api/node?outside_id=' + elem_id);
     $('service_resources_list').jqGrid('setGridWidth', $(container_id).parent().width()-20);
 }

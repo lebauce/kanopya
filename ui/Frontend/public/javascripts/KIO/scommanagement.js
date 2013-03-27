@@ -17,6 +17,9 @@ function scomManagement(cid, eid) {
 
 
     var indicators_grid_id = 'scom_indicators_list_' + eid;
+    var action_buttons_container = $('#' + cid).prevAll('.action_buttons');
+
+    createIndicator(action_buttons_container, eid);
     create_grid( {
         url                     : '/api/indicator?indicatorset_id=' + scom_indicatorset_id,
         content_container_id    : cid,
@@ -45,11 +48,11 @@ function scomManagement(cid, eid) {
                 url         : '/api/indicator',
                 extraParams : {multiselect : true},
                 icon        : 'ui-icon-trash'
-            },
+            }
         }
     } );
 
-    function createIndicator(cid, eid) {
+    function createIndicator(container, eid) {
         var service_fields  = {
             indicator_label : {
                 label   : 'Label',
@@ -133,9 +136,6 @@ function scomManagement(cid, eid) {
             mod = new ModalForm(service_opts);
             mod.start();
         }).button({ icons : { primary : 'ui-icon-plusthick' } });
-        $('#' + cid).append(button);
+        container.append(button);
     };
-
-    createIndicator(cid, eid);
-
 }

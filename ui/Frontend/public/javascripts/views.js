@@ -298,9 +298,7 @@ function create_grid(options) {
     options.multiactions = (options.multiactions === undefined) ? null : options.multiactions;
 
     if (options.multiselect && options.multiactions) {
-        var action_div = (content_container.prevAll('.action_buttons').length != 0)
-            ? content_container.prevAll('.action_buttons')
-            : content_container.nextAll('.action_buttons');
+        var action_div = content_container.prevAll('.action_buttons');
         $.each(options.multiactions, function(i, multiaction) {
             // default values
             multiaction.confirm = (multiaction.confirm === undefined)
