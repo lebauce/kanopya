@@ -5,10 +5,6 @@ class kanopya::openstack::repository {
             ensure => present,
         }
 
-        class { 'apt':
-            always_apt_update => true,
-        }
-
         apt::source { 'ubuntu-cloud-repository':
             location => 'http://ubuntu-cloud.archive.canonical.com/ubuntu',
             release  => 'precise-updates/folsom',
@@ -222,7 +218,7 @@ class kanopya::novacontroller($password, $dbserver, $amqpserver, $keystone, $ema
     Class['kanopya::openstack::repository'] -> Class['kanopya::novacontroller']
 }
 
-class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone, $quantum, $email, $password, $libvirt_type) {
+class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone, $quantum, $email, $password, $libvirt_type, $qpassword) {
     file { "/run/iscsid.pid":
         content => "1",
     }
@@ -287,14 +283,20 @@ class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone, $quantum,
         require             => Class['kanopya::openstack::repository']
     }
 
-    Class['kanopya::openstack::repository'] -> Class['kanopya::novacompute']
-
-    # Should not be there, but hey, who cares
-    package { 'quantum':
-        name    => 'quantum-server',
-        ensure  => present,
-        require => Class['kanopya::openstack::repository']
+    class { 'quantum::client':
     }
+
+    class { 'quantum':
+        rabbit_password => "${qpassword}",
+        rabbit_host     => "${amqpserver}",
+        rabbit_user     => 'quantum'
+    }
+
+    quantum_plugin_ovs {
+        'DATABASE/sql_connection': value => "mysql://quantum:${qpassword}@${dbserver}/quantum";
+    }
+
+    Class['kanopya::openstack::repository'] -> Class['kanopya::novacompute']
 }
 
 class kanopya::quantum_($amqpserver, $dbserver, $keystone, $password, $email, $bridge_flat, $bridge_vlan) {

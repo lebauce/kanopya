@@ -131,7 +131,7 @@ sub main {
 
     lives_ok {
         my $vm_cluster = Kanopya::Tools::Create->createVmCluster(
-                             iaas => $iaas,
+                             iaas => $nova_controller,
                              cluster_conf => {
                                  cluster_name         => 'VmCluster',
                                  cluster_basehostname => 'vmcluster',
