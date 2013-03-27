@@ -26,6 +26,10 @@ Entity::Component::MockMonitor
 
 Mock collector manager giving values for requested nodes and indicators according to configuration.
 
+Configuration allow to specify which value will be returned for a particular node or indicator.
+Priority is: 'nodes' -> 'indics' -> 'default'
+The 'response_time' parameter (in seconds) allow to simulate a request delay.
+
 Configuration example (JSON format):
 {
     'default' : {'const' : 200},
@@ -34,7 +38,8 @@ Configuration example (JSON format):
         'node2' : {'const' : 100},
         'node3' : {'rand'  : [0,100]},
     },
-    'indics' : {'indic1' : {'const':null}}
+    'indics' : {'indic1' : {'const':null}},
+    'response_time' : 60
 }
 
 =cut
@@ -86,6 +91,11 @@ sub retrieveData {
         my $loaded_conf = from_json($config, {allow_singlequote => 1, relaxed => 1});
         if (not exists $loaded_conf->{default}) {$loaded_conf->{default} = $conf->{default}};
         $conf = $loaded_conf;
+    }
+
+    # Simulate request delay
+    if ($conf->{response_time}) {
+        sleep $conf->{response_time};
     }
 
     my $res;
