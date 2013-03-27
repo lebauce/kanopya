@@ -98,6 +98,7 @@ function connectConnectorForm(eid, type, id, cb) {
                 fields  : fields,
                 cancel  : function() { deleteService(eid); },
                 beforeSubmit: function() {
+                    $('.ui-dialog').find('#button-ok').button('disable');
                     setTimeout(function() {
                         var dialog = $("<div>", { id : "waiting_default_insert", title : "Initializing configuration", text : "Please wait..." });
                         dialog.css('text-align', 'center');
