@@ -454,23 +454,6 @@ sub dependentClusterMetricIds() {
 
 =begin classdoc
 
-Remove duplicate from an array.
-
-@return array wi no doublons.
-
-=end classdoc
-
-=cut
-
-sub uniq {
-    return keys %{{ map { $_ => 1 } @_ }};
-}
-
-
-=pod
-
-=begin classdoc
-
 Compute the combination value using a hash of timestamped values for each Clustermetric.
 May be deprecated.
 
@@ -496,7 +479,7 @@ sub _computeFromArrays{
     foreach my $cm_id (@requiredArgs){
        @timestamps = (@timestamps, (keys %{$args{$cm_id}}));
     }
-    @timestamps = uniq @timestamps;
+    @timestamps = $self->uniq(timestamps => \@timestamps);
 
     my %rep;
     foreach my $timestamp (@timestamps){
