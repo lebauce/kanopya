@@ -362,6 +362,140 @@ sub evaluate {
     return \%evaluation_for_each_node;
 }
 
+=pod
+
+=begin classdoc
+
+Compute the combination value between two dates. Use evaluate() method of Clustermetric.
+
+@param start_time the begining date
+@param stop_time the ending date
+
+@return the computed value
+
+=end classdoc
+
+=cut
+
+sub evaluateTimeSerie {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args     => \%args,
+                         required => ['start_time','end_time'],
+                         optional => {nodes => undef});
+
+    # If @nodes not provided, get all non-disabled nodes of the service provider
+    my @nodes = (defined $args{nodes}) ? @{$args{nodes}}
+                                       : $self->service_provider->searchRelated(
+                                            filters => ['nodes'],
+                                            hash    => {-not => {monitoring_state => 'disabled'}}
+                                         );
+
+    $args{nodes} = \@nodes;
+
+    my @ci_ids = $self->getDependentCollectorIndicatorIds();
+    my %allTheCIValues;
+    foreach my $ci_id (@ci_ids){
+        my $ci = Entity::CollectorIndicator->get('id' => $ci_id);
+        $allTheCIValues{$ci_id} = $ci->fetch(%args);
+    }
+    print "heho ".(Dumper \%allTheCIValues)."\n";
+    return $self->_computeFromArrays(%allTheCIValues);
+}
+
+
+=pod
+
+=begin classdoc
+
+Compute the combination value using a hash of timestamped values for each Clustermetric.
+May be deprecated.
+
+@param a value for each clustermetric of the formula.
+
+@return the timestamped computed values
+
+=end classdoc
+
+=cut
+
+sub _computeFromArrays{
+    my ($self, %args) = @_;
+    my @requiredArgs = $self->getDependentCollectorIndicatorIds();
+
+    General::checkParams(args => \%args, required => \@requiredArgs);
+
+    # Merge all the timestamps keys in one arrays
+
+    my @timestamps;
+    foreach my $ci_id (@requiredArgs){
+       @timestamps = (@timestamps, (keys %{$args{$ci_id}}));
+    }
+    @timestamps = $self->uniq(timestamps => \@timestamps);
+
+    my %rep;
+    foreach my $timestamp (@timestamps){
+        my %valuesForATimeStamp;
+        foreach my $ci_id (@requiredArgs){
+            $valuesForATimeStamp{$ci_id} = $args{$ci_id}->{$timestamp};
+        }
+        $rep{$timestamp} = $self->compute(%valuesForATimeStamp);
+    }
+    return %rep;
+}
+
+=pod
+
+=begin classdoc
+
+Compute the combination value using a hash value for each Clustermetric.
+May be deprecated.
+
+@param a value for each clustermetric of the formula.
+
+@return the computed value
+
+=end classdoc
+
+=cut
+
+sub compute {
+    my $self = shift;
+    my %args = @_;
+
+    my @requiredArgs = $self->getDependentCollectorIndicatorIds();
+
+    checkMissingParams(args => \%args, required => \@requiredArgs);
+
+    foreach my $cm_id (@requiredArgs) {
+        if (! defined $args{$cm_id}) {
+            return undef;
+        }
+    }
+
+    my $formula = $self->nodemetric_combination_formula;
+
+    #Split aggregate_rule id from $formula
+    my @array = split(/(id\d+)/,$formula);
+    #replace each rule id by its evaluation
+    for my $element (@array) {
+        if ($element =~ m/id\d+/) {
+            $element = $args{substr($element,2)};
+            if (!defined $element) {
+                return undef;
+            }
+        }
+     }
+
+    my $res = undef;
+    my $arrayString = '$res = '."@array";
+
+    #Evaluate the logic formula
+    eval $arrayString;
+
+    return $res;
+}
 
 =pod
 

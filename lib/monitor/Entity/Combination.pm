@@ -267,4 +267,22 @@ sub autoPredict {
            );
 }
 
+=pod
+
+=begin classdoc
+
+Remove duplicate from an array.
+
+@return array without doublons.
+
+=end classdoc
+
+=cut
+
+sub uniq {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['timestamps']);
+    return keys %{{ map { $_ => 1 } @{$args{timestamps}}} };
+}
+
 1;
