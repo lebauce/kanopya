@@ -66,6 +66,9 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
+        evaluateTimeSerie => {
+            description => 'Retrieve historical value of combination.',
+        },
         computeDataModel => {
             description => 'Enqueue the select data model operation.',
         },
@@ -240,6 +243,8 @@ Parameters are roughly the same than DataModelSelector::autoPredict()
 @optional model_list  : The list of the available models for the selection. By default all existing models are
                         used.
 
+@return forecast data ref {timestamps => [t1,t2,...], values => [v1,v2,...]}
+
 =end classdoc
 
 =cut
@@ -273,6 +278,8 @@ sub autoPredict {
 
 Remove duplicate from an array.
 
+@param data Array ref of values with possible doublons
+
 @return array without doublons.
 
 =end classdoc
@@ -281,8 +288,42 @@ Remove duplicate from an array.
 
 sub uniq {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['timestamps']);
-    return keys %{{ map { $_ => 1 } @{$args{timestamps}}} };
+    General::checkParams(args => \%args, required => ['data']);
+    return keys %{{ map { $_ => 1 } @{$args{data}}} };
+}
+
+=pod
+
+=begin classdoc
+
+Dynamic param checker.
+The difference with General::checkParams is that it only check that required params exist, but they can be null.
+TODO Is it really necessary to have this specific method?
+
+@param required Array of required parameters
+@param args the checked args
+
+=end classdoc
+
+=cut
+
+sub checkMissingParams {
+    my %args = @_;
+
+    my $caller_args = $args{args};
+    my $required = $args{required};
+    my $caller_sub_name = (caller(1))[3];
+
+    for my $param (@$required) {
+        if (! exists $caller_args->{$param} ) {
+            my $errmsg = "$caller_sub_name needs a '$param' named argument!";
+
+            # Log in general logger
+            # TODO log in the logger corresponding to caller package;
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal::IncorrectParam();
+        }
+    }
 }
 
 1;

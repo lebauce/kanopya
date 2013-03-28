@@ -230,7 +230,7 @@ sub toString {
 
 =begin classdoc
 
-Compute the combination value between two dates. Use evaluate() method of Clustermetric.
+Compute the combination value between two dates. Use fetch() method of Clustermetric.
 
 @param start_time the begining date
 @param stop_time the ending date
@@ -399,7 +399,7 @@ sub compute {
 
     my @requiredArgs = $self->dependentClusterMetricIds();
 
-    checkMissingParams(args => \%args, required => \@requiredArgs);
+    Entity::Combination::checkMissingParams(args => \%args, required => \@requiredArgs);
 
     foreach my $cm_id (@requiredArgs) {
         if (! defined $args{$cm_id}) {
@@ -479,7 +479,7 @@ sub _computeFromArrays{
     foreach my $cm_id (@requiredArgs){
        @timestamps = (@timestamps, (keys %{$args{$cm_id}}));
     }
-    @timestamps = $self->uniq(timestamps => \@timestamps);
+    @timestamps = $self->uniq(data => \@timestamps);
 
     my %rep;
     foreach my $timestamp (@timestamps){
@@ -490,39 +490,6 @@ sub _computeFromArrays{
         $rep{$timestamp} = $self->compute(%valuesForATimeStamp);
     }
     return %rep;
-}
-
-
-=pod
-
-=begin classdoc
-
-Dynamic param checker.
-
-@param required Array of required parameters
-@param args the checked args
-
-=end classdoc
-
-=cut
-
-sub checkMissingParams {
-    my %args = @_;
-
-    my $caller_args = $args{args};
-    my $required = $args{required};
-    my $caller_sub_name = (caller(1))[3];
-
-    for my $param (@$required) {
-        if (! exists $caller_args->{$param} ) {
-            my $errmsg = "$caller_sub_name needs a '$param' named argument!";
-
-            # Log in general logger
-            # TODO log in the logger corresponding to caller package;
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal::IncorrectParam();
-        }
-    }
 }
 
 =pod
