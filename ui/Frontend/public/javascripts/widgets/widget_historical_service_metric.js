@@ -9,26 +9,108 @@ $('.widget').live('widgetLoadContent',function(e, obj){
     widgetCommonInit(obj.widget.element);
 
     var sp_id = obj.widget.metadata.service_id;
-    fillServiceMetricCombinationList(
-            obj.widget,
-            sp_id
+    initWidget(
+        obj.widget,
+        sp_id
     );
 
     obj.widget.element.find('.widget_part_forcasting').hide();
 });
 
+function initWidget(widget, sp_id) {
+    fillServiceMetricCombinationList (widget, sp_id);
+    InitNodeMetricControl(widget, sp_id);
+}
+
+/*
+ * Tiny dirty cache
+ * Allow widget instances to share basic requests result
+ * Only for get request without parameters
+ * Do not manage error status
+ *
+ * Note: Not the good way to do $.ajax caching
+ * TODO Cache properly
+ */
+var _requestCache = {};
+function getCache(url, callback) {
+    var now = Date.now();
+    var resp = _requestCache[url];
+    if (resp && (now - resp.time) < 20000) {
+        callback(resp.data);
+    } else {
+        if (resp && resp.pending) {
+            resp.listeners.push(callback);
+        } else {
+            _requestCache[url] = {
+                    pending   : true,
+                    listeners : [callback]
+            }
+            $.get(url, function(data) {
+                var listeners = _requestCache[url].listeners;
+                _requestCache[url] = {
+                        time     : now,
+                        data     : data,
+                };
+                $.each(listeners, function(i, callback) {
+                    callback(data);
+                })
+            })
+        }
+    }
+}
+
+function InitNodeMetricControl(widget, sp_id) {
+    getCache('/api/nodemetriccombination?service_provider_id=' + sp_id, function (data) {
+        var nodemetriccombination_list = widget.element.find('.nodemetriccombination_list').css('width', '250px');
+        $(data).each( function () {
+            nodemetriccombination_list.append($('<option>', {
+                combi_id: this.pk,
+                value   : this.label,
+                text    : this.label,
+                unit    : this.combination_unit
+            }));
+        });
+        nodemetriccombination_list.multiselect({
+            noneSelectedText: 'Select node combinations',
+            selectedText    : "# selected node combinations",
+            selectedList    : 1,
+            height          : '200px !important',
+            width           : '300px'
+        })
+        .multiselectfilter();
+    });
+
+    getCache('/api/serviceprovider/'+sp_id+'/nodes?monitoring_state=<>,disabled', function (data) {
+        var node_list = widget.element.find('.node_list');
+        $(data).each( function () {
+            node_list.append($('<option>', {
+                node_id : this.pk,
+                value   : this.node_hostname,
+                text    : this.node_hostname,
+            }));
+        });
+        node_list.multiselect({
+            noneSelectedText: 'Select nodes',
+            selectedText    : "# selected nodes",
+            selectedList    : 1,
+            height          : '200px !important'
+        })
+        .multiselectfilter();
+    });
+}
+
 function fillServiceMetricCombinationList (widget, sp_id) {
-    var indic_list = widget.element.find('.combination_list');
+    var indic_list = widget.element.find('.servicecombination_list').css('width', '250px');
 
     setRefreshButton(widget, null, sp_id);
 
-    $.get('/api/aggregatecombination?service_provider_id=' + sp_id, function (data) {
+    getCache('/api/aggregatecombination?service_provider_id=' + sp_id, function (data) {
         $(data).each( function () {
             // We do not set attr 'id' to avoid multiselect conflit when there is several instance of this widget
             indic_list.append($('<option>', {
-                combi_id: this.aggregate_combination_id,
-                value   : this.aggregate_combination_label,
-                text    : this.aggregate_combination_label,
+                combi_id: this.pk,
+                value   : this.label,
+                text    : this.label,
                 unit    : this.combination_unit
             }));
         });
@@ -44,8 +126,8 @@ function fillServiceMetricCombinationList (widget, sp_id) {
         }
 
         indic_list.multiselect({
-            noneSelectedText: 'Select combinations',
-            selectedText    : "# selected combination(s)",
+            noneSelectedText: 'Select service combinations',
+            selectedText    : "# selected service combinations",
             selectedList    : 1,
             height          : '200px !important'
         })
@@ -53,18 +135,17 @@ function fillServiceMetricCombinationList (widget, sp_id) {
     });
 }
 
-function _getSelectedMetrics(widget_div) {
-    var selected_metrics = $.map(
-            widget_div.find('.combination_list option:selected'),
-            function(elem) {
-                return {
-                         id  : $(elem).attr('combi_id'),
-                         name: $(elem).val(),
-                         unit: $(elem).attr('unit')
-                       };
-            }
-    );
-    return selected_metrics;
+function _getSelectedCombinations(widget_div, list_class) {
+    return $.map(
+               widget_div.find('.'+list_class+' option:selected'),
+               function(elem) {
+                   return {
+                           id  : $(elem).attr('combi_id'),
+                           name: $(elem).val(),
+                           unit: $(elem).attr('unit')
+                          };
+                }
+           );
 }
 
 function clickRefreshButton(widget_div) {
@@ -79,24 +160,31 @@ function setRefreshButton(widget, combis, sp_id, opts) {
             var widget = w;
             var widget_div = widget.element || widget;
 
-            var selected_metrics = combis || _getSelectedMetrics(widget_div);
+            var selected_service_combis = combis || _getSelectedCombinations(widget_div, 'servicecombination_list');
+            var selected_node_combis    = _getSelectedCombinations(widget_div, 'nodemetriccombination_list');
+            var selected_nodes          = $.map(
+                                              widget_div.find('.node_list option:selected'),
+                                              function(n){return {id:$(n).attr('node_id'),name:$(n).val()}}
+                                          );
+
+            // Limit the number of simultaneous series
+            var total_combinations = selected_service_combis.length + (selected_node_combis.length * selected_nodes.length);
+            if (total_combinations > 8) {
+                alert('Too much selected combinations');
+                return;
+            }
 
             // If widget object is passed then we update its metadata and title
             if (widget.element) {
-                var selected_ids = $.map(selected_metrics, function(metric) {return metric.id});
-                widget.addMetadataValue('aggregate_combination_ids', selected_ids);
-                if (selected_metrics.length <= 2) {
-                    var names = $.map(selected_metrics, function(metric) {return metric.name});
-                    widgetUpdateTitle(widget,  names.join(', '));
-                } else {
-                    widgetUpdateTitle(widget, selected_metrics.length + ' combinations');
-                }
+                _updateWidgetMedatada(widget,selected_service_combis,selected_node_combis,selected_nodes);
             }
 
             var time_settings = getPickedDate(widget_div);
             showCombinationGraph(
                     widget_div,
-                    selected_metrics,
+                    selected_service_combis,
+                    selected_node_combis,
+                    selected_nodes,
                     time_settings.start,
                     time_settings.end,
                     sp_id,
@@ -106,34 +194,105 @@ function setRefreshButton(widget, combis, sp_id, opts) {
     }(widget)).button({ icons : { primary : 'ui-icon-refresh' } }).show();
 }
 
-// Request data for each combinations and display them
-function showCombinationGraph(curobj,combinations,start,stop, sp_id, opts) {
-    var widget = $(curobj).closest('.widget');
-    widget_loading_start( widget );
+function _updateWidgetMedatada(widget,service_combis, node_combis, nodes) {
+    // Update metadata
+    widget.addMetadataValue(
+            'aggregate_combination_ids',
+            $.map(service_combis, function(c) {return c.id}).join(',')
+    );
+    widget.addMetadataValue(
+            'node_combination_ids',
+            $.map(node_combis, function(c) {return c.id}).join(',')
+    );
+    widget.addMetadataValue(
+            'node_ids',
+            $.map(nodes, function(n) {return n.id}).join(',')
+    );
 
-    var clustersview_url = '/monitoring/serviceprovider/' + sp_id +'/clustersview';
+    // Update title
+    var title;
+    var sc_length = service_combis.length;
+    var nc_length = node_combis.length;
+    var n_length  = nodes.length;
+    if (sc_length == 0) {
+        title = nc_length == 1 ? node_combis[0].name : nc_length + ' combinations';
+        title += ' for ';
+        title += n_length == 1 ? nodes[0].name : n_length + ' nodes';
+    } else if (nc_length == 0) {
+        if (sc_length <= 2) {
+            var names = $.map(service_combis, function(metric) {return metric.name});
+            title =  names.join(', ');
+        } else {
+            title = sc_length + ' combinations';
+        }
+    } else {
+        title = sc_length + ' service combinations, ' + nc_length + ' node combinations';
+    }
+    widgetUpdateTitle(widget, title);
+}
+
+// Utility function specific to used date format
+// Return Unix epoch time (sec) from date/time string formatted as 'mm-dd-yy HH:MM'
+function dateTimeToEpoch(dateTime) {
+    return parseInt(Date.parse(dateTime.replace(/-/g, '/')) / 1000);
+}
+
+// Request data for each combinations and display them
+function showCombinationGraph(curobj,service_combinations,node_combinations,nodes,start,stop, sp_id, options) {
+    var widget = $(curobj).closest('.widget');
     var widget_id = $(curobj).closest('.widget').attr("id");
     var graph_container = widget.find('.clusterCombinationView');
     var model_container = widget.find('.datamodel_fields');
     graph_container.children().remove();
 
-    opts = opts || {};
+    var opts = options || {};
+
+    widget_loading_start( widget );
 
     // Request data for each selected combination
-    var pending_requests =  combinations.length;
-    var error_count = 0;
-    var series = [], labels = [], units = [];
-    $.each(combinations, function (i, combi) {
+    var error_count      = 0;
+    var pending_requests = 0;
+
+    // Service level requests
+    var clustersview_url = '/monitoring/serviceprovider/' + sp_id +'/clustersview';
+    pending_requests =  service_combinations.length;
+    var service_data = {series:[], labels:[], units:[]};
+    $.each(service_combinations, function (i, combi) {
         var params = {id:combi.id,start:start,stop:stop};
         $.getJSON(clustersview_url, params, function(data) {
             pending_requests--;
             if (data.error) {
                 error_count++;
             } else {
-                series.push(data.first_histovalues);
-                labels.push(combi.name);
-                units.push(combi.unit);
+                service_data.series.push(data.first_histovalues);
+                service_data.labels.push(combi.name);
+                service_data.units.push(combi.unit);
             }
+        });
+    });
+
+    // Node level request
+    pending_requests += node_combinations.length;
+    var node_data = {series:[], labels:[], units:[]};
+    var params = {
+            start_time : dateTimeToEpoch(start),
+            end_time   : dateTimeToEpoch(stop),
+            node_ids   : $.map(nodes, function(n){return n.id})
+    }
+    $.each(node_combinations, function (i, combi) {
+        $.post('/api/combination/'+combi.id+'/evaluateTimeSerie',
+                params,
+                function(data) {
+                    pending_requests--;
+                    $.each(nodes, function(i,n) {
+                        node_data.series.push(_formatTimeSerieFromHash(data[n.id]));
+                        node_data.labels.push('['+n.name+'] '+combi.name);
+                        node_data.units.push(combi.unit);
+                    });
+                }
+        ).error(function() {
+            pending_requests--;
+            error_count++;
         });
     });
 
@@ -141,7 +300,7 @@ function showCombinationGraph(curobj,combinations,start,stop, sp_id, opts) {
     var graph;
     $(function displayGraph() {
         if (pending_requests == 0) {
-            if (error_count == combinations.length) {
+            if (error_count == service_combinations.length + node_combinations.length) {
                 graph_container.append('<br>').append($('<div>', {'class' : 'ui-state-highlight ui-corner-all', html: 'No data for selected time window'}));
                 deactivateWidgetPart(widget.find('.widget_part_forcasting'), 'You must have data on the graph to forecast');
             } else {
@@ -149,6 +308,9 @@ function showCombinationGraph(curobj,combinations,start,stop, sp_id, opts) {
                 var div = $('<div>', {id:div_id});
                 graph_container.css('display', 'block');
                 graph_container.append(div);
+                var series = service_data.series.concat(node_data.series);
+                var labels = service_data.labels.concat(node_data.labels);
+                var units  = service_data.units.concat(node_data.units);
                 graph = timedGraph(series, start, stop, labels, units, div_id, {show_cursor : opts.allow_forecast});
                 activateWidgetPart(widget.find('.widget_part_forcasting'));
 
@@ -162,7 +324,7 @@ function showCombinationGraph(curobj,combinations,start,stop, sp_id, opts) {
                         .unbind('click')
                         .click( function() {
                             selected_model_types = $.map(model_container.find('.datamodel_type_list option:selected'),function(elem) {return $(elem).val()});
-                            _autoPredict({graph:graph, combination:combinations[0], model_types:selected_model_types});
+                            _autoPredict({graph:graph, combination:service_combinations[0], model_types:selected_model_types});
                         });
                 }
             }
@@ -300,7 +462,7 @@ function _autoPredict(params) {
         ),
         success     : function (prediction_data) {
             // Fill last serie (reserved for forecast) with forecast data
-            graph.series[graph.data.length-1].data = _formatTimeSerie(prediction_data);
+            graph.series[graph.data.length-1].data = _formatTimeSerieFromArrays(prediction_data);
             graph.series[graph.data.length-1].show = true;
             graph.target.show();
             graph.redraw();
@@ -334,12 +496,25 @@ function elemLoadingStop( elem ) {
  * Transform time series format from API : {timestamps: [t1, t2], values: [v1,v2]}
  * to jqplot expected format : [[t1*1000, v1], [t2*1000, v2]]
  */
-function _formatTimeSerie(ts) {
+function _formatTimeSerieFromArrays(ts) {
     var formatted_ts = [];
     for (var i=0; i< ts.timestamps.length; i++) {
         // We multiply value by 1 to force number
-        formatted_ts.push([ts.timestamps[i] * 1000, 1 * ts.values[i]]);
+        var value = ts.values[i] === null ? null : 1 * ts.values[i];
+        formatted_ts.push([ts.timestamps[i] * 1000, value]);
     }
+    return formatted_ts;
+}
+
+/*
+ * Transform time series format from API : {t1 => v1, t2 => v2}
+ * to jqplot expected format : [[t1*1000, v1], [t2*1000, v2]]
+ */
+function _formatTimeSerieFromHash(ts) {
+    var formatted_ts = [];
+    $.each(ts, function(timestamp, value) {
+        formatted_ts.push([timestamp * 1000, value === null ? null : 1 * value]);
+    });
     return formatted_ts;
 }
 
@@ -517,6 +692,7 @@ function timedGraph(graph_lines, min, max, labels, units, div_id, opts) {
         axes    : series_axes.axes,
         series  : series_axes.series,
         legend : {
+            //renderer: $.jqplot.EnhancedLegendRenderer,
             show    : true,
             location: 'nw',
             labels  : labels,
