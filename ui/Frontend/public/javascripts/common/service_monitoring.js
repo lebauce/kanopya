@@ -247,7 +247,7 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
       var graph_div = $('<div>', { 'class' : 'widgetcontent' });
       cont.addClass('widget');
       cont.append(graph_div);
-      graph_div.load('/widgets/widget_historical_service_metric.html', function() {
+      graph_div.load('/widgets/widget_historical_view.html', function() {
           graph_div.find('.dropdown_container,.nodelevel_config').remove();
           widgetCommonInit(graph_div);
           setGraphDatePicker(graph_div);

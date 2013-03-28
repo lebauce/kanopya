@@ -233,7 +233,7 @@ function showConsumptionGraph(sp_id) {
     function addGraph(combi_id, title) {
         var graph_div   = $('<div>', { 'class' : 'widgetcontent' });
         cont.append($('<div>', {'class' : 'widget', 'id' : combi_id}).append(graph_div));
-        graph_div.load('/widgets/widget_historical_service_metric.html', function() {
+        graph_div.load('/widgets/widget_historical_view.html', function() {
             $('.dropdown_container').remove();
             setGraphDatePicker(graph_div);
             setRefreshButton(graph_div, combi_id, title, sp_id);
