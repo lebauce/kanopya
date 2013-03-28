@@ -227,6 +227,7 @@ my @classes = (
     'Entity::DataModel::RDataModel::AutoArima',
     'Entity::DataModel::RDataModel::ExponentialSmoothing',
     'Entity::DataModel::RDataModel::StlForecast',
+    'Entity::DataModel::RDataModel::ExpR',
 );
 
 sub registerClassTypes {

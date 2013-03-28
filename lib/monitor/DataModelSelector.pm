@@ -40,22 +40,23 @@ my $log = get_logger("");
 
 use constant {
     DEFAULT_TRAINING_PERCENTAGE => 80,
-    BASE_NAME => 'Entity::DataModel::',
-    MODEL_CLASSES               => ['AnalyticRegression::LinearRegression',
-                                    'AnalyticRegression::LogarithmicRegression',
-                                    'RDataModel::AutoArima',
-                                    'RDataModel::ExponentialSmoothing',
-                                    'RDataModel::StlForecast',
-                                    ],
-};
-
-
-use constant CHOICE_STRATEGY => {
-    DEMOCRACY => 'DEMOCRACY',
-    ME        => 'ME',
-    MAE       => 'MAE',
-    MSE       => 'MSE',
-    RMSE      => 'RMSE',
+    TIME_SERIES_MIN_LENGTH      => 20,
+    BASE_NAME                   => 'Entity::DataModel::',
+    MODEL_CLASSES               => [
+       'AnalyticRegression::LinearRegression',
+       'AnalyticRegression::LogarithmicRegression',
+#       'RDataModel::AutoArima',
+#       'RDataModel::ExponentialSmoothing',
+#       'RDataModel::StlForecast',
+       'RDataModel::ExpR',
+    ],
+    CHOICE_STRATEGY             => {
+        DEMOCRACY => 'DEMOCRACY',
+        ME        => 'ME',
+        MAE       => 'MAE',
+        MSE       => 'MSE',
+        RMSE      => 'RMSE',
+    },
 };
 
 sub methods {
@@ -146,6 +147,17 @@ sub autoPredict {
     my %extracted  = %{Utils::TimeSerieAnalysis->splitData(data => \%timeserie)};
     my @timestamps = @{$extracted{timestamps_ref}};
     my @values     = @{$extracted{values_ref}};
+
+    # ARBITRARY RESTRICTION : We throw an exception when the time series length is under a fixed limit, in
+    #                         order to avoid R crashes (especially in auto.arima, which does not seem to
+    #                          enjoy small time series).
+    if (scalar(@values) < TIME_SERIES_MIN_LENGTH) {
+        my $min_length = TIME_SERIES_MIN_LENGTH;
+        my $length = scalar(@values);
+        throw Kanopya::Exception(error => 'SelectDataModel : I will not proceed an automatic forecast for ' .
+                                          "a time serie with a length < $min_length (actual length is " .
+                                          "$length), it is unsafe and unreliable ! ");
+    }
 
     # Compute the granularity and predict points
     my %bricabrac = %{Utils::TimeSerieAnalysis->computePredictPointsAndGranularity(

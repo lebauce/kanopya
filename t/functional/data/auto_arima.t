@@ -38,7 +38,7 @@ sub checkPredict {
         for my $index (0..scalar(@expected_values) - 1) {
             unless ($expected_values[$index] == $forecasted_values[$index]) {
                 die ("AutoArima : Incorrect value returned in the forecast ($expected_values[$index] expected, 
-                      got $forecasted_values[$index]) - Hash format");
+                      got $forecasted_values[$index])");
             }
         }
     } 'Testing outputs of the AutoArima predict method'

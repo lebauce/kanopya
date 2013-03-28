@@ -13,7 +13,7 @@ use Test::More 'no_plan';
 use Kanopya::Tools::TestUtils 'expectedException';
 use Test::Exception;
 
-use Entity::DataModel::RDataModel::StlForecast;;
+use Entity::DataModel::RDataModel::StlForecast;
 
 main();
 
@@ -38,7 +38,7 @@ sub checkPredict {
         for my $index (0..scalar(@expected_values) - 1) {
             unless ($expected_values[$index] == $forecasted_values[$index]) {
                 die ("StlForecast : Incorrect value returned in the forecast " .
-                     " ($expected_values[$index] expected, got $forecasted_values[$index]) - Hash format");
+                     " ($expected_values[$index] expected, got $forecasted_values[$index])");
             }
         }
     } 'Testing outputs of the StlForecast predict method'
