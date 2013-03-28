@@ -84,17 +84,24 @@ my @types = (
 for my $type (@types) {
     my $function = '_register_' . $type;
 
-    $function->{data => $json_imported_items->{$type}};
+    $function->(data => $json_imported_items->{$type});
 }
 
 sub _register_services {
     my %args = @_;
 
     General::checkParams(args => \%args, required => [ "data" ]);
-    
 
-$DB::single = 1;
+    my @services = @{ $args{data} };
 
+    foreach my $service (@services) {
+        Entity::ServiceProvider::Externalcluster->new(
+            externalcluster_name       => $service->{externalcluster_name},
+            externalcluster_desc       => $service->{externalcluster_desc},
+            externalcluster_state      => $service->{externalcluster_state},
+            externalcluster_prev_state => $service->{externalcluster_prev_state},
+        );
+    }
 }
 
 1;
