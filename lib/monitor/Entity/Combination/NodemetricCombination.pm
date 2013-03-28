@@ -27,11 +27,12 @@ Mathematical formula of collector indicators
 
 package Entity::Combination::NodemetricCombination;
 
+use base 'Entity::Combination';
+
 use strict;
 use warnings;
 require 'Entity/Indicator.pm';
 use Entity::CollectorIndicator;
-use base 'Entity::Combination';
 use Data::Dumper;
 # logger
 use Log::Log4perl "get_logger";
@@ -366,10 +367,11 @@ sub evaluate {
 
 =begin classdoc
 
-Compute the combination value between two dates. Use evaluate() method of Clustermetric.
+Compute the combination value between two dates for each nodes. Use fetch() method of CollectorIndicator.
 
 @param start_time the begining date
 @param stop_time the ending date
+@optional nodes Array ref of nodes to compute. Default is all enabled nodes.
 
 @return the computed value
 
@@ -400,7 +402,7 @@ sub evaluateTimeSerie {
         my $ci = Entity::CollectorIndicator->get('id' => $ci_id);
         $allTheCIValues{$ci_id} = $ci->fetch(%args);
     }
-    print "heho ".(Dumper \%allTheCIValues)."\n";
+
     return $self->_computeFromArrays(%allTheCIValues);
 }
 
@@ -409,12 +411,13 @@ sub evaluateTimeSerie {
 
 =begin classdoc
 
-Compute the combination value using a hash of timestamped values for each Clustermetric.
-May be deprecated.
+Compute the combination value using a hash of timestamped values for each CollectorIndicator and nodes.
 
-@param a value for each clustermetric of the formula.
 
-@return the timestamped computed values
+@param dynamic A value for each collectorIndicator of the formula, for each nodes.
+               (ci_id => {node_id => {timestamp=>value}})
+
+@return A reference to computed values. {node_id => {timestamp=>value}}
 
 =end classdoc
 
@@ -426,33 +429,40 @@ sub _computeFromArrays{
 
     General::checkParams(args => \%args, required => \@requiredArgs);
 
-    # Merge all the timestamps keys in one arrays
-
+    # Merge all the timestamps keys in one arrays. Do the Same for node ids.
     my @timestamps;
+    my @node_ids;
     foreach my $ci_id (@requiredArgs){
-       @timestamps = (@timestamps, (keys %{$args{$ci_id}}));
+        while (my ($node_id, $data) = each %{$args{$ci_id}}){
+            @timestamps = (@timestamps, (keys %$data));
+            push @node_ids, $node_id;
+        }
     }
-    @timestamps = $self->uniq(timestamps => \@timestamps);
+    @timestamps = $self->uniq(data => \@timestamps);
+    @node_ids   = $self->uniq(data => \@node_ids);
 
     my %rep;
     foreach my $timestamp (@timestamps){
-        my %valuesForATimeStamp;
-        foreach my $ci_id (@requiredArgs){
-            $valuesForATimeStamp{$ci_id} = $args{$ci_id}->{$timestamp};
+        foreach my $node_id (@node_ids) {
+            my %valuesForATimeStamp;
+            foreach my $ci_id (@requiredArgs){
+                $valuesForATimeStamp{$ci_id} = $args{$ci_id}->{$node_id} ? $args{$ci_id}->{$node_id}{$timestamp}
+                                                                         : undef;
+            }
+            $rep{$node_id}{$timestamp} = $self->compute(%valuesForATimeStamp);
         }
-        $rep{$timestamp} = $self->compute(%valuesForATimeStamp);
     }
-    return %rep;
+
+    return \%rep;
 }
 
 =pod
 
 =begin classdoc
 
-Compute the combination value using a hash value for each Clustermetric.
-May be deprecated.
+Compute the combination value using a hash value for each CollectorIndicator.
 
-@param a value for each clustermetric of the formula.
+@param dynamic A value for each CollectorIndicator of the formula.
 
 @return the computed value
 
@@ -465,17 +475,14 @@ sub compute {
     my %args = @_;
 
     my @requiredArgs = $self->getDependentCollectorIndicatorIds();
-
-    checkMissingParams(args => \%args, required => \@requiredArgs);
-
-    foreach my $cm_id (@requiredArgs) {
-        if (! defined $args{$cm_id}) {
+    Entity::Combination::checkMissingParams(args => \%args, required => \@requiredArgs);
+    foreach my $ci_id (@requiredArgs) {
+        if (! defined $args{$ci_id}) {
             return undef;
         }
     }
 
     my $formula = $self->nodemetric_combination_formula;
-
     #Split aggregate_rule id from $formula
     my @array = split(/(id\d+)/,$formula);
     #replace each rule id by its evaluation
