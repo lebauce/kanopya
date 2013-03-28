@@ -17,9 +17,38 @@ $('.widget').live('widgetLoadContent',function(e, obj){
     obj.widget.element.find('.widget_part_forcasting').hide();
 });
 
+/*
+ * Init widget with full control (service and node combinations selection, nodes selection)
+ */
 function initWidget(widget, sp_id) {
     fillServiceMetricCombinationList (widget, sp_id);
-    InitNodeMetricControl(widget, sp_id);
+    InitNodeMetricControl(widget.element, sp_id);
+}
+
+/*
+ * Custom Init widget
+ * Specify which data to display
+ * Specify available controls
+ */
+function serviceLevelCustomInitWidget(widget_div, sp_id, cluster_metrics, options) {
+    widget_div.find('.dropdown_container').remove();
+    widgetCommonInit(widget_div);
+    setGraphDatePicker(widget_div);
+    fillDataModelTypeList(widget_div);
+
+    if (options && options.node_control) {
+        InitNodeMetricControl(widget_div, sp_id);
+    } else {
+        widget_div.find('.nodelevel_config').remove();
+    }
+
+    setRefreshButton(
+        widget_div,
+        cluster_metrics,
+        sp_id,
+        {allow_forecast:true}
+    );
+    clickRefreshButton(widget_div);
 }
 
 /*
@@ -59,9 +88,9 @@ function getCache(url, callback) {
     }
 }
 
-function InitNodeMetricControl(widget, sp_id) {
+function InitNodeMetricControl(widget_div, sp_id) {
     getCache('/api/nodemetriccombination?service_provider_id=' + sp_id, function (data) {
-        var nodemetriccombination_list = widget.element.find('.nodemetriccombination_list').css('width', '250px');
+        var nodemetriccombination_list = widget_div.find('.nodemetriccombination_list').css('width', '250px');
         $(data).each( function () {
             nodemetriccombination_list.append($('<option>', {
                 combi_id: this.pk,
@@ -81,7 +110,7 @@ function InitNodeMetricControl(widget, sp_id) {
     });
 
     getCache('/api/serviceprovider/'+sp_id+'/nodes?monitoring_state=<>,disabled', function (data) {
-        var node_list = widget.element.find('.node_list');
+        var node_list = widget_div.find('.node_list');
         $(data).each( function () {
             node_list.append($('<option>', {
                 node_id : this.pk,

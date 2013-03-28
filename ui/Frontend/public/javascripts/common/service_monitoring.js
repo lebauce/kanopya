@@ -248,17 +248,12 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
       cont.addClass('widget');
       cont.append(graph_div);
       graph_div.load('/widgets/widget_historical_view.html', function() {
-          graph_div.find('.dropdown_container,.nodelevel_config').remove();
-          widgetCommonInit(graph_div);
-          setGraphDatePicker(graph_div);
-          fillDataModelTypeList(graph_div);
-          setRefreshButton(
-              graph_div,
-              [{id:clusterMetric_id, name:row_data.aggregate_combination_label, unit:row_data.combination_unit}],
-              elem_id,
-              {allow_forecast:true}
+          serviceLevelCustomInitWidget(
+                  graph_div,
+                  elem_id,
+                  [{id:clusterMetric_id, name:row_data.aggregate_combination_label, unit:row_data.combination_unit}],
+                  {node_control : true}
           );
-          clickRefreshButton(graph_div);
       });
     }
 
