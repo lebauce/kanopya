@@ -372,6 +372,7 @@ Compute the combination value between two dates for each nodes. Use fetch() meth
 @param start_time the begining date
 @param stop_time the ending date
 @optional nodes Array ref of nodes to compute. Default is all enabled nodes.
+@optional node_ids Array ref of nodes id to compute. Used if 'nodes' is undef. Default is all enabled nodes.
 
 @return the computed value
 
@@ -385,15 +386,15 @@ sub evaluateTimeSerie {
 
     General::checkParams(args     => \%args,
                          required => ['start_time','end_time'],
-                         optional => {nodes => undef});
+                         optional => {nodes => undef, node_ids => undef});
 
-    # If @nodes not provided, get all non-disabled nodes of the service provider
+    # If @nodes not provided, get from ids if provided else get all non-disabled nodes of the service provider
     my @nodes = (defined $args{nodes}) ? @{$args{nodes}}
-                                       : $self->service_provider->searchRelated(
-                                            filters => ['nodes'],
-                                            hash    => {-not => {monitoring_state => 'disabled'}}
-                                         );
-
+              : $self->service_provider->searchRelated(
+                    filters => ['nodes'],
+                    hash    => (defined $args{node_ids}) ? {node_id => $args{node_ids}}
+                             : {-not => {monitoring_state => 'disabled'}}
+                 );
     $args{nodes} = \@nodes;
 
     my @ci_ids = $self->getDependentCollectorIndicatorIds();
