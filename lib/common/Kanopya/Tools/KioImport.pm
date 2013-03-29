@@ -58,49 +58,38 @@ while (my $line  = <$FILE>) {
 
 my $json_imported_items = JSON->new->utf8->decode($import);
 
-my @types = (
-    'services',
-    'connectors',
-    'connector_types',
-    'managers',
-    'externalnodes',
-    'aggregate_combinations',
-    'aggregate_conditions',
-    'aggregate_rules',
-    'clustermetrics',
-    'collector_indicators',
-    'combinations',
-    'constant_combinations',
-    'dashboards',
-    'indicators',
-    'nodemetric_combinations',
-    'nodemetric_conditions',
-    'nodemetric_rules',
-    'param_presets',
-    'verified_noderules',
-    'workflow_defs',
+my %register_methods = (
+    'services' => \&_registerServices,
 );
 
-for my $type (@types) {
-    my $function = '_register_' . $type;
-
-    $function->(data => $json_imported_items->{$type});
+for my $type (keys %register_methods) {
+    $register_methods{$type}->(data => $json_imported_items->{$type});
 }
 
-sub _register_services {
+sub _registerServices {
     my %args = @_;
 
     General::checkParams(args => \%args, required => [ "data" ]);
+    my $services = $args{data};
 
-    my @services = @{ $args{data} };
-
-    foreach my $service (@services) {
-        Entity::ServiceProvider::Externalcluster->new(
-            externalcluster_name       => $service->{externalcluster_name},
-            externalcluster_desc       => $service->{externalcluster_desc},
-            externalcluster_state      => $service->{externalcluster_state},
-            externalcluster_prev_state => $service->{externalcluster_prev_state},
+    for my $old_service (@$services) {
+        my $new_externalcluster = Entity::ServiceProvider::Externalcluster->new(
+            externalcluster_name       => $old_service->{externalcluster_name},
+            externalcluster_desc       => $old_service->{externalcluster_desc},
+            externalcluster_state      => $old_service->{externalcluster_state},
+            externalcluster_prev_state => $old_service->{externalcluster_prev_state}
         );
+
+        if (defined @{ $old_service->{externalnodes} }) {
+            for my $old_externalnode ( @{$old_service->{externalnodes}} ) {
+                my $new_node = Node->new(
+                    node_hostname       => $old_externalnode->{externalnode_hostname},
+                    node_number         => 0,
+                    monitoring_state    => $old_externalnode->{externalnode_state},
+                    service_provider_id => $new_externalcluster->id
+                );
+            }
+        }
     }
 }
 
