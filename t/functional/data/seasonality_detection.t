@@ -53,7 +53,7 @@ sub main {
     find_seasonality_DSP();
     find_seasonality_ACF();
     find_seasonality();
-    # scalability ();
+    forecast();
     BaseDB->rollbackTransaction;
 }
 
@@ -90,7 +90,11 @@ sub get_timeserie_data_fromCSV {
         my $file = $path.'test_data.csv';
         my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
         #Expected values
-        my %expected_values = ( 5901 => 315.42, 5902 => 316.31, 5903 => 316.50 , 5904 => 317.56, 5905 => 318.13);
+        my %expected_values = ( 5901 => 315.42,
+                                5902 => 316.31,
+                                5903 => 316.50,
+                                5904 => 317.56,
+                                5905 => 318.13 );
 
          if (scalar (keys %{$data}) == 5) {
             foreach my $key (keys %{$data}) {
@@ -366,6 +370,7 @@ sub find_seasonality {
             diag($seasons->[0].' !=6')  if ($seasons->[0] != $expected_value);
             die('Wrong calculation of seasonalities when season=6');
         }
+
     } 'Compute seasonalities when season=6';
 
     lives_ok {
@@ -392,13 +397,21 @@ sub find_seasonality {
         my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
 
         my $seasons        = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
-        my $expected_value = 10;
+        my @expected_values = (10, 38);
 
-        if ( $#{$seasons}+1 != 1 || $seasons->[0] != $expected_value ) {
-            diag($#$seasons+1 .' != 1') if ($#$seasons+1 != 1);
-            diag($seasons->[0].' !=10') if ($seasons->[0] != $expected_value);
+        if ($#{$seasons}+1 == 2) {
+            foreach my $i (0..$#$seasons) {
+                if ($seasons->[$i] != $expected_values[$i]) {
+                    diag ($seasons->[$i]." != ". $expected_values[$i]);
+                    die 'Wrong calculation of seasonalities when Season=10 : lynx';
+                }
+            }
+        }
+        else {
+            diag ($#{$seasons}+1 .' != 2');
             die 'Wrong calculation of seasonalities when Season=10 : lynx';
         }
+
     } 'Compute seasonalities when Season=10 : lynx';
 
     lives_ok {
@@ -416,6 +429,7 @@ sub find_seasonality {
             diag($seasons->[0]. ' != 53')   if ($seasons->[0] != $expected_value);
             die 'Wrong calculation of seasonalities when Season=53';
         }
+
     } 'Compute seasonalities when Season=53';
 
     lives_ok {
@@ -710,75 +724,227 @@ sub find_seasonality {
         }
     } 'Compute multiple seasonalities when there is only positive values : sinus (2)';
 
+
+    lives_ok {
+
+        #The data used for the test
+        my $file = $path.'complexSeasonality.csv';
+        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
+
+        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
+
+        my $expected_value = 6;
+
+        if ( $#{$seasons}+1 != 1 || $seasons->[0] != $expected_value ) {
+            diag($#$seasons+1 . ' != 1')    if ($#$seasons+1 != 1);
+            diag($seasons->[0]. ' != 6')   if ($seasons->[0] != $expected_value);
+            die 'Wrong calculation of complex seasonalities';
+        }
+    } 'Complex seasonalities : sinus + cosinus';
+
+
+    lives_ok {
+
+        #The data used for the test
+        my $file = $path.'complexSeasonality+trend+level.csv';
+        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
+
+        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
+
+        my $expected_value = 6;
+
+        if ( $#{$seasons}+1 != 1 || $seasons->[0] != $expected_value ) {
+            diag($#$seasons+1 . ' != 1')    if ($#$seasons+1 != 1);
+            diag($seasons->[0]. ' != 6')   if ($seasons->[0] != $expected_value);
+            die 'Wrong calculation of complex seasonalities with trend and level';
+        }
+    } 'Complex seasonalities (sinus + cosinus) with trend and level';
+
 }
 
 
-
-sub scalability{
+sub forecast {
 
     my ($service_provider, $mock_monitor) = setup();
     my $name_func = 'sum';
 
     lives_ok {
+        my $t = time();
+        my %prec = ( 'X' => 0.1);
+        my $cm = createCombinationMetric ('service_provider' => $service_provider,
+                                          'mock_monitor'     => $mock_monitor,
+                                          'name_func'        => $name_func,
+                                          'window_time'      => 20000);
+
+        my $comb = linkTimeSerietoAggregateCombination ('cm'               => $cm,
+                                                        'func'             => "sin(X)",
+                                                        'season'           => 10,
+                                                        'precision'        => \%prec,
+                                                        'time'             => $t,
+                                                        'rows'             => 20000,
+                                                        'service_provider' => $service_provider);
+
+        DataModelSelector->autoPredict( 'combination_id' => $comb->id,
+                                        'horizon'        => $t+15500,
+                                        'start_time'     => $t-15000,
+                                        'end_time'       => $t);
+
+    } 'Prediction when Season=10';
+
+
+    lives_ok {
+        my $t = 1362151970;
+        my %prec = ( 'X' => 0.1 );
         my $cm = createCombinationMetric ('service_provider' => $service_provider,
                                           'mock_monitor'     => $mock_monitor,
                                           'name_func'        => $name_func,
                                           'window_time'      => 1200);
+
+        my $comb = linkTimeSerietoAggregateCombination ('cm'               => $cm,
+                                                        'func'             => "sin(X)",
+                                                        'season'           => 53,
+                                                        'precision'        => \%prec,
+                                                        'rows'             => 300,
+                                                        'time'             => $t,
+                                                        'service_provider' => $service_provider);
+
+        DataModelSelector->autoPredict( 'combination_id' => $comb->id,
+                                        'horizon'        => $t+320,
+                                        'start_time'     => $t-250,
+                                        'end_time'       => $t);
+
+    } 'Prediction when Season=53';
+
+    lives_ok {
+        my $t = time();
+        my %prec = ( 'X' => 0.1 );
+        my $cm = createCombinationMetric ('service_provider' => $service_provider,
+                                          'mock_monitor'     => $mock_monitor,
+                                          'name_func'        => $name_func,
+                                          'window_time'      => 20000);
 
         my $comb = linkTimeSerietoAggregateCombination ('cm'               => $cm,
                                                         'func'             => "5*sin(2*3.14*X)+X",
-                                                        'rows'             => 2000,
-                                                        'step'             => 300,
+                                                        'precision'        => \%prec,
+                                                        'time'             => $t,
+                                                        'rows'             => 20000,
                                                         'service_provider' => $service_provider);
 
-        my ($best_data_model, $best_freq) = DataModelSelector->selectDataModel(
-                                                                        'combination' => $comb,
-                                                                        'start_time'  => time()-1999*300,
-                                                                        'end_time'    => time()-300);
+        DataModelSelector->autoPredict( 'combination_id' => $comb->id,
+                                        'horizon'        => $t+15500,
+                                        'start_time'     => $t-15000,
+                                        'end_time'       => $t);
 
-    } 'Scalability prediction with additive seasonalities : sinus function';
+    } 'Prediction with additive seasonalities';
 
 
     lives_ok {
-
+        my $t = time();
+        my %prec = ( 'X' => 3 );
         my $cm = createCombinationMetric ('service_provider' => $service_provider,
                                           'mock_monitor'     => $mock_monitor,
                                           'name_func'        => $name_func,
                                           'window_time'      => 1200);
 
         my $comb = linkTimeSerietoAggregateCombination ('cm'               => $cm,
-                                                        'func'             => "sin(2*3.14*5*X)",
-                                                        'rows'             => 2000,
-                                                        'step'             => 300,
+                                                        'func'             => "5*sin(2*3.14*X)+0.05*rand(50)",
+                                                        'rows'              => 500,
+                                                        'precision'        => \%prec,
+                                                        'time'             => $t,
                                                         'service_provider' => $service_provider);
 
-        my ($best_data_model, $best_freq) = DataModelSelector->selectDataModel(
-                                                                            'combination' => $comb,
-                                                                            'start_time'  => time()-1999*300,
-                                                                            'end_time'    => time()-300);
+        DataModelSelector->autoPredict( 'combination_id' => $comb->id,
+                                        'horizon'        => $t+350,
+                                        'start_time'     => $t-300,
+                                        'end_time'       => $t);
 
-    } 'Scalability prediction with sinus without noise';
+    } 'Prediction when there is noise : sinus';
 
     lives_ok {
-
+        my $t = time();
+        my %prec = ( 'X' => 3 );
         my $cm = createCombinationMetric ('service_provider' => $service_provider,
                                           'mock_monitor'     => $mock_monitor,
                                           'name_func'        => $name_func,
                                           'window_time'      => 1200);
 
         my $comb = linkTimeSerietoAggregateCombination ('cm'               => $cm,
-                                                        'func'             => "sin(2*3.14*5*X)+0.05*rand(50)",
-                                                        'srand'            => 1,
-                                                        'rows'             => 2000,
-                                                        'step'             => 300,
+                                                        'func'             => "5*sin(2*3.14*X)",
+                                                        'rows'              => 500,
+                                                        'precision'        => \%prec,
+                                                        'time'             => $t,
                                                         'service_provider' => $service_provider);
 
-        my ($best_data_model, $best_freq) = DataModelSelector->selectDataModel(
-                                                                            'combination' => $comb,
-                                                                            'start_time'  => time()-1999*300,
-                                                                            'end_time'    => time()-300);
+        DataModelSelector->autoPredict( 'combination_id' => $comb->id,
+                                        'horizon'        => $t+350,
+                                        'start_time'     => $t-300,
+                                        'end_time'       => $t);
 
-    } 'Scalability prediction with sinus with noise';
+    } 'Prediction when there is no noise : sinus';
+
+
+    lives_ok {
+        my $t = time();
+        my %prec = ( 'X' => 0.5 );
+        my $cm = createCombinationMetric ('service_provider' => $service_provider,
+                                          'mock_monitor'     => $mock_monitor,
+                                          'name_func'        => $name_func,
+                                          'window_time'      => 1200);
+
+        my $comb = linkTimeSerietoAggregateCombination ('cm'               => $cm,
+                                                        'func'             => "30*sin(X+3.14)+rand(5)+X",
+                                                        'rows'             => 500,
+                                                        'step'             => 300,
+                                                        'precision'        => \%prec,
+                                                        'time'             => $t,
+                                                        'service_provider' => $service_provider);
+
+        DataModelSelector->autoPredict( 'combination_id' => $comb->id,
+                                        'horizon'        => $t+550*300,
+                                        'start_time'     => $t-500*300,
+                                        'end_time'       => $t);
+    } 'Prediction when there is noise : sinus (2)';
+
+   lives_ok {
+        my $t = time();
+        my %prec = ( 'X' => 0.5 );
+        my $cm = createCombinationMetric ('service_provider' => $service_provider,
+                                          'mock_monitor'     => $mock_monitor,
+                                          'name_func'        => $name_func,
+                                          'window_time'      => 1200);
+
+        my $comb = linkTimeSerietoAggregateCombination ('cm'               => $cm,
+                                                        'func'             => "50*sin(2*3.14*X)+(400-X)",
+                                                        'rows'              => 250,
+                                                        'precision'        => \%prec,
+                                                        'time'             => $t,
+                                                        'service_provider' => $service_provider);
+
+        DataModelSelector->autoPredict( 'combination_id' => $comb->id,
+                                        'horizon'        => $t+300,
+                                        'start_time'     => $t-250,
+                                        'end_time'       => $t);
+    } 'Prediction with downward trend';
+
+   lives_ok {
+        my $t = time();
+        my %prec = ( 'X' => 0.1 );
+        my $cm = createCombinationMetric ('service_provider' => $service_provider,
+                                          'mock_monitor'     => $mock_monitor,
+                                          'name_func'        => $name_func,
+                                          'window_time'      => 1200);
+
+        my $comb = linkTimeSerietoAggregateCombination ('cm'               => $cm,
+                                                        'func'             => "abs(sin(X))",
+                                                        'precision'        => \%prec,
+                                                        'time'             => $t,
+                                                        'service_provider' => $service_provider);
+
+        DataModelSelector->autoPredict( 'combination_id' => $comb->id,
+                                        'horizon'        => $t+150,
+                                        'start_time'     => $t-100,
+                                        'end_time'       => $t);
+    } 'Prediction when there is only positive values : sinus';
 
 }
 
@@ -830,10 +996,15 @@ sub linkTimeSerietoAggregateCombination {
     my %args = @_;
     my $time_serie = Kanopya::Tools::TimeSerie->new();
     #get on parameter args func rows and step
-    $time_serie->generate(func  => $args{'func'},
-                          srand => $args{'srand'},
-                          rows  => $args{'rows'},
-                          step  => $args{'step'});
+
+    $time_serie->generate(func      => $args{'func'},
+                          srand     => $args{'srand'},
+                          rows      => $args{'rows'},
+                          step      => $args{'step'},
+                          precision => $args{'precision'},
+                          season    => $args{'season'},
+                          'time'    => $args{'time'}
+                          );
 
     $time_serie->store();
     $time_serie->linkToMetric( metric => $args{'cm'} );

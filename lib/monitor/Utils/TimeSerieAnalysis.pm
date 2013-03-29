@@ -30,6 +30,7 @@ use General;
 use Statistics::R;
 use Utils::R;
 use Data::Dumper;
+use List::MoreUtils qw(firstidx);
 
 # logger
 use Log::Log4perl "get_logger";
@@ -252,24 +253,18 @@ sub computeACF {
     my $data_values = $args{'data_values'};
     my $lag         = $args{'lag'};
 
-    my $path = "/tmp/ACF.pdf";
-
-    my $loadvect = "vect <- c (". join(",", @{$data_values}) .")" ;
-
+    my $loadvect = "vect <- c (". join(",", @{$data_values}).")" ;
     # Define an R session
     my $R = Statistics::R->new();
 
     # Open an R session
     $R->startR();
-
     # Send the instructions to R
     $R->send(
                 qq`
                 $loadvect
-                pdf("$path")
-                r<-acf(vect,$lag)
-                \n print(r)
-                dev.off()`
+                r<-acf(vect,$lag,plot = FALSE)
+                \n print(r)`
             );
 
     # Get the results (acf) by using the method of Utils::R
@@ -393,7 +388,6 @@ sub detectPeriodicity {
 
     #Possible offset when searching periodicity of the peak
     my $offset  = int( ($#{$acf} + 1) * 0.04);
-    $log->debug("offset ".$offset);
 
     for (my $i = $pos+1; $i < $#{$peaks}+1; $i++) {
         #Search for the multiple value of lag given by $peak->[$pos]+1
@@ -498,7 +492,7 @@ Computes the possible seasonalities based on the autocorrelation (acf).
 
 @param data_values the values of the historical data
 
-@return an array reference of the seasonality values
+@return the number of relevant seasonalities and an array reference of the seasonality values
 
 =end classdoc
 
@@ -510,7 +504,8 @@ sub findSeasonalityACF {
     General::checkParams(args     => \%args,
                          required => ['data_values']
                         );
-
+    #relevant seasonalities
+    my $relevant_season = 1;
     my $data_values = $args{'data_values'};
 
     #Contains the possible seasonalities obtained by acf
@@ -560,11 +555,16 @@ sub findSeasonalityACF {
         #Sort the values of the seasonalities following the values of the acf
         my %h = map { $season[$_] => $max_acf[$_]} (0..$#season);
         @sorted_season = sort { ($h{$b} <=> $h{$a}) || ($a <=> $b)} keys %h;
+        if ( (scalar @sorted_season > 2)                                                        &&
+             ($sorted_season[1] > $sorted_season[0])                                            &&
+             ($season[(firstidx { $_ ==  $sorted_season[0]} @season) + 1] != $sorted_season[1])    ) {
 
+            $relevant_season = 2;
+            }
         $log->debug("ordered seasons @sorted_season \n");
     }
 
-    return \@sorted_season;
+    return ($relevant_season,\@sorted_season);
 }
 
 
@@ -593,13 +593,14 @@ sub findSeasonality {
 
     #Get the data values of the time serie in an array
     my $data_values = $args{'data'};
-
     my @season;
     my $seasonal_DSP = $class->findSeasonalityDSP('data_values' => $data_values);
-    my $season_ACF   = $class->findSeasonalityACF('data_values' => $data_values);
-
-    if ( ($#$season_ACF+1 != 0)) {
-        push @season, $season_ACF->[0];
+    my ($relevant_season, $season_ACF)   = $class->findSeasonalityACF('data_values' => $data_values);
+    $log->debug($relevant_season);
+    if ( ($#$season_ACF+1 != 0) ) {
+        for (my $i = 0; $i < $relevant_season; $i++) {
+            push @season, $season_ACF->[$i];
+        }
     }
 
     if ( $seasonal_DSP != 1  && ((grep {$_ == $seasonal_DSP} @season) == 0) ) {
@@ -691,6 +692,7 @@ sub computePredictPointsAndGranularity {
         predict_start => $predict_start,
         predict_end   => $predict_end,
     };
+
 }
 
 1;
