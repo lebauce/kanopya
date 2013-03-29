@@ -31,7 +31,7 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-	monitor_server_ip => { 
+    monitor_server_ip => {
         label        => 'SNMP Server IP',
         type         => 'string',
         pattern      => '^.*$',
@@ -47,50 +47,7 @@ use constant ATTR_DEF => {
     },
 };
 
-
-
 sub getAttrDef { return ATTR_DEF; }
-
-sub getConf {
-    my ($self) = @_;
-
-    my $snmpd5_conf;
-    my $confindb = $self->{_dbix};
-    if($confindb) {
-       $snmpd5_conf = {
-        snmpd5_id => $confindb->get_column('snmpd5_id'),
-        monitor_server_ip => $confindb->get_column('monitor_server_ip'),
-        snmpd_options => $confindb->get_column('snmpd_options')};
-    } else {
-        $snmpd5_conf = $self->getBaseConfiguration();
-    }
-    return $snmpd5_conf; 
-}
-
-sub setConf {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['conf']);
-
-    my $conf = $args{conf};
-    if (not $conf->{snmpd5_id}) {
-        # new configuration -> create
-        $self->{_dbix}->create($conf);
-    } else {
-        # old configuration -> update
-        $self->{_dbix}->update($conf);
-    }
-}
-
-=head2 getNetConf
-B<Class>   : Public
-B<Desc>    : This method return component network configuration in a hash ref, it's indexed by port and value is the port
-B<args>    : None
-B<Return>  : hash ref containing network configuration with following format : {port => protocol}
-B<Comment>  : None
-B<throws>  : Nothing
-=cut
 
 sub getNetConf {
     return { 161 => ['udp'] };
