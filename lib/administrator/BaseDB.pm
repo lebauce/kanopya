@@ -112,6 +112,10 @@ sub new {
         }
     }
 
+    $class->populateRelations(relations => $relations,
+                              foreign   => 0,
+                              attrs     => $hash);
+
     my $attrs = $class->checkAttrs(attrs => $hash);
 
     my $self = $class->newDBix(attrs => $attrs);
@@ -278,7 +282,8 @@ sub promote {
     bless $self, $class;
 
     # Populate relations
-    $self->populateRelations(relations => $relations);
+    $self->populateRelations(relations => $relations,
+                             foreign   => 1);
 
     # Set the class type to the new promotion class
     eval {
@@ -1684,7 +1689,7 @@ sub extractRelations {
     # Extrating relation from attrs
     my $relations = {};
     for my $attr (keys %{$args{hash}}) {
-        if (ref($args{hash}->{$attr}) eq 'ARRAY') {
+        if (ref($args{hash}->{$attr}) =~ m/ARRAY|HASH/) {
             $relations->{$attr} = delete $args{hash}->{$attr};
         }
     }
@@ -1700,6 +1705,9 @@ Create or update relations. If a relation has the primary key set in this attrib
 we update the object, create it instead.
 
 @param relations hash containing object relations only
+@param foreign boolean to indicate the relations the create
+       A value of '0' means we need to create the entities that have a foreign key to 'self'
+       A value of '1' means we need to create the entities that 'self' points to
 
 =end classdoc
 
@@ -1711,54 +1719,78 @@ sub populateRelations {
 
     General::checkParams(args     => \%args,
                          required => [ 'relations' ],
-                         optional => { 'override' => 0 });
+                         optional => { 'override' => 0,
+                                       'foreign'  => 1,
+                                       'attrs'    => undef });
+
+    requireClass($class);
 
     # For each relations type
+    RELATION:
     for my $relation (keys %{$args{relations}}) {
-        my @entries = $self->searchRelated(filters => [ $relation ]);
-        my $existing = {};
-
         my $rel_infos = $self->getRelationship(relation => $relation);
+
+        next RELATION if $args{foreign} == 0 && $rel_infos->{relation} ne "single";
+
         my $relation_class = $rel_infos->{class};
         my $relation_schema = $rel_infos->{schema};
         my $key = $rel_infos->{linkfk} || "id";
-        %$existing = map { $_->$key => $_ } @entries;
 
-        # Create/update all entries
-        for my $entry (@{$args{relations}->{$relation}}) {
-            if ($rel_infos->{relation} eq 'single_multi') {
-                my $id = delete $entry->{@{$relation_schema->_primaries}[0]};
-                if ($id) {
-                    # We have the relation id, it is a relation update
-                    $relation_class->get(id => $id)->update(%$entry);
-                    delete $existing->{$id};
-                }
-                else {
-                    # Create the new relationships
-                    $entry->{$rel_infos->{fk}} = $self->id;
-                    # Id do not exists, it is a relation creation
-                    $relation_class->create(%$entry);
-                }
+        if ($rel_infos->{relation} eq "single") {
+            my $entry = $args{relations}->{$relation};
+            my $id = delete $entry->{@{$relation_schema->_primaries}[0]};
+            if ($id) {
+                # We have the relation id, it is a relation update
+                $relation_class->get(id => $id)->update(%$entry);
             }
-            elsif ($rel_infos->{relation} eq 'multi') {
-                # If instances are given in parameters instead of ids, use the ids
-                if (ref($entry)) {
-                    $entry = $entry->id;
-                }
-
-                my $exists = delete $existing->{$entry};
-                if (not $exists) {
-                    # Create entries in the link table
-                    $relation_class->create($rel_infos->{fk}     => $self->id,
-                                            $rel_infos->{linkfk} => $entry);
-                }
+            else {
+                # Id do not exists, it is a relation creation
+                my $obj = $relation_class->create(%$entry);
+                $args{attrs}->{$obj->getPrimaryKey} = $obj->id;
             }
         }
 
-        # Finally delete remaining entries
-        if ($args{override}) {
-            for my $remaning (values %$existing) {
-                $remaning->remove();
+        else {
+            my $existing = {};
+            my @entries = $self->searchRelated(filters => [ $relation ]);
+            %$existing = map { $_->$key => $_ } @entries;
+
+            # Create/update all entries
+            for my $entry (@{$args{relations}->{$relation}}) {
+                if ($rel_infos->{relation} eq 'single_multi') {
+                    my $id = delete $entry->{@{$relation_schema->_primaries}[0]};
+                    if ($id) {
+                        # We have the relation id, it is a relation update
+                        $relation_class->get(id => $id)->update(%$entry);
+                        delete $existing->{$id};
+                    }
+                    else {
+                        # Create the new relationships
+                        $entry->{$rel_infos->{fk}} = $self->id;
+                        # Id do not exists, it is a relation creation
+                        $relation_class->create(%$entry);
+                    }
+                }
+                elsif ($rel_infos->{relation} eq 'multi') {
+                    # If instances are given in parameters instead of ids, use the ids
+                    if (ref($entry)) {
+                        $entry = $entry->id;
+                    }
+
+                    my $exists = delete $existing->{$entry};
+                    if (not $exists) {
+                        # Create entries in the link table
+                        $relation_class->create($rel_infos->{fk}     => $self->id,
+                                                $rel_infos->{linkfk} => $entry);
+                    }
+                }
+            }
+
+            # Finally delete remaining entries
+            if ($args{override}) {
+                for my $remaning (values %$existing) {
+                    $remaning->remove();
+                }
             }
         }
     }
@@ -1771,7 +1803,9 @@ sub getRelationship {
     General::checkParams(args => \%args, required => [ 'relation' ]);
 
     my $relation = $args{relation};
-    my $attrdef  = $class->getAttrDefs->{$relation};
+
+    # For 'single' relation, the relation in the attrDefs ends with '_id'
+    my $attrdef  = $class->getAttrDefs->{$relation} || $class->getAttrDefs->{$relation . '_id'};
 
     my $source_infos = $self->getRelatedSource($relation);
 
@@ -2314,9 +2348,9 @@ sub getRelatedSource {
     my ($self, $relation) = @_;
     my $class = ref($self) || $self;
 
-    my $dbix = $self->{_dbix};
+    my $dbix = $class->getResultSource();
     while ($dbix and (not $dbix->has_relationship($relation))) {
-        $dbix = $dbix->parent;
+        $dbix = $dbix->relationship_info($relation);
     }
 
     my $relation_schema;
@@ -2326,7 +2360,7 @@ sub getRelatedSource {
         $relation_schema = BaseDB->_adm->{schema}->source($class);
     }
     else {
-        $relation_schema = $dbix->result_source->related_source($relation);
+        $relation_schema = $dbix->related_source($relation);
     }
 
     return { dbix => $dbix, source => $relation_schema };
