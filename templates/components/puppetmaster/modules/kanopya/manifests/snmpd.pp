@@ -7,6 +7,16 @@ class kanopya::snmpd::service {
 		notify  => Service['snmpd']
 	}
 
+	if $operatingsystem =~ /(?i)(debian|ubuntu)/ {
+		file { '/etc/default/snmpd':
+			path    => '/etc/default/snmpd',
+			ensure  => present,
+			mode    => 0644,
+			source  => "puppet:///kanopyafiles/${sourcepath}/etc/default/snmpd",
+			notify  => Service['snmpd']
+		}
+	}
+
 	service {
 		'snmpd':
 			name => $operatingsystem ? {
