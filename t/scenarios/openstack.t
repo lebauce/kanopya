@@ -44,9 +44,7 @@ sub main {
     diag('Register master image');
     my $masterimage;
     lives_ok {
-        #$masterimage = Kanopya::Tools::Register::registerMasterImage();
-	use Entity::Masterimage;
-	$masterimage = Entity::Masterimage->find;
+        $masterimage = Kanopya::Tools::Register::registerMasterImage();
     } 'Register master image';
 
     diag('Create and configure MySQL and RabbitMQ cluster');
@@ -133,7 +131,7 @@ sub main {
 
     lives_ok {
         my $vm_cluster = Kanopya::Tools::Create->createVmCluster(
-                             iaas => $iaas,
+                             iaas => $nova_controller,
                              cluster_conf => {
                                  cluster_name         => 'VmCluster',
                                  cluster_basehostname => 'vmcluster',

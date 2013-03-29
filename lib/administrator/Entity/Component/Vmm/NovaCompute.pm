@@ -50,7 +50,8 @@ sub getPuppetDefinition {
            "\tquantum => '" . $quantum->getMasterNode->fqdn . "',\n" .
            "\temail => '" . $self->nova_controller->service_provider->user->user_email . "',\n" .
            "\tpassword => 'nova',\n" .
-           "\tlibvirt_type => 'kvm'\n" .
+           "\tlibvirt_type => 'kvm',\n" .
+           "\tqpassword => 'quantum'\n" .
            "}\n";
 }
 
