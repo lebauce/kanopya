@@ -5,77 +5,118 @@ $('.widget').live('widgetLoadContent',function(e, obj){
     // Check if loaded widget is for us
     if (obj.widget.element.find('.clusterCombinationView').length == 0) {return;}
 
-    setGraphDatePicker(obj.widget.element, obj.widget);
-    widgetCommonInit(obj.widget.element);
-
     var sp_id = obj.widget.metadata.service_id;
-    initWidget(
-        obj.widget,
-        sp_id
-    );
 
-    obj.widget.element.find('.widget_part_forcasting').hide();
+    customInitHistoricalWidget(
+        obj.widget,
+        sp_id,
+        {
+            clustermetric_combinations : 'from_ajax',
+            nodemetric_combinations    : 'from_ajax',
+            nodes                      : 'from_ajax',
+        },
+        {
+            allow_forecast : false,
+        }
+    );
 });
 
 /*
- * Init widget with full control (service and node combinations selection, nodes selection)
- */
-function initWidget(widget, sp_id) {
-    fillServiceMetricCombinationList (widget, sp_id);
-    initNodeMetricControl(widget.element, sp_id);
-}
-
-/*
  * Custom Init widget
- * Specify which data to display
  * Specify available controls
+ * Specify lists options
+ *
+ * Widget parameter can be a widget instance or a widget.element (widget div)
+ * If it is a widget instance, its metadata will be loaded (mainly the selected options of lists loaded 'from_ajax')
+ * and updated according to user selection
+ *
+ * 'data' parameter allow to specify lists options (clustermetric_combinations, nodemetric_combinations, nodes).
+ * for each of this list, value can be:
+ *  - 'from_ajax' : load options from server and allow user to select
+ *  - null        : do not fill or display the list
+ *  - Array of options to selected by default, corresponding list will be not displayed
+ *
+ * 'option' is a hash of options:
+ *  - open_config_part : Boolean to say if the configuration part is open by default
+ *  - allow_forecast   : Boolean to add the forecast part
  */
-function customInitHistoricalWidget(widget_div, sp_id, data, options) {
+function customInitHistoricalWidget(widget, sp_id, data, options) {
+    var widget_div = widget.element || widget;
+    var metadata   = widget.metadata;
+
     widgetCommonInit(widget_div);
-    setGraphDatePicker(widget_div);
+    setGraphDatePicker(widget_div, widget.element ? widget : undefined );
 
     var opts = options || {};
     var clustermetric_combinations = data.clustermetric_combinations;
     var nodemetric_combinations    = data.nodemetric_combinations;
     var nodes                      = data.nodes;
 
+    var pending_init = 0;
+    function initControlDone() {
+        pending_init--;
+    }
+
+    // Deactivate config part during loading of all elements
+    deactivateWidgetPart(widget_div.find('.widget_part_config'), 'loading...');
+
+    // Forecasting control
     if (opts.allow_forecast) {
         fillDataModelTypeList(widget_div);
     } else {
         widget_div.find('.widget_part_forcasting').hide();
     }
 
-    if (clustermetric_combinations || nodes) {
+    // Nodemetric combinations and nodes control
+    if (nodemetric_combinations || nodes) {
+        pending_init++;
         initNodeMetricControl(
                 widget_div, sp_id,
                 {
                     nodemetric_combinations : nodemetric_combinations == 'from_ajax' ? null : nodemetric_combinations,
-                    nodes : nodes == 'from_ajax' ? null : nodes
-                 }
+                    nodes                   : nodes == 'from_ajax' ? null : nodes,
+                    metadata                : metadata
+                },
+                initControlDone
         );
     } else {
         widget_div.find('.nodelevel_config').remove();
     }
 
+    // Clustermetric combinations control
     if (clustermetric_combinations) {
+        pending_init++
         initServiceControl(
                 widget_div, sp_id,
-                {clustermetric_combinations : clustermetric_combinations == 'from_ajax' ? null : clustermetric_combinations}
+                {
+                    clustermetric_combinations : clustermetric_combinations == 'from_ajax' ? null : clustermetric_combinations,
+                    metadata                   : metadata
+                },
+                initControlDone
         );
     } else {
         widget_div.find('.dropdown_container').remove();
     }
 
-    if (opts.open_config_part) {
-        widget_div.find('.widget_part_config').click();
-    }
-
     setRefreshButton(
-        widget_div,
+        widget,
         sp_id,
         {allow_forecast : options && options.allow_forecast}
     );
-    clickRefreshButton(widget_div);
+
+    // Wait all lists are loaded to finalize init and display graph
+    var init_end = setInterval(function() {
+        if (pending_init == 0) {
+            clearInterval(init_end);
+
+            // Widget part management
+            activateWidgetPart(widget_div.find('.widget_part_config'));
+            if (opts.open_config_part) {
+                widget_div.find('.widget_part_config').click();
+            }
+            clickRefreshButton(widget_div);
+        }
+    }, 10);
 }
 
 /*
@@ -117,11 +158,13 @@ function getCache(url, callback) {
 
 /*
  * Fill nodemetric combinations list and node list using data from server or local data
- * If local data are passed then hide the select list (no user control)
+ * If local data are passed then all corresponding combinations are selected and the select list is hidden (no user control)
  */
-function initNodeMetricControl(widget_div, sp_id, options) {
+function initNodeMetricControl(widget_div, sp_id, options, callback) {
     var opts = options || {};
+    var pending = 0;
 
+    // Nodemetric combinations list management
     var nodemetriccombination_list = widget_div.find('.nodemetriccombination_list').css('width', '250px');
     if (opts.nodemetric_combinations) {
         $(opts.nodemetric_combinations).each( function () {
@@ -135,7 +178,9 @@ function initNodeMetricControl(widget_div, sp_id, options) {
         nodemetriccombination_list.hide();
         widget_div.find('.node_list_label').hide();
     } else {
+        pending++;
         getCache('/api/nodemetriccombination?service_provider_id=' + sp_id, function (data) {
+            // Fill list
             $(data).each( function () {
                 nodemetriccombination_list.append($('<option>', {
                     combi_id: this.pk,
@@ -144,6 +189,14 @@ function initNodeMetricControl(widget_div, sp_id, options) {
                     unit    : this.combination_unit
                 }));
             });
+            // Load widget content if configured (select combinations in drop down list)
+            if (opts.metadata && opts.metadata.nodemetric_combination_ids) {
+                var selected_ids = opts.metadata.nodemetric_combination_ids.split(',');
+                $.each(selected_ids, function(i,id) {
+                    nodemetriccombination_list.find('option[combi_id=' + id+']').prop('selected', true);
+                });
+            }
+            // Multiselectify
             nodemetriccombination_list.multiselect({
                 noneSelectedText: 'Select node combinations',
                 selectedText    : "# selected node combinations",
@@ -152,9 +205,11 @@ function initNodeMetricControl(widget_div, sp_id, options) {
                 width           : '300px'
             })
             .multiselectfilter();
+            pending--;
         });
     }
 
+    // Nodes list management
     var node_list = widget_div.find('.node_list');
     if (opts.nodes) {
         $(opts.nodes).each( function() {
@@ -167,7 +222,9 @@ function initNodeMetricControl(widget_div, sp_id, options) {
         node_list.hide();
         widget_div.find('.node_list_label').hide();
     } else {
+        pending++;
         getCache('/api/serviceprovider/'+sp_id+'/nodes?monitoring_state=<>,disabled', function (data) {
+            // Fill list
             $(data).each( function () {
                 node_list.append($('<option>', {
                     node_id : this.pk,
@@ -175,6 +232,14 @@ function initNodeMetricControl(widget_div, sp_id, options) {
                     text    : this.node_hostname,
                 }));
             });
+            // Load widget content if configured (select combinations in drop down list)
+            if (opts.metadata && opts.metadata.node_ids) {
+                var selected_ids = opts.metadata.node_ids.split(',');
+                $.each(selected_ids, function(i,id) {
+                    node_list.find('option[node_id=' + id+']').prop('selected', true);
+                });
+            }
+            // Multiselectify
             node_list.multiselect({
                 noneSelectedText: 'Select nodes',
                 selectedText    : "# selected nodes",
@@ -182,15 +247,23 @@ function initNodeMetricControl(widget_div, sp_id, options) {
                 height          : '200px !important'
             })
             .multiselectfilter();
+            pending--;
         });
     }
+
+    var done = setInterval(function() {
+                   if (pending == 0) {
+                       clearInterval(done);
+                       if (callback) {callback()};
+                   }
+                }, 10);
 }
 
 /*
  * Fill servicemetric combinations list
- * If local data are passed then hide the select list (no user control)
+ * If local data are passed then all corresponding combinations are selected and the select list is hidden (no user control)
  */
-function initServiceControl (widget_div, sp_id, options) {
+function initServiceControl (widget_div, sp_id, options, callback) {
     var opts = options || {};
 
     var clustermetriccombinations_list = widget_div.find('.servicecombination_list').css('width', '250px');
@@ -204,6 +277,7 @@ function initServiceControl (widget_div, sp_id, options) {
             }).prop('selected', true));
         });
         clustermetriccombinations_list.hide();
+        if (callback) {callback()};
     } else {
         getCache('/api/aggregatecombination?service_provider_id=' + sp_id, function (data) {
             $(data).each( function () {
@@ -216,51 +290,24 @@ function initServiceControl (widget_div, sp_id, options) {
                 }));
             });
 
+            // Load widget content if configured (select combinations in drop down list)
+            if (opts.metadata && opts.metadata.aggregate_combination_ids) {
+                var selected_ids = opts.metadata.aggregate_combination_ids.split(',');
+                $.each(selected_ids, function(i,id) {
+                    clustermetriccombinations_list.find('option[combi_id=' + id+']').prop('selected', true);
+                });
+            }
+
             clustermetriccombinations_list.multiselect({
                 noneSelectedText: 'Select service combinations',
                 selectedText    : "# selected service combinations",
                 selectedList    : 1,
                 height          : '200px !important'
-            })
-            .multiselectfilter();
+            }).multiselectfilter();
+
+            if (callback) {callback()};
         });
     }
-}
-
-function fillServiceMetricCombinationList (widget, sp_id) {
-    var indic_list = widget.element.find('.servicecombination_list').css('width', '250px');
-
-    setRefreshButton(widget, sp_id);
-
-    getCache('/api/aggregatecombination?service_provider_id=' + sp_id, function (data) {
-        $(data).each( function () {
-            // We do not set attr 'id' to avoid multiselect conflit when there is several instance of this widget
-            indic_list.append($('<option>', {
-                combi_id: this.pk,
-                value   : this.label,
-                text    : this.label,
-                unit    : this.combination_unit
-            }));
-        });
-
-        // Load widget content if configured
-        if (widget.metadata.aggregate_combination_ids) {
-            // Select combinations in drop down list
-            var selected_ids = widget.metadata.aggregate_combination_ids.split(',');
-            $.each(selected_ids, function(i,id) {
-                indic_list.find('option[combi_id=' + id+']').prop('selected', true).val();
-            });
-            widget.element.find('.refresh_button').click();
-        }
-
-        indic_list.multiselect({
-            noneSelectedText: 'Select service combinations',
-            selectedText    : "# selected service combinations",
-            selectedList    : 1,
-            height          : '200px !important'
-        })
-        .multiselectfilter();
-    });
 }
 
 function _getSelectedCombinations(widget_div, list_class) {
@@ -329,7 +376,7 @@ function _updateWidgetMedatada(widget,service_combis, node_combis, nodes) {
             $.map(service_combis, function(c) {return c.id}).join(',')
     );
     widget.addMetadataValue(
-            'node_combination_ids',
+            'nodemetric_combination_ids',
             $.map(node_combis, function(c) {return c.id}).join(',')
     );
     widget.addMetadataValue(
