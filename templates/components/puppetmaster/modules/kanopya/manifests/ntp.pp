@@ -1,4 +1,4 @@
-class kanopya::ntp($server) {
+class kanopya::ntp::service($server) {
     class { '::ntp':
         ensure     => stopped,
         servers    => [ $server ]
@@ -15,3 +15,20 @@ class kanopya::ntp($server) {
         hour    => 2
     }
 }
+
+class kanopya::ntp::install {
+    package { 'ntpdate':
+        name   => 'ntpdate',
+        ensure => present
+    }
+}
+
+class kanopya::ntp($server) {
+    class { 'kanopya::ntp::service':
+        server  => "$server",
+        require => Class['kanopya::ntp::install']
+    }
+
+    class { 'kanopya::ntp::install': }
+}
+
