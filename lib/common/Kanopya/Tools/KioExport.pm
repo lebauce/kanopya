@@ -48,89 +48,94 @@ use Entity::ServiceProvider::Outside::Externalcluster;
 
 Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
 
+
 my $export_dir = '/vagrant/';
 my $export_bdd_file = $export_dir . 'bdd.json';
-my $export_data;
-my @types = (
-    'services',
-    'connectors',
-    'connector_types',
-    'managers',
-    'externalnodes',
-    'aggregate_combinations',
-    'aggregate_conditions',
-    'aggregate_rules',
-    'clustermetrics',
-    'collector_indicators',
-    'combinations',
-    'constant_combinations',
-    'dashboards',
-    'indicators',
-    'nodemetric_combinations',
-    'nodemetric_conditions',
-    'nodemetric_rules',
-    'param_presets',
-    'verified_noderules',
-    'workflow_defs',
-
-);
-
 mkdir $export_dir unless (-d $export_dir);
 
-
-
-for my $type (@types) {
-    $export_data->{$type} = _exportDataToJson(data_type => $type);
-}
-_writeJsonFile(data => $export_data);
-
-sub _exportDataToJson {
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "data_type" ]);
-
-    my $data_matrix = {
-        services                => 'Entity::ServiceProvider::Outside::Externalcluster',
-        connectors              => 'Entity::Connector',
-        connector_types         => 'ConnectorType',
-        managers                => 'ServiceProviderManager',
-        externalnodes           => 'Externalnode',
-        aggregate_combinations  => 'Entity::Combination::AggregateCombination',
-        aggregate_conditions    => 'Entity::AggregateCondition',
-        aggregate_rules         => 'Entity::AggregateRule',
-        clustermetrics          => 'Entity::Clustermetric',
-        collector_indicators    => 'Entity::CollectorIndicator',
-        combinations            => 'Entity::Combination',
-        constant_combinations   => 'Entity::Combination::ConstantCombination',
-        dashboards              => 'Dashboard',
-        indicators              => 'Entity::Indicator',
-        nodemetric_combinations => 'Entity::Combination::NodemetricCombination',
-        nodemetric_conditions   => 'Entity::NodemetricCondition',
-        nodemetric_rules        => 'Entity::NodemetricRule',
-        param_presets           => 'ParamPreset',
-        verified_noderules      => 'VerifiedNoderule',
-        workflow_defs           => 'WorkflowDef',
-
-    };
-
-$DB::single = 1;
-    my @items = $data_matrix->{ $args{data_type} }->search(hash => {});
-
-    my @exported_items;
-    foreach my $item (@items) {
-        push @exported_items, $item->toJSON;
+my $export_data;
+my $matrix = {
+    services     => {
+        ref       => 'Entity::ServiceProvider::Outside::Externalcluster',
+        relations => [ 
+            'connectors', 
+            'externalnodes', 
+            'service_provider_managers',  
+            'combinations',
+            'nodemetric_rules',
+            'nodemetric_conditions',
+            'clustermetrics',
+            'aggregate_rules',
+            'aggregate_conditions',
+            'combinations',
+        ],
+    },
+    dashboard    => {
+        ref       => 'Dashboard',
+        relations => [],
+    },
+    param_preset => {
+        ref       => 'ParamPreset',
+        relations => [],
+    },
+    workflow_def => {
+        ref       => 'WorkflowDef',
+        relations => [],
+    },
+    indicator   => {
+        ref       => 'Entity::Indicator',
+        relations => [],
     }
-    
-    return \@exported_items;
+};
+
+while (my ($resource,$details) = each %$matrix) {
+
+    my @objects = $details->{ref}->search(hash => {});
+    my @objects_rdy_to_export;
+
+    foreach my $object (@objects) {
+        my $tojson_object = $object->toJSON;
+
+        foreach my $relation ( @{ $details->{relations} } ) {
+#            print "DEBUG RELATION = $relation \n";
+
+            if ($object->$relation > 0) {
+                my @tojson_relation;
+                foreach my $obj_relation ($object->$relation) {
+                    my $tojson_obj_relation = $obj_relation->toJSON;
+
+                    #hardcode stuff to insert collector_indicators and indicators
+                    if (ref $obj_relation eq 'Entity::Connector::Scom') {
+                        my @collector_indicators = Entity::CollectorIndicator->search(hash => {});
+                        my @tojson_collector_indicators;
+                        foreach my $collector_indicator (@collector_indicators) {
+                            push @tojson_collector_indicators, $collector_indicator->toJSON;
+                        }
+                        $tojson_obj_relation->{collector_indicators} = \@tojson_collector_indicators;
+                    }
+
+                    push @tojson_relation, $tojson_obj_relation;
+                }
+                $tojson_object->{$relation} = \@tojson_relation;
+            }
+        }
+        push @objects_rdy_to_export, $tojson_object;
+    }
+
+    $export_data->{$resource} = \@objects_rdy_to_export;
 }
+
+
+
+_writeJsonFile(data =>$export_data);
 
 sub _writeJsonFile {
     my %args = @_;
-
+   
     General::checkParams(args => \%args, required => [ "data" ]);
-
+   
     my $json_exported_items = JSON->new->utf8->encode($args{data});
-
+    
     open (my $FILE, '>>', $export_bdd_file) or die 'could not open \'$export_bdd_file\' : $!\n';
     print $FILE $json_exported_items; 
     close($FILE);
