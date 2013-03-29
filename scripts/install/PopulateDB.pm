@@ -692,11 +692,11 @@ sub registerDataModelTypes {
     );
 
     my @data_model_descriptions = (
-        'Perform a prediction on the selected combination using a classic linear regression. The model ' .
+        'Perform a prediction using a classic linear regression. The model ' .
         'follows a line equation form : y = a*t + b (t represents the time, a and b are computed '.
         'parameters).',
 
-        'Perform a prediction on the selected combination using a logarithmic regression. The model is ' .
+        'Perform a prediction using a logarithmic regression. The model is ' .
         'based on a equation with the following form : a*log(t) + b (t represents the time, a and b are ' .
         ' computed parameters).',
 
