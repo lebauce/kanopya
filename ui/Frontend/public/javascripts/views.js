@@ -114,6 +114,17 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
     }
 
     if (!(details_info.noDialog)) {
+        var available_buttons = [
+            {id:'button-cancel',text:'Cancel',click: function() {$(this).dialog('close');}},
+            {id:'button-ok',text:'Ok',click: function() {if (details_info.onOk) {details_info.onOk()}$(this).dialog('close');}}
+        ];
+        var buttons = [];
+        $.each(available_buttons, function (i,button) {
+            if (!details_info.buttons || $.inArray(button.id, details_info.buttons) >= 0) {
+                buttons.push(button);
+            }
+        });
+
         var dialog = $(view_detail_container)
         .dialog({
             autoOpen    : true,
@@ -127,10 +138,7 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
                 $('.last_content').addClass('current_content').removeClass('last_content');
                 $(this).remove(); // detail modals are never closed, they are destroyed
             },
-            buttons: [
-                {id:'button-cancel',text:'Cancel',click: function() {$(this).dialog('close');}},
-                {id:'button-ok',text:'Ok',click: function() {if (details_info.onOk) {details_info.onOk()}$(this).dialog('close');}}
-            ]
+            buttons: buttons
         });
         // Remove dialog title if wanted
         if (details_info.title == 'none') {

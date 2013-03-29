@@ -247,7 +247,7 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
     }
 
     // Clustermetric historical graph details handler
-    function clusterMetricDetailsHistorical(cid, clusterMetric_id, row_data) {
+    function clusterMetricCombinationDetailsHistorical(cid, clusterMetric_id, row_data) {
         integrateWidget(cid, 'widget_historical_view', function(widget_div) {
             customInitHistoricalWidget(
                 widget_div,
@@ -295,8 +295,9 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
                     { label : 'Histogram'  , id : 'histogram' , onLoad : nodeMetricDetailsHistogram },
                     { label : 'Historical' , id : 'historical', onLoad : nodeMetricDetailsHistorical },
                 ],
-            title : { from_column : 'nodemetric_combination_label' },
-            height: 600
+            title   : { from_column : 'nodemetric_combination_label' },
+            height  : 600,
+            buttons : ['button-ok']
         },
         deactivate_details  : mode_policy,
         action_delete: {
@@ -395,10 +396,11 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
         ],
         details: {
             tabs : [
-                    { label : 'Historical graph', id : 'servicehistoricalgraph', onLoad : clusterMetricDetailsHistorical },
+                    { label : 'Historical graph', id : 'servicehistoricalgraph', onLoad : clusterMetricCombinationDetailsHistorical },
                 ],
             title       : { from_column : 'aggregate_combination_label' },
-            height      : 600
+            height      : 600,
+            buttons     : ['button-ok']
         },
         deactivate_details  : mode_policy,
         action_delete: {
