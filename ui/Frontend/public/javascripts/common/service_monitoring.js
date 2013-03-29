@@ -212,31 +212,43 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
 
     var external        = ext || '';
 
+    // Allow to use dashboard widget outside of the dashboard
+    function integrateWidget(cid, widget_type, callback) {
+        var cont = $('#' + cid);
+        var widget_div = $('<div>', { 'class' : 'widgetcontent' });
+        cont.addClass('widget').append(widget_div);
+        widget_div.load('/widgets/'+ widget_type +'.html', function() {callback(widget_div)});
+    }
+
     // Nodemetric bargraph details handler
     function nodeMetricDetailsBargraph(cid, nodeMetric_id) {
-      // Use dashboard widget outside of the dashboard
-      var cont = $('#' + cid);
-      var graph_div = $('<div>', { 'class' : 'widgetcontent' });
-      cont.addClass('widget');
-      cont.append(graph_div);
-      graph_div.load('/widgets/widget_nodes_bargraph.html', function() {
-          $('.indicator_dropdown').remove();
-          $('.nodes_order_selection').hide();
-          showNodemetricCombinationBarGraph(graph_div, nodeMetric_id, '', elem_id);
+      integrateWidget(cid, 'widget_nodes_bargraph', function(widget_div) {
+          widget_div.find('.indicator_dropdown').remove();
+          widget_div.find('.nodes_order_selection').hide();
+          showNodemetricCombinationBarGraph(widget_div, nodeMetric_id, '', elem_id);
       });
     }
 
     // Nodemetric histogram details handler
     function nodeMetricDetailsHistogram(cid, nodeMetric_id) {
-      // Use dashboard widget outside of the dashboard
-      var cont = $('#' + cid);
-      var graph_div = $('<div>', { 'class' : 'widgetcontent' });
-      cont.addClass('widget');
-      cont.append(graph_div);
-      graph_div.load('/widgets/widget_nodes_histogram.html', function() {
-          $('.indicator_dropdown').remove();
-          $('.part_number_input').remove();
-          showNodemetricCombinationHistogram(graph_div, nodeMetric_id, '', 10, elem_id);
+      integrateWidget(cid, 'widget_nodes_histogram', function(widget_div) {
+          widget_div.find('.indicator_dropdown').remove();
+          widget_div.find('.part_number_input').remove();
+          showNodemetricCombinationHistogram(widget_div, nodeMetric_id, '', 10, elem_id);
+      });
+    }
+
+    // Nodemetric historical details handler
+    function nodeMetricDetailsHistorical(cid, nodeMetric_id) {
+        integrateWidget(cid, 'widget_historical_view', function(widget_div) {
+          serviceLevelCustomInitWidget(
+                  widget_div,
+                  elem_id,
+                  [],
+                  [{id:nodeMetric_id, name:'', unit:''}],
+                  [],
+                  {open_config_part : true, node_control : true}
+          );
       });
     }
 
@@ -252,7 +264,9 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
                   graph_div,
                   elem_id,
                   [{id:clusterMetric_id, name:row_data.aggregate_combination_label, unit:row_data.combination_unit}],
-                  {node_control : true}
+                  [],
+                  [],
+                  {node_control : true, allow_forecast : true}
           );
       });
     }
@@ -287,9 +301,11 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
         details: {
             tabs : [
                     { label : 'Nodes graph', id : 'nodesgraph', onLoad : nodeMetricDetailsBargraph },
-                    { label : 'Histogram', id : 'histogram', onLoad : nodeMetricDetailsHistogram },
+                    { label : 'Histogram'  , id : 'histogram' , onLoad : nodeMetricDetailsHistogram },
+                    { label : 'Historical' , id : 'historical', onLoad : nodeMetricDetailsHistorical },
                 ],
-            title : { from_column : 'nodemetric_combination_label' }
+            title : { from_column : 'nodemetric_combination_label' },
+            height: 600
         },
         deactivate_details  : mode_policy,
         action_delete: {
