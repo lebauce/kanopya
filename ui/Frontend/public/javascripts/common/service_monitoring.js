@@ -212,14 +212,6 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
 
     var external        = ext || '';
 
-    // Allow to use dashboard widget outside of the dashboard
-    function integrateWidget(cid, widget_type, callback) {
-        var cont = $('#' + cid);
-        var widget_div = $('<div>', { 'class' : 'widgetcontent' });
-        cont.addClass('widget').append(widget_div);
-        widget_div.load('/widgets/'+ widget_type +'.html', function() {callback(widget_div)});
-    }
-
     // Nodemetric bargraph details handler
     function nodeMetricDetailsBargraph(cid, nodeMetric_id) {
       integrateWidget(cid, 'widget_nodes_bargraph', function(widget_div) {
@@ -241,33 +233,32 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
     // Nodemetric historical details handler
     function nodeMetricDetailsHistorical(cid, nodeMetric_id) {
         integrateWidget(cid, 'widget_historical_view', function(widget_div) {
-          serviceLevelCustomInitWidget(
-                  widget_div,
-                  elem_id,
-                  [],
-                  [{id:nodeMetric_id, name:'', unit:''}],
-                  [],
-                  {open_config_part : true, node_control : true}
+          customInitHistoricalWidget(
+              widget_div,
+              elem_id,
+              {
+                  clustermetric_combinations : null,
+                  nodemetric_combinations    : [{id:nodeMetric_id, name:'', unit:''}],
+                  nodes                      : 'from_ajax',
+              },
+              {open_config_part : true}
           );
       });
     }
 
     // Clustermetric historical graph details handler
     function clusterMetricDetailsHistorical(cid, clusterMetric_id, row_data) {
-      // Use dashboard widget outside of the dashboard
-      var cont = $('#' + cid);
-      var graph_div = $('<div>', { 'class' : 'widgetcontent' });
-      cont.addClass('widget');
-      cont.append(graph_div);
-      graph_div.load('/widgets/widget_historical_view.html', function() {
-          serviceLevelCustomInitWidget(
-                  graph_div,
-                  elem_id,
-                  [{id:clusterMetric_id, name:row_data.aggregate_combination_label, unit:row_data.combination_unit}],
-                  [],
-                  [],
-                  {node_control : true, allow_forecast : true}
-          );
+        integrateWidget(cid, 'widget_historical_view', function(widget_div) {
+            customInitHistoricalWidget(
+                widget_div,
+                elem_id,
+                {
+                    clustermetric_combinations : [{id:clusterMetric_id, name:row_data.aggregate_combination_label, unit:row_data.combination_unit}],
+                    nodemetric_combinations    : 'from_ajax',
+                    nodes                      : 'from_ajax',
+                },
+                {allow_forecast : true}
+            );
       });
     }
 

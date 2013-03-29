@@ -234,10 +234,10 @@ function showConsumptionGraph(sp_id) {
         var graph_div   = $('<div>', { 'class' : 'widgetcontent' });
         cont.append($('<div>', {'class' : 'widget', 'id' : combi_id}).append(graph_div));
         graph_div.load('/widgets/widget_historical_view.html', function() {
-            serviceLevelCustomInitWidget(
+            customInitHistoricalWidget(
                     graph_div,
                     sp_id,
-                    [{id:combi_id, name:title, unit:unit}]
+                    { clustermetric_combinations : [{id:combi_id, name:title, unit:unit}] }
             );
         });
     }

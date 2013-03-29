@@ -22,7 +22,7 @@ $('.widget').live('widgetLoadContent',function(e, obj){
  */
 function initWidget(widget, sp_id) {
     fillServiceMetricCombinationList (widget, sp_id);
-    InitNodeMetricControl(widget.element, sp_id);
+    initNodeMetricControl(widget.element, sp_id);
 }
 
 /*
@@ -30,12 +30,14 @@ function initWidget(widget, sp_id) {
  * Specify which data to display
  * Specify available controls
  */
-function serviceLevelCustomInitWidget(widget_div, sp_id, clustermetric_combinations, nodemetric_combinations, nodes, options) {
-    widget_div.find('.dropdown_container').remove();
+function customInitHistoricalWidget(widget_div, sp_id, data, options) {
     widgetCommonInit(widget_div);
     setGraphDatePicker(widget_div);
 
     var opts = options || {};
+    var clustermetric_combinations = data.clustermetric_combinations;
+    var nodemetric_combinations    = data.nodemetric_combinations;
+    var nodes                      = data.nodes;
 
     if (opts.allow_forecast) {
         fillDataModelTypeList(widget_div);
@@ -43,10 +45,25 @@ function serviceLevelCustomInitWidget(widget_div, sp_id, clustermetric_combinati
         widget_div.find('.widget_part_forcasting').hide();
     }
 
-    if (options.node_control) {
-        InitNodeMetricControl(widget_div, sp_id, {nodemetric_combinations : nodemetric_combinations, nodes : nodes});
+    if (clustermetric_combinations || nodes) {
+        initNodeMetricControl(
+                widget_div, sp_id,
+                {
+                    nodemetric_combinations : nodemetric_combinations == 'from_ajax' ? null : nodemetric_combinations,
+                    nodes : nodes == 'from_ajax' ? null : nodes
+                 }
+        );
     } else {
         widget_div.find('.nodelevel_config').remove();
+    }
+
+    if (clustermetric_combinations) {
+        initServiceControl(
+                widget_div, sp_id,
+                {clustermetric_combinations : clustermetric_combinations == 'from_ajax' ? null : clustermetric_combinations}
+        );
+    } else {
+        widget_div.find('.dropdown_container').remove();
     }
 
     if (opts.open_config_part) {
@@ -55,9 +72,6 @@ function serviceLevelCustomInitWidget(widget_div, sp_id, clustermetric_combinati
 
     setRefreshButton(
         widget_div,
-        clustermetric_combinations,
-        null,
-        null,
         sp_id,
         {allow_forecast : options && options.allow_forecast}
     );
@@ -101,7 +115,11 @@ function getCache(url, callback) {
     }
 }
 
-function InitNodeMetricControl(widget_div, sp_id, options) {
+/*
+ * Fill nodemetric combinations list and node list using data from server or local data
+ * If local data are passed then hide the select list (no user control)
+ */
+function initNodeMetricControl(widget_div, sp_id, options) {
     var opts = options || {};
 
     var nodemetriccombination_list = widget_div.find('.nodemetriccombination_list').css('width', '250px');
@@ -137,29 +155,82 @@ function InitNodeMetricControl(widget_div, sp_id, options) {
         });
     }
 
-    getCache('/api/serviceprovider/'+sp_id+'/nodes?monitoring_state=<>,disabled', function (data) {
-        var node_list = widget_div.find('.node_list');
-        $(data).each( function () {
+    var node_list = widget_div.find('.node_list');
+    if (opts.nodes) {
+        $(opts.nodes).each( function() {
             node_list.append($('<option>', {
-                node_id : this.pk,
-                value   : this.node_hostname,
-                text    : this.node_hostname,
-            }));
+                node_id : this.id,
+                value   : this.name,
+                text    : this.name,
+            }).prop('selected', true));
         });
-        node_list.multiselect({
-            noneSelectedText: 'Select nodes',
-            selectedText    : "# selected nodes",
-            selectedList    : 1,
-            height          : '200px !important'
-        })
-        .multiselectfilter();
-    });
+        node_list.hide();
+        widget_div.find('.node_list_label').hide();
+    } else {
+        getCache('/api/serviceprovider/'+sp_id+'/nodes?monitoring_state=<>,disabled', function (data) {
+            $(data).each( function () {
+                node_list.append($('<option>', {
+                    node_id : this.pk,
+                    value   : this.node_hostname,
+                    text    : this.node_hostname,
+                }));
+            });
+            node_list.multiselect({
+                noneSelectedText: 'Select nodes',
+                selectedText    : "# selected nodes",
+                selectedList    : 1,
+                height          : '200px !important'
+            })
+            .multiselectfilter();
+        });
+    }
+}
+
+/*
+ * Fill servicemetric combinations list
+ * If local data are passed then hide the select list (no user control)
+ */
+function initServiceControl (widget_div, sp_id, options) {
+    var opts = options || {};
+
+    var clustermetriccombinations_list = widget_div.find('.servicecombination_list').css('width', '250px');
+    if (opts.clustermetric_combinations) {
+        $(opts.clustermetric_combinations).each( function() {
+            clustermetriccombinations_list.append($('<option>', {
+                combi_id: this.id,
+                value   : this.name,
+                text    : this.name,
+                unit    : this.unit
+            }).prop('selected', true));
+        });
+        clustermetriccombinations_list.hide();
+    } else {
+        getCache('/api/aggregatecombination?service_provider_id=' + sp_id, function (data) {
+            $(data).each( function () {
+                // We do not set attr 'id' to avoid multiselect conflit when there is several instance of this widget
+                clustermetriccombinations_list.append($('<option>', {
+                    combi_id: this.pk,
+                    value   : this.label,
+                    text    : this.label,
+                    unit    : this.combination_unit
+                }));
+            });
+
+            clustermetriccombinations_list.multiselect({
+                noneSelectedText: 'Select service combinations',
+                selectedText    : "# selected service combinations",
+                selectedList    : 1,
+                height          : '200px !important'
+            })
+            .multiselectfilter();
+        });
+    }
 }
 
 function fillServiceMetricCombinationList (widget, sp_id) {
     var indic_list = widget.element.find('.servicecombination_list').css('width', '250px');
 
-    setRefreshButton(widget, null, null, null, sp_id);
+    setRefreshButton(widget, sp_id);
 
     getCache('/api/aggregatecombination?service_provider_id=' + sp_id, function (data) {
         $(data).each( function () {
@@ -209,7 +280,7 @@ function clickRefreshButton(widget_div) {
     widget_div.find('.refresh_button').click();
 }
 
-function setRefreshButton(widget, service_combis, node_combis, nodes, sp_id, opts) {
+function setRefreshButton(widget, sp_id, opts) {
     var widget_div = widget.element || widget;
 
     widget_div.find('.refresh_button').unbind('click').click(function(w) {
@@ -217,12 +288,12 @@ function setRefreshButton(widget, service_combis, node_combis, nodes, sp_id, opt
             var widget = w;
             var widget_div = widget.element || widget;
 
-            var selected_service_combis = service_combis || _getSelectedCombinations(widget_div, 'servicecombination_list');
-            var selected_node_combis    = node_combis    || _getSelectedCombinations(widget_div, 'nodemetriccombination_list');
-            var selected_nodes          = nodes || $.map(
-                                                       widget_div.find('.node_list option:selected'),
-                                                       function(n){return {id:$(n).attr('node_id'),name:$(n).val()}}
-                                                   );
+            var selected_service_combis = _getSelectedCombinations(widget_div, 'servicecombination_list');
+            var selected_node_combis    = _getSelectedCombinations(widget_div, 'nodemetriccombination_list');
+            var selected_nodes          = $.map(
+                                               widget_div.find('.node_list option:selected'),
+                                               function(n){return {id:$(n).attr('node_id'),name:$(n).val()}}
+                                           );
 
             // Limit the number of simultaneous series
             var total_combinations = selected_service_combis.length + (selected_node_combis.length * selected_nodes.length);
@@ -344,7 +415,9 @@ function showCombinationGraph(curobj,service_combinations,node_combinations,node
                         pending_requests--;
                         $.each(nodes, function(i,n) {
                             node_data.series.push(_formatTimeSerieFromHash(data[n.id]));
-                            node_data.labels.push('['+n.name+'] '+combi.name);
+                            var label = n.name != '' && combi.name != '' ? '['+n.name+'] ' + combi.name
+                                                                         : n.name + combi.name;
+                            node_data.labels.push(label);
                             node_data.units.push(combi.unit);
                         });
                     }
