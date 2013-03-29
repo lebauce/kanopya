@@ -74,14 +74,6 @@ my $matrix = {
         ref       => 'Dashboard',
         relations => [],
     },
-    param_preset => {
-        ref       => 'ParamPreset',
-        relations => [],
-    },
-    workflow_def => {
-        ref       => 'WorkflowDef',
-        relations => [],
-    },
     indicator   => {
         ref       => 'Entity::Indicator',
         relations => [],
@@ -112,6 +104,12 @@ while (my ($resource,$details) = each %$matrix) {
                             push @tojson_collector_indicators, $collector_indicator->toJSON;
                         }
                         $tojson_obj_relation->{collector_indicators} = \@tojson_collector_indicators;
+                    }
+
+                    #hardcode stuff to gather manager parameters from param_presets
+                    if (ref $obj_relation eq 'ServiceProviderManager') {
+                        $DB::single = 1;
+                        $tojson_obj_relation->{manager_params} = $obj_relation->getParams();
                     }
 
                     push @tojson_relation, $tojson_obj_relation;
