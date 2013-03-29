@@ -268,7 +268,7 @@ function dateTimeToEpoch(dateTime) {
 
 // Request data for each combinations and display them
 function showCombinationGraph(curobj,service_combinations,node_combinations,nodes,start,stop, sp_id, options) {
-    var widget = $(curobj).closest('.widget');
+    var widget    = $(curobj).closest('.widget');
     var widget_id = $(curobj).closest('.widget').attr("id");
     var graph_container = widget.find('.clusterCombinationView');
     var model_container = widget.find('.datamodel_fields');
@@ -301,36 +301,38 @@ function showCombinationGraph(curobj,service_combinations,node_combinations,node
     });
 
     // Node level request
-    pending_requests += node_combinations.length;
     var node_data = {series:[], labels:[], units:[]};
-    var params = {
-            start_time : dateTimeToEpoch(start),
-            end_time   : dateTimeToEpoch(stop),
-            node_ids   : $.map(nodes, function(n){return n.id})
-    }
-    $.each(node_combinations, function (i, combi) {
-        $.post('/api/combination/'+combi.id+'/evaluateTimeSerie',
-                params,
-                function(data) {
-                    pending_requests--;
-                    $.each(nodes, function(i,n) {
-                        node_data.series.push(_formatTimeSerieFromHash(data[n.id]));
-                        node_data.labels.push('['+n.name+'] '+combi.name);
-                        node_data.units.push(combi.unit);
-                    });
-                }
-        ).error(function() {
-            pending_requests--;
-            error_count++;
+    if (nodes.length > 0) {
+        pending_requests += node_combinations.length;
+        var params = {
+                start_time : dateTimeToEpoch(start),
+                end_time   : dateTimeToEpoch(stop),
+                node_ids   : $.map(nodes, function(n){return n.id})
+        }
+        $.each(node_combinations, function (i, combi) {
+            $.post('/api/combination/'+combi.id+'/evaluateTimeSerie',
+                    params,
+                    function(data) {
+                        pending_requests--;
+                        $.each(nodes, function(i,n) {
+                            node_data.series.push(_formatTimeSerieFromHash(data[n.id]));
+                            node_data.labels.push('['+n.name+'] '+combi.name);
+                            node_data.units.push(combi.unit);
+                        });
+                    }
+            ).error(function() {
+                pending_requests--;
+                error_count++;
+            });
         });
-    });
+    }
 
     // Display data when all requests are done
     var graph;
     $(function displayGraph() {
         if (pending_requests == 0) {
-            if (error_count == service_combinations.length + node_combinations.length) {
-                graph_container.append('<br>').append($('<div>', {'class' : 'ui-state-highlight ui-corner-all', html: 'No data for selected time window'}));
+            if (error_count == service_combinations.length + node_combinations.length || service_data.series + node_data.series == 0) {
+                graph_container.append('<br>').append($('<div>', {'class' : 'ui-state-highlight ui-corner-all', html: 'No data to display'}));
                 deactivateWidgetPart(widget.find('.widget_part_forcasting'), 'You must have data on the graph to forecast');
             } else {
                 var div_id = 'cluster_combination_graph_' + widget_id;
