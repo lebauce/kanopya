@@ -216,6 +216,6 @@ button.ui-multiselect,.ui-multiselect-menu li label{cursor:pointer;}
 .message-error{background-position:0px 0px;}
 .message-success{background-position:-48px 0px;}
 
-.node-disabled {
-    background: darkgrey !important;
-}
+.node-disabled {background: darkgrey !important;}
+.waiting-insert-content-container {height:280px !important;}
+.waiting-insert-content {position:absolute !important;left:35% !important;top:35% !important;text-align:center;}

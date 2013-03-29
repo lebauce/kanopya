@@ -13,7 +13,7 @@
  *      desc_attr   : name of the object description attr
  * @param grid_ids     list of id of grid to refresh after import
  */
-function importItemButton(container_id, sp_id, obj_info, grid_ids) {
+function importItemButton(container, sp_id, obj_info, grid_ids) {
     var collector_manager_id;
 
     function loadItemTree() {
@@ -162,7 +162,7 @@ function importItemButton(container_id, sp_id, obj_info, grid_ids) {
             // Create and bind import button
             $("<button>", {html : 'Import ' + obj_info.name + 's'})
             .button({ icons : { primary : 'ui-icon-import' } })
-            .appendTo('#' + container_id)
+            .appendTo(container)
             .click( loadItemTree );
         }
     });

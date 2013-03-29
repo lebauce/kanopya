@@ -401,14 +401,16 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
     divacc.append(
         node_accordion_container.append(
             $('<div>')
+                .append( $('<div>', {id : 'service_nodemetric_conditions_action_buttons', class : 'action_buttons'}) )
                 .append( $('<div>', {id : 'service_nodemetric_conditions_container'}) )
-                .append( $('<div>', {class : 'action_buttons'}) )
         )
     );
 
     // Display nodemetric conditions
     var serviceNodemetricConditionsGridId = 'service_resources_nodemetric_conditions_' + elem_id;
     var serviceNodemetricRulesGridId = 'service_resources_nodemetric_rules_' + elem_id;
+
+    createNodemetricCondition('service_nodemetric_conditions_action_buttons', elem_id);
     create_grid( {
         caption: 'Conditions',
         url: '/api/serviceprovider/' + elem_id + '/nodemetric_conditions?expand=left_combination,right_combination',
@@ -441,15 +443,29 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
             }
         }
     } );
-    createNodemetricCondition('service_nodemetric_conditions_container', elem_id)
 
     // Display nodemetric rules
     $("<p>").appendTo('#node_accordion_container');
     node_accordion_container.append(
         $('<div>')
+            .append( $('<div>', {id : 'service_nodemetric_rules_action_buttons', class : 'action_buttons'}) )
             .append( $('<div>', {id : 'service_nodemetric_rules_container'}) )
-            .append( $('<div>', {class : 'action_buttons'}) )
     );
+
+    createRuleButton('service_nodemetric_rules_action_buttons', elem_id, 'nodemetric_rule');
+    if (!mode_policy) {
+        importItemButton(
+                'service_nodemetric_rules_action_buttons',
+                elem_id,
+                {
+                    name        : 'node rule',
+                    label_attr  : 'label',
+                    desc_attr   : 'description',
+                    type        : 'nodemetric_rule'
+                },
+                [serviceNodemetricConditionsGridId, serviceNodemetricRulesGridId]
+        );
+    }
     create_grid( {
         caption: 'Rules',
         url: '/api/nodemetricrule?service_provider_id=' + elem_id,
@@ -501,21 +517,6 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         }
     } );
 
-    createRuleButton('service_nodemetric_rules_container', elem_id, 'nodemetric_rule');
-    if (!mode_policy) {
-        importItemButton(
-                'service_nodemetric_rules_container',
-                elem_id,
-                {
-                    name        : 'node rule',
-                    label_attr  : 'label',
-                    desc_attr   : 'description',
-                    type        : 'nodemetric_rule'
-                },
-                [serviceNodemetricConditionsGridId, serviceNodemetricRulesGridId]
-        );
-    }
-
     // Here's the second part of the accordion :
     $('<h3><a href="#">Service</a></h3>').appendTo(divacc);
 
@@ -523,14 +524,16 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
     divacc.append(
         service_accordion_container.append(
             $('<div>')
+                .append( $('<div>', {id : 'service_resources_aggregate_conditions_action_buttons', class : 'action_buttons'}) )
                 .append( $('<div>', {id : 'service_resources_aggregate_conditions_container'}) )
-                .append( $('<div>', {class : 'action_buttons'}) )
         )
     );
 
     // Display service conditions :
     var serviceAggregateConditionsGridId = 'service_resources_aggregate_conditions_' + elem_id;
     var serviceAggregateRulesGridId = 'service_resources_aggregate_rules_' + elem_id;
+
+    createServiceCondition('service_resources_aggregate_conditions_action_buttons', elem_id);
     create_grid( {
         caption: 'Conditions',
         url: '/api/serviceprovider/' + elem_id + '/aggregate_conditions?expand=left_combination,right_combination',
@@ -561,15 +564,29 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
             }
         }
     } );
-    createServiceCondition('service_resources_aggregate_conditions_container', elem_id);
 
     // Display services rules :
     $("<p>").appendTo('#service_accordion_container');
     service_accordion_container.append(
         $('<div>')
+            .append( $('<div>', {id : 'service_resources_aggregate_rules_action_buttons', class : 'action_buttons'}) )
             .append( $('<div>', {id : 'service_resources_aggregate_rules_container'}) )
-            .append( $('<div>', {class : 'action_buttons'}) )
     );
+
+    createRuleButton('service_resources_aggregate_rules_action_buttons', elem_id, 'aggregate_rule');
+    if (!mode_policy) {
+        importItemButton(
+                'service_resources_aggregate_rules_action_buttons',
+                elem_id,
+                {
+                    name        : 'service rule',
+                    label_attr  : 'label',
+                    desc_attr   : 'description',
+                    type        : 'aggregate_rule'
+                },
+                [serviceAggregateConditionsGridId, serviceAggregateRulesGridId]
+        );
+    }
     create_grid( {
         caption: 'Rules',
         url: '/api/aggregaterule?service_provider_id=' + elem_id,
@@ -620,20 +637,6 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
             }
         }
     } );
-    createRuleButton('service_resources_aggregate_rules_container', elem_id, 'aggregate_rule');
-    if (!mode_policy) {
-        importItemButton(
-                'service_resources_aggregate_rules_container',
-                elem_id,
-                {
-                    name        : 'service rule',
-                    label_attr  : 'label',
-                    desc_attr   : 'description',
-                    type        : 'aggregate_rule'
-                },
-                [serviceAggregateConditionsGridId, serviceAggregateRulesGridId]
-        );
-    }
 
     $('#accordionrule').accordion({
         autoHeight  : false,

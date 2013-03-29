@@ -312,9 +312,7 @@ function create_grid(options) {
     options.multiactions = (options.multiactions === undefined) ? null : options.multiactions;
 
     if (options.multiselect && options.multiactions) {
-        var action_div = (content_container.prevAll('.action_buttons').length != 0)
-            ? content_container.prevAll('.action_buttons')
-            : content_container.nextAll('.action_buttons');
+        var action_div = content_container.prevAll('.action_buttons');
         $.each(options.multiactions, function(i, multiaction) {
             // default values
             multiaction.confirm = (multiaction.confirm === undefined)
@@ -332,12 +330,17 @@ function create_grid(options) {
                 var action_method = multiaction.method || null;
                 if ( multiaction.confirm ) {
                     var checkedItems = $("#" + options.grid_id).jqGrid('getGridParam','selarrrow');
-                    multiaction.confirm(options.grid_id, multiaction.label, function() {
-                        $.each(checkedItems, function(i, rowid) {
-                            multiaction.action(options.grid_id, rowid, action_url, action_method, multiaction.extraParams, multiaction.afterAction);
+                    if (checkedItems.length == 0) {
+                        alert("No item checked : check an item first !");
+                    }
+                    else {
+                        multiaction.confirm(options.grid_id, multiaction.label, function() {
+                            $.each(checkedItems, function(i, rowid) {
+                                multiaction.action(options.grid_id, rowid, action_url, action_method, multiaction.extraParams, multiaction.afterAction);
+                            });
+                            $("#" + options.grid_id).jqGrid('resetSelection');
                         });
-                        $("#" + options.grid_id).jqGrid('resetSelection');
-                    });
+                    }
                 }
             });
         });
@@ -555,6 +558,9 @@ function create_grid(options) {
     if (options.details || details_def[grid_class]) {
        grid.addClass('selectable_rows');
     }
+
+    // remove horizontal scrollbar
+    content_container.find('.ui-jqgrid-bdiv').css('overflow-x', 'hidden');
 
     return grid;
 }
