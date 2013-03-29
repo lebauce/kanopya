@@ -57,27 +57,18 @@ my $export_data;
 my $matrix = {
     services     => {
         ref       => 'Entity::ServiceProvider::Outside::Externalcluster',
-        relations => [ 
-            'connectors', 
-            'externalnodes', 
-            'service_provider_managers',  
+        relations => [
+            'connectors',
+            'externalnodes',
+            'service_provider_managers',
             'combinations',
             'nodemetric_rules',
             'nodemetric_conditions',
             'clustermetrics',
             'aggregate_rules',
             'aggregate_conditions',
-            'combinations',
         ],
     },
-    dashboard    => {
-        ref       => 'Dashboard',
-        relations => [],
-    },
-    indicator   => {
-        ref       => 'Entity::Indicator',
-        relations => [],
-    }
 };
 
 while (my ($resource,$details) = each %$matrix) {
@@ -96,20 +87,39 @@ while (my ($resource,$details) = each %$matrix) {
                 foreach my $obj_relation ($object->$relation) {
                     my $tojson_obj_relation = $obj_relation->toJSON;
 
+                    #hardcode stuff to insert connector_type
+                    if (ref ($obj_relation) =~ /Entity::Connector/) {
+                        my $type = ConnectorType->find(hash => {
+                            connector_type_id => $obj_relation->connector_type->id
+                        });
+                        $tojson_obj_relation->{connector_type} = $type->connector_name;
+                    }
+
                     #hardcode stuff to insert collector_indicators and indicators
                     if (ref $obj_relation eq 'Entity::Connector::Scom') {
                         my @collector_indicators = Entity::CollectorIndicator->search(hash => {});
                         my @tojson_collector_indicators;
                         foreach my $collector_indicator (@collector_indicators) {
-                            push @tojson_collector_indicators, $collector_indicator->toJSON;
+                            my $tojson_collector_indicator = $collector_indicator->toJSON;
+                            $tojson_collector_indicator->{indicator_name} = 
+                                Entity::Indicator->find(
+                                    hash => {
+                                        indicator_id => $collector_indicator->indicator_id
+                                    }
+                                )->indicator_name;
+                            push @tojson_collector_indicators, $tojson_collector_indicator;
+                            
                         }
                         $tojson_obj_relation->{collector_indicators} = \@tojson_collector_indicators;
                     }
 
                     #hardcode stuff to gather manager parameters from param_presets
                     if (ref $obj_relation eq 'ServiceProviderManager') {
-                        $DB::single = 1;
                         $tojson_obj_relation->{manager_params} = $obj_relation->getParams();
+                        my $origin_service_id = Entity::Connector->find( hash => {
+                                                    connector_id => $obj_relation->manager_id
+                                                })->service_provider_id;
+                        $tojson_obj_relation->{origin_service_id} = $origin_service_id;
                     }
 
                     push @tojson_relation, $tojson_obj_relation;
