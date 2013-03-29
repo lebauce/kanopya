@@ -27,11 +27,12 @@ Mathematical formula of collector indicators
 
 package Entity::Combination::NodemetricCombination;
 
+use base 'Entity::Combination';
+
 use strict;
 use warnings;
 require 'Entity/Indicator.pm';
 use Entity::CollectorIndicator;
-use base 'Entity::Combination';
 use Data::Dumper;
 # logger
 use Log::Log4perl "get_logger";
@@ -362,6 +363,147 @@ sub evaluate {
     return \%evaluation_for_each_node;
 }
 
+=pod
+
+=begin classdoc
+
+Compute the combination value between two dates for each nodes. Use fetch() method of CollectorIndicator.
+
+@param start_time the begining date
+@param stop_time the ending date
+@optional nodes Array ref of nodes to compute. Default is all enabled nodes.
+@optional node_ids Array ref of nodes id to compute. Used if 'nodes' is undef. Default is all enabled nodes.
+
+@return the computed value
+
+=end classdoc
+
+=cut
+
+sub evaluateTimeSerie {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args     => \%args,
+                         required => ['start_time','end_time'],
+                         optional => {nodes => undef, node_ids => undef});
+
+    # If @nodes not provided, get from ids if provided else get all non-disabled nodes of the service provider
+    my @nodes = (defined $args{nodes}) ? @{$args{nodes}}
+              : $self->service_provider->searchRelated(
+                    filters => ['nodes'],
+                    hash    => (defined $args{node_ids}) ? {node_id => $args{node_ids}}
+                             : {-not => {monitoring_state => 'disabled'}}
+                 );
+    $args{nodes} = \@nodes;
+
+    my @ci_ids = $self->getDependentCollectorIndicatorIds();
+    my %allTheCIValues;
+    foreach my $ci_id (@ci_ids){
+        my $ci = Entity::CollectorIndicator->get('id' => $ci_id);
+        $allTheCIValues{$ci_id} = $ci->fetch(%args);
+    }
+
+    return $self->_computeFromArrays(%allTheCIValues);
+}
+
+
+=pod
+
+=begin classdoc
+
+Compute the combination value using a hash of timestamped values for each CollectorIndicator and nodes.
+
+
+@param dynamic A value for each collectorIndicator of the formula, for each nodes.
+               (ci_id => {node_id => {timestamp=>value}})
+
+@return A reference to computed values. {node_id => {timestamp=>value}}
+
+=end classdoc
+
+=cut
+
+sub _computeFromArrays{
+    my ($self, %args) = @_;
+    my @requiredArgs = $self->getDependentCollectorIndicatorIds();
+
+    General::checkParams(args => \%args, required => \@requiredArgs);
+
+    # Merge all the timestamps keys in one arrays. Do the Same for node ids.
+    my @timestamps;
+    my @node_ids;
+    foreach my $ci_id (@requiredArgs){
+        while (my ($node_id, $data) = each %{$args{$ci_id}}){
+            @timestamps = (@timestamps, (keys %$data));
+            push @node_ids, $node_id;
+        }
+    }
+    @timestamps = $self->uniq(data => \@timestamps);
+    @node_ids   = $self->uniq(data => \@node_ids);
+
+    my %rep;
+    foreach my $timestamp (@timestamps){
+        foreach my $node_id (@node_ids) {
+            my %valuesForATimeStamp;
+            foreach my $ci_id (@requiredArgs){
+                $valuesForATimeStamp{$ci_id} = $args{$ci_id}->{$node_id} ? $args{$ci_id}->{$node_id}{$timestamp}
+                                                                         : undef;
+            }
+            $rep{$node_id}{$timestamp} = $self->compute(%valuesForATimeStamp);
+        }
+    }
+
+    return \%rep;
+}
+
+=pod
+
+=begin classdoc
+
+Compute the combination value using a hash value for each CollectorIndicator.
+
+@param dynamic A value for each CollectorIndicator of the formula.
+
+@return the computed value
+
+=end classdoc
+
+=cut
+
+sub compute {
+    my $self = shift;
+    my %args = @_;
+
+    my @requiredArgs = $self->getDependentCollectorIndicatorIds();
+    Entity::Combination::checkMissingParams(args => \%args, required => \@requiredArgs);
+    foreach my $ci_id (@requiredArgs) {
+        if (! defined $args{$ci_id}) {
+            return undef;
+        }
+    }
+
+    my $formula = $self->nodemetric_combination_formula;
+    #Split aggregate_rule id from $formula
+    my @array = split(/(id\d+)/,$formula);
+    #replace each rule id by its evaluation
+    for my $element (@array) {
+        if ($element =~ m/id\d+/) {
+            $element = $args{substr($element,2)};
+            if (!defined $element) {
+                return undef;
+            }
+        }
+     }
+
+    my $res = undef;
+    my $arrayString = '$res = '."@array";
+
+    #Evaluate the logic formula
+    eval $arrayString;
+
+    return $res;
+}
 
 =pod
 

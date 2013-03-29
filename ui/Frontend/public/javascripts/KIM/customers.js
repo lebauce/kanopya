@@ -230,16 +230,17 @@ function showConsumptionGraph(sp_id) {
     });
 
     // Graph div for core and mem
-    function addGraph(combi_id, title) {
+    function addGraph(combi_id, title, unit) {
         var graph_div   = $('<div>', { 'class' : 'widgetcontent' });
         cont.append($('<div>', {'class' : 'widget', 'id' : combi_id}).append(graph_div));
-        graph_div.load('/widgets/widget_historical_service_metric.html', function() {
-            $('.dropdown_container').remove();
-            setGraphDatePicker(graph_div);
-            setRefreshButton(graph_div, combi_id, title, sp_id);
-            showCombinationGraph(graph_div, combi_id, title, '', '', sp_id);
+        graph_div.load('/widgets/widget_historical_view.html', function() {
+            customInitHistoricalWidget(
+                    graph_div,
+                    sp_id,
+                    { clustermetric_combinations : [{id:combi_id, name:title, unit:unit}] }
+            );
         });
     }
-    addGraph(combi_mem_id, 'Memory consumption');
-    addGraph(combi_core_id, 'Cores consumption');
+    addGraph(combi_mem_id, 'Memory consumption', 'Mo');
+    addGraph(combi_core_id, 'Cores consumption', 'core');
 }

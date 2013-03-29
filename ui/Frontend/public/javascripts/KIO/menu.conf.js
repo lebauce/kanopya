@@ -12,12 +12,12 @@ var mainmenu_def = {
             id_key    : 'pk',
             submenu   : [
                 { label : 'Overview',        id : 'service_overview',      onLoad : function(cid, eid) { require('common/service_dashboard.js');    loadServicesOverview(cid, eid); },               icon : 'dashboard' },
-                { label : 'Configuration',   id : 'service_configuration', onLoad : function(cid, eid) { require('KIO/services_config.js');         loadServicesConfig(cid, eid); },                 icon : 'details' },
+                { label : 'Configuration',   id : 'service_configuration', onLoad : function(cid, eid) { require('KIO/services_config.js');         loadServicesConfig(cid, eid); },                 icon : 'configuration' },
                 { label : 'Resources',       id : 'service_resources',     onLoad : function(cid, eid) { require('KIO/services.js');                loadServicesResources(cid, eid); },              icon : 'resources' },
                 { label : 'Monitoring',      id : 'service_monitoring',    onLoad : function(cid, eid) { require('common/service_monitoring.js');   loadServicesMonitoring(cid, eid, 'external'); }, icon : 'monitoring' },
                 { label : 'Rules',           id : 'service_rules',         onLoad : function(cid, eid) { require('common/service_rules.js');        loadServicesRules(cid, eid, 'external'); },      icon : 'rules' },
                 { label : 'Events & Alerts', id : 'events_alerts',         onLoad : function(cid, eid) { require('common/service_eventsalerts.js'); loadServiceEventsAlerts(cid, eid); },            icon : 'alert' },
-                { label : 'Analysis',        id : 'service_analysis',      onLoad : function(cid, eid) { require('common/service_analysis.js');     loadServiceAnalysis(cid, eid); },                icon : 'details', info : {img:'images/info/scatter-plots-shape.png'} }
+                { label : 'Analysis',        id : 'service_analysis',      onLoad : function(cid, eid) { require('common/service_analysis.js');     loadServiceAnalysis(cid, eid); },                icon : 'analysis', info : {img:'images/info/scatter-plots-shape.png'} }
             ]
         }
     },

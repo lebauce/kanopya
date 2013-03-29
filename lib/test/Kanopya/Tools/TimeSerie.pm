@@ -288,7 +288,7 @@ Allow mocking historical values of a metric.
 sub linkToCollectorIndicator {
     my ($self, %args) = @_;
 
-    my $metric_uid = $args{metric}->id . '_' . $args{node}->node_hostname;
+    my $metric_uid = $args{metric}->indicator_id . '_' . $args{node}->node_hostname;
 
     $self->_copyRRD(metric_uid => $metric_uid);
 }

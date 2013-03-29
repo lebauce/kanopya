@@ -135,7 +135,9 @@ sub nodeMetricLastValue {
                               indicator                => $indicator,
                               monitored_objects_names  => $args{node_names}
                           );
-    } else {
+
+    }
+    else {
         my $cmg           = $args{collector_indicator}->collector_manager;
         my $mparams       = $args{service_provider}->getManagerParameters(manager_type => 'CollectorManager');
         my $indicator_oid = $indicator->indicator_oid;
@@ -191,11 +193,11 @@ TODO Allow fetch directly from collector manager
 =cut
 
 sub nodeMetricFetch {
-    my ($self, %args) = @_;
+    my ($class, %args) = @_;
 
     General::checkParams args => \%args, required => ['indicator', 'node_names', 'start_time', 'end_time'];
 
-    my $indicator = $args{collector_indicator}->indicator;
+    my $indicator = $args{indicator}; #$args{collector_indicator}->indicator;
 
     my %values_by_nodes;
     if ($NODEMETRIC_STORAGE_ACTIVE) {
@@ -206,9 +208,11 @@ sub nodeMetricFetch {
                           start  => $args{start_time},
                           end    => $args{end_time}
                       );
+
             $values_by_nodes{$object_name} = \%data;
         }
-    } else {
+    }
+    else {
         throw Kanopya::Exception::NotImplemented(
                   error => 'Can not fetch historical data of node metric when data cache is not active'
               );

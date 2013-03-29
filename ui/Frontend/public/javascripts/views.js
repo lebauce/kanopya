@@ -20,14 +20,20 @@ var SQLops = {
 
 var searchoptions = { sopt : $.map(SQLops, function(n) { return n; } ) };
 
-// keep_last option is a quick fix to avoid remove content when opening details dialog
-function reload_content(container_id, elem_id, keep_last) {
+/*
+ * Fill the content container using associated onLoad handler, for a particular elem
+ * Extra parameters can be
+ *      elem_data : elem attributes, forwarded to the onLoad handler
+ *      keep_last : this option is a quick fix to avoid remove background content when opening details dialog
+ */
+function reload_content(container_id, elem_id, extra) {
     if (_content_handlers.hasOwnProperty(container_id)) {
         if (_content_handlers[container_id]['onLoad']) {
             // Clean prev container content
             var current_content = $('.current_content');
             current_content.removeClass('current_content');
 
+            var keep_last = extra && extra.keep_last;
             if (keep_last === undefined || keep_last == false) {
                 current_content.children().remove();
             } else {
@@ -40,7 +46,7 @@ function reload_content(container_id, elem_id, keep_last) {
             action_div.empty();
             // Fill container using related handler
             var handler = _content_handlers[container_id]['onLoad'];
-            handler(container_id, elem_id);
+            handler(container_id, elem_id, extra && extra.elem_data);
 
             // Fill info panel
             var info_content = _content_handlers[container_id]['info'];
@@ -108,6 +114,17 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
     }
 
     if (!(details_info.noDialog)) {
+        var available_buttons = [
+            {id:'button-cancel',text:'Cancel',click: function() {$(this).dialog('close');}},
+            {id:'button-ok',text:'Ok',click: function() {if (details_info.onOk) {details_info.onOk()}$(this).dialog('close');}}
+        ];
+        var buttons = [];
+        $.each(available_buttons, function (i,button) {
+            if (!details_info.buttons || $.inArray(button.id, details_info.buttons) >= 0) {
+                buttons.push(button);
+            }
+        });
+
         var dialog = $(view_detail_container)
         .dialog({
             autoOpen    : true,
@@ -121,10 +138,7 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
                 $('.last_content').addClass('current_content').removeClass('last_content');
                 $(this).remove(); // detail modals are never closed, they are destroyed
             },
-            buttons: [
-                {id:'button-cancel',text:'Cancel',click: function() {$(this).dialog('close');}},
-                {id:'button-ok',text:'Ok',click: function() {if (details_info.onOk) {details_info.onOk()}$(this).dialog('close');}}
-            ]
+            buttons: buttons
         });
         // Remove dialog title if wanted
         if (details_info.title == 'none') {
@@ -139,7 +153,7 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
     }
 
     // Load first tab content
-    reload_content('content_' + details_info.tabs[0]['id'] + '_' + elem_id, elem_id, true);
+    reload_content('content_' + details_info.tabs[0]['id'] + '_' + elem_id, elem_id, {keep_last : true, elem_data : row_data});
 }
 
 // Callback when click on remove icon for a row

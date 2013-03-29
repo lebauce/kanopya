@@ -56,15 +56,6 @@ use constant CHOICE_STRATEGY => {
     RMSE      => 'RMSE',
 };
 
-sub methods {
-    return {
-        autoPredict => {
-            description => 'Find best model and predict metric values.',
-            perm_holder => 'entity',
-        }
-    };
-}
-
 =pod
 
 =begin classdoc
@@ -193,6 +184,8 @@ sub autoPredict {
     for my $i ($predict_start..$predict_end) {
         push @n_timestamps, $i * $granularity + $timestamps[0];
     }
+
+    $datamodel->delete();
 
     return {
         'timestamps' => \@n_timestamps,

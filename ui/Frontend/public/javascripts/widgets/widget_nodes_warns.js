@@ -39,7 +39,7 @@ function displayWarningNodesGrid(widget, sp_id) {
         subGrid         : true,
         subGridOptions: {
             "plusicon"  : "ui-icon-triangle-1-e",
-            "minusicon" :"ui-icon-triangle-1-s",
+            "minusicon" : "ui-icon-triangle-1-s",
             "openicon"  : "ui-icon-arrowreturn-1-e",
             "reloadOnExpand" : false,
             "selectOnExpand" : true
@@ -50,9 +50,10 @@ function displayWarningNodesGrid(widget, sp_id) {
             var rules_grid_cont = $("#" + subgridTableId);
             rules_grid_cont.jqGrid({
                 datatype    : 'local',
-                colNames    : ['Rule'],
+                colNames    : ['Rule', 'Description'],
                 colModel    : [
-                    { name: 'name' }
+                    { name  : 'label', width: '40' },
+                    { name  : 'description', width: '60' }
                 ],
                 height      : 'auto',
                 autowidth   : true,
@@ -66,7 +67,7 @@ function displayWarningNodesGrid(widget, sp_id) {
                 $.get(
                         'api/nodemetricrule/' + warnrule.verified_noderule_nodemetric_rule_id,
                         function(rule) {
-                            rules_grid_cont.jqGrid('addRowData', rule.pk, {name : rule.nodemetric_rule_label});
+                            rules_grid_cont.jqGrid('addRowData', rule.pk, rule);
                         }
                 );
             });

@@ -3,12 +3,12 @@
   {
   "data" : [
      {
-      "id" : "widget_historical_service_metric",
-      "title" : "Historical Service metric",
-      "description" : "Historical service metric combination widget",
+      "id" : "widget_historical_view",
+      "title" : "Historical view",
+      "description" : "Historical service and node metric combinations widget",
       "creator" : "Hedera",
-      "url" : "widgets/widget_historical_service_metric.html",
-      "image": "widgets/widget_historical_service_metric.jpg",
+      "url" : "widgets/widget_historical_view.html",
+      "image": "widgets/widget_historical_view.jpg",
       "metadata" : {}
     },
     {

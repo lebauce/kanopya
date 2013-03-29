@@ -36,6 +36,8 @@ use Data::Dumper;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
+use DataModelSelector;
+
 use constant ATTR_DEF => {
     combination_id      =>  {
         pattern         => '^.*$',
@@ -64,9 +66,14 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
+        evaluateTimeSerie => {
+            description => 'Retrieve historical value of combination.',
+        },
         computeDataModel => {
             description => 'Enqueue the select data model operation.',
-            perm_holder => 'entity',
+        },
+        autoPredict => {
+            description => 'Forecast combination values.',
         }
     };
 }
@@ -215,6 +222,108 @@ sub computeDataModel {
         type     => 'SelectDataModel',
         params   => $params
     );
+}
+
+=pod
+
+=begin classdoc
+
+Combination data forecasting.
+Retrieve combination values between data_start and data_end
+then call DataModelSelector::autoPredict() to forecast data between specified date
+
+Parameters are roughly the same than DataModelSelector::autoPredict()
+
+@param predict_start_tstamps The starting point wished for the prediction (in timestamps !).
+@param predict_end_tstamps The ending point wished for the prediction (in timestamps).
+@param data_start The start time if the data is directly loaded from a combination.
+@param data_end The end time if the data it directly loaded from a combination.
+
+@optional node_id related node in case of NodemetricCombination
+@optional model_list  : The list of the available models for the selection. By default all existing models are
+                        used.
+
+@return forecast data ref {timestamps => [t1,t2,...], values => [v1,v2,...]}
+
+=end classdoc
+
+=cut
+
+sub autoPredict {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => ['data_start', 'data_end', 'predict_start_tstamps', 'predict_end_tstamps'],
+                         optional => {'node_id' => undef, 'model_list' => undef}
+                         );
+
+    my %rawdata = $self->evaluateTimeSerie(start_time => $args{data_start},
+                                           stop_time  => $args{data_end},
+                                           node_id    => $args{node_id});
+
+    return DataModelSelector->autoPredict(
+               timeserie                => \%rawdata,
+               predict_start_tstamps    => $args{predict_start_tstamps},
+               predict_end_tstamps      => $args{predict_end_tstamps},
+               model_list               => $args{model_list},
+               # combination id is needed by autoPredict
+               # TODO DataModelSelector must ignore combination
+               combination_id           => $self->id
+           );
+}
+
+=pod
+
+=begin classdoc
+
+Remove duplicate from an array.
+
+@param data Array ref of values with possible doublons
+
+@return array without doublons.
+
+=end classdoc
+
+=cut
+
+sub uniq {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['data']);
+    return keys %{{ map { $_ => 1 } @{$args{data}}} };
+}
+
+=pod
+
+=begin classdoc
+
+Dynamic param checker.
+The difference with General::checkParams is that it only check that required params exist, but they can be null.
+TODO Is it really necessary to have this specific method?
+
+@param required Array of required parameters
+@param args the checked args
+
+=end classdoc
+
+=cut
+
+sub checkMissingParams {
+    my %args = @_;
+
+    my $caller_args = $args{args};
+    my $required = $args{required};
+    my $caller_sub_name = (caller(1))[3];
+
+    for my $param (@$required) {
+        if (! exists $caller_args->{$param} ) {
+            my $errmsg = "$caller_sub_name needs a '$param' named argument!";
+
+            # Log in general logger
+            # TODO log in the logger corresponding to caller package;
+            $log->error($errmsg);
+            throw Kanopya::Exception::Internal::IncorrectParam();
+        }
+    }
 }
 
 1;

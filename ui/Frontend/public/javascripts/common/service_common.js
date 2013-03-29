@@ -82,6 +82,14 @@ function addResourceExtraData(grid, rowid, rowdata, rowelem, nodemetricrules, sp
     }
 }
 
+// Allow to use dashboard widget outside of the dashboard
+function integrateWidget(cid, widget_type, callback) {
+    var cont = $('#' + cid);
+    var widget_div = $('<div>', { 'class' : 'widgetcontent' });
+    cont.addClass('widget').append(widget_div);
+    widget_div.load('/widgets/'+ widget_type +'.html', function() {callback(widget_div)});
+}
+
 //This function load grid with list of rules for verified state corelation with the the selected node :
 function node_rules_tab(cid, eid, service_provider_id) {
 
@@ -119,6 +127,21 @@ function node_rules_tab(cid, eid, service_provider_id) {
         ],
         action_delete : 'no',
     } );
+}
+
+function node_monitoring_tab(cid, node_id, service_provider_id) {
+    integrateWidget(cid, 'widget_historical_view', function(widget_div) {
+        customInitHistoricalWidget(
+                widget_div,
+                service_provider_id,
+                {
+                    clustermetric_combinations : 'from_ajax',
+                    nodemetric_combinations    : 'from_ajax',
+                    nodes                      : [{id:node_id}],
+                },
+                {open_config_part : true}
+        );
+    });
 }
 
 // Make the field autocomplete and replace autocompleted name with corresponding id
