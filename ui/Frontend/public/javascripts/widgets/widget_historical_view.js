@@ -30,23 +30,36 @@ function initWidget(widget, sp_id) {
  * Specify which data to display
  * Specify available controls
  */
-function serviceLevelCustomInitWidget(widget_div, sp_id, cluster_metrics, options) {
+function serviceLevelCustomInitWidget(widget_div, sp_id, clustermetric_combinations, nodemetric_combinations, nodes, options) {
     widget_div.find('.dropdown_container').remove();
     widgetCommonInit(widget_div);
     setGraphDatePicker(widget_div);
-    fillDataModelTypeList(widget_div);
 
-    if (options && options.node_control) {
-        InitNodeMetricControl(widget_div, sp_id);
+    var opts = options || {};
+
+    if (opts.allow_forecast) {
+        fillDataModelTypeList(widget_div);
+    } else {
+        widget_div.find('.widget_part_forcasting').hide();
+    }
+
+    if (options.node_control) {
+        InitNodeMetricControl(widget_div, sp_id, {nodemetric_combinations : nodemetric_combinations, nodes : nodes});
     } else {
         widget_div.find('.nodelevel_config').remove();
     }
 
+    if (opts.open_config_part) {
+        widget_div.find('.widget_part_config').click();
+    }
+
     setRefreshButton(
         widget_div,
-        cluster_metrics,
+        clustermetric_combinations,
+        null,
+        null,
         sp_id,
-        {allow_forecast:true}
+        {allow_forecast : options && options.allow_forecast}
     );
     clickRefreshButton(widget_div);
 }
@@ -88,26 +101,41 @@ function getCache(url, callback) {
     }
 }
 
-function InitNodeMetricControl(widget_div, sp_id) {
-    getCache('/api/nodemetriccombination?service_provider_id=' + sp_id, function (data) {
-        var nodemetriccombination_list = widget_div.find('.nodemetriccombination_list').css('width', '250px');
-        $(data).each( function () {
+function InitNodeMetricControl(widget_div, sp_id, options) {
+    var opts = options || {};
+
+    var nodemetriccombination_list = widget_div.find('.nodemetriccombination_list').css('width', '250px');
+    if (opts.nodemetric_combinations) {
+        $(opts.nodemetric_combinations).each( function () {
             nodemetriccombination_list.append($('<option>', {
-                combi_id: this.pk,
-                value   : this.label,
-                text    : this.label,
-                unit    : this.combination_unit
-            }));
+                combi_id: this.id,
+                value   : this.name,
+                text    : this.name,
+                unit    : this.unit
+            }).prop('selected', true));
         });
-        nodemetriccombination_list.multiselect({
-            noneSelectedText: 'Select node combinations',
-            selectedText    : "# selected node combinations",
-            selectedList    : 1,
-            height          : '200px !important',
-            width           : '300px'
-        })
-        .multiselectfilter();
-    });
+        nodemetriccombination_list.hide();
+        widget_div.find('.node_list_label').hide();
+    } else {
+        getCache('/api/nodemetriccombination?service_provider_id=' + sp_id, function (data) {
+            $(data).each( function () {
+                nodemetriccombination_list.append($('<option>', {
+                    combi_id: this.pk,
+                    value   : this.label,
+                    text    : this.label,
+                    unit    : this.combination_unit
+                }));
+            });
+            nodemetriccombination_list.multiselect({
+                noneSelectedText: 'Select node combinations',
+                selectedText    : "# selected node combinations",
+                selectedList    : 1,
+                height          : '200px !important',
+                width           : '300px'
+            })
+            .multiselectfilter();
+        });
+    }
 
     getCache('/api/serviceprovider/'+sp_id+'/nodes?monitoring_state=<>,disabled', function (data) {
         var node_list = widget_div.find('.node_list');
@@ -131,7 +159,7 @@ function InitNodeMetricControl(widget_div, sp_id) {
 function fillServiceMetricCombinationList (widget, sp_id) {
     var indic_list = widget.element.find('.servicecombination_list').css('width', '250px');
 
-    setRefreshButton(widget, null, sp_id);
+    setRefreshButton(widget, null, null, null, sp_id);
 
     getCache('/api/aggregatecombination?service_provider_id=' + sp_id, function (data) {
         $(data).each( function () {
@@ -181,7 +209,7 @@ function clickRefreshButton(widget_div) {
     widget_div.find('.refresh_button').click();
 }
 
-function setRefreshButton(widget, combis, sp_id, opts) {
+function setRefreshButton(widget, service_combis, node_combis, nodes, sp_id, opts) {
     var widget_div = widget.element || widget;
 
     widget_div.find('.refresh_button').unbind('click').click(function(w) {
@@ -189,12 +217,12 @@ function setRefreshButton(widget, combis, sp_id, opts) {
             var widget = w;
             var widget_div = widget.element || widget;
 
-            var selected_service_combis = combis || _getSelectedCombinations(widget_div, 'servicecombination_list');
-            var selected_node_combis    = _getSelectedCombinations(widget_div, 'nodemetriccombination_list');
-            var selected_nodes          = $.map(
-                                              widget_div.find('.node_list option:selected'),
-                                              function(n){return {id:$(n).attr('node_id'),name:$(n).val()}}
-                                          );
+            var selected_service_combis = service_combis || _getSelectedCombinations(widget_div, 'servicecombination_list');
+            var selected_node_combis    = node_combis    || _getSelectedCombinations(widget_div, 'nodemetriccombination_list');
+            var selected_nodes          = nodes || $.map(
+                                                       widget_div.find('.node_list option:selected'),
+                                                       function(n){return {id:$(n).attr('node_id'),name:$(n).val()}}
+                                                   );
 
             // Limit the number of simultaneous series
             var total_combinations = selected_service_combis.length + (selected_node_combis.length * selected_nodes.length);
