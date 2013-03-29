@@ -129,6 +129,21 @@ function node_rules_tab(cid, eid, service_provider_id) {
     } );
 }
 
+function node_monitoring_tab(cid, node_id, service_provider_id) {
+    integrateWidget(cid, 'widget_historical_view', function(widget_div) {
+        customInitHistoricalWidget(
+                widget_div,
+                service_provider_id,
+                {
+                    clustermetric_combinations : 'from_ajax',
+                    nodemetric_combinations    : 'from_ajax',
+                    nodes                      : [{id:node_id}],
+                },
+                {open_config_part : true}
+        );
+    });
+}
+
 // Make the field autocomplete and replace autocompleted name with corresponding id
 function makeAutocompleteAndTranslate(field, availableTags) {
     // don't navigate away from the field on tab when selecting an item

@@ -214,9 +214,11 @@ function loadServicesResources (container_id, elem_id) {
         ],
         details : {
             tabs : [
-                        { label : 'Rules', id : 'rules', onLoad : function(cid, eid) { node_rules_tab(cid, eid, elem_id); } },
+                        { label : 'Rules'     , id : 'rules'          , onLoad : function(cid, eid) { node_rules_tab(cid, eid, elem_id); } },
+                        { label : 'Monitoring', id : 'node_monitoring', onLoad : function(cid, eid) { node_monitoring_tab(cid, eid, elem_id); } },
                     ],
-            title : { from_column : 'node_hostname' }
+            title : { from_column : 'node_hostname' },
+            height: 600
         },
         action_delete: {url : '/api/node'},
         multiselect : true,
