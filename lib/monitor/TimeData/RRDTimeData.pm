@@ -67,7 +67,7 @@ if ($^O eq 'MSWin32') {
 
 =cut
 
-sub createTimeDataStore{
+sub createTimeDataStore {
     #rrd creation example: system ('$rrd create target.rrd --start 1328190055 
     #                                                      --step 300 
     #                                                      DS:mem:GAUGE:600:0:671744 
@@ -76,7 +76,9 @@ sub createTimeDataStore{
 
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['name'], optional => {'skip_if_exists' => undef});
+    General::checkParams(args     => \%args,
+                         required => [ 'name', 'collect_frequency', 'storage_duration' ],
+                         optional => { 'skip_if_exists' => undef });
 
     my $name = _formatName(name => $args{'name'});
 
@@ -87,15 +89,10 @@ sub createTimeDataStore{
     my $DS_chain;
     my $opts = '';
 
-    #get collect TimeData configuration 
-    my $configuration     = _getConfiguration();
-    my $collect_frequency = $configuration->{collect_frequency};
-    my $storage_duration  = $configuration->{storage_duration};
-
     #configure the heartbeat, number of CDP and step according to the configuration
     my $config    = _configTimeDataStore(
-                        'collect_frequency' => $collect_frequency,
-                        'storage_duration'  => $storage_duration,
+                        'collect_frequency' => $args{collect_frequency},
+                        'storage_duration'  => $args{storage_duration},
                     );
 
 
@@ -388,15 +385,16 @@ sub getLastUpdatedValue {
 sub resizeTimeDataStore {
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['storage_duration', 'clustermetric_id']);
+    General::checkParams(args     => \%args,
+                         required => [ 'storage_duration', 'old_storage_duration',
+                                       'collect_frequency', 'clustermetric_id' ]);
 
     my $new_duration = $args{storage_duration};
-    my $rrd_name     = _formatName(name => $args{'clustermetric_id'});
+    my $rrd_name     = _formatName(name => $args{clustermetric_id});
 
-    #get collect frequency value 
-    my $configuration     = _getConfiguration();
-    my $collect_frequency = $configuration->{collect_frequency};
-    my $old_duration      = $configuration->{storage_duration};
+    #get collect frequency value
+    my $collect_frequency = $args{collect_frequency};
+    my $old_duration      = $args{old_storage_duration};
 
     my $delta       = abs($new_duration - $old_duration);
     my $resize_type = ($new_duration > $old_duration) ? 'GROW' : 'SHRINK';
@@ -486,28 +484,6 @@ sub _formatName {
     my %args = @_;
     my $name = 'timeDB_'.$args{'name'}.'.rrd';
     return $name;
-}
-
-=head2 _getConfiguration
-
-    <Class>   : Private
-    <Desc>    : This method returns the configuration values in aggregator.conf 
-    <Return>  : \%configuration
-
-=cut
-
-sub _getConfiguration {
-    my %args = @_;
-
-    #get collect TimeData configuration from aggregator.conf
-    my $monitor_configuration = Kanopya::Config::get('aggregator');
-
-    my %configuration;
-    #set the returned hash
-    $configuration{collect_frequency} = $monitor_configuration->{time_step};
-    $configuration{storage_duration}  = $monitor_configuration->{storage_duration}->{duration};
-
-    return \%configuration;
 }
 
 1;

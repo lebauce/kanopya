@@ -12,15 +12,15 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package Entity::Indicator;
+use base Entity;
 
 use strict;
 use warnings;
-use base 'Entity';
-use Data::Dumper;
-require 'Entity/Clustermetric.pm';
-require 'Entity/Combination/NodemetricCombination.pm';
 
-# logger
+use Entity::Clustermetric;
+use Entity::Combination::NodemetricCombination;
+
+use Data::Dumper;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -86,13 +86,11 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        'toString'  => {
-            'description' => 'toString',
-            'perm_holder' => 'entity'
+        toString  => {
+            description => 'toString',
         },
-        'getDependencies' => {
-            'description' => 'return dependencies tree for this object',
-            'perm_holder' => 'entity',
+        getDependencies => {
+            description => 'return dependencies tree for this object',
         },
     };
 }
