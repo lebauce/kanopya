@@ -74,6 +74,9 @@ my $services = $json_imported_items->{services};
 my $collector_indicator_map;
 my $clustermetric_map;
 my $service_provider_map;
+my $combination_map;
+my $aggregate_condition_map;
+my $nodemetric_condition_map;
 my $formula_map;
 my @service_providers = grep {not defined $_->{connectors} } @$services;
 my @technical_services = grep {defined $_->{connectors} } @$services;
@@ -169,7 +172,7 @@ for my $service_provider (@service_providers) {
 
     for my $old_clustermetric (@{ $service_provider->{clustermetrics} }) {
         my $clustermetric_indicator_id =
-            $collector_indicator_map->{$old_clustermetric->{clustermetric_indicator_id}};
+            $collector_indicator_map->{ $old_clustermetric->{clustermetric_indicator_id} };
 
         $clustermetric_map->{$old_clustermetric->{clustermetric_id}} =
             Entity::Clustermetric->new(
@@ -186,33 +189,107 @@ for my $service_provider (@service_providers) {
 
     #register combinations
     foreach my $old_combination (@{ $service_provider->{combinations} }) {
-        if (defined $old_combination->{nodemetric_combination_id}) {
-            #we update the old formula with the new ids
-            my $nc_formula =  $old_combination->{nodemetric_combination_formula};
-            $nc_formula =~ s/id(\d+)/id$formula_map->{collector_indicators}->{$1}/g;
-
-            Entity::Combination::NodemetricCombination->new(
-                nodemetric_combination_label          => $old_combination->{nodemetric_combination_label},
-                nodemetric_combination_formula        => $nc_formula,
-                nodemetric_combination_formula_string => $old_combination->{nodemetric_combination_formula_string},
-                combination_unit                      => $old_combination->{combination_unit},
-                service_provider_id                   => $new_externalcluster->id,
-            );
-        }
-
+        my $combination_id;
         if (defined $old_combination->{aggregate_combination_id}) {
             #we update the old formula with the new ids
             my $ac_formula = $old_combination->{aggregate_combination_formula};
             $ac_formula =~ s/id(\d+)/id$formula_map->{clustermetrics}->{$1}/g;
 
-            Entity::Combination::AggregateCombination->new(
+            $combination_id = Entity::Combination::AggregateCombination->new(
                 aggregate_combination_label           => $old_combination->{aggregate_combination_label},
                 aggregate_combination_formula         => $ac_formula,
                 aggregate_combination_formula_string  => $old_combination->{aggregate_combination_formula_string},
                 combination_unit                      => $old_combination->{combination_unit},
-               service_provider_id                    => $new_externalcluster->id,
-            );
+                service_provider_id                   => $new_externalcluster->id,
+            )->id;
+            $combination_map->{ $old_combination->{aggregate_combination_id} } = $combination_id;
         }
+        elsif (defined $old_combination->{nodemetric_combination_id}) {
+            #we update the old formula with the new ids
+            my $nc_formula =  $old_combination->{nodemetric_combination_formula};
+            $nc_formula =~ s/id(\d+)/id$formula_map->{collector_indicators}->{$1}/g;
+
+            $combination_id = Entity::Combination::NodemetricCombination->new(
+                nodemetric_combination_label          => $old_combination->{nodemetric_combination_label},
+                nodemetric_combination_formula        => $nc_formula,
+                nodemetric_combination_formula_string => $old_combination->{nodemetric_combination_formula_string},
+                combination_unit                      => $old_combination->{combination_unit},
+                service_provider_id                   => $new_externalcluster->id,
+            )->id;
+            $combination_map->{ $old_combination->{nodemetric_combination_id} } = $combination_id;
+        }
+        elsif (defined $old_combination->{constant_combination_id}) { # constant combination
+            $combination_id = Entity::Combination::ConstantCombination->new(
+                value               => $old_combination->{value},
+                combination_unit    => $old_combination->{combination_unit},
+                service_provider_id => $new_externalcluster->id,
+            )->id;
+            $combination_map->{ $old_combination->{constant_combination_id} } = $combination_id
+        }
+    }
+
+    # register aggregate conditions
+    foreach my $old_agg_condition (@{ $service_provider->{aggregate_conditions} }) {
+        my $left_combination_id = $combination_map->{ $old_agg_condition->{left_combination_id} };
+        my $right_combination_id = $combination_map->{ $old_agg_condition->{right_combination_id} };
+        my $aggregate_condition_id = Entity::AggregateCondition->new(
+            aggregate_condition_label               => $old_agg_condition->{aggregate_condition_label},
+            aggregate_condition_formula_string      => $old_agg_condition->{aggregate_condition_formula_string},
+            comparator                              => $old_agg_condition->{comparator},
+            left_combination_id                     => $left_combination_id,
+            right_combination_id                    => $right_combination_id,
+            aggregate_condition_service_provider_id => $new_externalcluster->id,
+        )->id;
+        $aggregate_condition_map->{ $old_agg_condition->{aggregate_condition_id} } =
+            $aggregate_condition_id;
+    }
+    $formula_map->{aggregate_conditions} = $aggregate_condition_map;
+
+    # register aggregate rule
+    foreach my $old_agg_rule (@{ $service_provider->{aggregate_rules} }) {
+        my $agg_rule_formula =  $old_agg_rule->{aggregate_rule_formula};
+        $agg_rule_formula =~ s/id(\d+)/id$formula_map->{aggregate_conditions}->{$1}/g;
+
+        Entity::Rule::AggregateRule->new(
+            rule_name           => $old_agg_rule->{aggregate_rule_label},
+            state               => $old_agg_rule->{aggregate_rule_state},
+            description         => $old_agg_rule->{aggregate_rule_description},
+            formula             => $agg_rule_formula,
+            formula_string      => $old_agg_rule->{aggregate_rule_formula_string},
+            service_provider_id => $new_externalcluster->id,
+        );
+    }
+
+    # register nodemetric conditions
+    foreach my $old_nodemetric_condition (@{ $service_provider->{nodemetric_conditions} }) {
+        my $left_combination_id = $combination_map->{ $old_nodemetric_condition->{left_combination_id} };
+        my $right_combination_id = $combination_map->{ $old_nodemetric_condition->{right_combination_id} };
+        my $nodemetric_condition_id = Entity::NodemetricCondition->new(
+            nodemetric_condition_label               => $old_nodemetric_condition->{nodemetric_condition_label},
+            nodemetric_condition_formula_string      => $old_nodemetric_condition->{nodemetric_condition_formula_string},
+            nodemetric_condition_comparator          => $old_nodemetric_condition->{nodemetric_condition_comparator},
+            left_combination_id                      => $left_combination_id,
+            right_combination_id                     => $right_combination_id,
+            nodemetric_condition_service_provider_id => $new_externalcluster->id,
+        )->id;
+        $nodemetric_condition_map->{ $old_nodemetric_condition->{nodemetric_condition_id} } =
+            $nodemetric_condition_id;
+    }
+    $formula_map->{nodemetric_conditions} = $nodemetric_condition_map;
+
+    # register aggregate rule
+    foreach my $old_nodemetric_rule (@{ $service_provider->{nodemetric_rules} }) {
+        my $nodemetric_rule_formula =  $old_nodemetric_rule->{nodemetric_rule_formula};
+        $nodemetric_rule_formula =~ s/id(\d+)/id$formula_map->{nodemetric_conditions}->{$1}/g;
+
+        Entity::Rule::NodemetricRule->new(
+            rule_name           => $old_nodemetric_rule->{nodemetric_rule_label},
+            state               => $old_nodemetric_rule->{nodemetric_rule_state},
+            description         => $old_nodemetric_rule->{nodemetric_rule_description},
+            formula             => $nodemetric_rule_formula,
+            formula_string      => $old_nodemetric_rule->{nodemetric_rule_formula_string},
+            service_provider_id => $new_externalcluster->id,
+        );
     }
 }
 
