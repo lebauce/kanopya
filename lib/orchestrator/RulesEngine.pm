@@ -1,6 +1,5 @@
-# RulesEngine.pm - Object class of RulesEngine
-
 #    Copyright © 2011 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,7 +14,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 27 Feb. 2013
 
 =pod
 
@@ -33,16 +31,16 @@ workflow triggering.
 =cut
 
 package RulesEngine;
-use base 'BaseDB';
-use Message;
+use base Daemon;
 
 use strict;
 use warnings;
-use Data::Dumper;
+
+use Message;
 use Entity::ServiceProvider;
 
+use Data::Dumper;
 use Log::Log4perl "get_logger";
-
 my $log = get_logger("");
 
 use constant ATTR_DEF => {};
@@ -51,30 +49,19 @@ sub getAttrDef { return ATTR_DEF; }
 
 
 =pod
-
 =begin classdoc
+
+Load rulesengine configuration and do the BaseDB authentication.
 
 @constructor
 
-Create a new instance of the class.
-
-@return a class instance
-
 =end classdoc
-
 =cut
 
 sub new {
     my ($class) = @_;
-    my $self = {};
-    bless $self, $class;
 
-    my $conf = Kanopya::Config::get('rulesengine');
-
-    my ($login, $password) = ($conf->{user}{name}, $conf->{user}{password});
-    BaseDB->authenticate(login => $login, password => $password);
-
-    return $self;
+    return $class->SUPER::new(confkey => 'rulesengine');
 }
 
 
@@ -87,19 +74,26 @@ Main loop of rules engine. Collect rules managed by the ruleengine instance and 
 =end classdoc
 
 =cut
-
 sub oneRun {
-    my $self = shift;
+    my ($self) = @_;
 
-    if (defined $self->{_time_step}) {
-        $log->info("## UPDATE ALL $self->{_time_step} SECONDS##");
-    }
+    # Get the start time
+    my $start_time = time();
 
     # Select all the rules to be evaluated
     # i.e. rules of service provider with a CollectorManager
-    my $rules = $self->getRulesToEvaluate();
+    $self->evalRules(rules => $self->getRulesToEvaluate());
 
-    $self->evalRules(rules => $rules);
+    # Get the end time
+    my $update_duration = time() - $start_time;
+    $log->info("Manage duration : $update_duration seconds");
+
+    if ($update_duration > $self->{config}->{time_step}) {
+        $log->warn("RulesEngine duration > ruleengine time step ($self->{config}->{time_step})");
+    }
+    else {
+        sleep($self->{config}->{time_step} - $update_duration);
+    }
 }
 
 
@@ -160,49 +154,4 @@ sub evalRules {
         $rule->setEvaluation(evaluation => $evaluation, memoization => $memoization);
         $rule->manageWorkflows(evaluation => $evaluation, memoization => $memoization);
     }
-}
-
-
-=pod
-
-=begin classdoc
-
-Launch rules engine loop regularly
-
-=end classdoc
-
-=cut
-
-sub run {
-    my $self = shift;
-    my $running = shift;
-
-    Message->send(
-        from    => 'RulesEngine',
-        level   => 'info',
-        content => "Kanopya Rules Engine started."
-    );
-
-    while ( $$running ) {
-        # Load conf
-        my $conf = Kanopya::Config::get('rulesengine');
-        $self->{_time_step} = $conf->{time_step};
-
-        my $start_time = time();
-        $self->oneRun();
-
-        my $update_duration = time() - $start_time;
-        $log->info( "Manage duration : $update_duration seconds" );
-        if ( $update_duration > $self->{_time_step} ) {
-            $log->warn("Rules Engine duration > graphing time step (conf)");
-        } else {
-            sleep( $self->{_time_step} - $update_duration );
-        }
-    }
-
-    Message->send(
-        from    => 'RulesEngine',
-        level   => 'warning',
-        content => "Kanopya RuleEngine stopped"
-    );
 }
