@@ -52,27 +52,29 @@ our $VERSION = "1.00";
 my $log = get_logger("");
 my $errmsg;
 use constant ATTR_DEF => {
-    externalcluster_name    =>  {pattern        => '^.*$',
-                                 is_mandatory   => 1,
-                                 is_extended    => 0,
-                                 is_editable    => 0},
-    externalcluster_desc    =>  {pattern        => '^.*$',
-                                 is_mandatory   => 0,
-                                 is_extended    => 0,
-                                 is_editable    => 1},
-    externalcluster_state   => {pattern         => '^.*$',
-                                is_mandatory    => 0,
-                                is_extended     => 0,
-                                is_editable        => 0},
+    externalcluster_name => {
+        pattern        => '^.*$',
+        is_mandatory   => 1,
+        is_editable    => 0
+    },
+    externalcluster_desc => {
+        pattern        => '^.*$',
+        is_mandatory   => 0,
+        is_editable    => 1
+    },
+    externalcluster_state => {
+        pattern         => '^.*$',
+        is_mandatory    => 0,
+        is_editable     => 0
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        'updateNodes'=> {
-            'description'   => 'update nodes',
-            'entity'        => 'perm_holder'
+        updateNodes => {
+            description => 'update nodes',
         }
     };
 }
@@ -842,8 +844,9 @@ sub remove {
     for my $component (@components) {
         $component->remove();
     }
-
     $self->delete();
+
+    return $self;
 }
 
 1;
