@@ -1,4 +1,3 @@
-<conf time_step="300">
-    <storage_duration duration="604800" />
+<conf>
     <user name="admin" password="[% admin_password %]" />
 </conf>

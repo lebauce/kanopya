@@ -116,6 +116,8 @@ my @classes = (
     'Entity::Component',
     'Entity::Component::KanopyaExecutor',
     'Entity::Component::KanopyaFront',
+    'Entity::Component::KanopyaAggregator',
+    'Entity::Component::KanopyaRulesEngine',
     'Entity::Component::UcsManager',
     'Entity::Component::Fileimagemanager0',
     'Entity::Component::NetappManager',
@@ -1055,6 +1057,18 @@ sub registerComponents {
             component_categories   => [ ],
             service_provider_types => [ 'Cluster' ],
         },
+        {
+            component_name         => 'KanopyaAggregator',
+            component_version      => 0,
+            component_categories   => [ ],
+            service_provider_types => [ 'Cluster' ],
+        },
+        {
+            component_name         => 'KanopyaRulesEngine',
+            component_version      => 0,
+            component_categories   => [ ],
+            service_provider_types => [ 'Cluster' ],
+        },
     ];
 
     for my $component_type (@{$components}) {
@@ -1354,7 +1368,17 @@ sub registerKanopyaMaster {
             name => 'KanopyaFront'
         },
         {
-            name => 'KanopyaExecutor'
+            name => 'KanopyaExecutor',
+            conf => {
+                masterimages_directory => $args{masterimages_directory},
+                clusters_directory     => $args{clusters_directory},
+            }
+        },
+        {
+            name => 'KanopyaAggregator'
+        },
+        {
+            name => 'KanopyaRulesEngine'
         },
         {
             name => 'Lvm'
@@ -1384,7 +1408,7 @@ sub registerKanopyaMaster {
                 atftpd0_options    => '--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --maxthread 100 --verbose=5',
                 atftpd0_use_inetd  => 'FALSE',
                 atftpd0_logfile    => '/var/log/atftpd.log',
-                atftpd0_repository => '/tftp'
+                atftpd0_repository => $args{tftp_directory}
             }
         },
         {
@@ -1428,10 +1452,6 @@ sub registerKanopyaMaster {
         },
         {
             name => "Kanopyacollector",
-            conf => {
-                kanopyacollector1_collect_frequency => 3600,
-                kanopyacollector1_storage_time      => 86400
-            },
             manager => 'CollectorManager'
         },
         {

@@ -79,7 +79,7 @@ genConf();
 
 #init PERL5LIB
 print 'initialazing PERL5LIB'."\n";
-my $cmd = qq[setx PERL5LIB "$kanopya_dir\\kanopya\\lib\\common;$kanopya_dir\\kanopya\\lib\\administrator;$kanopya_dir\\kanopya\\lib\\executor;$kanopya_dir\\kanopya\\lib\\monitor;$kanopya_dir\\kanopya\\lib\\orchestrator;$kanopya_dir\\kanopya\\lib\\external;$kanopya_dir\\kanopya\\lib\\external\\NetApp"];
+my $cmd = qq[setx PERL5LIB "$kanopya_dir\\kanopya\\lib\\common;$kanopya_dir\\kanopya\\lib\\administrator;$kanopya_dir\\kanopya\\lib\\executor;$kanopya_dir\\kanopya\\lib\\monitor;$kanopya_dir\\kanopya\\lib\\orchestrator;$kanopya_dir\\kanopya\\lib\\external;$kanopya_dir\\kanopya\\lib\\external\\NetApp;$kanopya_dir\\kanopya\\lib\\component\\kanopya_front;$kanopya_dir\\kanopya\\lib\\component\\kanopya_executor;$kanopya_dir\\kanopya\\lib\\component\\kanopya_aggregator;$kanopya_dir\\kanopya\\lib\\component\\kanopya_rulesengine"];
 print $cmd."\n";
 my $exec = `$cmd 2>&1`;
 
@@ -92,7 +92,9 @@ push @INC, ("$kanopya_dir" . 'kanopya\lib\common',
             "$kanopya_dir" . 'kanopya\lib\external',
             "$kanopya_dir" . 'kanopya\lib\external\NetApp',
             "$kanopya_dir" . 'kanopya\lib\component\kanopya_front',
-            "$kanopya_dir" . 'kanopya\lib\component\kanopya_executor');
+            "$kanopya_dir" . 'kanopya\lib\component\kanopya_executor',
+            "$kanopya_dir" . 'kanopya\lib\component\kanopya_aggregator',
+            "$kanopya_dir" . 'kanopya\lib\component\kanopya_rulesengine');
 
 ######################
 #Directories Creation#

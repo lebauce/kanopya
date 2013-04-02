@@ -1,6 +1,3 @@
-<config logdir="[% logdir %]">
+<conf logdir="[% logdir %]">
     <user name="executor" password="[% admin_password %]" />
-    <masterimages directory="[% masterimages_dir %]" />
-    <tftp directory="[% tftp_dir %]" />
-    <clusters directory="[% clusters_dir %]" />
-</config>
+</conf>
