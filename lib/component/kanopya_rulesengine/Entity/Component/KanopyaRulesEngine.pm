@@ -31,11 +31,12 @@ my $log = get_logger("");
 use constant ATTR_DEF => {
     time_step => {
         label        => 'Rules evaluation frequency',
-        type         => 'time',
+        #type         => 'time',
+        type         => 'integer',
         pattern      => '^\d+$',
         default      => 300,
         is_mandatory => 1,
-        is_extended  => 0
+        is_editable  => 1
     },
 };
 
