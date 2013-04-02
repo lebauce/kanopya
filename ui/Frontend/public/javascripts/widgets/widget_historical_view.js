@@ -62,7 +62,7 @@ function customInitHistoricalWidget(widget, sp_id, data, options) {
 
     // Forecasting control
     if (opts.allow_forecast) {
-        fillDataModelTypeList(widget_div);
+        initForecastControl(widget_div);
     } else {
         widget_div.find('.widget_part_forcasting').hide();
     }
@@ -502,8 +502,7 @@ function showCombinationGraph(curobj,service_combinations,node_combinations,node
                         .prop('disabled', true).attr('title', 'You must select training data start and end date by clicking on the graph')
                         .unbind('click')
                         .click( function() {
-                            selected_model_types = $.map(model_container.find('.datamodel_type_list option:selected'),function(elem) {return $(elem).val()});
-                            _autoPredict({graph:graph, combination:service_combinations[0], model_types:selected_model_types});
+                            _autoPredict({graph:graph, combination:service_combinations[0]});
                         });
                 }
             }
@@ -577,11 +576,11 @@ function _pickTimeRange(graph, callback) {
   });
 }
 
-function fillDataModelTypeList(widget_div) {
+function initForecastControl(widget_div) {
+    // Fill data model type list
     $.get('/api/datamodeltype', function(types) {
         var datamodel_type_list = widget_div.find('.datamodel_type_list');
         $(types).each( function () {
-            console.log(this);
             datamodel_type_list.append($('<option>', {
                 value   : this.class_type,
                 text    : this.data_model_type_label,
@@ -595,6 +594,12 @@ function fillDataModelTypeList(widget_div) {
             header : false
         });
     });
+
+    // Manage model types selection
+    widget_div.find('.auto-forecast').change(function() {
+        widget_div.find('.modeltype-select').toggle();
+    }).prop('checked', true);
+    widget_div.find('.modeltype-select').hide();
 }
 
 /*
@@ -605,11 +610,24 @@ function fillDataModelTypeList(widget_div) {
 function _autoPredict(params) {
     var graph       = params.graph;
     var combination = params.combination;
-    var area  = graph.plugins.canvasOverlay.getObject('selected_area');
+    var area        = graph.plugins.canvasOverlay.getObject('selected_area');
+    var widget_div  = graph.target.closest('.widget');
 
     var current_selected_start_time = parseInt(area.options.start[0] / 1000);
     var current_selected_end_time   = parseInt(area.options.stop[0] / 1000);
-    var time_settings = getPickedDate(graph.target.closest('.widget'));
+    var time_settings = getPickedDate(widget_div);
+
+    var predict_params = {
+        data_start            : current_selected_start_time,
+        data_end              : current_selected_end_time,
+        predict_start_tstamps : parseInt(new Date(time_settings.start).getTime() / 1000),
+        predict_end_tstamps   : parseInt(new Date(time_settings.end).getTime() / 1000),
+    };
+
+    if (widget_div.find('.auto-forecast').prop('checked') == false) {
+        var selected_model_types = $.map(widget_div.find('.datamodel_type_list option:selected'),function(elem) {return $(elem).val()});
+        predict_params.model_list = selected_model_types
+    }
 
     graph.target.hide();
     elemLoadingStart(graph.target.parent(), 'Forecasting data...');
@@ -617,15 +635,7 @@ function _autoPredict(params) {
         url         : '/api/combination/'+combination.id+'/autoPredict',
         type        : 'POST',
         contentType : 'application/json',
-        data        : JSON.stringify(
-                {
-                    model_list            : params.model_types,
-                    data_start            : current_selected_start_time,
-                    data_end              : current_selected_end_time,
-                    predict_start_tstamps : parseInt(new Date(time_settings.start).getTime() / 1000),
-                    predict_end_tstamps   : parseInt(new Date(time_settings.end).getTime() / 1000),
-                }
-        ),
+        data        : JSON.stringify(predict_params),
         success     : function (prediction_data) {
             // Fill last serie (reserved for forecast) with forecast data
             graph.series[graph.data.length-1].data = _formatTimeSerieFromArrays(prediction_data);
