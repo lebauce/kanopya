@@ -598,7 +598,7 @@ sub getComponents {
     my %args = @_;
 
     General::checkParams(args => \%args, required => [ 'category' ],
-                                         optional => { order_by => undef } );
+                                         optional => { 'order_by' => undef });
 
     my $findargs = {
         hash => { 'service_provider_id' => $self->id }
@@ -621,11 +621,19 @@ sub getComponents {
 sub getComponent {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args);
+    General::checkParams(args => \%args, optional => { 'node'     => undef, 'name'     => undef,
+                                                       'category' => undef, 'version'  => undef });
 
-    my $findargs = {
-        hash => { 'service_provider_id' => $self->id }
-    };
+    my $findargs = { hash => {} };
+
+    # If filter on node defined, do not filter on service_provider as
+    # it is implicit from node filter
+    if (defined $args{node}) {
+        $findargs->{hash}->{'component_nodes.node.node_id'} = $args{node}->id;
+    }
+    else {
+        $findargs->{hash}->{'service_provider_id'} = $self->id;
+    }
 
     if (defined ($args{name})) {
         $findargs->{hash}->{'component_type.component_name'} = $args{name};
