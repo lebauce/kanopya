@@ -509,7 +509,6 @@ sub checkAttr {
         defined $args{value} && $args{value} !~ m/($attributes_def->{$args{name}}->{pattern})/) {
 
         $errmsg = "Wrong value detected <$args{value}> for param <$args{name}> on class <$class>";
-        $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
 }
@@ -566,8 +565,7 @@ sub checkAttrs {
                 next ATTRLOOP;
             }
         }
-        $errmsg = "Wrong attribute detected <$attr>";
-        $log->error($errmsg);
+        $errmsg = "$class, wrong attribute detected <$attr>";
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
 
@@ -576,10 +574,13 @@ sub checkAttrs {
         foreach my $attr (keys(%{$attributes_def->{$module}})) {
             if ((! $attributes_def->{$module}->{$attr}->{is_virtual}) &&
                 ($attributes_def->{$module}->{$attr}->{is_mandatory}) && (! exists $attrs->{$attr})) {
-
-                $errmsg = "Missing attribute detected <$attr> on class <$module>";
-                $log->error($errmsg);
-                throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+                if (not defined $attributes_def->{$module}->{$attr}->{default}) {
+                    $errmsg = "Missing attribute detected <$attr> on class <$module>";
+                    throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+                }
+                else {
+                     $final_attrs->{$module}->{$attr} = $attributes_def->{$module}->{$attr}->{default};
+                }
             }
         }
     }
@@ -887,7 +888,6 @@ sub setAttr {
 
     if (not $found) {
         $errmsg = ref($self) . " setAttr no attr name $args{name}!";
-        $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
@@ -1414,7 +1414,6 @@ sub save {
         }
     } else {
         $errmsg = "$self" . "->save can't be called on a non saved instance! (new has not be called)";
-        $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
     return $id;
@@ -2730,8 +2729,6 @@ sub _loadconfig {
     my $class = shift;
 
     my $config = Kanopya::Config::get('libkanopya');
-
-    General::checkParams(args => $config->{internalnetwork}, required => [ 'ip', 'mask' ]);
 
     General::checkParams(args => $config->{dbconf}, required => [ 'name', 'password', 'type', 'host', 'user', 'port' ]);
 
