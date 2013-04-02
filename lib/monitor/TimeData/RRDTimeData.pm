@@ -297,10 +297,16 @@ sub fetchTimeDataStore {
 
 sub updateTimeDataStore {
     my %args = @_;
-    General::checkParams(args => \%args, required => ['clustermetric_id', 'time']);
+
+    General::checkParams(args => \%args, required => [ 'clustermetric_id', 'time', 'time_step', 'storage_duration' ]);
 
     my $time = $args{'time'};
     my $name = _formatName(name => $args{'clustermetric_id'});
+
+    RRDTimeData::createTimeDataStore(skip_if_exists    => 1,
+                                     name              => $args{'clustermetric_id'},
+                                     collect_frequency => $args{'time_step'},
+                                     storage_duration  => $args{'storage_duration'});
 
     my $datasource = (defined $args{'datasource'}) ? $args{'datasource'} : 'aggregate';
     my $value      = (defined $args{'value'})      ? $args{'value'}      : 'U';
