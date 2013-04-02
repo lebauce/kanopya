@@ -48,6 +48,7 @@ my %resources = (
     "dashboard"                => "Dashboard",
     "datamodel"                => "Entity::DataModel",
     "datamodelselector"        => "DataModelSelector",
+    "datamodeltype"            => "ClassType::DataModelType",
     "debian"                   => "Entity::Component::Linux::Debian",
     "entity"                   => "Entity",
     "entitycomment"            => "EntityComment",

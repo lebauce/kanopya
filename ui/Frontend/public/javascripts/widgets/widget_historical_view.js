@@ -34,7 +34,7 @@ $('.widget').live('widgetLoadContent',function(e, obj){
  * for each of this list, value can be:
  *  - 'from_ajax' : load options from server and allow user to select
  *  - null        : do not fill or display the list
- *  - Array of options to selected by default, corresponding list will be not displayed
+ *  - Array of options selected by default, corresponding list will be not displayed
  *
  * 'option' is a hash of options:
  *  - open_config_part : Boolean to say if the configuration part is open by default
@@ -578,35 +578,22 @@ function _pickTimeRange(graph, callback) {
 }
 
 function fillDataModelTypeList(widget_div) {
-    // Available model type list
-    // TODO Do not hardcode, get it from server
-    var data = [
-                {
-                    type : 'AnalyticRegression::LinearRegression',
-                    label: 'Linear regression'
-                },
-                {
-                    type : 'AnalyticRegression::LogarithmicRegression',
-                    label: 'Logarithmic regression'
-                },
-                {
-                    type : 'RDataModel::AutoArima',
-                    label: 'ARIMA'
-                }
-    ];
-
-    var datamodel_type_list = widget_div.find('.datamodel_type_list');
-    $(data).each( function () {
-        datamodel_type_list.append($('<option>', {
-            value   : this.type,
-            text    : this.label,
-        }).prop('selected', true));
-    });
-    datamodel_type_list.multiselect({
-        noneSelectedText: 'Select model',
-        selectedText    : "# selected models",
-        selectedList    : 1,
-        header : false
+    $.get('/api/datamodeltype', function(types) {
+        var datamodel_type_list = widget_div.find('.datamodel_type_list');
+        $(types).each( function () {
+            console.log(this);
+            datamodel_type_list.append($('<option>', {
+                value   : this.class_type,
+                text    : this.data_model_type_label,
+                title   : this.data_model_type_description
+            }).prop('selected', true));
+        });
+        datamodel_type_list.multiselect({
+            noneSelectedText: 'Select model',
+            selectedText    : "# selected models",
+            selectedList    : 1,
+            header : false
+        });
     });
 }
 
