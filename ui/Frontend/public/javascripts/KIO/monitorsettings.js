@@ -1,3 +1,4 @@
+require('common/general.js');
 
 function loadMonitorSettings(cid, eid) {
     loadAggregatorSettings(cid, eid);
@@ -8,17 +9,27 @@ function loadMonitorSettings(cid, eid) {
 function loadOrchestratorSettings(cid, eid) {
     var container = $('#' + cid);
 
-    // Retrieve current aggregator conf
-    var time_step;
+    // Retrieve current rulesengine component
+    var rulesengine;
     $.ajax({
-        url     :'/api/orchestrator/getOrchestratorConf',
-        type    : 'POST',
+        url     : '/api/kanopyarulesengine',
+        type    : 'GET',
         async   : false,
         success : function(data) {
-            time_step           = data.time_step;
+            rulesengine = data[0];
         }
     });
 
+    var time_step;
+    $.ajax({
+        url     : '/api/kanopyarulesengine/' + rulesengine.pk + '/getConf',
+        type    : 'POST',
+        async   : false,
+        success : function(data) {
+            time_step = data.time_step;
+        }
+    });
+console.log(time_step);
     // Frequency select
     var select_freq = $('<select>', {id : 'orch_freq'});
     for (var i=1; i<60; i++) {
@@ -42,14 +53,8 @@ function loadOrchestratorSettings(cid, eid) {
                             var orch_freq    = $('#orch_freq :selected').val();
                             orch_freq        *= 60;
 
-                            $.ajax({
-                                url     :'/api/orchestrator/updateOrchestratorConf',
-                                type    : 'POST',
-                                async   : false,
-                                data    : {
-                                    time_step   : orch_freq,
-                                },
-                            });
+                            ajax('POST', '/api/kanopyarulesengine/' + rulesengine.pk + '/setConf', { conf : { time_step : orch_freq } });
+
                             // Update current conf
                             time_step           = orch_freq;
                             alert('ok');
@@ -60,11 +65,22 @@ function loadOrchestratorSettings(cid, eid) {
 function loadAggregatorSettings(cid, eid) {
     var container = $('#' + cid);
 
+    // Retrieve current rulesengine component
+    var aggregator;
+    $.ajax({
+        url     :'/api/kanopyaaggregator',
+        type    : 'GET',
+        async   : false,
+        success : function(data) {
+            aggregator = data[0];
+        }
+    });
+
     // Retrieve current aggregator conf
     var storage_duration;
     var time_step;
     $.ajax({
-        url     :'/api/aggregator/getAggregatorConf',
+        url     : '/api/kanopyaaggregator/' + aggregator.pk + '/getConf',
         type    : 'POST',
         async   : false,
         success : function(data) {
@@ -73,6 +89,7 @@ function loadAggregatorSettings(cid, eid) {
         }
     });
 
+    console.log(time_step);
     var week_seconds = 3600*24*7;
     var month_seconds = week_seconds*4;
 
@@ -125,15 +142,11 @@ function loadAggregatorSettings(cid, eid) {
                             var store_duration = duration_amount * duration_timescale;
 
                             function updateConf() {
-                                $.ajax({
-                                    url     :'/api/aggregator/updateAggregatorConf',
-                                    type    : 'POST',
-                                    async   : false,
-                                    data    : {
-                                        collect_frequency   : agg_freq,
-                                        storage_duration    : store_duration
-                                    },
-                                });
+                                ajax('POST',
+                                     '/api/kanopyaaggregator/' + aggregator.pk + '/setConf',
+                                      { conf : { time_step         : agg_freq,
+                                                 storage_duration  : store_duration } });
+
                                 // Update current conf
                                 storage_duration    = store_duration;
                                 time_step           = agg_freq;
