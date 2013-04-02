@@ -91,18 +91,6 @@ for my $technical_service (@technical_services) {
     $service_provider_map->{$technical_service->{service_provider_id}} = 
         $new_externalcluster;
 
-    # register node(s)
-    if (defined @{ $technical_service->{externalnodes} }) {
-        for my $old_externalnode (@{ $technical_service->{externalnodes} }) {
-            my $new_node = Node->new(
-                node_hostname       => $old_externalnode->{externalnode_hostname},
-                node_number         => 0,
-                monitoring_state    => $old_externalnode->{externalnode_state},
-                service_provider_id => $new_externalcluster->id
-            );
-        }
-    }
-
     # register component(s)
     for my $connector (@{ $technical_service->{connectors} }) {
         my $component_type_id = ClassType::ComponentType->find(hash => {
@@ -143,6 +131,18 @@ for my $service_provider (@service_providers) {
         externalcluster_state      => $service_provider->{externalcluster_state},
         externalcluster_prev_state => $service_provider->{externalcluster_prev_state}
     );
+
+    # register node(s)
+    if (defined @{ $service_provider->{externalnodes} }) {
+        for my $old_externalnode (@{ $service_provider->{externalnodes} }) {
+            my $new_node = Node->new(
+                node_hostname       => $old_externalnode->{externalnode_hostname},
+                node_number         => 0,
+                monitoring_state    => $old_externalnode->{externalnode_state},
+                service_provider_id => $new_externalcluster->id
+            );
+        }
+    }
 
     $service_provider_map->{$service_provider->{service_provider_id}} = 
         $new_externalcluster;
