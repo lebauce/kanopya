@@ -175,8 +175,9 @@ sub refreshConfiguration {
               );
     }
 
-    # Get the daemon configuration
-    my $merge = Hash::Merge->new('LEFT_PRECEDENT');
+    # Update the daemon configuration
+    my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
+
     $self->{config} = $merge->merge($self->{config}, $component->getConf());
 }
 
