@@ -393,6 +393,66 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 kanopya_aggregator
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::KanopyaAggregator>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopya_aggregator",
+  "AdministratorDB::Schema::Result::KanopyaAggregator",
+  { "foreign.kanopya_aggregator_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_executor
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::KanopyaExecutor>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopya_executor",
+  "AdministratorDB::Schema::Result::KanopyaExecutor",
+  { "foreign.kanopya_executor_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_front
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::KanopyaFront>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopya_front",
+  "AdministratorDB::Schema::Result::KanopyaFront",
+  { "foreign.kanopya_front_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_rules_engine
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::KanopyaRulesEngine>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopya_rules_engine",
+  "AdministratorDB::Schema::Result::KanopyaRulesEngine",
+  { "foreign.kanopya_rules_engine_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 kanopyacollector1
 
 Type: might_have
@@ -585,21 +645,6 @@ __PACKAGE__->might_have(
   "nfsd3",
   "AdministratorDB::Schema::Result::Nfsd3",
   { "foreign.nfsd3_id" => "self.component_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 nova_compute
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::NovaCompute>
-
-=cut
-
-__PACKAGE__->might_have(
-  "nova_compute",
-  "AdministratorDB::Schema::Result::NovaCompute",
-  { "foreign.nova_compute_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -909,8 +954,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-03-13 12:11:41
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:XJbYY/5aTno0sctlMSn/aQ
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-03-27 16:05:57
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:nkuHX7/pi1FAB6aqKqJcRA
 
 __PACKAGE__->belongs_to(
   "parent",
