@@ -137,7 +137,7 @@ sub execute {
 
     # remove the node working directory where generated files are
     # stored.
-    my $dir = $self->{config}->{clusters}->{directory};
+    my $dir = $self->_executor->getConf->{clusters_directory};
     $dir .= '/' . $self->{context}->{cluster}->cluster_name;
     $dir .= '/' . $self->{context}->{host}->node->node_hostname;
     my $econtext = $self->getEContext();

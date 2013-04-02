@@ -16,6 +16,7 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 package StateManager;
+use base Daemon;
 
 use strict;
 use warnings;
@@ -41,43 +42,8 @@ my $log = get_logger("");
 
 sub new {
     my ($class) = @_;
-    my $self = {};
 
-    bless $self, $class;
-
-    $self->{config} = Kanopya::Config::get('executor');
-
-    if ((! exists $self->{config}->{user}->{name}     || ! defined exists $self->{config}->{user}->{name}) &&
-        (! exists $self->{config}->{user}->{password} || ! defined exists $self->{config}->{user}->{password})) {
-        throw Kanopya::Exception::Internal::IncorrectParam(error => "StateManager->new need user definition in config file!");
-    }
-
-    BaseDB->authenticate(login => $self->{config}->{user}->{name},
-                         password => $self->{config}->{user}->{password});
-
-    return $self;
-}
-
-=head2 run
-
-StateManager->run() run the state manager server.
-
-=cut
-
-sub run {
-    my ($self, $running) = @_;
-
-    Message->send(from => 'StateManager', level => 'info', content => "Kanopya State Manager started.");
-
-    # Main loop
-    while ($$running) {
-        # Excecute one loop
-       $self->oneRun();
-
-       sleep 20;
-    }
-
-    Message->send(from => 'StateManager', level => 'warning', content => "Kanopya State Manager stopped");
+    return $class->SUPER::new(confkey => 'executor', name => 'Executor');
 }
 
 sub oneRun {
@@ -216,6 +182,7 @@ sub oneRun {
 
         $cluster->commitTransaction;
     }
+    sleep 20;
 }
 
 1;

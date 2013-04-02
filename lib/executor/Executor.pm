@@ -1,6 +1,5 @@
-# Executor.pm - Object class of Executor server
-
 #    Copyright © 2011 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,104 +14,38 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
-
-
-=head1 NAME
-
-<Executor> – <Executor main class>
-
-=head1 VERSION
-
-This documentation refers to <Executor> version 1.0.0.
-
-=head1 SYNOPSIS
-
-use <Executor>;
-
-
-=head1 DESCRIPTION
-
-Executor is the main execution class of executor service
-
-=head1 METHODS
-
-=cut
 
 package Executor;
+use base Daemon;
 
 use strict;
 use warnings;
 
 use General;
-use BaseDB;
-use Kanopya::Config;
-use Kanopya::Exceptions;
-use Entity::Operation;
-use EEntity::EOperation;
 use Message;
 
-use XML::Simple;
+use Entity::Operation;
+use EEntity::EOperation;
 
+use XML::Simple;
 use Data::Dumper;
+
 use Log::Log4perl "get_logger";
 use Log::Log4perl::Layout;
 use Log::Log4perl::Appender;
+
 my $log = get_logger("");
 
-our $VERSION = '1.00';
-
-=head2 new
-
-    my $executor = Executor->new();
-
-Executor::new creates a new executor object.
-
-=cut
 
 sub new {
     my ($class) = @_;
-    my $self = {};
 
-    bless $self, $class;
-
-    $self->{config} = Kanopya::Config::get('executor');
-
-    General::checkParams(args => $self->{config}->{user}, required => [ "name", "password" ]);
-
-    BaseDB->authenticate(login    => $self->{config}->{user}->{name},
-                         password => $self->{config}->{user}->{password});
+    my $self = $class->SUPER::new(confkey => 'executor');
 
     $self->{include_blocked} = 1;
     $self->{last_workflow_id} = -1;
 
     return $self;
-}
-
-=head2 run
-
-Executor->run() run the executor server.
-
-=cut
-
-sub run {
-    my ($self, $running) = @_;
-
-    Message->send(
-        from    => 'Executor',
-        level   => 'info',
-        content => "Kanopya Executor started."
-    );
-
-    while ($$running) {
-        $self->execnround(run => 1);
-    }
-
-    Message->send(
-        from    => 'Executor',
-        level   => 'warning',
-        content => "Kanopya Executor stopped"
-    );
 }
 
 sub oneRun {
@@ -124,7 +57,7 @@ sub oneRun {
     if ($operation){
         $log->info("\n\n");
 
-        $workflow = EEntity->new(data => $operation->getWorkflow);
+        $workflow = EEntity->new(data => $operation->getWorkflow, ehost => $self->_host);
 
         # init log appender for this workflow if this one is not the same as the last executed
         if($workflow->id != $self->{last_workflow_id}) {
@@ -165,7 +98,7 @@ sub oneRun {
 
             # Probably a compilation error on the operation class.
             $log->info("Cancelling " . $workflow->workflow_name . " workflow <" . $workflow->id . ">");
-            $workflow->cancel(config => $self->{config}, state => 'failed');
+            $workflow->cancel(state => 'failed');
             return;
         }
 
@@ -276,7 +209,7 @@ sub oneRun {
             }
 
             $log->info("$op rollback processing");
-            if(defined $op->{erollback}) {
+            if (defined $op->{erollback}) {
                 $op->{erollback}->undo();
             }
             # Rollback transaction
@@ -287,7 +220,7 @@ sub oneRun {
                 # Try to cancel all workflow operations, and delete them.
                 # Context entities will be unlocked by this call
                 $log->info("Cancelling " . $workflow->workflow_name . " workflow <" . $workflow->id . ">");
-                $workflow->cancel(config => $self->{config}, state => 'failed');
+                $workflow->cancel(state => 'failed');
             };
             if ($@){
                 my $err_rollback = $@;
@@ -352,37 +285,9 @@ sub oneRun {
         $self->{include_blocked} = 1;
     }
     else {
-        sleep 5;
-    }
-}
-
-=head2 execnrun
-
-Executor->execnround((run => $nbrun)) run the executor server for only one round.
-
-=cut
-
-sub execnround {
-    my ($self, %args) = @_;
-
-    while ($args{run}) {
-        $args{run} -= 1;
-        eval {
-            $self->oneRun();
-        };
-        if ($@) {
-            $log->error($@);
-        }
+        sleep $self->{config}->{time_step};
     }
 }
 
 1;
 
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut

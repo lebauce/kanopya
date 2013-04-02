@@ -80,8 +80,11 @@ sub prepare {
         = EEntity->new(entity => Entity::ServiceProvider::Cluster->getKanopyaCluster);
 
     # Instanciate dhcpd
-    my $dhcpd = $self->{context}->{bootserver}->getComponent(name => "Dhcpd", version => 3);
     $self->{context}->{dhcpd_component} = EEntity->new(entity => $dhcpd);
+
+    # Instanciate tftp server
+    my $tftp = $self->{context}->{bootserver}->getComponent(category => 'Tftpserver');
+    $self->{context}->{tftp_component}  = EEntity->new(entity => $tftp);
 
     $self->{params}->{kanopya_domainname} = $self->{context}->{bootserver}->cluster_domainname;
     $self->{cluster_components} = $self->{context}->{cluster}->getComponents(category => "all",
@@ -219,7 +222,7 @@ sub _generateBootConf {
     my $cluster     = $self->{context}->{cluster};
     my $host        = $self->{context}->{host};
     my $boot_policy = $cluster->cluster_boot_policy;
-    my $tftpdir     = $self->{config}->{tftp}->{directory};
+    my $tftpdir     = $self->{context}->{tftp_component}->getTftpDirectory;
 
     # is dedicated initramfs needed for remote root ?
     if ($boot_policy =~ m/(ISCSI|NFS)/) {
@@ -283,7 +286,7 @@ sub _generateBootConf {
                              error => "Error when processing template $input."
                          );
 
-            my $tftp_conf = $self->{config}->{tftp}->{directory};
+            my $tftp_conf = $self->{context}->{tftp_component}->getTftpDirectory;
             my $dest = $tftp_conf . '/' . $self->{context}->{host}->node->node_hostname . ".conf";
 
             $self->getEContext->send(src => "/tmp/$tmpfile", dest => "$dest");
@@ -308,7 +311,7 @@ sub _generatePXEConf {
     my $kernel_version = Entity::Kernel->get(id => $kernel_id)->kernel_version;
     my $boot_policy    = $args{cluster}->cluster_boot_policy;
 
-    my $tftpdir = $self->{config}->{tftp}->{directory};
+    my $tftpdir = $self->{context}->{tftp_component}->getTftpDirectory;
 
     my $nfsexport = "";
     if ($boot_policy =~ m/NFS/) {

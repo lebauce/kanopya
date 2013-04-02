@@ -35,15 +35,14 @@ use vars qw ( $AUTOLOAD );
 
 sub cancel {
     my ($self, %args) = @_;
+
     General::checkParams(args => \%args, required => ['state']);
 
     # TODO: filter on states to get operation to cancel only.
-    my @operations = Entity::Operation->search(hash => {
-                         workflow_id => $self->getAttr(name => 'workflow_id'),
-                     });
+    my @operations = Entity::Operation->search(hash => { workflow_id => $self->id });
 
     for my $operation (@operations) {
-        if ($operation->getAttr(name => 'state') ne 'pending') {
+        if ($operation->state ne 'pending') {
             eval {
                 $operation->unlockContext();
                 EEntity::EOperation->new(op => $operation)->cancel();

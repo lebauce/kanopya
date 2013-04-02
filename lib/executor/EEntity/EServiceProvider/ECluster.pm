@@ -47,13 +47,10 @@ sub create {
                          required => [ 'managers' ],
                          optional => { 'interfaces' => {}, 'components' => {} });
 
-    my $config = Kanopya::Config::get('executor');
-
     # Create cluster directory
-    my $dir = "$config->{clusters}->{directory}/" . $self->cluster_name;
+    my $dir = $self->_executor->getConf->{clusters_directory} . '/' . $self->cluster_name;
     my $command = "mkdir -p $dir";
     $self->_host->getEContext->execute(command => $command);
-    $log->debug("Execution : mkdir -p $dir");
 
     # set initial state to down
     $self->setAttr(name => 'cluster_state', value => 'down:'.time);
@@ -71,9 +68,6 @@ sub create {
                            value => $self->masterimage->masterimage_defaultkernel->id);
         }
     }
-
-    # Save the new cluster in db
-    $log->debug("trying to update the new cluster previouly created");
     $self->save();
 
     # Set default permissions on this cluster for the related customer
@@ -131,42 +125,6 @@ sub addNode {
     $log->debug("Host manager <" . $host_manager->id . "> returned free host <$host>");
 
     return $host;
-}
-
-sub generateResolvConf {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => ['host', 'mount_point' ]);
-
-    my $rand = new String::Random;
-    my $tmpfile = $rand->randpattern("cccccccc");
-
-    my @nameservers = ();
-
-    for my $attr ('cluster_nameserver1','cluster_nameserver2') {
-        push @nameservers, {
-            ipaddress => $self->getAttr(name => $attr)
-        };
-    }
-
-    my $data = {
-        domainname => $self->getAttr(name => 'cluster_domainname'),
-        nameservers => \@nameservers,
-    };
-
-    my $file = $self->generateNodeFile(
-        cluster       => $self->_entity,
-        host          => $args{host},
-        file          => '/etc/resolv.conf',
-        template_dir  => '/templates/internal',
-        template_file => 'resolv.conf.tt',
-        data          => $data
-    );
-
-    $self->_host->getEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/resolv.conf'
-    );
 }
 
 sub checkComponents {

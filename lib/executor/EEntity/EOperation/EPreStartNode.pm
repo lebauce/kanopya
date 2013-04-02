@@ -64,7 +64,7 @@ sub execute {
 
     # Create the node working directory where generated files will be
     # stored.
-    my $dir = $self->{config}->{clusters}->{directory};
+    my $dir = $self->_executor->getConf->{clusters_directory};
     $dir .= '/' . $self->{context}->{cluster}->cluster_name;
     $dir .= '/' . $hostname;
     my $econtext = $self->getEContext();
@@ -84,8 +84,8 @@ sub execute {
     $initiatorname .= ':' . time();
 
     $self->{context}->{host}->setAttr(name  => "host_initiatorname",
-                                      value => $initiatorname);
-    $self->{context}->{host}->save();
+                                      value => $initiatorname,
+                                      save  => 1);
 
     # For each container accesses of the system image, add an export client
     my $options = $self->{context}->{cluster}->cluster_si_shared ? "ro" : "rw";
@@ -113,7 +113,7 @@ sub _cancel {
     }
 
     if ($self->{context}->{host}) {
-        my $dir = $self->{config}->{clusters}->{directory};
+        my $dir = $self->_executor->getConf->{clusters_directory};
         $dir .= '/' . $self->{context}->{cluster}->cluster_name;
         $dir .= '/' . $self->{context}->{host}->node->node_hostname;
         $self->getEContext->execute(command => "rm -r $dir");
