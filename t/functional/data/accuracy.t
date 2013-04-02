@@ -8,10 +8,9 @@ Accuracy
 
 use strict;
 use warnings;
- 
+use Data::Dumper;
 use Test::More 'no_plan';
 use Test::Exception;
-
 use Utils::TimeSerieAnalysis;
 
 main();

@@ -1767,4 +1767,16 @@ CREATE TABLE `repository` (
   FOREIGN KEY (`container_access_id`) REFERENCES `container_access` (`container_access_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Table structure for table `data_model_type`
+--
+
+CREATE TABLE `data_model_type` (
+    `data_model_type_id` int(8) unsigned NOT NULL,
+    `data_model_type_label` char(64) NOT NULL,
+    `data_model_type_description` text(512) NOT NULL,
+    PRIMARY KEY (`data_model_type_id`),
+    FOREIGN KEY (`data_model_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 SET foreign_key_checks=1;

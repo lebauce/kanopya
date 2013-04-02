@@ -94,6 +94,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 data_model_type
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::DataModelType>
+
+=cut
+
+__PACKAGE__->might_have(
+  "data_model_type",
+  "AdministratorDB::Schema::Result::DataModelType",
+  { "foreign.data_model_type_id" => "self.class_type_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 entities
 
 Type: has_many

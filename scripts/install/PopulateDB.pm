@@ -85,6 +85,7 @@ use NetconfPoolip;
 use NetconfIface;
 use ComponentCategory;
 use ComponentCategory::ManagerCategory;
+use ClassType::DataModelType;
 
 # Catch warnings to clean the setup output (this warnings are not kanopya code related)
 $SIG{__WARN__} = sub {
@@ -225,6 +226,9 @@ my @classes = (
     'Entity::DataModel::AnalyticRegression::LinearRegression',
     'Entity::DataModel::AnalyticRegression::LogarithmicRegression',
     'Entity::DataModel::RDataModel::AutoArima',
+    'Entity::DataModel::RDataModel::ExponentialSmoothing',
+    'Entity::DataModel::RDataModel::StlForecast',
+    'Entity::DataModel::RDataModel::ExpR',
 );
 
 sub registerClassTypes {
@@ -664,6 +668,63 @@ sub registerManagerCategories {
     for my $manager (@{$managers}) {
         ComponentCategory::ManagerCategory->new(
             category_name  => $manager
+        );
+    }
+}
+
+sub registerDataModelTypes {
+    my %args = @_;
+
+    my @data_model_class_names = (
+        'Entity::DataModel::AnalyticRegression::LinearRegression',
+        'Entity::DataModel::AnalyticRegression::LogarithmicRegression',
+        'Entity::DataModel::RDataModel::AutoArima',
+        'Entity::DataModel::RDataModel::ExponentialSmoothing',
+        'Entity::DataModel::RDataModel::StlForecast',
+    );
+
+    my @data_model_labels = (
+        'Linear Regression',
+        'Logarithmic Regression',
+        'Automaticly fitted ARIMA model',
+        'Exponential smoothing state space model',
+        'Seasonal forecast model',
+    );
+
+    my @data_model_descriptions = (
+        'Perform a prediction using a classic linear regression. The model ' .
+        'follows a line equation form : y = a*t + b (t represents the time, a and b are computed '.
+        'parameters).',
+
+        'Perform a prediction using a logarithmic regression. The model is ' .
+        'based on a equation with the following form : a*log(t) + b (t represents the time, a and b are ' .
+        ' computed parameters).',
+
+        'Perform a prediction fitting automaticly an ARIMA model (Auto Regressive Integrated Moving Average' .
+        '). ARIMA is a purely statistic modelization of a time series, suited for performing complex ' .
+        'forecasts. This model is adapted for time series showing complex patterns, including trends and ' .
+        'seasonalities, but can be slow when applied to large data sets.',
+
+        'Perform a prediction fitting an Exponential Smoothing State Space model. It is a statistic model ' .
+        'which uses a similar approach as ARIMA models, but which handles better noisy data. Exponential ' .
+        'smoothing is generally slower than ARIMA for small time series ( < ~5000 observations), but more' .
+        'suited for big data sets.',
+
+        'Perform a forecast fitting either an ARIMA or an Exponential Smoothing model assuming that the ' .
+        'data is highly seasonal. This approach is particularly fast and adapted when the model seem to ' .
+        'show a complex seasonality.',
+    );
+
+    my @data_model;
+    for my $class_name (@data_model_class_names) {
+        push @data_model, ClassType->find(hash => {class_type => $class_name});
+    }
+
+    for my $i (0..$#data_model) {
+        ClassType::DataModelType->promote(
+            promoted                    => $data_model[$i],
+            data_model_type_label       => $data_model_labels[$i],
+            data_model_type_description => $data_model_descriptions[$i],
         );
     }
 }
@@ -2123,6 +2184,7 @@ sub populateDB {
     registerClassTypes(%args);
     registerManagerCategories(%args);
     registerUsers(%args);
+    registerDataModelTypes(%args);
 
     registerProcessorModels(%args);
     registerOperations(%args);
