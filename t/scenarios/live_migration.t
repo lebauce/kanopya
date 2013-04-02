@@ -25,7 +25,6 @@ Log::Log4perl->easy_init({
 
 use BaseDB;
 use Aggregator;
-use Monitor::Collector;
 use Entity;
 use Entity::Component::Virtualization::Opennebula3;
 use VerifiedNoderule;
