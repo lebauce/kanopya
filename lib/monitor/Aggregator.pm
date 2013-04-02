@@ -99,6 +99,21 @@ Check the elapsed time of the main loop.
 sub oneRun {
     my ($self) = @_;
 
+    # Firstly check is configuration changed, and udpate time data is required
+    if (defined $self->{last_time_step} and
+        $self->{last_time_step} != $self->{config}->{time_step}) {
+        $log->info("Configuration <time_step> has changed, regenerating time data stores.");
+
+        $self->regenTimeDataStores();
+    }
+    if (defined $self->{last_storage_duration} and
+        $self->{last_storage_duration} != $self->{config}->{storage_duration}) {
+        $log->info("Configuration <storage_duration> has changed, resizing time data stores.");
+
+        $self->resizeTimeDataStores(storage_duration     => $self->{config}->{storage_duration},
+                                    old_storage_duration => $self->{last_storage_duration});
+    }
+
     # Get the start time
     my $start_time = time();
 
@@ -115,6 +130,9 @@ sub oneRun {
     else {
         sleep($self->{config}->{time_step} - $update_duration);
     }
+
+    $self->{last_time_step}        = $self->{config}->{time_step};
+    $self->{last_storage_duration} = $self->{config}->{storage_duration};
 }
 
 
@@ -220,7 +238,7 @@ sub update {
                                                    );
 
                 # Call the retriever to get monitoring data
-                my $timestamp        = time();
+                my $timestamp = time();
                 my $monitored_values = $service_provider->getNodesMetrics(
                                            indicators => $wanted_indicators->{indicators},
                                            time_span  => $wanted_indicators->{time_span}
@@ -235,9 +253,11 @@ sub update {
 
                 # Nodes metrics values cache
                 DataCache::storeNodeMetricsValues(
-                    indicators          => $wanted_indicators->{indicators},
-                    values              => $monitored_values,
-                    timestamp           => $timestamp
+                    indicators       => $wanted_indicators->{indicators},
+                    values           => $monitored_values,
+                    timestamp        => $timestamp,
+                    time_step        => $self->{config}->{time_step},
+                    storage_duration => $self->{config}->{storage_duration}
                 );
 
                 # Parse retriever return, compute clustermetric values and store in DB
@@ -334,6 +354,8 @@ sub _computeCombinationAndFeedTimeDB {
                 clustermetric_id => $clustermetric_id,
                 time             => $args{timestamp},
                 value            => $statValue,
+                time_step        => $self->{config}->{time_step},
+                storage_duration => $self->{config}->{storage_duration}
             );
             if (!defined $statValue) {
                 $log->info("*** [WARNING] No statvalue computed for clustermetric " . $clustermetric_id);
@@ -343,12 +365,67 @@ sub _computeCombinationAndFeedTimeDB {
             # This case is current and produce lot of log
             # TODO better handling (and user feedback) of missing data
             $log->debug("*** [WARNING] No datas received for clustermetric " . $clustermetric_id);
+
             RRDTimeData::updateTimeDataStore(
                 clustermetric_id => $clustermetric_id,
                 time             => $args{timestamp},
                 value            => undef,
+                time_step        => $self->{config}->{time_step},
+                storage_duration => $self->{config}->{storage_duration}
             );
         }
+    }
+}
+
+
+=pod
+
+=begin classdoc
+
+Delete and create again every time data store for the clustermetrics
+
+=end classdoc
+
+=cut
+
+sub regenTimeDataStores {
+    my $self = shift;
+    my %args = @_;
+
+    foreach my $clustermetric (Entity::Clustermetric->search()) {
+        #delete previous rrd
+        RRDTimeData::deleteTimeDataStore(name => $clustermetric->clustermetric_id);
+        #create new rrd
+        RRDTimeData::createTimeDataStore(name              => $clustermetric->clustermetric_id,
+                                         collect_frequency => $self->{config}->{time_step},
+                                         storage_duration  => $self->{config}->{storage_duration});
+    }
+}
+
+
+=pod
+
+=begin classdoc
+
+Resize every time data store for the clustermetrics
+
+@param storage_duration
+
+=end classdoc
+
+=cut
+
+sub resizeTimeDataStores {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'storage_duration', 'old_storage_duration' ]);
+
+    foreach my $clustermetric (Entity::Clustermetric->search()) {
+        RRDTimeData::resizeTimeDataStore(clustermetric_id     => $clustermetric->clustermetric_id,
+                                         storage_duration     => $args{storage_duration},
+                                         old_storage_duration => $args{old_storage_duration},
+                                         collect_frequency    => $self->{config}->{time_step});
     }
 }
 

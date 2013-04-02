@@ -29,7 +29,7 @@ function loadOrchestratorSettings(cid, eid) {
             time_step = data.time_step;
         }
     });
-console.log(time_step);
+
     // Frequency select
     var select_freq = $('<select>', {id : 'orch_freq'});
     for (var i=1; i<60; i++) {
@@ -89,7 +89,6 @@ function loadAggregatorSettings(cid, eid) {
         }
     });
 
-    console.log(time_step);
     var week_seconds = 3600*24*7;
     var month_seconds = week_seconds*4;
 
@@ -162,12 +161,7 @@ function loadAggregatorSettings(cid, eid) {
                                                     Yes: function () {
                                                         // Update conf
                                                         updateConf();
-                                                        // Regen TimeDB
-                                                        $.ajax({
-                                                            url     :'/api/clustermetric/regenTimeDataStores',
-                                                            type    : 'POST',
-                                                            async   : false,
-                                                        });
+
                                                         alert('ok');
                                                         $(this).dialog("close");
                                                     },
@@ -180,15 +174,6 @@ function loadAggregatorSettings(cid, eid) {
                                                 }
                                             });
                             } else {
-                                // Resize TimeDB
-                                $.ajax({
-                                    url     :'/api/clustermetric/resizeTimeDataStores',
-                                    type    : 'POST',
-                                    async   : false,
-                                    data    : {
-                                        storage_duration : store_duration
-                                    }
-                                });
                                 // Update conf
                                 updateConf();
                                 alert('ok');

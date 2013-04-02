@@ -98,16 +98,47 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
   return {
-    regenTimeDataStores  => {
-        description => 'Delete and create again all data stores',
-    },
-    resizeTimeDataStores  => {
-        description => 'Resize all data stores',
-    },
     getDependencies => {
         description => 'return dependencies tree for this object',
     },
   }
+}
+
+
+=pod
+
+=begin classdoc
+
+@constructor
+
+Create a new instance of the class. Create the RRD which will store the computed data.
+Set the formula string, the unit and the label if not defined.
+
+@return a class instance
+
+=end classdoc
+
+=cut
+
+sub new {
+    my $class = shift;
+    my %args = @_;
+
+    my $self = $class->SUPER::new(%args);
+
+    my $service_provider = $self->clustermetric_service_provider;
+    my $collector = $service_provider->getManager(manager_type => "CollectorManager");
+    $collector->collectIndicator(indicator_id        => $self->clustermetric_indicator_id,
+                                 service_provider_id => $self->clustermetric_service_provider_id);
+
+    my $toString = $self->toString();
+    $self->setAttr(name=>'clustermetric_formula_string', value=>$toString);
+    $self->setAttr(name=>'clustermetric_unit', value=>$self->computeUnit());
+    if ((! defined $args{clustermetric_label}) || $args{clustermetric_label} eq '') {
+        $self->setAttr(name=>'clustermetric_label', value=>$toString);
+    }
+    $self->save();
+    return $self;
 }
 
 
@@ -226,112 +257,6 @@ sub lastValue {
     }
 
     return $indicator[0];
-}
-
-
-=pod
-
-=begin classdoc
-
-Delete and create again every time data store for the clustermetrics
-
-=end classdoc
-
-=cut
-
-sub regenTimeDataStores {
-
-    my @clustermetrics = Entity::Clustermetric->search(hash => { });
-
-    # TODO: (conf) Move this to the component KanopyaAggregator
-    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
-    my $aggregator = $kanopya->getComponent(name => 'KanopyaAggregator');
-
-    foreach my $clustermetric (@clustermetrics) {
-        #delete previous rrd
-        RRDTimeData::deleteTimeDataStore(name => $clustermetric->clustermetric_id);
-        #create new rrd
-        RRDTimeData::createTimeDataStore(name              => $clustermetric->clustermetric_id,
-                                         collect_frequency => $aggregator->time_step,
-                                         storage_duration  => $aggregator->storage_duration);
-    }
-}
-
-
-=pod
-
-=begin classdoc
-
-Resize every time data store for the clustermetrics
-
-@param storage_duration
-
-=end classdoc
-
-=cut
-
-sub resizeTimeDataStores {
-    my ($class, %args) = @_;
-
-    General::checkParams(args => \%args, required => ['storage_duration']);
-
-    # This probably should not be done here...
-    # TODO: (conf) Move this to the component KanopyaAggregator
-    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
-    my $aggregator = $kanopya->getComponent(name => 'KanopyaAggregator');
-
-    my @clustermetrics = Entity::Clustermetric->search(hash => { });
-    foreach my $clustermetric (@clustermetrics) {
-        RRDTimeData::resizeTimeDataStore(clustermetric_id     => $clustermetric->clustermetric_id,
-                                         storage_duration     => $args{storage_duration},
-                                         old_storage_duration => $aggregator->storage_duration,
-                                         collect_frequency    => $aggregator->time_step);
-    }
-}
-
-=pod
-
-=begin classdoc
-
-@constructor
-
-Create a new instance of the class. Create the RRD which will store the computed data.
-Set the formula string, the unit and the label if not defined.
-
-@return a class instance
-
-=end classdoc
-
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    my $self = $class->SUPER::new(%args);
-
-    # TODO: (conf) Move this to the component KanopyaAggregator
-    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
-    my $aggregator = $kanopya->getComponent(name => 'KanopyaAggregator');
-
-    # Create RRD DB
-    RRDTimeData::createTimeDataStore(name              => $self->clustermetric_id,
-                                     collect_frequency => $aggregator->time_step,
-                                     storage_duration  => $aggregator->storage_duration);
-
-    my $service_provider = $self->clustermetric_service_provider;
-    my $collector = $service_provider->getManager(manager_type => "CollectorManager");
-    $collector->collectIndicator(indicator_id        => $self->clustermetric_indicator_id,
-                                 service_provider_id => $self->clustermetric_service_provider_id);
-
-    my $toString = $self->toString();
-    $self->setAttr(name=>'clustermetric_formula_string', value=>$toString);
-    $self->setAttr(name=>'clustermetric_unit', value=>$self->computeUnit());
-    if ((! defined $args{clustermetric_label}) || $args{clustermetric_label} eq '') {
-        $self->setAttr(name=>'clustermetric_label', value=>$toString);
-    }
-    $self->save();
-    return $self;
 }
 
 

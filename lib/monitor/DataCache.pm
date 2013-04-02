@@ -90,18 +90,19 @@ Do not store if cache is not activated.
 sub storeNodeMetricsValues {
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['indicators', 'values', 'timestamp']);
+    General::checkParams(args => \%args, required => [ 'indicators', 'values', 'timestamp', 'time_step', 'storage_duration' ]);
 
     return if (!$NODEMETRIC_STORAGE_ACTIVE);
 
     while (my ($node_name, $indicators_values) = each %{$args{values}}) {
         while (my ($indicators_oid, $value) = each %$indicators_values) {
             my $metric_uid = $args{indicators}->{$indicators_oid}->id . '_' . $node_name;
-            RRDTimeData::createTimeDataStore(name => $metric_uid, skip_if_exists => 1);
             RRDTimeData::updateTimeDataStore(
                 clustermetric_id => $metric_uid,
                 time             => $args{timestamp},
                 value            => $value,
+                time_step        => $args{time_step},
+                storage_duration => $args{storage_duration}
             );
         }
     }
