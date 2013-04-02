@@ -108,4 +108,10 @@ sub getPuppetDefinition {
     return "class { 'kanopya::atftpd': }\n";
 }
 
+sub getTftpDirectory {
+    my ($self, %args) = @_;
+
+    return $self->atftpd0_repository;
+}
+
 1;

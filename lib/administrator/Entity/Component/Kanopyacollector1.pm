@@ -1,5 +1,5 @@
-# Snmpd5.pm - Kanopya-collector component (Adminstrator side)
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -14,7 +14,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 20 april 2012
 
 package Entity::Component::Kanopyacollector1;
 use base "Entity::Component";
@@ -24,25 +23,39 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use Monitor::Retriever;
 use Entity::Indicator;
 use Entity::CollectorIndicator;
 use Indicatorset;
 use Collect;
-use Log::Log4perl "get_logger";
-use Data::Dumper;
+use Retriever;
 
+use Data::Dumper;
+use Log::Log4perl "get_logger";
 my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    kanopyacollector1_collect_frequency => {
-        pattern      => '^\d*$',
+    time_step => {
+        label        => 'Monitoring data retrieval frequency',
+        type         => 'time',
+        pattern      => '^\d+$',
+        default      => 300,
         is_mandatory => 1,
         is_extended  => 0
     },
-    kanopyacollector1_storage_time => {
-        pattern      => '^\d*$',
+    storage_duration => {
+        label        => 'Data storage duration',
+        type         => 'time',
+        pattern      => '^\d+$',
+        default      => 86400,
+        is_mandatory => 1,
+        is_extended  => 0
+    },
+    rrd_base_directory => {
+        label        => 'RRD base directory',
+        type         => 'string',
+        pattern      => '^.*$',
+        default      => '/var/cache/kanopya/monitor/base',
         is_mandatory => 1,
         is_extended  => 0
     },
@@ -52,6 +65,7 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub new {
     my ($class, %args) = @_;
+
     my $self = $class->SUPER::new(%args);
 
     my @indicator_sets = (
@@ -99,8 +113,8 @@ sub retrieveData {
     ####################################
     my $time_span = 600;
 
-    my $nodelist       = $args{'nodelist'};
-    my $indicators     = $args{'indicators'};
+    my $nodelist   = $args{'nodelist'};
+    my $indicators = $args{'indicators'};
     my %sets_to_fetch;
 
     # Arrange indicators name by set_name
@@ -112,32 +126,32 @@ sub retrieveData {
     }
 
     # Now we fetch the requested data
-    my $retriever = Monitor::Retriever->new();
     my %monitored_values;
 
     while (my ($set_id, $indic_names) = each %sets_to_fetch) {
-
         foreach my $node (@$nodelist) {
             eval {
                 #TODO avoir this useless reinstanciation with a hashtable
                 my $indicator_set = Indicatorset->get(id => $set_id);
                 #TODO Improve lastValue / average management
-                my $last_value = ($indicator_set->indicatorset_provider eq 'KanopyaDatabaseProvider') ?
-                                 1 : undef;
+                my $last_value = $indicator_set->indicatorset_provider eq 'KanopyaDatabaseProvider'
+                                     ? 1 : undef;
 
-                
-                my $data = $retriever->getHostData(
-                                                set         => $indicator_set->indicatorset_name,
-                                                host        => $node,
-                                                required_ds => $indic_names,
-                                                time_laps   => $time_span,
-                                                start       => $args{start},
-                                                end         => $args{end},
-                                                historical  => $args{historical},
-                                                raw         => $args{raw},
-                                                last_value  => $args{last_value} || $last_value,
-                            );
-                $monitored_values{$node} = $monitored_values{$node} ? { %{$monitored_values{$node}}, %{$data} } :  $data;
+                my $data = Retriever->getHostData(
+                               set          => $indicator_set->indicatorset_name,
+                               host         => $node,
+                               required_ds  => $indic_names,
+                               time_laps    => $time_span,
+                               start        => $args{start},
+                               end          => $args{end},
+                               historical   => $args{historical},
+                               raw          => $args{raw},
+                               last_value   => $args{last_value} || $last_value,
+                               rrd_base_dir => $self->rrd_base_directory
+                           );
+
+                $monitored_values{$node} = $monitored_values{$node}
+                                               ? { %{$monitored_values{$node}}, %{$data} } : $data;
             };
             if ($@) {
                 $log->warn("Error while retrieving data from kanopya collector : $@");
