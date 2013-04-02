@@ -131,8 +131,6 @@ sub oneRun {
         sleep($self->{config}->{time_step} - $update_duration);
     }
 
-
-
     $self->{last_time_step}        = $self->{config}->{time_step};
     $self->{last_storage_duration} = $self->{config}->{storage_duration};
 }
