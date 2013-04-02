@@ -36,6 +36,7 @@ Log::Log4perl -> easy_init({
 use BaseDB;
 
 my $path = '/opt/kanopya/t/functional/data/timeserie_data/';
+my $path_predict = '/opt/kanopya/t/functional/data/timeserie_predict/';
 
 main();
 
@@ -313,9 +314,7 @@ sub find_seasonality {
 
         #The data used for the test
         my $file    = $path.'data_no_seasonality.csv';
-        my $data    = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-        my $values  = Utils::TimeSerieAnalysis->splitData('data' => $data)->{values_ref};
-        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $values);
+        my $seasons = find_seasonality_data('file' => $file, 'sep' => ';');
 
         #There is no seasonality for this example
         if ($#$seasons+1 != 0) {
@@ -329,9 +328,7 @@ sub find_seasonality {
         #The data used for the test
 
         my $file = $path.'nhtemp.csv';
-        my $data    = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-        my $values  = Utils::TimeSerieAnalysis->splitData('data' => $data)->{values_ref};
-        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $values);
+        my $seasons = find_seasonality_data('file' => $file, 'sep' => ';');
 
         #There is no seasonality for this example
         if ($#$seasons+1 != 0) {
@@ -344,9 +341,7 @@ sub find_seasonality {
 
         #The data used for the test
         my $file = $path.'BJsales.csv';
-        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-
-        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
+        my $seasons = find_seasonality_data('file' => $file, 'sep' => ';');
 
         #There is no seasonality for this example
         if ($#$seasons+1 != 0) {
@@ -359,9 +354,7 @@ sub find_seasonality {
 
         #The data used for the test
         my $file = $path.'data_seasonality=6.csv';
-        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-
-        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
+        my $seasons = find_seasonality_data('file' => $file, 'sep' => ';');
 
         my $expected_value = 6;
 
@@ -377,9 +370,7 @@ sub find_seasonality {
 
         # The data used for the test
         my $file    = $path.'data_seasonality=10.csv';
-        my $data    = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-        my $values  = Utils::TimeSerieAnalysis->splitData('data' => $data)->{values_ref};
-        my $seasons        = Utils::TimeSerieAnalysis->findSeasonality('data' => $values);
+        my $seasons = find_seasonality_data('file' => $file, 'sep' => ';');
 
         my $expected_value = 10;
 
@@ -394,9 +385,7 @@ sub find_seasonality {
 
         #The data used for the test
         my $file = $path.'lynx.csv';
-        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-
-        my $seasons        = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
+        my $seasons = find_seasonality_data('file' => $file, 'sep' => ';');
         my @expected_values = (10, 38);
 
         if ($#{$seasons}+1 == 2) {
@@ -418,9 +407,7 @@ sub find_seasonality {
 
         #The data used for the test
         my $file = $path.'data_seasonality=53.csv';
-        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-        my $values  = Utils::TimeSerieAnalysis->splitData('data' => $data)->{values_ref};
-        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $values);
+        my $seasons = find_seasonality_data('file' => $file, 'sep' => ';');
         my $expected_value = 53;
 
         #We have only one seasonality (equal to 53)
@@ -436,9 +423,7 @@ sub find_seasonality {
 
         #The data used for the test
         my $file = $path.'sin_additive.csv';
-        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-
-        my $seasons=Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
+        my $seasons = find_seasonality_data('file' => $file, 'sep' => ';');
 
         #The expected values of the seasonalities
         my $expected_value = 10;
@@ -454,9 +439,7 @@ sub find_seasonality {
 
         #The data used for the test
         my $file = $path.'data_co2.csv';
-        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-        my $values  = Utils::TimeSerieAnalysis->splitData('data' => $data)->{values_ref};
-        my $seasons=Utils::TimeSerieAnalysis->findSeasonality('data' => $values);
+        my $seasons = find_seasonality_data('file' => $file, 'sep' => ';');
 
         #The expected values of the seasonalities
         my $expected_value = 12;
@@ -472,9 +455,7 @@ sub find_seasonality {
 
         #The data used for the test
         my $file = $path.'data_seasonality=132.csv';
-        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-        my $values  = Utils::TimeSerieAnalysis->splitData('data' => $data)->{values_ref};
-        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $values);
+        my $seasons = find_seasonality_data('file' => $file, 'sep' => ';');
 
         my @expected_values = (132,3);
 
@@ -496,9 +477,7 @@ sub find_seasonality {
 
         #The data used for the test
         my $file = $path.'sin_no_noise.csv';
-        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-
-        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
+        my $seasons = find_seasonality_data('file' => $file, 'sep' => ';');
 
         my @expected_values = (130,125);
 
@@ -521,9 +500,7 @@ sub find_seasonality {
 
         #The data used for the test
         my $file = $path.'sin_noise.csv';
-        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-
-        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
+        my $seasons = find_seasonality_data('file' => $file, 'sep' => ';');
 
         my @expected_values = (13, 12);
 
@@ -545,9 +522,7 @@ sub find_seasonality {
 
         #The data used for the test
         my $file = $path.'AirPassengers.csv';
-        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-
-        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
+        my $seasons = find_seasonality_data('file' => $file, 'sep' => ';');
         my $expected_value = 12;
 
         if ( $#{$seasons}+1 != 1 || $seasons->[0] != $expected_value ) {
@@ -562,9 +537,7 @@ sub find_seasonality {
 
         #The data used for the test
         my $file = $path.'multi_seasonal.csv';
-        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-
-        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
+        my $seasons = find_seasonality_data('file' => $file, 'sep' => ';');
 
         my @expected_values = (38,11);
 
@@ -586,9 +559,7 @@ sub find_seasonality {
 
         #The data used for the test
         my $file = $path.'multi_seasonal_2.csv';
-        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-
-        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
+        my $seasons = find_seasonality_data('file' => $file, 'sep' => ';');
 
         my @expected_values = (114,10);
 
@@ -611,9 +582,7 @@ sub find_seasonality {
 
         #The data used for the test
         my $file = $path.'multi_seasonal_2_times2.csv';
-        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-
-        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
+        my $seasons = find_seasonality_data('file' => $file, 'sep' => ';');
 
         my @expected_values = (114,10);
 
@@ -636,9 +605,7 @@ sub find_seasonality {
 
         #The data used for the test
         my $file = $path.'downward_trend.csv';
-        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-
-        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
+        my $seasons = find_seasonality_data('file' => $file, 'sep' => ';');
 
         my $expected_value = 2;
 
@@ -654,9 +621,7 @@ sub find_seasonality {
 
         #The data used for the test
         my $file = $path.'sin_positive_seasonality=31.csv';
-        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-
-        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
+        my $seasons = find_seasonality_data('file' => $file, 'sep' => ';');
 
         my @expected_values = (31,29);
 
@@ -678,10 +643,7 @@ sub find_seasonality {
 
         #The data used for the test
         my $file = $path.'sin_positive_seasonality=31_times7_times4.csv';
-        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-
-        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
-
+        my $seasons = find_seasonality_data('file' => $file, 'sep' => ';');
         my @expected_values = (222,32);
 
         if ($#{$seasons}+1 == 2) {
@@ -703,9 +665,7 @@ sub find_seasonality {
 
         #The data used for the test
         my $file = $path.'sin_positive_seasonality=31_times7_times3.csv';
-        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-
-        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
+        my $seasons = find_seasonality_data('file' => $file, 'sep' => ';');
 
         my @expected_values = (222,42);
 
@@ -729,9 +689,7 @@ sub find_seasonality {
 
         #The data used for the test
         my $file = $path.'complexSeasonality.csv';
-        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-
-        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
+        my $seasons = find_seasonality_data('file' => $file, 'sep' => ';');
 
         my $expected_value = 6;
 
@@ -747,9 +705,7 @@ sub find_seasonality {
 
         #The data used for the test
         my $file = $path.'complexSeasonality+trend+level.csv';
-        my $data = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
-
-        my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $data);
+        my $seasons = find_seasonality_data('file' => $file, 'sep' => ';');
 
         my $expected_value = 6;
 
@@ -762,6 +718,17 @@ sub find_seasonality {
 
 }
 
+sub find_seasonality_data{
+    my %args = @_;
+    my $data    = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $args{'file'},
+                                                                     'sep'  => $args{'sep'}
+                                                                    );
+    my $values  = Utils::TimeSerieAnalysis->splitData('data' => $data)->{values_ref};
+    my $seasons = Utils::TimeSerieAnalysis->findSeasonality('data' => $values);
+
+    return $seasons;
+}
+
 
 sub forecast {
 
@@ -769,7 +736,7 @@ sub forecast {
     my $name_func = 'sum';
 
     lives_ok {
-        my $t = time();
+        my $t = 1364897079;
         my %prec = ( 'X' => 0.1);
         my $cm = createCombinationMetric ('service_provider' => $service_provider,
                                           'mock_monitor'     => $mock_monitor,
@@ -781,13 +748,33 @@ sub forecast {
                                                         'season'           => 10,
                                                         'precision'        => \%prec,
                                                         'time'             => $t,
-                                                        'rows'             => 20000,
+                                                        'rows'             => 8000,
                                                         'service_provider' => $service_provider);
 
-        DataModelSelector->autoPredict( 'combination_id' => $comb->id,
-                                        'horizon'        => $t+15500,
-                                        'start_time'     => $t-15000,
-                                        'end_time'       => $t);
+        my $args = DataModelSelector->autoPredict( 'combination_id'        => $comb->id,
+                                                   'data_start'            => $t-8000,
+                                                   'data_end'              => $t,
+                                                   'predict_end_tstamps'   => $t+8500,
+                                                   'predict_start_tstamps' => $t+1,
+                                                 );
+        my $timestamps = $args->{'timestamps'};
+        my $prediction = $args->{'values'};
+
+        my $file = $path_predict.'predict_season=10.csv';
+        my $expected_values = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
+
+        if (($#$timestamps+1) == (scalar keys(%{$expected_values}))) {
+            foreach my $i (0..$#$timestamps) {
+                if (abs($prediction->[$i] - $expected_values->{$timestamps->[$i]})> 10**(-5)) {
+                    diag ($prediction->[$i]." != ". $expected_values->{$timestamps->[$i]});
+                    die 'Wrong prediction when season=10';
+                }
+            }
+        }
+        else {
+            diag (($#$timestamps+1) .' != '. (scalar keys(%{$expected_values})));
+            die 'Wrong prediction when season=10';
+        }
 
     } 'Prediction when Season=10';
 
@@ -808,38 +795,75 @@ sub forecast {
                                                         'time'             => $t,
                                                         'service_provider' => $service_provider);
 
-        DataModelSelector->autoPredict( 'combination_id' => $comb->id,
-                                        'horizon'        => $t+320,
-                                        'start_time'     => $t-250,
-                                        'end_time'       => $t);
+        my $args = DataModelSelector->autoPredict( 'combination_id'             => $comb->id,
+                                        'predict_start_tstamps'      => $t+1,
+                                        'predict_end_tstamps'        => $t+320,
+                                        'data_start'                 => $t-250,
+                                        'data_end'                   => $t);
 
+        my $timestamps = $args->{'timestamps'};
+        my $prediction = $args->{'values'};
+
+        my $file = $path_predict.'predict_season=53.csv';
+        my $expected_values = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
+
+        if (($#$timestamps+1) == (scalar keys(%{$expected_values}))) {
+            foreach my $i (0..$#$timestamps) {
+                if (abs($prediction->[$i] - $expected_values->{$timestamps->[$i]})> 10**(-5)) {
+                    diag ($prediction->[$i]." != ". $expected_values->{$timestamps->[$i]});
+                    die 'Wrong prediction when season=53';
+                }
+            }
+        }
+        else {
+            diag (($#$timestamps+1) .' != '. (scalar keys(%{$expected_values})));
+            die 'Wrong prediction when season=53';
+        }
     } 'Prediction when Season=53';
 
     lives_ok {
-        my $t = time();
+        my $t = 1362151970;
         my %prec = ( 'X' => 0.1 );
         my $cm = createCombinationMetric ('service_provider' => $service_provider,
                                           'mock_monitor'     => $mock_monitor,
                                           'name_func'        => $name_func,
-                                          'window_time'      => 20000);
+                                          'window_time'      => 5000);
 
         my $comb = linkTimeSerietoAggregateCombination ('cm'               => $cm,
                                                         'func'             => "5*sin(2*3.14*X)+X",
                                                         'precision'        => \%prec,
                                                         'time'             => $t,
-                                                        'rows'             => 20000,
+                                                        'rows'             => 5000,
                                                         'service_provider' => $service_provider);
 
-        DataModelSelector->autoPredict( 'combination_id' => $comb->id,
-                                        'horizon'        => $t+15500,
-                                        'start_time'     => $t-15000,
-                                        'end_time'       => $t);
+        my $args = DataModelSelector->autoPredict( 'combination_id'             => $comb->id,
+                                                   'predict_start_tstamps'      => $t+1,
+                                                   'predict_end_tstamps'        => $t+5500,
+                                                   'data_start'                 => $t-5000,
+                                                   'data_end'                   => $t);
+        my $timestamps = $args->{'timestamps'};
+        my $prediction = $args->{'values'};
 
+        my $file = $path_predict.'predict_season_additive.csv';
+        my $expected_values = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
+
+        if (($#$timestamps+1) == (scalar keys(%{$expected_values}))) {
+            foreach my $i (0..$#$timestamps) {
+                if (abs($prediction->[$i] - $expected_values->{$timestamps->[$i]})> 10**(-5)) {
+                    diag ($prediction->[$i]." != ". $expected_values->{$timestamps->[$i]});
+                    die 'Wrong prediction with additive seasonalities';
+                }
+            }
+        }
+        else {
+            diag (($#$timestamps+1) .' != '. (scalar keys(%{$expected_values})));
+            die 'Wrong prediction with additive seasonalities';
+        }
     } 'Prediction with additive seasonalities';
 
 
     lives_ok {
-        my $t = time();
+        my $t = 1362151970;
         my %prec = ( 'X' => 3 );
         my $cm = createCombinationMetric ('service_provider' => $service_provider,
                                           'mock_monitor'     => $mock_monitor,
@@ -848,65 +872,41 @@ sub forecast {
 
         my $comb = linkTimeSerietoAggregateCombination ('cm'               => $cm,
                                                         'func'             => "5*sin(2*3.14*X)+0.05*rand(50)",
-                                                        'rows'              => 500,
+                                                        'srand'            => 1,
+                                                        'rows'             => 500,
                                                         'precision'        => \%prec,
                                                         'time'             => $t,
                                                         'service_provider' => $service_provider);
 
-        DataModelSelector->autoPredict( 'combination_id' => $comb->id,
-                                        'horizon'        => $t+350,
-                                        'start_time'     => $t-300,
-                                        'end_time'       => $t);
+        my $args = DataModelSelector->autoPredict( 'combination_id'             => $comb->id,
+                                                   'predict_start_tstamps'      => $t+1,
+                                                   'predict_end_tstamps'        => $t+350,
+                                                   'data_start'                 => $t-300,
+                                                   'data_end'                   => $t);
 
+        my $timestamps = $args->{'timestamps'};
+        my $prediction = $args->{'values'};
+
+        my $file = $path_predict.'predict_noise.csv';
+        my $expected_values = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
+
+        if (($#$timestamps+1) == (scalar keys(%{$expected_values}))) {
+            foreach my $i (0..$#$timestamps) {
+                if (abs($prediction->[$i] - $expected_values->{$timestamps->[$i]})> 10**(-5)) {
+                    diag ($prediction->[$i]." != ". $expected_values->{$timestamps->[$i]});
+                    die 'Wrong prediction when there is noise : sinus';
+                }
+            }
+        }
+        else {
+            diag (($#$timestamps+1) .' != '. (scalar keys(%{$expected_values})));
+            die 'Wrong prediction when there is noise : sinus';
+        }
     } 'Prediction when there is noise : sinus';
 
-    lives_ok {
-        my $t = time();
-        my %prec = ( 'X' => 3 );
-        my $cm = createCombinationMetric ('service_provider' => $service_provider,
-                                          'mock_monitor'     => $mock_monitor,
-                                          'name_func'        => $name_func,
-                                          'window_time'      => 1200);
-
-        my $comb = linkTimeSerietoAggregateCombination ('cm'               => $cm,
-                                                        'func'             => "5*sin(2*3.14*X)",
-                                                        'rows'              => 500,
-                                                        'precision'        => \%prec,
-                                                        'time'             => $t,
-                                                        'service_provider' => $service_provider);
-
-        DataModelSelector->autoPredict( 'combination_id' => $comb->id,
-                                        'horizon'        => $t+350,
-                                        'start_time'     => $t-300,
-                                        'end_time'       => $t);
-
-    } 'Prediction when there is no noise : sinus';
-
-
-    lives_ok {
-        my $t = time();
-        my %prec = ( 'X' => 0.5 );
-        my $cm = createCombinationMetric ('service_provider' => $service_provider,
-                                          'mock_monitor'     => $mock_monitor,
-                                          'name_func'        => $name_func,
-                                          'window_time'      => 1200);
-
-        my $comb = linkTimeSerietoAggregateCombination ('cm'               => $cm,
-                                                        'func'             => "30*sin(X+3.14)+rand(5)+X",
-                                                        'rows'             => 500,
-                                                        'step'             => 300,
-                                                        'precision'        => \%prec,
-                                                        'time'             => $t,
-                                                        'service_provider' => $service_provider);
-
-        DataModelSelector->autoPredict( 'combination_id' => $comb->id,
-                                        'horizon'        => $t+550*300,
-                                        'start_time'     => $t-500*300,
-                                        'end_time'       => $t);
-    } 'Prediction when there is noise : sinus (2)';
 
    lives_ok {
-        my $t = time();
+        my $t = 1364921543;
         my %prec = ( 'X' => 0.5 );
         my $cm = createCombinationMetric ('service_provider' => $service_provider,
                                           'mock_monitor'     => $mock_monitor,
@@ -920,31 +920,32 @@ sub forecast {
                                                         'time'             => $t,
                                                         'service_provider' => $service_provider);
 
-        DataModelSelector->autoPredict( 'combination_id' => $comb->id,
-                                        'horizon'        => $t+300,
-                                        'start_time'     => $t-250,
-                                        'end_time'       => $t);
+        my $args = DataModelSelector->autoPredict( 'combination_id'             => $comb->id,
+                                                   'predict_start_tstamps'      => $t+1,
+                                                   'predict_end_tstamps'        => $t+300,
+                                                   'data_start'                 => $t-250,
+                                                   'data_end'                   => $t);
+
+        my $timestamps = $args->{'timestamps'};
+        my $prediction = $args->{'values'};
+
+        my $file = $path_predict.'predict_downward_trend.csv';
+        my $expected_values = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
+
+        if (($#$timestamps+1) == (scalar keys(%{$expected_values}))) {
+            foreach my $i (0..$#$timestamps) {
+                if (abs($prediction->[$i] - $expected_values->{$timestamps->[$i]})> 10**(-5)) {
+                    diag ($prediction->[$i]." != ". $expected_values->{$timestamps->[$i]});
+                    die 'Wrong prediction with downward trend';
+                }
+            }
+        }
+        else {
+            diag (($#$timestamps+1) .' != '. (scalar keys(%{$expected_values})));
+            die 'Wrong prediction with downward trend';
+        }
+
     } 'Prediction with downward trend';
-
-   lives_ok {
-        my $t = time();
-        my %prec = ( 'X' => 0.1 );
-        my $cm = createCombinationMetric ('service_provider' => $service_provider,
-                                          'mock_monitor'     => $mock_monitor,
-                                          'name_func'        => $name_func,
-                                          'window_time'      => 1200);
-
-        my $comb = linkTimeSerietoAggregateCombination ('cm'               => $cm,
-                                                        'func'             => "abs(sin(X))",
-                                                        'precision'        => \%prec,
-                                                        'time'             => $t,
-                                                        'service_provider' => $service_provider);
-
-        DataModelSelector->autoPredict( 'combination_id' => $comb->id,
-                                        'horizon'        => $t+150,
-                                        'start_time'     => $t-100,
-                                        'end_time'       => $t);
-    } 'Prediction when there is only positive values : sinus';
 
 }
 
