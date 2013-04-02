@@ -6,7 +6,7 @@ use Clustermetric;
 use AggregateCombination;
 use AggregateCondition;
 use AggregateRule;
-use MonitorManager;
+use Indicatorset;
 
 use Log::Log4perl "get_logger";
 Log::Log4perl->init('/opt/kanopya/conf/monitor-log.conf');
@@ -65,9 +65,7 @@ if ((scalar Clustermetric->search(hash=>{})) eq 0){
 }
 
 if($ok eq 1){
-
-    my $monitomanager = MonitorManager->new(schemas => BaseDB->_adm->{schema});
-    my $scom_indicatorset = $monitomanager->getSetDesc( set_name => 'scom' ); 
+    my $scom_indicatorset = Indicatorset->findFromLabel(set_name => 'scom'); 
     my @indicators;
     my @funcs = qw(mean max min standard_deviation);
     foreach my $indicator (@{$scom_indicatorset->{ds}}){

@@ -25,18 +25,22 @@ Aggregation of a collector indicator value for each node of the service, accordi
 =cut
 
 package Entity::Clustermetric;
+use base 'Entity';
 
 use strict;
 use warnings;
+
 use General;
 use Data::Dumper;
 use DescriptiveStatisticsFunction;
 use TimeData::RRDTimeData;
 use Entity::Indicator;
 use Entity::CollectorIndicator;
-require 'Entity/Combination/AggregateCombination.pm';
+use Entity::Combination::AggregateCombination;
 
-use base 'Entity';
+# To get the kanopya cluster
+# TODO: remove me
+use Entity::ServiceProvider::Cluster;
 
 # logger
 use Log::Log4perl "get_logger";
@@ -94,17 +98,14 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
   return {
-    'regenTimeDataStores'  => {
-      'description' => 'Delete and create again all data stores',
-      'perm_holder' => 'entity'
+    regenTimeDataStores  => {
+        description => 'Delete and create again all data stores',
     },
-    'resizeTimeDataStores'  => {
-      'description' => 'Resize all data stores',
-      'perm_holder' => 'entity'
+    resizeTimeDataStores  => {
+        description => 'Resize all data stores',
     },
-    'getDependencies' => {
-        'description' => 'return dependencies tree for this object',
-        'perm_holder' => 'entity',
+    getDependencies => {
+        description => 'return dependencies tree for this object',
     },
   }
 }
@@ -242,11 +243,17 @@ sub regenTimeDataStores {
 
     my @clustermetrics = Entity::Clustermetric->search(hash => { });
 
+    # TODO: (conf) Move this to the component KanopyaAggregator
+    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
+    my $aggregator = $kanopya->getComponent(name => 'KanopyaAggregator');
+
     foreach my $clustermetric (@clustermetrics) {
         #delete previous rrd
         RRDTimeData::deleteTimeDataStore(name => $clustermetric->clustermetric_id);
         #create new rrd
-        RRDTimeData::createTimeDataStore(name => $clustermetric->clustermetric_id);
+        RRDTimeData::createTimeDataStore(name              => $clustermetric->clustermetric_id,
+                                         collect_frequency => $aggregator->time_step,
+                                         storage_duration  => $aggregator->storage_duration);
     }
 }
 
@@ -265,11 +272,20 @@ Resize every time data store for the clustermetrics
 
 sub resizeTimeDataStores {
     my ($class, %args) = @_;
+
     General::checkParams(args => \%args, required => ['storage_duration']);
+
+    # This probably should not be done here...
+    # TODO: (conf) Move this to the component KanopyaAggregator
+    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
+    my $aggregator = $kanopya->getComponent(name => 'KanopyaAggregator');
 
     my @clustermetrics = Entity::Clustermetric->search(hash => { });
     foreach my $clustermetric (@clustermetrics) {
-        RRDTimeData::resizeTimeDataStore(storage_duration => $args{storage_duration}, clustermetric_id => $clustermetric->clustermetric_id);
+        RRDTimeData::resizeTimeDataStore(clustermetric_id     => $clustermetric->clustermetric_id,
+                                         storage_duration     => $args{storage_duration},
+                                         old_storage_duration => $aggregator->storage_duration,
+                                         collect_frequency    => $aggregator->time_step);
     }
 }
 
@@ -294,9 +310,14 @@ sub new {
 
     my $self = $class->SUPER::new(%args);
 
+    # TODO: (conf) Move this to the component KanopyaAggregator
+    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
+    my $aggregator = $kanopya->getComponent(name => 'KanopyaAggregator');
+
     # Create RRD DB
-    my $clustermetric_id = $self->getAttr(name=>'clustermetric_id');
-    RRDTimeData::createTimeDataStore(name => $clustermetric_id);
+    RRDTimeData::createTimeDataStore(name              => $self->clustermetric_id,
+                                     collect_frequency => $aggregator->time_step,
+                                     storage_duration  => $aggregator->storage_duration);
 
     my $service_provider = $self->clustermetric_service_provider;
     my $collector = $service_provider->getManager(manager_type => "CollectorManager");

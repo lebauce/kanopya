@@ -15,7 +15,7 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package Entity::Component::KanopyaExecutor;
+package Entity::Component::KanopyaRulesEngine;
 use base "Entity::Component";
 
 use strict;
@@ -30,25 +30,11 @@ my $log = get_logger("");
 
 use constant ATTR_DEF => {
     time_step => {
-        label        => 'Workflow pooling frequency',
+        label        => 'Rules evaluation frequency',
         #type         => 'time',
         type         => 'integer',
         pattern      => '^\d+$',
-        default      => 5,
-        is_mandatory => 1,
-        is_editable  => 1
-    },
-    masterimages_directory => {
-        label        => 'Master images directory',
-        type         => 'string',
-        pattern      => '^.*$',
-        is_mandatory => 1,
-        is_editable  => 1
-    },
-    clusters_directory => {
-        label        => 'Clusters data directory',
-        type         => 'string',
-        pattern      => '^.*$',
+        default      => 300,
         is_mandatory => 1,
         is_editable  => 1
     },

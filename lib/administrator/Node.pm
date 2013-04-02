@@ -79,13 +79,6 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub rulestate {
-    my $self = shift;
-    my %args = @_;
-
-    return grep { $_->verified_noderule_state eq "verified" } $self->verified_noderules;
-}
-
 sub new {
     my $class = shift;
     my %args = @_;
@@ -97,12 +90,18 @@ sub new {
     return $self;
 }
 
+sub getComponent {
+    my ($self, %args) = @_;
 
-=head2 _undefRules
+    return $self->service_provider->getComponent(node => $self, %args);
+}
 
-    Set all nodemetric rules as 'undef' for this node
+sub rulestate {
+    my $self = shift;
+    my %args = @_;
 
-=cut
+    return grep { $_->verified_noderule_state eq "verified" } $self->verified_noderules;
+}
 
 sub _undefRules {
     my $self = shift;
@@ -137,18 +136,6 @@ sub enable {
     $self->_undefRules();
     $self->monitoring_state('enabled');
 }
-
-=head2 getMonitoringData
-
-    Desc: call linked collector manager to retrieve indicators values for this node
-    Args:
-        (required) \@indicator_ids
-        $time_span OR $start, $end
-        Options : same as CollectorManager::RetrieveData()
-
-    return \%data;
-
-=cut
 
 sub getMonitoringData {
     my ($self, %args) = @_;

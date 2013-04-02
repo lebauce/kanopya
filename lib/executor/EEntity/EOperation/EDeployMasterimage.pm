@@ -1,6 +1,5 @@
-# EDeployMasterimage.pm - Operation class implementing master image deployment 
-
 #    Copyright 2011 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,21 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
-=head1 NAME
-
-EOperation::EDeployMasterimage - Operation class implementing master image deployment
-
-=head1 SYNOPSIS
-
-
-=head1 DESCRIPTION
-
-parameters:
-    file_path
-
-=cut
 package EEntity::EOperation::EDeployMasterimage;
 use base "EEntity::EOperation";
 
@@ -51,12 +36,6 @@ use EEntity;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
-my $errmsg;
-our $VERSION = '1.00';
-
-=head2 prepare
-
-=cut
 
 sub prepare {
     my $self = shift;
@@ -91,6 +70,10 @@ sub prepare {
         $self->{params}->{compress_type} = $1;
         $self->{params}->{file} = $file_path;
     }
+
+    # Instanciate tftp server
+    my $tftp = $self->{context}->{bootserver}->getComponent(category => 'Tftpserver');
+    $self->{context}->{tftp_component}  = EEntity->new(entity => $tftp);
 }
 
 sub execute {
@@ -119,7 +102,7 @@ sub execute {
     
     # retrieve master images directory
     $log->debug(Dumper $metadata);
-    my $directory = $self->{config}->{masterimages}->{directory};
+    my $directory = $self->_executor->getConf->{masterimages_directory};
     $directory =~ s/\/$//g;
     
     # get the image size
@@ -144,7 +127,7 @@ sub execute {
             };
             if ($@) {
                 # move image and metadata to the directory
-                my $tftpdir = Kanopya::Config::get('executor')->{tftp}->{directory};
+                my $tftpdir = $self->{context}->{tftp_component}->getTftpDirectory;
                 move("$tmpdir/" . $infos->{file}, $tftpdir);
 
                 if (defined ($infos->{initrd})) {
@@ -152,10 +135,10 @@ sub execute {
                 }
 
                 $kernel = Entity::Kernel->new(
-                    kernel_name    => $name,
-                    kernel_version => $infos->{version},
-                    kernel_desc    => $infos->{description}
-                );
+                              kernel_name    => $name,
+                              kernel_version => $infos->{version},
+                              kernel_desc    => $infos->{description}
+                          );
             }
 
             if ($infos->{default}) {

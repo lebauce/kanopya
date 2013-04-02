@@ -21,24 +21,25 @@ package BillingManager;
 use strict;
 use warnings;
 
-use Log::Log4perl "get_logger";
-use Data::Dumper;
-use Monitor::Retriever;
-use Set::IntervalTree;
-use Text::CSV;
-
 use Kanopya::Exceptions;
 use General;
-use List::Util qw[min max];
 use Entity::User;
 use Entity::ServiceProvider::Cluster;
 use Entity::Billinglimit;
-use Monitor::Retriever;
+use Retriever;
 
+use List::Util qw[min max];
+use Set::IntervalTree;
+use Text::CSV;
+
+use Log::Log4perl "get_logger";
+use Data::Dumper;
 my $log = get_logger("");
+
 
 my $EVERY_DAY = 1;
 my $EVERY_MONTH = 2;
+
 
 sub userBilling {
     my ($user, $from, $to) = @_;
@@ -67,7 +68,6 @@ sub clusterBilling {
     my $duration = 60 * 60;
     my $cluster_name = $cluster->getAttr(name => "cluster_name");
     my $timestamp = $from->epoch();
-    my $retriever = Monitor::Retriever->new;
 
     # Get all the limit types for this cluster
     my @cluster_limits = $cluster->searchRelated(filters => [ 'billinglimits' ]);
@@ -78,6 +78,10 @@ sub clusterBilling {
 #                          { columns => [ qw/type/ ], distinct => 1 }
 #                      );
 
+    # TODO: Can we remove this ?
+    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
+    my $collector = $kanopya->getComponent(name => 'Kanopyacollector');
+
     LIMIT_TYPE:
     for my $limit_type (@cluster_limits) {
         my $metric = $limit_type->type;
@@ -85,18 +89,15 @@ sub clusterBilling {
             next LIMIT_TYPE;
         }
 
-        my $data = $retriever->getClusterData(
-                       cluster     => $cluster_name,
-                       set         => 'billing',
-                       start       => $from->epoch(),
-                       end         => $to->epoch(),
-                       aggregation => "total",
-                       raw         => 1,
-                       required_ds => [ $metric ],
-                   )->{$metric};
+        my %data = Retriever->getData(rrd_name     => "billing_raw",
+                                      start        => $from->epoch(),
+                                      end          => $to->epoch(),
+                                      raw          => 1,
+                                      max_def      => undef,
+                                      rrd_base_dir => $collector->rrd_base_directory);
 
         $metrics{$metric} = {
-            data   => $data,
+            data   => $data{$metric},
             tree   => Set::IntervalTree->new,
             limits => {}
         };

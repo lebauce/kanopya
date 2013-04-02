@@ -13,7 +13,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 =pod
-
 =begin classdoc
 
 Main task of Aggregator is to compute and store cluster metrics
@@ -42,10 +41,10 @@ and uses DataCache to (possibly) store data at node level.
 @see <package>Entity::Manager::CollectorManager</package>
 
 =end classdoc
-
 =cut
 
 package Aggregator;
+use base Daemon;
 
 use strict;
 use warnings;
@@ -69,18 +68,6 @@ use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub getMethods {
-  return {
-    'updateAggregatorConf'  => {
-      'description' => 'Update aggregator conf',
-      'perm_holder' => 'entity'
-    },
-    'getAggregatorConf'  => {
-      'description' => 'Get aggregator conf',
-      'perm_holder' => 'entity'
-    }
-  }
-}
 
 =pod
 =begin classdoc
@@ -93,17 +80,43 @@ Load aggregator configuration and do the BaseDB authentication.
 =cut
 
 sub new {
-    my $class = shift;
-    my $self = {};
-    bless $self, $class;
+    my ($class) = @_;
 
-    my $conf = getAggregatorConf();
+    return $class->SUPER::new(confkey => 'aggregator');
+}
 
-    my ($login, $password) = ($conf->{user_name}, $conf->{user_password});
-    BaseDB->authenticate(login => $login, password => $password);
 
-    return $self;
-};
+=pod
+=begin classdoc
+
+Check the elapsed time of the main loop.
+
+@constructor
+
+=end classdoc
+=cut
+
+sub oneRun {
+    my ($self) = @_;
+
+    # Get the start time
+    my $start_time = time();
+
+    # Update metrics
+    $self->update();
+
+    # Get the end time
+    my $update_duration = time() - $start_time;
+    $log->info("Manage duration : $update_duration seconds");
+
+    if ($update_duration > $self->{config}->{time_step}) {
+        $log->warn("Aggregator duration > aggregator time step ($self->{config}->{time_step})");
+    }
+    else {
+        sleep($self->{config}->{time_step} - $update_duration);
+    }
+}
+
 
 =pod
 =begin classdoc
@@ -146,7 +159,7 @@ sub _getUsedIndicators {
     # Get indicators used by cluster metrics
 
     my @cms = $args{service_provider}->searchRelated(hash     => {},
-                                                     filters  => ['clustermetrics'],
+                                                     filters  => [ 'clustermetrics' ],
                                                      prefetch => [ 'clustermetric_indicator.indicator' ]);
 
     for my $clustermetric (@cms) {
@@ -276,15 +289,14 @@ sub _checkNodesMetrics {
     return 1;
 }
 
-=head2 _computeCombinationAndFeedTimeDB
 
-    Class : Public
+=pod
+=begin classdoc
 
-    Desc : Parse the hash table received from Retriever (input), compute
-    clustermetric values and store them in DB
+Parse the hash table received from Retriever (input), compute clustermetric
+values and store them in DB.
 
-    Args : values : hash table from the Retriever
-
+=end classdoc
 =cut
 
 sub _computeCombinationAndFeedTimeDB {
@@ -326,7 +338,8 @@ sub _computeCombinationAndFeedTimeDB {
             if (!defined $statValue) {
                 $log->info("*** [WARNING] No statvalue computed for clustermetric " . $clustermetric_id);
             }
-        } else {
+        }
+        else {
             # This case is current and produce lot of log
             # TODO better handling (and user feedback) of missing data
             $log->debug("*** [WARNING] No datas received for clustermetric " . $clustermetric_id);
@@ -336,97 +349,6 @@ sub _computeCombinationAndFeedTimeDB {
                 value            => undef,
             );
         }
-    }
-}
-
-
-=head2 run
-
-    Class : Public
-
-    Desc : Retrieve indicator values for all the clustermetrics, compute the
-    aggregation statistics function and store them in TimeDb
-    every time_step (configuration)
-
-=cut
-
-sub run {
-    my $self = shift;
-    my $running = shift;
-
-    Message->send(
-        from    => 'Aggregator',
-        level   => 'info',
-        content => "Kanopya Aggregator started."
-    );
-
-    while ($$running) {
-        my $start_time = time();
-        $self->update();
-        my $update_duration = time() - $start_time;
-        $log->info( "Manage duration : $update_duration seconds" );
-
-        my $conf      = getAggregatorConf();
-        my $time_step = $conf->{time_step};
-
-        if ($update_duration > $time_step) {
-            $log->warn("aggregator duration > aggregator time step (conf)");
-        } else {
-            sleep($time_step - $update_duration);
-        }
-    }
-
-    Message->send(
-        from    => 'Aggregator',
-        level   => 'warning',
-        content => "Kanopya Aggregator stopped"
-    );
-}
-
-=head2 updateAggregatorConf
-
-    Class : Public
-    Desc : update values in the aggregator.conf file
-    Args: $collect_frequency and/or $storage_duration
-
-=cut
-
-sub updateAggregatorConf {
-    my ($class, %args) = @_;
-
-    if ((not defined $args{collect_frequency}) && (not defined $args{storage_duration})) {
-        throw Kanopya::Exception::Internal(
-            error => 'A collect frequency and/or a storage duration must be provided for update'
-        );
-    }
-
-    #get aggregator configuration
-    my $configuration = Kanopya::Config::get('aggregator');
-
-    if (defined $args{collect_frequency}) {
-        $configuration->{time_step} = $args{collect_frequency};
-        Kanopya::Config::set(subsystem => 'aggregator', config => $configuration);
-    }
-    if (defined $args{storage_duration}) {
-        $configuration->{storage_duration}->{duration} = $args{storage_duration};
-        Kanopya::Config::set(subsystem => 'aggregator', config => $configuration);
-    }
-}
-
-=head2 getAggregatorConf
-
-    Class : Public
-    Desc : get public values from aggregator.conf file
-
-=cut
-
-sub getAggregatorConf {
-    my $conf = Kanopya::Config::get('aggregator');
-    return {
-        time_step           => $conf->{time_step},
-        storage_duration    => $conf->{storage_duration}{duration},
-        user_name           => $conf->{user}{name},
-        user_password       => $conf->{user}{password},
     }
 }
 

@@ -264,7 +264,10 @@ my %datas = (
     admin_interface          => $answers->{internal_net_interface},
     admin_password           => $answers->{dbpassword1},
     admin_kernel             => $release,
-    tmstp                    => time()
+    tmstp                    => time(),
+    masterimages_directory   => $answers->{masterimages_directory},
+    clusters_directory       => $answers->{clusters_directory},
+    tftp_directory           => $answers->{tftp_directory},
 );
 
 useTemplate(

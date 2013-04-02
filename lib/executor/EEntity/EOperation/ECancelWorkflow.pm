@@ -48,9 +48,8 @@ sub prepare {
     $self->{context}->{workflow} = EEntity->new(data => $workflow);
 
     # Check if the workflow is 'running'
-    if ($self->{context}->{workflow}->getAttr(name => 'state') ne 'running') {
-        $errmsg = "Workflow <" . $self->{context}->{workflow}->getAttr(name => 'workflow_id') . "> is not active";
-        $log->error($errmsg);
+    if ($self->{context}->{workflow}->state ne 'running') {
+        $errmsg = "Workflow <" . $self->{context}->{workflow}->id . "> is not active";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 }
@@ -59,7 +58,7 @@ sub execute {
     my $self = shift;
     $self->SUPER::execute();
 
-    $self->{context}->{workflow}->cancel(config => $self->{config}, state => 'cancelled');
+    $self->{context}->{workflow}->cancel(state => 'cancelled');
 }
 
 sub finish {
@@ -69,12 +68,3 @@ sub finish {
 }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2012 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut

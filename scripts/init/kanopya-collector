@@ -36,6 +36,8 @@ PERL5LIB=\
 /opt/kanopya/lib/orchestrator:\
 /opt/kanopya/lib/component/kanopya_front:\
 /opt/kanopya/lib/component/kanopya_executor:\
+/opt/kanopya/lib/component/kanopya_aggregator:\
+/opt/kanopya/lib/component/kanopya_rulesengine:\
 /opt/kanopya/lib/mock
 export PERL5LIB
 KANOPYA_COLLECTOR_RUN=yes

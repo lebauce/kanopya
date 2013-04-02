@@ -37,7 +37,7 @@ Collector dynamically gather informations about clustered nodes and aggregates d
 
 use strict;
 use warnings;
-use Monitor::Collector;
+use Collector;
 use Kanopya::Config;
 use Log::Log4perl "get_logger";
 use Error qw(:try);
@@ -67,7 +67,7 @@ $SIG{TERM} = \&signalHandler;
 #$SIG{SEGV} = \&segfaultHandler;
 
 eval	{
-	my $collector = Monitor::Collector->new();
+	my $collector = Collector->new();
 	$log->info("Starting main loop");
 	# enter in the main loop and continue while $$running is true
 	$collector->run(\$running);

@@ -840,7 +840,7 @@ sub generateXenVmTemplate {
                   units => 'M'
               );
 
-    my $tftp_conf = $self->{config}->{tftp}->{directory};
+    my $tftp_conf = $self->service_provider->getKanopyaCluster->getComponent(category => 'Tftpserver');
     my $cluster = Entity->get(id => $args{host}->getClusterId());
 
     my $kernel = Entity->get(id => $cluster->getAttr(name => "kernel_id"));
@@ -851,33 +851,32 @@ sub generateXenVmTemplate {
     my $image_name = $image->systemimage_name;
     my $hostname = $args{host}->node->node_hostname;
 
-    my %repo = $self->_entity->getImageRepository(
+    my %repo = $self->getImageRepository(
                    container_access_id => $disk_params->{container_access_id}
                );
 
-    my $repository_path = $self->_entity->getAttr(name => 'image_repository_path') .
+    my $repository_path = $self->getAttr(name => 'image_repository_path') .
                           '/' . $repo{repository_name};
 
     my $interfaces = [];
     my $bridge = ($args{hypervisor}->getIfaces(role => 'vms'))[0];
     for my $iface ($args{host}->getIfaces()) {
         for my $network ($iface->getInterface->getNetworks) {
-            my $vlan = $network->isa("Entity::Network::Vlan") ?
-                           $network->getAttr(name => "vlan_number") : undef;
+            my $vlan = $network->isa("Entity::Network::Vlan") ? $network->vlan_number : undef;
 
             # generate and register vnet
             my $vnet_template = $self->generateVnetTemplate(
-                vnet_name       => $hostname . '-' . $iface->getAttr(name => 'iface_name'),
+                vnet_name       => $hostname . '-' . $iface->iface_name,
                 vnet_bridge     => "br-" . ($vlan || "default"),
-                vnet_phydev     => "p" . $bridge->getAttr(name => "iface_name"),
+                vnet_phydev     => "p" . $bridge->iface_name,
                 vnet_vlanid     => $vlan,
-                vnet_mac        => $iface->getAttr(name => 'iface_mac_addr'),
+                vnet_mac        => $iface->iface_mac_addr,
                 vnet_netaddress => $iface->getIPAddr
             );
             my $vnetid = $self->onevnet_create(file => $vnet_template);
             push @$interfaces, {
-                mac     => $iface->getAttr(name => 'iface_mac_addr'),
-                network => $hostname.'-'.$iface->getAttr(name => 'iface_name'),
+                mac     => $iface->iface_mac_addr,
+                network => $hostname . '-' . $iface->iface_name,
             };
         };
     }
@@ -949,7 +948,6 @@ sub generateKvmVmTemplate {
                   units => 'M'
               );
 
-    my $tftp_conf = $self->{config}->{tftp}->{directory};
     my $cluster = Entity->get(id => $args{host}->getClusterId());
 
     # get the maximum memory from the hosting policy

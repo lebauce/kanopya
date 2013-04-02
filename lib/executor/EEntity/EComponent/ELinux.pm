@@ -548,7 +548,7 @@ sub customizeInitramfs {
     my $clustername = $args{cluster}->cluster_name;
     my $hostname = $args{host}->node->node_hostname;
 
-    my $nodedir = Kanopya::Config::get('executor')->{clusters}->{directory} . "/$clustername/$hostname";
+    my $nodedir = $self->_executor->getConf->{clusters_directory} . "/$clustername/$hostname";
 
     # append files to the archive directory
     my $sourcefile = $nodedir . '/etc/udev/rules.d/70-persistent-net.rules';

@@ -1,12 +1,12 @@
 use utf8;
-package AdministratorDB::Schema::Result::Kanopyaworkflow0;
+package AdministratorDB::Schema::Result::KanopyaFront;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
 =head1 NAME
 
-AdministratorDB::Schema::Result::Kanopyaworkflow0
+AdministratorDB::Schema::Result::KanopyaFront
 
 =cut
 
@@ -31,18 +31,17 @@ use base 'DBIx::Class::IntrospectableM2M';
 
 use base qw/DBIx::Class::Core/;
 
-=head1 TABLE: C<kanopyaworkflow0>
+=head1 TABLE: C<kanopya_front>
 
 =cut
 
-__PACKAGE__->table("kanopyaworkflow0");
+__PACKAGE__->table("kanopya_front");
 
 =head1 ACCESSORS
 
-=head2 kanopyaworkflow_id
+=head2 kanopya_front_id
 
   data_type: 'integer'
-  default_value: 0
   extra: {unsigned => 1}
   is_foreign_key: 1
   is_nullable: 0
@@ -50,10 +49,9 @@ __PACKAGE__->table("kanopyaworkflow0");
 =cut
 
 __PACKAGE__->add_columns(
-  "kanopyaworkflow_id",
+  "kanopya_front_id",
   {
     data_type => "integer",
-    default_value => 0,
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
@@ -64,17 +62,17 @@ __PACKAGE__->add_columns(
 
 =over 4
 
-=item * L</kanopyaworkflow_id>
+=item * L</kanopya_front_id>
 
 =back
 
 =cut
 
-__PACKAGE__->set_primary_key("kanopyaworkflow_id");
+__PACKAGE__->set_primary_key("kanopya_front_id");
 
 =head1 RELATIONS
 
-=head2 kanopyaworkflow
+=head2 kanopya_front
 
 Type: belongs_to
 
@@ -83,20 +81,20 @@ Related object: L<AdministratorDB::Schema::Result::Component>
 =cut
 
 __PACKAGE__->belongs_to(
-  "kanopyaworkflow",
+  "kanopya_front",
   "AdministratorDB::Schema::Result::Component",
-  { component_id => "kanopyaworkflow_id" },
+  { component_id => "kanopya_front_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
 # Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-03-27 16:05:57
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:e6zm40fj7FQF635vkMHUkg
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:FjiP82IWsOxfhlAu30nMbw
 
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Component",
-  { component_id => "kanopyaworkflow_id" },
+  { component_id => "kanopya_front_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
