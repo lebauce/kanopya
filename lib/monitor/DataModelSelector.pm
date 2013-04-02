@@ -211,7 +211,9 @@ sub autoPredict {
     # Construct new timestamps
     my @n_timestamps;
     for my $i ($predict_start..$predict_end) {
-        push @n_timestamps, $i * $granularity + $timestamps[0];
+        if (($predict_end - $i) <= $#{$prediction}) {
+            push @n_timestamps, $i * $granularity + $timestamps[0];
+        }
     }
 
     $datamodel->delete();
