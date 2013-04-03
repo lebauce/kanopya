@@ -53,6 +53,22 @@ my $export_dir = '/vagrant/';
 my $export_bdd_file = $export_dir . 'bdd.json';
 mkdir $export_dir unless (-d $export_dir);
 
+my ($rrd_backup_dir, $rrd_dir);
+my $cp_dir;
+if ($^O eq 'MSWin32') {
+    $rrd_backup_dir = 'C:\\tmp\\monitor\\TimeData_old\\';
+    $rrd_dir        = 'C:\\tmp\\monitor\\TimeData\\';
+    $cp_dir         = 'cp -recurse';
+}
+elsif ($^O eq 'linux') {
+    $rrd_backup_dir = '/var/cache/kanopya/monitor_old/';
+    $rrd_dir        = '/var/cache/kanopya/monitor/';
+    $cp_dir         = 'cp -R';
+}
+
+# backup monitoring data (folder to copy for restore machine)
+`$cp_dir $rrd_dir $rrd_backup_dir`;
+
 my $export_data;
 my $matrix = {
     services     => {

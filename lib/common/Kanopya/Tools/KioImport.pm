@@ -51,6 +51,23 @@ use ClassType::ComponentType;
 
 BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
 
+my ($rrd_backup_dir, $rrd_dir);
+my ($cp_file, $del_file);
+
+# rrd backup parameters
+if ($^O eq 'MSWin32') {
+    $rrd_backup_dir = 'C:\\tmp\\monitor\\TimeData_old\\';
+    $rrd_dir        = 'C:\\tmp\\monitor\\TimeData\\';
+    $cp_file        = 'cp';
+    $del_file       = 'del';
+}
+elsif ($^O eq 'linux') {
+    $rrd_backup_dir = '/var/cache/kanopya/monitor_old/';
+    $rrd_dir        = '/var/cache/kanopya/monitor/';
+    $cp_file        = 'cp';
+    $del_file       = 'rm';
+}
+
 my $export_dir = '/vagrant/';
 my $export_bdd_file = $export_dir . 'bdd.json';
 
@@ -70,6 +87,7 @@ my $services = $json_imported_items->{services};
 # NodemetricCombination formula => collector indicator ids
 # AggregateRule                 => AggregateCondition ids
 # NodemetricRule                => NodemetricCondition ids
+# ids in RRD filenames          => clustermetric ids
 
 my $collector_indicator_map;
 my $clustermetric_map;
@@ -291,6 +309,26 @@ for my $service_provider (@service_providers) {
             service_provider_id => $new_externalcluster->id,
         );
     }
+}
+
+# restore monitoring data
+if (not -d $rrd_backup_dir) {
+    throw  Kanopya::Exception::Internal(error => 'RRD backup directory not found');
+}
+else {
+    # delete all rrd files in current install's rrd directory
+    `$del_file $rrd_dir*.rrd`;
+
+    # restore files with new clustermetric ids
+    opendir(DIR, $rrd_backup_dir) or die $!;
+    while (my $old_rrd_file = readdir(DIR)) {
+        next unless (-f $rrd_backup_dir.$old_rrd_file);
+        next unless ($old_rrd_file =~ m/^timeDB_(\d+)\.rrd$/);
+
+        (my $rrd_file = $old_rrd_file) =~ s/timeDB_(\d+)/timeDB_$clustermetric_map->{$1}/;
+        `$cp_file $rrd_backup_dir$old_rrd_file $rrd_dir$rrd_file`;
+    }
+    closedir(DIR);
 }
 
 1;
