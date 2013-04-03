@@ -260,16 +260,20 @@ sub autoPredict {
     my %rawdata = $self->evaluateTimeSerie(start_time => $args{data_start},
                                            stop_time  => $args{data_end},
                                            node_id    => $args{node_id});
+    my %predict_params = (
+           timeserie                => \%rawdata,
+           predict_start_tstamps    => $args{predict_start_tstamps},
+           predict_end_tstamps      => $args{predict_end_tstamps},
+           # combination id is needed by autoPredict
+           # TODO DataModelSelector must ignore combination
+           combination_id           => $self->id
+   );
 
-    return DataModelSelector->autoPredict(
-               timeserie                => \%rawdata,
-               predict_start_tstamps    => $args{predict_start_tstamps},
-               predict_end_tstamps      => $args{predict_end_tstamps},
-               model_list               => $args{model_list},
-               # combination id is needed by autoPredict
-               # TODO DataModelSelector must ignore combination
-               combination_id           => $self->id
-           );
+    if (defined $args{model_list}) {
+        $predict_params{model_list} = $args{model_list};
+    }
+
+    return DataModelSelector->autoPredict(%predict_params);
 }
 
 =pod

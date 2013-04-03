@@ -34,7 +34,7 @@ $('.widget').live('widgetLoadContent',function(e, obj){
  * for each of this list, value can be:
  *  - 'from_ajax' : load options from server and allow user to select
  *  - null        : do not fill or display the list
- *  - Array of options to selected by default, corresponding list will be not displayed
+ *  - Array of options selected by default, corresponding list will be not displayed
  *
  * 'option' is a hash of options:
  *  - open_config_part : Boolean to say if the configuration part is open by default
@@ -62,7 +62,7 @@ function customInitHistoricalWidget(widget, sp_id, data, options) {
 
     // Forecasting control
     if (opts.allow_forecast) {
-        fillDataModelTypeList(widget_div);
+        initForecastControl(widget_div);
     } else {
         widget_div.find('.widget_part_forcasting').hide();
     }
@@ -502,8 +502,7 @@ function showCombinationGraph(curobj,service_combinations,node_combinations,node
                         .prop('disabled', true).attr('title', 'You must select training data start and end date by clicking on the graph')
                         .unbind('click')
                         .click( function() {
-                            selected_model_types = $.map(model_container.find('.datamodel_type_list option:selected'),function(elem) {return $(elem).val()});
-                            _autoPredict({graph:graph, combination:service_combinations[0], model_types:selected_model_types});
+                            _autoPredict({graph:graph, combination:service_combinations[0]});
                         });
                 }
             }
@@ -536,7 +535,7 @@ function FillModelList(widget) {
 function _pickTimeRange(graph, callback) {
     var selected_start_time;
     var selected_end_time;
-    graph.target.bind("jqplotClick", function(ev, gridpos, datapos, neighbor) {
+    graph.target.unbind("jqplotClick").bind("jqplotClick", function(ev, gridpos, datapos, neighbor) {
       if (selected_start_time === undefined || selected_end_time !== undefined) {
           selected_start_time = datapos.xaxis;
           selected_end_time = undefined;
@@ -552,11 +551,14 @@ function _pickTimeRange(graph, callback) {
       } else {
           selected_end_time = datapos.xaxis;
 
+          var current_yaxis = graph.axes.yaxis;
+          var middle_ytick  = current_yaxis.min + (current_yaxis.max - current_yaxis.min) / 2;
+
           // Display selected area on graph
           var picked_area = {
               name      : 'selected_area',
-              start     : [selected_start_time,0],
-              stop      : [selected_end_time,0],
+              start     : [selected_start_time,middle_ytick],
+              stop      : [selected_end_time,middle_ytick],
               lineWidth : 1000,
               lineCap   : 'butt',
               color     : 'rgba(89, 198, 154, 0.45)',
@@ -571,43 +573,34 @@ function _pickTimeRange(graph, callback) {
           var current_selected_start_time = parseInt(selected_start_time / 1000);
           var current_selected_end_time   = parseInt(selected_end_time / 1000);
           callback(current_selected_start_time, current_selected_end_time);
-
-          _pickTimeRange(graph, callback);
       }
   });
 }
 
-function fillDataModelTypeList(widget_div) {
-    // Available model type list
-    // TODO Do not hardcode, get it from server
-    var data = [
-                {
-                    type : 'AnalyticRegression::LinearRegression',
-                    label: 'Linear regression'
-                },
-                {
-                    type : 'AnalyticRegression::LogarithmicRegression',
-                    label: 'Logarithmic regression'
-                },
-                {
-                    type : 'RDataModel::AutoArima',
-                    label: 'ARIMA'
-                }
-    ];
+function initForecastControl(widget_div) {
+    // Fill data model type list
+    $.get('/api/datamodeltype', function(types) {
+        var datamodel_type_list = widget_div.find('.datamodel_type_list');
+        $(types).each( function () {
+            datamodel_type_list.append($('<option>', {
+                value   : this.class_type,
+                text    : this.data_model_type_label,
+                title   : this.data_model_type_description
+            }).prop('selected', true));
+        });
+        datamodel_type_list.multiselect({
+            noneSelectedText: 'Select model',
+            selectedText    : "# selected models",
+            selectedList    : 1,
+            header : false
+        });
+    });
 
-    var datamodel_type_list = widget_div.find('.datamodel_type_list');
-    $(data).each( function () {
-        datamodel_type_list.append($('<option>', {
-            value   : this.type,
-            text    : this.label,
-        }).prop('selected', true));
-    });
-    datamodel_type_list.multiselect({
-        noneSelectedText: 'Select model',
-        selectedText    : "# selected models",
-        selectedList    : 1,
-        header : false
-    });
+    // Manage model types selection
+    widget_div.find('.auto-forecast').change(function() {
+        widget_div.find('.modeltype-select').toggle();
+    }).prop('checked', true);
+    widget_div.find('.modeltype-select').hide();
 }
 
 /*
@@ -618,11 +611,24 @@ function fillDataModelTypeList(widget_div) {
 function _autoPredict(params) {
     var graph       = params.graph;
     var combination = params.combination;
-    var area  = graph.plugins.canvasOverlay.getObject('selected_area');
+    var area        = graph.plugins.canvasOverlay.getObject('selected_area');
+    var widget_div  = graph.target.closest('.widget');
 
     var current_selected_start_time = parseInt(area.options.start[0] / 1000);
     var current_selected_end_time   = parseInt(area.options.stop[0] / 1000);
-    var time_settings = getPickedDate(graph.target.closest('.widget'));
+    var time_settings = getPickedDate(widget_div);
+
+    var predict_params = {
+        data_start            : current_selected_start_time,
+        data_end              : current_selected_end_time,
+        predict_start_tstamps : parseInt(new Date(time_settings.start).getTime() / 1000),
+        predict_end_tstamps   : parseInt(new Date(time_settings.end).getTime() / 1000),
+    };
+
+    if (widget_div.find('.auto-forecast').prop('checked') == false) {
+        var selected_model_types = $.map(widget_div.find('.datamodel_type_list option:selected'),function(elem) {return $(elem).val()});
+        predict_params.model_list = selected_model_types
+    }
 
     graph.target.hide();
     elemLoadingStart(graph.target.parent(), 'Forecasting data...');
@@ -630,15 +636,7 @@ function _autoPredict(params) {
         url         : '/api/combination/'+combination.id+'/autoPredict',
         type        : 'POST',
         contentType : 'application/json',
-        data        : JSON.stringify(
-                {
-                    model_list            : params.model_types,
-                    data_start            : current_selected_start_time,
-                    data_end              : current_selected_end_time,
-                    predict_start_tstamps : parseInt(new Date(time_settings.start).getTime() / 1000),
-                    predict_end_tstamps   : parseInt(new Date(time_settings.end).getTime() / 1000),
-                }
-        ),
+        data        : JSON.stringify(predict_params),
         success     : function (prediction_data) {
             // Fill last serie (reserved for forecast) with forecast data
             graph.series[graph.data.length-1].data = _formatTimeSerieFromArrays(prediction_data);

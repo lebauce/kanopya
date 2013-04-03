@@ -211,7 +211,9 @@ sub autoPredict {
     # Construct new timestamps
     my @n_timestamps;
     for my $i ($predict_start..$predict_end) {
-        push @n_timestamps, $i * $granularity + $timestamps[0];
+        if (($predict_end - $i) <= $#{$prediction}) {
+            push @n_timestamps, $i * $granularity + $timestamps[0];
+        }
     }
 
     $datamodel->delete();
@@ -253,9 +255,13 @@ sub selectDataModel {
                                       'combination_id' => undef,
                          });
 
+    # Manage model classes. If full class name is not provided (shortcut) we add the base name
+    my $base_name = BASE_NAME;
     my @data_model_classes = @{$args{model_list}};
     for my $i (0..$#data_model_classes) {
-        $data_model_classes[$i] = BASE_NAME . $data_model_classes[$i];
+        if ($data_model_classes[$i] !~ m/^$base_name/) {
+            $data_model_classes[$i] = BASE_NAME . $data_model_classes[$i];
+        }
     }
 
     # Compute the possible seasonality values
