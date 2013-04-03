@@ -30,6 +30,7 @@ use General;
 use Statistics::R;
 use Utils::R;
 use Data::Dumper;
+use List::MoreUtils qw(firstidx);
 
 # logger
 use Log::Log4perl "get_logger";
@@ -40,10 +41,10 @@ my $log = get_logger("");
 
 =begin classdoc
 
-Measure the accuracy of a theorical dataset compared to real/experimental values (so they must be known), 
+Measure the accuracy of a theorical dataset compared to real/experimental values (so they must be known),
 using different kinds of measures.
 
-@param theorical_data_ref A reference to the theorical dataset (must be stored in an array). 
+@param theorical_data_ref A reference to the theorical dataset (must be stored in an array).
 @param real_data_ref A reference to the real dataset (must be stored in an array).
 
 @return A ref to a hash containing several accuracy measures ('me', 'mae', 'mse', 'rmse').
@@ -93,10 +94,10 @@ sub accuracy {
 
 =begin classdoc
 
-Ensure that a theorical dataset and a experimental one have the same length (otherwise the accuracy of the 
+Ensure that a theorical dataset and a experimental one have the same length (otherwise the accuracy of the
 theorical one cannot be measured). If they do, returns this length, else throws an exception.
 
-@param theorical_data_ref A reference to the theorical dataset (must be stored in an array). 
+@param theorical_data_ref A reference to the theorical dataset (must be stored in an array).
 @param real_data_ref A reference to the real dataset (must be stored in an array).
 
 @return The datasets length, if it is the same.
@@ -127,10 +128,10 @@ sub _checkLength {
 
 =begin classdoc
 
-Take a time serie and generate a fixed one from it. Remove the undef values at the beginning or the end and 
+Take a time serie and generate a fixed one from it. Remove the undef values at the beginning or the end and
 replace those at the middle by the average of the total time serie.
 
-@param data A hash containing the data ('timestamp' => value). 
+@param data A hash containing the data ('timestamp' => value).
 
 @return a fixed version of the data.
 
@@ -203,7 +204,7 @@ sub fixTimeSerie {
 
 Compute the average of a time serie, ignore the undef values.
 
-@param values An array containing the values of the time serie. 
+@param values An array containing the values of the time serie.
 
 @return a fixed version of the data.
 
@@ -236,7 +237,7 @@ Computes the autocorrelation by making a call to R (Project for Statistical Comp
 @param data_values the values of the historical data
 @param lag defines the maximum lag for which the acf is computed
 
-@return an array reference which contains the values of the autocorrelation (acf) 
+@return an array reference which contains the values of the autocorrelation (acf)
 
 =end classdoc
 
@@ -252,25 +253,18 @@ sub computeACF {
     my $data_values = $args{'data_values'};
     my $lag         = $args{'lag'};
 
-
-    my $path = "/tmp/ACF.pdf";
-
-    my $loadvect = "vect <- c (". join(",", @{$data_values}) .")" ;
-
+    my $loadvect = "vect <- c (". join(",", @{$data_values}).")" ;
     # Define an R session
     my $R = Statistics::R->new();
 
     # Open an R session
     $R->startR();
-
     # Send the instructions to R
     $R->send(
                 qq`
                 $loadvect
-                pdf("$path")
-                r<-acf(vect,$lag)
-                \n print(r)
-                dev.off()`
+                r<-acf(vect,$lag,plot = FALSE)
+                \n print(r)`
             );
 
     # Get the results (acf) by using the method of Utils::R
@@ -307,7 +301,6 @@ sub confidenceAutocorrelation {
 
     #The formula is 2/square root(cardinality of data_values)
     my $IC = 2/sqrt($#{$data_values}+1);
-
     return $IC;
 }
 
@@ -327,10 +320,8 @@ the value is higher than the value of the confidence interval.
 
 =cut
 
-
 sub detectPeaks {
     my ($class,%args) = @_;
-
     General::checkParams(args     => \%args,
                          required => ['IC','tab']
                          );
@@ -371,8 +362,7 @@ offset when searching the periodic peaks.
 @param acf an array containing the values of the autocorrelation
 @param peaks the positions of the peaks of the acf array
 
-@return the maximum number of periodicity, the minimum value of the autocorrelation function of the
-periodically peaks and the estimated value of the seasonality
+@return the maximum number of periodicity and the estimated value of the seasonality
 
 =end classdoc
 
@@ -398,7 +388,6 @@ sub detectPeriodicity {
 
     #Possible offset when searching periodicity of the peak
     my $offset  = int( ($#{$acf} + 1) * 0.04);
-    my $min_max = $acf->[$peaks->[$pos]];
 
     for (my $i = $pos+1; $i < $#{$peaks}+1; $i++) {
         #Search for the multiple value of lag given by $peak->[$pos]+1
@@ -416,11 +405,6 @@ sub detectPeriodicity {
             }
 
             $multiple++;
-
-            #Change the min_max value of the acf
-            if ($acf->[$peaks->[$i]] < $min_max) {
-                $min_max = $acf->[$peaks->[$i]];
-            }
         }
 
         #Out if the current element is higher than what expecting
@@ -439,7 +423,7 @@ sub detectPeriodicity {
     }
 
     $log->debug("Multiple ". $pos ." -> ". $multiple." \n");
-    return ($multiple-1, $min_max, $mode_value_peak);
+    return ($multiple-1, $mode_value_peak);
 }
 
 =pod
@@ -508,7 +492,7 @@ Computes the possible seasonalities based on the autocorrelation (acf).
 
 @param data_values the values of the historical data
 
-@return an array reference of the seasonality values
+@return the number of relevant seasonalities and an array reference of the seasonality values
 
 =end classdoc
 
@@ -520,14 +504,15 @@ sub findSeasonalityACF {
     General::checkParams(args     => \%args,
                          required => ['data_values']
                         );
-
+    #relevant seasonalities
+    my $relevant_season = 1;
     my $data_values = $args{'data_values'};
 
     #Contains the possible seasonalities obtained by acf
     my @season;
 
-    #Contains the mininum autocorrelation value for each seasonality
-    my @min_max_acf;
+    #Contains the autocorrelation values for each seasonality
+    my @max_acf;
 
     #A choice : contains the lag for autocorrelation
     my $lag = int( ($#{$data_values}+1)/2 + 1 );
@@ -546,17 +531,17 @@ sub findSeasonalityACF {
 
     #A call to the detectPeriodicity with each position of the @peaks array
     for (my $pos = 0; $pos < $#{$peaks}+1; $pos++) {
-        my ($multiple, $min_max, $mode_value_peak) =
-        $class->detectPeriodicity('pos' => $pos, 'acf' => $acf, 'peaks' => $peaks);
+        my ($multiple, $mode_value_peak) =
+            $class->detectPeriodicity('pos' => $pos, 'acf' => $acf, 'peaks' => $peaks);
 
         #If we have as many multiple as necessary for $lag,
-        #put seasonality into @season and save $min_max corresponding
+        #put seasonality into @season and save the corresponding acf
         my $nb_period = int($lag / $mode_value_peak);
         my $err       = int($nb_period * 0.6);
 
-        if ($multiple >= $nb_period - $err) {
+        if ( ($multiple >= $nb_period - $err) && ((grep {$_ == $mode_value_peak} @season) == 0) ) {
             push @season, $mode_value_peak;
-            push @min_max_acf, $min_max;
+            push @max_acf, $acf->[$peaks->[$pos]];
         }
     }
 
@@ -565,14 +550,21 @@ sub findSeasonalityACF {
     if (scalar @season != 0) {
         $log->debug('The seasonalities and corresponding min autocorrelations found are:');
         $log->debug("points @season \n");
-        $log->debug("values acf @min_max_acf \n");
+        $log->debug("values acf @max_acf \n");
 
-        #Sort the values of the seasonalities following the values of $min_max_acf
-        my %h = map { $season[$_] => $min_max_acf[$_]} (0..$#season);
-        @sorted_season = sort { $h{$b} <=> $h{$a} } keys %h;
+        #Sort the values of the seasonalities following the values of the acf
+        my %h = map { $season[$_] => $max_acf[$_]} (0..$#season);
+        @sorted_season = sort { ($h{$b} <=> $h{$a}) || ($a <=> $b)} keys %h;
+        if ( (scalar @sorted_season > 2)                                                        &&
+             ($sorted_season[1] > $sorted_season[0])                                            &&
+             ($season[(firstidx { $_ ==  $sorted_season[0]} @season) + 1] != $sorted_season[1])    ) {
+
+            $relevant_season = 2;
+            }
+        $log->debug("ordered seasons @sorted_season \n");
     }
 
-    return \@sorted_season;
+    return ($relevant_season,\@sorted_season);
 }
 
 
@@ -601,19 +593,18 @@ sub findSeasonality {
 
     #Get the data values of the time serie in an array
     my $data_values = $args{'data'};
-
     my @season;
     my $seasonal_DSP = $class->findSeasonalityDSP('data_values' => $data_values);
-    my $season_ACF   = $class->findSeasonalityACF('data_values' => $data_values);
-
-    if ( $seasonal_DSP != 1 ) {
-        push @season, $seasonal_DSP;
-        if ( ($#$season_ACF+1 != 0) && ((grep {$_ eq $seasonal_DSP} @{$season_ACF}) == 0) ) {
-            push  @season, $season_ACF->[0];
+    my ($relevant_season, $season_ACF)   = $class->findSeasonalityACF('data_values' => $data_values);
+    $log->debug($relevant_season);
+    if ( ($#$season_ACF+1 != 0) ) {
+        for (my $i = 0; $i < $relevant_season; $i++) {
+            push @season, $season_ACF->[$i];
         }
     }
-    else {
-        push @season, $season_ACF->[0] if ( $#$season_ACF+1 != 0 );
+
+    if ( $seasonal_DSP != 1  && ((grep {$_ == $seasonal_DSP} @season) == 0) ) {
+        push @season, $seasonal_DSP;
     }
 
     $log->debug("The seasonalities @season \n");
@@ -701,6 +692,7 @@ sub computePredictPointsAndGranularity {
         predict_start => $predict_start,
         predict_end   => $predict_end,
     };
+
 }
 
 1;
