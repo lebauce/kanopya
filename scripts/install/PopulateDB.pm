@@ -1370,8 +1370,8 @@ sub registerKanopyaMaster {
         {
             name => 'KanopyaExecutor',
             conf => {
-                masterimages_directory => $args{masterimages_directory},
-                clusters_directory     => $args{clusters_directory},
+                masterimages_directory => defined $args{masterimages_directory} ? $args{masterimages_directory} : "/var/lib/kanopya/masterimages/",
+                clusters_directory     => defined $args{clusters_directory} ? $args{clusters_directory} : "/var/lib/kanopya/clusters/"
             }
         },
         {
@@ -1408,7 +1408,7 @@ sub registerKanopyaMaster {
                 atftpd0_options    => '--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --maxthread 100 --verbose=5',
                 atftpd0_use_inetd  => 'FALSE',
                 atftpd0_logfile    => '/var/log/atftpd.log',
-                atftpd0_repository => $args{tftp_directory}
+                atftpd0_repository => defined $args{tftp_directory} ? $args{tftp_directory} : "/var/lib/kanopya/tftp/"
             }
         },
         {
