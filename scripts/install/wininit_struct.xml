@@ -17,7 +17,7 @@
         kanopya_aggregator   = "kanopya-aggregator.pl"
         kanopya_executor     = "kanopya-executor.pl"
         kanopya_frontend     = "kanopya-frontend.pl"
-        kanopya_orchestrator = "kanopya-orchestrator.pl" />
+        kanopya_orchestrator = "kanopya-rulesengine.pl" />
     <genfiles>
     <executor.conf template="executor.conf.tt">
       <datas logdir="log_directory" masterimages_dir="masterimages_directory" tftp_dir="tftp_directory" clusters_dir="clusters_directory" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask" admin_password="dbpassword1"/>
@@ -34,9 +34,9 @@
         <datas admin_password="dbpassword1" internal_net_add="internal_net_add" internal_net_mask="internal_net_mask"/>
     </monitor.conf>
     
-    <orchestrator.conf template="orchestrator.conf.tt">
+    <rulesengine.conf template="rulesengine.conf.tt">
         <datas admin_password="dbpassword1"/>
-    </orchestrator.conf>
+    </rulesengine.conf>
     
     <components.conf template="components.conf.tt">
         <datas />
@@ -59,9 +59,9 @@
         <datas logdir="log_directory"/>
     </aggregator-log.conf>
     
-    <orchestrator-log.conf template="orchestrator-log.conf.tt">
+    <rulesengine-log.conf template="rulesengine-log.conf.tt">
         <datas logdir="log_directory"/>
-    </orchestrator-log.conf>
+    </rulesengine-log.conf>
 
     <webui-log.conf template="webui-log.conf.tt">
         <datas logdir="log_directory"/>

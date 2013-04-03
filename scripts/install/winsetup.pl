@@ -46,7 +46,7 @@ my $services        = $install_conf->{services};
 
 my $log_directory    = 'C:\var\log\kanopya\\';
 my $tmp_monitor      = 'C:\tmp\monitor\graph\\';
-my $tmp_orchestrator = 'C:\tmp\orchestrator\graph\\';
+my $tmp_orchestrator = 'C:\tmp\rulesengine\graph\\';
 my $timedata_dir     = 'C:\tmp\monitor\TimeData\\';
 
 my $crypt_salt = join '', ('.','/',0..9,'A'..'Z','a'..'z')[rand 64, rand 64];
@@ -112,7 +112,7 @@ sub createDir {
 createDir('log', $log_directory);
 createDir('workflows log', $log_directory.'workflows\\');
 createDir('monitor temp', $tmp_monitor);
-createDir('orchestrator temp', $tmp_orchestrator);
+createDir('rulesengine temp', $tmp_orchestrator);
 createDir('time data temp', $timedata_dir);
 
 ################
@@ -195,7 +195,7 @@ open (my $FILE, "<","$conf_vars->{comp_conf}");
 
 my $line;
 while(defined($line = <$FILE>)) {
-    $/ = "\r\n";
+    #$/ = "\r\n";
     chomp ($line);
     # don't proceed empty lines or commented lines
     next if (( ! $line ) || ( $line =~ /^#/ ));

@@ -5,8 +5,8 @@ use Win32::Daemon;
 use Win32::Process;
 use Data::Dumper;
 
-use constant SERVICE_NAME => 'kanopya-orchestrator';
-use constant SERVICE_DESC => 'Orchestrator service for Kanopya';
+use constant SERVICE_NAME => 'kanopya-rulesengine';
+use constant SERVICE_DESC => 'rulesengine service for Kanopya';
 
 main();
 
@@ -70,7 +70,7 @@ sub Callback_Running {
         if ($context->{pid} == 0) { # Child
             while (1 == 1) {
                 print 'Running the service: '."\n";
-                my $cmd = "perl \"$context->{dir}\\kanopya\\sbin\\kanopya-orchestrator\"";
+                my $cmd = "perl \"$context->{dir}\\kanopya\\sbin\\kanopya-rulesengine\"";
                 print $cmd."\n";
                 system($cmd);
             }
@@ -84,7 +84,7 @@ sub Callback_Running {
             Win32::Daemon::State( SERVICE_STOPPED );
             Win32::Daemon::StopService();
             # kill(9, $context->{pid});
-            my $tokill = 'orchestrator';
+            my $tokill = 'rulesengine';
             my $cmd    = 'WMIC PROCESS WHERE (Commandline LIKE \'%'
                          .$tokill
                          .'%\' AND name LIKE \'perl.exe\' AND NOT Commandline LIKE \'%%WMIC\') call terminate';
