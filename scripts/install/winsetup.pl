@@ -82,6 +82,10 @@ print 'initialazing PERL5LIB'."\n";
 my $cmd = qq[setx PERL5LIB "$kanopya_dir\\kanopya\\lib\\common;$kanopya_dir\\kanopya\\lib\\administrator;$kanopya_dir\\kanopya\\lib\\executor;$kanopya_dir\\kanopya\\lib\\monitor;$kanopya_dir\\kanopya\\lib\\orchestrator;$kanopya_dir\\kanopya\\lib\\external;$kanopya_dir\\kanopya\\lib\\external\\NetApp;$kanopya_dir\\kanopya\\lib\\component\\kanopya_front;$kanopya_dir\\kanopya\\lib\\component\\kanopya_executor;$kanopya_dir\\kanopya\\lib\\component\\kanopya_aggregator;$kanopya_dir\\kanopya\\lib\\component\\kanopya_rulesengine"];
 print $cmd."\n";
 my $exec = `$cmd 2>&1`;
+`powershell New-EventLog Application -Source KanopyaAggregator`;
+`powershell New-EventLog Application -Source KanopyaExecutor`;
+`powershell New-EventLog Application -Source KanopyaRulesEngine`;
+`powershell New-EventLog Application -Source KanopyaWebUI`;
 
 #lol.
 push @INC, ("$kanopya_dir" . 'kanopya\lib\common',
@@ -314,6 +318,7 @@ sub genConf {
         foreach my $d (keys %{$conf_files->{$files}->{datas}}) {
             $datas{$d} = $conf_data{$d};
         }
+        $datas{windows} = 1;
         useTemplate(
             template => $conf_files->{$files}->{template},
             datas    => \%datas,
