@@ -59,9 +59,18 @@ Load rulesengine configuration and do the BaseDB authentication.
 =cut
 
 sub new {
-    my ($class) = @_;
+    my ($class, %args) = @_;
 
-    return $class->SUPER::new(confkey => 'rulesengine');
+    General::checkParams(args => \%args, optional => { 'service_providers' => [] });
+
+    my $self = $class->SUPER::new(confkey => 'rulesengine');
+
+    $self->{service_providers} = [];
+    for my $service_provider_id (@{ $args{service_providers} }) {
+        push @{ $self->{service_providers} }, Entity::ServiceProvider->get(id => $service_provider_id);
+    }
+
+    return $self;
 }
 
 
@@ -114,8 +123,15 @@ sub getRulesToEvaluate {
 
     my @rules = ();
 
-    # TODO Add rules prefetch
-    my @service_providers = Entity::ServiceProvider->search(hash => {});
+    my @service_providers;
+    if (scalar @{ $self->{service_providers} }) {
+        @service_providers = @{ $self->{service_providers} };
+    }
+    else {
+        @service_providers = Entity::ServiceProvider->search(hash => {
+                                 service_provider_type_id => { not => undef }
+                             });
+    }
 
     SP:
     for my $service_provider (@service_providers){
@@ -126,6 +142,7 @@ sub getRulesToEvaluate {
             $log->info('Rules Engine skip service provider '.$service_provider->id.' because it has no collector manager');
             next SP;
         }
+        $log->info('RulesEngine handle rules for service provider '.  $service_provider->id);
         push @rules, $service_provider->rules;
     }
     return \@rules;

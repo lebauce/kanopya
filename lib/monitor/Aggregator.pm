@@ -80,9 +80,18 @@ Load aggregator configuration and do the BaseDB authentication.
 =cut
 
 sub new {
-    my ($class) = @_;
+    my ($class, %args) = @_;
 
-    return $class->SUPER::new(confkey => 'aggregator');
+    General::checkParams(args => \%args, optional => { 'service_providers' => [] });
+
+    my $self = $class->SUPER::new(confkey => 'aggregator');
+
+    $self->{service_providers} = [];
+    for my $service_provider_id (@{ $args{service_providers} }) {
+        push @{ $self->{service_providers} }, Entity::ServiceProvider->get(id => $service_provider_id);
+    }
+
+    return $self;
 }
 
 
@@ -206,6 +215,7 @@ sub _getUsedIndicators {
     };
 };
 
+
 =pod
 =begin classdoc
 
@@ -219,7 +229,15 @@ after having computed the clustermetric combinations.
 sub update {
     my $self = shift;
 
-    my @service_providers = Entity::ServiceProvider->search(hash => { service_provider_type_id => { not => undef }});
+    my @service_providers;
+    if (scalar @{ $self->{service_providers} }) {
+        @service_providers = @{ $self->{service_providers} };
+    }
+    else {
+        @service_providers = Entity::ServiceProvider->search(hash => {
+                                 service_provider_type_id => { not => undef }
+                             });
+    }
 
     CLUSTER:
     for my $service_provider (@service_providers) {
@@ -233,9 +251,9 @@ sub update {
 
                 # Get all indicators used by the service
                 my $wanted_indicators = $self->_getUsedIndicators(
-                                                       service_provider     => $service_provider,
-                                                       include_nodemetric   => 1
-                                                   );
+                                            service_provider     => $service_provider,
+                                            include_nodemetric   => 1
+                                        );
 
                 # Call the retriever to get monitoring data
                 my $timestamp = time();
