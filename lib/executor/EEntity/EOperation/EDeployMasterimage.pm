@@ -71,8 +71,8 @@ sub prepare {
     }
 
     # Instanciate tftp server
-    my $tftp = $self->{context}->{bootserver}->getComponent(category => 'Tftpserver');
-    $self->{context}->{tftp_component}  = EEntity->new(entity => $tftp);
+    my $tftp = Entity::ServiceProvider::Cluster->getKanopyaCluster->getComponent(category => 'Tftpserver');
+    $self->{context}->{tftp_component} = EEntity->new(entity => $tftp);
 }
 
 sub execute {
