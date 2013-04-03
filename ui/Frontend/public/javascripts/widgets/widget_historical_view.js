@@ -535,7 +535,7 @@ function FillModelList(widget) {
 function _pickTimeRange(graph, callback) {
     var selected_start_time;
     var selected_end_time;
-    graph.target.bind("jqplotClick", function(ev, gridpos, datapos, neighbor) {
+    graph.target.unbind("jqplotClick").bind("jqplotClick", function(ev, gridpos, datapos, neighbor) {
       if (selected_start_time === undefined || selected_end_time !== undefined) {
           selected_start_time = datapos.xaxis;
           selected_end_time = undefined;
@@ -551,11 +551,14 @@ function _pickTimeRange(graph, callback) {
       } else {
           selected_end_time = datapos.xaxis;
 
+          var current_yaxis = graph.axes.yaxis;
+          var middle_ytick  = current_yaxis.min + (current_yaxis.max - current_yaxis.min) / 2;
+
           // Display selected area on graph
           var picked_area = {
               name      : 'selected_area',
-              start     : [selected_start_time,0],
-              stop      : [selected_end_time,0],
+              start     : [selected_start_time,middle_ytick],
+              stop      : [selected_end_time,middle_ytick],
               lineWidth : 1000,
               lineCap   : 'butt',
               color     : 'rgba(89, 198, 154, 0.45)',
@@ -570,8 +573,6 @@ function _pickTimeRange(graph, callback) {
           var current_selected_start_time = parseInt(selected_start_time / 1000);
           var current_selected_end_time   = parseInt(selected_end_time / 1000);
           callback(current_selected_start_time, current_selected_end_time);
-
-          _pickTimeRange(graph, callback);
       }
   });
 }
