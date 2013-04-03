@@ -35,7 +35,6 @@ use Kanopya::Exceptions;
 use Kanopya::Config;
 use EContext;
 
-use File::Basename;
 use Template;
 use vars qw ( $AUTOLOAD );
 
