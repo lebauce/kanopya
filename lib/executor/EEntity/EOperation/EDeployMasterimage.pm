@@ -36,7 +36,6 @@ use EEntity;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
-
 sub prepare {
     my $self = shift;
     my %args = @_;
@@ -48,23 +47,23 @@ sub prepare {
     my $file_path = $self->{params}->{file_path};
 
     if (not defined $file_path) {
-        $errmsg = "Invalid operation argument ; $file_path not defined !";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
+        throw Kanopya::Exception::Internal(
+                  error => "Invalid operation argument ; $file_path not defined !"
+              );
     }
     
     # check tarball existence
     if (! -e $file_path) {
-        $errmsg = "Invalid operation argument ; $file_path not found !";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
+        throw Kanopya::Exception::Internal(
+                  error => "Invalid operation argument ; $file_path not found !"
+              );
     }
 
     # check tarball format
     if (`file $file_path` !~ /(bzip2|gzip) compressed data/) {
-        $errmsg = "Invalid operation argument ; $file_path must be a gzip or bzip2 compressed file !";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
+        throw Kanopya::Exception::Internal(
+                  error => "Invalid operation argument ; $file_path must be a gzip or bzip2 compressed file !"
+              );
     }
     else {
         $self->{params}->{compress_type} = $1;
@@ -90,9 +89,7 @@ sub execute {
     # check metadata file exists
     my $metadatafile = "$tmpdir/img-metadata.xml";
     if(! -e $metadatafile) {
-        $errmsg = "File missing in archive ; $metadatafile";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
+        throw Kanopya::Exception::Internal(error => "File missing in archive ; $metadatafile");
     }
     
     # parse and validate metadata file
