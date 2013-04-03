@@ -83,10 +83,8 @@ my $cmd = qq[setx PERL5LIB "$kanopya_dir\\kanopya\\lib\\common;$kanopya_dir\\kan
 print $cmd."\n";
 my $exec = `$cmd 2>&1`;
 `powershell New-EventLog Application -Source KanopyaAggregator`;
-`powershell New-EventLog Application -Source KanopyaCollector`;
 `powershell New-EventLog Application -Source KanopyaExecutor`;
 `powershell New-EventLog Application -Source KanopyaRulesEngine`;
-`powershell New-EventLog Application -Source KanopyaStateManager`;
 `powershell New-EventLog Application -Source KanopyaWebUI`;
 
 #lol.
