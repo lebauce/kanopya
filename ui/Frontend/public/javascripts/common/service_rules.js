@@ -416,7 +416,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         url: '/api/serviceprovider/' + elem_id + '/nodemetric_conditions?expand=left_combination,right_combination',
         content_container_id: 'service_nodemetric_conditions_container',
         grid_id: serviceNodemetricConditionsGridId,
-        colNames: [ 'id', 'name', 'left operand', 'comparator', 'right operand' ],
+        colNames: [ 'id', 'Name', 'Left operand', 'Comparator', 'Right operand' ],
         colModel: [
             { name: 'pk', index: 'pk', sorttype: 'int', hidden: true, key: true },
             { name: 'nodemetric_condition_label', index: 'nodemetric_condition_label', width: 200 },
@@ -482,7 +482,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
             require('common/notification_subscription.js');
             addSubscriptionButtonInGrid(grid, rowid, rowdata, rowelem, "service_resources_nodemetric_rules_" +  elem_id +"_alert", "ProcessRule", false);
         },
-        colNames: [ 'id', 'name', 'enabled', 'formula', 'description', 'trigger', 'Alert' ],
+        colNames: [ 'id', 'Name', 'Enabled', 'Formula', 'Description', 'Trigger', 'Alert' ],
         colModel: [
             { name: 'pk', index: 'pk', sorttype: 'int', hidden: true, key: true },
             { name: 'label', index: 'label', width: 120 },
@@ -539,7 +539,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         url: '/api/serviceprovider/' + elem_id + '/aggregate_conditions?expand=left_combination,right_combination',
         content_container_id: 'service_resources_aggregate_conditions_container',
         grid_id: serviceAggregateConditionsGridId,
-        colNames: ['id','name', 'left operand', 'comparator', 'right operand'],
+        colNames: [ 'id', 'Name', 'Left operand', 'Comparator', 'Right operand' ],
         colModel: [ 
              {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
              {name:'aggregate_condition_label',index:'aggregate_condition_label', width:200,},
@@ -593,7 +593,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         grid_class: 'service_resources_aggregate_rules',
         content_container_id: 'service_resources_aggregate_rules_container',
         grid_id: serviceAggregateRulesGridId,
-        colNames: ['id','name', 'enabled', 'last eval', 'formula', 'description', 'trigger', 'alert'],
+        colNames: [ 'id', 'Name', 'Enabled', 'Last eval', 'Formula', 'Description', 'Trigger', 'Alert' ],
         colModel: [
              {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
              {name:'label',index:'label', width:90,},
@@ -683,12 +683,12 @@ function rule_nodes_tab(cid, rule_id, service_provider_id) {
         content_container_id: cid,
         grid_id: loadNodeRulesTabGridId,
         grid_class: 'rule_nodes_grid',
-        colNames: [ 'id', 'hostname', 'state' ],
+        colNames: [ 'id', 'Hostname', 'State' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
-            { name: 'node_hostname', index: 'node_hostname', width: 110,},
-            { name: 'verified_noderule_state', index: 'verified_noderule_state', width: 60, formatter: verifiedRuleNodesStateFormatter,}, 
+            { name: 'node_hostname', index: 'node_hostname', width: 110 },
+            { name: 'verified_noderule_state', index: 'verified_noderule_state', width: 60, formatter: verifiedRuleNodesStateFormatter }
         ],
-        action_delete : 'no',
+        action_delete : 'no'
     } );
 }

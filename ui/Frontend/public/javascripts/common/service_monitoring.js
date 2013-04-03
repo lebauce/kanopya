@@ -41,7 +41,7 @@ function createServiceMetric(container_id, elem_id, ext, options) {
             clustermetric_statistics_function_name    : {
                 label   : 'Statistic function name',
                 type    : 'select',
-                options   : statistics_function_name,
+                options   : statistics_function_name
             },
             clustermetric_indicator_id  :{
                 label   : 'Indicator',
@@ -78,7 +78,7 @@ function createServiceMetric(container_id, elem_id, ext, options) {
                             data    : {
                                 aggregate_combination_label     : elem.clustermetric_label,
                                 service_provider_id             : elem_id,
-                                aggregate_combination_formula   : 'id' + elem.pk,
+                                aggregate_combination_formula   : 'id' + elem.pk
                             },
                             success : function() {
                                 $("#service_resources_aggregate_combinations_" + elem_id).trigger('reloadGrid');
@@ -86,7 +86,7 @@ function createServiceMetric(container_id, elem_id, ext, options) {
                         });
                     }
             },
-            beforeSubmit: (options && options.beforeSubmit) || $.noop,
+            beforeSubmit: (options && options.beforeSubmit) || $.noop
         };
 
         mod = new ModalForm(service_opts);
@@ -104,16 +104,16 @@ function createServiceCombination(container_id, elem_id, options) {
     var service_fields  = {
         aggregate_combination_label     : {
             label   : 'Name',
-            type    : 'text',
+            type    : 'text'
         },
         aggregate_combination_formula   : {
             label   : 'Formula',
-            type    : 'text',
+            type    : 'text'
         },
         service_provider_id             : {
             type    : 'hidden',
-            value   : elem_id,  
-        },
+            value   : elem_id
+        }
     };
     var service_opts    = {
         title       : 'Create a Combination',
@@ -125,7 +125,7 @@ function createServiceCombination(container_id, elem_id, options) {
         error       : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
         },
-        beforeSubmit: (options && options.beforeSubmit) || $.noop,
+        beforeSubmit: (options && options.beforeSubmit) || $.noop
     };
 
     var button = $("<button>", {html : 'Add a combination'});
@@ -161,16 +161,16 @@ function createNodemetricCombination(container_id, elem_id, ext, options) {
     var service_fields  = {
         nodemetric_combination_label    : {
             label   : 'Name',
-            type    : 'text',
+            type    : 'text'
         },
         nodemetric_combination_formula  : {
             label   : 'Indicators Formula',
-            type    : 'text',
+            type    : 'text'
         },
         service_provider_id             : {
             type    : 'hidden',
-            value   : elem_id,
-        },
+            value   : elem_id
+        }
     };
     var service_opts    = {
         title       : 'Create a Combination',
@@ -182,7 +182,7 @@ function createNodemetricCombination(container_id, elem_id, ext, options) {
         callback    : function() {
             $('#service_resources_nodemetric_combination_' + elem_id).trigger('reloadGrid');
         },
-        beforeSubmit: (options && options.beforeSubmit) || $.noop,
+        beforeSubmit: (options && options.beforeSubmit) || $.noop
     };
 
     var button = $("<button>", {html : 'Add a combination'});
@@ -239,7 +239,7 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
               {
                   clustermetric_combinations : null,
                   nodemetric_combinations    : [{id:nodeMetric_id, name:'', unit:''}],
-                  nodes                      : 'from_ajax',
+                  nodes                      : 'from_ajax'
               },
               {open_config_part : true}
           );
@@ -255,7 +255,7 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
                 {
                     clustermetric_combinations : [{id:clusterMetric_id, name:row_data.aggregate_combination_label, unit:row_data.combination_unit}],
                     nodemetric_combinations    : 'from_ajax',
-                    nodes                      : 'from_ajax',
+                    nodes                      : 'from_ajax'
                 },
                 {allow_forecast : true}
             );
@@ -296,18 +296,18 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
         url: '/api/nodemetriccombination?service_provider_id=' + elem_id,
         content_container_id: 'node_metrics_container',
         grid_id: nodemetriccombi_grid_id,
-        colNames: [ 'id', 'name', 'indicators formula', 'indicators formula brut' ],
+        colNames: [ 'id', 'Name', 'Indicators formula', 'Indicators formula brut' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 90, sorttype: 'int', hidden: true, key: true },
             { name: 'nodemetric_combination_label', index: 'nodemetric_combination_label', width: 120 },
             { name: 'formula_label', index: 'formula_label', width: 170 },
-            { name: 'nodemetric_combination_formula', index: 'nodemetric_combination_formula', hidden: true },
+            { name: 'nodemetric_combination_formula', index: 'nodemetric_combination_formula', hidden: true }
         ],
         details: {
             tabs : [
                     { label : 'Nodes graph', id : 'nodesgraph', onLoad : nodeMetricDetailsBargraph },
                     { label : 'Histogram'  , id : 'histogram' , onLoad : nodeMetricDetailsHistogram },
-                    { label : 'Historical' , id : 'historical', onLoad : nodeMetricDetailsHistorical },
+                    { label : 'Historical' , id : 'historical', onLoad : nodeMetricDetailsHistorical }
                 ],
             title   : { from_column : 'nodemetric_combination_label' },
             height  : 600,
@@ -350,12 +350,12 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
         url: '/api/serviceprovider/' + elem_id + '/clustermetrics',
         content_container_id: 'service_metrics_container',
         grid_id: clustermetric_grid_id,
-        colNames: [ 'id', 'name', 'function', 'indicator' ],
+        colNames: [ 'id', 'Name', 'Function', 'Indicator' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true},
             { name: 'clustermetric_label', index: 'clustermetric_label', width: 90 },
             { name: 'clustermetric_statistics_function_name', index: 'clustermetric_statistics_function_name', width: 90 },
-            { name: 'indicator_label', index: 'indicator_label', width: 200 },
+            { name: 'indicator_label', index: 'indicator_label', width: 200 }
         ],
         action_delete: {
             callback : function (id) {
@@ -402,16 +402,16 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
         url: '/api/aggregatecombination?service_provider_id=' + elem_id,
         content_container_id: 'service_metric_comb_container',
         grid_id: aggregatecombi_grid_id,
-        colNames: [ 'id', 'name', 'formula', 'unit' ],
+        colNames: [ 'id', 'Name', 'Formula', 'Unit' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
             { name: 'aggregate_combination_label', index: 'aggregate_combination_label', width: 90 },
             { name: 'formula_label', index: 'formula_label', width: 200 },
-            { name: 'combination_unit', index: 'combination_unit',  hidden: true },
+            { name: 'combination_unit', index: 'combination_unit',  hidden: true }
         ],
         details: {
             tabs : [
-                    { label : 'Historical graph', id : 'servicehistoricalgraph', onLoad : clusterMetricCombinationDetailsHistorical },
+                    { label : 'Historical graph', id : 'servicehistoricalgraph', onLoad : clusterMetricCombinationDetailsHistorical }
                 ],
             title       : { from_column : 'aggregate_combination_label' },
             height      : 600,

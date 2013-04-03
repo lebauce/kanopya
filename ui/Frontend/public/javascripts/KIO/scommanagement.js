@@ -26,7 +26,7 @@ function scomManagement(cid, eid) {
         grid_id                 : indicators_grid_id,
         grid_class              : 'scom_indicators_list',
         rowNum                  : 25,
-        colNames                : [ 'id', 'label', 'oid', 'min', 'max', 'unit' ],
+        colNames                : [ 'Id', 'Label', 'OID', 'Min', 'Max', 'Unit' ],
         colModel                : [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
             { name: 'indicator_label', index: 'indicator_label', width: 200 },

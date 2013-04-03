@@ -47,7 +47,7 @@ function Users() {
             content_container_id: container_id,
             grid_id: 'users_list',
             details: { onSelectRow : user_addbutton_action },
-            colNames: [ 'user id', 'first name', 'last name', 'login', 'email' ],
+            colNames: [ 'user id', 'First name', 'Last name', 'Login', 'Email' ],
             colModel: [
                 { name: 'user_id', index: 'user_id', width: 60, sorttype: "int", hidden: true, key: true },
                 { name: 'user_firstname', index: 'user_firstname', width: 90, sorttype: "text" },
@@ -78,7 +78,7 @@ function loadGroups (container_id, elem_id) {
         rights: true,
         content_container_id: container_id,
         grid_id: 'groups_list',
-        colNames: [ 'group id', 'group name', 'group type' ],
+        colNames: [ 'group id', 'Group name', 'Group type' ],
         colModel: [ 
             { name: 'gp_id', index: 'gp_id', width: 60, sorttype: "int", hidden: true, key: true },
             { name: 'gp_name', index: 'gp_name', width: 90, sorttype: "date"},
@@ -129,7 +129,7 @@ function groupsList (container_id, elem_id) {
         rights: true,
         content_container_id: container_id,
         grid_id: 'groups_list',
-        colNames: [ 'group id', 'group name', 'group type' ],
+        colNames: [ 'group id', 'Group name', 'Group type' ],
         colModel: [
             { name: 'gp_id', index: 'gp_id', width:60, sorttype: "int", hidden: true, key: true },
             { name: 'gp_name', index: 'gp_name', width: 90, sorttype: "date"},

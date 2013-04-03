@@ -7,7 +7,7 @@ function Customers() {
             url: '/api/customer',
             content_container_id: container_id,
             grid_id: 'customers_list',
-            colNames: ['user id','first name','last name','email' ],
+            colNames: ['user id','First name','Last name','Email' ],
             colModel: [
                  { name:'user_id',index:'user_id', width:60, sorttype:"int", hidden:true, key:true},
                  { name:'user_firstname',index:'user_firstname', width:120},
