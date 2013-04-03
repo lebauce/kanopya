@@ -62,10 +62,16 @@ sub getBaseConfiguration {
     };
 }
 
-sub getNetConf {
+sub getExecToTest {
     my $self = shift;
 
-    return { $self->mysql5_port => [ 'tcp' ] };
+    return {
+        mysql => {
+            cmd         => 'netstat -lnpt | grep ' . $self->mysql5_port,
+            answer      => '.+$',
+            return_code => '0'
+        }
+    };
 }
 
 sub getPuppetDefinition {
