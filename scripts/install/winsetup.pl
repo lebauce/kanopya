@@ -314,6 +314,7 @@ sub genConf {
         foreach my $d (keys %{$conf_files->{$files}->{datas}}) {
             $datas{$d} = $conf_data{$d};
         }
+        $datas{windows} = 1;
         useTemplate(
             template => $conf_files->{$files}->{template},
             datas    => \%datas,
