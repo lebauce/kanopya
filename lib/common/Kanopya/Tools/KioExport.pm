@@ -45,6 +45,7 @@ use UserProfile;
 use VerifiedNoderule;
 use WorkflowDef;
 use Entity::ServiceProvider::Outside::Externalcluster;
+use Kanopya::Config;
 
 Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
 
@@ -149,7 +150,9 @@ while (my ($resource,$details) = each %$matrix) {
     $export_data->{$resource} = \@objects_rdy_to_export;
 }
 
-
+# save kanopya configuration
+my $config = Kanopya::Config::get();
+$export_data->{configuration} = $config;
 
 _writeJsonFile(data =>$export_data);
 
