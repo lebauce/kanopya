@@ -82,7 +82,15 @@ function add_menutree(container, label, menu_info, elem_id) {
     });
     var sublevel = $('<ul>');
     sublevel.hide();
-    $.getJSON(menu_info.level2_url+'?service_template_id='+elem_id, function (data) {
+
+    var url = 'service_template_id=' + elem_id;
+    if (menu_info.level2_url.indexOf("?") !== -1) {
+        url = '&' + url;
+    } else {
+        url = '?' + url;
+    }
+    url = menu_info.level2_url + url;
+    $.getJSON(url, function (data) {
         var n   = 0;
         for(index in data) {
             if (menu_info.level2_filter == null || menu_info.level2_filter(data[index]) === true) {
