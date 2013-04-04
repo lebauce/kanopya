@@ -188,11 +188,11 @@ function hosts_list(cid, host_manager_id) {
     var grid = create_grid({
         content_container_id    : cid,
         grid_id                 : 'hosts_list',
-        url                     : '/api/host?host_manager_id=' + g_host_manager_id,
+        url                     : '/api/host?expand=node&host_manager_id=' + g_host_manager_id,
         colNames                : [ 'Id', 'Hostname', 'Description', 'Active', 'State' ],
         colModel                : [
             { name : 'pk', index : 'pk', hidden : true, key : true, sorttype : 'int' },
-            { name : 'host_hostname', index : 'host_hostname' },
+            { name : 'node.node_hostname', index : 'node.node_hostname' },
             { name : 'host_desc', index : 'host_desc' },
             { name : 'active', index : 'active', width : 40, align : 'center', formatter : function(cell, formatopts, row) { return booleantostateformatter(cell, 'active', 'inactive') } },
             { name : 'host_state', index : 'host_state', width : 40, align : 'center', formatter : StateFormatter }
