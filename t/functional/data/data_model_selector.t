@@ -42,7 +42,7 @@ sub main {
     }
 
     setup();
-    testDataModelSelector();
+#    testDataModelSelector();
     testAutoPredict();
 
     if ($testing == 1) {
@@ -96,7 +96,8 @@ sub testAutoPredict {
             timeserie             => \%timeserie,
             combination_id        => $comb->id,
         )};
-        my @vals = @{$forecast{values}};
+        my @vals    = @{$forecast{values}};
+        my @tstamps = @{$forecast{timestamps}};
 
     } 'DataModelSelector : Testing autoPredict Method';
 }
