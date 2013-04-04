@@ -38,6 +38,9 @@ use BaseDB;
 my $path = '/opt/kanopya/t/functional/data/timeserie_data/';
 my $path_predict = '/opt/kanopya/t/functional/data/timeserie_predict/';
 
+use constant MODEL_CLASSES   => ['AnalyticRegression::LinearRegression',
+                                 'AnalyticRegression::LogarithmicRegression',
+                                 'RDataModel::AutoArima'];
 main();
 
 sub main {
@@ -612,7 +615,7 @@ sub find_seasonality {
 
         if ( $#{$seasons}+1 != 1 || $seasons->[0] != $expected_value ) {
             diag($#$seasons+1 . ' != 1')    if ($#$seasons+1 != 1);
-            diag($seasons->[0]. ' != 2')   if ($seasons->[0] != $expected_value);
+            diag($seasons->[0]. ' != 2')    if ($seasons->[0] != $expected_value);
             die 'Wrong calculation of seasonalities with downward trend';
         }
     } 'Compute seasonalities with downward trend';
@@ -695,7 +698,7 @@ sub find_seasonality {
 
         if ( $#{$seasons}+1 != 1 || $seasons->[0] != $expected_value ) {
             diag($#$seasons+1 . ' != 1')    if ($#$seasons+1 != 1);
-            diag($seasons->[0]. ' != 6')   if ($seasons->[0] != $expected_value);
+            diag($seasons->[0]. ' != 6')    if ($seasons->[0] != $expected_value);
             die 'Wrong calculation of complex seasonalities';
         }
     } 'Complex seasonalities : sinus + cosinus';
@@ -711,7 +714,7 @@ sub find_seasonality {
 
         if ( $#{$seasons}+1 != 1 || $seasons->[0] != $expected_value ) {
             diag($#$seasons+1 . ' != 1')    if ($#$seasons+1 != 1);
-            diag($seasons->[0]. ' != 6')   if ($seasons->[0] != $expected_value);
+            diag($seasons->[0]. ' != 6')    if ($seasons->[0] != $expected_value);
             die 'Wrong calculation of complex seasonalities with trend and level';
         }
     } 'Complex seasonalities (sinus + cosinus) with trend and level';
@@ -756,6 +759,7 @@ sub forecast {
                                                    'data_end'              => $t,
                                                    'predict_end_tstamps'   => $t+8500,
                                                    'predict_start_tstamps' => $t+1,
+                                                   'model_list'            => MODEL_CLASSES
                                                  );
         my $timestamps = $args->{'timestamps'};
         my $prediction = $args->{'values'};
@@ -796,11 +800,12 @@ sub forecast {
                                                         'service_provider' => $service_provider);
 
         my $args = DataModelSelector->autoPredict( 'combination_id'             => $comb->id,
-                                        'predict_start_tstamps'      => $t+1,
-                                        'predict_end_tstamps'        => $t+320,
-                                        'data_start'                 => $t-250,
-                                        'data_end'                   => $t);
-
+                                                   'predict_start_tstamps'      => $t+1,
+                                                   'predict_end_tstamps'        => $t+320,
+                                                   'data_start'                 => $t-250,
+                                                   'data_end'                   => $t,
+                                                   'model_list'                 => MODEL_CLASSES
+                                                 );
         my $timestamps = $args->{'timestamps'};
         my $prediction = $args->{'values'};
 
@@ -840,7 +845,9 @@ sub forecast {
                                                    'predict_start_tstamps'      => $t+1,
                                                    'predict_end_tstamps'        => $t+5500,
                                                    'data_start'                 => $t-5000,
-                                                   'data_end'                   => $t);
+                                                   'data_end'                   => $t,
+                                                   'model_list'                 => MODEL_CLASSES
+                                                 );
         my $timestamps = $args->{'timestamps'};
         my $prediction = $args->{'values'};
 
@@ -882,7 +889,9 @@ sub forecast {
                                                    'predict_start_tstamps'      => $t+1,
                                                    'predict_end_tstamps'        => $t+350,
                                                    'data_start'                 => $t-300,
-                                                   'data_end'                   => $t);
+                                                   'data_end'                   => $t,
+                                                   'model_list'                 => MODEL_CLASSES
+                                                 );
 
         my $timestamps = $args->{'timestamps'};
         my $prediction = $args->{'values'};
@@ -924,7 +933,9 @@ sub forecast {
                                                    'predict_start_tstamps'      => $t+1,
                                                    'predict_end_tstamps'        => $t+300,
                                                    'data_start'                 => $t-250,
-                                                   'data_end'                   => $t);
+                                                   'data_end'                   => $t,
+                                                   'model_list'                 => MODEL_CLASSES
+                                                 );
 
         my $timestamps = $args->{'timestamps'};
         my $prediction = $args->{'values'};
