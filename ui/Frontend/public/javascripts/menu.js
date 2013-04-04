@@ -1,4 +1,6 @@
 
+var current_user = get_current_user();
+
 // mainmenu_def is set in product specific menu.conf.js
 function add_menu(container, label, submenu_links, elem_id) {
     var id_suffix = elem_id ? elem_id : 'static';
@@ -110,21 +112,21 @@ function build_mainmenu() {
     var menu_elements    = undefined;
 
     // Get the list of menuentries for the current profile :
-    var user_profiles = get_user_profiles();
     $.ajax({
         async    : false,
         url      : 'javascripts/KIM/menuprofiles.json',
         type     : 'GET',
         dataType : 'json',
         success  : function(data) {
-            for (var profile in user_profiles) {
-                if (data[user_profiles[profile]] != undefined) {
+            for (var profile in current_user.profiles) {
+                var profile_id = current_user.profiles[profile].profile_id;
+                if (data[profile_id] != undefined) {
                     if (menu_elements !== undefined) {
-                        menu_elements    = arrayIntersect(menu_elements, data[user_profiles[profile]].menu_entries);
-                        submenu_elements = arrayIntersect(submenu_elements, data[user_profiles[profile]].submenu_entries)
+                        menu_elements    = arrayIntersect(menu_elements, data[profile_id].menu_entries);
+                        submenu_elements = arrayIntersect(submenu_elements, data[profile_id].submenu_entries)
                     } else {
-                        menu_elements    = data[user_profiles[profile]].menu_entries;
-                        submenu_elements = data[user_profiles[profile]].submenu_entries;
+                        menu_elements    = data[profile_id].menu_entries;
+                        submenu_elements = data[profile_id].submenu_entries;
                     }
                 }
             }
@@ -171,11 +173,10 @@ function build_mainmenu() {
     } );
 }
 
-function get_user_profiles () {
+function get_current_user () {
     // Get username of current logged user :
     var username = '';
-    var userid;
-    var profiles = [];
+    var user;
     $.ajax({
         async   : false,
         url     : '/me',
@@ -187,23 +188,16 @@ function get_user_profiles () {
     // Get profile list for the username :
     $.ajax({
         async   : false,
-        url     : '/api/user?user_login=' + username,
+        url     : '/api/user?expand=profiles&user_login=' + username,
         type    : 'GET',
         success : function(data) {
-            userid = data[0].user_id;
-        }
-    });
-    $.ajax({
-        async   : false,
-        url     : '/api/userprofile?user_id=' + userid,
-        tyepe   : 'GET',
-        success : function(data) {
-            for (var profile in data) {
-                profiles.push(data[profile].profile_id);
+            user = {
+                user_id  : data[0].pk,
+                profiles : data[0].profiles
             }
         }
     });
-    return profiles;
+    return user;
 }
 
 function build_submenu(container, view_id, links, elem_id) {

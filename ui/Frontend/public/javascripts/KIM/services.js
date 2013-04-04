@@ -44,8 +44,13 @@ function servicesList (container_id, elem_id) {
         $('#services_list').jqGrid('GridDestroy');
     }
 
+    // If the logged user is a customer, filter the list of service
+    var customer_filter = '';
+    if (current_user.profiles.length == 1 && current_user.profiles[0].profile_name === "Customer") {
+        customer_filter = '&user_id=' + current_user.user_id;
+    }
     var grid = create_grid( {
-        url: '/api/cluster?expand=service_template,nodes,rules&deep=1',
+        url: '/api/cluster?expand=service_template,nodes,rules&deep=1' + customer_filter,
         content_container_id: container_id,
         grid_id: 'services_list',
         afterInsertRow: function (grid, rowid, rowdata, rowelem) {
@@ -63,7 +68,7 @@ function servicesList (container_id, elem_id) {
             { name: 'service_template.service_name', index: 'service_template_name', width: 200 },
             { name: 'cluster_name', index: 'service_name', width: 200 },
             { name: 'active', index: 'active', width : 40, align : 'center', formatter : function(cell, formatopts, row) { return booleantostateformatter(cell, 'active', 'inactive') } },
-            { name: 'cluster_state', index: 'service_state', width: 90, formatter:StateFormatter },
+            { name: 'cluster_state', index: 'service_state', width: 90, align : 'center', formatter:StateFormatter },
             { name: 'rulesstate', index : 'rulesstate' },
             { name: 'node_number', index: 'node_number', width: 150 }
         ],

@@ -1,5 +1,6 @@
 require('modalform.js');
 require('common/formatters.js');
+require('KIM/services_details.js');
 
 function netapp_addbutton_action(e) {
     (new ModalForm({
@@ -61,4 +62,24 @@ function netapp_list(cid) {
     var netapp_addbutton    = $('<a>', { text : 'Create a NetApp' }).appendTo(action_div)
                                 .button({ icons : { primary : 'ui-icon-plusthick' } });
     $(netapp_addbutton).bind('click', netapp_addbutton_action);
+}
+
+function linuxnas_list(cid) {
+    create_grid({
+        content_container_id    : cid,  
+        url                     : '/api/cluster?components.component_type.component_name=Lvm',
+        grid_id                 : 'linuxnas_list',
+        colNames                : ['Id', 'Name', 'Description', 'State' ],
+        colModel                : [
+            { name : 'pk', index : 'pk', key : true, hidden : true, sorttype : 'int' },
+            { name : 'cluster_name', index : 'cluster_name' },
+            { name : 'cluster_desc', index : 'cluster_desc' },
+            { name:  'cluster_state', index: 'cluster_state', width: 90, align : 'center', formatter:StateFormatter },
+        ],
+        elem_name   : 'service',
+        details                 : {
+            noDialog    : true,
+            tabs        : mainmenu_def.Services.jsontree.submenu
+        },
+    });
 }

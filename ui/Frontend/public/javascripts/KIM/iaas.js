@@ -230,6 +230,8 @@ function load_iaas_content (container_id) {
     var tabs = [];
     // Add the same tabs than 'Services'
     jQuery.extend(true, tabs, mainmenu_def.Services.jsontree.submenu);
+    // Remove the Billing tab
+    tabs.pop();
     // Add the tab 'Hypervisor'
     tabs.push({label : 'Hypervisors', id : 'hypervisors', onLoad : load_iaas_detail_hypervisor });
     // change details tab callback to inform we are in IAAS mode

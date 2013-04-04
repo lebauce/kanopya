@@ -14,6 +14,7 @@ $.getJSON("/api/cluster?cluster_name=Kanopya", function (data) {
     });
 });
 
+var service_list_url = '/api/cluster';
 
 // each link will show the div with id "view_<id>" and hide all div in "#view-container"
 // onLoad handlers are called with params (content_container_id)
@@ -24,7 +25,8 @@ var mainmenu_def = {
             { label : 'UCS',   id : 'ucs',   onLoad : function(cid) { require('KIM/ucs.js'); ucs_list(cid); } }
         ],
         'Storage' : [
-            { label : 'NetApp', id : 'storage_netapp', onLoad : function(cid) { require('KIM/netapp.js'); netapp_list(cid); } }
+            { label : 'Linux NAS', id : 'storage_linux', onLoad : function(cid) { require('KIM/storage.js'); linuxnas_list(cid); } },
+            { label : 'NetApp', id : 'storage_netapp', onLoad : function(cid) { require('KIM/storage.js'); netapp_list(cid); } }
         ],
         'IaaS'    : [
             { label : 'IaaS', id : 'iaas', onLoad : load_iaas_content}
@@ -65,7 +67,7 @@ var mainmenu_def = {
         jsontree : {
             level1_url       : '/api/servicetemplate',
             level1_label_key : 'service_name',
-            level2_url       : '/api/cluster',
+            level2_url       : service_list_url,
             level2_label_key : 'cluster_name',
             level2_filter    : function(elem) { return servicesListFilter(elem); }, 
             id_key           : 'pk',
@@ -83,8 +85,13 @@ var mainmenu_def = {
     },
     'Administration'    : {
         'Kanopya'          : [
-            { label : 'Configuration', id : 'service_configuration', onLoad : function(cid) { require('KIM/services_config.js'); loadServicesConfig(cid, kanopya_cluster); }, icon : 'system' },
-            { label : 'Resources',     id : 'service_resources',     onLoad : function(cid) { require('KIM/services.js'); loadServicesResources(cid, kanopya_cluster); }, icon : 'resources' }
+            { label : 'Overview',        id : 'service_overview',      onLoad : function(cid, eid) { require('common/service_dashboard.js'); loadServicesOverview(cid, kanopya_cluster); }, icon : 'dashboard' },
+            { label : 'Details',         id : 'service_details',       onLoad : function(cid, eid) { require('KIM/services_details.js'); loadServicesDetails(cid, kanopya_cluster); }, icon : 'search' },
+            { label : 'Configuration',   id : 'service_configuration', onLoad : function(cid, eid) { require('KIM/services_config.js'); loadServicesConfig(cid, kanopya_cluster); }, icon : 'system' },
+            { label : 'Resources',       id : 'service_resources',     onLoad : function(cid, eid) { require('KIM/services.js'); loadServicesResources(cid, kanopya_cluster); }, icon : 'resources' },
+            { label : 'Monitoring',      id : 'service_monitoring',    onLoad : function(cid, eid) { require('common/service_monitoring.js'); loadServicesMonitoring(cid, kanopya_cluster); }, icon : 'monitoring' },
+            { label : 'Rules',           id : 'service_rules',         onLoad : function(cid, eid) { require('common/service_rules.js'); loadServicesRules(cid, kanopya_cluster); }, icon : 'rules' },
+            { label : 'Events & Alerts', id : 'events_alerts',         onLoad : function(cid, eid) { require('common/service_eventsalerts.js'); loadServiceEventsAlerts(cid, kanopya_cluster); }, icon : 'alert' },
         ],
         'Right Management' : [
             { label : 'Users',       id : 'users',       onLoad : users.load_content },
