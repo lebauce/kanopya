@@ -688,7 +688,7 @@ sub registerDataModelTypes {
     my @data_model_labels = (
         'Linear Regression',
         'Logarithmic Regression',
-        'Automaticly fitted ARIMA model',
+        'Automatically fitted ARIMA model',
         'Exponential smoothing state space model',
         'Seasonal forecast model',
     );
@@ -702,10 +702,10 @@ sub registerDataModelTypes {
         'based on a equation with the following form : a*log(t) + b (t represents the time, a and b are ' .
         ' computed parameters).',
 
-        'Perform a prediction fitting automaticly an ARIMA model (Auto Regressive Integrated Moving Average' .
-        '). ARIMA is a purely statistic modelization of a time series, suited for performing complex ' .
+        'Perform a prediction by fitting automaticallly an ARIMA model (Auto Regressive Integrated Moving ' .
+        'Average). ARIMA is a purely statistic model of a time series, suited for performing complex ' .
         'forecasts. This model is adapted for time series showing complex patterns, including trends and ' .
-        'seasonalities, but can be slow when applied to large data sets.',
+        'seasonality, but can be slow when applied to large data sets.',
 
         'Perform a prediction fitting an Exponential Smoothing State Space model. It is a statistic model ' .
         'which uses a similar approach as ARIMA models, but which handles better noisy data. Exponential ' .

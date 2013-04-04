@@ -116,7 +116,7 @@ sub autoPredict {
         %rawdata = %{$args{timeserie}};
     }
     elsif (defined($combination) && defined $args{data_start} && defined($args{data_end})) {
-        $combination->evaluateTimeSerie(start_time => $args{data_start},
+        %rawdata = $combination->evaluateTimeSerie(start_time => $args{data_start},
                                         stop_time  => $args{data_end},
                                         node_id    => $args{node_id},
         );
