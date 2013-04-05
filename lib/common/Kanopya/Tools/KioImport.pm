@@ -49,6 +49,7 @@ use Entity::WorkflowDef;
 use Entity::ServiceProvider::Externalcluster;
 use ClassType::ComponentType;
 use Kanopya::Config;
+use Indicatorset;
 
 BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
 BaseDB->beginTransaction;
@@ -57,31 +58,35 @@ eval {
     importKanopyaData();
 };
 if ($@) {
+    my $error = $@;
+    print 'Error in data import : ' . $error . "\n";
     BaseDB->rollbackTransaction;
 }
 else {
     BaseDB->commitTransaction;
+    print "Data imported successfully\n";
 }
 
 sub importKanopyaData {
-    my ($rrd_backup_dir, $rrd_dir);
+    my ($export_dir, $rrd_backup_dir, $rrd_dir);
     my ($cp_file, $del_file);
 
     # rrd backup parameters
     if ($^O eq 'MSWin32') {
+        $export_dir     = 'C:\\tmp\\';
         $rrd_backup_dir = 'C:\\tmp\\monitor\\TimeData_old\\';
         $rrd_dir        = 'C:\\tmp\\monitor\\TimeData\\';
         $cp_file        = 'cp';
         $del_file       = 'del';
     }
     elsif ($^O eq 'linux') {
+        $export_dir     = '/vagrant/';
         $rrd_backup_dir = '/var/cache/kanopya/monitor_old/';
         $rrd_dir        = '/var/cache/kanopya/monitor/';
         $cp_file        = 'cp';
         $del_file       = 'rm';
     }
 
-    my $export_dir = '/vagrant/';
     my $export_bdd_file = $export_dir . 'bdd.json';
 
     open (my $FILE, '<', $export_bdd_file) or die 'could not open \'$export_bdd_file\' : $!\n';
@@ -94,6 +99,7 @@ sub importKanopyaData {
     my $json_imported_items = JSON->new->utf8->decode($import);
 
     my $services = $json_imported_items->{services};
+    my $user_indicators = $json_imported_items->{user_indicators};
 
     # We need to map old ids to new ones for data updates
     # reminder:
@@ -142,9 +148,29 @@ sub importKanopyaData {
 
                 foreach my $old_collector_indicator (@{ $connector->{collector_indicators} }) {
                     my $old_indicator_name = $old_collector_indicator->{indicator_name};
-                    my $indicator_id = Entity::Indicator->find( hash => {
-                                         indicator_name => $old_indicator_name,
-                                       })->id;
+                    my $indicator_id;
+                    eval{
+                        $indicator_id = Entity::Indicator->find( hash => {
+                                             indicator_name => $old_indicator_name,
+                                           })->id;
+                    };
+                    if ($@) {
+                        my $old_indicator_id = $old_collector_indicator->{indicator_id};
+                        $indicator_id = Entity::Indicator->new(
+                            indicator_name => $user_indicators->{$old_indicator_id}->{indicator_name},
+                            indicator_label => $user_indicators->{$old_indicator_id}->{indicator_label},
+                            indicator_oid => $user_indicators->{$old_indicator_id}->{indicator_oid},
+                            indicator_min => $user_indicators->{$old_indicator_id}->{indicator_min},
+                            indicator_max => $user_indicators->{$old_indicator_id}->{indicator_max},
+                            indicator_unit => $user_indicators->{$old_indicator_id}->{indicator_unit},
+                            indicatorset_id => Indicatorset->find(
+                                hash => {
+                                    indicatorset_name =>
+                                        $user_indicators->{$old_indicator_id}->{indicatorset_name}
+                                }
+                            )->indicatorset_id,
+                        )->id;
+                    }
 
                     $collector_indicator_map->{$old_collector_indicator->{collector_indicator_id}} =
                         Entity::CollectorIndicator->new(
@@ -345,7 +371,6 @@ sub importKanopyaData {
         closedir(DIR);
     }
 
-    $DB::single=1;
     # configure services
     my $configuration = $json_imported_items->{configuration};
     my $kanopya_cluster = Entity::ServiceProvider::Cluster->getKanopyaCluster();
