@@ -376,94 +376,11 @@ sub importKanopyaData {
     my $configuration = $json_imported_items->{configuration};
     my $kanopya_cluster = Entity::ServiceProvider::Cluster->getKanopyaCluster();
     if (defined $configuration->{aggregator}) {
-        Kanopya::Config::set(
-            subsystem => 'aggregator',
-            config => {
-                user => $configuration->{aggregator}->{user},
-            },
-        );
         $kanopya_cluster->getComponent(name => 'KanopyaAggregator')->setConf(
             conf => {
                 time_step => $configuration->{aggregator}->{time_step},
                 storage_duration => $configuration->{aggregator}->{storage_duration}->{duration},
             }
-        );
-    }
-
-    if (defined $configuration->{libkanopya}) {
-        my $dbconf = $configuration->{libkanopya}->{dbconf};
-        my $dbi = 'dbi:'
-            . $dbconf->{type} . ':' . $dbconf->{user} . ':' . $dbconf->{host} . ':' . $dbconf->{port};
-        Kanopya::Config::set(
-            subsystem => 'libkanopya',
-            config => {
-                crypt => $configuration->{libkanopya}->{crypt},
-                logdir => $configuration->{libkanopya}->{logdir},
-                dbconf => $configuration->{libkanopya}->{dbconf},
-                dbi => $dbi,
-            },
-        );
-    }
-
-    if (defined $configuration->{executor}) {
-        Kanopya::Config::set(
-            subsystem => 'executor',
-            config => {
-                user => $configuration->{executor}->{user},
-                logdir => $configuration->{executor}->{logdir},
-            },
-        );
-        $kanopya_cluster->getComponent(name => 'KanopyaExecutor')->setConf(
-            conf => {
-                time_step => $configuration->{executor}->{time_step},
-                masterimages_directory => $configuration->{executor}->{masterimages}->{directory},
-                clusters_directory => $configuration->{executor}->{clusters}->{directory},
-            }
-        );
-    }
-
-    if (defined $configuration->{monitor}) {
-        Kanopya::Config::set(
-            subsystem => 'monitor',
-            config => {
-                user => $configuration->{monitor}->{user},
-            },
-        );
-    }
-
-    if (defined $configuration->{aggregator_path}) {
-        Kanopya::Config::set(
-            subsystem => 'aggregator_path',
-            config => {
-                aggregator_path => $configuration->{aggregator_path},
-            },
-        );
-    }
-
-    if (defined $configuration->{executor_path}) {
-        Kanopya::Config::set(
-            subsystem => 'executor_path',
-            config => {
-                executor_path => $configuration->{executor_path},
-            },
-        );
-    }
-
-    if (defined $configuration->{monitor_path}) {
-        Kanopya::Config::set(
-            subsystem => 'monitor_path',
-            config => {
-                monitor_path => $configuration->{monitor_path},
-            },
-        );
-    }
-
-    if (defined $configuration->{libkanopya_path}) {
-        Kanopya::Config::set(
-            subsystem => 'libkanopya_path',
-            config => {
-                libkanopya_path => $configuration->{libkanopya_path},
-            },
         );
     }
 
