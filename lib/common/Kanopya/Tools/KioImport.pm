@@ -223,8 +223,9 @@ sub importKanopyaData {
                              )->id;
 
             $new_externalcluster->addManager(
-                manager_id   => $manager_id,
-                manager_type => $manager_categories->{$old_manager->{manager_type}}
+                manager_id      => $manager_id,
+                manager_type    => $manager_categories->{$old_manager->{manager_type}},
+                no_default_conf => 1,
             );
         }
 
