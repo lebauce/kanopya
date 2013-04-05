@@ -158,13 +158,13 @@ _writeJsonFile(data =>$export_data);
 
 sub _writeJsonFile {
     my %args = @_;
-   
+
     General::checkParams(args => \%args, required => [ "data" ]);
-   
+
     my $json_exported_items = JSON->new->utf8->encode($args{data});
-    
-    open (my $FILE, '>>', $export_bdd_file) or die 'could not open \'$export_bdd_file\' : $!\n';
-    print $FILE $json_exported_items; 
+
+    open (my $FILE, '>', $export_bdd_file) or die 'could not open \'$export_bdd_file\' : $!\n';
+    print $FILE $json_exported_items;
     close($FILE);
 }
 
