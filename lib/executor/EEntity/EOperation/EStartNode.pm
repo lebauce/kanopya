@@ -80,6 +80,7 @@ sub prepare {
         = EEntity->new(entity => Entity::ServiceProvider::Cluster->getKanopyaCluster);
 
     # Instanciate dhcpd
+    my $dhcpd = $self->{context}->{bootserver}->getComponent(category => "Dhcpserver");
     $self->{context}->{dhcpd_component} = EEntity->new(entity => $dhcpd);
 
     # Instanciate tftp server
