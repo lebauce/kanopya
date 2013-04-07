@@ -38,6 +38,7 @@ use Test::More;
 use Test::Exception;
 
 use Kanopya::Exceptions;
+use Kanopya::Tools::Retrieve;
 use General;
 use Entity::Host;
 use Entity::ServiceProvider::Cluster;
@@ -72,8 +73,8 @@ sub registerHost {
     my $host = Entity::Host->new(
                    active             => 1,
                    host_manager_id    => $physical_hoster->id,
-                   host_serial_number => 'Kro',
-                   host_ram           => $board->{ram} * 1024 * 1024,
+                   host_serial_number => $board->{serial_number},
+                   host_ram           => $board->{ram},
                    host_core          => $board->{core},
                );
 

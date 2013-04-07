@@ -49,25 +49,6 @@ use Kanopya::Tools::TestUtils 'expectedException';
 
 my $testing = 1;
 
-my $boards = [
-    {
-        ram  => 2048,
-        core => 2,
-        nics => [
-            {
-                name => "eth0",
-                mac  => "00:11:22:33:44:55",
-                pxe  => 1
-            },
-            {
-                name => "eth1",
-                mac  => "66:77:88:99:00:aa",
-                pxe  => 0,
-            }
-        ]
-    },
-];
-
 main();
 
 sub main {
@@ -185,11 +166,6 @@ sub _create_and_configure_cluster {
 
     diag('Retrieve the admin user');
     $admin_user = Entity::User->find(hash => { user_login => 'admin' });
-
-    diag('Registering physical hosts');
-    foreach my $board (@{ $boards }) {
-        my $host = Kanopya::Tools::Register->registerHost(board => $board);
-    }
 
     diag('Retrieve admin network');
     my $admin_network = Entity::Network->find( hash => { network_name => 'admin' } );
