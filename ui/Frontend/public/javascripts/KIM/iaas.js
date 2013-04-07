@@ -30,7 +30,7 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
         return;
     }
     $.ajax({
-        url     : '/api/virtualization/' + cloudmanagerid + '/hypervisors',
+        url     : '/api/virtualization/' + cloudmanagerid + '/hypervisors?expand=node',
         type    : 'POST',
         success : function(data) {
             var topush  = [];
@@ -42,7 +42,7 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
                 data[i].vmcount = 0;
                 $.ajax({
                     async   : false,
-                    url     : '/api/hypervisor/' + data[i].id + '/virtual_machines',
+                    url     : '/api/hypervisor/' + data[i].id + '/virtual_machines?expand=node',
                     success : function(hyp) {
                         return (function(vms) {
                             hyp.totalRamUsed    = 0;
@@ -72,14 +72,14 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
                 caption                 : 'Hypervisors for IaaS ' + elem_id,
                 treeGrid                : true,
                 treeGridModel           : 'adjacency',
-                ExpandColumn            : 'host_hostname',
+                ExpandColumn            : 'node.node_hostname',
                 data                    : data,
                 content_container_id    : container_id,
                 grid_id                 : 'iaas_hyp_list',
                 colNames                : [ 'ID', 'Base hostname', 'State', 'Vms', 'Admin Ip', '', '', '', '', '', '' ],
                 colModel                : [
                     { name : 'id', index : 'id', width : 60, sorttype : "int", hidden : true, key : true },
-                    { name : 'host_hostname', index : 'host_hostname', width : 90 },
+                    { name : 'node.node_hostname', index : 'node.node_hostname', width : 90 },
                     { name : 'host_state', index : 'host_state', width : 30, formatter : StateFormatter, align : 'center' },
                     { name : 'vmcount', index : 'vmcount', width : 30, align : 'center' },
                     { name : 'adminip', index : 'adminip', width : 100 },
@@ -128,7 +128,7 @@ function load_hypervisorvm_details(cid, eid, cmgrid) {
     if (data.type === 'hypervisor') {
         var table           = $('<table>', { width : '100%' }).appendTo($('#' + cid));
         $(table).append($('<tr>').append($('<th>', { text : 'Hostname : ', width : '100px' }))
-                                     .append($('<td>', { text : data.host_hostname })));
+                                     .append($('<td>', { text : data.node.node_hostname })));
         data.host_ram = data.host_ram / 1024 / 1024;
         data.totalRamUsed = data.totalRamUsed / 1024 / 1024;
         var hypervisorType  = $('<td>');
