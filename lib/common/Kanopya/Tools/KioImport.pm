@@ -74,14 +74,14 @@ sub importKanopyaData {
     # rrd backup parameters
     if ($^O eq 'MSWin32') {
         $export_dir     = 'C:\\tmp\\';
-        $rrd_backup_dir = 'C:\\tmp\\monitor\\TimeData_old\\';
+        $rrd_backup_dir = 'C:\\tmp\\monitor\\TimeData_backup\\';
         $rrd_dir        = 'C:\\tmp\\monitor\\TimeData\\';
         $cp_file        = 'cp';
         $del_file       = 'del';
     }
     elsif ($^O eq 'linux') {
         $export_dir     = '/vagrant/';
-        $rrd_backup_dir = '/var/cache/kanopya/monitor_old/';
+        $rrd_backup_dir = '/var/cache/kanopya/monitor_backup/';
         $rrd_dir        = '/var/cache/kanopya/monitor/';
         $cp_file        = 'cp';
         $del_file       = 'rm';

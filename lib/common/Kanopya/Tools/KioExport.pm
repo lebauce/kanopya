@@ -55,13 +55,13 @@ my ($export_dir, $rrd_backup_dir, $rrd_dir);
 my $cp_dir;
 if ($^O eq 'MSWin32') {
     $export_dir     = 'C:\\tmp\\';
-    $rrd_backup_dir = 'C:\\tmp\\monitor\\TimeData_old\\';
+    $rrd_backup_dir = 'C:\\tmp\\monitor\\TimeData_backup\\';
     $rrd_dir        = 'C:\\tmp\\monitor\\TimeData\\';
     $cp_dir         = 'cp -recurse';
 }
 elsif ($^O eq 'linux') {
     $export_dir     = '/vagrant/';
-    $rrd_backup_dir = '/var/cache/kanopya/monitor_old/';
+    $rrd_backup_dir = '/var/cache/kanopya/monitor_backup/';
     $rrd_dir        = '/var/cache/kanopya/monitor/';
     $cp_dir         = 'cp -R';
 }
