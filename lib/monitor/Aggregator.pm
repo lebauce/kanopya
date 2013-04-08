@@ -108,6 +108,9 @@ Check the elapsed time of the main loop.
 sub oneRun {
     my ($self) = @_;
 
+    # Get the start time
+    my $start_time = time();
+
     # Firstly check is configuration changed, and udpate time data is required
     if (defined $self->{last_time_step} and
         $self->{last_time_step} != $self->{config}->{time_step}) {
@@ -122,9 +125,6 @@ sub oneRun {
         $self->resizeTimeDataStores(storage_duration     => $self->{config}->{storage_duration},
                                     old_storage_duration => $self->{last_storage_duration});
     }
-
-    # Get the start time
-    my $start_time = time();
 
     # Update metrics
     $self->update();
