@@ -30,20 +30,38 @@ function loadServiceAnalysis(container_id, sp_id) {
         var histo_graph_container = $('<div>', {id : 'histo_graph', style:'float:left;width:60%;margin-left:5%'});
         container.append(graph_container).append(histo_graph_container).append($('<div>', {style:'clear:both'}));
 
+        graph_container.append('<div class="loading"><img alt="Loading, please wait" src="/css/theme/loading.gif" /><p>Loading...</p></div>');
+
+        // Request data and build serie for corellation
+        var request_count = 2;
+        var data_x, data_y;
         $.get('/monitoring/serviceprovider/'+sp_id+'/clustersview?id='+selected_metric_x.attr('id'), function(xdata) {
-            var data_x = xdata.first_histovalues;
-            $.get('/monitoring/serviceprovider/'+sp_id+'/clustersview?id='+selected_metric_y.attr('id'), function(ydata) {
-                var data_y = ydata.first_histovalues;
-                var serie = [];
-
-                // Build serie with values of both metrics corresponding to the same time
-                $.each(data_x, function(i, elem) {
-                    serie.push([elem[1], data_y[i][1], elem[0]]);
-                });
-
-                graphScatterPlots(serie, {xlabel:selected_metric_x.val(), ylabel:selected_metric_y.val()});
-            });
+            data_x = xdata.first_histovalues;
+            request_count --;
         });
+        $.get('/monitoring/serviceprovider/'+sp_id+'/clustersview?id='+selected_metric_y.attr('id'), function(ydata) {
+            data_y = ydata.first_histovalues;
+            request_count --;
+        });
+
+        var data_loaded = setInterval(function() {
+            if (request_count == 0) {
+                clearInterval(data_loaded);
+
+                if (data_x === undefined || data_y === undefined) {
+                    graph_container.find('.loading').remove();
+                    graph_container.append($('<span>', {html: 'Not enough data to correlate'}));
+                } else {
+                    // Build serie with values of both metrics corresponding to the same time
+                    var serie = [];
+                    $.each(data_x, function(i, elem) {
+                        serie.push([elem[1], data_y[i][1], elem[0]]);
+                    });
+                    graph_container.find('.loading').remove();
+                    graphScatterPlots(serie, {xlabel:selected_metric_x.val(), ylabel:selected_metric_y.val()});
+                }
+            }
+        }, 10);
 
         // Add historical graph
         integrateWidget('histo_graph', 'widget_historical_view', function(widget_div) {
@@ -58,7 +76,7 @@ function loadServiceAnalysis(container_id, sp_id) {
                     nodemetric_combinations    : null,
                     nodes                      : null
                 },
-                {}
+                {hide_config_part : true}
             );
         });
 
