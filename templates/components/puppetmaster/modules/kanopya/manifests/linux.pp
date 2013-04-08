@@ -49,8 +49,8 @@ class kanopya::linux ($sourcepath) {
     }
 
     if $operatingsystem =~ /(?i)(debian|ubuntu)/ {
-        class { 'apt':
-            always_apt_update => true,
+        exec { 'apt-get update':
+            path => '/usr/bin'
         }
     }
 }
