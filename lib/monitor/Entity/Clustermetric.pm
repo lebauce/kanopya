@@ -31,18 +31,14 @@ use strict;
 use warnings;
 
 use General;
-use Data::Dumper;
-use DescriptiveStatisticsFunction;
 use TimeData::RRDTimeData;
 use Entity::Indicator;
 use Entity::CollectorIndicator;
 use Entity::Combination::AggregateCombination;
 
-# To get the kanopya cluster
-# TODO: remove me
-use Entity::ServiceProvider::Cluster;
+use DescriptiveStatisticsFunction;
 
-# logger
+use Data::Dumper;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
