@@ -164,6 +164,7 @@ sub remove {
     my $self = shift;
 
     $self->service_provider->removeNode('node_id' => $self->id);
+    return;
 }
 
 sub adminIp {
