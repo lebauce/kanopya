@@ -38,6 +38,7 @@ $('.widget').live('widgetLoadContent',function(e, obj){
  *
  * 'option' is a hash of options:
  *  - open_config_part : Boolean to say if the configuration part is open by default
+ *  - hide_config_part : Do not show configuration part, use default time settings
  *  - allow_forecast   : Boolean to add the forecast part
  */
 function customInitHistoricalWidget(widget, sp_id, data, options) {
@@ -55,6 +56,10 @@ function customInitHistoricalWidget(widget, sp_id, data, options) {
     var pending_init = 0;
     function initControlDone() {
         pending_init--;
+    }
+
+    if (options.hide_config_part) {
+        widget_div.find('.widget_part_config').hide();
     }
 
     // Deactivate config part during loading of all elements
