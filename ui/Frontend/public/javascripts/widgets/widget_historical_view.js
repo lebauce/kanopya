@@ -228,13 +228,16 @@ function initNodeMetricControl(widget_div, sp_id, options, callback) {
         widget_div.find('.node_list_label').hide();
     } else {
         pending++;
+
+        function _fqdnToShortname(fqdn) { return fqdn.split('.')[0] }
+
         getCache('/api/serviceprovider/'+sp_id+'/nodes?monitoring_state=<>,disabled', function (data) {
             // Fill list
             $(data).each( function () {
                 node_list.append($('<option>', {
                     node_id : this.pk,
                     value   : this.node_hostname,
-                    text    : this.node_hostname,
+                    text    : _fqdnToShortname(this.node_hostname),
                 }));
             });
             // Load widget content if configured (select combinations in drop down list)
@@ -344,7 +347,7 @@ function setRefreshButton(widget, sp_id, opts) {
             var selected_node_combis    = _getSelectedCombinations(widget_div, 'nodemetriccombination_list');
             var selected_nodes          = $.map(
                                                widget_div.find('.node_list option:selected'),
-                                               function(n){return {id:$(n).attr('node_id'),name:$(n).val()}}
+                                               function(n){return {id:$(n).attr('node_id'),name:$(n).html()}}
                                            );
 
             // Limit the number of simultaneous series
