@@ -8,7 +8,7 @@ function loadServiceAnalysis(container_id, sp_id) {
     container.append('<br>');
     var metric_y_select  = $('<select>', {id : 'metric_y_select'}).appendTo(container.append($('<span>', {text:' y: '})));
     container.append('<br>');
-    var correlate_button = $('<button>', {id : 'correlate_button', text : 'correlate'});
+    var correlate_button = $('<button>', {id : 'correlate_button', text : 'correlate'}).button();
 
     $.get('/api/aggregatecombination?service_provider_id=' + sp_id, function (data) {
         $(data).each( function () {
@@ -17,6 +17,7 @@ function loadServiceAnalysis(container_id, sp_id) {
             metric_y_select.append(option.clone());
         });
         correlate_button.appendTo(container);
+        container.append('<br>')
     });
 
     correlate_button.click(function() {
@@ -24,8 +25,10 @@ function loadServiceAnalysis(container_id, sp_id) {
         var selected_metric_y = metric_y_select.find('option:selected');
 
         $('#scatter_graph').remove();
-        var graph_container = $('<div>', {id : 'scatter_graph', style:'margin:auto'});
-        container.append(graph_container);
+        $('#histo_graph').remove();
+        var graph_container = $('<div>', {id : 'scatter_graph', style:'float:left;width:30%'});
+        var histo_graph_container = $('<div>', {id : 'histo_graph', style:'float:left;width:60%;margin-left:5%'});
+        container.append(graph_container).append(histo_graph_container).append($('<div>', {style:'clear:both'}));
 
         $.get('/monitoring/serviceprovider/'+sp_id+'/clustersview?id='+selected_metric_x.attr('id'), function(xdata) {
             var data_x = xdata.first_histovalues;
@@ -41,6 +44,24 @@ function loadServiceAnalysis(container_id, sp_id) {
                 graphScatterPlots(serie, {xlabel:selected_metric_x.val(), ylabel:selected_metric_y.val()});
             });
         });
+
+        // Add historical graph
+        integrateWidget('histo_graph', 'widget_historical_view', function(widget_div) {
+            customInitHistoricalWidget(
+                widget_div,
+                sp_id,
+                {
+                    clustermetric_combinations : [
+                           {id:selected_metric_x.attr('id'), name:selected_metric_x.val(), unit:''},
+                           {id:selected_metric_y.attr('id'), name:selected_metric_y.val(), unit:''}
+                     ],
+                    nodemetric_combinations    : null,
+                    nodes                      : null
+                },
+                {}
+            );
+        });
+
     });
 }
 
