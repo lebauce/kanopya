@@ -55,9 +55,7 @@ use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub getMethods {
-
-}
+sub getMethods {}
 
 =pod
 =begin classdoc
@@ -97,7 +95,7 @@ sub storeNodeMetricsValues {
     while (my ($node_name, $indicators_values) = each %{$args{values}}) {
         while (my ($indicators_oid, $value) = each %$indicators_values) {
             my $metric_uid = $args{indicators}->{$indicators_oid}->id . '_' . $node_name;
-            RRDTimeData::updateTimeDataStore(
+            TimeData::RRDTimeData::updateTimeDataStore(
                 clustermetric_id => $metric_uid,
                 time             => $args{timestamp},
                 value            => $value,
@@ -165,7 +163,7 @@ sub _nodeMetricLastValueFromStorage {
         my $metric_uid = $args{indicator}->id . '_' . $object_name;
         my ($timestamp, $value);
         eval {
-            ($timestamp, $value) = RRDTimeData::getLastUpdatedValue(metric_uid => $metric_uid);
+            ($timestamp, $value) = TimeData::RRDTimeData::getLastUpdatedValue(metric_uid => $metric_uid);
         };
         if ($@) {
             $value = undef;
@@ -204,7 +202,7 @@ sub nodeMetricFetch {
     if ($NODEMETRIC_STORAGE_ACTIVE) {
         for my $object_name (@{$args{node_names}}) {
             my $metric_uid = $args{indicator}->id . '_' . $object_name;
-            my %data = RRDTimeData::fetchTimeDataStore(
+            my %data = TimeData::RRDTimeData::fetchTimeDataStore(
                           name   => $metric_uid,
                           start  => $args{start_time},
                           end    => $args{end_time}

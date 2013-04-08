@@ -26,15 +26,15 @@ Condition on aggregate combination (left operand) and agreggate combination or t
 =cut
 
 package Entity::AggregateCondition;
+use base Entity;
 
 use strict;
 use warnings;
-use TimeData::RRDTimeData;
+
 use Entity::Combination::AggregateCombination;
-require 'Entity/Rule/AggregateRule.pm';
-use base 'Entity';
+use Entity::Rule::AggregateRule;
+
 use Data::Dumper;
-# logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -99,13 +99,11 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        'updateName'    => {
-            'description'   => 'updateName',
-            'perm_holder'   => 'entity'
+        updateName    => {
+            description   => 'updateName',
         },
-        'getDependencies' => {
-            'description' => 'return dependencies tree for this object',
-            'perm_holder' => 'entity',
+        getDependencies => {
+            description => 'return dependencies tree for this object',
         },
     };
 }

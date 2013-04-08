@@ -221,7 +221,7 @@ sub fetch {
     my ($self, %args) = @_;
     General::checkParams args => \%args, required => ['start_time', 'stop_time'];
 
-    my %rep = RRDTimeData::fetchTimeDataStore(
+    my %rep = TimeData::RRDTimeData::fetchTimeDataStore(
                   name   => $self->id,
                   start  => $args{start_time},
                   end    => $args{stop_time}
@@ -249,7 +249,7 @@ sub lastValue {
         return $args{memoization}->{$self->id};
     }
 
-    my %last_value = RRDTimeData::getLastUpdatedValue(metric_uid => $self->id);
+    my %last_value = TimeData::RRDTimeData::getLastUpdatedValue(metric_uid => $self->id);
     my @indicator = (values %last_value);
 
     if (defined $args{memoization}) {
@@ -467,7 +467,7 @@ sub delete {
             }
         }
     }
-    RRDTimeData::deleteTimeDataStore(name => $id);
+    TimeData::RRDTimeData::deleteTimeDataStore(name => $id);
     return $self->SUPER::delete();
 }
 

@@ -17,8 +17,7 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 03/02/2012
 
-package RRDTimeData;
-
+package TimeData::RRDTimeData;
 use base TimeData;
 
 use strict;
@@ -303,10 +302,10 @@ sub updateTimeDataStore {
     my $time = $args{'time'};
     my $name = _formatName(name => $args{'clustermetric_id'});
 
-    RRDTimeData::createTimeDataStore(skip_if_exists    => 1,
-                                     name              => $args{'clustermetric_id'},
-                                     collect_frequency => $args{'time_step'},
-                                     storage_duration  => $args{'storage_duration'});
+    TimeData::RRDTimeData::createTimeDataStore(skip_if_exists    => 1,
+                                               name              => $args{'clustermetric_id'},
+                                               collect_frequency => $args{'time_step'},
+                                               storage_duration  => $args{'storage_duration'});
 
     my $datasource = (defined $args{'datasource'}) ? $args{'datasource'} : 'aggregate';
     my $value      = (defined $args{'value'})      ? $args{'value'}      : 'U';

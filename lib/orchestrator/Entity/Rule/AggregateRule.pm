@@ -30,7 +30,6 @@ use base 'Entity::Rule';
 use strict;
 use warnings;
 
-use TimeData::RRDTimeData;
 use Entity::AggregateCondition;
 use Data::Dumper;
 use Switch;
