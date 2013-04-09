@@ -40,12 +40,14 @@ use constant ATTR_DEF   => {
         is_mandatory    => 1,
         is_extended     => 0,
         is_editable     => 1,
+        label           => 'Service provider'
     },
     rule_name => {
         pattern         => '^.*$',
         is_mandatory    => 0,
         is_extended     => 0,
         is_editable     => 1,
+        label           => 'Name'
     },
     formula => {
         pattern         => '^((id\d+)|and|or|not|[ ()!&|])+$',
@@ -61,24 +63,28 @@ use constant ATTR_DEF   => {
         is_mandatory    => 0,
         is_extended     => 0,
         is_editable     => 1,
+        label           => 'Timestamp'
     },
     state => {
         pattern         => '(enabled|disabled|disabled_temp|delayed|triggered)$',
         is_mandatory    => 1,
         is_extended     => 0,
         is_editable     => 1,
+        label           => 'State'
     },
     workflow_def_id => {
         pattern         => '^.*$',
         is_mandatory    => 0,
         is_extended     => 0,
         is_editable     => 1,
+        label           => 'Worflow'
     },
     description => {
         pattern         => '^.*$',
         is_mandatory    => 0,
         is_extended     => 0,
         is_editable     => 1,
+        label           => 'Description'
     },
     formula_string => {
         pattern         => '^.*$',
@@ -299,6 +305,34 @@ sub getDependentConditionIds {
     my $self = shift;
     my %ids = map { $_ => undef } ($self->formula =~ m/id(\d+)/g);
     return keys %ids;
+}
+
+=pod
+
+=begin classdoc
+
+Return true if there is an active time period for the rule
+ 
+@return a boolean
+
+=end classdoc
+
+=cut
+
+sub isActive {
+    my $self = shift;
+    my $active = 0;
+
+    if ($self->entity_time_periods) {
+        for my $period ($self->time_periods) {
+            $active ||= $period->isActive;
+        }
+    }
+    else {
+        $active = 1;
+    }
+
+    return $active;
 }
 
 1;

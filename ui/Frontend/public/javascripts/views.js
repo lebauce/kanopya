@@ -271,7 +271,7 @@ function gridGenericPost(grid_id, rowid, action_url, action_method, extraParams,
 }
 
 // generic dialog box for multi action confirm
-function multiActionGenericConfirm(grid_id, msg, actionHandler) {
+function multiActionGenericConfirm(grid_id, msg, selection, actionHandler) {
     var dialog_height   = 120;
     var dialog_width    = 300;
     var container       = $('<div>', { text : msg + ' ?' });
@@ -334,9 +334,9 @@ function create_grid(options) {
                         alert("No item checked : check an item first !");
                     }
                     else {
-                        multiaction.confirm(options.grid_id, multiaction.label, function() {
+                        multiaction.confirm(options.grid_id, multiaction.label, checkedItems, function(data) {
                             $.each(checkedItems, function(i, rowid) {
-                                multiaction.action(options.grid_id, rowid, action_url, action_method, multiaction.extraParams, multiaction.afterAction);
+                                multiaction.action(options.grid_id, rowid, action_url, action_method, multiaction.extraParams, multiaction.afterAction, data);
                             });
                             $("#" + options.grid_id).jqGrid('resetSelection');
                         });

@@ -330,6 +330,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 entity_time_periods
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::EntityTimePeriod>
+
+=cut
+
+__PACKAGE__->has_many(
+  "entity_time_periods",
+  "AdministratorDB::Schema::Result::EntityTimePeriod",
+  { "foreign.entity_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 entityright_entityright_consumers
 
 Type: has_many
@@ -750,6 +765,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 time_period
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::TimePeriod>
+
+=cut
+
+__PACKAGE__->might_have(
+  "time_period",
+  "AdministratorDB::Schema::Result::TimePeriod",
+  { "foreign.time_period_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 user
 
 Type: might_have
@@ -836,8 +866,10 @@ Composing rels: L</ingroups> -> gp
 __PACKAGE__->many_to_many("gps", "ingroups", "gp");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-02-21 17:12:33
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:IDXik1wM1YaBKXKaGbXCcw
+# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-04-08 22:31:57
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:QMQMA2d16fJebhG5GsifsQ
+
+__PACKAGE__->many_to_many("time_periods", "entity_time_periods", "time_period");
 
 __PACKAGE__->might_have(
   "workflow",
@@ -867,6 +899,5 @@ __PACKAGE__->has_many(
   { "foreign.entity_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
-
 
 1;

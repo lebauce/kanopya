@@ -143,7 +143,11 @@ sub getRulesToEvaluate {
             next SP;
         }
         $log->info('RulesEngine handle rules for service provider '.  $service_provider->id);
-        push @rules, $service_provider->rules;
+        for my $rule ($service_provider->rules) {
+            if ($rule->isActive) {
+                push @rules, $rule;
+            }
+        }
     }
     return \@rules;
 }

@@ -32,10 +32,10 @@ var KanopyaFormWizard = (function() {
 
         // Load the form contents
         this.steps = {};
-        this.load();
+        var values = this.load();
 
         // We add buttons at end of the form
-        var buttons = this.actionsCallback();
+        var buttons = this.actionsCallback(values);
         if (buttons) {
             var actionsTable = $("<table>");
             var tr = $('<tr>');
@@ -49,7 +49,7 @@ var KanopyaFormWizard = (function() {
             }
             actionsTable.append(tr);
             var fieldset = $("<fieldset>").appendTo(this.form);
-            var legend   = $("<legend>", { text : 'Actions' }).css('font-weight', 'bold');
+            var legend   = $("<legend>", { text : this.actionsLabel }).css('font-weight', 'bold');
             fieldset.append(legend);
             fieldset.append(actionsTable);
             this.form.appendTo(this.content).append(fieldset);
@@ -210,6 +210,8 @@ var KanopyaFormWizard = (function() {
         $(this.form).formwizard("update_steps");
 
         this.resizeDialog();
+
+        return values;
     }
 
     KanopyaFormWizard.prototype.buildFromAttrDef = function(attributes, displayed, values, relations, listing) {
@@ -239,7 +241,7 @@ var KanopyaFormWizard = (function() {
              * - virtual attributes as we can not set a value on,
              * - blacklisted attributes.
              */
-            if (!(this.attributedefs[name].is_virtual || $.inArray(name, attributes_blacklist) >= 0) &&
+            if (!((this.attributedefs[name].is_virtual && this.attributedefs[name].is_editable == true) || $.inArray(name, attributes_blacklist) >= 0) &&
                 !(this.attributedefs[name].type === 'relation' && this.attributedefs[name].relation === "single_multi")) {
                 var value = this.attributedefs[name].value || values[name] || undefined;
 
@@ -275,7 +277,7 @@ var KanopyaFormWizard = (function() {
 
         if (relations[name]) {
             // Relation is multi to multi
-            resource = this.attributedefs[name].link_to;
+            resource = this.attributedefs[name].link_to.replace(/_/g, '');
 
         } else {
             // Relation is single to single
@@ -440,7 +442,6 @@ var KanopyaFormWizard = (function() {
          */
         if (attr.hidden) {
             input.attr('type', 'hidden');
-
         } else {
             if (table.parent().is('fieldset') && table.parent().css('display') == 'none') {
                table.parent().css('display', 'block');
@@ -933,8 +934,6 @@ var KanopyaFormWizard = (function() {
         if ('type' in args) {
             this.type = args.type;
             this.name = 'form_' + args.type;
-        } else {
-            throw new Error("KanopyaFormWizard : Must provide a type");
         }
 
         this.id              = args.id;
@@ -945,13 +944,16 @@ var KanopyaFormWizard = (function() {
         this.rawsteps        = args.rawsteps        || {};
         this.callback        = args.callback        || $.noop;
         this.title           = args.title           || this.name;
+        this.actionsLabel    = args.actionsLabel    || 'Actions';
         this.skippable       = args.skippable       || false;
         this.reloadable      = args.reloadable      || false;
         this.hideDisabled    = args.hideDisabled    || false;
         this.stepsAsTags     = args.stepsAsTags     || false;
         this.submitCallback  = args.submitCallback  || this.submit;
         this.valuesCallback  = args.valuesCallback  || this.getValues;
-        this.attrsCallback   = args.attrsCallback   || this.getAttributes;
+        this.attrsCallback   = args.attrsCallback   || (args.type ?
+                                                        this.getAttributes :
+                                                        function () { return { attributes : [], relations : [] } });
         this.optionsCallback = args.optionsCallback || function () { return false };
         this.actionsCallback = args.actionsCallback || $.noop;
         this.cancelCallback  = args.cancelCallback  || $.noop;

@@ -60,6 +60,14 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_extended  => 0
     },
+    entity_time_periods => {
+        label        => 'Time periods',
+        type         => 'relation',
+        relation     => 'multi',
+        link_to      => 'time_period',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
     comment => {
         is_virtual   => 1,
     },
