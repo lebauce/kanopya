@@ -934,8 +934,6 @@ var KanopyaFormWizard = (function() {
         if ('type' in args) {
             this.type = args.type;
             this.name = 'form_' + args.type;
-        } else {
-            throw new Error("KanopyaFormWizard : Must provide a type");
         }
 
         this.id              = args.id;
@@ -953,7 +951,9 @@ var KanopyaFormWizard = (function() {
         this.stepsAsTags     = args.stepsAsTags     || false;
         this.submitCallback  = args.submitCallback  || this.submit;
         this.valuesCallback  = args.valuesCallback  || this.getValues;
-        this.attrsCallback   = args.attrsCallback   || this.getAttributes;
+        this.attrsCallback   = args.attrsCallback   || (args.type ?
+                                                        this.getAttributes :
+                                                        function () { return { attributes : [], relations : [] } });
         this.optionsCallback = args.optionsCallback || function () { return false };
         this.actionsCallback = args.actionsCallback || $.noop;
         this.cancelCallback  = args.cancelCallback  || $.noop;
