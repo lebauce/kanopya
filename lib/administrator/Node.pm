@@ -179,6 +179,13 @@ sub fqdn {
     return $self->node_hostname . '.' . $self->service_provider->cluster_domainname;
 }
 
+sub getMasterComponents {
+    my $self = shift;
+
+    my @masters = $self->searchRelated(filters => ['component_nodes'], hash => { master_node => 1 });
+    return @masters;
+}
+
 sub getDelegatee {
     my $self = shift;
     my $class = ref $self;
