@@ -44,6 +44,7 @@ use Entity::Host;
 use Entity::ServiceProvider::Cluster;
 use Entity::Masterimage;
 use Entity::Vlan;
+use Harddisk;
 use NetconfVlan;
 
 =pod
@@ -90,6 +91,16 @@ sub registerHost {
                 $if->setAttr(name => 'master', value => $iface->{master});
                 $if->save();
             }
+        }
+    }
+
+    if (defined ($board->{harddisks})) {
+        for my $harddisk (@{$board->{harddisks}}) {
+            Harddisk->new(
+                host_id         => $host->id,
+                harddisk_device => $harddisk->{device},
+                harddisk_size   => $harddisk->{size}
+            );
         }
     }
 
