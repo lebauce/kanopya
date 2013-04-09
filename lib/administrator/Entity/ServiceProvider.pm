@@ -650,4 +650,27 @@ sub getComponent {
     return Entity::Component->find(%$findargs);
 }
 
+sub nodesByWeight {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { 'master_node' => 1 });
+
+    my @nodes = $self->nodes;
+    if (not $args{master_node}) {
+        # If option set, keep non master nodes only
+        @nodes = grep { scalar($_->getMasterComponents) == 0 } @nodes;
+    }
+
+    return sort {
+        # Firstly sort by number of master components
+        scalar($b->getMasterComponents) <=> scalar($a->getMasterComponents)
+            ||
+        # Then by number of components
+        scalar($b->component_nodes) <=> scalar($a->component_nodes)
+            ||
+        # Finally by node number
+        $a->node_number <=> $b->node_number
+    } @nodes;
+}
+
 1;
