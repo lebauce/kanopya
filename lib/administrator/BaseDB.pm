@@ -1720,7 +1720,10 @@ sub populateRelations {
     for my $relation (keys %{$args{relations}}) {
         my $rel_infos = $self->getRelationship(relation => $relation);
 
-        next RELATION if $args{foreign} == 0 && $rel_infos->{relation} ne "single";
+        if (($args{foreign} == 0 && $rel_infos->{relation} ne "single") ||
+            ($args{override} == 0 && $args{foreign} == 1 && $rel_infos->{relation} eq "single")) {
+            next RELATION;
+        }
 
         my $relation_class = $rel_infos->{class};
         my $relation_schema = $rel_infos->{schema};
@@ -1728,10 +1731,9 @@ sub populateRelations {
 
         if ($rel_infos->{relation} eq "single") {
             my $entry = $args{relations}->{$relation};
-            my $id = delete $entry->{@{$relation_schema->_primaries}[0]};
-            if ($id) {
+            if (ref($self) && $self->$relation) {
                 # We have the relation id, it is a relation update
-                $relation_class->get(id => $id)->update(%$entry);
+                $self->$relation->update(%$entry, override => $args{override});
             }
             else {
                 # Id do not exists, it is a relation creation
