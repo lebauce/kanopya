@@ -277,7 +277,7 @@ var KanopyaFormWizard = (function() {
 
         if (relations[name]) {
             // Relation is multi to multi
-            resource = this.attributedefs[name].link_to;
+            resource = this.attributedefs[name].link_to.replace(/_/g, '');
 
         } else {
             // Relation is single to single
@@ -442,7 +442,6 @@ var KanopyaFormWizard = (function() {
          */
         if (attr.hidden) {
             input.attr('type', 'hidden');
-
         } else {
             if (table.parent().is('fieldset') && table.parent().css('display') == 'none') {
                table.parent().css('display', 'block');
