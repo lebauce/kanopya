@@ -2340,7 +2340,7 @@ sub getRelatedSource {
 
     my $dbix = $class->getResultSource();
     while ($dbix and (not $dbix->has_relationship($relation))) {
-        $dbix = $dbix->relationship_info($relation);
+        $dbix = $dbix->related_source("parent");
     }
 
     my $relation_schema;
