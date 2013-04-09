@@ -32,10 +32,10 @@ var KanopyaFormWizard = (function() {
 
         // Load the form contents
         this.steps = {};
-        this.load();
+        var values = this.load();
 
         // We add buttons at end of the form
-        var buttons = this.actionsCallback();
+        var buttons = this.actionsCallback(values);
         if (buttons) {
             var actionsTable = $("<table>");
             var tr = $('<tr>');
@@ -210,6 +210,8 @@ var KanopyaFormWizard = (function() {
         $(this.form).formwizard("update_steps");
 
         this.resizeDialog();
+
+        return values;
     }
 
     KanopyaFormWizard.prototype.buildFromAttrDef = function(attributes, displayed, values, relations, listing) {
