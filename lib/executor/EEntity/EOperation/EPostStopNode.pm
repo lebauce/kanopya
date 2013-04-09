@@ -187,11 +187,8 @@ sub execute {
 sub finish {
     my $self = shift;
 
-    my @cluster_state = $self->{context}->{cluster}->getState;
-    my $nbnodes = scalar(@{ $self->{context}->{cluster}->getHosts() });
-
     # If the cluster has no node any more, it has been properly stoped
-    if ($nbnodes == 0) {
+    if (scalar(@{ $self->{context}->{cluster}->getHosts() }) == 0) {
         $self->{context}->{cluster}->setState(state => "down");
     }
 }
