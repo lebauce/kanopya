@@ -117,7 +117,7 @@ sub getPuppetDefinition {
         $str .= "mount {'$mount->{linux_mount_point}':\n";
         $str .= "\tdevice => '$mount->{linux_mount_device}',\n";        
         $str .= "\tensure => mounted,\n";
-        $str .= "\trequire => File['$mount->{linux_mount_point}']\n";
+        $str .= "\trequire => File['$mount->{linux_mount_point}'],\n";
         $str .= "\tfstype => '$mount->{linux_mount_filesystem}',\n";
         $str .= "\tname   => '$mount->{linux_mount_point}',\n";
         $str .= "\toptions => '$mount->{linux_mount_options}',\n";
