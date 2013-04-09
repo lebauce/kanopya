@@ -1,6 +1,5 @@
-# EPreStopNode.pm - Operation class implementing Cluster creation operation
-
 #    Copyright © 2011 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,28 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
-=head1 NAME
-
-EEntity::Operation::EPreStopNode - Operation class implementing Host creation operation
-
-=head1 SYNOPSIS
-
-This Object represent an operation.
-It allows to implement Host creation operation
-
-=head1 DESCRIPTION
-
-EPreStopNode allows to prepare cluster for node addition.
-It takes as parameters :
-- host_id : Int (Scalar) : host_id identifies host
-    which will be migrated into cluster to become a node.
-- cluster_id : Int (Scalar) : cluster_id identifies cluster which will grow.
-
-=head1 METHODS
-
-=cut
 package EEntity::EOperation::EPreStopNode;
 use base "EEntity::EOperation";
 
@@ -68,15 +46,14 @@ sub prerequisites {
     if ((not defined $self->{context}->{host}) && (defined $self->{context}->{cluster})) {
         $log->info('No node selected, select a random node');
 
-        my @nodes = $self->{context}->{cluster}->nodes;
-        if (scalar (@nodes) <= 1) {
-            throw Kanopya::Exception(error => 'Cannot remove a node from cluster <'.($self->{context}->{cluster}->id).'> only one left');
+        # Search the less important non master node
+        my @nodes = $self->{context}->{cluster}->nodesByWeight(master_node => 0);
+        if (not scalar (@nodes)) {
+            throw Kanopya::Exception(error => 'Cannot remove a node from cluster <'.($self->{context}->{cluster}->id).'>, only master nodes left');
         }
-        my $random_int = int(scalar (@nodes) * rand);
-        my $node = $nodes[$random_int];
+        my $node = pop @nodes;
 
-        $log->info('Node <' . $node->id . '> selected to be removed between <' . (scalar @nodes) . '> nodes');
-
+        $log->info('Node <' . $node->id . '> selected to be removed among <' . (scalar @nodes) . '> nodes');
         $self->{context}->{host} = EEntity->new(data => $node->host);
     }
 
@@ -84,9 +61,9 @@ sub prerequisites {
         $log->info('Need to flush the hypervisor before stopping it');
 
         my $operation_to_enqueue = {
-            type => 'FlushHypervisor',
+            type     => 'FlushHypervisor',
             priority => 1,
-            params => { context => { host => $self->{context}->{host}}, }
+            params   => { context => { host => $self->{context}->{host} } }
         };
 
         $self->workflow->enqueueBefore(operation => $operation_to_enqueue);
@@ -94,7 +71,7 @@ sub prerequisites {
         return -1;
     }
 
-    if(not defined $self->{context}->{cluster}) {
+    if (not defined $self->{context}->{cluster}) {
          my $cluster = Entity->get(id => $self->{context}->{host}->node->service_provider_id);
          $self->{context}->{cluster} = $cluster;
     }

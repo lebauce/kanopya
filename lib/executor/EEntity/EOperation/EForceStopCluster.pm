@@ -55,7 +55,7 @@ sub execute {
 
     my $subnet = $self->{context}->{component_dhcpd}->getInternalSubNetId();
 
-    foreach my $node ($self->{context}->{cluster}->getHosts()) {
+    foreach my $node (reverse $self->{context}->{cluster}->nodesByWeight()) {
         eval {
             # Halt Node
             my $ehost = EEntity->new(data => $node);

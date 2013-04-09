@@ -1,6 +1,5 @@
-# Operation.pm - Operation class, this is an abstract class
-
 #    Copyright © 2011 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,22 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
-=head1 NAME
-
-Operation.pm - Operation class, this is an abstract class
-
-=head1 SYNOPSIS
-
-This Object represent an operation.
-
-=head1 DESCRIPTION
-
-
-=head1 METHODS
-
-=cut
 
 package Entity::Operation;
 use base 'Entity';
@@ -44,7 +28,6 @@ use Operationtype;
 use ParamPreset;
 use Kanopya::Exceptions;
 use NotificationSubscription;
-use Entity::Operation;
 use OldOperation;
 
 use DateTime;
@@ -54,7 +37,6 @@ use Data::Dumper;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
-our $VERSION = '1.00';
 my $errmsg;
 
 use constant ATTR_DEF => {
