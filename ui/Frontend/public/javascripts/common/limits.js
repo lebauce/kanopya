@@ -1,4 +1,4 @@
-	/* require('jquery/fullcalendar/build/out/fullcalendar.js'); */
+require('jquery/fullcalendar/fullcalendar.js');
 
 function Periods() {
     Periods.prototype.add = function (e) {

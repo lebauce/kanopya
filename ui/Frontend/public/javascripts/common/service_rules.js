@@ -320,13 +320,14 @@ function ruleForm(sp_id, type, editid, onClose, values) {
     });
 }
 
-function createRuleButton(container_id, sp_id, type, editid, onClose) {
-    var button = $("<button>", {html : editid ? 'Edit' : 'Add a rule'});
-    button.bind('click', function() {
-        ruleForm(sp_id, type, editid, onClose);
-        return false;
-    }).button({ icons : { primary : editid ? 'ui-icon-pencil' : 'ui-icon-plusthick' } });
-    $('#' + container_id).append(button);
+function createRuleButton(sp_id, type, editid, onClose) {
+    var button = $("<a>", { text : editid ? 'Edit' : 'Add a rule' })
+        .button({ icons : { primary : editid ? 'ui-icon-pencil' : 'ui-icon-plusthick' } })
+        .click(function() {
+            ruleForm(sp_id, type, editid, onClose);
+            return false;
+        });
+    return button;
 }
 
 function createServiceCondition(container_id, elem_id) {
@@ -345,51 +346,74 @@ var filterNotifyWorkflow    = function(grid, rowid) {
     }
 };
 
+function associateTimePeriods(grid_id, rowid, url, method, extraParams, afterAction, data) {
+    $.ajax({
+        url : "/api/aggregaterule/" + rowid,
+        type : "PUT",
+        contentType : 'application/json',
+        data : JSON.stringify(data)
+    });
+}
+
 function loadServicesRules (container_id, elem_id, ext, mode_policy) {
     var container = $("#" + container_id);
 
     ext = ext || '';
 
     var displayAssociationButton = function(cid, eid, type) {
-        createWorkflowRuleAssociationButton(cid, eid, type == 'nodemetric_rule' ? 1 : 2, elem_id);
-        $('<br>').appendTo($('#' + cid));
+        return createWorkflowRuleAssociationButton(cid, eid, type == 'nodemetric_rule' ? 1 : 2, elem_id);
     }
 
     var ruleDetails = function(cid, eid, type) {
-        $.ajax({
-            url     : '/api/'+type.replace('_','')+'/' + eid,
-            success : function(data) {
-                var container   = $('#' + cid);
-                var detail_div   = $('<div>').appendTo(container);
-                if (data['description']) {
-                    $('<p>', { text : data['description'], 'class':'ui-state-highlight' }).appendTo(detail_div);
-                }
-                $('<p>', { text : 'Formula : ' + data.formula_label }).appendTo(detail_div);
-
+        (new KanopyaFormWizard({
+            title      : 'Rule details',
+            type       : type.replace('_', ''),
+            id         : eid,
+            displayed  : [ "description", "formula_label", "entity_time_periods" ],
+            actionsCallback : function (data) {
+                var buttons = [];
                 if (data.workflow_def_id != null) {
                     $.ajax({
                         url     : '/api/workflowdef/' + data.workflow_def_id,
-                        success : function(wfdef) {
+                        async   : false,
+                        success : function (wfdef) {
                             if (notifyworkflow_regex.exec(wfdef.workflow_def_name) == null) {
-                                var p   = $('<p>', { text : 'Associated workflow : ' + wfdef.workflow_def_name }).appendTo(detail_div);
+                                var p = $('<p>', { text : 'Associated workflow : ' + wfdef.workflow_def_name });
                                 appendWorkflowActionsButtons(p, cid, eid, data.workflow_def_id, elem_id);
+                                buttons.push(p);
+                                buttons.push($("<br>"));
                             } else {
-                                displayAssociationButton(cid, eid, type);
+                                buttons.push(displayAssociationButton(cid, eid, type));
                             }
                         }
                     });
                 } else {
-                    displayAssociationButton(cid, eid, type);
+                    buttons.push(displayAssociationButton(cid, eid, type));
                 }
-                createRuleButton(cid, elem_id, type, eid, function(form) {
+                buttons.push(createRuleButton(elem_id, type, eid, function(form) {
                     // Update overview content
-                    reload_content(cid, eid);
+                    if (cid) reload_content(cid, eid);
                     // Update dialog title
-                    var rule_label = form.find('#input_'+type+'_label').val();
+                    var rule_label = form.find('#input_' + type + '_label').val();
                     container.parents('.ui-dialog').find('.ui-dialog-title').html(rule_label);
-                });
-            }
-        });
+                }));
+                return buttons;
+            },
+            attrsCallback  : function (type, data, trigger) {
+                var attrs = this.getAttributes(type, data, trigger);
+                var attributes = attrs.attributes;
+                attrs.attributes = { };
+                for (var i = 0; i < this.displayed.length; i++) {
+                    attrs.attributes[this.displayed[i]] = attributes[this.displayed[i]];
+                }
+                attrs.relations = {
+                    "entity_time_periods" : attrs.relations.entity_time_periods
+                };
+                return attrs;
+            },
+        })).start();
+
+        return false;
     }
 
     ////////////////////////RULES ACCORDION//////////////////////////////////
@@ -452,7 +476,8 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
             .append( $('<div>', {id : 'service_nodemetric_rules_container'}) )
     );
 
-    createRuleButton('service_nodemetric_rules_action_buttons', elem_id, 'nodemetric_rule');
+    $('#service_nodemetric_rules_action_buttons').append(createRuleButton(elem_id, 'nodemetric_rule'));
+
     if (!mode_policy) {
         importItemButton(
                 'service_nodemetric_rules_action_buttons',
@@ -573,7 +598,8 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
             .append( $('<div>', {id : 'service_resources_aggregate_rules_container'}) )
     );
 
-    createRuleButton('service_resources_aggregate_rules_action_buttons', elem_id, 'aggregate_rule');
+    $('#service_resources_aggregate_rules_action_buttons').append(createRuleButton(elem_id, 'aggregate_rule'));
+
     if (!mode_policy) {
         importItemButton(
                 'service_resources_aggregate_rules_action_buttons',
@@ -615,14 +641,12 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
             addSubscriptionButtonInGrid(grid, rowid, rowdata, rowelem, "service_resources_aggregate_rules_" +  elem_id +"_alert", "ProcessRule", false);
         },
         details : {
-            tabs    : [
-                { label : 'Overview', id : 'overview', onLoad : function(cid, eid) {
-                    ruleDetails(cid, eid, 'aggregate_rule');
-               }},
-            ],
-            title   : { from_column : 'label' },
-            onClose : function() {$('#'+serviceAggregateRulesGridId).trigger('reloadGrid')}
+            onSelectRow : function (elem_id, row_data, grid_id) {
+                ruleDetails(undefined, elem_id, 'aggregate_rule');
+                $('#' + serviceAggregateRulesGridId).trigger('reloadGrid');
+            }
         },
+        onSelectRow : function () { alert("Rouge"); },
         action_delete: {
             url : '/api/aggregaterule',
         },
@@ -633,7 +657,35 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                 action      : removeGridEntry,
                 url         : '/api/aggregaterule',
                 icon        : 'ui-icon-trash',
-                extraParams : {multiselect : true}
+                extraParams : { multiselect : true }
+            },
+            associateTimePeriod : {
+                label       : 'Associate time periods',
+                action      : associateTimePeriods,
+                url         : '/api/rule',
+                icon        : 'ui-icon-clock',
+                extraParams : { multiselect : true },
+                confirm     : function (grid, label, selection, callback) {
+                    (new KanopyaFormWizard({
+                        title      : label,
+                        type       : 'aggregaterule',
+                        id         : undefined,
+                        displayed  : [ "entity_time_periods" ],
+                        attrsCallback  : function (type, data, trigger) {
+                            var attrs = this.getAttributes(type, data, trigger);
+                            attrs.attributes = {
+                                "entity_time_periods" : attrs.attributes.entity_time_periods
+                            };
+                            attrs.relations = {
+                                "entity_time_periods" : attrs.relations.entity_time_periods
+                            };
+                            return attrs;
+                        },
+                        submitCallback : function (data, form, opts) {
+                            this.closeDialog();
+                        }
+                    })).start();
+                }
             }
         }
     } );
@@ -675,7 +727,6 @@ function rule_nodes_tab(cid, rule_id, service_provider_id) {
             });
         return VerifiedRuleFormat;
     }
-//         url: '/api/node/' + eid,
     
     var loadNodeRulesTabGridId = 'rule_nodes_tabs';
     create_grid( {

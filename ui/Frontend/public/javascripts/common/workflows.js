@@ -491,7 +491,7 @@ function workflowRuleDeassociation(cid, rule_id, wfdef_id, serviceprovider_id) {
 function createWorkflowRuleAssociationButton(cid, eid, scid, serviceprovider_id) {
     var button  = $("<a>", { text : 'Associate a Workflow' }).button();
     button.bind('click', function() { workflowRuleAssociation(eid, scid, cid, serviceprovider_id); });
-    $('#' + cid).append(button);
+    return button;
 }
 
 function appendWorkflowActionsButtons(elem, cid, rule_id, wfdef_id, serviceprovider_id) {

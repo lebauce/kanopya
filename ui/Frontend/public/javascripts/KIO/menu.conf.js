@@ -35,7 +35,7 @@ var mainmenu_def = {
                 icon : 'monitoring'
             }, { label : 'Rules',
                  id : 'service_rules',
-                 onLoad : function(cid, eid) { /* require('common/service_rules.js'); */ loadServicesRules(cid, eid, 'external'); },
+                 onLoad : function(cid, eid) { require('common/service_rules.js'); loadServicesRules(cid, eid, 'external'); },
                  icon : 'rules'
             }, { label : 'Events & Alerts',
                  id : 'events_alerts',

@@ -1,7 +1,6 @@
+<link href='/javascripts/jquery/fullcalendar/fullcalendar.css' rel='stylesheet' />
 <script src="/javascripts/KIO/menu.conf.js"></script>
-
 <div id='view-container' class="ui-layout-center">
-    <!--div id='bread-scrumbs' >Salut</div-->
     <div id='view-dashboard' class='master_view'>
         <img id='image-welcome' class='hidden' src='/images/welcome_box.png'/>
     </div>
