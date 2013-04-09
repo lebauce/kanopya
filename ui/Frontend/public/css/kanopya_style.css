@@ -219,3 +219,34 @@ button.ui-multiselect,.ui-multiselect-menu li label{cursor:pointer;}
 .node-disabled {background: darkgrey !important;}
 .waiting-insert-content-container {height:280px !important;}
 .waiting-insert-content {position:absolute !important;left:35% !important;top:35% !important;text-align:center;}
+
+.node-disabled {
+    background: darkgrey !important;
+}
+
+.fullcalendar {
+    width: 100%;
+    height: auto;
+    margin: 0 auto;
+}
+
+.close-box {
+    position: absolute;
+    background-color: transparent;
+    z-index: 100;
+    right: 0px;
+    top: -2px;
+}
+
+#form_timeperiod table {
+    width: 100%;
+}
+
+#edit-event-dialog span {
+    font-weight: normal;
+}
+
+#edit-event-dialog input[type="radio"] {
+    margin-right: 10px;
+}
+

@@ -1,5 +1,6 @@
 // each link will show the div with id "view_<link_name>" and hide all div in "#view-container"
 require('common/workflows.js');
+require('common/limits.js');
 
 var mainmenu_def = {
     'Services' : {
