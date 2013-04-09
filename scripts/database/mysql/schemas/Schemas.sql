@@ -710,6 +710,8 @@ CREATE TABLE `alert` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
+CREATE INDEX alert_fast_find
+on alert (alert_message(255), trigger_entity_id, alert_active);
 
 --
 -- Table structure for table `systemimage`
