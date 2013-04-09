@@ -86,7 +86,7 @@ function servicesList (container_id, elem_id) {
     $("#services_list").on('gridChange', reloadServices);
 }
 
-function createUpdateNodeButton(container, elem_id, grid) {
+function createUpdateNodeButton(container, elem_id, grid_id) {
     var import_button = $("<button>", { text : 'Import nodes', title : 'Add new nodes in service', 'class':'update_node_button' })
         .button({ icons : { primary : 'ui-icon-arrowthick-1-w' } });
     var synchro_button = $("<button>", { text : 'Synchronize', title : 'Add new nodes in service and remove old nodes', 'class':'update_node_button' })
@@ -104,7 +104,7 @@ function createUpdateNodeButton(container, elem_id, grid) {
                         url          : '/api/externalcluster/' + elem_id + '/updateNodes',
                         data         : data,
                         success      : function(data) {
-                            $(grid).trigger("reloadGrid");
+                            $('#'+grid_id).trigger("reloadGrid");
                             if (data) {
                                 alert(
                                         data.retrieved_node_count + ' nodes retrieved\n' +
@@ -143,7 +143,7 @@ function loadServicesResources (container_id, elem_id) {
     var nodemetricrules;
     var action_buttons_container = $('#' + container_id).prevAll('.action_buttons');
 
-    createUpdateNodeButton(action_buttons_container, elem_id, $('#' + loadServicesResourcesGridId));
+    createUpdateNodeButton(action_buttons_container, elem_id, loadServicesResourcesGridId);
 
     // Manage enable/disable nodes and add control button in grid
     function manageNodeEnabling(grid, rowid, rowdata, rowelem) {

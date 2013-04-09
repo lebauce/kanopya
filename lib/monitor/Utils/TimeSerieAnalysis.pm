@@ -460,8 +460,9 @@ sub findSeasonalityDSP {
     my $loadvect = "vect <- c (". join(",", @{$data_values}) .")" ;
 
     #Get find.freq function to be sent to R
-    my $nameFile = "/opt/kanopya/scripts/R/findFreq.R";
-    open (FILE,"<$nameFile") or die "open: $!";
+    my $kanopya_dir   = Kanopya::Config::getKanopyaDir();
+    my $r_script_path = $kanopya_dir . '/scripts/R/findFreq.R';
+    open (FILE,"<$r_script_path") or die "open: $!";
     my @find_freq = <FILE>;
     my $find_freq = join("",@find_freq);
     close FILE;

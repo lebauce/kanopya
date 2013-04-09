@@ -327,7 +327,7 @@ sub updateTimeDataStore {
 
     <Class>   : Public
     <Desc>    : This method get the last updated value into a RRD file.
-    <args>    : metric_uid
+    <args>    : metric_uid, fresh_only (optional: return undef if last value date is < now - heartbeat)
     <Return>  : %values
     <throws>  : 'RRD fetch failed for last updated value' if the fetch is a failure 
     §WARNING§: the code only catch the keyword 'ERROR' in the command return...
@@ -336,7 +336,7 @@ sub updateTimeDataStore {
 
 sub getLastUpdatedValue {
     my %args = @_;
-    General::checkParams(args => \%args, required => ['metric_uid']);
+    General::checkParams(args => \%args, required => ['metric_uid'], optional => {fresh_only => undef});
 
     my $name = _formatName(name => $args{'metric_uid'});
 
@@ -367,12 +367,26 @@ sub getLastUpdatedValue {
         throw  Kanopya::Exception::Internal(error => 'no values could be retrieved from RRD');
     }
 
+    my $heartbeat = 0;
+    if ($args{fresh_only}) {
+        $cmd = $rrd.' info '.$dir.$name;
+        my $res = `$cmd`;
+        if ($res =~ /minimal_heartbeat = (\d+)/) {
+            $heartbeat = $1;
+        }
+    }
+
     #we replace the '-1.#IND000000e+000' values for "undef"
+    # and we keep only fresh value if wanted
     while (my ($timestamp, $value) = each %values) {
         if ($value eq '-1.#IND000000e+000' || $value eq 'U') {
             $values{$timestamp} = undef;
         }
+        if ($args{fresh_only} && (time() - $timestamp > $heartbeat)) {
+            delete $values{$timestamp};
+        }
     }
+
 
     #print Dumper(\%values);
 #    $log->debug(Dumper(\%values));

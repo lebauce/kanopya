@@ -824,7 +824,8 @@ sub removeNode {
     General::checkParams(args => \%args, required => ['node_id']);
 
     my $node = Node->get(id => $args{node_id});
-    $self->unregisterNode(node => $node)
+    $self->unregisterNode(node => $node);
+    return;
 }
 
 =head2 remove

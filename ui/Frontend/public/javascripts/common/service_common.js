@@ -51,6 +51,11 @@ function addServiceExtraData(grid, rowid, rowdata, rowelem) {
 //Add extra info to each row for specific columns
 //Extra column is 'rulesstate'
 function addResourceExtraData(grid, rowid, rowdata, rowelem, nodemetricrules, sp_id, ext) {
+    // Do not display lights if monitoring is disabled for this node
+    if (rowelem.monitoring_state && rowelem.monitoring_state == 'disabled') {
+        $(grid).setCell(rowid, 'rulesstate', 'Not evaluated');
+        return;
+    }
     var     verifiednoderules = {};
     var     ok          = $('<span>', { text : 0, rel : 'ok', css : {'padding-right' : '10px'} });
     var     notok       = $('<span>', { text : 0, rel : 'notok', css : {'padding-right' : '10px'} });

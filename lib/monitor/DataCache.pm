@@ -163,7 +163,10 @@ sub _nodeMetricLastValueFromStorage {
         my $metric_uid = $args{indicator}->id . '_' . $object_name;
         my ($timestamp, $value);
         eval {
-            ($timestamp, $value) = TimeData::RRDTimeData::getLastUpdatedValue(metric_uid => $metric_uid);
+            ($timestamp, $value) = TimeData::RRDTimeData::getLastUpdatedValue(
+                                       metric_uid => $metric_uid,
+                                       fresh_only => 1
+                                   );
         };
         if ($@) {
             $value = undef;

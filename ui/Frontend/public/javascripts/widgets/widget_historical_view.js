@@ -38,6 +38,7 @@ $('.widget').live('widgetLoadContent',function(e, obj){
  *
  * 'option' is a hash of options:
  *  - open_config_part : Boolean to say if the configuration part is open by default
+ *  - hide_config_part : Do not show configuration part, use default time settings
  *  - allow_forecast   : Boolean to add the forecast part
  */
 function customInitHistoricalWidget(widget, sp_id, data, options) {
@@ -55,6 +56,10 @@ function customInitHistoricalWidget(widget, sp_id, data, options) {
     var pending_init = 0;
     function initControlDone() {
         pending_init--;
+    }
+
+    if (options.hide_config_part) {
+        widget_div.find('.widget_part_config').hide();
     }
 
     // Deactivate config part during loading of all elements
@@ -223,13 +228,16 @@ function initNodeMetricControl(widget_div, sp_id, options, callback) {
         widget_div.find('.node_list_label').hide();
     } else {
         pending++;
+
+        function _fqdnToShortname(fqdn) { return fqdn.split('.')[0] }
+
         getCache('/api/serviceprovider/'+sp_id+'/nodes?monitoring_state=<>,disabled', function (data) {
             // Fill list
             $(data).each( function () {
                 node_list.append($('<option>', {
                     node_id : this.pk,
                     value   : this.node_hostname,
-                    text    : this.node_hostname,
+                    text    : _fqdnToShortname(this.node_hostname),
                 }));
             });
             // Load widget content if configured (select combinations in drop down list)
@@ -339,7 +347,7 @@ function setRefreshButton(widget, sp_id, opts) {
             var selected_node_combis    = _getSelectedCombinations(widget_div, 'nodemetriccombination_list');
             var selected_nodes          = $.map(
                                                widget_div.find('.node_list option:selected'),
-                                               function(n){return {id:$(n).attr('node_id'),name:$(n).val()}}
+                                               function(n){return {id:$(n).attr('node_id'),name:$(n).html()}}
                                            );
 
             // Limit the number of simultaneous series
@@ -533,15 +541,15 @@ function FillModelList(widget) {
  * Callback will be called with start and stop params
  */
 function _pickTimeRange(graph, callback) {
-    var selected_start_time;
-    var selected_end_time;
+    var selected_time_1; // First date selected on graph by user
+    var selected_time_2; // Second date selected on graph by user
     graph.target.unbind("jqplotClick").bind("jqplotClick", function(ev, gridpos, datapos, neighbor) {
-      if (selected_start_time === undefined || selected_end_time !== undefined) {
-          selected_start_time = datapos.xaxis;
-          selected_end_time = undefined;
+      if (selected_time_1 === undefined || selected_time_2 !== undefined) {
+          selected_time_1 = datapos.xaxis;
+          selected_time_2 = undefined;
           var start_line = {
               name      : 'start_line',
-              x         : selected_start_time,
+              x         : selected_time_1,
               color     : 'rgba(89, 198, 154, 0.45)',
               shadow    : false
           };
@@ -549,7 +557,10 @@ function _pickTimeRange(graph, callback) {
           graph.plugins.canvasOverlay.addVerticalLine(start_line);
           graph.replot();
       } else {
-          selected_end_time = datapos.xaxis;
+          selected_time_2 = datapos.xaxis;
+
+          var epoch_time_1  = parseInt(selected_time_1 / 1000);
+          var epoch_time_2  = parseInt(selected_time_2 / 1000);
 
           var current_yaxis = graph.axes.yaxis;
           var middle_ytick  = current_yaxis.min + (current_yaxis.max - current_yaxis.min) / 2;
@@ -557,8 +568,14 @@ function _pickTimeRange(graph, callback) {
           // Display selected area on graph
           var picked_area = {
               name      : 'selected_area',
-              start     : [selected_start_time,middle_ytick],
-              stop      : [selected_end_time,middle_ytick],
+              start     : [
+                           epoch_time_1 < epoch_time_2 ? selected_time_1 : selected_time_2,
+                           middle_ytick
+                          ],
+              stop      : [
+                           epoch_time_1 < epoch_time_2 ? selected_time_2 : selected_time_1,
+                           middle_ytick
+                          ],
               lineWidth : 1000,
               lineCap   : 'butt',
               color     : 'rgba(89, 198, 154, 0.45)',
@@ -570,8 +587,8 @@ function _pickTimeRange(graph, callback) {
           graph.replot();
 
           // Callback
-          var current_selected_start_time = parseInt(selected_start_time / 1000);
-          var current_selected_end_time   = parseInt(selected_end_time / 1000);
+          var current_selected_start_time = epoch_time_1 < epoch_time_2 ? epoch_time_1 : epoch_time_2;
+          var current_selected_end_time   = epoch_time_1 < epoch_time_2 ? epoch_time_2 : epoch_time_1;
           callback(current_selected_start_time, current_selected_end_time);
       }
   });
@@ -621,8 +638,8 @@ function _autoPredict(params) {
     var predict_params = {
         data_start            : current_selected_start_time,
         data_end              : current_selected_end_time,
-        predict_start_tstamps : parseInt(new Date(time_settings.start).getTime() / 1000),
-        predict_end_tstamps   : parseInt(new Date(time_settings.end).getTime() / 1000),
+        predict_start_tstamps : dateTimeToEpoch(time_settings.start),
+        predict_end_tstamps   : dateTimeToEpoch(time_settings.end),
     };
 
     if (widget_div.find('.auto-forecast').prop('checked') == false) {
