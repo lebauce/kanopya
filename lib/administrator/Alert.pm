@@ -65,31 +65,25 @@ sub mark_resolved {
 
 sub resolve {
     my ($class, %args) = @_;
+
     General::checkParams(args => \%args, required => ['trigger_entity', 'entity_id', 'alert_message']);
 
     $log->debug('Try to resolve alert from entity <'.($args{trigger_entity}->id).'> with message: '.$args{alert_message});
     eval {
-        my $alert = $args{trigger_entity}->findRelated(filters => ['alert_trigger_entities'],
-                                                       hash    => {
-                                                           alert_message => $args{alert_message},
-                                                           alert_active  => 1
-                                                       });
+        my $alert = $class->findActive(trigger_entity => $args{trigger_entity}, alert_message => $args{alert_message});
         $alert->mark_resolved();
     };
 }
 
 sub throw {
     my ($class, %args) = @_;
+
     General::checkParams(args => \%args, required => ['trigger_entity', 'entity_id', 'alert_message']);
 
     $log->debug('Try to throw alert from entity <'.($args{trigger_entity}->id).'> with message: '.$args{alert_message});
 
     eval {
-        my $alert = $args{trigger_entity}->findRelated(filters => ['alert_trigger_entities'],
-                                                       hash    => {
-                                                           alert_message => $args{alert_message},
-                                                           alert_active  => 1
-                                                       });
+        $class->findActive(trigger_entity => $args{trigger_entity}, alert_message => $args{alert_message});
     };
     if ($@) {
         Alert->new(entity_id         => $args{entity_id},
@@ -98,4 +92,16 @@ sub throw {
                    trigger_entity_id => $args{trigger_entity}->id);
     }
 }
+
+sub findActive {
+    my ($class, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'trigger_entity', 'alert_message' ]);
+
+    # Do not use findRelated on trigger_entity here, as we do not want a JOIN between Alert and Entity
+    return Alert->find(hash => { trigger_entity_id => $args{trigger_entity}->id,
+                                 alert_message     => $args{alert_message},
+                                 alert_active      => 1 });
+}
+
 1;
