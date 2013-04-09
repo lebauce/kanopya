@@ -40,12 +40,14 @@ use constant ATTR_DEF   => {
         is_mandatory    => 1,
         is_extended     => 0,
         is_editable     => 1,
+        label           => 'Service provider'
     },
     rule_name => {
         pattern         => '^.*$',
         is_mandatory    => 0,
         is_extended     => 0,
         is_editable     => 1,
+        label           => 'Name'
     },
     formula => {
         pattern         => '^((id\d+)|and|or|not|[ ()!&|])+$',
@@ -61,24 +63,28 @@ use constant ATTR_DEF   => {
         is_mandatory    => 0,
         is_extended     => 0,
         is_editable     => 1,
+        label           => 'Timestamp'
     },
     state => {
         pattern         => '(enabled|disabled|disabled_temp|delayed|triggered)$',
         is_mandatory    => 1,
         is_extended     => 0,
         is_editable     => 1,
+        label           => 'State'
     },
     workflow_def_id => {
         pattern         => '^.*$',
         is_mandatory    => 0,
         is_extended     => 0,
         is_editable     => 1,
+        label           => 'Worflow'
     },
     description => {
         pattern         => '^.*$',
         is_mandatory    => 0,
         is_extended     => 0,
         is_editable     => 1,
+        label           => 'Description'
     },
     formula_string => {
         pattern         => '^.*$',
