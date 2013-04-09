@@ -2,7 +2,7 @@
 
 =begin classdoc
 
-Subroutines to upgrade KIO 
+Subroutines to upgrade KIO
 
 @since 2013-March-26
 
@@ -45,11 +45,27 @@ use UserProfile;
 use VerifiedNoderule;
 use WorkflowDef;
 use Entity::ServiceProvider::Outside::Externalcluster;
+use Kanopya::Config;
+use Indicatorset;
 
 Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
 
 
-my $export_dir = '/vagrant/';
+my ($export_dir, $rrd_backup_dir, $rrd_dir);
+my $cp_dir;
+if ($^O eq 'MSWin32') {
+    $export_dir     = 'C:\\tmp\\';
+    $rrd_backup_dir = 'C:\\tmp\\monitor\\TimeData_backup\\';
+    $rrd_dir        = 'C:\\tmp\\monitor\\TimeData\\';
+    $cp_dir         = 'cp -recurse';
+}
+elsif ($^O eq 'linux') {
+    $export_dir     = '/vagrant/';
+    $rrd_backup_dir = '/var/cache/kanopya/monitor_backup/';
+    $rrd_dir        = '/var/cache/kanopya/monitor/';
+    $cp_dir         = 'cp -R';
+}
+
 my $export_bdd_file = $export_dir . 'bdd.json';
 mkdir $export_dir unless (-d $export_dir);
 
@@ -70,6 +86,25 @@ my $matrix = {
         ],
     },
 };
+
+# backup monitoring data (folder to copy on machine to be restored)
+`$cp_dir $rrd_dir $rrd_backup_dir`;
+
+# save indicators created by user
+my @user_indicators = Entity::Indicator->search(hash => {indicator_color => undef});
+foreach my $user_indicator (@user_indicators) {
+    my $tojson_user_indicator = $user_indicator->toJSON;
+    $tojson_user_indicator->{indicatorset_name} = Indicatorset->find(
+        hash => {
+            indicatorset_id => $user_indicator->indicatorset_id
+        }
+    )->indicatorset_name;
+    $export_data->{'user_indicators'}->{$user_indicator->indicator_id} = $tojson_user_indicator;
+}
+
+# save kanopya configuration
+my $config = Kanopya::Config::get();
+$export_data->{configuration} = $config;
 
 while (my ($resource,$details) = each %$matrix) {
 
@@ -101,14 +136,14 @@ while (my ($resource,$details) = each %$matrix) {
                         my @tojson_collector_indicators;
                         foreach my $collector_indicator (@collector_indicators) {
                             my $tojson_collector_indicator = $collector_indicator->toJSON;
-                            $tojson_collector_indicator->{indicator_name} = 
+                            $tojson_collector_indicator->{indicator_name} =
                                 Entity::Indicator->find(
                                     hash => {
                                         indicator_id => $collector_indicator->indicator_id
                                     }
                                 )->indicator_name;
                             push @tojson_collector_indicators, $tojson_collector_indicator;
-                            
+
                         }
                         $tojson_obj_relation->{collector_indicators} = \@tojson_collector_indicators;
                     }
@@ -133,19 +168,17 @@ while (my ($resource,$details) = each %$matrix) {
     $export_data->{$resource} = \@objects_rdy_to_export;
 }
 
-
-
 _writeJsonFile(data =>$export_data);
 
 sub _writeJsonFile {
     my %args = @_;
-   
+
     General::checkParams(args => \%args, required => [ "data" ]);
-   
+
     my $json_exported_items = JSON->new->utf8->encode($args{data});
-    
-    open (my $FILE, '>>', $export_bdd_file) or die 'could not open \'$export_bdd_file\' : $!\n';
-    print $FILE $json_exported_items; 
+
+    open (my $FILE, '>', $export_bdd_file) or die 'could not open \'$export_bdd_file\' : $!\n';
+    print $FILE $json_exported_items;
     close($FILE);
 }
 
