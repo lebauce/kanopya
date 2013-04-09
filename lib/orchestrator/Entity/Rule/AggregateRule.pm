@@ -68,6 +68,8 @@ use constant ATTR_DEF => {
     },
     formula_label => {
         is_virtual      => 1,
+        is_editable     => 0,
+        label           => 'Formula'
     }
 };
 
