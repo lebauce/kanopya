@@ -307,4 +307,32 @@ sub getDependentConditionIds {
     return keys %ids;
 }
 
+=pod
+
+=begin classdoc
+
+Return true if there is an active time period for the rule
+ 
+@return a boolean
+
+=end classdoc
+
+=cut
+
+sub isActive {
+    my $self = shift;
+    my $active = 0;
+
+    if ($self->entity_time_periods) {
+        for my $period ($self->time_periods) {
+            $active ||= $period->isActive;
+        }
+    }
+    else {
+        $active = 1;
+    }
+
+    return $active;
+}
+
 1;
