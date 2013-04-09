@@ -1159,6 +1159,7 @@ var KanopyaFormWizard = (function() {
             title           : this.title,
             modal           : true,
             resizable       : false,
+            dialogClass     : 'no-close',
             position        : 'top',
             width           : 'auto',
             minWidth        : 800,
@@ -1171,7 +1172,6 @@ var KanopyaFormWizard = (function() {
             'Cancel' : $('#button-cancel'),
             'Back'   : $('#button-back')
         };
-        $('.ui-dialog-titlebar-close').remove();
         
         // If we are in the step mode, disable button as they will be
         // enabled by the changeStep method.

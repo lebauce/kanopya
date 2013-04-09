@@ -44,6 +44,7 @@ function callMethodWithPassword( options ) {
         title           : options.dialog_title,
         resizable       : false,
         closeOnEscape   : false,
+        dialogClass     : "no-close",
         buttons         : {
             'Ok'    : function() {
                 $("div#meth_passworderror").removeClass("ui-state-error").empty();

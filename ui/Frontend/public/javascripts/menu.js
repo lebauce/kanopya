@@ -210,10 +210,17 @@ function get_current_user () {
 
 function build_submenu(container, view_id, links, elem_id) {
     // Create the div container for this view
-    var view = $('<div class="master_view" id="' + view_id + '"></div>').appendTo(container);
-    var class_menu=(links.length>1?'':'invisible');
+    var class_master='master_view';
+    var class_menu='invisible';
+    var style_master='';
+    if(links.length>1){
+        class_master+=' with-submenu';
+        style_master='style=""'
+        class_menu='';
+    }
+    var view = $('<div class="'+class_master+'" id="' + view_id + '" '+style_master+'></div>').appendTo(container);
     // Tab container of the view
-    var submenu_cont = $('<ul class="'+class_menu+'"></ul>').appendTo(view);
+    var submenu_cont = $('<ul class="'+class_menu+' submenu"></ul>').appendTo(view);
 	
     view.tabs({});
 

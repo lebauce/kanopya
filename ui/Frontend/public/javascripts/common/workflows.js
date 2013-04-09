@@ -89,6 +89,7 @@ function createSCOWorkflowDefButton(container, managerid, dial, wfid, wf) {
             modal           : true,
             resizable       : false,
             closeOnEscape   : false,
+            dialogClass     : "no-close",
             title           : 'Create a Workflow Definition',
             close           : function() { $(this).remove(); },
             buttons         : {
@@ -209,10 +210,14 @@ function workflowdetails(workflowmanagerid, workflowmanager) {
     }).appendTo($('body'));
     $(dial).dialog({
         close       : function() { $(this).remove(); },
+        dialogClass : "no-close",
         width       : 626,
         resizable   : false,
         modal       : true,
-        title       : workflowmanager.service_provider_name + ' - ' + workflowmanager.name
+        title       : workflowmanager.service_provider_name + ' - ' + workflowmanager.name,
+        buttons     : [
+                        {id:'button-cancel',text:'Cancel',click: function() { $(this).dialog("close"); }}
+                      ]
     });
     $.ajax({
         url         : '/api/component/' + workflowmanager.id + '/getWorkflowDefs',
@@ -313,6 +318,7 @@ function workflowRuleConfigure(wfdef_id) {
 
                                     $(dial).dialog({
                                         resizable       : false,
+                                        dialogClass     : "no-close",
                                         closeOnEscape   : false,
                                         modal           : true,
                                         width           : '400px',
@@ -445,6 +451,7 @@ function workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
                                 $(dial).dialog({
                                       resizable       : false,
                                       closeOnEscape   : false,
+                                      dialogClass     : "no-close",
                                       modal           : true,
                                       width           : '400px',
                                       close           : function() { $(this).remove(); },

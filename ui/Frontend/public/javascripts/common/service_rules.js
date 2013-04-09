@@ -192,6 +192,7 @@ function conditionDialog(sp_id, condition_type, fields, editid) {
                 width       : '700px',
                 modal       : true,
                 resizable   : false,
+                dialogClass : "no-close",
                 close       : function() { $(this).remove() },
                 buttons     : [
         			{id:'button-cancel',text:'Cancel',click: function() { $(this).dialog("close"); }},

@@ -156,6 +156,7 @@ function loadAggregatorSettings(cid, eid) {
                                 $('<div>', {html : warn_text}).appendTo(container)
                                             .dialog({
                                                 title   : 'Warning',
+                                                dialogClass: "no-close",
                                                 modal   : true,
                                                 buttons : {
                                                     Yes: function () {

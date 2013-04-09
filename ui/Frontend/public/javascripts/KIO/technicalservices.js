@@ -165,6 +165,7 @@ function addTechnicalServiceButton(container) {
                 dialog.css('text-align', 'center');
                 dialog.appendTo("body").dialog({
                     resizable   : false,
+                    dialogClass : "no-close",
                     title       : ""
                 });
                 $(dialog).parents('div.ui-dialog').find('span.ui-icon-closethick').remove();

@@ -21,6 +21,25 @@
   background-repeat: repeat !important;
 }
 
+#header-links {
+    position:absolute;
+    top:10px;
+    right:10px;
+}
+
+#header-links #about {
+    color: #C2C2C2;
+    font-size: 11px;
+    font-weight: bold;
+    float: right;
+    cursor: pointer;
+    margin-top: 5px;
+}
+
+#header-links #about:hover {
+    color: #7E388A;
+}
+
 /* Allow scroll inside view (tab content) */
 .view div {
     height:100%;
@@ -39,7 +58,13 @@
     font-size: 11px;
 }
 
-.ui-icon{cursor:pointer;}
+.ui-icon{
+    cursor: pointer;
+}
+
+.no-close .ui-dialog-titlebar-close,.custom-delete-modal .ui-jqdialog-titlebar-close {
+    display: none;
+}
 
 /* Action buttons */
 .ui-button {margin-top: 15px;}
@@ -130,7 +155,7 @@ display:inline-block;zoom:1;*display:block;float:none;
 .ui-jqgrid tr.ui-row-ltr td:last-child{border-right:0;}
 
 .ui-jqgrid-labels th:last-child{border-right:0;}
-.ui-jqgrid tr.jqgrow td{line-height:22px;}
+.ui-jqgrid tr.jqgrow td{line-height:22px;vertical-align: middle;}
 
 /* remove vertical border between the cells in the grid */
 .ui-jqgrid tr.ui-row-ltr td { border-right-color: transparent; }
@@ -157,10 +182,11 @@ ul#Services >li{cursor:pointer;}
 #view-container{background-image:url(../images/LOGO_ARBRE_KANOPYA.png)!important;background-repeat:no-repeat!important;background-position:center 27px !important;}
 
 .action_buttons{padding:0 10px;}
+.ui-accordion .action_buttons{margin-bottom:10px;}
 .action_buttons .ui-button,.action_buttons button{margin:0;margin-right:10px;}
 .action_buttons .button-with-sprite .ui-button-text{padding:0 10px 0 0px !important;}
 .action_buttons .button-without-sprite .ui-button-text{padding:0 10px 0 10px !important;}
-.action_buttons .ui-button-text-icon-primary .ui-button-text, .action_buttons .ui-button-text-icons .ui-button-text{padding:0 10px 0 30px !important;}
+.action_buttons .ui-button-text-icon-primary .ui-button-text, .action_buttons .ui-button-text-icons .ui-button-text, .action_buttons .ui-button-text-only .ui-button-text{padding:0 10px 0 30px !important;}
 
 .action_buttons .ui-state-hover,.action_buttons .ui-button:hover,.action_buttons button:hover{background:white;border:1px solid #b2b2b2;}
 .action_buttons .ui-state-default, .action_buttons .ui-widget-content .ui-state-default, .action_buttons .ui-widget-header .ui-state-default,.action_buttons button{background:none;border:1px solid white;padding:0;}
@@ -214,12 +240,20 @@ button.ui-multiselect,.ui-multiselect-menu li label{cursor:pointer;}
 #users_list .ui-state-hover{margin-left:5px!important;}
 
 .DelButton,.ui-dialog-buttonset{padding-top:2px!important;}
-.DelButton .fm-button{text-indent:-999999em;background-clip:content-box;padding:0px;height:20px;width:20px;}
+.DelButton .fm-button{text-indent:-9999em;background-clip:content-box;padding:0px;height:20px;width:20px;}
 .DelButton .fm-button span{margin:-7px 0 0;padding:0;}
+
+.custom-delete-modal .DelButton .fm-button span{margin:-10px 0 0;}
+.custom-delete-modal .fm-button-icon-left .ui-icon{left:0;}
 
 .ui-icon-arrowthickstop-1-n{background-position:-122px -80px;}
 .ui-icon-mail-closed,.ui-icon-clock,.action_buttons .ui-icon-arrowthick-2-e-w, .action_buttons .ui-icon-calculator{background-image:url(theme/images/ui-icons_7e388a_256x240.png)!important;width:16px!important;height:16px!important;}
 .action_buttons .ui-icon-arrowthick-2-e-w, .action_buttons .ui-icon-calculator{margin-right:5px;}
+
+.node_control{margin:2px 0;}
+.node_control .ui-button-text{text-indent:9999em;padding: 2px;height:16px;width:16px;background-image: url("/images/kanopya-sprites.png");background-repeat: no-repeat;background-position:-80px -140px !important;}
+.node-disabled .node_control .ui-button-text{background-position:-100px -20px !important;}
+
 
 /*les icones des messages*/
 .message-level{width:24px;height:24px;background:url(../images/messages.png) no-repeat;}

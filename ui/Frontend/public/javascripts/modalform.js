@@ -477,12 +477,12 @@ var ModalForm = (function() {
         this.content.dialog({
             title           : this.title,
             modal           : true,
+            dialogClass     : "no-close",
             resizable       : false,
             width           : 500,
             buttons         : buttons,
             closeOnEscape   : false
         });
-        $('.ui-dialog-titlebar-close').remove();
     }
 
     ModalForm.prototype.cancel = function() {

@@ -80,10 +80,10 @@ var MasterImage = (function(_super) {
             title       : 'Upload a master image',
             resizable   : false,
             modal       : true,
-            close       : function() { $(this).remove(); },
+            dialogClass : "no-close",
             buttons     : [
-            	{id:'button-cancel',text:'Cancel',click: function() { $(this).dialog('close'); }},
-            	{id:'button-ok',text:'Ok',click: function() { $(form).submit(); }}  
+                {id:'button-cancel',text:'Cancel',click: function() { $(this).dialog('close'); }},
+                {id:'button-ok',text:'Ok',click: function() { $(form).submit(); }}  
             ]
         });
     };

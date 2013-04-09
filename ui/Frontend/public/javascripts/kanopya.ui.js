@@ -1,5 +1,6 @@
 require('messages.js');
 require('gritter.js');
+require('about.js');
 
 var lastMsgId = 0;
 
@@ -41,7 +42,7 @@ $(document).ready(function () {
             $(form).dialog({
                 resizable       : false,
                 closeOnEscape   : false,
-                close           : function() { $(this).remove(); },
+                dialogClass: "no-close",
                 modal           : true,
                 buttons         : {
                     'Ok'    : function() {
@@ -67,7 +68,6 @@ $(document).ready(function () {
                     }
                 }
             });
-            $("a.ui-dialog-titlebar-close").remove();
         } else if (jqXHR.responseXML !== undefined && !mustOpen) {
           mustOpen  = true;
         }
@@ -137,6 +137,7 @@ $(document).ready(function () {
         }
     });
 
+    jQuery('#about').click(function () {openAbout('about_templates.html');});
     // call for the themeswitcher
     //$('#switcher').themeswitcher();
 });

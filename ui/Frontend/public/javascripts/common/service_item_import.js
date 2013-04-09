@@ -133,6 +133,7 @@ function importItemButton(container, sp_id, obj_info, grid_ids) {
                     // Show dialog
                     browser.dialog({
                         title   : 'Import ' + obj_info.name + 's',
+                        dialogClass: "no-close",
                         modal   : true,
                         width   : '400px',
                         buttons : [

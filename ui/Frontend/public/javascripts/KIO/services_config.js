@@ -233,6 +233,7 @@ function createmanagerDialog(managertype, sp_id, callback, skippable, instance_i
     $("<div>").append($(select)).append(fieldset).appendTo('body').dialog({
         title           : mode_config ? connectortype + ' configuration' : 'Link to a ' + connectortype,
         closeOnEscape   : false,
+        dialogClass     : "no-close",
         resizable       : false,
         modal           : true,
         buttons         : {
@@ -464,6 +465,7 @@ function ActiveDirectorySearch(event) {
 
     browser.dialog({
         title   : 'AD Search',
+        dialogClass: "no-close",
         modal   : true,
         width   : '450px',
         buttons : {

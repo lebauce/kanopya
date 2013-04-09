@@ -335,7 +335,7 @@ function migrate(spid, eid) {
                     $(cont).dialog({
                         modal       : true,
                         resizable   : false,
-                        close       : function() { $(this).remove(); },
+                        dialogClass : "no-close",
                         buttons     : {
                             'Ok'        : function() {
                                 var hyp = $(sel).val();

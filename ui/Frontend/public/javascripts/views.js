@@ -146,6 +146,7 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
             width       : 800,
             height      : details_info.height || 500,
             resizable   : details_info.resizable || false,
+            dialogClass : "no-close",
             close: function(event, ui) {
                 if (details_info.onClose) {details_info.onClose()}
                 $('.last_content').addClass('current_content').removeClass('last_content');
@@ -196,6 +197,8 @@ function removeGridEntry (grid_id, rowid, url, method, extraParams) {
                 height          : dialog_height,
                 top             : ($(window).height() / 2) - (dialog_height / 2),
                 left            : ($(window).width() / 2) - (dialog_width / 2),
+                delicon         : [true,'left','ui-icon-ok'],
+                cancelicon      : [true,'left','ui-icon-closethick'],
                 afterComplete   : function (response) {
                     var json = $.parseJSON(response.responseText);
                     if (json.operation_id != undefined) {
@@ -204,6 +207,10 @@ function removeGridEntry (grid_id, rowid, url, method, extraParams) {
                     } else {
                         $("#"+grid_id).trigger('gridChange')
                     }
+                },
+                beforeShowForm  : function (formid){
+                    var divdelparents=formid.parents('.ui-jqdialog');
+                    divdelparents.addClass('custom-delete-modal');
                 }
             }
         );
@@ -336,7 +343,7 @@ function create_grid(options) {
             multiaction.extraParams = (multiaction.extraParams === undefined) ? null : multiaction.extraParams;
             multiaction.icon    = (multiaction.icon === undefined) ? '' : multiaction.icon;
             // action button
-            var actionButton    = $('<a>', { text : multiaction.label })
+            var actionButton    = $('<a>', { text : multiaction.label ,title:multiaction.title})
                 .appendTo(action_div).button({ icons : { primary : multiaction.icon } });
             actionButton.bind('click', function() {
                 var action_url = multiaction.url || options.url;

@@ -23,6 +23,7 @@ function createAddServiceButton(container) {
                 var dialog = $("<div>", { id : "waiting_default_insert", title : "Initializing configuration", text : "Please wait..." });
                 dialog.css('text-align', 'center');
                 dialog.appendTo("body").dialog({
+                    dialogClass : "no-close",
                     resizable   : false,
                     title       : ""
                 });
@@ -88,7 +89,7 @@ function servicesList (container_id, elem_id) {
 
 function createUpdateNodeButton(container, elem_id, grid_id) {
     var import_button = $("<button>", { text : 'Import nodes', title : 'Add new nodes in service', 'class':'update_node_button' })
-        .button({ icons : { primary : 'ui-icon-arrowthick-1-w' } });
+        .button({ icons : { primary : 'ui-icon-import' } });
     var synchro_button = $("<button>", { text : 'Synchronize', title : 'Add new nodes in service and remove old nodes', 'class':'update_node_button' })
         .button({ icons : { primary : 'ui-icon-arrowthick-2-e-w' } });
 
@@ -228,22 +229,27 @@ function loadServicesResources (container_id, elem_id) {
         multiactions : {
             nodeEnable : {
                 label   : 'Enable node(s)',
+                title   :'Enable node(s)',
                 action  : gridGenericPost,
                 url     : '/api/serviceprovider/' + elem_id + '/enableNode',
+                icon    : 'ui-icon-ok',
                 afterAction  : function(grid_id, rowid) {
                     _buttonEnabling('#' + grid_id, rowid, true);
                 }
             },
             nodeDisable : {
                 label   : 'Disable node(s)',
+                title   : 'Disable node(s)',
                 action  : gridGenericPost,
                 url     : '/api/serviceprovider/' + elem_id + '/disableNode',
+                icon    : 'ui-icon-cancel',
                 afterAction  : function(grid_id, rowid) {
                     _buttonEnabling('#' + grid_id, rowid, false);
                 }
             },
             multiDelete : {
                 label   : 'Delete node(s)',
+                title   : 'Delete node(s)',
                 action  : removeGridEntry,
                 icon    : 'ui-icon-trash',
                 url     : '/api/node',

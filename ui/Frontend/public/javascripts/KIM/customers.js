@@ -219,6 +219,7 @@ function showConsumptionGraph(sp_id) {
         width: 800,
         height: 500,
         resizable: false,
+        dialogClass: "no-close",
         close: function(event, ui) {
             $(this).remove();
         },
