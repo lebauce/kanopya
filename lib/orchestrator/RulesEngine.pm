@@ -132,7 +132,11 @@ sub getRulesToEvaluate {
             $log->info('Rules Engine skip service provider '.$service_provider->id.' because it has no collector manager');
             next SP;
         }
-        push @rules, $service_provider->rules;
+        for my $rule ($service_provider->rules) {
+            if ($rule->isActive) {
+                push @rules, $rule;
+            }
+        }
     }
     return \@rules;
 }
