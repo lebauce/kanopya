@@ -65,10 +65,9 @@ function conditionDialog(sp_id, condition_type, fields, editid) {
     }
 
     // Name input
-    if (!editid) {
         form.append($('<label>', {'for':'name_input', html:'Name : '}))
-            .append($('<input>', {type:'text', name:fields.name, id:'name_input'})).append('<br>');
-    }
+            .append($('<input>', {type:'text', name:fields.name, id:'name_input', value:editid ? elem_data[fields.name] : ''}))
+            .append('<br>');
 
     // Condition type
     var type_select = $('<select>', {id:'type_select'})
@@ -244,7 +243,7 @@ function createNodemetricCondition(container_id, elem_id) {
 /*
  * Form for creation/edition of node and service rule
  *
- * @param    sp_id      related service provider od
+ * @param    sp_id      related service provider id
  * @param    type       nodemetric_rule/aggregate_rule
  * @optional editid     id of elem if edition
  * @optional onClose    callback when form closed after request
