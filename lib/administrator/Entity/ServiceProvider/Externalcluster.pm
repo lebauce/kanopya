@@ -58,7 +58,7 @@ use constant ATTR_DEF => {
         is_editable    => 0
     },
     externalcluster_desc => {
-        pattern        => '^.*$',
+        pattern        => '.*',
         is_mandatory   => 0,
         is_editable    => 1
     },
