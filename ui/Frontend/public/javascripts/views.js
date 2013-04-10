@@ -44,6 +44,7 @@ function reload_content(container_id, elem_id, extra) {
             $('#' + container_id).addClass('current_content');
             var action_div=$('#' + container_id).prevAll('.action_buttons');
             action_div.empty();
+
             // Fill container using related handler
             var handler = _content_handlers[container_id]['onLoad'];
             handler(container_id, elem_id, extra && extra.elem_data);
@@ -100,7 +101,6 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
     var id = 'view_detail_' + elem_id;
     var view_detail_container = $('<div></div>');
 
-    //build_detailmenu(view_detail_container, id, details_info.tabs, elem_id);
     build_submenu(view_detail_container, id, details_info.tabs, elem_id);
     view_detail_container.find('#' + id).show();
 
@@ -114,10 +114,23 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
     }
 
     if (!(details_info.noDialog)) {
-        var available_buttons = [
-            {id:'button-cancel',text:'Cancel',click: function() {$(this).dialog('close');}},
-            {id:'button-ok',text:'Ok',click: function() {if (details_info.onOk) {details_info.onOk()}$(this).dialog('close');}}
-        ];
+        var available_buttons = [ {
+            id: 'button-cancel',
+            text:'Cancel',
+            click: function () {
+                $(this).dialog('close');
+            }
+        }, {
+            id: 'button-ok',
+            text: 'Ok',
+            click: function() {
+                if (details_info.onOk) {
+                    // Fill container using related handler
+                    details_info.onOk();
+                }
+                $(this).dialog('close');
+            }
+        } ];
         var buttons = [];
         $.each(available_buttons, function (i,button) {
             if (!details_info.buttons || $.inArray(button.id, details_info.buttons) >= 0) {

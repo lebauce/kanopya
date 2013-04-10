@@ -345,15 +345,6 @@ var filterNotifyWorkflow    = function(grid, rowid) {
     }
 };
 
-function associateTimePeriods(grid_id, rowid, url, method, extraParams, afterAction, data) {
-    $.ajax({
-        url : "/api/aggregaterule/" + rowid,
-        type : "PUT",
-        contentType : 'application/json',
-        data : JSON.stringify(data)
-    });
-}
-
 function loadServicesRules (container_id, elem_id, ext, mode_policy) {
     var container = $("#" + container_id);
 
@@ -363,8 +354,47 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         return createWorkflowRuleAssociationButton(cid, eid, type == 'nodemetric_rule' ? 1 : 2, elem_id);
     }
 
+    var associateTimePeriod = function (type) {
+        return {
+            label       : 'Associate time periods',
+            action      : function (grid_id, rowid, url, method, extraParams, afterAction, data) {
+                $.ajax({
+                    url : "/api/" + type + "/" + rowid,
+                    type : "PUT",
+                    contentType : 'application/json',
+                    data : JSON.stringify(data)
+                });
+            },
+            url         : '/api/' + type,
+            icon        : 'ui-icon-clock',
+            extraParams : { multiselect : true },
+            confirm     : function (grid, label, selection, callback) {
+                (new KanopyaFormWizard({
+                    title      : label,
+                    type       : type,
+                    id         : undefined,
+                    displayed  : [ "entity_time_periods" ],
+                    attrsCallback  : function (type, data, trigger) {
+                        var attrs = this.getAttributes(type, data, trigger);
+                        attrs.attributes = {
+                            "entity_time_periods" : attrs.attributes.entity_time_periods
+                        };
+                        attrs.relations = {
+                            "entity_time_periods" : attrs.relations.entity_time_periods
+                        };
+                        return attrs;
+                    },
+                    submitCallback : function (data, form, opts) {
+                        callback(data);
+                        this.closeDialog();
+                    }
+                })).start();
+            }
+        };
+    }
+
     var ruleDetails = function(cid, eid, type) {
-        (new KanopyaFormWizard({
+        var wizard = new KanopyaFormWizard({
             title      : 'Rule details',
             type       : type.replace('_', ''),
             id         : eid,
@@ -410,9 +440,16 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                 };
                 return attrs;
             },
-        })).start();
+        });
 
-        return false;
+        if (cid) {
+            $('#' + cid).append(wizard.content);
+            wizard.startWizard();
+        } else {
+            wizard.start();
+        }
+
+        return wizard;
     }
 
     ////////////////////////RULES ACCORDION//////////////////////////////////
@@ -490,6 +527,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                 [serviceNodemetricConditionsGridId, serviceNodemetricRulesGridId]
         );
     }
+    var _wizard = undefined;
     create_grid( {
         caption: 'Rules',
         url: '/api/nodemetricrule?service_provider_id=' + elem_id,
@@ -517,14 +555,32 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
             { name: 'alert', index: 'alert', width: 40, align: 'center', nodetails: true }
         ],
         details: {
-            tabs : [
-                        { label : 'Overview', id : 'overview', onLoad : function(cid, eid) {
-                            ruleDetails(cid, eid, 'nodemetric_rule');
-                        }},
-                        { label : 'Nodes', id : 'nodes', onLoad : function(cid, eid) { rule_nodes_tab(cid, eid, elem_id); }, hidden : mode_policy },
-                    ],
-            title : { from_column : 'label' },
-            onClose : function() {$('#'+serviceNodemetricRulesGridId).trigger('reloadGrid')}
+            onOk : function () {
+                if (_wizard != undefined) {
+                    _wizard.validateForm();
+                }
+            },
+            tabs : [ {
+                label : 'Overview',
+                id : 'overview',
+                onLoad : function (cid, eid) {
+                    _wizard = ruleDetails(cid, eid, 'nodemetric_rule');
+                },
+            }, {
+                label : 'Nodes',
+                id : 'nodes',
+                onLoad : function(cid, eid) {
+                    rule_nodes_tab(cid, eid, elem_id);
+                    _wizard = undefined;
+                },
+                hidden : mode_policy
+            } ],
+            title : {
+                from_column : 'label'
+            },
+            onClose : function() {
+                $('#' + serviceNodemetricRulesGridId).trigger('reloadGrid')
+            }
         },
         action_delete: {
             url : '/api/nodemetricrule'
@@ -537,7 +593,8 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                 url         : '/api/nodemetricrule',
                 icon        : 'ui-icon-trash',
                 extraParams : {multiselect : true}
-            }
+            },
+            'associateTimePeriod' : associateTimePeriod('nodemetricrule')
         }
     } );
 
@@ -645,7 +702,6 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                 $('#' + serviceAggregateRulesGridId).trigger('reloadGrid');
             }
         },
-        onSelectRow : function () { alert("Rouge"); },
         action_delete: {
             url : '/api/aggregaterule',
         },
@@ -658,34 +714,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                 icon        : 'ui-icon-trash',
                 extraParams : { multiselect : true }
             },
-            associateTimePeriod : {
-                label       : 'Associate time periods',
-                action      : associateTimePeriods,
-                url         : '/api/rule',
-                icon        : 'ui-icon-clock',
-                extraParams : { multiselect : true },
-                confirm     : function (grid, label, selection, callback) {
-                    (new KanopyaFormWizard({
-                        title      : label,
-                        type       : 'aggregaterule',
-                        id         : undefined,
-                        displayed  : [ "entity_time_periods" ],
-                        attrsCallback  : function (type, data, trigger) {
-                            var attrs = this.getAttributes(type, data, trigger);
-                            attrs.attributes = {
-                                "entity_time_periods" : attrs.attributes.entity_time_periods
-                            };
-                            attrs.relations = {
-                                "entity_time_periods" : attrs.relations.entity_time_periods
-                            };
-                            return attrs;
-                        },
-                        submitCallback : function (data, form, opts) {
-                            this.closeDialog();
-                        }
-                    })).start();
-                }
-            }
+            'associateTimePeriod' : associateTimePeriod('aggregaterule')
         }
     } );
 
