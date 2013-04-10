@@ -1166,6 +1166,13 @@ var KanopyaFormWizard = (function() {
 //            maxHeight       : 550,
             buttons         : buttons,
             closeOnEscape   : false
+        }).on('keydown', function(e) { // bind the Enter key press
+            if(e.which == 13) {
+                if(!$("textarea").is(":focus") && !$('.ui-button').is(':focus')){
+                    $('.ui-button#button-ok:visible').first().click();
+                    return false;
+                }
+            }
         });
         this.buttons = {
             'Ok'     : $('#button-ok'),
