@@ -140,6 +140,7 @@ sub postrequisites {
     }
     else {
         my $error = 'ScaleIn of vm <' . $self->{context}->{host}->id . '> : Failed. Current CPU is <' . $vm_cpu . '>';
+        $log->warn($error);
         Message->send(
              from    => 'EScaleCpuHost',
              level   => 'error',

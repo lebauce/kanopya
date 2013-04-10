@@ -64,7 +64,7 @@ sub execute {
         if ($@) {
             my $error = $@;
             $errmsg = "Problem with node <" . $node->host_id . "> during force stop cluster : $error";
-            $log->info($errmsg);
+            $log->warn($errmsg);
         }
 
         eval {
@@ -84,7 +84,7 @@ sub execute {
             my $error = $@;
             $errmsg = "Problem with node <" . $node->getAttr(name=>"host_id").
                       "> during dhcp configuration update : $error";
-            $log->info($errmsg);
+            $log->warn($errmsg);
         }
 
         # component migration

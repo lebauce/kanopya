@@ -68,7 +68,7 @@ sub prerequisites {
     }
     
     if (! $self->{context}->{host}->checkUp()) {
-        $log->info("Host <$host_id> not yet reachable at <$node_ip>");
+        $log->debug("Host <$host_id> not yet reachable at <$node_ip>");
         return $delay;
     }
 
@@ -81,7 +81,7 @@ sub prerequisites {
     $self->{context}->{host}->setState(state => "up");
     $self->{context}->{host}->setNodeState(state => "in");
 
-    $log->debug("Host <$host_id> is 'up'");
+    $log->info("Host <$host_id> is 'up'");
 
     return 0;
 }

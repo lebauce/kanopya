@@ -119,6 +119,7 @@ sub prepare {
 
         if ($check == 0) {
             my $errmsg = "Not enough resource in HV $hv_id for VM $vm_id migration";
+            $log->warn($errmsg);
             throw Kanopya::Exception::Internal(error => $errmsg);
         }
     }
@@ -175,6 +176,7 @@ sub postrequisites {
         else {
             # Vm is running but not on its hypervisor
             my $error = 'Migration of vm <' . $self->{context}->{vm}->id . '> failed, but still running...';
+            $log->warn($error);
             Message->send(
                 from    => 'EMigrateHost',
                 level   => 'error',

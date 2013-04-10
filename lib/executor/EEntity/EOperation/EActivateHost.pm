@@ -44,6 +44,7 @@ sub prepare {
     # check if host is not active
     if ($self->{context}->{host}->active) {
         $errmsg = "Host <" . $self->{context}->{host}->id . "> is already active";
+        $log->debug($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 }

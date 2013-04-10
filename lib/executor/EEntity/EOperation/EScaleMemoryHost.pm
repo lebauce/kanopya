@@ -85,6 +85,7 @@ sub prepare {
 
     if ($mem_limit && ($check == 0 || $self->{params}->{memory} > $mem_limit)) {
         $errmsg = "Not enough memory in HV $hv_id for VM $vm_id. Infrastructure may have change between operation queing and its execution";
+        $log->debug($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
@@ -93,6 +94,7 @@ sub prepare {
     if ($host_manager_params->{ram} > $self->{params}->{memory}) {
         $errmsg = "Could not scale memory bellow the initial ram amount <" .
                   ($host_manager_params->{ram} / 1024 / 1024) . "Mo >";
+        $log->debug($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 }
@@ -147,6 +149,7 @@ sub postrequisites {
     else {
         my $lastmessage = $self->{context}->{cloudmanager_comp}->vmLoggedErrorMessage(opennebula3_vm => $self->{context}->{host});
         my $error = 'ScaleIn of vm <' . $self->{context}->{host}->id . '> : Failed. Current RAM is <' . $vm_ram . '>. Cloud manager logs: '.$lastmessage;
+        $log->warn($error);
         Message->send(
              from    => 'EScaleMemoryHost',
              level   => 'error',

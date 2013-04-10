@@ -40,12 +40,14 @@ sub prepare {
     # Check if host is not active
     if (not $self->{context}->{host_to_deactivate}->active) {
         $errmsg = "Host <" . $self->{context}->{host_to_deactivate}->id . "> is not active";
+        $log->debug($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
     # Check if host is used as a node
     if ($self->{context}->{host_to_deactivate}->node) {
         $errmsg = "Host <" . $self->{context}->{host_to_deactivate}->id . "> is a node";
+        $log->debug($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 }

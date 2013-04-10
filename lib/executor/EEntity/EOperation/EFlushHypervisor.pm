@@ -80,9 +80,10 @@ sub execute {
 
     my $flushRes = $cm->flushHypervisor(hv_id => $host_id);
     if ($flushRes->{num_failed} == 0) {
+        $log->info('Flush hypervisor '.$self->{context}->{host}->node->node_hostname);
         my $workflow = $self->workflow;
         for my $operation (@{$flushRes->{operation_plan}}) {
-            $log->info('Operation enqueuing host = '.$operation->{params}->{context}->{host}->id);
+            $log->debug('Operation enqueuing host = '.$operation->{params}->{context}->{host}->id);
             $workflow->enqueueNow(operation => $operation);
         }
     }
