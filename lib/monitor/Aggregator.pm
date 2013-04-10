@@ -247,29 +247,38 @@ sub update {
             };
             if (not $@){
                 next CLUSTER if ( 0 == $service_provider->nodes);
+                my $start, 
+                my $timeinfo = "duration: ";
                 $log->info('Aggregator collecting for service provider '.  $service_provider->id);
 
                 # Get all indicators used by the service
+                $start = time();
                 my $wanted_indicators = $self->_getUsedIndicators(
                                             service_provider     => $service_provider,
                                             include_nodemetric   => 1
                                         );
+                $timeinfo .= "Retrieve Indicators: ".(time() - $start).", ";
 
                 # Call the retriever to get monitoring data
+                $start = time();
                 my $timestamp = time();
                 my $monitored_values = $service_provider->getNodesMetrics(
                                            indicators => $wanted_indicators->{indicators},
                                            time_span  => $wanted_indicators->{time_span}
                                        );
+                $timeinfo .= "Request data: ".(time() - $start).", ";
 
                 # Verify answers received from collector manager to detect metrics anomalies
+                $start = time();
                 my $checker = $self->_checkNodesMetrics(
                                   service_provider_id => $service_provider->id,
                                   asked_indicators    => $wanted_indicators->{indicators},
                                   received            => $monitored_values
                               );
+                $timeinfo .= "Anomalies detection: ".(time() - $start).", ";
 
                 # Nodes metrics values cache
+                $start = time();
                 DataCache::storeNodeMetricsValues(
                     indicators       => $wanted_indicators->{indicators},
                     values           => $monitored_values,
@@ -277,17 +286,22 @@ sub update {
                     time_step        => $self->{config}->{time_step},
                     storage_duration => $self->{config}->{storage_duration}
                 );
-
+                $timeinfo .= "Nodes data storage: ".(time() - $start).", ";
+                
                 # Parse retriever return, compute clustermetric values and store in DB
                 if ($checker == 1) {
+                    $start = time();
                     $self->_computeCombinationAndFeedTimeDB(
                         values           => $monitored_values,
                         timestamp        => $timestamp,
                         service_provider => $service_provider
                     );
+                    $timeinfo .= "Cluster metric compute: ".(time() - $start);
                 }
+                $log->info($timeinfo);
                 1;
             }
+        
         };
         if ($@) {
             $log->error("An error occurred : " . $@);
