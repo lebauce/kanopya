@@ -99,9 +99,6 @@ sub oneRun {
                              alert_message  => $hostmsg,
                              trigger_entity => $node);
 
-                $log->warn($msg);
-
-
                 # Set the host and node states to broken
                 $ehost->setState(state => 'broken');
                 $ehost->setNodeState(state => 'broken');
