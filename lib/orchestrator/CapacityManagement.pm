@@ -257,13 +257,13 @@ sub isScalingAuthorized{
     }
 
     my $delta    = $wanted_resource - $current_resource;
-    $log->info("**** [scale-in $resource_type]  Remaining <$remaining_resource> in HV <$hv_id>, need <$delta> more to have <$wanted_resource> ****");
+    $log->debug("**** [scale-in $resource_type]  Remaining <$remaining_resource> in HV <$hv_id>, need <$delta> more to have <$wanted_resource> ****");
     if ($remaining_resource < $delta) {
-        $log->info('not enough resource');
+        $log->info('Scaling refused : not enough resource ' . $resource_type . ' for VM ' . $vm_id . ' on hv ' . $hv_id);
         return 0;
     }
     else{
-        $log->info('scaling authorized by capacity management');
+        $log->info('scaling authorized by capacity management : ' . $resource_type . ' for VM ' . $vm_id . ' on hv ' . $hv_id);
         return 1;
     }
 }
@@ -302,13 +302,15 @@ sub isMigrationAuthorized{
     );
 
     for my $resource (@resources) {
-        $log->info("Check $resource, good if :  ".$self->{_infra}->{vms}->{$vm_id}->{$resource}.' < '.$remaining_resources->{$resource});
+        $log->debug("Check $resource, good if :  ".$self->{_infra}->{vms}->{$vm_id}->{$resource}.' < '.$remaining_resources->{$resource});
 
         if( $self->{_infra}->{vms}->{$vm_id}->{$resource} > $remaining_resources->{$resource}  ) {
-            $log->error("Not enough $resource to migrate VM $vm_id (".$self->{_infra}->{vms}->{$vm_id}->{$resource}.") in HV $hv_id (".$remaining_resources->{$resource} );
+            $log->info("Migration refused : not enough $resource to migrate VM $vm_id (".$self->{_infra}->{vms}->{$vm_id}->{$resource}.") in HV $hv_id (".$remaining_resources->{$resource} );
             return 0;
         }
     }
+
+    $log->info("Migration authorized to migrate VM $vm_id (".$self->{_infra}->{vms}->{$vm_id}->{$resource}.") in HV $hv_id");
     return 1;
 }
 
@@ -330,14 +332,11 @@ sub optimIaas{
     my $self = shift;
 
     $self->{_operationPlan} = [];
-    $log->debug('Infra before optimiaas = '.(Dumper $self->{_infra}));
     my $hv_selected_ids = $self->_separateEmptyHvIds()->{non_empty_hv_ids};
     my $optim;
     my $current_plan = [];
     my $step = 1;
     do{
-        $log->info("Loop $step\n");
-
         $optim = $self->_optimStep(
             hv_selected_ids => $hv_selected_ids,
             methode         => 2,
@@ -352,7 +351,7 @@ sub optimIaas{
         plan                    => $current_plan,
         empty_master_allowed    => 0,
     );
-    $log->debug(Dumper $self->{_infra}->{hvs});
+
     return $self->{_operationPlan};
 }
 
@@ -575,7 +574,7 @@ sub scaleMemoryHost{
     } else {
         Message->send(
             from    => 'Capacity Management',
-            level   => 'info',
+            level   => 'warn',
             content => "Wrong format for scale in memory value (typed : $args{memory})",
         );
         $log->warn("*** Wrong format for scale in memory value (typed : $args{memory})*** ");
@@ -585,7 +584,7 @@ sub scaleMemoryHost{
     if ($memory <= 0) {
         Message->send(
             from    => 'Capacity Management',
-            level   => 'info',
+            level   => 'warn',
             content => "Scale in memory value must be strictly positive (typed : $args{memory}"
         );
         $log->warn("*** Cannot Scale Ram to a negative value (typed : $args{memory})*** ");
@@ -593,7 +592,7 @@ sub scaleMemoryHost{
     elsif ($args{memory_limit} && ($memory > $args{memory_limit})) {
         Message(
             from    => 'Capacity Management',
-            level   => 'info',
+            level   => 'warn',
             content => "Scale in is limited to <".($args{memory_limit})."> B, (<$memory> B requested)",
         );
         $log->warn("Scale in is limited to <".($args{memory_limit})."> B, (<$memory> B requested)");
@@ -660,7 +659,7 @@ sub scaleCpuHost{
     } else {
         Message->send(
             from    => 'Capacity Management',
-            level   => 'info',
+            level   => 'warn',
             content => "Wrong format for scale in memory value (typed : $args{vcpu_number})",
         );
 
@@ -671,7 +670,7 @@ sub scaleCpuHost{
     if ($cpu =~ /\D/) {
         Message->send(
             from    => 'Capacity Management',
-            level   => 'info',
+            level   => 'warn',
             content => "Wrong format for scale in cpu value (typed : $args{vcpu_number})",
         );
 
@@ -680,7 +679,7 @@ sub scaleCpuHost{
     elsif ($cpu <= 0) {
         Message->send(
             from    => 'Capacity Management',
-            level   => 'info',
+            level   => 'warn',
             content => "Scale in cpu value must be strictly positive (typed : $args{vcpu_number})",
         );
 
@@ -689,7 +688,7 @@ sub scaleCpuHost{
     elsif ($args{cpu_limit} && ($cpu > $args{cpu_limit})) {
         Message->send(
             from    => 'Capacity Management',
-            level   => 'info',
+            level   => 'warn',
             content => "Scale in is limited to $args{cpu_limit} CPU, ($cpu CPU requested)",
         );
 
@@ -861,6 +860,7 @@ sub _scaleOnNewHV {
     # Migrate host
     # Host context will be inheritate by postStart node
 
+    $log->debug("=> migration $vm_id to new started HV");
     push @{$self->{_operationPlan}}, {
         type => 'MigrateHost',
         priority => 1,
@@ -871,11 +871,9 @@ sub _scaleOnNewHV {
         }
     };
 
-    $log->info("=> migration $vm_id to new started HV");
-
     # Scale host
     if ($scale_metric eq 'ram'){
-        $log->info("=> Operation scaling $scale_metric of vm $vm_id to $new_value");
+        $log->debug("=> Operation scaling $scale_metric of vm $vm_id to $new_value");
         push @{$self->{_operationPlan}}, {
             type => 'ScaleMemoryHost',
             priority => 1,
@@ -888,7 +886,7 @@ sub _scaleOnNewHV {
         };
     }
     elsif ($scale_metric eq 'cpu') {
-        $log->info("=> Operation scaling $scale_metric of vm $vm_id to $new_value");
+        $log->debug("=> Operation scaling $scale_metric of vm $vm_id to $new_value");
         push @{$self->{_operationPlan}}, {
             type => 'ScaleCpuHost',
             priority => 1,
@@ -966,11 +964,9 @@ sub _getHvSizeRemaining {
 
     if(defined $self->{_hvs_mem_available}) {
         $remaining_ram = $self->{_hvs_mem_available}->{$hv_id};
-        $log->info("HV <$hv_id> Remaining RAM <$remaining_ram> using real values");
     }
     else {
         $remaining_ram = $all_the_ram - $size->{ram};
-        $log->info("HV <$hv_id> Remaining RAM <$remaining_ram> using computed values");
     }
 
     my $size_rem = {
@@ -1046,7 +1042,7 @@ sub _scaleOrder{
     $self->{_infra}->{vms}->{$vm_id}->{$scale_metric} = $new_value;
 
     if ($scale_metric eq 'ram') {
-        $log->info("=> Operation scaling $scale_metric of vm $vm_id to $new_value");
+        $log->debug("=> Operation scaling $scale_metric of vm $vm_id to $new_value");
         push @{$self->{_operationPlan}}, {
             type => 'ScaleMemoryHost',
             priority => 1,
@@ -1059,7 +1055,7 @@ sub _scaleOrder{
         };
     }
     elsif ($scale_metric eq 'cpu') {
-        $log->info("=> Operation scaling $scale_metric of vm $vm_id to $new_value");
+        $log->debug("=> Operation scaling $scale_metric of vm $vm_id to $new_value");
         push @{$self->{_operationPlan}}, {
             type => 'ScaleCpuHost',
             priority => 1,
@@ -1111,30 +1107,18 @@ sub _migrateVmModifyInfra{
     }
     push @{$self->{_infra}->{hvs}->{$hv_dest_id}->{vm_ids}}, $vm_id;
 
-    $log->info("Infra modified => migration <$vm_id> (ram: ".($self->{_infra}->{vms}->{$vm_id}->{'ram'}).") from <$hv_from_id> to <$hv_dest_id>");
+    $log->debug("Infra modified => migration <$vm_id> (ram: ".($self->{_infra}->{vms}->{$vm_id}->{'ram'}).") from <$hv_from_id> to <$hv_dest_id>");
 
     # Modify available memory
     if (defined $self->{_hvs_mem_available}) {
-        $log->debug(Dumper $self->{_hvs_mem_available});
         $self->{_hvs_mem_available}->{$hv_dest_id} -= $self->{_infra}->{vms}->{$vm_id}->{'ram'};
         $self->{_hvs_mem_available}->{$hv_from_id} += $self->{_infra}->{vms}->{$vm_id}->{'ram'};
-        $log->debug(Dumper $self->{_hvs_mem_available});
     }
 
     # Modify RAM effective when overcommitment
     if( defined $self->{_infra}->{hvs}->{$hv_from_id}->{hv_capa}->{ram_effective}) {
-        $log->debug("RAM effective before hv <$hv_dest_id> <"
-                    .($self->{_infra}->{hvs}->{$hv_dest_id}->{hv_capa}->{ram_effective})
-                    ."> ; hv <$hv_from_id> <"
-                    .($self->{_infra}->{hvs}->{$hv_from_id}->{hv_capa}->{ram_effective}).">"
-        );
         $self->{_infra}->{hvs}->{$hv_dest_id}->{hv_capa}->{ram_effective} -= $self->{_infra}->{vms}->{$vm_id}->{'ram_effective'};
         $self->{_infra}->{hvs}->{$hv_from_id}->{hv_capa}->{ram_effective} += $self->{_infra}->{vms}->{$vm_id}->{'ram_effective'};
-        $log->debug("RAM effective before hv <$hv_dest_id> <"
-                    .($self->{_infra}->{hvs}->{$hv_dest_id}->{hv_capa}->{ram_effective})
-                    ."> ; hv <$hv_from_id> <"
-                    .($self->{_infra}->{hvs}->{$hv_from_id}->{hv_capa}->{ram_effective}).">"
-        );
     }
 }
 
@@ -1157,7 +1141,7 @@ sub _migrateVmOrder{
     my $vm_id      = $args{vm_id};
     my $hv_dest_id = $args{hv_dest_id};
 
-    $log->info("Enqueuing MigrateHost of host $vm_id to hypervisor $hv_dest_id");
+    $log->debug("Enqueuing MigrateHost of host $vm_id to hypervisor $hv_dest_id");
     push @{$self->{_operationPlan}}, {
         type => 'MigrateHost',
         priority => 1,
@@ -1168,7 +1152,7 @@ sub _migrateVmOrder{
            }
         }
       };
-    $log->info("=> migration $vm_id to $hv_dest_id");
+    $log->debug("=> migration $vm_id to $hv_dest_id");
 }
 
 
@@ -1258,12 +1242,12 @@ sub _findMinHVidRespectCapa{
 
         my $total_score = $size_remaining->{cpu_p} + $size_remaining->{ram_p};
 
-        $log->info('HV <'.$hv_id.'> Wanted RAM <'.($wanted_metrics->{ram}).'> got <'.($size_remaining->{ram}).' ('.(100*$size_remaining->{ram_p}).'%) > & CPU <'.($wanted_metrics->{cpu}).'> got <'.($size_remaining->{cpu}).' ('.(100*$size_remaining->{cpu_p}).'%) >');
+        $log->debug('HV <'.$hv_id.'> Wanted RAM <'.($wanted_metrics->{ram}).'> got <'.($size_remaining->{ram}).' ('.(100*$size_remaining->{ram_p}).'%) > & CPU <'.($wanted_metrics->{cpu}).'> got <'.($size_remaining->{cpu}).' ('.(100*$size_remaining->{cpu_p}).'%) >');
 
         my $condition = 1;
         for my $metric (keys %$wanted_metrics) {
             if(defined $size_remaining->{$metric}) {
-                $log->info("Check $metric, ok if $wanted_metrics->{$metric} <= $size_remaining->{$metric}");
+                $log->debug("Check $metric, ok if $wanted_metrics->{$metric} <= $size_remaining->{$metric}");
                 $condition &&= $wanted_metrics->{$metric} <= $size_remaining->{$metric};
             }
         }
@@ -1327,7 +1311,7 @@ sub _migrateOtherVmToScale{
                     } @$vms_in_hv;
 
 
-    $log->info("HV <$hv_id> Remaining size = $remaining_size->{$scale_metric}, Need size = $delta, potential VM to scale (according to $scale_metric) => VM_ids :  @other_vms");
+    $log->debug("HV <$hv_id> Remaining size = $remaining_size->{$scale_metric}, Need size = $delta, potential VM to scale (according to $scale_metric) => VM_ids :  @other_vms");
 
 
     #Find one with other metric OK
@@ -1340,7 +1324,7 @@ sub _migrateOtherVmToScale{
 
     while ((!defined $hv_dest_id) && (scalar @sorted_vms > 0)) {
         $vm_to_migrate_id = pop @sorted_vms;
-        $log->info("Check $vm_to_migrate_id migration possibility...");
+        $log->debug("Check $vm_to_migrate_id migration possibility...");
 
         # remove vm HV from selection
 
@@ -1350,7 +1334,7 @@ sub _migrateOtherVmToScale{
 
         my @selection = grep {$_ != $vm_hv_id} @$hv_selection_ids;
 
-        $log->info(Dumper \@selection);
+        $log->debug(Dumper \@selection);
 
         $hv_dest_id = $self->_findMinHVidRespectCapa(
             hv_selection_ids => \@selection,,
@@ -1433,17 +1417,17 @@ sub _optimStep{
         # Migrate all vms of the selected hv
 
         my @vmlist = @{$self->{_infra}->{hvs}->{$hv_id}->{vm_ids}};
-        $log->info("List of VMs to migrate = @vmlist");
+        $log->debug("List of VMs to migrate = @vmlist");
 
         for my $vm_to_migrate_id (@vmlist){
-            $log->info("Computing where to migrate VM $vm_to_migrate_id");
             my $hv_dest_id = $self->_findMinHVidRespectCapa(
                 hv_selection_ids => \@hv_selection_ids,
                 wanted_metrics   => $self->{_infra}->{vms}->{$vm_to_migrate_id},
             );
 
+            my $msg;
             if(defined $hv_dest_id){
-                $log->info("Enqueue VM <$vm_to_migrate_id> migration");
+                $msg = "Enqueue VM <$vm_to_migrate_id> migration";
                 $self->_migrateVmModifyInfra(
                     vm_id       => $vm_to_migrate_id,
                     hv_dest_id  => $hv_dest_id->{hv_id},
@@ -1451,9 +1435,10 @@ sub _optimStep{
                 push @$current_plan, {vm_id => $vm_to_migrate_id, hv_id => $hv_dest_id->{hv_id}};
             }
             else{
-                $log->info("___Cannot migrate VM $vm_to_migrate_id");
+                $msg = "___Cannot migrate VM $vm_to_migrate_id";
                 $num_failed++;
             }
+            $log->debug($msg);
         }
     }
     ($num_failed > 0) ? return 0 : return 1;
@@ -1739,20 +1724,18 @@ sub _getFlushHypervisorPlan {
 
     # Migrate all the vm of the selected hv
     my @vmlist = @{$self->{_infra}->{hvs}->{$hv_id}->{vm_ids}};
-
-    $log->info("List of VMs to migrate = @vmlist");
+    $log->debug("List of VMs to migrate = @vmlist");
 
     my @operation_plan = ();
     my $num_failed      = 0;
     for my $vm_to_migrate_id (@vmlist) {
-        $log->info("Computing where to migrate VM $vm_to_migrate_id");
         my $hv_dest_id = $self->_findMinHVidRespectCapa(
             hv_selection_ids => \@hv_selection_ids,
             wanted_metrics   => $self->{_infra}->{vms}->{$vm_to_migrate_id},
         );
 
         if(defined $hv_dest_id){
-            $log->info("Enqueue VM <$vm_to_migrate_id> migration");
+            $log->debug("Enqueue VM <$vm_to_migrate_id> migration");
             $self->_migrateVmModifyInfra(
                 vm_id       => $vm_to_migrate_id,
                 hv_dest_id  => $hv_dest_id->{hv_id},
@@ -1760,7 +1743,7 @@ sub _getFlushHypervisorPlan {
             push @operation_plan, {vm_id => $vm_to_migrate_id, hv_id => $hv_dest_id->{hv_id}};
         }
         else{
-            $log->info("___Cannot migrate VM $vm_to_migrate_id");
+            $log->debug("___Cannot migrate VM $vm_to_migrate_id");
             $num_failed++;
         }
     }

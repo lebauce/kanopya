@@ -361,7 +361,7 @@ sub _updateWorkflowStatus {
 
     if (! defined $workflow) {
         # Skip workflow status update if no workflow has been launched earlier
-        $log->info('No workflow launched buy rule <' . $self->id . '>');
+        $log->info('No workflow launched by rule <' . $self->id . '>');
         return;
     }
 
