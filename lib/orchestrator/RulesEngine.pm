@@ -110,7 +110,7 @@ sub oneRun {
 
 =begin classdoc
 
-Compute rules evaluated bu rules engine. All rules from service providers with a Collector Manager.
+Compute rules evaluated by rules engine. All rules from service providers with a Collector Manager.
 
 @return reference on an array of rules
 

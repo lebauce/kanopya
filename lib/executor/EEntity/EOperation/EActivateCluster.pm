@@ -93,7 +93,7 @@ This module is a part of Administrator package so refers to Administrator config
 
 =head1 DEPENDENCIES
 
-This module depends of 
+This module depends of
 
 =over
 

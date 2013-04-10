@@ -212,7 +212,7 @@ sub undo {
             
             # TODO: We need to remove inserted callback when we detect that it is useless.
             #$log->error("Rollback <$func> falled:\n$@");
-            $log->error("Rollback <$func> falled.");
+            $log->error("Rollback <$func> failed.");
         }
 
         $current = $current->{prev_item};

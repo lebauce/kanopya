@@ -68,7 +68,7 @@ sub connect {
         throw Kanopya::Exception::Execution(error => $result->{stderr});
     }
 
-    $log->debug("Loging in node <$target> (<$ip:$port>).");
+    $log->debug("Logging in node <$target> (<$ip:$port>).");
 
     my $login_node_cmd = "iscsiadm -m node -T $target -p $ip:$port -l";
     $result = $args{econtext}->execute(command => $login_node_cmd);

@@ -142,7 +142,7 @@ sub postrequisites {
         return 0;
     }
     elsif ($time < 3*10) {
-        return 5;
+        return 5; 
     }
     else {
         my $lastmessage = $self->{context}->{cloudmanager_comp}->vmLoggedErrorMessage(opennebula3_vm => $self->{context}->{host});
