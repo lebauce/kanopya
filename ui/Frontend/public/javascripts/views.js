@@ -431,7 +431,7 @@ function create_grid(options) {
             root: "rows",
             page: "page",
             total: "pages",
-            records: "records",
+            records: "total",
             repeatitems: false
         },
 
@@ -452,7 +452,8 @@ function create_grid(options) {
         pager           : options.pager || '#' + pager_id,
         altRows         : true,
         rowNum          : options.rowNum || 10,
-        rowList         : options.rowList || undefined,
+        rowList         : options.rowList || [10,25,50,100,500],
+        viewrecords     : true,
         autoencode      : true,
 
         afterInsertRow  : function(rowid, rowdata, rowelem) {
