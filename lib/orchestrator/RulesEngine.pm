@@ -170,9 +170,14 @@ sub evalRules {
 
     my $memoization= {};
     for my $rule (@{$args{rules}}) {
-        $log->info('Evaluation rule <'.($rule->id).'> <'.($rule->formula_string).'>');
-        my $evaluation = $rule->evaluate(memoization => $memoization);
-        $rule->setEvaluation(evaluation => $evaluation, memoization => $memoization);
-        $rule->manageWorkflows(evaluation => $evaluation, memoization => $memoization);
+        $log->info('Evaluation rule <'.($rule->id)."> '".($rule->formula_string)."'");
+        eval {
+            my $evaluation = $rule->evaluate(memoization => $memoization);
+            $rule->setEvaluation(evaluation => $evaluation, memoization => $memoization);
+            $rule->manageWorkflows(evaluation => $evaluation, memoization => $memoization);
+        };
+        if ($@) {
+            $log->error('During management of rule '.($rule->id) ." : ". $@);
+        }
     }
 }
