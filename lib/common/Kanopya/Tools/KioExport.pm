@@ -57,7 +57,7 @@ if ($^O eq 'MSWin32') {
     $export_dir     = 'C:\\tmp\\';
     $rrd_backup_dir = 'C:\\tmp\\monitor\\TimeData_backup\\';
     $rrd_dir        = 'C:\\tmp\\monitor\\TimeData\\';
-    $cp_dir         = 'cp -recurse';
+    $cp_dir         = 'powershell cp -recurse';
 }
 elsif ($^O eq 'linux') {
     $export_dir     = '/vagrant/';
