@@ -1912,10 +1912,12 @@ sub _getDbixFromHash {
     $SIG{__WARN__} = sub {
         my $warn_msg = $_[0];
         if ($warn_msg =~ m/Prefetching multiple has_many rel/) {
-            $log->warn($warn_msg);
+            # Just debug level because we know what we are doing (prefetch multi)
+            $log->debug($warn_msg);
         }
         else {
-            #arn $warn_msg;
+            # TODO Test number of logs if we log in warn level
+            $log->debug($warn_msg);
         }
     };
 
