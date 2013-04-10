@@ -77,15 +77,13 @@ sub getExecToTest {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return "class {\n" .
-           "\t'mysql::server':\n" .
-           "\t\tconfig_hash => {\n" .
-           "\t\t\t'port' => '" . $self->mysql5_port . "',\n" .
-           "\t\t\t'bind_address' => '" . $self->mysql5_bindaddress . "',\n" .
-           "\t\t\t'datadir' => '" . $self->mysql5_datadir . "',\n" .
-           "\t\t}\n" .
-           "}\n" .
-           "class { 'kanopya::mysql': }\n";
+    return "class { 'kanopya::mysql':\n" .
+           "\tconfig_hash => {\n" .
+           "\t\t'port' => '" . $self->mysql5_port . "',\n" .
+           "\t\t'bind_address' => '" . $self->mysql5_bindaddress . "',\n" .
+           "\t\t'datadir' => '" . $self->mysql5_datadir . "',\n" .
+           "\t}\n" .
+           "}\n";
 }
 
 1;
