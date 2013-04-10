@@ -76,8 +76,8 @@ sub importKanopyaData {
         $export_dir     = 'C:\\tmp\\';
         $rrd_backup_dir = 'C:\\tmp\\monitor\\TimeData_backup\\';
         $rrd_dir        = 'C:\\tmp\\monitor\\TimeData\\';
-        $cp_file        = 'cp';
-        $del_file       = 'del';
+        $cp_file        = 'powershell cp';
+        $del_file       = 'powershell del';
     }
     elsif ($^O eq 'linux') {
         $export_dir     = '/vagrant/';
