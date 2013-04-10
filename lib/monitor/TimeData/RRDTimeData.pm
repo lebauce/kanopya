@@ -166,7 +166,7 @@ sub createTimeDataStore {
     #final command
     my $cmd = $rrd.' create '.$dir.$name.' '.$opts.' '.$DS_chain.' '.$RRA_chain;
     # print $cmd."\n";
-    $log->info($cmd);
+    $log->debug($cmd);
     $log->info("creating rrd $dir$name");
 
     #execution of the command
@@ -247,7 +247,7 @@ sub fetchTimeDataStore {
         $cmd .= ' -e '.$end;
     }
 
-    $log->info($cmd);
+    $log->debug($cmd);
 
     #we store the ouput of the command into a string
     my $exec = `$cmd 2>&1`;
@@ -341,10 +341,8 @@ sub getLastUpdatedValue {
     my $name = _formatName(name => $args{'metric_uid'});
 
     my $cmd = $rrd.' lastupdate '.$dir.$name;
-    $log->info($cmd);
 
     my $exec =`$cmd 2>&1`;
-    #print $exec."\n";
 
     if ($exec =~ m/^ERROR.*/) {
         throw Kanopya::Exception::Internal(error => 'RRD fetch failed for last updated value: '.$exec);
