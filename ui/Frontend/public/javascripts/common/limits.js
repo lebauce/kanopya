@@ -103,6 +103,7 @@ function Periods() {
                 center: 'title',
                 right: 'month,agendaWeek,agendaDay'
             },
+            contentHeight: 400,
             firstDay: 1,
             defaultView: 'agendaWeek',
             selectable: true,
