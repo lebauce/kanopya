@@ -83,10 +83,6 @@ var mainmenu_def = {
             label : 'Groups',
             id : 'groups',
             onLoad : function(cid, eid) { require('common/users.js'); groupsList(cid, eid); }
-        }, {
-            label : 'Permissions',
-            id : 'permissions',
-            onLoad : function(cid, eid) { require('common/users.js'); permissions(cid, eid); }
         } ]
     }
 };
