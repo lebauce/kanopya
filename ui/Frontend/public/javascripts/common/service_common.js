@@ -16,35 +16,45 @@ function addServiceExtraData(grid, rowid, rowdata, rowelem) {
     var verified = 0;
     var undef    = 0;
     var ok       = 0;
-    for (var index in rowelem.rules) {
-        var rule = rowelem.rules[index];
 
-        // Filter on rules concrete type in js (bad), because the api do not support it for instance.
-        if (! rule.hasOwnProperty('aggregate_rule_last_eval'))
-            continue;
+    // Get the rules of each row as extra data, because expanding rules and nodes
+    // when getting service providers list raise a combinatorial explosion (thanks to underling generic sql joins).
+    $.ajax({
+        url     : '/api/aggregaterule?service_provider_id=' + rowelem.pk,
+        type    : 'GET',
+        async   : true,
+        success : function(aggregaterules) {
+            for (var index in aggregaterules) {
+                var rule = aggregaterules[index];
 
-        var lasteval = rule.aggregate_rule_last_eval;
-        if (lasteval === '1') {
-            ++verified;
-        } else if (lasteval === null) {
-            ++undef;
-        } else if (lasteval === '0') {
-            ++ok;
+                // Filter on rules concrete type in js (bad), because the api do not support it for instance.
+                if (! rule.hasOwnProperty('aggregate_rule_last_eval'))
+                    continue;
+
+                var lasteval = rule.aggregate_rule_last_eval;
+                if (lasteval === '1') {
+                    ++verified;
+                } else if (lasteval === null) {
+                    ++undef;
+                } else if (lasteval === '0') {
+                    ++ok;
+                }
+                var cellContent = $('<div>');
+                if (ok > 0) {
+                    $(cellContent).append($('<img>', { src : '/images/icons/up.png' })).append(ok + "&nbsp;");
+                }
+                if (verified > 0) {
+                    $(cellContent).append($('<img>', { src : '/images/icons/broken.png' })).append(verified + "&nbsp;");
+                }
+                if (undef > 0) {
+                    $(cellContent).append($('<img>', { src : '/images/icons/down.png' })).append(undef);
+                }
+                $(grid).setGridParam({ autoencode : false });
+                $(grid).setCell(rowid, 'rulesstate', cellContent.html());
+                $(grid).setGridParam({ autoencode : true });
+            }
         }
-        var cellContent = $('<div>');
-        if (ok > 0) {
-            $(cellContent).append($('<img>', { src : '/images/icons/up.png' })).append(ok + "&nbsp;");
-        }
-        if (verified > 0) {
-            $(cellContent).append($('<img>', { src : '/images/icons/broken.png' })).append(verified + "&nbsp;");
-        }
-        if (undef > 0) {
-            $(cellContent).append($('<img>', { src : '/images/icons/down.png' })).append(undef);
-        }
-        $(grid).setGridParam({ autoencode : false });
-        $(grid).setCell(rowid, 'rulesstate', cellContent.html());
-        $(grid).setGridParam({ autoencode : true });
-    }
+    });
 }
 
 //Callback for service resources grid

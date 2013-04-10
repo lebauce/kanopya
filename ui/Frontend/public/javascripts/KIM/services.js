@@ -50,7 +50,7 @@ function servicesList (container_id, elem_id) {
         customer_filter = '&user_id=' + current_user.user_id;
     }
     var grid = create_grid( {
-        url: '/api/cluster?expand=service_template,nodes,rules&deep=1' + customer_filter,
+        url: '/api/cluster?expand=service_template,nodes' + customer_filter,
         content_container_id: container_id,
         grid_id: 'services_list',
         afterInsertRow: function (grid, rowid, rowdata, rowelem) {

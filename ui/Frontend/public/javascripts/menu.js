@@ -56,7 +56,7 @@ function add_menutree(container, label, menu_info, elem_id) {
         var container_id = 'content_services_overview_static';
 
         create_grid( {
-            url: '/api/cluster?expand=service_template,nodes,rules&deep=1&service_template.service_template_id=' + elem_id,
+            url: '/api/cluster?expand=service_template,nodes&service_template.service_template_id=' + elem_id,
             content_container_id: container_id,
             grid_id: 'services_list',
             afterInsertRow: function (grid, rowid, rowdata, rowelem) {
@@ -77,7 +77,7 @@ function add_menutree(container, label, menu_info, elem_id) {
             ],
             elem_name   : 'service',
             details     : { link_to_menu : 'yes', label_key : 'cluster_name'},
-            before_container : add_button,
+            before_container : add_button
         });
     });
     var sublevel = $('<ul>');

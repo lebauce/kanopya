@@ -56,7 +56,7 @@ function servicesList (container_id, elem_id) {
 
     // Only list externalcluster without connector
     create_grid( {
-        url: '/api/externalcluster?expand=nodes,rules&deep=1&components.component_id=',
+        url: '/api/externalcluster?expand=nodes&components.component_id=',
         content_container_id: container_id,
         grid_id: 'services_list',
         afterInsertRow: function (grid, rowid, rowdata, rowelem) {
