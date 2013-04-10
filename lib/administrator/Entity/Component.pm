@@ -196,12 +196,11 @@ sub getTemplateDirectory {
 sub remove {
     my $self = shift;
 
-    my @managers = ServiceProviderManager->search( hash => { manager_id => $self->id } );
+    my @managers = ServiceProviderManager->search(hash => { manager_id => $self->id });
     for my $manager (@managers) {
         $manager->remove();
     }
-
-    $self->remove();
+    $self->SUPER::remove();
 }
 
 sub registerNode {
