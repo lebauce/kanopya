@@ -8,9 +8,9 @@ class kanopya::mysql::repo {
         }
     }
     elsif $operatingsystem =~ /(?i)(debian|ubuntu)/ {
-        case $operatingsystem {
-            'Debian' : { $release = 'squeeze' }
-            'Ubuntu' : { $release = 'precise' }
+        $release = $operatingsystem ? {
+            'Debian' => 'squeeze',
+            'Ubuntu' => 'precise'
         }
         apt::source { 'MariaDB':
             location   => 'http://ftp.igh.cnrs.fr/pub/mariadb/repo/5.5/${operatingsystem}',
