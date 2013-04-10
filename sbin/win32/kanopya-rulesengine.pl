@@ -160,11 +160,14 @@ sub install_service {
         start_type   => SERVICE_AUTO_START,
     );
     # Install the service
-    if( Win32::Daemon::CreateService(\%srv_config)) {
+    if (Win32::Daemon::CreateService(\%srv_config)) {
         print "Service installed successfully\n";
+        return 0;
     }
     else {
-        print "Failed to install service\n";
+        print "Failed to install service:\n " .
+              Win32::FormatMessage(Win32::Daemon::GetLastError()) . "\n";
+        return Win32::Daemon::GetLastError();
     }
 }
 

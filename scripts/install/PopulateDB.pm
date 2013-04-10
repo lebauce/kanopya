@@ -1581,14 +1581,17 @@ sub registerKanopyaMaster {
 
     # TODO: insert IscsiPortals...
 
-    my $ehost = EEntity->new(entity => $admin_host);
+    # TODO: Implement getTotalCpu, getTotalMemory for Win32.
+    if ($^O ne 'MSWin32') {
+        my $ehost = EEntity->new(entity => $admin_host);
 
-    $admin_host->setAttr(name  => "host_core",
-                         value => $ehost->getTotalCpu);
+        $admin_host->setAttr(name  => "host_core",
+                             value => $ehost->getTotalCpu);
 
-    $admin_host->setAttr(name  => "host_ram",
-                         value => $ehost->getTotalMemory);
-    $admin_host->save();
+        $admin_host->setAttr(name  => "host_ram",
+                             value => $ehost->getTotalMemory);
+        $admin_host->save();
+    }
 
     return $admin_cluster;
 }
