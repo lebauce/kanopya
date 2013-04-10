@@ -104,8 +104,8 @@ sub execute {
         
     my $result = {};
     my $command = $args{command};
-    $log->info("Running command: $command");
-    $ENV{'PATH'} = '/bin:/usr/bin:/sbin:/usr/sbin'; 
+    $log->debug("Running command: $command");
+
     my $stdout = `$command 2> /tmp/EContext.stderr`;
     $result->{exitcode} = $?;
     $result->{stdout} = $stdout;
@@ -127,7 +127,7 @@ sub execute {
 
 =begin classdoc
 
-Use the cp command to copu the file.
+Use the cp command to copy the file.
 
 @param src the source file to copy
 @param dest the destionation to copy file
@@ -140,6 +140,7 @@ Use the cp command to copu the file.
 
 sub send {
     my ($self, %args) = @_;
+
     General::checkParams(args => \%args, required => [ 'src', 'dest' ]);
     
     if(not -e $args{src}) {
@@ -147,11 +148,11 @@ sub send {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
-    # TODO faire plus de test sur la destination
+
     my $result = {};
     my $command = "cp -R $args{src} $args{dest}";
-    $log->info("Running command: $command");
-    $ENV{'PATH'} = '/bin:/usr/bin:/sbin:/usr/sbin'; 
+    $log->debug("Running command: $command");
+
     my $stdout = `$command 2> /tmp/EContext.stderr`;
     $result->{exitcode} = $?;
     $result->{stdout} = $stdout;
