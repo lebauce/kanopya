@@ -376,35 +376,41 @@ sub _computeCombinationAndFeedTimeDB {
             }
         }
 
-        my $clustermetric_id = $clustermetric->id;
-        # Compute the $clustermetric value from all @dataStored values
-        if (0 < (scalar @dataStored)) {
-            my $statValue = $clustermetric->compute(values => \@dataStored);
+        eval {
+            my $clustermetric_id = $clustermetric->id;
+            # Compute the $clustermetric value from all @dataStored values
+            if (0 < (scalar @dataStored)) {
+                my $statValue = $clustermetric->compute(values => \@dataStored);
 
-            # Store in DB and time stamp
-            TimeData::RRDTimeData::updateTimeDataStore(
-                clustermetric_id => $clustermetric_id,
-                time             => $args{timestamp},
-                value            => $statValue,
-                time_step        => $self->{config}->{time_step},
-                storage_duration => $self->{config}->{storage_duration}
-            );
-            if (!defined $statValue) {
-                $log->info("*** [WARNING] No statvalue computed for clustermetric " . $clustermetric_id);
+                # Store in DB and time stamp
+                TimeData::RRDTimeData::updateTimeDataStore(
+                    clustermetric_id => $clustermetric_id,
+                    time             => $args{timestamp},
+                    value            => $statValue,
+                    time_step        => $self->{config}->{time_step},
+                    storage_duration => $self->{config}->{storage_duration}
+                );
+                if (!defined $statValue) {
+                    $log->info("*** [WARNING] No statvalue computed for clustermetric " . $clustermetric_id);
+                }
             }
-        }
-        else {
-            # This case is current and produce lot of log
-            # TODO better handling (and user feedback) of missing data
-            $log->debug("*** [WARNING] No datas received for clustermetric " . $clustermetric_id);
+            else {
+                # This case is current and produce lot of log
+                # TODO better handling (and user feedback) of missing data
+                $log->debug("*** [WARNING] No datas received for clustermetric " . $clustermetric_id);
 
-            TimeData::RRDTimeData::updateTimeDataStore(
-                clustermetric_id => $clustermetric_id,
-                time             => $args{timestamp},
-                value            => undef,
-                time_step        => $self->{config}->{time_step},
-                storage_duration => $self->{config}->{storage_duration}
-            );
+                TimeData::RRDTimeData::updateTimeDataStore(
+                    clustermetric_id => $clustermetric_id,
+                    time             => $args{timestamp},
+                    value            => undef,
+                    time_step        => $self->{config}->{time_step},
+                    storage_duration => $self->{config}->{storage_duration}
+                );
+            }
+        };
+        if ($@) {
+            # Handle error when create rrd then directly update with a time < creation time
+            $log->warn($@);
         }
     }
 }

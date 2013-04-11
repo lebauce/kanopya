@@ -94,14 +94,22 @@ sub storeNodeMetricsValues {
 
     while (my ($node_name, $indicators_values) = each %{$args{values}}) {
         while (my ($indicators_oid, $value) = each %$indicators_values) {
-            my $metric_uid = $args{indicators}->{$indicators_oid}->id . '_' . $node_name;
-            TimeData::RRDTimeData::updateTimeDataStore(
-                clustermetric_id => $metric_uid,
-                time             => $args{timestamp},
-                value            => $value,
-                time_step        => $args{time_step},
-                storage_duration => $args{storage_duration}
-            );
+            eval {
+                my $metric_uid = $args{indicators}->{$indicators_oid}->id . '_' . $node_name;
+                TimeData::RRDTimeData::updateTimeDataStore(
+                    clustermetric_id => $metric_uid,
+                    time             => $args{timestamp},
+                    value            => $value,
+                    time_step        => $args{time_step},
+                    storage_duration => $args{storage_duration}
+                );
+            };
+            if ($@) {
+                # Possible error is an illegal attempt to update using time < last update time
+                # This error is throw when the rrd is created at now() but updated at collect time (< now)
+                # This error happens only at the first update (when rrd is just created because not exists)
+                $log->warn($@);
+            }
         }
     }
 }
