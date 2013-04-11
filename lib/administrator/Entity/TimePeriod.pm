@@ -174,8 +174,10 @@ sub toSpanSet {
         }
         else {
             # Sporadic event
-            $tree->insert($limit->{id},
-                          $start, $end);
+            $span = DateTime::Span->from_datetimes(start => $start,
+                                                   end   => $end);
+
+            $spansets = $spansets->union($span);
         }
     }
 
