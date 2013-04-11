@@ -298,3 +298,11 @@ button.ui-multiselect,.ui-multiselect-menu li label{cursor:pointer;}
     margin-right: 10px;
 }
 
+/* About kanopya page */
+#logo-about{display:inline-block;vertical-align:top;margin:20px;}
+#content-about{display:inline-block;vertical-align:top;margin:20px 20px 20px 0;}
+    #content-about h1{width:201px;height:48px;background:url("../images/kanopya.png") no-repeat;margin:0 0 5px;}
+    #content-about h1 span{display:none;}
+        #content-about h2{font-size:12px;color:black;margin:0 0 2px;}
+    #content-about p{font-weight:normal;}
+
