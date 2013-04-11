@@ -134,7 +134,7 @@ function createUpdateNodeButton(container, elem_id, grid_id) {
 }
 
 function _buttonEnabling (grid, rowid, action_enable) {
-    $('#' + rowid).find('.node_control .ui-button-text').html(action_enable ? 'Disable' : 'Enable');
+    $('#' + rowid).find('.node_control .ui-button-text').html(action_enable ? 'Disable' : 'Enable').attr('title',action_enable ? 'Disable node' : 'Enable node');
     var td = $(grid).find('tr#' + rowid + ' td');
     action_enable ? td.removeClass('node-disabled') : td.addClass('node-disabled');
 }
@@ -153,7 +153,7 @@ function loadServicesResources (container_id, elem_id) {
             $(grid).find('tr#' + rowid + ' td').addClass('node-disabled');
         }
         var cell = $(grid).find('tr#' + rowid).find('td[aria-describedby="' + loadServicesResourcesGridId + '_activate_control"]');
-        var activateButton  = $('<div>', {'class' : 'node_control', html : node_disabled ? 'Enable' : 'Disable', css : 'position:center'}).button().appendTo(cell);
+        var activateButton  = $('<div>', {'class' : 'node_control', html : node_disabled ? 'Enable' : 'Disable', css : 'position:center',title:node_disabled ? 'Enable node' : 'Disable node'}).button().appendTo(cell);
         $(activateButton).attr('style', 'margin-top:0px;');
         $(activateButton).click(function() {
             var action          = $(this).find('.ui-button-text').html().toLowerCase();

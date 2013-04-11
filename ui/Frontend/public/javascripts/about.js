@@ -3,7 +3,7 @@ function openAbout(contentAbout){
         jQuery(document.createElement('div'))
         .html(data)
         .dialog({
-            title           : 'Kanopya 1.7.0 release version',
+            title           : 'About Kanopya',
             buttons         : [{text:'OK',click: function(){$(this).dialog('close');}, id:'button-ok'}],
             close           : function(){$(this).remove();},
             draggable       : true,
