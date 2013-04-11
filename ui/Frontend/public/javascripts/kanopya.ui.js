@@ -103,7 +103,7 @@ $(document).ready(function () {
                        closable : false
                    },
                    west : {
-                       minSize   : 220,
+                       minSize   : 260,
                        closable  : false,
                        resizable : true
                    },
