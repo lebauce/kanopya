@@ -144,6 +144,23 @@ sub importKanopyaData {
                 service_provider_id   => $new_externalcluster->id,
             );
 
+            if ($component_class_type =~ /ActiveDirectory/) {
+                my $conf = {
+                    ad_host          => $connector->{ad_host},
+                    ad_nodes_base_dn => $connector->{ad_nodes_base_dn},
+                    ad_user          => $connector->{ad_user},
+                    ad_usessl        => $connector->{ad_usessl},
+                };
+                $component->setConf(conf => $conf);
+            }
+            elsif ($component_class_type =~ /Scom/) {
+                my $conf = {
+                    scom_usessl  => $connector->{scom_usessl},
+                    scom_ms_name => $connector->{scom_ms_name},
+                };
+                $component->setConf(conf => $conf);
+            }
+
             if (defined $connector->{collector_indicators}) {
 
                 foreach my $old_collector_indicator (@{ $connector->{collector_indicators} }) {
@@ -227,6 +244,12 @@ sub importKanopyaData {
                 manager_type    => $manager_categories->{$old_manager->{manager_type}},
                 no_default_conf => 1,
             );
+            if (defined $old_manager->{manager_params}) {
+                $new_externalcluster->addManagerParameters(
+                    manager_type => $manager_categories->{$old_manager->{manager_type}},
+                    params       => $old_manager->{manager_params},
+                );
+            }
         }
 
         for my $old_clustermetric (@{ $service_provider->{clustermetrics} }) {
