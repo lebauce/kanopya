@@ -94,6 +94,21 @@ function Periods() {
             });
     }
 
+    Periods.prototype.shiftEvent = function (event, dayDelta, minuteDelta, endOnly) {
+        var new_date;
+        if (!endOnly) {
+            new_date = new Date(new Date(event.limit.start).getTime() +
+                                86400000 * dayDelta +
+                                60000 * minuteDelta);
+            event.limit.start = new_date;
+        }
+
+        new_date = new Date(new Date(event.limit.end).getTime() +
+                            86400000 * dayDelta +
+                            60000 * minuteDelta);
+        event.limit.end = new_date;
+    }
+
     Periods.prototype.showCalendar = function (limits) {
         var that = this;
         this.limits = limits || [];
@@ -116,8 +131,12 @@ function Periods() {
             eventDragStart: function (event, jsEvent, ui, view) {
             },
             eventResize: function (event, dayDelta, minuteDelta, revertFunc, jsEvent, ui, view) {
-                event.limit.start = event.start;
-                event.limit.end = event.end;
+                that.shiftEvent(event, dayDelta, minuteDelta, true);
+                that.calendar.fullCalendar('refetchEvents');
+            },
+            eventDrop: function (event, dayDelta, minuteDelta, allDay, revertFunc) {
+                that.shiftEvent(event, dayDelta, minuteDelta);
+                that.calendar.fullCalendar('refetchEvents');
             },
             eventMouseover: function (event, jsEvent, view) {
                 var close = $("<div class='close-box ui-icon ui-icon-close'></div>");
