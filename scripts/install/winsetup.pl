@@ -377,7 +377,7 @@ sub getKanopyaDirectory {
 sub command {
     my %args = @_;
 
-    print "Executing command: $args{cmd} \n";
+    # Warning; do not print/log command (can contains password)
     my $stdout = `$args{cmd} 2>&1`;
     my $code = $?;
 
