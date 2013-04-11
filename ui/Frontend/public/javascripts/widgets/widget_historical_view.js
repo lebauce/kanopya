@@ -663,8 +663,15 @@ function _autoPredict(params) {
             elemLoadingStop(graph.target.parent());
         },
         error       : function(error) {
+            var error_msg;
+            try {
+                error_msg = JSON.parse(error.responseText)['reason'];
+            }
+            catch (err) {
+                error_msg = error.responseText;
+            }
             graph.target.parent().find('#predict_error_div').remove();
-            graph.target.parent().prepend($('<div>', {id : 'predict_error_div', 'class' : 'ui-state-highlight ui-corner-all', html: error.responseText}));
+            graph.target.parent().prepend($('<div>', {id : 'predict_error_div', 'class' : 'ui-state-highlight ui-corner-all', html: error_msg}));
             elemLoadingStop(graph.target.parent());
         }
     });
