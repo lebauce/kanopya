@@ -48,7 +48,7 @@ use constant ATTR_DEF => {
         is_editable  => 1
     },
     gp_desc => {
-        pattern      => '^[\w\s]*$',
+        pattern      => '.*',
         is_mandatory => 0,
         is_extended  => 0,
         is_editable  => 1

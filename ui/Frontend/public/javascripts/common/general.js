@@ -397,15 +397,3 @@ function checkOperation (grid, operation_id, id) {
         }
     }
 }
-
-// On load we bind keydown event
-// If 'enter' is pressed we trigger click on 'Ok' button
-$(document).ready(function () {
-    $(document).keydown( function(e) {
-        if(e.which == 13) { // enter pressed
-            if(!$("textarea").is(":focus")){
-                $('.ui-button:contains("Ok"):visible').click();
-            }
-        }
-    });
-});

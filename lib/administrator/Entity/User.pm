@@ -48,7 +48,7 @@ use constant ATTR_DEF => {
         label        => 'Description',
         type         => 'text',
         # Impossible to check char used because of \n doesn't match with \w
-        pattern      => '^.*$',
+        pattern      => '.*',
         is_mandatory => 0,
         is_editable  => 1
     },
