@@ -310,7 +310,7 @@ sub isMigrationAuthorized{
         }
     }
 
-    $log->info("Migration authorized to migrate VM $vm_id (".$self->{_infra}->{vms}->{$vm_id}->{$resource}.") in HV $hv_id");
+    $log->info("Migration authorized to migrate VM $vm_id in HV $hv_id");
     return 1;
 }
 
