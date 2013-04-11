@@ -252,7 +252,7 @@ var KanopyaFormWizard = (function() {
 
                     // For hidden fields, do not get possible values, add the value as option only
                     if (this.attributedefs[name].hidden && value !== undefined) {
-                        this.attributedefs[name].options = [ value ];
+                        this.attributedefs[name].options = $.isArray(value) ? value : [ value ];
 
                     } else {
                         this.attributedefs[name].options = this.getOptions(name, value, relations);
@@ -442,6 +442,7 @@ var KanopyaFormWizard = (function() {
          */
         if (attr.hidden) {
             input.attr('type', 'hidden');
+
         } else {
             if (table.parent().is('fieldset') && table.parent().css('display') == 'none') {
                table.parent().css('display', 'block');
