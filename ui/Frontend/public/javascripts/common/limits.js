@@ -142,6 +142,10 @@ function Periods() {
                             }
                             $('#edit-event-dialog').dialog('close');
                         });
+                    } else {
+                        var index = that.limits.indexOf(event.limit);
+                        that.limits.splice(index, 1);
+                        that.calendar.fullCalendar('refetchEvents');
                     }
                     return false;
                 });
