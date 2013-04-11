@@ -24,7 +24,6 @@ use DateTime;
 use DateTime::Duration;
 use DateTime::Set;
 use DateTime::Format::HTTP;
-use Set::IntervalTree;
 use DateTime::Infinite;
 
 use constant ATTR_DEF => {
@@ -90,7 +89,6 @@ sub toSpanSet {
 
     my $spansets = DateTime::SpanSet->from_spans(spans => []);
     my $limits = $args{limits} || $self->param_preset->load()->{limits};
-    my $tree = Set::IntervalTree->new;
     my $from = $args{from};
     my $to = $args{to};
 
