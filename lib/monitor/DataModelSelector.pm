@@ -277,6 +277,8 @@ sub selectDataModel {
     # Models with their computed accuracy {class_name => {accuracy}}
     my %accuracy_hash;
 
+    my $error;
+
     for my $data_model_class (@data_model_classes) {
         BaseDB::requireClass($data_model_class);
 
@@ -286,30 +288,58 @@ sub selectDataModel {
             my %temp_accuracy_hash;
 
             # Compute the accuracy of the model for each freq
-            for my $freq (@freqs) {
-                $temp_accuracy_hash{$freq} = $class->evaluateDataModelAccuracy(
+            for my $freq (@freqs) {                
+                eval {
+                    my $accur = $class->evaluateDataModelAccuracy(
+                        data_model_class => $data_model_class,
+                        data             => $args{data},
+                        combination_id   => $args{combination_id},
+                        node_id          => $args{node_id},
+                        freq             => $freq,
+                    );
+                    if (defined($accur)) {
+                        $temp_accuracy_hash{$freq} = $accur;
+                    }
+                };
+                if ($@) {
+                    $error = $@;
+                    $log->info("$error");
+                }
+            }
+
+            # Store the best model retained if there is at least one available
+            if (scalar(keys(%temp_accuracy_hash)) != 0) {
+                my $best_freq = $class->chooseBestDataModel(accuracy_measures => {%temp_accuracy_hash});
+                $freq_hash{$data_model_class}     = $best_freq;
+                $accuracy_hash{$data_model_class} = $temp_accuracy_hash{$best_freq};
+            }
+        }
+        else {
+            eval {
+                my $t_freq = 1;
+                my $accur  = $class->evaluateDataModelAccuracy(
                     data_model_class => $data_model_class,
                     data             => $args{data},
                     combination_id   => $args{combination_id},
-                    node_id          => $args{node_id},
-                    freq             => $freq,
+                    node_id          => $args{node_if},
                 );
+                if (defined($accur)) {
+                    $freq_hash{$data_model_class}     = $t_freq;
+                    $accuracy_hash{$data_model_class} = $accur;
+                }
+            };
+            if ($@) {
+                $error = $@;
+                $log->info("$error");
             }
+        }
+    }
 
-            # Store the best model retained
-            my $best_freq = $class->chooseBestDataModel(accuracy_measures => {%temp_accuracy_hash});
-            $freq_hash{$data_model_class}     = $best_freq;
-            $accuracy_hash{$data_model_class} = $temp_accuracy_hash{$best_freq};
-        }
-        else {
-            $freq_hash{$data_model_class}     = 1;
-            $accuracy_hash{$data_model_class} = $class->evaluateDataModelAccuracy(
-                data_model_class => $data_model_class,
-                data             => $args{data},
-                combination_id   => $args{combination_id},
-                node_id          => $args{node_if},
-            );
-        }
+    # If there was only exceptions, throw an exception !
+    if (scalar(keys(%accuracy_hash)) == 0) {
+        throw Kanopya::Exception(error => 'All selected models were unable to proceed the forecast with ' .
+                                          'the selected data.please try to select more data or more ' .
+                                          'models. See logs for details.');
     }
 
     # Choose the best DataModel among all
