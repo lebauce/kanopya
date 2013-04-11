@@ -289,7 +289,15 @@ function Periods() {
                          displayed  : displayed };
             },
             submitCallback : function (data, form, opts) {
-                var limit = data;
+                var limit;
+
+                if (data.ends_on) {
+                    var day_after = new Date();
+                    day_after.setDate(new Date(data.ends_on).getDate() + 1);
+                    data.ends_on = $.datepicker.formatDate('yy-mm-dd', day_after);
+                }
+
+                limit = data;
                 $.extend(limit, {
                     id: start.getTime() + "-" + data.type + "-" + data.value,
                     title: data.type + " " + data.value,
