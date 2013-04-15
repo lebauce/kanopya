@@ -1,3 +1,14 @@
+class kanopya::mysql::galera {
+    mysql::server::config { 'galera':
+        settings => {
+            mysqld => {
+                wsrep_provider        => '/usr/lib64/galera/libgalera_smm.so',
+                wsrep_cluster_address => ''
+            }
+        }
+    }
+}
+
 class kanopya::mysql::deb($config_hash) {
     $release = $operatingsystem ? {
         /(?i)(debian)/ => 'squeeze',
@@ -18,6 +29,9 @@ class kanopya::mysql::deb($config_hash) {
         package_name => 'mariadb-galera-server',
         require      => Apt::Source['MariaDB']
     }
+    class { 'kanopya::mysql::galera':
+        require => Class['::mysql::server']
+    }
 }
 
 class kanopya::mysql::rh($config_hash) {
@@ -33,6 +47,9 @@ class kanopya::mysql::rh($config_hash) {
         config_hash   => $config_hash,
         package_name  => 'MariaDB-Galera-server',
         require       => Yumrepo['MariaDB']
+    }
+    class { 'kanopya::mysql::galera':
+        require => Class['::mysql::server']
     }
 }
 
