@@ -37,6 +37,11 @@ class kanopya::mysql::rh($config_hash) {
 }
 
 class kanopya::mysql($config_hash) {
+    file { '/var/run/mysqld':
+        ensure => 'directory',
+        owner  => 'mysql',
+        group  => 'mysql'
+    }
     case $operatingsystem {
         /(?i)(debian|ubuntu)/ : {
             class { 'kanopya::mysql::deb':
