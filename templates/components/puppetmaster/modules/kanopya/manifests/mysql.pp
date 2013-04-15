@@ -1,8 +1,11 @@
-class kanopya::mysql::galera {
+class kanopya::mysql::galera($lib) {
+    $provider = $architecture ? {
+        'x86_64' => '/usr/lib64/galera/libgalera_smm.so',
+        default  => '/usr/lib/galera/libgalera_smm.so'
     mysql::server::config { 'galera':
         settings => {
             mysqld => {
-                wsrep_provider        => '/usr/lib64/galera/libgalera_smm.so',
+                wsrep_provider        => $provider,
                 wsrep_cluster_address => ''
             }
         }
