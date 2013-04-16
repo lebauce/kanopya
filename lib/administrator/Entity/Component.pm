@@ -141,7 +141,7 @@ sub getConf {
     my @relations;
     my $attrdefs = $class->getAttrDefs();
     while (my ($name, $attr) = each %{$attrdefs}) {
-        if ($attr->{type} eq "relation") {
+        if (defined $attr->{type} and $attr->{type} eq "relation") {
             push @relations, $name;
         }
     }
