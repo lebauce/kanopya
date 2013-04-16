@@ -64,7 +64,6 @@ CREATE TABLE `entity_lock` (
   PRIMARY KEY (`entity_lock_id`),
   UNIQUE KEY (`entity_id`),
   FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`consumer_id`),
   FOREIGN KEY (`consumer_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -556,7 +555,7 @@ CREATE TABLE `operationtype` (
 
 CREATE TABLE `operation` (
   `operation_id` int(8) unsigned NOT NULL,
-  `type` char(64) NOT NULL,
+  `operationtype_id` int(8) unsigned NOT NULL,
   `workflow_id` int(8) unsigned NOT NULL,
   `state` char(32) NOT NULL DEFAULT 'pending',
   `user_id` int(8) unsigned NOT NULL,
@@ -565,15 +564,14 @@ CREATE TABLE `operation` (
   `creation_time` time NOT NULL,
   `hoped_execution_time` int(4) unsigned DEFAULT NULL,
   `execution_rank` int(8) unsigned NOT NULL,
+  `param_preset_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`operation_id`),
   FOREIGN KEY (`operation_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`execution_rank`, `workflow_id`),
-  KEY (`user_id`),
   FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`workflow_id`),
-  FOREIGN KEY (`workflow_id`) REFERENCES `workflow` (`workflow_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`type`),
-  FOREIGN KEY (`type`) REFERENCES `operationtype` (`operationtype_name`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`workflow_id`) REFERENCES `workflow` (`workflow_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`operationtype_id`) REFERENCES `operationtype` (`operationtype_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -583,7 +581,7 @@ CREATE TABLE `operation` (
 CREATE TABLE `old_operation` (
   `old_operation_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `operation_id` int(8) unsigned NULL DEFAULT NULL,
-  `type` char(64) NOT NULL,
+  `operationtype_id` int(8) unsigned NOT NULL,
   `workflow_id` int(8) unsigned NOT NULL,
   `user_id` int(8) unsigned NOT NULL,
   `priority` int(2) unsigned NOT NULL,
@@ -592,10 +590,12 @@ CREATE TABLE `old_operation` (
   `execution_date` date NOT NULL,
   `execution_time` time NOT NULL,
   `execution_status` char(32) NOT NULL,
+  `param_preset_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`old_operation_id`),
   FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   FOREIGN KEY (`workflow_id`) REFERENCES `workflow` (`workflow_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`type`) REFERENCES `operationtype` (`operationtype_name`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`operationtype_id`) REFERENCES `operationtype` (`operationtype_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -611,38 +611,6 @@ CREATE TABLE `workflow_def_manager` (
     FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
     FOREIGN KEY (`manager_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 )   ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `operation_parameter`
---
-
-CREATE TABLE `operation_parameter` (
-  `operation_parameter_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `operation_id` int(8) unsigned NOT NULL,
-  `name` char(64) NOT NULL,
-  `value` char(255) NOT NULL,
-  `tag` char(64) DEFAULT NULL,
-  PRIMARY KEY (`operation_parameter_id`),
-  UNIQUE KEY (`operation_id`, `name`, `tag`),
-  KEY (`operation_id`),
-  FOREIGN KEY (`operation_id`) REFERENCES `operation` (`operation_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `old_operation_parameter`
---
-
-CREATE TABLE `old_operation_parameter` (
-  `old_operation_parameter_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `old_operation_id` int(8) unsigned NOT NULL,
-  `name` char(64) NOT NULL,
-  `value` char(255) NOT NULL,
-  `tag` char(64) DEFAULT NULL,
-  PRIMARY KEY (`old_operation_parameter_id`),
-  UNIQUE KEY (`old_operation_id`, `name`, `tag`),
-  KEY (`old_operation_id`),
-  FOREIGN KEY (`old_operation_id`) REFERENCES `old_operation` (`old_operation_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Table structure for table `workflow`
@@ -1744,11 +1712,8 @@ CREATE TABLE `data_model` (
   `end_time` double NULL,
   PRIMARY KEY (`data_model_id`),
   FOREIGN KEY (`data_model_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY(`combination_id`),
   FOREIGN KEY (`combination_id`) REFERENCES `combination` (`combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY(`node_id`),
   FOREIGN KEY (`node_id`) REFERENCES `node` (`node_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`param_preset_id`),
   FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 

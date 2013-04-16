@@ -52,12 +52,12 @@ __PACKAGE__->table("old_operation");
   extra: {unsigned => 1}
   is_nullable: 1
 
-=head2 type
+=head2 operationtype_id
 
-  data_type: 'char'
+  data_type: 'integer'
+  extra: {unsigned => 1}
   is_foreign_key: 1
   is_nullable: 0
-  size: 64
 
 =head2 workflow_id
 
@@ -107,6 +107,13 @@ __PACKAGE__->table("old_operation");
   is_nullable: 0
   size: 32
 
+=head2 param_preset_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -119,8 +126,13 @@ __PACKAGE__->add_columns(
   },
   "operation_id",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
-  "type",
-  { data_type => "char", is_foreign_key => 1, is_nullable => 0, size => 64 },
+  "operationtype_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
   "workflow_id",
   {
     data_type => "integer",
@@ -147,6 +159,13 @@ __PACKAGE__->add_columns(
   { data_type => "time", is_nullable => 0 },
   "execution_status",
   { data_type => "char", is_nullable => 0, size => 32 },
+  "param_preset_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
 );
 
 =head1 PRIMARY KEY
@@ -163,22 +182,7 @@ __PACKAGE__->set_primary_key("old_operation_id");
 
 =head1 RELATIONS
 
-=head2 old_operation_parameters
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::OldOperationParameter>
-
-=cut
-
-__PACKAGE__->has_many(
-  "old_operation_parameters",
-  "AdministratorDB::Schema::Result::OldOperationParameter",
-  { "foreign.old_operation_id" => "self.old_operation_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 type
+=head2 operationtype
 
 Type: belongs_to
 
@@ -187,10 +191,30 @@ Related object: L<AdministratorDB::Schema::Result::Operationtype>
 =cut
 
 __PACKAGE__->belongs_to(
-  "type",
+  "operationtype",
   "AdministratorDB::Schema::Result::Operationtype",
-  { operationtype_name => "type" },
+  { operationtype_id => "operationtype_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 param_preset
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::ParamPreset>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "param_preset",
+  "AdministratorDB::Schema::Result::ParamPreset",
+  { param_preset_id => "param_preset_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 user
@@ -224,8 +248,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-03-11 16:42:20
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:cdtD+AIK/L05+Vh+BLu6+Q
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-04-16 11:59:00
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:QWqAihDbWY89JLOGHKCKmA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
