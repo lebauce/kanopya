@@ -82,6 +82,10 @@ sub getPuppetDefinition {
            "\t\t'port' => '" . $self->mysql5_port . "',\n" .
            "\t\t'bind_address' => '" . $self->mysql5_bindaddress . "',\n" .
            "\t\t'datadir' => '" . $self->mysql5_datadir . "',\n" .
+           "\t},\n" .
+           "\tgalera => {\n" .
+           "\t\taddress => 'gcomm://',\n" .
+           "\t\tname => '" . $self->service_provider->cluster_name . "'\n" .
            "\t}\n" .
            "}\n";
 }

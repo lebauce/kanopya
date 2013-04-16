@@ -1,18 +1,20 @@
-class kanopya::mysql::galera($lib) {
+class kanopya::mysql::galera($galera) {
     $provider = $architecture ? {
         'x86_64' => '/usr/lib64/galera/libgalera_smm.so',
         default  => '/usr/lib/galera/libgalera_smm.so'
+    }
     mysql::server::config { 'galera':
         settings => {
             mysqld => {
                 wsrep_provider        => $provider,
-                wsrep_cluster_address => ''
+                wsrep_cluster_address => $galera['address'],
+                wsrep_cluster_name    => $galera['name']
             }
         }
     }
 }
 
-class kanopya::mysql::deb($config_hash) {
+class kanopya::mysql::deb($config_hash, $galera) {
     $release = $operatingsystem ? {
         /(?i)(debian)/ => 'squeeze',
         /(?i)(ubuntu)/ => 'precise'
@@ -33,11 +35,12 @@ class kanopya::mysql::deb($config_hash) {
         require      => Apt::Source['MariaDB']
     }
     class { 'kanopya::mysql::galera':
+        galera  => $galera,
         require => Class['::mysql::server']
     }
 }
 
-class kanopya::mysql::rh($config_hash) {
+class kanopya::mysql::rh($config_hash, $galera) {
     yumrepo { 'MariaDB':
         baseurl  => 'http://yum.mariadb.org/5.5/centos6-amd64',
         enabled  => '1',
@@ -52,11 +55,12 @@ class kanopya::mysql::rh($config_hash) {
         require       => Yumrepo['MariaDB']
     }
     class { 'kanopya::mysql::galera':
+        galera  => $galera,
         require => Class['::mysql::server']
     }
 }
 
-class kanopya::mysql($config_hash) {
+class kanopya::mysql($config_hash, $galera) {
     file { '/var/run/mysqld':
         ensure => 'directory',
         owner  => 'mysql',
@@ -65,12 +69,14 @@ class kanopya::mysql($config_hash) {
     case $operatingsystem {
         /(?i)(debian|ubuntu)/ : {
             class { 'kanopya::mysql::deb':
-                config_hash => $config_hash
+                config_hash => $config_hash,
+                galera      => $galera
             }
         }
         /(?i)(centos)/ : {
             class { 'kanopya::mysql::rh':
-                config_hash => $config_hash
+                config_hash => $config_hash,
+                galera      => $galera
             }
         }
         default : {
