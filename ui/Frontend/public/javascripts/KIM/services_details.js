@@ -1,3 +1,5 @@
+require('common/general.js');
+
 function loadServicesDetails(cid, eid, is_iaas) {
         
     var divId = 'service_details';
@@ -60,6 +62,35 @@ function loadServicesDetails(cid, eid, is_iaas) {
     //var actioncell  = $('<td>', {'class' : 'action-cell'}).css('text-align', 'right').appendTo(table);
     var actioncell=$('#' + cid).prevAll('.action_buttons'); 
 
+    function scaleOutComponentsDialog (e) {
+        // Get the component types list availabe on this service provider
+        var components = ajax('GET', '/api/serviceprovider/' + eid + '/components?expand=component_type');
+        var component_types = {};
+        for (var index in components) {
+            console.log(components[index]);
+            component_types[components[index].component_type.pk] = components[index].component_type.component_name;
+        }
+        console.log(component_types);
+        // Open a wizards to suggest component type to scale to the user
+        (new KanopyaFormWizard({
+            title      : 'Scale out components',
+            displayed  : [ 'component_types' ],
+            rawattrdef : {
+                component_types : {
+                    label        : 'Components to scale out',
+                    type         : 'relation',
+                    relation     : 'multi',
+                    is_mandatory : 1,
+                    options      : component_types
+                }
+            },
+            submitCallback  : function(data, $form, opts, onsuccess, onerror) {
+                ajax('POST', '/api/cluster/' + eid + '/addNode', data, onsuccess, onerror);
+            }
+        })).start();
+
+    }
+
     //$(actioncell).append($('<div>').append($('<h4>', { text : 'Actions' })));
     $.ajax({
         url     : '/api/serviceprovider/' + eid,
@@ -92,6 +123,11 @@ function loadServicesDetails(cid, eid, is_iaas) {
                     action      : '/api/cluster/' + eid + '/addNode'
                 },
                 {
+                    label       : 'Scale out components',
+                    icon        : 'arrowthick-2-e-w',
+                    action      : scaleOutComponentsDialog
+                },
+                {
                     label       : 'Optimize IaaS',
                     icon        : 'calculator',
                     action      : '/api/component/' + cloudmanager_id + '/optimiaas',
@@ -122,8 +158,7 @@ function createbutton(button) {
            ).append(
                $('<a>', { text : button.label })
            ).button().bind('click', function (e) {
-        if (button.confirm &&
-            !confirm(button.confirm + ". Do you want to continue ?")) {
+        if (button.confirm && !confirm(button.confirm + ". Do you want to continue ?")) {
             return false;
         }
         if (typeof(button.action) === 'string') {
