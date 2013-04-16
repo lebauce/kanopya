@@ -135,7 +135,8 @@ sub registerNode {
                          optional => { 'host'             => undef,
                                        'systemimage'      => undef,
                                        'state'            => undef,
-                                       'monitoring_state' => 'enabled' });
+                                       'monitoring_state' => 'enabled',
+                                       'components'       => [ $self->components ] });
 
     my $node = Node->new(
                    service_provider_id => $self->id,
@@ -148,8 +149,7 @@ sub registerNode {
                );
 
     # Link the service provider components to the new node
-    # TODO: Handle heterogeneous component configuration
-    for my $component ($self->components) {
+    for my $component (@{ $args{components} }) {
         if ($component->service_provider->id != $self->id) {
             throw Kanopya::Exception::Internal(
                       error => "Component <$component> do not come from this service provider <" . $self->id . ">"

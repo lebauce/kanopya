@@ -313,7 +313,7 @@ sub create {
 
     my $op_params = {
         cluster_params => $confpattern,
-        presets        => $composite_params,
+        %$composite_params
     };
 
     # If the cluster created from a service template, add it in the context
@@ -361,18 +361,18 @@ sub applyPolicies {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "presets" ]);
+    General::checkParams(args => \%args, required => [ "pattern" ]);
 
     # First, configure managers (potentially needed by other policies)
-    if (exists $args{presets}{managers}) {
-        $self->configureManagers(managers => $args{presets}{managers});
-        delete $args{presets}{managers};
+    if (exists $args{pattern}{managers}) {
+        $self->configureManagers(managers => $args{pattern}{managers});
+        delete $args{pattern}{managers};
     }
 
     # Then, configure cluster using policies
     my ($name, $value);
-    for my $name (keys %{ $args{presets} }) {
-        $value = $args{presets}->{$name};
+    for my $name (keys %{ $args{pattern} }) {
+        $value = $args{pattern}->{$name};
 
         # Handle components cluster config
         if ($name eq 'components') {
@@ -770,6 +770,17 @@ sub isLoadBalanced {
 
 sub addNode {
     my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, optional => { 'component_types' => undef });
+
+    # Add the component type list to the agrs if defined
+    my $components_params = {};
+    if (defined $args{component_types}) {
+        $components_params = {
+            component_types => $args{component_types},
+        };
+    }
 
     return Entity::Workflow->run(
         name       => 'AddNode',
@@ -777,7 +788,8 @@ sub addNode {
         params     => {
             context => {
                 cluster => $self,
-            }
+            },
+            %$components_params
         }
     );
 }

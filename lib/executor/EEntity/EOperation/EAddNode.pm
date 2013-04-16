@@ -28,6 +28,7 @@ use Entity::Systemimage;
 use Entity::Host;
 use CapacityManagement;
 use Entity::Workflow;
+use ClassType::ComponentType;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -44,8 +45,8 @@ sub prerequisites {
     my $cluster = $self->{context}->{cluster};
     my $host_type = $cluster->getHostManager->hostType;
 
+    # TODO: Move this virtual machine specific code to the host manager
     if ($host_type eq 'Virtual Machine') {
-
         $self->{context}->{host_manager} = EEntity->new(
                                                data => $cluster->getManager(manager_type => 'HostManager'),
                                            );
@@ -64,9 +65,7 @@ sub prerequisites {
         my $host_manager_params = $cluster->getManagerParameters(manager_type => 'HostManager');
         $log->info('host_manager_params :'.(Dumper $host_manager_params));
 
-        my $cm = CapacityManagement->new(
-                     cloud_manager => $self->{context}->{host_manager},
-                 );
+        my $cm = CapacityManagement->new(cloud_manager => $self->{context}->{host_manager});
 
         my $hypervisor_id = $cm->getHypervisorIdForVM(
                                 # blacklisted_hv_ids => $self->{params}->{blacklisted_hv_ids},
@@ -97,11 +96,7 @@ sub prerequisites {
        return 0
    }
 }
-=head2 prepare
 
-    $op->prepare();
-
-=cut
 
 sub prepare {
     my $self = shift;
@@ -139,19 +134,41 @@ sub prepare {
         }
     }
 
+    # Get the node number
     $self->{params}->{node_number} = $self->{context}->{cluster}->getNewNodeNumber();
     $log->debug("Node number for this new node: $self->{params}->{node_number} ");
 
+    # Check node number consistency
     my $maxnode = $self->{context}->{cluster}->cluster_max_node;
     if ($maxnode < $self->{params}->{node_number}) {
         throw Kanopya::Exception::Internal::WrongValue(error => "Too many nodes, limited to " . $maxnode);
     }
 
-    my $systemimage_name = $self->{context}->{cluster}->cluster_name . '_' .
-                           $self->{params}->{node_number};
+    # Check requested components for this node
+    if (defined $self->{params}->{component_types}) {
+        my @notavailable;
+        for my $component_type_id (@{ $self->{params}->{component_types}  }) {
+            eval {
+                $self->{context}->{cluster}->findRelated(
+                    filters => [ 'components' ],
+                    hash    => { 'component_type.component_type_id' => $component_type_id }
+                );
+            };
+            if ($@) {
+                push @notavailable, ClassType::ComponentType->get(id => $component_type_id)->component_name;
+            }
+        }
+        if (scalar (@notavailable)) {
+            throw Kanopya::Exception::Internal::WrongValue(
+                      error => "Component(s) <" . join(', ', @notavailable) . "> not available on this cluster."
+                  );
+        }
+    }
 
     # Check for existing systemimage for this node.
     my $existing_image;
+    my $systemimage_name = $self->{context}->{cluster}->cluster_name . '_' .
+                           $self->{params}->{node_number};
     eval {
         $existing_image = Entity::Systemimage->find(hash => { systemimage_name => $systemimage_name });
     };
@@ -193,7 +210,7 @@ sub execute {
     $self->SUPER::execute();
 
     if (not defined $self->{context}->{host}) {
-        # Just call Master node addition, other node will be add by the state manager
+        # Get a free host
         $self->{context}->{host} = $self->{context}->{cluster}->addNode();
 
         if (not defined $self->{context}->{host}) {
@@ -268,7 +285,6 @@ sub execute {
 
     # Export system image for node if required.
     if (not $self->{context}->{systemimage}->active) {
-
         # Creation of the export to access to the system image container
         my @accesses;
         my $portals = defined $createexport_params->{iscsi_portals} ?

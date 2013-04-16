@@ -68,7 +68,7 @@ sub pepareNextOp {
 
     $self->getCurrentOperation->setState(state => 'succeeded');
 
-    if(not $args{params}) {
+    if (not $args{params}) {
         $args{params} = {};
     }
 
