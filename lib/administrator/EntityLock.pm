@@ -32,14 +32,12 @@ my $errmsg;
 
 use constant ATTR_DEF => {
     entity_id => {
-        pattern => '^\d+$',
+        pattern      => '^\d+$',
         is_mandatory => 1,
-        is_extended => 0
     },
     consumer_id => {
-        pattern => '^\d+$',
+        pattern      => '^\d+$',
         is_mandatory => 1,
-        is_extended => 0
     },
 };
 
