@@ -27,59 +27,59 @@ use Data::Dumper;
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
-    type => {
-        pattern      => '^.*$',
+    operationtype_id => {
+        pattern      => '^\d+$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     operation_id => {
         pattern      => '^\d+$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     workflow_id => {
         pattern      => '^\d+$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     user_id => {
         pattern      => '^\d+$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     priority => {
         pattern      => '^\d+$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     creation_date => {
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     creation_time => {
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     execution_date => {
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     execution_time => {
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     execution_status => {
         pattern      => '^ready|processing|prereported|postreported|waiting_validation|' .
                         'validated|blocked|cancelled|succeeded|pending$',
         is_mandatory => 0,
-        is_extended  => 0
+    },
+    type => {
+        is_virtual   => 1,
     },
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub type {
+    my $self = shift;
+
+    return $self->operationtype->operationtype_name;
+}
+
 
 1;

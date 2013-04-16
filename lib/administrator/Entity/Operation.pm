@@ -1,4 +1,4 @@
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -15,7 +15,6 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-
 package Entity::Operation;
 use base 'Entity';
 
@@ -29,7 +28,6 @@ use ParamPreset;
 use Kanopya::Exceptions;
 use NotificationSubscription;
 use OldOperation;
-
 use DateTime;
 use Hash::Merge;
 
@@ -40,56 +38,47 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    type => {
-        pattern      => '^.*$',
-        is_mandatory => 0,
-        is_extended  => 0
+    operationtype_id => {
+        pattern      => '^\d+$',
+        is_mandatory => 1,
     },
     state => {
         pattern      => '^ready|processing|prereported|postreported|waiting_validation|' .
                         'validated|blocked|cancelled|succeeded|pending$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     workflow_id => {
         pattern      => '^\d+$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     user_id => {
         pattern      => '^\d+$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     priority => {
         pattern      => '^\d+$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     creation_date => {
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     creation_time => {
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     hoped_execution_time => {
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     execution_rank => {
         pattern      => '^\d+$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     label => {
-        pattern      => '^\d+$',
-        is_mandatory => 0,
-        is_extended  => 0,
+        is_virtual   => 1,
+    },
+    type => {
         is_virtual   => 1,
     },
 };
@@ -100,48 +89,13 @@ sub methods {
     return {
         validate => {
             description => 'Validate the operation execution.',
-            perm_holder => 'entity',
         },
         deny => {
             description => 'Deny the operation execution.',
-            perm_holder => 'entity',
         }
     };
 }
 
-
-=head2 label
-
-    Method for virtual attribute 'label'
-
-=cut
-
-sub label {
-    my $self = shift;
-    my %args = @_;
-
-    my $type = Operationtype->find(hash => { operationtype_name => $self->type });
-
-    return $type->operationtype_label ? $type->operationtype_label : $self->type;
-}
-
-sub enqueue {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'priority', 'type' ]);
-
-    return Entity::Operation->new(%args);
-}
-
-sub enqueueNow {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'priority', 'type' ]);
-
-    return Entity::Operation->new(%args);
-}
 
 sub new {
     my $class = shift;
@@ -172,7 +126,7 @@ sub new {
         $log->debug("Enqueuing new operation <$args{type}>, in workflow <$args{workflow_id}>");
 
         my $params = {
-            type                 => $args{type},
+            operationtype_id     => Operationtype->find(hash => { operationtype_name => $args{type} })->id,
             state                => $initial_state,
             execution_rank       => $execution_rank,
             workflow_id          => $args{workflow_id},
@@ -200,15 +154,28 @@ sub new {
     return $self;
 }
 
-=head2 getNextOp
+sub label {
+    my $self = shift;
+    my %args = @_;
 
-    Class : Public
+    my $type = $self->operationtype;
+    return $type->operationtype_label ? $type->operationtype_label : $type->operationtype_name;
+}
 
-    Desc : This method return next operation to execute
+sub type {
+    my $self = shift;
 
-    Returns the concrete Operation with the execution_rank min
+    return $self->operationtype->operationtype_name;
+}
 
-=cut
+sub enqueue {
+    my $class = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'priority', 'type' ]);
+
+    return Entity::Operation->new(%args);
+}
 
 sub getNextOp {
     my $class = shift;
@@ -238,39 +205,25 @@ sub getNextOp {
     return $operation;
 }
 
-=head2 delete
-
-    Class : Public
-
-    Desc : This method delete Operation and its parameters
-
-=cut
-
 sub delete {
     my $self = shift;
 
-    # Firstly build the old_operation params list
-    my @oldoperationparams;
-    for my $opparams ($self->operation_parameters) {
-        my $json = $opparams->toJSON();
-        delete $json->{operation_id};
-
-        push @oldoperationparams, $json;
-    }
+    # Uncomment this line if we do not want to keep old parameters
+    # $self->removePresets();
 
     # Then create the old_operation from the operation
     OldOperation->new(
-        operation_id             => $self->id,
-        type                     => $self->type,
-        workflow_id              => $self->workflow_id,
-        user_id                  => $self->user_id,
-        priority                 => $self->priority,
-        creation_date            => $self->creation_date,
-        creation_time            => $self->creation_time,
-        execution_date           => \"CURRENT_DATE()",
-        execution_time           => \"CURRENT_TIME()",
-        execution_status         => $self->state,
-        old_operation_parameters => \@oldoperationparams,
+        operation_id     => $self->id,
+        operationtype_id => $self->operationtype_id,
+        workflow_id      => $self->workflow_id,
+        user_id          => $self->user_id,
+        priority         => $self->priority,
+        creation_date    => $self->creation_date,
+        creation_time    => $self->creation_time,
+        execution_date   => \"CURRENT_DATE()",
+        execution_time   => \"CURRENT_TIME()",
+        execution_status => $self->state,
+        param_preset_id  => $self->param_preset_id,
     );
     $self->SUPER::delete();
 
@@ -281,14 +234,9 @@ sub getWorkflow {
     my $self = shift;
     my %args = @_;
 
-    # my $workflow = $self->getRelation(name => 'workflow');
-    return Entity::Workflow->get(id => $self->getAttr(name => 'workflow_id'));
+    return $self->workflow;
 }
 
-=head setHopedExecutionTime
-    modify the field value hoped_execution_time in database
-    arg: value : duration in seconds
-=cut
 
 sub setHopedExecutionTime {
     my $self = shift;
@@ -297,9 +245,7 @@ sub setHopedExecutionTime {
     General::checkParams(args => \%args, required => ['value']);
 
     my $t = time + $args{value};
-    $self->{_dbix}->set_column('hoped_execution_time', $t);
-    $self->{_dbix}->update;
-    $log->debug("hoped_execution_time updated with value : $t");
+    $self->hoped_execution_time($t);
 }
 
 sub getNextRank {
@@ -328,8 +274,7 @@ sub setState {
 
     General::checkParams(args => \%args, required => [ 'state' ]);
 
-    $self->setAttr(name => 'state', value => $args{state});
-    $self->save();
+    $self->setAttr(name => 'state', value => $args{state}, save => 1);
 }
 
 sub setParams {
@@ -344,13 +289,8 @@ sub setParams {
     my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
     $existing_params = $merge->merge($existing_params, $args{params});
 
-    my $param_list = $self->buildParams(hash => $existing_params);
-
-    # TODO: Could be smarter
-    $self->{_dbix}->operation_parameters->delete();
-    for my $param (@{$param_list}) {
-        $self->{_dbix}->operation_parameters->create($param);
-    }
+    my $preset = ParamPreset->new(params => $self->buildParams(hash => $existing_params));
+    $self->setAttr(name => 'param_preset_id', value => $preset->id, save => 1);
 }
 
 sub buildParams {
@@ -359,91 +299,71 @@ sub buildParams {
 
     General::checkParams(args => \%args, required => [ 'hash' ]);
 
-    my $op_params = [];
-    while(my ($key, $value) = each %{$args{hash}}) {
-        if (not defined $value) { next; }
+    PARAMS:
+    while(my ($key, $value) = each %{ $args{hash} }) {
+        if (not defined $value) { next PARAMS; }
 
-        # If value is a hash, this is a set of tagged params
-        if (ref($value) eq 'HASH') {
-            while(my ($subkey, $subvalue) = each %{$value}) {
-                my $param_value;
+        # Context params must Entity instances, which will be serialized
+        # as an entity id, and re-instanciated at pop params.
+        if ($key eq 'context') {
+            if (ref($value) ne 'HASH') {
+                throw Kanopya::Exception::Internal(
+                          error => "Params 'context' must be a hash with Entity intances as values."
+                      );
+            }
 
+            # Serialize each context entities
+            CONTEXT:
+            while(my ($subkey, $subvalue) = each %{ $value }) {
                 # If tag is 'context', this is entities params
-                if ($key eq 'context') {
-                    if (not defined $subvalue) {
-                        $log->warn("Context value anormally undefined: $subkey");
-                        next;
-                    }
-
-                    if (not ($subvalue->isa('Entity') or $subvalue->isa('EEntity'))) {
-                        throw Kanopya::Exception::Internal(
-                                  error => "Can not enqueue operation <$args{type}> with param <$subkey> " .
-                                           "of type 'context' that is not an entity."
-                              );
-                    }
-                    $param_value = $subvalue->getAttr(name => 'entity_id');
+                if (not defined $subvalue) {
+                    $log->warn("Context value anormally undefined: $subkey");
+                    next CONTEXT;
                 }
-                # If tag is 'preset', this is a composite param, we store it as a ParamPreset
-                elsif ($key eq 'presets') {
-                    my $preset = ParamPreset->new(params => $subvalue);
-                    $param_value = $preset->getAttr(name => 'param_preset_id');
+                if (not ($subvalue->isa('Entity') or $subvalue->isa('EEntity'))) {
+                    throw Kanopya::Exception::Internal(
+                              error => "Can not enqueue operation <$args{type}> with param <$subkey> " .
+                                       "of type 'context' that is not an entity."
+                          );
                 }
-                else {
-                    $param_value = $subvalue;
-                }
-                push @$op_params, { name => $subkey, value => $param_value, tag => $key};
+                $value->{$subkey} = $subvalue->id;
             }
         }
-        else {
-             push @$op_params, { name => $key, value => $value };
-        }
     }
-    return $op_params;
+    return $args{hash};
 }
 
 sub getParams {
     my $self = shift;
     my %args = @_;
 
-    my %params;
-    my $params_rs = $self->{_dbix}->operation_parameters;
-    while (my $param = $params_rs->next){
-        my $name  = $param->get_column('name');
-        my $tag   = $param->get_column('tag');
-        my $value = $param->get_column('value');
+    General::checkParams(args => \%args, optional => { 'skip_not_found' => 0 });
 
-        if ($tag) {
-            if ($tag eq 'context') {
-                # Try to instanciate value as an entity.
-                eval {
-                    $value = EEntity->new(data => Entity->get(id => $value));
-                };
-                if ($@) {
-                    # Can skip errors on entity instanciation. Could be usefull when
-                    # loading context that containing deleted entities.
-                    if (not $args{skip_not_found}) {
-                        $errmsg = "Workflow <" . $self->getAttr(name => 'workflow_id') .
-                                   ">, context param <$value>, seems not to be an entity id.\n$@";
-                        $log->debug($errmsg);
-                        throw Kanopya::Exception::Internal(error => $errmsg);
-                    }
-                    else{ next; }
+    my $params = defined $self->param_preset ? $self->param_preset->load() : {};
+    if (defined $params->{context}) {
+        # Unserialize context entities
+        CONTEXT:
+        while(my ($key, $value) = each %{ $params->{context} }) {
+            # Try to instanciate value as an entity.
+            eval {
+                $params->{context}->{$key} = EEntity->new(data => Entity->get(id => $value));
+            };
+            if ($@) {
+                # Can skip errors on entity instanciation. Could be usefull when
+                # loading context that containing deleted entities.
+                if (not $args{skip_not_found}) {
+                    $errmsg = "Workflow <" . $self->id .
+                              ">, context param <$value>, seems not to be an entity id.\n$@";
+                    throw Kanopya::Exception::Internal(error => $errmsg);
                 }
-                $params{$tag}->{$name} = $value;
+                else {
+                    delete $params->{context}->{$key};
+                    next CONTEXT;
+                }
             }
-            elsif ($tag eq 'presets') {
-                my $preset = ParamPreset->get(id => $value);
-                $params{$name} = $preset->load();
-            }
-            else {
-                $params{$tag}->{$name} = $value;
-            }
-        }
-        else {
-            $params{$name} = $value;
         }
     }
-    return \%params;
+    return $params;
 }
 
 sub lockContext {
@@ -523,5 +443,30 @@ sub removeValidationPerm {
     $self->removePerm(method => 'validate');
     $self->removePerm(method => 'deny');
 }
+
+
+=pod
+=begin classdoc
+
+Remove the related param preset from db.
+
+=end classdoc
+=cut
+
+sub removePresets {
+    my $self  = shift;
+    my %args  = @_;
+
+    # Firstly empty the old pattern
+    my $presets = $self->param_preset;
+    if ($presets) {
+        # Detach presets from the policy
+        $self->setAttr(name => 'param_preset_id', value => undef, save => 1);
+
+        # Remove the preset
+        $presets->remove();
+    }
+}
+
 
 1;

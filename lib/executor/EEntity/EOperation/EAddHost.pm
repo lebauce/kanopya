@@ -1,4 +1,4 @@
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -22,17 +22,6 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use EEntity;
-use Template;
-
-use Entity;
-use Entity::Host;
-use Entity::ServiceProvider::Cluster;
-use Entity::Kernel;
-use Entity::Hostmodel;
-use Entity::Processormodel;
-use Entity::Gp;
-use ERollback;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -47,31 +36,14 @@ sub prepare {
     $self->SUPER::prepare();
 
     General::checkParams(args => $self->{context}, required => [ "host_manager" ]);
-
-    # Restore the list of ifaces
-    if (defined $self->{params}->{ifaces}) {
-        my @ifaces;
-        for my $iface (keys %{$self->{params}->{ifaces}}) {
-            push @ifaces, $self->{params}->{ifaces}->{$iface};
-        }
-        $self->{params}->{ifaces} = \@ifaces;
-    }
-    
-    if (defined $self->{params}->{harddisks}) {
-        my @harddisks;
-        for my $hd (keys %{$self->{params}->{harddisks}}) {
-            push @harddisks, $self->{params}->{harddisks}->{$hd};
-        }
-        $self->{params}->{harddisks} = \@harddisks;
-    }
 }
 
 sub execute {
     my $self = shift;
 
-    my $host = $self->{context}->{host_manager}->createHost(%{$self->{params}}, erollback => $self->{erollback});
+    my $host = $self->{context}->{host_manager}->createHost(%{ $self->{params} }, erollback => $self->{erollback});
 
-    $log->info("Host <" . $host->getAttr(name => "entity_id") . "> is now created");
+    $log->info("Host <" . $host->id . "> is now created");
 }
 
 1;

@@ -77,7 +77,7 @@ sub create {
 
     # Use the method for policy applying to configure manager, components, and interfaces.
     $self->applyPolicies(
-        presets => {
+        pattern => {
             components      => $args{components},
             interfaces      => $args{interfaces},
             managers        => $args{managers},
