@@ -137,6 +137,14 @@ use Exception::Class (
         isa         => 'Kanopya::Exception',
         description => 'Method not implemented'
     },
+    Kanopya::Exception::MessageQueuing => {
+        isa         => 'Kanopya::Exception',
+        description => 'Kanopya MessageQueuing Exception'
+    },
+    Kanopya::Exception::MessageQueuing::NoMessage => {
+        isa         => 'Kanopya::Exception::MessageQueuing',
+        description => 'No message to fetch'
+    },
 );
 
 # Force print trace when exception is stringified
