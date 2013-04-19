@@ -16,7 +16,8 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 package Entity::Component::KanopyaRulesEngine;
-use base "Entity::Component";
+use base Entity::Component;
+use base MessageQueuing::Sender;
 
 use strict;
 use warnings;
@@ -42,6 +43,15 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub methods {}
+sub methods {
+    return {
+        ruleVerified => {
+            description => 'Produce a verified rule status.',
+            message_queuing => {
+                channel => 'verified_rule'
+            }
+        },
+    };
+}
 
 1;
