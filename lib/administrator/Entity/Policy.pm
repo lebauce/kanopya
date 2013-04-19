@@ -54,6 +54,7 @@ use warnings;
 use ParamPreset;
 
 use Clone qw(clone);
+use Hash::Merge;
 
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
