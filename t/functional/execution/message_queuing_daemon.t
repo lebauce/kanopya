@@ -46,19 +46,26 @@ eval {
 
     # Defined the callback method
     sub callback {
-        return 1;
+        my (%args) = @_;
+        print "Message received " . Dumper(\%args) . "\n";
     }
 
-    # Register the generic daemon as a worker on channel 'generic'
-    $genericdaemon->registerWorker(channel => $channel, callback => \&callback, duration => 'IMMEDIATE');
-    $genericdaemon2->registerWorker(channel => $channel, callback => \&callback, duration => 'IMMEDIATE');
+    # Connect manually in order to create the reciever at register, without it,
+    # the connection and the receivers are created at oneRun call.
+    $genericdaemon->connect();
+    $genericdaemon2->connect();
 
-    $genericdaemon->registerSubscriber(channel => $channel, callback => \&callback, duration => 'IMMEDIATE');
-    $genericdaemon2->registerSubscriber(channel => $channel, callback => \&callback, duration => 'IMMEDIATE');
+    # Register the generic daemons as workers on channel 'generic'
+    $genericdaemon->registerWorker(channel => $channel, callback => \&callback, duration => 'MINUTE');
+    $genericdaemon2->registerWorker(channel => $channel, callback => \&callback, duration => 'MINUTE');
+
+    # Register the generic daemon as subscribers on channel 'generic'
+    $genericdaemon->registerSubscriber(channel => $channel, callback => \&callback, duration => 'MINUTE');
+    $genericdaemon2->registerSubscriber(channel => $channel, callback => \&callback, duration => 'MINUTE');
 
     # Firstly send a message on the channel $channel
     MessageQueuing::Sender->send(channel => $channel, test => 'test');
-
+    
     lives_ok {
         $genericdaemon->oneRun(channel => $channel, type => 'queue');
     } 'Fetch the message as worker1';
@@ -90,6 +97,10 @@ eval {
         $genericdaemon->oneRun(channel => $channel, type => 'topic');
     } "Kanopya::Exception::MessageQueuing::NoMessage",
       "Try to fetch as subcriber2 an already consummed message.";
+
+    # Uncomment this lines to test the daemon
+    # my $running = 1;
+    # $genericdaemon->run(\$running);
 
     $genericdaemon->disconnect();
     $genericdaemon2->disconnect();
