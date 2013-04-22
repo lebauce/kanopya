@@ -15,7 +15,6 @@ my $log = get_logger("");
 my $testing = 0;
 
 use BaseDB;
-use Entity::Kernel;
 use Entity::Component;
 use Entity::ServiceProvider::Externalcluster;
 use CapacityManagement;
@@ -31,6 +30,7 @@ my $coef = 1024**3;
 my $service_provider;
 my $service_provider_hypervisors;
 my $one;
+my %vm_index;
 
 main();
 
@@ -55,7 +55,6 @@ sub main {
     # Create entity with random arguments because only used for their ids
     for my $i (1..3) {
         push @vms, Entity::Host->new(
-            kernel_id => Entity::Kernel->find(hash => {})->id,
             host_core => 1,
             host_ram => 1,
             host_manager_id =>Entity::Component->find(hash => {})->id,
@@ -76,12 +75,68 @@ sub main {
     test_scale_memory();
     test_scale_cpu();
     test_optimiaas();
+    test_flushhypervisor();
 
     if ($testing == 1) {
         BaseDB->rollbackTransaction;
     }
 }
 
+sub test_flushhypervisor {
+
+    lives_ok {
+
+        my $infra = _getTestInfraForFlush();
+        my $cm    = CapacityManagement->new(infra=>$infra);
+
+        if ( not ( $cm->flushHypervisor(hv_id => 4)->{num_failed} == 4 &&
+            scalar @{$cm->flushHypervisor(hv_id => 4)->{operation_plan}} == 0)) {
+            die 'Error in flush hypervisor - case: no vm can migrate';
+        }
+
+        # Remove vm 9 (5GB RAM)
+        my @temp = grep {($_ != $vms[9]->id)} @{$cm->{_infra}->{hvs}->{1}->{vm_ids}};
+        $cm->{_infra}->{hvs}->{1}->{vm_ids} = \@temp;
+
+        my $flush_res = $cm->flushHypervisor(hv_id => 4);
+
+        if ($flush_res->{num_failed} != 2) {die 'Error flush hypervisor - Num failed expected 2, got '.$flush_res->{num_failed};}
+
+        my %possible_migrations = (7 => 1, 8 => 1, 5 => 1, 3 => 1);
+
+        for my $operation (@{$flush_res->{operation_plan}}) {
+            if (not ( $operation->{type} eq 'MigrateHost'
+                && $operation->{params}->{context}->{host}->id == $possible_migrations{$vm_index{$operation->{params}->{context}->{vm}->id}})) {
+                die 'Error in flush hypervisor vm '.($vm_index{$operation->{params}->{context}->{vm}->id})
+            }
+        }
+
+        # Remove 1 vm in hv 1 and one vm in hv 6
+
+        pop @{$cm->{_infra}->{hvs}->{1}->{vm_ids}};
+        pop @{$cm->{_infra}->{hvs}->{6}->{vm_ids}};
+
+        my @hv_4_vms = @{$cm->{_infra}->{hvs}->{4}->{vm_ids}};
+
+        $flush_res = $cm->flushHypervisor(hv_id => 4);
+
+        if ($flush_res->{num_failed} != 0) {die 'Error flush hypervisor - Num failed expected 0, got '.$flush_res->{num_failed};}
+
+        # Check that vm of hv 4 have been plan to be migrated to hv 0 or hv 1
+        for my $operation (@{$flush_res->{operation_plan}}) {
+            if (not (
+                $operation->{type} eq 'MigrateHost'
+                && ($operation->{params}->{context}->{host}->id == 1
+                    || $operation->{params}->{context}->{host}->id == 6)
+                && ($operation->{params}->{context}->{vm}->id == $hv_4_vms[0]
+                    || $operation->{params}->{context}->{vm}->id == $hv_4_vms[1])
+            )) {
+                die 'Error in flush hypervisor vm '.($vm_index{$operation->{params}->{context}->{vm}->id});
+            }
+        }
+    } 'Flush hypervisor';
+
+}
 sub test_resubmit {
     lives_ok {
         my $infra = {
@@ -213,42 +268,64 @@ sub test_hypervisor_selection {
     } 'Hyperivsor selection for a Vm';
 }
 
-sub _getTestInfraForOptimiaas {
-    my %args = @_;
-
+sub _getTestInfraForFlush {
     my $infra = {
-          vms => {
-                     $vms[0]->id => {cpu => 1, ram => 3*$coef},
-                     $vms[1]->id => {cpu => 1, ram => 2*$coef},
-                     $vms[2]->id => {cpu => 1, ram => 2*$coef},
-                     $vms[3]->id => {cpu => 1, ram => 2*$coef},
-                     $vms[4]->id => {cpu => 1, ram => 2*$coef},
-                     $vms[5]->id => {cpu => 1, ram => 3*$coef},
-                     $vms[6]->id => {cpu => 1, ram => 4*$coef},
-                     $vms[7]->id => {cpu => 1, ram => 1*$coef},
-                     $vms[8]->id => {cpu => 1, ram => 3*$coef},
-                     $vms[9]->id => {cpu => 1, ram => 5*$coef},
-                   },
+        vms => {
+            $vms[0]->id => {cpu => 1, ram => 3*$coef},
+            $vms[1]->id => {cpu => 1, ram => 2*$coef},
+            $vms[2]->id => {cpu => 1, ram => 2*$coef},
+            $vms[3]->id => {cpu => 1, ram => 2*$coef},
+            $vms[4]->id => {cpu => 1, ram => 2*$coef},
+            $vms[5]->id => {cpu => 1, ram => 3*$coef},
+            $vms[6]->id => {cpu => 1, ram => 2*$coef},
+            $vms[7]->id => {cpu => 1, ram => 2*$coef},
+            $vms[8]->id => {cpu => 1, ram => 3*$coef},
+            $vms[9]->id => {cpu => 1, ram => 5*$coef},
+        },
 
-          hvs => {  1 => {vm_ids  => [$vms[0]->id,],
-                        hv_capa => {cpu => 10,ram => 9.5*$coef}},
-                    2 => {vm_ids  => [$vms[2]->id],
-                          hv_capa => {cpu => 10,ram => 9.5*$coef}},
-                    3 => {vm_ids  => [$vms[1]->id],
-                          hv_capa => {cpu => 10,ram => 9.5*$coef}},
-                    4 => {vm_ids  => [$vms[6]->id,$vms[7]->id],
-                          hv_capa => {cpu => 10,ram => 9.5*$coef}},
-                    5 => {vm_ids  => [$vms[4]->id,$vms[8]->id],
-                          hv_capa => {cpu => 10,ram => 9.5*$coef}},
-                    6 => {vm_ids  => [$vms[5]->id],
-                          hv_capa => {cpu => 10,ram => 9.5*$coef}},
-                    7 => {vm_ids  => [$vms[3]->id,$vms[9]->id],
-                          hv_capa => {cpu => 10,ram => 9.5*$coef}},
-                   },
+        hvs => {
+            1 => {vm_ids  => [$vms[1]->id, $vms[3]->id, $vms[9]->id,],
+                  hv_capa => {cpu => 10,ram => 9.5*$coef}},
+            4 => {vm_ids  => [$vms[2]->id, $vms[4]->id, $vms[6]->id, $vms[7]->id],
+                  hv_capa => {cpu => 10,ram => 9.5*$coef}},
+            6 => {vm_ids  => [$vms[0]->id, $vms[5]->id, $vms[8]->id,],
+                  hv_capa => {cpu => 10,ram => 9.5*$coef}},
+        },
+   };
 
-          master_hv => 1,
-        };
+    return  $infra;
+};
 
+sub _getTestInfraForOptimiaas {
+    my $infra = {
+        vms => {
+            $vms[0]->id => {cpu => 1, ram => 1*$coef},
+            $vms[1]->id => {cpu => 1, ram => 2*$coef},
+            $vms[2]->id => {cpu => 1, ram => 3*$coef},
+            $vms[3]->id => {cpu => 1, ram => 4*$coef},
+            $vms[4]->id => {cpu => 1, ram => 5*$coef},
+            $vms[5]->id => {cpu => 1, ram => 6*$coef},
+            $vms[6]->id => {cpu => 1, ram => 7*$coef},
+            $vms[7]->id => {cpu => 1, ram => 8*$coef},
+        },
+
+        hvs => {
+            1 => {vm_ids  => [$vms[0]->id, $vms[1]->id],
+                  hv_capa => {cpu => 10,ram => 9.5*$coef}},
+            2 => {vm_ids  => [$vms[2]->id],
+                  hv_capa => {cpu => 10,ram => 9.5*$coef}},
+            3 => {vm_ids  => [$vms[3]->id],
+                  hv_capa => {cpu => 10,ram => 9.5*$coef}},
+            4 => {vm_ids  => [$vms[4]->id,],
+                  hv_capa => {cpu => 10,ram => 9.5*$coef}},
+            5 => {vm_ids  => [$vms[5]->id,],
+                  hv_capa => {cpu => 10,ram => 9.5*$coef}},
+            6 => {vm_ids  => [$vms[6]->id],
+                  hv_capa => {cpu => 10,ram => 9.5*$coef}},
+            7 => {vm_ids  => [$vms[7]->id,],
+                  hv_capa => {cpu => 10,ram => 9.5*$coef}},
+        },
+    };
     return  $infra;
 }
 
@@ -322,15 +399,12 @@ sub test_scale_cpu {
 
 sub test_optimiaas {
     @vms = ();
-    my %vm_index;
-
     my %waited_migrations;
     my $cm;
     # Create entity with random arguments because only used for their ids
     lives_ok {
         for my $i (1..10) {
             my $e = Entity::Host->new(
-                        kernel_id          => Entity::Kernel->find(hash => {})->id,
                         host_core          => 1,
                         host_ram           => 1,
                         host_manager_id    => Entity::Component->find(hash => {})->id,
@@ -340,17 +414,16 @@ sub test_optimiaas {
             $vm_index{$e->id} = $i;
         }
 
-        my $infra      = _getTestInfraForOptimiaas();
-        $cm         = CapacityManagement->new(infra=>$infra);
+        my $infra = _getTestInfraForOptimiaas();
+        $cm = CapacityManagement->new(infra=>$infra);
         my $operations = $cm->optimIaas();
 
-        if (scalar @{$operations} != 8) {
+        %waited_migrations = (1 => 7, 2 => 6, 3 => 5, 4 => 4);
+
+        if (scalar @{$operations} != scalar (keys %waited_migrations)) {
             die 'Wrong operation number after optimiaas'
         }
 
-        %waited_migrations = ( 1 => 6, 2 => 1, 3 => 4, 4 => 1,
-                                  5 => 4, 6 => 6, 9 => 6, 10 => 1,
-                                );
 
         for my $operation (@{$operations}) {
             if ( not (
@@ -360,55 +433,7 @@ sub test_optimiaas {
                 die 'Error in optimiaas - Check migration '.($vm_index{$operation->{params}->{context}->{vm}->id});
             }
         }
-
-        #Delete empty hvs
-        delete $cm->{_infra}->{hvs}->{5};
-        delete $cm->{_infra}->{hvs}->{2};
-        delete $cm->{_infra}->{hvs}->{7};
-        delete $cm->{_infra}->{hvs}->{3};
     } 'Optimiaas';
-
-    lives_ok {
-
-        if ( not ( $cm->flushHypervisor(hv_id => 4)->{num_failed} == 4 &&
-            scalar @{$cm->flushHypervisor(hv_id => 4)->{operation_plan}} == 0)) {
-            die 'Error in flush hypervisor - case: no vm can migrate';
-        }
-
-        # Remove vm 9 (5GB RAM)
-        my @temp = grep {($_ != $vms[9]->id)} @{$cm->{_infra}->{hvs}->{1}->{vm_ids}};
-        $cm->{_infra}->{hvs}->{1}->{vm_ids} = \@temp;
-
-        my $flush_res = $cm->flushHypervisor(hv_id => 4);
-
-        %waited_migrations = (7 => 1, 8 => 1);
-
-        if ($flush_res->{num_failed} != 2) {die 'Error flush hypervisor - Check 2 vms can not be migrated ';}
-
-        for my $operation (@{$flush_res->{operation_plan}}) {
-            if (not ( $operation->{type} eq 'MigrateHost'
-                && $operation->{params}->{context}->{host}->id == $waited_migrations{$vm_index{$operation->{params}->{context}->{vm}->id}})) {
-                die 'Error in flush hypervisor vm '.($vm_index{$operation->{params}->{context}->{vm}->id})
-            }
-        }
-
-        # Remove vm 6 (4GB RAM)
-        @temp = grep {($_ != $vms[6]->id)} @{$cm->{_infra}->{hvs}->{1}->{vm_ids}};
-        $cm->{_infra}->{hvs}->{1}->{vm_ids} = \@temp;
-
-        $flush_res = $cm->flushHypervisor(hv_id => 4);
-        if ($flush_res->{num_failed} != 0) {die 'Error in flush hyperivsor';}
-
-        %waited_migrations = (3 => 1, 5 => 1);
-        for my $operation (@{$flush_res->{operation_plan}}) {
-            if ( not (
-                $operation->{type} eq 'MigrateHost'
-                && $operation->{params}->{context}->{host}->id == $waited_migrations{$vm_index{$operation->{params}->{context}->{vm}->id}}
-            )) {
-                die 'Error in flush hypervisor vm '.($vm_index{$operation->{params}->{context}->{vm}->id});
-            }
-        }
-    } 'Flush hypervisor';
 }
 
 sub test_scale_memory {
