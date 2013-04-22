@@ -53,9 +53,6 @@ sub new {
 
     my $self = $class->SUPER::new(%args);
 
-    # Connect to the broker
-    $self->connect();
-
     return $self;
 }
 
@@ -109,6 +106,67 @@ sub registerSubscriber {
 =pod
 =begin classdoc
 
+Base method to run the daemon.
+Override the parent method, create a child process for each registration on channels.
+
+=end classdoc
+=cut
+
+sub run {
+    my ($self, $running) = @_;
+
+    Message->send(
+        from    => $self->{name},
+        level   => 'info',
+        content => "Kanopya $self->{name} started."
+    );
+
+    # Disconnect possibly connected session, as we must do
+    # the connection inside the childs created for each channel.
+    if ($self->connected) {
+        $self->disconnect();
+    }
+
+    my $pid;
+    for my $type ('queue', 'topic') {
+        for my $channel (keys %{ $self->receivers->{$type} }) {
+            $log->info("Run child process for waiting on <$type>, channel <$channel>");
+
+            $pid = fork();
+            if ($pid == 0) {
+                while (1) {
+                    eval {
+                        $self->oneRun(channel => $channel, type => $type);
+                    };
+                    if ($@) {
+                        my $err = $@;
+                        $log->warn("(Deamon $self->{name}) oneRun failled:\n$@");
+                    }
+                }
+                die;
+            }
+        }
+    }
+    if ($pid != 0) {
+        # Wait on the running pointer, and kill childs when the daemon is stopping
+        while ($$running) {
+            sleep(5);
+        }
+        kill -1, getpgrp($pid);
+    }
+    $self->disconnect();
+
+    Message->send(
+        from    => $self->{name},
+        level   => 'warning',
+        content => "Kanopya $self->{name} stopped"
+    );
+}
+
+
+=pod
+=begin classdoc
+
 Receive messages from the channels on which the daemon is registred,
 and call the corresponding callbacks.
 
@@ -119,6 +177,11 @@ sub oneRun {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'channel', 'type' ]);
+
+    if (not $self->connected) {
+        # Connect to the broker
+        $self->connect();
+    }
 
     # Blocking call
     $self->receive(type => $args{type}, channel => $args{channel});
