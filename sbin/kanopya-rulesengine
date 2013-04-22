@@ -38,7 +38,6 @@ Rules Engine evaluate rules and apply associated workflow.
 use strict;
 use warnings;
 
-use BaseDB;
 use General;
 use RulesEngine;
 use Kanopya::Config;
@@ -59,56 +58,11 @@ sub signalHandler {
 
 $SIG{TERM} = \&signalHandler;
 
-sub runRulesEngine {
-    my %args = @_;
-
-    my $rulesengine = RulesEngine->new(service_providers => $args{service_providers});
+eval {
+    my $rulesengine = RulesEngine->new();
 
     # enter in the main loop and continue while $$running is true
     $rulesengine->run(\$running);
-}
-
-eval {
-    # Firstly authenticate here, to get the list of service providers
-    my $config = Kanopya::Config::get('rulesengine');
-
-    # Authenticate the daemon to the api.
-    BaseDB->authenticate(login    => $config->{user}->{name},
-                         password => $config->{user}->{password});
-
-    # Infinite loop.
-    # - If multiprocess is not set, run the rules engine normally
-    # - If multiprocess is set, spawn one process for each service provider
-    if ($config->{multiprocess}) {
-        # Keep the processing service providers
-        my $processing = {};
-        while (1) {
-            my @serviceproviders = Entity::ServiceProvider->search(hash => {
-                                       service_provider_type_id => { not => undef }
-                                   });
-
-            my $pid;
-            for my $serviceprovider (@serviceproviders) {
-                if (not defined $processing->{$serviceprovider->id}) {
-                    $processing->{$serviceprovider->id} = $serviceprovider;
-
-                    # Run an aggregator in a child
-                    $log->info("Run a rules engine for service <" . $serviceprovider->id . "> in a child process...");
-                    $pid = fork();
-                    if ($pid == 0) {
-                        runRulesEngine(service_providers => [ $serviceprovider->id ]);
-                        last;
-                    }
-                }
-            };
-            if (not defined $pid or $pid != 0) {
-                sleep 30;
-            }
-        }
-    }
-    else {
-        runRulesEngine();
-    }
 };
 if ($@) {
 	my $ex = $@;
