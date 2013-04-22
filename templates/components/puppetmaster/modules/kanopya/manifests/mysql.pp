@@ -8,13 +8,15 @@ class kanopya::mysql::galera($galera) {
             mysqld => {
                 wsrep_provider        => $provider,
                 wsrep_cluster_address => $galera['address'],
-                wsrep_cluster_name    => $galera['name']
+                wsrep_cluster_name    => $galera['name'],
+                wsrep_sst_method      => 'xtrabackup',
+                wsrep_sst_auth        => ''
             }
         }
     }
 }
 
-class kanopya::mysql::deb($config_hash, $galera) {
+class kanopya::mysql::deb($config_hash) {
     $release = $operatingsystem ? {
         /(?i)(debian)/ => 'squeeze',
         /(?i)(ubuntu)/ => 'precise'
@@ -32,15 +34,12 @@ class kanopya::mysql::deb($config_hash, $galera) {
         service_name => 'mysql',
         config_hash  => $config_hash,
         package_name => 'mariadb-galera-server',
-        require      => Apt::Source['MariaDB']
-    }
-    class { 'kanopya::mysql::galera':
-        galera  => $galera,
-        require => Class['::mysql::server']
+        require      => Apt::Source['MariaDB'],
+        before       => Class['kanopya::mysql::galera']
     }
 }
 
-class kanopya::mysql::rh($config_hash, $galera) {
+class kanopya::mysql::rh($config_hash) {
     yumrepo { 'MariaDB':
         baseurl  => 'http://yum.mariadb.org/5.5/centos6-amd64',
         enabled  => '1',
@@ -52,11 +51,8 @@ class kanopya::mysql::rh($config_hash, $galera) {
         service_name  => 'mysql',
         config_hash   => $config_hash,
         package_name  => 'MariaDB-Galera-server',
-        require       => Yumrepo['MariaDB']
-    }
-    class { 'kanopya::mysql::galera':
-        galera  => $galera,
-        require => Class['::mysql::server']
+        require       => Yumrepo['MariaDB'],
+        before        => Class['kanopya::mysql::galera']
     }
 }
 
@@ -69,19 +65,20 @@ class kanopya::mysql($config_hash, $galera) {
     case $operatingsystem {
         /(?i)(debian|ubuntu)/ : {
             class { 'kanopya::mysql::deb':
-                config_hash => $config_hash,
-                galera      => $galera
+                config_hash => $config_hash
             }
         }
         /(?i)(centos)/ : {
             class { 'kanopya::mysql::rh':
-                config_hash => $config_hash,
-                galera      => $galera
+                config_hash => $config_hash
             }
         }
         default : {
             fail("Unsupported operatingsystem : ${operatingsystem}. Only Debian, Ubuntu and CentOS are supported")
         }
+    }
+    class { 'kanopya::mysql::galera':
+        galera  => $galera
     }
     Mysql::Db <<| tag == "${fqdn}" |>>
     Database_user <<| tag == "${fqdn}" |>>
