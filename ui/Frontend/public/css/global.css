@@ -164,3 +164,8 @@ th {
     opacity: 1.0;
     filter: Alpha(Opacity=100);
 }
+
+/* Manage visibility of widget time configuration*/
+.time_mode:not(.selected-time-mode) {
+    display : none;
+}
