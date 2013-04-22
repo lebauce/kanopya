@@ -75,7 +75,18 @@ sub getExecToTest {
 }
 
 sub getPuppetDefinition {
-    my ($self, %args) = @_;
+    my ($self, %args)   = @_;
+
+    my $cluster_address = 'gcomm://';
+    my @component_nodes = $self->component_nodes;
+    my @fqdns           = ();
+    for my $component_node (@component_nodes) {
+        my $n = $component_node->node;
+        if ($n->node_id != $args{host}->node->node_id) {
+            push @fqdns, $n->fqdn;
+        }
+    }
+    $cluster_address   .= join ',', @fqdns;
 
     return "class { 'kanopya::mysql':\n" .
            "\tconfig_hash => {\n" .
@@ -84,7 +95,7 @@ sub getPuppetDefinition {
            "\t\t'datadir' => '" . $self->mysql5_datadir . "',\n" .
            "\t},\n" .
            "\tgalera => {\n" .
-           "\t\taddress => 'gcomm://',\n" .
+           "\t\taddress => '" . $cluster_address . "',\n" .
            "\t\tname => '" . $self->service_provider->cluster_name . "'\n" .
            "\t}\n" .
            "}\n";
