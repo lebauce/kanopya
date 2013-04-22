@@ -517,7 +517,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
 
     if (!mode_policy) {
         importItemButton(
-                'service_nodemetric_rules_action_buttons',
+                node_accordion_container.find('#service_nodemetric_rules_action_buttons'),
                 elem_id,
                 {
                     name        : 'node rule',
@@ -659,7 +659,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
 
     if (!mode_policy) {
         importItemButton(
-                'service_resources_aggregate_rules_action_buttons',
+                service_accordion_container.find('#service_resources_aggregate_rules_action_buttons'),
                 elem_id,
                 {
                     name        : 'service rule',

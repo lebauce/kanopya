@@ -280,7 +280,7 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
     createNodemetricCombination('node_metrics_action_buttons', elem_id, (external !== '') ? true : false);
     if (!mode_policy) {
         importItemButton(
-                'node_metrics_action_buttons',
+                node_monitoring_accordion_container.find('#node_metrics_action_buttons'),
                 elem_id,
                 {
                     name        : 'combination',
@@ -386,7 +386,7 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
     createServiceCombination('service_metric_comb_action_buttons', elem_id);
     if (!mode_policy) {
         importItemButton(
-                'service_metric_comb_action_buttons',
+                service_monitoring_accordion_container.find('#service_metric_comb_action_buttons'),
                 elem_id,
                 {
                     name        : 'combination',
