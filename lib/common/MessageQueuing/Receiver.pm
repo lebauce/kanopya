@@ -74,8 +74,6 @@ sub connect {
     # Open the seesion
     $connection->open();
     $session = $connection->createSession();
-
-    $self->{receivers} = {};
 }
 
 
@@ -91,11 +89,23 @@ sub disconnect {
     my ($self, %args) = @_;
 
     for my $type ('queue', 'topic') {
-        for my $receiver (values %{ $self->{receivers}->{$type} }) {
-            $receiver->{receiver}->close();
+        for my $receiver (values %{ $self->{_receivers}->{$type} }) {
+            if (defined $receiver->{receiver}) {
+                eval {
+                    $receiver->{receiver}->close();
+                };
+                if ($@) {
+                    $log->warn("Unable to close receiver <$type>:\n$@");
+                }
+                delete $receiver->{receiver};
+            }
         }
     }
+    $session->close();
     $connection->close();
+
+    $session = undef;
+    $connection = undef;
 }
 
 
@@ -118,12 +128,6 @@ sub register {
                          required => [ 'type', 'channel', 'callback' ],
                          optional => { 'duration' => 'FOREVER' });
 
-    if (not defined $session) {
-        throw Kanopya::Exception::Internal::IncorrectParam(
-                  error => "You must to connect to the message queuing server before registring."
-              );
-    }
-
     if ($args{type} !~ m/^(queue|topic)$/) {
         throw Kanopya::Exception::Internal::IncorrectParam(
                   error => "Wrong value <$args{type}> for argument <type>, must be <queue|topic>"
@@ -140,10 +144,17 @@ sub register {
     # Build the addresse string from channel and type
     my $address = $args{channel} . '; { create: always, node: { type: ' . $args{type} . ' } }';
 
+    if (not defined $self->{_receivers}) {
+        $self->{_receivers} = {};
+    }
+
     # Register the method to call back at message recepetion
-    $self->{receivers}->{$args{type}}->{$args{channel}} = { receiver => $session->createReceiver($address),
-                                                            callback => $args{callback},
-                                                            duration => DURATION->{$args{duration}} };
+    $self->{_receivers}->{$args{type}}->{$args{channel}} = {
+        receiver => $self->connected ? $session->createReceiver($address) : undef,
+        address  => $address,
+        callback => $args{callback},
+        duration => DURATION->{$args{duration}}
+    };
 }
 
 
@@ -161,15 +172,19 @@ sub receive {
     General::checkParams(args => \%args, required => [ 'type', 'channel' ]);
 
     # Check the connection status
-    if (not defined $session) {
+    if (not $self->connected) {
         throw Kanopya::Exception::Internal::IncorrectParam(
                   error => "You must to connect to the message queuing server before receiving."
               );
     }
 
+    my $receiver = $self->{_receivers}->{$args{type}}->{$args{channel}};
+    if (not defined $receiver->{receiver}) {
+        $receiver->{receiver} = $session->createReceiver($receiver->{address});
+    }
+
     # Wait on the queue
     my $content;
-    my $receiver = $self->{receivers}->{$args{type}}->{$args{channel}};
     eval {
         $content = cqpid_perl::decodeMap($receiver->{receiver}->fetch($receiver->{duration}));
     };
@@ -184,6 +199,36 @@ sub receive {
     $session->acknowledge();
 
     return $result;
+}
+
+
+=pod
+=begin classdoc
+
+Return the connection status.
+
+=end classdoc
+=cut
+
+sub connected {
+    my ($self, %args) = @_;
+
+    return (defined $session and defined $session->getConnection());
+}
+
+
+=pod
+=begin classdoc
+
+Return the receivers instancies.
+
+=end classdoc
+=cut
+
+sub receivers {
+    my ($self, %args) = @_;
+
+    return $self->{_receivers};
 }
 
 1;

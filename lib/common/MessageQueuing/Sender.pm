@@ -96,7 +96,7 @@ sub disconnect {
     my ($self, %args) = @_;
 
     for my $type ('queue', 'topic') {
-        for my $receiver (values %{ $self->{receivers}->{$type} }) {
+        for my $receiver (values %{ $self->{_receivers}->{$type} }) {
             $receiver->{receiver}->close();
         }
     }
@@ -142,6 +142,7 @@ sub AUTOLOAD {
         $senders->{$channel} = [];
         for my $type ('queue', 'topic') {
             my $address = $channel . '; { create: always, node: { type: ' . $type . ' } }';
+
             push @{ $senders->{$channel} },  $session->createSender($address);
         }
     }
@@ -151,7 +152,7 @@ sub AUTOLOAD {
     cqpid_perl::encode(\%args, $message);
 
     for my $sender (@{ $senders->{$channel} }) {
-        $sender->send($message);
+        $sender->send($message, 1);
     }
 }
 

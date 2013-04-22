@@ -35,6 +35,7 @@ use warnings;
 use Kanopya::Exceptions;
 use Kanopya::Config;
 
+use Message;
 use EEntity;
 use Entity::Host;
 
@@ -152,12 +153,7 @@ sub execnround {
         # Refresh the configuration as it could be changed.
         $self->refreshConfiguration();
 
-        eval {
-            $self->oneRun();
-        };
-        if ($@) {
-            $log->error($@);
-        }
+        $self->oneRun();
     }
 }
 
