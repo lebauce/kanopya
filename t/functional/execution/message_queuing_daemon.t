@@ -47,7 +47,7 @@ eval {
     # Defined the callback method
     sub callback {
         my (%args) = @_;
-        print "Message received " . Dumper(\%args) . "\n";
+#        print "Message received " . Dumper(\%args) . "\n";
     }
 
     # Connect manually in order to create the reciever at register, without it,
@@ -56,12 +56,12 @@ eval {
     $genericdaemon2->connect();
 
     # Register the generic daemons as workers on channel 'generic'
-    $genericdaemon->registerWorker(channel => $channel, callback => \&callback, duration => 'MINUTE');
-    $genericdaemon2->registerWorker(channel => $channel, callback => \&callback, duration => 'MINUTE');
+    $genericdaemon->registerWorker(channel => $channel, callback => \&callback, duration => 'IMMEDIATE');
+    $genericdaemon2->registerWorker(channel => $channel, callback => \&callback, duration => 'IMMEDIATE');
 
     # Register the generic daemon as subscribers on channel 'generic'
-    $genericdaemon->registerSubscriber(channel => $channel, callback => \&callback, duration => 'MINUTE');
-    $genericdaemon2->registerSubscriber(channel => $channel, callback => \&callback, duration => 'MINUTE');
+    $genericdaemon->registerSubscriber(channel => $channel, callback => \&callback, duration => 'IMMEDIATE');
+    $genericdaemon2->registerSubscriber(channel => $channel, callback => \&callback, duration => 'IMMEDIATE');
 
     # Firstly send a message on the channel $channel
     MessageQueuing::Sender->send(channel => $channel, test => 'test');

@@ -101,11 +101,14 @@ sub disconnect {
             }
         }
     }
-    $session->close();
-    $connection->close();
-
-    $session = undef;
-    $connection = undef;
+    if (defined $session) {
+        $session->close();
+        $session = undef;
+    }
+    if (defined $connection) {
+        $connection->close();
+        $connection = undef;
+    }
 }
 
 
