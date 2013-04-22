@@ -29,7 +29,7 @@ Base class to manage internal daemons that communicate between them.
 
 package Daemon::MessageQueuing;
 use base Daemon;
-use base MessageQueuing::Receiver;
+use base MessageQueuing::Qpid::Receiver;
 
 use strict;
 use warnings;

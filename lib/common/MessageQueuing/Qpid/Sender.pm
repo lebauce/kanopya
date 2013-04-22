@@ -28,12 +28,11 @@ Provide methods to send message on queues or topics.
 
 =cut
 
-package MessageQueuing::Sender;
+package MessageQueuing::Qpid::Sender;
+use base MessageQueuing::Qpid;
 
 use strict;
 use warnings;
-
-use cqpid_perl;
 
 use Hash::Merge;
 use Data::Dumper;
@@ -51,37 +50,9 @@ sub methods {
     };
 }
 
-my $session;
-my $connection;
 my $senders = {};
 
 my $merge = Hash::Merge->new('LEFT_PRECEDENT');
-
-
-=pod
-=begin classdoc
-
-Connect to the message queuing server.
-
-@param ip the message queuing server ip
-@param port the message queuing server port
-
-=end classdoc
-=cut
-
-sub connect {
-    my ($class, %args) = @_;
-
-    General::checkParams(args     => \%args,
-                         optional => { 'ip' => '127.0.0.1', 'port' => '5672' });
-
-    # Connect to the broker
-    $connection = new cqpid_perl::Connection("amqp:tcp:" . $args{ip} . ":" . $args{port}, "");
-
-    # Open the seesion
-    $connection->open();
-    $session = $connection->createSession();
-}
 
 
 =pod
@@ -95,12 +66,12 @@ Disconnect from the message queuing server.
 sub disconnect {
     my ($self, %args) = @_;
 
-    for my $type ('queue', 'topic') {
-        for my $receiver (values %{ $self->{_receivers}->{$type} }) {
-            $receiver->{receiver}->close();
+    for my $channel (keys %{ $senders }) {
+        for my $sender (@{ $senders->{$channel} }) {
+             $sender->close();
         }
     }
-    $connection->close();
+    $self->SUPER::disconnect(%args);
 }
 
 
@@ -132,7 +103,7 @@ sub AUTOLOAD {
 
     my $channel = delete $args{channel};
     if (not defined $senders->{$channel}) {
-        if (not defined $session) {
+        if (not $self->connected) {
             throw Kanopya::Exception::Internal::IncorrectParam(
                       error => "You must to connect to the message queuing server before sending."
                   );
@@ -143,7 +114,7 @@ sub AUTOLOAD {
         for my $type ('queue', 'topic') {
             my $address = $channel . '; { create: always, node: { type: ' . $type . ' } }';
 
-            push @{ $senders->{$channel} },  $session->createSender($address);
+            push @{ $senders->{$channel} }, $self->_session->createSender($address);
         }
     }
 

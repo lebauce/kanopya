@@ -28,20 +28,17 @@ Provide methods to register callback on queues or topics.
 
 =cut
 
-package MessageQueuing::Receiver;
+package MessageQueuing::Qpid::Receiver;
+use base MessageQueuing::Qpid;
 
 use strict;
 use warnings;
-
-use cqpid_perl;
 
 use Data::Dumper;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
-my $session;
-my $connection;
 
 use constant DURATION => {
     FOREVER   => $cqpid_perl::Duration::FOREVER,
@@ -49,32 +46,6 @@ use constant DURATION => {
     MINUTE    => $cqpid_perl::Duration::MINUTE,
     IMMEDIATE => $cqpid_perl::Duration::IMMEDIATE
 };
-
-
-=pod
-=begin classdoc
-
-Connect to the message queuing server.
-
-@param ip the message queuing server ip
-@param port the message queuing server port
-
-=end classdoc
-=cut
-
-sub connect {
-    my ($self, %args) = @_;
-
-    General::checkParams(args     => \%args,
-                         optional => { 'ip' => '127.0.0.1', 'port' => '5672' });
-
-    # Connect to the broker
-    $connection = new cqpid_perl::Connection("amqp:tcp:" . $args{ip} . ":" . $args{port}, "");
-
-    # Open the seesion
-    $connection->open();
-    $session = $connection->createSession();
-}
 
 
 =pod
@@ -101,14 +72,7 @@ sub disconnect {
             }
         }
     }
-    if (defined $session) {
-        $session->close();
-        $session = undef;
-    }
-    if (defined $connection) {
-        $connection->close();
-        $connection = undef;
-    }
+    return $self->SUPER::disconnect(%args);
 }
 
 
@@ -153,7 +117,7 @@ sub register {
 
     # Register the method to call back at message recepetion
     $self->{_receivers}->{$args{type}}->{$args{channel}} = {
-        receiver => $self->connected ? $session->createReceiver($address) : undef,
+        receiver => $self->connected ? $self->_session->createReceiver($address) : undef,
         address  => $address,
         callback => $args{callback},
         duration => DURATION->{$args{duration}}
@@ -183,7 +147,7 @@ sub receive {
 
     my $receiver = $self->{_receivers}->{$args{type}}->{$args{channel}};
     if (not defined $receiver->{receiver}) {
-        $receiver->{receiver} = $session->createReceiver($receiver->{address});
+        $receiver->{receiver} = $self->_session->createReceiver($receiver->{address});
     }
 
     # Wait on the queue
@@ -199,24 +163,9 @@ sub receive {
     my $result = $receiver->{callback}->(%$content);
 
     # Acknowledge the message, as the corrsponding job is finish
-    $session->acknowledge();
+    $self->_session->acknowledge();
 
     return $result;
-}
-
-
-=pod
-=begin classdoc
-
-Return the connection status.
-
-=end classdoc
-=cut
-
-sub connected {
-    my ($self, %args) = @_;
-
-    return (defined $session and defined $session->getConnection());
 }
 
 

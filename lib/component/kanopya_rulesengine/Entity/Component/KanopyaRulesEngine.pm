@@ -17,7 +17,7 @@
 
 package Entity::Component::KanopyaRulesEngine;
 use base Entity::Component;
-use base MessageQueuing::Sender;
+use base MessageQueuing::Qpid::Sender;
 
 use strict;
 use warnings;

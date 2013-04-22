@@ -23,7 +23,7 @@ Log::Log4perl->easy_init({
 
 eval {
     use_ok ('Daemon::MessageQueuing');
-    use_ok ('MessageQueuing::Sender');
+    use_ok ('MessageQueuing::Qpid::Sender');
 
     my $daemonconf = {
         config => {
@@ -42,7 +42,7 @@ eval {
     my $genericdaemon2 = new_ok("Daemon::MessageQueuing", \@configarray, "Instantiate a generic Daemon::MessageQueuing");
 
     # Use the client lib to send messages
-    MessageQueuing::Sender->connect();
+    MessageQueuing::Qpid::Sender->connect();
 
     # Defined the callback method
     sub callback {
@@ -64,7 +64,7 @@ eval {
     $genericdaemon2->registerSubscriber(channel => $channel, callback => \&callback, duration => 'IMMEDIATE');
 
     # Firstly send a message on the channel $channel
-    MessageQueuing::Sender->send(channel => $channel, test => 'test');
+    MessageQueuing::Qpid::Sender->send(channel => $channel, test => 'test');
     
     lives_ok {
         $genericdaemon->oneRun(channel => $channel, type => 'queue');
@@ -102,6 +102,7 @@ eval {
     # my $running = 1;
     # $genericdaemon->run(\$running);
 
+    MessageQueuing::Qpid::Sender->disconnect();
     $genericdaemon->disconnect();
     $genericdaemon2->disconnect();
 };
