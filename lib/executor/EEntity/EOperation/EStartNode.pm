@@ -233,11 +233,16 @@ sub _generateBootConf {
         my $clustername = $cluster->cluster_name;
         my $hostname    = $host->node->node_hostname;
 
+        if (not defined $kernel_id) {
+            throw Kanopya::Exception::Internal::WrongValue(
+                     error => "Neither cluster nor host kernel defined"
+                  );
+        }
         my $kernel_version  = Entity::Kernel->get(id => $kernel_id)->kernel_version;
         my $linux_component = EEntity->new(entity => $cluster->getComponent(category => "System"));
         
         $log->info("Extract initramfs $tftpdir/initrd_$kernel_version");
-        
+
         my $initrd_dir = $linux_component->extractInitramfs(src_file => "$tftpdir/initrd_$kernel_version"); 
         $log->info("Customize initramfs in $initrd_dir");
         $linux_component->customizeInitramfs(initrd_dir => $initrd_dir,

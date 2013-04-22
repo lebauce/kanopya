@@ -118,27 +118,6 @@ sub createHost {
     General::checkParams(args     => \%args,
                          required => [ "host_core", "host_serial_number", "host_ram" ]);
 
-    my $composite_params = {};
-    if (defined $args{ifaces}) {
-        # Make a hash from the iface list, as composite params
-        # are in store as param presets, and it do not support array yet.
-        my $index = 0;
-        for my $iface (@{$args{ifaces}}) {
-            $composite_params->{ifaces}->{'iface_' . $index} = $iface;
-            $index++;
-        }
-        delete $args{ifaces};
-    }
-
-    if (defined $args{harddisks}) {
-        my $index = 0;
-        for my $harddisk (@{$args{harddisks}}) {
-            $composite_params->{harddisks}->{'harddisk_' . $index} = $harddisk;
-            $index++;
-        }
-        delete $args{harddisks};
-    }
-
     Entity::Operation->enqueue(
         priority => 200,
         type     => 'AddHost',
@@ -146,7 +125,6 @@ sub createHost {
             context  => {
                 host_manager => $self,
             },
-            presets  => $composite_params,
             %args
         }
     );

@@ -101,11 +101,9 @@ sub validation {
     for my $entity (values %{ $self->getParams->{context} }) {
         $log->debug("Check if notification/validation required for $entity <" . $entity->id . ">");
 
-        # Arg, the foreign key on operationtype is not on the primary key...
-        my $operationtype = Operationtype->find(hash => { operationtype_name => $self->type });
         my @subscribtions = NotificationSubscription->search(hash => {
                                 entity_id        => $entity->id,
-                                operationtype_id => $operationtype->id,
+                                operationtype_id => $self->operationtype_id,
                             });
 
         for my $subscribtion (@subscribtions) {

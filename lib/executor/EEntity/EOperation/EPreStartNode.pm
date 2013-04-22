@@ -55,12 +55,21 @@ sub execute {
     }
 
     # Register the node in the cluster
-    $self->{context}->{cluster}->registerNode(
-        host        => $self->{context}->{host},
-        systemimage => $self->{context}->{systemimage},
-        number      => $self->{params}->{node_number},
-        hostname    => $hostname
-    );
+    my $params = { host        => $self->{context}->{host},
+                   systemimage => $self->{context}->{systemimage},
+                   number      => $self->{params}->{node_number},
+                   hostname    => $hostname };
+
+    # If components to install on the node defined,
+    if ($self->{params}->{component_types}) {
+        $params->{components} = $self->{context}->{cluster}->searchRelated(
+                                    filters => [ 'components' ],
+                                    hash    => {
+                                        'component_type.component_type_id' => $self->{params}->{component_types}
+                                    }
+                                );
+    }
+    $self->{context}->{cluster}->registerNode(%$params);
 
     # Create the node working directory where generated files will be
     # stored.
@@ -113,13 +122,16 @@ sub _cancel {
     }
 
     if ($self->{context}->{host}) {
-        my $dir = $self->_executor->getConf->{clusters_directory};
-        $dir .= '/' . $self->{context}->{cluster}->cluster_name;
-        $dir .= '/' . $self->{context}->{host}->node->node_hostname;
-        $self->getEContext->execute(command => "rm -r $dir");
+        if (defined $self->{context}->{host}->node) {
+            my $dir = $self->_executor->getConf->{clusters_directory};
+            $dir .= '/' . $self->{context}->{cluster}->cluster_name;
+            $dir .= '/' . $self->{context}->{host}->node->node_hostname;
+            $self->getEContext->execute(command => "rm -r $dir");
+
+            $self->{context}->{host}->node->setAttr(name  => 'node_hostname', value => undef, save => 1);
+        }
 
         $self->{context}->{host}->stop();
-        $self->{context}->{host}->node->setAttr(name  => 'node_hostname', value => undef, save => 1);
         $self->{context}->{host}->setState(state => 'down');
     }
 }

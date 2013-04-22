@@ -32,14 +32,10 @@ use Log::Log4perl 'get_logger';
 use EntityLock;
 use Entityright;
 use EntityComment;
-use Entity::Workflow;
-use Message;
 use ClassType;
 use Entity::Gp;
-use OperationParameter;
 use Operationtype;
 use Kanopya::Exceptions;
-use Entity::Operation;
 use NotificationSubscription;
 use Entity::ServiceProvider::Cluster;
 
@@ -224,6 +220,27 @@ sub remove {
     }
 
     $self->unlock(consumer => $self);
+}
+
+
+=pod
+
+=begin classdoc
+
+Ensure to unlock the entity, whatever the consumer.
+
+=end classdoc
+
+=cut
+
+sub delete {
+    my ($self, %args) = @_;
+
+    my $lock = $self->entity_lock_entity;
+    if (defined $lock) {
+        $self->unlock(consumer => $lock->consumer);
+    }
+    return $self->SUPER::delete();
 }
 
 
@@ -436,13 +453,11 @@ sub setComment {
     my $comment_id = $self->getAttr(name => 'entity_comment_id');
     if ($comment_id) {
         $comment = EntityComment->get(id => $comment_id);
-        $comment->setAttr(name => 'entity_comment', value => $args{comment});
-        $comment->save();
+        $comment->setAttr(name => 'entity_comment', value => $args{comment}, save => 1);
     }
     else {
         $comment = EntityComment->new(entity_comment => $args{comment});
-        $self->setAttr(name => 'entity_comment_id', value => $comment->getAttr(name => 'entity_comment_id'));
-        $self->save();
+        $self->setAttr(name => 'entity_comment_id', value => $comment->id, save => 1);
     }
 }
 
@@ -465,10 +480,11 @@ sub lock {
         };
         if (not $lock) {
             throw Kanopya::Exception::Execution::Locked(
-                      error => "Entity <" . $self->id . "> already locked."
+                      error => $self->class_type->class_type . " <" . $self->id . "> already locked."
                   );
         } else {
-            $log->debug("Entity <" . $self->id . "> already locked by the consumer <$consumer_id>");
+            $log->debug($self->class_type->class_type . "<" .
+                        $self->id . "> already locked by the consumer <$consumer_id>");
         }
     }
 }
@@ -487,7 +503,8 @@ sub unlock {
     if ($@) {
         my $error = $@;
         if ($error->isa('Kanopya::Exception::Internal::NotFound')) {
-            $log->debug("Entity <" . $self->id . "> lock does not exists any more.");
+            $log->debug($self->class_type->class_type . "<" .
+                        $self->id . "> lock does not exists any more.");
         }
         else { throw $error; }
     }

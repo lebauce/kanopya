@@ -94,6 +94,36 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 old_operations
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::OldOperation>
+
+=cut
+
+__PACKAGE__->has_many(
+  "old_operations",
+  "AdministratorDB::Schema::Result::OldOperation",
+  { "foreign.param_preset_id" => "self.param_preset_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 operations
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Operation>
+
+=cut
+
+__PACKAGE__->has_many(
+  "operations",
+  "AdministratorDB::Schema::Result::Operation",
+  { "foreign.param_preset_id" => "self.param_preset_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 policies
 
 Type: has_many
@@ -124,6 +154,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 time_periods
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::TimePeriod>
+
+=cut
+
+__PACKAGE__->has_many(
+  "time_periods",
+  "AdministratorDB::Schema::Result::TimePeriod",
+  { "foreign.param_preset_id" => "self.param_preset_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 workflow_defs
 
 Type: has_many
@@ -140,8 +185,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-16 17:31:06
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Ytkja2bXugtZBZLzs8XPtQ
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-04-16 11:59:00
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Qly39udgLrRVVIA6UKkICw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
