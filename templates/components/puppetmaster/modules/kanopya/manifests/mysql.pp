@@ -12,7 +12,8 @@ class kanopya::mysql::galera($galera) {
                 wsrep_sst_method      => 'xtrabackup',
                 wsrep_sst_auth        => ''
             }
-        }
+        },
+        require    => Class['::mysql::server']
     }
 }
 
@@ -34,8 +35,6 @@ class kanopya::mysql::deb($config_hash) {
         service_name => 'mysql',
         config_hash  => $config_hash,
         package_name => 'mariadb-galera-server',
-        require      => Apt::Source['MariaDB'],
-        before       => Class['kanopya::mysql::galera']
     }
 }
 
@@ -51,8 +50,6 @@ class kanopya::mysql::rh($config_hash) {
         service_name  => 'mysql',
         config_hash   => $config_hash,
         package_name  => 'MariaDB-Galera-server',
-        require       => Yumrepo['MariaDB'],
-        before        => Class['kanopya::mysql::galera']
     }
 }
 
