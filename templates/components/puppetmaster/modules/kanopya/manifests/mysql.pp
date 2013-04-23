@@ -26,10 +26,10 @@ class kanopya::mysql::galera($galera) {
                 wsrep_cluster_address => $galera['address'],
                 wsrep_cluster_name    => $galera['name'],
                 wsrep_sst_method      => 'xtrabackup',
-                wsrep_sst_auth        => ''
+                wsrep_sst_auth        => 'root:'
             }
         },
-        require    => Class['::mysql::server']
+        require    => Package['percona-xtrabackup']
     }
 }
 
@@ -76,6 +76,7 @@ class kanopya::mysql::repos::rh {
 
 class kanopya::mysql($config_hash, $galera) inherits kanopya::mysql::params {
     $config_hash['service_name'] = 'mysql'
+    $config_hash['pidfile']      = "${fqdn}.pid"
     file { '/var/run/mysqld':
         ensure  => 'directory',
         owner   => 'mysql',
@@ -83,12 +84,13 @@ class kanopya::mysql($config_hash, $galera) inherits kanopya::mysql::params {
         require => Class['::mysql::server']
     }
     package { 'percona-xtrabackup':
-        ensure  => installed
+        ensure  => installed,
+        require => Package['mysql-server']
     }
     class { '::mysql::server':
-        service_name  => 'mysql',
-        config_hash   => $config_hash,
-        package_name  => $kanopya::mysql::params::mysql_package_name
+        service_name   => 'mysql',
+        config_hash    => $config_hash,
+        package_name   => $kanopya::mysql::params::mysql_package_name
     }
     class { 'kanopya::mysql::galera':
         galera  => $galera
