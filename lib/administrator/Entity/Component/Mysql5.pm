@@ -82,7 +82,8 @@ sub getPuppetDefinition {
     my @fqdns           = ();
     for my $component_node (@component_nodes) {
         my $n = $component_node->node;
-        if ($n->node_id != $args{host}->node->node_id) {
+        if ($n->node_id != $args{host}->node->node_id
+         && $n->host->host_state =~ /^up:\d+$/) {
             push @fqdns, $n->fqdn;
         }
     }
