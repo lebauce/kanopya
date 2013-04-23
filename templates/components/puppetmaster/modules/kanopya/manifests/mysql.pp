@@ -75,6 +75,7 @@ class kanopya::mysql::repos::rh {
 }
 
 class kanopya::mysql($config_hash, $galera) inherits kanopya::mysql::params {
+    $config_hash['service_name'] = 'mysql'
     file { '/var/run/mysqld':
         ensure  => 'directory',
         owner   => 'mysql',
