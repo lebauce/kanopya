@@ -22,7 +22,7 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
-    service_provider_id => {
+    entity_id => {
         pattern      => '^\d*$',
         is_mandatory => 0,
         is_extended  => 0
