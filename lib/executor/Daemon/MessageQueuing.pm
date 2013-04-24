@@ -29,7 +29,7 @@ Base class to manage internal daemons that communicate between them.
 
 package Daemon::MessageQueuing;
 use base Daemon;
-use base MessageQueuing::Qpid::Receiver;
+use base MessageQueuing::RabbitMQ::Receiver;
 
 use strict;
 use warnings;
@@ -53,6 +53,8 @@ sub new {
 
     my $self = $class->SUPER::new(%args);
 
+    # TODO: Check the configuration ($self->{config}) about the broker,
+    #       and store it as private member to further connection.
     return $self;
 }
 
@@ -127,33 +129,9 @@ sub run {
         $self->disconnect();
     }
 
-    my $pid;
-    for my $type ('queue', 'topic') {
-        for my $channel (keys %{ $self->receivers->{$type} }) {
-            $log->info("Run child process for waiting on <$type>, channel <$channel>");
+    # Wait on all channel of all types
+    $self->receiveAll(\$running);
 
-            $pid = fork();
-            if ($pid == 0) {
-                while (1) {
-                    eval {
-                        $self->oneRun(channel => $channel, type => $type);
-                    };
-                    if ($@) {
-                        my $err = $@;
-                        $log->warn("(Deamon $self->{name}) oneRun failled:\n$@");
-                    }
-                }
-                die;
-            }
-        }
-    }
-    if ($pid != 0) {
-        # Wait on the running pointer, and kill childs when the daemon is stopping
-        while ($$running) {
-            sleep(5);
-        }
-        kill -1, getpgrp($pid);
-    }
     $self->disconnect();
 
     Message->send(
@@ -177,11 +155,6 @@ sub oneRun {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'channel', 'type' ]);
-
-    if (not $self->connected) {
-        # Connect to the broker
-        $self->connect();
-    }
 
     # Blocking call
     $self->receive(type => $args{type}, channel => $args{channel});
