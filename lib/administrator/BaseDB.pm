@@ -93,6 +93,8 @@ of the hierarchy, every entry having a foreign key to its parent entry
 sub new {
     my ($class, %args) = @_;
     my $hash = \%args;
+    my $virtuals = { };
+    my $attrdef = $class->getAttrDefs();
 
     # Extract relation for futher handling
     my $relations = $class->extractRelations(hash => $hash);
@@ -110,6 +112,17 @@ sub new {
         elsif ($attr eq 'user_id' and not defined $args{$attr}) {
             $args{$attr} = BaseDB->_adm->{user}->{user_id};
         }
+        else {
+            if ($attrdef->{$attr}->{is_virtual}) {
+                # If the attribute is virtual and editable, call the setter method
+                if ($attrdef->{$attr}->{is_editable}) {
+                    $virtuals->{$attr} = delete $hash->{$attr};
+                }
+                else {
+                    delete $hash->{$attr};
+                }
+            }
+        }
     }
 
     $class->populateRelations(relations => $relations,
@@ -117,18 +130,11 @@ sub new {
                               attrs     => $hash);
 
     my $attrs = $class->checkAttrs(attrs => $hash);
-
     my $self = $class->newDBix(attrs => $attrs);
     bless $self, $class;
 
-    my $attrdef = $class->getAttrDefs();
-    for my $attr (keys %$hash) {
-        if ($attrdef->{$attr}->{is_virtual}) {
-            # If the attribute is virtual and editable, call the setter method
-            if ($attrdef->{$attr}->{is_editable}) {
-                $self->$attr($hash->{$attr});
-            }
-        }
+    for my $attr (keys %$virtuals) {
+        $self->$attr($virtuals->{$attr});
     }
 
     # Populate relations
