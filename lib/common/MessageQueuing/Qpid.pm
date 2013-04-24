@@ -40,8 +40,22 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 
-my $session;
-my $connection;
+=pod
+=begin classdoc
+
+@constructor
+
+Usefull to use the lib stand alone, without inheritance.
+
+=end classdoc
+=cut
+
+sub new {
+    my ($class, %args) = @_;
+
+    my $self = {};
+    bless $self, $class;
+}
 
 
 =pod
@@ -56,17 +70,17 @@ Connect to the message queuing server.
 =cut
 
 sub connect {
-    my ($class, %args) = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         optional => { 'ip' => '127.0.0.1', 'port' => '5672' });
+                         optional => { 'ip' => '127.0.0.1', 'port' => 5672 });
 
     # Connect to the broker
-    $connection = new cqpid_perl::Connection("amqp:tcp:" . $args{ip} . ":" . $args{port}, "");
+    $self->{_connection} = new cqpid_perl::Connection("amqp:tcp:" . $args{ip} . ":" . $args{port}, "");
 
-    # Open the seesion
-    $connection->open();
-    $session = $connection->createSession();
+    # Open the session
+    $self->_connection->open();
+    $self->{_session} = $self->_connection->createSession();
 }
 
 
@@ -81,13 +95,13 @@ Disconnect from the message queuing server.
 sub disconnect {
     my ($self, %args) = @_;
 
-    if (defined $session) {
-        $session->close();
-        $session = undef;
+    if (defined $self->_session) {
+        $self->_session->close();
+        $self->{_session} = undef;
     }
-    if (defined $connection) {
-        $connection->close();
-        $connection = undef;
+    if (defined $self->_connection) {
+        $self->_connection->close();
+        $self->{_connection} = undef;
     }
 }
 
@@ -103,14 +117,14 @@ Return the connection status.
 sub connected {
     my ($self, %args) = @_;
 
-    return (defined $session and defined $session->getConnection());
+    return (defined $self->_session and defined $self->_session->getConnection());
 }
 
 
 =pod
 =begin classdoc
 
-Return the session singleton.
+Return the session private attribute.
 
 =end classdoc
 =cut
@@ -118,7 +132,22 @@ Return the session singleton.
 sub _session {
     my ($self, %args) = @_;
 
-    return $session;
+    return $self->{_session};
+}
+
+
+=pod
+=begin classdoc
+
+Return the connection private attribute.
+
+=end classdoc
+=cut
+
+sub _connection {
+    my ($self, %args) = @_;
+
+    return $self->{_connection};
 }
 
 1;

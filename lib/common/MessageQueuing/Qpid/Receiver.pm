@@ -60,7 +60,7 @@ sub disconnect {
     my ($self, %args) = @_;
 
     for my $type ('queue', 'topic') {
-        for my $receiver (values %{ $self->{_receivers}->{$type} }) {
+        for my $receiver (values %{ $self->_receivers->{$type} }) {
             if (defined $receiver->{receiver}) {
                 eval {
                     $receiver->{receiver}->close();
@@ -82,8 +82,10 @@ sub disconnect {
 Register a callback on a specific channel.
 
 @param channel the channel on which the callback is resistred
-@param channel the type of the queue (queue or topic)
+@param type the type of the queue (queue or topic)
 @param callback the classback method to call when data is produced on the channel
+
+@optional the maximum duration of awaiting messages
 
 =end classdoc
 =cut
@@ -111,12 +113,12 @@ sub register {
     # Build the addresse string from channel and type
     my $address = $args{channel} . '; { create: always, node: { type: ' . $args{type} . ' } }';
 
-    if (not defined $self->{_receivers}) {
+    if (not defined $self->_receivers) {
         $self->{_receivers} = {};
     }
 
     # Register the method to call back at message recepetion
-    $self->{_receivers}->{$args{type}}->{$args{channel}} = {
+    $self->_receivers->{$args{type}}->{$args{channel}} = {
         receiver => $self->connected ? $self->_session->createReceiver($address) : undef,
         address  => $address,
         callback => $args{callback},
@@ -129,6 +131,9 @@ sub register {
 =begin classdoc
 
 Receive messages from the specific channel, and call the corresponding callbacks.
+
+@param channel the channel on which the callback is resistred
+@param type the type of the queue (queue or topic)
 
 =end classdoc
 =cut
@@ -145,7 +150,7 @@ sub receive {
               );
     }
 
-    my $receiver = $self->{_receivers}->{$args{type}}->{$args{channel}};
+    my $receiver = $self->_receivers->{$args{type}}->{$args{channel}};
     if (not defined $receiver->{receiver}) {
         $receiver->{receiver} = $self->_session->createReceiver($receiver->{address});
     }
@@ -172,12 +177,60 @@ sub receive {
 =pod
 =begin classdoc
 
+Receive messages from all channels, spawn a child for each channel,
+then wait on the $$running pointer to kill childs when the service is stopped.
+
+=end classdoc
+=cut
+
+sub receiveAll {
+    my ($self, $running) = @_;
+
+    my $pid;
+    for my $type ('queue', 'topic') {
+        for my $channel (keys %{ $self->_receivers->{$type} }) {
+            $log->info("Run child process for waiting on <$type>, channel <$channel>");
+
+            $pid = fork();
+            if ($pid == 0) {
+                # Connect to the broker within the child
+                if (not $self->connected) {
+                    $self->connect();
+                }
+
+                # Infinite loop on receive
+                while (1) {
+                    eval {
+                        $self->receive(channel => $channel, type => $type);
+                    };
+                    if ($@) {
+                        my $err = $@;
+                        $log->warn("Receive on <$channel> of type <$type> failled:\n$@");
+                    }
+                }
+                die;
+            }
+        }
+    }
+    if ($pid != 0) {
+        # Wait on the running pointer, and kill childs when the daemon is stopping
+        while ($$running) {
+            sleep(5);
+        }
+        kill -1, getpgrp($pid);
+    }
+}
+
+
+=pod
+=begin classdoc
+
 Return the receivers instancies.
 
 =end classdoc
 =cut
 
-sub receivers {
+sub _receivers {
     my ($self, %args) = @_;
 
     return $self->{_receivers};
