@@ -464,22 +464,24 @@ function showCombinationGraph(curobj,service_combinations,node_combinations,node
                 node_ids   : $.map(nodes, function(n){return n.id})
         }
         $.each(node_combinations, function (i, combi) {
-            $.post('/api/combination/'+combi.id+'/evaluateTimeSerie',
-                    params,
-                    function(data) {
-                        pending_requests--;
-                        $.each(nodes, function(i,n) {
-                            node_data.series.push(_formatTimeSerieFromHash(data[n.id]));
-                            var label = n.name != '' && combi.name != '' ? '['+n.name+'] ' + combi.name
-                                                                         : n.name + combi.name;
-                            node_data.labels.push(label);
-                            node_data.units.push(combi.unit);
-                        });
-                    }
-            ).error(function() {
-                pending_requests--;
-                error_count++;
-            });
+            ajax('POST',
+                 '/api/combination/'+combi.id+'/evaluateTimeSerie',
+                 params,
+                 function(data) {
+                     pending_requests--;
+                     $.each(nodes, function(i,n) {
+                         node_data.series.push(_formatTimeSerieFromHash(data[n.id]));
+                         var label = n.name != '' && combi.name != '' ? '['+n.name+'] ' + combi.name
+                                                                      : n.name + combi.name;
+                         node_data.labels.push(label);
+                         node_data.units.push(combi.unit);
+                     });
+                 },
+                 function() {
+                     pending_requests--;
+                     error_count++;
+                 }
+            );
         });
     }
 
