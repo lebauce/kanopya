@@ -241,7 +241,7 @@ var KanopyaFormWizard = (function() {
              * - virtual attributes as we can not set a value on,
              * - blacklisted attributes.
              */
-            if (!((this.attributedefs[name].is_virtual && this.attributedefs[name].is_editable == true) || $.inArray(name, attributes_blacklist) >= 0) &&
+            if (!($.inArray(name, attributes_blacklist) >= 0) &&
                 !(this.attributedefs[name].type === 'relation' && this.attributedefs[name].relation === "single_multi")) {
                 var value = this.attributedefs[name].value || values[name] || undefined;
 

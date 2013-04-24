@@ -184,6 +184,11 @@ sub update {
 
                 if (not $updated) { $updated = 1; }
             }
+        } else {
+            # If the attribute is virtual and editable, call the setter method
+            if ($attrdef->{$attr}->{is_editable}) {
+                $self->$attr($hash->{$attr});
+            }
         }
     }
     if ($updated) { $self->save(); }
@@ -866,6 +871,7 @@ class hierarchy, and check attribute validity.
 
 sub setAttr {
     my ($self, %args) = @_;
+    my $class = ref($self);
 
     General::checkParams(args     => \%args,
                          required => [ 'name' ],
@@ -873,7 +879,26 @@ sub setAttr {
 
     my ($name, $value) = ($args{name}, $args{value});
     my $dbix = $self->{_dbix};
+
     $self->checkAttr(%args);
+    my $attr = $class->getAttrDefs()->{$name};
+
+    # The attr is a virtual attr
+    if (($self->can($args{name}) or $self->can(normalizeMethod($args{name}))) and
+        defined $attr and $attr->{is_virtual}) {
+
+        # Firstly try to call method with camel-case style
+        eval {
+            my $camelcased_method = normalizeMethod($name);
+            $self->$camelcased_method($value);
+        };
+        if ($@ and $self->can($name)) {
+            # If failled with camel-cased, try the original attr name as method
+            $self->$name($value);
+        }
+
+        return;
+    }
 
     my $found = 0;
     while(1) {
