@@ -121,6 +121,16 @@ sub new {
     my $self = $class->newDBix(attrs => $attrs);
     bless $self, $class;
 
+    my $attrdef = $class->getAttrDefs();
+    for my $attr (keys %$hash) {
+        if ($attrdef->{$attr}->{is_virtual}) {
+            # If the attribute is virtual and editable, call the setter method
+            if ($attrdef->{$attr}->{is_editable}) {
+                $self->$attr($hash->{$attr});
+            }
+        }
+    }
+
     # Populate relations
     $self->populateRelations(relations => $relations);
 
