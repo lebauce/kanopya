@@ -99,7 +99,7 @@ sub prepare {
     );
 
     $log->info('Destination hv <' . $self->{context}->{host}->node->node_hostname .
-               '> vs opennebula hv <' . $vm_state->{hypervisor} . '>');
+               '> vs cloud manager hv <' . $vm_state->{hypervisor} . '>');
 
     if ($self->{context}->{host}->node->node_hostname eq $vm_state->{hypervisor}) {
         $log->info('VM is on the same hypervisor, no need to migrate');
