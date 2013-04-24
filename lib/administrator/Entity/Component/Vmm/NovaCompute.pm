@@ -29,14 +29,49 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+
 sub getPuppetDefinition {
     my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'cluster', 'host' ]);
+
+    # The support of network is very limited
+    # We create only one bridge for all the networks with no VLAN
+    # and a bridge for all the networks with VLAN
+
+    my $bridge_vlan;
+    my $bridge_flat;
+
+    IFACE:
+    for my $iface ($args{host}->getIfaces()) {
+        next IFACE if $iface->hasRole(role => 'admin');
+
+        for my $netconf ($iface->netconfs) {
+            if (scalar $netconf->vlans) {
+                $bridge_vlan = $iface->iface_name if not $bridge_vlan;
+                next IFACE;
+            }
+        }
+
+        $bridge_flat = $iface->iface_name if not $bridge_flat;
+    }
 
     my $glance = join(",", map { $_->getMasterNode->fqdn . ":9292" } $self->nova_controller->glances);
     my $keystone = $self->nova_controller->keystone->getMasterNode->fqdn;
     my $quantum = ($self->nova_controller->quantums)[0];
     my $amqp = $self->nova_controller->amqp->getMasterNode->fqdn;
     my $sql = $self->mysql5->getMasterNode->fqdn;
+
+    my @uplinks;
+
+    if ($bridge_flat) {
+        push @uplinks, "'br-flat:" . $bridge_flat . "'";
+    }
+
+    if ($bridge_vlan) {
+        push @uplinks, "'br-vlan:" . $bridge_vlan . "'";
+    }
 
     return "if \$kanopya_openstack_repository == undef {\n" .
            "\tclass { 'kanopya::openstack::repository': }\n" .
@@ -48,6 +83,7 @@ sub getPuppetDefinition {
            "\tglance => '" . $glance . "',\n" .
            "\tkeystone => '" . $keystone . "',\n" .
            "\tquantum => '" . $quantum->getMasterNode->fqdn . "',\n" .
+           "\tbridge_uplinks => [ " . join(' ,', @uplinks) . " ],\n" .
            "\temail => '" . $self->nova_controller->service_provider->user->user_email . "',\n" .
            "\tpassword => 'nova',\n" .
            "\tlibvirt_type => 'kvm',\n" .

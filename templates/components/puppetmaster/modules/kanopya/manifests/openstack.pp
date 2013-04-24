@@ -218,7 +218,9 @@ class kanopya::novacontroller($password, $dbserver, $amqpserver, $keystone, $ema
     Class['kanopya::openstack::repository'] -> Class['kanopya::novacontroller']
 }
 
-class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone, $quantum, $email, $password, $libvirt_type, $qpassword) {
+class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone,
+                           $quantum, $email, $password, $libvirt_type,
+                           $qpassword, $bridge_uplinks) {
     file { "/run/iscsid.pid":
         content => "1",
     }
@@ -279,7 +281,7 @@ class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone, $quantum,
     class { 'quantum::agents::ovs':
         integration_bridge  => 'br-int',
         bridge_mappings     => [ 'physflat:br-flat', 'physvlan:br-vlan' ],
-        bridge_uplinks      => [ 'br-flat:eth2' ],
+        bridge_uplinks      => $bridge_uplinks,
         require             => Class['kanopya::openstack::repository']
     }
 
@@ -294,8 +296,12 @@ class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone, $quantum,
 
     quantum_plugin_ovs {
         'DATABASE/sql_connection': value => "mysql://quantum:${qpassword}@${dbserver}/quantum";
+        'OVS/network_vlan_ranges': value => 'physnetflat,physnetvlan:1:4094';
+        'OVS/bridge_mappings': value => 'physflat:br-flat,physvlan:br-vlan';
+        'OVS/bridge_uplinks': value => "${bridge_uplinks}";
+        'OVS/integration_bridge': value => 'br-int';
     }
-
+    
     Class['kanopya::openstack::repository'] -> Class['kanopya::novacompute']
 }
 
