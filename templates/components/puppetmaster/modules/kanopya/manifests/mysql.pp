@@ -1,11 +1,13 @@
 class kanopya::mysql::params {
     case $operatingsystem {
         /(?i)(debian|ubuntu)/ : {
-            $mysql_package_name = 'mariadb-galera-server'
+            $mysql_package_name        = 'mariadb-galera-server'
+            $mysql_client_package_name = 'mariadb-client'
             class { 'kanopya::mysql::repos::deb': }
         }
         /(?i)(centos)/ : {
-            $mysql_package_name = 'MariaDB-Galera-server'
+            $mysql_package_name        = 'MariaDB-Galera-server'
+            $mysql_client_package_name = 'MariaDB-client'
             class { 'kanopya::mysql::repos::rh': }
         }
         default : {
@@ -104,6 +106,10 @@ class kanopya::mysql($config_hash, $galera) inherits kanopya::mysql::params {
     Database_grant <<| tag == "${fqdn}" |>>
     class { 'kanopya::mysql::galera':
         galera  => $galera
+    }
+    class { '::mysql':
+        package_name => $kanopya::mysql::params::mysql_client_package_name,
+        require      => Package['mysql-server']
     }
 }
 
