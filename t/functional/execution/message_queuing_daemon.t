@@ -23,7 +23,7 @@ Log::Log4perl->easy_init({
 
 eval {
     use_ok ('Daemon::MessageQueuing');
-    use_ok ('MessageQueuing::Qpid::Sender');
+    use_ok ('MessageQueuing::RabbitMQ::Sender');
 
     my $daemonconf = {
         config => {
@@ -42,12 +42,12 @@ eval {
     my $genericdaemon2 = new_ok("Daemon::MessageQueuing", \@configarray, "Instantiate a generic Daemon::MessageQueuing");
 
     # Use the client lib to send messages
-    MessageQueuing::Qpid::Sender->connect();
+    my $genericclient = MessageQueuing::RabbitMQ::Sender->new();
+    $genericclient->connect();
 
     # Defined the callback method
     sub callback {
-        my (%args) = @_;
-#        print "Message received " . Dumper(\%args) . "\n";
+        my @args = @_;
     }
 
     # Connect manually in order to create the reciever at register, without it,
@@ -56,20 +56,20 @@ eval {
     $genericdaemon2->connect();
 
     # Register the generic daemons as workers on channel 'generic'
-    $genericdaemon->registerWorker(channel => $channel, callback => \&callback, duration => 'IMMEDIATE');
-    $genericdaemon2->registerWorker(channel => $channel, callback => \&callback, duration => 'IMMEDIATE');
+    $genericdaemon->registerWorker(channel => $channel, callback => \&callback, duration => 'SECOND');
+    $genericdaemon2->registerWorker(channel => $channel, callback => \&callback, duration => 'SECOND');
 
     # Register the generic daemon as subscribers on channel 'generic'
-    $genericdaemon->registerSubscriber(channel => $channel, callback => \&callback, duration => 'IMMEDIATE');
-    $genericdaemon2->registerSubscriber(channel => $channel, callback => \&callback, duration => 'IMMEDIATE');
+    $genericdaemon->registerSubscriber(channel => $channel, callback => \&callback, duration => 'SECOND');
+    $genericdaemon2->registerSubscriber(channel => $channel, callback => \&callback, duration => 'SECOND');
 
     # Firstly send a message on the channel $channel
-    MessageQueuing::Qpid::Sender->send(channel => $channel, test => 'test');
-    
+    $genericclient->send(channel => $channel, test => 'test');
+
     lives_ok {
         $genericdaemon->oneRun(channel => $channel, type => 'queue');
     } 'Fetch the message as worker1';
-    
+
     throws_ok {
         $genericdaemon->oneRun(channel => $channel, type => 'queue');
     } "Kanopya::Exception::MessageQueuing::NoMessage",
@@ -94,15 +94,15 @@ eval {
     } 'Fetch the message as subscriber2';
 
     throws_ok {
-        $genericdaemon->oneRun(channel => $channel, type => 'topic');
+        $genericdaemon2->oneRun(channel => $channel, type => 'topic');
     } "Kanopya::Exception::MessageQueuing::NoMessage",
       "Try to fetch as subcriber2 an already consummed message.";
 
-    # Uncomment this lines to test the daemon
+    # Uncomment this lines to test the daemon (infinite loop)
     # my $running = 1;
     # $genericdaemon->run(\$running);
 
-    MessageQueuing::Qpid::Sender->disconnect();
+    $genericclient->disconnect();
     $genericdaemon->disconnect();
     $genericdaemon2->disconnect();
 };
