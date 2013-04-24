@@ -525,19 +525,19 @@ sub stopHost {
 
     my $host = $args{host};
     my $api = $self->api;
-    my $image_name = $host->getNodeSystemimage()->systemimage_name;
     my $uuid = $host->openstack_vm_uuid;
 
     # get image id from openstack
-    my $os_images = $api->images->get(target => "image")->{images};
-    my ($image) = grep { $_->{name} eq $image_name } @{$os_images};
+    my $image_id = $api->tenant(id => $api->{tenant_id})->servers(id => $uuid)->get(
+        target => 'compute',
+    )->{server}->{image}->{id};
 
     # delete image : set 'protected' attribute to false, then delete image
-    $api->images(id => $image->{id})->put(
+    $api->images(id => $image_id)->put(
         target => 'image',
         headers => { 'x-image-meta-protected' => 'False' }
     );
-    $api->images(id => $image->{id})->delete(target => 'image');
+    $api->images(id => $image_id)->delete(target => 'image');
 
     # delete vm
     $api->tenant(id => $api->{tenant_id})->servers(id => $uuid)->delete(target => 'compute');
