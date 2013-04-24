@@ -173,6 +173,7 @@ sub getVMState {
     my $state_map = {
         'MIGRATING' => 'migr',
         'BUILD'     => 'pend',
+        'REBUILD'   => 'pend',
         'ACTIVE'    => 'runn',
         'ERROR'     => 'fail',
         'SHUTOFF'   => 'shut'
@@ -525,19 +526,19 @@ sub stopHost {
 
     my $host = $args{host};
     my $api = $self->api;
-    my $image_name = $host->getNodeSystemimage()->systemimage_name;
     my $uuid = $host->openstack_vm_uuid;
 
     # get image id from openstack
-    my $os_images = $api->images->get(target => "image")->{images};
-    my ($image) = grep { $_->{name} eq $image_name } @{$os_images};
+    my $image_id = $api->tenant(id => $api->{tenant_id})->servers(id => $uuid)->get(
+        target => 'compute',
+    )->{server}->{image}->{id};
 
     # delete image : set 'protected' attribute to false, then delete image
-    $api->images(id => $image->{id})->put(
+    $api->images(id => $image_id)->put(
         target => 'image',
         headers => { 'x-image-meta-protected' => 'False' }
     );
-    $api->images(id => $image->{id})->delete(target => 'image');
+    $api->images(id => $image_id)->delete(target => 'image');
 
     # delete vm
     $api->tenant(id => $api->{tenant_id})->servers(id => $uuid)->delete(target => 'compute');
@@ -577,6 +578,101 @@ sub postStartNode {
     $args{cluster}->reconfigure();
 }
 
+=pod
+
+=begin classdoc
+
+Resubmit a node in an OpenStack IAAS : set vm's state to active, then rebuild vm
+
+@param $vm virtual machine to resubmit
+@param $hypervisor hypervisor on which vm will be placed
+
+=end classdoc
+
+=cut
+
+sub resubmitNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['vm', 'hypervisor']);
+
+    my $vm = $args{vm};
+    my $uuid = $vm->openstack_vm_uuid;
+    my $vm_name = $vm->node->node_hostname;
+    my $api = $self->api;
+
+    # NOTE
+    #   - resubmit => state to active
+    #   - deploy => rebuild
+    #   - hypervisor is not used since rebuild is done on same host
+    #   - nova evacuate has not been used for vm because it requires an hypervisor down
+
+    # set vm's state to active (state required prior a rebuild)
+    $api->tenant(id => $api->{tenant_id})->servers(id => $uuid)->action->post(
+        target  => 'compute',
+        content => {
+            'os-resetState' => {
+                'state' => 'active'
+            }
+        }
+    );
+
+    # rebuild vm (host expected to be up)
+    my $image_id = $api->tenant(id => $api->{tenant_id})->servers(id => $uuid)->get(
+        target => 'compute',
+    )->{server}->{image}->{id};
+
+    my $response = $api->tenant(id => $api->{tenant_id})->servers(id => $uuid)->action->post(
+        target  => 'compute',
+        content => {
+            'rebuild' => {
+                'name'     => $vm_name,
+                'imageRef' => $image_id,
+            }
+        }
+    );
+
+    $log->debug('Rebuild VM <' . $vm_name . '>. Compute response : '
+        . (Dumper $response));
+}
+
+=pod
+
+=begin classdoc
+
+Get last message logged by a vm
+
+@param $vm virtual machine whose logs are wanted
+
+@return $lastmessage last message logged by vm
+
+=end classdoc
+
+=cut
+
+sub vmLoggedErrorMessage {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'vm' ]);
+
+    my $vm = $args{vm};
+    my $instance_name = $self->_getInstanceName(vm => $vm);
+    my $e_hypervisor = EEntity->new(entity => $vm->hypervisor);
+    my $command = 'tail -n 10 /var/log/libvirt/qemu/'. $instance_name . '.log';
+
+    $log->debug("commande = $command");
+
+    my $result  = $e_hypervisor->getEContext->execute(command => $command);
+    my $output  = $result->{stdout};
+    $log->debug($output);
+
+    my @lastmessage = split '\n', $output;
+
+    $log->debug(@lastmessage);
+
+    return $lastmessage[-1];
+}
+
 sub applyVLAN {
     my ($self, %args) = @_;
 
@@ -584,6 +680,35 @@ sub applyVLAN {
         args     => \%args,
         required => [ 'iface', 'vlan' ]
     );
+}
+
+=pod
+
+=begin classdoc
+
+Get name of an instance (vm) from nova compute's view
+
+@param $vm virtual machine's name
+
+@return $instance_name instance's name
+
+=end classdoc
+
+=cut
+
+sub _getInstanceName {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'vm' ]);
+
+    my $uuid = $args{vm}->openstack_vm_uuid;
+    my $api = $self->api;
+
+    my $instance_name = $api->tenant(id => $api->{tenant_id})->servers(id => $uuid)->get(
+        target => 'compute',
+    )->{server}->{'OS-EXT-SRV-ATTR:instance_name'};
+
+    return $instance_name;
 }
 
 =pod

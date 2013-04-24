@@ -40,6 +40,7 @@ use strict;
 use warnings;
 
 use Entity;
+use CapacityManagement;
 
 use Log::Log4perl "get_logger";
 
@@ -109,28 +110,9 @@ sub execute {
     my ($self, %args) = @_;
     $self->SUPER::execute();
 
-    $self->{context}->{cloudmanager_comp}->onevm_resubmit(
-        vm_nameorid => $self->{context}->{host}->node->node_hostname,
-    );
-
-    sleep(5); # Wait 5 seconds for the VM to be pending
-
-    $self->{context}->{cloudmanager_comp}->onevm_deploy(
-        vm_nameorid    => $self->{context}->{host}->node->node_hostname,
-        host_nameorid  => $self->{context}->{hypervisor}->node->node_hostname,
-    );
-
-    sleep(5);
-
-    $self->{context}->{cloudmanager_comp}->onevm_resubmit(
-        vm_nameorid => $self->{context}->{host}->node->node_hostname,
-    );
-
-    sleep(5); # Wait 5 seconds for the VM to be pending
-
-    $self->{context}->{cloudmanager_comp}->onevm_deploy(
-        vm_nameorid    => $self->{context}->{host}->node->node_hostname,
-        host_nameorid  => $self->{context}->{hypervisor}->node->node_hostname,
+    $self->{context}->{cloudmanager_comp}->resubmitNode(
+        vm          => $self->{context}->{host},
+        hypervisor  => $self->{context}->{hypervisor},
     );
 
     $self->{context}->{host}->setState(state => 'starting');
@@ -169,7 +151,7 @@ sub postrequisites {
                            host => $self->{context}->{host},
     );
 
-    $log->info('Vm <'.$host_id.'> opennebula status <'.($vm_state->{state}).'>');
+    $log->info('Vm <'.$host_id.'> cloud manager status <'.($vm_state->{state}).'>');
 
     if ($vm_state->{state} eq 'runn') {
         $log->info('VM running try to contact it');
@@ -179,7 +161,7 @@ sub postrequisites {
         return $delay;
     }
     elsif ($vm_state->{state} eq 'fail' ) {
-        my $lastmessage = $self->{context}->{cloudmanager_comp}->vmLoggedErrorMessage(opennebula3_vm => $self->{context}->{host});
+        my $lastmessage = $self->{context}->{cloudmanager_comp}->vmLoggedErrorMessage(vm => $self->{context}->{host});
         throw Kanopya::Exception(error => 'Vm fail on boot: '.$lastmessage);
     }
     elsif ($vm_state->{state} eq 'pend' ) {

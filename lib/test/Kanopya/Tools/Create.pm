@@ -240,9 +240,18 @@ Create a cluster of VMs
 sub createVmCluster {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['iaas']);
+    General::checkParams(
+        args => \%args,
+        required => ['iaas'],
+        optional => {
+            'container_name' => 'test_image_repository',
+            'container_type' => 'nfs',
+        }
+    );
 
     my $iaas = $args{iaas};
+    my $container_name = $args{container_name};
+    my $container_type = $args{container_type};
 
     #get iaas HostManager component to use it as host manager
     my $host_manager = $iaas->getComponent(category => 'HostManager');
@@ -252,45 +261,51 @@ sub createVmCluster {
     my $fileimagemanager = $kanopya->getComponent(name    => "Fileimagemanager",
                                                   version => 0);
 
-
     my $nfs_manager = EEntity->new(
                           entity => $kanopya->getComponent(name    => 'Nfsd',
                                                            version => 3)
                       );
 
-    my $nfs = Kanopya::Tools::Retrieve->retrieveContainerAccess(
-                  name       => 'test_image_repository',
-                  type       => 'nfs',
-              );
+    my $managers = {
+        host_manager => {
+            manager_id     => $host_manager->id,
+            manager_params => {
+                core    => 2,
+                ram     => 512 * 1024 * 1024,
+                ifaces  => 1,
+            },
+        }
+    };
+
+    if ($container_type eq 'nfs') {
+        my $nfs = Kanopya::Tools::Retrieve->retrieveContainerAccess(
+                      name => $container_name,
+                      type => $container_type,
+                  );
+
+        $managers->{disk_manager} = {
+            manager_id => $fileimagemanager->id,
+            manager_params => {
+                container_access_id => $nfs->id ,
+                systemimage_size    => 4 * 1024 * 1024 * 1024,
+            },
+        };
+        $managers->{export_manager} = {
+            manager_id => $fileimagemanager->id,
+            manager_params => {
+                container_access_id => $nfs->id ,
+                systemimage_size    => 4 * 1024 * 1024 * 1024,
+            },
+        };
+    }
 
     delete $args{iaas};
+    delete $args{container_name};
+    delete $args{container_type};
 
     return $self->createCluster(
         %args,
-        managers => {
-            host_manager => {
-                manager_id     => $host_manager->id,
-                manager_params => {
-                    core    => 2,
-                    ram     => 512 * 1024 * 1024,
-                    ifaces  => 1,
-                },
-            },
-            disk_manager => {
-                manager_id => $fileimagemanager->id,
-                manager_params => {
-                     container_access_id => $nfs->id ,
-                     systemimage_size => 4 * 1024 * 1024 * 1024,
-                },
-            },
-            export_manager => {
-                manager_id => $fileimagemanager->id,
-                manager_params => {
-                     container_access_id => $nfs->id ,
-                     systemimage_size => 4 * 1024 * 1024 * 1024,
-                },
-            }
-        },
+        managers => $managers
     );
 }
 

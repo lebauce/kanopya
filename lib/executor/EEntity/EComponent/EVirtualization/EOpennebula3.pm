@@ -628,6 +628,20 @@ sub propagateVLAN {
     }
 }
 
+=pod
+
+=begin classdoc
+
+Get last message logged by a vm
+
+@param $vm virtual machine whose logs are wanted
+
+@return $lastmessage last message logged by vm
+
+=end classdoc
+
+=cut
+
 sub vmLoggedErrorMessage {
     my ($self,%args) = @_;
 
@@ -1408,6 +1422,49 @@ sub onevm_resubmit {
     my $result = $self->getEContext->execute(command => $cmd);
 }
 
+=pod
+
+=begin classdoc
+
+Resubmit a node in an OpenNebula IAAS
+
+@param $vm virtual machine to resubmit
+@param $hypervisor hypervisor on which vm will be placed
+
+=end classdoc
+
+=cut
+
+sub resubmitNode {
+    my ($self,%args) = @_;
+    General::checkParams(
+        args     => \%args,
+        required => ['vm', 'hypervisor'],
+    );
+
+    my $vm_nameorid = $args{vm}->node->node_hostname;
+    my $host_nameorid = $args{hypervisor}->node->node_hostname;
+
+    onevm_resubmit(vm_nameorid => $vm_nameorid);
+
+    sleep(5); # Wait 5 seconds for the VM to be pending
+
+    onevm_deploy(
+        vm_nameorid     => $vm_nameorid,
+        host_nameorid   => $host_nameorid,
+    );
+
+    sleep(5);
+
+    onevm_resubmit(vm_nameorid => $vm_nameorid);
+
+    sleep(5); # Wait 5 seconds for the VM to be pending
+
+    onevm_deploy(
+        vm_nameorid     => $vm_nameorid,
+        host_nameorid   => $host_nameorid,
+    );
+}
 
 sub getMaxRamFreeHV{
     my ($self, %args) = @_;
