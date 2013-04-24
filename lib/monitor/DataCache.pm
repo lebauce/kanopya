@@ -213,12 +213,17 @@ sub nodeMetricFetch {
     if ($NODEMETRIC_STORAGE_ACTIVE) {
         for my $object_name (@{$args{node_names}}) {
             my $metric_uid = $args{indicator}->id . '_' . $object_name;
-            my %data = TimeData::RRDTimeData::fetchTimeDataStore(
+            my %data = ();
+            eval {
+                %data = TimeData::RRDTimeData::fetchTimeDataStore(
                           name   => $metric_uid,
                           start  => $args{start_time},
                           end    => $args{end_time}
-                      );
-
+                        );
+            };
+            if ($@) {
+                $log->info($@);
+            }
             $values_by_nodes{$object_name} = \%data;
         }
     }
