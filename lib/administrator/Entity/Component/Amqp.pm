@@ -28,7 +28,12 @@ sub getAttrDef { return ATTR_DEF };
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    my $definitions = "class { 'kanopya::rabbitmq': }\n";
+    my @nodes = $self->service_provider->nodes;
+    my @nodes_hostnames = map {$_->node_hostname} @nodes;
+
+    my $definitions = "class { 'kanopya::rabbitmq':
+                           disk_nodes => ['" . join ("','", @nodes_hostnames) . "'],
+                       }\n";
 
     return $definitions;
 }
