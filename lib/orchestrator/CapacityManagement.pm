@@ -147,23 +147,6 @@ sub new {
 
 =begin classdoc
 
-Variable getter
-
-@return Internal representation of current infrastructure
-
-=end classdoc
-
-=cut
-
-sub getInfra {
-    my ($self) = @_;
-    return $self->{_infra};
-}
-
-=pod
-
-=begin classdoc
-
 Construct the infrastructure data structure used in the class by algorithms.
 Use the cloud manager to get the infrastructure information
 
@@ -564,13 +547,16 @@ sub scaleMemoryHost {
 
     # Compute absolute memory instead of relative
     my $memory;
-    if($sign eq '+'){
+    if ($sign eq '+') {
         $memory = $self->{_infra}->{vms}->{$args{host_id}}->{ram} + $mem_input;
-    } elsif ($sign eq '-') {
+    }
+    elsif ($sign eq '-') {
         $memory = $self->{_infra}->{vms}->{$args{host_id}}->{ram} - $mem_input;
-    } elsif ($sign =~ /\d/) {
+    }
+    elsif ($sign =~ /\d/) {
         $memory = $mem_input;
-    } else {
+    }
+    else {
         Message->send(
             from    => 'Capacity Management',
             level   => 'warn',
@@ -1121,7 +1107,6 @@ sub _migrateVmModifyInfra{
     }
 }
 
-
 =pod
 
 =begin classdoc
@@ -1373,7 +1358,7 @@ its CPU usage
 
 =cut
 
-sub _optimStep{
+sub _optimStep {
     my ($self,%args) = @_;
     my $current_plan    = $args{current_plan};
     my $hv_selected_ids = $args{hv_selected_ids};
