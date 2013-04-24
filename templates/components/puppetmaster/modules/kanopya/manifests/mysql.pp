@@ -15,6 +15,13 @@ class kanopya::mysql::params {
 }
 
 class kanopya::mysql::galera($galera) {
+    @@database_user { "wsrep@localhost":
+        tag           => "${fqdn}",
+    }
+    @@database_grant { "wsrep@localhost/*":
+        privileges => ['all'] ,
+        tag        => "${fqdn}"
+    }
     $provider = $architecture ? {
         'x86_64' => '/usr/lib64/galera/libgalera_smm.so',
         default  => '/usr/lib/galera/libgalera_smm.so'
@@ -26,7 +33,7 @@ class kanopya::mysql::galera($galera) {
                 wsrep_cluster_address => $galera['address'],
                 wsrep_cluster_name    => $galera['name'],
                 wsrep_sst_method      => 'xtrabackup',
-                wsrep_sst_auth        => 'root:'
+                wsrep_sst_auth        => "wsrep:"
             }
         },
         require    => Package['percona-xtrabackup']
@@ -92,11 +99,11 @@ class kanopya::mysql($config_hash, $galera) inherits kanopya::mysql::params {
         config_hash    => $config_hash,
         package_name   => $kanopya::mysql::params::mysql_package_name
     }
-    class { 'kanopya::mysql::galera':
-        galera  => $galera
-    }
     Mysql::Db <<| tag == "${fqdn}" |>>
     Database_user <<| tag == "${fqdn}" |>>
     Database_grant <<| tag == "${fqdn}" |>>
+    class { 'kanopya::mysql::galera':
+        galera  => $galera
+    }
 }
 

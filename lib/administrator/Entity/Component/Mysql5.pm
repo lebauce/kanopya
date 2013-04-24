@@ -72,7 +72,7 @@ sub getExecToTest {
             return_code => '0'
         },
         galera => {
-            cmd         => 'mysql -u root -e "SHOW STATUS LIKE \'wsrep_ready\'" --skip-column-names | cat',
+            cmd         => 'mysql -u wsrep -e "SHOW STATUS LIKE \'wsrep_ready\'" --skip-column-names | cat',
             answer      => '^wsrep_ready\tON$',
             return_code => 0
         }
