@@ -35,7 +35,9 @@ class kanopya::mysql::galera($galera) {
                 wsrep_cluster_address => $galera['address'],
                 wsrep_cluster_name    => $galera['name'],
                 wsrep_sst_method      => 'xtrabackup',
-                wsrep_sst_auth        => "wsrep:"
+                wsrep_sst_auth        => "wsrep:",
+                datadir               => "/var/lib/mysql",
+                tmpdir                => "/tmp"
             }
         },
         require    => Package['percona-xtrabackup']
