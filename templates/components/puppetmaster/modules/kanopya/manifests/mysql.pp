@@ -17,12 +17,23 @@ class kanopya::mysql::params {
 }
 
 class kanopya::mysql::galera($galera) {
-    @@database_user { "wsrep@localhost":
-        tag           => "${fqdn}",
+    exec { 'mysql-start':
+        command => "service mysql start",
+        path    => "/bin:/sbin:/usr/bin:/usr/sbin",
+        require => Package['mysql-server']
     }
-    @@database_grant { "wsrep@localhost/*":
+    database_user { 'wsrep@localhost':
+        password_hash => mysql_password('wsrep'),
+        require       => Exec['mysql-start'],
+    }
+    database_grant { "wsrep@localhost":
         privileges => ['all'] ,
-        tag        => "${fqdn}"
+        require    => Database_User['wsrep@localhost'],
+    }
+    exec { 'mysql-stop':
+        command => "service mysql stop",
+        path    => "/bin:/sbin:/usr/bin:/usr/sbin",
+        require => Database_grant["wsrep@localhost"]
     }
     $provider = $architecture ? {
         'x86_64' => '/usr/lib64/galera/libgalera_smm.so',
@@ -31,16 +42,26 @@ class kanopya::mysql::galera($galera) {
     mysql::server::config { 'galera':
         settings => {
             mysqld => {
-                wsrep_provider        => $provider,
-                wsrep_cluster_address => $galera['address'],
-                wsrep_cluster_name    => $galera['name'],
-                wsrep_sst_method      => 'xtrabackup',
-                wsrep_sst_auth        => "wsrep:",
-                datadir               => "/var/lib/mysql",
-                tmpdir                => "/tmp"
+                wsrep_provider                 => $provider,
+                wsrep_cluster_address          => $galera['address'],
+                wsrep_cluster_name             => $galera['name'],
+                wsrep_sst_method               => 'xtrabackup',
+                wsrep_sst_auth                 => "wsrep:wsrep",
+                datadir                        => "/var/lib/mysql",
+                tmpdir                         => "/tmp",
+                binlog_format                  => "ROW",
+                default-storage-engine         => "innodb",
+                sync_binlog                    => "0",
+                innodb_flush_log_at_trx_commit => "0",
+                innodb_doublewrite             => "0",
+                innodb_autoinc_lock_mode       => "2",
+                innodb_locks_unsafe_for_binlog => "1",
+                query_cache_size               => "0",
+                query_cache_type               => "0",
+                wsrep_sst_receive_address      => "$ipaddress"
             }
         },
-        require    => Package['percona-xtrabackup']
+        require    => [ Exec['mysql-stop'], Package['percona-xtrabackup'] ]
     }
 }
 
@@ -107,7 +128,7 @@ class kanopya::mysql($config_hash, $galera) inherits kanopya::mysql::params {
     Database_user <<| tag == "${fqdn}" |>>
     Database_grant <<| tag == "${fqdn}" |>>
     class { 'kanopya::mysql::galera':
-        galera  => $galera
+        galera       => $galera
     }
     class { '::mysql':
         package_name => $kanopya::mysql::params::mysql_client_package_name,
