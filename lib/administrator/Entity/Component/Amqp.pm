@@ -59,7 +59,7 @@ sub getPuppetDefinition {
 
     my $definitions = "class { 'kanopya::rabbitmq':
                            disk_nodes => ['" . join ("','", @nodes_hostnames) . "'],
-                           cookie     => $self->cookie,
+                           cookie     => " . $self->cookie . ",
                        }\n";
 
     return $definitions;
