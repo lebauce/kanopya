@@ -667,6 +667,7 @@ sub registerManagerCategories {
         'NotificationManager',
         'WorkflowManager',
         'DirectoryServiceManager',
+        'ExecutionManager',
     ];
 
     for my $manager (@{$managers}) {
@@ -1053,16 +1054,16 @@ sub registerComponents {
             component_categories   => [ ],
             service_provider_types => [ 'Cluster' ],
         },
-        { 
+        {
             component_name         => 'KanopyaFront',
             component_version      => 0,
             component_categories   => [ ],
             service_provider_types => [ 'Cluster' ],
         },
-        { 
+        {
             component_name         => 'KanopyaExecutor',
             component_version      => 0,
-            component_categories   => [ ],
+            component_categories   => [ 'ExecutionManager' ],
             service_provider_types => [ 'Cluster' ],
         },
         {
@@ -1376,8 +1377,9 @@ sub registerKanopyaMaster {
             name => 'KanopyaFront'
         },
         {
-            name => 'KanopyaExecutor',
-            conf => {
+            name    => 'KanopyaExecutor',
+            manager => 'ExecutionManager',
+            conf    => {
                 masterimages_directory => defined $args{masterimages_directory} ? $args{masterimages_directory} : "/var/lib/kanopya/masterimages/",
                 clusters_directory     => defined $args{clusters_directory} ? $args{clusters_directory} : "/var/lib/kanopya/clusters/"
             }
