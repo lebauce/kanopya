@@ -25,7 +25,6 @@ use General;
 use Node;
 use Harddisk;
 use Entity::Iface;
-use Entity::Operation;
 use Entity::Workflow;
 
 use Log::Log4perl "get_logger";
@@ -484,17 +483,7 @@ sub getFreeHosts {
 sub remove {
     my $self = shift;
 
-    $log->debug("New Operation RemoveHost with host_id : <" . $self->id . ">");
-
-    return Entity::Operation->enqueue(
-               priority => 200,
-               type     => 'RemoveHost',
-               params   => {
-                   context  => {
-                       host => $self,
-                   },
-               },
-           );
+    return $self->host_manager->removeHost(host => $self);
 }
 
 sub addHarddisk {
@@ -519,31 +508,13 @@ sub removeHarddisk {
 sub activate{
     my $self = shift;
 
-    $log->debug("New Operation ActivateHost with host_id : " . $self->getAttr(name=>'host_id'));
-    Entity::Operation->enqueue(
-        priority => 200,
-        type     => 'ActivateHost',
-        params   => {
-            context => {
-                host => $self
-           }
-       }
-   );
+    return $self->host_manager->activateHost(host => $self);
 }
 
 sub deactivate{
     my $self = shift;
 
-    $log->debug("New Operation EDeactivateHost with host_id : " . $self->getAttr(name=>'host_id'));
-    Entity::Operation->enqueue(
-        priority => 200,
-        type     => 'DeactivateHost',
-        params   => {
-            context => {
-                host_to_deactivate => $self
-            }
-        }
-    );
+    return $self->host_manager->deactivateHost(host => $self);
 }
 
 =head2 toString

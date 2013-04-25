@@ -23,7 +23,6 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use Entity::Operation;
 use General;
 
 use Entity::Container;
@@ -85,16 +84,16 @@ sub installedComponentLinkCreation {
     $self->{_dbix}->components_installed->create(\%args);
 }
 
-=head2 remove
-
-=cut
 
 sub remove {
     my $self = shift;
     
-    $log->debug("New Operation RemoveSystemimage with systemimage_id : <".$self->getAttr(name=>"systemimage_id").">");
-    Entity::Operation->enqueue(
-        priority => 200,
+    $log->debug("New Operation RemoveSystemimage with id : <" . $self->id . ">");
+
+    # Use the execution manager of the service on which the disk manager is installed
+    my $diskmanager = $self->getContainer->disk_manager;
+    my $executor = $diskmanager->service_provider->getManager(manager_type => 'ExecutionManager');
+    $executor->enqueue(
         type     => 'RemoveSystemimage',
         params   => {
             context => {
@@ -104,24 +103,12 @@ sub remove {
     );
 }
 
-=head2 toString
-
-    desc: return a string representation of the entity
-
-=cut
-
 sub toString {
     my $self = shift;
-    my $string = $self->{_dbix}->get_column('systemimage_name');
-    return $string;
+
+    return $self->systemimage_name;
 }
 
-=head2 getInstalledComponents
-
-get components installed on this systemimage
-return array ref containing hash ref 
-
-=cut
 
 sub getInstalledComponents {
     my $self = shift;
@@ -149,11 +136,6 @@ sub getInstalledComponents {
     return $components;
 }
 
-=head2 cloneComponentsInstalledFrom
-
-# used during systemimage clone to set components installed on the new systemimage
-
-=cut
 
 sub cloneComponentsInstalledFrom {
     my $self = shift;

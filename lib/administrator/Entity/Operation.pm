@@ -16,7 +16,7 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 package Entity::Operation;
-use base 'Entity';
+use base Entity;
 
 use strict;
 use warnings;

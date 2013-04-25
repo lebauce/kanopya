@@ -22,6 +22,7 @@ use base MessageQueuing::RabbitMQ::Sender;
 use strict;
 use warnings;
 
+use Entity::Operation;
 use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
@@ -78,6 +79,24 @@ sub methods {
             }
         },
     };
+}
+
+
+sub execute {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'type', 'params' ],
+                         optional => { 'priority' => 200 });
+
+    my $operation = Entity::Operation->enqueue(priority => $args{priority},
+                                               type     => $args{type},
+                                               params   => $args{params});
+
+    # Transmit the created operation id for instance.
+    $self->SUPER::execute(operation_id => $operation->id);
+
+    return $operation;
 }
 
 1;

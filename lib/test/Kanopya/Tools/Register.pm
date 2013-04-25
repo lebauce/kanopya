@@ -125,12 +125,10 @@ sub registerMasterImage {
     my $name = shift || $ENV{'MASTERIMAGE'} || "centos-6.3-opennebula3.tar.bz2";
 
     diag('Deploy master image');
-    my $deploy = Entity::Operation->enqueue(
-                  priority => 200,
-                  type     => 'DeployMasterimage',
-                  params   => { file_path => "/masterimages/" . $name,
-                                keep_file => 1 },
-    );
+    my $deploy = Entity::Masterimage->create(
+                     file_path => "/masterimages/" . $name,
+                     keep_file => 1
+                 );
 
     Kanopya::Tools::Execution->executeOne(entity => $deploy);
 

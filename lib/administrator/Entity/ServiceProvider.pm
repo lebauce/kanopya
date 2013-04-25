@@ -245,14 +245,6 @@ sub getState {
     throw Kanopya::Exception::NotImplemented();
 }
 
-=head2 getManager
-
-    Desc: get a service provider manager object
-    Args: $manager_type (string)
-    Return: manager object
-
-=cut
-
 sub getManager {
     my $self = shift;
     my %args = @_;

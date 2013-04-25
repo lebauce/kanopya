@@ -6,8 +6,9 @@ use XML::Simple;
 
 use Kanopya::Exceptions;
 use BaseDB;
-use Entity::Operation;
 use General;
+
+use Entity::ServiceProvider::Cluster;
 
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init($ERROR);
@@ -34,8 +35,8 @@ my $adm = BaseDB->authenticate(
           );
 
 eval {
-    Entity::Operation->enqueue(
-        priority => 200,
+    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster;
+    $kanopya->getManager(manager_type => 'ExecutionManager')->enqueue(
         type     => 'DeployMasterimage',
         params   => { file_path => "$arg", keep_file => 1 },
     );
