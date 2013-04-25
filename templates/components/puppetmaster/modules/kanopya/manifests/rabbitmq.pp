@@ -1,4 +1,4 @@
-class kanopya::rabbitmq ($disk_nodes) {
+class kanopya::rabbitmq ($disk_nodes, $cookie) {
     $rabbitmq_repo = $operatingsystem ? {
         /(?i)(debian|ubuntu)/ => 'rabbitmq::repo::apt',
         default               => 'rabbitmq::repo::rhel'
@@ -8,7 +8,7 @@ class kanopya::rabbitmq ($disk_nodes) {
         wipe_db_on_cookie_change => true,
         config_cluster           => true,
         cluster_disk_nodes       => $disk_nodes,
-        erlang_cookie            => 'rabbit',
+        erlang_cookie            => $cookie,
     }
     Rabbitmq_user <<| tag == "${fqdn}" |>>
     Rabbitmq_user_permissions <<| tag == "${fqdn}" |>>
