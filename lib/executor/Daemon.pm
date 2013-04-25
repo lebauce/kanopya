@@ -35,6 +35,7 @@ use warnings;
 use Kanopya::Exceptions;
 use Kanopya::Config;
 
+use Message;
 use EEntity;
 use Entity::Host;
 
@@ -60,15 +61,25 @@ Base method to authenticate daemon to the api.
 sub new {
     my ($class, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'confkey' ], optional => { 'name' => $class });
+    General::checkParams(args     => \%args,
+                         optional => { 'confkey' => undef,
+                                       'config'  => {},
+                                       'name'    => $class });
 
     my $self = { name => $args{name} };
     bless $self, $class;
 
     # Get the authentication configuration
-    $self->{config} = Kanopya::Config::get($args{confkey});
+    $self->{config} = defined $args{confkey} ? Kanopya::Config::get($args{confkey}) : $args{config};
 
-    General::checkParams(args => $self->{config}->{user}, required => [ "name", "password" ]);
+    eval {
+        General::checkParams(args => $self->{config}->{user}, required => [ "name", "password" ]);
+    };
+    if ($@) {
+        throw Kanopya::Exception::Internal(
+                  error => "Could not find <name> or/and <password> in the <user> configuration"
+              );
+    }
 
     # Authenticate the daemon to the api.
     BaseDB->authenticate(login    => $self->{config}->{user}->{name},
@@ -142,12 +153,7 @@ sub execnround {
         # Refresh the configuration as it could be changed.
         $self->refreshConfiguration();
 
-        eval {
-            $self->oneRun();
-        };
-        if ($@) {
-            $log->error($@);
-        }
+        $self->oneRun();
     }
 }
 
@@ -167,18 +173,17 @@ sub refreshConfiguration {
     my $component;
     eval {
         $component = $self->_host->node->getComponent(name => 'Kanopya' . $self->{name});
+
+        # Update the daemon configuration
+        my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
+
+        $self->{config} = $merge->merge($self->{config}, $component->getConf());
     };
     if ($@) {
-        throw Kanopya::Exception::Internal(
-                  error => "Could not find component corresponding to service <$self->{name}> " .
-                           "on host <" . $self->_host->node->node_hostname . ">."
-              );
+        my $err = "Could not find component corresponding to service <$self->{name}> " .
+                  "on host <" . $self->_host->node->node_hostname . ">.";
+        $log->warn($err);
     }
-
-    # Update the daemon configuration
-    my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
-
-    $self->{config} = $merge->merge($self->{config}, $component->getConf());
 }
 
 

@@ -12,7 +12,7 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package Collector;
-use base Daemon;
+use base Daemon::Pooling;
 
 use strict;
 use warnings;
@@ -56,40 +56,11 @@ sub new {
         mkdir $dir;
     }
 
+    # Register the method to call every loop
+    $self->registerPollingMethod(callback => \&$self->update);
+
     return $self;
 }
-
-
-=pod
-
-=begin classdoc
-
-Main loop of the collector.
-
-=end classdoc
-
-=cut
-
-sub oneRun {
-    my ($self) = @_;
-
-    # Get the start time
-    my $start_time = time();
-
-    $self->update();
-
-    # Get the end time
-    my $update_duration = time() - $start_time;
-    $log->info("Update duration : $update_duration seconds");
-
-    if ($update_duration > $self->{config}->{time_step}) {
-        $log->warn("Collector duration > collector time step ($self->{config}->{time_step})");
-    }
-    else {
-        sleep($self->{config}->{time_step} - $update_duration);
-    }
-}
-
 
 sub retrieveHostsByCluster {
     my $self = shift;

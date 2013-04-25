@@ -37,7 +37,6 @@ Aggregator is the main script to run indicator aggregation over group of hosts.
 use strict;
 use warnings;
 
-use BaseDB;
 use General;
 use Aggregator;
 use Kanopya::Config;
@@ -57,56 +56,11 @@ sub signalHandler {
 
 $SIG{TERM} = \&signalHandler;
 
-sub runAggregator {
-    my %args = @_;
-
-    my $aggregator = Aggregator->new(service_providers => $args{service_providers});
+eval {
+    my $aggregator = Aggregator->new();
 
     # enter in the main loop and continue while $$running is true
     $aggregator->run(\$running);
-}
-
-eval {
-    # Firstly authenticate here, to get the list of service providers
-    my $config = Kanopya::Config::get('aggregator');
-
-    # Authenticate the daemon to the api.
-    BaseDB->authenticate(login    => $config->{user}->{name},
-                         password => $config->{user}->{password});
-
-    # Infinite loop.
-    # - If multiprocess is not set, run the aggregator normally
-    # - If multiprocess is set, spawn one process for each service provider
-    if ($config->{multiprocess}) {
-        # Keep the processing service providers
-        my $processing = {};
-        while (1) {
-            my @serviceproviders = Entity::ServiceProvider->search(hash => {
-                                       service_provider_type_id => { not => undef }
-                                   });
-
-            my $pid;
-            for my $serviceprovider (@serviceproviders) {
-                if (not defined $processing->{$serviceprovider->id}) {
-                    $processing->{$serviceprovider->id} = $serviceprovider;
-
-                    # Run an aggregator in a child
-                    $log->info("Run an aggregator for service <" . $serviceprovider->id . "> in a child process...");
-                    $pid = fork();
-                    if ($pid == 0) {
-                        runAggregator(service_providers => [ $serviceprovider->id ]);
-                        last;
-                    }
-                }
-            };
-            if (not defined $pid or $pid != 0) {
-                sleep 30;
-            }
-        }
-    }
-    else {
-        runAggregator();
-    }
 };
 if ($@) {
 	my $ex = $@;
