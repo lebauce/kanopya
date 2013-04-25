@@ -8,6 +8,7 @@ SET foreign_key_checks=0;
 
 CREATE TABLE `amqp` (
   `amqp_id` int(8) unsigned NOT NULL,
+  `cookie` char(255) NULL DEFAULT NULL, 
   PRIMARY KEY (`amqp_id`),
   CONSTRAINT `fk_amqp_1` FOREIGN KEY (`amqp_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
