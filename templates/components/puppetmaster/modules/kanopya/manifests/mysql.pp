@@ -21,6 +21,7 @@ class kanopya::mysql::galera($galera) {
         command => "service mysql start",
         path    => "/bin:/sbin:/usr/bin:/usr/sbin",
         require => [ Package['mysql-server'],
+                     Service['mysqld'],
                      Package['mysql_client'] ]
     }
     database_user { 'wsrep@localhost':
@@ -30,11 +31,6 @@ class kanopya::mysql::galera($galera) {
     database_grant { "wsrep@localhost":
         privileges => ['all'] ,
         require    => Database_User['wsrep@localhost'],
-    }
-    exec { 'mysql-stop':
-        command => "service mysql stop",
-        path    => "/bin:/sbin:/usr/bin:/usr/sbin",
-        require => Database_grant["wsrep@localhost"]
     }
     $provider = $architecture ? {
         'x86_64' => '/usr/lib64/galera/libgalera_smm.so',
@@ -62,7 +58,8 @@ class kanopya::mysql::galera($galera) {
                 wsrep_sst_receive_address      => "$ipaddress"
             }
         },
-        require    => [ Exec['mysql-stop'], Package['percona-xtrabackup'] ]
+        require    => [ Database_grant['wsrep@localhost'],
+                        Package['percona-xtrabackup'] ]
     }
 }
 
