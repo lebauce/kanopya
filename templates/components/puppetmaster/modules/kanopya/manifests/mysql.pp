@@ -20,7 +20,8 @@ class kanopya::mysql::galera($galera) {
     exec { 'mysql-start':
         command => "service mysql start",
         path    => "/bin:/sbin:/usr/bin:/usr/sbin",
-        require => Package['mysql-server']
+        require => [ Package['mysql-server'],
+                     Package['mysql_client'] ]
     }
     database_user { 'wsrep@localhost':
         password_hash => mysql_password('wsrep'),
