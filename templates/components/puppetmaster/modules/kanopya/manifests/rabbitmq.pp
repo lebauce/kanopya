@@ -9,6 +9,11 @@ class kanopya::rabbitmq ($disk_nodes, $cookie) {
         config_cluster           => true,
         cluster_disk_nodes       => $disk_nodes,
         erlang_cookie            => $cookie,
+        require                  => Class["$rabbitmq_repo"],
+        package_name             => $operatingsystem ? {
+            /(?i)(centos|redhat|fedora)/ => 'rabbitmq-server.noarch',
+            default                      => 'rabbitmq-server'
+        }
     }
     Rabbitmq_user <<| tag == "${fqdn}" |>>
     Rabbitmq_user_permissions <<| tag == "${fqdn}" |>>
