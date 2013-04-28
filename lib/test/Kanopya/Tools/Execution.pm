@@ -198,6 +198,10 @@ sub startCluster {
     Kanopya::Tools::Execution->executeOne(entity => $cluster->start());
     $cluster = $cluster->reload();
 
+    if (scalar ($cluster->nodes) < $cluster->cluster_min_node) {
+        Kanopya::Tools::Execution->executeAll;
+    }
+
     my ($state, $timestemp) = $cluster->getState;
     if ($state eq 'up') {
         diag("Cluster " . $cluster->cluster_name . " started successfully");
