@@ -3,7 +3,12 @@ class kanopya::rabbitmq ($disk_nodes, $cookie) {
         /(?i)(debian|ubuntu)/ => 'rabbitmq::repo::apt',
         default               => 'rabbitmq::repo::rhel'
     }
-    class { "$rabbitmq_repo": }
+    package { 'erlang':
+        ensure => installed
+    }
+    class { "$rabbitmq_repo":
+        require => Package['erlang'] 
+    }
     class { 'rabbitmq::server':
         wipe_db_on_cookie_change => true,
         config_cluster           => true,
