@@ -17,7 +17,7 @@
 
 package Entity::Component::KanopyaAggregator;
 use base Entity::Component;
-use base MessageQueuing::Qpid::Sender;
+use base MessageQueuing::RabbitMQ::Sender;
 
 use strict;
 use warnings;
