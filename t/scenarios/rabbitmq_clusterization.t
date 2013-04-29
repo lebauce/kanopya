@@ -62,6 +62,10 @@ sub main {
         $cluster = Kanopya::Tools::Create->createCluster(
                        components => {
                            'amqp' => {}
+                       },
+                       cluster_conf => {
+                           cluster_name => 'RabbitMQ',
+                           cluster_min_node => 2
                        }
                    );
     } 'Create cluster';
