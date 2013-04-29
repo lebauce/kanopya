@@ -170,7 +170,7 @@ sub isUp {
     General::checkParams( args => \%args, required => [ 'cluster', 'host' ] );
     
     my $availability = 1;
-    my $execution_list = $self->_entity->getExecToTest();
+    my $execution_list = $self->_entity->getExecToTest(host => $args{host});
     my $net_conf = $self->_entity->getNetConf();
 
     # Test executable
