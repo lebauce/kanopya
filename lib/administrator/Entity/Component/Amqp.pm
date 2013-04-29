@@ -25,6 +25,14 @@ use constant ATTR_DEF => { };
 
 sub getAttrDef { return ATTR_DEF };
 
+sub getNetConf {
+    my ($self) = @_;
+    my $conf = {
+        5672 => ['tcp']
+    };
+    return $conf;
+}
+
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 

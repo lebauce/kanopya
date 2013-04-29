@@ -29,6 +29,15 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub getNetConf {
+    my ($self) = @_;
+    my $conf = {
+        9191 => ['tcp'],  # glance-registry
+        9292 => ['tcp']   # glance-api
+    };
+    return $conf;
+}
+
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
