@@ -65,6 +65,22 @@ sub getPuppetDefinition {
     return $definitions;
 }
 
+sub getExecToTest {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    return {
+        rabbitmq => {
+            cmd         => 'rabbitmqctl cluster_status',
+            answer      => 'running_nodes,\[.*,?rabbit@' .
+                           $args{host}->node->node_hostname .
+                           ',?.*\]}',
+            return_code => 0
+        }
+    }
+}
+
 sub label {
     my $self = shift;
 
