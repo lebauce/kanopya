@@ -62,10 +62,24 @@ sub configureNode {
         file          => '/etc/puppet/puppet.conf',
         template_dir  => '/templates/components/puppetagent',
         template_file => 'puppet.conf.tt', 
-        data         => $data
+        data          => $data
     );
 
      $self->_host->getEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/puppet'
+    );
+
+    $file = $self->generateNodeFile(
+        cluster       => $args{cluster},
+        host          => $args{host},
+        file          => '/etc/puppet/auth.conf',
+        template_dir  => '/templates/components/puppetagent',
+        template_file => 'auth.conf.tt',
+        data          => $data
+    );
+
+    $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc/puppet'
     );

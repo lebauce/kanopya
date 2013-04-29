@@ -12,3 +12,6 @@
 
 [agent]
   pluginsync=true
+[% IF puppetagent2_masterserver %]
+  listen=true
+[% END %]
