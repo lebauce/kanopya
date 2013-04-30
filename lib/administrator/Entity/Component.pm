@@ -310,6 +310,7 @@ sub needBridge { return 0; }
 
 sub getHostsEntries { return; }
 
+
 sub getPuppetDefinition {
     return {
         manifest     => '',

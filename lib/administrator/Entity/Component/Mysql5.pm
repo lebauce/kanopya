@@ -93,6 +93,7 @@ sub getPuppetDefinition {
     my ($self, %args)   = @_;
 
     General::checkParams(args => \%args, required => [ 'host' ]);
+    my $definition = $self->SUPER::getPuppetDefinition(%args);
 
     my $cluster_address = 'gcomm://';
     my @fqdns           = map { $_->fqdn } (grep { $_->node_id != $args{host}->node->node_id } $self->getActiveNodes);

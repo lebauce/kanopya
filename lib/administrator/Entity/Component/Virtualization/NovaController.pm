@@ -161,6 +161,7 @@ Build the content of the puppet agent manifest for a node
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;
+    my $definition = $self->SUPER::getPuppetDefinition(%args);
 
     my $sql        = $self->mysql5;
     my $keystone   = $self->keystone;
@@ -171,7 +172,7 @@ sub getPuppetDefinition {
         return;
     }
 
-    my $definition = "class { 'kanopya::openstack::nova::controller':\n" .
+    $definition   .= "class { 'kanopya::openstack::nova::controller':\n" .
                      "\tdbserver => '" . $sql->getMasterNode->fqdn . "',\n" .
                      "\tamqpserver => '" . $self->amqp->getMasterNode->fqdn . "',\n" .
                      "\tpassword => 'nova',\n" .

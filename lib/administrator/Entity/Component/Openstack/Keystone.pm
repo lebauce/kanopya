@@ -50,8 +50,8 @@ sub getNetConf {
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;
+    my $definition = $self->SUPER::getPuppetDefinition(%args);
 
-    my $definition;
     my $sqlconnection;
     my $sql = $self->mysql5;
 
@@ -60,7 +60,7 @@ sub getPuppetDefinition {
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
-    $definition = "class { 'kanopya::openstack::keystone':\n" .
+    $definition .= "class { 'kanopya::openstack::keystone':\n" .
                   "    dbserver      => '" . $sql->getMasterNode->fqdn . "',\n" .
                   "    dbip          => '" . $sql->getMasterNode->adminIp . "',\n" .
                   "    dbpassword    => 'keystone',\n" .
