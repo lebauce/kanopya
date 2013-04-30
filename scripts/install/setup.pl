@@ -690,15 +690,23 @@ sub tftpPopulation {
 sub generatePuppetConfiguration {
     my %args = @_;
 
+    my $datas = {
+        kanopya_puppet_modules => '/opt/kanopya/templates/components/puppetmaster/modules',
+        admin_domainname       => $args{admin_domainname},
+        kanopya_hostname       => $args{kanopya_hostname}
+    };
     useTemplate(
         include  => '/opt/kanopya/templates/components/puppetmaster',
         template => 'puppet.conf.tt',
         conf     => '/etc/puppet/puppet.conf',
-        datas    => {
-            kanopya_puppet_modules => '/opt/kanopya/templates/components/puppetmaster/modules',
-            admin_domainname       => $args{admin_domainname},
-            kanopya_hostname       => $args{kanopya_hostname}
-        }
+        datas    => $datas
+    );
+
+    useTemplate(
+        include  => '/opt/kanopya/templates/components/puppetmaster',
+        template => 'auth.conf.tt',
+        conf     => '/etc/puppet/auth.conf',
+        datas    => $datas
     );
 
     my $path = $answers->{clusters_directory};

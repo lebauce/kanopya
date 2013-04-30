@@ -20,4 +20,5 @@ storeconfigs = true
 
 [agent]
 server = [% kanopya_hostname %].[% admin_domainname %]
+listen = true
 
