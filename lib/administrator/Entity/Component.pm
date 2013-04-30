@@ -221,6 +221,21 @@ sub getMasterNode {
     return $self->findRelated(filters => [ 'component_nodes' ], hash => { master_node => 1 })->node;
 }
 
+sub getActiveNodes {
+    my ($self, %args)   = @_;
+
+    my @component_nodes = $self->component_nodes;
+    my @nodes           = ();
+    for my $component_node (@component_nodes) {
+        my $n = $component_node->node;
+        if ($n->host->host_state =~ /^up:\d+$/) {
+            push @nodes, $n;
+        }
+    }
+
+    return @nodes;
+}
+
 =head2 toString
 
 B<Class>   : Public

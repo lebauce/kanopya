@@ -65,6 +65,8 @@ sub getBaseConfiguration {
 sub getExecToTest {
     my $self = shift;
 
+    my $status = scalar ($self->getActiveNodes) >= 2 ? 'wsrep_connected' : 'wsrep_ready';
+
     return {
         mysql => {
             cmd         => 'netstat -lnpt | grep ' . $self->mysql5_port,
@@ -72,8 +74,8 @@ sub getExecToTest {
             return_code => '0'
         },
         galera => {
-            cmd         => 'mysql -u wsrep -pwsrep -e "SHOW STATUS LIKE \'wsrep_ready\'" --skip-column-names | cat',
-            answer      => '^wsrep_ready\tON$',
+            cmd         => 'mysql -u wsrep -pwsrep -e "SHOW STATUS LIKE \'' . $status . '\'" --skip-column-names | cat',
+            answer      => '^' . $status . '\tON$',
             return_code => 0
         }
     };
@@ -82,16 +84,10 @@ sub getExecToTest {
 sub getPuppetDefinition {
     my ($self, %args)   = @_;
 
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
     my $cluster_address = 'gcomm://';
-    my @component_nodes = $self->component_nodes;
-    my @fqdns           = ();
-    for my $component_node (@component_nodes) {
-        my $n = $component_node->node;
-        if ($n->node_id != $args{host}->node->node_id
-         && $n->host->host_state =~ /^up:\d+$/) {
-            push @fqdns, $n->fqdn;
-        }
-    }
+    my @fqdns           = map { $_->fqdn } (grep { $_->node_id != $args{host}->node->node_id } $self->getActiveNodes);
     $cluster_address   .= join ',', @fqdns;
 
     return "class { 'kanopya::mysql':\n" .
