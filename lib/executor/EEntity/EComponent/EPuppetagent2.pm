@@ -203,8 +203,16 @@ sub applyManifest {
         (Entity::ServiceProvider::Cluster->getKanopyaCluster)->getComponent(name => 'Puppetmaster');
     my $econtext         = (EEntity->new(data => $puppetmaster))->getEContext;
     my $hostname         = $node->node_hostname . '.' . $node->service_provider->cluster_domainname;
-    $econtext->{timeout} = 180;
-    my $ret              = $econtext->execute(command => 'puppet kick --foreground ' . $hostname);
+    my $ret              = undef;
+    my $timeout          = 180;
+    do {
+        if ($ret != undef) {
+            sleep 5;
+            $timeout -= 5;
+        }
+        $ret = $econtext->execute(command => 'puppet kick --foreground ' . $hostname);
+    } while ($ret->{exitcode} == 3 && $timeout > 0);
+    # `puppet kick` returns 3 when puppet is already running on the target node
 }
 
 1;
