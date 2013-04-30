@@ -51,7 +51,7 @@
 # allow nodes to retrieve their own catalog (ie their configuration)
 path ~ ^/catalog/([^/]+)$
 method find
-[% IF puppetagent2_masterserver %]allow [% puppetagent2_masterserver %][% END %]
+allow *
 
 # allow all nodes to access the certificates services
 path /certificate_revocation_list/ca
