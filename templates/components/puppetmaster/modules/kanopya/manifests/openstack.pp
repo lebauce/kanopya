@@ -323,14 +323,6 @@ class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone,
         rabbit_user     => 'quantum'
     }
 
-    quantum_plugin_ovs {
-        'DATABASE/sql_connection': value => "mysql://quantum:${qpassword}@${dbserver}/quantum";
-        'OVS/network_vlan_ranges': value => 'physnetflat,physnetvlan:1:4094';
-        'OVS/bridge_mappings': value => 'physflat:br-flat,physvlan:br-vlan';
-        'OVS/bridge_uplinks': value => "${bridge_uplinks}";
-        'OVS/integration_bridge': value => 'br-int';
-    }
-    
     Class['kanopya::openstack::repository'] -> Class['kanopya::novacompute']
 }
 
@@ -402,7 +394,6 @@ class kanopya::quantum_($amqpserver, $dbserver, $keystone, $password, $email, $b
         sql_connection      => "mysql://quantum:${password}@${dbserver}/quantum",
         tenant_network_type => 'vlan',
         network_vlan_ranges => 'physnetflat,physnetvlan:1:4094',
-        bridge_mappings     => [ "physnetflat:${bridge_flat}", "physnetvlan:${bridge_vlan}" ],
         require             => Class['kanopya::openstack::repository']
     }
 
