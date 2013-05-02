@@ -18,6 +18,7 @@ use strict;
 use Template;
 use General;
 use EEntity;
+use Entity::ServiceProvider::Cluster;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
@@ -62,10 +63,24 @@ sub configureNode {
         file          => '/etc/puppet/puppet.conf',
         template_dir  => '/templates/components/puppetagent',
         template_file => 'puppet.conf.tt', 
-        data         => $data
+        data          => $data
     );
 
      $self->_host->getEContext->send(
+        src  => $file,
+        dest => $args{mount_point}.'/etc/puppet'
+    );
+
+    $file = $self->generateNodeFile(
+        cluster       => $args{cluster},
+        host          => $args{host},
+        file          => '/etc/puppet/auth.conf',
+        template_dir  => '/templates/components/puppetagent',
+        template_file => 'auth.conf.tt',
+        data          => $data
+    );
+
+    $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc/puppet'
     );
@@ -183,9 +198,21 @@ sub applyAllManifests {
 sub applyManifest {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['host']);
-    my $econtext = $args{host}->getEContext;
-    $econtext->{timeout} = 180;
-    $econtext->execute(command => 'puppet agent --test');
+    my $node             = $args{host}->node;
+    my $puppetmaster     =
+        (Entity::ServiceProvider::Cluster->getKanopyaCluster)->getComponent(name => 'Puppetmaster');
+    my $econtext         = (EEntity->new(data => $puppetmaster))->getEContext;
+    my $hostname         = $node->node_hostname . '.' . $node->service_provider->cluster_domainname;
+    my $ret              = undef;
+    my $timeout          = 180;
+    do {
+        if ($ret != undef) {
+            sleep 5;
+            $timeout -= 5;
+        }
+        $ret = $econtext->execute(command => 'puppet kick --foreground ' . $hostname);
+    } while ($ret->{exitcode} == 3 && $timeout > 0);
+    # `puppet kick` returns 3 when puppet is already running on the target node
 }
 
 1;

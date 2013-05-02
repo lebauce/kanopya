@@ -199,7 +199,8 @@ sub startCluster {
     $cluster = $cluster->reload();
 
     if (scalar ($cluster->nodes) < $cluster->cluster_min_node) {
-        Kanopya::Tools::Execution->executeAll;
+        Kanopya::Tools::Execution->executeAll(timeout => 3600);
+        $cluster = $cluster->reload();
     }
 
     my ($state, $timestemp) = $cluster->getState;

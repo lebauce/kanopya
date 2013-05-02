@@ -64,8 +64,8 @@ sub mount {
     my $mount_cmd = "mount.nfs $target $args{mountpoint} -o vers=3";
     my $cmd_res   = $args{econtext}->execute(command => $mount_cmd);
 
-    # exitcode 8192: mount.nfs: mountpoint is busy or already mounted
-    if ($cmd_res->{'stderr'}) { #and ($cmd_res->{'exitcode'} != 8192)){
+    # Must check return code 32 ("mount failed") as ->{'exitcode'} value changer in Local EContext
+    if ($cmd_res->{'stderr'}) { #and ($cmd_res->{'exitcode'} != 32)){
         throw Kanopya::Exception::Execution(
                   error => "Unable to mount $target on $args{mountpoint}: " .
                            $cmd_res->{'stderr'}

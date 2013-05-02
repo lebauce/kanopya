@@ -107,7 +107,7 @@ sub execute {
     $log->debug("Running command: $command");
 
     my $stdout = `$command 2> /tmp/EContext.stderr`;
-    $result->{exitcode} = $?;
+    $result->{exitcode} = ($? >> 8);
     $result->{stdout} = $stdout;
     chop($stdout);
     $result->{stderr} = `cat /tmp/EContext.stderr`;
