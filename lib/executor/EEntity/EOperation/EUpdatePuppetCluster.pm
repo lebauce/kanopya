@@ -34,19 +34,24 @@ sub execute {
     $self->SUPER::execute();
 
     # check if this cluster has a puppet agent component
-    my $puppetagent = eval {
-        $self->{context}->{cluster}->getComponent(category => 'Configurationagent');
+    my $puppetagent;
+    eval {
+        $puppetagent = $self->{context}->{cluster}->getComponent(category => 'Configurationagent');
     };
-    if (not $puppetagent) {
+    if ($@) {
         my $errmsg = "UpdatePuppetCluster Operation cannot be used without a puppet " .
-                     "agent component configured on the cluster";
+                     "agent component configured on the cluster : " . $@;
         $log->error($errmsg);
         thow Kanopya::Exception::Internal(error => $errmsg);
-    } else {
-        $self->{context}->{puppetagent} = EEntity->new(
-            data => $puppetagent
-        );
     }
+
+    $self->{context}->{puppetagent} = EEntity->new(
+        data => $puppetagent
+    );
+}
+
+sub execute {
+    my ($self, %args) = @_;
 
     $self->{context}->{puppetagent}->applyConfiguration(
         cluster => $self->{context}->{cluster}
