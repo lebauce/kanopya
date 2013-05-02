@@ -212,7 +212,10 @@ sub methods {
         update => {
             description => 'reconfigure the cluster',
             perm_holder => 'entity',
-        }
+        },
+        addComponents => {
+            description => 'add components to this node',
+        },
     };
 }
 
@@ -671,6 +674,59 @@ sub addComponent {
         }
     }
     return $component;
+}
+
+
+=pod
+
+=begin classdoc
+
+Add components to nodes.
+
+@paramlist $component_types IDs of component types to add on nodes
+@paramlist $nodes IDs of nodes on which component must be added
+
+=end classdoc
+
+=cut
+
+sub addComponents {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'nodes', 'component_types' ]);
+    my @nodes = Node->search(hash => { node_id => $args{nodes} });
+    my @component_types = ClassType::ComponentType->search(hash => { component_type_id => $args{component_types} });
+
+    for my $component_type (@component_types) {
+        # check if component if installed on node's cluster
+        my $component;
+        eval {
+            my %params = defined($component_type->component_version) ?
+                (name => $component_type->component_name, version => $component_type->component_version)
+                : (name => $component_type->component_name);
+            $component = $self->getComponent(%params);
+        };
+        if($@) {
+            throw Kanopya::Exception::Internal(
+                error => "Component <$component_type->component_name> is not installed on cluster <" .
+                         $self->id . ">"
+            );
+        }
+
+        # register component on nodes
+        for my $node (@nodes) {
+            if ($node->service_provider->id != $self->id) {
+                throw Kanopya::Exception::Internal(
+                    error => "Node <$node->node_hostname> do not come from this service provider <" .
+                             $self->id . ">"
+                );
+            }
+            $component->registerNode(node => $node, master_node => ($node->node_number == 1));
+        }
+    }
+
+    # update cluster
+    $self->update();
 }
 
 sub getSharedSystemimage {
