@@ -266,6 +266,7 @@ function loadServicesResources (container_id, elem_id) {
                         { label : 'Network Interfaces', id : 'iface', onLoad : function(cid, eid) {node_ifaces_tab(cid, eid); } },
                         { label : 'Monitoring', id : 'resource_monitoring', onLoad : NodeIndicatorDetailsHistorical },
                         { label : 'Rules', id : 'rules', onLoad : function(cid, eid) { node_rules_tab(cid, eid, elem_id); } },
+                        { label : 'Components', id : 'components', onLoad : function(cid, eid) { node_components_tab(cid, eid); } },
                     ],
             title : { from_column : 'node_hostname' }
         },
@@ -489,4 +490,100 @@ function node_ifaces_tab(cid, eid) {
             }
         },
     });
+}
+
+// load component details grid for a node
+function node_components_tab(cid, eid) {
+    // get node's cluster components
+    var node;
+    $.ajax({
+        url     : '/api/node?node_id=' + eid,
+        type    : 'GET',
+        async   : false,
+        success : function(data) {
+            node = data[0];
+        }
+    });
+    var sp_id = node.service_provider_id;
+
+    var cluster_components = ajax('GET', '/api/serviceprovider/' + sp_id + '/components?expand=component_type');
+    // ugly way to have both name & version for node's component
+    // and an array of name for cluster's component (required by KanopyaFormWizard)
+    var node_component_types = {};
+    var cluster_component_types = {};
+    for (var index in cluster_components) {
+        node_component_types[cluster_components[index].component_type.pk] = {
+            'component_name' : cluster_components[index].component_type.component_name,
+            'component_version' : cluster_components[index].component_type.component_version,
+        };
+        cluster_component_types[cluster_components[index].component_type.pk] =
+            cluster_components[index].component_type.component_name;
+    }
+
+    // node's components grid
+    var grid = create_grid( {
+        dataType : 'local',
+        content_container_id: cid,
+        grid_id: 'node_ifaces_tab' + eid,
+        grid_class: 'node_ifaces_tab',
+        rowNum : 5,
+        action_delete: 'no',
+        caption: 'Components',
+        colNames: [ 'id', 'Component', 'Version', ],
+        colModel: [
+            { name: 'pk', index: 'pk', width: 60, sorttype: "int", hidden: true, key: true },
+            { name: 'component_name', index: 'component_name', width: 10 },
+            { name: 'component_version', index: 'component_version', width: 10 },
+        ],
+    });
+    build_component_by_node_grid(grid, eid, node_component_types);
+
+    // add component
+    var addButton   = $('<a>', { text : 'Add component' }).prependTo( $('#' + cid) )
+                        .button({ icons : { primary : 'ui-icon-plusthick' } });
+    $(addButton).bind('click', function (e) {
+        (new KanopyaFormWizard({
+            title      : 'Add components',
+            displayed  : [ 'node_hostname', 'component_types' ],
+            rawattrdef : {
+                node_hostname : {
+                    label : 'Hostname',
+                    value : node.node_hostname
+                },
+                component_types : {
+                    label        : 'Components to add',
+                    type         : 'relation',
+                    relation     : 'multi',
+                    is_mandatory : 1,
+                    options      : cluster_component_types
+                }
+            },
+            submitCallback  : function(data, $form, opts, onsuccess, onerror) {
+                data['nodes'] = [eid];
+                var _this = this;
+                ajax('POST', '/api/cluster/' + sp_id + '/addComponents', data, function() {
+                    build_component_by_node_grid(grid, eid, node_component_types);
+                    _this.closeDialog();
+                });
+            }
+        })).start();
+    });
+}
+
+// construct grid for node component
+function build_component_by_node_grid(grid, eid, component_types) {
+    var node_components = ajax('GET', '/api/node/' + eid + '/component_nodes?expand=component');
+    var n = 0;
+
+    grid.clearGridData(true);
+
+    $.each(node_components, function(index, val) {
+        grid.addRowData(n + 1, {
+            "pk" : index,
+            "component_name" : component_types[val.component.component_type_id].component_name,
+            "component_version" : component_types[val.component.component_type_id].component_version,
+        } );
+    } );
+
+    $(grid).trigger("reloadGrid");
 }
