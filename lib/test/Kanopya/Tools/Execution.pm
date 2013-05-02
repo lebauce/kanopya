@@ -228,4 +228,43 @@ sub startCluster {
     return $cluster;
 }
 
+sub addNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(
+        args => \%args, required => [ 'cluster' ],
+        optional => { 'component_types' => undef }
+    );
+
+    my $cluster = $args{cluster};
+    my $components_params = {};
+    if (defined $args{component_types}) {
+        $components_params = {
+            component_types => $args{component_types},
+        };
+    }
+
+    my $old_node_number = scalar ($cluster->nodes);
+
+    Kanopya::Tools::Execution->executeOne(entity => $cluster->addNode(%$components_params));
+
+    $cluster = $cluster->reload();
+    if (scalar ($cluster->nodes) != $old_node_number+1) {
+        die 'Node not added to cluster ' . $cluster->cluster_name;
+    }
+
+    my @nodes = $cluster->nodes;
+    my $node = $nodes[$old_node_number];
+
+    my ($state, $timestemp) = $node->host->getState;
+    if ($state eq 'up') {
+        diag("Node " . $node->node_hostname . " added successfully");
+    }
+    else {
+        die "Node is not 'up'";
+    }
+
+    return $node;
+}
+
 1;
