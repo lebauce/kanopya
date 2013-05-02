@@ -14,7 +14,6 @@ use Test::More 'no_plan';
 use Test::Exception;
 use Test::Pod;
 use Kanopya::Exceptions;
-use ClassType::ComponentType;
 
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
