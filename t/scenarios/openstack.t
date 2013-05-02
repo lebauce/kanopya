@@ -163,7 +163,7 @@ sub main {
 
     lives_ok {
         my $vm_cluster = Kanopya::Tools::Create->createVmCluster(
-                             iaas => $iaas,
+                             iaas => $cloud,
                              container_type => 'iscsi',
                              cluster_conf => {
                                  cluster_name         => 'VmCluster',
