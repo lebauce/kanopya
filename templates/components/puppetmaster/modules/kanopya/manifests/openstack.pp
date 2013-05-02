@@ -94,6 +94,10 @@ class kanopya::glance($dbserver, $password, $keystone, $email) {
         tag          => "${keystone}"
     }
 
+    exec { "/usr/bin/glance-manage db_sync":
+        path => "/usr/bin:/usr/sbin:/bin:/sbin",
+    }
+
     class { 'glance::api':
         verbose           => 'True',
         debug             => 'True',
@@ -103,7 +107,8 @@ class kanopya::glance($dbserver, $password, $keystone, $email) {
         keystone_user     => 'glance',
         keystone_password => 'glance',
         sql_connection    => "mysql://glance:${password}@${dbserver}/glance",
-        require           => Class['kanopya::openstack::repository']
+        require           => [ Class['kanopya::openstack::repository'],
+                               Exec['/usr/bin/glance-manage db_sync'] ]
     }
 
     class { 'glance::registry':
