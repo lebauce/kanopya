@@ -240,6 +240,10 @@ class kanopya::novacontroller($password, $dbserver, $amqpserver, $keystone, $ema
         require => Class['kanopya::openstack::repository']
     }
 
+    class { 'nova::conductor':
+        enabled => true
+    }
+
     Class['kanopya::openstack::repository'] -> Class['kanopya::novacontroller']
 }
 
