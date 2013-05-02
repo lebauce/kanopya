@@ -150,7 +150,7 @@ function servicesList (container_id, elem_id) {
                         }
                     };
 
-                    // If the service template defined, fill the from with the service template definition
+                    // If the service template defined, fill the form with the service template definition
                     if (data.service_template_id) {
                         var args = { params : data, trigger : trigger };
                         attributes = ajax('POST', '/api/servicetemplate/getServiceTemplateDef', args);

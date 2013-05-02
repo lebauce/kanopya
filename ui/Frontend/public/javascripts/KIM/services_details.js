@@ -67,10 +67,9 @@ function loadServicesDetails(cid, eid, is_iaas) {
         var components = ajax('GET', '/api/serviceprovider/' + eid + '/components?expand=component_type');
         var component_types = {};
         for (var index in components) {
-            console.log(components[index]);
             component_types[components[index].component_type.pk] = components[index].component_type.component_name;
         }
-        console.log(component_types);
+
         // Open a wizards to suggest component type to scale to the user
         (new KanopyaFormWizard({
             title      : 'Scale out components',
