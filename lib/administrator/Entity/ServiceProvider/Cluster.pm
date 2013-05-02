@@ -828,7 +828,7 @@ sub addNode {
 
     General::checkParams(args => \%args, optional => { 'component_types' => undef });
 
-    # Add the component type list to the agrs if defined
+    # Add the component type list to the args if defined
     my $components_params = {};
     if (defined $args{component_types}) {
         $components_params = {

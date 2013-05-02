@@ -75,7 +75,7 @@ sub methods {
         setConf => {
             description => 'set configuration of the component.',
         },
-    }
+    };
 }
 
 sub label {
