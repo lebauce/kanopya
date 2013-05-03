@@ -7,15 +7,42 @@ SET foreign_key_checks=0;
 
 CREATE TABLE `keepalived1` (
   `keepalived_id` int(8) unsigned NOT NULL,
-  `daemon_method` enum('master','backup','both') NOT NULL DEFAULT 'master',
-  `iface` char(64) DEFAULT NULL,
-  `notification_email` char(255) DEFAULT 'admin@hedera-technology.com',
-  `notification_email_from` char(255) DEFAULT 'keepalived@some-cluster.com',
+  `notification_email` char(255) NOT NULL DEFAULT 'admin@hedera-technology.com',
   `smtp_server` char(39) NOT NULL,
-  `smtp_connect_timeout` int(2) unsigned NOT NULL DEFAULT 30,
-  `lvs_id` char(32) NOT NULL DEFAULT 'MAIN_LVS',
   PRIMARY KEY (`keepalived_id`),
   CONSTRAINT `fk_keepalived1_1` FOREIGN KEY (`keepalived_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `keepalived1_vrrpinstance`
+--
+
+CREATE TABLE `keepalived1_vrrpinstance` (
+  `vrrpinstance_id` int(8) unsigned NOT NULL AUTO_INCREMENT, 
+  `keepalived_id` int(8) unsigned NOT NULL,
+  `vrrpinstance_name` char(32) NOT NULL,
+  `vrrpinstance_password` char(32) NOT NULL,
+  `interface_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`vrrpinstance_id`),
+  CONSTRAINT `fk_vrrpinstance_1` FOREIGN KEY (`keepalived_id`) REFERENCES `keepalived1` (`keepalived_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_vrrpinstance_2` FOREIGN KEY (`interface_id`) REFERENCES `interface` (`interface_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `keepalived1_virtualip`
+--
+
+CREATE TABLE `keepalived1_virtualip` (
+  `virtualip_id` int(8) unsigned NOT NULL AUTO_INCREMENT, 
+  `vrrpinstance_id` int(8) unsigned NOT NULL,
+  `ip_id` int(8) unsigned NOT NULL,
+  `interface_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`virtualip_id`),
+  CONSTRAINT `fk_virtualip_1` FOREIGN KEY (`vrrpinstance_id`) REFERENCES `keepalived1_vrrpinstance` (`vrrpinstance_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_virtualip_2` FOREIGN KEY (`ip_id`) REFERENCES `ip` (`ip_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_virtualip_3` FOREIGN KEY (`interface_id`) REFERENCES `interface` (`interface_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -26,31 +53,19 @@ CREATE TABLE `keepalived1` (
 CREATE TABLE `keepalived1_virtualserver` (
   `virtualserver_id` int(8) unsigned NOT NULL AUTO_INCREMENT, 
   `keepalived_id` int(8) unsigned NOT NULL,
-  `virtualserver_ip` char(39) NOT NULL,
-  `virtualserver_port` int(2) unsigned NOT NULL,
-  `virtualserver_lbalgo` enum('rr','wrr','lc','wlc','sh','dh','lblc') NOT NULL DEFAULT 'rr',
+  `virtualserver_name` char(64) NOT NULL,
+  `virtualserver_ip` char(17) NOT NULL,
+  `virtualserver_port` int(8) NOT NULL,
+  `virtualserver_protocol` enum('TCP','UDP') NOT NULL,
+  `virtualserver_persistence_timeout` int unsigned NOT NULL DEFAULT 0,
+  `virtualserver_lbalgo` enum('rr','wrr','lc','wlc','lblc','lblcr','dh','sh','sed','nq') NOT NULL DEFAULT 'rr',
   `virtualserver_lbkind` enum('NAT','DR','TUN') NOT NULL DEFAULT 'NAT',
+  `component_id` int(8) unsigned NOT NULL,
+  `interface_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`virtualserver_id`),
-  KEY `fk_keepalived1_virtualserver_1` (`keepalived_id`),
-  CONSTRAINT `fk_keepalived1_virtualserver_1` FOREIGN KEY (`keepalived_id`) REFERENCES `keepalived1` (`keepalived_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `keepalived1_realserver`
---
-
-CREATE TABLE `keepalived1_realserver` (
-  `realserver_id` int(8) unsigned NOT NULL AUTO_INCREMENT, 
-  `virtualserver_id` int(8) unsigned NOT NULL,
-  `realserver_ip` char(39) NOT NULL,
-  `realserver_port` int(2) unsigned NOT NULL,
-  `realserver_weight` int(2) unsigned NOT NULL,
-  `realserver_checkport` int(2) unsigned NOT NULL,
-  `realserver_checktimeout` int(2) unsigned NOT NULL,	 
-  PRIMARY KEY (`realserver_id`),
-  KEY `fk_keepalived1_realserver_1` (`virtualserver_id`),
-  CONSTRAINT `fk_keepalived1_realserver_1` FOREIGN KEY (`virtualserver_id`) REFERENCES `keepalived1_virtualserver` (`virtualserver_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  CONSTRAINT `fk_virtualserver_1` FOREIGN KEY (`keepalived_id`) REFERENCES `keepalived1` (`keepalived_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_virtualserver_2` FOREIGN KEY (`component_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_virtualserver_3` FOREIGN KEY (`interface_id`) REFERENCES `interface` (`interface_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
