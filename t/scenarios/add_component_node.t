@@ -56,8 +56,29 @@ sub main {
     diag('Create and configure cluster');
     my $cluster;
     lives_ok {
-        $cluster = Kanopya::Tools::Create->createCluster();
+        $cluster = Kanopya::Tools::Create->createCluster(
+                        cluster_conf => {
+                            cluster_name         => 'CloudController',
+                            cluster_basehostname => 'cloud'
+                        },
+                        components => {
+                            'mysql' => {
+                            },
+                            'amqp'  => {
+                            },
+                            'keystone' => {
+                            },
+                        }
+                   );
     } 'Create cluster';
+
+    diag('Get and configure components');
+    my $sql = $cluster->getComponent(name => 'Mysql');
+    my $amqp = $cluster->getComponent(name => 'Amqp');
+    my $keystone = $cluster->getComponent(name => 'Keystone');
+    $keystone->setConf(conf => {
+        mysql5_id   => $sql->id,
+    });
 
     diag('Start host');
     lives_ok {
@@ -67,18 +88,23 @@ sub main {
     my ($node1, $node2);
     diag('Add 2 nodes with some components on each');
     lives_ok {
-        my $sql = $cluster->getComponent(name => 'Mysql');
-        my $puppetagent = $cluster->getComponent(name => 'Puppetagent');
-        $node1 = Kanopya::Tools::Execution->addNode(cluster => $cluster, component_types => [$sql->id, $puppetagent->id]);
-        $node2 = Kanopya::Tools::Execution->addNode(cluster => $cluster, component_types => [$sql->id, $puppetagent->id]);
+        $keystone->setConf(conf => {
+            mysql5_id   => $sql->id,
+        });
+        $node1 = Kanopya::Tools::Execution->addNode(cluster => $cluster, component_types => [$sql->id, $amqp->id]);
+        $node2 = Kanopya::Tools::Execution->addNode(cluster => $cluster, component_types => [$sql->id, $keystone->id]);
     } 'Add nodes';
 
     diag("Adding other components to nodes");
     lives_ok {
         my @component_types = $cluster->getComponents(category => 'DiskManager');
+        my @component_types_ids;
+        for my $component_type (@component_types) {
+            push @component_types_ids, $component_type->id;
+        }
         $cluster->addComponents(
             nodes => [$node1, $node2],
-            component_types => @component_types,
+            component_types => @component_types_ids,
         );
     } 'Add components to node';
 
