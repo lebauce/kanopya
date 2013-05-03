@@ -65,7 +65,7 @@ sub getBaseConfiguration {
 sub getExecToTest {
     my $self = shift;
 
-    my $status = scalar ($self->getActiveNodes) >= 2 ? 'wsrep_connected' : 'wsrep_ready';
+    my $status = scalar ($self->getActiveNodes) >= 1 ? 'wsrep_connected' : 'wsrep_ready';
 
     return {
         mysql => {
