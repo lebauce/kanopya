@@ -3,11 +3,17 @@ class kanopya::mysql::params {
         /(?i)(debian|ubuntu)/ : {
             $mysql_package_name        = 'mariadb-galera-server'
             $mysql_client_package_name = 'mariadb-client'
+            $mysql_service_provider    = 'init'
             class { 'kanopya::mysql::repos::deb': }
+            package { 'galera':
+                ensure  => installed,
+                require => Class['kanopya::mysql::repos::deb']
+            }
         }
         /(?i)(centos)/ : {
             $mysql_package_name        = 'MariaDB-Galera-server'
             $mysql_client_package_name = 'MariaDB-client'
+            $mysql_service_provider    = 'base'
             class { 'kanopya::mysql::repos::rh': }
         }
         default : {
@@ -69,21 +75,25 @@ class kanopya::mysql::repos::deb {
         /(?i)(ubuntu)/ => 'precise'
     }
     $os = downcase($operatingsystem)
-    apt::source { 'Percona':
+    @apt::source { 'Percona':
         location   => 'http://repo.percona.com/apt',
         release    => $release,
         repos      => 'main',
         key        => '1C4CBDCDCD2EFD2A',
         key_server => 'hkp://keys.gnupg.net',
-        before     => Package['percona-xtrabackup']
+        before     => Package['percona-xtrabackup'],
     }
-    apt::source { 'MariaDB':
+    @apt::source { 'MariaDB':
         location   => "http://ftp.igh.cnrs.fr/pub/mariadb/repo/5.5/${os}",
         release    => $release,
         repos      => 'main',
         key        => 'cbcb082a1bb943db',
         key_server => 'keyserver.ubuntu.com',
         before     => Class['::mysql::server']
+    }
+    file { '/etc/apt/preferences.d/mariadb-pin-900':
+        content => template('kanopya/apt-pinning.erb'),
+        before  => Class['::mysql::server']
     }
 }
 
@@ -118,9 +128,10 @@ class kanopya::mysql($config_hash, $galera) inherits kanopya::mysql::params {
         require => Package['mysql-server']
     }
     class { '::mysql::server':
-        service_name   => 'mysql',
-        config_hash    => $config_hash,
-        package_name   => $kanopya::mysql::params::mysql_package_name
+        service_name     => 'mysql',
+        service_provider => $kanopya::mysql::params::mysql_service_provider,
+        config_hash      => $config_hash,
+        package_name     => $kanopya::mysql::params::mysql_package_name
     }
     Mysql::Db <<| tag == "${fqdn}" |>>
     Database_user <<| tag == "${fqdn}" |>>

@@ -1,3 +1,7 @@
+class kanopya::linux::repositories {
+    Apt::Source <| |>
+}
+
 class kanopya::linux ($sourcepath) {
     case $operatingsystem {
         CentOS, Fedora: { $haltpath = "/etc/rc.d/rc0.d/"
@@ -48,9 +52,12 @@ class kanopya::linux ($sourcepath) {
         source  => 'file:///usr/share/zoneinfo/CET'
     }
 
+    class { 'kanopya::linux::repositories': }
+
     if $operatingsystem =~ /(?i)(debian|ubuntu)/ {
         exec { 'apt-get update':
-            path => '/usr/bin'
+            path    => '/usr/bin',
+            require => Class['kanopya::linux::repositories']
         }
     }
 }
