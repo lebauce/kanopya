@@ -238,7 +238,15 @@ sub _generateBootConf {
                      error => "Neither cluster nor host kernel defined"
                   );
         }
-        my $kernel_version  = Entity::Kernel->get(id => $kernel_id)->kernel_version;
+        my $host_params = $cluster->getManagerParameters(manager_type => 'HostManager');
+        my $kernel_version;
+        if ($host_params->{deploy_on_disk}) {
+            $kernel_version  = Entity::Kernel->find(hash => { kernel_name => 'deployment' })->kernel_version;
+        }
+        else {
+            $kernel_version  = Entity::Kernel->get(id => $kernel_id)->kernel_version;
+        }
+
         my $linux_component = EEntity->new(entity => $cluster->getComponent(category => "System"));
         
         $log->info("Extract initramfs $tftpdir/initrd_$kernel_version");

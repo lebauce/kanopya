@@ -236,7 +236,7 @@ my @classes = (
 
 sub registerKernels {
     my @kernels = (
-        [ 'initrd_3.0.51-0.7.9-default', 'initrd_3.0.51-0.7.9-default', 'Kanopya deployment' ]
+        [ 'deployment', '3.0.51-0.7.9-default', 'Kanopya deployment' ]
     );
 
     for my $kernel (@kernels) {
@@ -2219,8 +2219,8 @@ sub populateDB {
 
     $args{db} = BaseDB->_adm->{schema};
 
-    registerKernels(%args);
     registerClassTypes(%args);
+    registerKernels(%args);
     registerManagerCategories(%args);
     registerUsers(%args);
     registerDataModelTypes(%args);
