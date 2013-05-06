@@ -171,48 +171,35 @@ sub postStopNode {
 sub applyConfiguration {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster' ]);
+    General::checkParams(args => \%args, required => [ 'cluster' ],
+                                         optional => { 'host' => undef });
 
-    EEntity->new(entity => $self->getPuppetMaster)->updateSite();
-
-    my @ehosts = map { EEntity->new(entity => $_) } @{ $args{cluster}->getHosts() };
+    my @ehosts = ($args{host}) || (map { EEntity->new(entity => $_) } @{ $args{cluster}->getHosts() });
     for my $ehost (@ehosts) {
         $self->generatePuppetDefinitions(%args,
                                          host => $ehost);
-        $self->applyManifest(%args,
-                             host => $ehost);
     }
-}
 
-sub applyAllManifests {
-    my ($self, %args) = @_;
+    my $ret = undef;
+    my $timeout = 180;
+    my @hosts = ($args{host}) || (map { $_->node->fqdn } @{ $args{cluster}->getHosts() });
+    my $puppetmaster = (Entity::ServiceProvider::Cluster->getKanopyaCluster)->getComponent(name => 'Puppetmaster');
+    my $econtext = (EEntity->new(data => $puppetmaster))->getEContext;
 
-    General::checkParams(args => \%args, required => [ 'cluster' ]);
-
-    my @ehosts = map { EEntity->new(entity => $_) } @{  $args{cluster}->getHosts() };
-    for my $ehost (@ehosts) {
-        $self->applyManifest(host => $ehost);
-    }
-}
-
-sub applyManifest {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['host']);
-    my $node             = $args{host}->node;
-    my $puppetmaster     =
-        (Entity::ServiceProvider::Cluster->getKanopyaCluster)->getComponent(name => 'Puppetmaster');
-    my $econtext         = (EEntity->new(data => $puppetmaster))->getEContext;
-    my $hostname         = $node->node_hostname . '.' . $node->service_provider->cluster_domainname;
-    my $ret              = undef;
-    my $timeout          = 180;
     do {
         if ($ret != undef) {
             sleep 5;
             $timeout -= 5;
         }
-        $ret = $econtext->execute(command => 'puppet kick --foreground ' . $hostname);
-    } while ($ret->{exitcode} == 3 && $timeout > 0);
-    # `puppet kick` returns 3 when puppet is already running on the target node
+
+        my $command = "puppet kick --foreground --parallel " . (scalar @hosts) . " ";
+        $command .= join('--host ', @hosts);
+        $ret = $econtext->execute(command => $command);
+
+        while ($ret->{output} =~ /(.*) finished with exit code 3/g) {
+            @hosts = grep{ $_ ne $1 } @hosts;
+        }
+    } while ($ret->{exitcode} == 3 && $timeout > 0 && (scalar @hosts));
 }
 
 1;
