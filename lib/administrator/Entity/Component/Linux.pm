@@ -23,6 +23,8 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Entity::Component::Linux::LinuxMount;
+use Entity::ServiceProvider::Cluster;
+
 use Log::Log4perl 'get_logger';
 
 my $log = get_logger("");
@@ -97,6 +99,7 @@ sub getPuppetDefinition {
     General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
 
     my $ntp = $self->service_provider->getKanopyaCluster->getComponent(category => 'System');
+
     my $conf = $self->getConf();
     my $nfs;
     my $str = "";
@@ -104,9 +107,14 @@ sub getPuppetDefinition {
                      $args{cluster}->cluster_name . '/' . $args{host}->node->node_hostname .
                      "\", stage => system }\n";
 
-    $definition .= "class { 'kanopya::ntp':\n";
-    $definition .= "\tserver => '" . $ntp->getMasterNode->adminIp . "'\n";
-    $definition .= "}\n";
+    if (Entity::ServiceProvider::Cluster->getKanopyaCluster->id == $args{cluster}->id) {
+        $definition .= "class { 'kanopya::ntp::server': }\n";
+    }
+    else {
+        $definition .= "class { 'kanopya::ntp::client':\n";
+        $definition .= "\tserver => '" . $ntp->getMasterNode->adminIp . "'\n";
+        $definition .= "}\n";
+    }
 
     my @swap_entries = grep { $_->{linux_mount_filesystem} eq 'swap' } @{$conf->{linuxes_mount}};
     my @mount_entries = grep { $_->{linux_mount_filesystem} ne 'swap' } @{$conf->{linuxes_mount}};
