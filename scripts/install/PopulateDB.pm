@@ -149,6 +149,7 @@ my @classes = (
     'Entity::Component::Amqp',
     'Entity::Component::Virtualization::NovaController',
     'Entity::Component::Vmm::NovaCompute',
+    'Entity::Component::Openstack::Cinder',
     'Entity::Component::Openstack::Quantum',
     'Entity::Component::Openstack::Keystone',
     'Entity::Component::Openstack::Glance',
@@ -1003,6 +1004,12 @@ sub registerComponents {
             component_version      => 1,
             component_categories   => [ 'DiskManager', 'ExportManager' ],
             service_provider_types => [ 'Netapp' ],
+        },
+        {
+            component_name         => 'Cinder',
+            component_version      => 6,
+            component_categories   => [ 'DiskManager', 'ExportManager' ],
+            service_provider_types => [ 'Cluster' ],
         },
         {
             component_name         => 'Glance',

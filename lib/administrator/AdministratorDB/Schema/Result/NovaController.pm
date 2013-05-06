@@ -67,6 +67,13 @@ __PACKAGE__->table("nova_controller");
   is_foreign_key: 1
   is_nullable: 1
 
+=head2 cinder_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -92,6 +99,13 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
   "keystone_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
+  "cinder_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -131,6 +145,26 @@ __PACKAGE__->belongs_to(
     join_type     => "LEFT",
     on_delete     => "CASCADE",
     on_update     => "NO ACTION",
+  },
+);
+
+=head2 cinder
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Cinder>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "cinder",
+  "AdministratorDB::Schema::Result::Cinder",
+  { cinder_id => "cinder_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
   },
 );
 

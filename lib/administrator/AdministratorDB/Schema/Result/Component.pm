@@ -193,6 +193,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 cinder
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Cinder>
+
+=cut
+
+__PACKAGE__->might_have(
+  "cinder",
+  "AdministratorDB::Schema::Result::Cinder",
+  { "foreign.cinder_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 collector_indicators
 
 Type: has_many
