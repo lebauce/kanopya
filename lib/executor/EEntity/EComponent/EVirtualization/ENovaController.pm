@@ -48,7 +48,7 @@ sub api {
         auth => {
             passwordCredentials => {
                 username    => "admin",
-                password    => "pass"
+                password    => "keystone"
             },
             tenantName      => "openstack"
         }
@@ -75,6 +75,9 @@ sub api {
         },
         network => {
             url     => 'http://' . $quantum->getMasterNode->fqdn . ':9696/v2.0'
+        },
+        volume => {
+            url     => 'http://' . $glance->getMasterNode->fqdn . ':8776/v1'
         }
     };
 
