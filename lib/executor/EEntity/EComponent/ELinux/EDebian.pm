@@ -83,6 +83,7 @@ sub _writeNetConf {
 
     #we ignore the slave interfaces in the case of bonding
     my @ifaces = @{ $args{ifaces} };
+    my $host_params = $args{cluster}->getManagerParameters(manager_type => 'HostManager');
 
     my $file = $self->generateNodeFile(
         cluster       => $args{cluster},
@@ -90,7 +91,10 @@ sub _writeNetConf {
         file          => '/etc/network/interfaces',
         template_dir  => '/templates/internal',
         template_file => 'network_interfaces.tt',
-        data          => { interfaces => \@ifaces }
+        data          => {
+            deploy_on_disk => $host_params->{deploy_on_disk},
+            interfaces     => \@ifaces
+        }
     );
 
     $args{econtext}->send(

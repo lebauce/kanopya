@@ -13,7 +13,7 @@ iface lo inet loopback
 #iface eth0 inet dhcp
 
 [% FOREACH interface=interfaces %]
-[% IF not interface.iface_pxe %]
+[% IF not interface.iface_pxe or deploy_on_disk %]
 auto [% interface.name %]
 iface [% interface.name %] inet [% interface.method %]
 [% IF interface.method == "static" %]
