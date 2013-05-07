@@ -243,11 +243,11 @@ sub _generateBootConf {
         $kernel_version = Entity::Kernel->get(id => $kernel_id)->kernel_version;
         if ($host_params->{deploy_on_disk}) {
             eval {
-                my $harddisk = $args{host}->findRelated(
+                my $harddisk = $host->findRelated(
                     filters  => [ 'harddisks' ],
                     order_by => 'harddisk_device'
                 );
-                if ($harddisk->service_provider_id != $args{cluster}->id) {
+                if ($harddisk->service_provider_id != $cluster->id) {
                     $kernel_version = Entity::Kernel->find(hash => { kernel_name => 'deployment' })->kernel_version;
                 }
             };
