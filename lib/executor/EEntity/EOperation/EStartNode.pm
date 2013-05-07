@@ -242,19 +242,23 @@ sub _generateBootConf {
         my $host_params = $cluster->getManagerParameters(manager_type => 'HostManager');
         $kernel_version = Entity::Kernel->get(id => $kernel_id)->kernel_version;
         if ($host_params->{deploy_on_disk}) {
+            my $harddisk;
             eval {
-                my $harddisk = $host->findRelated(
+                $harddisk = $host->findRelated(
                     filters  => [ 'harddisks' ],
                     order_by => 'harddisk_device'
                 );
-                if ($harddisk->service_provider_id != $cluster->id) {
-                    $kernel_version = Entity::Kernel->find(hash => { kernel_name => 'deployment' })->kernel_version;
-                }
             };
             if ($@) {
                 throw Kanopya::Exception::Internal::NotFound(
                     error => "No hard disk to deploy the system on was found"
                 );
+            }
+            if ($harddisk->service_provider_id != $cluster->id) {
+                $kernel_version = Entity::Kernel->find(hash => { kernel_name => 'deployment' })->kernel_version;
+            }
+            else {
+                return;
             }
         }
 
