@@ -79,6 +79,27 @@ sub postStartNode {
             my $harddisk = $args{host}->findRelated(filters  => [ 'harddisks' ],
                                                  order_by => 'harddisk_device');
             $harddisk->service_provider_id($args{cluster}->id);
+            my $kanopya  = Entity::ServiceProvider::Cluster->getKanopyaCluster;
+            my $dhcp     = EEntity->new(data => $kanopya->getComponent(name => "Dhcpd", version => "3"));
+            my $subnetid = $dhcp->getInternalSubNetId;
+            eval {
+                my $PXEIface = $args{host}->getPXEIface;
+                my $hostid   = $dhcp->getHostId(
+                    dhcpd3_subnet_id         => $subnetid,
+                    dhcpd3_hosts_mac_address => $PXEIface->iface_mac_addr
+                );
+                $dhcp->removeHost(
+                    dhcpd3_hosts_id  => $hostid,
+                    dhcpd3_subnet_id => $subnetid
+                );
+                $dhcp->generate;
+                $dhcp->reload;
+            };
+            if ($@) {
+                throw Kanopya::Exception::Internal::NotFound(
+                    error => "No PXE Iface was found"
+                );
+            }
         };
         if ($@) {
             throw Kanopya::Exception::Internal::NotFound(
