@@ -768,8 +768,7 @@ sub generatePuppetConfiguration {
     system('/etc/init.d/puppet', 'restart');
     system('/etc/init.d/puppetmaster', 'restart');
 
-    my $epuppetagent = EEntity->new(entity => $kanopya->getComponent(name => "Puppetagent"));
-    $epuppetagent->applyConfiguration(cluster => $kanopya);
+    EEntity->new(entity => $kanopya)->reconfigure();
 }
 
 
