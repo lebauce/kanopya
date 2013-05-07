@@ -86,13 +86,20 @@ eval {
     close ($FILE);
 };
 
+# retrieve resolv.conf information
+my %nsinfo = getNameServiceInfo();
+
 #Welcome message - accepting Licence is mandatory
 welcome();
+
 #Ask questions to users
 getConf();
+
 #Function used to generate conf files
 $answers->{crypt_salt} = join '', ('.','/',0..9,'A'..'Z','a'..'z')[rand 64, rand 64];
+
 genConf();
+
 
 # creating the graph directory to avoid bug in createUser function
 make_path("/tmp/monitor/graph", { verbose => 1 });
@@ -269,6 +276,14 @@ my %datas = (
     clusters_directory       => $answers->{clusters_directory},
     tftp_directory           => $answers->{tftp_directory},
 );
+
+if(@{$nsinfo{nameservers}} > 0) {
+    $datas{kanopya_nameserver1} = $nsinfo{nameservers}->[0];
+} 
+
+if(@{$nsinfo{nameservers}} > 1) {
+    $datas{kanopya_nameserver2} = $nsinfo{nameservers}->[2];
+}
 
 useTemplate(
     template => 'Data.sql.tt',
@@ -833,4 +848,26 @@ sub service {
             system("service " . $service . " " . $command);
         }
     }
+}
+
+sub getNameServiceInfo {
+    my ($domain, @nameservers);
+
+    open my $FILE, '<', '/etc/resolv.conf';
+    my @lines = <$FILE>;
+    close($FILE);
+
+    for my $line (@lines) {
+        if($line =~ /^nameserver (.+)/) {
+            push @nameservers, $1;
+            next;
+        }
+
+        if($line =~ /^domain (.+)/) {
+            $domain = $1;
+            next;
+        }
+    }
+
+    return ( domain => $domain, nameservers => \@nameservers );
 }
