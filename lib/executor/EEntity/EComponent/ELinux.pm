@@ -73,6 +73,19 @@ sub postStartNode {
             host    => $ehost
         );
     }
+    my $params = $args{cluster}->getManagerParameters(manager_type => 'HostManager');
+    if ($params->{deploy_on_disk}) {
+        eval {
+            my $harddisk = $args{host}->findRelated(filters  => [ 'harddisks' ],
+                                                 order_by => 'harddisk_device');
+            $harddisk->service_provider_id($args{cluster}->id);
+        };
+        if ($@) {
+            throw Kanopya::Exception::Internal::NotFound(
+                error => "No hard disk to deploy the system on was found"
+            );
+        }
+    }
 }
 
 sub postStopNode {
