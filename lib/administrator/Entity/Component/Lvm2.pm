@@ -329,8 +329,25 @@ sub getFreeSpace {
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;
+    my $definition;
 
-    return "class { 'kanopya::lvm': }\n";
+    for my $vg ($self->lvm2_vgs) {
+        my @pvs = ();
+        for my $pv ($vg->lvm2_pvs) {
+            $definition .= "physical_volume { '" . $pv->lvm2_pv_name . "':\n" .
+                           "    ensure => present\n" .
+                           "}\n";
+
+            push @pvs, '"' . $pv->lvm2_pv_name . '"';
+        }
+
+        $definition .= "volume_group { '" . $vg->lvm2_vg_name . "':\n" .
+                       "    ensure => present,\n" .
+                       "    physical_volumes => [ " . join(',', @pvs) . " ]\n" .
+                       "}\n";
+    }
+
+    return "class { 'kanopya::lvm': }\n" . $definition;
 }
 
 1;
