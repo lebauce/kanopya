@@ -35,6 +35,7 @@ use warnings;
 use Kanopya::Exceptions;
 use General;
 use ClassType::ComponentType;
+use Data::Dumper;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -309,5 +310,24 @@ sub needBridge { return 0; }
 sub getHostsEntries { return; }
 
 sub getPuppetDefinition { return ""; }
+
+sub instanciatePuppetResource {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'name' ],
+                                         optional => { 'params' => {},
+                                                       'resource' => 'class' });
+
+    $Data::Dumper::Terse = 1;
+    $Data::Dumper::Quotekeys = 0;
+
+    my @dumper = split('\n', Dumper($args{params}));
+    shift @dumper;
+    pop @dumper;
+
+    return "$args{resource} { '$args{name}':\n" .
+           join("\n", @dumper) . "\n" .
+           "}\n";
+}
 
 1;
