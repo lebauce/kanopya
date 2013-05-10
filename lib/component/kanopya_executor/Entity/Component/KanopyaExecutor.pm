@@ -22,6 +22,7 @@ use base MessageQueuing::RabbitMQ::Sender;
 use strict;
 use warnings;
 
+use Entity::Workflow;
 use Entity::Operation;
 use Kanopya::Exceptions;
 
@@ -73,7 +74,7 @@ sub methods {
             }
         },
         terminate => {
-            description => 'Produce an operation execution result',
+            description => 'Produce an operation execution result.',
             message_queuing => {
                 channel => 'operation_result'
             }
@@ -82,22 +83,65 @@ sub methods {
 }
 
 
-sub execute {
+sub enqueue {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'type', 'params' ],
-                         optional => { 'priority' => 200 });
+                         required => [ 'type' ],
+                         optional => { 'params'   => {},
+                                       'priority' => 200 });
 
     my $operation = Entity::Operation->enqueue(priority => $args{priority},
                                                type     => $args{type},
                                                params   => $args{params});
 
     # Transmit the created operation id for instance.
-    $self->SUPER::execute(operation_id => $operation->id);
+    $self->execute(operation_id => $operation->id);
 
     return $operation;
 }
+
+
+sub execute {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'operation_id' ]);
+
+    # Transmit the created operation id for instance.
+    MessageQueuing::RabbitMQ::Sender::execute($self, operation_id => $args{operation_id});
+}
+
+
+sub terminate {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'operation_id', 'status' ],
+                         optional => { 'exception' => undef,
+                                       'delay'     => 0 });
+
+    # Transmit the created operation id for instance.
+    MessageQueuing::RabbitMQ::Sender::terminate($self, %args);
+}
+
+
+sub run {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'name' ],
+                         optional => { 'params'     => undef,
+                                       'related_id' => undef,
+                                       'rule_id'    => undef });
+
+    my $workflow = Entity::Workflow->run(%args);
+
+    # Transmit the created operation id for instance.
+    MessageQueuing::RabbitMQ::Sender::run($self, workflow_id => $workflow->id);
+
+    return $workflow;
+}
+
 
 sub getPuppetDefinition {
     return "class { 'kanopya::executor':\n" .
