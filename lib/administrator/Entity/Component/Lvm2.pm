@@ -109,20 +109,8 @@ sub getDiskManagerParams {
 sub getMainVg {
     my $self = shift;
 
-    my $vgname = $self->{_dbix}->lvm2_vgs->single->get_column('lvm2_vg_name');
-    my $vgid = $self->{_dbix}->lvm2_vgs->single->get_column('lvm2_vg_id');
-    $log->debug("Main VG founds, its id is <$vgid>");
-    #TODO getMainVg, return id or name ?
-    return {vgid => $vgid, vgname =>$vgname};
-}
-
-sub getVg {
-    my $self = shift;
-    my %args = @_;
-    
-    General::checkParams(args => \%args, required => [ "lvm2_vg_id" ]);
-
-    return  $self->{_dbix}->lvm2_vgs->find($args{lvm2_vg_id})->get_column('lvm2_vg_name');
+    my @vgs = $self->lvm2_vgs;
+    return shift @vgs;
 }
 
 sub lvCreate{
@@ -331,11 +319,12 @@ sub getFreeSpace {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, optional => { 'vg_id' => $self->getMainVg->{vgid} });
+    General::checkParams(args => \%args, optional => { 'vg_id' => undef });
 
-    my $vg_rs = $self->{_dbix}->lvm2_vgs->single({ lvm2_vg_id => $args{vg_id} });
+    my $vg = $args{vg_id} ? Entity::Component::Lvm2::Lvm2Vg->get(id => $args{vg_id})
+                          : $self->getMainVg;
 
-    return $vg_rs->get_column('lvm2_vg_freespace');
+    return $vg->lvm2_vg_freespace;
 }
 
 sub getPuppetDefinition {

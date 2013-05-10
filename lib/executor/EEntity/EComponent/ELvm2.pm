@@ -21,10 +21,9 @@ use warnings;
 
 use General;
 use Kanopya::Exceptions;
+use Entity::Component::Lvm2::Lvm2Vg;
 
-use Data::Dumper;
 use Log::Log4perl "get_logger";
-
 my $log = get_logger("");
 my $errmsg;
 
@@ -47,26 +46,27 @@ sub createDisk {
 
     General::checkParams(args     => \%args,
                          required => [ 'name', 'size', 'filesystem' ],
-                         optional => { 'vg_id' => $self->getMainVg->{vgid} });
+                         optional => { 'vg_id' => undef });
 
-    my $vg_name = $self->_entity->getVg(lvm2_vg_id => $args{vg_id});
+    my $vg = $args{vg_id} ? Entity::Component::Lvm2::Lvm2Vg->get(id => $args{vg_id})
+                          : $self->getMainVg;
 
-    $self->lvCreate(vg_name            => $vg_name,
+    $self->lvCreate(vg_name            => $vg->lvm2_vg_name,
                     lvm2_lv_name       => $args{name},
                     lvm2_lv_filesystem => $args{filesystem},
                     lvm2_lv_size       => $args{size});
 
-    my $newdevice = "/dev/$vg_name/$args{name}";
+    my $newdevice = "/dev/" . $vg->lvm2_vg_name . "/$args{name}";
     if (! defined $args{"noformat"}) {
         $self->mkfs(device => $newdevice, fstype => $args{filesystem});
     }
     delete $args{noformat};
     
-    $self->vgSpaceUpdate(lvm2_vg_id   => $args{vg_id},
-                         lvm2_vg_name => $vg_name);
+    $self->vgSpaceUpdate(lvm2_vg_id   => $vg->id,
+                         lvm2_vg_name => $vg->lvm2_vg_name);
 
     my $entity = $self->_entity->lvCreate(
-                     lvm2_vg_id         => $args{vg_id},
+                     lvm2_vg_id         => $vg->id,
                      lvm2_lv_name       => $args{name},
                      lvm2_lv_filesystem => $args{filesystem},
                      lvm2_lv_size       => $args{size}
@@ -104,15 +104,15 @@ sub removeDisk{
     $self->SUPER::removeDisk(%args);
 
     my $vg = $self->getMainVg();
-    $self->lvRemove(lvm2_vg_id   => $vg->{vgid},
+    $self->lvRemove(lvm2_vg_id   => $vg->id,
                     lvm2_lv_name => $args{container}->container_name,
-                    lvm2_vg_name => $vg->{vgname});
+                    lvm2_vg_name => $vg->lvm2_vg_name);
 
-    $self->_entity->lvRemove(lvm2_vg_id   => $vg->{vgid},
-                                lvm2_lv_name => $args{container}->container_name);
+    $self->_entity->lvRemove(lvm2_vg_id   => $vg->id,
+                             lvm2_lv_name => $args{container}->container_name);
 
-    $self->vgSpaceUpdate(lvm2_vg_id   => $vg->{vgid},
-                         lvm2_vg_name => $vg->{vgname});
+    $self->vgSpaceUpdate(lvm2_vg_id   => $vg->id,
+                         lvm2_vg_name => $vg->lvm2_vg_name);
 
     $args{container}->delete();
 
