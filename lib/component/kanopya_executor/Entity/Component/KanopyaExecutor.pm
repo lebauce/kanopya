@@ -99,4 +99,10 @@ sub execute {
     return $operation;
 }
 
+sub getPuppetDefinition {
+    return "class { 'kanopya::executor':\n" .
+           "    password => 'K4n0pY4',\n" .
+           "}\n";
+}
+
 1;
