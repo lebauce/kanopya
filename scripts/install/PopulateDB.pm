@@ -400,6 +400,7 @@ sub registerUsers {
 
     # Browse all class types to find api methods
     for my $classtype (@classes) {
+
         BaseDB::requireClass($classtype);
 
         my ($parenttype) = Class::ISA::super_path($classtype);
@@ -1045,7 +1046,7 @@ sub registerComponents {
         {
             component_name         => 'Amqp',
             component_version      => 6,
-            component_categories   => [ ],
+            component_categories   => [ 'MessageQueuing' ],
             service_provider_types => [ 'Cluster' ],
         },
         {
@@ -1476,6 +1477,9 @@ sub registerKanopyaMaster {
             conf => {
                 smtp_server => "localhost"
             }
+        },
+        {
+            name => "Amqp",
         }
     ];
 
@@ -2225,9 +2229,10 @@ sub populateDB {
     registerComponents(%args);
     registerNetconfRoles(%args);
     registerIndicators(%args);
-    my $kanopya_master = registerKanopyaMaster(%args);
-    registerScopes(%args);
 
+    my $kanopya_master = registerKanopyaMaster(%args);
+
+    registerScopes(%args);
     populate_workflow_def(kanopya_master => $kanopya_master);
 
     my $policies = populate_policies(kanopya_master => $kanopya_master);

@@ -41,5 +41,9 @@ eval {
         params   => { file_path => "$arg", keep_file => 1 },
     );
 };
-
-print "DeployMasterimage operation added to operations queue\n";
+if ($@) {
+    print "Failed:\n$@";
+}
+else {
+    print "DeployMasterimage operation added to operations queue\n";
+}
