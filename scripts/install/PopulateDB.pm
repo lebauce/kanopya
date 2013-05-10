@@ -53,6 +53,7 @@ use Ip;
 use Node;
 use ServiceProviderManager;
 use Entity::Component::Lvm2::Lvm2Vg;
+use Entity::Component::Lvm2::Lvm2Pv;
 use Scope;
 use ScopeParameter;
 use Entity::Component::Lvm2;
@@ -159,6 +160,7 @@ my @classes = (
     'Entity::Component::Apache2::Apache2Virtualhost',
     'Entity::Component::Linux::LinuxMount',
     'Entity::Component::Lvm2::Lvm2Vg',
+    'Entity::Component::Lvm2::Lvm2Pv',
     'Entity::Component::Vsphere5::Vsphere5Datacenter',
     'Entity::Component::Vsphere5::Vsphere5Repository',
     'Entity::Component::Iscsi::IscsiPortal',
@@ -1574,10 +1576,10 @@ sub registerKanopyaMaster {
         lvm2_vg_size      => $args{kanopya_vg_size}
     );
 
-    $args{db}->resultset('Lvm2Pv')->create( {
+    my $pv = Entity::Component::Lvm2::Lvm2Pv->new(
         lvm2_vg_id   => $vg->id,
         lvm2_pv_name => $args{kanopya_pvs}->[0]
-    } );
+    );
 
     $args{db}->resultset('Dhcpd3Subnet')->create( {
         dhcpd3_id             => $dhcp->id,
