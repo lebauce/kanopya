@@ -14,9 +14,56 @@
 
 package EEntity::EComponent::EOpenstack::ECinder;
 use base "EEntity::EComponent";
+use base "EManager::EDiskManager";
 
 use strict;
 use warnings;
 
-1;
+use EEntity;
 
+=head
+
+=begin classdoc
+Instruct a cinder instance to create a volume, then trigger the Cinder entity to register
+it into Kanopya
+
+@param name the volume name
+@param size the volume size
+
+@return a container object
+
+=end classdoc
+
+=cut
+
+sub createDisk {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ "name", "size" ]); 
+
+    my $novacontroller = $self->nova_controller;
+    my $api = $novacontroller->api;
+
+    my $req = $api->tenant(id => $api->{tenant_id})->volumes->post(
+                  target  => 'volume',
+                  content => {
+                      "volume" => {
+                          "name"         => $args{name},
+                          "size"         => $args{size} / 1024 / 1024 / 1024,
+                          "display_name" => $args{name},
+                      }
+                  }
+              );
+    my $container_device = '';
+
+    my $entity = $self->lvcreate(
+                     lvm2_lv_name => $args{name},
+                     lvm2_lv_size => $args{size} / 1024 / 1024 / 1024,
+                 );
+
+    my $container = EEntity->new(data => $entity);
+
+    return $container;
+}
+
+1;
