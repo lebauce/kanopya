@@ -42,11 +42,7 @@ sub getPuppetDefinition {
         );
     }
 
-    return "if \$kanopya_openstack_repository == undef {\n" .
-           "\tclass { 'kanopya::openstack::repository': }\n" .
-           "\t\$kanopya_openstack_repository = 1\n" .
-           "}\n" .
-           "class { 'kanopya::glance':\n" .
+    return "class { 'kanopya::glance':\n" .
            "\tdbserver => '" . $sql->getMasterNode->fqdn . "',\n" .
            "\tpassword => 'glance',\n" .
            "\tkeystone => '" . $keystone->getMasterNode->fqdn . "',\n" .

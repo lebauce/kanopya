@@ -36,11 +36,7 @@ sub getPuppetDefinition {
     my $amqp = $self->nova_controller->amqp->getMasterNode->fqdn;
     my $sql = $self->mysql5->getMasterNode->fqdn;
 
-    return "if \$kanopya_openstack_repository == undef {\n" .
-           "\tclass { 'kanopya::openstack::repository': }\n" .
-           "\t\$kanopya_openstack_repository = 1\n" .
-           "}\n" .
-           "class { 'kanopya::quantum_':\n" .
+    return "class { 'kanopya::quantum_':\n" .
            "\tamqpserver => '" . $amqp . "',\n" .
            "\tkeystone   => '" . $keystone . "',\n" .
            "\tpassword   => 'quantum'," .

@@ -14,6 +14,10 @@ class kanopya::openstack::repository {
 }
 
 class kanopya::keystone($dbserver, $dbip, $dbpassword, $adminpassword, $email) {
+    if ! defined(Class['kanopya::openstack::repository']) {
+        class { 'kanopya::openstack::repository': }
+    }
+
     @@mysql::db { 'keystone':
         user     => 'keystone',
         password => "${dbpassword}",
@@ -57,6 +61,10 @@ class kanopya::keystone($dbserver, $dbip, $dbpassword, $adminpassword, $email) {
 }
 
 class kanopya::glance($dbserver, $password, $keystone, $email) {
+    if ! defined(Class['kanopya::openstack::repository']) {
+        class { 'kanopya::openstack::repository': }
+    }
+
     @@mysql::db { 'glance':
         user     => 'glance',
         password => "${password}",
@@ -128,6 +136,10 @@ class kanopya::glance($dbserver, $password, $keystone, $email) {
 }
 
 class kanopya::novacontroller($password, $dbserver, $amqpserver, $keystone, $email, $glance, $quantum) {
+    if ! defined(Class['kanopya::openstack::repository']) {
+        class { 'kanopya::openstack::repository': }
+    }
+
     exec { "/usr/bin/nova-manage db sync":
         path => "/usr/bin:/usr/sbin:/bin:/sbin",
     }
@@ -250,6 +262,10 @@ class kanopya::novacontroller($password, $dbserver, $amqpserver, $keystone, $ema
 class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone,
                            $quantum, $email, $password, $libvirt_type,
                            $qpassword, $bridge_uplinks) {
+    if ! defined(Class['kanopya::openstack::repository']) {
+        class { 'kanopya::openstack::repository': }
+    }
+
     file { "/run/iscsid.pid":
         content => "1",
     }
@@ -327,6 +343,10 @@ class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone,
 }
 
 class kanopya::quantum_($amqpserver, $dbserver, $keystone, $password, $email, $bridge_flat, $bridge_vlan) {
+    if ! defined(Class['kanopya::openstack::repository']) {
+        class { 'kanopya::openstack::repository': }
+    }
+
     class { 'quantum':
         rabbit_password => "${password}",
         rabbit_host     => "${amqpserver}",
@@ -401,6 +421,10 @@ class kanopya::quantum_($amqpserver, $dbserver, $keystone, $password, $email, $b
 }
 
 class kanopya::nova::common($amqpserver, $dbserver, $glance, $keystone, $quantum, $email, $password) {
+    if ! defined(Class['kanopya::openstack::repository']) {
+        class { 'kanopya::openstack::repository': }
+    }
+
     class { 'nova':
         # set sql and rabbit to false so that the resources will be collected
         sql_connection     => "mysql://nova:${password}@${dbserver}/nova",
@@ -422,6 +446,10 @@ class kanopya::nova::common($amqpserver, $dbserver, $glance, $keystone, $quantum
 }
 
 class kanopya::cinder($rabbits, $dbpassword, $dbserver, $amqpserver, $rpassword, $kpassword, $email, $keystone) {
+    if ! defined(Class['kanopya::openstack::repository']) {
+        class { 'kanopya::openstack::repository': }
+    }
+
     class {'::cinder':
         rabbit_hosts    => $rabbits,
         sql_connection  => "mysql://cinder:${dbpassword}@${dbserver}/cinder",
