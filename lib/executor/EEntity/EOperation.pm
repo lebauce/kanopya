@@ -42,12 +42,14 @@ sub new {
     my $class = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'op' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'operation' ],
+                         optional => { 'skip_not_found' => 0 });
 
-    my $self = $class->SUPER::new(entity => $args{op},
-                                  eclass => "EEntity::EOperation::E" . $args{op}->type);
+    my $self = $class->SUPER::new(entity => $args{operation},
+                                  eclass => "EEntity::EOperation::E" . $args{operation}->type);
 
-    my $params = $args{op}->getParams;
+    my $params = $args{operation}->unserializeParams(skip_not_found => $args{skip_not_found});
     $self->{context} = delete $params->{context};
     $self->{params}  = $params;
 
@@ -98,7 +100,7 @@ sub validation {
 
     # Search for all context entites if notification/validation required
     my $validation = 0;
-    for my $entity (values %{ $self->getParams->{context} }) {
+    for my $entity (values %{ $self->unserializeParams->{context} }) {
         $log->debug("Check if notification/validation required for $entity <" . $entity->id . ">");
 
         my @subscribtions = NotificationSubscription->search(hash => {
