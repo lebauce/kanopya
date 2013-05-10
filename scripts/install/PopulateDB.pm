@@ -232,7 +232,10 @@ my @classes = (
     'Entity::DataModel::RDataModel::ExponentialSmoothing',
     'Entity::DataModel::RDataModel::StlForecast',
     'Entity::DataModel::RDataModel::ExpR',
-    'Entity::TimePeriod'
+    'Entity::TimePeriod',
+    'Entity::Component::Ceph',
+    'Entity::Component::Ceph::CephMon',
+    'Entity::Component::Ceph::CephOsd'
 );
 
 sub registerClassTypes {
@@ -1073,6 +1076,24 @@ sub registerComponents {
         },
         {
             component_name         => 'KanopyaRulesEngine',
+            component_version      => 0,
+            component_categories   => [ ],
+            service_provider_types => [ 'Cluster' ],
+        },
+        {
+            component_name         => 'Ceph',
+            component_version      => 0,
+            component_categories   => [ ],
+            service_provider_types => [ 'Cluster' ],
+        },
+        {
+            component_name         => 'CephMon',
+            component_version      => 0,
+            component_categories   => [ ],
+            service_provider_types => [ 'Cluster' ],
+        },
+        {
+            component_name         => 'CephOsd',
             component_version      => 0,
             component_categories   => [ ],
             service_provider_types => [ 'Cluster' ],

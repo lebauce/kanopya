@@ -2167,6 +2167,10 @@ sub getClassHierarchy {
     }
 
     @hierarchy = grep { eval { BaseDB->_adm->{schema}->source($_) }; not $@ } @hierarchy;
+
+    my @klasses;
+    @hierarchy = grep { push @klasses, $_; $class->isa(join('::', @klasses)) or
+                                           (join('::', @klasses) eq join('::', @hierarchy)) } @hierarchy;
     return wantarray ? @hierarchy : \@hierarchy;
 }
 

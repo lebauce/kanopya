@@ -208,6 +208,51 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 ceph
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Ceph>
+
+=cut
+
+__PACKAGE__->might_have(
+  "ceph",
+  "AdministratorDB::Schema::Result::Ceph",
+  { "foreign.ceph_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 ceph_mon
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::CephMon>
+
+=cut
+
+__PACKAGE__->might_have(
+  "ceph_mon",
+  "AdministratorDB::Schema::Result::CephMon",
+  { "foreign.ceph_mon_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 ceph_osd
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::CephOsd>
+
+=cut
+
+__PACKAGE__->might_have(
+  "ceph_osd",
+  "AdministratorDB::Schema::Result::CephOsd",
+  { "foreign.ceph_osd_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 collector_indicators
 
 Type: has_many
