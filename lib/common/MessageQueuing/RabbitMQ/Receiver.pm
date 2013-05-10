@@ -244,8 +244,17 @@ sub consume {
             else { $err->rethrow(); }
         }
 
+        # Build a callback method to ack the message
+        my $ack_cb = sub {
+            $self->acknowledge(tag => $var->{deliver}->{method_frame}->{delivery_tag});
+        };
+
         # Call the corresponding method
-        $receiver->{callback}->(%$args);
+        $args->{acknowledge_cb} = $ack_cb;
+        if ($receiver->{callback}->(%$args)) {
+            # Acknowledge the message if specified by the callback
+            $args->{acknowledge_cb}->();
+        }
 
         # Interupt the infinite loop
         if (defined $args{condvar}) {
@@ -257,7 +266,7 @@ sub consume {
     $self->_session->consume(
         on_consume => \&$callback,
         queue      => $receiver->{receiver}->{method_frame}->{queue},
-        no_ack     => 1,
+        no_ack     => 0,
     );
 }
 
@@ -284,10 +293,10 @@ sub fetch {
     my $timeouted = 0;
     if (defined $args{duration}) {
         $timerref = AnyEvent->timer(after => $args{duration}, cb => sub {
-            $timeouted = 1;
-            # Interupt the infinite loop
-            $args{condvar}->send;
-        });
+                        $timeouted = 1;
+                        # Interupt the infinite loop
+                        $args{condvar}->send;
+                    });
     }
 
     # Wait on the queue
@@ -298,9 +307,6 @@ sub fetch {
                   error => "No message recevied for $args{duration} second(s)"
               );
     }
-
-    # Acknowledge the message, as the corresponding job is finish
-    $self->_session->ack();
 }
 
 
@@ -336,6 +342,25 @@ sub createReceiver {
         );
         return $queue;
     }
+}
+
+
+=pod
+=begin classdoc
+
+Acknowledge a message secified by tag.
+
+@param tag the delivery tag of the essage to ack
+
+=end classdoc
+=cut
+
+sub acknowledge {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'tag' ]);
+
+    $self->_session->ack(delivery_tag => $args{tag}, multiple => 0);
 }
 
 
