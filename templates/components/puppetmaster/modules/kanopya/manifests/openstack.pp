@@ -417,7 +417,7 @@ class kanopya::quantum($amqpserver, $dbserver, $keystone, $password, $email, $br
         require             => Class['kanopya::openstack::repository']
     }
 
-    Class['kanopya::openstack::repository'] -> Class['kanopya::quantum_']
+    Class['kanopya::openstack::repository'] -> Class['kanopya::quantum']
 }
 
 class kanopya::nova::common($amqpserver, $dbserver, $glance, $keystone, $quantum, $email, $password) {
