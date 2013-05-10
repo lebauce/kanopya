@@ -342,12 +342,12 @@ class kanopya::novacompute($amqpserver, $dbserver, $glance, $keystone,
     Class['kanopya::openstack::repository'] -> Class['kanopya::novacompute']
 }
 
-class kanopya::quantum_($amqpserver, $dbserver, $keystone, $password, $email, $bridge_flat, $bridge_vlan) {
+class kanopya::quantum($amqpserver, $dbserver, $keystone, $password, $email, $bridge_flat, $bridge_vlan) {
     if ! defined(Class['kanopya::openstack::repository']) {
         class { 'kanopya::openstack::repository': }
     }
 
-    class { 'quantum':
+    class { '::quantum':
         rabbit_password => "${password}",
         rabbit_host     => "${amqpserver}",
         rabbit_user     => 'quantum',
