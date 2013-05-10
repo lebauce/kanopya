@@ -778,7 +778,7 @@ sub addNode {
         };
     }
 
-    return Entity::Workflow->run(
+    return $self->getManager(manager_type => 'ExecutionManager')->run(
         name       => 'AddNode',
         related_id => $self->id,
         params     => {
@@ -797,7 +797,7 @@ sub removeNode {
     General::checkParams(args => \%args, required => ['node_id']);
 
     my $host = Node->get(id => $args{node_id})->host;
-    Entity::Workflow->run(
+    $self->getManager(manager_type => 'ExecutionManager')->run(
         name       => 'StopNode',
         related_id => $self->id,
         params     => {
@@ -821,7 +821,6 @@ sub start {
 sub stop {
     my $self = shift;
 
-    $log->debug("New Operation StopCluster with cluster_id : " . $self->id);
     $self->getManager(manager_type => 'ExecutionManager')->enqueue(
         type   => 'StopCluster',
         params => { 

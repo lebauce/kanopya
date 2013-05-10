@@ -180,10 +180,10 @@ sub create {
     Entity->get(id => $args{host_manager_id})->createHost(%args);
 }
 
-sub resubmit() {
+sub resubmit {
     my $self = shift;
 
-    Entity::Workflow->run(name => 'ResubmitNode', params => { context => { host => $self } });
+    $self->host_manager->resubmitHost(host => $self);
 }
 
 

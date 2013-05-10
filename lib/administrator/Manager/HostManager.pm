@@ -174,6 +174,21 @@ sub deactivateHost {
     );
 }
 
+sub resubmitHost {
+    my ($self, %args) = @_;
+
+    General::checkParams(args  => \%args, required => [ "host" ]);
+
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+        name   => 'ResubmitNode',
+        params => {
+            context => {
+                host => $self
+            }
+        }
+    );
+}
+
 sub getOvercommitmentFactors {
     my ($self) = @_;
 

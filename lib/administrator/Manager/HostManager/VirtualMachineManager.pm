@@ -113,8 +113,10 @@ sub scaleHost {
         }
     };
 
-    Entity::Workflow->run(name   => 'ScaleIn' . ($args{scalein_type} eq 'memory' ? "Memory" : "CPU"),
-                          params => $wf_params);
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+        name   => 'ScaleIn' . ($args{scalein_type} eq 'memory' ? "Memory" : "CPU"),
+        params => $wf_params
+    );
 }
 
 =head2 migrate
@@ -135,11 +137,11 @@ sub migrate {
         }
     };
 
-    return Entity::Workflow->run(
-        name       => 'MigrateWorkflow',
-        related_id => $hypervisor->getClusterId(),
-        params     => $wf_params
-    );
+    return $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+               name       => 'MigrateWorkflow',
+               related_id => $hypervisor->getClusterId(),
+               params     => $wf_params
+           );
 }
 
 sub migrateHost {

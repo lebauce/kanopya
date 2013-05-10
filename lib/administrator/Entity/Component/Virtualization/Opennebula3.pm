@@ -418,14 +418,15 @@ sub addVM {
 
 sub optimiaas {
     my ($self, %args) = @_;
-    my $wf_params = {
-        context => {
-            cloudmanager_comp => $self,
-        }
-    };
 
-    return Entity::Workflow->run(name => 'OptimiaasWorkflow', params => $wf_params);
-
+    return $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+               name   => 'OptimiaasWorkflow',
+               params => {
+                   context => {
+                       cloudmanager_comp => $self,
+                   },
+               },
+           );
 }
 
 sub getImageRepository {

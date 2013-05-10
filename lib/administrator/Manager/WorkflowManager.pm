@@ -42,29 +42,20 @@ use NotificationSubscription;
 
 sub methods {
   return {
-    'getWorkflowDefsIds'    => {
-        'description'   => 'getWorkflowDefsIds',
-        'perm_holder'   => 'entity'
+    getWorkflowDefsIds => {
+        description => 'getWorkflowDefsIds',
     },
-    'getWorkflowDefs'    => {
-        'description'   => 'getWorkflowDefs',
-        'perm_holder'   => 'entity'
+    getWorkflowDefs => {
+        description => 'getWorkflowDefs',
     },
-    'createWorkflow'        => {
-        'description'   => 'createWorkflow',
-        'perm_holder'   => 'entity'
+    createWorkflow => {
+        description => 'createWorkflow',
     },
-    '_getAllParams'             => {
-        'description'   => 'getParams',
-        'perm_holder'   => 'entity'
+    associateWorkflow => {
+        description => 'associateWorkflow',
     },
-    'associateWorkflow'     => {
-        'description'   => 'associateWorkflow',
-        'perm_holder'   => 'entity'
-    },
-    'deassociateWorkflow'     => {
-        'description'   => 'deassociateWorkflow',
-        'perm_holder'   => 'entity'
+    deassociateWorkflow => {
+        description => 'deassociateWorkflow',
     }
   };
 }
@@ -337,7 +328,7 @@ sub _linkWorkflowToRule {
 =cut
 
 sub runWorkflow {
-    my ($self,%args) = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'workflow_def_id', 'rule_id', 'service_provider_id' ]);
 
@@ -379,11 +370,11 @@ sub runWorkflow {
                           );
 
     #run the workflow with the fully defined params
-    return Entity::Workflow->run(
+    return $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
                name       => $workflow_name,
                related_id => $service_provider_id,
                params     => $workflow_params,
-               rule    => Entity->get(id => $rule_id),
+               rule       => Entity->get(id => $rule_id),
            );
 }
 
