@@ -172,7 +172,8 @@ sub applyConfiguration {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'cluster' ],
-                                         optional => { 'host' => undef });
+                                         optional => { 'host' => undef,
+                                                       'tag' => undef });
 
     my @ehosts = ($args{host}) || (map { EEntity->new(entity => $_) } @{ $args{cluster}->getHosts() });
     for my $ehost (@ehosts) {
@@ -192,8 +193,10 @@ sub applyConfiguration {
             $timeout -= 5;
         }
 
-        my $command = "puppet kick --foreground --parallel " . (scalar @hosts) . " ";
-        $command .= join('--host ', @hosts);
+        my $command = "puppet kick --foreground --parallel " . (scalar @hosts);
+        $command .= " --tag $args{tag}" if $args{tag};
+        $command .= join('', map { ' --host ' . $_ } @hosts);
+
         $ret = $econtext->execute(command => $command);
 
         while ($ret->{output} =~ /(.*) finished with exit code 3/g) {
