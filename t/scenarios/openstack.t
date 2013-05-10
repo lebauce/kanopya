@@ -66,6 +66,10 @@ sub main {
                                 overcommitment_cpu_factor    => 1,
                                 overcommitment_memory_factor => 1
                             },
+                            'cinder' => {
+                            },
+                            'lvm' => {
+                            },
                             'glance' => {
                             },
                             'quantum' => {
@@ -82,6 +86,7 @@ sub main {
     my $nova_controller = $cloud->getComponent(name => "NovaController");
     my $glance = $cloud->getComponent(name => "Glance");
     my $quantum = $cloud->getComponent(name => "Quantum");
+    my $cinder = $cloud->getComponent(name => "Cinder");
 
     $keystone->setConf(conf => {
         mysql5_id   => $sql->id,
@@ -99,6 +104,11 @@ sub main {
     });
 
     $quantum->setConf(conf => {
+        mysql5_id          => $sql->id,
+        nova_controller_id => $nova_controller->id
+    });
+
+    $cinder->setConf(conf => {
         mysql5_id          => $sql->id,
         nova_controller_id => $nova_controller->id
     });
