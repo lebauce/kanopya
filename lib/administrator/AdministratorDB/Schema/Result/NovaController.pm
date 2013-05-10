@@ -67,13 +67,6 @@ __PACKAGE__->table("nova_controller");
   is_foreign_key: 1
   is_nullable: 1
 
-=head2 cinder_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 1
-
 =cut
 
 __PACKAGE__->add_columns(
@@ -99,13 +92,6 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
   "keystone_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 1,
-  },
-  "cinder_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -148,24 +134,19 @@ __PACKAGE__->belongs_to(
   },
 );
 
-=head2 cinder
+=head2 cinders
 
-Type: belongs_to
+Type: has_many
 
 Related object: L<AdministratorDB::Schema::Result::Cinder>
 
 =cut
 
-__PACKAGE__->belongs_to(
-  "cinder",
+__PACKAGE__->has_many(
+  "cinders",
   "AdministratorDB::Schema::Result::Cinder",
-  { cinder_id => "cinder_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
+  { "foreign.nova_controller_id" => "self.nova_controller_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 =head2 glances
@@ -299,9 +280,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07035 @ 2013-03-01 11:52:49
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dk/hziCY1pIT7EoADgwFog
-
+# Created by DBIx::Class::Schema::Loader v0.07035 @ 2013-05-07 16:54:44
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:XGlxUxpKXDAjG5IRaA+kFA
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Virtualization",
