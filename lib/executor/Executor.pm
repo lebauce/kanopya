@@ -16,7 +16,7 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 package Executor;
-use base Daemon;
+use base Daemon::MessageQueuing;
 
 use strict;
 use warnings;
@@ -24,6 +24,7 @@ use warnings;
 use General;
 use Message;
 
+use Entity::Workflow;
 use Entity::Operation;
 use EEntity::EOperation;
 
@@ -42,251 +43,363 @@ sub new {
 
     my $self = $class->SUPER::new(confkey => 'executor');
 
-    $self->{include_blocked} = 1;
-    $self->{last_workflow_id} = -1;
+    $self->{timerrefs} = {};
+
+    # Defined closures for callbacks
+    my $execute = sub {
+        my %args = @_;
+        my $ack = 1;
+        eval {
+            $ack = $self->executeOperation(%args);
+        };
+        if ($@) { $log->error($@); }
+
+        return $ack;
+    };
+    my $run = sub {
+        my %args = @_;
+        my $ack = 1;
+        eval {
+            $ack = $self->runWorkflow(%args);
+        };
+        if ($@) { $log->error($@); }
+
+        return $ack;
+    };
+    my $handle = sub {
+        my %args = @_;
+        my $ack = 1;
+        eval {
+            $ack = $self->handleResult(%args);
+        };
+        if ($@) { $log->error($@); }
+
+        return $ack;
+    };
+
+    # Register the callback for used channels
+    $self->registerWorker(channel => 'operation', callback => \&$execute);
+    $self->registerWorker(channel => 'workflow', callback => \&$run);
+    $self->registerWorker(channel => 'operation_result', callback => \&$handle);
 
     return $self;
 }
 
-sub oneRun {
-    my ($self) = @_;
+sub executeOperation {
+    my ($self, %args) = @_;
 
-    my $operation = Entity::Operation->getNextOp(include_blocked => $self->{include_blocked});
+    General::checkParams(args  => \%args, required => [ "operation_id" ]);
 
-    my ($op, $workflow, $delay, $logprefix);
-    if ($operation){
-        $log->info("\n\n");
+    my $operation;
+    eval {
+        $operation = EEntity::EOperation->new(
+                         operation => Entity::Operation->get(id => $args{operation_id})
+                     );
+    };
+    if ($@) {
+        # The operation does not exists, probably due to a workflow cancel
+        $log->warn("Operation <$args{operation_id}> does not exists, skipping.");
+        return 1;
+    }
 
-        $workflow = EEntity->new(data => $operation->getWorkflow, ehost => $self->_host);
+    $log->info("---- [ Operation " . $operation->type  . " <" . $operation->id . "> ] ----");
+    Message->send(from    => 'Executor',
+                  level   => 'info',
+                  content => "Operation Processing [$operation]...");
 
-        # init log appender for this workflow if this one is not the same as the last executed
-        if($workflow->id != $self->{last_workflow_id}) {
-            my $appenders = Log::Log4perl->appenders();
+    # Initialize EOperation and context
+    eval {
+        $log->info("Step <check>");
+        $operation->check();
+    };
+    if ($@) {
+        # Probably a compilation error on the operation class.
+        return $self->terminateOperation(operation => $operation,
+                                         status    => 'cancelled',
+                                         exception => $@);
+    }
 
-            if(exists $appenders->{'WORKFLOW'}) {
-                $log->eradicate_appender('WORKFLOW');
-            }
-            my $layout = Log::Log4perl::Layout::PatternLayout->new("%d %c %p> %M - %m%n");
-            my $file_appender = Log::Log4perl::Appender->new("Log::Dispatch::File",
-                                    name      => "WORKFLOW",
-                                    filename  => $self->{config}->{logdir} . "workflows/" . $workflow->id . ".log"
-                                );
+    # Check if the operation require validation.
+#    if ($operation->state eq 'validated') {
+#        $operation->setState(state => 'ready');
+#    }
+#    else {
+#        $log->debug("Calling validation of operation $operation.");
+#
+#        if (not $operation->validation()) {
+#            # Probably a compilation error on the operation class.
+#            return $self->terminateOperation(operation => $operation,
+#                                             status    => 'waiting_validation');
+#        }
+#    }
 
-            $file_appender->layout($layout);
-            $log->add_appender($file_appender);
-            $self->{last_workflow_id} = $workflow->id;
-        }
-
-        # Initialize EOperation and context
+    # Skip the proccessing steps id postreported
+    my $delay;
+    if ($operation->state ne 'postreported') {
+        # Check preconditions for processing
         eval {
-            $op = EEntity::EOperation->new(op => $operation);
-            $logprefix = "[" . $workflow->workflow_name . " workflow <" . $workflow->id .
-                         "> - Operation " . $op->type  . " <" . $op->id . ">]";
-
-            $log->info("---- $logprefix ----");
-            Message->send(
-                from    => 'Executor',
-                level   => 'info',
-                content => "Operation Processing [$op]..."
-            );
-
-            $log->info("Check step");
-            $op->check();
+            $log->info("Step <prerequisites>");
+            $delay = $operation->prerequisites();
         };
         if ($@) {
-            $log->error("$op context initilisation failed:$@");
-
-            # Probably a compilation error on the operation class.
-            $log->info("Cancelling " . $workflow->workflow_name . " workflow <" . $workflow->id . ">");
-            $workflow->cancel(state => 'failed');
-            return;
+            return $self->terminateOperation(operation => $operation,
+                                             status    => 'cancelled',
+                                             exception => $@);
+        }
+        # Report the operation if delay is set
+        if ($delay) {
+            return $self->terminateOperation(operation => $operation,
+                                             status    => 'prereported',
+                                             time      => time + $delay);
         }
 
-        # Try to lock the context to check if entities are locked by others workflow
-        if ($op->state eq 'validated') {
-            $op->setState(state => 'ready');
-        }
-        else {
-            $log->debug("Calling validation of operation $op.");
-
-            if (not $op->validation()) {
-                $op->setState(state => 'waiting_validation');
-
-                $log->info("---- [$op] Operation waiting validation. ----");
-                return;
-            }
-        }
-
-        # Try to lock the context to check if entities are locked by others workflow
-        eval {
-            $log->debug("Locking context for $op");
-            $operation->lockContext();
-
-            if ($op->state eq 'blocked') {
-                $op->setState(state => 'ready');
-            }
-        };
-        if ($@) {
-            my $message = $@;
-            $op->setState(state => 'blocked');
-
-            $log->info("---- [$op] Unable to get locks, skip. ----");
-            $log->debug($message);
-
-            # Unset the option include_blocked, to avoid
-            # fetching this operation at the next loop.
-            $self->{include_blocked} = 0;
-            return;
-        }
+        # Set the operation as proccessing
+        $operation->setState(state => 'processing');
 
         # Process the operation
         eval {
-            # Start transaction for prerequisite/postrequisite
             $operation->beginTransaction;
 
-            # If the operation never been processed, check its prerequisite
-            if ($op->state eq 'ready' or $op->state eq 'prereported') {
+            $log->info("Step <prepare>");
+            $operation->prepare();
 
-                $log->info("Prerequisites step");
-                $delay = $op->prerequisites();
+            $log->info("Step <process>");
+            $operation->process();
 
-                # If the prerequisite are validated, process the operation
-                if ($delay == 0) {
-                    $op->setState(state => 'processing');
-
-                    $operation->commitTransaction;
-
-                    # Start transaction for processing
-                    $operation->beginTransaction;
-
-                    $log->info("Prepare step");
-                    $op->prepare();
-
-                    $log->info("Process step");
-                    $op->process();
-                }
-            }
-
-            # If the operation has been processed, check its postrequisite
-            if ($op->state eq 'processing' or $op->state eq 'postreported') {
-
-                $log->info("Postrequisites step");
-                $delay = $op->postrequisites();
-            }
-
-            # Report the operation if required
-            if ($delay != 0) {
-                if ($delay < 0) {
-                    $op->setState(state => 'pending');
-                }
-                else {
-                    # Update the context with possibles newly set params
-                    $op->{params}->{context} = $op->{context};
-                    $op->setParams(params => $op->{params});
-    
-                    $op->report(duration => $delay);
-    
-                    if ($op->state eq 'ready') {
-                        $op->setState(state => 'prereported');
-                    }
-                    elsif ($op->state eq 'processing') {
-                        $op->setState(state => 'postreported');
-                    }
-                }
-                $operation->commitTransaction;
-
-                throw Kanopya::Exception::Execution::OperationReported(error => 'Operation reported');
-            }
+            $operation->commitTransaction;
         };
         if ($@) {
-            my $err_exec = $@;
-
-            if ($err_exec->isa('Kanopya::Exception::Execution::OperationReported')) {
-                $log->info("--- $logprefix Processing REPORTED ($delay s.)");
-                return;
-            } else {
-                $log->error("--- $logprefix Processing FAILED : $err_exec");
-            }
-
-            $log->info("$op rollback processing");
-            if (defined $op->{erollback}) {
-                $op->{erollback}->undo();
+            # If some rollback defined, undo them
+            if (defined $operation->{erollback}) {
+                $operation->{erollback}->undo();
             }
             # Rollback transaction
             $operation->rollbackTransaction;
 
-            # Cancelling the workflow
-            eval {
-                # Try to cancel all workflow operations, and delete them.
-                # Context entities will be unlocked by this call
-                $log->info("Cancelling " . $workflow->workflow_name . " workflow <" . $workflow->id . ">");
-                $workflow->cancel(state => 'failed');
-            };
-            if ($@){
-                my $err_rollback = $@;
-                $log->error("Workflow cancel failed:$err_rollback");
-            }
-
-            if (!(ref($err_exec) eq "HASH") or !$err_exec->{hidden}){
-                Message->send(
-                    from    => 'Executor',
-                    level   => 'error',
-                    content => "[$op] Execution Aborted : $err_exec"
-                );
-            }
-            else {
-                $log->info("Warning : $err_exec");
-            }
-
+            return $self->terminateOperation(operation => $operation,
+                                             status    => 'cancelled',
+                                             exception => $@);
         }
-        else {
-            # Finishing the operation.
-            eval {
-                $log->info("Finish step");
-                $op->finish();
-            };
-            if ($@) {
-                my $err_finish = $@;
-                $log->error("Finish failed :$err_finish");
-            }
+    }
 
-            # Commit transaction
-            $operation->commitTransaction;
+    $log->info("Step <postrequisites>");
+    eval {
+         $delay = $operation->postrequisites();
+    };
+    if ($@) {
+        return $self->terminateOperation(operation => $operation,
+                                         status    => 'cancelled',
+                                         exception => $@);
+    }
+    # Report the operation if delay is set
+    if ($delay) {
+        return $self->terminateOperation(operation => $operation,
+                                         status    => 'postreported',
+                                         time      => time + $delay);
+    }
 
-            $log->info("---- $logprefix Processing SUCCEED ----");
-            Message->send(
-                from    => 'Executor',
-                level   => 'info',
-                content => "[$op] Execution Success"
-            );
+    # Finishing the operation.
+    eval {
+        $log->info("Step <finish>");
+        $operation->finish();
+    };
+    if ($@) {
+        return $self->terminateOperation(operation => $operation,
+                                         status    => 'cancelled',
+                                         exception => $@);
+    }
 
-            # Unlock the context to update it.
-            eval {
-                $log->debug("Unlocking context for $op");
-                $operation->unlockContext();
-            };
-            if ($@) {
-                my $err_unlock = $@;
-                $log->error("Context unlock failed:$err_unlock");
-            }
+    # Terminate the operation with success
+    return $self->terminateOperation(operation => $operation,
+                                     status    => 'succeeded');
+}
 
-            eval {
-                # Update the workflow context
-                $workflow->pepareNextOp(context => $op->{context}, params => $op->{params});
-            };
-            if ($@) {
-                my $err_prepare = $@;
-                $log->error("Error during workflow prepare :\n$err_prepare");
-            }
-        }
+sub terminateOperation {
+    my ($self, %args) = @_;
 
-        # Set the option include_blocked, to check if blocked operation can get locks
-        # as the just finished operation probably free some locks.
-        $self->{include_blocked} = 1;
+    General::checkParams(args => \%args, required => [ 'operation', 'status' ]);
+
+    my $operation = delete $args{operation};
+
+    $log->info("Operation terminated with status <$args{status}>");
+
+    # Serialize the parameters as its could be modified during
+    # the operation executions steps.
+    my $params = delete $operation->{params};
+    $params->{context} = delete $operation->{context};
+    $operation->serializeParams(params => $params);
+
+    if (defined $args{exception} and ref($args{exception})) {
+        $args{exception} = "$args{exception}";
+    }
+
+    # Produce a result on the operation_result channel
+    $self->_component->terminate(operation_id => $operation->id, %args);
+
+    # Acknowledge the message
+    return 1;
+}
+
+sub runWorkflow {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'workflow_id' ]);
+
+    my $workflow = EEntity->new(entity => Entity::Workflow->get(id => $args{workflow_id}));
+
+    # Set the workflow as running
+    $workflow->setState(state => 'running');
+
+    # Pop the first operation
+    my $first;
+    eval {
+        $first = $workflow->getNextOperation();
+    };
+    if ($@) {
+        $log->warn($@);
+        $workflow->finish();
     }
     else {
-        sleep $self->{config}->{time_step};
+        $log->info("Running " . $workflow->workflow_name . " workflow <" . $workflow->id . "> ");
+        $log->info("Executing " . $workflow->workflow_name . " first operation <" . $first->id . ">");
+    
+        # Push the first operation on the execution channel
+        $self->_component->execute(operation_id => $first->id);
     }
+
+    # Acknowledge the message
+    return 1;
+}
+
+sub handleResult {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'operation_id', 'status' ]);
+
+    my $operation;
+    eval {
+        $operation = EEntity::EOperation->new(
+                         operation      => Entity::Operation->get(id => $args{operation_id}),
+                         skip_not_found => 1
+                     );
+    };
+    if ($@) {
+        # The operation does not exists, probably due to a workflow cancel
+        $log->warn("Operation <$args{operation_id}> does not exists, skipping.");
+        return 1;
+    }
+
+    my $workflow  = EEntity->new(entity => $operation->workflow);
+
+    # Set the operation state
+    $operation->setState(state => $args{status});
+
+    # Operation succeeded
+    if ($args{status} eq 'succeeded') {
+        $log->info("---- [ Operation " . $operation->type . " <" . $operation->id . "> SUCCEED ] ----");
+
+        Message->send(from    => 'Executor',
+                      level   => 'info',
+                      content => "[$operation] Execution Success");
+
+        # Continue the workflow
+    }
+    # Operation reported
+    elsif ($args{status} eq 'prereported' or $args{status} eq 'postreported'){
+
+        General::checkParams(args => \%args, optional => { 'time' => undef });
+
+        # The operation execution is reported at $args{time}
+        if (defined $args{time}) {
+            $log->info("---- [ Operation " . $operation->type . " <" . $operation->id . "> REPORTED ] ----");
+
+            # Compute the delay
+            my $delay = $args{time} - time;
+
+            # If the hoped execution time is in the future, report the operation 
+            if ($delay > 0) {
+                # Update the hoped excution time of the operation
+                $operation->report(duration => $delay);
+
+                # Re-trigger the operation at proper time
+                my $report_cb = sub {
+                    # Re-execute the operation
+                    $self->_component->execute(operation_id => $operation->id);
+
+                    # Acknowledge the message as the operation result is finally handled
+                    $args{acknowledge_cb}->();
+                }
+                # Keep the timer ref
+                $self->{timerrefs}->{$operation->id} = AnyEvent->timer(after => $delay, cb => $report_cb);
+
+                # Do not acknowledge the message as it will be done by the timer.
+                # If the current proccess die while some timers still active,
+                # the operation result will be automatically re-enqueued.
+                return 0;
+            }
+            else {
+                # Re-trigger the operation now
+                $self->_component->execute(operation_id => $operation->id);
+
+                # Stop the workflow for now
+                return 1;
+            }
+        }
+        # The operation is indefinitely reported, execution is delegated to the workflow
+        else {
+            $operation->setState(state => 'pending');
+
+            # Continue the workflow
+        }
+    }
+    # Operation failed
+    elsif ($args{status} eq 'cancelled') {
+
+        General::checkParams(args => \%args, optional => { 'exception' => undef });
+
+        $log->info("---- [ Operation " . $operation->type  . " <" . $operation->id . "> FAILED ] ----");
+        $log->error($args{exception});
+
+        Message->send(from    => 'Executor',
+                      level   => 'error',
+                      content => "[$operation] Execution Aborted : $args{exception}");
+
+        # Try to cancel all workflow operations, and delete them.
+        $log->info("Cancelling " . $workflow->workflow_name . " workflow <" . $workflow->id . ">");
+        $workflow->cancel();
+
+        # Stop the workflow
+        return 1;
+    }
+
+    # Compute the workflow status, push the next op if there is remaining one(s),
+    # finish the workflow instead.
+    my $next;
+    eval {
+        $next = $workflow->prepareNextOperation(current => $operation);
+    };
+    if ($@) {
+        my $err = $@;
+        if (not $err->isa('Kanopya::Exception::Internal::NotFound')) {
+            $err->rethrow();
+        }
+
+        # No remaning operation
+        $log->info("Finishing " . $workflow->workflow_name . " workflow <" . $workflow->id . ">");
+        $workflow->finish();
+    }
+    else {
+        $log->info("Executing " . $workflow->workflow_name . " next operation <" . $next->id . ">");
+
+        # Set the operation as ready
+        $next->setState(state => 'ready');
+
+        # Push the next operation on the execution channel
+        $self->_component->execute(operation_id => $next->id);
+    }
+
+    # Acknowledge the message
+    return 1;
 }
 
 1;
