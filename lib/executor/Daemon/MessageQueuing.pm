@@ -55,6 +55,22 @@ sub new {
 
     # TODO: Check the configuration ($self->{config}) about the broker,
     #       and store it as private member to further connection.
+
+    # Connect the component as the connection can not be done
+    # within a message callback.
+    eval {
+        $self->_component->connect();
+    };
+    if ($@) {
+        my $err = $@;
+        if (ref($err) and $err->isa('Kanopya::Exception::Internal::NotFound')) {
+            $log->warn("Can not connect the sender component <Kanopya" . $self->{name} .
+                       "> as it can not be found.");
+        }
+        elsif (ref($err)) { $err->rethrow(); }
+        else { throw Kanopya::Exception(error => $err); }
+    }
+
     return $self;
 }
 
