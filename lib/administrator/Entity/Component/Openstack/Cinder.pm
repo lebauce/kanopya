@@ -25,6 +25,7 @@ use warnings;
 use Entity::Container::LvmContainer;
 use Entity::Component::Lvm2::Lvm2Lv;
 use Entity::Component::Lvm2::Lvm2Vg;
+use Entity::ContainerAccess::IscsiContainerAccess;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -60,9 +61,9 @@ sub lvcreate {
                          required => [ "lvm2_lv_name", "lvm2_lv_size" ],
                          optional => {container_device => undef });
 
-    my $cinder_vg = Entity::Lvm::Lvm2Vg->find(hash => { lvm2_vg_name => 'cinder_volumes' });
+    my $cinder_vg = Entity::Component::Lvm::Lvm2Vg->find(hash => { lvm2_vg_name => 'cinder_volumes' });
 
-    my $lv = Entity::Lvm::Lvm2Lv->new(
+    my $lv = Entity::Component::Lvm::Lvm2Lv->new(
         lvm2_lv_name       => $args{lvm2_lv_name},
         lvm2_vg_id         => $cinder_vg->id,
         lvm2_lv_freespace  => 0,
@@ -82,7 +83,17 @@ sub lvcreate {
 
 }
 
+=head 2
+
+=begin classdoc
+Register a new iscsi container access into Kanopya 
+
+=end classdoc
+
+=cut
+
 sub createExport {
+    my ($self, %args) = @_;
 
 }
 
