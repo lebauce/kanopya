@@ -306,26 +306,44 @@ ReadMode('noecho');
 chomp($root_passwd = <STDIN>);
 ReadMode('original');
 #Test user for creation
-my $user = `mysql -h $answers->{dbip}  -P $answers->{dbport} -u root -p$root_passwd -e "use mysql; SELECT user FROM mysql.user WHERE user='$answers->{dbuser}';" | grep "$answers->{dbuser}"`;
-if (!$user) {
-    print "creating mysql user, please insert root password...\n";
-    system ("mysql -h $answers->{dbip}  -P $answers->{dbport} -u root -p$root_passwd " .
-            "-e \"CREATE USER '" . $answers->{dbuser} . "'\@'localhost' " .
-            "IDENTIFIED BY '$answers->{dbpassword1}'\"") == 0 or die "error while creating mysql user: $!" == 0 or die "error while creating mysql user: $!";
-    eval {
-        system ("mysql -h $answers->{dbip}  -P $answers->{dbport} -u root -p$root_passwd -e \"CREATE USER '$answers->{dbuser}' IDENTIFIED BY '$answers->{dbpassword1}'\"");
-    };
-    print "done\n";
-}
-else {
-    print "User $answers->{dbuser} already exists\n";
+
+sub execSQL {
+    my $sql = shift;
+    return system("mysql -h $answers->{dbip}  -P $answers->{dbport} " .
+                  "-u root -p$root_passwd -e \"$sql\"")
 }
 
-#We grant all privileges to kanopya database for $db_user
-#my $grant = `mysql -h $answers->{dbip}  -P $answers->{dbport} -u root -p$root_passwd -e "use mysql; SHOW GRANTS for $answers->{dbuser};" | grep kanopya\.`;
-print "granting all privileges on kanopya database to $answers->{dbuser}, please insert root password...\n";
-system ("mysql -h $answers->{dbip} -P $answers->{dbport} -u root -p$root_passwd -e \"GRANT ALL PRIVILEGES ON kanopya.* TO '$answers->{dbuser}' WITH GRANT OPTION\"") == 0 or die "error while granting privileges to $answers->{dbuser}: $!";
-print "done\n";
+sub createMySQLUser {
+    my ($dbuser, $dbpassword) = @_;
+
+    my $user = `mysql -h $answers->{dbip}  -P $answers->{dbport} -u root -p$root_passwd -e "use mysql; SELECT user FROM mysql.user WHERE user='$dbuser';" | grep "$dbuser"`;
+    if (!$user) {
+        print "creating mysql user, please insert root password...\n";
+        execSQL("CREATE USER '" . $dbuser . "'\@'localhost' " .
+                "IDENTIFIED BY '$dbpassword'") == 0
+            or die "error while creating mysql user: $!" == 0
+            or die "error while creating mysql user: $!";
+        eval {
+            execSQL("CREATE USER '$dbuser' IDENTIFIED BY '$dbpassword'");
+        };
+        print "done\n";
+    }
+    else {
+        print "User $answers->{dbuser} already exists\n";
+    }
+
+    #We grant all privileges to kanopya database for $db_user
+    #my $grant = `mysql -h $answers->{dbip}  -P $answers->{dbport} -u root -p$root_passwd -e "use mysql; SHOW GRANTS for $answers->{dbuser};" | grep kanopya\.`;
+    print "granting all privileges on $dbuser database to $dbuser, please insert root password...\n";
+    execSQL("GRANT ALL PRIVILEGES ON $dbuser.* TO '$dbuser' WITH GRANT OPTION") == 0
+        or die "error while granting privileges to $dbuser: $!";
+    print "done\n";
+}
+
+createMySQLUser($answers->{dbuser}, $answers->{dbpassword1});
+
+execSQL("CREATE DATABASE puppet");
+createMySQLUser("puppet", $answers->{dbpassword1});
 
 #We now generate the database schemas
 print "generating database schemas...";
@@ -708,7 +726,9 @@ sub generatePuppetConfiguration {
     my $datas = {
         kanopya_puppet_modules => '/opt/kanopya/templates/components/puppetmaster/modules',
         admin_domainname       => $args{admin_domainname},
-        kanopya_hostname       => $args{kanopya_hostname}
+        kanopya_hostname       => $args{kanopya_hostname},
+        dbserver               => 'localhost',
+        dbpassword             => $args{admin_password},
     };
     useTemplate(
         include  => '/opt/kanopya/templates/components/puppetmaster',

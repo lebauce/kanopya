@@ -17,6 +17,13 @@ filetimeout=0
 ssl_client_header = SSL_CLIENT_S_DN 
 ssl_client_verify_header = SSL_CLIENT_VERIFY
 storeconfigs = true
+dbadapter = mysql
+dbname = puppet
+dbuser = puppet
+dbpassword = [% dbpassword %]
+
+dbserver = [% dbserver %]
+
 
 [agent]
 server = [% kanopya_hostname %].[% admin_domainname %]
