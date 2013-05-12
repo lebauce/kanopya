@@ -42,7 +42,7 @@ sub getPuppetDefinition {
         );
     }
 
-    return "class { 'kanopya::glance':\n" .
+    return "class { 'kanopya::openstack::glance':\n" .
            "\tdbserver => '" . $sql->getMasterNode->fqdn . "',\n" .
            "\tpassword => 'glance',\n" .
            "\tkeystone => '" . $keystone->getMasterNode->fqdn . "',\n" .

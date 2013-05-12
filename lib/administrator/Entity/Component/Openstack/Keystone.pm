@@ -43,7 +43,7 @@ sub getPuppetDefinition {
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
-    $definition = "class { 'kanopya::keystone':\n" .
+    $definition = "class { 'kanopya::openstack::keystone':\n" .
                   "    dbserver      => '" . $sql->getMasterNode->fqdn . "',\n" .
                   "    dbip          => '" . $sql->getMasterNode->adminIp . "',\n" .
                   "    dbpassword    => 'keystone',\n" .

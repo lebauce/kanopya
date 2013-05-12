@@ -36,7 +36,7 @@ sub getPuppetDefinition {
     my $amqp = $self->nova_controller->amqp->getMasterNode->fqdn;
     my $sql = $self->mysql5->getMasterNode->fqdn;
 
-    return "class { 'kanopya::quantum':\n" .
+    return "class { 'kanopya::openstack::quantum::server':\n" .
            "\tamqpserver => '" . $amqp . "',\n" .
            "\tkeystone   => '" . $keystone . "',\n" .
            "\tpassword   => 'quantum'," .

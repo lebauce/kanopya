@@ -73,7 +73,7 @@ sub getPuppetDefinition {
         push @uplinks, "'br-vlan:" . $bridge_vlan . "'";
     }
 
-    return "class { 'kanopya::novacompute':\n" .
+    return "class { 'kanopya::openstack::nova::compute':\n" .
            "\tamqpserver => '" . $amqp . "',\n" .
            "\tdbserver => '" . $sql . "',\n" .
            "\tglance => '" . $glance . "',\n" .

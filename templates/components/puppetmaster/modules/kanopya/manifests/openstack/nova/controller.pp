@@ -1,0 +1,124 @@
+class kanopya::openstack::nova::controller($password, $dbserver, $amqpserver, $keystone, $email, $glance, $quantum) {
+    if ! defined(Class['kanopya::openstack::repository']) {
+        class { 'kanopya::openstack::repository': }
+    }
+
+    exec { "/usr/bin/nova-manage db sync":
+        path => "/usr/bin:/usr/sbin:/bin:/sbin",
+    }
+
+    @@rabbitmq_user { 'nova':
+        admin    => true,
+        password => "${password}",
+        provider => 'rabbitmqctl',
+        tag      => "${amqpserver}",
+    }
+
+    @@rabbitmq_user_permissions { "nova@/":
+        configure_permission => '.*',
+        write_permission     => '.*',
+        read_permission      => '.*',
+        provider             => 'rabbitmqctl',
+        tag                  => "${amqpserver}",
+    }
+
+    @@keystone_user { 'nova':
+        ensure   => present,
+        password => "${password}",
+        email    => "${email}",
+        tenant   => 'services',
+        tag      => "${keystone}",
+    }
+
+    @@keystone_user_role { 'nova@services':
+        ensure  => present,
+        roles   => 'admin',
+        tag     => "${keystone}",
+    }
+
+    @@keystone_service { 'compute':
+        ensure      => present,
+        type        => "compute",
+        description => "Nova Compute Service",
+        tag         => "${keystone}"
+    }
+
+    @@keystone_endpoint { "RegionOne/compute":
+        ensure       => present,
+        public_url   => "http://${fqdn}:8774/v2/\$(tenant_id)s",
+        admin_url    => "http://${fqdn}:8774/v2/\$(tenant_id)s",
+        internal_url => "http://${fqdn}:8774/v2/\$(tenant_id)s",
+        tag          => "${keystone}"
+    }
+
+    @@mysql::db { 'nova':
+            user     => 'nova',
+            password => "${password}",
+            host     => "${ipaddress}",
+            grant    => ['all'],
+            charset  => 'latin1',
+            tag      => "${dbserver}",
+    }
+
+    @@database_user { "nova@${fqdn}":
+        password_hash => mysql_password("${password}"),
+        tag           => "${dbserver}",
+    }
+
+    @@database_grant { "nova@${fqdn}/nova":
+        privileges => ['all'] ,
+        tag        => "${dbserver}"
+    }
+
+    class { 'nova::api':
+        enabled        => true,
+        admin_password => "${password}",
+        auth_host      => "${keystone}",
+        require        => [ Exec["/usr/bin/nova-manage db sync"],
+                            Class['kanopya::openstack::repository'] ]
+    }
+
+    if ! defined(Class['kanopya::openstack::nova::common']) {
+        class { 'kanopya::openstack::nova::common':
+            amqpserver => "${amqpserver}",
+            dbserver   => "${dbserver}",
+            glance     => "${glance}",
+            keystone   => "${keystone}",
+            quantum    => "${quantum}",
+            email      => "${email}",
+            password   => "${password}"
+        }
+    }
+
+    class { 'nova::scheduler':
+        enabled => true,
+        require => Class['kanopya::openstack::repository']
+    }
+
+    class { 'nova::objectstore':
+        enabled => true,
+        require => Class['kanopya::openstack::repository']
+    }
+
+    class { 'nova::cert':
+        enabled => true,
+        require => Class['kanopya::openstack::repository']
+    }
+
+    class { 'nova::vncproxy':
+        enabled => true,
+        require => Class['kanopya::openstack::repository']
+    }
+
+    class { 'nova::consoleauth':
+        enabled => true,
+        require => Class['kanopya::openstack::repository']
+    }
+
+    class { 'nova::conductor':
+        enabled => true
+    }
+
+    Class['kanopya::openstack::repository'] -> Class['kanopya::openstack::nova::controller']
+}
+

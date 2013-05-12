@@ -159,7 +159,7 @@ sub getPuppetDefinition {
         return;
     }
 
-    my $definition = "class { 'kanopya::novacontroller':\n" .
+    my $definition = "class { 'kanopya::openstack::nova::controller':\n" .
                      "\tdbserver => '" . $sql->getMasterNode->fqdn . "',\n" .
                      "\tamqpserver => '" . $self->amqp->getMasterNode->fqdn . "',\n" .
                      "\tpassword => 'nova',\n" .
