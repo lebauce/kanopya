@@ -348,7 +348,10 @@ sub getTemplateDataOnedInitScript {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return "class { 'kanopya::opennebula': }\n";
+    return {
+        manifest     => "class { 'kanopya::opennebula': }\n",
+        dependencies => []
+    };
 }
 
 ### hypervisors manipulation ###

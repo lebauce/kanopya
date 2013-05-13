@@ -44,15 +44,18 @@ sub getPuppetDefinition {
     my $amqp = $self->nova_controller->amqp->getMasterNode->fqdn;
     my $sql = $self->mysql5->getMasterNode->fqdn;
 
-    return "class { 'kanopya::openstack::quantum::server':\n" .
-           "\tamqpserver => '" . $amqp . "',\n" .
-           "\tkeystone   => '" . $keystone . "',\n" .
-           "\tpassword   => 'quantum'," .
-           "\tbridge_flat => 'br-flat'," .
-           "\tbridge_vlan => 'br-vlan'," .
-           "\temail      => '" . $self->service_provider->user->user_email . "',\n" .
-           "\tdbserver   => '" . $sql . "'\n" .
-           "}\n";
+    return {
+        manifest =>
+            "class { 'kanopya::openstack::quantum::server':\n" .
+            "\tamqpserver => '" . $amqp . "',\n" .
+            "\tkeystone   => '" . $keystone . "',\n" .
+            "\tpassword   => 'quantum'," .
+            "\tbridge_flat => 'br-flat'," .
+            "\tbridge_vlan => 'br-vlan'," .
+            "\temail      => '" . $self->service_provider->user->user_email . "',\n" .
+            "\tdbserver   => '" . $sql . "'\n" .
+            "}\n"
+    };
 }
 
 sub getHostsEntries {

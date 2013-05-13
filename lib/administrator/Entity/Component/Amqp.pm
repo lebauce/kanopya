@@ -68,7 +68,10 @@ sub getPuppetDefinition {
                       "    cookie     => " . $self->cookie . ",\n" .
                       "}\n";
 
-    return $definitions;
+    return {
+        manifest     => $definitions,
+        dependencies => []
+    };
 }
 
 sub getExecToTest {

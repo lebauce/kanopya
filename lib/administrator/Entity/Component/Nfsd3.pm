@@ -309,7 +309,10 @@ sub createExport {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return "class { 'kanopya::nfsd': }\n";
+    return {
+        manifest     => "class { 'kanopya::nfsd': }\n",
+        dependencies => []
+    };
 }
 
 1;

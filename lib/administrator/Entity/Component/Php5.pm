@@ -90,8 +90,11 @@ sub getBaseConfiguration {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return "class { 'apache::mod::php': }\n" .
-           "class { 'kanopya::php5': }\n";
+    return {
+        manifest     => "class { 'apache::mod::php': }\n" .
+                        "class { 'kanopya::php5': }\n",
+        dependencies => []
+    };
 }
 
 1;

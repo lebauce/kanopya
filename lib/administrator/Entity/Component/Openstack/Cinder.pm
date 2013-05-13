@@ -133,16 +133,19 @@ sub getPuppetDefinition {
     my $sql  = $self->mysql5;
     my $keystone = $self->nova_controller->keystone;
 
-    return "class { 'kanopya::openstack::cinder':\n" .
-                "\tamqpserver => '" . $amqp . "',\n" .
-                "\trabbits    => ['" . $amqp . "', '" . $amqp . "'],\n" .
-                "\tdbpassword => 'cinder',\n" .
-                "\tdbserver   => '" . $sql->getMasterNode->fqdn . "',\n" .
-                "\trpassword  => 'cinder',\n" .
-                "\tkpassword  => 'cinder',\n" .
-                "\temail      => '" . $self->service_provider->user->user_email . "',\n" .
-                "\tkeystone   => '" . $keystone->getMasterNode->fqdn ."',\n" .
-           "}\n";
+    return {
+        manifest =>
+            "class { 'kanopya::openstack::cinder':\n" .
+            "\tamqpserver => '" . $amqp . "',\n" .
+            "\trabbits    => ['" . $amqp . "', '" . $amqp . "'],\n" .
+            "\tdbpassword => 'cinder',\n" .
+            "\tdbserver   => '" . $sql->getMasterNode->fqdn . "',\n" .
+            "\trpassword  => 'cinder',\n" .
+            "\tkpassword  => 'cinder',\n" .
+            "\temail      => '" . $self->service_provider->user->user_email . "',\n" .
+            "\tkeystone   => '" . $keystone->getMasterNode->fqdn ."',\n" .
+           "}\n"
+    }
 }
 
 sub getHostsEntries {

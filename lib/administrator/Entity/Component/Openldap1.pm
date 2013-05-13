@@ -118,7 +118,10 @@ sub getNetConf {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return "class { 'kanopya::openldap': }\n";
+    return {
+        manifest     => "class { 'kanopya::openldap': }\n",
+        dependencies => []
+    };
 }
 
 1;

@@ -39,7 +39,11 @@ sub getPuppetDefinition {
                      "\t\tenabled        => \"1\";\n" .
                      "}\n";
 
-    return $self->SUPER::getPuppetDefinition(%args) . $definition;
+    my $superDef   = $self->SUPER::getPuppetDefinition(%args);
+    return {
+        manifest     => $superDef->{manifest} . $definition,
+        dependencies => []
+    };
 }
 
 1;

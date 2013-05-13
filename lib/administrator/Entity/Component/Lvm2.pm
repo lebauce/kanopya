@@ -346,7 +346,9 @@ sub getPuppetDefinition {
                        "}\n";
     }
 
-    return "class { 'kanopya::lvm': }\n" . $definition;
+    return {
+        manifest => "class { 'kanopya::lvm': }\n"
+    };
 }
 
 1;

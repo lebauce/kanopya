@@ -309,7 +309,12 @@ sub needBridge { return 0; }
 
 sub getHostsEntries { return; }
 
-sub getPuppetDefinition { return ""; }
+sub getPuppetDefinition {
+    return {
+        manifest     => '',
+        dependencies => []
+    };
+}
 
 sub instanciatePuppetResource {
     my ($self, %args) = @_;

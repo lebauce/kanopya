@@ -136,7 +136,7 @@ sub generatePuppetDefinitions {
         $puppet_definitions .= $ecomponent->getPuppetDefinition(
             host    => $args{host},
             cluster => $args{cluster},
-        );
+        )->{manifest};
     }
 
     if ($self->puppetagent2_mode eq 'kanopya') {

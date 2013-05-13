@@ -73,18 +73,21 @@ sub getPuppetDefinition {
         push @uplinks, "'br-vlan:" . $bridge_vlan . "'";
     }
 
-    return "class { 'kanopya::openstack::nova::compute':\n" .
-           "\tamqpserver => '" . $amqp . "',\n" .
-           "\tdbserver => '" . $sql . "',\n" .
-           "\tglance => '" . $glance . "',\n" .
-           "\tkeystone => '" . $keystone . "',\n" .
-           "\tquantum => '" . $quantum->getMasterNode->fqdn . "',\n" .
-           "\tbridge_uplinks => [ " . join(' ,', @uplinks) . " ],\n" .
-           "\temail => '" . $self->nova_controller->service_provider->user->user_email . "',\n" .
-           "\tpassword => 'nova',\n" .
-           "\tlibvirt_type => 'kvm',\n" .
-           "\tqpassword => 'quantum'\n" .
-           "}\n";
+    return {
+        manifest =>
+            "class { 'kanopya::openstack::nova::compute':\n" .
+            "\tamqpserver => '" . $amqp . "',\n" .
+            "\tdbserver => '" . $sql . "',\n" .
+            "\tglance => '" . $glance . "',\n" .
+            "\tkeystone => '" . $keystone . "',\n" .
+            "\tquantum => '" . $quantum->getMasterNode->fqdn . "',\n" .
+            "\tbridge_uplinks => [ " . join(' ,', @uplinks) . " ],\n" .
+            "\temail => '" . $self->nova_controller->service_provider->user->user_email . "',\n" .
+            "\tpassword => 'nova',\n" .
+            "\tlibvirt_type => 'kvm',\n" .
+            "\tqpassword => 'quantum'\n" .
+            "}\n";
+    };
 }
 
 sub getHostsEntries {

@@ -51,13 +51,15 @@ sub getPuppetDefinition {
         );
     }
 
-    return "class { 'kanopya::openstack::glance':\n" .
-           "\tdbserver => '" . $sql->getMasterNode->fqdn . "',\n" .
-           "\tpassword => 'glance',\n" .
-           "\tkeystone => '" . $keystone->getMasterNode->fqdn . "',\n" .
-           "\temail    => '" . $self->service_provider->user->user_email . "'\n" .
-           "}\n";
-    ;
+    return {
+        manifest =>
+            "class { 'kanopya::openstack::glance':\n" .
+            "\tdbserver => '" . $sql->getMasterNode->fqdn . "',\n" .
+            "\tpassword => 'glance',\n" .
+            "\tkeystone => '" . $keystone->getMasterNode->fqdn . "',\n" .
+            "\temail    => '" . $self->service_provider->user->user_email . "'\n" .
+            "}\n"
+    };
 }
 
 sub getHostsEntries {

@@ -162,7 +162,10 @@ sub getPuppetDefinition {
         $definition .= "class { 'kanopya::nfs': }\n";
     }
 
-    return $definition . $str;
+    return {
+        manifest     => $definition . $str,
+        dependencies => []
+    };
 }
 
 1;

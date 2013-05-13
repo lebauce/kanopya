@@ -34,7 +34,10 @@ sub getAttrDef { return ATTR_DEF; }
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return "class { 'kanopya::kvm': }\n";
+    return {
+        manifest     => "class { 'kanopya::kvm': }\n",
+        dependencies => []
+    };
 }
 
 1;

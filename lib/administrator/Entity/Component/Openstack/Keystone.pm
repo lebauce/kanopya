@@ -60,7 +60,10 @@ sub getPuppetDefinition {
                   "    email         => '" . $self->service_provider->user->user_email . "',\n" .
                   "}\n";
 
-    return $definition;
+    return {
+        manifest     => $definition,
+        dependencies => []
+    };
 }
 
 sub getHostsEntries {

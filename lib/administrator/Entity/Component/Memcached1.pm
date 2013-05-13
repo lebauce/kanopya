@@ -79,7 +79,10 @@ sub getBaseConfiguration {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return "class { 'kanopya::memcached': }\n";
+    return {
+        manifest     => "class { 'kanopya::memcached': }\n",
+        dependencies => []
+    };
 }
 
 # Commented because we want check this component only on master node

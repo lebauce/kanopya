@@ -71,7 +71,7 @@ sub execute {
         $puppet_definitions .= $self->{context}->{component}->getPuppetDefinition(
             host    => $host,
             cluster => $self->{context}->{cluster},
-        );
+        )->{manifest};
 
         $self->{context}->{component_puppetmaster}->createHostManifest(
                 host_fqdn          => $host->node->fqdn,
