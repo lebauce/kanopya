@@ -41,8 +41,8 @@ sub createDisk {
 
     General::checkParams(args => \%args, required => [ "name", "size" ]); 
 
-    my $novacontroller = $self->nova_controller;
-    my $api = $novacontroller->api;
+    my $e_controller = EEntity->new(entity => $self->nova_controller);
+    my $api = $e_controller->api;
 
     my $req = $api->tenant(id => $api->{tenant_id})->volumes->post(
                   target  => 'volume',
@@ -54,9 +54,9 @@ sub createDisk {
                       }
                   }
               );
-    my $container_device = '';
 
     my $entity = $self->lvcreate(
+                     volume_id    => $req->{volume}->{id},
                      lvm2_lv_name => $args{name},
                      lvm2_lv_size => $args{size} / 1024 / 1024 / 1024,
                  );

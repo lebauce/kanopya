@@ -35,11 +35,6 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub createDisk {
-    my ($self, %args) = @_;
-
-}
-
 =head 2
 
 =begin classdoc
@@ -58,26 +53,30 @@ sub lvcreate {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "lvm2_lv_name", "lvm2_lv_size" ],
+                         required => [ "lvm2_lv_name", "lvm2_lv_size", "volume_id" ],
                          optional => {container_device => undef });
 
-    my $cinder_vg = Entity::Component::Lvm::Lvm2Vg->find(hash => { lvm2_vg_name => 'cinder_volumes' });
+    my $cinder_vg = Entity::Component::Lvm2::Lvm2Vg->find(hash => { lvm2_vg_name => 'cinder-volumes' });
 
-    my $lv = Entity::Component::Lvm::Lvm2Lv->new(
+    my $lv = Entity::Component::Lvm2::Lvm2Lv->new(
         lvm2_lv_name       => $args{lvm2_lv_name},
         lvm2_vg_id         => $cinder_vg->id,
         lvm2_lv_freespace  => 0,
         lvm2_lv_size       => $args{lvm2_lv_size},
     );
 
+    my $container_device = '/dev' . $cinder_vg->lvm2_vg_name . '/' . $args{volume_id};
+
     my $container = Entity::Container::LvmContainer->new(
                         disk_manager_id      => $self->id,
                         container_name       => $lv->lvm2_lv_name, 
                         container_size       => $args{lvm2_lv_size}, 
                         container_freespace  => 0,
-                        container_device     => ,
+                        container_device     => $container_device ,
                         lv_id                => $lv->id 
                     );
+
+    $self->createExport(container => $container);
 
     return $container;
 
@@ -95,6 +94,18 @@ Register a new iscsi container access into Kanopya
 sub createExport {
     my ($self, %args) = @_;
 
+    General::checkParams(args     => \%args,
+                         required => [ "container" ] );
+
+    Entity::ContainerAccess::IscsiContainerAccess->new(
+        container_id            => $args{container}->id,
+        container_access_export =>,
+        container_access_port   =>,
+        container_access_ip     =>,
+#        device_connected        =>,
+#        partition_connected     =>,
+        export_manager_id       => $self->id,
+    );
 }
 
 =head2
@@ -109,6 +120,22 @@ Generate component manifest
 =cut
 
 sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    my $amqp = $self->nova_controller->amqp->getMasterNode->fqdn;
+    my $sql  = $self->mysql5;
+    my $keystone = $self->nova_controller->keystone;
+
+    return "class { 'kanopya::openstack::cinder':\n" .
+                "\tamqpserver => '" . $amqp . "',\n" .
+                "\trabbits    => ['" . $amqp . "', '" . $amqp . "'],\n" .
+                "\tdbpassword => 'cinder',\n" .
+                "\tdbserver   => '" . $sql->getMasterNode->fqdn . "',\n" .
+                "\trpassword  => 'cinder',\n" .
+                "\tkpassword  => 'cinder',\n" .
+                "\temail      => '" . $self->service_provider->user->user_email . "',\n" .
+                "\tkeystone   => '" . $keystone->getMasterNode->fqdn ."',\n" .
+           "}\n";
 }
 
 sub getHostsEntries {

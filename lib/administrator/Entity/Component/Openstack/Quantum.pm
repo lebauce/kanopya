@@ -44,7 +44,7 @@ sub getPuppetDefinition {
            "\tbridge_vlan => 'br-vlan'," .
            "\temail      => '" . $self->service_provider->user->user_email . "',\n" .
            "\tdbserver   => '" . $sql . "'\n" .
-           "}";
+           "}\n";
 }
 
 sub getHostsEntries {
