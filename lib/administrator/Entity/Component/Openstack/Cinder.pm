@@ -65,14 +65,15 @@ sub lvcreate {
         lvm2_lv_size       => $args{lvm2_lv_size},
     );
 
-    my $container_device = '/dev' . $cinder_vg->lvm2_vg_name . '/' . $args{volume_id};
+    $args{volume_id} =~ s/\-/\-\-/g;
+    my $container_device = '/dev/mapper/cinder--volumes-volume--' . $args{volume_id};
 
     my $container = Entity::Container::LvmContainer->new(
                         disk_manager_id      => $self->id,
                         container_name       => $lv->lvm2_lv_name, 
                         container_size       => $args{lvm2_lv_size}, 
                         container_freespace  => 0,
-                        container_device     => $container_device ,
+                        container_device     => $container_device,
                         lv_id                => $lv->id 
                     );
 
