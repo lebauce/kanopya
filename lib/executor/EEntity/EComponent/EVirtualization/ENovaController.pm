@@ -61,6 +61,8 @@ sub api {
     my $compute  = shift @computes;
     my @quantums  = $self->quantums;
     my $quantum  = shift @quantums;
+    my @cinders  = $self->cinders;
+    my $cinder  = shift @cinders;
 
     my $config = {
         verify_ssl => 0,
@@ -77,7 +79,7 @@ sub api {
             url     => 'http://' . $quantum->getMasterNode->fqdn . ':9696/v2.0'
         },
         volume => {
-            url     => 'http://' . $glance->getMasterNode->fqdn . ':8776/v1'
+            url     => 'http://' . $cinder->getMasterNode->fqdn . ':8776/v1'
         }
     };
 
