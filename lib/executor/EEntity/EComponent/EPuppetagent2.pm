@@ -203,10 +203,10 @@ sub applyManifest {
         (Entity::ServiceProvider::Cluster->getKanopyaCluster)->getComponent(name => 'Puppetmaster');
     my $econtext         = (EEntity->new(data => $puppetmaster))->getEContext;
     my $hostname         = $node->node_hostname . '.' . $node->service_provider->cluster_domainname;
-    my $ret              = undef;
+    my $ret              = -1;
     my $timeout          = 180;
     do {
-        if ($ret != undef) {
+        if ($ret != -1) {
             sleep 5;
             $timeout -= 5;
         }
