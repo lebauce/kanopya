@@ -29,7 +29,7 @@ eval {
         config => {
             user => {
                 name     => 'admin',
-                password => '_tamere23'
+                password => 'K4n0pY4'
             }
         }
     };
