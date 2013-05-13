@@ -55,7 +55,9 @@ function loadServiceAnalysis(container_id, sp_id) {
                     // Build serie with values of both metrics corresponding to the same time
                     var serie = [];
                     $.each(data_x, function(i, elem) {
-                        serie.push([elem[1], data_y[i][1], elem[0]]);
+                        if (data_y[i]) {
+                            serie.push([elem[1], data_y[i][1], elem[0]]);
+                        }
                     });
                     graph_container.find('.loading').remove();
                     graphScatterPlots(serie, {xlabel:selected_metric_x.val(), ylabel:selected_metric_y.val()});
