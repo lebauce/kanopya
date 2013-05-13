@@ -328,7 +328,7 @@ sub handleResult {
 
                     # Acknowledge the message as the operation result is finally handled
                     $args{acknowledge_cb}->();
-                }
+                };
                 # Keep the timer ref
                 $self->{timerrefs}->{$operation->id} = AnyEvent->timer(after => $delay, cb => $report_cb);
 
