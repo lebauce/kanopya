@@ -224,6 +224,7 @@ sub _generateBootConf {
     my $host        = $self->{context}->{host};
     my $boot_policy = $cluster->cluster_boot_policy;
     my $tftpdir     = $self->{context}->{tftp_component}->getTftpDirectory;
+    my $kernel_version = undef;
 
     # is dedicated initramfs needed for remote root ?
     if ($boot_policy =~ m/(ISCSI|NFS)/) {
@@ -238,7 +239,29 @@ sub _generateBootConf {
                      error => "Neither cluster nor host kernel defined"
                   );
         }
-        my $kernel_version  = Entity::Kernel->get(id => $kernel_id)->kernel_version;
+        my $host_params = $cluster->getManagerParameters(manager_type => 'HostManager');
+        $kernel_version = Entity::Kernel->get(id => $kernel_id)->kernel_version;
+        if ($host_params->{deploy_on_disk}) {
+            my $harddisk;
+            eval {
+                $harddisk = $host->findRelated(
+                    filters  => [ 'harddisks' ],
+                    order_by => 'harddisk_device'
+                );
+            };
+            if ($@) {
+                throw Kanopya::Exception::Internal::NotFound(
+                    error => "No hard disk to deploy the system on was found"
+                );
+            }
+            if ($harddisk->service_provider_id != $cluster->id) {
+                $kernel_version = Entity::Kernel->find(hash => { kernel_name => 'deployment' })->kernel_version;
+            }
+            else {
+                return;
+            }
+        }
+
         my $linux_component = EEntity->new(entity => $cluster->getComponent(category => "System"));
         
         $log->info("Extract initramfs $tftpdir/initrd_$kernel_version");
@@ -262,9 +285,10 @@ sub _generateBootConf {
     }
 
     if ($boot_policy =~ m/PXE/) {
-        $self->_generatePXEConf(cluster     => $self->{context}->{cluster},
-                                host        => $self->{context}->{host},
-                                mount_point => $args{mount_point});
+        $self->_generatePXEConf(cluster        => $self->{context}->{cluster},
+                                host           => $self->{context}->{host},
+                                mount_point    => $args{mount_point},
+                                kernel_version => $kernel_version);
 
         if ($boot_policy =~ m/ISCSI/) {
             my $targetname = $self->{context}->{container_access}->container_access_export;
@@ -306,7 +330,10 @@ sub _generatePXEConf {
 
     General::checkParams(args     =>\%args,
                          required => ['cluster', 'host' ],
-                         optional => { 'mount_point' => undef });
+                         optional => {
+                            'mount_point'    => undef,
+                            'kernel_version' => undef
+                         });
 
     my $cluster_kernel_id = $args{cluster}->kernel_id;
     my $kernel_id = $cluster_kernel_id ? $cluster_kernel_id : $args{host}->kernel_id;
@@ -314,7 +341,7 @@ sub _generatePXEConf {
     my $clustername = $args{cluster}->cluster_name;
     my $hostname = $args{host}->node->node_hostname;
 
-    my $kernel_version = Entity::Kernel->get(id => $kernel_id)->kernel_version;
+    my $kernel_version = $args{kernel_version} or Entity::Kernel->get(id => $kernel_id)->kernel_version;
     my $boot_policy    = $args{cluster}->cluster_boot_policy;
 
     my $tftpdir = $self->{context}->{tftp_component}->getTftpDirectory;

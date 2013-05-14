@@ -235,6 +235,20 @@ my @classes = (
     'Entity::TimePeriod'
 );
 
+sub registerKernels {
+    my @kernels = (
+        [ 'deployment', '3.0.51-0.7.9-default', 'Kanopya deployment' ]
+    );
+
+    for my $kernel (@kernels) {
+        Entity::Kernel->new(
+            kernel_name    => $kernel->[0],
+            kernel_version => $kernel->[1],
+            kernel_desc    => $kernel->[2]
+        );
+    }
+}
+
 sub registerClassTypes {
     for my $class_type (@classes) {
         ClassType->new(class_type => $class_type);
@@ -2213,6 +2227,7 @@ sub populateDB {
     $args{db} = BaseDB->_adm->{schema};
 
     registerClassTypes(%args);
+    registerKernels(%args);
     registerManagerCategories(%args);
     registerUsers(%args);
     registerDataModelTypes(%args);

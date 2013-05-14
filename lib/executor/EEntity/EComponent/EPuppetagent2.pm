@@ -181,14 +181,14 @@ sub applyConfiguration {
                                          host => $ehost);
     }
 
-    my $ret = undef;
+    my $ret = -1;
     my $timeout = 180;
     my @hosts = ($args{host}) || (map { $_->node->fqdn } @{ $args{cluster}->getHosts() });
     my $puppetmaster = (Entity::ServiceProvider::Cluster->getKanopyaCluster)->getComponent(name => 'Puppetmaster');
     my $econtext = (EEntity->new(data => $puppetmaster))->getEContext;
 
     do {
-        if ($ret != undef) {
+        if ($ret != -1) {
             sleep 5;
             $timeout -= 5;
         }

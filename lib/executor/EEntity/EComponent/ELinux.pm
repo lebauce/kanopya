@@ -73,6 +73,40 @@ sub postStartNode {
             host    => $ehost
         );
     }
+    my $params = $args{cluster}->getManagerParameters(manager_type => 'HostManager');
+    if ($params->{deploy_on_disk}) {
+        eval {
+            my $harddisk = $args{host}->findRelated(filters  => [ 'harddisks' ],
+                                                 order_by => 'harddisk_device');
+            $harddisk->service_provider_id($args{cluster}->id);
+            my $kanopya  = Entity::ServiceProvider::Cluster->getKanopyaCluster;
+            my $dhcp     = EEntity->new(data => $kanopya->getComponent(name => "Dhcpd", version => "3"));
+            my $subnetid = $dhcp->getInternalSubNetId;
+            eval {
+                my $PXEIface = $args{host}->getPXEIface;
+                my $hostid   = $dhcp->getHostId(
+                    dhcpd3_subnet_id         => $subnetid,
+                    dhcpd3_hosts_mac_address => $PXEIface->iface_mac_addr
+                );
+                $dhcp->removeHost(
+                    dhcpd3_hosts_id  => $hostid,
+                    dhcpd3_subnet_id => $subnetid
+                );
+                $dhcp->generate;
+                $dhcp->reload;
+            };
+            if ($@) {
+                throw Kanopya::Exception::Internal::NotFound(
+                    error => "No PXE Iface was found"
+                );
+            }
+        };
+        if ($@) {
+            throw Kanopya::Exception::Internal::NotFound(
+                error => "No hard disk to deploy the system on was found"
+            );
+        }
+    }
 }
 
 sub postStopNode {
@@ -87,7 +121,7 @@ sub postStopNode {
             cluster => $args{cluster},
             host    => $ehost
         );
-    }    
+    }
 }
 
 =head2 getAvailableMemory
@@ -150,10 +184,10 @@ sub generateConfiguration {
 
     General::checkParams(args     => \%args,
                          required => [ 'cluster', 'host' ]);
-     
+
     my $generated_files = [];
     my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
-                         
+
     push @$generated_files, $self->_generateHostname(%args);
     push @$generated_files, $self->_generateResolvconf(%args);
     push @$generated_files, $self->_generateUdevPersistentNetRules(%args);
@@ -173,8 +207,8 @@ sub preconfigureSystemimage {
                          required => [ 'files', 'cluster', 'host', 'mount_point' ]);
 
     my $econtext = $self->_host->getEContext;
-    
-    # send generated files to the image mount directory                    
+
+    # send generated files to the image mount directory
     for my $file (@{$args{files}}) {
         $econtext->send(
             src  => $file->{src},
@@ -222,7 +256,7 @@ sub _generateHostname {
         template_file => 'hostname.tt',
         data          => { hostname => $args{host}->node->node_hostname }
     );
-    
+
     return { src  => $file, dest => $args{path} };
 }
 
@@ -242,7 +276,7 @@ sub _generateHosts {
         template_file => 'hosts.tt',
         data          => { hosts => \@hosts_entries }
     );
-    
+
     return { src  => $file, dest => '/etc/hosts' };
 }
 
@@ -271,7 +305,7 @@ sub _generateResolvconf {
         template_file => 'resolv.conf.tt',
         data          => $data
     );
-    
+
     return { src  => $file, dest => '/etc/resolv.conf' };
 }
 
@@ -281,7 +315,7 @@ sub _generateUdevPersistentNetRules {
     General::checkParams(args => \%args, required => [ 'host','cluster' ]);
 
     my @interfaces = ();
-    
+
     for my $iface ($args{host}->_entity->getIfaces()) {
         my $tmp = {
             mac_address   => lc($iface->getAttr(name => 'iface_mac_addr')),
@@ -480,10 +514,10 @@ sub extractInitramfs {
     my ($self, %args) = @_;
     General::checkParams(args     =>\%args,
                          required => ['src_file']);
-    
+
     my $econtext = $self->_host->getEContext;
     my $initrd = $args{src_file};
-    
+
     my $cmd = "[ -f $args{src_file} ] && echo -n found";
     my $result = $econtext->execute(command => $cmd);
     if($result->{stdout} ne 'found') {
@@ -491,9 +525,9 @@ sub extractInitramfs {
             error => "$initrd not found"
         );
     }
-    
+
     my $rand = new String::Random;
-    
+
     # create working directory
     my $initrddir = '/tmp/'.$rand->randpattern("cccccccc");
     $log->info("extract initramfs $initrd to temporary directory $initrddir");
@@ -537,24 +571,245 @@ update initrd directory content
 
 sub customizeInitramfs {
     my ($self, %args) = @_;
+
     General::checkParams(args     =>\%args,
-                         required => [ 'initrd_dir','cluster', 'host' ]);
-    
+                         required => [ 'initrd_dir', 'cluster', 'host' ]);
+
     my $econtext = $self->_host->getEContext;
     my $initrddir = $args{initrd_dir};
+    my $systemimage = $args{host}->getNodeSystemimage;
+    my $ifaces = $args{host}->getIfaces;
+    my $hostname = $args{host}->node->node_hostname;
+
+    my $file = $self->_generateUdevPersistentNetRules(host => $args{host}, cluster => $args{cluster});
+    my $cmd = 'cp '.$file->{src}.' '.$initrddir.$file->{dest};
+    $econtext->execute(command => $cmd);
+
+    # TODO check targetname is the same for each container access
+    my $portals = [];
+    my $target = "";
+    for my $container_access ($systemimage->container_accesses) {
+        push @$portals, { ip   => $container_access->container_access_ip,
+                          port => $container_access->container_access_port };
+        $target = $container_access->container_access_export;
+    }
 
     $log->info("customize initramfs $initrddir");
 
-    my $clustername = $args{cluster}->cluster_name;
-    my $hostname = $args{host}->node->node_hostname;
+    my $rootdev = $self->_initrd_iscsi(
+                      initrd_dir    => $initrddir,
+                      initiatorname => $args{host}->host_initiatorname,
+                      target        => $target,
+                      portals       => $portals
+                  );
 
-    my $nodedir = $self->_executor->getConf->{clusters_directory} . "/$clustername/$hostname";
+    # TODO: Check host harddisks for a harddisk_device called 'autodetect'
+    my $host_params = $args{cluster}->getManagerParameters(manager_type => 'HostManager');
+    if ($host_params->{deploy_on_disk}) {
+        my $harddisk;
+        eval {
+            $harddisk = $args{host}->findRelated(filters  => [ 'harddisks' ],
+                                                 order_by => 'harddisk_device');
+        };
+        if ($@) {
+            throw Kanopya::Exception::Internal::NotFound(
+                      error => "No hard disk to deploy the system on was found"
+                  );
+        }
 
-    # append files to the archive directory
-    my $sourcefile = $nodedir . '/etc/udev/rules.d/70-persistent-net.rules';
-    my $cmd = "(cd $initrddir && mkdir -p etc/udev/rules.d && cp $sourcefile etc/udev/rules.d)";
-    $econtext->execute(command => $cmd);
+        my $size = $harddisk->harddisk_size;
+        my $device = '/dev/disk/by-path/ip-' . $portals->[0]->{ip} . ':' .
+                     $portals->[0]->{port} . '-iscsi-' . $target . '-lun-0';
+
+        $self->_initrd_deployment(initrd_dir  => $initrddir,
+                                  src_device  => $device,
+                                  dest_device => $harddisk->harddisk_device,
+                                  root_size   => $size * 0.6 / 1024 / 1024 / 1024,
+                                  swap_size   => $size * 0.4 / 1024 / 1024 / 1024);
+    }
+    else {
+        # else remove deployement script
+        $cmd = 'rm ' . $args{initrd_dir} . '/boot/83-deploy.sh';
+        $econtext->execute(command => $cmd);
+    }
+
+    my @ifaces = $args{host}->getIfaces();
+    $self->_initrd_config(initrd_dir => $initrddir,
+                          ifaces     => \@ifaces,
+                          hostname   => $args{host}->node->node_hostname,
+                          rootdev    => $rootdev);
 }
+
+=pod
+
+=begin classdoc
+
+generate config variables for iscsi script in the initrd.
+enable multipath script if several portals are provided
+
+@param initrd_dir initrd working directory
+@param target device to duplicate to dest_device
+@param portals device receiving src_device content
+@param initiatorname size in gigabyte to use during root resizing
+
+@return device containing root filesystem
+
+=end classdoc
+
+=cut
+
+sub _initrd_iscsi {
+    my ($self, %args) = @_;
+    General::checkParams(args     =>\%args,
+                         required => ['initrd_dir','target', 'portals', 'initiatorname']);
+    my $econtext = $self->_host->getEContext;
+    my $cmd;
+
+    # generate send_targets and nodes info
+
+    my $target = $args{target};
+    my @portals = @{$args{portals}};
+
+    for my $portal (@portals) {
+        my $st_dir = $args{initrd_dir}.'/etc/iscsi/send_targets/'.$portal->{ip}.",".$portal->{port};
+        $cmd = 'mkdir -p '.$st_dir;
+        $econtext->execute(command => $cmd);
+
+        my $target_dir = $args{initrd_dir}."/etc/iscsi/nodes/$target/".$portal->{ip}.",".$portal->{port}.',1';
+        $cmd = 'mkdir -p '.$target_dir;
+        $econtext->execute(command => $cmd);
+
+        $self->generateFile(mount_point => $st_dir,
+                            input_file  => 'st_config.tt',
+                            template_dir => '/opt/kanopya/templates/internal/initrd/sles',
+                            output      => '/st_config',
+                            data        => { ip => $portal->{ip}, port => $portal->{port} }
+                            );
+
+        $self->generateFile(mount_point => $target_dir,
+                            input_file  => 'default.tt',
+                            template_dir => '/opt/kanopya/templates/internal/initrd/sles',
+                            output      => '/default',
+                            data        => { target => $target, ip => $portal->{ip}, port => $portal->{port} }
+                            );
+
+        $cmd = "echo InitiatorName=$args{initiatorname} > $args{initrd_dir}/etc/iscsi/initiatorname.iscsi";
+        $econtext->execute(command => $cmd);
+    }
+
+    # if you have only one portal, remove multipath capability and use iscsi dev instead of device mapper device
+    my $rootdev = '/dev/dm-1';
+    if(scalar(@portals) == 1) {
+        $log->debug("removing multipath capability");
+        $cmd = 'rm '.$args{initrd_dir}.'/boot/04-multipathd.sh '.$args{initrd_dir}.'/boot/21-multipath.sh';
+        $econtext->execute(command => $cmd);
+        $rootdev = '/dev/disk/by-path/ip-'.$portals[0]->{ip}.':'.$portals[0]->{port}.'-iscsi-'.$target.'-lun-0-part1';
+    }
+    return $rootdev;
+}
+
+=pod
+
+=begin classdoc
+
+desc
+
+@param initrd_dir initrd working directory
+@param src_device device to duplicate to dest_device
+@param dest_device device receiving src_device content
+@param root_size size in gigabyte to use during root resizing
+@param swap_size size in gigabyte to use during swap device creation
+
+=end classdoc
+
+=cut
+
+sub _initrd_deployment {
+    my ($self, %args) = @_;
+    General::checkParams(args     =>\%args,
+                         required => [ 'initrd_dir', 'src_device', 'dest_device',
+                                       'root_size', 'swap_size' ]);
+
+    $self->generateFile(
+        mount_point  => $args{initrd_dir} . '/config',
+        input_file   => 'deploy.sh.tt',
+        template_dir => '/opt/kanopya/templates/internal/initrd/sles',
+        output       => '/deploy.sh',
+        data         => { deploy_src_dev   => $args{src_device},
+                          deploy_dest_dev  => $args{dest_device},
+                          deploy_root_size => $args{root_size},
+                          deploy_swap_size => $args{swap_size} }
+    );
+
+    # TODO change hard coded root device (depend on master image partitioning)
+    return '/dev/sda1';
+}
+
+=pod
+
+=begin classdoc
+
+generate config variables for deployment script in the initrd
+
+@param initrd_dir initrd working directory
+@param ifaces array reference of Entity::Iface instances to configure static ip
+@param hostname host hostname
+@param rootdev device containing the final root filesystem
+
+=end classdoc
+
+=cut
+
+sub _initrd_config {
+    my ($self, %args) = @_;
+    General::checkParams(args     =>\%args,
+                         required => ['initrd_dir', 'ifaces', 'hostname', 'rootdev']);
+
+    $self->generateFile(mount_point => $args{initrd_dir}.'/config',
+                        input_file  => 'storage.sh.tt',
+                        template_dir => '/opt/kanopya/templates/internal/initrd/sles',
+                        output      => '/storage.sh',
+                        data        => { rootdev => $args{rootdev} }
+                        );
+
+    my @macaddresses = ();
+    my @ips = ();
+    my $hostname = $args{hostname};
+
+    IFACE:
+    for my $iface (@{$args{ifaces}}) {
+        my $name = $iface->getAttr(name => 'iface_name');
+        my $mac  = $iface->getAttr(name => 'iface_mac_addr');
+        my $ip   =  eval { $iface->getIPAddr; };
+        if ($@) {
+          next IFACE;
+        }
+        my $netmask = $iface->getPoolip->network->network_netmask;
+        my $gateway = $iface->getPoolip->network->network_gateway;
+        push @macaddresses, "$name:$mac";
+        push @ips, $ip.'::'.$gateway.':'.$netmask.':'.$hostname.':'.$name.':none';
+    }
+
+    my $static_macaddress = join(' ', @macaddresses);
+    my $static_ips = join(' ', @ips);
+
+    $self->generateFile(mount_point => $args{initrd_dir}.'/config',
+                        input_file  => 'network.sh.tt',
+                        template_dir => '/opt/kanopya/templates/internal/initrd/sles',
+                        output      => '/network.sh',
+                        data        => { static_macaddress => $static_macaddress,
+                                         static_ips =>  $static_ips }
+                       );
+
+    $self->generateFile(mount_point => $args{initrd_dir}.'/config',
+                        input_file  => 'mount.sh.tt',
+                        template_dir => '/opt/kanopya/templates/internal/initrd/sles',
+                        output      => '/mount.sh',
+                        data        => { rootdev => $args{rootdev},
+                                         rootfsck => '/sbin/fsck.ext3' }
+                       );
+}
+
 
 =pod
 
@@ -563,7 +818,7 @@ sub customizeInitramfs {
 create the cpio file and compress it
 
 @param initrd_dir initrd directory path
-@param compress_type comression algo to use (must be 'gzip' or 'bzip2') 
+@param compress_type comression algo to use (must be 'gzip' or 'bzip2')
 @param new_initrd_file full path of the new initrd to create (directory must exists)
 
 =end classdoc
@@ -574,12 +829,12 @@ sub buildInitramfs {
     my ($self, %args) = @_;
     General::checkParams(args     =>\%args,
                          required => ['initrd_dir','compress_type', 'new_initrd_file']);
-    
+
     my $econtext = $self->_host->getEContext;
     my $initrddir = $args{initrd_dir};
     my $newinitrd = $args{new_initrd_file};
     my $compress = $args{compress_type};
-    
+
     # rebuild and compress the new initrd
     my $cmd = "(cd $initrddir && find . | cpio -H newc -o | $compress > $newinitrd)";
     $econtext->execute(command => $cmd);

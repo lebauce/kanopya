@@ -532,6 +532,7 @@ CREATE TABLE `harddisk` (
   `host_id` int(8) unsigned NOT NULL,
   `harddisk_device` char(32) NOT NULL,
   `harddisk_size` bigint unsigned DEFAULT 0,
+  `service_provider_id` int(8) unsigned DEFAULT 0,
   PRIMARY KEY (`harddisk_id`),
   KEY (`host_id`),
   FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION

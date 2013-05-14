@@ -92,6 +92,13 @@ __PACKAGE__->add_columns(
     extra => { unsigned => 1 },
     is_nullable => 1,
   },
+  'service_provider_id',
+  {
+    data_type => 'int',
+    default_value => 0,
+    extra => { unsigned => 1 },
+    is_nullable => 1
+  }
 );
 
 =head1 PRIMARY KEY
