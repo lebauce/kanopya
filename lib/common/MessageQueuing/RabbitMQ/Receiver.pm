@@ -236,28 +236,26 @@ sub fetch {
                          optional => { 'duration' => undef });
 
     # Set a timer to wait messages for the specified duration only
-    my $timeouted = 0;
     my $timeout = undef;
     if (defined $args{duration}) {
         $timeout = AnyEvent->timer(after => $args{duration}, cb => sub {
-                              $timeouted = 1;
-                              # Interupt the infinite loop
-                              $args{condvar}->send;
-                          });
+                       # Interupt the infinite loop
+                       $args{condvar}->croak("No message recevied for $args{duration} second(s)");
+                   });
     }
 
     # Wait for the first send from callback
-    $args{condvar}->recv;
+    eval {
+        $args{condvar}->recv;
+    };
+    if ($@) {
+        my $err = $@;
+        throw Kanopya::Exception::MessageQueuing::NoMessage(error => $err);
+    }
 
     # Disarm the timer
     # TODO: We probably need to disarm the timer within the callback
     $timeout = undef;
-
-    if ($timeouted) {
-        throw Kanopya::Exception::MessageQueuing::NoMessage(
-                  error => "No message recevied for $args{duration} second(s)"
-              );
-    }
 }
 
 
