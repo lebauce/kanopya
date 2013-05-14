@@ -90,20 +90,6 @@ use constant ATTR_DEF => {
         is_editable  => 1,
         is_mandatory => 1
     },
-    overcommitment_memory_factor => {
-        label        => 'Overcommitment memory factor',
-        type         => 'string',
-        pattern      => '^\d*$',
-        is_editable  => 1,
-        is_mandatory => 0
-    },
-    overcommitment_cpu_factor => {
-        label        => 'Overcommitment CPU factor',
-        type         => 'string',
-        pattern      => '^\d*$',
-        is_editable  => 1,
-        is_mandatory => 0
-    },
     # TODO: move this virtual attr to HostManager attr def when supported
     host_type => {
         is_virtual => 1
