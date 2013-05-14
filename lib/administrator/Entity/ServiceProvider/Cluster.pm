@@ -843,7 +843,8 @@ sub setState {
 
     General::checkParams(args => \%args, required => [ 'state' ]);
 
-    $self->setAttr(name => 'cluster_prev_state', value => $self->getState());
+    my $state = $self->getState();
+    $self->setAttr(name => 'cluster_prev_state', value => $state);
     $self->setAttr(name => 'cluster_state', value => $args{state} . ":" . time);
     $self->save();
 }
