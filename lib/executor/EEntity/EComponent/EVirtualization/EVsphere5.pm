@@ -209,16 +209,16 @@ sub createVm {
     $log->info('trying to get Hypervisor ' .$host_conf{hypervisor}. ' view from vsphere');
 
     #retrieve host view
-        $host_view = $self->findEntityView(view_type   => 'HostSystem',
-                                           hash_filter => {
-                                               'name' => $host_conf{hypervisor},
-                                           });
+    $host_view = $self->findEntityView(view_type   => 'HostSystem',
+                                       hash_filter => {
+                                           'name' => $host_conf{hypervisor},
+                                       });
 
     #retrieve datacenter view
-        $datacenter_view = $self->findEntityview(view_type   => 'Datacenter',
-                                                 hash_filter => {
-                                                     name => $host_conf{datacenter}
-                                                 });
+    $datacenter_view = $self->findEntityview(view_type   => 'Datacenter',
+                                             hash_filter => {
+                                                 name => $host_conf{datacenter}
+                                             });
 
     #Generate vm's devices specifications
     my $controller_vm_dev_conf_spec = create_conf_spec();
