@@ -45,41 +45,14 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_editable  => 1
     },
-    keepalived1_virtualservers => {
-        label       => 'Load balancing',
-        type        => 'relation',
-        relation    => 'single_multi',
-        is_editable => 1
-    },
     keepalived1_vrrpinstances => {
-        label       => 'Load balancing',
+        label       => 'High Available IP',
         type        => 'relation',
         relation    => 'single_multi',
         is_editable => 1
     },
-    
 };
 sub getAttrDef { return ATTR_DEF; }
-
-sub getConf {
-    my $self = shift;
-    my $conf = $self->SUPER::getConf();
-
-    my @vrrp_instances;
-    for my $vs ($self->keepalived1_vrrpinstances) {
-        push @virtualservers, $vs->toJSON(raw => 1);
-    }
-
-    return $conf;
-}
-
-sub setConf {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['conf']);
-    #my ($vrrpinstances, $virtualservers);
-    my $conf = $args{conf};
-    $self->SUPER::setConf(conf => $conf);
-}
 
 sub getBaseConfiguration {
     return {
@@ -93,10 +66,10 @@ sub getPuppetDefinition {
     my $manifest = "";
     my $state;
     # first we check if we need to deploy a new keepalived 
-    my $nodes_count = scalar($self->service_provider->nodes);
-    if($nodes_count == 1) {
+    my $node_number = $args{host}->node->node_number;
+    if($node_number == 1) {
         $state = 'MASTER';
-    } elsif($nodes_count == 2) {
+    } elsif($node_number == 2) {
         $state = 'BACKUP';
     } else {
         return $manifest;
@@ -105,7 +78,6 @@ sub getPuppetDefinition {
     my $email = $self->notification_email;
     my $smtp_server = $self->smtp_server;
     
-    my @virtual_servers = $self->keepalived1_virtualservers;
     my @vrrp_instances = $self->keepalived1_vrrpinstances;
     
     # global config

@@ -70,7 +70,7 @@ sub getPuppetDefinition {
                       "}\n";
 
     return {
-        manifest     => $definitions,
+        manifest     => $definition,
         dependencies => []
     };
 }

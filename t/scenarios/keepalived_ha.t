@@ -136,7 +136,10 @@ sub main {
     } 'ssh connection on node 1';
     
     my $result = $master_econtext->execute(command => "pgrep keepalived");
-    cmp_ok($result->{stdout}, '!=', "", "keepalived process is running on node 1");
+    ok($result->{stdout} ne "", "keepalived process is running on node 1");
+    
+    $result = $master_econtext->execute(command => "grep MASTER /etc/keepalived/keepalived.conf");
+    ok($result->{stdout} ne "", "keepalived configured as MASTER on node 1");
     
     diag("test virtual ips reachability");
     $p = Net::Ping->new('icmp', 10);
@@ -161,7 +164,10 @@ sub main {
     
     my $cmd = "pgrep keepalived";
     $result = $backup_econtext->execute(command => $cmd);
-    cmp_ok($result->{stdout}, '!=', "", "keepalived process is running on node 2");
+    ok($result->{stdout} ne "", "keepalived process is running on node 2");
+    
+    $result = $backup_econtext->execute(command => "grep BACKUP /etc/keepalived/keepalived.conf");
+    ok($result->{stdout} ne "", "keepalived configured as BACKUP on node 2");
     
     $cmd = "ip addr | grep -E \"inet ($addr1|$addr2)\"";
     $result = $backup_econtext->execute(command => $cmd);
@@ -200,6 +206,24 @@ sub main {
     
     ok($p->ping($addr1), "vip $addr1 is reachable");
     ok($p->ping($addr2), "vip $addr2 is reachable");
+    
+    # start a third non-keepalived node 
+    
+    diag("start a third node");
+    $cluster->addNode();
+    Kanopya::Tools::Execution->executeAll();
+    
+    my $othernode = get_node_by_number(cluster => $cluster, number => 3);
+    ok($othernode, "retrieve node 3");
+    
+    my $othernode_econtext;
+    lives_ok { 
+        $othernode_econtext = EContext::SSH->new(ip => $othernode->adminIp, timeout => 10);
+    } 'ssh connection on node 3';
+    
+    $cmd = "pgrep keepalived";
+    $result = $othernode_econtext->execute(command => $cmd);
+    ok($result->{stdout} ne "", "keepalived process not running on node 3");
     
 }
 

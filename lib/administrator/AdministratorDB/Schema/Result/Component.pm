@@ -1,37 +1,18 @@
-use utf8;
 package AdministratorDB::Schema::Result::Component;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-=head1 NAME
-
-AdministratorDB::Schema::Result::Component
-
-=cut
-
 use strict;
 use warnings;
 
-=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
-
-=cut
-
 use base 'DBIx::Class::IntrospectableM2M';
-
-=head1 LEFT BASE CLASSES
-
-=over 4
-
-=item * L<DBIx::Class::Core>
-
-=back
-
-=cut
 
 use base qw/DBIx::Class::Core/;
 
-=head1 TABLE: C<component>
+=head1 NAME
+
+AdministratorDB::Schema::Result::Component
 
 =cut
 
@@ -99,33 +80,7 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
 );
-
-=head1 PRIMARY KEY
-
-=over 4
-
-=item * L</component_id>
-
-=back
-
-=cut
-
 __PACKAGE__->set_primary_key("component_id");
-
-=head1 UNIQUE CONSTRAINTS
-
-=head2 C<service_provider_id>
-
-=over 4
-
-=item * L</service_provider_id>
-
-=item * L</component_type_id>
-
-=back
-
-=cut
-
 __PACKAGE__->add_unique_constraint(
   "service_provider_id",
   ["service_provider_id", "component_type_id"],
@@ -193,21 +148,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 cinder
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Cinder>
-
-=cut
-
-__PACKAGE__->might_have(
-  "cinder",
-  "AdministratorDB::Schema::Result::Cinder",
-  { "foreign.cinder_id" => "self.component_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 ceph
 
 Type: might_have
@@ -253,6 +193,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 cinder
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Cinder>
+
+=cut
+
+__PACKAGE__->might_have(
+  "cinder",
+  "AdministratorDB::Schema::Result::Cinder",
+  { "foreign.cinder_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 collector_indicators
 
 Type: has_many
@@ -283,19 +238,24 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 component_nodes
+=head2 service_provider
 
-Type: has_many
+Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::ComponentNode>
+Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
 
 =cut
 
-__PACKAGE__->has_many(
-  "component_nodes",
-  "AdministratorDB::Schema::Result::ComponentNode",
-  { "foreign.component_id" => "self.component_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
+__PACKAGE__->belongs_to(
+  "service_provider",
+  "AdministratorDB::Schema::Result::ServiceProvider",
+  { service_provider_id => "service_provider_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 component_template
@@ -333,18 +293,18 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 container_accesses
+=head2 component_nodes
 
 Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::ContainerAccess>
+Related object: L<AdministratorDB::Schema::Result::ComponentNode>
 
 =cut
 
 __PACKAGE__->has_many(
-  "container_accesses",
-  "AdministratorDB::Schema::Result::ContainerAccess",
-  { "foreign.export_manager_id" => "self.component_id" },
+  "component_nodes",
+  "AdministratorDB::Schema::Result::ComponentNode",
+  { "foreign.component_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -360,6 +320,21 @@ __PACKAGE__->has_many(
   "containers",
   "AdministratorDB::Schema::Result::Container",
   { "foreign.disk_manager_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 container_accesses
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ContainerAccess>
+
+=cut
+
+__PACKAGE__->has_many(
+  "container_accesses",
+  "AdministratorDB::Schema::Result::ContainerAccess",
+  { "foreign.export_manager_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -858,26 +833,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 service_provider
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "service_provider",
-  "AdministratorDB::Schema::Result::ServiceProvider",
-  { service_provider_id => "service_provider_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
-);
-
 =head2 service_provider_managers
 
 Type: has_many
@@ -968,21 +923,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 vmm_iaas
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Vmm>
-
-=cut
-
-__PACKAGE__->has_many(
-  "vmm_iaas",
-  "AdministratorDB::Schema::Result::Vmm",
-  { "foreign.iaas_id" => "self.component_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 vmm_vmm
 
 Type: might_have
@@ -995,6 +935,21 @@ __PACKAGE__->might_have(
   "vmm_vmm",
   "AdministratorDB::Schema::Result::Vmm",
   { "foreign.vmm_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 vmm_iaas
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Vmm>
+
+=cut
+
+__PACKAGE__->has_many(
+  "vmm_iaas",
+  "AdministratorDB::Schema::Result::Vmm",
+  { "foreign.iaas_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -1014,15 +969,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-03-27 16:05:57
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:nkuHX7/pi1FAB6aqKqJcRA
-
-__PACKAGE__->belongs_to(
-  "parent",
-  "AdministratorDB::Schema::Result::Entity",
-  { entity_id => "component_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2013-05-30 10:47:07
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1KDFWlcR3gx/Al16+F1Yww
 
 __PACKAGE__->has_many(
   "vmms",
@@ -1036,6 +984,13 @@ __PACKAGE__->might_have(
   "AdministratorDB::Schema::Result::Vmm",
   { "foreign.vmm_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "component_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 1;

@@ -133,7 +133,6 @@ my @classes = (
     'Entity::Component::Dhcpd3',
     'Entity::Component::HAProxy1',
     'Entity::Component::Keepalived1',
-    'Entity::Component::Keepalived1::Keepalived1Virtualserver',
     'Entity::Component::Keepalived1::Keepalived1Vrrpinstance',
     'Entity::Component::Keepalived1::Keepalived1Virtualip',
     'Entity::Component::Memcached1',
