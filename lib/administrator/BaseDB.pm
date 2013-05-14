@@ -1958,7 +1958,7 @@ sub _getDbixFromHash {
         }
         else {
             # TODO Test number of logs if we log in warn level
-            $log->debug($warn_msg);
+            $log->warn($warn_msg);
         }
     };
 
@@ -2599,7 +2599,12 @@ sub rollbackTransaction {
     my $self = shift;
 
     $log->debug("Rollbacking database transaction");
-    $self->_adm->{schema}->txn_rollback;
+    eval {
+        $self->_adm->{schema}->txn_rollback;
+    };
+    if ($@) {
+        $log->warn($@);
+    }
 }
 
 
