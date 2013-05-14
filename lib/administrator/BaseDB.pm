@@ -1958,7 +1958,7 @@ sub _getDbixFromHash {
         }
         else {
             # TODO Test number of logs if we log in warn level
-            $log->warn($warn_msg);
+            $log->debug($warn_msg);
         }
     };
 

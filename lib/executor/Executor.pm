@@ -120,6 +120,9 @@ sub runWorkflow {
 
     my $workflow = EEntity->new(entity => Entity::Workflow->get(id => $args{workflow_id}));
 
+    # Log in the proper file
+    $self->setLogAppender(workflow => $workflow);
+
     # Set the workflow as running
     $workflow->setState(state => 'running');
 
@@ -172,6 +175,9 @@ sub executeOperation {
         $log->warn("Operation <$args{operation_id}> does not exists, skipping.");
         return 1;
     }
+
+    # Log in the proper file
+    $self->setLogAppender(workflow => $operation->workflow);
 
     $log->info("---- [ Operation " . $operation->type  . " <" . $operation->id . "> ] ----");
     Message->send(from    => 'Executor',
@@ -325,6 +331,9 @@ sub handleResult {
 
     my $workflow = EEntity->new(entity => $operation->workflow);
 
+    # Log in the proper file
+    $self->setLogAppender(workflow => $workflow);
+
     # Set the operation state
     $operation->setState(state => $args{status});
 
@@ -473,6 +482,35 @@ sub terminateOperation {
 
     # Acknowledge the message
     return 1;
+}
+
+
+=pod
+=begin classdoc
+
+Set the log appender to log in the workflow specific log file.
+
+@param workflow the workflow to identify the log file
+
+=end classdoc
+=cut
+
+sub setLogAppender {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'workflow' ]);
+
+    if (exists Log::Log4perl->appenders()->{'workflow'}) {
+        $log->eradicate_appender('workflow');
+    }
+
+    my $appender = Log::Log4perl::Appender->new("Log::Dispatch::File",
+                       name      => "workflow",
+                       filename  => $self->{config}->{logdir} . "workflows/" . $args{workflow}->id . ".log"
+                   );
+
+    $appender->layout(Log::Log4perl::Layout::PatternLayout->new("%d %c %p> %M - %m%n"));
+    $log->add_appender($appender);
 }
 
 1;
