@@ -34,6 +34,7 @@ use warnings;
 
 use VMware::VIRuntime;
 use Vsphere5Datacenter;
+use Entity::Component::Vsphere5::Vsphere5Datacenter;
 use Entity::Repository::Vsphere5Repository;
 use Entity;
 use Entity::Host::Hypervisor;
@@ -133,7 +134,7 @@ sub startHost {
     my $repository  = $self->getRepository(
                           container_access_id => $disk_params->{container_access_id}
                       );
-    my $datacenter  = Vsphere5Datacenter->find(hash => { 
+    my $datacenter  = Entity::Component::Vsphere5::Vsphere5Datacenter->find(hash => {
                           vsphere5_datacenter_id => $hypervisor->vsphere5_datacenter_id
                       });
     

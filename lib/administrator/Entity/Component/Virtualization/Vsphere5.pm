@@ -787,7 +787,7 @@ sub registerDatacenter {
     #First we check if the datacenter already exist in Kanopya
     my $datacenter;
     eval {
-        $datacenter = Vsphere5Datacenter->find(hash => {
+        $datacenter = Entity::Component::Vsphere5::Vsphere5Datacenter->find(hash => {
                           vsphere5_datacenter_name => $args{name},
                           vsphere5_id              => $self->id,
                       });
@@ -802,7 +802,7 @@ sub registerDatacenter {
     }
     else {
         eval {
-            $datacenter = Vsphere5Datacenter->new(
+            $datacenter = Entity::Component::Vsphere5::Vsphere5Datacenter->new(
                               vsphere5_datacenter_name => $args{name},
                               vsphere5_id              => $self->id
                           );
@@ -1061,7 +1061,7 @@ sub registerHypervisor {
     General::checkParams(args => \%args, required => ['parent','name']);
 
     #If parent is not a datacenter, exit, returning the parent
-    if (!(ref $args{parent} eq 'Vsphere5Datacenter')) {
+    if (!(ref $args{parent} eq 'Entity::Component::Vsphere5::Vsphere5Datacenter')) {
         my $msg = 'Can\'t register a hypervisor with this method without a datacenter parent';
         $log->info($msg);
         return $args{parent};
@@ -1532,7 +1532,7 @@ sub getDatacenters {
     my $datacenters;
 
     if (defined $args{datacenter_name}) {
-        $datacenters  = Vsphere5Datacenter->find(
+        $datacenters  = Entity::Component::Vsphere5::Vsphere5Datacenter->find(
                             hash => {
                                 vsphere5_id              => $self->id,
                                 vsphere5_datacenter_name => $args{datacenter_name},
@@ -1540,7 +1540,7 @@ sub getDatacenters {
                         );
     }
     else {
-        $datacenters  = Vsphere5Datacenter->search(
+        $datacenters  = Entity::Component::Vsphere5::Vsphere5Datacenter->search(
                                hash => { vsphere5_id => $self->id }
                         );
     }
