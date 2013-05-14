@@ -8,7 +8,7 @@ var Vsphere5 = (function(_super) {
 
         this.displayed = [ 'vsphere5_login', 'vsphere5_pwd', 'vsphere5_url', 'overcommitment_cpu_factor', 'overcommitment_memory_factor'];
 
-        this.relations = { 'vsphere5_repositories': [ 'repository_name', 'container_access_id' ] };
+        this.relations = { 'repositories': [ 'repository_name', 'container_access_id' ] };
         this.actionsCallback = function () {
             var vsphereButton = $('<input>', { type : 'button' }).val('Import vSphere').bind('click', function(event) {
                 vsphereBrowser(event);
