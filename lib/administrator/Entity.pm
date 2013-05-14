@@ -240,7 +240,7 @@ sub delete {
     if (defined $lock) {
         $self->unlock(consumer => $lock->consumer);
     }
-    return $self->SUPER::delete();
+    return $self->SUPER::delete(%args);
 }
 
 
