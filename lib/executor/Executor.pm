@@ -211,7 +211,7 @@ sub executeOperation {
 #        }
 #    }
 
-    # Skip the proccessing steps id postreported
+    # Skip the proccessing steps if postreported
     my $delay;
     if ($operation->state ne 'postreported') {
         # Check preconditions for processing
