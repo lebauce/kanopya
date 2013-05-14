@@ -139,6 +139,22 @@ sub methods {
 
 =begin classdoc
 
+Return the boot policies for the host ruled by this host manager
+
+=end classdoc
+
+=cut
+
+sub getBootPolicies {
+    return (Manager::HostManager->BOOT_POLICIES->{virtual_disk},
+            Manager::HostManager->BOOT_POLICIES->{pxe_iscsi},
+            Manager::HostManager->BOOT_POLICIES->{pxe_nfs});
+}
+
+=pod
+
+=begin classdoc
+
 Not implemented
 
 =end classdoc
@@ -734,7 +750,6 @@ sub register {
 
     my @registered_items;
     foreach my $register_item (@register_items) {
-
         my $register_method = $register_methods{$register_item->{type}};
 
         my $registered_item;
@@ -747,7 +762,7 @@ sub register {
         };
         if ($@) {
             $errmsg = 'Could not register '. $register_item->{name} .' in Kanopya: '. $@;
-            $log->info($errmsg);
+            $log->error($errmsg);
             throw Kanopya::Exception::Internal(error => $errmsg);
         }
 
@@ -847,13 +862,11 @@ sub registerVm {
     my $service_provider_renamed = $self->formatName(name => $service_provider_name);
 
     #Get the datacenter used by the hosting hypervisor(s)
-    my @hypervisors_nodes;
-    eval {
-        @hypervisors_nodes = Node->search(hash => {
-                                 service_provider_id => $parent_service_provider->id
-                             });
-    };
-    if ($@) {
+    my @hypervisors_nodes = ();
+    @hypervisors_nodes = Node->search(hash => {
+                             service_provider_id => $parent_service_provider->id
+                         });
+    if (not scalar @hypervisors_nodes) {
         $errmsg  = 'Could not find any node in the parent service provider: '. $@;
         $errmsg .= 'Has the parent service provider been correctly registered?';
         throw Kanopya::Exception::Internal(error => $errmsg);
@@ -916,44 +929,6 @@ sub registerVm {
                                     user_id                => $admin_user->user_id,
                                 );
 
-            #Check if the vsphere hosting policy and the vsphere vm policy already exist
-            #If not create them 
-            my $hp;
-            my $st;
-
-            eval {
-                $hp = Entity::Policy->find(hash => {
-                          policy_name => 'vsphere'}
-                      );
-            };
-            if (not defined $hp) {
-                $hp = Entity::Policy->new(
-                         policy_type => 'hosting_policy',
-                         policy_name => 'vsphere',
-                      );
-            }
-
-            eval {
-                $st = Entity::ServiceTemplate->find(hash => {
-                          hosting_policy_id => $hp->id,
-                          service_name      => 'vsphere_vm_service',}
-                      );
-            };
-            if (defined $st) {
-                $service_provider->setAttr(name  => 'service_template_id',
-                                           value => $st->id);
-                $service_provider->save();
-            }
-            else {
-                $st = Entity::ServiceTemplate->new(
-                          hosting_policy_id => $hp->id,
-                          service_name      => 'vsphere_vm_service'
-                      );
-                $service_provider->setAttr(name  => 'service_template_id',
-                                           value => $st->id);
-                $service_provider->save();
-            }
-            
             #Now set this manager as host manager for the new service provider
             $service_provider->addManager(manager_type => 'HostManager',
                                           manager_id   => $self->id);
@@ -993,9 +968,6 @@ sub registerVm {
             }
         }
 
-        # Use the first kernel found...
-        my $kernel = Entity::Kernel->find(hash => {});
-
         my $host_state;
         my $time;
 
@@ -1013,20 +985,23 @@ sub registerVm {
             $host_state = 'broken: ' . $time;
         }
 
-        my $vm = Entity::Host::VirtualMachine->new(
+        my $vm = Entity::Host->new(
                      host_manager_id    => $self->id,
-                     kernel_id          => $kernel->id,
                      host_serial_number => '',
                      host_desc          => $datacenter_name. ' vm',
                      active             => 1,
                      host_ram           => $vm_view->config->hardware->memoryMB * 1024 * 1024,
                      host_core          => $vm_view->config->hardware->numCPU,
                      host_state         => $host_state,
-                     hypervisor_id      => $hosting_hypervisor_id,
                  );
 
         #promote new virtual machine class to a vsphere5Vm one
-        $self->addVM(host => $vm, guest_id => $vm_view->config->guestId, uuid => $vm_uuid);
+        $self->addVM(
+            host => $vm,
+            guest_id => $vm_view->config->guestId,
+            uuid => $vm_uuid,
+            hypervisor_id => $hosting_hypervisor_id
+        );
 
         # Register the node
         $service_provider->registerNode(host     => $vm,
@@ -1045,7 +1020,7 @@ sub registerVm {
 Register a new host to match a vsphere hypervisor
 Check if a matching service provider already exist in Kanopya and, if so, return it
 instead of creating a new one
-    
+
 @param name the name of the hypervisor to be registered
 @param parent the parent of the hypervisor (must be a Vsphere5Datacenter object)
 
@@ -1128,55 +1103,14 @@ sub registerHypervisor {
                                     user_id                => $admin_user->user_id,
                                 );
 
-            #Check if the vsphere hosting policy and the vsphere hypervisor policy already exist
-            #If not create them 
-            my $hp;
-            my $st;
-
-            eval {
-                $hp = Entity::Policy->find(hash => {
-                          policy_name => 'vsphere'}
-                      );
-            };
-            if (not defined $hp) {
-                $hp = Entity::Policy->new(
-                         policy_type => 'hosting_policy',
-                         policy_name => 'vsphere'
-                      );
-            }
-
-            eval {
-                $st = Entity::ServiceTemplate->find(hash => {
-                          hosting_policy_id => $hp->id,
-                          service_name      => 'vsphere_hypervisor_service',}
-                      );
-            };
-            if (defined $st) {
-                $service_provider->setAttr(name  => 'service_template_id',
-                                           value => $st->id);
-                $service_provider->save();
-            }
-            else {
-                $st = Entity::ServiceTemplate->new(
-                          hosting_policy_id => $hp->id,
-                          service_name      => 'vsphere_hypervisor_service'
-                      );
-                $service_provider->setAttr(name  => 'service_template_id',
-                                           value => $st->id);
-                $service_provider->save();
-            }
-
             #Now set this manager as host manager for the new service provider
             $service_provider->addManager(manager_type => 'HostManager',
                                           manager_id   => $self->id);
         };
         if ($@) {
             $errmsg = 'Could not create new service provider to register vsphere hypervisor: '. $@;
-            throw Kanopya::Exception::Internal(error => $errmsg);
+            $log->error(error => $errmsg);
         }
-
-        # Use the first kernel found...
-        my $kernel = Entity::Kernel->find(hash => {});
 
         my $host_state;
         my $time;
@@ -1195,9 +1129,8 @@ sub registerHypervisor {
             $host_state = 'broken: '. $time;
         }
 
-        my $hv = Entity::Host::Hypervisor->new(
+        my $hv = Entity::Host->new(
                      host_manager_id    => $self->id,
-                     kernel_id          => $kernel->id,
                      host_serial_number => '',
                      host_desc          => $datacenter_name. ' hypervisor',
                      active             => 1,
@@ -1233,7 +1166,7 @@ instead of creating a new one
 @return service_provider
 
 =end classdoc
- 
+
 =cut
 
 sub registerCluster {
@@ -1244,7 +1177,7 @@ sub registerCluster {
     #If parent is not a datacenter, exit, returning the parent
     if (!(ref $args{parent} eq 'Vsphere5Datacenter')) {
         my $msg = 'Can\'t register a cluster with this method without a datacenter parent';
-        $log->info($msg);
+        $log->warn($msg);
         return $args{parent};
     }
 
@@ -1307,43 +1240,6 @@ sub registerCluster {
                                     cluster_boot_policy    => '',
                                     user_id                => $admin_user->user_id,
                                 );
-    
-            #Check if the vsphere hosting policy and the vsphere vm policy already exist
-            #If not create them 
-            my $hp;
-            my $st;
-
-            eval {
-                $hp = Entity::Policy->find(hash => {
-                          policy_name => 'vsphere'}
-                      );
-            };
-            if (not defined $hp) {
-                $hp = Entity::Policy->new(
-                         policy_type => 'hosting_policy',
-                         policy_name => 'vsphere',
-                      );
-            }
-
-            eval {
-                $st = Entity::ServiceTemplate->find(hash => {
-                          hosting_policy_id => $hp->id,
-                          service_name      => 'vsphere_hypervisor_service'});
-            };
-            if (defined $st) {
-                $service_provider->setAttr(name  => 'service_template_id',
-                                           value => $st->id);
-                $service_provider->save();
-            }
-            else {
-                $st = Entity::ServiceTemplate->new(
-                          hosting_policy_id => $hp->id,
-                          service_name      => 'vsphere_hypervisor_service',
-                      );
-                $service_provider->setAttr(name  => 'service_template_id',
-                                           value => $st->id);
-                $service_provider->save();
-            }
 
             #Now set this manager as host manager for the new service provider
             $service_provider->addManager(manager_type => 'HostManager',
@@ -1353,9 +1249,6 @@ sub registerCluster {
             $errmsg = 'Could not create new service provider to register vsphere cluster: '. $@;
             throw Kanopya::Exception::Internal(error => $errmsg);
         }
-
-        # Use the first kernel found...
-        my $kernel = Entity::Kernel->find(hash => {});
 
         foreach my $hv_number (0..$#hypervisors) {
             my $hypervisor = $hypervisors[$hv_number];
@@ -1376,9 +1269,8 @@ sub registerCluster {
                 $host_state = 'broken: '.$time;
             }
 
-            my $hv = Entity::Host::Hypervisor->new(
+            my $hv = Entity::Host->new(
                          host_manager_id    => $self->id,
-                         kernel_id          => $kernel->id,
                          host_serial_number => '',
                          host_desc          => $cluster_name.' hypervisor',
                          active             => 1,
@@ -1399,66 +1291,10 @@ sub registerCluster {
                                             hostname => $hypervisor_view->name,
                                             number   => $hv_number + 1,
                                             state    => 'in');
-
         }
+
         return $service_provider;
     }
-}
-
-=pod
-
-=begin classdoc
-
-Set the component configuration
-
-@param conf a hash containing the component configuration
-
-=end classdoc
-
-=cut
-
-sub setConf {
-    my ($self,%args) = @_;
-
-    General::checkParams(args => \%args, required => ['conf']);
-
-    my $conf = $args{conf};
-
-    if (defined $conf->{repositories}) {
-        while (my ($repo,$container) = each (%{$conf->{repositories}})) {
-            $self->addRepository(repository_name     => $repo,
-                                 container_access_id => $container->{container_access_id});
-        }
-        delete $conf->{repositories};
-    }
-
-    $self->SUPER::setConf(conf => $conf);
-}
-
-=pod
-
-=begin classdoc
-
-Get the component configuration
-
-@return \%conf
-
-=end classdoc
-
-=cut
-
-sub getConf {
-    my ($self,%args) = @_;
-
-    my %conf;
-    my @repos = Entity::Component::Vsphere5::Vsphere5Repository->search(hash => { vsphere5_id => $self->id });
-
-    $conf{vsphere5_login}         = $self->vsphere5_login;
-    $conf{vsphere5_pwd}           = $self->vsphere5_pwd;
-    $conf{vsphere5_url}           = $self->vsphere5_url;
-    $conf{vsphere5_repositories}  = \@repos;
-
-    return \%conf;
 }
 
 =pod
@@ -1555,7 +1391,7 @@ sub getDatacenters {
 Get a repository corresponding to a container access
 
 @param container_access_id the container access id associated to the repository to be retrieved
- 
+
 @return $repository
 
 =end classdoc
@@ -1574,7 +1410,7 @@ sub getRepository {
     if (! defined $repository) {
         throw Kanopya::Exception::Internal(error => "No repository configured for Vsphere  " .$self->id);
     }
- 
+
     return $repository;
 }
 
@@ -1586,6 +1422,7 @@ Promote a virtual machine object to a Vsphere5Vm one
 
 @param host the virtual machine host object to be promoted
 @param guest_id the vmware guest id of the vm
+@param hypervisor_id id of hypervisor hosting vm
 
 @return vsphere5vm the promoted virtual machine
 
@@ -1596,10 +1433,11 @@ Promote a virtual machine object to a Vsphere5Vm one
 sub addVM {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host', 'guest_id', 'uuid' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'guest_id', 'uuid', 'hypervisor_id' ]);
 
     my $vsphere5vm = Entity::Host::VirtualMachine::Vsphere5Vm->promote(
                          promoted          => $args{host},
+                         hypervisor_id     => $args{hypervisor_id},
                          vsphere5_id       => $self->id,
                          vsphere5_guest_id => $args{guest_id},
                          vsphere5_uuid     => $args{uuid},
@@ -1672,6 +1510,29 @@ sub addHypervisor {
                              );
 
     return $vsphere5Hypervisor;
+}
+
+=pod
+
+=begin classdoc
+
+Return a list of active hypervisors ruled by this manager
+
+@return active_hypervisors
+
+=end classdoc
+
+=cut
+
+sub activeHypervisors {
+    my $self = shift;
+
+    my @hypervisors = $self->searchRelated(
+                          filters => [ 'vsphere5_hypervisors' ],
+                          hash    => { active => 1 }
+                      );
+
+    return wantarray ? @hypervisors : \@hypervisors;
 }
 
 =pod
