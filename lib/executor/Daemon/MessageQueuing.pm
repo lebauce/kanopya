@@ -43,6 +43,8 @@ my $log = get_logger("");
 =pod
 =begin classdoc
 
+@constructor
+
 Base method to configure the daemon to use the message queuing middleware.
 
 =end classdoc
@@ -68,7 +70,11 @@ sub new {
                        "> as it can not be found.");
         }
         elsif (ref($err)) { $err->rethrow(); }
-        else { throw Kanopya::Exception(error => $err); }
+        else {
+            throw Kanopya::Exception(
+                      error => "Unable to connect to the broker: $err \n"
+                  );
+        }
     }
 
     return $self;
