@@ -1,4 +1,4 @@
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -14,6 +14,22 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
+
+=pod
+=begin classdoc
+
+The execution daemon, fetch actions from the following messages queues:
+ - 'operation'        : Execute a single operation and push the result on the queue 'operation_result',
+ - 'operation_result' : Handle an operation result, continue, finish or cancel workflows according to
+                        the last operation result and the state of the workflow,
+ - 'workflow'         : Run a specified workflow., push the first operation.
+
+@since    2013-May-14
+@instance hash
+@self     $self
+
+=end classdoc
+=cut
 
 package Executor;
 use base Daemon::MessageQueuing;
@@ -38,57 +54,112 @@ use Log::Log4perl::Appender;
 my $log = get_logger("");
 
 
+=pod
+=begin classdoc
+
+@constructor
+
+Instanciate an execution daemon, bind callback methods to the corresponing queues.
+
+@optional duration force the duration while awaiting messages.
+
+@return the executor instance
+
+=end classdoc
+=cut
+
 sub new {
-    my ($class) = @_;
+    my ($class, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { "duration" => undef });
 
     my $self = $class->SUPER::new(confkey => 'executor');
 
+    # Keep the ref of the timers triggered for reported operations
     $self->{timerrefs} = {};
 
-    # Defined closures for callbacks
-    my $execute = sub {
-        my %args = @_;
-        my $ack = 1;
-        eval {
-            $ack = $self->executeOperation(%args);
-        };
-        if ($@) { $log->error($@); }
+    # Force the duration if defined
+    my $duration = {};
+    if (defined $args{duration}) {
+        $duration->{duration} = $args{duration};
+    }
 
-        return $ack;
-    };
-    my $run = sub {
-        my %args = @_;
-        my $ack = 1;
-        eval {
-            $ack = $self->runWorkflow(%args);
-        };
-        if ($@) { $log->error($@); }
-
-        return $ack;
-    };
-    my $handle = sub {
-        my %args = @_;
-        my $ack = 1;
-        eval {
-            $ack = $self->handleResult(%args);
-        };
-        if ($@) { $log->error($@); }
-
-        return $ack;
-    };
+    # Bind channels on callbacks
+    my $callbacks = { 'operation'        => \&executeOperation,
+                      'operation_result' => \&handleResult,
+                      'workflow'         => \&runWorkflow };
 
     # Register the callback for used channels
-    $self->registerWorker(channel => 'operation', callback => \&$execute);
-    $self->registerWorker(channel => 'workflow', callback => \&$run);
-    $self->registerWorker(channel => 'operation_result', callback => \&$handle);
+    for my $channel (keys %$callbacks) {
+        my $callback = sub {
+            my %cbargs = @_;
+            return $callbacks->{$channel}->($self, %cbargs);
+        };
+        $self->registerWorker(channel => $channel, callback => \&$callback, %$duration);
+    }
 
     return $self;
 }
 
+
+=pod
+=begin classdoc
+
+Wait messages on the channel 'workflow', set the workflow as running
+and push the first operation on the channel 'operation'.
+
+@param workflow_id the id of the workflow to run.
+
+=end classdoc
+=cut
+
+sub runWorkflow {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'workflow_id' ]);
+
+    my $workflow = EEntity->new(entity => Entity::Workflow->get(id => $args{workflow_id}));
+
+    # Set the workflow as running
+    $workflow->setState(state => 'running');
+
+    # Pop the first operation
+    my $first;
+    eval {
+        $first = $workflow->getNextOperation();
+    };
+    if ($@) {
+        $log->warn($@);
+        $workflow->finish();
+    }
+    else {
+        $log->info("Running " . $workflow->workflow_name . " workflow <" . $workflow->id . "> ");
+        $log->info("Executing " . $workflow->workflow_name . " first operation <" . $first->id . ">");
+
+        # Push the first operation on the execution channel
+        $self->_component->execute(operation_id => $first->id);
+    }
+
+    # Acknowledge the message
+    return 1;
+}
+
+
+=pod
+=begin classdoc
+
+Wait messages on the channel 'operation', execute the operation
+and push the result on the queue 'operation_result'.
+
+@param operation_id the id of the operation to execute.
+
+=end classdoc
+=cut
+
 sub executeOperation {
     my ($self, %args) = @_;
 
-    General::checkParams(args  => \%args, required => [ "operation_id" ]);
+    General::checkParams(args => \%args, required => [ "operation_id" ]);
 
     my $operation;
     eval {
@@ -113,10 +184,11 @@ sub executeOperation {
         $operation->check();
     };
     if ($@) {
+        my $err = $@;
         # Probably a compilation error on the operation class.
         return $self->terminateOperation(operation => $operation,
                                          status    => 'cancelled',
-                                         exception => $@);
+                                         exception => $err);
     }
 
     # Check if the operation require validation.
@@ -142,9 +214,10 @@ sub executeOperation {
             $delay = $operation->prerequisites();
         };
         if ($@) {
+            my $err = $@;
             return $self->terminateOperation(operation => $operation,
                                              status    => 'cancelled',
-                                             exception => $@);
+                                             exception => $err);
         }
         # Report the operation if delay is set
         if ($delay) {
@@ -169,6 +242,7 @@ sub executeOperation {
             $operation->commitTransaction;
         };
         if ($@) {
+            my $err = $@;
             # If some rollback defined, undo them
             if (defined $operation->{erollback}) {
                 $operation->{erollback}->undo();
@@ -178,7 +252,7 @@ sub executeOperation {
 
             return $self->terminateOperation(operation => $operation,
                                              status    => 'cancelled',
-                                             exception => $@);
+                                             exception => $err);
         }
     }
 
@@ -187,9 +261,10 @@ sub executeOperation {
          $delay = $operation->postrequisites();
     };
     if ($@) {
+        my $err = $@;
         return $self->terminateOperation(operation => $operation,
                                          status    => 'cancelled',
-                                         exception => $@);
+                                         exception => $err);
     }
     # Report the operation if delay is set
     if ($delay) {
@@ -204,9 +279,10 @@ sub executeOperation {
         $operation->finish();
     };
     if ($@) {
+        my $err = $@;
         return $self->terminateOperation(operation => $operation,
                                          status    => 'cancelled',
-                                         exception => $@);
+                                         exception => $err);
     }
 
     # Terminate the operation with success
@@ -214,62 +290,20 @@ sub executeOperation {
                                      status    => 'succeeded');
 }
 
-sub terminateOperation {
-    my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'operation', 'status' ]);
+=pod
+=begin classdoc
 
-    my $operation = delete $args{operation};
+Wait messages on the channel 'operation_result', and trigger the correponding job:
+ - operation succeeded : continue or finish the workflow,
+ - operation reported  : trigger a timer that will re-push the operation at the proper time,
+ - operation cancelled : cancel the workflow.
 
-    $log->info("Operation terminated with status <$args{status}>");
+@param operation_id the id of the terminated operation.
+@param status the state of the execution of the operation.
 
-    # Serialize the parameters as its could be modified during
-    # the operation executions steps.
-    my $params = delete $operation->{params};
-    $params->{context} = delete $operation->{context};
-    $operation->serializeParams(params => $params);
-
-    if (defined $args{exception} and ref($args{exception})) {
-        $args{exception} = "$args{exception}";
-    }
-
-    # Produce a result on the operation_result channel
-    $self->_component->terminate(operation_id => $operation->id, %args);
-
-    # Acknowledge the message
-    return 1;
-}
-
-sub runWorkflow {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'workflow_id' ]);
-
-    my $workflow = EEntity->new(entity => Entity::Workflow->get(id => $args{workflow_id}));
-
-    # Set the workflow as running
-    $workflow->setState(state => 'running');
-
-    # Pop the first operation
-    my $first;
-    eval {
-        $first = $workflow->getNextOperation();
-    };
-    if ($@) {
-        $log->warn($@);
-        $workflow->finish();
-    }
-    else {
-        $log->info("Running " . $workflow->workflow_name . " workflow <" . $workflow->id . "> ");
-        $log->info("Executing " . $workflow->workflow_name . " first operation <" . $first->id . ">");
-    
-        # Push the first operation on the execution channel
-        $self->_component->execute(operation_id => $first->id);
-    }
-
-    # Acknowledge the message
-    return 1;
-}
+=end classdoc
+=cut
 
 sub handleResult {
     my ($self, %args) = @_;
@@ -289,7 +323,7 @@ sub handleResult {
         return 1;
     }
 
-    my $workflow  = EEntity->new(entity => $operation->workflow);
+    my $workflow = EEntity->new(entity => $operation->workflow);
 
     # Set the operation state
     $operation->setState(state => $args{status});
@@ -402,5 +436,43 @@ sub handleResult {
     return 1;
 }
 
-1;
 
+=pod
+=begin classdoc
+
+Push a result on the channel 'operation_result'. Also serialize
+the terminated operation parameters.
+
+@param operation the terminated operation.
+@param status the state of the execution of the operation.
+
+=end classdoc
+=cut
+
+sub terminateOperation {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'operation', 'status' ]);
+
+    my $operation = delete $args{operation};
+
+    $log->info("Operation terminated with status <$args{status}>");
+
+    # Serialize the parameters as its could be modified during
+    # the operation executions steps.
+    my $params = delete $operation->{params};
+    $params->{context} = delete $operation->{context};
+    $operation->serializeParams(params => $params);
+
+    if (defined $args{exception} and ref($args{exception})) {
+        $args{exception} = "$args{exception}";
+    }
+
+    # Produce a result on the operation_result channel
+    $self->_component->terminate(operation_id => $operation->id, %args);
+
+    # Acknowledge the message
+    return 1;
+}
+
+1;
