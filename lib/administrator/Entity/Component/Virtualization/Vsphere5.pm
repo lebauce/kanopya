@@ -270,7 +270,7 @@ sub negociateConnection {
 
 Retrieve a list of all datacenters
 
-@param id_request ID of request
+@param id_request ID of request (used to differentiate UI requests)
 
 @return: \@datacenter_infos
 
@@ -281,10 +281,9 @@ Retrieve a list of all datacenters
 sub retrieveDatacenters {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['id_request']);
+    General::checkParams(args => \%args, optional => {'id_request' => undef});
 
     my @datacenters_infos;
-    my $id_response = $args{id_request};
 
     my $datacenter_views = $self->findEntityViews(
                                view_type      => 'Datacenter',
@@ -299,10 +298,12 @@ sub retrieveDatacenters {
         push @datacenters_infos, \%datacenter_infos;
     }
 
-    my $response = {
-        id_response => $id_response,
-        items_list  => \@datacenters_infos,
-    };
+    my $response = defined $args{id_request} ?
+                       {
+                           id_response => $args{id_request},
+                           items_list  => \@datacenters_infos,
+                       } :
+                       \@datacenters_infos;
 
     return $response;
 }
@@ -317,7 +318,7 @@ Retrieve a list of Clusters and Hypervisors (that are not in a cluster)
 hosted in a given Datacenter
 
 @param datacenter_name the datacenter name
-@param id_request ID of request
+@param id_request ID of request (used to differentiate UI requests)
 
 @return \@clusters_and_hypervisors_infos
 
@@ -328,10 +329,13 @@ hosted in a given Datacenter
 sub retrieveClustersAndHypervisors {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['datacenter_name', 'id_request']);
+    General::checkParams(
+        args => \%args,
+        required => ['datacenter_name'],
+        optional => {'id_request' => undef}
+    );
 
     my @clusters_hypervisors_infos;
-    my $id_response = $args{id_request};
     my $datacenter_name = $args{datacenter_name};
 
     #Find datacenter view
@@ -372,10 +376,12 @@ sub retrieveClustersAndHypervisors {
         push @clusters_hypervisors_infos, $compute_resource_infos;
     }
 
-    my $response = {
-        id_response => $id_response,
-        items_list  => \@clusters_hypervisors_infos,
-    };
+    my $response = defined $args{id_request} ?
+                       {
+                           id_response => $args{id_request},
+                           items_list  => \@clusters_hypervisors_infos,
+                       } :
+                       \@clusters_hypervisors_infos;
 
     return $response;
 }
@@ -390,7 +396,7 @@ Retrieve a cluster's hypervisors
 
 @param cluster_name the name of the target cluster
 @param datacenter_name the name of the cluster's datacenter
-@param id_request ID of request
+@param id_request ID of request (used to differentiate UI requests)
 
 @return \@hypervisors_infos
 
@@ -401,9 +407,11 @@ Retrieve a cluster's hypervisors
 sub retrieveClusterHypervisors {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['cluster_name', 'datacenter_name', 'id_request']);
-
-    my $id_response = $args{id_request};
+    General::checkParams(
+        args => \%args,
+        required => ['cluster_name', 'datacenter_name'],
+        optional => {'id_request' => undef}
+    );
 
     #retrieve datacenter and cluster views
     my $datacenter_view = $self->findEntityView(
@@ -433,15 +441,17 @@ sub retrieveClusterHypervisors {
         push @hypervisors_infos, \%hypervisor_infos;
     }
 
-    my $response = {
-        id_response => $id_response,
-        items_list  => \@hypervisors_infos,
-    };
+    my $response = defined $args{id_request} ?
+                       {
+                           id_response => $args{id_request},
+                           items_list  => \@hypervisors_infos,
+                       } :
+                       \@hypervisors_infos;
 
     return $response;
 }
 
-=pod 
+=pod
 
 =begin classdoc
 
@@ -451,7 +461,7 @@ Retrieve all the VM from a vsphere hypervisor
 
 @param datacenter_name the name of the hypervisor's datacenter
 @param hypervisor_name the name of the target hypervisor
-@param id_request ID of request
+@param id_request ID of request (used to differentiate UI requests)
 
 @return \@vms_infos
 
@@ -462,9 +472,11 @@ Retrieve all the VM from a vsphere hypervisor
 sub retrieveHypervisorVms {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['datacenter_name', 'hypervisor_name', 'id_request']);
-
-    my $id_response = $args{id_request};
+    General::checkParams(
+        args => \%args,
+        required => ['datacenter_name', 'hypervisor_name'],
+        optional => {'id_request' => undef}
+    );
 
     #retrieve views
     my $datacenter_view = $self->findEntityView(
@@ -494,15 +506,17 @@ sub retrieveHypervisorVms {
         push @vms_infos, $vm_infos;
     }
 
-    my $response = {
-        id_response => $id_response,
-        items_list  => \@vms_infos,
-    };
+    my $response = defined $args{id_request} ?
+                       {
+                           id_response => $args{id_request},
+                           items_list  => \@vms_infos,
+                       } :
+                       \@vms_infos;
 
     return $response;
 }
 
-=pod 
+=pod
 
 =begin classdoc
 
@@ -512,7 +526,7 @@ Get a vsphere managed object view
 
 @return $view
 
-=end classdoc 
+=end classdoc
 
 =cut
 
@@ -763,7 +777,7 @@ Check if the datacenter is already registered and linked to this component
 
 =end classdoc
 
-=cut 
+=cut
 
 sub registerDatacenter {
     my ($self, %args) = @_;
@@ -1055,7 +1069,7 @@ sub registerHypervisor {
 
     my $datacenter               = $args{parent};
     my $service_provider_name    = $args{name};
-    my $hv_uuid                  = $args{uuid}; 
+    my $hv_uuid                  = $args{uuid};
     #We substitute terms in (new string) to match cluster_name pattern
     my $service_provider_renamed = $self->formatName(name => $service_provider_name);
     my $datacenter_name          = $datacenter->vsphere5_datacenter_name;
@@ -1355,7 +1369,7 @@ sub registerCluster {
             if ($hypervisor_view->runtime->connectionState->val    eq 'disconnected') {
                 $host_state = 'down: '.$time;
             }
-            elsif ($hypervisor_view->runtime->connectionState->val eq 'connected') {   
+            elsif ($hypervisor_view->runtime->connectionState->val eq 'connected') {
                 $host_state = 'up: '.$time;
             }
             elsif ($hypervisor_view->runtime->connectionState->val eq 'notResponding') {
@@ -1618,8 +1632,8 @@ sub powerOnVm {
                                               'name' => $host_name
                                           });
     my $host_vms = $host_view->vm;
- 
-    #maybe find a better way to do that? 
+
+    #maybe find a better way to do that?
     foreach my $vm (@$host_vms) {
         my $guest = $self->getView(mo_ref => $vm);
         if ($guest->name eq $vm_name) {
