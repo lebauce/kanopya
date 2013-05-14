@@ -128,8 +128,17 @@ sub executeOne {
 
     WORKFLOW:
     while(1) {
-        $executor->oneRun(channel => 'operation', type => 'queue');
-        $executor->oneRun(channel => 'operation_result', type => 'queue');
+        eval {
+            $executor->oneRun(channel => 'operation', type => 'queue');
+            $executor->oneRun(channel => 'operation_result', type => 'queue');
+        };
+        if ($@) {
+            my $err = $@;
+            if (not $err->isa('Kanopya::Exception::MessageQueuing::NoMessage')) {
+                $err->rethrow();
+            }
+            # If no message received, an operation is probably currently reported.
+        }
 
         my $state = $workflow->reload->state;
         if ($state eq 'running') {
