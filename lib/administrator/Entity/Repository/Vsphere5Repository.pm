@@ -15,28 +15,10 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package Entity::Component::Vsphere5::Vsphere5Repository;
-use base 'BaseDB';
+package Entity::Repository::Vsphere5Repository;
+use base 'Entity::Repository';
 
-use constant ATTR_DEF => {
-    vsphere5_id         => {
-        pattern      => '^\d*$',
-        is_mandatory => 1
-    },
-    repository_name     => {
-        label        => 'Name',
-        pattern      => '^.*$',
-        is_mandatory => 1,
-        is_editable  => 1
-    },
-    container_access_id => {
-        label        => 'Container access',
-        type         => 'relation',
-        relation     => 'single',
-        is_mandatory => 1,
-        is_editable  => 1,
-    },
-};
+use constant ATTR_DEF => { };
 
 sub getAttrDef { return ATTR_DEF; }
 

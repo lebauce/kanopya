@@ -34,7 +34,7 @@ use warnings;
 
 use VMware::VIRuntime;
 use Vsphere5Datacenter;
-use Vsphere5Repository;
+use Entity::Repository::Vsphere5Repository;
 use Entity;
 use Entity::Host::Hypervisor;
 

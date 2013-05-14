@@ -46,7 +46,7 @@ use VMware::VIRuntime;
 
 use General;
 use Kanopya::Exceptions;
-use Entity::Component::Vsphere5::Vsphere5Repository;
+use Entity::Repository::Vsphere5Repository;
 use Entity::Component::Vsphere5::Vsphere5Datacenter;
 use Entity::User;
 use Entity::Policy;
@@ -63,6 +63,13 @@ my $log = get_logger("administrator");
 my $errmsg;
 
 use constant ATTR_DEF => {
+    repositories => {
+        label       => 'Virtual machine images repositories',
+        type        => 'relation',
+        relation    => 'single_multi',
+        is_editable => 1,
+        specialized => 'vsphere5_repository'
+    },
     vsphere5_login => {
         label        => 'Login',
         type         => 'string',
@@ -97,12 +104,6 @@ use constant ATTR_DEF => {
         is_editable  => 1,
         is_mandatory => 0
     },
-    vsphere5_repositories => {
-        label       => 'Virtual machine images repositories',
-        type        => 'relation',
-        relation    => 'single_multi',
-        is_editable => 1,
-    },
     # TODO: move this virtual attr to HostManager attr def when supported
     host_type => {
         is_virtual => 1
@@ -111,7 +112,7 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-=pod 
+=pod
 
 =begin classdoc
 
@@ -1502,9 +1503,10 @@ sub addRepository {
 
     General::checkParams(args => \%args, required => ['repository_name', 'container_access_id']);
 
-    my $repository = Entity::Component::Vsphere5::Vsphere5Repository->new(vsphere5_id         => $self->id,
-                                             repository_name     => $args{repository_name},
-                                             container_access_id => $args{container_access_id},
+    my $repository = Entity::Repository::Vsphere5Repository->new(
+                         virtualization_id   => $self->id,
+                         repository_name     => $args{repository_name},
+                         container_access_id => $args{container_access_id},
                      );
 
     return $repository;
@@ -1565,7 +1567,7 @@ sub getRepository {
 
     General::checkParams(args => \%args, required => ['container_access_id']);
 
-    my $repository = Entity::Component::Vsphere5::Vsphere5Repository->find(hash => {
+    my $repository = Entity::Repository::Vsphere5Repository->find(hash => {
                          container_access_id => $args{container_access_id} }
                      );
 

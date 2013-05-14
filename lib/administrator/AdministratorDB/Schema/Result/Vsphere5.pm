@@ -153,21 +153,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 vsphere5_repositories
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Vsphere5Repository>
-
-=cut
-
-__PACKAGE__->has_many(
-  "vsphere5_repositories",
-  "AdministratorDB::Schema::Result::Vsphere5Repository",
-  { "foreign.vsphere5_id" => "self.vsphere5_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 vsphere5_vms
 
 Type: has_many
