@@ -299,7 +299,7 @@ sub create {
     General::checkParams(args => $confpattern, required => [ 'managers' ]);
     General::checkParams(args => $confpattern->{managers}, required => [ 'host_manager', 'disk_manager' ]);
 
-#    $log->debug("Final parameters after applying policies:\n" . Dumper($confpattern));
+    #$log->info("Final parameters after applying policies:\n" . Dumper($confpattern));
 
     my $composite_params;
     for my $name ('managers', 'interfaces', 'components', 'billing_limits', 'orchestration') {
@@ -321,8 +321,12 @@ sub create {
         $op_params->{context}->{service_template} = $service_template;
     } 
 
-    my $executor = $class->getKanopyaCluster->getManager(manager_type => 'ExecutionManager');
-    $executor->enqueue(type => 'AddCluster', params => $op_params);
+    my $kanopya = $class->getKanopyaCluster;
+    $kanopya->getManager(manager_type => 'ExecutionManager')->enqueue(
+        type       => 'AddCluster',
+        params     => $op_params,
+        related_id => $kanopya->id
+    );
 }
 
 sub checkConfigurationPattern {
