@@ -20,6 +20,7 @@ use strict;
 use warnings;
 
 use EEntity;
+use Entity::ContainerAccess::IscsiContainerAccess;
 
 =head
 
@@ -62,6 +63,53 @@ sub createDisk {
                     );
 
     return EEntity->new(entity => $container);
+}
+
+=head 2
+
+=begin classdoc
+Register a new iscsi container access into Kanopya
+
+=end classdoc
+
+=cut
+
+sub createExport {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ "container" ] );
+
+    my $id = join('-', (split('--', $args{container}->container_device))[-5..-1]);
+
+    my $export = Entity::ContainerAccess::IscsiContainerAccess->new(
+        container_id            => $args{container}->id,
+        container_access_export => "iqn.2010-10.org.openstack:volume-" . $id,
+        container_access_port   => 3260,
+        container_access_ip     => $self->getMasterNode->adminIp,
+        export_manager_id       => $self->id,
+        typeio                  => "fileio",
+        iomode                  => "wb",
+        lun_name                => ""
+    );
+
+    return EEntity->new(entity => $export);
+}
+
+sub removeExport {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ "container_access" ] );
+
+    $args{container_access}->remove();
+}
+
+sub addExportClient {
+}
+
+sub getLunId {
+    return 1;
 }
 
 1;

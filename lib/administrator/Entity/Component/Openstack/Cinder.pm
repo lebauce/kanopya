@@ -30,9 +30,43 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
+    disk_type => {
+        is_virtual => 1
+    },
+    export_type => {
+       is_virtual => 1
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub diskType {
+    return "LVM logical volume";
+}
+
+sub exportType {
+    return "ISCSI target";
+}
+
+sub getExportManagerParams {
+    return { };
+}
+
+sub getBootPolicyFromExportManager {
+    return Manager::HostManager->BOOT_POLICIES->{pxe_iscsi};
+}
+
+sub getExportManagers {
+    my $self = shift;
+
+    return [ $self ];
+}
+
+sub getReadOnlyParameter {
+}
+
+sub checkExportManagerParams {
+}
 
 =head 2
 
