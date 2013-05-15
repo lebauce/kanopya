@@ -44,8 +44,10 @@ use Entity::Workflow;
 use Entity::Operation;
 use EEntity::EOperation;
 
+use AnyEvent;
 use XML::Simple;
 use Data::Dumper;
+
 
 use Log::Log4perl "get_logger";
 use Log::Log4perl::Layout;
@@ -93,7 +95,12 @@ sub new {
     for my $channel (keys %$callbacks) {
         my $callback = sub {
             my %cbargs = @_;
-            return $callbacks->{$channel}->($self, %cbargs);
+            my $ack = 0;
+            eval {
+                $ack = $callbacks->{$channel}->($self, %cbargs);
+            };
+            if ($@) { $self->log(level => 'error', msg => "$@"); }
+            return $ack;
         };
         $self->registerWorker(channel => $channel, callback => \&$callback, %$duration);
     }
@@ -132,12 +139,18 @@ sub runWorkflow {
         $first = $workflow->getNextOperation();
     };
     if ($@) {
-        $log->warn($@);
+        $self->log(level => 'warn', msg => "$@");
         $workflow->finish();
     }
     else {
-        $log->info("Running " . $workflow->workflow_name . " workflow <" . $workflow->id . "> ");
-        $log->info("Executing " . $workflow->workflow_name . " first operation <" . $first->id . ">");
+        $self->log(
+            level => 'info',
+            msg   => "Running " . $workflow->workflow_name . " workflow <" . $workflow->id . "> "
+        );
+        $self->log(
+            level => 'info',
+            msg   => "Executing " . $workflow->workflow_name . " first operation <" . $first->id . ">"
+        );
 
         # Push the first operation on the execution channel
         $self->_component->execute(operation_id => $first->id);
@@ -172,51 +185,56 @@ sub executeOperation {
     };
     if ($@) {
         # The operation does not exists, probably due to a workflow cancel
-        $log->warn("Operation <$args{operation_id}> does not exists, skipping.");
-        return 1;
+        $self->log(
+            level => 'warn',
+            msg   => "Operation <$args{operation_id}> does not exists, skipping."
+        );
     }
 
     # Log in the proper file
     $self->setLogAppender(workflow => $operation->workflow);
 
-    $log->info("---- [ Operation " . $operation->type  . " <" . $operation->id . "> ] ----");
+    $self->logWorkflowState(operation => $operation);
     Message->send(from    => 'Executor',
                   level   => 'info',
                   content => "Operation Processing [$operation]...");
 
-    # Initialize EOperation and context
+    # Check parameters
     eval {
-        $log->info("Step <check>");
+        $self->log(level => 'info', msg => "Step <check>");
         $operation->check();
     };
     if ($@) {
         my $err = $@;
-        # Probably a compilation error on the operation class.
         return $self->terminateOperation(operation => $operation,
                                          status    => 'cancelled',
                                          exception => $err);
     }
 
-    # Check if the operation require validation.
-#    if ($operation->state eq 'validated') {
-#        $operation->setState(state => 'ready');
-#    }
-#    else {
-#        $log->debug("Calling validation of operation $operation.");
-#
-#        if (not $operation->validation()) {
-#            # Probably a compilation error on the operation class.
-#            return $self->terminateOperation(operation => $operation,
-#                                             status    => 'waiting_validation');
-#        }
-#    }
+    # Validate the operation
+    my $valid;
+    eval {
+        $self->log(level => 'info', msg => "Step <validation>");
+        $valid = ($operation->state eq 'validated') ? 1 : $operation->validation();
+    };
+    if ($@) {
+        my $err = $@;
+        return $self->terminateOperation(operation => $operation,
+                                         status    => 'cancelled',
+                                         exception => $err);
+    }
+    # Terminate if the operation require validation
+    if (not $valid) {
+        return $self->terminateOperation(operation => $operation,
+                                         status    => 'waiting_validation');
+    }
 
     # Skip the proccessing steps if postreported
     my $delay;
     if ($operation->state ne 'postreported') {
         # Check preconditions for processing
         eval {
-            $log->info("Step <prerequisites>");
+            $self->log(level => 'info', msg => "Step <prerequisites>");
             $delay = $operation->prerequisites();
         };
         if ($@) {
@@ -239,10 +257,10 @@ sub executeOperation {
         eval {
             $operation->beginTransaction;
 
-            $log->info("Step <prepare>");
+            $self->log(level => 'info', msg => "Step <prepare>");
             $operation->prepare();
 
-            $log->info("Step <process>");
+            $self->log(level => 'info', msg => "Step <process>");
             $operation->process();
 
             $operation->commitTransaction;
@@ -262,7 +280,7 @@ sub executeOperation {
         }
     }
 
-    $log->info("Step <postrequisites>");
+    $self->log(level => 'info', msg => "Step <postrequisites>");
     eval {
          $delay = $operation->postrequisites();
     };
@@ -281,7 +299,7 @@ sub executeOperation {
 
     # Finishing the operation.
     eval {
-        $log->info("Step <finish>");
+        $self->log(level => 'info', msg => "Step <finish>");
         $operation->finish();
     };
     if ($@) {
@@ -325,7 +343,10 @@ sub handleResult {
     };
     if ($@) {
         # The operation does not exists, probably due to a workflow cancel
-        $log->warn("Operation <$args{operation_id}> does not exists, skipping.");
+        $self->log(
+            level => 'warn',
+            msg   => "Operation <$args{operation_id}> does not exists, skipping."
+        );
         return 1;
     }
 
@@ -339,7 +360,7 @@ sub handleResult {
 
     # Operation succeeded
     if ($args{status} eq 'succeeded') {
-        $log->info("---- [ Operation " . $operation->type . " <" . $operation->id . "> SUCCEED ] ----");
+        $self->logWorkflowState(operation => $operation, state => 'SUCCEED');
 
         Message->send(from    => 'Executor',
                       level   => 'info',
@@ -354,7 +375,7 @@ sub handleResult {
 
         # The operation execution is reported at $args{time}
         if (defined $args{time}) {
-            $log->info("---- [ Operation " . $operation->type . " <" . $operation->id . "> REPORTED ] ----");
+            $self->logWorkflowState(operation => $operation, state => 'REPORTED');
 
             # Compute the delay
             my $delay = $args{time} - time;
@@ -395,20 +416,43 @@ sub handleResult {
             # Continue the workflow
         }
     }
+    # Operation required validation
+    elsif ($args{status} eq 'waiting_validation') {
+        $self->logWorkflowState(operation => $operation, state => 'WAITING VALIDATION');
+
+        # TODO: Probably better to send notification for validation here,
+        #       instead of at validation time (cf. executeOperation)
+
+        # Stop the workflow
+        return 1;
+    }
+    # Operation is validated
+    elsif ($args{status} eq 'validated') {
+        $self->logWorkflowState(operation => $operation, state => 'VALIDATED');
+
+        # Re-trigger the operation now
+        $self->_component->execute(operation_id => $operation->id);
+
+        # Stop the workflow
+        return 1;
+    }
     # Operation failed
     elsif ($args{status} eq 'cancelled') {
 
         General::checkParams(args => \%args, optional => { 'exception' => undef });
 
-        $log->info("---- [ Operation " . $operation->type  . " <" . $operation->id . "> FAILED ] ----");
-        $log->error($args{exception});
+        $self->logWorkflowState(operation => $operation, state => 'FAILED');
+        $self->log(level => 'error', msg => $args{exception});
 
         Message->send(from    => 'Executor',
                       level   => 'error',
                       content => "[$operation] Execution Aborted : $args{exception}");
 
         # Try to cancel all workflow operations, and delete them.
-        $log->info("Cancelling " . $workflow->workflow_name . " workflow <" . $workflow->id . ">");
+        $self->log(
+            level => 'info',
+            msg   => "Cancelling " . $workflow->workflow_name . " workflow <" . $workflow->id . ">"
+        );
         $workflow->cancel();
 
         # Stop the workflow
@@ -428,11 +472,17 @@ sub handleResult {
         }
 
         # No remaning operation
-        $log->info("Finishing " . $workflow->workflow_name . " workflow <" . $workflow->id . ">");
+        $self->log(
+            level => 'info',
+            msg   => "Finishing " . $workflow->workflow_name . " workflow <" . $workflow->id . ">"
+        );
         $workflow->finish();
     }
     else {
-        $log->info("Executing " . $workflow->workflow_name . " next operation <" . $next->id . ">");
+        $self->log(
+            level => 'info',
+            msg   => "Executing " . $workflow->workflow_name . " next operation <" . $next->id . ">"
+        );
 
         # Set the operation as ready
         $next->setState(state => 'ready');
@@ -465,7 +515,7 @@ sub terminateOperation {
 
     my $operation = delete $args{operation};
 
-    $log->info("Operation terminated with status <$args{status}>");
+    $self->log(level => 'info', msg => "Operation terminated with status <$args{status}>");
 
     # Serialize the parameters as its could be modified during
     # the operation executions steps.
@@ -511,6 +561,29 @@ sub setLogAppender {
 
     $appender->layout(Log::Log4perl::Layout::PatternLayout->new("%d %c %p> %M - %m%n"));
     $log->add_appender($appender);
+}
+
+
+=pod
+=begin classdoc
+
+Log the workflow state.
+
+@param operation the just terinated operation of the workflow
+@param state the state of the workflow
+
+=end classdoc
+=cut
+
+sub logWorkflowState {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'operation' ],
+                         optional => { 'state' => '' });
+
+    my $msg = $args{operation}->type . " <" . $args{operation}->id . "> " . $args{state};
+    $self->log(level => 'info', msg => "---- [ Operation " . $msg . " ] ----");
 }
 
 1;
