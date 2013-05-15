@@ -25,7 +25,6 @@ use warnings;
 use Entity::Container::LvmContainer;
 use Entity::Component::Lvm2::Lvm2Lv;
 use Entity::Component::Lvm2::Lvm2Vg;
-use Entity::ContainerAccess::IscsiContainerAccess;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -38,10 +37,11 @@ sub getAttrDef { return ATTR_DEF; }
 =head 2
 
 =begin classdoc
-Register a new logical volume into Kanopya
+Register a new logical volume into Kanopya (Lvm2Lv and LvmContainer)
 
 @param lvm2_lv_name the name of the logical volume
 @param lv2_lv_size the size of the logical volume
+@param volume_id the cinder id of the newly created volume
 
 @return the newly created lvmcontainer object
 
@@ -54,7 +54,7 @@ sub lvcreate {
 
     General::checkParams(args     => \%args,
                          required => [ "lvm2_lv_name", "lvm2_lv_size", "volume_id" ],
-                         optional => {container_device => undef });
+                         optional => { container_device => undef });
 
     my $cinder_vg = Entity::Component::Lvm2::Lvm2Vg->find(hash => { lvm2_vg_name => 'cinder-volumes' });
 
@@ -77,36 +77,8 @@ sub lvcreate {
                         lv_id                => $lv->id 
                     );
 
-    $self->createExport(container => $container);
-
     return $container;
 
-}
-
-=head 2
-
-=begin classdoc
-Register a new iscsi container access into Kanopya 
-
-=end classdoc
-
-=cut
-
-sub createExport {
-    my ($self, %args) = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ "container" ] );
-
-    Entity::ContainerAccess::IscsiContainerAccess->new(
-        container_id            => $args{container}->id,
-        container_access_export =>,
-        container_access_port   =>,
-        container_access_ip     =>,
-#        device_connected        =>,
-#        partition_connected     =>,
-        export_manager_id       => $self->id,
-    );
 }
 
 =head2

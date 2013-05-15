@@ -55,15 +55,13 @@ sub createDisk {
                   }
               );
 
-    my $entity = $self->lvcreate(
-                     volume_id    => $req->{volume}->{id},
-                     lvm2_lv_name => $args{name},
-                     lvm2_lv_size => $args{size} / 1024 / 1024 / 1024,
-                 );
+    my $container = $self->lvcreate(
+                        volume_id    => $req->{volume}->{id},
+                        lvm2_lv_name => $args{name},
+                        lvm2_lv_size => $args{size},
+                    );
 
-    my $container = EEntity->new(data => $entity);
-
-    return $container;
+    return EEntity->new(entity => $container);
 }
 
 1;
