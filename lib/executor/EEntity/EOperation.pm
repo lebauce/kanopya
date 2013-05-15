@@ -150,7 +150,7 @@ sub validation {
                 $templatedata->{validation_url} = $baseurl . '/validate';
                 $templatedata->{deny_url} = $baseurl . '/deny';
 
-                # Give permissions to the user/group to call validate/cancel methos on the operation.
+                # Give permissions to the user/group to call validate/cancel method on the operation.
                 $self->addValidationPerm(consumer => $subscribtion->subscriber);
 
                 $validation = 1;
