@@ -34,6 +34,7 @@ use base MessageQueuing::RabbitMQ;
 use strict;
 use warnings;
 
+use AnyEvent;
 use Data::Dumper;
 
 use Log::Log4perl "get_logger";
@@ -175,44 +176,56 @@ then wait on the $$running pointer to kill childs when the service is stopped.
 sub receiveAll {
     my ($self, $running) = @_;
 
-    if (not $self->connected) {
-        $self->connect();
-    }
-
-    # Register as consumer for all channel and types
+    my $pid;
     for my $type ('queue', 'topic') {
         for my $channel (keys %{ $self->_receivers->{$type} }) {
-            my $receiver = $self->_receivers->{$type}->{$channel};
+            $log->info("Run child process <$$> for waiting on <$type>, channel <$channel>");
 
-            # Create the receivers
-            if (not defined $receiver->{receiver}) {
-                $receiver->{receiver} = $self->createReceiver(channel => $channel, type => $type);
+            $pid = fork();
+            if ($pid == 0) {
+                # Connect to the broker within the child
+                if (not $self->connected) {
+                    $self->connect();
+                }
+
+                # Create the receivers
+                my $receiver = $self->_receivers->{$type}->{$channel};
+                if (not defined $receiver->{receiver}) {
+                    $receiver->{receiver} = $self->createReceiver(channel => $channel, type => $type);
+                }
+                # Register the callback for this channel
+                if (defined $receiver->{consumer}) {
+                    $self->cancel(receiver => $receiver);
+                }
+                $receiver->{consumer} = $self->consume(
+                                            queue    => $receiver->{receiver}->{method_frame}->{queue},
+                                            callback => $receiver->{callback}
+                                        );
+
+                # Infinite loop on fetch
+                while (1) {
+                    my $condvar = AnyEvent->condvar;
+                    eval {
+                        $self->fetch(condvar => $condvar, duration => $receiver->{duration});
+                    };
+                    if ($@) {
+                        my $err = $@;
+                        # Excpetion should be Kanopya::Exception::MessageQueuing::NoMessage
+                        if (not $err->isa('Kanopya::Exception::MessageQueuing::NoMessage')) {
+                            $err->rethow();
+                        }
+                    }
+                }
+                die;
             }
-            # Register the callback for this channel
-            if (defined $receiver->{consumer}) {
-                $self->cancel(receiver => $receiver);
-            }
-            $receiver->{consumer} = $self->consume(
-                                        queue    => $receiver->{receiver}->{method_frame}->{queue},
-                                        callback => $receiver->{callback}
-                                    );
         }
     }
-
-    # Wait messages, stop when the running pointer is false
-    while ($$running) {
-        my $condvar = AnyEvent->condvar;
-        # Fecth durring 5 sec to be able to stop to fetch when the runngin pointer switch to false
-        eval {
-            $self->fetch(condvar => $condvar, duration => 5);
-        };
-        if ($@) {
-            my $err = $@;
-            # Excpetion should be Kanopya::Exception::MessageQueuing::NoMessage
-            if (not $err->isa('Kanopya::Exception::MessageQueuing::NoMessage')) {
-                $err->rethow();
-            }
+    if ($pid != 0) {
+        # Wait on the running pointer, and kill childs when the daemon is stopping
+        while ($$running) {
+            sleep(5);
         }
+        kill -1, getpgrp($pid);
     }
 }
 
@@ -222,6 +235,8 @@ sub receiveAll {
 
 Wait for message in an event loop, interupt the bloking call
 if the duration exceed.
+
+@param condvar the condition variable for the event loop
 
 @optional duration the maximum time to wait messages.
 
@@ -300,8 +315,10 @@ sub createReceiver {
 
 Register the callbck method for a specific channel and type.
 
-@param channel the channel on which the callback is resistred
-@param type the type of the queue (queue or topic)
+@param queue the queue on which register hte calback
+@param callback the callback method
+
+@optional condvar the condition variable to interupt the event loop
 
 =end classdoc
 =cut
@@ -380,8 +397,7 @@ sub consume {
 
 Register the callbck method for a specific channel and type.
 
-@param channel the channel on which the callback is resistred
-@param type the type of the queue (queue or topic)
+@param receiver the receiver data hash
 
 =end classdoc
 =cut
