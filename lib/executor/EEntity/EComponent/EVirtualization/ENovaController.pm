@@ -73,7 +73,7 @@ sub api {
             url     => 'http://' . $glance->getMasterNode->fqdn  . ':9292/v1'
         },
         compute => {
-            url     => 'http://' . $compute->getMasterNode->fqdn . ':8774/v2'
+            url     => 'http://' . $self->getMasterNode->fqdn . ':8774/v2'
         },
         network => {
             url     => 'http://' . $quantum->getMasterNode->fqdn . ':9696/v2.0'
