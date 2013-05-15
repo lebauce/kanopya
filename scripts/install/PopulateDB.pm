@@ -799,7 +799,7 @@ sub registerComponents {
         {
             component_name         => 'Iscsitarget',
             component_version      => 1,
-            component_categories   => [ 'ExportManager' ],
+            component_categories   => [ 'ExportManager', 'BlockExportManager' ],
             component_template     => '/templates/components/ietd',
             service_provider_types => [ 'Cluster' ],
         },
@@ -1012,7 +1012,7 @@ sub registerComponents {
         {
             component_name         => 'Cinder',
             component_version      => 6,
-            component_categories   => [ 'DiskManager', 'ExportManager' ],
+            component_categories   => [ 'DiskManager', 'ExportManager', 'BlockExportManager' ],
             service_provider_types => [ 'Cluster' ],
         },
         {
