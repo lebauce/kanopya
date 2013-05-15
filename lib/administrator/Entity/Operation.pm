@@ -106,11 +106,12 @@ sub new {
     General::checkParams(args     => \%args,
                          required => [ 'priority', 'type' ],
                          optional => { 'workflow_id' => undef,
-                                       'params'      => undef });
+                                       'params'      => undef,
+                                       'related_id'  => undef });
 
     # If workflow not defined, initiate a new one with parameters
     if (not defined $args{workflow_id}) {
-        my $workflow = Entity::Workflow->new(workflow_name => $args{type});
+        my $workflow = Entity::Workflow->new(workflow_name => $args{type}, related_id => $args{related_id});
         $args{workflow_id} = $workflow->id;
     }
 
@@ -375,8 +376,23 @@ sub validate {
     my $self = shift;
     my %args = @_;
 
-    $self->setAttr(name => 'state', value => 'validated');
-    $self->save();
+    my $executor;
+    eval {
+        $executor = $self->workflow->relatedServiceProvider->getManager(manager_type => 'ExecutionManager');
+    };
+    if ($@) {
+        my $err = $@;
+        if ($@->isa('Kanopya::Exception::Internal')) {
+            throw Kanopya::Exception::Internal(
+                      error => "Can not validate operation <" . $self->id .
+                               "> without related service provider on the workflow."
+                  );
+        }
+        else { $err->rethrow(); }
+    }
+
+    # Push a message on the channel 'operation_result' to continue the workflow
+    $executor->terminate(operation_id => $self->id, status => 'validated');
 
     $self->removeValidationPerm();
 }

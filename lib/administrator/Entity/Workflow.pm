@@ -283,19 +283,25 @@ sub cancel {
     my $self = shift;
     my %params;
 
-    if (defined $self->related and $self->related->isa('Entity::ServiceProvider')) {
-        $self->related->getManager(manager_type => 'ExecutionManager')->enqueue(
+    eval {
+        $self->relatedServiceProvider->getManager(manager_type => 'ExecutionManager')->enqueue(
             type     => 'CancelWorkflow',
             priority => 1,
             params   => {
                 workflow_id => $self->id,
             },
         );
-    }
-    else {
-        throw Kanopya::Exception::Internal(
-                  error => "Can not cancel workflow <" . $self->id .  "> without related service provider."
-              );
+    };
+    if ($@) {
+        my $err = $@;
+        if ($@->isa('Kanopya::Exception::Internal')) {
+            throw Kanopya::Exception::Internal(
+                      error => "Can not cancel workflow <" . $self->id .  "> without related service provider."
+                  );
+        }
+        else {
+            $err->rethrow();
+        }
     }
 }
 
@@ -317,6 +323,17 @@ sub finish {
         $operation->remove();
     }
     $self->setState(state => 'done');
+}
+
+sub relatedServiceProvider {
+    my $self = shift;
+
+    if (defined $self->related and $self->related->isa('Entity::ServiceProvider')) {
+        return $self->related;
+    }
+    throw Kanopya::Exception::Internal(
+          error => "Related entity is not a service provider."
+      );
 }
 
 1;
