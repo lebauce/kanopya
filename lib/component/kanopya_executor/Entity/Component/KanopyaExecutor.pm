@@ -91,12 +91,10 @@ sub enqueue {
                          optional => { 'params'   => {},
                                        'priority' => 200 });
 
-    my $operation = Entity::Operation->enqueue(priority => $args{priority},
-                                               type     => $args{type},
-                                               params   => $args{params});
+    my $operation = Entity::Operation->enqueue(%args);
 
-    # Transmit the created operation id for instance.
-    $self->execute(operation_id => $operation->id);
+    # Publish on the 'workflow' channel
+    MessageQueuing::RabbitMQ::Sender::run($self, workflow_id => $operation->workflow->id);
 
     return $operation;
 }
@@ -107,7 +105,7 @@ sub execute {
 
     General::checkParams(args => \%args, required => [ 'operation_id' ]);
 
-    # Transmit the created operation id for instance.
+    # Publish on the 'operation' channel
     MessageQueuing::RabbitMQ::Sender::execute($self, operation_id => $args{operation_id});
 }
 
@@ -120,7 +118,7 @@ sub terminate {
                          optional => { 'exception' => undef,
                                        'delay'     => 0 });
 
-    # Transmit the created operation id for instance.
+    # Publish on the 'operation_result' channel
     MessageQueuing::RabbitMQ::Sender::terminate($self, %args);
 }
 
@@ -136,7 +134,7 @@ sub run {
 
     my $workflow = Entity::Workflow->run(%args);
 
-    # Transmit the created operation id for instance.
+    # Publish on the 'workflow' channel
     MessageQueuing::RabbitMQ::Sender::run($self, workflow_id => $workflow->id);
 
     return $workflow;
