@@ -86,7 +86,7 @@ sub getPuppetDefinition {
             "\tpassword => 'nova',\n" .
             "\tlibvirt_type => 'kvm',\n" .
             "\tqpassword => 'quantum'\n" .
-            "}\n";
+            "}\n"
     };
 }
 
