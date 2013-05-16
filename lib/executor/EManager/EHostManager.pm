@@ -172,4 +172,16 @@ sub applyVLAN {
     $log->debug("VLAN are not supported by this host manager, doing nothing");
 }
 
+
+sub getHypervisorVMs {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ "host" ]);
+    throw Kanopya::Exception::NotImplemented();
+}
+
+sub resubmitHost {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ "host" ]);
+    throw Kanopya::Exception::NotImplemented();
+}
 1;
