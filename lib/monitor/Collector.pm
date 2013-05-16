@@ -324,19 +324,19 @@ sub updateHostData {
             #############################################################
             # Skip this set if associated component is not on this host #
             #############################################################
-            if (defined $set->{'component'} && $set->{'component'} ne 'base' &&    
-                ! exists $args{components}->{ $set->{'component'} }) {
-                $log->info("[$host_name] No component '$set->{'component'}' to monitor on this host");
+            if (defined $set->indicatorset_component &&
+                ! exists $args{components}->{ $set->indicatorset_component }) {
+                $log->info("[$host_name] No component '$set->indicator_component' to monitor on this host");
                 next SET;
             }
 
             # Skip set if collect is done by an external process
-            next SET if ($set->{'data_provider'} eq 'External');
+            next SET if ($set->indicatorset_provider eq 'External');
 
             ###################################################
             # Build the required var map: ( var_name => oid ) #
             ###################################################
-            my %var_map = map { $_->{label} => $_->{oid} } @{ General::getAsArrayRef( data => $set, tag => 'ds') };
+            my %var_map = map { $_->indicator_name => $_->indicator_oid } $set->indicators;
             
             my ($time, $update_values);
             my $retrieve_set_time;
@@ -345,11 +345,11 @@ sub updateHostData {
                 #################################
                 # Get the specific DataProvider #
                 #################################
-                $provider_class = $set->{'data_provider'} || "SnmpProvider";
+                $provider_class = $set->indicatorset_provider || "SnmpProvider";
                 my $data_provider = $providers{$provider_class};
                 if (not defined $data_provider) {
                     require "DataProvider/$provider_class.pm";
-                    my $comp =  $set->{'component'} ? ($args{'components'}->{ $set->{'component'} } || undef) : undef;
+                    my $comp =  $set->indicatorset_component ? $args{'components'}->{ $set->indicatorset_component } : undef;
                     my $provider_class_prefixed = 'DataProvider::'.$provider_class;
                     $data_provider = $provider_class_prefixed->new(
                         host      => $host,
@@ -362,10 +362,10 @@ sub updateHostData {
                 # Retrieve the map ref { index => { var_name => value } } corresponding to required var_map for each entry #
                 ############################################################################################################
                 my $retrieve_set_start_time = time();
-                if ( defined $set->{table_oid} ) {
+                if ( defined $set->indicatorset_tableoid ) {
                     ($time, $update_values) = $data_provider->retrieveTableData(
-                                                  table_oid => $set->{table_oid},
-                                                  index_oid => $set->{index_oid},
+                                                  table_oid => $set->indicatorset_tableoid,
+                                                  index_oid => $set->indicatorset_indexoid,
                                                   var_map => \%var_map
                                               );
                 } else {
@@ -385,7 +385,7 @@ sub updateHostData {
                 # Handle exceptions #
                 #####################
                 my $error = $@;
-                $log->warn( "[$host_name] Collecting data set '$set->{label}' => $provider_class : $error" );
+                $log->warn( "[$host_name] Collecting data set '" . $set->indicatorset_name . "' => $provider_class : $error" );
                 #TODO find a better way to detect unreachable host (grep error string is not very safe)
                 if ( "$error" =~ "No response" || "$error" =~ "Can't connect") {
                     $provider_class =~ /(.*)Provider/;
@@ -398,7 +398,7 @@ sub updateHostData {
                     $host_reachable = 0;
                     last SET; # we stop collecting data sets
                 } else {
-                    my $mess = "[$host_name] Error while collecting data set '$set->{label}' => $error";
+                    my $mess = "[$host_name] Error while collecting data set '" . $set->indicatorset_name . "' => $error";
                     $log->warn($mess);
                     Message->send(from => 'Monitor', level => "warning", content => $mess );
                     $error_happened = 1;
@@ -412,15 +412,15 @@ sub updateHostData {
             # we loop because updates_values can be rows of table
             while ( my ($index, $values) = each %$update_values) { 
                 # Log value of indicators
-                $log->debug("[$host_name](" . $retrieve_set_time . "s) '$set->{label}' => "
+                $log->debug("[$host_name](" . $retrieve_set_time . "s) '" . $set->indicatorset_name . "' => "
                              . join( " | ", map { "$_" . ($index eq "0" ? "" : ".$index") . ":$values->{$_}" } keys %$values ));
                 
-                my $set_name = $set->{label} . ( $index eq "0" ? "" : ".$index" );
+                my $set_name = $set->indicatorset_name . ( $index eq "0" ? "" : ".$index" );
                 my $rrd_name = Retriever->rrdName(set_name => $set_name, host_name => $host_name);
                 my %stored_values = $self->updateRRD(
                                         rrd_name => $rrd_name,
                                         set_name => $set_name,
-                                        ds_type  => $set->{ds_type},
+                                        ds_type  => $set->indicatorset_type,
                                         time     => $time,
                                         data     => $values
                                     );
