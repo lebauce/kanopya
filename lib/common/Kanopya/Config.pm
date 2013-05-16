@@ -53,7 +53,7 @@ sub _loadconfig {
     $kanopya_dir = $kanopya[0] . '/kanopya';
 
     $config = {
-        executor          => XMLin($kanopya_dir . '/conf/executor.conf'),
+        executor          => XMLin($kanopya_dir . '/conf/executor.conf', ForceArray => [ "callbacks" ]),
         executor_path     => $kanopya_dir . '/conf/executor.conf',
         monitor           => XMLin($kanopya_dir . '/conf/monitor.conf'),
         monitor_path      => $kanopya_dir . '/conf/monitor.conf',
