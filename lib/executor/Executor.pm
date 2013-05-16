@@ -48,12 +48,32 @@ use AnyEvent;
 use XML::Simple;
 use Data::Dumper;
 
-
 use Log::Log4perl "get_logger";
 use Log::Log4perl::Layout;
 use Log::Log4perl::Appender;
 
 my $log = get_logger("");
+
+
+use constant CALLBACKS => {
+    execute_operation => {
+        callback => \&executeOperation,
+        channel  => 'operation',
+        type     => 'queue',
+    },
+    handle_result => {
+        callback => \&handleResult,
+        channel  => 'operation_result',
+        type     => 'queue',
+    },
+    run_workflow => {
+        callback => \&runWorkflow,
+        channel  => 'workflow',
+        type     => 'queue',
+    }
+};
+
+sub getCallbacks { return CALLBACKS; }
 
 
 =pod
@@ -79,31 +99,6 @@ sub new {
 
     # Keep the ref of the timers triggered for reported operations
     $self->{timerrefs} = {};
-
-    # Force the duration if defined
-    my $duration = {};
-    if (defined $args{duration}) {
-        $duration->{duration} = $args{duration};
-    }
-
-    # Bind channels on callbacks
-    my $callbacks = { 'operation'        => \&executeOperation,
-                      'operation_result' => \&handleResult,
-                      'workflow'         => \&runWorkflow };
-
-    # Register the callback for used channels
-    for my $channel (keys %$callbacks) {
-        my $callback = sub {
-            my %cbargs = @_;
-            my $ack = 0;
-            eval {
-                $ack = $callbacks->{$channel}->($self, %cbargs);
-            };
-            if ($@) { $self->log(level => 'error', msg => "$@"); }
-            return $ack;
-        };
-        $self->registerWorker(channel => $channel, callback => \&$callback, %$duration);
-    }
 
     return $self;
 }

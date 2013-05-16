@@ -40,6 +40,11 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 
+use constant CALLBACKS => {};
+
+sub getCallbacks { return CALLBACKS; }
+
+
 =pod
 =begin classdoc
 
@@ -74,6 +79,39 @@ sub new {
             throw Kanopya::Exception(
                       error => "Unable to connect to the broker: $err \n"
                   );
+        }
+    }
+
+    # Force the duration if defined
+    my $duration = {};
+    if (defined $args{duration}) {
+        $duration->{duration} = $args{duration};
+    }
+    my $amqpconf = $self->{config}->{amqp};
+
+    # Register the callback for used channels
+    CALLBACK:
+    for my $name (keys %{ $self->getCallbacks }) {
+        # If callbacks specified in the conf, skip not defined ones
+        if (defined $amqpconf->{callback} and not defined $amqpconf->{callback}->{$name}) {
+            next CALLBACK
+        }
+
+        my $callback = $self->getCallbacks->{$name};
+        my $cbmethod = sub {
+            my %cbargs = @_;
+            my $ack = 0;
+            eval {
+                $ack = $callback->{callback}->($self, %cbargs);
+            };
+            if ($@) { $self->log(level => 'error', msg => "$@"); }
+            return $ack;
+        };
+        if ($callback->{type} eq 'queue') {
+            $self->registerWorker(channel => $callback->{channel}, callback => \&$cbmethod, %$duration);
+        }
+        else {
+            $self->registerSubscriber(channel => $callback->{channel}, callback => \&$cbmethod, %$duration);
         }
     }
 

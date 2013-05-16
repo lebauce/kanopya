@@ -179,10 +179,11 @@ sub receiveAll {
     my $pid;
     for my $type ('queue', 'topic') {
         for my $channel (keys %{ $self->_receivers->{$type} }) {
-            $log->info("Run child process <$$> for waiting on <$type>, channel <$channel>");
-
+            # Fork for each channels
             $pid = fork();
             if ($pid == 0) {
+                $log->info("Spawn child process <$$> for waiting on <$type>, channel <$channel>");
+
                 # Connect to the broker within the child
                 if (not $self->connected) {
                     $self->connect();
