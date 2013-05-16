@@ -152,7 +152,7 @@ my ( $kanopya_vg_size, $kanopya_vg_free_space ) = split(/\|/,$kanopya_vg_sizes);
 
 #We gather pv's present in the vg
 my @kanopya_pvs = `pvs --noheadings --separator '|' -o pv_name,vg_name  | grep $answers->{vg} | cut -d'|' -f1`;
-chomp(@kanopya_pvs);
+@kanopya_pvs = map { $_ =~ s/^\s+|\s+$//g; $_ } @kanopya_pvs;
 
 #########################
 #Directory manipulations#
