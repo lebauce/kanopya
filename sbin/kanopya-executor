@@ -63,7 +63,9 @@ eval {
 	$exec->run(\$running);
 };
 if($@) {
-    $log->error("$@");
+    my $err = $@;
+    $log->error("$err");
+    die("$err");
 }
 
 $log->warn("kanopya-executor stopped");
