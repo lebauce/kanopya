@@ -38,40 +38,18 @@ sub getPuppetDefinition {
     my $sqlconnection;
     my $sql = $self->mysql5;
 
-    if (ref($sql) eq 'Entity::Component::Mysql5') {
-        $sqlconnection  = 'mysql://keystone:keystone@';
-        $sqlconnection .= $sql->getMasterNode->adminIp;
-        $sqlconnection .= '/keystone';
-    }
-    else {
+    if (ref($sql) ne 'Entity::Component::Mysql5') {
         $errmsg = "Only mysql is currently supported as DB backend";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
-    $definition = "if \$kanopya_openstack_repository == undef {
-                       class { 'kanopya::openstack::repository': }
-                       \$kanopya_openstack_repository = 1
-                   }\n
-                   class { 'keystone':
-                         verbose        => true,
-                         debug          => true,
-                         sql_connection => '$sqlconnection',
-                         catalog_type   => 'sql',
-                         admin_token    => 'admin_token',
-                         before => Class['keystone::roles::admin'],
-                   }
-                   exec { \"/usr/bin/keystone-manage db_sync\":
-                         path => \"/usr/bin:/usr/sbin:/bin:/sbin\",
-                   }\n";
-
-    $definition .= "class { 'keystone::roles::admin':
-                        email => '" . $self->service_provider->user->user_email . "',
-                        password => 'pass',
-                        require => Exec['/usr/bin/keystone-manage db_sync'],
-                    }\n";
-    $definition .= "class { 'kanopya::keystone': dbserver => \"" .
-                   $sql->getMasterNode->fqdn .
-                   "\", password => \"keystone\" }\n";
+    $definition = "class { 'kanopya::openstack::keystone':\n" .
+                  "    dbserver      => '" . $sql->getMasterNode->fqdn . "',\n" .
+                  "    dbip          => '" . $sql->getMasterNode->adminIp . "',\n" .
+                  "    dbpassword    => 'keystone',\n" .
+                  "    adminpassword => 'keystone',\n" .
+                  "    email         => '" . $self->service_provider->user->user_email . "',\n" .
+                  "}\n";
 
     return $definition;
 }

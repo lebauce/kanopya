@@ -54,6 +54,7 @@ use Node;
 use ServiceProviderManager;
 use Entity::Component::Lvm2::Lvm2Vg;
 use Entity::Component::Lvm2::Lvm2Pv;
+use Entity::Component::Lvm2::Lvm2Lv;
 use Scope;
 use ScopeParameter;
 use Entity::Component::Lvm2;
@@ -161,6 +162,7 @@ my @classes = (
     'Entity::Component::Linux::LinuxMount',
     'Entity::Component::Lvm2::Lvm2Vg',
     'Entity::Component::Lvm2::Lvm2Pv',
+    'Entity::Component::Lvm2::Lvm2Lv',
     'Entity::Component::Vsphere5::Vsphere5Datacenter',
     'Entity::Component::Vsphere5::Vsphere5Repository',
     'Entity::Component::Iscsi::IscsiPortal',
@@ -816,7 +818,7 @@ sub registerComponents {
         {
             component_name         => 'Iscsitarget',
             component_version      => 1,
-            component_categories   => [ 'ExportManager' ],
+            component_categories   => [ 'ExportManager', 'BlockExportManager' ],
             component_template     => '/templates/components/ietd',
             service_provider_types => [ 'Cluster' ],
         },
@@ -1029,7 +1031,7 @@ sub registerComponents {
         {
             component_name         => 'Cinder',
             component_version      => 6,
-            component_categories   => [ 'DiskManager', 'ExportManager' ],
+            component_categories   => [ 'DiskManager', 'ExportManager', 'BlockExportManager' ],
             service_provider_types => [ 'Cluster' ],
         },
         {

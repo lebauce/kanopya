@@ -65,7 +65,7 @@ use constant ATTR_DEF => {
     },
     container_filesystem => {
         pattern      => '^.*$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_extended  => 0
     },
     container_freespace => {

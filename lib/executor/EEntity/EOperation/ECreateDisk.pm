@@ -60,7 +60,7 @@ sub prepare {
     General::checkParams(args => $self->{context}, required => [ "disk_manager" ]);
 
     General::checkParams(args     => $self->{params},
-                         required => [ "name", "size", "filesystem" ]);
+                         required => [ "name", "size" ]);
 
     # Check service provider state
     my $storage_provider = $self->{context}->{disk_manager}->service_provider;

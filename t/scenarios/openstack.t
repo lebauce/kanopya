@@ -23,6 +23,8 @@ Log::Log4perl->easy_init({
 use BaseDB;
 use NetconfVlan;
 use Entity::Vlan;
+use Entity::Component::Lvm2::Lvm2Vg;
+use Entity::Component::Lvm2::Lvm2Pv;
 
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::Register;
@@ -66,6 +68,10 @@ sub main {
                                 overcommitment_cpu_factor    => 1,
                                 overcommitment_memory_factor => 1
                             },
+                            'cinder' => {
+                            },
+                            'lvm' => {
+                            },
                             'glance' => {
                             },
                             'quantum' => {
@@ -82,6 +88,8 @@ sub main {
     my $nova_controller = $cloud->getComponent(name => "NovaController");
     my $glance = $cloud->getComponent(name => "Glance");
     my $quantum = $cloud->getComponent(name => "Quantum");
+    my $cinder = $cloud->getComponent(name => "Cinder");
+    my $lvm = $cloud->getComponent(name => "Lvm");
 
     $keystone->setConf(conf => {
         mysql5_id   => $sql->id,
@@ -102,6 +110,23 @@ sub main {
         mysql5_id          => $sql->id,
         nova_controller_id => $nova_controller->id
     });
+
+    $cinder->setConf(conf => {
+        mysql5_id          => $sql->id,
+        nova_controller_id => $nova_controller->id
+    });
+
+    my $vg = Entity::Component::Lvm2::Lvm2Vg->new(
+        lvm2_id           => $lvm->id,
+        lvm2_vg_name      => "cinder-volumes",
+        lvm2_vg_freespace => 0,
+        lvm2_vg_size      => 10 * 1024 * 1024 * 1024
+    );
+
+    my $pv = Entity::Component::Lvm2::Lvm2Pv->new(
+        lvm2_vg_id   => $vg->id,
+        lvm2_pv_name => "/dev/sda"
+    );
 
     diag('Create and configure Nova compute cluster');
     my $compute;

@@ -57,10 +57,10 @@ sub getPuppetDefinition {
     my @nodes = $self->service_provider->nodes;
     my @nodes_hostnames = map {$_->node_hostname} @nodes;
 
-    my $definitions = "class { 'kanopya::rabbitmq':
-                           disk_nodes => ['" . join ("','", @nodes_hostnames) . "'],
-                           cookie     => " . $self->cookie . ",
-                       }\n";
+    my $definitions = "class { 'kanopya::rabbitmq':\n" .
+                      "    disk_nodes => ['" . join ("','", @nodes_hostnames) . "'],\n" .
+                      "    cookie     => " . $self->cookie . ",\n" .
+                      "}\n";
 
     return $definitions;
 }

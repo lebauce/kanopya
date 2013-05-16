@@ -34,7 +34,7 @@ sub getDefaultExportManager {
     my $manager = $self->getDiskManager();
     my $cluster = Entity->get(id => $manager->getAttr(name => 'service_provider_id'));
 
-    return $cluster->getComponent(name => "Iscsitarget", version => "1");
+    return $cluster->getComponent(category => "BlockExportManager");
 }
 
 1;

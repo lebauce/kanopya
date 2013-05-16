@@ -75,7 +75,17 @@ sub getReadOnlyParameter {
     throw Kanopya::Exception::NotImplemented();
 }
 
-=head2 getReadOnlyParameter
+=head2
+
+=begin classdoc
+Enqueue a CreateExport operation
+
+@param container the container from which the export must be created
+@param export_name the name of the export
+
+@return container_access
+
+=end classdoc
 
 =cut
 

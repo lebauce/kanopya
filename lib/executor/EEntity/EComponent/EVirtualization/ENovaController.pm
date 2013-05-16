@@ -48,7 +48,7 @@ sub api {
         auth => {
             passwordCredentials => {
                 username    => "admin",
-                password    => "pass"
+                password    => "keystone"
             },
             tenantName      => "openstack"
         }
@@ -61,6 +61,8 @@ sub api {
     my $compute  = shift @computes;
     my @quantums  = $self->quantums;
     my $quantum  = shift @quantums;
+    my @cinders  = $self->cinders;
+    my $cinder  = shift @cinders;
 
     my $config = {
         verify_ssl => 0,
@@ -71,10 +73,13 @@ sub api {
             url     => 'http://' . $glance->getMasterNode->fqdn  . ':9292/v1'
         },
         compute => {
-            url     => 'http://' . $compute->getMasterNode->fqdn . ':8774/v2'
+            url     => 'http://' . $self->getMasterNode->fqdn . ':8774/v2'
         },
         network => {
             url     => 'http://' . $quantum->getMasterNode->fqdn . ':9696/v2.0'
+        },
+        volume => {
+            url     => 'http://' . $cinder->getMasterNode->fqdn . ':8776/v1'
         }
     };
 

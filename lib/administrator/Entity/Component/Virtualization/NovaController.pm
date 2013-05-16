@@ -159,11 +159,7 @@ sub getPuppetDefinition {
         return;
     }
 
-    my $definition = "if \$kanopya_openstack_repository == undef {\n" .
-                     "\tclass { 'kanopya::openstack::repository': }\n" .
-                     "\t\$kanopya_openstack_repository = 1\n" .
-                     "}\n" .
-                     "class { 'kanopya::novacontroller':\n" .
+    my $definition = "class { 'kanopya::openstack::nova::controller':\n" .
                      "\tdbserver => '" . $sql->getMasterNode->fqdn . "',\n" .
                      "\tamqpserver => '" . $self->amqp->getMasterNode->fqdn . "',\n" .
                      "\tpassword => 'nova',\n" .

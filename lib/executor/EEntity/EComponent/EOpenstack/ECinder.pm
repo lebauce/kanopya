@@ -14,9 +14,102 @@
 
 package EEntity::EComponent::EOpenstack::ECinder;
 use base "EEntity::EComponent";
+use base "EManager::EDiskManager";
 
 use strict;
 use warnings;
 
-1;
+use EEntity;
+use Entity::ContainerAccess::IscsiContainerAccess;
 
+=head
+
+=begin classdoc
+Instruct a cinder instance to create a volume, then trigger the Cinder entity to register
+it into Kanopya
+
+@param name the volume name
+@param size the volume size
+
+@return a container object
+
+=end classdoc
+
+=cut
+
+sub createDisk {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ "name", "size" ]); 
+
+    my $e_controller = EEntity->new(entity => $self->nova_controller);
+    my $api = $e_controller->api;
+
+    my $req = $api->tenant(id => $api->{tenant_id})->volumes->post(
+                  target  => 'volume',
+                  content => {
+                      "volume" => {
+                          "name"         => $args{name},
+                          "size"         => $args{size} / 1024 / 1024 / 1024,
+                          "display_name" => $args{name},
+                      }
+                  }
+              );
+
+    my $container = $self->lvcreate(
+                        volume_id    => $req->{volume}->{id},
+                        lvm2_lv_name => $args{name},
+                        lvm2_lv_size => $args{size},
+                    );
+
+    return EEntity->new(entity => $container);
+}
+
+=head 2
+
+=begin classdoc
+Register a new iscsi container access into Kanopya
+
+=end classdoc
+
+=cut
+
+sub createExport {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ "container" ] );
+
+    my $id = join('-', (split('--', $args{container}->container_device))[-5..-1]);
+
+    my $export = Entity::ContainerAccess::IscsiContainerAccess->new(
+        container_id            => $args{container}->id,
+        container_access_export => "iqn.2010-10.org.openstack:volume-" . $id,
+        container_access_port   => 3260,
+        container_access_ip     => $self->getMasterNode->adminIp,
+        export_manager_id       => $self->id,
+        typeio                  => "fileio",
+        iomode                  => "wb",
+        lun_name                => ""
+    );
+
+    return EEntity->new(entity => $export);
+}
+
+sub removeExport {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ "container_access" ] );
+
+    $args{container_access}->remove();
+}
+
+sub addExportClient {
+}
+
+sub getLunId {
+    return 1;
+}
+
+1;
