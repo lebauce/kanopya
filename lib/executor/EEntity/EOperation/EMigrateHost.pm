@@ -51,6 +51,71 @@ my $log = get_logger("");
 my $errmsg;
 our $VERSION = '1.00';
 
+
+
+sub check {
+    my ($self, %args) = @_;
+    General::checkParams(args => $self->{context}, required => [ "host", "vm" ]);
+
+    if (not defined $self->{context}->{cloudmanager_comp}) {
+        $self->{context}->{cloudmanager_comp} = $self->{context}->{vm}->getHostManager();
+    }
+}
+
+sub prerequisites {
+    my ($self, %args) = @_;
+
+    my $diff_infra_db = $self->{context}
+                             ->{cloudmanager_comp}
+                             ->checkHypervisorVMPlacementIntegrity(host => $self->{context}->{host});
+    eval {
+        $diff_infra_db = $self->{context}
+                              ->{cloudmanager_comp}
+                              ->checkVMPlacementIntegrity(
+                                    host          => $self->{context}->{vm},
+                                    diff_infra_db => $diff_infra_db,
+                                );
+    };
+    if ($@) {
+        my $error = $@;
+
+        # Vm is not found in infrastructure
+        # Enqueue synchronization in *new* workflow to repair DB
+        # Throw exception to stop migration
+        Entity::Operation->enqueue(
+            priority => 200,
+            type     => 'SynchronizeInfrastructure',
+            params   => {
+                context => {
+                    hypervisor => $self->{context}->{host},
+                    vm         => $self->{context}->{vm},
+                },
+            }
+        );
+        throw Kanopya::Exception(error => $error);
+    }
+
+    if (! $self->{context}->{cloudmanager_comp}->isInfrastructureSynchronized(hash => $diff_infra_db)) {
+
+        # Repair infra before retrying AddNode
+        # TODO : pass $diff_infra_db Hashref throw params
+
+        $self->workflow->enqueueBefore(
+            operation => {
+                priority => 200,
+                type     => 'SynchronizeInfrastructure',
+                params   => {
+                    context => {
+                        hypervisor => $self->{context}->{host},
+                        vm         => $self->{context}->{vm},
+                    },
+                }
+            }
+        );
+        return -1;
+    }
+
+}
 =head2 prepare
 
 =cut
@@ -60,10 +125,6 @@ sub prepare {
     $self->SUPER::prepare();
 
     General::checkParams(args => $self->{context}, required => [ "host", "vm" ]);
-
-    if (not defined $self->{context}->{cloudmanager_comp}) {
-        $self->{context}->{cloudmanager_comp} = $self->{context}->{vm}->getHostManager();
-    }
 
     # Check cloudCluster
     if (not defined $self->{context}->{cluster}) {
