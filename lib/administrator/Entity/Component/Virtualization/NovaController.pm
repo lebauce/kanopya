@@ -265,6 +265,20 @@ sub addHypervisor {
            );
 }
 
+sub promoteHost {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'host', 'openstack_vm_uuid', 'hypervisor_id' ]);
+
+     $args{host} = Entity::Host::VirtualMachine::OpenstackVm->promote(
+                      promoted           => $args{host},
+                      nova_controller_id => $self->id,
+                      openstack_vm_uuid  => $args{openstack_vm_uuid},
+                  );
+
+    $args{host}->hypervisor_id($args{hypervisor_id});
+    return $args{host};
+}
+
 =pod
 
 =begin classdoc
