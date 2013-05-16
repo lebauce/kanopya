@@ -1,3 +1,4 @@
 <conf multiprocess="0">
 	<user name="admin" password="[% admin_password %]" />
+	<amqp user="rulesengine" password="[% admin_password %]" />
 </conf>

@@ -1,3 +1,4 @@
 <conf>
     <user name="admin" password="[% admin_password %]" />
+    <amqp user="monitor" password="[% admin_password %]" />
 </conf>

@@ -135,7 +135,7 @@ sub receive {
     General::checkParams(args => \%args, required => [ 'type', 'channel' ]);
 
     if (not $self->connected) {
-        $self->connect();
+        $self->connect(%{$self->{_config}});
     }
 
     my $receiver = $self->_receivers->{$args{type}}->{$args{channel}};
@@ -186,7 +186,7 @@ sub receiveAll {
 
                 # Connect to the broker within the child
                 if (not $self->connected) {
-                    $self->connect();
+                    $self->connect(%{$self->{_config}});
                 }
 
                 # Create the receivers

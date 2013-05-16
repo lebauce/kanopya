@@ -447,11 +447,29 @@ useTemplate(
 # Puppetmaster configuration
 generatePuppetConfiguration(%datas);
 
+# Create AMQP users, they should have been created by Puppet
+sub createAMQPUser {
+    my ($user, $password) = @_;
+
+    if (system ("rabbitmqctl list_users | grep -P '^$user\t'")) {
+        system ("rabbitmqctl add_user $user $password");
+        system ("rabbitmqctl set_permissions $user '.*' '.*' '.*'");
+    }
+    else {
+        print "Changing password for user $user\n";
+        system ("rabbitmqctl change_password $user $password");
+    }
+}
+
+for my $user ("executor", "aggregator", "rulesengine", "monitor") {
+    createAMQPUser($user, $answers->{dbpassword1});
+}
+
 # Configure log rotate
 copy("$conf_vars->{install_template_dir}/logrotate-kanopya", '/etc/logrotate.d') || die "Copy failed $!";
 
 # set /etc/hosts
-writeFile('/etc/hosts', "127.0.0.1 localhost\n$internal_ip_add $hostname.$domain $hostname\n");
+writeFile('/etc/hosts', "127.0.0.1 localhost\n192.168.0.173 download.kanopya.org\n$internal_ip_add $hostname.$domain $hostname\n");
 
 # Launching Kanopya's init scripts
 service([ 'kanopya-executor' ], 'restart');

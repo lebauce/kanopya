@@ -60,13 +60,10 @@ sub new {
 
     my $self = $class->SUPER::new(%args);
 
-    # TODO: Check the configuration ($self->{config}) about the broker,
-    #       and store it as private member to further connection.
-
     # Connect the component as the connection can not be done
     # within a message callback.
     eval {
-        $self->_component->connect();
+        $self->_component->connect(%{$self->{config}->{amqp}});
     };
     if ($@) {
         my $err = $@;

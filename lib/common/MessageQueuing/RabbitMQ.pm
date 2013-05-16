@@ -74,17 +74,20 @@ sub connect {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         optional => { 'ip' => '127.0.0.1', 'port' => 5672 });
+                         optional => { 'ip' => '127.0.0.1', 'port' => 5672,
+                                       'user' => 'guest', 'password' => "guest" });
 
     $self->{_connection} = Net::RabbitFoot->new()->load_xml_spec()->connect(
                                host => $args{ip},
                                port => $args{port},
-                               user => 'guest',
-                               pass => 'guest',
+                               user => $args{user},
+                               pass => $args{password},
                                vhost => '/',
                            );
 
     $self->{_session} = $self->_connection->open_channel();
+
+    $self->{_config} = \%args;
 }
 
 
