@@ -147,23 +147,6 @@ sub new {
 
 =begin classdoc
 
-Variable getter
-
-@return Internal representation of current infrastructure
-
-=end classdoc
-
-=cut
-
-sub getInfra {
-    my ($self) = @_;
-    return $self->{_infra};
-}
-
-=pod
-
-=begin classdoc
-
 Construct the infrastructure data structure used in the class by algorithms.
 Use the cloud manager to get the infrastructure information
 
@@ -190,16 +173,16 @@ sub _constructInfra {
                 ram => $hypervisor->host_ram,
                 cpu => $hypervisor->host_core,
             },
-            vm_ids  => [],
         };
 
         my @hypervisor_vms = $hypervisor->getVms();
         for my $vm (@hypervisor_vms) {
             $vms->{$vm->id} = {
-                ram => $vm->host_ram,
-                cpu => $vm->host_core,
+                ram   => $vm->host_ram,
+                cpu   => $vm->host_core,
+                hv_id => $hypervisor->getId,
             };
-            push @{$hvs->{$hypervisor->getId}->{vm_ids}}, $vm->id;
+            $hvs->{$hypervisor->getId}->{vm_ids}->{$vm->id} = 1;
         }
     }
 
@@ -295,7 +278,8 @@ sub isMigrationAuthorized{
         return 0;
     }
 
-    my @resources = keys %{$self->{_infra}->{vms}->{$vm_id}};
+    # TODO better resource management
+    my @resources = grep {! ($_ eq 'hv_id')} keys %{$self->{_infra}->{vms}->{$vm_id}};
 
     my $remaining_resources = $self->_getHvSizeRemaining(
         hv_id => $hv_id,
@@ -304,7 +288,7 @@ sub isMigrationAuthorized{
     for my $resource (@resources) {
         $log->debug("Check $resource, good if :  ".$self->{_infra}->{vms}->{$vm_id}->{$resource}.' < '.$remaining_resources->{$resource});
 
-        if( $self->{_infra}->{vms}->{$vm_id}->{$resource} > $remaining_resources->{$resource}  ) {
+        if ($self->{_infra}->{vms}->{$vm_id}->{$resource} > $remaining_resources->{$resource}) {
             $log->info("Migration refused : not enough $resource to migrate VM $vm_id (".$self->{_infra}->{vms}->{$vm_id}->{$resource}.") in HV $hv_id (".$remaining_resources->{$resource} );
             return 0;
         }
@@ -412,7 +396,7 @@ sub getHypervisorIdsForVMs{
     while (my ($vm_id, $wanted_values) = each (%{$args{vms_wanted_values}})) {
         my $hv_id = $self->getHypervisorIdForVM(wanted_values => $wanted_values);
         if (defined $hv_id) {
-            push @{$self->{_infra}->{hvs}->{$hv_id}->{vm_ids}}, $vm_id;
+            $self->{_infra}->{hvs}->{$hv_id}->{vm_ids}->{$vm_id} = 1;
             $self->{_infra}->{vms}->{$vm_id} = $wanted_values;
             $rep{$vm_id} = $hv_id;
         }
@@ -444,16 +428,13 @@ sub getHypervisorIdResubmitVM {
     return $self->getHypervisorIdForVM(%args);
 }
 
-
 sub _removeVmfromInfra {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['vm_id']);
-    my $vm_id = $args{vm_id};
-    delete $self->{_infra}->{vms}->{$vm_id};
-
-    #TODO add a break to avoid continuing research once id is found
-    HV:for my $hv_id_it ( keys %{$self->{_infra}->{hvs}} ) {
-        @{$self->{_infra}->{hvs}->{$hv_id_it}->{vm_ids}} = grep {$vm_id != $_} @{$self->{_infra}->{hvs}->{$hv_id_it}->{vm_ids}};
+    if (defined $self->{_infra}->{vms}->{$args{vm_id}}) {
+        my $hv_id = $self->{_infra}->{vms}->{$args{vm_id}}->{hv_id};
+        delete $self->{_infra}->{hvs}->{$hv_id}->{vm_ids}->{$args{vm_id}};
+        delete $self->{_infra}->{vms}->{$args{vm_id}};
     }
 }
 
@@ -537,7 +518,7 @@ Try to scale the memory of a VM.
 
 =cut
 
-sub scaleMemoryHost{
+sub scaleMemoryHost {
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => ['host_id','memory']);
 
@@ -553,7 +534,7 @@ sub scaleMemoryHost{
         $mem_input = $args{memory};
     }
 
-    if ($mem_input =~ /\D/){
+    if ($mem_input =~ /\D/) {
         Message->send(
            from    => 'Capacity Management',
            level   => 'info',
@@ -565,13 +546,16 @@ sub scaleMemoryHost{
 
     # Compute absolute memory instead of relative
     my $memory;
-    if($sign eq '+'){
+    if ($sign eq '+') {
         $memory = $self->{_infra}->{vms}->{$args{host_id}}->{ram} + $mem_input;
-    } elsif ($sign eq '-') {
+    }
+    elsif ($sign eq '-') {
         $memory = $self->{_infra}->{vms}->{$args{host_id}}->{ram} - $mem_input;
-    } elsif ($sign =~ /\d/) {
+    }
+    elsif ($sign =~ /\d/) {
         $memory = $mem_input;
-    } else {
+    }
+    else {
         Message->send(
             from    => 'Capacity Management',
             level   => 'warn',
@@ -917,12 +901,13 @@ Return occupied size (RAM and CPU) of a hypervisor. Add 32MB margin for each VM
 
 sub _getHvSizeOccupied{
     my ($self,%args) = @_;
-    my $hv_id          = $args{hv_id};
+    General::checkParams(args => \%args, required => ['hv_id']);
 
-    my $hv_vms = $self->{_infra}->{hvs}->{$hv_id}->{vm_ids};
+    my $hv_id = $args{hv_id};
+
     my $size   = {cpu => 0, ram => 0};
 
-    for my $vm_id (@$hv_vms) {
+    for my $vm_id (keys %{$self->{_infra}->{hvs}->{$hv_id}->{vm_ids}}) {
         $size->{cpu} += $self->{_infra}->{vms}->{$vm_id}->{cpu};
         $size->{ram} += $self->{_infra}->{vms}->{$vm_id}->{ram};
         #TODO margin used originally for Xen. Can be parametered
@@ -1000,21 +985,7 @@ Return the id of the HV in which the VM runs
 
 sub _getHvIdFromVmId{
     my ($self,%args) = @_;
-    my $vm_id = $args{vm_id};
-
-    my $hv_id;
-
-    #TODO a specific infrastructure in order to avoid this not optimized loops...
-    HV:for my $hv_id_it (keys %{$self->{_infra}->{hvs}}){
-        my $vm_ids = $self->{_infra}->{hvs}->{$hv_id_it}->{vm_ids};
-        for my $vm_id_it (@$vm_ids){
-            if($vm_id == $vm_id_it){
-                $hv_id = $hv_id_it;
-                last HV;
-            }
-        }
-    }
-    return $hv_id;
+    return $self->{_infra}->{vms}->{$args{vm_id}}->{hv_id};
 }
 
 
@@ -1069,6 +1040,34 @@ sub _scaleOrder{
     }
 }
 
+sub _addVmInHV {
+    my ($self,%args) = @_;
+    General::checkParams(args => \%args, required => [ 'vm_id', 'hv_id' ]);
+    $self->{_infra}->{hvs}->{$args{hv_id}}->{vm_ids}->{$args{vm_id}} = 1;
+    $self->{_infra}->{vms}->{$args{vm_id}}->{hv_id} = $args{hv_id}
+}
+
+sub _removeVmFromHV {
+    my ($self,%args) = @_;
+    General::checkParams(args => \%args, required => [ 'vm_id' ], optional => {hv_id => undef});
+
+    $args{hv_id} = $args{hv_id} || $self->_getHvIdFromVmId(vm_id => $args{vm_id});
+
+    if ($self->{_infra}->{vms}->{$args{vm_id}}->{hv_id} != $args{hv_id}) {
+        my $error = "Hypervisor <$args{hv_id}> does not match vm <$args{vm_id}> hv id (<".$self->{_infra}->{vms}->{$args{vm_id}}->{hv_id}.">)";
+        throw Kanopya::Exception(error => $error);
+    }
+
+    if (defined $self->{_infra}->{hvs}->{$args{hv_id}}->{vm_ids}->{$args{vm_id}}) {
+        delete $self->{_infra}->{hvs}->{$args{hv_id}}->{vm_ids}->{$args{vm_id}}
+    }
+    else {
+        my $error = "Vm <$args{vm_id}> is not on hypervisor <$args{hv_id}> vm list";
+        throw Kanopya::Exception(error => $error);
+    }
+
+    $self->{_infra}->{vms}->{$args{vm_id}}->{hv_id} = undef;
+}
 =pod
 
 =begin classdoc
@@ -1087,25 +1086,10 @@ sub _migrateVmModifyInfra{
     my $vm_id      = $args{vm_id};
     my $hv_dest_id = $args{hv_dest_id};
 
-    my $hv_from_id;
+    my $hv_from_id = $self->_getHvIdFromVmId(vm_id => $args{vm_id});
 
-    # Find vm original hypervisor id
-    while (my ($hv_id, $hv) = each %{$self->{_infra}->{hvs}}) {
-        my $count = 0;
-        my $index_search;
-        for my $vm_id_p (@{$hv->{vm_ids}}){
-            if($vm_id == $vm_id_p){
-                $index_search = $count;
-                last;
-            }
-            $count++
-        }
-        if(defined $index_search){
-            $hv_from_id = $hv_id;
-            splice @{$hv->{vm_ids}}, $index_search,1;
-        }
-    }
-    push @{$self->{_infra}->{hvs}->{$hv_dest_id}->{vm_ids}}, $vm_id;
+    $self->_removeVmFromHV(vm_id => $vm_id, hv_id => $hv_from_id);
+    $self->_addVmInHV(vm_id => $vm_id, hv_id => $hv_dest_id);
 
     $log->debug("Infra modified => migration <$vm_id> (ram: ".($self->{_infra}->{vms}->{$vm_id}->{'ram'}).") from <$hv_from_id> to <$hv_dest_id>");
 
@@ -1121,7 +1105,6 @@ sub _migrateVmModifyInfra{
         $self->{_infra}->{hvs}->{$hv_from_id}->{hv_capa}->{ram_effective} += $self->{_infra}->{vms}->{$vm_id}->{'ram_effective'};
     }
 }
-
 
 =pod
 
@@ -1295,20 +1278,17 @@ sub _migrateOtherVmToScale{
 
     my $hv_id            = $self->_getHvIdFromVmId(vm_id => $vm_id);
 
-    my $vms_in_hv        = $self->{_infra}->{hvs}->{$hv_id}->{vm_ids};
-
     my $delta            = $new_value - $self->{_infra}->{vms}->{$vm_id}->{$scale_metric};
     my $remaining_size   = $self->_getHvSizeRemaining(
                                hv_id => $hv_id,
                            );
-
 
     #Other vm which could be migrated instead of current vm (according to analyzed metric)
     my @other_vms = grep {
                         $self->{_infra}->{vms}->{$_}->{$scale_metric} + $remaining_size->{$scale_metric} >= $delta   #otherwise too small
                         && $self->{_infra}->{vms}->{$_}->{$scale_metric} < $new_value #otherwise the other one could have been migrated
                         &&  $_ != $vm_id
-                    } @$vms_in_hv;
+                    } keys %{$self->{_infra}->{hvs}->{$hv_id}->{vm_ids}};
 
 
     $log->debug("HV <$hv_id> Remaining size = $remaining_size->{$scale_metric}, Need size = $delta, potential VM to scale (according to $scale_metric) => VM_ids :  @other_vms");
@@ -1377,7 +1357,7 @@ its CPU usage
 
 =cut
 
-sub _optimStep{
+sub _optimStep {
     my ($self,%args) = @_;
     my $current_plan    = $args{current_plan};
     my $hv_selected_ids = $args{hv_selected_ids};
@@ -1416,7 +1396,7 @@ sub _optimStep{
         $log->debug("List of HVs available to free <$hv_id> : @hv_selection_ids");
         # Migrate all vms of the selected hv
 
-        my @vmlist = @{$self->{_infra}->{hvs}->{$hv_id}->{vm_ids}};
+        my @vmlist = keys %{$self->{_infra}->{hvs}->{$hv_id}->{vm_ids}};
         $log->debug("List of VMs to migrate = @vmlist");
 
         for my $vm_to_migrate_id (@vmlist){
@@ -1464,7 +1444,7 @@ sub _separateEmptyHvIds {
     my @hv_ids;
 
     for my $hv_index (keys %$hvs){
-        if(scalar @{$hvs->{$hv_index}->{vm_ids}} > 0){
+        if(scalar keys %{$hvs->{$hv_index}->{vm_ids}} > 0){
             push @non_empty_hv_ids, $hv_index;
         }
         else {
@@ -1495,13 +1475,12 @@ sub _findHvIdWithMinVmSize{
     my $hv_selected_ids = $args{hv_selected_ids};
 
     my $hv_index        = $hv_selected_ids->[0];
-    my $vm_ids          = $self->{_infra}->{hvs}->{$hv_index}->{vm_ids};
 
     my @vm_sizes = map {
         $self->_computeRelativeResourceSize(vm_id => $_);
-    } (@$vm_ids);
+    } (keys %{$self->{_infra}->{hvs}->{$hv_index}->{vm_ids}});
 
-    my $n_vm             = List::Util::max @vm_sizes;
+    my $n_vm = List::Util::max @vm_sizes;
     my $rep = {
         id    => [$hv_index],
         count => $n_vm,
@@ -1510,11 +1489,10 @@ sub _findHvIdWithMinVmSize{
     for my $hv_index_s (1..@$hv_selected_ids-1){
 
         my $hv_index        = $hv_selected_ids->[$hv_index_s];
-        my $vm_ids          = $self->{_infra}->{hvs}->{$hv_index}->{vm_ids};
 
         my @vm_sizes = map {
             $self->_computeRelativeResourceSize(vm_id => $_);
-        } (@$vm_ids);
+        } (keys %{$self->{_infra}->{hvs}->{$hv_index}->{vm_ids}});
 
         my $n_vm            = List::Util::max @vm_sizes;
 
@@ -1526,7 +1504,7 @@ sub _findHvIdWithMinVmSize{
             push @{$rep->{id}}, $hv_index;
         }
     }
-    $log->debug("_Size selected = $rep->{count} (hypervisor draw = @{$rep->{id}})");
+    $log->debug("Select minimax hv: value = $rep->{count} ; id: @{$rep->{id}})");
     return $rep;
 }
 
@@ -1568,7 +1546,7 @@ sub _computeInfraChargeStat{
     $stat->{ram_p}  = 0;
 
     while (my($hv_id,$v) = each(%{$self->{_infra}->{hvs}})) {
-        my @vm_list = @{$self->{_infra}->{hvs}->{$hv_id}->{vm_ids}};
+        my @vm_list = keys %{$self->{_infra}->{hvs}->{$hv_id}->{vm_ids}};
         if (@vm_list == 0) {
             $num_of_empty_hv++;
         }
@@ -1629,17 +1607,16 @@ sub _findHvIdWithMinNumVms{
     my $hv_selected_ids = $args{hv_selected_ids};
 
     my $hv_index = $hv_selected_ids->[0];
-    my $vm_ids   = $self->{_infra}->{hvs}->{$hv_index}->{vm_ids};
 
     my $rep = {
         id    => [$hv_index],
-        count => scalar @$vm_ids,
+        count => scalar keys %{$self->{_infra}->{hvs}->{$hv_index}->{vm_ids}},
     };
 
     for my $hv_index_s (1..@$hv_selected_ids-1){
         my $hv_index = $hv_selected_ids->[$hv_index_s];
-        my $vm_ids   = $self->{_infra}->{hvs}->{$hv_index}->{vm_ids};
-        my $n_vm = scalar (@$vm_ids);
+
+        my $n_vm = scalar (keys %{$self->{_infra}->{hvs}->{$hv_index}->{vm_ids}});
         if ($n_vm< $rep->{count}){
             $rep->{count} = $n_vm;
             $rep->{id}    = [$hv_index];
@@ -1723,7 +1700,7 @@ sub _getFlushHypervisorPlan {
     $log->debug("List of HVs available to free <$hv_id> : @hv_selection_ids");
 
     # Migrate all the vm of the selected hv
-    my @vmlist = @{$self->{_infra}->{hvs}->{$hv_id}->{vm_ids}};
+    my @vmlist = keys %{$self->{_infra}->{hvs}->{$hv_id}->{vm_ids}};
     $log->debug("List of VMs to migrate = @vmlist");
 
     my @operation_plan = ();

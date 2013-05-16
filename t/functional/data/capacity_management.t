@@ -94,9 +94,21 @@ sub test_flushhypervisor {
             die 'Error in flush hypervisor - case: no vm can migrate';
         }
 
+        if (! defined $cm->{_infra}->{vms}->{$vms[9]->id}) {
+            die 'Error vm should be indexed in vms list'
+        }
+        if (! defined  $cm->{_infra}->{hvs}->{1}->{vm_ids}->{$vms[9]->id}) {
+            die 'Error vm should be indexed in hv vms list'
+        }
+
         # Remove vm 9 (5GB RAM)
-        my @temp = grep {($_ != $vms[9]->id)} @{$cm->{_infra}->{hvs}->{1}->{vm_ids}};
-        $cm->{_infra}->{hvs}->{1}->{vm_ids} = \@temp;
+        $cm->_removeVmfromInfra(vm_id => $vms[9]->id);
+        if (exists $cm->{_infra}->{vms}->{$vms[9]->id}) {
+            die 'Error vm still indexed in vms list'
+        }
+        if (exists $cm->{_infra}->{hvs}->{1}->{vm_ids}->{$vms[9]->id}) {
+            die 'Error vm still indexed in hv vms list'
+        }
 
         my $flush_res = $cm->flushHypervisor(hv_id => 4);
 
@@ -112,11 +124,13 @@ sub test_flushhypervisor {
         }
 
         # Remove 1 vm in hv 1 and one vm in hv 6
+        my @keys = keys %{$cm->{_infra}->{hvs}->{1}->{vm_ids}};
+        $cm->_removeVmfromInfra(vm_id => pop @keys);
 
-        pop @{$cm->{_infra}->{hvs}->{1}->{vm_ids}};
-        pop @{$cm->{_infra}->{hvs}->{6}->{vm_ids}};
+        @keys = keys %{$cm->{_infra}->{hvs}->{6}->{vm_ids}};
+        $cm->_removeVmfromInfra(vm_id => pop @keys);
 
-        my @hv_4_vms = @{$cm->{_infra}->{hvs}->{4}->{vm_ids}};
+        my @hv_4_vms = keys %{$cm->{_infra}->{hvs}->{4}->{vm_ids}};
 
         $flush_res = $cm->flushHypervisor(hv_id => 4);
 
@@ -141,27 +155,37 @@ sub test_resubmit {
     lives_ok {
         my $infra = {
             vms => {
-                $vms[0]->id => {cpu => 8, ram => 8*1024*1024*1024},
-                $vms[1]->id => {cpu => 2, ram => 2*1024*1024*1024},
-                $vms[2]->id => {cpu => 1, ram => 1*1024*1024*1024},
+                $vms[0]->id => {cpu => 8, ram => 8*1024*1024*1024, hv_id => 1},
+                $vms[1]->id => {cpu => 2, ram => 2*1024*1024*1024, hv_id => 1},
+                $vms[2]->id => {cpu => 1, ram => 1*1024*1024*1024, hv_id => 2},
             },
-            hvs => {  1 => {vm_ids  => [$vms[0]->id,$vms[1]->id],
-                            hv_capa => {cpu => 10,ram => 10*1024*1024*1024}},
-                      2 => {vm_ids  => [$vms[2]->id],
-                            hv_capa => {cpu => 10,ram => 10*1024*1024*1024}},
+            hvs => { 1 => {hv_capa => {cpu => 10,ram => 10*1024*1024*1024}},
+                     2 => {hv_capa => {cpu => 10,ram => 10*1024*1024*1024}},
             }
         };
 
-        my $cm = CapacityManagement->new(infra => $infra);
-
-        if ($cm->getHypervisorIdResubmitVM (vm_id => $vms[0]->id,
-                                            wanted_values => { ram => 8*$coef, cpu => 8 }) != 1) {
-            die 'Error in resubmition in the same HV';
+        while (my ($vm_id, $vm) = each(%{$infra->{vms}})) {
+            $infra->{hvs}->{$vm->{hv_id}}->{vm_ids}->{$vm_id} = 1;
         }
 
-        if ($cm->getHypervisorIdResubmitVM ( vm_id => $vms[0]->id,
-                                             wanted_values => { ram => 9*$coef, cpu => 8 }) != 2) {
-                 die 'Error in resubmition in an other HV' ;
+        my $cm = CapacityManagement->new(infra => $infra);
+
+        my $hv_resubmit_id = $cm->getHypervisorIdResubmitVM(
+                                 vm_id         => $vms[0]->id,
+                                 wanted_values => { ram => 8*$coef, cpu => 8 }
+                             );
+
+        if ($hv_resubmit_id != 1) {
+            die 'Error in resubmition in the same HV (get <'.$hv_resubmit_id.'> instead of 1)';
+        }
+
+        $hv_resubmit_id = $cm->getHypervisorIdResubmitVM(
+                              vm_id         => $vms[0]->id,
+                              wanted_values => { ram => 9*$coef, cpu => 8 }
+                          );
+
+        if ($hv_resubmit_id != 2) {
+            die 'Error in resubmition in the same HV (get <'.$hv_resubmit_id.'> instead of 2)';
         }
     } 'Hypervisor selection for vm resubmition' ;
 }
@@ -271,79 +295,77 @@ sub test_hypervisor_selection {
 sub _getTestInfraForFlush {
     my $infra = {
         vms => {
-            $vms[0]->id => {cpu => 1, ram => 3*$coef},
-            $vms[1]->id => {cpu => 1, ram => 2*$coef},
-            $vms[2]->id => {cpu => 1, ram => 2*$coef},
-            $vms[3]->id => {cpu => 1, ram => 2*$coef},
-            $vms[4]->id => {cpu => 1, ram => 2*$coef},
-            $vms[5]->id => {cpu => 1, ram => 3*$coef},
-            $vms[6]->id => {cpu => 1, ram => 2*$coef},
-            $vms[7]->id => {cpu => 1, ram => 2*$coef},
-            $vms[8]->id => {cpu => 1, ram => 3*$coef},
-            $vms[9]->id => {cpu => 1, ram => 5*$coef},
+            $vms[0]->id => {cpu => 1, ram => 3*$coef, hv_id => 6},
+            $vms[1]->id => {cpu => 1, ram => 2*$coef, hv_id => 1},
+            $vms[2]->id => {cpu => 1, ram => 2*$coef, hv_id => 4},
+            $vms[3]->id => {cpu => 1, ram => 2*$coef, hv_id => 1},
+            $vms[4]->id => {cpu => 1, ram => 2*$coef, hv_id => 4},
+            $vms[5]->id => {cpu => 1, ram => 3*$coef, hv_id => 6},
+            $vms[6]->id => {cpu => 1, ram => 2*$coef, hv_id => 4},
+            $vms[7]->id => {cpu => 1, ram => 2*$coef, hv_id => 4},
+            $vms[8]->id => {cpu => 1, ram => 3*$coef, hv_id => 6},
+            $vms[9]->id => {cpu => 1, ram => 5*$coef, hv_id => 1},
         },
 
         hvs => {
-            1 => {vm_ids  => [$vms[1]->id, $vms[3]->id, $vms[9]->id,],
-                  hv_capa => {cpu => 10,ram => 9.5*$coef}},
-            4 => {vm_ids  => [$vms[2]->id, $vms[4]->id, $vms[6]->id, $vms[7]->id],
-                  hv_capa => {cpu => 10,ram => 9.5*$coef}},
-            6 => {vm_ids  => [$vms[0]->id, $vms[5]->id, $vms[8]->id,],
-                  hv_capa => {cpu => 10,ram => 9.5*$coef}},
+            1 => {hv_capa => {cpu => 10,ram => 9.5*$coef}},
+            4 => {hv_capa => {cpu => 10,ram => 9.5*$coef}},
+            6 => {hv_capa => {cpu => 10,ram => 9.5*$coef}},
         },
    };
-
+    while (my ($vm_id, $vm) = each(%{$infra->{vms}})) {
+        $infra->{hvs}->{$vm->{hv_id}}->{vm_ids}->{$vm_id} = 1;
+    }
     return  $infra;
 };
 
 sub _getTestInfraForOptimiaas {
     my $infra = {
         vms => {
-            $vms[0]->id => {cpu => 1, ram => 1*$coef},
-            $vms[1]->id => {cpu => 1, ram => 2*$coef},
-            $vms[2]->id => {cpu => 1, ram => 3*$coef},
-            $vms[3]->id => {cpu => 1, ram => 4*$coef},
-            $vms[4]->id => {cpu => 1, ram => 5*$coef},
-            $vms[5]->id => {cpu => 1, ram => 6*$coef},
-            $vms[6]->id => {cpu => 1, ram => 7*$coef},
-            $vms[7]->id => {cpu => 1, ram => 8*$coef},
+            $vms[0]->id => {cpu => 1, ram => 1*$coef, hv_id => 1},
+            $vms[1]->id => {cpu => 1, ram => 2*$coef, hv_id => 1},
+            $vms[2]->id => {cpu => 1, ram => 3*$coef, hv_id => 2},
+            $vms[3]->id => {cpu => 1, ram => 4*$coef, hv_id => 3},
+            $vms[4]->id => {cpu => 1, ram => 5*$coef, hv_id => 4},
+            $vms[5]->id => {cpu => 1, ram => 6*$coef, hv_id => 5},
+            $vms[6]->id => {cpu => 1, ram => 7*$coef, hv_id => 6},
+            $vms[7]->id => {cpu => 1, ram => 8*$coef, hv_id => 7},
         },
 
         hvs => {
-            1 => {vm_ids  => [$vms[0]->id, $vms[1]->id],
-                  hv_capa => {cpu => 10,ram => 9.5*$coef}},
-            2 => {vm_ids  => [$vms[2]->id],
-                  hv_capa => {cpu => 10,ram => 9.5*$coef}},
-            3 => {vm_ids  => [$vms[3]->id],
-                  hv_capa => {cpu => 10,ram => 9.5*$coef}},
-            4 => {vm_ids  => [$vms[4]->id,],
-                  hv_capa => {cpu => 10,ram => 9.5*$coef}},
-            5 => {vm_ids  => [$vms[5]->id,],
-                  hv_capa => {cpu => 10,ram => 9.5*$coef}},
-            6 => {vm_ids  => [$vms[6]->id],
-                  hv_capa => {cpu => 10,ram => 9.5*$coef}},
-            7 => {vm_ids  => [$vms[7]->id,],
-                  hv_capa => {cpu => 10,ram => 9.5*$coef}},
+            1 => {hv_capa => {cpu => 10,ram => 9.5*$coef}},
+            2 => {hv_capa => {cpu => 10,ram => 9.5*$coef}},
+            3 => {hv_capa => {cpu => 10,ram => 9.5*$coef}},
+            4 => {hv_capa => {cpu => 10,ram => 9.5*$coef}},
+            5 => {hv_capa => {cpu => 10,ram => 9.5*$coef}},
+            6 => {hv_capa => {cpu => 10,ram => 9.5*$coef}},
+            7 => {hv_capa => {cpu => 10,ram => 9.5*$coef}},
         },
     };
+
+    while (my ($vm_id, $vm) = each(%{$infra->{vms}})) {
+        $infra->{hvs}->{$vm->{hv_id}}->{vm_ids}->{$vm_id} = 1;
+    }
     return  $infra;
 }
 
 sub getTestInfraForScaling {
-    my %args = @_;
 
     my $infra = {
-          vms => {
-                     $vms[0]->id => {cpu => 6, ram => 6*1024*1024*1024},
-                     $vms[1]->id => {cpu => 2, ram => 2*1024*1024*1024},
-                     $vms[2]->id => {cpu => 3, ram => 3*1024*1024*1024},
-                   },
-          hvs => {  1 => {vm_ids  => [$vms[0]->id,$vms[1]->id],
-                        hv_capa => {cpu => 10,ram => 10*1024*1024*1024}},
-                    2 => {vm_ids  => [$vms[2]->id],
-                          hv_capa => {cpu => 10,ram => 10*1024*1024*1024}},
-                   }
-        };
+        vms => {
+            $vms[0]->id => {cpu => 6, ram => 6*1024*1024*1024, hv_id => 1},
+            $vms[1]->id => {cpu => 2, ram => 2*1024*1024*1024, hv_id => 1},
+            $vms[2]->id => {cpu => 3, ram => 3*1024*1024*1024, hv_id => 2},
+        },
+        hvs => {
+            1 => { hv_capa => {cpu => 10,ram => 10*1024*1024*1024}},
+            2 => { hv_capa => {cpu => 10,ram => 10*1024*1024*1024}},
+        }
+    };
+
+    while (my ($vm_id, $vm) = each(%{$infra->{vms}})) {
+        $infra->{hvs}->{$vm->{hv_id}}->{vm_ids}->{$vm_id} = 1;
+    }
 
     return  $infra;
 }
@@ -440,12 +462,15 @@ sub test_scale_memory {
     my %args = @_;
 
     lives_ok {
+
         my $infra = getTestInfraForScaling(vms => \@vms);
-        my $cm    = CapacityManagement->new(infra=>$infra);
+
+        my $cm    = CapacityManagement->new(infra => $infra);
 
         if ( not (
             $cm->isScalingAuthorized(vm_id => $vms[1]->id, hv_id => 1, resource_type => 'ram', wanted_resource => 3*$coef) == 1
-            && $cm->isScalingAuthorized(vm_id => $vms[1]->id, hv_id => 1, resource_type => 'ram', wanted_resource => 5*$coef) == 0)) {
+            && $cm->isScalingAuthorized(vm_id => $vms[1]->id, hv_id => 1, resource_type => 'ram', wanted_resource => 5*$coef) == 0))
+        {
             die 'Check scale memory authorization';
         }
 
