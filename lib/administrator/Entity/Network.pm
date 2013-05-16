@@ -19,6 +19,7 @@ package Entity::Network;
 use base "Entity";
 
 use Entity::Poolip;
+use NetAddr::IP;
 
 use constant ATTR_DEF => {
     network_name => {
@@ -65,9 +66,14 @@ sub getAttrDef { return ATTR_DEF; }
 =cut
 
 sub toString {
+    return shift->network_name;
+}
+
+sub cidr {
     my $self = shift;
-    my $string = $self->{_dbix}->get_column('network_name');
-    return $string;
+
+    return NetAddr::IP->new($self->network_addr,
+                            $self->network_netmask)->cidr;
 }
 
 1;
