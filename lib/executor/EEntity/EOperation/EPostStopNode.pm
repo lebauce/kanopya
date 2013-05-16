@@ -182,10 +182,6 @@ sub execute {
     } else {
         $log->info("cluster image persistence is set, keeping $systemimage_name image");
     }
-}
-
-sub finish {
-    my $self = shift;
 
     # If the cluster has no node any more, it has been properly stoped
     if (scalar(@{ $self->{context}->{cluster}->getHosts() }) == 0) {

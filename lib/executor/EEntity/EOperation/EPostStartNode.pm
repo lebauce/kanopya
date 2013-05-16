@@ -96,7 +96,9 @@ sub execute {
         erollback => $self->{erollback},
     );
 
-    my $eagent = EEntity->new(entity => $self->{context}->{cluster}->getComponent(category => "Configurationagent"));
+    my $eagent = EEntity->new(entity => $self->{context}->{cluster}->getComponent(
+                                             category => "Configurationagent")
+                                        );
 
     # Apply configuration on the node that just started
     $eagent->applyConfiguration(cluster => $self->{context}->{cluster},
@@ -116,19 +118,10 @@ sub execute {
         resource => 'cpu',
         amount   => $self->{context}->{host}->host_core,
     );
-}
-
-sub finish {
-    my $self = shift;
-
-    my @nodes = $self->{context}->{cluster}->getHosts();
 
     # Add another node if required
-    if (scalar(@nodes) < $self->{context}->{cluster}->cluster_min_node) {
-        # _entity is important here, cause we want to enqueue AddNode operation.
-        $self->{context}->{cluster}->_entity->addNode();
-    }
-    else {
+    my @nodes = $self->{context}->{cluster}->getHosts();
+    if (scalar(@nodes) >= $self->{context}->{cluster}->cluster_min_node) {
         my $nodes_states = 1;
         foreach my $node (@nodes) {
             my @node_state = $node->getNodeState();
@@ -143,9 +136,24 @@ sub finish {
             # Another node that the current one is broken
         }
     }
+}
 
-    # /!\ WARNING: DO NOT DELETE $self->{context}->{host} ! needed in worflow addNode + VM migration
+sub finish {
+    my $self = shift;
 
+    # If first node, start others required nodes
+    if ($self->{context}->{host}->node->node_number == 1 and
+        $self->{context}->{cluster}->cluster_min_node > 1) {
+
+        # TODO: How to known if another nodes are starting ? Is it a problem ?
+        for (1 .. ($self->{context}->{cluster}->cluster_min_node - 1)) {
+            # _entity is important here, cause we want to enqueue AddNode operation.
+            $self->{context}->{cluster}->_entity->addNode();
+        }
+    }
+
+    # WARNING: Do NOT delete $self->{context}->{host}, required in worflow addNode + VM migration
+    # TODO: Definitly design a mechanism to bind output parms to input one in workflows
     delete $self->{context}->{cluster}; # Need to be deleted for Add hypervisor followed by add Vm
 }
 
