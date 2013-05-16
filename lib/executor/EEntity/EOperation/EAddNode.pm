@@ -68,19 +68,44 @@ sub prerequisites {
         my $cm = CapacityManagement->new(cloud_manager => $self->{context}->{host_manager});
 
         my $hypervisor_id = $cm->getHypervisorIdForVM(
-                                # blacklisted_hv_ids => $self->{params}->{blacklisted_hv_ids},
                                 selected_hv_ids => \@hv_in_ids,
                                 wanted_values   => {
                                     ram           => $host_manager_params->{ram},
                                     cpu           => $host_manager_params->{core},
                                     # Even if there is memory overcommitment VM needs effectively 1GB to boot the OS
-                                    ram_effective => 1*1024*1024*1024
+                                    ram_effective => 1*1024*1024*1024,
                                 }
                             );
 
-        if(defined $hypervisor_id) {
+        if (defined $hypervisor_id) {
             $log->info("Hypervisor <$hypervisor_id> ready");
-            $self->{context}->{hypervisor} = Entity::Host->get(id => $hypervisor_id);
+            my $host = Entity::Host->get(id => $hypervisor_id);
+
+            my $diff_infra_db = $self->{context}
+                                     ->{host_manager}
+                                     ->checkHypervisorVMPlacementIntegrity(host => $host);
+
+            if (! $self->{context}->{host_manager}->isInfrastructureSynchronized(hash => $diff_infra_db)) {
+
+                # Repair infra before retrying AddNode
+                # TODO : pass $diff_infra_db Hashref throw params
+                $self->workflow->enqueueBefore(
+                    operation => {
+                        priority => 200,
+                        type     => 'SynchronizeInfrastructure',
+                        params   => {
+                            context => {
+                                hypervisor => $host
+                            },
+                        }
+                    }
+                );
+
+                return -1;
+            }
+
+            $log->info('Hypervisor confirmed, start node');
+            $self->{context}->{hypervisor} = $host;
             return 0;
         }
         else {
