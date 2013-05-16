@@ -116,15 +116,15 @@ sub executeOne {
     }
     elsif (ref $args{entity} eq 'Entity::Workflow') {
         $workflow = $args{entity};
-
-        # Run the workflow
-        $executor->oneRun(channel => 'workflow', type => 'queue');
     }
     else {
         throw Kanopya::Exception::Internal(
             error => 'wrong type of entity given to execute'
         );
     }
+
+    # Run the workflow
+    $executor->oneRun(channel => 'workflow', type => 'queue');
 
     WORKFLOW:
     while(1) {
