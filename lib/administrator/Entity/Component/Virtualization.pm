@@ -46,6 +46,17 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF };
 
+sub optimiaas {
+    my ($self, %args) = @_;
+    my $wf_params = {
+        context => {
+            cloudmanager_comp => $self,
+        }
+    };
+
+    return Entity::Workflow->run(name => 'OptimiaasWorkflow', params => $wf_params);
+}
+
 sub getBaseConfiguration {
     return {
         overcommitment_cpu_factor => '1',

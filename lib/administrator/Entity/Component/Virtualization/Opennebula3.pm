@@ -416,19 +416,6 @@ sub addVM {
     return $opennebulavm;
 }
 
-sub optimiaas {
-    my ($self, %args) = @_;
-
-    return $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
-               name   => 'OptimiaasWorkflow',
-               params => {
-                   context => {
-                       cloudmanager_comp => $self,
-                   },
-               },
-           );
-}
-
 sub getImageRepository {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['container_access_id']);
