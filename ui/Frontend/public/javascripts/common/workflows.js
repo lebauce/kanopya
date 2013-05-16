@@ -551,15 +551,16 @@ function runningworkflowslist(cid, eid) {
         content_container_id : cid,
         grid_id              : 'runningworkflowsgrid',
         action_delete        : { url : '/api/workflow', method: 'cancel' },
-        colNames             : [ 'Id', 'Name', 'Current Operation', 'Step' ],
+        colNames             : [ 'Id', 'Name', 'Current Operation', 'Current Operation ID', 'State' ],
         afterInsertRow       : function(grid, rowid, rowdata, rowelem) {
             $.ajax({
                 url     : '/api/operation?workflow_id=' + rowdata.pk + '&state=<>,succeeded&order_by=execution_rank%20ASC',
                 type    : 'GET',
                 success : function(data) {
                     var operation = data[0];
-                    rowelem.currentOperation = operation.label ? operation.label : operation.type;
-                    $(grid).setCell(rowid, 'currentOperation', rowelem.currentOperation);
+                    $(grid).setCell(rowid, 'currentOperation', operation.label ? operation.label : operation.type);
+                    $(grid).setCell(rowid, 'currentOperationId', operation.pk);
+                    $(grid).setCell(rowid, 'state', operation.state);
                 }
             });
         },
@@ -567,8 +568,24 @@ function runningworkflowslist(cid, eid) {
             { name : 'pk', index : 'pk', sorttype : 'int', hidden : true, key : true },
             { name : 'workflow_name', index : 'workflow_name' },
             { name : 'currentOperation', index : 'currentOperation' },
-            { name : 'step', index : 'step' }
-        ]
+            { name : 'currentOperationId', index : 'currentOperationId', hidden : true },
+            { name : 'state', index : 'state' }
+        ],
+        details : {
+            onSelectRow : function(eid, e) {
+                // Workaround to be able to validate operation from the ui,
+                // we need to a mechanism to add custom action on grids.
+                if (e.state == 'waiting_validation') {
+                    var ok = confirm("This will validate the operation:\n\n - \"" + e.currentOperation + "\"\n\nDo you want to continue ?");
+                    if (ok) {
+                        $.ajax({
+                            url  : '/api/operation/' + e.currentOperationId + '/validate',
+                            type : 'POST'
+                        });
+                    }
+                }
+            }
+        }
     });
     $('<br />').appendTo('#'+cid);
 }

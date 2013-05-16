@@ -2599,7 +2599,12 @@ sub rollbackTransaction {
     my $self = shift;
 
     $log->debug("Rollbacking database transaction");
-    $self->_adm->{schema}->txn_rollback;
+    eval {
+        $self->_adm->{schema}->txn_rollback;
+    };
+    if ($@) {
+        $log->warn($@);
+    }
 }
 
 

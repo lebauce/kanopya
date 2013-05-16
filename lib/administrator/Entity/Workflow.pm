@@ -40,6 +40,7 @@ use constant ATTR_DEF => {
     },
     state => {
         pattern      => '^.*$',
+        default      => 'pending',
         is_mandatory => 0,
         is_extended  => 0
     },
@@ -110,10 +111,7 @@ sub enqueue {
     my $self = shift;
     my %args = @_;
 
-    return Entity::Operation->enqueue(
-        workflow_id => $self->getAttr(name => 'workflow_id'),
-        %args,
-    );
+    return Entity::Operation->enqueue(workflow_id => $self->id, %args);
 }
 
 sub _getOperationsToEnqueue {
@@ -219,20 +217,16 @@ sub enqueueBefore {
 
 sub enqueueNow {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, optional => { 'operation' => undef, 'workflow' => undef});
+
+    General::checkParams(args => \%args, optional => { 'operation' => undef, 'workflow' => undef });
 
     my @operations_to_enqueue = $self->_getOperationsToEnqueue(%args);
 
     my $incr_num = $self->_updatePendingOperationRank( offset => (scalar @operations_to_enqueue) );
 
     my $rank_offset = 0;
-
     for my $operation_to_enqueue (@operations_to_enqueue) {
-
-        my $operation = Entity::Operation->enqueue(
-            workflow_id => $self->getAttr(name => 'workflow_id'),
-            %$operation_to_enqueue,
-        );
+        my $operation = Entity::Operation->enqueue(workflow_id => $self->id, %$operation_to_enqueue);
 
         if ($incr_num > 0) {
             # Ajust execution rank
@@ -245,35 +239,70 @@ sub enqueueNow {
     map {$log->debug($_->execution_rank.' '.$_->type)} $self->operations;
 }
 
-sub getCurrentOperation {
+sub getNextOperation {
     my ($self, %args) = @_;
 
-    my $op;
+    my $operation;
     eval {
-        $op = (Entity::Operation->search(
-                  hash     => { workflow_id => $self->id, -not => { state => 'succeeded' } },
-                  order_by => 'execution_rank ASC',
-              ))[0];
+        $operation = Entity::Operation->find(
+                         hash     => { workflow_id => $self->id, -not => { state => 'succeeded' } },
+                         order_by => 'execution_rank ASC'
+                     );
     };
-    if ($@ || !defined ($op)) {
+    if ($@) {
         throw Kanopya::Exception::Internal::NotFound(
-                  error => "Not more operations within workflow <" . $self->id .  ">"
+                  error => "No more operations within workflow <" . $self->id .  ">"
               );
     }
-    return $op;
+    return $operation;
+}
+
+sub prepareNextOperation {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'current' ]);
+
+    # Pop the next operation
+    my $next = $self->getNextOperation();
+
+    # Avoid infinite workflow, probably due to an internal error
+    if ($next->id == $args{current}->id) {
+        throw Kanopya::Exception::Internal(
+                  error => "Next operation is the same than the current one <" . $next->id .
+                           "> in workflow <" . $self->id .  ">"
+              );
+    }
+
+    # Give the current operation params to the next one
+    $next->param_preset_id($args{current}->param_preset_id);
+
+    return $next;
 }
 
 sub cancel {
     my $self = shift;
     my %params;
 
-    Entity::Operation->enqueue(
-        priority => 1,
-        type     => 'CancelWorkflow',
-        params   => {
-            workflow_id => $self->id,
+    eval {
+        $self->relatedServiceProvider->getManager(manager_type => 'ExecutionManager')->enqueue(
+            type     => 'CancelWorkflow',
+            priority => 1,
+            params   => {
+                workflow_id => $self->id,
+            },
+        );
+    };
+    if ($@) {
+        my $err = $@;
+        if ($@->isa('Kanopya::Exception::Internal')) {
+            throw Kanopya::Exception::Internal(
+                      error => "Can not cancel workflow <" . $self->id .  "> without related service provider."
+                  );
         }
-    );
+        else {
+            $err->rethrow();
+        }
+    }
 }
 
 sub setState {
@@ -290,14 +319,21 @@ sub finish {
     my $self = shift;
     my %args = @_;
 
-    my @operations = Entity::Operation->search(hash => {
-                         workflow_id => $self->getAttr(name => 'workflow_id'),
-                     });
-
-    for my $operation (@operations) {
+    for my $operation ($self->operations) {
         $operation->remove();
     }
     $self->setState(state => 'done');
+}
+
+sub relatedServiceProvider {
+    my $self = shift;
+
+    if (defined $self->related and $self->related->isa('Entity::ServiceProvider')) {
+        return $self->related;
+    }
+    throw Kanopya::Exception::Internal(
+          error => "Related entity is not a service provider."
+      );
 }
 
 1;

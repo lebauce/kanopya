@@ -28,7 +28,6 @@ use Data::Dumper;
 use Entity::Processormodel;
 use Entity::Hostmodel;
 use Entity::Kernel;
-use Entity::Operation;
 
 my $log = get_logger("");
 my $errmsg;
@@ -118,8 +117,7 @@ sub createHost {
     General::checkParams(args     => \%args,
                          required => [ "host_core", "host_serial_number", "host_ram" ]);
 
-    Entity::Operation->enqueue(
-        priority => 200,
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
         type     => 'AddHost',
         params   => {
             context  => {
@@ -136,17 +134,58 @@ sub removeHost {
 
     General::checkParams(args  => \%args, required => [ "host" ]);
 
-    $log->debug("New Operation RemoveHost with host_id : <" .
-                $args{host}->getAttr(name => "host_id") . ">");
-
-    Entity::Operation->enqueue(
-        priority => 200,
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
         type     => 'RemoveHost',
         params   => {
             context  => {
                 host => $args{host},
             },
         },
+    );
+}
+
+sub activateHost {
+    my ($self, %args) = @_;
+
+    General::checkParams(args  => \%args, required => [ "host" ]);
+
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
+        type     => 'ActivateHost',
+        params   => {
+            context => {
+                host => $args{host},
+           }
+       }
+   );
+}
+
+sub deactivateHost {
+    my ($self, %args) = @_;
+
+    General::checkParams(args  => \%args, required => [ "host" ]);
+
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
+        type     => 'DeactivateHost',
+        params   => {
+            context => {
+                host_to_deactivate => $args{host},
+            }
+        }
+    );
+}
+
+sub resubmitHost {
+    my ($self, %args) = @_;
+
+    General::checkParams(args  => \%args, required => [ "host" ]);
+
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+        name   => 'ResubmitNode',
+        params => {
+            context => {
+                host => $self
+            }
+        }
     );
 }
 

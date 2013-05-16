@@ -26,7 +26,7 @@ This object allows to manipulate cluster configuration
 =cut
 
 package Entity::ServiceProvider::Cluster;
-use base 'Entity::ServiceProvider';
+use base Entity::ServiceProvider;
 
 use strict;
 use warnings;
@@ -39,7 +39,6 @@ use Collect;
 use BillingManager;
 use ServiceProviderManager;
 use Entity::Component;
-use Entity::Operation;
 use Entity::Workflow;
 use Entity::Clustermetric;
 use Entity::Combination::NodemetricCombination;
@@ -300,7 +299,7 @@ sub create {
     General::checkParams(args => $confpattern, required => [ 'managers' ]);
     General::checkParams(args => $confpattern->{managers}, required => [ 'host_manager', 'disk_manager' ]);
 
-#    $log->debug("Final parameters after applying policies:\n" . Dumper($confpattern));
+    #$log->info("Final parameters after applying policies:\n" . Dumper($confpattern));
 
     my $composite_params;
     for my $name ('managers', 'interfaces', 'components', 'billing_limits', 'orchestration') {
@@ -320,12 +319,13 @@ sub create {
     # to handle notification/validation on cluster instanciation.
     if ($service_template) {
         $op_params->{context}->{service_template} = $service_template;
-    }
+    } 
 
-    Entity::Operation->enqueue(
-        priority => 200,
-        type     => 'AddCluster',
-        params   => $op_params
+    my $kanopya = $class->getKanopyaCluster;
+    $kanopya->getManager(manager_type => 'ExecutionManager')->enqueue(
+        type       => 'AddCluster',
+        params     => $op_params,
+        related_id => $kanopya->id
     );
 }
 
@@ -422,6 +422,11 @@ sub configureManagers {
         $args{managers}->{collector_manager} = { manager_id   => $collector_manager->id,
                                                  manager_type => "CollectorManager" };
 
+        # Add default execution manager
+        my $execution_manager = $kanopya->getComponent(name => "KanopyaExecutor");
+        $args{managers}->{execution_manager} = { manager_id   => $execution_manager->id,
+                                                 manager_type => "ExecutionManager" };
+
         for my $manager (values %{$args{managers}}) {
             # Check if the manager is already set, add it otherwise,
             # and set manager parameters if defined.
@@ -456,8 +461,7 @@ sub configureManagers {
     if(not ($export_manager and $self->cluster_boot_policy)) {
         if ($export_manager) {
             my $bootpolicy = $disk_manager->getBootPolicyFromExportManager(export_manager => $export_manager);
-            $self->setAttr(name => 'cluster_boot_policy', value => $bootpolicy);
-            $self->save();
+            $self->setAttr(name => 'cluster_boot_policy', value => $bootpolicy, save => 1);
         }
         # Else use the boot policy to deduce the export manager to use
         else {
@@ -582,60 +586,56 @@ sub remove {
     my $self = shift;
 
     $log->debug("New Operation Remove Cluster with cluster id : " .  $self->id);
-    return Entity::Operation->enqueue(
-               priority => 200,
-               type     => 'RemoveCluster',
-               params   => {
-                   context => {
-                       cluster => $self,
-                   },
-               }
-           );
+    $self->getManager(manager_type => 'ExecutionManager')->enqueue(
+        type   => 'RemoveCluster',
+        params => { 
+            context => {
+                cluster => $self,
+            }
+        }
+    );
 }
 
 sub forceStop {
     my $self = shift;
 
     $log->debug("New Operation Force Stop Cluster with cluster: " . $self->id);
-    return Entity::Operation->enqueue(
-               priority => 200,
-               type     => 'ForceStopCluster',
-               params   => {
-                   context => {
-                       cluster => $self,
-                   },
-               },
-           );
+    $self->getManager(manager_type => 'ExecutionManager')->enqueue(
+        type   => 'ForceStopCluster',
+        params => { 
+            context => {
+                cluster => $self,
+            }
+        }
+    );
 }
 
 sub activate {
     my $self = shift;
 
     $log->debug("New Operation ActivateCluster with cluster_id : " . $self->id);
-    return Entity::Operation->enqueue(
-               priority => 200,
-               type     => 'ActivateCluster',
-               params   => {
-                   context => {
-                       cluster => $self,
-                   },
-               },
-           );
+    $self->getManager(manager_type => 'ExecutionManager')->enqueue(
+        type   => 'ActivateCluster',
+        params => { 
+            context => {
+                cluster => $self,
+            }
+        }
+    );
 }
 
 sub deactivate {
     my $self = shift;
 
     $log->debug("New Operation DeactivateCluster with cluster_id : " . $self->id);
-    return Entity::Operation->enqueue(
-               priority => 200,
-               type     => 'DeactivateCluster',
-               params   => {
-                   context => {
-                       cluster => $self,
-                   },
-               },
-           );
+    $self->getManager(manager_type => 'ExecutionManager')->enqueue(
+        type   => 'DeactivateCluster',
+        params => { 
+            context => {
+                cluster => $self,
+            }
+        }
+    );
 }
 
 sub toString {
@@ -782,7 +782,7 @@ sub addNode {
         };
     }
 
-    return Entity::Workflow->run(
+    return $self->getManager(manager_type => 'ExecutionManager')->run(
         name       => 'AddNode',
         related_id => $self->id,
         params     => {
@@ -801,7 +801,7 @@ sub removeNode {
     General::checkParams(args => \%args, required => ['node_id']);
 
     my $host = Node->get(id => $args{node_id})->host;
-    Entity::Workflow->run(
+    $self->getManager(manager_type => 'ExecutionManager')->run(
         name       => 'StopNode',
         related_id => $self->id,
         params     => {
@@ -825,15 +825,13 @@ sub start {
 sub stop {
     my $self = shift;
 
-    $log->debug("New Operation StopCluster with cluster_id : " . $self->id);
-    return Entity::Operation->enqueue(
-        priority => 200,
-        type     => 'StopCluster',
-        params   => {
+    $self->getManager(manager_type => 'ExecutionManager')->enqueue(
+        type   => 'StopCluster',
+        params => { 
             context => {
                 cluster => $self,
             }
-        },
+        }
     );
 }
 
@@ -849,7 +847,8 @@ sub setState {
 
     General::checkParams(args => \%args, required => [ 'state' ]);
 
-    $self->setAttr(name => 'cluster_prev_state', value => $self->getState());
+    my $state = $self->getState();
+    $self->setAttr(name => 'cluster_prev_state', value => $state);
     $self->setAttr(name => 'cluster_state', value => $args{state} . ":" . time);
     $self->save();
 }
@@ -1080,15 +1079,13 @@ sub update {
         }
         delete $args{components};
     }
-
-    Entity::Operation->enqueue(
-        priority => 200,
-        type     => 'UpdatePuppetCluster',
-        params   => {
+    $self->getManager(manager_type => 'ExecutionManager')->enqueue(
+        type   => 'UpdatePuppetCluster',
+        params => { 
             context => {
                 cluster => $self,
-            },
-        },
+            }
+        }
     );
 }
 

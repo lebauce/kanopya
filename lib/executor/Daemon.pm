@@ -47,6 +47,12 @@ my $log = get_logger("");
 # The host on which the daemon is running.
 my $host;
 
+# The component corresponding to the daemon
+my $component;
+
+
+my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
+
 
 =pod
 =begin classdoc
@@ -170,14 +176,9 @@ sub refreshConfiguration {
     my ($self, %args) = @_;
 
     # Retrieve the corresponding component
-    my $component;
     eval {
-        $component = $self->_host->node->getComponent(name => 'Kanopya' . $self->{name});
-
         # Update the daemon configuration
-        my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
-
-        $self->{config} = $merge->merge($self->{config}, $component->getConf());
+        $self->{config} = $merge->merge($self->{config}, $self->_component->getConf());
     };
     if ($@) {
         my $err = "Could not find component corresponding to service <$self->{name}> " .
@@ -190,7 +191,30 @@ sub refreshConfiguration {
 =pod
 =begin classdoc
 
-Build the service name from the concrete class name.
+Prefix all logs by the name and pid of the daemon.
+
+@param msg the log message
+@param level the log level
+
+=end classdoc
+=cut
+
+sub log {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'msg', 'level' ]);
+
+    my $prefix = "[ $self->{name} - PID $$ ] ";
+
+    my $method = $args{level};
+    $log->$method($prefix . $args{msg});
+}
+
+
+=pod
+=begin classdoc
+
+Return/instanciate the host singleton.
 
 =end classdoc
 =cut
@@ -206,6 +230,25 @@ sub _host {
 
     $host = EEntity->new(entity => Entity::Host->find(hash => { 'node.node_hostname' => $hostname }));
     return $host;
+}
+
+
+=pod
+=begin classdoc
+
+Return/instanciate the component singleton.
+
+=end classdoc
+=cut
+
+sub _component {
+    my $self = shift;
+    my %args = @_;
+
+    return $component if defined $component;
+
+    $component = $self->_host->node->getComponent(name => 'Kanopya' . $self->{name});
+    return $component;
 }
 
 1;

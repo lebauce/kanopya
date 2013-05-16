@@ -51,7 +51,6 @@ use Entity::Component::Vsphere5::Vsphere5Datacenter;
 use Entity::User;
 use Entity::Policy;
 use Entity::ServiceTemplate;
-use Entity::Operation;
 use Entity::ServiceProvider::Cluster;
 use Entity::Host::VirtualMachine::Vsphere5Vm;
 use Entity::Host::Hypervisor::Vsphere5Hypervisor;

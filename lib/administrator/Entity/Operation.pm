@@ -16,7 +16,7 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 package Entity::Operation;
-use base 'Entity';
+use base Entity;
 
 use strict;
 use warnings;
@@ -45,6 +45,7 @@ use constant ATTR_DEF => {
     state => {
         pattern      => '^ready|processing|prereported|postreported|waiting_validation|' .
                         'validated|blocked|cancelled|succeeded|pending$',
+        default      => 'pending',
         is_mandatory => 0,
     },
     workflow_id => {
@@ -105,11 +106,12 @@ sub new {
     General::checkParams(args     => \%args,
                          required => [ 'priority', 'type' ],
                          optional => { 'workflow_id' => undef,
-                                       'params'      => undef });
+                                       'params'      => undef,
+                                       'related_id'  => undef });
 
     # If workflow not defined, initiate a new one with parameters
     if (not defined $args{workflow_id}) {
-        my $workflow = Entity::Workflow->new(workflow_name => $args{type});
+        my $workflow = Entity::Workflow->new(workflow_name => $args{type}, related_id => $args{related_id});
         $args{workflow_id} = $workflow->id;
     }
 
@@ -146,7 +148,7 @@ sub new {
     }
 
     if (defined $args{params}) {
-        $self->setParams(params => $args{params});
+        $self->serializeParams(params => $args{params});
     }
 
     $class->commitTransaction;
@@ -177,34 +179,6 @@ sub enqueue {
     return Entity::Operation->new(%args);
 }
 
-sub getNextOp {
-    my $class = shift;
-    my %args = @_;
-
-    my $states = [ "ready", "processing", "prereported", "postreported", "validated" ];
-    if ($args{include_blocked}) {
-        push @$states, "blocked";
-    }
-
-    # Choose the next operation to be treated :
-    # if hoped_execution_time is definied, value returned by time function must be superior to hoped_execution_time
-    # unless operation is not execute at this moment
-    my $operation;
-    eval {
-        $operation = Entity::Operation->find(
-                         hash => {
-                             state => { -in => $states },
-                             -or   => [ hoped_execution_time => undef, hoped_execution_time => { '<', time } ]
-                         },
-                         order_by => 'priority asc'
-                     );
-    };
-    if ($@) {
-        return;
-    }
-    return $operation;
-}
-
 sub delete {
     my $self = shift;
 
@@ -226,8 +200,6 @@ sub delete {
         param_preset_id  => $self->param_preset_id,
     );
     $self->SUPER::delete();
-
-    $log->info(ref($self)." <" . $self->id . "> deleted from database (removed from execution list)");
 }
 
 sub getWorkflow {
@@ -277,30 +249,15 @@ sub setState {
     $self->setAttr(name => 'state', value => $args{state}, save => 1);
 }
 
-sub setParams {
+
+sub serializeParams {
     my $self = shift;
     my %args = @_;
 
     General::checkParams(args => \%args, required => [ 'params' ]);
 
-    # Firstly get the existing params for this operation
-    my $existing_params = $self->getParams;
-
-    my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
-    $existing_params = $merge->merge($existing_params, $args{params});
-
-    my $preset = ParamPreset->new(params => $self->buildParams(hash => $existing_params));
-    $self->setAttr(name => 'param_preset_id', value => $preset->id, save => 1);
-}
-
-sub buildParams {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'hash' ]);
-
     PARAMS:
-    while(my ($key, $value) = each %{ $args{hash} }) {
+    while(my ($key, $value) = each %{ $args{params} }) {
         if (not defined $value) { next PARAMS; }
 
         # Context params must Entity instances, which will be serialized
@@ -330,10 +287,18 @@ sub buildParams {
             }
         }
     }
-    return $args{hash};
+
+    # Update the existing presets, create its instead
+    if (defined $self->param_preset) {
+        $self->param_preset->update(params => $args{params}, override => 1);
+    }
+    else {
+        my $preset = ParamPreset->new(params => $args{params});
+        $self->setAttr(name => 'param_preset_id', value => $preset->id, save => 1);
+    }
 }
 
-sub getParams {
+sub unserializeParams {
     my $self = shift;
     my %args = @_;
 
@@ -372,7 +337,7 @@ sub lockContext {
 
     $self->beginTransaction;
     eval {
-        for my $entity (values %{ $self->getParams->{context} }) {
+        for my $entity (values %{ $self->unserializeParams->{context} }) {
             $log->debug("Trying to lock entity <$entity>");
             $entity->lock(consumer => $self->getWorkflow);
         }
@@ -391,7 +356,7 @@ sub unlockContext {
 
     # Get the params with option 'skip_not_found', as some input context entities,
     # could be deleted by the operation, so no need to unlock them.
-    my $params = $self->getParams(skip_not_found => 1);
+    my $params = $self->unserializeParams(skip_not_found => 1);
 
     $self->beginTransaction;
     for my $key (keys %{ $params->{context} }) {
@@ -411,8 +376,23 @@ sub validate {
     my $self = shift;
     my %args = @_;
 
-    $self->setAttr(name => 'state', value => 'validated');
-    $self->save();
+    my $executor;
+    eval {
+        $executor = $self->workflow->relatedServiceProvider->getManager(manager_type => 'ExecutionManager');
+    };
+    if ($@) {
+        my $err = $@;
+        if ($@->isa('Kanopya::Exception::Internal')) {
+            throw Kanopya::Exception::Internal(
+                      error => "Can not validate operation <" . $self->id .
+                               "> without related service provider on the workflow."
+                  );
+        }
+        else { $err->rethrow(); }
+    }
+
+    # Push a message on the channel 'operation_result' to continue the workflow
+    $executor->terminate(operation_id => $self->id, status => 'validated');
 
     $self->removeValidationPerm();
 }

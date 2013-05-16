@@ -33,7 +33,7 @@ use strict;
 use warnings;
 
 use General;
-use Entity::Operation;
+
 use Manager::HostManager;
 use Entity::ServiceProvider;
 use Entity::Container::LvmContainer;
@@ -304,8 +304,7 @@ sub createDisk {
                          required => [ "vg_id", "name", "size", "filesystem" ]);
 
     $log->debug("New Operation CreateDisk with attrs : " . %args);
-    Entity::Operation->enqueue(
-        priority => 200,
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
         type     => 'CreateDisk',
         params   => {
             name       => $args{name},

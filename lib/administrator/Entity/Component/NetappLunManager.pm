@@ -23,7 +23,7 @@ use warnings;
 use strict;
 
 use Manager::HostManager;
-use Entity::Operation;
+
 use Entity::Container::NetappLun;
 use Entity::Container::NetappVolume;
 use Entity::ContainerAccess::IscsiContainerAccess;
@@ -155,8 +155,7 @@ sub createDisk {
                          required => [ "volume_id", "disk_name", "size", "filesystem" ]);
 
     $log->debug("New Operation CreateDisk with attrs : " . %args);
-    Entity::Operation->enqueue(
-        priority => 200,
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
         type     => 'CreateDisk',
         params   => {
             name       => $args{disk_name},
@@ -187,8 +186,7 @@ sub createExport {
                          required => [ "container", "export_name", "typeio", "iomode" ]);
 
     $log->debug("New Operation CreateExport with attrs : " . %args);
-    Entity::Operation->enqueue(
-        priority => 200,
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
         type     => 'CreateExport',
         params   => {
             context => {

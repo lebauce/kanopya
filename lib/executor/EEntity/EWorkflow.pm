@@ -16,7 +16,7 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 package EEntity::EWorkflow;
-use base 'EEntity';
+use base EEntity;
 
 use strict;
 use warnings;
@@ -36,16 +36,12 @@ use vars qw ( $AUTOLOAD );
 sub cancel {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => ['state']);
+    General::checkParams(args => \%args);
 
-    # TODO: filter on states to get operation to cancel only.
-    my @operations = Entity::Operation->search(hash => { workflow_id => $self->id });
-
-    for my $operation (@operations) {
+    for my $operation ($self->operations) {
         if ($operation->state ne 'pending') {
             eval {
-                $operation->unlockContext();
-                EEntity::EOperation->new(op => $operation)->cancel();
+                EEntity::EOperation->new(operation => $operation, skip_not_found => 1)->cancel();
             };
             if ($@){
                 $log->error("Error during operation cancel :\n$@");
@@ -54,39 +50,7 @@ sub cancel {
         $operation->remove();
     }
 
-    # Remove here possible resilient locks due to contexts params overriding
-    # TODO: Be sure no resilient locks occurs
-    for my $lock (EntityLock->search(hash => { consumer_id => $self->id })) {
-        $lock->remove();
-    }
-    $self->setState(state => $args{state});
-}
-
-sub pepareNextOp {
-    my $self = shift;
-    my %args = @_;
-
-    $self->getCurrentOperation->setState(state => 'succeeded');
-
-    if (not $args{params}) {
-        $args{params} = {};
-    }
-
-    my $next;
-    eval {
-        $next = $self->getCurrentOperation();
-    };
-    if ($@) {
-        $self->finish();
-    }
-    else {
-        # Update the context with the last operation output context
-        $args{params}->{context} = $args{context};
-        $next->setParams(params => $args{params});
-
-        $next->lockContext();
-        $next->setState(state => 'ready');
-    }
+    $self->setState(state => 'cancelled');
 }
 
 1;

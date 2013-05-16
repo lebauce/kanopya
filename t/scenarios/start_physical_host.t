@@ -49,6 +49,13 @@ sub main {
 
     if ($testing == 1) {
         BaseDB->beginTransaction;
+
+        Kanopya::Tools::Register->registerHost(board => {
+            ram  => 1073741824,
+            core => 4,
+            serial_number => 0,
+            ifaces => [ { name => 'test', pxe => 1, mac => '00:00:00:00:00:00' } ]
+        });
     }
 
     diag('Register master image');

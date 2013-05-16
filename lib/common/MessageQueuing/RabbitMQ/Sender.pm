@@ -54,6 +54,52 @@ my $senders = {};
 
 my $merge = Hash::Merge->new('LEFT_PRECEDENT');
 
+
+=pod
+=begin classdoc
+
+Connect to the message queuing server, and declare the channels.
+
+=end classdoc
+=cut
+
+sub connect {
+    my ($self, %args) = @_;
+
+    $self->SUPER::connect(%args);
+
+    # For each method declare the predefined channel
+    for my $method (values %{ $self->methods }) {
+        if (defined $method->{message_queuing}->{channel}) {
+            $self->declareChannel(channel => $method->{message_queuing}->{channel});
+        }
+    }
+}
+
+
+=pod
+=begin classdoc
+
+Declare the exchange and the queue for the specified channels.
+
+=end classdoc
+=cut
+
+sub declareChannel {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'channel' ]);
+
+    # Declare the exchange for the subscribers
+    $self->_session->declare_exchange(exchange => $args{channel}, type => 'fanout');
+    # Declare the queue for the workers
+    $self->_session->declare_queue(queue => $args{channel}, durable => 1);
+
+    # Keep the session to known if the exchange and the queue are created for this channel
+    $senders->{$args{channel}} = $self->_session;
+}
+
+
 =pod
 =begin classdoc
 
@@ -81,20 +127,14 @@ sub AUTOLOAD {
     General::checkParams(args => \%args, required => [ 'channel' ]);
 
     my $channel = delete $args{channel};
+
+    # Connect the sender if not done
+    if (not $self->connected) {
+        $self->connect();
+    }
+    # Declare the channel if not done at connect
     if (not defined $senders->{$channel}) {
-        if (not $self->connected) {
-            throw Kanopya::Exception::Internal::IncorrectParam(
-                      error => "You must to connect to the message queuing server before sending."
-                  );
-        }
-
-        # Declare the exchange for the subscribers
-        $self->_session->declare_exchange(exchange => $channel, type => 'fanout');
-        # Declare the queue for the workers
-        $self->_session->declare_queue(queue => $channel, durable => 1);
-
-        # Keep the session to known if the exchange and the queue are created for this channel
-        $senders->{$channel} = $self->_session;
+        $self->declareChannel(channel => $channel);
     }
 
     # Serialize arguments
@@ -103,12 +143,16 @@ sub AUTOLOAD {
     # Send message for the workers
     $senders->{$channel}->publish(exchange    => '',
                                   routing_key => $channel,
-                                  body        => $data);
+                                  body        => $data,
+                                  # make message persistent
+                                  header => { delivery_mode => 2 });
 
     # Send message for the subscribers
     $senders->{$channel}->publish(exchange    => $channel,
                                   routing_key => '',
-                                  body        => $data);
+                                  body        => $data,
+                                  # make message persistent
+                                  header => { delivery_mode => 2 });
 }
 
 

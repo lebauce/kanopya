@@ -21,8 +21,13 @@ use base "Entity";
 use strict;
 use warnings;
 
-use Entity::Operation;
 use ClassType::ComponentType;
+
+# Used to get the Kanopya cluster statically
+# TODO: Implement a component KanopyaMasterimage of type MasterimageManager,
+#       then the executor will be get by using the execution manager of 
+#       the cluster on which is installed the component
+use Entity::ServiceProvider::Cluster;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -70,13 +75,16 @@ sub create {
     my $class = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'file_path' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'file_path' ],
+                         optional => { 'keep_file' => 0 });
 
-    Entity::Operation->enqueue(
-        priority    => 200,
-        type        => 'DeployMasterimage',
-        params      => {
-            file_path => $args{file_path}
+    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster;
+    $kanopya->getManager(manager_type => 'ExecutionManager')->enqueue(
+        type   => 'DeployMasterimage',
+        params => {
+            file_path => $args{file_path},
+            keep_file => $args{keep_file}
         }
     );
 }
@@ -84,8 +92,8 @@ sub create {
 sub remove {
     my $self = shift;
 
-    Entity::Operation->enqueue(
-        priority => 200,
+    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster;
+    $kanopya->getManager(manager_type => 'ExecutionManager')->enqueue(
         type     => 'RemoveMasterimage',
         params  => {
             context => {

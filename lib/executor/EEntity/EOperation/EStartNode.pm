@@ -66,7 +66,7 @@ sub prerequisites {
         }
     }
 
-    $log->info("Cluster <$cluster_id> ready for node addition");
+    $log->debug("Cluster <$cluster_id> ready for node addition");
     return 0;
 }
 
@@ -187,8 +187,8 @@ sub execute {
 sub _cancel {
     my $self = shift;
 
-    $log->info("Cancel start node, we will try to remove node link for <" .
-               $self->{context}->{host}->id . ">");
+    $log->debug("Cancel start node, we will try to remove node link for <" .
+                $self->{context}->{host}->id . ">");
 
     $self->{context}->{cluster}->unregisterNode(node => $self->{context}->{host}->node);
 

@@ -229,8 +229,8 @@ sub sco_workflow_triggered_by_rule {
             workflow_id => $node_workflow->id,
         });
 
-        my $output_file = '/tmp/'.($sco_operation->getParams->{output_file});
-        my $return_file = $sco_operation->getParams->{return_file};
+        my $output_file = '/tmp/'.($sco_operation->unserializeParams->{output_file});
+        my $return_file = $sco_operation->unserializeParams->{return_file};
 
         diag('Open the output file');
         open(FILE,$output_file);
@@ -262,8 +262,8 @@ sub sco_workflow_triggered_by_rule {
             workflow_id => $service_workflow->id,
         });
 
-        $output_file = '/tmp/'.($service_sco_operation->getParams->{output_file});
-        $return_file = $service_sco_operation->getParams->{return_file};
+        $output_file = '/tmp/'.($service_sco_operation->unserializeParams->{output_file});
+        $return_file = $service_sco_operation->unserializeParams->{return_file};
 
         diag('Open the output service file');
         open(FILE,$output_file);

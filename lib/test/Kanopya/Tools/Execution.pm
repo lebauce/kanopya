@@ -55,7 +55,7 @@ BEGIN {
     }
 }
 
-my $executor = Executor->new();
+my $executor = Executor->new(duration => 'SECOND');
 
 =pod
 
@@ -68,9 +68,10 @@ Launch 1 executor->oneRun
 =cut
 
 sub oneRun {
-    my $self = shift;
+    my ($self, %args) = @_;
 
-    $executor->oneRun;
+    $executor->oneRun(channel => 'operation', type => 'queue');
+    $executor->oneRun(channel => 'operation_result', type => 'queue');
 }
 
 =pod
@@ -87,7 +88,7 @@ sub nRun {
     my ($self, %args) = @_;
 
     for (1..$args{n}) {
-        $executor->oneRun;
+        $self->oneRun;
     }
 }
 
@@ -122,20 +123,26 @@ sub executeOne {
         );
     }
 
+    # Run the workflow
+    $executor->oneRun(channel => 'workflow', type => 'queue');
+
     WORKFLOW:
     while(1) {
-        $executor->oneRun;
-
-        my $current;
         eval {
-            $current = $workflow->getCurrentOperation;
+            $executor->oneRun(channel => 'operation', type => 'queue');
+            $executor->oneRun(channel => 'operation_result', type => 'queue');
         };
+        if ($@) {
+            my $err = $@;
+            if (not $err->isa('Kanopya::Exception::MessageQueuing::NoMessage')) {
+                $err->rethrow();
+            }
+            # If no message received, an operation is probably currently reported.
+        }
 
-        # refresh workflow view
-        $workflow = Entity::Workflow->find(hash => {workflow_id => $workflow->id});
-
-        my $state = $workflow->state;
+        my $state = $workflow->reload->state;
         if ($state eq 'running') {
+            diag('Workflow ' . $workflow->id . ' still running...');
             sleep(5);
             next WORKFLOW;
         }
@@ -182,7 +189,8 @@ sub executeAll {
         else {
             sleep 5;
             $timeout -= 5;
-            $executor->oneRun;
+            $executor->oneRun(channel => 'operation', type => 'queue');
+            $executor->oneRun(channel => 'operation_result', type => 'queue');
             $log->info("sleep 5 ($timeout)");
         }
     }

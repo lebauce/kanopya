@@ -68,24 +68,28 @@ sub getCloudManager {
 
 sub maintenance {
     my $self = shift;
-    Entity::Workflow->run( name   => 'HypervisorMaintenance',
-                           params => {
-                               context => {
-                                    host => $self,
-                               }
-                           }
-                      );
+
+    $self->getCloudManager->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+        name   => 'HypervisorMaintenance',
+        params => {
+            context => {
+                host => $self,
+            }
+        }
+    );
 }
 
 sub resubmitVms {
     my $self = shift;
-    Entity::Workflow->run( name   => 'ResubmitHypervisor',
-                           params => {
-                               context => {
-                                    host => $self,
-                               }
-                           }
-                      );
+
+    $self->getCloudManager->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+        name   => 'ResubmitHypervisor',
+        params => {
+            context => {
+                host => $self,
+            }
+        }
+    );
 }
 
 1;

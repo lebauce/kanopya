@@ -31,7 +31,6 @@ use base "Manager";
 use strict;
 use warnings;
 
-use Entity::Operation;
 use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
@@ -92,8 +91,7 @@ sub createDisk {
                          required => [ "name" ]);
 
     $log->debug("New Operation CreateDisk with attrs : " . %args);
-    Entity::Operation->enqueue(
-        priority => 200,
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
         type     => 'CreateDisk',
         params   => {
             name    => $args{name},
@@ -119,8 +117,7 @@ sub removeDisk {
     General::checkParams(args => \%args, required => [ "container" ]);
 
     $log->debug("New Operation RemoveDisk with attrs : " . %args);
-    Entity::Operation->enqueue(
-        priority => 200,
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
         type     => 'RemoveDisk',
         params   => {
             context => {

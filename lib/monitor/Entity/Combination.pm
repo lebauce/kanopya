@@ -27,10 +27,11 @@ General Combination class. Implement delete function of combinations and getDepe
 =cut
 
 package Entity::Combination;
+use base Entity;
 
 use strict;
 use warnings;
-use base 'Entity';
+
 use Data::Dumper;
 # logger
 use Log::Log4perl "get_logger";
@@ -206,21 +207,22 @@ Enqueue ESelectDataModel operation
 
 sub computeDataModel {
     my ($self, %args) = @_;
+
     General::checkParams(args     => \%args,
                          required => ['start_time', 'end_time'],
                          optional => { 'node_id' => undef });
 
-    my $params = {context => {combination => $self},
-                  start_time => $args{start_time},
-                  end_time => $args{end_time},};
+    my $params = { context    => { combination => $self },
+                   start_time => $args{start_time},
+                   end_time   => $args{end_time} };
 
-    if (defined $args{node_id}) {$params->{node_id} = $args{node_id}}
+    if (defined $args{node_id}) {
+        $params->{node_id} = $args{node_id}
+    }
 
-    $log->info('Enqueuing combination id='.$self->id);
-    Entity::Operation->enqueue(
-        priority => 200,
-        type     => 'SelectDataModel',
-        params   => $params
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
+        type   => 'SelectDataModel',
+        params => $params
     );
 }
 

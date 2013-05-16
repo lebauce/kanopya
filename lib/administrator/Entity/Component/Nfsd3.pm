@@ -23,7 +23,7 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use Entity::Operation;
+
 use Entity::Container;
 use Entity::NfsContainerAccessClient;
 use Log::Log4perl "get_logger";
@@ -290,8 +290,7 @@ sub createExport {
 
     my %params = $self->getAttrs();
     $log->debug("New Operation CreateExport with attrs : " . %args);
-    Entity::Operation->enqueue(
-        priority => 200,
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
         type     => 'CreateExport',
         params   => {
             context => {

@@ -22,6 +22,8 @@ use base MessageQueuing::RabbitMQ::Sender;
 use strict;
 use warnings;
 
+use Entity::Workflow;
+use Entity::Operation;
 use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
@@ -72,12 +74,77 @@ sub methods {
             }
         },
         terminate => {
-            description => 'Produce an operation execution result',
+            description => 'Produce an operation execution result.',
             message_queuing => {
                 channel => 'operation_result'
             }
         },
     };
+}
+
+
+sub enqueue {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'type' ],
+                         optional => { 'params'   => {},
+                                       'priority' => 200 });
+
+    my $operation = Entity::Operation->enqueue(%args);
+
+    # Publish on the 'workflow' channel
+    MessageQueuing::RabbitMQ::Sender::run($self, workflow_id => $operation->workflow->id);
+
+    return $operation;
+}
+
+
+sub execute {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'operation_id' ]);
+
+    # Publish on the 'operation' channel
+    MessageQueuing::RabbitMQ::Sender::execute($self, operation_id => $args{operation_id});
+}
+
+
+sub terminate {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'operation_id', 'status' ],
+                         optional => { 'exception' => undef,
+                                       'delay'     => 0 });
+
+    # Publish on the 'operation_result' channel
+    MessageQueuing::RabbitMQ::Sender::terminate($self, %args);
+}
+
+
+sub run {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'name' ],
+                         optional => { 'params'     => undef,
+                                       'related_id' => undef,
+                                       'rule_id'    => undef });
+
+    my $workflow = Entity::Workflow->run(%args);
+
+    # Publish on the 'workflow' channel
+    MessageQueuing::RabbitMQ::Sender::run($self, workflow_id => $workflow->id);
+
+    return $workflow;
+}
+
+
+sub getPuppetDefinition {
+    return "class { 'kanopya::executor':\n" .
+           "    password => 'K4n0pY4',\n" .
+           "}\n";
 }
 
 1;

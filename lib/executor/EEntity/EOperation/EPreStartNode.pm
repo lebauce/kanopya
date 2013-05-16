@@ -40,7 +40,6 @@ sub execute {
     my @components = $self->{context}->{cluster}->getComponents(category => "all",
                                                                 order_by => "priority");
 
-    $log->info('Inform cluster components about node addition');
     foreach my $component (@components) {
         EEntity->new(data => $component)->preStartNode(
             host    => $self->{context}->{host},

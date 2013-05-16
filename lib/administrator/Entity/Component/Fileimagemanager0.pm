@@ -33,7 +33,6 @@ use base "Manager::DiskManager";
 use strict;
 use warnings;
 
-use Entity::Operation;
 use Entity::Container::FileContainer;
 use Entity::ContainerAccess::FileContainerAccess;
 use Entity::ContainerAccess;
@@ -205,8 +204,7 @@ sub createDisk {
                          required => [ "container_access", "name", "size", "filesystem" ]);
 
     $log->debug("New Operation CreateDisk with attrs : " . %args);
-    Entity::Operation->enqueue(
-        priority => 200,
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
         type     => 'CreateDisk',
         params   => {
             name                => $args{name},
@@ -258,8 +256,7 @@ sub createExport {
                          required => [ "container", "export_name" ]);
 
     $log->debug("New Operation CreateExport with attrs : " . %args);
-    Entity::Operation->enqueue(
-        priority => 200,
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
         type     => 'CreateExport',
         params   => {
             context => {
