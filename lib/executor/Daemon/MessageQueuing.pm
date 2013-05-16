@@ -50,7 +50,8 @@ sub getCallbacks { return CALLBACKS; }
 
 @constructor
 
-Base method to configure the daemon to use the message queuing middleware.
+Base method to configure the daemon to use the message queuing middleware,
+bind callback methods to the corresponing queues.
 
 =end classdoc
 =cut
@@ -84,17 +85,33 @@ sub new {
     if (defined $args{duration}) {
         $duration->{duration} = $args{duration};
     }
-    my $amqpconf = $self->{config}->{amqp};
+
+    # Get the callback related amqp conf
+    my $cbconf = $self->{config}->{amqp}->{callbacks};
 
     # Register the callback for used channels
     CALLBACK:
-    for my $name (keys %{ $self->getCallbacks }) {
-        # If callbacks specified in the conf, skip not defined ones
-        if (defined $amqpconf->{callback} and not defined $amqpconf->{callback}->{$name}) {
-            next CALLBACK
+    for my $cbname (keys %{ $self->getCallbacks }) {
+        my $callback = $self->getCallbacks->{$cbname};
+
+        # Handle the callbacks conf if defined
+        if (defined $cbconf) {
+            # If callbacks specified in the conf, skip not defined ones
+            if (not defined $cbconf->{$cbname}) {
+                $self->log(
+                    level => "info",
+                    msg   => "Skiping callback <$cbname> on channel <$callback->{channel}>",
+                );
+                next CALLBACK;
+            }
+            # If the number of instance is specified in conf,
+            # override the callback definition
+            if (defined $cbconf->{$cbname}->{instances}) {
+                $callback->{instances} = $cbconf->{$cbname}->{instances};
+            }
         }
 
-        my $callback = $self->getCallbacks->{$name};
+        # Define a closure that call the specified callaback within eval
         my $cbmethod = sub {
             my %cbargs = @_;
             my $ack = 0;
@@ -104,14 +121,33 @@ sub new {
             if ($@) { $self->log(level => 'error', msg => "$@"); }
             return $ack;
         };
+
+        # Register worker/subscriber in function of the type
+        my $instances = defined $callback->{instances} ? $callback->{instances} : 1;
+
+        $self->log(
+            level => "info",
+            msg   => "Registering $instances callback(s) <$cbname> on channel <$callback->{channel}>",
+        );
+
         if ($callback->{type} eq 'queue') {
-            $self->registerWorker(channel => $callback->{channel}, callback => \&$cbmethod, %$duration);
+            $self->registerWorker(callback  => \&$cbmethod,
+                                  channel   => $callback->{channel},
+                                  instances => $instances,
+                                  %$duration);
         }
         else {
-            $self->registerSubscriber(channel => $callback->{channel}, callback => \&$cbmethod, %$duration);
+            $self->registerSubscriber(callback  => \&$cbmethod,
+                                      channel   => $callback->{channel},
+                                      instances => $instances,
+                                      %$duration);
         }
     }
-
+    if (not defined $self->_receivers) {
+        throw Kanopya::Exception(
+            error => "Could not start daemon $self->{name}, no callback defined..."
+        );
+    }
     return $self;
 }
 

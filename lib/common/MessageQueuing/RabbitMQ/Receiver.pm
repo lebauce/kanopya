@@ -88,7 +88,8 @@ sub register {
 
     General::checkParams(args     => \%args,
                          required => [ 'type', 'channel', 'callback' ],
-                         optional => { 'duration' => 'FOREVER' });
+                         optional => { 'duration'  => 'FOREVER',
+                                       'instances' => 1 });
 
     if ($args{type} !~ m/^(queue|topic)$/) {
         throw Kanopya::Exception::Internal::IncorrectParam(
@@ -109,124 +110,15 @@ sub register {
 
     # Register the method to call back at message recepetion
     $self->_receivers->{$args{type}}->{$args{channel}} = {
-        callback => $args{callback},
-        duration => DURATION->{$args{duration}},
-        # Declare the queues if connected
-        receiver => $self->connected
-                        ? $self->createReceiver(channel => $args{channel}, type => $args{type}) : undef
+        callback  => $args{callback},
+        duration  => DURATION->{$args{duration}},
+        instances => $args{instances},
     };
-}
 
-
-=pod
-=begin classdoc
-
-Receive messages from the specific channel, and call the corresponding callbacks.
-
-@param channel the channel on which the callback is resistred
-@param type the type of the queue (queue or topic)
-
-=end classdoc
-=cut
-
-sub receive {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'type', 'channel' ]);
-
-    if (not $self->connected) {
-        $self->connect(%{$self->{_config}});
-    }
-
-    my $receiver = $self->_receivers->{$args{type}}->{$args{channel}};
-
-    # Register the consumer on the channel
-    if (not defined $receiver->{receiver}) {
-        $receiver->{receiver} = $self->createReceiver(channel => $args{channel}, type => $args{type});
-    }
-
-    # Share the AnyEvent condvar with the callback
-    my $condvar = AnyEvent->condvar;
-
-    # Register the callback for the channel
-    if (defined $receiver->{consumer}) {
-        $self->cancel(receiver => $receiver);
-    }
-    $receiver->{consumer} = $self->consume(queue    => $receiver->{receiver}->{method_frame}->{queue},
-                                           callback => $receiver->{callback},
-                                           condvar  => $condvar);
-
-    # Blocking call
-    $self->fetch(condvar => $condvar, duration => $receiver->{duration});
-
-    # Unregister the callback as we are in one by one fetch mode
-    $self->cancel(receiver => $receiver);
-}
-
-
-=pod
-=begin classdoc
-
-Receive messages from all channels, spawn a child for each channel,
-then wait on the $$running pointer to kill childs when the service is stopped.
-
-=end classdoc
-=cut
-
-sub receiveAll {
-    my ($self, $running) = @_;
-
-    my $pid;
-    for my $type ('queue', 'topic') {
-        for my $channel (keys %{ $self->_receivers->{$type} }) {
-            # Fork for each channels
-            $pid = fork();
-            if ($pid == 0) {
-                $log->info("Spawn child process <$$> for waiting on <$type>, channel <$channel>");
-
-                # Connect to the broker within the child
-                if (not $self->connected) {
-                    $self->connect(%{$self->{_config}});
-                }
-
-                # Create the receivers
-                my $receiver = $self->_receivers->{$type}->{$channel};
-                if (not defined $receiver->{receiver}) {
-                    $receiver->{receiver} = $self->createReceiver(channel => $channel, type => $type);
-                }
-                # Register the callback for this channel
-                if (defined $receiver->{consumer}) {
-                    $self->cancel(receiver => $receiver);
-                }
-                $receiver->{consumer} = $self->consume(
-                                            queue    => $receiver->{receiver}->{method_frame}->{queue},
-                                            callback => $receiver->{callback}
-                                        );
-
-                # Infinite loop on fetch
-                while (1) {
-                    my $condvar = AnyEvent->condvar;
-                    eval {
-                        $self->fetch(condvar => $condvar, duration => $receiver->{duration});
-                    };
-                    if ($@) {
-                        my $err = $@;
-                        # Excpetion should be Kanopya::Exception::MessageQueuing::NoMessage
-                        if (not $err->isa('Kanopya::Exception::MessageQueuing::NoMessage')) {
-                            $err->rethow();
-                        }
-                    }
-                }
-                die;
-            }
-        }
-    }
-    if ($pid != 0) {
-        # Wait on the running pointer, and kill childs when the daemon is stopping
-        while ($$running) {
-            sleep(5);
-        }
-        kill -1, getpgrp($pid);
+    # Declare the queues if connected
+    if ($self->connected) {
+        $self->_receivers->{$args{type}}->{$args{channel}}->{receiver}
+            = $self->createReceiver(channel => $args{channel}, type => $args{type})
     }
 }
 
@@ -396,6 +288,124 @@ sub consume {
 =pod
 =begin classdoc
 
+Receive messages from the specific channel, and call the corresponding callbacks.
+
+@param channel the channel on which the callback is resistred
+@param type the type of the queue (queue or topic)
+
+=end classdoc
+=cut
+
+sub receive {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'type', 'channel' ]);
+
+    if (not $self->connected) {
+        $self->connect(%{$self->{_config}});
+    }
+
+    my $receiver = $self->_receivers->{$args{type}}->{$args{channel}};
+
+    # Register the consumer on the channel
+    if (not defined $receiver->{receiver}) {
+        $receiver->{receiver} = $self->createReceiver(channel => $args{channel}, type => $args{type});
+    }
+
+    # Share the AnyEvent condvar with the callback
+    my $condvar = AnyEvent->condvar;
+
+    # Register the callback for the channel
+    if (defined $receiver->{consumer}) {
+        $self->cancel(receiver => $receiver);
+    }
+    $receiver->{consumer} = $self->consume(queue    => $receiver->{receiver}->{method_frame}->{queue},
+                                           callback => $receiver->{callback},
+                                           condvar  => $condvar);
+
+    # Blocking call
+    $self->fetch(condvar => $condvar, duration => $receiver->{duration});
+
+    # Unregister the callback as we are in one by one fetch mode
+    $self->cancel(receiver => $receiver);
+}
+
+
+=pod
+=begin classdoc
+
+Receive messages from all channels, spawn a child for each channel,
+then wait on the $$running pointer to kill childs when the service is stopped.
+
+=end classdoc
+=cut
+
+sub receiveAll {
+    my ($self, $running) = @_;
+
+    # Run through all registred receviers
+    my $pid;
+    for my $type ('queue', 'topic') {
+        for my $channel (keys %{ $self->_receivers->{$type} }) {
+            my $receiver = $self->_receivers->{$type}->{$channel};
+
+            # Create specified number of instance of the worker/subscriber
+            for (1 .. $receiver->{instances}) {
+                # Fork for each channels
+                $pid = fork();
+                if ($pid == 0) {
+                    $log->info("Spawn child process <$$> for waiting on <$type>, channel <$channel>");
+
+                    # Connect to the broker within the child
+                    if (not $self->connected) {
+                        $self->connect(%{$self->{_config}});
+                    }
+
+                    # Create the receivers
+                    if (not defined $receiver->{receiver}) {
+                        $receiver->{receiver} = $self->createReceiver(channel => $channel, type => $type);
+                    }
+                    # Register the callback for this channel
+                    if (defined $receiver->{consumer}) {
+                        $self->cancel(receiver => $receiver);
+                    }
+                    $self->consume(
+                        queue    => $receiver->{receiver}->{method_frame}->{queue},
+                        callback => $receiver->{callback}
+                    );
+
+                    # Infinite loop on fetch
+                    while (1) {
+                        my $condvar = AnyEvent->condvar;
+                        eval {
+                            $self->fetch(condvar => $condvar, duration => $receiver->{duration});
+                        };
+                        if ($@) {
+                            my $err = $@;
+                            # Excpetion should be Kanopya::Exception::MessageQueuing::NoMessage
+                            if (not $err->isa('Kanopya::Exception::MessageQueuing::NoMessage')) {
+                                $err->rethow();
+                            }
+                        }
+                    }
+                    die;
+                }
+            }
+        }
+    }
+    if ($pid != 0) {
+        # Wait on the running pointer, and kill childs when the daemon is stopping
+        while ($$running) {
+            sleep(5);
+        }
+        kill -1, getpgrp($pid);
+    }
+}
+
+
+=pod
+=begin classdoc
+
 Register the callbck method for a specific channel and type.
 
 @param receiver the receiver data hash
@@ -437,7 +447,7 @@ sub acknowledge {
 =pod
 =begin classdoc
 
-Return the receivers instancies.
+Return the receivers instances.
 
 =end classdoc
 =cut

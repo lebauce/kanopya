@@ -57,19 +57,22 @@ my $log = get_logger("");
 
 use constant CALLBACKS => {
     execute_operation => {
-        callback => \&executeOperation,
-        channel  => 'operation',
-        type     => 'queue',
+        callback  => \&executeOperation,
+        channel   => 'operation',
+        type      => 'queue',
+        instances => 1
     },
     handle_result => {
-        callback => \&handleResult,
-        channel  => 'operation_result',
-        type     => 'queue',
+        callback  => \&handleResult,
+        channel   => 'operation_result',
+        type      => 'queue',
+        instances => 1
     },
     run_workflow => {
-        callback => \&runWorkflow,
-        channel  => 'workflow',
-        type     => 'queue',
+        callback  => \&runWorkflow,
+        channel   => 'workflow',
+        type      => 'queue',
+        instances => 1
     }
 };
 
@@ -81,7 +84,7 @@ sub getCallbacks { return CALLBACKS; }
 
 @constructor
 
-Instanciate an execution daemon, bind callback methods to the corresponing queues.
+Instanciate an execution daemon.
 
 @optional duration force the duration while awaiting messages.
 
@@ -139,11 +142,11 @@ sub runWorkflow {
     }
     else {
         $self->log(
-            level => 'info',
+            level => "info",
             msg   => "Running " . $workflow->workflow_name . " workflow <" . $workflow->id . "> "
         );
         $self->log(
-            level => 'info',
+            level => "info",
             msg   => "Executing " . $workflow->workflow_name . " first operation <" . $first->id . ">"
         );
 
@@ -190,13 +193,13 @@ sub executeOperation {
     $self->setLogAppender(workflow => $operation->workflow);
 
     $self->logWorkflowState(operation => $operation);
-    Message->send(from    => 'Executor',
-                  level   => 'info',
+    Message->send(from    => "Executor",
+                  level   => "info",
                   content => "Operation Processing [$operation]...");
 
     # Check parameters
     eval {
-        $self->log(level => 'info', msg => "Step <check>");
+        $self->log(level => "info", msg => "Step <check>");
         $operation->check();
     };
     if ($@) {
@@ -209,7 +212,7 @@ sub executeOperation {
     # Validate the operation
     my $valid;
     eval {
-        $self->log(level => 'info', msg => "Step <validation>");
+        $self->log(level => "info", msg => "Step <validation>");
         $valid = ($operation->state eq 'validated') ? 1 : $operation->validation();
     };
     if ($@) {
@@ -229,7 +232,7 @@ sub executeOperation {
     if ($operation->state ne 'postreported') {
         # Check preconditions for processing
         eval {
-            $self->log(level => 'info', msg => "Step <prerequisites>");
+            $self->log(level => "info", msg => "Step <prerequisites>");
             $delay = $operation->prerequisites();
         };
         if ($@) {
@@ -252,10 +255,10 @@ sub executeOperation {
         eval {
             $operation->beginTransaction;
 
-            $self->log(level => 'info', msg => "Step <prepare>");
+            $self->log(level => "info", msg => "Step <prepare>");
             $operation->prepare();
 
-            $self->log(level => 'info', msg => "Step <process>");
+            $self->log(level => "info", msg => "Step <process>");
             $operation->process();
 
             $operation->commitTransaction;
@@ -275,7 +278,7 @@ sub executeOperation {
         }
     }
 
-    $self->log(level => 'info', msg => "Step <postrequisites>");
+    $self->log(level => "info", msg => "Step <postrequisites>");
     eval {
          $delay = $operation->postrequisites();
     };
@@ -294,7 +297,7 @@ sub executeOperation {
 
     # Finishing the operation.
     eval {
-        $self->log(level => 'info', msg => "Step <finish>");
+        $self->log(level => "info", msg => "Step <finish>");
         $operation->finish();
     };
     if ($@) {
@@ -357,8 +360,8 @@ sub handleResult {
     if ($args{status} eq 'succeeded') {
         $self->logWorkflowState(operation => $operation, state => 'SUCCEED');
 
-        Message->send(from    => 'Executor',
-                      level   => 'info',
+        Message->send(from    => "Executor",
+                      level   => "info",
                       content => "[$operation] Execution Success");
 
         # Continue the workflow
@@ -389,7 +392,8 @@ sub handleResult {
                     $args{acknowledge_cb}->();
                 };
                 # Keep the timer ref
-                $self->{timerrefs}->{$operation->id} = AnyEvent->timer(after => $delay, cb => $report_cb);
+                $self->{timerrefs}->{$operation->id} = AnyEvent->timer(after => $delay,
+                                                                       cb    => $report_cb);
 
                 # Do not acknowledge the message as it will be done by the timer.
                 # If the current proccess die while some timers still active,
@@ -437,15 +441,15 @@ sub handleResult {
         General::checkParams(args => \%args, optional => { 'exception' => undef });
 
         $self->logWorkflowState(operation => $operation, state => 'FAILED');
-        $self->log(level => 'error', msg => $args{exception});
+        $self->log(level => "error", msg => $args{exception});
 
-        Message->send(from    => 'Executor',
-                      level   => 'error',
+        Message->send(from    => "Executor",
+                      level   => "error",
                       content => "[$operation] Execution Aborted : $args{exception}");
 
         # Try to cancel all workflow operations, and delete them.
         $self->log(
-            level => 'info',
+            level => "info",
             msg   => "Cancelling " . $workflow->workflow_name . " workflow <" . $workflow->id . ">"
         );
         $workflow->cancel();
@@ -468,14 +472,14 @@ sub handleResult {
 
         # No remaning operation
         $self->log(
-            level => 'info',
+            level => "info",
             msg   => "Finishing " . $workflow->workflow_name . " workflow <" . $workflow->id . ">"
         );
         $workflow->finish();
     }
     else {
         $self->log(
-            level => 'info',
+            level => "info",
             msg   => "Executing " . $workflow->workflow_name . " next operation <" . $next->id . ">"
         );
 
@@ -510,7 +514,7 @@ sub terminateOperation {
 
     my $operation = delete $args{operation};
 
-    $self->log(level => 'info', msg => "Operation terminated with status <$args{status}>");
+    $self->log(level => "info", msg => "Operation terminated with status <$args{status}>");
 
     # Serialize the parameters as its could be modified during
     # the operation executions steps.
@@ -578,7 +582,7 @@ sub logWorkflowState {
                          optional => { 'state' => '' });
 
     my $msg = $args{operation}->type . " <" . $args{operation}->id . "> " . $args{state};
-    $self->log(level => 'info', msg => "---- [ Operation " . $msg . " ] ----");
+    $self->log(level => "info", msg => "---- [ Operation " . $msg . " ] ----");
 }
 
 1;
