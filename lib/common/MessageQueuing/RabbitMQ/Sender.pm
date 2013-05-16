@@ -143,12 +143,16 @@ sub AUTOLOAD {
     # Send message for the workers
     $senders->{$channel}->publish(exchange    => '',
                                   routing_key => $channel,
-                                  body        => $data);
+                                  body        => $data,
+                                  # make message persistent
+                                  header => { delivery_mode => 2 });
 
     # Send message for the subscribers
     $senders->{$channel}->publish(exchange    => $channel,
                                   routing_key => '',
-                                  body        => $data);
+                                  body        => $data,
+                                  # make message persistent
+                                  header => { delivery_mode => 2 });
 }
 
 
