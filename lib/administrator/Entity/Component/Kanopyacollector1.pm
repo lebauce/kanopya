@@ -41,7 +41,8 @@ use constant ATTR_DEF => {
         pattern      => '^\d+$',
         default      => 300,
         is_mandatory => 1,
-        is_extended  => 0
+        is_extended  => 0,
+        is_editable  => 1
     },
     storage_duration => {
         label        => 'Data storage duration',
