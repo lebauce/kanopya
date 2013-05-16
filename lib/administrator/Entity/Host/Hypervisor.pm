@@ -59,7 +59,7 @@ sub checkStoppable {
                                           " can't be stopped as it still runs virtual machines");
     }
 
-    return 0;
+    return 1;
 }
 
 sub getCloudManager {
