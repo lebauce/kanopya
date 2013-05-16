@@ -189,8 +189,9 @@ sub executeAll {
         else {
             sleep 5;
             $timeout -= 5;
-            $executor->oneRun(channel => 'operation', type => 'queue');
-            $executor->oneRun(channel => 'operation_result', type => 'queue');
+            eval { $executor->oneRun(channel => 'workflow', type => 'queue'); };
+            eval { $executor->oneRun(channel => 'operation', type => 'queue'); };
+            eval { $executor->oneRun(channel => 'operation_result', type => 'queue'); };
             $log->info("sleep 5 ($timeout)");
         }
     }
