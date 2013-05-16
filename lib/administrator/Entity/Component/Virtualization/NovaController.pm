@@ -27,7 +27,7 @@ OpenStack component, used as host manager by Kanopya
 
 package  Entity::Component::Virtualization::NovaController;
 
-use base "Entity::Component";
+use base "Entity::Component::Virtualization";
 use base "Manager::HostManager::VirtualMachineManager";
 
 use strict;
@@ -259,6 +259,20 @@ sub addHypervisor {
                promoted                  => $args{host},
                nova_controller_id        => $self->id,
            );
+}
+
+sub promoteHost {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'host', 'openstack_vm_uuid', 'hypervisor_id' ]);
+
+     $args{host} = Entity::Host::VirtualMachine::OpenstackVm->promote(
+                      promoted           => $args{host},
+                      nova_controller_id => $self->id,
+                      openstack_vm_uuid  => $args{openstack_vm_uuid},
+                  );
+
+    $args{host}->hypervisor_id($args{hypervisor_id});
+    return $args{host};
 }
 
 =pod

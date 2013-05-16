@@ -39,6 +39,7 @@ use base "EEntity::EOperation";
 use strict;
 use warnings;
 use Entity;
+use CapacityManagement;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -51,7 +52,7 @@ sub check {
     General::checkParams(args => $self->{context}, required => [ "host" ]);
 }
 
-sub prepare {
+sub prerequisites {
     my $self = shift;
 
     $self->SUPER::prepare();
@@ -63,35 +64,64 @@ sub prepare {
 
     # variable used in maintenance workflows
     $self->{context}->{host_to_deactivate} = $self->{context}->{host};
-}
-
-sub execute {
-    my $self = shift;
 
     $self->{context}->{cloud_manager} = EEntity->new(
                                             data => $self->{context}->{host}->getCloudManager(),
                                         );
 
     my $cm = CapacityManagement->new(
-        cloud_manager => $self->{context}->{cloud_manager},
-    );
+                 cloud_manager => $self->{context}->{cloud_manager},
+             );
 
     my $host_id = $self->{context}->{host}->id;
 
     my $flushRes = $cm->flushHypervisor(hv_id => $host_id);
-    if ($flushRes->{num_failed} == 0) {
-        $log->info('Flush hypervisor '.$self->{context}->{host}->node->node_hostname);
-        my $workflow = $self->workflow;
-        for my $operation (@{$flushRes->{operation_plan}}) {
-            $log->debug('Operation enqueuing host = '.$operation->{params}->{context}->{host}->id);
-            $workflow->enqueueNow(operation => $operation);
-        }
+
+    my $hypervisors = {};
+    for my $operation (@{$flushRes->{ operation_plan }}) {
+        $hypervisors->{$operation->{params}->{context}->{host}->id} = $operation->{params}->{context}->{host};
     }
-    else {
-        throw Kanopya::Exception(
-                  error => "The hypervisor ".$self->{context}->{host}->node->node_hostname." can't be flushed"
-              );
+
+    my @hvs_array = values %$hypervisors;
+
+    my $diff_infra_db = $self->{context}
+                             ->{cloud_manager}
+                             ->checkHypervisorsVMPlacementIntegrity(hypervisors => \@hvs_array);
+
+    if (! $self->{context}->{cloud_manager}->isInfrastructureSynchronized(hash => $diff_infra_db)) {
+
+        $self->workflow->enqueueBefore(
+            operation => {
+                priority => 200,
+                type     => 'SynchronizeInfrastructure',
+                params   => {
+                    context => {
+                        cloud_manager => $self->{context}->{cloud_manager}
+                    },
+                }
+            }
+        );
+        return -1;
     }
+
+    if ($flushRes->{num_failed} > 0) {
+        throw Kanopya::Exception(error => "The hypervisor ".$self->{context}->{host}->node->node_hostname." can't be flushed");
+    }
+
+    # /!\ TODO
+    # Move the following part in execute() when $flushRes can be pass through $self->{params}
+
+    $log->info('Flush hypervisor '.$self->{context}->{host}->node->node_hostname);
+
+    for my $operation (@{$flushRes->{operation_plan}}) {
+        $log->debug('Operation enqueuing host = '.$operation->{params}->{context}->{host}->id);
+        $self->workflow->enqueueNow(operation => $operation);
+    }
+
+}
+
+sub execute {
+    my $self = shift;
     $self->SUPER::execute();
 }
 

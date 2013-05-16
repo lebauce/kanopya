@@ -54,6 +54,13 @@ sub getTotalCpu {
     return $vm_resources->{$self->id}->{cpu};
 }
 
+sub getResources {
+    my ($self, %args) = @_;
+    my $vm_resources = $self->getHypervisor->getVmResources(vm => $self, resources => [ 'cpu', 'ram' ]);
+    return $vm_resources->{$self->id};
+}
+
+
 =head2 getHypervisor
 
     Return EEntity corresponding to the hypervisor.

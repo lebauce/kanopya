@@ -39,6 +39,7 @@ use warnings;
 use Data::Dumper;
 use Clone qw(clone);
 use List::Util;
+use Entity;
 use EEntity;
 use Message;
 use Entity::ServiceProvider::Cluster;
@@ -74,74 +75,41 @@ sub new {
     # Either the infra is get by params, or it is directly constructed
     if (defined $args{infra}) {
         $self->{_infra} = $args{infra};
+        return $self;
     }
-    else {
-        General::checkParams(args => \%args, optional => { cloud_manager         => undef });
 
-        if (defined $args{cloud_manager}) {
-            $self->{_cloud_manager} = $args{cloud_manager};
-        }
-        else {
-            throw Kanopya::Exception(error => 'No cloud_manager arg capacity manager cannot construct infra');
-        }
+    General::checkParams(args => \%args, optional => { cloud_manager => undef });
 
-        $self->{_infra} = $self->_constructInfra;
-
-        # Get available memory for all cloud manager hosts (hypervisors)
-        my $overcommitment_factors =  $self->{_cloud_manager}->getOvercommitmentFactors();
-        $log->info('Overcommitment cpu    factor <'.($overcommitment_factors->{overcommitment_cpu_factor}).'>');
-        $log->info('Overcommitment memory factor <'.($overcommitment_factors->{overcommitment_memory_factor}).'>');
-
-        # Add extra information to hypervisors
-        my @hypervisors = $self->{_cloud_manager}->activeHypervisors();
-
-        for my $hypervisor (@hypervisors) {
-            # Non execution dependant information
-            $self->{_infra}->{hvs}->{$hypervisor->id}
-                                  ->{hv_capa}->{cpu} *= $overcommitment_factors->{overcommitment_cpu_factor};
-        }
-
-        for my $hypervisor (@hypervisors) {
-            my $ehypervisor = EEntity->new(data => $hypervisor);
-            my $hypervisor_available_memory;
-
-            eval {
-                $hypervisor_available_memory = $ehypervisor->getAvailableMemory;
-                $log->info(Dumper $hypervisor_available_memory);
-            };
-            if ($@) {
-                my $error = $@;
-                $log->error('Capacity Management catches following error : '.$error);
-            }
-
-            if (defined $hypervisor_available_memory->{mem_theoretically_available}) {
-                $self->{_hvs_mem_available}->{$hypervisor->id} = $hypervisor_available_memory->{mem_theoretically_available};
-            }
-
-            $self->{_infra}->{hvs}->{$hypervisor->id}->{hv_capa}->{ram_effective} = $hypervisor_available_memory->{mem_effectively_available};
-
-            # Manage CPU Overcommitment when cloud_manager is defined
-        }
-
-        # Add extra information to VMs
-
-        my @vm_ids = keys %{$self->{_infra}->{vms}};
-        for my $vm_id (@vm_ids) {
-            my $vm = EEntity->new(entity => Entity->get(id => $vm_id));
-            my $hypervisor = EEntity->new(entity => $vm->hypervisor);
-            #TODO: This can take some time => need a method whichs retrieve information in one shot
-            eval {
-	            $self->{_infra}->{vms}->{$vm_id}->{ram_effective} =
-	                $hypervisor->getRamUsedByVm(host => $vm)->{total};
-            };
-            if ($@) {
-                my $error = $@;
-                $log->error('Capacity Management catches following error : '.$error);
-            }
-       }
+    if (! defined $args{cloud_manager}) {
+        throw Kanopya::Exception(error => 'No cloud_manager arg capacity manager cannot construct infra');
     }
+
+    $self->{_cloud_manager} = $args{cloud_manager};
+
+    $self->{_infra} = $self->_constructInfra();
+    $self->_applyOvercommitmentFactors();
+
     return $self;
 }
+
+
+sub _applyOvercommitmentFactors {
+    my ($self, %args) = @_;
+
+    # Get available memory for all cloud manager hosts (hypervisors)
+    $log->info("The cloud manager is: ".$self->{_cloud_manager});
+    my $overcommitment_factors =  $self->{_cloud_manager}->getOvercommitmentFactors();
+    $log->info('Overcommitment cpu    factor <'.($overcommitment_factors->{overcommitment_cpu_factor}).'>');
+    $log->info('Overcommitment memory factor <'.($overcommitment_factors->{overcommitment_memory_factor}).'>');
+
+
+   for my $hv_id (keys %{$self->{_infra}->{hvs}}) {
+        # Non execution dependant information
+        $self->{_infra}->{hvs}->{$hv_id}->{hv_capa}->{cpu} *= $overcommitment_factors->{overcommitment_cpu_factor};
+        $self->{_infra}->{hvs}->{$hv_id}->{hv_capa}->{ram} *= $overcommitment_factors->{overcommitment_memory_factor};
+   }
+}
+
 
 =pod
 
@@ -160,7 +128,6 @@ sub _constructInfra {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => []);
-    # OPTION : hv_capacities
 
     # Get the list of all hypervisors
     my @hypervisors_r = $self->{_cloud_manager}->activeHypervisors();

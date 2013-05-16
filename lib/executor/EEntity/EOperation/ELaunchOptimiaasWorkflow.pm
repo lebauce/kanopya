@@ -1,4 +1,4 @@
-# ELaunchSCOWorkflow.pm - Launch a SCP Workflow
+# ELaunchOptimiaasWorkflow.pm - Launch a SCP Workflow
 
 #    Copyright © 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
@@ -48,24 +48,41 @@ my $log = get_logger("");
 my $errmsg;
 our $VERSION = '1.00';
 
-=head2 prepare
 
-=cut
 
-sub prepare {
+sub prerequisites {
     my $self = shift;
-    my %args = @_;
-    $self->SUPER::prepare();
     General::checkParams(args => $self->{context}, required => [ "cloudmanager_comp" ]);
+
+    my $diff_infra_db = $self->{context}
+                        ->{cloudmanager_comp}
+                        ->checkAllInfrastructureIntegrity();
+
+    if (! $self->{context}->{cloudmanager_comp}->isInfrastructureSynchronized(hash => $diff_infra_db)) {
+
+        # TODO Add diff_infra_db in parameters
+        $self->workflow->enqueueBefore(
+            operation => {
+                priority => 200,
+                type     => 'SynchronizeInfrastructure',
+                params   => {
+                    context => {
+                        cloud_manager => $self->{context}->{cloudmanager_comp}
+                    },
+                }
+            }
+        );
+        return -1;
+    }
+
 }
 
 sub execute{
     my $self = shift;
     $self->SUPER::execute();
 
-    my $cm             = CapacityManagement->new(
-        cloud_manager => $self->{context}->{cloudmanager_comp},
-    );
+    my $cm  = CapacityManagement->new(cloud_manager => $self->{context}->{cloudmanager_comp});
+
     my $operation_plan = $cm->optimIaas();
 
     for my $operation (@$operation_plan){
