@@ -223,7 +223,7 @@ sub run {
     }
 
     # Wait on all channel of all types
-    $self->receiveAll(\$running);
+    $self->receiveAll($running);
 
     $self->disconnect();
 
