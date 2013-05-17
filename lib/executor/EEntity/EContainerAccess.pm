@@ -91,7 +91,9 @@ sub copy {
         my $source_size = $source_access->getContainer->getAttr(name => 'container_size');
         my $dest_size   = $dest_access->getContainer->getAttr(name => 'container_size');
 
-        $command = "virt-resize --expand /dev/sda1 " . $source_device . " " . $dest_device;
+        $command = "SRCDEV=`readlink -f $source_device`;" .
+                   "DSTDEV=`readlink -f $dest_device`;" .
+                   "virt-resize --expand /dev/sda1 \$SRCDEV \$DSTDEV";
         $result  = $args{econtext}->execute(command => $command);
 
         if ($result->{stderr} and ($result->{exitcode} != 0)) {
@@ -184,7 +186,8 @@ sub mount {
 
     $log->debug("Mounting <$device> on <$args{mountpoint}>.");
 
-    $command = "guestmount -a " . $device . " -m /dev/sda1 " . $args{mountpoint};
+    $command = "DEV=`readlink -f $device`; " .
+               "guestmount -a \$DEV -m /dev/sda1 " . $args{mountpoint};
     $result  = $args{econtext}->execute(command => $command);
 
     if ($result->{exitcode} != 0) {

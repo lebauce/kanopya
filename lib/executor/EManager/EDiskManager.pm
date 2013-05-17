@@ -43,9 +43,10 @@ sub mkfs {
     
     my $command = "TMPDIR=`mktemp -d`;" .
                   "TMPDISK=`mktemp`;" .
+                  "DEV=`readlink -f $args{device}`;" .
                   "[ -x /usr/bin/virt-format ] && virt-format -a $args{device} --filesystem=$args{fstype} || " .
                   "(virt-make-fs --format=raw --size=256M --type=$args{fstype} --partition -- \$TMPDIR \$TMPDISK;" .
-                  "virt-resize --expand /dev/sda1 \$TMPDISK $args{device}; rm \$TMPDISK; rmdir \$TMPDIR)";
+                  "virt-resize --expand /dev/sda1 \$TMPDISK \$DEV; rm \$TMPDISK; rmdir \$TMPDIR)";
 
     my $ret = $self->getEContext->execute(command => $command,
                                           timeout => 3600);
