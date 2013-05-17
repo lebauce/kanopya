@@ -94,10 +94,10 @@ sub createDisk {
     $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
         type     => 'CreateDisk',
         params   => {
-            name    => $args{name},
             context => {
                 disk_manager => $self,
-            }
+            },
+            %args,
         },
     );
 }

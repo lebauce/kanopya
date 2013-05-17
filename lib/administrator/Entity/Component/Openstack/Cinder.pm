@@ -170,23 +170,12 @@ This function enqueue a ECreateDisk operation.
 =cut
 
 sub createDisk {
-    my ($self,%args) = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
                          required => [ "name", "size" ]);
 
-    $log->debug("New Operation CreateDisk with attrs : " . %args);
-    Entity::Operation->enqueue(
-        priority => 200,
-        type     => 'CreateDisk',
-        params   => {
-            name       => $args{name},
-            size       => $args{size},
-            context    => {
-                disk_manager => $self,
-            }
-        },
-    );
+    $self->SUPER::createDisk(%args);
 }
 
 1;

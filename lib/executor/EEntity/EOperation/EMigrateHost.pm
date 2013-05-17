@@ -1,6 +1,5 @@
-# EMigrateHost.pm - Operation class implementing component installation on systemimage
-
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2012-2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,25 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
-=head1 NAME
-
-EOperation::EMigrateHost - Operation class implementing component installation on systemimage
-
-=head1 SYNOPSIS
-
-This Object represent an operation.
-It allows to implement cluster activation operation
-
-=head1 DESCRIPTION
-
-Component is an abstract class of operation objects
-
-=head1 METHODS
-
-=cut
 package EEntity::EOperation::EMigrateHost;
 use base "EEntity::EOperation";
 
@@ -49,32 +30,26 @@ use CapacityManagement;
 
 my $log = get_logger("");
 my $errmsg;
-our $VERSION = '1.00';
-
-
 
 sub check {
     my ($self, %args) = @_;
-    General::checkParams(args => $self->{context}, required => [ "host", "vm" ]);
 
-    if (not defined $self->{context}->{cloudmanager_comp}) {
-        $self->{context}->{cloudmanager_comp} = $self->{context}->{vm}->getHostManager();
-    }
+    General::checkParams(args => $self->{context}, required => [ "host", "vm" ]);
 }
 
 sub prerequisites {
     my ($self, %args) = @_;
 
-    my $diff_infra_db = $self->{context}
-                             ->{cloudmanager_comp}
-                             ->checkHypervisorVMPlacementIntegrity(host => $self->{context}->{host});
+    if (not defined $self->{context}->{cloudmanager_comp}) {
+        $self->{context}->{cloudmanager_comp} = $self->{context}->{vm}->getHostManager();
+    }
+
+    my $diff_infra_db = $self->{context}->{cloudmanager_comp}
+                            ->checkHypervisorVMPlacementIntegrity(host => $self->{context}->{host});
     eval {
-        $diff_infra_db = $self->{context}
-                              ->{cloudmanager_comp}
-                              ->checkVMPlacementIntegrity(
-                                    host          => $self->{context}->{vm},
-                                    diff_infra_db => $diff_infra_db,
-                                );
+        $diff_infra_db = $self->{context}->{cloudmanager_comp}
+                             ->checkVMPlacementIntegrity(host          => $self->{context}->{vm},
+                                                         diff_infra_db => $diff_infra_db);
     };
     if ($@) {
         my $error = $@;
@@ -82,7 +57,7 @@ sub prerequisites {
         # Vm is not found in infrastructure
         # Enqueue synchronization in *new* workflow to repair DB
         # Throw exception to stop migration
-        Entity::Operation->enqueue(
+        $self->_executor->enqueue(
             priority => 200,
             type     => 'SynchronizeInfrastructure',
             params   => {
