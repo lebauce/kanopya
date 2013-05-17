@@ -204,11 +204,16 @@ sub registerSubscriber {
 Base method to run the daemon.
 Override the parent method, create a child process for each registration on channels.
 
+@param condvar the condition variable on which the daemon wait for termination
+
 =end classdoc
 =cut
 
 sub run {
-    my ($self, $running) = @_;
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         optional => { 'condvar' => AnyEvent->condvar });
 
     Message->send(
         from    => $self->{name},
@@ -223,9 +228,13 @@ sub run {
     }
 
     # Wait on all channel of all types
-    $self->receiveAll($running);
+    $self->receiveAll(condvar => $args{condvar});
 
-    $self->disconnect();
+    # Never should aprear as the parent process loop on the running
+    # pointer only, to properly stop the childs jobs at daemon stopping.
+    if ($self->connected) {
+        $self->disconnect();
+    }
 
     Message->send(
         from    => $self->{name},

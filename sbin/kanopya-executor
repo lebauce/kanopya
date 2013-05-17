@@ -22,9 +22,9 @@
 
 kanopya-executor - kanopya-executor Server
 
-=head1 SYNOPSIS	    
+=head1 SYNOPSIS
 
-	$ ./kanopya-executor
+    $ ./kanopya-executor
 
 =head1 DESCRIPTION
 
@@ -37,7 +37,10 @@ Executor is the main script to run microCluster Executor server.
 
 use strict;
 use warnings;
+
 use Executor;
+use AnyEvent;
+
 use Kanopya::Config;
 use Log::Log4perl 'get_logger';
 
@@ -45,22 +48,26 @@ my $dir = Kanopya::Config::getKanopyaDir();
 Log::Log4perl->init($dir . '/conf/executor-log.conf');
 my $log = get_logger("");
 
-my $running = 1;
+# Instantiate a condition variable to stop the service
+my $condvar = AnyEvent->condvar;
 
 sub signalHandler {
-	my ($sig) = @_;
-	$log->debug($sig." signal recieved : exiting main loop");
-	$running = 0;
+    my ($sig) = @_;
+    $log->debug($sig." signal recieved : exiting main loop");
+
+    # Interrupt the daemon event loop
+    $condvar->send;
 }
 
 $SIG{TERM} = \&signalHandler;
-	
+
 
 eval {
-	my $exec = Executor->new();
-	$log->info("Entering main loop");
-	# enter in the main loop and continue while $$running is true
-	$exec->run(\$running);
+    my $exec = Executor->new();
+    $log->info("Entering main loop");
+
+    # enter in the main loop and continue while $$running is true
+    $exec->run(condvar => $condvar);
 };
 if($@) {
     my $err = $@;
@@ -69,17 +76,3 @@ if($@) {
 }
 
 $log->warn("kanopya-executor stopped");
-
-
-
-
-
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut
