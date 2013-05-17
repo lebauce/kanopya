@@ -392,6 +392,7 @@ sub handleResult {
                     $args{acknowledge_cb}->();
                 };
                 # Keep the timer ref
+                delete $self->{timerrefs}->{$operation->id};
                 $self->{timerrefs}->{$operation->id} = AnyEvent->timer(after => $delay,
                                                                        cb    => $report_cb);
 
