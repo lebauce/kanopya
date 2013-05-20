@@ -51,6 +51,12 @@ sub _genCookie {
     return $string;
 }
 
+sub getNetConf {
+    return {
+        5672 => [ 'tcp' ]
+    };
+}
+
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 

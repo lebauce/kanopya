@@ -54,6 +54,14 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub getNetConf {
+    my ($self) = @_;
+    my $conf = {
+        3306 => ['tcp'],  
+    };
+    return $conf;
+}
+
 sub getBaseConfiguration {
     return {
         mysql5_port => 3306,

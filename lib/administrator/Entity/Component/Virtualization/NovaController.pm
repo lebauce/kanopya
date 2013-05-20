@@ -60,6 +60,18 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub getNetConf {
+    my ($self) = @_;
+    my $conf = {
+        6080 => ['tcp'],  # novncproxy
+        8773 => ['tcp'],  # EC2 API
+        8774 => ['tcp'],  # os compute API
+        8775 => ['tcp'],  # metadata API
+        8776 => ['tcp'],  # volume API
+    };
+    return $conf;
+}
+
 sub getHostManagerParams {
     my $self = shift;
     my %args = @_;
