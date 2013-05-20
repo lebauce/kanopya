@@ -54,10 +54,13 @@ sub main {
 
     lives_ok {
         diag('Register master image');
-        Kanopya::Tools::Register::registerMasterImage();
+        my $masterimage = Kanopya::Tools::Register::registerMasterImage();
 
         diag('Create and configure cluster');
         my $cluster = Kanopya::Tools::Create->createCluster(
+                          cluster_conf => {
+                            masterimage_id       => $masterimage->id,
+                          },
                           managers => {
                               host_manager => {
                                   manager_params => {

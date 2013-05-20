@@ -77,7 +77,6 @@ sub createCluster {
     my $components     = $args{components};
     my $interfaces     = $args{interfaces};
     my $managers       = $args{managers};
-    my $masterimage_id = $args{masterimage_id}; 
     my %cluster_conf;
 
     diag('Retrieve the Kanopya cluster');
@@ -158,14 +157,6 @@ sub createCluster {
             }
         }
     );
-
-    if (not defined $masterimage_id) {
-        diag('Retrieve master image');
-        eval {
-            $masterimage_id = Entity::Masterimage->find( hash => { } )->id;
-        };
-    }
-    $default_conf{masterimage_id} =  $masterimage_id;
 
     if (defined $args{cluster_conf}) {
         Hash::Merge::set_behavior('RIGHT_PRECEDENT');

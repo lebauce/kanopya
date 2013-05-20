@@ -128,7 +128,7 @@ sub registerMasterImage {
     my $deploy = Entity::Operation->enqueue(
                   priority => 200,
                   type     => 'DeployMasterimage',
-                  params   => { file_path => "/masterimages/" . $name,
+                  params   => { file_path => $name,
                                 keep_file => 1 },
     );
 

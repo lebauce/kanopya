@@ -72,7 +72,7 @@ sub main {
     $eth2->save();
     
     diag('register masterimage');
-    Kanopya::Tools::Register::registerMasterImage();
+    my $masterimage = Kanopya::Tools::Register::registerMasterImage();
 
     diag('retrieve admin netconf');
     my $adminnetconf = Kanopya::Tools::Retrieve->retrieveNetconf(criteria => { netconf_name => 'Kanopya admin' });
@@ -80,8 +80,9 @@ sub main {
     diag('Create and configure cluster');
     my $bondage = Kanopya::Tools::Create->createCluster(
                       cluster_conf => {
-                          cluster_name => 'Bondage',
+                          cluster_name         => 'Bondage',
                           cluster_basehostname => 'bondage',
+                          masterimage_id       => $masterimage->id,
                       },
                       interfaces => {
                           public => {

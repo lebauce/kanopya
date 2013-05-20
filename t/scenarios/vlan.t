@@ -42,14 +42,19 @@ sub main {
     }
 
     diag('Register master image');
+    my $masterimage;
     lives_ok {
-        Kanopya::Tools::Register::registerMasterImage();
+        $masterimage = Kanopya::Tools::Register::registerMasterImage();
     } 'Register master image';
 
     diag('Create and configure cluster');
     my $cluster;
     lives_ok {
-        $cluster = Kanopya::Tools::Create->createCluster();
+        $cluster = Kanopya::Tools::Create->createCluster(
+            cluster_conf => {
+                masterimage_id       => $masterimage->id,
+            },
+        );
     } 'Create cluster';
 
     diag('add two vlans to admin netconf');
