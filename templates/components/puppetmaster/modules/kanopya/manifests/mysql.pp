@@ -70,10 +70,7 @@ class kanopya::mysql::galera($galera) {
 }
 
 class kanopya::mysql::repos::deb {
-    $release = $operatingsystem ? {
-        /(?i)(debian)/ => 'squeeze',
-        /(?i)(ubuntu)/ => 'precise'
-    }
+    $release = downcase($lsbdistcodename)
     $os = downcase($operatingsystem)
     @apt::source { 'Percona':
         location   => 'http://repo.percona.com/apt',
