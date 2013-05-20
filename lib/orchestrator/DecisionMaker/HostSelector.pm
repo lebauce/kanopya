@@ -59,6 +59,7 @@ Final constraints are intersection of input constraints and cluster components c
 
 @optional core min number of desired core
 @optional ram  min amount of desired ram  # TODO manage unit (M,G,..)
+@optional interfaces Interfaces of the 
 
 @return Entity::Host
 
@@ -69,13 +70,13 @@ Final constraints are intersection of input constraints and cluster components c
 sub getHost {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ "host_manager_id" ],
-                                         optional => { ram  => 512 * 1024 * 1024,
-                                                       core => 1 });
+    General::checkParams(args => \%args, required => [ "cluster" ]);
 
-    # Get all free hosts of the specified host manager
-    my $host_manager = Entity->get(id => $args{host_manager_id});
-    my @free_hosts = $host_manager->getFreeHosts();
+    my $cluster      = $args{cluster};
+    my $host_params  = $cluster->getManagerParameters(manager_type => "HostManager");
+
+    my $host_manager = $cluster->getManager(manager_type => "HostManager");
+    my @free_hosts   = $host_manager->getFreeHosts();
 
     # Generate Json objects for the external module (infrastructure and constraints)
 
@@ -97,7 +98,6 @@ sub getHost {
             };
             push @json_ifaces, $json_iface;
         }
-
         # Construct the current host
         my $current = {
             cpu     => {
@@ -117,7 +117,7 @@ sub getHost {
 
     # Construct json interfaces (bonds number + netIPs)
     my @json_interfaces;
-    for my $interface (@{ $args{interfaces} }) {
+    for my $interface ($cluster->interfaces) {
         my @netconfs = $interface->netconfs;
         my @networks;
         for my $netconf (@netconfs) {
@@ -133,10 +133,10 @@ sub getHost {
     # Construct the constraint json object
     my $json_constraints = {
         cpu     => {
-            nbCoresMin => $args{core},
+            nbCoresMin => $host_params->{core},
         },
         ram     => {
-            qtyMin     => $args{ram}/1024/1024,
+            qtyMin     => $host_params->{ram}/1024/1024,
         },
         network => {
             interfaces => \@json_interfaces,

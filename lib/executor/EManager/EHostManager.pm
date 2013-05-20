@@ -154,9 +154,7 @@ sub getFreeHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "ram", "cpu", "interfaces" ]);
-
-    $args{host_manager_id} = $self->id;
+    General::checkParams(args => \%args, required => [ "cluster" ]);
 
     return DecisionMaker::HostSelector->getHost(%args);
 }
