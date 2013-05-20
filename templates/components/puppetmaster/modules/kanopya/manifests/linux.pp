@@ -4,17 +4,17 @@ class kanopya::linux::repositories {
 
 class kanopya::linux ($sourcepath) {
     case $operatingsystem {
-        CentOS, Fedora: { $haltpath = "/etc/rc.d/rc0.d/"
+        CentOS, Fedora: { $haltpath = "/etc/rc.d/rc0.d"
                           $netscript = "K[0-9][0-9]network"
                           $iscsiscript = "K[0-9][0-9]iscsi" 
                         }
         
-        Ubuntu:         { $haltpath = "/etc/rc0.d/" 
+        Ubuntu:         { $haltpath = "/etc/rc0.d" 
                           $netscript = "S[0-9][0-9]networking"
                           $iscsiscript = "S[0-9][0-9]open-iscsi" 
                         }
         
-        Debian:         { $haltpath = "/etc/rc0.d/"
+        Debian:         { $haltpath = "/etc/rc0.d"
                           $netscript = "K[0-9][0-9]networking"
                           $iscsiscript = "K[0-9][0-9]umountiscsi" 
                         }
@@ -37,7 +37,7 @@ class kanopya::linux ($sourcepath) {
     }
 
     tidy {'bad-scripts':
-        path    => $haltpath,
+        path    => "${haltpath}",
         recurse => true,
         matches => [ $iscsiscript, $netscript ]
     }

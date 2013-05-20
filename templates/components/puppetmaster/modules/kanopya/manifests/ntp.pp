@@ -15,12 +15,12 @@ class kanopya::ntp::ntpdate($server) {
     }
 
     exec { "ntpdate -b -u ${server}":
-        path    => '/usr/sbin',
+        path    => '/bin:/sbin:/usr/bin:/usr/sbin',
         require => Class['::ntp']
     }
 
     cron { 'ntpdate':
-        command => "/usr/sbin/ntpdate -b -u ${server}",
+        command => "ntpdate -b -u ${server}",
         user    => root,
         hour    => 2
     }
