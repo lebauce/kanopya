@@ -274,7 +274,7 @@ sub test1e {
     # Create Host 4
     my $host4 = Kanopya::Tools::Register->registerHost(
         board => {
-            serial_number => 1,
+            serial_number => 4,
             core          => 1,
             ram           => 4096*1024*1024,
         },
@@ -327,7 +327,7 @@ sub test1e {
     # Create Host 5
     my $host5 = Kanopya::Tools::Register->registerHost(
         board => {
-            serial_number => 2,
+            serial_number => 5,
             core          => 2,
             ram           => 8192*1024*1024,
         },
@@ -380,7 +380,7 @@ sub test1e {
     # Create Host 6
     my $host6 = Kanopya::Tools::Register->registerHost(
         board => {
-            serial_number => 3,
+            serial_number => 6,
             core          => 4,
             ram           => 4096*1024*1024,
         },
