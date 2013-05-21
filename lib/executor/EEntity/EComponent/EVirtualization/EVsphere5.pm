@@ -133,13 +133,29 @@ sub startHost {
     my $disk_params = $cluster->getManagerParameters(manager_type => 'DiskManager');
     my $image_type = $disk_params->{image_type};
     my $host_params = $cluster->getManagerParameters(manager_type => 'HostManager');
-    my $repository  = $self->getRepository(
-                          container_access_id => $disk_params->{container_access_id}
-                      );
     my $datacenter  = Entity::Component::Vsphere5::Vsphere5Datacenter->find(hash => {
                           vsphere5_datacenter_id => $hypervisor->vsphere5_datacenter_id
                       });
-    
+
+    my $repo = Entity::Repository->find(hash => {
+        container_access_id => $disk_params->{container_access_id},
+        virtualization_id   => $self->id
+    });
+    my $container_access = Entity::ContainerAccess->get(id => $repo->container_access_id);
+
+    # register repo in kanopya
+    my $repository  = $self->_entity->addRepository(
+        virtualization_id   => $self->id,
+        repository_name     => $repo->repository_name,
+        container_access_id => $repo->container_access_id,
+    );
+    # register repo in VSphere
+    $self->addRepository(
+        hypervisor       => $hypervisor,
+        repository_name  => $repo->repository_name,
+        container_access => $container_access,
+    );
+
     $host_conf{hostname}   = $host->node->node_hostname;
     $host_conf{hypervisor} = $hypervisor->node->node_hostname;
     $host_conf{datacenter} = $datacenter->vsphere5_datacenter_name;
