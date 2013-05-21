@@ -35,6 +35,7 @@ use warnings;
 
 use Entity::Container::FileContainer;
 use Entity::ContainerAccess::FileContainerAccess;
+use Entity::ContainerAccess::NfsContainerAccess;
 use Entity::ContainerAccess;
 use Entity::ServiceProvider;
 
@@ -98,8 +99,9 @@ sub getDiskManagerParams {
     my %args  = @_;
 
     my $accesses = {};
-    for my $access (@{ $self->getConf->{container_accesses} }) {
-        $accesses->{$access->{container_access_id}} = $access->{container_access_name};
+    my @nfs = Entity::ContainerAccess::NfsContainerAccess->search();
+    for my $access (@nfs) {
+        $accesses->{$access->id} = $access->container_access_export;
     }
 
     return {
@@ -117,28 +119,6 @@ sub getDiskManagerParams {
         },
     };
 }
-
-sub getConf {
-    my $self = shift;
-    my $conf = {};
-    my @access_hashes = ();
-
-    eval {
-        my $iaas = $self->service_provider->getComponent(category => 'HostManager');
-        for my $repository ($iaas->repositories) {
-            my $container_access = $repository->container_access;
-            push @access_hashes, {
-                container_access_id   => $container_access->id,
-                container_access_name => $container_access->container_access_export,
-            }
-        }
-    };
-
-    $conf->{container_accesses} = \@access_hashes;
-    return $conf;
-}
-
-sub setConf {}
 
 sub getExportManagerFromBootPolicy {
     my $self = shift;
