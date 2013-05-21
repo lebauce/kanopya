@@ -178,6 +178,8 @@ sub startHost {
     $self->addVM(
         host     => $host->_entity,
         guest_id => $guest_id,
+        uuid     => $host->vsphere5_uuid,
+        hypervisor_id => $hypervisor->id,
     );
 
     #Power on the VM
