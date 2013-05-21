@@ -56,6 +56,7 @@ sub main {
                         cluster_conf => {
                             cluster_name         => 'CloudController',
                             cluster_basehostname => 'cloud'
+                            masterimage_id       => $masterimage->id,
                         },
                         components => {
                             'mysql' => {

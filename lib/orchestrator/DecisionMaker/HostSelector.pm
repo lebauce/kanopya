@@ -30,6 +30,9 @@ package DecisionMaker::HostSelector;
 use strict;
 use warnings;
 
+use JSON;
+use Cwd;
+
 use General;
 use Entity;
 use Entity::Host;
@@ -39,6 +42,11 @@ use Data::Dumper;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
+
+use constant {
+    JAR_DIR  => "/tools/deployment_solver/",
+    JAR_NAME => "deployment_solver.jar",
+};
 
 =pod
 
@@ -51,6 +59,7 @@ Final constraints are intersection of input constraints and cluster components c
 
 @optional core min number of desired core
 @optional ram  min amount of desired ram  # TODO manage unit (M,G,..)
+@optional interfaces Interfaces of the 
 
 @return Entity::Host
 
@@ -61,310 +70,115 @@ Final constraints are intersection of input constraints and cluster components c
 sub getHost {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ "host_manager_id" ],
-                                         optional => { ram  => 512 * 1024 * 1024,
-                                                       core => 1 });
+    General::checkParams(args => \%args, required => [ "cluster" ]);
 
-    $log->debug("Host selector search for a node with ram : <$args{ram}> and core : <$args{core}>");
+    my $cluster      = $args{cluster};
+    my $host_params  = $cluster->getManagerParameters(manager_type => "HostManager");
 
-    # Get all free hosts of the specified host manager
-    my $host_manager = Entity->get(id => $args{host_manager_id});
-    my @free_hosts = $host_manager->getFreeHosts();
+    my $host_manager = $cluster->getManager(manager_type => "HostManager");
+    my @free_hosts   = $host_manager->getFreeHosts();
 
-    # Keep only hosts matching constraints (cpu, mem, interfaces)
-    my @valid_hosts = grep { $self->_matchHostConstraints(host => $_, %args) } @free_hosts;
+    # Generate Json objects for the external module (infrastructure and constraints)
 
-    if (scalar @valid_hosts == 0) {
-        my $errmsg = "no free host respecting constraints";
-        $log->warn($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
+    # INFRASTRUCTURE
+    my @json_infrastructure;
+    for my $host (@free_hosts) {
 
-    # Get the first valid host
-    # TODO get the better hosts according to rank (e.g min consumption, max cpu, ...)
-    my $host = $valid_hosts[0];
-
-    return $host;
-}
-
-=pod
-
-=begin classdoc
-
-Filter the hosts with the given contraints
-
-@param host
-@optional ram
-@optional cpu
-@optional ifaces a number of interfaces
-
-@return boolean
-
-=end classdoc
-
-=cut
-
-sub _matchHostConstraints {
-    my ($self,%args)  = @_;
-
-    General::checkParams(args => \%args, required => [ 'host' ]);
-
-    my $host = $args{host};
-
-    if (defined $args{ram}) {
-        if (not $self->_matchRam(host => $args{host}, ram => $args{ram})) {
-            return 0;
-        }
-    }
-    if (defined $args{core}) {
-        if (not $self->_matchCore(host => $args{host}, core => $args{core})) {
-            return 0;
-        }
-    }
-    if (defined $args{interfaces}) {
-        if (not $self->_matchIfaceNumber(host => $args{host}, interfaces => $args{interfaces})) {
-            return 0;
-        }
-        if (not $self->_matchIfaceNetconf(host => $args{host}, interfaces => $args{interfaces})) {
-            return 0;
-        }
-    }
-
-    return 1;
-}
-
-=pod
-
-=begin classdoc
-
-check iface netconf constraint
-If any of the host iface is configured, all the cluster interface must be matched by
-at least one of the host iface
-
-@param host
-@param interfaces
-
-@return boolean
-
-=end classdoc
-
-=cut
-
-sub _matchIfaceNetconf {
-    my ($self,%args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'host', 'interfaces' ]);
-
-    my @interfaces = @{ $args{interfaces} };
-    my $host = $args{host};
-
-    my @configured_ifaces = $host->configuredIfaces;
-
-    if (scalar @configured_ifaces > 0) {
-        my @configured_bonded_ifaces = grep {scalar @{$_->slaves} > 0} @configured_ifaces;
-        my @configured_simple_ifaces =
-            grep {scalar @{ $_->slaves } == 0 && !$_->master} @configured_ifaces;
-        my @configured_simple_interfaces =
-            grep {scalar $_->netconfs > 0 && $_->bonds_number == 0} @{ $args{interfaces} };
-        my @configured_bonded_interfaces =
-            grep {scalar $_->netconfs > 0 && $_->bonds_number > 0} @{ $args{interfaces} };
-        my @iface_netconfs;
-        my @interface_netconfs;
-        my @matching_netconfs;
-
-        #First the bonded interfaces
-        if (scalar @configured_bonded_interfaces > 0) {
-
-            BONDED_INTERFACES:
-            foreach my $configured_bonded_interface (@configured_bonded_interfaces) {
-                my @matchs;
-                @interface_netconfs = $configured_bonded_interface->netconfs;
-                my @same_bond_nb =
-                    grep {$configured_bonded_interface->bonds_number == scalar @{ $_->slaves }}
-                    @configured_bonded_ifaces;
-                if (!scalar @same_bond_nb) {
-                    my $msg = 'The bonded cluster interface <' .$configured_bonded_interface->id;
-                    $msg   .= '> does not have any matching iface on host <' . $host->id . '>';
-                    $log->debug($msg);
-                    return 0;
-                }
-                foreach my $netconf (@interface_netconfs) {
-                    foreach my $configured_bonded_iface (@same_bond_nb) {
-                        @iface_netconfs = $configured_bonded_iface->netconfs;
-                        @matching_netconfs  = grep {$netconf->id == $_->id} @iface_netconfs;
-                        if (scalar @matching_netconfs > 0) {
-                            push @matchs, $configured_bonded_iface;
-                        }
-                    }
-                    if (scalar @matchs > 0) {
-                        my %retained;
-                        $retained{$matchs[0]} = 1;
-                        @configured_bonded_ifaces = grep {!$retained{$_}} @configured_bonded_ifaces;
-                        next BONDED_INTERFACES;
-                    }
-                }
-                if (!scalar @matchs) {
-                    my $msg = 'There is no iface on host <' . $host->id . '> that can match ';
-                    $msg   .= ' the configuration of cluster interface <' . $configured_bonded_interface->id;
-                    $msg   .= '>';
-                    $log->debug($msg);
-                    return 0;
-                }
+        # Construct json ifaces (bonds number + netIPs)
+        my @json_ifaces;
+        for my $iface (@{ $host->getIfaces() }) {
+            my @netconfs = $iface->netconfs;
+            my @networks;
+            for my $netconf (@netconfs) {
+                @networks = (@networks, map { $_->network->id } $netconf->poolips);
             }
+            my $json_iface = {
+                bondsNumber => scalar(@{ $iface->slaves }) + 1,
+                netIPs    => \@networks,
+            };
+            push @json_ifaces, $json_iface;
         }
+        # Construct the current host
+        my $current = {
+            cpu     => {
+                nbCores => $host->host_core,
+            },
+            ram     => {
+                qty     => $host->host_ram/1024/1024,
+            },
+            network => {
+                ifaces  => \@json_ifaces,
+            },
+        };
+        push @json_infrastructure, $current;
+    }
 
-        #Then the simple ones
-        if (scalar @configured_simple_interfaces > 0) {
+    # CLUSTER CONSTRAINTS
 
-            SIMPLE_INTERFACES:
-            foreach my $configured_simple_interface (@configured_simple_interfaces) {
-                my @matchs;
-                @interface_netconfs = $configured_simple_interface->netconfs;
-                foreach my $netconf (@interface_netconfs) {
-                    foreach my $configured_simple_iface (@configured_simple_ifaces) {
-                        @iface_netconfs = $configured_simple_iface->netconfs;
-                        @matching_netconfs  = grep {$netconf->id == $_->id} @iface_netconfs;
-                        if (scalar @matching_netconfs > 0) {
-                            push @matchs, $configured_simple_iface;
-                        }
-                    }
-                    if (scalar @matchs > 0) {
-                        my %retained;
-                        $retained{$matchs[0]} = 1;
-                        @configured_simple_ifaces = grep {!$retained{$_}} @configured_simple_ifaces;
-                        next SIMPLE_INTERFACES;
-                    }
-                }
-                if (!scalar @matchs) {
-                    my $msg = 'There is no iface on host <' . $host->id . '> that can match ';
-                    $msg   .= ' the configuration of cluster interface <' . $configured_simple_interface->id;
-                    $msg   .= '>';
-                    $log->debug($msg);
-                    return 0;
-                }
-            }
+    # Construct json interfaces (bonds number + netIPs)
+    my @json_interfaces;
+    for my $interface ($cluster->interfaces) {
+        my @netconfs = $interface->netconfs;
+        my @networks;
+        for my $netconf (@netconfs) {
+            @networks = (@networks, map { $_->network->id } $netconf->poolips);
         }
+        my $json_interface = {
+            bondsNumberMin => $interface->bonds_number + 1,
+            netIPsMin    => \@networks,
+        };
+        push @json_interfaces, $json_interface;
     }
 
-    return 1;
+    # Construct the constraint json object
+    my $json_constraints = {
+        cpu     => {
+            nbCoresMin => $host_params->{core},
+        },
+        ram     => {
+            qtyMin     => $host_params->{ram}/1024/1024,
+        },
+        network => {
+            interfaces => \@json_interfaces,
+        },
+    };
+
+    # Get current working directory
+    my $dir             = getcwd();
+    my $infra_dir       = $dir . "/hosts.json";
+    my $constraints_dir = $dir . "/constraints.json";
+    my $result_dir      = $dir . "/result.json";
+
+    my $hosts_json = JSON->new->utf8->encode(\@json_infrastructure);
+
+    open (my $FILE1, '>', $infra_dir) or die "could not $infra_dir : $!\n";
+    print $FILE1 $hosts_json;
+    close($FILE1);
+
+    my $constraints_json = JSON->new->utf8->encode($json_constraints);
+    open (my $FILE2, '>', $constraints_dir) or die "could not create $constraints_dir : $!\n";
+    print $FILE2 $constraints_json;
+    close($FILE2);
+
+    my $jar = Kanopya::Config->getKanopyaDir() . JAR_DIR . JAR_NAME;
+
+    system "java -jar $jar $infra_dir $constraints_dir $result_dir";
+
+    open (my $FILE3, '<', $result_dir) or die "could not open $result_dir : $!\n";
+    my $import;
+    while (my $line  = <$FILE3>) {
+        $import .= $line;
+    }
+    my $result = JSON->new->utf8->decode($import);
+
+    my $selected_host = $result->{selectedHostIndex};
+
+    unlink ($infra_dir, $constraints_dir, $result_dir);
+
+    if ($selected_host == -1) {
+        throw Kanopya::Exception(error => 'HostSelector - getHost : None of the free hosts match the ' . 
+                                          'given cluster constraints.');
+    }
+
+    return $selected_host;
 }
-
-=pod
-
-=begin classdoc
-
-check iface number constraint
-
-@param host
-@param interfaces
-
-@return boolean
-
-=end classdoc
-
-=cut
-
-sub _matchIfaceNumber {
-    my ($self,%args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'host', 'interfaces' ]);
-
-    my $host = $args{host};
-    my @interfaces = @{ $args{interfaces} };
-    my @ifaces = $host->ifaces;
-
-    my $nb_simple_interfaces;
-    my @copy_ifaces = @ifaces;
-    my @simple_ifaces = grep {!$_->master && scalar @{$_->slaves} == 0} @ifaces;
-
-    foreach my $interface (@interfaces) {
-        if ($interface->bonds_number > 0) {
-            my @matchs = grep {scalar @{$_->slaves} == $interface->bonds_number} @copy_ifaces;
-            if (scalar @matchs != 0) {
-                #retain one of the match to delete it from the parsed ifaces
-                my %retained;
-                $retained{$matchs[0]} = 1;
-                @copy_ifaces = grep {!$retained{$_}} @copy_ifaces;
-            }
-            else {
-                $log->info('host ' . $host->id . ' cannot meet the cluster bond requirements');
-                return 0;
-            }
-        }
-        else {
-            $nb_simple_interfaces++;
-        }
-    }
-
-    if ($nb_simple_interfaces > scalar @simple_ifaces) {
-        my $msg = 'host ' . $host->id . ' does not have enough simple ifaces (';
-        $msg   .= scalar @simple_ifaces . ' ) to meet the cluster common interface requirements (';
-        $msg   .= $nb_simple_interfaces . ')';
-        $log->info($msg);
-        return 0;
-    }
-
-    return 1;
-}
-
-=pod
-
-=begin classdoc
-
-check ram constraint
-
-@param host
-@param ram
-
-@return boolean
-
-=end classdoc
-
-=cut
-
-sub _matchRam {
-    my ($self,%args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'host', 'ram' ]);
-
-    if ($args{host}->host_ram >= $args{ram}) {
-        $log->debug('Cluster ram constraint (' . $args{ram} . ') <= host ram amount (' . $args{host}->host_ram . ')');
-        return 1;
-    }
-    else {
-        $log->debug('Cluster ram constraint (' . $args{ram} . ') >= host ram amount (' . $args{host}->host_ram . ')');
-        return 0;
-    }
-}
-
-=pod
-
-=begin classdoc
-
-check cores constraint
-
-@param host
-@param core
-
-@return boolean
-
-=end classdoc
-
-=cut
-
-sub _matchCore {
-    my ($self,%args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'host', 'core' ]);
-
-    if ($args{host}->host_core >= $args{core}) {
-        $log->debug('Cluster core constraint (' . $args{core} . ') <= host cores number (' . $args{host}->host_core . ')');
-        return 1;
-    }
-    else {
-        $log->debug('Cluster core constraint (' . $args{core} . ') >= host cores number (' . $args{host}->host_core . ')');
-        return 0;
-    }
-}
-
-1;
