@@ -218,33 +218,21 @@ sub isUp {
     my $econtext     = (EEntity->new(data => $puppetmaster))->getEContext;
     # Check if /var/lib/puppet/yaml/node/FQDN.yaml exists on puppet master
     # (means that the catalog has been applied at least one time on that node).
-    my $ret          = $econtext->execute(command => '[ -f /var/lib/puppet/yaml/node/' . $args{host}->fqdn . '.yaml ]');
+    my $ret          = $econtext->execute(command => '[ -f /var/lib/puppet/yaml/node/' . $args{host}->node->fqdn . '.yaml ]');
     if ($ret->{exitcode} == 0) {
-        if (1) { #Must check if boolean is in context
-            my @components   = $args{cluster}->getComponents(category => "all");
-            my %done         = {};
-            for my $component (@components) {
-                my @dependencies = $component->getPuppetDefinition->{dependencies};
-                for my $dependency (@dependencies) {
-                    if (not exists($done{$dependency->id})) { # check that we have not updated this dependency yet.
-                        $done{$dependency->id} = 1;
-                        Entity::Operation->enqueue( # Must enqueue in the same workflow with WORKFLOW->enqueueNow/WORKFLOW->enqueueBefore
-                            priority => 200,
-                            type     => 'UpdateComponent',
-                            params   => {
-                                context => {
-                                    component => $dependency
-                                }
-                            }
-                        );
-                    }
-                }
+        my @components   = $args{cluster}->getComponents(category => "all");
+        for my $component (@components) {
+            my $dependencies = $component->getPuppetDefinition->{dependencies} || [];
+            for my $dependency (@{$dependencies}) {
+                my $ecomponent = EEntity->new(entity => $dependency);
+                $ecomponent->applyConfiguration();
             }
-            throw Kanopya::Exception::Execution::OperationReported;
         }
         return 1;
     }
-    return 0;
+    else {
+        return 0;
+    }
 }
 
 1;
