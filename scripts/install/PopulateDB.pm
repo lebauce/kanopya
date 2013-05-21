@@ -974,7 +974,7 @@ sub registerComponents {
         {
             component_name         => 'Vsphere',
             component_version      => 5,
-            component_categories   => [ 'Hostmanager' ],
+            component_categories   => [ 'Hostmanager', 'Hypervisor' ],
             service_provider_types => [ 'Cluster' ],
         },
         {
