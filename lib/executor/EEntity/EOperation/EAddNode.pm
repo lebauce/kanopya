@@ -151,8 +151,8 @@ sub prerequisites {
         for my $hv (@hvs) {
             my ($state,$time_stamp) = $hv->getNodeState();
             $log->info('hv <'.($hv->getId()).'>, state <'.($state).'>');
-            if($state eq 'in') {
-                push @hv_in_ids, $hv->getId();
+            if ($state eq 'in') {
+                push @hv_in_ids, $hv->id;
             }
         }
         $log->info("Hvs selected <@hv_in_ids>");

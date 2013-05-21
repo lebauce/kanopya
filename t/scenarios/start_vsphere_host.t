@@ -5,7 +5,7 @@ use warnings;
 
 use Test::More 'no_plan';
 use Test::Exception;
-use Test::Pod;     
+use Test::Pod;
 use Data::Dumper;
 
 use Log::Log4perl qw(:easy);
@@ -153,15 +153,10 @@ eval {
 
     #exit 0 if (!$testing);
 
-    my $kernel;
-    lives_ok {
-        $kernel = Entity::Kernel->find(hash => { kernel_name => '2.6.32-5-xen-amd64' });
-    } 'Get a kernel for Xen';
-
     my @hosts;
-    lives_ok { 
-        @hosts = Entity::Host->find(hash => { host_manager_id => $physical_hoster->getId });
-    } 'Retrieve physical hosts';	
+    lives_ok {
+        @hosts = Entity::Host->find(hash => { host_manager_id => $physical_hoster->id });
+    } 'Retrieve physical hosts';
 
     my $admin_user;
     lives_ok {
@@ -174,8 +169,7 @@ eval {
       for my $board (@{$boards}) {
            $host = Entity::Host->new(
                active             => 1,
-               host_manager_id    => $physical_hoster->getId,
-               kernel_id          => $kernel->getId,
+               host_manager_id    => $physical_hoster->id,
                host_serial_number => "123",
                host_ram           => $board->{ram} * 1024 * 1024,
                host_core          => $board->{core}
@@ -196,7 +190,7 @@ eval {
         $admin_network = Entity::Network->find( hash => { network_name => 'admin' } );
     } 'Retrieve admin network';
 
-    my $interface_role; 
+    my $interface_role;
     lives_ok {
         $interface_role = Entity::InterfaceRole->find(hash => { interface_role_name => "admin" });
     } 'Get the interface role admin';
@@ -221,10 +215,10 @@ eval {
             cluster_nameserver2    => '127.0.0.1',
             # cluster_boot_policy    => 'PXE Boot via ISCSI',
             masterimage_id         => $vm_masterimage->id,
-            user_id                => $admin_user->getAttr(name => 'user_id'),
+            user_id                => $admin_user->id,
             managers               => {
                 host_manager => {
-                    manager_id     => $physical_hoster->getId,
+                    manager_id     => $physical_hoster->id,
                     manager_type   => 'HostManager',
                     manager_params => {
                         cpu        => 1,
@@ -232,7 +226,7 @@ eval {
                     }
                 },
                 disk_manager => {
-                    manager_id       => $disk_manager->getId,
+                    manager_id       => $disk_manager->id,
                     manager_type     => 'DiskManager',
                     manager_params   => {
                         vg_id => 1,
@@ -240,7 +234,7 @@ eval {
                     },
                 },
                 export_manager => {
-                    manager_id       => $export_manager->getId,
+                    manager_id       => $export_manager->id,
                     manager_type     => 'ExportManager',
                     manager_params   => {
                         systemimage_size => 4 * 1024 * 1024 * 1024
@@ -340,10 +334,10 @@ eval {
 
     my $datacenter;
     lives_ok {
-        $datacenter = $vsphere->registerDatacenter( 
+        $datacenter = $vsphere->registerDatacenter(
                           name => 'TortueCenter'
                       );
-    
+
     } 'register a new datacenter in the vsphere component';
 
     lives_ok {
@@ -373,12 +367,12 @@ eval {
             cluster_nameserver1    => '192.168.0.31',
             cluster_nameserver2    => '127.0.0.1',
             # cluster_boot_policy    => 'BootOnVirtualDisk',
-            kernel_id              => $vm_kernel->getId,
-            masterimage_id         => $vm_masterimage->getId,
-            user_id                => $admin_user->getAttr(name => 'user_id'),
+            kernel_id              => $vm_kernel->id,
+            masterimage_id         => $vm_masterimage->id,
+            user_id                => $admin_user->id,
             managers               => {
                 host_manager => {
-                    manager_id     => $vsphere->getId,
+                    manager_id     => $vsphere->id,
                     manager_type   => 'HostManager',
                     manager_params => {
                         cpu      => 1,
@@ -387,7 +381,7 @@ eval {
                     }
                 },
                 disk_manager => {
-                    manager_id     => $fileimagemanager->getId,
+                    manager_id     => $fileimagemanager->id,
                     manager_type   => 'DiskManager',
                     manager_params => {
                         container_access_id => $nfs->getId,
@@ -395,18 +389,18 @@ eval {
                     }
                 },
                 export_manager => {
-                    manager_id      => $fileimagemanager->getId,
+                    manager_id      => $fileimagemanager->id,
                     manager_type    => 'ExportManager',
                     manager_params  => {
-                        container_access_id => $nfs->getId,
+                        container_access_id => $nfs->id,
                         systemimage_size    => 4 * 1024 * 1024 * 1024
                     }
                 }
             },
             interfaces => {
                 admin => {
-                    interface_role => $interface_role->getId,
-                    interface_networks => [ $admin_network->getId ],
+                    interface_role => $interface_role->id,
+                    interface_networks => [ $admin_network->id ],
                 },
             }
         );
@@ -436,9 +430,9 @@ eval {
     if ($testing == 1) {
         BaseDB->rollbackTransaction;
     }
-};    
+};
 
 if($@) {
-    my $error = $@; 
+    my $error = $@;
     print $error."\n";
 }

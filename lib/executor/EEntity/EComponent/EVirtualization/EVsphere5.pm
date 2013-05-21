@@ -33,11 +33,12 @@ use strict;
 use warnings;
 
 use VMware::VIRuntime;
-use Vsphere5Datacenter;
 use Entity::Component::Vsphere5::Vsphere5Datacenter;
+use Entity::Repository;
 use Entity::Repository::Vsphere5Repository;
 use Entity;
 use Entity::Host::Hypervisor;
+use Entity::ContainerAccess;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
