@@ -65,8 +65,8 @@ Register a new datastore for an host in vSphere
 sub addRepository {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['host', 
-                                                      'repository_name', 
+    General::checkParams(args => \%args, required => ['hypervisor',
+                                                      'repository_name',
                                                       'container_access']);
 
     $self->negociateConnection();
