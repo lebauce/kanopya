@@ -1,4 +1,4 @@
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -16,14 +16,15 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 package EEntity::EOperation::EStopCluster;
-use base "EEntity::EOperation";
+use base EEntity::EOperation;
 
 use strict;
 use warnings;
+
 use Log::Log4perl "get_logger";
-use Entity::ServiceProvider::Cluster;
 my $log = get_logger("");
 my $errmsg;
+
 
 sub prepare {
     my $self = shift;
@@ -33,29 +34,36 @@ sub prepare {
     General::checkParams(args => $self->{context}, required => [ "cluster" ]);
 }
 
+
 sub execute {
     my $self = shift;
     $self->SUPER::execute();
 
     my @nodes = $self->{context}->{cluster}->nodesByWeight();
     if (not scalar(@nodes)) {
-        $self->{context}->{cluster}->setState(state  => 'stopping');
         $errmsg = "This cluster <" . $self->{context}->{cluster}->id . "> seems to have no node.";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
+}
+
+
+sub postrequisites {
+    my ($self, %args)  = @_;
 
     # Remove node from the less important to the most important
-    foreach my $node (reverse @nodes) {
+    NODE:
+    foreach my $node (reverse $self->{context}->{cluster}->nodesByWeight()) {
         # We stop nodes with state 'up' only
         # TODO: manage other node states
         my ($state, $timestamp) = $node->host->getState();
-        if ($state ne 'up') { next; }
+        if ($state ne 'up') { next NODE; }
 
         $self->{context}->{cluster}->removeNode(node_id => $node->id);
     }
 
     $self->{context}->{cluster}->setState(state => 'stopping');
-    $self->{context}->{cluster}->save();
+
+    return 0;
 }
 
 1;
