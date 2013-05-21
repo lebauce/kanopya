@@ -128,9 +128,10 @@ sub startHost {
     my $cluster     = Entity->get(id => $host->getClusterId());
     my $image       = $args{host}->getNodeSystemimage();
     #TODO fix this way to get image disk file type
-    my $image_name  = $image->systemimage_name.'.raw';
+    my $image_name  = $image->systemimage_name;
     my $image_size  = $image->container->container_size;
     my $disk_params = $cluster->getManagerParameters(manager_type => 'DiskManager');
+    my $image_type = $disk_params->{image_type};
     my $host_params = $cluster->getManagerParameters(manager_type => 'HostManager');
     my $repository  = $self->getRepository(
                           container_access_id => $disk_params->{container_access_id}
@@ -145,6 +146,7 @@ sub startHost {
     $host_conf{guest_id}   = $guest_id;
     $host_conf{datastore}  = $repository->repository_name;
     $host_conf{img_name}   = $image_name;
+    $host_conf{image_type} = $image_type;
     $host_conf{img_size}   = $image_size;
     $host_conf{memory}     = $host_params->{ram};
     $host_conf{cores}      = $host_params->{core};
@@ -199,8 +201,9 @@ sub createVm {
     my %host_conf = %{$args{host_conf}};
     my $ds_path   = '['.$host_conf{datastore}.']';
     my $img_name  = $host_conf{img_name};
+    my $image_type = $host_conf{image_type};
     my $img_size  = $host_conf{img_size};
-    my $path      = $ds_path.' '.$img_name;
+    my $path      = $ds_path . ' ' . $img_name . '.' . $image_type;
     my $host_view;
     my $datacenter_view;
     my $vm_folder_view;
@@ -328,7 +331,7 @@ sub scaleCpu {
     else {
         $errmsg = 'The host type: ' . ref $host . ' is not handled by this manager';
         throw Kanopya::Exception::Internal(error => $errmsg);
-    } 
+    }
 }
 
 =pod
@@ -396,7 +399,7 @@ sub scaleMemory {
     else {
         $errmsg = 'The host type: ' . ref $host . ' is not handled by this manager';
         throw Kanopya::Exception::Internal(error => $errmsg);
-    } 
+    }
 }
 
 sub create_conf_spec {
@@ -433,7 +436,7 @@ sub create_virtual_disk {
     my $disk_vm_dev_conf_spec;
     my $disk_backing_info;
     my $disk;
-    
+
     eval {
         $disk_backing_info =
            VirtualDiskFlatVer2BackingInfo->new(diskMode => 'persistent',
