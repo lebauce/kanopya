@@ -61,25 +61,6 @@ sub new {
 
     my $self = $class->SUPER::new(%args);
 
-    # Connect the component as the connection can not be done
-    # within a message callback.
-    eval {
-        $self->_component->connect(%{$self->{config}->{amqp}});
-    };
-    if ($@) {
-        my $err = $@;
-        if (ref($err) and $err->isa('Kanopya::Exception::Internal::NotFound')) {
-            $log->warn("Can not connect the sender component <Kanopya" . $self->{name} .
-                       "> as it can not be found.");
-        }
-        elsif (ref($err)) { $err->rethrow(); }
-        else {
-            throw Kanopya::Exception(
-                      error => "Unable to connect to the broker: $err \n"
-                  );
-        }
-    }
-
     # Force the duration if defined
     my $duration = {};
     if (defined $args{duration}) {
@@ -149,6 +130,41 @@ sub new {
         );
     }
     return $self;
+}
+
+
+=pod
+=begin classdoc
+
+Override the connect method to connect the component by giving it the already openned
+connection of the deamon.
+
+=end classdoc
+=cut
+
+sub connect {
+    my ($self, %args) = @_;
+
+    $self->SUPER::connect(%args);
+
+    # Connect the component as the connection can not be done
+    # within a message callback.
+    eval {
+        $self->_component->connect(%{$self->{config}->{amqp}});
+    };
+    if ($@) {
+        my $err = $@;
+        if (ref($err) and $err->isa('Kanopya::Exception::Internal::NotFound')) {
+            $log->warn("Can not connect the sender component <Kanopya" . $self->{name} .
+                       "> as it can not be found.");
+        }
+        elsif (ref($err)) { $err->rethrow(); }
+        else {
+            throw Kanopya::Exception(
+                      error => "Unable to connect the component to the broker: $err \n"
+                  );
+        }
+    }
 }
 
 
