@@ -825,7 +825,7 @@ sub start {
 sub stop {
     my $self = shift;
 
-    $self->getManager(manager_type => 'ExecutionManager')->enqueue(
+    return $self->getManager(manager_type => 'ExecutionManager')->enqueue(
         type   => 'StopCluster',
         params => { 
             context => {
