@@ -166,7 +166,43 @@ Not implemented
 sub checkHostManagerParams {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['ram', 'cpu']);
+    General::checkParams(args => \%args, required => [ 'ram', 'core' ]);
+}
+
+sub getHostManagerParams {
+    my $self = shift;
+    my %args = @_;
+
+    return {
+        core => {
+            label        => 'Initial CPU number',
+            type         => 'integer',
+            unit         => 'core(s)',
+            pattern      => '^\d*$',
+            is_mandatory => 1
+        },
+        ram => {
+            label        => 'Initial RAM amount',
+            type         => 'integer',
+            unit         => 'byte',
+            pattern      => '^\d*$',
+            is_mandatory => 1
+        },
+        max_core => {
+            label        => 'Maximum CPU number',
+            type         => 'integer',
+            unit         => 'core(s)',
+            pattern      => '^\d*$',
+            is_mandatory => 1
+        },
+        max_ram => {
+            label        => 'Maximum RAM amount',
+            type         => 'integer',
+            unit         => 'byte',
+            pattern      => '^\d*$',
+            is_mandatory => 1
+        },
+    };
 }
 
 =pod
