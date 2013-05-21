@@ -238,7 +238,7 @@ sub disconnect {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
-    $log->info('A connection to vSphere has been closed');
+    $log->debug('A connection to vSphere has been closed');
     return;
 }
 
@@ -263,7 +263,7 @@ sub negociateConnection {
     };
     if ($@ =~ /no global session is defined/ ||
         $@ =~ /session object is uninitialized or not logged in/) {
-        $log->info('opening a new session to vSphere');
+        $log->debug('opening a new session to vSphere');
 
         $self->connect(
             user_name => $self->vsphere5_login,
@@ -273,7 +273,7 @@ sub negociateConnection {
         return;
     }
     else {
-        $log->info('A session toward vSphere is already opened');
+        $log->debug('A session toward vSphere is already opened');
         return;
     }
 }
