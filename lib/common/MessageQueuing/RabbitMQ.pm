@@ -41,6 +41,13 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 
+# The connection singleton
+my $connection;
+
+# The session singleton
+my $session;
+
+
 =pod
 =begin classdoc
 
@@ -77,15 +84,17 @@ sub connect {
                          optional => { 'ip' => '127.0.0.1', 'port' => 5672,
                                        'user' => 'guest', 'password' => "guest" });
 
-    $self->{_connection} = Net::RabbitFoot->new()->load_xml_spec()->connect(
-                               host => $args{ip},
-                               port => $args{port},
-                               user => $args{user},
-                               pass => $args{password},
-                               vhost => '/',
-                           );
+    if (not $self->connected) {
+        $connection = Net::RabbitFoot->new()->load_xml_spec()->connect(
+                          host => $args{ip},
+                          port => $args{port},
+                          user => $args{user},
+                          pass => $args{password},
+                          vhost => '/',
+                      );
 
-    $self->{_session} = $self->_connection->open_channel();
+        $session = $self->_connection->open_channel();
+    }
 
     $self->{_config} = \%args;
 }
@@ -104,8 +113,8 @@ sub disconnect {
 
     $self->_session->close();
     $self->_connection->close();
-    $self->{_session} = undef;
-    $self->{_connection} = undef;
+    $session = undef;
+    $connection = undef;
 }
 
 
@@ -135,7 +144,7 @@ Return the session private attribute.
 sub _session {
     my ($self, %args) = @_;
 
-    return $self->{_session};
+    return $session;
 }
 
 
@@ -150,7 +159,7 @@ Return the connection private attribute.
 sub _connection {
     my ($self, %args) = @_;
 
-    return $self->{_connection};
+    return $connection;
 }
 
 1;
