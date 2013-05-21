@@ -180,19 +180,24 @@ sub executeAll {
 
     my $operation;
     while ($timeout > 0) {
+        $log->info("Checking remaning operations...");
         eval {
             $operation = Entity::Operation->find(hash => {});
         };
         if ($@) {
+            $log->info("No more operations, exiting...");
             last;
         }
         else {
+            $log->info("sleep 5 ($timeout)");
             sleep 5;
             $timeout -= 5;
+            $log->info("Fetching on channel <workflow>");
             eval { $executor->oneRun(channel => 'workflow', type => 'queue'); };
+            $log->info("Fetching on channel <operation>");
             eval { $executor->oneRun(channel => 'operation', type => 'queue'); };
+            $log->info("Fetching on channel <operation_result>");
             eval { $executor->oneRun(channel => 'operation_result', type => 'queue'); };
-            $log->info("sleep 5 ($timeout)");
         }
     }
 }
