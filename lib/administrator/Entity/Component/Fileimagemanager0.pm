@@ -113,7 +113,7 @@ sub getDiskManagerParams {
             label        => 'Disk image format',
             type         => 'enum',
             is_mandatory => 1,
-            options      => [ "raw", "qcow2", "VMDK" ]
+            options      => [ "raw", "qcow2", "vmdk" ]
         },
     };
 }
