@@ -52,13 +52,14 @@ sub getPuppetDefinition {
     }
 
     return {
-        manifest =>
+        manifest     =>
             "class { 'kanopya::openstack::glance':\n" .
             "\tdbserver => '" . $sql->getMasterNode->fqdn . "',\n" .
             "\tpassword => 'glance',\n" .
             "\tkeystone => '" . $keystone->getMasterNode->fqdn . "',\n" .
             "\temail    => '" . $self->service_provider->user->user_email . "'\n" .
-            "}\n"
+            "}\n",
+        dependencies => [ $sql , $keystone ]
     };
 }
 

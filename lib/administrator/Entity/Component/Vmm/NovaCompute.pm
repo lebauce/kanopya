@@ -74,7 +74,7 @@ sub getPuppetDefinition {
     }
 
     return {
-        manifest =>
+        manifest     =>
             "class { 'kanopya::openstack::nova::compute':\n" .
             "\tamqpserver => '" . $amqp . "',\n" .
             "\tdbserver => '" . $sql . "',\n" .
@@ -86,7 +86,8 @@ sub getPuppetDefinition {
             "\tpassword => 'nova',\n" .
             "\tlibvirt_type => 'kvm',\n" .
             "\tqpassword => 'quantum'\n" .
-            "}\n"
+            "}\n",
+        dependencies => [ $self->mysql5 ]
     };
 }
 

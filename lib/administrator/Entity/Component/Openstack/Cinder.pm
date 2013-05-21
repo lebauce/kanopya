@@ -134,7 +134,7 @@ sub getPuppetDefinition {
     my $keystone = $self->nova_controller->keystone;
 
     return {
-        manifest =>
+        manifest     =>
             "class { 'kanopya::openstack::cinder':\n" .
             "\tamqpserver => '" . $amqp . "',\n" .
             "\trabbits    => ['" . $amqp . "', '" . $amqp . "'],\n" .
@@ -144,7 +144,8 @@ sub getPuppetDefinition {
             "\tkpassword  => 'cinder',\n" .
             "\temail      => '" . $self->service_provider->user->user_email . "',\n" .
             "\tkeystone   => '" . $keystone->getMasterNode->fqdn ."',\n" .
-           "}\n"
+           "}\n",
+        dependencies => [ $self->nova_controller->amqp , $sql , $keystone ]
     }
 }
 

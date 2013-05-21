@@ -45,7 +45,7 @@ sub getPuppetDefinition {
     my $sql = $self->mysql5->getMasterNode->fqdn;
 
     return {
-        manifest =>
+        manifest     =>
             "class { 'kanopya::openstack::quantum::server':\n" .
             "\tamqpserver => '" . $amqp . "',\n" .
             "\tkeystone   => '" . $keystone . "',\n" .
@@ -54,7 +54,10 @@ sub getPuppetDefinition {
             "\tbridge_vlan => 'br-vlan'," .
             "\temail      => '" . $self->service_provider->user->user_email . "',\n" .
             "\tdbserver   => '" . $sql . "'\n" .
-            "}\n"
+            "}\n",
+        dependencies => [ $self->nova_controller->keystone,
+                          $self->nova_controller->amqp,
+                          $self->mysql5 ]
     };
 }
 

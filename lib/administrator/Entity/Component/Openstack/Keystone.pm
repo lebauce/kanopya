@@ -62,7 +62,7 @@ sub getPuppetDefinition {
 
     return {
         manifest     => $definition,
-        dependencies => []
+        dependencies => [ $sql ]
     };
 }
 
