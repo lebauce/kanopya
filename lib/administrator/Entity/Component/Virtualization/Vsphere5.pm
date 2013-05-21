@@ -1124,26 +1124,18 @@ sub registerHypervisor {
             my $admin_user           = Entity::User->find(hash => { user_login => 'admin' });
             my $cluster_basehostname = 'vsphere_service_'. $hypervisor_view->summary->host->value;
 
-            $service_provider = Entity::ServiceProvider::Cluster->new(
-                                    active                 => 1,
-                                    cluster_name           => $service_provider_renamed,
-                                    cluster_state          => 'up:'. time(),
-                                    cluster_min_node       => 1,
-                                    cluster_max_node       => 1,
-                                    cluster_priority       => 500,
-                                    cluster_si_shared      => 0,
-                                    cluster_si_persistent  => 1,
-                                    cluster_domainname     => 'my.domain',
-                                    cluster_basehostname   => $cluster_basehostname,
-                                    cluster_nameserver1    => '127.0.0.1',
-                                    cluster_nameserver2    => '127.0.0.1',
-                                    cluster_boot_policy    => '',
-                                    user_id                => $admin_user->user_id,
-                                );
+            $service_provider = $self->service_provider;
 
-            #Now set this manager as host manager for the new service provider
-            $service_provider->addManager(manager_type => 'HostManager',
-                                          manager_id   => $self->id);
+            #Now set this manager as host manager for service provider (if not yet done)
+            eval {
+                $service_provider->getHostManager();
+            };
+            if ($@) {
+                $service_provider->addManager(
+                    manager_type => 'HostManager',
+                    manager_id   => $self->id
+                );
+            }
         };
         if ($@) {
             $errmsg = 'Could not create new service provider to register vsphere hypervisor: '. $@;
@@ -1262,26 +1254,18 @@ sub registerCluster {
             my $admin_user           = Entity::User->find(hash => { user_login => 'admin' });
             my $cluster_basehostname = 'vsphere_service_'. lc $cluster_renamed. '_' .time();
 
-            $service_provider = Entity::ServiceProvider::Cluster->new(
-                                    active                 => 1,
-                                    cluster_name           => $cluster_renamed,
-                                    cluster_state          => 'up:'. time(),
-                                    cluster_min_node       => 1,
-                                    cluster_max_node       => scalar(@hypervisors),
-                                    cluster_priority       => 500,
-                                    cluster_si_shared      => 0,
-                                    cluster_si_persistent  => 1,
-                                    cluster_domainname     => 'my.domain',
-                                    cluster_basehostname   => $cluster_basehostname,
-                                    cluster_nameserver1    => '127.0.0.1',
-                                    cluster_nameserver2    => '127.0.0.1',
-                                    cluster_boot_policy    => '',
-                                    user_id                => $admin_user->user_id,
-                                );
+            $service_provider = $self->service_provider;
 
             #Now set this manager as host manager for the new service provider
-            $service_provider->addManager(manager_type => 'HostManager',
-                                          manager_id   => $self->id);
+            eval {
+                $service_provider->getHostManager();
+            };
+            if ($@) {
+                $service_provider->addManager(
+                    manager_type => 'HostManager',
+                    manager_id   => $self->id
+                );
+            }
         };
         if ($@) {
             $errmsg = 'Could not create new service provider to register vsphere cluster: '. $@;
