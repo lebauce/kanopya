@@ -1,4 +1,6 @@
 class kanopya::openstack::cinder($rabbits, $dbpassword, $dbserver, $amqpserver, $rpassword, $kpassword, $email, $keystone) {
+    tag("kanopya::cinder")
+
     if ! defined(Class['kanopya::openstack::repository']) {
         class { 'kanopya::openstack::repository': }
     }

@@ -1,4 +1,6 @@
 class kanopya::openstack::keystone($dbserver, $dbip, $dbpassword, $adminpassword, $email) {
+    tag("kanopya::keystone")
+
     if ! defined(Class['kanopya::openstack::repository']) {
         class { 'kanopya::openstack::repository': }
     }

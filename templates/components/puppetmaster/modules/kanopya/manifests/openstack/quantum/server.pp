@@ -1,4 +1,6 @@
 class kanopya::openstack::quantum::server($amqpserver, $dbserver, $keystone, $password, $email, $bridge_flat, $bridge_vlan) {
+    tag("kanopya::quantum")
+
     if ! defined(Class['kanopya::openstack::repository']) {
         class { 'kanopya::openstack::repository': }
     }

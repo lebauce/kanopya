@@ -1,4 +1,6 @@
 class kanopya::openstack::glance($dbserver, $password, $keystone, $email) {
+    tag("kanopya::glance")
+
     if ! defined(Class['kanopya::openstack::repository']) {
         class { 'kanopya::openstack::repository': }
     }

@@ -1,6 +1,8 @@
 class kanopya::openstack::nova::compute($amqpserver, $dbserver, $glance, $keystone,
                            $quantum, $email, $password, $libvirt_type,
                            $qpassword, $bridge_uplinks) {
+    tag("kanopya::novacompute")
+
     if ! defined(Class['kanopya::openstack::repository']) {
         class { 'kanopya::openstack::repository': }
     }

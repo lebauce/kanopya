@@ -1,4 +1,6 @@
 class kanopya::rabbitmq ($disk_nodes, $cookie) {
+    tag("kanopya::amqp")
+
     $rabbitmq_repo = $operatingsystem ? {
         /(?i)(debian|ubuntu)/ => 'rabbitmq::repo::apt',
         default               => 'rabbitmq::repo::rhel'
