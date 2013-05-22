@@ -548,7 +548,7 @@ sub checkAttr {
 =begin classdoc
 
 Check attributes validity in the class hierarchy and build as the same time
-a hasref structure to pass to 'new' method of dbix resultset for
+a hashref structure to pass to 'new' method of dbix resultset for
 the root class of the hierarchy.
 
 @param attrs hash containing keys/values of attributes to check
