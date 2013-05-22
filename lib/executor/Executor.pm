@@ -98,7 +98,7 @@ sub new {
 
     General::checkParams(args => \%args, optional => { "duration" => undef });
 
-    my $self = $class->SUPER::new(confkey => 'executor');
+    my $self = $class->SUPER::new(confkey => 'executor', %args);
 
     # Keep the ref of the timers triggered for reported operations
     $self->{timerrefs} = {};
