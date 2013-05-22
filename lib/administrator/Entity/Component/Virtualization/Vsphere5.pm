@@ -1199,7 +1199,7 @@ sub registerCluster {
     General::checkParams(args => \%args, required => ['parent','name']);
 
     #If parent is not a datacenter, exit, returning the parent
-    if (!(ref $args{parent} eq 'Vsphere5Datacenter')) {
+    if (!(ref $args{parent} eq 'Entity::Component::Vsphere5::Vsphere5Datacenter')) {
         my $msg = 'Can\'t register a cluster with this method without a datacenter parent';
         $log->warn($msg);
         return $args{parent};
