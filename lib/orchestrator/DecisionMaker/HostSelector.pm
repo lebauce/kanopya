@@ -79,6 +79,8 @@ sub getHost {
     my $host_manager = $cluster->getManager(manager_type => "HostManager");
     my @free_hosts   = $host_manager->getFreeHosts();
 
+    my $admin_id     = Entity::Network->find(hash => { network_name => "admin" })->id;
+
     # Generate Json objects for the external module (infrastructure and constraints)
 
     # INFRASTRUCTURE
@@ -89,9 +91,17 @@ sub getHost {
         my @json_ifaces;
         for my $iface (@{ $host->getIfaces() }) {
             my @netconfs = $iface->netconfs;
-            my @networks;
+            my @temp_networks;
             for my $netconf (@netconfs) {
-                @networks = (@networks, map { $_->network->id } $netconf->poolips);
+                # Add id of all networks in the current netconf
+                @temp_networks = (@temp_networks, map { $_->network->id } $netconf->poolips);
+            }
+            # Don't keep id of the admin network
+            my @networks;
+            for my $network_id (@temp_networks) {
+                if ($network_id != $admin_id) {
+                    push @networks, $network_id;
+                }
             }
             my $json_iface = {
                 bondsNumber => scalar(@{ $iface->slaves }) + 1,
@@ -120,9 +130,17 @@ sub getHost {
     my @json_interfaces;
     for my $interface ($cluster->interfaces) {
         my @netconfs = $interface->netconfs;
-        my @networks;
+        my @temp_networks;
         for my $netconf (@netconfs) {
-            @networks = (@networks, map { $_->network->id } $netconf->poolips);
+            # Add id of all networks in the current netconf
+            @temp_networks = (@temp_networks, map { $_->network->id } $netconf->poolips);
+        }
+        # Don't keep id of the admin network
+        my @networks;
+        for my $network_id (@temp_networks) {
+            if ($network_id != $admin_id) {
+                push @networks, $network_id;
+            }
         }
         my $json_interface = {
             bondsNumberMin => $interface->bonds_number + 1,
