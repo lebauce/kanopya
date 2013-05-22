@@ -163,13 +163,9 @@ sub getHost {
     };
 
     # Create temp files
-    (my $infra_file, my $infra_filename)             = tempfile("hostsXXXXX", SUFFIX => ".json");
-    (my $constraints_file, my $constraints_filename) = tempfile("constraintsXXXXX", SUFFIX => ".json");
-    (my $result_file, my $result_filename)           = tempfile("resultXXXXX", SUFFIX => ".json");
-
-    $infra_file->unlink_on_destroy( 1 );
-    $constraints_file->unlink_on_destroy( 1 );
-    $result_file->unlink_on_destroy( 1 );
+    (my $infra_file, my $infra_filename)             = tempfile("hosts.jsonXXXXX", TMPDIR => 1);
+    (my $constraints_file, my $constraints_filename) = tempfile("constraints.jsonXXXXX", TMPDIR => 1);
+    (my $result_file, my $result_filename)           = tempfile("result.jsonXXXXX", TMPDIR => 1);
 
     # Write generated Json's into
     my $hosts_json = JSON->new->utf8->encode(\@json_infrastructure);
@@ -190,9 +186,9 @@ sub getHost {
 
     my $selected_host = $result->{selectedHostIndex};
 
-    close $infra_file;
-    close $constraints_file;
-    close $result_file;
+    unlink $infra_filename;
+    unlink $constraints_filename;
+    unlink $result_filename;
 
     if ($selected_host == -1) {
         throw Kanopya::Exception(error => 'HostSelector - getHost : None of the free hosts match the ' . 
