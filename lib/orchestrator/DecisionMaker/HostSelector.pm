@@ -167,6 +167,10 @@ sub getHost {
     (my $constraints_file, my $constraints_filename) = tempfile("constraintsXXXXX", SUFFIX => ".json");
     (my $result_file, my $result_filename)           = tempfile("resultXXXXX", SUFFIX => ".json");
 
+    $infra_file->unlink_on_destroy( 1 );
+    $constraints_file->unlink_on_destroy( 1 );
+    $result_file->unlink_on_destroy( 1 );
+
     # Write generated Json's into
     my $hosts_json = JSON->new->utf8->encode(\@json_infrastructure);
     print $infra_file $hosts_json;
