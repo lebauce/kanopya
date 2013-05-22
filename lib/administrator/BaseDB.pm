@@ -284,8 +284,11 @@ sub promote {
     my $subclass = $class;
     $subclass =~ s/^$pattern//g;
 
+    my $nextclass = $subclass;
+    $nextclass =~ s/\:\:.*$//g;
+
     # Set the primary key to the parent primary key value.
-    my $primary_key = (BaseDB->_adm->{schema}->source(_rootTable($subclass))->primary_columns)[0];
+    my $primary_key = (BaseDB->_adm->{schema}->source($nextclass)->primary_columns)[0];
     $args{$primary_key} = $promoted->id;
 
     # Extract relation for futher handling
@@ -296,9 +299,9 @@ sub promote {
 
     # Then extract only the attrs for new tables for insertion
     my $attrs = $class->checkAttrs(attrs => \%totalargs,
-                                   trunc => $baseclass . '::' . _rootTable($subclass));
+                                   trunc => $baseclass . '::' . $nextclass);
 
-    my $self = $class->newDBix(attrs => $attrs, subclass => $subclass);
+    my $self = $class->newDBix(attrs => $attrs, table => $nextclass);
 
     bless $self, $class;
 
@@ -643,7 +646,7 @@ sub checkAttrs {
 Build a new dbix from class name and attributes, and insert it in database.
 
 @param attrs hash containing keys / values of the new dbix attributes
-@optional subclass a class name to force building a sub type dbix of the class.
+@optional table the first table of the hierarchy
 
 @return the object hash with the private _dbix.
 
@@ -656,9 +659,10 @@ sub newDBix {
 
     General::checkParams(args     => \%args,
                          required => [ 'attrs' ],
-                         optional => { 'subclass' => $class });
+                         optional => { 'table' => undef });
 
-    my $dbixroot = $class->_newDbix(table => _rootTable($args{subclass}), row => $args{attrs});
+    my $dbixroot = $class->_newDbix(table => $args{table} || _rootTable($class),
+                                    row   => $args{attrs});
 
     eval {
         $dbixroot->insert;
