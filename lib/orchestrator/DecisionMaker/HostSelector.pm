@@ -32,6 +32,7 @@ use warnings;
 
 use JSON;
 use Cwd;
+use File::Temp qw(tempfile);;
 
 use General;
 use Entity;
@@ -143,37 +144,33 @@ sub getHost {
         },
     };
 
-    # Get current working directory
-    my $dir             = getcwd();
-    my $infra_dir       = $dir . "/hosts.json";
-    my $constraints_dir = $dir . "/constraints.json";
-    my $result_dir      = $dir . "/result.json";
+    # Create temp files
+    (my $infra_file, my $infra_filename)             = tempfile("hostsXXXXX", SUFFIX => ".json");
+    (my $constraints_file, my $constraints_filename) = tempfile("constraintsXXXXX", SUFFIX => ".json");
+    (my $result_file, my $result_filename)           = tempfile("resultXXXXX", SUFFIX => ".json");
 
+    # Write generated Json's into
     my $hosts_json = JSON->new->utf8->encode(\@json_infrastructure);
-
-    open (my $FILE1, '>', $infra_dir) or die "could not $infra_dir : $!\n";
-    print $FILE1 $hosts_json;
-    close($FILE1);
+    print $infra_file $hosts_json;
 
     my $constraints_json = JSON->new->utf8->encode($json_constraints);
-    open (my $FILE2, '>', $constraints_dir) or die "could not create $constraints_dir : $!\n";
-    print $FILE2 $constraints_json;
-    close($FILE2);
+    print $constraints_file $constraints_json;
 
     my $jar = Kanopya::Config->getKanopyaDir() . JAR_DIR . JAR_NAME;
 
-    system "java -jar $jar $infra_dir $constraints_dir $result_dir";
+    system "java -jar $jar $infra_filename $constraints_filename $result_filename";
 
-    open (my $FILE3, '<', $result_dir) or die "could not open $result_dir : $!\n";
     my $import;
-    while (my $line  = <$FILE3>) {
+    while (my $line  = <$result_file>) {
         $import .= $line;
     }
     my $result = JSON->new->utf8->decode($import);
 
     my $selected_host = $result->{selectedHostIndex};
 
-    unlink ($infra_dir, $constraints_dir, $result_dir);
+    close $infra_file;
+    close $constraints_file;
+    close $result_file;
 
     if ($selected_host == -1) {
         throw Kanopya::Exception(error => 'HostSelector - getHost : None of the free hosts match the ' . 
