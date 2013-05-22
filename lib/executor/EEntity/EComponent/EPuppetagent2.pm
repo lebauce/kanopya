@@ -184,7 +184,7 @@ sub applyConfiguration {
 
     my $ret = -1;
     my $timeout = 180;
-    my @hosts = ($args{host}) || (map { $_->node->fqdn } @{ $args{cluster}->getHosts() });
+    my @hosts = (defined $args{host}) ? ($args{host}->node->fqdn) : (map { $_->node->fqdn } @{ $args{cluster}->getHosts() });
     my $puppetmaster = (Entity::ServiceProvider::Cluster->getKanopyaCluster)->getComponent(name => 'Puppetmaster');
     my $econtext = (EEntity->new(data => $puppetmaster))->getEContext;
 
@@ -220,9 +220,13 @@ sub isUp {
     # (means that the catalog has been applied at least one time on that node).
     my $ret          = $econtext->execute(command => '[ -f /var/lib/puppet/yaml/node/' . $args{host}->node->fqdn . '.yaml ]');
     if ($ret->{exitcode} == 0) {
+        $self->applyConfiguration(cluster => $args{cluster}, host => $args{host}, tag => 'finished');
         my @components   = $args{cluster}->getComponents(category => "all");
         for my $component (@components) {
-            my $dependencies = $component->getPuppetDefinition->{dependencies} || [];
+            my $dependencies = $component->getPuppetDefinition(
+                host    => $args{host},
+                cluster => $args{cluster}
+            )->{dependencies} || [];
             for my $dependency (@{$dependencies}) {
                 my $ecomponent = EEntity->new(entity => $dependency);
                 $ecomponent->applyConfiguration();
