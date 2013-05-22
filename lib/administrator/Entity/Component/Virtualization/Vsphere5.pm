@@ -1011,16 +1011,13 @@ sub registerVm {
 
         #we define the state time as now
         if ($vm_view->runtime->connectionState->val    eq 'disconnected') {
-            $time       = time();
-            $host_state = 'down: ' . $time;
+            $host_state = 'down:' . time();
         }
         elsif ($vm_view->runtime->connectionState->val eq 'connected') {
-            $time       = time();
-            $host_state = 'up: ' . $time;
+            $host_state = 'up:' . time();
         }
         elsif ($vm_view->runtime->connectionState->val eq 'inaccessible') {
-            $time       = time();
-            $host_state = 'broken: ' . $time;
+            $host_state = 'broken:' . time();
         }
 
         my $vm = Entity::Host->new(
@@ -1147,16 +1144,13 @@ sub registerHypervisor {
 
         #we define the state time as now
         if ($hypervisor_view->runtime->connectionState->val    eq 'disconnected') {
-            $time       = time();
-            $host_state = 'down: '. $time;
+            $host_state = 'down:' . time();
         }
         elsif ($hypervisor_view->runtime->connectionState->val eq 'connected') {
-            $time       = time();
-            $host_state = 'up: '. $time;
+            $host_state = 'up:' . time();
         }
         elsif ($hypervisor_view->runtime->connectionState->val eq 'notResponding') {
-            $time       = time();
-            $host_state = 'broken: '. $time;
+            $host_state = 'broken:' . time();
         }
 
         my $hv = Entity::Host->new(
@@ -1278,19 +1272,19 @@ sub registerCluster {
             #Get hypervisor's view from it's MOR
             my $hypervisor_view = $self->getView(mo_ref => $hypervisor);
             my $host_state;
-            my $time = time();
 
             #we define the state time as now
             if ($hypervisor_view->runtime->connectionState->val    eq 'disconnected') {
-                $host_state = 'down: '.$time;
+                $host_state = 'down:' . time();
             }
             elsif ($hypervisor_view->runtime->connectionState->val eq 'connected') {
-                $host_state = 'up: '.$time;
+                $host_state = 'up:' . time();
             }
             elsif ($hypervisor_view->runtime->connectionState->val eq 'notResponding') {
-                $host_state = 'broken: '.$time;
+                $host_state = 'broken:' . time();
             }
 
+$DB::single = 1;
             my $hv = Entity::Host->new(
                          host_manager_id    => $self->id,
                          host_serial_number => '',
@@ -1457,15 +1451,13 @@ sub addVM {
 
     General::checkParams(args => \%args, required => [ 'host', 'guest_id', 'uuid', 'hypervisor_id' ]);
 
-    my $vsphere5vm = Entity::Host::VirtualMachine::Vsphere5Vm->promote(
+    return Entity::Host::VirtualMachine::Vsphere5Vm->promote(
                          promoted          => $args{host},
                          hypervisor_id     => $args{hypervisor_id},
                          vsphere5_id       => $self->id,
                          vsphere5_guest_id => $args{guest_id},
                          vsphere5_uuid     => $args{uuid},
-                     );
-
-    return $vsphere5vm;
+           );
 }
 
 =pod
@@ -1522,16 +1514,12 @@ sub addHypervisor {
 
     General::checkParams(args => \%args, required => [ 'host', 'datacenter_id', 'uuid' ]);
 
-    my $hypervisor_type = 'Entity::Host::Hypervisor::Vsphere5Hypervisor';
-
-    my $vsphere5Hypervisor = $hypervisor_type->promote(
+    return Entity::Host::Hypervisor::Vsphere5Hypervisor->promote(
                                  promoted               => $args{host},
                                  vsphere5_id            => $self->id,
                                  vsphere5_datacenter_id => $args{datacenter_id},
                                  vsphere5_uuid          => $args{uuid},
-                             );
-
-    return $vsphere5Hypervisor;
+           );
 }
 
 =pod
