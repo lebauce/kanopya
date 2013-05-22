@@ -57,6 +57,7 @@ class kanopya::linux ($sourcepath) {
     if $operatingsystem =~ /(?i)(debian|ubuntu)/ {
         exec { 'apt-get update':
             path    => '/usr/bin',
+            tries   => 5,
             require => [ Class['kanopya::linux::repositories'],
                          File['/etc/resolv.conf'] ]
         }
