@@ -791,6 +791,7 @@ sub generatePuppetConfiguration {
               "  path    => '/usr/bin:/usr/sbin:/bin:/sbin'\n" .
               "}\n" .
               "stage { 'system': before => Stage['main'], }\n" .
+              "stage { 'finished': }\n" .
               "import \"nodes/*.pp\"\n");
 
     use Kanopya::Config;

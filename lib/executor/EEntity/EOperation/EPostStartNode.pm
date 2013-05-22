@@ -73,19 +73,7 @@ sub prerequisites {
     }
 
     # Check if all host components are up.
-    my $components_ok = 0;
-    eval {
-        $components_ok = $self->{context}->{cluster}->checkComponents(host => $self->{context}->{host});
-    };
-    if ($@) {
-        if (ref $@ eq "Kanopya::Exception::Execution::OperationReported") {
-            return -1;
-        }
-        else {
-            throw $@;
-        }
-    }
-    if (not $components_ok) {
+    if (not $self->{context}->{cluster}->checkComponents(host => $self->{context}->{host})) {
         return $delay;
     }
 

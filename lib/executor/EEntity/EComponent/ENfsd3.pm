@@ -84,12 +84,7 @@ sub createExport {
 
     $mounttable->setConf(conf => { linuxes_mount => \@mountentries });
 
-    #my $emounttable = EEntity->new(data => $mounttable);
-    #$emounttable->_generateFstab(cluster => $cluster, host => $cluster->getMasterNode);
-
-    my $agent = $cluster->getComponent(category => "Configurationagent");
-    my $eagent = EEntity->new(data => $agent);
-    $eagent->applyConfiguration(cluster => $cluster);
+    $self->applyConfiguration(tags => [ 'mount' ]);
 
     my $manager_ip = $self->getMasterNode->adminIp;
     my $mount_dir  = $self->getMountDir(device => $args{container}->getAttr(name => 'container_device'));

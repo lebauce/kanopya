@@ -216,12 +216,13 @@ sub getEContext {
 }
 
 sub applyConfiguration {
-    my $self = shift;
+    my ($self, %args) = @_;
 
+    my $tags = $args{tags} || [ 'kanopya::' . lc($self->component_type->component_name) ];
     my $cluster = $self->service_provider;
     my $epuppet = EEntity->new(entity => $cluster->getComponent(category => "Configurationagent"));
     return $epuppet->applyConfiguration(cluster => $cluster,
-                                        tag     => 'kanopya::' . lc($self->component_type->component_name));
+                                        tags    => $tags);
 }
 
 1;
