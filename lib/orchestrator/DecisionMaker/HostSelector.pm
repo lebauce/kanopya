@@ -195,5 +195,5 @@ sub getHost {
                                           'given cluster constraints.');
     }
 
-    return $selected_host;
+    return $free_hosts[$selected_host];
 }
