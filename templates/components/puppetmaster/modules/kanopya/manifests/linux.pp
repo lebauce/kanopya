@@ -68,6 +68,12 @@ class kanopya::linux ($sourcepath) {
             content => "# ubuntu-cloud-repository\ndeb http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/grizzly main\ndeb-src http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/grizzly main",
             before  => Exec['apt-get update']
         }
+
+        package { 'ubuntu-cloud-keyring':
+            name    => 'ubuntu-cloud-keyring',
+            ensure  => present,
+            require => Exec['apt-get update']
+        }
     }
 }
 
