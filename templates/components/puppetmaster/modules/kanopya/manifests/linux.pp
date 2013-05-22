@@ -61,6 +61,13 @@ class kanopya::linux ($sourcepath) {
                          File['/etc/resolv.conf'] ]
         }
     }
+
+    if $operatingsystem =~ /(?i)(ubuntu)/ {
+        file { '/etc/apt/sources.list.d/ubuntu-cloud-repository.list':
+            content => "# ubuntu-cloud-repository\ndeb http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/grizzly main\ndeb-src http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/grizzly main",
+            before  => Exec['apt-get update']
+        }
+    }
 }
 
 define swap($ensure = present) {
