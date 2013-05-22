@@ -142,6 +142,8 @@ sub execute {
     $dir .= '/' . $self->{context}->{host}->node->node_hostname;
     my $econtext = $self->getEContext();
     $econtext->execute(command => "rm -r $dir");
+    $econtext->execute(command => "rm /var/lib/puppet/yaml/node/" .
+                                  $self->{context}->{host}->node->fqdn . ".yaml");
 
     $self->{context}->{host}->node->setAttr(name => "node_hostname", value => undef, save => 1);
     $self->{context}->{host}->setAttr(name => "host_initiatorname", value => undef, save => 1);
