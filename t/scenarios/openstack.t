@@ -160,6 +160,10 @@ sub main {
     } 'Create Nova Compute cluster';
 
     lives_ok {
+        Kanopya::Tools::Execution->startCluster(cluster => $db);
+    } 'Start database cluster';
+
+    lives_ok {
         Kanopya::Tools::Execution->startCluster(cluster => $cloud);
     } 'Start Cloud controller cluster';
 
