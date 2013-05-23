@@ -165,10 +165,7 @@ sub test3b {
     ##########################
 
     lives_ok {
-        my $selected_host_index = DecisionMaker::HostSelector->getHost(cluster => $cluster);
-        my $host_manager        = $cluster->getManager(manager_type => "HostManager");
-        my @free_hosts          = $host_manager->getFreeHosts();
-        my $selected_host       = $free_hosts[$selected_host_index];
+        my $selected_host = DecisionMaker::HostSelector->getHost(cluster => $cluster);
 
         # The selected host must be the 3rd.
         if ($selected_host->id != $host3->id) {

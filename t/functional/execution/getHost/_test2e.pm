@@ -435,11 +435,7 @@ sub test2e {
     ##########################
 
     throws_ok {
-        my $selected_host_index = DecisionMaker::HostSelector->getHost(cluster => $cluster);
-        my $host_manager        = $cluster->getManager(manager_type => "HostManager");
-        my @free_hosts          = $host_manager->getFreeHosts();
-        my $selected_host       = $free_hosts[$selected_host_index];
-
+        my $selected_host = DecisionMaker::HostSelector->getHost(cluster => $cluster);
     } 'Kanopya::Exception',
       'Test 2.e : None of the hosts match the minimum network configuration constraint';
 }

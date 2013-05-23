@@ -73,15 +73,25 @@ sub getHost {
 
     General::checkParams(args => \%args, required => [ "cluster" ]);
 
+    $log->debug('HostSelector : Retrieving cluster params');
+
     my $cluster      = $args{cluster};
     my $host_params  = $cluster->getManagerParameters(manager_type => "HostManager");
+
+    $log->debug('HostSelector : Retrieving free hosts');
 
     my $host_manager = $cluster->getManager(manager_type => "HostManager");
     my @free_hosts   = $host_manager->getFreeHosts();
 
+    $log->debug('HostSelector : Number of free hosts in the host manager : ' . scalar(@free_hosts));
+
+    $log->debug('HostSelector : Retrieving id of master network to exclude it from the constraints');
+
     my $admin_id     = Entity::Network->find(hash => { network_name => "admin" })->id;
 
     # Generate Json objects for the external module (infrastructure and constraints)
+
+    $log->debug('HostSelector : Creating JSON structure for hosts description');
 
     # INFRASTRUCTURE
     my @json_infrastructure;
@@ -124,6 +134,8 @@ sub getHost {
         push @json_infrastructure, $current;
     }
 
+    $log->debug('HostSelector : Creating JSON structure for constraints description');
+
     # CLUSTER CONSTRAINTS
 
     # Construct json interfaces (bonds number + netIPs)
@@ -162,10 +174,12 @@ sub getHost {
         },
     };
 
+    $log->debug('HostSelector : Creating JSON temp files');
+
     # Create temp files
-    (my $infra_file, my $infra_filename)             = tempfile("hostsXXXXX", SUFFIX => ".json");
-    (my $constraints_file, my $constraints_filename) = tempfile("constraintsXXXXX", SUFFIX => ".json");
-    (my $result_file, my $result_filename)           = tempfile("resultXXXXX", SUFFIX => ".json");
+    (my $infra_file, my $infra_filename)             = tempfile("hosts.jsonXXXXX", TMPDIR => 1);
+    (my $constraints_file, my $constraints_filename) = tempfile("constraints.jsonXXXXX", TMPDIR => 1);
+    (my $result_file, my $result_filename)           = tempfile("result.jsonXXXXX", TMPDIR => 1);
 
     # Write generated Json's into
     my $hosts_json = JSON->new->utf8->encode(\@json_infrastructure);
@@ -176,7 +190,11 @@ sub getHost {
 
     my $jar = Kanopya::Config->getKanopyaDir() . JAR_DIR . JAR_NAME;
 
+    $log->debug('HostSelector : Calling the Jar');
+
     system "java -jar $jar $infra_filename $constraints_filename $result_filename";
+
+    $log->debug('HostSelector : Retrieving the result and unlink the files');
 
     my $import;
     while (my $line  = <$result_file>) {
@@ -186,9 +204,9 @@ sub getHost {
 
     my $selected_host = $result->{selectedHostIndex};
 
-    close $infra_file;
-    close $constraints_file;
-    close $result_file;
+    unlink $infra_filename;
+    unlink $constraints_filename;
+    unlink $result_filename;
 
     if ($selected_host == -1) {
         throw Kanopya::Exception(error => 'HostSelector - getHost : None of the free hosts match the ' . 
