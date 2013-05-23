@@ -181,8 +181,32 @@ sub main {
                                  masterimage_id       => $masterimage->id,
                              }
                          );
-        
     } 'Create VM cluster';
+
+    lives_ok {
+        my $cinder_vm = Kanopya::Tools::Create->createVmCluster(
+                            iaas => $iaas,
+                            container_type => 'iscsi',
+                            cluster_conf => {
+                                cluster_name         => 'CinderVmCluster',
+                                cluster_basehostname => 'cindervm',
+                                masterimage_id       => $masterimage->id,
+                            },
+                            managers => {
+                                disk_manager => {
+                                    manager_id => $cinder->id,
+                                    manager_params => {
+                                        systemimage_size => 4 * 1024 * 1024 * 1024,
+                                    }
+                                },
+                                export_manager => {
+                                    manager_id => $cinder->id,
+                                    manager_params => {
+                                    }
+                                }
+                            }
+                        );
+    } 'Create VM cluster with Cinder as disk manager manager';
 
     if ($testing == 1) {
         BaseDB->rollbackTransaction;
