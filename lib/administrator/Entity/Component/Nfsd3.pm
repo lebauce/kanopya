@@ -25,6 +25,8 @@ use warnings;
 use Kanopya::Exceptions;
 
 use Entity::Container;
+use Entity::ContainerAccess;
+use Entity::ContainerAccess::NfsContainerAccess;
 use Entity::NfsContainerAccessClient;
 use Log::Log4perl "get_logger";
 
