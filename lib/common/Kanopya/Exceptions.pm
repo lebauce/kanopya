@@ -13,7 +13,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 =pod
-
 =begin classdoc
 
 Kanopya Exceptions declaration
@@ -21,7 +20,6 @@ Kanopya Exceptions declaration
 @since    2011-Jan-13
 
 =end classdoc
-
 =cut
 
 package Kanopya::Exceptions;
@@ -105,6 +103,10 @@ use Exception::Class (
         isa         => 'Kanopya::Exception::Execution',
         description => 'Operation execution reported',
     },
+    Kanopya::Exception::Execution::InvalidState => {
+        isa         => 'Kanopya::Exception::Execution',
+        description => 'Invalid context object state',
+    },
     Kanopya::Exception::Execution::Locked => {
         isa         => 'Kanopya::Exception::Execution',
         description => 'Entity already locked',
@@ -128,10 +130,6 @@ use Exception::Class (
     Kanopya::Exception::Permission::Denied => {
         isa         => 'Kanopya::Exception::Permission',
         description => 'Permission denied'
-    },
-    Kanopya::Exception::OperationAlreadyEnqueued => {
-        isa         => 'Kanopya::Exception',
-        description => 'Operation already enqueued'
     },
     Kanopya::Exception::NotImplemented => {
         isa         => 'Kanopya::Exception',
