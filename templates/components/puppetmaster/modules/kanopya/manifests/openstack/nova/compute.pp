@@ -66,7 +66,7 @@ class kanopya::openstack::nova::compute($amqpserver, $dbserver, $glance, $keysto
 
     class { 'quantum::agents::ovs':
         integration_bridge  => 'br-int',
-        bridge_mappings     => [ 'physflat:br-flat', 'physvlan:br-vlan' ],
+        bridge_mappings     => [ 'physnetflat:br-flat', 'physnetvlan:br-vlan' ],
         bridge_uplinks      => $bridge_uplinks,
         require             => Class['kanopya::openstack::repository']
     }
