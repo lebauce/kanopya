@@ -22,7 +22,7 @@ function orchestrationPolicyForm(sp_id, policy, grid) {
             return ajax('POST', '/api/orchestrationpolicy/getPolicyDef', { params : data });
         },
         submitCallback : function(data, $form, opts, onsuccess, onerror) {
-            data['orchestration_service_provider_id'] = sp_id;
+            data['orchestration'] = {'service_provider_id' : sp_id};
 
             // Post the policy
             ajax($(this.form).attr('method').toUpperCase(),
@@ -87,9 +87,9 @@ function createPolicyServiceProvider() {
 // Edit existing policy
 function load_orchestration_policy_details(policy, grid_id) {
     $.get(
-            '/api/parampreset/' + policy.param_preset_id,
-            function (pp) {
-                var params = JSON.parse(pp.params);
+            '/api/orchestrationpolicy/' + policy.pk + '?expand=param_preset',
+            function (data) {
+                var params = JSON.parse(data.param_preset.params);
                 var sp_id;
                 if (params.orchestration && params.orchestration.service_provider_id) {
                     sp_id = params.orchestration.service_provider_id;

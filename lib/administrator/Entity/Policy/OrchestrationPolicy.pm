@@ -72,8 +72,8 @@ sub getPatternFromParams {
 
     my $pattern = $self->SUPER::getPatternFromParams(params => $args{params});
 
-    if (defined $args{params}->{orchestration_service_provider_id}) {
-        $pattern->{orchestration}->{service_provider_id} = delete $args{params}->{orchestration_service_provider_id};
+    if (defined $args{params}->{orchestration}{service_provider_id}) {
+        $pattern->{orchestration}{service_provider_id} = delete $args{params}->{orchestration}{service_provider_id};
     }
     return $pattern;
 }

@@ -493,7 +493,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                 confirmDeleteWithDependencies('/api/nodemetriccondition/', id, [serviceNodemetricConditionsGridId, serviceNodemetricRulesGridId]);
             }
         },
-        multiselect : true,
+        multiselect : !mode_policy,
         multiactions : {
             multiDelete : {
                 label       : 'Delete node condition(s)',
@@ -586,7 +586,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         action_delete: {
             url : '/api/nodemetricrule'
         },
-        multiselect : true,
+        multiselect : !mode_policy,
         multiactions : {
             multiDelete : {
                 label       : 'Delete node rule(s)',
@@ -635,7 +635,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                 confirmDeleteWithDependencies('/api/aggregatecondition/', id, [serviceAggregateConditionsGridId, serviceAggregateRulesGridId]);
             }
         },
-        multiselect : true,
+        multiselect : !mode_policy,
         multiactions : {
             multiDelete : {
                 label       : 'Delete service condition(s)',
@@ -706,7 +706,7 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
         action_delete: {
             url : '/api/aggregaterule',
         },
-        multiselect : true,
+        multiselect : !mode_policy,
         multiactions : {
             multiDelete : {
                 label       : 'Delete service rule(s)',

@@ -319,7 +319,7 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
                 confirmDeleteWithDependencies('/api/nodemetriccombination/', id, [nodemetriccombi_grid_id]);
             }
         },
-        multiselect : true,
+        multiselect : !mode_policy,
         multiactions : {
             multiDelete : {
                 label       : 'Delete node combination(s)',
@@ -363,7 +363,7 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
             }
         },
         deactivate_details  : mode_policy,
-        multiselect : true,
+        multiselect : !mode_policy,
         multiactions : {
             multiDelete : {
                 label       : 'Delete service metric(s)',
@@ -423,7 +423,7 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
                 confirmDeleteWithDependencies('/api/aggregatecombination/', id, [aggregatecombi_grid_id]);
             }
         },
-        multiselect : true,
+        multiselect : !mode_policy,
         multiactions : {
             multiDelete : {
                 label       : 'Delete service combination(s)',
