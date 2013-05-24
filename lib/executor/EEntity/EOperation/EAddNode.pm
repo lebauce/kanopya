@@ -68,9 +68,9 @@ sub check {
     # Add the manager to the context
     # TODO: Probably not the proper place...
     my $cluster = $self->{context}->{cluster};
-    $self->{context}->{host_manager}   = $cluster->getManager(manager_type => 'HostManager');
-    $self->{context}->{disk_manager}   = $cluster->getManager(manager_type => 'DiskManager');
-    $self->{context}->{export_manager} = $cluster->getManager(manager_type => 'ExportManager');
+    $self->{context}->{host_manager}   = EEntity->new(entity => $cluster->getManager(manager_type => 'HostManager'));
+    $self->{context}->{disk_manager}   = EEntity->new(entity => $cluster->getManager(manager_type => 'DiskManager'));
+    $self->{context}->{export_manager} = EEntity->new(entity => $cluster->getManager(manager_type => 'ExportManager'));
 }
 
 
