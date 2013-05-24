@@ -211,7 +211,7 @@ button.ui-multiselect,.ui-multiselect-menu li label{cursor:pointer;}
 .ui-multiselect-single .ui-multiselect-checkboxes label{padding:2px 5px !important}
 .ui-multiselect-menu{-moz-border-radius-topleft: 0px; -webkit-border-top-left-radius: 0px; -khtml-border-top-left-radius: 0px; border-top-left-radius: 0px;-moz-border-radius-topright: 0px; -webkit-border-top-right-radius: 0px; -khtml-border-top-right-radius: 0px; border-top-right-radius: 0px;width:246px!important;}
 .ui-formwizard button.ui-state-active,#form_cluster button.ui-state-active{-moz-border-radius-bottomleft: 0px; -webkit-border-bottom-left-radius: 0px; -khtml-border-bottom-left-radius: 0px; border-bottom-left-radius: 0px;-moz-border-radius-bottomright: 0px; -webkit-border-bottom-right-radius: 0px; -khtml-border-bottom-right-radius: 0px; border-bottom-right-radius: 0px;}
-.ui-multiselect-checkboxes{height:auto!important;}
+.ui-multiselect-checkboxes{height:200px!important;}
 .ui-multiselect-all .ui-icon,.ui-multiselect-none .ui-icon{margin-top:0!important;}
 .ui-button-icon-only .ui-icon-closethick,.ui-button-icon-only .ui-icon-refresh{margin-top:-10px!important;}
 .clickable{cursor: pointer;}
