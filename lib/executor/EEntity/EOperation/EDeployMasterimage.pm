@@ -77,6 +77,8 @@ sub prepare {
 
 sub execute {
     my $self = shift;
+    $self->SUPER::execute();
+
     my ($cmd, $cmd_res);
 
     # Untar master image archive in a temporary folder

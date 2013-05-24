@@ -1,6 +1,5 @@
-# ECloneSystemimage.pm - Operation class implementing System image cloning operation
-
-#    Copyright © 2010-2012 Hedera Technology SAS
+#    Copyright © 2010-2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -16,22 +15,6 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-=head1 NAME
-
-EEntity::EOperation::ECloneSystemimage - Operation class implementing System image cloning operation
-
-=head1 SYNOPSIS
-
-This Object represent an operation.
-It allows to implement System image cloning operation
-
-=head1 DESCRIPTION
-
-
-
-=head1 METHODS
-
-=cut
 package EEntity::EOperation::ECloneSystemimage;
 use base "EEntity::EOperation";
 
@@ -53,13 +36,7 @@ use Template;
 
 my $log = get_logger("");
 my $errmsg;
-our $VERSION = '1.00';
 
-=head2 prepare
-
-    $op->prepare();
-
-=cut
 
 sub prepare {
     my ($self, %args) = @_;
@@ -121,6 +98,7 @@ sub prepare {
 
 sub execute {
     my $self = shift;
+    $self->SUPER::execute();
 
     $self->{context}->{systemimage}->create(src_container => $self->{context}->{systemimage_src},
                                             disk_manager  => $self->{context}->{disk_manager},
@@ -135,12 +113,3 @@ sub execute {
 }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010-2012 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut

@@ -57,6 +57,7 @@ sub prepare {
 
 sub execute {
     my ($self, %args) = @_;
+    $self->SUPER::execute(%args);
 
     my $cluster = $self->{context}->{component}->service_provider;
     for my $host ($cluster->getHosts()) {

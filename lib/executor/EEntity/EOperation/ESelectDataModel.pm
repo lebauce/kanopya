@@ -28,11 +28,6 @@ use DataModelSelector;
 my $log = get_logger("");
 my $errmsg;
 
-
-=head2 check
-
-=cut
-
 sub check {
     my $self = shift;
     my %args = @_;
@@ -40,7 +35,8 @@ sub check {
 }
 
 sub execute {
-    my $self = shift;
+    my ($self, %args) = @_;
+    $self->SUPER::execute();
 
     DataModelSelector->selectDataModel(
         combination => $self->{context}->{combination},

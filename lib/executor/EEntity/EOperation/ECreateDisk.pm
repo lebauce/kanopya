@@ -1,4 +1,5 @@
-#    Copyright © 2012 Hedera Technology SAS
+#    Copyright © 2012-2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -12,22 +13,6 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-=head1 NAME
-
-EOperation::ECreateDisk - Operation class implementing disk creation
-
-=head1 SYNOPSIS
-
-This Object represent an operation.
-It allows to implement cluster activation operation
-
-=head1 DESCRIPTION
-
-Component is an abstract class of operation objects
-
-=head1 METHODS
-
-=cut
 package EEntity::EOperation::ECreateDisk;
 use base "EEntity::EOperation";
 
@@ -45,17 +30,10 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
-our $VERSION = '1.00';
-
-
-=head2 prepare
-
-=cut
 
 sub prepare {
-    my $self = shift;
-    my %args = @_;
-    $self->SUPER::prepare();
+    my ($self, %args) = @_;
+    $self->SUPER::prepare(%args);
 
     General::checkParams(args => $self->{context}, required => [ "disk_manager" ]);
 
@@ -73,7 +51,8 @@ sub prepare {
 }
 
 sub execute {
-    my $self = shift;
+    my ($self, %args) = @_;
+    $self->SUPER::execute(%args);
 
     my $container = $self->{context}->{disk_manager}->createDisk(
                         name       => $self->{params}->{name},

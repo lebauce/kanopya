@@ -83,7 +83,7 @@ sub execute{
     $log->info('Total of <'.(scalar @$operation_plan).'> operation(s) to enqueue');
     for my $operation (@$operation_plan){
         $log->info('Operation enqueuing');
-        $self->getWorkflow()->enqueue(
+        $self->workflow->enqueue(
             %$operation
         );
     }

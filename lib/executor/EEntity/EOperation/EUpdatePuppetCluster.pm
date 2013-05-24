@@ -1,6 +1,5 @@
-# EUpdatePuppetCluster.pm - Operation class implementing cluster Nodes reconfiguration via puppet
-
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,7 +14,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 29 may 2012
 
 package EEntity::EOperation::EUpdatePuppetCluster;
 use base "EEntity::EOperation";
@@ -32,6 +30,7 @@ my $errmsg;
 
 sub prepare {
     my ($self, %args) = @_;
+    $self->SUPER::prepare();
 
     # check if this cluster has a puppet agent component
     my $puppetagent = eval {
@@ -51,6 +50,7 @@ sub prepare {
 
 sub execute {
     my ($self, %args) = @_;
+    $self->SUPER::execute();
 
     $self->{context}->{puppetagent}->applyConfiguration(
         cluster => $self->{context}->{cluster}

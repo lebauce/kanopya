@@ -1,6 +1,5 @@
-# EActivateHost.pm - Operation class implementing Host activation operation
-
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -27,12 +26,11 @@ use Data::Dumper;
 use Kanopya::Exceptions;
 use EEntity;
 
-use Entity::ServiceProvider::Cluster;
 use Entity::Host;
 
 my $log = get_logger("");
 my $errmsg;
-our $VERSION = '1.00';
+
 
 sub prepare {
     my $self = shift;
@@ -44,7 +42,6 @@ sub prepare {
     # check if host is not active
     if ($self->{context}->{host}->active) {
         $errmsg = "Host <" . $self->{context}->{host}->id . "> is already active";
-        $log->debug($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 }

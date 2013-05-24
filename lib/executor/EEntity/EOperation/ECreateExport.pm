@@ -1,4 +1,5 @@
-#    Copyright © 2009-2012 Hedera Technology SAS
+#    Copyright © 2009-2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -14,25 +15,8 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-=head1 NAME
-
-EOperation::ECreateExport - Operation class implementing component installation on systemimage
-
-=head1 SYNOPSIS
-
-This Object represent an operation.
-It allows to implement cluster activation operation
-
-=head1 DESCRIPTION
-
-Component is an abstract class of operation objects
-
-=head1 METHODS
-
-=cut
-
 package EEntity::EOperation::ECreateExport;
-use base "EEntity::EOperation";
+use base EEntity::EOperation;
 
 use strict;
 use warnings;
@@ -47,12 +31,6 @@ use Data::Dumper;
 
 my $log = get_logger("");
 my $errmsg;
-our $VERSION = '1.00';
-
-
-=head2 prepare
-
-=cut
 
 sub prepare {    
     my $self = shift;
@@ -75,6 +53,7 @@ sub prepare {
 
 sub execute {
     my $self = shift;
+    $self->SUPER::execute();
 
     $self->{context}->{export_manager}->createExport(container => $self->{context}->{container},
                                                      erollback => $self->{erollback},

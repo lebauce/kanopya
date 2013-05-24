@@ -1,6 +1,5 @@
-# ERelieveHypervisor.pm - Operation class implementing
-
-#    Copyright © 2012 Hedera Technology SAS
+#    Copyright © 2012-2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,30 +14,12 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 26 sept 2012
 
-=head1 NAME
-
-EEntity::Operation::ERelieveHypervisor - Operation class implementing
-
-=head1 SYNOPSIS
-
-This Object represent an operation.
-It allows to implement
-
-=head1 DESCRIPTION
-
-Component is an abstract class of operation objects
-
-=head1 METHODS
-
-=cut
 package EEntity::EOperation::ERelieveHypervisor;
-use base "EEntity::EOperation";
+use base EEntity::EOperation;
 
 use strict;
 use warnings;
-use Entity;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -84,7 +65,7 @@ sub execute {
 
 sub finish {
     my ($self) = @_;
-#    $self->getWorkflow()->enqueue(
+#    $self->workflow->enqueue(
 #        type => 'MigrateHost',
 #        priority => 1,
 #        params => {
@@ -97,13 +78,3 @@ sub finish {
 }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut
-

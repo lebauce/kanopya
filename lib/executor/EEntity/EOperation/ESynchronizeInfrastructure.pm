@@ -1,6 +1,5 @@
-# ESynchronizeInfrastructure.pm - Operation class implementing
-
-#    Copyright © 2012 Hedera Technology SAS
+#    Copyright © 2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,24 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 26 sept 2012
 
-=head1 NAME
-
-EEntity::EOperation::ESynchronizeInfrastructure - Operation class implementing
-
-=head1 SYNOPSIS
-
-This Object represent an operation.
-It allows to implement
-
-=head1 DESCRIPTION
-
-Component is an abstract class of operation objects
-
-=head1 METHODS
-
-=cut
 package EEntity::EOperation::ESynchronizeInfrastructure;
 use base "EEntity::EOperation";
 
@@ -83,6 +65,7 @@ sub prepare {
 
 sub execute {
     my $self = shift;
+    $self->SUPER::execute();
 
     $DB::single = 1;
 
@@ -118,25 +101,22 @@ sub execute {
     $self->{context}->{cloud_manager}->repairVmInDBNotInInfra(vm_ids => $self->{params}->{diff_infra_db}->{base_not_hv_infra});
     $self->{context}->{cloud_manager}->repairVmInInfraUnkInDB(vm_uuids => $self->{params}->{diff_infra_db}->{unk_vm_uuids});
     $self->{context}->{cloud_manager}->repairVmInInfraWrongHostManager(vm_ids => $self->{params}->{diff_infra_db}->{infra_not_hostmanager});
+<<<<<<< HEAD
 
     $self->SUPER::execute();
+=======
+>>>>>>> [core] Ensure to call the super method in EOperation interface implementations.
 }
 
 sub finish {
     my ($self) = @_;
+<<<<<<< HEAD
+=======
+    $self->SUPER::finish();
+>>>>>>> [core] Ensure to call the super method in EOperation interface implementations.
 
     delete $self->{context}->{hypervisor};
     delete $self->{context}->{cloud_manager};
 }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut
-

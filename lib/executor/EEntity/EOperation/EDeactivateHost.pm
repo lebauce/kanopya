@@ -1,6 +1,5 @@
-# EDeactivateHost.pm - Operation class implementing Host deactivation operation
-
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -28,7 +27,6 @@ use Kanopya::Exceptions;
 
 my $log = get_logger("");
 my $errmsg;
-our $VERSION = '1.00';
 
 sub prepare {
     my $self = shift;
@@ -54,6 +52,7 @@ sub prepare {
 
 sub execute{
     my $self = shift;
+    $self->SUPER::execute();
 
     # set host active in db
     $self->{context}->{host_to_deactivate}->setAttr(name => 'active', value => 0, save => 1);
