@@ -15,35 +15,92 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+=begin classdoc
+
+Add a host to the system.
+
+@since    2012-Aug-20
+@instance hash
+@self     $self
+
+=end classdoc
+=cut
+
 package EEntity::EOperation::EAddHost;
-use base "EEntity::EOperation";
+use base EEntity::EOperation;
 
 use strict;
 use warnings;
 
-use Kanopya::Exceptions;
-
 use Log::Log4perl "get_logger";
-use Data::Dumper;
-
 my $log = get_logger("");
 my $errmsg;
 
 
-sub prepare {
-    my $self = shift;
-    my %args = @_;
-    $self->SUPER::prepare();
+=pod
+=begin classdoc
+
+Check if the host manager is defined in the context.
+
+=end classdoc
+=cut
+
+sub check {
+    my ($self, %args) = @_;
+    $self->SUPER::check(%args);
 
     General::checkParams(args => $self->{context}, required => [ "host_manager" ]);
 }
 
+
+=pod
+=begin classdoc
+
+Check if the host manager has not reach the maximum amount of consumers
+
+=end classdoc
+=cut
+
+sub prepare {
+    my ($self, %args) = @_;
+    $self->SUPER::prepare(%args);
+
+    $self->{context}->{host_manager}->increaseConsumers();
+}
+
+
+=pod
+=begin classdoc
+
+Call the host manager to create the new host.
+
+=end classdoc
+=cut
+
 sub execute {
-    my $self = shift;
+    my ($self, %args) = @_;
+    $self->SUPER::execute(%args);
 
     my $host = $self->{context}->{host_manager}->createHost(%{ $self->{params} }, erollback => $self->{erollback});
 
     $log->info("Host <" . $host->id . "> is now created");
+}
+
+
+=pod
+=begin classdoc
+
+Decrease the number of consumers of the host manager as the host is successfully created.
+
+=end classdoc
+=cut
+
+sub finish {
+    my ($self, %args) = @_;
+    $self->SUPER::finish(%args);
+
+    $self->{context}->{host_manager}->decreaseConsumers();
 }
 
 1;
