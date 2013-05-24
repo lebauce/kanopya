@@ -16,7 +16,6 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 =pod
-
 =begin classdoc
 
 Excecution class for Systemimage. Here are implemented methods related to
@@ -27,7 +26,6 @@ system image creation involving disks creation, disks copies and exports creatio
 @self     $self
 
 =end classdoc
-
 =cut
 
 package EEntity::ESystemimage;
