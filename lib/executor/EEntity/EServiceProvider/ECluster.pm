@@ -16,7 +16,7 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 package EEntity::EServiceProvider::ECluster;
-use base 'EEntity';
+use base EEntity;
 
 use strict;
 use warnings;
@@ -106,22 +106,6 @@ sub create {
         my @netconfs = $interface->netconfs;
         $self->addNetworkInterface(netconfs => \@netconfs);
     }
-}
-
-sub addNode {
-    my $self = shift;
-    my %args = @_;
-
-    my $host_manager = $self->getManager(manager_type => 'HostManager');
-    my $host_manager_params = $self->getManagerParameters(manager_type => 'HostManager');
-
-    my $ehost_manager = EEntity->new(entity => $host_manager);
-
-    my $host = $ehost_manager->getFreeHost(cluster => $self);
-
-    $log->debug("Host manager <" . $host_manager->id . "> returned free host <$host>");
-
-    return $host;
 }
 
 sub checkComponents {
