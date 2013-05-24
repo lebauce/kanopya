@@ -1,4 +1,4 @@
-# Copyright © 2012 Hedera Technology SAS
+# Copyright © 2012-2013 Hedera Technology SAS
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -14,6 +14,15 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
+
+=pod
+=begin classdoc
+
+A component is called manager by the others service providers that 
+the one on which it is installed.
+
+=end classdoc
+=cut
 
 package Manager;
 
@@ -38,8 +47,13 @@ sub methods {
     };
 }
 
-=head2 checkManagerParams
 
+=pod
+=begin classdoc
+
+Check required paramaters in function of the type of the manager.
+
+=end classdoc
 =cut
 
 sub checkManagerParams {
@@ -70,12 +84,51 @@ sub checkManagerParams {
     }
 }
 
-=head2 getManagerParamsDef
 
+=pod
+=begin classdoc
+
+@return the definition of the required params of the manager.
+
+=end classdoc
 =cut
 
 sub getManagerParamsDef {
+    my ($self, %args) = @_;
     return {};
+}
+
+
+=pod
+=begin classdoc
+
+Try to increase the number of current consumers of the manager.
+Concrete managers could override this method and raise an exceptions
+if the manager has reach the maximum of simultaneous users.
+
+=end classdoc
+=cut
+
+sub increaseConsumers {
+    my ($self, %args) = @_;
+
+    # Use the following block to raise exception in concrete implementation of increaseConsumers.
+    #throw Kanopya::Exception::Execution::InvalidState(
+    #          error => "The xxxx manager has reach the maximum amount of consumers"
+    #      );
+}
+
+
+=pod
+=begin classdoc
+
+Decrease the number of current consumers of the manager.
+
+=end classdoc
+=cut
+
+sub decreaseConsumers {
+    my ($self, %args) = @_;
 }
 
 1;
