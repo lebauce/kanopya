@@ -18,7 +18,7 @@
 =pod
 =begin classdoc
 
-The execution daemon, fetch actions from the following messages queues:
+The execution daemon, fetch jobs from the following messages queues:
  - 'operation'        : Execute a single operation and push the result on the queue 'operation_result',
  - 'operation_result' : Handle an operation result, continue, finish or cancel workflows according to
                         the last operation result and the state of the workflow,
@@ -232,6 +232,37 @@ sub executeOperation {
     # Skip the proccessing steps if postreported
     my $delay;
     if ($operation->state ne 'postreported') {
+        # Check the required state of the context objects, and update its
+        eval {
+            # Firstly lock the context objects
+            $self->lockOperationContext(operation => $operation);
+
+            # Check/Update the state of the context objects atomically
+            $self->log(level => "info", msg => "Step <prepare>");
+            $operation->prepare();
+
+            # Unlock the context objects
+            $operation->unlockContext();
+        };
+        if ($@) {
+            my $err = $@;
+            $operation->unlockContext();
+
+            if ($err->isa('Kanopya::Exception::Execution::InvalidState') or
+                $err->isa('Kanopya::Exception::Execution::OperationReported')) {
+                # TODO: Do not report the operation, implement a mechanism
+                #       that re-trrgier operation that received InvalidState
+                #       when the coresponding state change...
+                return $self->terminateOperation(operation => $operation,
+                                                 status    => 'prereported',
+                                                 time      => time + 10,
+                                                 exception => $err);
+            }
+            return $self->terminateOperation(operation => $operation,
+                                             status    => 'cancelled',
+                                             exception => $err);
+        }
+
         # Check preconditions for processing
         eval {
             $self->log(level => "info", msg => "Step <prerequisites>");
@@ -257,20 +288,14 @@ sub executeOperation {
         eval {
             $operation->beginTransaction;
 
-            $self->log(level => "info", msg => "Step <prepare>");
-            $operation->prepare();
-
             $self->log(level => "info", msg => "Step <process>");
-            $operation->process();
+            $operation->execute();
 
             $operation->commitTransaction;
         };
         if ($@) {
             my $err = $@;
-            # If some rollback defined, undo them
-            if (defined $operation->{erollback}) {
-                $operation->{erollback}->undo();
-            }
+
             # Rollback transaction
             $operation->rollbackTransaction;
 
@@ -297,13 +322,22 @@ sub executeOperation {
                                          time      => $delay > 0 ? time + $delay : undef);
     }
 
-    # Finishing the operation.
+    # Update the state of the context objects if required
     eval {
+        # Firstly lock the context objects
+        $self->lockOperationContext(operation => $operation);
+
+        # Update the state of the context objects atomically
         $self->log(level => "info", msg => "Step <finish>");
         $operation->finish();
+
+        # Unlock the context objects
+        $operation->unlockContext();
     };
     if ($@) {
         my $err = $@;
+        $operation->unlockContext();
+
         return $self->terminateOperation(operation => $operation,
                                          status    => 'cancelled',
                                          exception => $err);
@@ -312,6 +346,52 @@ sub executeOperation {
     # Terminate the operation with success
     return $self->terminateOperation(operation => $operation,
                                      status    => 'succeeded');
+}
+
+
+=pod
+=begin classdoc
+
+Push a result on the channel 'operation_result'. Also serialize
+the terminated operation parameters.
+
+@param operation the terminated operation.
+@param status the state of the execution of the operation.
+
+=end classdoc
+=cut
+
+sub terminateOperation {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'operation', 'status' ]);
+
+    my $operation = delete $args{operation};
+
+    $self->log(level => "info", msg => "Operation terminated with status <$args{status}>");
+
+    # If some rollback defined, undo them
+    if ($args{status} eq 'cancelled' and defined $operation->{erollback}) {
+        $self->log(level => "debug", msg => "Undo rollbacks");
+        $operation->{erollback}->undo();
+    }
+
+    # Serialize the parameters as its could be modified during
+    # the operation executions steps.
+    my $params = delete $operation->{params};
+    $params->{context} = delete $operation->{context};
+    $operation->serializeParams(params => $params);
+
+    if (defined $args{exception} and ref($args{exception})) {
+        $args{exception} = "$args{exception}";
+        $self->log(level => "debug", msg => $args{exception});
+    }
+
+    # Produce a result on the operation_result channel
+    $self->_component->terminate(operation_id => $operation->id, %args);
+
+    # Acknowledge the message
+    return 1;
 }
 
 
@@ -375,10 +455,13 @@ sub handleResult {
 
         # The operation execution is reported at $args{time}
         if (defined $args{time}) {
-            $self->logWorkflowState(operation => $operation, state => 'REPORTED');
-
             # Compute the delay
             my $delay = $args{time} - time;
+
+            $self->logWorkflowState(operation => $operation, state => "REPORTED while $delay s");
+            if (defined $args{exception}) {
+                $self->log(level => "info", msg => "Report reason: " . $args{exception});
+            }
 
             # If the hoped execution time is in the future, report the operation 
             if ($delay > 0) {
@@ -455,7 +538,26 @@ sub handleResult {
             level => "info",
             msg   => "Cancelling " . $workflow->workflow_name . " workflow <" . $workflow->id . ">"
         );
-        $workflow->cancel();
+
+        # Restore context object states updated at 'prepare' step.
+        eval {
+            # Firstly lock the context objects
+            $self->lockOperationContext(operation => $operation);
+
+            # Update the state of the context objects atomically
+            $workflow->cancel();
+
+            # Unlock the context objects
+            $operation->unlockContext();
+        };
+        if ($@) {
+            my $err = $@;
+            $operation->unlockContext();
+
+            return $self->terminateOperation(operation => $operation,
+                                             status    => 'cancelled',
+                                             exception => $err);
+        }
 
         # Stop the workflow
         return 1;
@@ -483,7 +585,8 @@ sub handleResult {
     else {
         $self->log(
             level => "info",
-            msg   => "Executing " . $workflow->workflow_name . " next operation <" . $next->id . ">"
+            msg   => "Executing " . $workflow->workflow_name .
+                     " workflow next operation " . $operation->type . " <" . $next->id . ">"
         );
 
         # Set the operation as ready
@@ -492,45 +595,6 @@ sub handleResult {
         # Push the next operation on the execution channel
         $self->_component->execute(operation_id => $next->id);
     }
-
-    # Acknowledge the message
-    return 1;
-}
-
-
-=pod
-=begin classdoc
-
-Push a result on the channel 'operation_result'. Also serialize
-the terminated operation parameters.
-
-@param operation the terminated operation.
-@param status the state of the execution of the operation.
-
-=end classdoc
-=cut
-
-sub terminateOperation {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'operation', 'status' ]);
-
-    my $operation = delete $args{operation};
-
-    $self->log(level => "info", msg => "Operation terminated with status <$args{status}>");
-
-    # Serialize the parameters as its could be modified during
-    # the operation executions steps.
-    my $params = delete $operation->{params};
-    $params->{context} = delete $operation->{context};
-    $operation->serializeParams(params => $params);
-
-    if (defined $args{exception} and ref($args{exception})) {
-        $args{exception} = "$args{exception}";
-    }
-
-    # Produce a result on the operation_result channel
-    $self->_component->terminate(operation_id => $operation->id, %args);
 
     # Acknowledge the message
     return 1;
@@ -571,7 +635,7 @@ sub setLogAppender {
 
 Log the workflow state.
 
-@param operation the just terinated operation of the workflow
+@param operation the just terminated operation of the workflow
 @param state the state of the workflow
 
 =end classdoc
@@ -586,6 +650,52 @@ sub logWorkflowState {
 
     my $msg = $args{operation}->type . " <" . $args{operation}->id . "> " . $args{state};
     $self->log(level => "info", msg => "---- [ Operation " . $msg . " ] ----");
+}
+
+
+=pod
+=begin classdoc
+
+Try to lock the entities of the operation context. Context entities should not
+be locked by an operation while more than few millisecond, so retry to lock every second.
+If could not get the locks until the timeout exeedeed, report the operation.
+
+@param operation the operation thaht want lock the context
+@param state the state of the workflow
+
+=end classdoc
+=cut
+
+sub lockOperationContext {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'operation' ]);
+
+    my $timeout = 10;
+    while ($timeout >= 0) {
+        eval {
+            $args{operation}->lockContext();
+        };
+        if ($@) {
+            my $err = $@;
+            if (not $err->isa('Kanopya::Exception::Execution::Locked')) {
+                $err->rethrow();
+            }
+            $self->log(
+                level => "info",
+                msg => "Operation <" . $args{operation}->id .
+                       ">, unable to get the context locks, $timeout second(s) left..."
+            );
+            sleep 1;
+        }
+        else {
+            return;
+        }
+        $timeout--;
+    }
+    throw Kanopya::Exception::Execution::OperationReported(
+              error => "Unable to get the context locks until timeout exeedeed."
+          );
 }
 
 1;
