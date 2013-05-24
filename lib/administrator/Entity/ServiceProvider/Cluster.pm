@@ -16,13 +16,11 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 =pod
-
 =begin classdoc
 
 This object allows to manipulate cluster configuration
 
 =end classdoc
-
 =cut
 
 package Entity::ServiceProvider::Cluster;
@@ -112,7 +110,7 @@ use constant ATTR_DEF => {
     },
     cluster_state => {
         label        => 'State',
-        pattern      => '^up:\d*|down:\d*|starting:\d*|stopping:\d*|warning:\d*',
+        pattern      => '^up:\d*|down:\d*|updating:\d*|starting:\d*|stopping:\d*|warning:\d*',
         is_mandatory => 0,
         is_editable  => 0
     },
@@ -816,8 +814,6 @@ sub removeNode {
 sub start {
     my $self = shift;
 
-    $self->setState(state => 'starting');
-
     # Enqueue operation AddNode.
     return $self->addNode();
 }
@@ -853,6 +849,15 @@ sub setState {
     $self->save();
 }
 
+sub restoreState {
+    my $self = shift;
+    my %args = @_;
+
+    my ($previous, $timestamp) = split(/:/,  $self->cluster_prev_state);
+
+    $self->setAttr(name => 'cluster_prev_state', value => $self->getState);
+    $self->setAttr(name => 'cluster_state', value => $previous . ":" . time, save => 1);
+}
 
 sub getNewNodeNumber {
     my $self = shift;
@@ -1053,7 +1058,8 @@ sub lock {
     $self->SUPER::lock(%args);
 
     # Lock the customer user related to the cluster
-    $self->user->lock(%args);
+    # TODO: Verify if required
+    # $self->user->lock(%args);
 }
 
 sub unlock {
@@ -1063,7 +1069,8 @@ sub unlock {
     General::checkParams(args => \%args, required => [ 'consumer' ]);
 
     # Unock the customer user related to the cluster
-    $self->user->unlock(%args);
+    # TODO: Verify if required (cf. sub lock)
+    # $self->user->unlock(%args);
 
     # Unlock the cluster himself
     $self->SUPER::unlock(%args);
