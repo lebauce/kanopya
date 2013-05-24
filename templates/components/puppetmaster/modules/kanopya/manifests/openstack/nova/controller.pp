@@ -1,4 +1,6 @@
 class kanopya::openstack::nova::controller($password, $dbserver, $amqpserver, $keystone, $email, $glance, $quantum) {
+    tag("kanopya::novacontroller")
+
     if ! defined(Class['kanopya::openstack::repository']) {
         class { 'kanopya::openstack::repository': }
     }

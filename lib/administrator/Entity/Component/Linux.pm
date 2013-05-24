@@ -103,16 +103,18 @@ sub getPuppetDefinition {
     my $conf = $self->getConf();
     my $nfs;
     my $str = "";
+    my $tag = 'kanopya::' . lc($self->component_type->component_name);
     my $definition = "class { 'kanopya::linux': sourcepath => \"" .
                      $args{cluster}->cluster_name . '/' . $args{host}->node->node_hostname .
-                     "\", stage => system }\n";
+                     "\", stage => system, tag => '$tag' }\n";
 
     if (Entity::ServiceProvider::Cluster->getKanopyaCluster->id == $args{cluster}->id) {
-        $definition .= "class { 'kanopya::ntp::server': }\n";
+        $definition .= "class { 'kanopya::ntp::server': tag => '$tag' }\n";
     }
     else {
         $definition .= "class { 'kanopya::ntp::client':\n";
-        $definition .= "\tserver => '" . $ntp->getMasterNode->adminIp . "'\n";
+        $definition .= "\tserver => '" . $ntp->getMasterNode->adminIp . "'\n,";
+        $definition .= "\ttag => '$tag'\n";
         $definition .= "}\n";
     }
 
@@ -131,6 +133,7 @@ sub getPuppetDefinition {
         $str .= "\toptions => '$mount->{linux_mount_options}',\n";
         $str .= "\tdump   => '$mount->{linux_mount_dumpfreq}',\n";
         $str .= "\tpass   => '$mount->{linux_mount_passnum}',\n";
+        $str .= "\ttag    => '$tag'\n";
         $str .= "}\n";
 
         $nfs = $nfs || ($mount->{linux_mount_filesystem} eq "nfs");
@@ -149,20 +152,25 @@ sub getPuppetDefinition {
         $str .= "\toptions => 'sw',\n";
         $str .= "\tdump   => '0',\n";
         $str .= "\tpass   => '0',\n";
+        $str .= "\ttag    => '$tag',\n";
         $str .= "}\n";
     }
     
     if(@swap_entries) {
         $str .= "swap {'swap' :\n";
-        $str .= "\tensure => present,\n";
-        $str .= "\trequire => Mount['".$swap_entries[0]->{linux_mount_device}."'] }\n";
+        $str .= "\tensure  => present,\n";
+        $str .= "\ttag     => '$tag',\n";
+        $str .= "\trequire => Mount['". $swap_entries[0]->{linux_mount_device} . "'] }\n";
     }
 
     if ($nfs) {
-        $definition .= "class { 'kanopya::nfs': }\n";
+        $definition .= "class { 'kanopya::nfs': tag => '$tag'}\n";
     }
 
-    return $definition . $str;
+    return {
+        manifest     => $definition . $str,
+        dependencies => [ ]
+    };
 }
 
 1;

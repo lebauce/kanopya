@@ -57,8 +57,22 @@ class kanopya::linux ($sourcepath) {
     if $operatingsystem =~ /(?i)(debian|ubuntu)/ {
         exec { 'apt-get update':
             path    => '/usr/bin',
+            tries   => 5,
             require => [ Class['kanopya::linux::repositories'],
                          File['/etc/resolv.conf'] ]
+        }
+    }
+
+    if $operatingsystem =~ /(?i)(ubuntu)/ {
+        file { '/etc/apt/sources.list.d/ubuntu-cloud-repository.list':
+            content => "# ubuntu-cloud-repository\ndeb http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/grizzly main\ndeb-src http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/grizzly main",
+            before  => Exec['apt-get update']
+        }
+
+        package { 'ubuntu-cloud-keyring':
+            name    => 'ubuntu-cloud-keyring',
+            ensure  => present,
+            require => Exec['apt-get update']
         }
     }
 }

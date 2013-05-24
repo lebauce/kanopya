@@ -98,7 +98,10 @@ sub insertDefaultExtendedConfiguration {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return "class { 'kanopya::haproxy': }\n";
+    return {
+        manifest     => "class { 'kanopya::haproxy': }\n",
+        dependencies => []
+    };
 }
 
 1;

@@ -25,6 +25,22 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
+    mysql5_id => {
+        label        => 'Database server',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
+    nova_controller_id => {
+        label        => 'Openstack controller',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -73,18 +89,22 @@ sub getPuppetDefinition {
         push @uplinks, "'br-vlan:" . $bridge_vlan . "'";
     }
 
-    return "class { 'kanopya::openstack::nova::compute':\n" .
-           "\tamqpserver => '" . $amqp . "',\n" .
-           "\tdbserver => '" . $sql . "',\n" .
-           "\tglance => '" . $glance . "',\n" .
-           "\tkeystone => '" . $keystone . "',\n" .
-           "\tquantum => '" . $quantum->getMasterNode->fqdn . "',\n" .
-           "\tbridge_uplinks => [ " . join(' ,', @uplinks) . " ],\n" .
-           "\temail => '" . $self->nova_controller->service_provider->user->user_email . "',\n" .
-           "\tpassword => 'nova',\n" .
-           "\tlibvirt_type => 'kvm',\n" .
-           "\tqpassword => 'quantum'\n" .
-           "}\n";
+    return {
+        manifest     =>
+            "class { 'kanopya::openstack::nova::compute':\n" .
+            "\tamqpserver => '" . $amqp . "',\n" .
+            "\tdbserver => '" . $sql . "',\n" .
+            "\tglance => '" . $glance . "',\n" .
+            "\tkeystone => '" . $keystone . "',\n" .
+            "\tquantum => '" . $quantum->getMasterNode->fqdn . "',\n" .
+            "\tbridge_uplinks => [ " . join(' ,', @uplinks) . " ],\n" .
+            "\temail => '" . $self->nova_controller->service_provider->user->user_email . "',\n" .
+            "\tpassword => 'nova',\n" .
+            "\tlibvirt_type => 'kvm',\n" .
+            "\tqpassword => 'quantum'\n" .
+            "}\n",
+        dependencies => [ $self->mysql5 ]
+    };
 }
 
 sub getHostsEntries {

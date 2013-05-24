@@ -328,7 +328,7 @@ sub getFreeSpace {
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;
-    my $definition;
+    my $definition = "";
 
     for my $vg ($self->lvm2_vgs) {
         my @pvs = ();
@@ -346,7 +346,9 @@ sub getPuppetDefinition {
                        "}\n";
     }
 
-    return "class { 'kanopya::lvm': }\n" . $definition;
+    return {
+        manifest => $definition . "class { 'kanopya::lvm': }\n"
+    };
 }
 
 1;

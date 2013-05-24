@@ -129,7 +129,7 @@ sub checkComponents {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    my @components = $self->getComponents(category => "all");
+    my @components = $self->getComponents(category => "all", order_by => 'priority');
     foreach my $component (@components) {
         my $component_name = $component->component_type->component_name;
         $log->debug("Browsing component: " . $component_name);
@@ -209,11 +209,11 @@ sub postStopNode {
 }
 
 sub reconfigure {
-    my $self = shift;
+    my ($self, %args) = @_;
 
     my $agent = $self->getComponent(category => "Configurationagent");
     my $eagent = EEntity->new(data => $agent);
-    $eagent->applyConfiguration(cluster => $self);
+    $eagent->applyConfiguration(%args, cluster => $self);
 }
 
 1;

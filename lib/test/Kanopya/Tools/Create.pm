@@ -237,25 +237,15 @@ sub createVmCluster {
         optional => {
             'container_name' => 'test_image_repository',
             'container_type' => 'nfs',
+            'managers'       => { }
         }
     );
 
-    my $iaas = $args{iaas};
-    my $container_name = $args{container_name};
-    my $container_type = $args{container_type};
-
     #get iaas HostManager component to use it as host manager
+    my $iaas = $args{iaas};
     my $host_manager = $iaas->getComponent(category => 'HostManager');
 
-    #get fileimagemanager from kanopya cluster as export and disk manager
     my $kanopya = Kanopya::Tools::Retrieve->retrieveCluster();
-    my $fileimagemanager = $kanopya->getComponent(name    => "Fileimagemanager",
-                                                  version => 0);
-
-    my $nfs_manager = EEntity->new(
-                          entity => $kanopya->getComponent(name    => 'Nfsd',
-                                                           version => 3)
-                      );
 
     my $managers = {
         host_manager => {
@@ -268,7 +258,14 @@ sub createVmCluster {
         }
     };
 
+    my $container_type = $args{container_type};
     if ($container_type eq 'nfs') {
+        my $container_name = $args{container_name};
+
+        #get fileimagemanager from kanopya cluster as export and disk manager
+        my $fileimagemanager = $kanopya->getComponent(name    => "Fileimagemanager",
+                                                      version => 0);
+
         my $nfs = Kanopya::Tools::Retrieve->retrieveContainerAccess(
                       name => $container_name,
                       type => $container_type,
@@ -290,6 +287,8 @@ sub createVmCluster {
         };
     }
 
+    $managers = merge($managers, $args{managers});  
+                        
     delete $args{iaas};
     delete $args{container_name};
     delete $args{container_type};

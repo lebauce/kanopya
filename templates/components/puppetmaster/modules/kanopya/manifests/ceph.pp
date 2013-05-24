@@ -10,6 +10,8 @@ class kanopya::ceph($fsid, $cluster_network, $public_network) {
 }
 
 class kanopya::ceph::mon($mon_id, $mon_secret) {
+  tag("kanopya::cephmon")
+
   ceph::mon { $mon_id:
     monitor_secret => $mon_secret,
     mon_addr       => "${ipaddress}"
@@ -26,6 +28,8 @@ class kanopya::ceph::mon($mon_id, $mon_secret) {
 }
 
 class kanopya::ceph::osd {
+  tag("kanopya::cephosd")
+
   class { '::ceph::osd' :
     public_address => "${ipaddress}",
     cluster_address => "${ipaddress}",

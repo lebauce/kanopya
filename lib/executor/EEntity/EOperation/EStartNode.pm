@@ -162,9 +162,8 @@ sub execute {
                              options     => $mount_options);
 
     # Update kanopya etc hosts
-    my $agent = $self->{context}->{bootserver}->getComponent(category => "Configurationagent");
-    my $eagent = EEntity->new(data => $agent);
-    $eagent->applyConfiguration(cluster => $self->{context}->{bootserver});
+    my $system = $self->{context}->{bootserver}->getComponent(category => "System");
+    EEntity->new(data => $system)->applyConfiguration();
 
     # Umount system image container
     if ($self->{params}->{mountpoint}) {

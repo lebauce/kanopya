@@ -30,6 +30,22 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
+    mysql5_id => {
+        label        => 'Database server',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
+    nova_controller_id => {
+        label        => 'Openstack controller',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
     disk_type => {
         is_virtual => 1
     },
@@ -133,16 +149,20 @@ sub getPuppetDefinition {
     my $sql  = $self->mysql5;
     my $keystone = $self->nova_controller->keystone;
 
-    return "class { 'kanopya::openstack::cinder':\n" .
-                "\tamqpserver => '" . $amqp . "',\n" .
-                "\trabbits    => ['" . $amqp . "', '" . $amqp . "'],\n" .
-                "\tdbpassword => 'cinder',\n" .
-                "\tdbserver   => '" . $sql->getMasterNode->fqdn . "',\n" .
-                "\trpassword  => 'cinder',\n" .
-                "\tkpassword  => 'cinder',\n" .
-                "\temail      => '" . $self->service_provider->user->user_email . "',\n" .
-                "\tkeystone   => '" . $keystone->getMasterNode->fqdn ."',\n" .
-           "}\n";
+    return {
+        manifest     =>
+            "class { 'kanopya::openstack::cinder':\n" .
+            "\tamqpserver => '" . $amqp . "',\n" .
+            "\trabbits    => ['" . $amqp . "', '" . $amqp . "'],\n" .
+            "\tdbpassword => 'cinder',\n" .
+            "\tdbserver   => '" . $sql->getMasterNode->fqdn . "',\n" .
+            "\trpassword  => 'cinder',\n" .
+            "\tkpassword  => 'cinder',\n" .
+            "\temail      => '" . $self->service_provider->user->user_email . "',\n" .
+            "\tkeystone   => '" . $keystone->getMasterNode->fqdn ."',\n" .
+           "}\n",
+        dependencies => [ $self->nova_controller->amqp , $sql , $keystone ]
+    }
 }
 
 sub getHostsEntries {

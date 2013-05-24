@@ -25,6 +25,22 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
+    mysql5_id => {
+        label        => 'Database server',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
+    nova_controller_id => {
+        label        => 'Openstack controller',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -44,15 +60,21 @@ sub getPuppetDefinition {
     my $amqp = $self->nova_controller->amqp->getMasterNode->fqdn;
     my $sql = $self->mysql5->getMasterNode->fqdn;
 
-    return "class { 'kanopya::openstack::quantum::server':\n" .
-           "\tamqpserver => '" . $amqp . "',\n" .
-           "\tkeystone   => '" . $keystone . "',\n" .
-           "\tpassword   => 'quantum'," .
-           "\tbridge_flat => 'br-flat'," .
-           "\tbridge_vlan => 'br-vlan'," .
-           "\temail      => '" . $self->service_provider->user->user_email . "',\n" .
-           "\tdbserver   => '" . $sql . "'\n" .
-           "}\n";
+    return {
+        manifest     =>
+            "class { 'kanopya::openstack::quantum::server':\n" .
+            "\tamqpserver => '" . $amqp . "',\n" .
+            "\tkeystone   => '" . $keystone . "',\n" .
+            "\tpassword   => 'quantum'," .
+            "\tbridge_flat => 'br-flat'," .
+            "\tbridge_vlan => 'br-vlan'," .
+            "\temail      => '" . $self->service_provider->user->user_email . "',\n" .
+            "\tdbserver   => '" . $sql . "'\n" .
+            "}\n",
+        dependencies => [ $self->nova_controller->keystone,
+                          $self->nova_controller->amqp,
+                          $self->mysql5 ]
+    };
 }
 
 sub getHostsEntries {

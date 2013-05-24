@@ -81,6 +81,13 @@ sub methods {
     }
 }
 
+sub label {
+    my $self = shift;
+
+    return $self->component_type->component_name . " (on " .
+           $self->service_provider->label . ")";
+}
+
 my $merge = Hash::Merge->new('LEFT_PRECEDENT');
 
 sub new {
@@ -229,7 +236,8 @@ sub getActiveNodes {
     my @nodes           = ();
     for my $component_node (@component_nodes) {
         my $n = $component_node->node;
-        if ($n->host->host_state =~ /^up:\d+$/) {
+        if ($n->host->host_state =~ /^up:\d+$/ &&
+            $n->host->getNodeState() eq "in") {
             push @nodes, $n;
         }
     }
@@ -309,7 +317,12 @@ sub needBridge { return 0; }
 
 sub getHostsEntries { return; }
 
-sub getPuppetDefinition { return ""; }
+sub getPuppetDefinition {
+    return {
+        manifest     => '',
+        dependencies => []
+    };
+}
 
 sub instanciatePuppetResource {
     my ($self, %args) = @_;

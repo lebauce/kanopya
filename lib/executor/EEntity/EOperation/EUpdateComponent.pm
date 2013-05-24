@@ -35,8 +35,9 @@ sub prepare {
     my ($self, %args) = @_;
 
     # check if this cluster has a puppet agent component
-    my $puppetagent = $self->{context}->{cluster}->getComponent(name    => 'Puppetagent',
-                                                                version => 2);
+    my $cluster       = $self->{context}->{component}->service_provider;
+    my $puppetagent   = $cluster->getComponent(name    => 'Puppetagent',
+                                               version => 2);
     
     if (not $puppetagent) {
         my $errmsg = "UpdateComponent Operation cannot be used without a " .
@@ -47,41 +48,37 @@ sub prepare {
         $self->{context}->{puppetagent} = EEntity->new(data => $puppetagent);
     }
     
-     # Instanciate the bootserver Cluster
-    $self->{context}->{bootserver}
-        = EEntity->new(entity => Entity::ServiceProvider::Cluster->getKanopyaCluster);
+    # Instanciate the bootserver Cluster
+    my $bootserver       = EEntity->new(entity => Entity::ServiceProvider::Cluster->getKanopyaCluster);
           
-    my $puppetmaster = $self->{context}->{bootserver}->getComponent(name => 'Puppetmaster', version => 2);
-    $self->{context}->{component_puppetmaster} = EEntity->new(data => $puppetmaster);
-
-    $self->{params}->{kanopya_domainname} = $self->{context}->{bootserver}->cluster_domainname;
-    
+    my $puppetmaster  = $self->{context}->{bootserver}->getComponent(name => 'Puppetmaster', version => 2);
+    $self->{context}->{puppetmaster} = EEntity->new(data => $puppetmaster);
 }
 
 sub execute {
     my ($self, %args) = @_;
 
-    for my $host ($self->{context}->{cluster}->getHosts()) {
-        my $ehost = EEntity->new(data => $host);
+    my $cluster = $self->{context}->{component}->service_provider;
+    for my $host ($cluster->getHosts()) {
+        my $ehost              = EEntity->new(data => $host);
         my $puppet_definitions = "";
         $self->{context}->{component}->generateConfiguration(
-            cluster => $self->{context}->{cluster},
+            cluster => $cluster,
             host    => $ehost
         );
-        $puppet_definitions .= $self->{context}->{component}->getPuppetDefinition(
+        $puppet_definitions   .= $self->{context}->{component}->getPuppetDefinition(
             host    => $host,
-            cluster => $self->{context}->{cluster},
-        );
+            cluster => $cluster
+        )->{manifest};
 
-        $self->{context}->{component_puppetmaster}->createHostManifest(
+        $self->{context}->{puppetmaster}->createHostManifest(
                 host_fqdn          => $host->node->fqdn,
                 puppet_definitions => $puppet_definitions,
-                sourcepath         => $self->{context}->{cluster}->cluster_name
+                sourcepath         => $cluster->cluster_name
                                       . '/' . $host->node->node_hostname
         );
-
-        $self->{context}->{puppetagent}->applyManifest(host => $ehost);
     }
+    $self->{context}->{puppetagent}->applyManifest(cluster => $cluster);
 }
 
 1;

@@ -74,7 +74,10 @@ sub setConf {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return "class { 'kanopya::puppetmaster': }\n";
+    return {
+        manifest     => "class { 'kanopya::puppetmaster': }\n",
+        dependencies => []
+    };
 }
 
 1;

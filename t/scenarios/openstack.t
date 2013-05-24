@@ -50,19 +50,35 @@ sub main {
     } 'Register master image';
 
     diag('Create and configure MySQL and RabbitMQ cluster');
-    my $cloud;
+    my $db;
     lives_ok {
-        $cloud = Kanopya::Tools::Create->createCluster(
+        $db = Kanopya::Tools::Create->createCluster(
                         cluster_conf => {
-                            cluster_name         => 'CloudController',
-                            cluster_basehostname => 'cloud'
-                            masterimage_id       => $masterimage->id,
+                            cluster_name         => 'Database',
+                            cluster_basehostname => 'database',
+                            masterimage_id       => $masterimage->id
                         },
                         components => {
                             'mysql' => {
                             },
                             'amqp'  => {
                             },
+                        }
+                    );
+    } 'Create MySQL and RabbitMQ cluster';
+
+    my $sql = $db->getComponent(name => 'Mysql');
+    my $amqp = $db->getComponent(name => 'Amqp');
+
+    diag('Create and configure Nova controller');
+    my $cloud;
+    lives_ok {
+        $cloud = Kanopya::Tools::Create->createCluster(
+                        cluster_conf => {
+                            cluster_name         => 'CloudController',
+                            cluster_basehostname => 'cloud'
+                        },
+                        components => {
                             'keystone' => {
                             },
                             'novacontroller' => {
@@ -77,14 +93,10 @@ sub main {
                             },
                             'quantum' => {
                             },
-                            'fileimagemanager' => {
-                            }
                         }
                     );
-    } 'Create MySQL and RabbitMQ cluster';
+    } 'Create Nova controller cluster';
 
-    my $sql = $cloud->getComponent(name => 'Mysql');
-    my $amqp = $cloud->getComponent(name => 'Amqp');
     my $keystone = $cloud->getComponent(name => 'Keystone');
     my $nova_controller = $cloud->getComponent(name => "NovaController");
     my $glance = $cloud->getComponent(name => "Glance");
@@ -148,6 +160,10 @@ sub main {
     } 'Create Nova Compute cluster';
 
     lives_ok {
+        Kanopya::Tools::Execution->startCluster(cluster => $db);
+    } 'Start database cluster';
+
+    lives_ok {
         Kanopya::Tools::Execution->startCluster(cluster => $cloud);
     } 'Start Cloud controller cluster';
 
@@ -165,8 +181,32 @@ sub main {
                                  masterimage_id       => $masterimage->id,
                              }
                          );
-        
     } 'Create VM cluster';
+
+    lives_ok {
+        my $cinder_vm = Kanopya::Tools::Create->createVmCluster(
+                            iaas => $iaas,
+                            container_type => 'iscsi',
+                            cluster_conf => {
+                                cluster_name         => 'CinderVmCluster',
+                                cluster_basehostname => 'cindervm',
+                                masterimage_id       => $masterimage->id,
+                            },
+                            managers => {
+                                disk_manager => {
+                                    manager_id => $cinder->id,
+                                    manager_params => {
+                                        systemimage_size => 4 * 1024 * 1024 * 1024,
+                                    }
+                                },
+                                export_manager => {
+                                    manager_id => $cinder->id,
+                                    manager_params => {
+                                    }
+                                }
+                            }
+                        );
+    } 'Create VM cluster with Cinder as disk manager manager';
 
     if ($testing == 1) {
         BaseDB->rollbackTransaction;

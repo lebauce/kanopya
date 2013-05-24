@@ -98,17 +98,20 @@ sub getPuppetDefinition {
     my @fqdns           = map { $_->fqdn } (grep { $_->node_id != $args{host}->node->node_id } $self->getActiveNodes);
     $cluster_address   .= join ',', @fqdns;
 
-    return "class { 'kanopya::mysql':\n" .
-           "\tconfig_hash => {\n" .
-           "\t\t'port' => '" . $self->mysql5_port . "',\n" .
-           "\t\t'bind_address' => '" . $self->mysql5_bindaddress . "',\n" .
-           "\t\t'datadir' => '" . $self->mysql5_datadir . "',\n" .
-           "\t},\n" .
-           "\tgalera => {\n" .
-           "\t\taddress => '" . $cluster_address . "',\n" .
-           "\t\tname => '" . $self->service_provider->cluster_name . "'\n" .
-           "\t}\n" .
-           "}\n";
+    return {
+        manifest     => "class { 'kanopya::mysql':\n" .
+                        "\tconfig_hash => {\n" .
+                        "\t\t'port' => '" . $self->mysql5_port . "',\n" .
+                        "\t\t'bind_address' => '" . $self->mysql5_bindaddress . "',\n" .
+                        "\t\t'datadir' => '" . $self->mysql5_datadir . "',\n" .
+                        "\t},\n" .
+                        "\tgalera => {\n" .
+                        "\t\taddress => '" . $cluster_address . "',\n" .
+                        "\t\tname => '" . $self->service_provider->cluster_name . "'\n" .
+                        "\t}\n" .
+                        "}\n",
+        dependencies => []
+    };
 }
 
 1;

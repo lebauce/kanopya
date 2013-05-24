@@ -38,7 +38,10 @@ sub getNetConf {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return "class { 'kanopya::openssh': }\n";
+    return {
+        manifest     => "class { 'kanopya::openssh': }\n",
+        dependencies => []
+    };
 }
 
 1;

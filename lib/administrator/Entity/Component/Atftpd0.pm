@@ -105,7 +105,10 @@ sub getBaseConfiguration {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return "class { 'kanopya::atftpd': }\n";
+    return {
+        manifest     => "class { 'kanopya::atftpd': }\n",
+        dependencies => []
+    };
 }
 
 sub getTftpDirectory {

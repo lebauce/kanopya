@@ -25,6 +25,22 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
+    mysql5_id => {
+        label        => 'Database server',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
+    nova_controller_id => {
+        label        => 'Openstack controller',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -51,13 +67,16 @@ sub getPuppetDefinition {
         );
     }
 
-    return "class { 'kanopya::openstack::glance':\n" .
-           "\tdbserver => '" . $sql->getMasterNode->fqdn . "',\n" .
-           "\tpassword => 'glance',\n" .
-           "\tkeystone => '" . $keystone->getMasterNode->fqdn . "',\n" .
-           "\temail    => '" . $self->service_provider->user->user_email . "'\n" .
-           "}\n";
-    ;
+    return {
+        manifest     =>
+            "class { 'kanopya::openstack::glance':\n" .
+            "\tdbserver => '" . $sql->getMasterNode->fqdn . "',\n" .
+            "\tpassword => 'glance',\n" .
+            "\tkeystone => '" . $keystone->getMasterNode->fqdn . "',\n" .
+            "\temail    => '" . $self->service_provider->user->user_email . "'\n" .
+            "}\n",
+        dependencies => [ $sql , $keystone ]
+    };
 }
 
 sub getHostsEntries {

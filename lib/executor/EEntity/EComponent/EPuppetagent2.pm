@@ -20,6 +20,7 @@ use General;
 use EEntity;
 use Entity::ServiceProvider::Cluster;
 use Log::Log4perl "get_logger";
+use Kanopya::Exceptions;
 
 my $log = get_logger("");
 my $errmsg;
@@ -136,7 +137,7 @@ sub generatePuppetDefinitions {
         $puppet_definitions .= $ecomponent->getPuppetDefinition(
             host    => $args{host},
             cluster => $args{cluster},
-        );
+        )->{manifest};
     }
 
     if ($self->puppetagent2_mode eq 'kanopya') {
@@ -173,7 +174,7 @@ sub applyConfiguration {
 
     General::checkParams(args => \%args, required => [ 'cluster' ],
                                          optional => { 'host' => undef,
-                                                       'tag' => undef });
+                                                       'tags' => [ ] });
 
     my @ehosts = ($args{host}) || (map { EEntity->new(entity => $_) } @{ $args{cluster}->getHosts() });
     for my $ehost (@ehosts) {
@@ -183,7 +184,7 @@ sub applyConfiguration {
 
     my $ret = -1;
     my $timeout = 180;
-    my @hosts = ($args{host}) || (map { $_->node->fqdn } @{ $args{cluster}->getHosts() });
+    my @hosts = (defined $args{host}) ? ($args{host}->node->fqdn) : (map { $_->node->fqdn } @{ $args{cluster}->getHosts() });
     my $puppetmaster = (Entity::ServiceProvider::Cluster->getKanopyaCluster)->getComponent(name => 'Puppetmaster');
     my $econtext = (EEntity->new(data => $puppetmaster))->getEContext;
 
@@ -194,8 +195,8 @@ sub applyConfiguration {
         }
 
         my $command = "puppet kick --foreground --parallel " . (scalar @hosts);
-        $command .= " --tag $args{tag}" if $args{tag};
-        $command .= join('', map { ' --host ' . $_ } @hosts);
+        map { $command .= " --tag " . $_; } @{$args{tags}};
+        map { $command .= " --host " . $_; } @hosts;
 
         $ret = $econtext->execute(command => $command);
 
@@ -203,6 +204,55 @@ sub applyConfiguration {
             @hosts = grep{ $_ ne $1 } @hosts;
         }
     } while ($ret->{exitcode} == 3 && $timeout > 0 && (scalar @hosts));
+}
+
+sub isUp {
+    my ($self, %args) = @_;
+
+    General::checkParams(
+        args     => \%args,
+        required => [ 'cluster', 'host' ]
+    );
+
+    my $puppetmaster = (Entity::ServiceProvider::Cluster->getKanopyaCluster)->getComponent(name => 'Puppetmaster');
+    my $econtext     = (EEntity->new(data => $puppetmaster))->getEContext;
+    # Check if /var/lib/puppet/yaml/node/FQDN.yaml exists on puppet master
+    # (means that the catalog has been applied at least one time on that node).
+    my $ret          = $econtext->execute(command => '[ -f /var/lib/puppet/yaml/node/' . $args{host}->node->fqdn . '.yaml ]');
+    if ($ret->{exitcode} == 0) {
+        my $reconfigure = { };
+        $self->applyConfiguration(cluster => $args{cluster},
+                                  host    => $args{host},
+                                  tags    => [ 'finished' ]);
+        my @components  = $args{cluster}->getComponents(category => "all");
+        # Sort the components by service provider
+        for my $component (@components) {
+            my $defs = $component->getPuppetDefinition(%args);
+            my @dependencies = @{$defs->{dependencies} || []};
+            for my $dependency (@dependencies) {
+                my $key = $dependency->service_provider->id;
+                if (! defined ($reconfigure->{$key})) {
+                    $reconfigure->{$key} = [ $dependency ];
+                } else {
+                    push @{$reconfigure->{$key}}, $dependency;
+                }
+            }
+        }
+
+        # Reconfigure the required components for each cluster
+        for my $cluster_id (keys %{$reconfigure}) {
+            my $cluster = $reconfigure->{$cluster_id}->[0]->service_provider;
+            my @tags = map {
+                           'kanopya::' . lc($_->component_type->component_name)
+                       } @{$reconfigure->{$cluster_id}};
+            EEntity->new(entity => $cluster)->reconfigure(tags => \@tags);
+        }
+
+        return 1;
+    }
+    else {
+        return 0;
+    }
 }
 
 1;

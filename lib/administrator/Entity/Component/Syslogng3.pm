@@ -173,7 +173,10 @@ sub getKanopyaNodesLogDirectories {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return "class { 'kanopya::syslogng': }\n";
+    return {
+        manifest     => "class { 'kanopya::syslogng': }\n",
+        dependencies => []
+    };
 }
 
 1;

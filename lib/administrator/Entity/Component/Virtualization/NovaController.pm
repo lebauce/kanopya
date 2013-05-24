@@ -181,7 +181,10 @@ sub getPuppetDefinition {
                      "\tquantum => '" . $quantum->getMasterNode->fqdn . "',\n" .
                      "}\n";
 
-    return $definition;
+    return {
+        manifest     => $definition,
+        dependencies => [ $sql , $keystone , $self->amqp ]
+    };
 }
 
 sub getHostsEntries {

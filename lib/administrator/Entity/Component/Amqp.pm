@@ -68,7 +68,10 @@ sub getPuppetDefinition {
                       "    cookie     => " . $self->cookie . ",\n" .
                       "}\n";
 
-    return $definitions;
+    return {
+        manifest     => $definitions,
+        dependencies => []
+    };
 }
 
 sub getExecToTest {
@@ -85,12 +88,6 @@ sub getExecToTest {
             return_code => 0
         }
     }
-}
-
-sub label {
-    my $self = shift;
-
-    return "RabbitMQ";
 }
 
 1;

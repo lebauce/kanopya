@@ -27,6 +27,14 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
+    mysql5_id => {
+        label        => 'Database server',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -60,7 +68,10 @@ sub getPuppetDefinition {
                   "    email         => '" . $self->service_provider->user->user_email . "',\n" .
                   "}\n";
 
-    return $definition;
+    return {
+        manifest     => $definition,
+        dependencies => [ $sql ]
+    };
 }
 
 sub getHostsEntries {

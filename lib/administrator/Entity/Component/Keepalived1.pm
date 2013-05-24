@@ -303,7 +303,10 @@ sub getBaseConfiguration {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return "class { 'kanopya::keepalived': }\n";
+    return {
+        manifest     => "class { 'kanopya::keepalived': }\n",
+        dependencies => []
+    };
 }
 
 sub readyNodeRemoving {

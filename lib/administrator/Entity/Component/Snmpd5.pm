@@ -77,7 +77,10 @@ sub insertDefaultExtendedConfiguration {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return "class { 'kanopya::snmpd': }\n";
+    return {
+        manifest     => "class { 'kanopya::snmpd': }\n",
+        dependencies => []
+    };
 }
 
 1;

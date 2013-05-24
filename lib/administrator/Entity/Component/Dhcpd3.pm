@@ -229,7 +229,10 @@ sub getNetConf {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return "class { 'kanopya::dhcpd': }\n";
+    return {
+        manifest     => "class { 'kanopya::dhcpd': }\n",
+        dependencies => []
+    };
 }
 
 sub getHostsEntries {
