@@ -81,6 +81,13 @@ sub methods {
     }
 }
 
+sub label {
+    my $self = shift;
+
+    return $self->component_type->component_name . " (on " .
+           $self->service_provider->label . ")";
+}
+
 my $merge = Hash::Merge->new('LEFT_PRECEDENT');
 
 sub new {

@@ -90,10 +90,4 @@ sub getExecToTest {
     }
 }
 
-sub label {
-    my $self = shift;
-
-    return "RabbitMQ";
-}
-
 1;
