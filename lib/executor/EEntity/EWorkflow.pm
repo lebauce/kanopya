@@ -36,9 +36,7 @@ use vars qw ( $AUTOLOAD );
 sub cancel {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args);
-
-    for my $operation ($self->operations) {
+    for my $operation (Entity::Operation->search(order_by => 'execution_rank DESC')) {
         if ($operation->state ne 'pending') {
             eval {
                 EEntity::EOperation->new(operation => $operation, skip_not_found => 1)->cancel();
@@ -49,7 +47,6 @@ sub cancel {
         }
         $operation->remove();
     }
-
     $self->setState(state => 'cancelled');
 }
 
