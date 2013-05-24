@@ -85,7 +85,9 @@ var mainmenu_def = {
                 { label : 'Monitoring',      id : 'service_monitoring',    onLoad : function(cid, eid) { require('common/service_monitoring.js'); loadServicesMonitoring(cid, eid); }, icon : 'monitoring' },
                 { label : 'Rules',           id : 'service_rules',         onLoad : function(cid, eid) { require('common/service_rules.js'); loadServicesRules(cid, eid); }, icon : 'rules' },
                 { label : 'Events & Alerts', id : 'events_alerts',         onLoad : function(cid, eid) { require('common/service_eventsalerts.js'); loadServiceEventsAlerts(cid, eid); }, icon : 'alert' },
-                { label : 'Billing',         id : 'billing',               onLoad : function(cid, eid) { require('KIM/billing.js'); billinglist(cid, eid); }, icon : 'metering' }
+                { label : 'Billing',         id : 'billing',               onLoad : function(cid, eid) { require('KIM/billing.js'); billinglist(cid, eid); }, icon : 'metering' },
+                { label : 'Analysis',        id : 'service_analysis',      onLoad : function(cid, eid) { require('common/service_analysis.js'); loadServiceAnalysis(cid, eid); }, icon : 'analysis', info : {img:'images/info/scatter-plots-shape.png'}
+               }
             ]
         }
     },
@@ -103,7 +105,10 @@ var mainmenu_def = {
             { label : 'Users',       id : 'users',       onLoad : users.load_content },
             { label : 'Groups',      id : 'groups',      onLoad : function(cid, eid) { require('common/users.js'); groupsList(cid, eid); } },
             { label : 'Permissions', id : 'permissions', onLoad : function(cid, eid) { require('common/users.js'); permissions(cid, eid); } }
-        ]
+        ],
+        'Time periods' : [
+            { label : 'Time periods', id : 'timeperiods', onLoad : function(cid, eid) { require('common/limits.js'); timePeriods.load(cid, eid); } }
+        ],
     }
 };
 
