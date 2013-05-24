@@ -1,5 +1,5 @@
-# Component.pm - This module is components generalization
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -14,20 +14,17 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 3 july 2010
 
 =pod
-
 =begin classdoc
 
-This module is components generalization.
+This module is components abstract class.
 
 =end classdoc
-
 =cut
 
 package Entity::Component;
-use base "Entity";
+use base Entity;
 
 use strict;
 use warnings;
@@ -90,6 +87,19 @@ sub label {
 
 my $merge = Hash::Merge->new('LEFT_PRECEDENT');
 
+
+=pod
+=begin classdoc
+
+@constructor
+
+Create a new component from a component type name and version. 
+
+@return the component instance.
+
+=end classdoc
+=cut
+
 sub new {
     my $class = shift;
     my %args = @_;
@@ -135,10 +145,12 @@ sub search {
 }
 
 
-=head2 getConf
+=pod
+=begin classdoc
 
-    Generic method for getting simple component configuration
+Generic method for getting simple component configuration.
 
+=end classdoc
 =cut
 
 sub getConf {
@@ -157,12 +169,14 @@ sub getConf {
     return $self->toJSON(raw => 1, deep => 1, expand => \@relations);
 }
 
-=head2 setConf
 
-    Generic method for setting simple component configuration.
-    If a value differs from db contents, the attr is set, and
-    the object saved.
+=pod
+=begin classdoc
 
+Generic method for setting simple component configuration.
+If a value differs from db contents, the attr is set, and the object saved.
+
+=end classdoc
 =cut
 
 sub setConf {
@@ -174,31 +188,31 @@ sub setConf {
     $self->update(%{ $args{conf} });
 }
 
-=head2 getTemplateDirectory
 
-B<Class>   : Public
-B<Desc>    : This method return this component instance Template dir from database.
-B<args>    : None
-B<Return>  : String : component instance template directory
-B<Comment>  : None
-B<throws>  : None
+=pod
+=begin classdoc
 
+@return this component instance Template dir from database.
+
+=end classdoc
 =cut
 
 sub getTemplateDirectory {
     my $self = shift;
-    my $template_id = $self->getAttr(name => 'component_template_id'); 
 
-    if (defined $template_id) {
+    if (defined $self->component_template_id) {
         return $self->component_template->component_template_directory;
     }
 }
 
-=head2 remove
 
-    Desc: Overrided to remove associated service_provider_manager
-          Managers can't be cascade deleted because they are linked either to a a connector or a component.
+=pod
+=begin classdoc
 
+Overrided to remove associated service_provider_manager.
+Managers can't be cascade deleted because they are linked either to a a connector or a component.
+
+=end classdoc
 =cut
 
 sub remove {
@@ -245,17 +259,6 @@ sub getActiveNodes {
     return @nodes;
 }
 
-=head2 toString
-
-B<Class>   : Public
-B<Desc>    : This method return a string describing the component
-B<args>    : None
-B<Return>  : String : Format : 'Component name' 'Component version'
-B<Comment>  : None
-B<throws>  : None
-
-=cut
-
 sub toString {
     my $self = shift;
 
@@ -277,32 +280,26 @@ sub readyNodeAddition { return 1; }
 
 sub readyNodeRemoving { return 1; }
 
+
 =pod
-
 =begin classdoc
-
-=head2 getBaseConfiguration
 
 Method to be overrided to get component basic configuration
 
 @return %base_configuration
 
 =end classdoc
-
 =cut
 
 sub getBaseConfiguration { return {}; }
 
-=pod
 
+=pod
 =begin classdoc
 
-=head2 insertDefaultExtendedConfiguration
-
-Method to be overrided to insert in db default configuration for tables linked to component
+Method to be overrided to insert in db default configuration for tables linked to component.
 
 =end classdoc
-
 =cut
 
 sub insertDefaultExtendedConfiguration {}
@@ -328,7 +325,7 @@ sub instanciatePuppetResource {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'name' ],
-                                         optional => { 'params' => {},
+                                         optional => { 'params'   => {},
                                                        'resource' => 'class' });
 
     $Data::Dumper::Terse = 1;

@@ -16,17 +16,15 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 =pod
-
 =begin classdoc
 
 TODO
 
 =end classdoc
-
 =cut
 
 package Entity::ServiceProvider;
-use base "Entity";
+use base Entity;
 
 use General;
 use ClassType::ComponentType;
@@ -87,7 +85,6 @@ sub methods {
 
 
 =pod
-
 =begin classdoc
 
 @constructor
@@ -97,7 +94,6 @@ Override the constructor to set the proper service provider type.
 @return the service provider instance
 
 =end classdoc
-
 =cut
 
 sub new {
@@ -115,7 +111,6 @@ sub new {
 
 
 =pod
-
 =begin classdoc
 
 Register a new node in the servie provider.
@@ -124,7 +119,6 @@ Also reconfigure the components about the node registration.
 @return the registered node
 
 =end classdoc
-
 =cut
 
 sub registerNode {
@@ -134,7 +128,7 @@ sub registerNode {
                          required => [ 'hostname', 'number' ],
                          optional => { 'host'             => undef,
                                        'systemimage'      => undef,
-                                       'state'            => undef,
+                                       'state'            => 'out',
                                        'monitoring_state' => 'enabled',
                                        'components'       => [ $self->components ] });
 
@@ -160,6 +154,17 @@ sub registerNode {
     return $node;
 }
 
+
+=pod
+=begin classdoc
+
+Unregister the node from the servie provider, and free assigned ips.
+
+@return the registered node
+
+=end classdoc
+=cut
+
 sub unregisterNode {
     my ($self, %args) = @_;
 
@@ -174,14 +179,12 @@ sub unregisterNode {
                 $ip->delete();
             }
         }
-        $args{node}->host->setState(state => 'down');
     }
     $args{node}->delete();
 }
 
 
 =pod
-
 =begin classdoc
 
 Get the monitoring data for a node.
@@ -189,7 +192,6 @@ Get the monitoring data for a node.
 @return node monitoring data
 
 =end classdoc
-
 =cut
 
 sub getNodeMonitoringData {
@@ -203,13 +205,11 @@ sub getNodeMonitoringData {
 
 
 =pod
-
 =begin classdoc
 
 Enable a node.
 
 =end classdoc
-
 =cut
 
 sub enableNode {
@@ -222,13 +222,11 @@ sub enableNode {
 
 
 =pod
-
 =begin classdoc
 
 Disable a node.
 
 =end classdoc
-
 =cut
 
 sub disableNode {
@@ -286,7 +284,6 @@ sub getNodes {
 
 
 =pod
-
 =begin classdoc
 
 Add a manager to a service provider
@@ -297,7 +294,6 @@ Add a manager to a service provider
 @return the ServiceProviderManager instance
 
 =end classdoc
-
 =cut
 
 sub addManager {
@@ -321,14 +317,6 @@ sub addManager {
     return $manager;
 }
 
-=head2 addManagerParameter
-
-    Desc: add  parameters to a service provider manager
-    Args: manager type (string), param name (string) param value (string) (string)
-    Return: none
-
-=cut
-
 sub addManagerParameter {
     my $self = shift;
     my %args = @_;
@@ -343,7 +331,6 @@ sub addManagerParameter {
 
 
 =pod
-
 =begin classdoc
 
 Set parameters of a manager defined by its type.
@@ -352,7 +339,6 @@ Set parameters of a manager defined by its type.
 @param params the parameters hash to set 
 
 =end classdoc
-
 =cut
 
 sub addManagerParameters {
@@ -370,14 +356,6 @@ sub addManagerParameters {
 }
 
 
-=head2 getManagerParameters
-
-    Desc: get a service provider manager parameters
-    Args: manager type (string)
-    Return: \%manager_params
-
-=cut
-
 sub getManagerParameters {
     my $self = shift;
     my %args = @_;
@@ -391,13 +369,11 @@ sub getManagerParameters {
 }
 
 =pod
-
 =begin classdoc
 
 Add a network interface on this service provider
 
 =end classdoc
-
 =cut
 
 sub addNetworkInterface {
@@ -415,11 +391,6 @@ sub addNetworkInterface {
     return Entity::Interface->new(%$params);
 }
 
-=head2 removeNetworkInterface
-
-    Desc: remove a network interface
-
-=cut
 
 sub removeNetworkInterface {
     my ($self, %args) = @_;
@@ -493,7 +464,6 @@ sub getLimit {
 
 
 =pod
-
 =begin classdoc
 
 Create a new componant and link it to the cluster
@@ -504,7 +474,6 @@ Create a new componant and link it to the cluster
 @return component
 
 =end classdoc
-
 =cut
 
 sub addComponent {
@@ -574,16 +543,6 @@ sub addComponent {
     return $component;
 }
 
-=head2 getComponents
-
-    Desc : This function get components used in a cluster. This function allows to select
-            category of components or all of them.
-    args:
-        category : String : Component category
-
-    return : a hashref of components, it is indexed on component_instance_id
-
-=cut
 
 sub getComponents {
     my $self = shift;
