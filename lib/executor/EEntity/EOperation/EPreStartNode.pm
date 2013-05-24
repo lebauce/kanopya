@@ -15,6 +15,18 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+=begin classdoc
+
+Register the new node.
+
+@since    2012-Aug-20
+@instance hash
+@self     $self
+
+=end classdoc
+=cut
+
 package EEntity::EOperation::EPreStartNode;
 use base "EEntity::EOperation";
 
@@ -33,8 +45,38 @@ use Template;
 my $log = get_logger("");
 my $errmsg;
 
+
+=pod
+=begin classdoc
+
+@param cluster     the cluster to add node
+@param host        the host selected to be registred as node
+@param systemimage the system image of the node
+@param node_number the number of the new node
+
+=end classdoc
+=cut
+
+sub check {
+    my ($self, %args) = @_;
+    $self->SUPER::check(%args);
+
+    General::checkParams(args => $self->{context}, required => [ "cluster", "host", "systemimage" ]);
+
+    General::checkParams(args => $self->{params}, required => [ "node_number" ]);
+}
+
+
+=pod
+=begin classdoc
+
+Register the node.
+
+=end classdoc
+=cut
+
 sub execute {
-    my $self = shift;
+    my ($self, %args) = @_;
     $self->SUPER::execute();
 
     my @components = $self->{context}->{cluster}->getComponents(category => "all",
@@ -68,15 +110,14 @@ sub execute {
                                     }
                                 );
     }
-    $self->{context}->{cluster}->registerNode(%$params);
+    $self->{context}->{cluster}->registerNode(%$params, econtext => );
 
     # Create the node working directory where generated files will be
     # stored.
     my $dir = $self->_executor->getConf->{clusters_directory};
     $dir .= '/' . $self->{context}->{cluster}->cluster_name;
     $dir .= '/' . $hostname;
-    my $econtext = $self->getEContext();
-    $econtext->execute(command => "mkdir -p $dir");
+    $self->getEContext->execute(command => "mkdir -p $dir");
 
     # Here we compute an iscsi initiator name for the node
     my $date = today();
@@ -91,9 +132,7 @@ sub execute {
     $initiatorname .= '.' . $self->{context}->{host}->node->node_hostname;
     $initiatorname .= ':' . time();
 
-    $self->{context}->{host}->setAttr(name  => "host_initiatorname",
-                                      value => $initiatorname,
-                                      save  => 1);
+    $self->{context}->{host}->host_initiatorname($initiatorname);
 
     # For each container accesses of the system image, add an export client
     my $options = $self->{context}->{cluster}->cluster_si_shared ? "ro" : "rw";
@@ -107,31 +146,44 @@ sub execute {
             options => $options
         );
     }
+}
+
+
+=pod
+=begin classdoc
+
+Update the node state.
+
+=end classdoc
+=cut
+
+sub finish {
+    my ($self, %args) = @_;
+    $self->SUPER::finish(%args);
 
     $self->{context}->{host}->setNodeState(state => "pregoingin");
 }
 
-sub _cancel {
-    my $self = shift;
 
-    if ($self->{context}->{cluster}) {
-        if (! scalar(@{ $self->{context}->{cluster}->getHosts() })) {
-            $self->{context}->{cluster}->setState(state => 'down');
-        }
-    }
+=pod
+=begin classdoc
 
-    if ($self->{context}->{host}) {
-        if (defined $self->{context}->{host}->node) {
-            my $dir = $self->_executor->getConf->{clusters_directory};
-            $dir .= '/' . $self->{context}->{cluster}->cluster_name;
-            $dir .= '/' . $self->{context}->{host}->node->node_hostname;
-            $self->getEContext->execute(command => "rm -r $dir");
+Unregister the node.
 
-            $self->{context}->{host}->node->setAttr(name  => 'node_hostname', value => undef, save => 1);
-        }
+=end classdoc
+=cut
 
-        $self->{context}->{host}->stop();
-        $self->{context}->{host}->setState(state => 'down');
+sub cancel {
+    my ($self, %args) = @_;
+    $self->SUPER::cancel(%args);
+
+    if (defined $self->{context}->{host}->node) {
+        my $dir = $self->_executor->getConf->{clusters_directory};
+        $dir .= '/' . $self->{context}->{cluster}->cluster_name;
+        $dir .= '/' . $self->{context}->{host}->node->node_hostname;
+        $self->getEContext->execute(command => "rm -r $dir");
+
+        $self->{context}->{cluster}->unregisterNode(node => $self->{context}->{host}->node);
     }
 }
 

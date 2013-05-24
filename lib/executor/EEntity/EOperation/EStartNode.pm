@@ -1,4 +1,4 @@
-#    Copyright © 2009-2012 Hedera Technology SAS
+#    Copyright © 2009-2013 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -12,6 +12,18 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+=pod
+=begin classdoc
+
+Configure the system image of the node, and start it.
+
+@since    2012-Aug-20
+@instance hash
+@self     $self
+
+=end classdoc
+=cut
 
 package EEntity::EOperation::EStartNode;
 use base "EEntity::EOperation";
@@ -41,12 +53,30 @@ my $errmsg;
 my $config = General::getTemplateConfiguration();
 
 
+=pod
+=begin classdoc
+
+@param cluster the cluster to add node
+@param host    the host selected to be registred as node
+
+=end classdoc
+=cut
+
 sub check {
     my $self = shift;
     my %args = @_;
 
     General::checkParams(args => $self->{context}, required => [ "cluster", "host" ]);
 }
+
+
+=pod
+=begin classdoc
+
+Ask to the cluster component if they are ready for the node addition.
+
+=end classdoc
+=cut
 
 sub prerequisites {
     my $self  = shift;
@@ -70,34 +100,29 @@ sub prerequisites {
     return 0;
 }
 
-sub prepare {
-    my $self = shift;
-    my %args = @_;
-    $self->SUPER::prepare();
+
+=pod
+=begin classdoc
+
+Mount the system image on the executor, configure the network, the components,
+the boot configuration, and start the node.
+
+=end classdoc
+=cut
+
+sub execute {
+    my ($self, %args) = @_;
+    $self->SUPER::execute(%args);
 
     # Instanciate the bootserver Cluster
-    $self->{context}->{bootserver}
-        = EEntity->new(entity => Entity::ServiceProvider::Cluster->getKanopyaCluster);
-
-    # Instanciate dhcpd
-    my $dhcpd = $self->{context}->{bootserver}->getComponent(category => "Dhcpserver");
-    $self->{context}->{dhcpd_component} = EEntity->new(entity => $dhcpd);
+    my $bootserver = EEntity->new(entity => Entity::ServiceProvider::Cluster->getKanopyaCluster);
 
     # Instanciate tftp server
-    my $tftp = $self->{context}->{bootserver}->getComponent(category => 'Tftpserver');
-    $self->{context}->{tftp_component}  = EEntity->new(entity => $tftp);
-
-    $self->{params}->{kanopya_domainname} = $self->{context}->{bootserver}->cluster_domainname;
-    $self->{cluster_components} = $self->{context}->{cluster}->getComponents(category => "all",
-                                                                             order_by => "priority");
+    my $tftp = EEntity->new(entity => $bootserver->getComponent(category => 'Tftpserver'));
 
     # Use the first systemimage container access found, as all should access to the same container.
     my @accesses = $self->{context}->{host}->getNodeSystemimage->container_accesses;
     $self->{context}->{container_access} = EEntity->new(entity => pop @accesses);
-}
-
-sub execute {
-    my $self = shift;
 
     # Firstly compute the node configuration
     my $mount_options = $self->{context}->{cluster}->cluster_si_shared
@@ -147,7 +172,9 @@ sub execute {
     # If the system image is configurable, configure the components
     if ($self->{params}->{mountpoint}) {
         $log->info("Operate components configuration");
-        foreach my $component (@{ $self->{cluster_components} }) {
+        my @components = $self->{context}->{cluster}->getComponents(category => "all",
+                                                                    order_by => "priority");
+        foreach my $component (@components) {
             my $ecomponent = EEntity->new(entity => $component);
             $ecomponent->addNode(host             => $self->{context}->{host},
                                  mount_point      => $self->{params}->{mountpoint},
@@ -159,21 +186,17 @@ sub execute {
 
     $log->info("Operate Boot Configuration");
     $self->_generateBootConf(mount_point => $self->{params}->{mountpoint},
-                             options     => $mount_options);
+                             options     => $mount_options,
+                             tftpserver  => $tftp);
 
     # Update kanopya etc hosts
-    my $system = $self->{context}->{bootserver}->getComponent(category => "System");
-    EEntity->new(data => $system)->applyConfiguration();
+    EEntity->new(data => $bootserver->getComponent(category => "System")->applyConfiguration();
 
     # Umount system image container
     if ($self->{params}->{mountpoint}) {
         $self->{context}->{container_access}->umount(econtext   => $self->getEContext,
                                                      erollback  => $self->{erollback});
     }
-
-    # Create node instance
-    $self->{context}->{host}->setNodeState(state => "goingin");
-    $self->{context}->{host}->save();
 
     # Finally we start the node
     $self->{context}->{host} = $self->{context}->{host}->start(
@@ -183,46 +206,44 @@ sub execute {
     );
 }
 
-sub _cancel {
-    my $self = shift;
 
-    $log->debug("Cancel start node, we will try to remove node link for <" .
-                $self->{context}->{host}->id . ">");
+=pod
+=begin classdoc
 
-    $self->{context}->{cluster}->unregisterNode(node => $self->{context}->{host}->node);
+Update the node state.
 
-    if (! scalar(@{ $self->{context}->{cluster}->getHosts() })) {
-        $self->{context}->{cluster}->setState(state => "down");
-    }
-
-    # Try to umount the container.
-    if ($self->{params}->{mountpoint}) {
-        $self->{context}->{container_access}->umount(econtext   => $self->getEContext,
-                                                     erollback  => $self->{erollback});
-    }
-}
+=end classdoc
+=cut
 
 sub finish {
-    my $self = shift;
+    my ($self, %args) = @_;
+    $self->SUPER::finish(%args);
 
-    # No need to lock the bootserver
-    delete $self->{context}->{bootserver};
-    delete $self->{context}->{dhcpd_component};
-    delete $self->{context}->{container_access};
+    $self->{context}->{host}->setNodeState(state => "goingin");
+
     delete $self->{context}->{systemimage};
 }
+
+
+=pod
+=begin classdoc
+
+Generate the boot configuration.
+
+=end classdoc
+=cut
 
 sub _generateBootConf {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'options' ],
+                         required => [ 'options', 'tftpserver' ],
                          optional => { 'mount_point' => undef });
 
     my $cluster     = $self->{context}->{cluster};
     my $host        = $self->{context}->{host};
     my $boot_policy = $cluster->cluster_boot_policy;
-    my $tftpdir     = $self->{context}->{tftp_component}->getTftpDirectory;
+    my $tftpdir     = $args{tftpserver}->getTftpDirectory;
     my $kernel_version = undef;
 
     # is dedicated initramfs needed for remote root ?
@@ -287,7 +308,8 @@ sub _generateBootConf {
         $self->_generatePXEConf(cluster        => $self->{context}->{cluster},
                                 host           => $self->{context}->{host},
                                 mount_point    => $args{mount_point},
-                                kernel_version => $kernel_version);
+                                kernel_version => $kernel_version,
+                                tftpserver     => $args{tftpserver});
 
         if ($boot_policy =~ m/ISCSI/) {
             my $targetname = $self->{context}->{container_access}->container_access_export;
@@ -315,7 +337,7 @@ sub _generateBootConf {
                              error => "Error when processing template $input."
                          );
 
-            my $tftp_conf = $self->{context}->{tftp_component}->getTftpDirectory;
+            my $tftp_conf = $args{tftpserver}->getTftpDirectory;
             my $dest = $tftp_conf . '/' . $self->{context}->{host}->node->node_hostname . ".conf";
 
             $self->getEContext->send(src => "/tmp/$tmpfile", dest => "$dest");
@@ -324,15 +346,27 @@ sub _generateBootConf {
     }
 }
 
+
+=pod
+=begin classdoc
+
+Generate the PXE configuration.
+
+=end classdoc
+=cut
+
 sub _generatePXEConf {
     my ($self, %args) = @_;
 
     General::checkParams(args     =>\%args,
-                         required => ['cluster', 'host' ],
+                         required => [ 'cluster', 'host', 'bootserver', 'tfpserver' ],
                          optional => {
                             'mount_point'    => undef,
                             'kernel_version' => undef
                          });
+
+    # Instanciate dhcpd
+    my $dhcpd = EEntity->new(entity => $args{bootserver}->getComponent(category => "Dhcpserver"));
 
     my $cluster_kernel_id = $args{cluster}->kernel_id;
     my $kernel_id = $cluster_kernel_id ? $cluster_kernel_id : $args{host}->kernel_id;
@@ -343,7 +377,7 @@ sub _generatePXEConf {
     my $kernel_version = $args{kernel_version} or Entity::Kernel->get(id => $kernel_id)->kernel_version;
     my $boot_policy    = $args{cluster}->cluster_boot_policy;
 
-    my $tftpdir = $self->{context}->{tftp_component}->getTftpDirectory;
+    my $tftpdir = $args{tftpserver}->getTftpDirectory;
 
     my $nfsexport = "";
     if ($boot_policy =~ m/NFS/) {
@@ -359,14 +393,14 @@ sub _generatePXEConf {
     }
 
     # Add host in the dhcp
-    my $subnet = $self->{context}->{dhcpd_component}->getInternalSubNetId();
+    my $subnet = $dhcpd->getInternalSubNetId();
 
     # Configure DHCP Component
     my $tmp_kernel_id = $self->{context}->{cluster}->kernel_id;
     my $host_kernel_id = $tmp_kernel_id ? $tmp_kernel_id : $self->{context}->{host}->kernel_id;
 
-    my $ntpserver = $self->{context}->{bootserver}->getComponent(category => 'System');
-    $self->{context}->{dhcpd_component}->addHost(
+    my $ntpserver = $args{bootserver}->getComponent(category => 'System');
+    $dhcpd->addHost(
         dhcpd3_subnet_id                => $subnet,
         dhcpd3_hosts_ipaddr             => $pxeiface->getIPAddr,
         dhcpd3_hosts_mac_address        => $pxeiface->iface_mac_addr,
@@ -384,13 +418,13 @@ sub _generatePXEConf {
     $self->{erollback}->insertNextErollBefore(erollback => $eroll_add_dhcp_host);
 
     # Generate new configuration file
-    $self->{context}->{dhcpd_component}->generate(erollback => $self->{erollback});
+    $dhcpd->generate(erollback => $self->{erollback});
 
     my $eroll_dhcp_generate = $self->{erollback}->getLastInserted();
     $self->{erollback}->insertNextErollBefore(erollback=>$eroll_dhcp_generate);
 
     # Generate new configuration file
-    $self->{context}->{dhcpd_component}->reload(erollback => $self->{erollback});
+    $dhcpd->reload(erollback => $self->{erollback});
     $log->info('Kanopya dhcp server reconfigured');
 
     # Here we generate pxelinux.cfg for the host
@@ -424,7 +458,7 @@ sub _generatePXEConf {
 
     # Update Host internal ip
     $log->debug("Get subnet <$subnet> and have host ip <$pxeiface->getIPAddr>");
-    my %subnet_hash = $self->{context}->{dhcpd_component}->getSubNet(dhcpd3_subnet_id => $subnet);
+    my %subnet_hash = $dhcpd->getSubNet(dhcpd3_subnet_id => $subnet);
 }
 
 1;

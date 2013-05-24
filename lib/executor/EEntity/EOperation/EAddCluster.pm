@@ -1,4 +1,4 @@
-#    Copyright © 2009-2012 Hedera Technology SAS
+#    Copyright © 2009-2013 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -15,8 +15,20 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+=begin classdoc
+
+Add a cluster to the system.
+
+@since    2012-Aug-20
+@instance hash
+@self     $self
+
+=end classdoc
+=cut
+
 package EEntity::EOperation::EAddCluster;
-use base "EEntity::EOperation";
+use base EEntity::EOperation;
 
 use strict;
 use warnings;
@@ -27,20 +39,26 @@ use EEntity;
 use Entity::ServiceProvider::Cluster;
 use Entity::Systemimage;
 use Entity::Gp;
-use Entity;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
 my $log = get_logger("");
 my $errmsg;
-our $VERSION = '1.00';
 
 
-sub prepare {
-    my $self = shift;
-    my %args = @_;
-    $self->SUPER::prepare();
+=pod
+=begin classdoc
+
+@param cluster_params the params required to create the cluster.
+@param managers the manager definition to apply on the cluster.
+
+=end classdoc
+=cut
+
+sub check {
+    my ($self, %args) = @_;
+    $self->SUPER::check(%args);
 
     # Check if all required params group are defined
     General::checkParams(args => $self->{params}, required => [ "cluster_params", "managers" ]);
@@ -53,6 +71,20 @@ sub prepare {
     # Check required params within managers
     General::checkParams(args     => $self->{params}->{managers},
                          required => [ "host_manager", "disk_manager" ]);
+}
+
+
+=pod
+=begin classdoc
+
+Create the cluster and apply the configuration.
+
+=end classdoc
+=cut
+
+sub execute {
+    my ($self, %args) = @_;
+    $self->SUPER::execute(%args);
 
     if (defined $self->{params}->{cluster_params}->{kernel_id} and
         not $self->{params}->{cluster_params}->{kernel_id}) {
@@ -74,13 +106,8 @@ sub prepare {
     };
     if($@) {
         $errmsg = "Cluster instanciation failed because : " . $@;
-        $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-}
-
-sub execute {
-    my $self = shift;
 
     $self->{context}->{cluster}->create(managers        => $self->{params}->{managers},
                                         components      => $self->{params}->{components},
@@ -90,12 +117,6 @@ sub execute {
                                         erollback       => $self->{erollback});
 
     $log->info("Cluster <" . $self->{context}->{cluster}->cluster_name . "> is now added");
-}
-
-sub finish {
-    my $self = shift;
-
-    delete $self->{context}->{service_template};
 }
 
 1;

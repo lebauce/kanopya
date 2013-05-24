@@ -1,4 +1,4 @@
-# Copyright © 2010-2012 Hedera Technology SAS
+# Copyright © 2010-2013 Hedera Technology SAS
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -15,6 +15,18 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+=begin classdoc
+
+Select a host for the new node, create the system image export it.
+
+@since    2012-Aug-20
+@instance hash
+@self     $self
+
+=end classdoc
+=cut
+
 package EEntity::EOperation::EAddNode;
 use base "EEntity::EOperation";
 
@@ -23,7 +35,6 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Entity::ServiceProvider::Cluster;
-use Entity::Masterimage;
 use Entity::Systemimage;
 use Entity::Host;
 use CapacityManagement;
@@ -37,20 +48,73 @@ my $log = get_logger("");
 my $errmsg;
 
 
-sub prerequisites {
+=pod
+=begin classdoc
+
+@param cluster        the cluster to add node
+@param host_manager   the host manager to get a new free host
+@param disk_manager   the disk manager to create the disk
+@param export_manager the export manager to export the disk
+
+=end classdoc
+=cut
+
+sub check {
     my ($self, %args) = @_;
+    $self->SUPER::check(%args);
 
     General::checkParams(args => $self->{context}, required => [ "cluster" ]);
+
+    # Add the manager to the context
+    # TODO: Probably not the proper place...
+    my $cluster = $self->{context}->{cluster};
+    $self->{context}->{host_manager}   = $cluster->getManager(manager_type => 'HostManager');
+    $self->{context}->{disk_manager}   = $cluster->getManager(manager_type => 'DiskManager');
+    $self->{context}->{export_manager} = $cluster->getManager(manager_type => 'ExportManager');
+}
+
+
+=pod
+=begin classdoc
+
+Check if the cluster is stable, ask to the manager the permission to use them.
+
+=end classdoc
+=cut
+
+sub prepare {
+    my ($self, %args) = @_;
+    $self->SUPER::prepare(%args);
+
+    # Check the cluster state
+    if ($self->{context}->{cluster}->getState !~ m/starting|down/) {
+        $self->{context}->{cluster}->setState(state => 'updating');
+    }
+
+    # Ask to the manager if we can use them
+    $self->{context}->{host_manager}->increaseConsumers();
+    $self->{context}->{disk_manager}->increaseConsumers();
+    $self->{context}->{export_manager}->increaseConsumers();
+}
+
+
+=pod
+=begin classdoc
+
+If the host type is a virtual machine, find an hypervisor, and synchronize
+the database with the infrastructure if required.
+
+=end classdoc
+=cut
+
+sub prerequisites {
+    my ($self, %args) = @_;
 
     my $cluster = $self->{context}->{cluster};
     my $host_type = $cluster->getHostManager->hostType;
 
     # TODO: Move this virtual machine specific code to the host manager
     if ($host_type eq 'Virtual Machine') {
-        $self->{context}->{host_manager} = EEntity->new(
-                                               data => $cluster->getManager(manager_type => 'HostManager'),
-                                           );
-
         my @hvs   = @{ $self->{context}->{host_manager}->hypervisors };
         my @hv_in_ids;
         for my $hv (@hvs) {
@@ -100,7 +164,6 @@ sub prerequisites {
                         }
                     }
                 );
-
                 return -1;
             }
 
@@ -123,41 +186,18 @@ sub prerequisites {
 }
 
 
-sub prepare {
+=pod
+=begin classdoc
+
+If the host type is a virtual machine, find an hypervisor, and synchronize
+the database with the infrastructure if required.
+
+=end classdoc
+=cut
+
+sub execute {
     my $self = shift;
-    my %args = @_;
-    $self->SUPER::prepare();
-
-    General::checkParams(args => $self->{context}, required => [ "cluster" ]);
-
-    # Get the disk manager for disk creation
-    my $disk_manager = $self->{context}->{cluster}->getManager(manager_type => 'DiskManager');
-    $self->{context}->{disk_manager} = EEntity->new(data => $disk_manager);
-
-    # Get the export manager for disk creation
-    my $export_manager = $self->{context}->{cluster}->getManager(manager_type => 'ExportManager');
-    $self->{context}->{export_manager} = EEntity->new(data => $export_manager);
-
-    # Get the masterimage for node systemimage creation.
-    if ($self->{context}->{cluster}->masterimage) {
-        $self->{context}->{masterimage} = EEntity->new(entity => $self->{context}->{cluster}->masterimage);
-    }
-
-    # Check if a host is specified.
-    if (defined $self->{context}->{host}) {
-        my $host_manager_id = $self->{context}->{host}->host_manager_id;
-        my $cluster_host_manager_id = $self->{context}->{cluster}->getManager(manager_type => 'HostManager')->id;
-
-        # Check if the specified host is managed by the cluster host manager
-        if ($host_manager_id != $cluster_host_manager_id) {
-            delete $self->{context}->{host};
-            # TODO throw the following error when new context and param system passing through operations
-
-            # $errmsg = 'Specified host <.'($self->{context}->{host}->id).'>, is not managed by the same host manager than the ' .
-            #     "cluster one (<$host_manager_id>) != <$cluster_host_manager_id>).";
-            #     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-        }
-    }
+    $self->SUPER::execute();
 
     # Get the node number
     $self->{params}->{node_number} = $self->{context}->{cluster}->getNewNodeNumber();
@@ -189,6 +229,35 @@ sub prepare {
                   );
         }
     }
+
+    # Check if a host is specified.
+    if (not defined $self->{context}->{host} or
+        ($self->{context}->{host}->host_manager_id != $self->{context}->{host_manager}->id)) {
+        # Get a free host
+        $self->{context}->{host} = $self->{context}->{host_manager}->getFreeHost(
+                                       cluster => $self->{context}->{cluster}
+                                   );
+
+        if (not defined $self->{context}->{host}) {
+            throw Kanopya::Exception::Internal(error => "Could not find a usable host");
+        }
+
+        # If the host ifaces are not configured to netconfs at resource declaration step,
+        # associate them according to the cluster interfaces netconfs
+        my @ifaces = $self->{context}->{host}->configuredIfaces;
+        if (scalar @ifaces == 0) {
+            $self->{context}->{host}->configureIfaces(cluster => $self->{context}->{cluster});
+        }
+    }
+
+    # Check the user quota on ram and cpu
+    $self->{context}->{cluster}->user->canConsumeQuota(resource => 'ram',
+                                                       amount   => $self->{context}->{host}->host_ram);
+    $self->{context}->{cluster}->user->canConsumeQuota(resource => 'cpu',
+                                                       amount   => $self->{context}->{host}->host_core);
+
+    my $createdisk_params   = $self->{context}->{cluster}->getManagerParameters(manager_type => 'DiskManager');
+    my $createexport_params = $self->{context}->{cluster}->getManagerParameters(manager_type => 'ExportManager');
 
     # Check for existing systemimage for this node.
     my $existing_image;
@@ -228,47 +297,9 @@ sub prepare {
                                               );
         }
     }
-}
-
-sub execute {
-    my $self = shift;
-    $self->SUPER::execute();
-
-    if (not defined $self->{context}->{host}) {
-        # Get a free host
-        $self->{context}->{host} = $self->{context}->{cluster}->addNode();
-
-        if (not defined $self->{context}->{host}) {
-            throw Kanopya::Exception::Internal(error => "Could not find a usable host");
-        }
-
-        # If the host ifaces are not configured to netconfs at resource declaration step,
-        # associate them according to the cluster interfaces netconfs
-        my @ifaces = $self->{context}->{host}->configuredIfaces;
-        if (scalar @ifaces == 0) {
-            $self->{context}->{host}->configureIfaces(cluster => $self->{context}->{cluster});
-        }
-    }
-
-    # Check the user quota on ram and cpu
-    $self->{context}->{cluster}->user->canConsumeQuota(resource => 'ram',
-                                                       amount   => $self->{context}->{host}->host_ram);
-    $self->{context}->{cluster}->user->canConsumeQuota(resource => 'cpu',
-                                                       amount   => $self->{context}->{host}->host_core);
-
-    $self->{context}->{host}->setState(state => "locked");
-
-    # If it is the first node, the cluster is starting
-    if ($self->{params}->{node_number} == 1) {
-        $self->{context}->{cluster}->setState(state => 'starting');
-        $self->{context}->{cluster}->save();
-    }
-
-    my $createdisk_params   = $self->{context}->{cluster}->getManagerParameters(manager_type => 'DiskManager');
-    my $createexport_params = $self->{context}->{cluster}->getManagerParameters(manager_type => 'ExportManager');
 
     # Create system image for node if required.
-    if ($self->{params}->{create_systemimage} and $self->{context}->{masterimage}) {
+    if ($self->{params}->{create_systemimage} and $self->{context}->{cluster}->masterimage) {
 
         # Creation of the device based on distribution device
         my $container = $self->{context}->{disk_manager}->createDisk(
@@ -284,11 +315,11 @@ sub execute {
 
         # Create a temporary local container to access to the masterimage file.
         my $master_container = EEntity->new(entity => Entity::Container::LocalContainer->new(
-                                   container_name       => $self->{context}->{masterimage}->masterimage_name,
-                                   container_size       => $self->{context}->{masterimage}->masterimage_size,
+                                   container_name       => $self->{context}->{cluster}->masterimage->masterimage_name,
+                                   container_size       => $self->{context}->{cluster}->masterimage->masterimage_size,
                                    # TODO: get this value from masterimage attrs.
                                    container_filesystem => 'ext3',
-                                   container_device     => $self->{context}->{masterimage}->masterimage_file,
+                                   container_device     => $self->{context}->{cluster}->masterimage->masterimage_file,
                                ));
 
         # Copy the masterimage container contents to the new container
@@ -299,7 +330,7 @@ sub execute {
         # Remove the temporary container
         $master_container->remove();
 
-        foreach my $comp ($self->{context}->{masterimage}->component_types) {
+        foreach my $comp ($$self->{context}->{cluster}->masterimage->component_types) {
             $self->{context}->{systemimage}->installedComponentLinkCreation(component_type_id => $comp->id);
         }
         $log->info('System image <' . $self->{context}->{systemimage}->systemimage_name . '> creation complete');
@@ -329,28 +360,48 @@ sub execute {
     }
 }
 
+
+=pod
+=begin classdoc
+
+Set the host as 'locked'.
+
+=end classdoc
+=cut
+
 sub finish {
-    my $self = shift;
+    my ($self, %args) = @_;
+    $self->SUPER::finish(%args);
 
-    # Do not require masterimage in context any more.
-    delete $self->{context}->{masterimage};
+    $self->{context}->{host}->setState(state => "locked");
 
-    # Do not require storage managers in context any more.
+    # Release managers
+    $self->{context}->{host_manager}->decreaseConsumers();
+    $self->{context}->{disk_manager}->decreaseConsumers();
+    $self->{context}->{export_manager}->decreaseConsumers();
+
+    delete $self->{context}->{host_manager};
     delete $self->{context}->{disk_manager};
     delete $self->{context}->{export_manager};
 }
 
-sub _cancel {
-    my $self = shift;
 
-    if ($self->{context}->{cluster}) {
-        if (! scalar(@{ $self->{context}->{cluster}->getHosts() })) {
-            $self->{context}->{cluster}->setState(state => "down");
-        }
-    }
+=pod
+=begin classdoc
 
-    if ($self->{context}->{host}) {
-        $self->{context}->{host}->setState(state => "down");
+Restore the clutser and host states.
+
+=end classdoc
+=cut
+
+sub cancel {
+    my ($self, %args) = @_;
+    $self->SUPER::finish(%args);
+
+    $self->{context}->{cluster}->restoreState();
+
+    if (defined $self->{context}->{host}) {
+        $self->{context}->{host}->setState(state => 'down');
     }
 }
 

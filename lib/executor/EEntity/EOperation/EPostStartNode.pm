@@ -1,4 +1,4 @@
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -14,6 +14,18 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
+
+=pod
+=begin classdoc
+
+Ensure the components are up on the new node, and configure them.
+
+@since    2012-Aug-20
+@instance hash
+@self     $self
+
+=end classdoc
+=cut
 
 package EEntity::EOperation::EPostStartNode;
 use base "EEntity::EOperation";
@@ -36,16 +48,33 @@ use Template;
 my $log = get_logger("");
 my $errmsg;
 
+
+=pod
+=begin classdoc
+
+@param cluster the cluster to add node
+@param host    the host selected registred as node
+
+=end classdoc
+=cut
+
 sub check {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => $self->{context}, required => [ "cluster", "host" ]);
 }
 
+
+=pod
+=begin classdoc
+
+Wait for the to be up.
+
+=end classdoc
+=cut
+
 sub prerequisites {
-    my $self  = shift;
-    my %args  = @_;
+    my ($self, %args) = @_;
 
     # Duration to wait before retrying prerequistes
     my $delay = 10;
@@ -86,9 +115,17 @@ sub prerequisites {
     return 0;
 }
 
+
+=pod
+=begin classdoc
+
+Configure the component as the new node is up.
+
+=end classdoc
+=cut
+
 sub execute {
     my ($self, %args) = @_;
-
     $self->SUPER::execute();
 
     $self->{context}->{cluster}->postStartNode(
@@ -96,9 +133,9 @@ sub execute {
         erollback => $self->{erollback},
     );
 
-    my $eagent = EEntity->new(entity => $self->{context}->{cluster}->getComponent(
-                                             category => "Configurationagent")
-                                        );
+    my $eagent = EEntity->new(
+                     entity => $self->{context}->{cluster}->getComponent(category => "Configurationagent")
+                 );
 
     # Apply configuration on the node that just started
     $eagent->applyConfiguration(cluster => $self->{context}->{cluster},
@@ -118,61 +155,46 @@ sub execute {
         resource => 'cpu',
         amount   => $self->{context}->{host}->host_core,
     );
+}
+
+
+=pod
+=begin classdoc
+
+Add another node if the number of nodes not reach the min node number
+
+=end classdoc
+=cut
+
+sub postrequisites {
+    my ($self, %args)  = @_;
 
     # Add another node if required
-    my @nodes = $self->{context}->{cluster}->getHosts();
-    if (scalar(@nodes) >= $self->{context}->{cluster}->cluster_min_node) {
-        my $nodes_states = 1;
-        foreach my $node (@nodes) {
-            my @node_state = $node->getNodeState();
-            if ($node_state[0] ne "in"){
-                $nodes_states = 0;
-            }
-        }
-        if ($nodes_states) {
-            $self->{context}->{cluster}->setState(state => "up");
-        }
-        else {
-            # Another node that the current one is broken
-        }
+    my @nodes = $self->{context}->{cluster}->nodes;
+    if (scalar(@nodes) < $self->{context}->{cluster}->cluster_min_node) {
+        $self->{context}->{cluster}->addNode();
     }
+    return 0;
 }
+
+
+=pod
+=begin classdoc
+
+Set the cluster as up.
+
+=end classdoc
+=cut
 
 sub finish {
-    my $self = shift;
+    my ($self, %args) = @_;
+    $self->SUPER::finish(%args);
 
-    # If first node, start others required nodes
-    if ($self->{context}->{host}->node->node_number == 1 and
-        $self->{context}->{cluster}->cluster_min_node > 1) {
-
-        # TODO: How to known if another nodes are starting ? Is it a problem ?
-        for (1 .. ($self->{context}->{cluster}->cluster_min_node - 1)) {
-            # _entity is important here, cause we want to enqueue AddNode operation.
-            $self->{context}->{cluster}->_entity->addNode();
-        }
-    }
+    $self->{context}->{cluster}->setState(state => "up");
 
     # WARNING: Do NOT delete $self->{context}->{host}, required in worflow addNode + VM migration
-    # TODO: Definitly design a mechanism to bind output parms to input one in workflows
+    # TODO: Definitly design a mechanism to bind output params to input one in workflows
     delete $self->{context}->{cluster}; # Need to be deleted for Add hypervisor followed by add Vm
-}
-
-sub _cancel {
-    my $self = shift;
-
-    $log->info("Cancel post start node, we will try to remove node link for <" .
-               $self->{context}->{host} . ">");
-
-    eval {
-        $self->{context}->{cluster}->unregisterNode(node => $self->{context}->{host}->node);
-    };
-    if ($@) {
-        $log->debug($@);
-    }
-
-    if (! scalar(@{ $self->{context}->{cluster}->getHosts() })) {
-        $self->{context}->{cluster}->setState(state => "down");
-    }
 }
 
 1;
