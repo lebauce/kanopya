@@ -76,7 +76,8 @@ sub main {
         $cloud = Kanopya::Tools::Create->createCluster(
                         cluster_conf => {
                             cluster_name         => 'CloudController',
-                            cluster_basehostname => 'cloud'
+                            cluster_basehostname => 'cloud',
+                            masterimage_id       => $masterimage->id
                         },
                         components => {
                             'keystone' => {
@@ -147,7 +148,8 @@ sub main {
         $compute = Kanopya::Tools::Create->createCluster(
                        cluster_conf => {
                            cluster_name         => 'Compute',
-                           cluster_basehostname => 'compute' 
+                           cluster_basehostname => 'compute',
+                            masterimage_id       => $masterimage->id
                        },
                        components => {
                            'novacompute'  => {
@@ -158,18 +160,6 @@ sub main {
                        }
                    );
     } 'Create Nova Compute cluster';
-
-    lives_ok {
-        Kanopya::Tools::Execution->startCluster(cluster => $db);
-    } 'Start database cluster';
-
-    lives_ok {
-        Kanopya::Tools::Execution->startCluster(cluster => $cloud);
-    } 'Start Cloud controller cluster';
-
-    lives_ok {
-        Kanopya::Tools::Execution->startCluster(cluster => $compute);
-    } 'Start Nova Compute cluster';
 
     lives_ok {
         my $vm_cluster = Kanopya::Tools::Create->createVmCluster(
@@ -207,6 +197,18 @@ sub main {
                             }
                         );
     } 'Create VM cluster with Cinder as disk manager manager';
+
+    lives_ok {
+        Kanopya::Tools::Execution->startCluster(cluster => $db);
+    } 'Start database cluster';
+
+    lives_ok {
+        Kanopya::Tools::Execution->startCluster(cluster => $cloud);
+    } 'Start Cloud controller cluster';
+
+    lives_ok {
+        Kanopya::Tools::Execution->startCluster(cluster => $compute);
+    } 'Start Nova Compute cluster';
 
     if ($testing == 1) {
         BaseDB->rollbackTransaction;
