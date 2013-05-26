@@ -72,7 +72,7 @@ class kanopya::linux ($sourcepath) {
         package { 'ubuntu-cloud-keyring':
             name    => 'ubuntu-cloud-keyring',
             ensure  => present,
-            require => Exec['apt-get update']
+            before  => Exec['apt-get update']
         }
     }
 }
