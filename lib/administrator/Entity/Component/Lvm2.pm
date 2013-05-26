@@ -37,7 +37,7 @@ use General;
 use Manager::HostManager;
 use Entity::ServiceProvider;
 use Entity::Container::LvmContainer;
-
+use Entity::Component::Lvm2::Lvm2Pv;
 use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
@@ -52,7 +52,7 @@ use constant ATTR_DEF => {
         type         => 'relation',
         relation     => 'single_multi',
         is_mandatory => 0,
-        is_editable  => 0,
+        is_editable  => 1,
     },
     disk_type => {
         is_virtual => 1
@@ -187,43 +187,50 @@ sub lvRemove{
 sub getConf {
     my $self = shift;
 
-    my $conf = {};
-    my @tab_volumegroups = ();
-    my $volumegroups = $self->{_dbix}->lvm2_vgs;
-    while(my $vg_row = $volumegroups->next){
-        my @tab_logicalvolumes = ();
-        my %vg = $vg_row->get_columns();
-        my $logicalvolumes = $vg_row->lvm2_lvs;
-        while(my $lv_row = $logicalvolumes->next) {
-            my %lv = $lv_row->get_columns();
-            push @tab_logicalvolumes, \%lv;
-        }
-        $vg{lvm2_lvs} = \@tab_logicalvolumes;
-        push @tab_volumegroups, \%vg;
-    }
-    $conf->{lvm2_vgs} = \@tab_volumegroups;
-    return $conf;
+    my @lvm2_vgs = $self->lvm2_vgs;
+    my @volumegroups = map {
+        my $vg   = $_;
+        my $json = $vg->toJSON(raw => 1);
+
+        my @lvm2_lvs = $vg->lvm2_lvs;
+        my @logicalvolumes = map { $_->toJSON(raw => 1) } @lvm2_lvs;
+        $json->{lvm2_lvs} = \@logicalvolumes;
+
+        my @lvm2_pvs = $vg->lvm2_pvs;
+        my @physical_volumes = map { $_->toJSON(raw => 1) } @lvm2_pvs;
+        $json->{lvm2_pvs} = \@physical_volumes;
+
+        $json;
+    } @lvm2_vgs;
+
+    return {
+        lvm2_vgs => \@volumegroups
+    };
 }
 
 sub setConf {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['conf']);
+    General::checkParams(args => \%args, required => [ 'conf' ]);
 
     my $conf = $args{conf};
-    for my $vg ( @{ $conf->{vgs} }) {
-        for my $new_lv ( @{ $vg->{lvs} }) {
+    for my $vg ( @{ $conf->{lvm2_vgs} }) {
+        for my $new_lv ( @{ $vg->{lvm2_lvs} }) {
             if (keys %$new_lv and not $new_lv->{lvm2_lv_id}) {
                 $self->createDisk(
                     name       => $new_lv->{lvm2_lv_name},
                     size       => $new_lv->{lvm2_lv_size},
                     filesystem => $new_lv->{lvm2_lv_filesystem},
-                    vg_id      => $vg->{vg_id}
+                    vg_id      => $new_lv->{lvm2_vg}
                 );
             }
         }
+
+        delete $vg->{lvm2_lvs};
     }
+
+    $self->SUPER::setConf(%args);
 }
 
 sub getExportManagerFromBootPolicy {

@@ -29,13 +29,13 @@ use constant ATTR_DEF => {
         label        => 'Name',
         type         => 'string',
         is_mandatory => 1,
-        is_editable  => 0,
+        is_editable  => 1,
     },
     lvm2_vg_freespace => {
         label        => 'Free space',
         type         => 'string',
         unit         => 'byte',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_editable  => 0,
     },
     lvm2_vg_size => {
@@ -43,7 +43,14 @@ use constant ATTR_DEF => {
         type         => 'string',
         unit         => 'byte',
         is_mandatory => 1,
-        is_editable  => 0,
+        is_editable  => 1,
+    },
+    lvm2_pvs => {
+        label        => 'Physical volumes',
+        type         => 'relation',
+        relation     => 'single_multi',
+        is_mandatory => 0,
+        is_editable  => 1,
     },
 };
 
