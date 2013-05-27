@@ -668,6 +668,7 @@ sub registerOperations {
         [ 'FlushHypervisor', 'Compute flush hypervisor plan' ],
         [ 'ResubmitHypervisor', 'Resubmit hypervisor virtual machines' ],
         [ 'SelectDataModel', 'Compute the best data model of a combination' ],
+        [ 'SynchronizeInfrastructure', 'Synchronize infrastructure' ],
     ];
 
     for my $operation (@{$operations}) {
