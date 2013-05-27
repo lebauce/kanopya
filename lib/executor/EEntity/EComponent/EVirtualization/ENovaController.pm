@@ -994,6 +994,7 @@ sub registerFlavor {
     return $id;
 }
 
+
 =pod
 
 =begin classdoc
@@ -1055,235 +1056,41 @@ sub _scaleHost {
     );
 }
 
-sub isInfrastructureSynchronized {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'hash' ]);
 
-    $log->info(Dumper $args{hash});
-
-    return ! (keys %{$args{hash}->{wrong_hv}}              > 0 ||
-              keys %{$args{hash}->{infra_not_hostmanager}} > 0 ||
-              keys %{$args{hash}->{base_not_hv_infra}}     > 0 ||
-              keys %{$args{hash}->{unk_vm_uuids}}          > 0);
-
-}
-
-sub checkAllInfrastructureIntegrity {
-    my $self = shift;
-    my $hypervisors = $self->hypervisors;
-    return $self->checkHypervisorsVMPlacementIntegrity(hypervisors => $hypervisors);
-}
-
-sub checkHypervisorsVMPlacementIntegrity {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'hypervisors' ]);
-
-    my $diff_infra_db;
-
-    for my $hypervisor (@{$args{hypervisors}}) {
-        $diff_infra_db = $self->checkHypervisorVMPlacementIntegrity(
-                                    host          => $hypervisor,
-                                    diff_infra_db => $diff_infra_db
-                                );
-    }
-    return $diff_infra_db;
-}
-
-
-sub checkVMPlacementIntegrity {
-    my ($self, %args) = @_;
-    General::checkParams(args     => \%args,
-                         required => [ 'host' ],
-                         optional => {
-                             diff_infra_db => {
-                                infra_not_hostmanager => {},
-                                base_not_hv_infra     => {},
-                                wrong_hv              => {},
-                                unk_vm_uuids          => {},
-                             }
-                         });
-
-    my $detail;
-    eval {
-        $detail = $self->getVMDetails(host => $args{host});
-    };
-    if ($@) {
-        my $error = $@;
-        $args{diff_infra_db}->{base_not_hv_infra}->{$args{host}->id} = undef;
-        throw Kanopya::Exception(error => $error);
-    }
-
-    my $hypervisor_hostname = $detail->{server}->{'OS-EXT-SRV-ATTR:host'};
-    my $hypervisor_id = Node->find(hash => {node_hostname => $hypervisor_hostname})->host->id;
-    my $db_hypervisor = $args{host}->hypervisor;
-
-    if (defined $db_hypervisor && ($hypervisor_id == $db_hypervisor->id)) {
-        return $args{diff_infra_db};
-    }
-    $args{diff_infra_db}->{wrong_hv}->{$args{host}->id} = $hypervisor_id;
-    return $args{diff_infra_db};
-}
+#sub _synchronizeVmHypervisor {
+#    my ($self, %args) = @_;
+#    General::checkParams(args => \%args, required => [ 'host' ]);
+#
+#    my $detail;
+#    eval {
+#        $detail = $self->getVMDetails(host => $args{host});
+#    };
+#    if ($@) {
+#        if (defined $args{host}->node) {
+#            $args{host}->node->disable();
+#            $args{host}->setNodeState(state => 'broken');
+#        }
+#        $args{host}->setAttr(name => 'hypervisor_id', value => undef);
+#        $args{host}->save();
+#        throw Kanopya::Exception(error => "VM <".$args{host}->id."> not found in infrastructure, node as been disabled and considered as broken");
+#    }
+#
+#    my $hypervisor_hostname = $detail->{server}->{'OS-EXT-SRV-ATTR:host'};
+#    $log->debug("According to infractructire VM hypervisor is <$hypervisor_hostname>");
+#
+#    my $hypervisor_id = Node->find(hash => {node_hostname => $hypervisor_hostname})->host->id;
+#
+#    my $db_hypervisor = $args{host}->hypervisor;
+#
+#    if (defined $db_hypervisor && ($hypervisor_id == $db_hypervisor->id)) {
+#        return;
+#    }
+#
+#    $args{host}->hypervisor_id($hypervisor_id);
+#    return;
+#}
 
 
-sub _synchronizeVmHypervisor {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'host' ]);
 
-    my $detail;
-    eval {
-        $detail = $self->getVMDetails(host => $args{host});
-    };
-    if ($@) {
-        if (defined $args{host}->node) {
-            $args{host}->node->disable();
-            $args{host}->setNodeState(state => 'broken');
-        }
-        $args{host}->setAttr(name => 'hypervisor_id', value => undef);
-        $args{host}->save();
-        throw Kanopya::Exception(error => "VM <".$args{host}->id."> not found in infrastructure, node as been disabled and considered as broken");
-    }
-
-    my $hypervisor_hostname = $detail->{server}->{'OS-EXT-SRV-ATTR:host'};
-    $log->debug("According to infractructire VM hypervisor is <$hypervisor_hostname>");
-
-    my $hypervisor_id = Node->find(hash => {node_hostname => $hypervisor_hostname})->host->id;
-
-    my $db_hypervisor = $args{host}->hypervisor;
-
-    if (defined $db_hypervisor && ($hypervisor_id == $db_hypervisor->id)) {
-        return;
-    }
-
-    $args{host}->hypervisor_id($hypervisor_id);
-    return;
-}
-
-sub checkHypervisorVMPlacementIntegrity {
-    my ($self, %args) = @_;
-    General::checkParams(args     => \%args,
-                         required => [ 'host' ],
-                         optional => {
-                             diff_infra_db => {
-                                infra_not_hostmanager => {},
-                                base_not_hv_infra     => {},
-                                wrong_hv              => {},
-                                unk_vm_uuids          => {},
-                             }
-                         });
-
-    my $hypervisor = $args{host};
-
-    # Get hypervisor vms according to HostManager
-    my $h_vms = $self->getHypervisorVMs(host => $hypervisor);
-    my @infra_hv_vms = @{$h_vms->{vms}};
-    my $hv_infra= {};
-    for my $vm (@infra_hv_vms) {
-        $hv_infra->{$vm->id} = $hypervisor->id;
-    };
-
-    # Get all the vms of the infra from the db
-    my $cloud_vms = {};
-    my @cloud_vms_array = $self->hosts;
-    for my $vm (@cloud_vms_array) {
-        $cloud_vms->{$vm->id} = -1;
-    };
-
-    # Get all the vms of the hypervisor from the db
-    my @db_hv_vms = $hypervisor->virtual_machines;
-
-    # Get all unkown vms
-    for my $uuid (@{$h_vms->{unk_vm_uuids}}) {
-        $args{diff_infra_db}->{unk_vm_uuids}->{$uuid} = $hypervisor->id;
-    }
-
-    for my $hv_infra_vm (@infra_hv_vms) {
-        if (! defined $cloud_vms->{$hv_infra_vm->id}) {
-            # Vm in db but not known by the hostmanager
-            $args{diff_infra_db}->{infra_not_hostmanager}->{$hv_infra_vm->id} = $hypervisor->id;
-        }
-        elsif ($hv_infra_vm->hypervisor_id != $hypervisor->id) {
-            # Vm in db, known by hostmanager but wrong hypervisor
-            $args{diff_infra_db}->{wrong_hv}->{$hv_infra_vm->id} = $hypervisor->id;
-            delete $args{diff_infra_db}->{base_not_hv_infra}->{$hv_infra_vm->id};
-        }
-    }
-
-    # Check vm of hv in db which are not in the hv_infra
-    for my $vm (@db_hv_vms) {
-        if ((! defined $hv_infra->{$vm->id}) && (! defined $args{diff_infra_db}->{wrong_hv}->{$vm->id})) {
-            $args{diff_infra_db}->{base_not_hv_infra}->{$vm->id} = undef;
-        }
-    }
-    return $args{diff_infra_db};
-}
-
-sub repairVMRessourceIntegrity {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'host' ]);
-
-    for my $vm ($args{host}->virtual_machines) {
-        my $evm = new EEntity(data => $vm)->getResources(resource => [ 'cpu' , 'ram' ]);
-
-        if ($evm->{ram} != $vm->host_ram) {
-            $vm->setAttr(name => 'host_ram', value => $evm->{ram});
-        }
-
-        if ($evm->{cpu} != $vm->host_core) {
-            $vm->setAttr(name => 'host_core', value => $evm->{cpu});
-        }
-        $vm->save();
-    }
-}
-
-
-sub repairWrongHypervisor {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'vm_ids' ]);
-    while (my ($vm_id, $hv_id) = each (%{$args{vm_ids}})) {
-        Entity->get(id => $vm_id)->hypervisor_id($hv_id);
-    }
-}
-
-sub repairVmInDBNotInInfra {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'vm_ids' ]);
-    for my $vm_id (keys %{$args{vm_ids}}) {
-        my $vm = Entity->get(id => $vm_id);
-        eval {
-            $self->_synchronizeVmHypervisor(host => $vm);
-        };
-        if ($@) {
-            $log->info($@);
-        }
-    }
-}
-
-sub repairVmInInfraUnkInDB {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'vm_uuids' ]);
-    while (my ($vm_uuid, $hv_id) = each (%{$args{vm_uuids}})) {
-
-        my $host = $self->createVirtualHost(ram => 0, core => 0, ifaces => 1);
-        $host = $self->promoteHost(host              => $host,
-                                   openstack_vm_uuid => $vm_uuid,
-                                   hypervisor_id     => $hv_id);
-
-        my $evm = new EEntity(data => $host)->getResources(resource => [ 'cpu' , 'ram' ]);
-        $host->setAttr(name => 'host_ram',  value => $evm->{ram});
-        $host->setAttr(name => 'host_core', value => $evm->{cpu});
-        $host->save();
-    }
-}
-
-sub repairVmInInfraWrongHostManager {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'vm_ids' ]);
-    while (my ($vm_id, $hv_id) = each (%{$args{vm_ids}})) {
-        my $host = Entity->get(id => $vm_id);
-        $host->setAttr(name => 'hypervisor_id',   value => $hv_id);
-        $host->setAttr(name => 'host_manager_id', value => $self->id);
-        $host->save();
-    }
-}
 
 1;
