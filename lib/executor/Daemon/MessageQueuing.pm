@@ -99,7 +99,10 @@ sub new {
             eval {
                 $ack = $callback->{callback}->($self, %cbargs);
             };
-            if ($@) { $self->log(level => 'error', msg => "$@"); }
+            if ($@) {
+                $self->log(level => 'error', msg => "$@");
+                $ack = 1;
+            }
             return $ack;
         };
 
