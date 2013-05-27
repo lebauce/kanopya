@@ -345,8 +345,14 @@ sub executeOperation {
     };
     if ($@) {
         my $err = $@;
-        $operation->unlockContext();
+        $operation->unlockContext(skip_not_found => 1);
 
+        if ($err->isa('Kanopya::Exception::Execution::OperationReported')) {
+            return $self->terminateOperation(operation => $operation,
+                                             status    => 'prereported',
+                                             time      => time + 10,
+                                             exception => $err);
+        }
         return $self->terminateOperation(operation => $operation,
                                          status    => 'cancelled',
                                          exception => $err);
@@ -378,6 +384,10 @@ sub terminateOperation {
     my $operation = delete $args{operation};
 
     $self->log(level => "info", msg => "Operation terminated with status <$args{status}>");
+    if (defined $args{exception} and ref($args{exception})) {
+        $args{exception} = "$args{exception}";
+        $self->log(level => "debug", msg => $args{exception});
+    }
 
     # If some rollback defined, undo them
     if ($args{status} eq 'cancelled' and defined $operation->{erollback}) {
@@ -390,11 +400,6 @@ sub terminateOperation {
     my $params = delete $operation->{params};
     $params->{context} = delete $operation->{context};
     $operation->serializeParams(params => $params);
-
-    if (defined $args{exception} and ref($args{exception})) {
-        $args{exception} = "$args{exception}";
-        $self->log(level => "debug", msg => $args{exception});
-    }
 
     # Produce a result on the operation_result channel
     $self->_component->terminate(operation_id => $operation->id, %args);
@@ -551,21 +556,23 @@ sub handleResult {
         # Restore context object states updated at 'prepare' step.
         eval {
             # Firstly lock the context objects
-            $self->lockOperationContext(operation => $operation);
+            $self->lockOperationContext(operation => $operation, skip_not_found => 1);
 
             # Update the state of the context objects atomically
             $workflow->cancel();
 
             # Unlock the context objects
-            $operation->unlockContext();
+            $operation->unlockContext(skip_not_found => 1);
         };
         if ($@) {
             my $err = $@;
-            $operation->unlockContext();
+            $operation->unlockContext(skip_not_found => 1);
 
-            return $self->terminateOperation(operation => $operation,
-                                             status    => 'cancelled',
-                                             exception => $err);
+            if ($err->isa('Kanopya::Exception::Execution::OperationReported')) {
+                # Could not get the locks, do not ack the message
+                return 0;
+            }
+            else { $err->rethrow(); }
         }
 
         # Stop the workflow
