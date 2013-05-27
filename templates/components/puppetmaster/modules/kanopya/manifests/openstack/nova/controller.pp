@@ -126,6 +126,23 @@ class kanopya::openstack::nova::controller($password, $dbserver, $amqpserver, $k
         'DEFAULT/cpu_allocation_ratio': value => '100'
     }
 
+    $inf = 100000
+    class { 'nova::quota':
+        quota_instances                       => $inf,
+        quota_cores                           => $inf,
+        quota_ram                             => $inf,
+        quota_volumes                         => $inf,
+        quota_gigabytes                       => $inf,
+        quota_floating_ips                    => $inf,
+        quota_metadata_items                  => $inf,
+        quota_max_injected_files              => $inf,
+        quota_max_injected_file_content_bytes => $inf,
+        quota_max_injected_file_path_bytes    => $inf,
+        quota_security_groups                 => $inf,
+        quota_security_group_rules            => $inf,
+        quota_key_pairs                       => $inf
+    }
+
     Class['kanopya::openstack::repository'] -> Class['kanopya::openstack::nova::controller']
 }
 
