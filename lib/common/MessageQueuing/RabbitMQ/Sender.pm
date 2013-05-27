@@ -91,8 +91,11 @@ sub declareChannel {
     General::checkParams(args => \%args, required => [ 'channel' ]);
 
     # Declare the exchange for the subscribers
+    $log->debug("Declaring exchange <$args{channel}> of type <fanout>");
     $self->_session->declare_exchange(exchange => $args{channel}, type => 'fanout');
+
     # Declare the queue for the workers
+    $log->debug("Declaring queue <$args{channel}>");
     $self->_session->declare_queue(queue => $args{channel}, durable => 1);
 
     # Keep the session to known if the exchange and the queue are created for this channel
@@ -141,6 +144,7 @@ sub AUTOLOAD {
     my $data = JSON->new->utf8->encode(\%args);
 
     # Send message for the workers
+    $log->debug("Publishing on queue <$channel>, body:\n" . Dumper($data));
     $senders->{$channel}->publish(exchange    => '',
                                   routing_key => $channel,
                                   body        => $data,
@@ -148,6 +152,7 @@ sub AUTOLOAD {
                                   header => { delivery_mode => 2 });
 
     # Send message for the subscribers
+    $log->debug("Publishing on exchange <$channel>, body:\n" . Dumper($data));
     $senders->{$channel}->publish(exchange    => $channel,
                                   routing_key => '',
                                   body        => $data,

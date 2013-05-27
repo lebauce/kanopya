@@ -186,15 +186,19 @@ sub createReceiver {
 
     my $queue;
     if ($args{type} eq 'queue') {
+        $log->debug("Declaring queue <$args{channel}>");
         $queue = $self->_session->declare_queue(queue => $args{channel}, durable => 1);
     }
     elsif ($args{type} eq 'topic') {
+        $log->debug("Declaring exchange <$args{channel}> of type <fanout>");
         $self->_session->declare_exchange(
             exchange => $args{channel},
             type     => 'fanout',
         );
 
+        $log->debug("Declaring exclusive queue in way to bind on exchange <$args{channel}>");
         $queue = $self->_session->declare_queue(exclusive => 1);
+        $log->debug("Binding queue $queue->{method_frame}->{queue} on exchange <$args{channel}>");
         $self->_session->bind_queue(
             exchange => $args{channel},
             queue    => $queue->{method_frame}->{queue},
@@ -280,6 +284,7 @@ sub consume {
     };
 
     # Register the method to call back at message consumption
+    $log->debug("Registering (consume) callback on queue <$args{queue}>");
     return $self->_session->consume(on_consume => \&$callback,
                                     queue      => $args{queue},
                                     no_ack     => 0);
@@ -320,11 +325,13 @@ sub receive {
     if (defined $receiver->{consumer}) {
         $self->cancel(receiver => $receiver);
     }
+    $log->debug("Registering (consume) callback on queue <$receiver->{receiver}->{method_frame}->{queue}>");
     $receiver->{consumer} = $self->consume(queue    => $receiver->{receiver}->{method_frame}->{queue},
                                            callback => $receiver->{callback},
                                            condvar  => $condvar);
 
     # Blocking call
+    $log->debug("Fetching on queue <$receiver->{receiver}->{method_frame}->{queue}>...");
     $self->fetch(condvar => $condvar, duration => $receiver->{duration});
 
     # Unregister the callback as we are in one by one fetch mode
@@ -464,6 +471,7 @@ sub cancel {
 
     my $consumer = delete $args{receiver}->{consumer};
     if ($consumer) {
+        $log->debug("Unregistering (cancel) callback with tag <$consumer->{method_frame}->{consumer_tag}>");
         $self->_session->cancel(consumer_tag => $consumer->{method_frame}->{consumer_tag});
     }
 }
@@ -484,6 +492,7 @@ sub acknowledge {
 
     General::checkParams(args => \%args, required => [ 'tag' ]);
 
+    $log->debug("Acknowledging message with tag <$args{tag}>");
     $self->_session->ack(delivery_tag => $args{tag}, multiple => 0);
 }
 

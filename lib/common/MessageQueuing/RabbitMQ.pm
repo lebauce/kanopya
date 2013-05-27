@@ -85,6 +85,7 @@ sub connect {
                                        'user' => 'guest', 'password' => "guest" });
 
     if (not $self->connected) {
+        $log->debug("Connecting to broker <$args{ip}:$args{port}> as <$args{user}>");
         $connection = Net::RabbitFoot->new()->load_xml_spec()->connect(
                           host => $args{ip},
                           port => $args{port},
@@ -92,7 +93,7 @@ sub connect {
                           pass => $args{password},
                           vhost => '/',
                       );
-
+        $log->debug("Openning channel");
         $session = $self->_connection->open_channel();
     }
 
@@ -111,7 +112,9 @@ Disconnect from the message queuing server.
 sub disconnect {
     my ($self, %args) = @_;
 
+    $log->debug("Closing channel");
     $self->_session->close();
+    $log->debug("Disconnecting from broker");
     $self->_connection->close();
     $session = undef;
     $connection = undef;
