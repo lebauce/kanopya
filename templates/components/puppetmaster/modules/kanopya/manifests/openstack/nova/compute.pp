@@ -80,5 +80,9 @@ class kanopya::openstack::nova::compute($amqpserver, $dbserver, $glance, $keysto
         rabbit_user     => 'quantum'
     }
 
+    quantum_plugin_ovs {
+        'SECURITYGROUP/firewall_driver': value => "quantum.agent.linux.iptables_firewall.OVSHybridIptablesFirewallDriver";
+    }
+
     Class['kanopya::openstack::repository'] -> Class['kanopya::openstack::nova::compute']
 }
