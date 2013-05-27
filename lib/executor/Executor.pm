@@ -182,13 +182,20 @@ sub executeOperation {
                      );
     };
     if ($@) {
-        my $error = $@;
-        # The operation does not exists, probably due to a workflow cancel
-        $self->log(
-            level => 'warn',
-            msg   => "Operation <$args{operation_id}> does not exists, skipping.\n $error"
-        );
-        return 1;
+        my $err = $@;
+        if ($err->isa('Kanopya::Exception::Internal::NotFound')) {
+            # The operation does not exists, probably due to a workflow cancel
+            $self->log(
+                level => 'warn',
+                msg   => "Operation <$args{operation_id}> does not exists, skipping."
+            );
+            return 1;
+        }
+        else {
+            return $self->terminateOperation(operation => $operation,
+                                             status    => 'cancelled',
+                                             exception => $err);
+        }
     }
 
     # Log in the proper file
@@ -324,15 +331,17 @@ sub executeOperation {
 
     # Update the state of the context objects if required
     eval {
-        # Firstly lock the context objects
-        $self->lockOperationContext(operation => $operation);
+        # Lock/Unlock the context with option 'skip_not_found',
+        # as some context entities could be deleted by the operation
+        $self->lockOperationContext(operation      => $operation,
+                                    skip_not_found => 1);
 
         # Update the state of the context objects atomically
         $self->log(level => "info", msg => "Step <finish>");
         $operation->finish();
 
         # Unlock the context objects
-        $operation->unlockContext();
+        $operation->unlockContext(skip_not_found => 1);
     };
     if ($@) {
         my $err = $@;
@@ -669,12 +678,14 @@ If could not get the locks until the timeout exeedeed, report the operation.
 sub lockOperationContext {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'operation' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'operation' ],
+                         optional => { 'skip_not_found' => 0 });
 
     my $timeout = 10;
     while ($timeout >= 0) {
         eval {
-            $args{operation}->lockContext();
+            $args{operation}->lockContext(skip_not_found => $args{skip_not_found});
         };
         if ($@) {
             my $err = $@;

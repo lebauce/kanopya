@@ -149,15 +149,12 @@ sub new {
     $class->beginTransaction;
 
     eval {
-        my $execution_rank = $class->getNextRank(workflow_id => $args{workflow_id});
-        my $initial_state  = $execution_rank ? "pending" : "ready";
-
         $log->debug("Enqueuing new operation <$args{type}>, in workflow <$args{workflow_id}>");
 
         my $params = {
             operationtype_id     => Operationtype->find(hash => { operationtype_name => $args{type} })->id,
-            state                => $initial_state,
-            execution_rank       => $execution_rank,
+            state                => "pending",
+            execution_rank       => $class->getNextRank(workflow_id => $args{workflow_id}),
             workflow_id          => $args{workflow_id},
             priority             => $args{priority},
             creation_date        => \"CURRENT_DATE()",
@@ -223,10 +220,10 @@ sub serializeParams {
                     delete $value->{$subkey};
                     next CONTEXT;
                 }
-                if (not (defined ref ($subvalue) or $subvalue->isa('Entity') or $subvalue->isa('EEntity'))) {
+                if (! ref ($subvalue) or ! ($subvalue->isa('Entity') or $subvalue->isa('EEntity'))) {
                     throw Kanopya::Exception::Internal(
-                              error => "Can not enqueue operation <$args{type}> with param <$subkey> " .
-                                       "of type 'context' that is not an entity <$subvalue>."
+                              error => "Can not serialize param <$subkey> of type <context>' " .
+                                       "that is not an entity <$subvalue>."
                           );
                 }
                 $value->{$subkey} = $subvalue->id;
@@ -277,9 +274,10 @@ sub unserializeParams {
                 # Can skip errors on entity instanciation. Could be usefull when
                 # loading context that containing deleted entities.
                 if (not $args{skip_not_found}) {
-                    $errmsg = "Workflow <" . $self->id .
-                              ">, context param <$value>, seems not to be an entity id.\n$@";
-                    throw Kanopya::Exception::Internal(error => $errmsg);
+                    throw Kanopya::Exception::Internal(
+                              error => "Workflow <" . $self->id .
+                                       ">, context param <$value>, seems not to be an entity id.\n$@"
+                          );
                 }
                 else {
                     delete $params->{context}->{$key};
@@ -305,9 +303,13 @@ sub lockContext {
     my $self = shift;
     my %args = @_;
 
+    General::checkParams(args => \%args, optional => { 'skip_not_found' => 0 });
+
+    my $params = $self->unserializeParams(skip_not_found => $args{skip_not_found});
+
     $self->beginTransaction;
     eval {
-        for my $entity (values %{ $self->unserializeParams->{context} }) {
+        for my $entity (values %{ $params->{context} }) {
             $log->debug("Trying to lock entity <$entity>");
             $entity->lock(consumer => $self->workflow);
         }
@@ -333,9 +335,9 @@ sub unlockContext {
     my $self = shift;
     my %args = @_;
 
-    # Get the params with option 'skip_not_found', as some input context entities,
-    # could be deleted by the operation, so no need to unlock them.
-    my $params = $self->unserializeParams(skip_not_found => 1);
+    General::checkParams(args => \%args, optional => { 'skip_not_found' => 0 });
+
+    my $params = $self->unserializeParams(skip_not_found => $args{skip_not_found});
 
     $self->beginTransaction;
     for my $key (keys %{ $params->{context} }) {
