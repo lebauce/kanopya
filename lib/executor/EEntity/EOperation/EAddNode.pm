@@ -330,7 +330,7 @@ sub execute {
         # Remove the temporary container
         $master_container->remove();
 
-        foreach my $comp ($$self->{context}->{cluster}->masterimage->component_types) {
+        foreach my $comp ($self->{context}->{cluster}->masterimage->component_types) {
             $self->{context}->{systemimage}->installedComponentLinkCreation(component_type_id => $comp->id);
         }
         $log->info('System image <' . $self->{context}->{systemimage}->systemimage_name . '> creation complete');
