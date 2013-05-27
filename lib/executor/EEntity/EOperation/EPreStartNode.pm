@@ -132,7 +132,9 @@ sub execute {
     $initiatorname .= '.' . $self->{context}->{host}->node->node_hostname;
     $initiatorname .= ':' . time();
 
-    $self->{context}->{host}->host_initiatorname($initiatorname);
+    $self->{context}->{host}->setAttr(name  => 'host_initiatorname',
+                                      value => $initiatorname,
+                                      save  => 1);
 
     # For each container accesses of the system image, add an export client
     my $options = $self->{context}->{cluster}->cluster_si_shared ? "ro" : "rw";
