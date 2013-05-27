@@ -226,6 +226,15 @@ sub serializeParams {
                                        "that is not an entity <$subvalue>."
                           );
                 }
+                eval {
+                    $subvalue->reload();
+                };
+                if ($@) {
+                    $log->warn("Entity $subvalue <" . $subvalue->id . "> does not exists any more, " .
+                               "removing it from context.");
+                    delete $value->{$subkey};
+                    next CONTEXT;
+                }
                 $value->{$subkey} = $subvalue->id;
             }
         }
