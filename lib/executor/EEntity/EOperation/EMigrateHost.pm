@@ -45,11 +45,11 @@ sub prerequisites {
     }
 
     my $diff_infra_db = $self->{context}->{cloudmanager_comp}
-                            ->checkHypervisorVMPlacementIntegrity(host => $self->{context}->{host});
+                             ->checkHypervisorVMPlacementIntegrity(host => $self->{context}->{host});
     eval {
         $diff_infra_db = $self->{context}->{cloudmanager_comp}
-                             ->checkVMPlacementIntegrity(host          => $self->{context}->{vm},
-                                                         diff_infra_db => $diff_infra_db);
+                              ->checkVMPlacementIntegrity(host          => $self->{context}->{vm},
+                                                          diff_infra_db => $diff_infra_db);
     };
     if ($@) {
         my $error = $@;
@@ -65,6 +65,7 @@ sub prerequisites {
                     hypervisor => $self->{context}->{host},
                     vm         => $self->{context}->{vm},
                 },
+                diff_infra_db => $diff_infra_db,
             }
         );
         throw Kanopya::Exception(error => $error);
@@ -73,7 +74,6 @@ sub prerequisites {
     if (! $self->{context}->{cloudmanager_comp}->isInfrastructureSynchronized(hash => $diff_infra_db)) {
 
         # Repair infra before retrying AddNode
-        # TODO : pass $diff_infra_db Hashref throw params
 
         $self->workflow->enqueueBefore(
             operation => {
@@ -84,6 +84,7 @@ sub prerequisites {
                         hypervisor => $self->{context}->{host},
                         vm         => $self->{context}->{vm},
                     },
+                    diff_infra_db => $diff_infra_db,
                 }
             }
         );

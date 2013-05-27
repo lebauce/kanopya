@@ -60,7 +60,6 @@ sub prerequisites {
 
     if (! $self->{context}->{cloudmanager_comp}->isInfrastructureSynchronized(hash => $diff_infra_db)) {
 
-        # TODO Add diff_infra_db in parameters
         $self->workflow->enqueueBefore(
             operation => {
                 priority => 200,
@@ -69,6 +68,7 @@ sub prerequisites {
                     context => {
                         cloud_manager => $self->{context}->{cloudmanager_comp}
                     },
+                diff_infra_db => $diff_infra_db,
                 }
             }
         );

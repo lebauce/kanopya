@@ -98,6 +98,7 @@ sub prerequisites {
                     context => {
                         cloud_manager => $self->{context}->{cloud_manager}
                     },
+                    diff_infra_db => $diff_infra_db,
                 }
             }
         );
@@ -107,22 +108,17 @@ sub prerequisites {
     if ($flushRes->{num_failed} > 0) {
         throw Kanopya::Exception(error => "The hypervisor ".$self->{context}->{host}->node->node_hostname." can't be flushed");
     }
+}
 
-    # /!\ TODO
-    # Move the following part in execute() when $flushRes can be pass through $self->{params}
-
+sub execute {
+    my $self = shift;
+    $self->SUPER::execute();
     $log->info('Flush hypervisor '.$self->{context}->{host}->node->node_hostname);
 
     for my $operation (@{$flushRes->{operation_plan}}) {
         $log->debug('Operation enqueuing host = '.$operation->{params}->{context}->{host}->id);
         $self->workflow->enqueueNow(operation => $operation);
     }
-
-}
-
-sub execute {
-    my $self = shift;
-    $self->SUPER::execute();
 }
 
 sub finish {

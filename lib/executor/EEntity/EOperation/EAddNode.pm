@@ -88,7 +88,6 @@ sub prerequisites {
             if (! $self->{context}->{host_manager}->isInfrastructureSynchronized(hash => $diff_infra_db)) {
 
                 # Repair infra before retrying AddNode
-                # TODO : pass $diff_infra_db Hashref throw params
                 $self->workflow->enqueueBefore(
                     operation => {
                         priority => 200,
@@ -97,6 +96,7 @@ sub prerequisites {
                             context => {
                                 hypervisor => $host
                             },
+                            diff_infra_db => $diff_infra_db,
                         }
                     }
                 );
