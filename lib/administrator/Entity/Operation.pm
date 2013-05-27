@@ -275,6 +275,7 @@ sub serializeParams {
                 # If tag is 'context', this is entities params
                 if (not defined $subvalue) {
                     $log->warn("Context value anormally undefined: $subkey");
+                    delete $value->{$subkey};
                     next CONTEXT;
                 }
                 if (not ($subvalue->isa('Entity') or $subvalue->isa('EEntity'))) {
