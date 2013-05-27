@@ -276,14 +276,31 @@ sub addHypervisor {
            );
 }
 
-sub promoteHost {
+
+=pod
+
+=begin classdoc
+
+Promote host into OpenstackVm and set its hypervisor id
+
+@param host    host to promote
+@param vm_uuid openstack uuid
+@param hypervisor_id
+
+@return the promoted host
+
+=end classdoc
+
+=cut
+
+sub promoteVm {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'host', 'openstack_vm_uuid', 'hypervisor_id' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'vm_uuid', 'hypervisor_id' ]);
 
      $args{host} = Entity::Host::VirtualMachine::OpenstackVm->promote(
                       promoted           => $args{host},
                       nova_controller_id => $self->id,
-                      openstack_vm_uuid  => $args{openstack_vm_uuid},
+                      openstack_vm_uuid  => $args{vm_uuid},
                   );
 
     $args{host}->hypervisor_id($args{hypervisor_id});
