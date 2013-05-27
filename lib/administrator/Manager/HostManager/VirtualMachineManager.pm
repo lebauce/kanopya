@@ -119,7 +119,13 @@ sub scaleHost {
     );
 }
 
-=head2 migrate
+=pod
+
+=begin classdoc
+
+Launch migration
+
+=end classdoc
 
 =cut
 
@@ -144,17 +150,29 @@ sub migrate {
            );
 }
 
+
+=pod
+
+=begin classdoc
+
+Update hypervisor of vm in DB
+
+=end classdoc
+
+=cut
+
 sub migrateHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'host', 'hypervisor_dst', 'hypervisor_cluster' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'hypervisor_dst' ]);
 
     $log->info('Migrating host <' . $args{host}->getId . '> to hypervisor ' . $args{hypervisor_dst}->getId);
 
-    $args{host}->setAttr(name => 'hypervisor_id', value => $args{hypervisor_dst}->getId);
-    $args{host}->save();
+    $args{host}->hypervisor_id($args{hypervisor_dst}->id);
+
 }
+
 
 =pod
 
@@ -176,4 +194,80 @@ sub hostType {
     return "Virtual Machine";
 }
 
+
+=pod
+
+=begin classdoc
+
+Update hypervisors of vms
+
+@param hashtable {vm_id => hypervisor_id}
+
+=end classdoc
+
+=cut
+
+sub repairWrongHypervisor {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'vm_ids' ]);
+    while (my ($vm_id, $hv_id) = each (%{$args{vm_ids}})) {
+        Entity->get(id => $vm_id)->hypervisor_id($hv_id);
+    }
+}
+
+
+=pod
+
+=begin classdoc
+
+Deactivate a node which is not in the infrastructure. Set state as broken and hypervisor as undef
+
+@param hashtable {vm_id => undef}
+
+=end classdoc
+
+=cut
+
+sub repairVmInDBNotInInfra {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'vm_ids' ]);
+    for my $vm_id (keys %{$args{vm_ids}}) {
+        my $vm = Entity->get(id => $vm_id);
+        if (defined $vm->node) {
+            $vm->node->disable();
+            $vm->setNodeState(state => 'broken');
+        }
+        $vm->setAttr(name => 'hypervisor_id', value => undef);
+        $vm->save();
+    }
+}
+
+=pod
+
+=begin classdoc
+
+Update hypervisor of vms in Kanopya DB
+
+@param vm_ids hashtable {vm_id => hv_id}
+
+=end classdoc
+
+=cut
+
+sub repairVmInInfraWrongHostManager {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'vm_ids' ]);
+    while (my ($vm_id, $hv_id) = each (%{$args{vm_ids}})) {
+        my $host = Entity->get(id => $vm_id);
+        $host->setAttr(name => 'hypervisor_id',   value => $hv_id);
+        $host->setAttr(name => 'host_manager_id', value => $self->id);
+        $host->save();
+    }
+}
+
+sub promoteVm {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'host', 'hypervisor_id' ]);
+    throw Kanopya::Exception::NotImplemented();
+}
 1;
