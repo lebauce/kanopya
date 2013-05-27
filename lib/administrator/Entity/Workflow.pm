@@ -145,23 +145,17 @@ sub _updatePendingOperationRank {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'offset' ]);
 
-    my @sorted_operations = sort {
-        $b->execution_rank <=> $a->execution_rank
-    } $self->operations;
+    my @operations = $self->searchRelated(filters => ['operations'],
+                                          hash    => { 'me.state' => ['pending'] },
+                                          order_by => 'execution_rank DESC');
 
-    my $incr_num = 0; # num of operations to slide
-
-    for my $operation (@sorted_operations) {
-        if ($operation->state eq 'pending') {
-            # offset all pending operation to insert new ones
-            my $execution_rank = $operation->execution_rank;
-            $execution_rank += $args{offset};
-            $operation->setAttr(name => 'execution_rank', value => $execution_rank);
-            $operation->save();
-            $incr_num++;
-        }
+    for my $operation (@operations) {
+        # offset all pending operation to insert new ones
+        my $execution_rank = $operation->execution_rank;
+        $operation->execution_rank($execution_rank + $args{offset});
     }
-    return $incr_num;
+
+    return (scalar @operations);
 }
 
 sub _updateProcessingOperationRank {
@@ -171,13 +165,13 @@ sub _updateProcessingOperationRank {
     my $processing_operation = $self->findRelated(
                                 filters => ['operations'],
                                 hash    => { 'me.state' => ['processing', 'prereported', 'ready'] }
-                            );
+                               );
 
     my $execution_rank = $processing_operation->execution_rank;
-    $execution_rank += $args{offset};
-    $processing_operation->setAttr(name => 'execution_rank', value => $execution_rank);
+    $processing_operation->setAttr(name => 'execution_rank', value => $execution_rank + $args{offset});
+    $processing_operation->setAttr(name => 'state', value => 'pending');
     $processing_operation->save();
-    $log->debug('Operation id '.$processing_operation->id.': new rank'.$execution_rank);
+    $log->debug('Operation id '.$processing_operation->id.': new rank '.($execution_rank + $args{offset}));
 }
 
 sub enqueueBefore {
@@ -193,23 +187,16 @@ sub enqueueBefore {
     my $rank_offset = 0;
 
     for my $operation_to_enqueue (@operations_to_enqueue) {
-
         my $operation = Entity::Operation->enqueue(
             workflow_id => $self->getAttr(name => 'workflow_id'),
             %$operation_to_enqueue,
         );
 
-        if ($incr_num > 0) {
-            # Ajust execution rank
-            my $current_rank = $operation->execution_rank;
-            my $new_rank = $current_rank - $incr_num - scalar(@operations_to_enqueue) + $rank_offset - 1;
-            $operation->setAttr(name => 'execution_rank', value => $new_rank);
-            if ($new_rank == 0) {
-                $operation->setAttr(name => 'state', value => 'ready');
-            }
-            $operation->save();
-            $rank_offset++;
-        }
+        # Ajust execution rank
+        my $current_rank = $operation->execution_rank;
+        my $new_rank = $current_rank - $incr_num - scalar(@operations_to_enqueue) + $rank_offset - 1;
+        $operation->execution_rank($new_rank);
+        $rank_offset++;
     }
 
     map {$log->debug($_->execution_rank.' '.$_->type.' '.$_->state)} $self->operations;
@@ -271,6 +258,10 @@ sub prepareNextOperation {
                   error => "Next operation is the same than the current one <" . $next->id .
                            "> in workflow <" . $self->id .  ">"
               );
+    }
+
+    if (defined $next->param_preset_id) {
+        $args{current}->param_preset->update(params => $next->param_preset->load());
     }
 
     # Give the current operation params to the next one
