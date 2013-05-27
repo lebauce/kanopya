@@ -119,4 +119,20 @@ sub execute {
     $log->info("Cluster <" . $self->{context}->{cluster}->cluster_name . "> is now added");
 }
 
+
+=pod
+=begin classdoc
+
+Set the cluster as down.
+
+=end classdoc
+=cut
+
+sub finish {
+    my ($self, %args) = @_;
+    $self->SUPER::finish(%args);
+
+    $self->{context}->{cluster}->setState(state => 'down');
+}
+
 1;

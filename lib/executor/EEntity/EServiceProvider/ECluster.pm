@@ -52,9 +52,6 @@ sub create {
     my $command = "mkdir -p $dir";
     $self->_host->getEContext->execute(command => $command);
 
-    # set initial state to down
-    $self->setAttr(name => 'cluster_state', value => 'down:'.time);
-
     # Add all the components provided by the master image
     if ($self->masterimage) {
         foreach my $component ($self->masterimage->components_provided) {
