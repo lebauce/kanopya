@@ -1620,10 +1620,12 @@ sub registerKanopyaMaster {
         lvm2_vg_size      => $args{kanopya_vg_size}
     );
 
-    my $pv = Entity::Component::Lvm2::Lvm2Pv->new(
-        lvm2_vg_id   => $vg->id,
-        lvm2_pv_name => $args{kanopya_pvs}->[0]
-    );
+    for my $pv (@{$args{kanopya_pvs}}) {
+        Entity::Component::Lvm2::Lvm2Pv->new(
+            lvm2_vg_id   => $vg->id,
+            lvm2_pv_name => $pv
+        );
+    }
 
     $args{db}->resultset('Dhcpd3Subnet')->create( {
         dhcpd3_id             => $dhcp->id,
