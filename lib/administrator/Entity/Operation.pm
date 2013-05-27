@@ -342,7 +342,7 @@ sub unlockContext {
     $self->beginTransaction;
     for my $key (keys %{ $params->{context} }) {
         my $entity = $params->{context}->{$key};
-        $log->debug("Trying to unlock entity <$key>:" . $entity->id . ">");
+        $log->debug("Trying to unlock entity <$key>, id <" . $entity->id . ">");
         eval {
             $entity->unlock(consumer => $self->workflow);
         };
