@@ -325,7 +325,6 @@ sub receive {
     if (defined $receiver->{consumer}) {
         $self->cancel(receiver => $receiver);
     }
-    $log->debug("Registering (consume) callback on queue <$receiver->{receiver}->{method_frame}->{queue}>");
     $receiver->{consumer} = $self->consume(queue    => $receiver->{receiver}->{method_frame}->{queue},
                                            callback => $receiver->{callback},
                                            condvar  => $condvar);

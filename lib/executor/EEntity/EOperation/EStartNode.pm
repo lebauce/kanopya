@@ -187,7 +187,8 @@ sub execute {
     $log->info("Operate Boot Configuration");
     $self->_generateBootConf(mount_point => $self->{params}->{mountpoint},
                              options     => $mount_options,
-                             tftpserver  => $tftp);
+                             tftpserver  => $tftp,
+                             bootserver  => $bootserver);
 
     # Update kanopya etc hosts
     EEntity->new(data => $bootserver->getComponent(category => "System"))->applyConfiguration();
@@ -237,7 +238,7 @@ sub _generateBootConf {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'options', 'tftpserver' ],
+                         required => [ 'options', 'tftpserver', 'bootserver' ],
                          optional => { 'mount_point' => undef });
 
     my $cluster     = $self->{context}->{cluster};
@@ -309,7 +310,8 @@ sub _generateBootConf {
                                 host           => $self->{context}->{host},
                                 mount_point    => $args{mount_point},
                                 kernel_version => $kernel_version,
-                                tftpserver     => $args{tftpserver});
+                                tftpserver     => $args{tftpserver},
+                                bootserver     => $args{bootserver});
 
         if ($boot_policy =~ m/ISCSI/) {
             my $targetname = $self->{context}->{container_access}->container_access_export;
@@ -360,10 +362,8 @@ sub _generatePXEConf {
 
     General::checkParams(args     =>\%args,
                          required => [ 'cluster', 'host', 'bootserver', 'tfpserver' ],
-                         optional => {
-                            'mount_point'    => undef,
-                            'kernel_version' => undef
-                         });
+                         optional => { 'mount_point'    => undef,
+                                       'kernel_version' => undef });
 
     # Instanciate dhcpd
     my $dhcpd = EEntity->new(entity => $args{bootserver}->getComponent(category => "Dhcpserver"));

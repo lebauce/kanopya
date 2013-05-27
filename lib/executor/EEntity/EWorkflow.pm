@@ -39,6 +39,7 @@ sub cancel {
     for my $operation (Entity::Operation->search(order_by => 'execution_rank DESC')) {
         if ($operation->state ne 'pending') {
             eval {
+                $log->info("Cancelling operation <" . $operation->id . ">");
                 EEntity::EOperation->new(operation => $operation, skip_not_found => 1)->cancel();
             };
             if ($@){

@@ -144,7 +144,7 @@ sub AUTOLOAD {
     my $data = JSON->new->utf8->encode(\%args);
 
     # Send message for the workers
-    $log->debug("Publishing on queue <$channel>, body: $data"));
+    $log->debug("Publishing on queue <$channel>, body: $data");
     $senders->{$channel}->publish(exchange    => '',
                                   routing_key => $channel,
                                   body        => $data,
@@ -152,7 +152,7 @@ sub AUTOLOAD {
                                   header => { delivery_mode => 2 });
 
     # Send message for the subscribers
-    $log->debug("Publishing on exchange <$channel>, body: $data"));
+    $log->debug("Publishing on exchange <$channel>, body: $data");
     $senders->{$channel}->publish(exchange    => $channel,
                                   routing_key => '',
                                   body        => $data,
