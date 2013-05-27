@@ -29,14 +29,19 @@ my $errmsg;
 sub getFreeHost {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ "ram", "core", "interfaces" ]);
+    General::checkParams(args => \%args, required => [ "cluster" ]);
+
+    my $cluster     = $args{cluster};
+    my $host_params = $cluster->getManagerParameters(manager_type => "HostManager");
+    my @interfaces  = $cluster->interfaces;
 
     $log->info("Looking for a virtual host");
-    my $host = eval {
+    my $host;
+    eval {
         return $self->createVirtualHost(
-                   core   => $args{core},
-                   ram    => $args{ram},
-                   ifaces => scalar @{$args{interfaces}},
+                   core   => $host_params->{core},
+                   ram    => $host_params->{ram},
+                   ifaces => scalar @interfaces,
                );
     };
     if ($@) {
