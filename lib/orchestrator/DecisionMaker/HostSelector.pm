@@ -1,6 +1,4 @@
-# HostSelector.pm - Select better fit host according to context, constraints and choice policy
-
-#    Copyright © 2011-2012 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -16,13 +14,11 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 =pod
-
 =begin classdoc
 
 Select better fit host according to context, constraints and choice policy
 
 =end classdoc
-
 =cut
 
 package DecisionMaker::HostSelector;
@@ -35,8 +31,7 @@ use Cwd;
 use File::Temp qw(tempfile);;
 
 use General;
-use Entity;
-use Entity::Host;
+use EContext::Local;
 use Kanopya::Exceptions;
 
 use Data::Dumper;
@@ -49,8 +44,8 @@ use constant {
     JAR_NAME => "deployment_solver.jar",
 };
 
-=pod
 
+=pod
 =begin classdoc
 
 Select and return the more suitable host according to constraints
@@ -62,10 +57,9 @@ Final constraints are intersection of input constraints and cluster components c
 @optional ram  min amount of desired ram  # TODO manage unit (M,G,..)
 @optional interfaces Interfaces of the 
 
-@return Entity::Host
+@return the selected host
 
 =end classdoc
-
 =cut
 
 sub getHost {
@@ -192,7 +186,12 @@ sub getHost {
 
     $log->debug('HostSelector : Calling the Jar');
 
-    system "java -jar $jar $infra_filename $constraints_filename $result_filename";
+    my $econtext = EContext::Local->new();
+    my $command  = "java -jar $jar $infra_filename $constraints_filename $result_filename";
+    my $result   = $econtext->execute(command => $command);
+    if ($result->{stderr} and ($result->{exitcode} != 0)) {
+        throw Kanopya::Exception(error => $result->{stderr});
+    }
 
     $log->debug('HostSelector : Retrieving the result and unlink the files');
 
@@ -200,7 +199,7 @@ sub getHost {
     while (my $line  = <$result_file>) {
         $import .= $line;
     }
-    my $result = JSON->new->utf8->decode($import);
+    $result = JSON->new->utf8->decode($import);
 
     my $selected_host = $result->{selectedHostIndex};
 
@@ -215,3 +214,5 @@ sub getHost {
 
     return $free_hosts[$selected_host];
 }
+
+1;
