@@ -37,7 +37,7 @@ function add_menu(container, label, submenu_links, elem_id) {
 function add_menutree(container, label, menu_info, elem_id) {
     
     var link_li = $('<li>');
-    var link_a = $('<span class="arrow"></span><a class="view_link">' + label + '</a>');
+    var link_a = $('<a class="view_link"><span class="arrow"></span>' + label + '</a>');
     link_a.bind('click', function(event) {
         $(this).next().toggle();
 
@@ -105,7 +105,7 @@ function add_menutree(container, label, menu_info, elem_id) {
             $(link_li).show();
         }
     });
-    
+
     link_li.append(link_a);
     link_li.append(sublevel);
     $(link_li).hide();
