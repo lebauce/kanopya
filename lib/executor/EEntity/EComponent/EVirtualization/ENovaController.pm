@@ -151,6 +151,19 @@ sub migrateHost {
     );
 }
 
+
+=pod
+
+=begin classdoc
+
+Get all the vms of an hypervisor
+
+@param host hypervisor
+
+=end classdoc
+
+=cut
+
 sub getHypervisorVMs {
     my ($self, %args) = @_;
 
@@ -191,6 +204,19 @@ sub getHypervisorVMs {
     };
 }
 
+
+=pod
+
+=begin classdoc
+
+Get the detail of a vm
+
+@params host vm
+
+=end classdoc
+
+=cut
+
 sub getVMDetails {
     my ($self, %args) = @_;
 
@@ -207,9 +233,11 @@ sub getVMDetails {
         throw Kanopya::Exception(error => "VM <".$args{host}->id."> not found in infrastructure");
     }
 
-    return $details;
+    return {
+        state     => $details->{server}->{status},
+        hypervisor => $details->{server}->{'OS-EXT-SRV-ATTR:host'},
+    };
 }
-
 
 
 =pod
@@ -229,21 +257,23 @@ sub getVMState {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    my $details =  $self->getVMDetails(%args);
+    eval {
+        my $details =  $self->getVMDetails(%args);
 
-    my $state_map = {
-        'MIGRATING' => 'migr',
-        'BUILD'     => 'pend',
-        'REBUILD'   => 'pend',
-        'ACTIVE'    => 'runn',
-        'ERROR'     => 'fail',
-        'SHUTOFF'   => 'shut'
-    };
-
-    return {
-        state      => $state_map->{$details->{server}->{status}} || 'fail',
-        hypervisor => $details->{server}->{"OS-EXT-SRV-ATTR:host"}
-    };
+        my $state_map = {
+            'MIGRATING' => 'migr',
+            'BUILD'     => 'pend',
+            'REBUILD'   => 'pend',
+            'ACTIVE'    => 'runn',
+            'ERROR'     => 'fail',
+            'SHUTOFF'   => 'shut'
+        };
+    
+        return {
+            state      => $state_map->{$details->{state}} || 'fail',
+            hypervisor => $details->{hypervisor},
+        };
+    }
 }
 
 =pod
