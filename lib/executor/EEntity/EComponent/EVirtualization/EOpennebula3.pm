@@ -245,7 +245,7 @@ sub migrateHost {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'host', 'hypervisor_dst', 'hypervisor_cluster']);
+                         required => [ 'host', 'hypervisor_dst']);
 
     # Get the source hypervisor
     my $src_hypervisor = $args{host}->hypervisor;

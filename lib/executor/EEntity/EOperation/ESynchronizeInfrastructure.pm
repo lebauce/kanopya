@@ -53,32 +53,44 @@ sub check {
                                       'cloud_manager' => undef,
                                       'vm'            => undef,
                          });
+
+    if (! (defined $self->{context}->{hypervisor} ||
+        defined $self->{context}->{vm} ||
+        defined $self->{context}->{cloud_manager})) {
+
+        my $error = 'At least one param in {hypervisor, cloud_manager, vm} must be defined in context';
+        throw Kanopya::Exception::Internal(error => $error);
+     }
 }
+
 
 sub prepare {
     my $self = shift;
     $self->SUPER::prepare();
-    if (defined $self->{context}->{hypervisor} && 
-        not $self->{context}->{hypervisor}->isa('EEntity::EHost::EHypervisor')) {
 
-        my $error = 'Operation can only be applied to an hypervisor';
-        throw Kanopya::Exception(error => $error);
+    if ((! defined $self->{context}->{cloud_manager}) && defined $self->{context}->{vm}) {
+        $self->{context}->{cloud_manager} = EEntity->new(
+                                                data => $self->{context}->{vm}->host_manager,
+                                            );
+    }
+    elsif ((! defined $self->{context}->{cloud_manager}) && defined $self->{context}->{hypervisor}) {
+        $self->{context}->{cloud_manager} = EEntity->new(
+                                                data => $self->{context}->{hypervisor}->getCloudManager(),
+                                            );
     }
 }
+
 
 sub execute {
     my $self = shift;
 
-    if (! defined $self->{context}->{cloud_manager}) {
-        $self->{context}->{cloud_manager} = EEntity->new(
-                                            data => $self->{context}->{hypervisor}->getCloudManager(),
-                                         );
-    }
+    $DB::single = 1;
 
     if (! defined $self->{params}->{diff_infra_db}) {
         if (defined $self->{context}->{hypervisor}) {
-            $self->{params}->{diff_infra_db} = $self->{context}->{cloud_manager}->checkHypervisorVMPlacementIntegrity(host => $self->{context}->{hypervisor});
-            $self->{context}->{cloud_manager}->repairVMRessourceIntegrity(host => $self->{context}->{hypervisor});
+            $self->{params}->{diff_infra_db} = $self->{context}->{cloud_manager}->checkHypervisorVMPlacementIntegrity(
+                                                   host => $self->{context}->{hypervisor}
+                                               );
         }
         else {
             $self->{params}->{diff_infra_db} = $self->{context}->{cloud_manager}->checkAllInfrastructureIntegrity(cloud_manager => $self->{context}->{cloud_manager});
@@ -94,20 +106,25 @@ sub execute {
                                                           );
             };
         }
-    } 
+    }
+
+    if (defined $self->{context}->{hypervisor}) {
+        $self->{context}->{cloud_manager}->repairVMRessourceIntegrity(
+            host => $self->{context}->{hypervisor}
+        );
+    }
 
     $self->{context}->{cloud_manager}->repairWrongHypervisor(vm_ids => $self->{params}->{diff_infra_db}->{wrong_hv});
     $self->{context}->{cloud_manager}->repairVmInDBNotInInfra(vm_ids => $self->{params}->{diff_infra_db}->{base_not_hv_infra});
     $self->{context}->{cloud_manager}->repairVmInInfraUnkInDB(vm_uuids => $self->{params}->{diff_infra_db}->{unk_vm_uuids});
     $self->{context}->{cloud_manager}->repairVmInInfraWrongHostManager(vm_ids => $self->{params}->{diff_infra_db}->{infra_not_hostmanager});
 
-
-
     $self->SUPER::execute();
 }
 
 sub finish {
     my ($self) = @_;
+
     delete $self->{context}->{hypervisor};
     delete $self->{context}->{cloud_manager};
 }

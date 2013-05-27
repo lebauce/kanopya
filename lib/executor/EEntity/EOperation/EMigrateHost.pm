@@ -45,11 +45,11 @@ sub prerequisites {
     }
 
     my $diff_infra_db = $self->{context}->{cloudmanager_comp}
-                            ->checkHypervisorVMPlacementIntegrity(host => $self->{context}->{host});
+                             ->checkHypervisorVMPlacementIntegrity(host => $self->{context}->{host});
     eval {
         $diff_infra_db = $self->{context}->{cloudmanager_comp}
-                             ->checkVMPlacementIntegrity(host          => $self->{context}->{vm},
-                                                         diff_infra_db => $diff_infra_db);
+                              ->checkVMPlacementIntegrity(host          => $self->{context}->{vm},
+                                                          diff_infra_db => $diff_infra_db);
     };
     if ($@) {
         my $error = $@;
@@ -65,6 +65,7 @@ sub prerequisites {
                     hypervisor => $self->{context}->{host},
                     vm         => $self->{context}->{vm},
                 },
+                diff_infra_db => $diff_infra_db,
             }
         );
         throw Kanopya::Exception(error => $error);
@@ -73,7 +74,6 @@ sub prerequisites {
     if (! $self->{context}->{cloudmanager_comp}->isInfrastructureSynchronized(hash => $diff_infra_db)) {
 
         # Repair infra before retrying AddNode
-        # TODO : pass $diff_infra_db Hashref throw params
 
         $self->workflow->enqueueBefore(
             operation => {
@@ -84,6 +84,7 @@ sub prerequisites {
                         hypervisor => $self->{context}->{host},
                         vm         => $self->{context}->{vm},
                     },
+                    diff_infra_db => $diff_infra_db,
                 }
             }
         );
@@ -100,13 +101,6 @@ sub prepare {
     $self->SUPER::prepare();
 
     General::checkParams(args => $self->{context}, required => [ "host", "vm" ]);
-
-    # Check cloudCluster
-    if (not defined $self->{context}->{cluster}) {
-        $self->{context}->{cluster} = Entity::ServiceProvider->get(
-                                          id => $self->{context}->{host}->getClusterId()
-                                      );
-    }
 
     # check if host is deactivated
     if ($self->{context}->{host}->active == 0) {
@@ -171,7 +165,6 @@ sub execute {
         $self->{context}->{cloudmanager_comp}->migrateHost(
             host               => $self->{context}->{vm},
             hypervisor_dst     => $self->{context}->{host},
-            hypervisor_cluster => $self->{context}->{cluster}
         );
 
         $log->info("VM <" . $self->{context}->{vm}->id .
@@ -205,7 +198,6 @@ sub postrequisites {
             $self->{context}->{cloudmanager_comp}->_entity->migrateHost(
                 host               => $self->{context}->{vm},
                 hypervisor_dst     => $self->{context}->{host},
-                hypervisor_cluster => $self->{context}->{cluster}
             );
             return 0;
         }

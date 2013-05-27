@@ -182,11 +182,13 @@ sub executeOperation {
                      );
     };
     if ($@) {
+        my $error = $@;
         # The operation does not exists, probably due to a workflow cancel
         $self->log(
             level => 'warn',
-            msg   => "Operation <$args{operation_id}> does not exists, skipping."
+            msg   => "Operation <$args{operation_id}> does not exists, skipping.\n $error"
         );
+        return 1;
     }
 
     # Log in the proper file
@@ -245,7 +247,7 @@ sub executeOperation {
         if ($delay) {
             return $self->terminateOperation(operation => $operation,
                                              status    => 'prereported',
-                                             time      => time + $delay);
+                                             time      => $delay > 0 ? time + $delay : undef);
         }
 
         # Set the operation as proccessing
@@ -292,7 +294,7 @@ sub executeOperation {
     if ($delay) {
         return $self->terminateOperation(operation => $operation,
                                          status    => 'postreported',
-                                         time      => time + $delay);
+                                         time      => $delay > 0 ? time + $delay : undef);
     }
 
     # Finishing the operation.
