@@ -200,10 +200,16 @@ sub applyConfiguration {
 
         $ret = $econtext->execute(command => $command);
 
-        while ($ret->{output} =~ /(.*) finished with exit code 3/g) {
-            @hosts = grep{ $_ ne $1 } @hosts;
+        while ($ret->{stdout} =~ /([\w.]+) finished with exit code (\d+)/g) {
+            # If the host is down or not reachable, the exit code is 2
+            # If the host is already applying manifest, the exit code is 3
+            # In both cases, puppet kick returns 3 so we filter the broken hosts
+            # and the hosts that have already applied the manifest
+            if ($2 != 3) {
+                @hosts = grep{ $_ ne $1 } @hosts;
+            }
         }
-    } while ($ret->{exitcode} == 3 && $timeout > 0 && (scalar @hosts));
+    } while ($timeout > 0 && (scalar @hosts));
 }
 
 sub isUp {
