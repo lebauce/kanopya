@@ -78,11 +78,7 @@ sub new {
         return $self;
     }
 
-    General::checkParams(args => \%args, optional => { cloud_manager => undef });
-
-    if (! defined $args{cloud_manager}) {
-        throw Kanopya::Exception(error => 'No cloud_manager arg capacity manager cannot construct infra');
-    }
+    General::checkParams(args => \%args, required => [ 'cloud_manager' ]);
 
     $self->{_cloud_manager} = $args{cloud_manager};
 
@@ -94,7 +90,7 @@ sub new {
 
 
 sub _applyOvercommitmentFactors {
-    my ($self, %args) = @_;
+    my $self = shift;
 
     # Get available memory for all cloud manager hosts (hypervisors)
     $log->info("The cloud manager is: ".$self->{_cloud_manager});
@@ -125,9 +121,7 @@ Use the cloud manager to get the infrastructure information
 =cut
 
 sub _constructInfra {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => []);
+    my $self = shift;
 
     # Get the list of all hypervisors
     my @hypervisors_r = $self->{_cloud_manager}->activeHypervisors();
