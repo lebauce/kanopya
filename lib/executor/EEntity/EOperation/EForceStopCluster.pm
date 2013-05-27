@@ -101,8 +101,8 @@ sub execute {
             );
         }
 
-        $node->node_hostname = undef;
-        $node->host->host_initiatorname = undef;
+        $node->node_hostname(undef);
+        $node->host->host_initiatorname(undef);
 
         $self->{context}->{cluster}->unregisterNode(node => $node);
     }
