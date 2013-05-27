@@ -122,6 +122,7 @@ sub test1e {
                 manager_params => {
                     core => 1,
                     ram  => 4096*1024*1024,
+                    tags => [],
                 },
             },
         }
@@ -437,7 +438,7 @@ sub test1e {
     lives_ok {
         my $selected_host = DecisionMaker::HostSelector->getHost(cluster => $cluster);
 
-        # The selected host must be the 1st.
+        # The selected host must be the 5th.
         if ($selected_host->id != $host5->id) {
             die ("Test 1.e : Wrong host selected");
         }

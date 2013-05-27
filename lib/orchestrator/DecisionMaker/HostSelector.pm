@@ -132,6 +132,7 @@ sub getHost {
             },
             tags => [$host->tags],
         };
+
         push @json_infrastructure, $current;
     }
 
@@ -157,7 +158,7 @@ sub getHost {
         }
         my $json_interface = {
             bondsNumberMin => $interface->bonds_number + 1,
-            netIPsMin    => \@networks,
+            netIPsMin      => \@networks,
         };
         push @json_interfaces, $json_interface;
     }
@@ -173,7 +174,7 @@ sub getHost {
         network  => {
             interfaces => \@json_interfaces,
         },
-        tags_min => [$host_params->{tags}],
+        tagsMin => $host_params->{tags},
     };
 
     $log->debug('HostSelector : Creating JSON temp files');

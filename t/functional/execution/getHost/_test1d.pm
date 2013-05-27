@@ -50,6 +50,7 @@ sub test1d {
                 manager_params => {
                     core => 1,
                     ram  => 4096*1024*1024,
+                    tags => [],
                 },
             },
         }
@@ -168,7 +169,7 @@ sub test1d {
     lives_ok {
         my $selected_host = DecisionMaker::HostSelector->getHost(cluster => $cluster);
 
-        # The selected host must be the 1st.
+        # The selected host must be the 3rd.
         if ($selected_host->id != $host3->id) {
             die ("Test 1.d : Wrong host selected");
         }

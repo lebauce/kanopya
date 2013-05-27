@@ -41,6 +41,7 @@ sub test2b {
                 manager_params => {
                     core => 8,
                     ram  => 512*1024*1024,
+                    tags => [],
                 },
             },
         }
