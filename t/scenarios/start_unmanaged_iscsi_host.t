@@ -122,7 +122,7 @@ sub stop_deactivate_and_remove_iscsi_host {
 
         expectedException {
             $cluster = Entity::ServiceProvider::Cluster->get(id => $cluster->id);
-        } 'Kanopya::Exception::DB',
+        } 'Kanopya::Exception::Internal::NotFound',
         "Cluster $cluster_name with id $cluster_id has been successfully removed";
     } 'Stop, deactivate and remove cluster';
 }
@@ -158,8 +158,8 @@ sub _create_and_configure_cluster {
         ]
     });
 
-    diag('Get a kernel for KVM');
-    my $kernel = Entity::Kernel->find(hash => { kernel_name => '2.6.32-279.5.1.el6.x86_64' });
+#    diag('Get a kernel for KVM');
+#    my $kernel = Entity::Kernel->find(hash => { kernel_name => '2.6.32-279.5.1.el6.x86_64' });
 
     diag('Retrieve physical hosts');
     my @hosts = Entity::Host->find(hash => { host_manager_id => $physical_hoster->getId });
