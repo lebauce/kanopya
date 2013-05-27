@@ -175,28 +175,7 @@ sub executeOperation {
 
     General::checkParams(args => \%args, required => [ "operation_id" ]);
 
-    my $operation;
-    eval {
-        $operation = EEntity::EOperation->new(
-                         operation => Entity::Operation->get(id => $args{operation_id})
-                     );
-    };
-    if ($@) {
-        my $err = $@;
-        if ($err->isa('Kanopya::Exception::Internal::NotFound')) {
-            # The operation does not exists, probably due to a workflow cancel
-            $self->log(
-                level => 'warn',
-                msg   => "Operation <$args{operation_id}> does not exists, skipping."
-            );
-            return 1;
-        }
-        else {
-            return $self->terminateOperation(operation => $operation,
-                                             status    => 'cancelled',
-                                             exception => $err);
-        }
-    }
+    my $operation = $self->instantiateOperation(id => $args{operation_id});
 
     # Log in the proper file
     $self->setLogAppender(workflow => $operation->workflow);
@@ -428,23 +407,8 @@ sub handleResult {
 
     General::checkParams(args => \%args, required => [ 'operation_id', 'status' ]);
 
-    my $operation;
-    eval {
-        $operation = EEntity::EOperation->new(
-                         operation      => Entity::Operation->get(id => $args{operation_id}),
-                         skip_not_found => 1
-                     );
-    };
-    if ($@) {
-        # The operation does not exists, probably due to a workflow cancel
-        $self->log(
-            level => 'warn',
-            msg   => "Operation <$args{operation_id}> does not exists, skipping."
-        );
-        return 1;
-    }
-
-    my $workflow = EEntity->new(entity => $operation->workflow);
+    my $operation = $self->instantiateOperation(id => $args{operation_id});
+    my $workflow  = EEntity->new(entity => $operation->workflow);
 
     # Log in the proper file
     $self->setLogAppender(workflow => $workflow);
@@ -714,6 +678,47 @@ sub lockOperationContext {
     throw Kanopya::Exception::Execution::OperationReported(
               error => "Unable to get the context locks until timeout exeedeed."
           );
+}
+
+
+=pod
+=begin classdoc
+
+@param operation the operation to instantiate
+
+@return the operation instance
+
+=end classdoc
+=cut
+
+sub instantiateOperation {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'id' ]);
+
+    my $operation;
+    eval {
+        $operation = EEntity::EOperation->new(
+                         operation => Entity::Operation->get(id => $args{id})
+                     );
+    };
+    if ($@) {
+        my $err = $@;
+        if ($err->isa('Kanopya::Exception::Internal::NotFound')) {
+            # The operation does not exists, probably due to a workflow cancel
+            $self->log(
+                level => 'warn',
+                msg   => "Operation <$args{id}> does not exists, skipping."
+            );
+        }
+        if (ref($err)) {
+            $err->rethrow();
+        }
+        else {
+            throw Kanopya::Exception::Execution(error => $err);
+        }
+    }
+    return $operation;
 }
 
 1;
