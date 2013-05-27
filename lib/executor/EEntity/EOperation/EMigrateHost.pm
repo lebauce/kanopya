@@ -102,13 +102,6 @@ sub prepare {
 
     General::checkParams(args => $self->{context}, required => [ "host", "vm" ]);
 
-    # Check cloudCluster
-    if (not defined $self->{context}->{cluster}) {
-        $self->{context}->{cluster} = Entity::ServiceProvider->get(
-                                          id => $self->{context}->{host}->getClusterId()
-                                      );
-    }
-
     # check if host is deactivated
     if ($self->{context}->{host}->active == 0) {
         throw Kanopya::Exception::Internal(error => 'hypervisor is not active');
@@ -172,7 +165,6 @@ sub execute {
         $self->{context}->{cloudmanager_comp}->migrateHost(
             host               => $self->{context}->{vm},
             hypervisor_dst     => $self->{context}->{host},
-            hypervisor_cluster => $self->{context}->{cluster}
         );
 
         $log->info("VM <" . $self->{context}->{vm}->id .
@@ -206,7 +198,6 @@ sub postrequisites {
             $self->{context}->{cloudmanager_comp}->_entity->migrateHost(
                 host               => $self->{context}->{vm},
                 hypervisor_dst     => $self->{context}->{host},
-                hypervisor_cluster => $self->{context}->{cluster}
             );
             return 0;
         }
