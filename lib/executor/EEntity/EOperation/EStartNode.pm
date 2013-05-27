@@ -190,7 +190,7 @@ sub execute {
                              tftpserver  => $tftp);
 
     # Update kanopya etc hosts
-    EEntity->new(data => $bootserver->getComponent(category => "System")->applyConfiguration();
+    EEntity->new(data => $bootserver->getComponent(category => "System"))->applyConfiguration();
 
     # Umount system image container
     if ($self->{params}->{mountpoint}) {
