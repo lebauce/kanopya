@@ -38,13 +38,19 @@ my $log = get_logger("");
 my $errmsg;
 
 
-sub prepare {
+sub check {
     my ($self, %args) = @_;
-    $self->SUPER::prepare();
+    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "systemimage_src", "disk_manager" ]);
     
     General::checkParams(args => $self->{params}, required => [ "systemimage_name", "systemimage_desc", "disk_manager_params" ]);
+}
+
+
+sub execute {
+    my $self = shift;
+    $self->SUPER::execute();
 
     # Check if systemimage is not active
     $log->debug('Checking source systemimage active value <' .
@@ -94,11 +100,6 @@ sub prepare {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
-}
-
-sub execute {
-    my $self = shift;
-    $self->SUPER::execute();
 
     $self->{context}->{systemimage}->create(src_container => $self->{context}->{systemimage_src},
                                             disk_manager  => $self->{context}->{disk_manager},

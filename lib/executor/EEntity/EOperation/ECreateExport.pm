@@ -32,14 +32,20 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
-sub prepare {    
+sub check {
     my $self = shift;
     my %args = @_;
-    $self->SUPER::prepare();
+    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "export_manager", "container" ]);
 
     General::checkParams(args => $self->{params}, required => [ "manager_params" ]);
+}
+
+
+sub execute {
+    my $self = shift;
+    $self->SUPER::execute();
 
     # Check state of the storage_provider
     my $storage_provider = $self->{context}->{export_manager}->service_provider;
@@ -49,11 +55,6 @@ sub prepare {
         $log->error($errmsg);
         throw Kanopya::Exception::Execution(error => $errmsg);
     }
-}
-
-sub execute {
-    my $self = shift;
-    $self->SUPER::execute();
 
     $self->{context}->{export_manager}->createExport(container => $self->{context}->{container},
                                                      erollback => $self->{erollback},

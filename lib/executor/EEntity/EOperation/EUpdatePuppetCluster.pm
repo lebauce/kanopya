@@ -28,9 +28,10 @@ use Log::Log4perl 'get_logger';
 my $log = get_logger("");
 my $errmsg;
 
-sub prepare {
+
+sub execute {
     my ($self, %args) = @_;
-    $self->SUPER::prepare();
+    $self->SUPER::execute();
 
     # check if this cluster has a puppet agent component
     my $puppetagent = eval {
@@ -46,11 +47,6 @@ sub prepare {
             data => $puppetagent
         );
     }
-}
-
-sub execute {
-    my ($self, %args) = @_;
-    $self->SUPER::execute();
 
     $self->{context}->{puppetagent}->applyConfiguration(
         cluster => $self->{context}->{cluster}

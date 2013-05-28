@@ -30,23 +30,24 @@ use EEntity;
 my $log = get_logger("");
 my $errmsg;
 
-sub prepare {
+
+sub check {
     my $self = shift;
     my %args = @_;
-    $self->SUPER::prepare();
+    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "cluster" ]);
+}
+
+sub execute {
+    my $self = shift;
+    $self->SUPER::execute();
 
     # Check if cluster is active
     if ($self->{context}->{cluster}->active) {
         $errmsg = "Cluster <" . $self->{context}->{cluster}->id . "> is active";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
-}
-
-sub execute {
-    my $self = shift;
-    $self->SUPER::execute();
 
     # Remove cluster directory
     my $dir = $self->_executor->getConf->{clusters_directory} . '/' . 

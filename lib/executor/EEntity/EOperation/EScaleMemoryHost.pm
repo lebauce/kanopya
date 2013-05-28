@@ -33,15 +33,18 @@ my $log = get_logger("");
 my $errmsg;
 
 
-sub prepare {
-    my $self = shift;
-    my %args = @_;
-    my $errmsg;
-
-    $self->SUPER::prepare();
+sub check {
+    my ($self, %args) = @_;
+    $self->SUPER::check(%args);
 
     General::checkParams(args => $self->{context}, required => [ "host", "cloudmanager_comp"]);
+
     General::checkParams(args => $self->{params}, required => [ "memory" ]);
+}
+
+sub execute {
+    my ($self, %args) = @_;
+    $self->SUPER::execute(%args);
 
     # Verify if there is enough resource in HV
     my $vm_id = $self->{context}->{host}->getId;
@@ -75,11 +78,6 @@ sub prepare {
         $log->debug($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
-}
-
-sub execute {
-    my ($self, %args) = @_;
-    $self->SUPER::execute(%args);
 
     $self->{context}->{cloudmanager_comp}->scaleMemory(host   => $self->{context}->{host},
                                                        memory => $self->{params}->{memory});

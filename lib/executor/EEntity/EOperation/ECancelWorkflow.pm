@@ -38,10 +38,9 @@ sub check {
     General::checkParams(args => $self->{params}, required => [ "workflow_id" ]);
 }
 
-sub prepare {
+sub execute {
     my $self = shift;
-    my %args = @_;
-    $self->SUPER::prepare();
+    $self->SUPER::execute();
 
     # Workflow is not an entity...
     my $workflow = Entity::Workflow->get(id => $self->{params}->{workflow_id});
@@ -52,11 +51,6 @@ sub prepare {
         $errmsg = "Workflow <" . $self->{context}->{workflow}->id . "> is not active";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
-}
-
-sub execute {
-    my $self = shift;
-    $self->SUPER::execute();
 
     $self->{context}->{workflow}->cancel(state => 'cancelled');
 }

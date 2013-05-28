@@ -29,8 +29,8 @@ my $log = get_logger("");
 my $errmsg;
 
 sub check {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
+
     General::checkParams(args => $self->{context}, required => [ "combination"]);
 }
 
@@ -45,4 +45,5 @@ sub execute {
         node_id     => $self->{params}->{node_id}, # undef if not defined
     );
 }
+
 1;

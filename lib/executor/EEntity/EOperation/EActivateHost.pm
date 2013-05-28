@@ -32,23 +32,23 @@ my $log = get_logger("");
 my $errmsg;
 
 
-sub prepare {
+sub check {
     my $self = shift;
     my %args = @_;
-    $self->SUPER::prepare();
+    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "host" ]);
+}
+
+sub execute{
+    my $self = shift;
+    $self->SUPER::execute();
 
     # check if host is not active
     if ($self->{context}->{host}->active) {
         $errmsg = "Host <" . $self->{context}->{host}->id . "> is already active";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
-}
-
-sub execute{
-    my $self = shift;
-    $self->SUPER::execute();
 
     # set host active in db
     $self->{context}->{host}->setAttr(name => 'active', value => 1, save => 1);

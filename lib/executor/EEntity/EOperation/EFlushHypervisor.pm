@@ -15,24 +15,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 26 sept 2012
 
-=head1 NAME
-
-EEntity::Operation::EFlushHypervisor - Operation class implementing
-
-=head1 SYNOPSIS
-
-This Object represent an operation.
-It allows to implement
-
-=head1 DESCRIPTION
-
-Component is an abstract class of operation objects
-
-=head1 METHODS
-
-=cut
 package EEntity::EOperation::EFlushHypervisor;
 use base "EEntity::EOperation";
 
@@ -49,13 +32,13 @@ my $errmsg;
 
 sub check {
     my $self = shift;
+
     General::checkParams(args => $self->{context}, required => [ "host" ]);
 }
 
 sub prerequisites {
     my $self = shift;
-
-    $self->SUPER::prepare();
+    $self->SUPER::prerequisites();
 
     if (not $self->{context}->{host}->isa('EEntity::EHost::EHypervisor')) {
         my $error = 'Operation can only be applied to an hypervisor';
@@ -123,17 +106,8 @@ sub execute {
 
 sub finish {
     my ($self) = @_;
+
     delete $self->{context}->{host};
 }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut
-

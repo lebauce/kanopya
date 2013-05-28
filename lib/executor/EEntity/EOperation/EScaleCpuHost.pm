@@ -34,13 +34,19 @@ my $log = get_logger("");
 my $errmsg;
 
 
-sub prepare {
+sub check {
     my ($self, %args) = @_;
-    $self->SUPER::prepare();
+    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "host","cloudmanager_comp" ]);
 
     General::checkParams(args => $self->{params}, required => [ "cpu_number" ]);
+
+}
+
+sub execute {
+    my ($self, %args) = @_;
+    $self->SUPER::execute(%args);
 
     # Verify if there is enough resource in HV
     my $vm_id = $self->{context}->{host}->getId;
@@ -61,14 +67,10 @@ sub prepare {
     my $cpu_limit = $self->{context}->{host}->node->service_provider->getLimit(type => 'cpu');
 
     if ($cpu_limit && ($check == 0 || $self->{params}->{cpu_number} > $cpu_limit)) {
-        my $errmsg = "Not enough CPU in HV $hv_id for VM $vm_id. Infrastructure may have change between operation queing and its execution";
+        my $errmsg = "Not enough CPU in HV $hv_id for VM $vm_id. " . 
+                     "Infrastructure may have change between operation queing and its execution";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
-}
-
-sub execute {
-    my ($self, %args) = @_;
-    $self->SUPER::execute(%args);
 
     $self->{context}->{cloudmanager_comp}->scaleCpu(host       => $self->{context}->{host},
                                                     cpu_number => $self->{params}->{cpu_number});

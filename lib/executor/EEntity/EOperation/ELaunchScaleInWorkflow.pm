@@ -26,23 +26,22 @@ use Data::Dumper;
 use Kanopya::Exceptions;
 use EEntity;
 use CapacityManagement;
-#use Entity::ServiceProvider::Cluster;
-#use Entity::Host;
 
 my $log = get_logger("");
 my $errmsg;
 
 
-sub prepare {
+sub check {
     my $self = shift;
     my %args = @_;
-    $self->SUPER::prepare();
+    $self->SUPER::check();
 
     General::checkParams(args => $self->{params}, required => [ 'scalein_value', 'scalein_type' ]);
 
     General::checkParams(args => $self->{context}, required => [ "host" ]);
 
 }
+
 
 sub execute{
     my $self = shift;

@@ -30,25 +30,24 @@ my $errmsg;
 
 sub check {
     my $self = shift;
-    General::checkParams(args => $self->{context},
-                         optional => {'hypervisor'    => undef,
-                                      'cloud_manager' => undef,
-                                      'vm'            => undef,
-                         });
+
+    General::checkParams(args     => $self->{context},
+                         optional => { 'hypervisor'    => undef,
+                                       'cloud_manager' => undef,
+                                       'vm'            => undef });
 
     if (! (defined $self->{context}->{hypervisor} ||
-        defined $self->{context}->{vm} ||
-        defined $self->{context}->{cloud_manager})) {
+           defined $self->{context}->{vm} ||
+           defined $self->{context}->{cloud_manager})) {
 
         my $error = 'At least one param in {hypervisor, cloud_manager, vm} must be defined in context';
         throw Kanopya::Exception::Internal(error => $error);
      }
 }
 
-
-sub prepare {
+sub execute {
     my $self = shift;
-    $self->SUPER::prepare();
+    $self->SUPER::execute();
 
     if ((! defined $self->{context}->{cloud_manager}) && defined $self->{context}->{vm}) {
         $self->{context}->{cloud_manager} = EEntity->new(
@@ -60,14 +59,6 @@ sub prepare {
                                                 data => $self->{context}->{hypervisor}->getCloudManager(),
                                             );
     }
-}
-
-
-sub execute {
-    my $self = shift;
-    $self->SUPER::execute();
-
-    $DB::single = 1;
 
     if (! defined $self->{params}->{diff_infra_db}) {
         if (defined $self->{context}->{hypervisor}) {
@@ -101,19 +92,11 @@ sub execute {
     $self->{context}->{cloud_manager}->repairVmInDBNotInInfra(vm_ids => $self->{params}->{diff_infra_db}->{base_not_hv_infra});
     $self->{context}->{cloud_manager}->repairVmInInfraUnkInDB(vm_uuids => $self->{params}->{diff_infra_db}->{unk_vm_uuids});
     $self->{context}->{cloud_manager}->repairVmInInfraWrongHostManager(vm_ids => $self->{params}->{diff_infra_db}->{infra_not_hostmanager});
-<<<<<<< HEAD
-
-    $self->SUPER::execute();
-=======
->>>>>>> [core] Ensure to call the super method in EOperation interface implementations.
 }
 
 sub finish {
     my ($self) = @_;
-<<<<<<< HEAD
-=======
     $self->SUPER::finish();
->>>>>>> [core] Ensure to call the super method in EOperation interface implementations.
 
     delete $self->{context}->{hypervisor};
     delete $self->{context}->{cloud_manager};

@@ -93,11 +93,9 @@ sub prerequisites {
 
 }
 
-sub prepare {
+sub execute {
     my ($self, %args) = @_;
-    $self->SUPER::prepare(%args);
-
-    General::checkParams(args => $self->{context}, required => [ "host", "vm" ]);
+    $self->SUPER::execute(%args);
 
     # check if host is deactivated
     if ($self->{context}->{host}->active == 0) {
@@ -150,11 +148,6 @@ sub prepare {
             throw Kanopya::Exception::Internal(error => $errmsg);
         }
     }
-}
-
-sub execute {
-    my ($self, %args) = @_;
-    $self->SUPER::execute(%args);
 
     if (defined $self->{params}->{no_migration}) {
         delete $self->{params}->{no_migration};

@@ -29,13 +29,14 @@ my $errmsg;
 
 sub check {
     my $self = shift;
+
     General::checkParams(args => $self->{context}, required => [ "host" ]);
 }
 
 
-sub prepare {
+sub execute {
     my $self = shift;
-    $self->SUPER::prepare();
+    $self->SUPER::execute();
 
     if (not $self->{context}->{host}->isa('EEntity::EHost::EHypervisor')) {
         my $error = 'Operation can only be applied to an hypervisor';
@@ -53,14 +54,10 @@ sub prepare {
         throw Kanopya::Exception(error => $error);
     }
 
-# Transmit new context to next operation defined in workflow_def (migratehost)
+    # Transmit new context to next operation defined in workflow_def (migratehost)
     $self->{context}->{vm}   = $vm_min_effective_ram->{vm},
     $self->{context}->{host} = $hv_max_effective_freeram->{hypervisor},
-  }
 
-sub execute {
-    my $self = shift;
-    $self->SUPER::execute();
 }
 
 sub finish {

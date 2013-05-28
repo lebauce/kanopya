@@ -34,10 +34,10 @@ sub check {
     General::checkParams(args => $self->{context}, required => [ "host" ]);
 }
 
-sub prepare {
-    my $self = shift;
 
-    $self->SUPER::prepare();
+sub execute {
+    my $self = shift;
+    $self->SUPER::execute();
 
     if (not $self->{context}->{host}->isa('EEntity::EHost::EHypervisor')) {
         my $error = 'Operation can only be applied to an hypervisor';
@@ -46,11 +46,6 @@ sub prepare {
 
     $self->{context}->{host}->setAttr(name => 'active', value => 0);
     $self->{context}->{host}->save();
-}
-
-sub execute {
-    my $self = shift;
-    $self->SUPER::execute();
 
     $self->{context}->{cloud_manager} = EEntity->new(
                                             data => $self->{context}->{host}->getCloudManager(),

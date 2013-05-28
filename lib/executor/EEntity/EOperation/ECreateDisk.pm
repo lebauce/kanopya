@@ -31,14 +31,18 @@ my $log = get_logger("");
 my $errmsg;
 
 
-sub prepare {
+sub check {
     my ($self, %args) = @_;
-    $self->SUPER::prepare(%args);
+    $self->SUPER::check(%args);
 
     General::checkParams(args => $self->{context}, required => [ "disk_manager" ]);
 
-    General::checkParams(args     => $self->{params},
-                         required => [ "name", "size" ]);
+    General::checkParams(args => $self->{params}, required => [ "name", "size" ]);
+}
+
+sub execute {
+    my ($self, %args) = @_;
+    $self->SUPER::execute(%args);
 
     # Check service provider state
     my $storage_provider = $self->{context}->{disk_manager}->service_provider;
@@ -48,11 +52,6 @@ sub prepare {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
-}
-
-sub execute {
-    my ($self, %args) = @_;
-    $self->SUPER::execute(%args);
 
     my $container = $self->{context}->{disk_manager}->createDisk(
                         name       => $self->{params}->{name},

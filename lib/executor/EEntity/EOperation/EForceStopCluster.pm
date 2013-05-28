@@ -1,6 +1,5 @@
-# EForceStopCluster.pm - Operation class node removing from cluster operation
-
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -34,12 +33,18 @@ my $log = get_logger("");
 my $errmsg;
 
 
-sub prepare {
+sub check {
     my $self = shift;
     my %args = @_;
-    $self->SUPER::prepare();
+    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "cluster" ]);
+}
+
+
+sub execute {
+    my $self = shift;
+    $self->SUPER::execute();
 
     # Instanciate bootserver Cluster
     my $bootserver = Entity::ServiceProvider::Cluster->getKanopyaCluster;
@@ -47,12 +52,7 @@ sub prepare {
     # Instanciate dhcpd component.
     $self->{context}->{component_dhcpd}
         = EEntity->new(data => $bootserver->getComponent(name => "Dhcpd", version => "3"));
-}
-
-sub execute {
-    my $self = shift;
-    $self->SUPER::execute();
-
+ 
     my $subnet = $self->{context}->{component_dhcpd}->getInternalSubNetId();
 
     foreach my $node (reverse $self->{context}->{cluster}->nodesByWeight()) {

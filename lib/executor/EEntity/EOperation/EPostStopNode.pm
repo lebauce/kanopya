@@ -98,10 +98,10 @@ sub prerequisites {
     return 0;
 }
 
-sub prepare {
+
+sub execute {
     my $self = shift;
-    my %args = @_;
-    $self->SUPER::prepare();
+    $self->SUPER::execute();
 
     # Instanciate bootserver Cluster
     my $bootserver = Entity::ServiceProvider::Cluster->getKanopyaCluster;
@@ -109,11 +109,7 @@ sub prepare {
     # Instanciate dhcpd component
     $self->{context}->{component_dhcpd}
         = EEntity->new(data => $bootserver->getComponent(name => "Dhcpd", version => "3"));
-}
 
-sub execute {
-    my $self = shift;
-    $self->SUPER::execute();
     $self->{context}->{host}->stop();
 
     # Remove Host from the dhcp

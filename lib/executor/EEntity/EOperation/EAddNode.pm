@@ -87,9 +87,14 @@ sub prepare {
     $self->SUPER::prepare(%args);
 
     # Check the cluster state
-    if ($self->{context}->{cluster}->getState !~ m/starting|down/) {
-        $self->{context}->{cluster}->setState(state => 'updating');
+    my $state = $self->{context}->{cluster}->getState;
+    if ($state !~ m/starting|down/) {
+        throw Kanopya::Exception::Execution::InvalidState(
+                  error => "The cluster <" . $self->{context}->{cluster} .
+                           "> has to be <starting|down>, not <$state>"
+              );
     }
+    $self->{context}->{cluster}->setState(state => 'updating');
 
     # Ask to the manager if we can use them
     $self->{context}->{host_manager}->increaseConsumers();

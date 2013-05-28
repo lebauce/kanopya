@@ -28,18 +28,12 @@ my $log = get_logger("");
 my $errmsg;
 
 
-sub prepare {
+sub check {
     my $self = shift;
     my %args = @_;
-    $self->SUPER::prepare();
+    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "cluster" ]);
-
-    # Check if cluster is not active
-    if ($self->{context}->{cluster}->active) {
-        $errmsg = "Cluster <" . $self->{context}->{cluster}->id . "> is already active";
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
 }
 
 
@@ -47,11 +41,16 @@ sub execute {
     my $self = shift;
     $self->SUPER::execute();
 
+    # Check if cluster is not active
+    if ($self->{context}->{cluster}->active) {
+        $errmsg = "Cluster <" . $self->{context}->{cluster}->id . "> is already active";
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+
     # set cluster active in db
-    $self->{context}->{cluster}->active(1);
+    $self->{context}->{cluster}->setAttr(name => 'active', value => 1, save => 1);
 
     $log->info("Cluster <" . $self->{context}->{cluster}->cluster_name ."> is now active");
-
 }
 
 1;

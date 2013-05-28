@@ -31,12 +31,18 @@ my $log = get_logger("");
 my $errmsg;
 
 
-sub prepare {
+sub check {
     my $self = shift;
     my %args = @_;
-    $self->SUPER::prepare();
+    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "cluster" ]);
+}
+
+
+sub execute{
+    my $self = shift;
+    $self->SUPER::execute();
 
     # Check if cluster is active
     if (not $self->{context}->{cluster}->getAttr(name => 'active')) {
@@ -53,11 +59,6 @@ sub prepare {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-}
-
-sub execute{
-    my $self = shift;
-    $self->SUPER::execute();
 
     # set cluster active in db
     $self->{context}->{cluster}->setAttr(name => 'active', value => 0, save => 1);

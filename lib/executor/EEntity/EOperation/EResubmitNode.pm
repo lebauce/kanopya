@@ -15,24 +15,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 25 sept 2012
 
-=head1 NAME
-
-EEntity::Operation::EResubmitNode - Operation class implementing a node resubmition its IAAS
-
-=head1 SYNOPSIS
-
-This Object represent an operation.
-It allows to implement a node resubmition to its IAAS operation
-
-=head1 DESCRIPTION
-
-Component is an abstract class of operation objects
-
-=head1 METHODS
-
-=cut
 package EEntity::EOperation::EResubmitNode;
 use base "EEntity::EOperation";
 
@@ -49,13 +32,13 @@ my $errmsg;
 
 sub check {
     my $self = shift;
+
     General::checkParams(args => $self->{context}, required => [ "host" ]);
 }
 
-
-sub prepare {
+sub execute {
     my ($self, %args) = @_;
-    $self->SUPER::prepare();
+    $self->SUPER::execute();
 
     my $node = $self->{context}->{host}->node;
 
@@ -104,11 +87,6 @@ sub prepare {
         $self->{context}->{hypervisor} = Entity->get(id => $hypervisor_id);
 
     }
-}
-
-sub execute {
-    my ($self, %args) = @_;
-    $self->SUPER::execute();
 
     $self->{context}->{cloudmanager_comp}->resubmitNode(
         vm          => $self->{context}->{host},
@@ -220,13 +198,3 @@ sub finish {
 }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut
-

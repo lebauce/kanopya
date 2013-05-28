@@ -30,9 +30,9 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
-sub prepare {
+sub check {
     my ($self,%args) = @_;
-    $self->SUPER::prepare();
+    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "entity" ]);
 }

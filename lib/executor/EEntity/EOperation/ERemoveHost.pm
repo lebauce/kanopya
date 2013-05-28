@@ -32,11 +32,16 @@ my $log = get_logger("");
 my $errmsg;
 
 
-sub prepare {
+sub check {
     my ($self, %args) = @_;
-    $self->SUPER::prepare();
+    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "host" ]);
+}
+
+sub execute{
+    my ($self, %args) = @_;
+    $self->SUPER::execute();
 
     # check if host is not active
     if ($self->{context}->{host}->getAttr(name => 'active')) {
@@ -50,11 +55,6 @@ sub prepare {
     if($@) {
         throw Kanopya::Exception::Internal::WrongValue(error => $@);
     }
-}
-
-sub execute{
-    my ($self, %args) = @_;
-    $self->SUPER::execute();
 
     $self->{context}->{host_manager}->removeHost(host      => $self->{context}->{host},
                                                  erollback => $self->{erollback});

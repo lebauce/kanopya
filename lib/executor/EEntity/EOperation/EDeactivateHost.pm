@@ -28,12 +28,17 @@ use Kanopya::Exceptions;
 my $log = get_logger("");
 my $errmsg;
 
-sub prepare {
+sub check {
     my $self = shift;
     my %args = @_;
-    $self->SUPER::prepare();
+    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "host_to_deactivate" ]);
+}
+
+sub execute{
+    my $self = shift;
+    $self->SUPER::execute();
 
     # Check if host is not active
     if (not $self->{context}->{host_to_deactivate}->active) {
@@ -48,11 +53,6 @@ sub prepare {
         $log->debug($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
-}
-
-sub execute{
-    my $self = shift;
-    $self->SUPER::execute();
 
     # set host active in db
     $self->{context}->{host_to_deactivate}->setAttr(name => 'active', value => 0, save => 1);

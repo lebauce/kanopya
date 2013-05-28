@@ -26,17 +26,16 @@ my $log = get_logger("");
 my $errmsg;
 
 
-sub prepare {
-    my $self = shift;
-    my %args = @_;
-    $self->SUPER::prepare();
+sub check {
+    my ($self, %args)  = @_;
+    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "cluster" ]);
 }
 
 
 sub execute {
-    my $self = shift;
+    my ($self, %args)  = @_;
     $self->SUPER::execute();
 
     my @nodes = $self->{context}->{cluster}->nodesByWeight();
