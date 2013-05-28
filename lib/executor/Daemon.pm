@@ -47,9 +47,6 @@ my $log = get_logger("");
 # The host on which the daemon is running.
 my $host;
 
-# The component corresponding to the daemon
-my $component;
-
 
 my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
 
@@ -72,7 +69,7 @@ sub new {
                                        'config'  => {},
                                        'name'    => $class });
 
-    my $self = { name => $args{name} };
+    my $self = { name => $args{name}, component => undef };
     bless $self, $class;
 
     # Get the authentication configuration
@@ -245,10 +242,10 @@ sub _component {
     my $self = shift;
     my %args = @_;
 
-    return $component if defined $component;
+    return $self->{component} if defined $self->{component};
 
-    $component = $self->_host->node->getComponent(name => 'Kanopya' . $self->{name});
-    return $component;
+    $self->{component} = $self->_host->node->getComponent(name => 'Kanopya' . $self->{name});
+    return $self->{component};
 }
 
 1;
