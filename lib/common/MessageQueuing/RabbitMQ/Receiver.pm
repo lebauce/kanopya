@@ -310,9 +310,14 @@ sub receive {
 
     General::checkParams(args => \%args, required => [ 'type', 'channel' ]);
 
-    if (not $self->connected) {
-        $self->connect(%{$self->{_config}});
+    # Always reconnect the process at each receive, because the session and connection
+    # singleton grow in memoy at each call as 'consume' and 'cancel', whereas the following
+    # code should properly register a callback on a channel, and unregister it before re-fetch...
+    if ($self->connected) {
+        $self->disconnect();
     }
+    $self->connect(%{$self->{_config}});
+
     my $receiver = $self->_receivers->{$args{type}}->{$args{channel}};
 
     # Register the consumer on the channel
@@ -332,11 +337,12 @@ sub receive {
                                            condvar  => $condvar);
 
     # Blocking call
-    $log->debug("Fetching on queue <$receiver->{receiver}->{method_frame}->{queue}>...");
     $self->fetch(condvar => $condvar, duration => $receiver->{duration});
 
     # Unregister the callback as we are in one by one fetch mode
     $self->cancel(receiver => $receiver);
+
+    $self->disconnect();
 }
 
 
