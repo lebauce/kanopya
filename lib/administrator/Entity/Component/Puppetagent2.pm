@@ -64,7 +64,7 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub priority { return 0; }
+sub priority { return 5; }
 
 sub setConf {
     my $self = shift;

@@ -73,11 +73,41 @@ sub postStartNode {
             host    => $ehost
         );
     }
+}
+
+sub postStopNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'cluster', 'host' ]);
+
+    my @ehosts = map { EEntity->new(entity => $_) } @{ $args{cluster}->getHosts() };
+    for my $ehost (@ehosts) {
+        $self->generateConfiguration(
+            cluster => $args{cluster},
+            host    => $ehost
+        );
+    }
+}
+
+sub isUp {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ "cluster", "host" ]);
+
     my $params = $args{cluster}->getManagerParameters(manager_type => 'HostManager');
     if ($params->{deploy_on_disk}) {
+        # Check if the host has already been deployed
+        my $harddisk = $args{host}->findRelated(filters  => [ 'harddisks' ],
+                                                order_by => 'harddisk_device');
+        return 1 if $harddisk->service_provider;
+
+        # Try connecting to the host, return 0 if it fails
+        eval { $args{host}->getEContext->execute(command => "true"); };
+        return 0 if $@;
+
+        # Remove the DHCP entry for the host
         eval {
-            my $harddisk = $args{host}->findRelated(filters  => [ 'harddisks' ],
-                                                 order_by => 'harddisk_device');
             $harddisk->service_provider_id($args{cluster}->id);
             my $kanopya  = Entity::ServiceProvider::Cluster->getKanopyaCluster;
             my $dhcp     = EEntity->new(data => $kanopya->getComponent(name => "Dhcpd", version => "3"));
@@ -100,6 +130,10 @@ sub postStartNode {
                     error => "No PXE Iface was found"
                 );
             }
+
+            # Now reboot the host
+            $args{host}->getEContext->execute(command => "reboot");
+            return 0;
         };
         if ($@) {
             throw Kanopya::Exception::Internal::NotFound(
@@ -107,21 +141,8 @@ sub postStartNode {
             );
         }
     }
-}
 
-sub postStopNode {
-    my ($self, %args) = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ 'cluster', 'host' ]);
-
-    my @ehosts = map { EEntity->new(entity => $_) } @{ $args{cluster}->getHosts() };
-    for my $ehost (@ehosts) {
-        $self->generateConfiguration(
-            cluster => $args{cluster},
-            host    => $ehost
-        );
-    }
+    return 1;
 }
 
 =head2 getAvailableMemory
