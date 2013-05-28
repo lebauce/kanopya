@@ -239,7 +239,8 @@ my @classes = (
     'Entity::TimePeriod',
     'Entity::Component::Ceph',
     'Entity::Component::Ceph::CephMon',
-    'Entity::Component::Ceph::CephOsd'
+    'Entity::Component::Ceph::CephOsd',
+    'Entity::Tag',
 );
 
 sub registerKernels {

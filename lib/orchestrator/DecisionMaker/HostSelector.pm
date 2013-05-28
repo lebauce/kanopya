@@ -120,6 +120,7 @@ sub getHost {
             push @json_ifaces, $json_iface;
         }
         # Construct the current host
+        my @tags = map { $_->id } $host->tags;
         my $current = {
             cpu     => {
                 nbCores => $host->host_core,
@@ -130,7 +131,7 @@ sub getHost {
             network => {
                 ifaces  => \@json_ifaces,
             },
-            tags => [$host->tags],
+            tags => \@tags,
         };
 
         push @json_infrastructure, $current;
@@ -164,6 +165,7 @@ sub getHost {
     }
 
     # Construct the constraint json object
+    my $tags = defined( $host_params->{tags_ids} ) ? $host_params->{tags_ids} : [];
     my $json_constraints = {
         cpu      => {
             nbCoresMin => $host_params->{core},
@@ -174,7 +176,7 @@ sub getHost {
         network  => {
             interfaces => \@json_interfaces,
         },
-        tagsMin => $host_params->{tags},
+        tagsMin => $tags,
     };
 
     $log->debug('HostSelector : Creating JSON temp files');

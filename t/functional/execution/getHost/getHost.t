@@ -9,6 +9,7 @@
 #       1.C - There is only one host matching the minimum Ifaces number.
 #       1.D - There is only one host matching the minimum bonding configuration.
 #       1.E - There is only one host matching the minimum network configuration constraint.
+#       1.F - There is only one host matching the minimum tags constraint.
 #
 #       * There must be at least one host matching all the constraints but the one tested among the
 #         invalid ones.
@@ -20,16 +21,18 @@
 #       2.C - None of the hosts match the minimum Ifaces number constraint.
 #       2.D - None of the hosts match the minimum bonding configuration.
 #       2.E - None of the hosts match the minimum network configuration constraint.
+#       2.F - None of the hosts match the minimum tags constraint.
 #
 #       * There must be at least one host matching all the constraints but the one tested among the hosts.
 #
 #   3 -> All the hosts are valid, the one with the lowest cost must be chosen.
 #
-#       3.A - One host have a better cost than the other because of its RAM cost.
-#       3.B - One host have a better cost than the other because of its CPU cost.
-#       3.C - One host have a better cost than the other because of its number of Iface.
-#       3.D - One host have a better cost than the other because of its bonding configuration.
-#       3.E - One host have a better cost than the other because of its network configuration.
+#       3.A - One host have a better cost than the others because of its RAM cost.
+#       3.B - One host have a better cost than the others because of its CPU cost.
+#       3.C - One host have a better cost than the others because of its number of Iface.
+#       3.D - One host have a better cost than the others because of its bonding configuration.
+#       3.E - One host have a better cost than the others because of its network configuration.
+#       3.F - One host have a better cost than the others because of its tags number.
 #
 #       * In each case the costs for the non tested criterion are equals.
 #
@@ -52,18 +55,21 @@ use _test1b;
 use _test1c;
 use _test1d;
 use _test1e;
+use _test1f;
 
 use _test2a;
 use _test2b;
 use _test2c;
 use _test2d;
 use _test2e;
+use _test2f;
 
 use _test3a;
 use _test3b;
 use _test3c;
 use _test3d;
 use _test3e;
+use _test3f;
 
 use DecisionMaker::HostSelector;
 
@@ -102,6 +108,10 @@ sub main {
     test1e();
     BaseDB->rollbackTransaction;
 
+    BaseDB->beginTransaction;
+    test1f();
+    BaseDB->rollbackTransaction;
+
     # 2nd serie of tests : None of the hosts match the constraints.
 
     BaseDB->beginTransaction;
@@ -124,6 +134,10 @@ sub main {
     test2e();
     BaseDB->rollbackTransaction;
 
+    BaseDB->beginTransaction;
+    test2f();
+    BaseDB->rollbackTransaction;
+
     # 3rd serie of tests : Choosing the host with the best cost for a given criterion.
 
     BaseDB->beginTransaction;
@@ -144,5 +158,9 @@ sub main {
 
     BaseDB->beginTransaction;
     test3e();
+    BaseDB->rollbackTransaction;
+
+    BaseDB->beginTransaction;
+    test3f();
     BaseDB->rollbackTransaction;
 }

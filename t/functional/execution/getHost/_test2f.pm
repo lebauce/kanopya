@@ -1,4 +1,4 @@
-#   TEST 1.A :
+#   TEST 2.F :
 #
 #       HOSTS :
 #        _______________________________________________________________________________________________
@@ -10,29 +10,42 @@
 #       |         iface 1 :             |         iface 1 :             |         iface 1 :             |
 #       |             Bonds number = 0  |             Bonds number = 0  |             Bonds number = 0  |
 #       |             NetIps       = [] |             NetIps       = [] |             NetIps       = [] |
+#       |     Tags : [1]                |     Tags : [1,2]              |     Tags : [2,3]              |
 #       |_______________________________|_______________________________|_______________________________|
+
 #
 #       CONSTRAINTS (Cluster) :
 #
 #       /---------------------------------\
 #       /                                 \
 #       /   Min CPU Core number = 1       \
-#       /   Min RAM quantity    = 8192    \
+#       /   Min RAM quantity    = 512     \
 #       /   Interfaces :                  \
 #       /       interface 1 :             \
 #       /           Min Bonds number = 0  \
 #       /           Min NetIps       = [] \
+#       /   Min Tags : [1,2,3]            \
 #       /                                 \
 #       /---------------------------------\
 #
-sub test1a {
+
+use Entity::Tag;
+
+sub test2f {
+    ########################
+    #### Create Tags    ####
+    ########################
+    my $tag1 = Entity::Tag->new(tag => "Storage");
+    my $tag2 = Entity::Tag->new(tag => "High Performance");
+    my $tag3 = Entity::Tag->new(tag => "Beer dispenser");
+
     ########################
     #### Create Cluster ####
     ########################
     
     # Create NetConf
     my $netConf =  Entity::Netconf->create(
-        netconf_name => 'just another lonely netconf',
+        netconf_name => 'netconf',
     );
     # Host Manager config
     my $host_manager_conf = {
@@ -40,8 +53,8 @@ sub test1a {
             host_manager => {
                 manager_params => {
                     core     => 1,
-                    ram      => 8192*1024*1024,
-                    tags_ids => [],
+                    ram      => 512*1024*1024,
+                    tags_ids => [$tag1->id, $tag2->id, $tag3->id],
                 },
             },
         }
@@ -74,12 +87,18 @@ sub test1a {
             ram           => 512*1024*1024,
             ifaces        => [
                 {
-                    name => 'such a lonely iface',
+                    name => 'iface',
                     pxe  => 0,
                 },
             ],
         },
     );
+    $host1->populateRelations(
+        relations => {
+            entity_tags => [$tag1],
+        }
+    );
+
     # Create Host 2
     my $host2 = Kanopya::Tools::Register->registerHost(
         board => {
@@ -88,12 +107,18 @@ sub test1a {
             ram           => 8192*1024*1024,
             ifaces        => [
                 {
-                    name => 'Une iface qui a du SWAG',
+                    name => 'Une iface',
                     pxe  => 0,
                 },
             ],
         },
     );
+    $host2->populateRelations(
+        relations => {
+            entity_tags => [$tag1, $tag2],
+        }
+    );
+
     # Create Host 3
     my $host3 = Kanopya::Tools::Register->registerHost(
         board => {
@@ -102,25 +127,26 @@ sub test1a {
             ram           => 4096*1024*1024,
             ifaces        => [
                 {
-                    name => 'iface yourself !',
+                    name => 'i',
                     pxe  => 0,
                 },
             ],
         },
+    );
+    $host3->populateRelations(
+        relations => {
+            entity_tags => [$tag2, $tag3],
+        }
     );
 
     ##########################
     #### Perform the test ####
     ##########################
 
-    lives_ok {
+    throws_ok {
         my $selected_host = DecisionMaker::HostSelector->getHost(cluster => $cluster);
-
-        # The selected host must be the 2nd.
-        if ($selected_host->id != $host2->id) {
-            die ("Test 1.a : Wrong host selected");
-        }
-    } "Test 1.a : Only one host match the RAM constraint";
+    } 'Kanopya::Exception',
+      'Test 2.f : None of the hosts match the minimum tags set constraint';
 }
 
 1;
