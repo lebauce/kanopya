@@ -386,7 +386,7 @@ sub _generatePXEConf {
 
     my $gateway  = undef;
     my $pxeiface = $args{host}->getPXEIface;
-    if ($args{cluster}->default_gateway ne undef) {
+    if (defined $args{cluster}->default_gateway) {
         if ($pxeiface->getPoolip->network->id == $args{cluster}->default_gateway->id) {
             $gateway = $args{cluster}->default_gateway->network_gateway;
         }
