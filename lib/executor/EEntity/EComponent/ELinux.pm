@@ -624,8 +624,8 @@ sub customizeInitramfs {
         $self->_initrd_deployment(initrd_dir  => $initrddir,
                                   src_device  => $device,
                                   dest_device => $harddisk->harddisk_device,
-                                  root_size   => $size * 0.6 / 1024 / 1024 / 1024,
-                                  swap_size   => $size * 0.4 / 1024 / 1024 / 1024);
+                                  root_size   => int($size * 0.6 / 1024 / 1024 / 1024),
+                                  swap_size   => int($size * 0.4 / 1024 / 1024 / 1024));
     }
     else {
         # else remove deployement script
