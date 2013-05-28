@@ -89,7 +89,7 @@ sub prerequisites {
     # Ask to all cluster component if they are ready for node addition.
     my @components = $self->{context}->{cluster}->getComponents(category => "all");
     foreach my $component (@components) {
-        my $ready = $component->readyNodeAddition(host_id => $host_id);
+        my $ready = EEntity->new(entity => $component)->readyNodeAddition(host_id => $host_id);
         if (not $ready) {
             $log->info("Component $component not ready for node addition");
             return $delay;
