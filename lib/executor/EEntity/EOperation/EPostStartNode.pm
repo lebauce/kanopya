@@ -137,10 +137,6 @@ sub execute {
                      entity => $self->{context}->{cluster}->getComponent(category => "Configurationagent")
                  );
 
-    # Apply configuration on the node that just started
-    $eagent->applyConfiguration(cluster => $self->{context}->{cluster},
-                                host    => $self->{context}->{host});
-
     # And apply the configuration on every node of the cluster
     $eagent->applyConfiguration(cluster => $self->{context}->{cluster});
 
