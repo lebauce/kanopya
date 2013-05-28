@@ -42,7 +42,7 @@ sub test1f {
     ########################
     #### Create Cluster ####
     ########################
-    
+
     # Create NetConf
     my $netConf =  Entity::Netconf->create(
         netconf_name => 'netconf',
