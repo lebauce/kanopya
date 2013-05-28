@@ -283,6 +283,9 @@ sub consume {
         }
     };
 
+    $log->debug("Setting the QOS <prefetch_count => 1> on the channel");
+    $self->_session->qos(prefetch_count => 1);
+
     # Register the method to call back at message consumption
     $log->debug("Registering (consume) callback on queue <$args{queue}>");
     return $self->_session->consume(on_consume => \&$callback,
@@ -310,7 +313,6 @@ sub receive {
     if (not $self->connected) {
         $self->connect(%{$self->{_config}});
     }
-
     my $receiver = $self->_receivers->{$args{type}}->{$args{channel}};
 
     # Register the consumer on the channel
