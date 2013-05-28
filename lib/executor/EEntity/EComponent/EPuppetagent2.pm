@@ -200,7 +200,7 @@ sub applyConfiguration {
 
         $ret = $econtext->execute(command => $command);
 
-        while ($ret->{stdout} =~ /([\w.]+) finished with exit code (\d+)/g) {
+        while ($ret->{stdout} =~ /([\w.\-]+) finished with exit code (\d+)/g) {
             # If the host is down or not reachable, the exit code is 2
             # If the host is already applying manifest, the exit code is 3
             # In both cases, puppet kick returns 3 so we filter the broken hosts
