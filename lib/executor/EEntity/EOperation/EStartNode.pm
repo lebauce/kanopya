@@ -361,7 +361,7 @@ sub _generatePXEConf {
     my ($self, %args) = @_;
 
     General::checkParams(args     =>\%args,
-                         required => [ 'cluster', 'host', 'bootserver', 'tfpserver' ],
+                         required => [ 'cluster', 'host', 'bootserver', 'tftpserver' ],
                          optional => { 'mount_point'    => undef,
                                        'kernel_version' => undef });
 
