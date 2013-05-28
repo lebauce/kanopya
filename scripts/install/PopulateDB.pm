@@ -757,6 +757,20 @@ sub registerDataModelTypes {
     }
 }
 
+sub registerTags {
+    my %args = @_;
+
+    my @tags = (
+        'hypervisor',
+        'storage',
+        'high performance computing',
+    );
+
+    for my $tag (@tags) {
+        Entity::Tag->new(tag => $tag);
+    }
+}
+
 sub registerServiceProviders {
     my %args = @_;
 
@@ -2263,7 +2277,7 @@ sub populateDB {
     registerManagerCategories(%args);
     registerUsers(%args);
     registerDataModelTypes(%args);
-
+    registerTags(%args);
     registerProcessorModels(%args);
     registerOperations(%args);
     registerServiceProviders(%args);
