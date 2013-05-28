@@ -225,13 +225,18 @@ sub executeOperation {
 
             # Check/Update the state of the context objects atomically
             $self->log(level => "info", msg => "Step <prepare>");
+            $operation->beginTransaction;
+
             $operation->prepare();
+
+            $operation->commitTransaction;
 
             # Unlock the context objects
             $operation->unlockContext();
         };
         if ($@) {
             my $err = $@;
+            $operation->rollbackTransaction;
             $operation->unlockContext();
 
             if ($err->isa('Kanopya::Exception::Execution::InvalidState') or
@@ -281,8 +286,6 @@ sub executeOperation {
         };
         if ($@) {
             my $err = $@;
-
-            # Rollback transaction
             $operation->rollbackTransaction;
 
             return $self->terminateOperation(operation => $operation,
