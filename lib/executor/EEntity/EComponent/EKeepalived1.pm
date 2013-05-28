@@ -341,7 +341,6 @@ sub addnetwork_routes {
     my $command = '/bin/chmod +x '.$args{mount_point}.'/etc/init.d/network_routes';
     $log->debug($command);
     my $result = $self->_host->getEContext->execute(command => $command);
-     
 }
 
 sub postStartNode{

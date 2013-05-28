@@ -14,13 +14,11 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 =pod
-
 =begin classdoc
 
 Entity base class
 
 =end classdoc
-
 =cut
 
 package Entity;
@@ -99,7 +97,6 @@ sub methods {
 
 
 =pod
-
 =begin classdoc
 
 @constructor
@@ -110,7 +107,6 @@ to the corresponding groups of the whole class hierachy.
 @return the entity instance
 
 =end classdoc
-
 =cut
 
 sub new {
@@ -123,27 +119,13 @@ sub new {
     my $self = $class->SUPER::new(%args);
 
     # Try to add the instance to master groups of the whole hierachy.
-    for my $groupname (reverse(split(/::/, "$class"))) {
-        my $mastergroup;
-        eval {
-            $mastergroup = Entity::Gp->find(hash => { gp_name => $groupname });
-        };
-        if ($@) {
-            my $exception = $@;
-            if (not $exception->isa('Kanopya::Exception::Internal::NotFound')) {
-                $exception->rethrow();
-            }
-        }
-        else {
-            $mastergroup->appendEntity(entity => $self);
-        }
-    }
+    $self->appendToHierarchyGroups(hierarchy => $class);
+
     return $self;
 }
 
 
 =pod
-
 =begin classdoc
 
 Lock the entity while updating it.
@@ -151,7 +133,6 @@ Lock the entity while updating it.
 @return the updated instance
 
 =end classdoc
-
 =cut
 
 sub update {
@@ -176,7 +157,6 @@ sub update {
 
 
 =pod
-
 =begin classdoc
 
 Reload entity from database
@@ -184,7 +164,6 @@ Reload entity from database
 @return the reloaded instance
 
 =end classdoc
-
 =cut
 
 sub reload {
@@ -194,13 +173,11 @@ sub reload {
 
 
 =pod
-
 =begin classdoc
 
 Ensure to get the lock on the entity before removing it.
 
 =end classdoc
-
 =cut
 
 sub remove {
@@ -224,13 +201,11 @@ sub remove {
 
 
 =pod
-
 =begin classdoc
 
 Ensure to unlock the entity, whatever the consumer.
 
 =end classdoc
-
 =cut
 
 sub delete {
@@ -245,13 +220,44 @@ sub delete {
 
 
 =pod
+=begin classdoc
 
+Override the method to add the promoted object to the groups
+of the new hierarchy.
+
+@return the promoted object
+
+=end classdoc
+=cut
+
+sub promote {
+    my ($class, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'promoted' ]);
+
+    # Keep the orignal class of the object
+    my $baseclass = ref($args{promoted});
+
+    # Promote it
+    my $promoted = $class->SUPER::promote(%args);
+
+    # Extract the new levels of the hierarchy
+    my $pattern = $baseclass . '::';
+    my $subclass = $class;
+    $subclass =~ s/^$pattern//g;
+
+    $promoted->appendToHierarchyGroups(hierarchy => $subclass);
+
+    return $promoted;
+}
+
+
+=pod
 =begin classdoc
 
 @return the entity master group
 
 =end classdoc
-
 =cut
 
 sub getMasterGroup {
@@ -269,13 +275,11 @@ sub getMasterGroup {
 
 
 =pod
-
 =begin classdoc
 
 @return the master group name associated with this entity
 
 =end classdoc
-
 =cut
 
 sub getMasterGroupName {
@@ -289,13 +293,11 @@ sub getMasterGroupName {
 
 
 =pod
-
 =begin classdoc
 
 @return a string representing the entity.
 
 =end classdoc
-
 =cut
 
 sub asString {
@@ -414,7 +416,9 @@ sub subscribe {
 
 sub unsubscribe {
     my ($self, %args) = @_;
+
     General::checkParams(args => \%args, required => [ 'notification_subscription_id' ]);
+
     my $ns = NotificationSubscription->get(id => $args{notification_subscription_id});
     $ns->delete();
 }
@@ -460,6 +464,39 @@ sub setComment {
         $self->setAttr(name => 'entity_comment_id', value => $comment->id, save => 1);
     }
 }
+
+
+=pod
+=begin classdoc
+
+Append the entity to the groups of the given hierarchy if exists.
+
+=end classdoc
+=cut
+
+sub appendToHierarchyGroups {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'hierarchy' ]);
+
+    # Try to add the instance to master groups of the whole hierachy.
+    for my $groupname (reverse(split(/::/, "$args{hierarchy}"))) {
+        my $mastergroup;
+        eval {
+            $mastergroup = Entity::Gp->find(hash => { gp_name => $groupname });
+        };
+        if ($@) {
+            my $exception = $@;
+            if (not $exception->isa('Kanopya::Exception::Internal::NotFound')) {
+                $exception->rethrow();
+            }
+        }
+        else {
+            $mastergroup->appendEntity(entity => $self);
+        }
+    }
+}
+
 
 sub lock {
     my $self = shift;
