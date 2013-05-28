@@ -314,36 +314,47 @@ sub execSQL {
 }
 
 sub createMySQLUser {
-    my ($dbuser, $dbpassword) = @_;
+    my %args = @_;
 
-    my $user = `mysql -h $answers->{dbip}  -P $answers->{dbport} -u root -p$root_passwd -e "use mysql; SELECT user FROM mysql.user WHERE user='$dbuser';" | grep "$dbuser"`;
+    $args{database} = $args{database} || $args{user};
+    my $user = `mysql -h $answers->{dbip}  -P $answers->{dbport} -u root -p$root_passwd -e "use mysql; SELECT user FROM mysql.user WHERE user='$args{user}';" | grep "$args{user}"`;
     if (!$user) {
         print "creating mysql user, please insert root password...\n";
-        execSQL("CREATE USER '" . $dbuser . "'\@'localhost' " .
-                "IDENTIFIED BY '$dbpassword'") == 0
+        execSQL("CREATE USER '" . $args{user} . "'\@'localhost' " .
+                "IDENTIFIED BY '$args{password}'") == 0
             or die "error while creating mysql user: $!" == 0
             or die "error while creating mysql user: $!";
         eval {
-            execSQL("CREATE USER '$dbuser' IDENTIFIED BY '$dbpassword'");
+            execSQL("CREATE USER '$args{user}' IDENTIFIED BY '$args{password}'");
         };
         print "done\n";
     }
     else {
-        print "User $answers->{dbuser} already exists\n";
+        print "User $args{user} already exists\n";
     }
 
     #We grant all privileges to kanopya database for $db_user
     #my $grant = `mysql -h $answers->{dbip}  -P $answers->{dbport} -u root -p$root_passwd -e "use mysql; SHOW GRANTS for $answers->{dbuser};" | grep kanopya\.`;
-    print "granting all privileges on $dbuser database to $dbuser, please insert root password...\n";
-    execSQL("GRANT ALL PRIVILEGES ON $dbuser.* TO '$dbuser' WITH GRANT OPTION") == 0
-        or die "error while granting privileges to $dbuser: $!";
+    print "granting all privileges on $args{database} database to $args{user}, please insert root password...\n";
+    execSQL("GRANT " . $args{privileges} . " ON $args{database}.* TO '$args{user}' WITH GRANT OPTION") == 0
+         or die "error while granting privileges to $args{user}: $!";
+
     print "done\n";
 }
 
-createMySQLUser($answers->{dbuser}, $answers->{dbpassword1});
+createMySQLUser(user       => $answers->{dbuser},
+                password   => $answers->{dbpassword1},
+                privileges => "ALL PRIVILEGES");
+
+createMySQLUser(user       => "wsrep",
+                password   => "wsrep",
+                database   => "*",
+                privileges => "RELOAD, LOCK TABLES, REPLICATION CLIENT");
 
 execSQL("CREATE DATABASE puppet");
-createMySQLUser("puppet", $answers->{dbpassword1});
+createMySQLUser(user       => "puppet",
+                password   => $answers->{dbpassword1},
+                privileges => "ALL PRIVILEGES");
 
 #We now generate the database schemas
 print "generating database schemas...";
