@@ -166,7 +166,7 @@ sub readyNodeRemoving {
     # Ask to all cluster component if they are ready for node addition.
     my @components = $self->getComponents(category => "all");
     foreach my $component (@components) {
-        if (not $component->readyNodeRemoving(host_id => $args{host}->id)) {
+        if (not EEntity->new(entity => $component)->readyNodeRemoving(host_id => $args{host}->id)) {
             return 0;
         }
     }

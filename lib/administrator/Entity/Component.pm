@@ -276,10 +276,6 @@ sub priority {
     return 50;
 }
 
-sub readyNodeAddition { return 1; }
-
-sub readyNodeRemoving { return 1; }
-
 
 =pod
 =begin classdoc

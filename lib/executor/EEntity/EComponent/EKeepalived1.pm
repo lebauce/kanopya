@@ -358,4 +358,23 @@ sub postStartNode{
     }
 }
 
+sub readyNodeRemoving {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'host_id' ]);
+
+    my $host = Entity::Host->find(hash => { host_id => $args{host_id} });
+
+    my $result = $self->getEContext->execute(command => "ipvsadm -L -n | grep " . $host->adminIp);
+    my @result = split(/\n/, $result->{stdout});
+    foreach my $line (@result) {
+        my @cols = split(/[\t| ]+/, $line);
+        if ($cols[5] > 0 || $cols[6] > 0) {
+            return 0;
+        }
+    }
+    return 1;
+}
+
 1;
