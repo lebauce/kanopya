@@ -4,6 +4,19 @@ function loadServiceAnalysis(container_id, sp_id) {
 
     var container   = $("#" + container_id);
 
+    // Add an info link to display correlation help
+    container.append(
+        $('<span>', {class:'ui-icon ui-icon-info', style:'float:right'})
+        .click(function(){
+            $('<div>').append($('<img>', {src:'images/info/scatter-plots-shape.png'}))
+            .dialog({
+                title  : 'Correlation patterns',
+                height : 400,
+                width  : 200,
+            });
+        })
+    );
+
     var metric_x_select  = $('<select>', {id : 'metric_x_select'}).appendTo(container.append($('<span>', {text:'x: '})));
     container.append('<br>');
     var metric_y_select  = $('<select>', {id : 'metric_y_select'}).appendTo(container.append($('<span>', {text:' y: '})));
