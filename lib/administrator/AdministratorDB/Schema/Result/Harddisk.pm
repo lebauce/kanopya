@@ -66,6 +66,14 @@ __PACKAGE__->table("harddisk");
   extra: {unsigned => 1}
   is_nullable: 1
 
+=head2 service_provider_id
+
+  data_type: 'integer'
+  default_value: 0
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -92,13 +100,14 @@ __PACKAGE__->add_columns(
     extra => { unsigned => 1 },
     is_nullable => 1,
   },
-  'service_provider_id',
+  "service_provider_id",
   {
-    data_type => 'int',
+    data_type => "integer",
     default_value => 0,
     extra => { unsigned => 1 },
-    is_nullable => 1
-  }
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
 );
 
 =head1 PRIMARY KEY
@@ -127,12 +136,32 @@ __PACKAGE__->belongs_to(
   "host",
   "AdministratorDB::Schema::Result::Host",
   { host_id => "host_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
+);
+
+=head2 service_provider
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "service_provider",
+  "AdministratorDB::Schema::Result::ServiceProvider",
+  { service_provider_id => "service_provider_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "NO ACTION",
+  },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-12-28 18:04:08
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3ci3d/SV6zsyj+hJa+AQvQ
+# Created by DBIx::Class::Schema::Loader v0.07035 @ 2013-05-29 00:29:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:gGjDTDdGQVvinr0cwlou7A
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
