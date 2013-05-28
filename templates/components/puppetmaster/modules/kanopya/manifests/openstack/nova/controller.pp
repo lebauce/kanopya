@@ -122,7 +122,7 @@ class kanopya::openstack::nova::controller($password, $dbserver, $amqpserver, $k
     }
 
     nova_config {
-        'DEFAULT/ram_allocation_ratio': value => '100',
+        'DEFAULT/ram_allocation_ratio': value => '100';
         'DEFAULT/cpu_allocation_ratio': value => '100'
     }
 
