@@ -88,7 +88,7 @@ sub prepare {
 
     # Check the cluster state
     my $state = $self->{context}->{cluster}->getState;
-    if ($state !~ m/starting|down/) {
+    if ($state !~ m/up|down/) {
         throw Kanopya::Exception::Execution::InvalidState(
                   error => "The cluster <" . $self->{context}->{cluster} .
                            "> has to be <starting|down>, not <$state>"
