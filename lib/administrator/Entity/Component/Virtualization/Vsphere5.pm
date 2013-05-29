@@ -934,7 +934,6 @@ sub registerVm {
     #Check if a service provider called $service_provider_name already exist and
     #Create a new one to hold the vsphere vm if none exists
     my $service_provider;
-
     eval {
         $service_provider = Entity::ServiceProvider::Cluster->find(hash => {
                                          cluster_name => $service_provider_renamed,});
@@ -966,6 +965,13 @@ sub registerVm {
                                     cluster_boot_policy    => '',
                                     user_id                => $admin_user->user_id,
                                 );
+
+            # policy and service template
+            my $st = $self->_registerTemplate(
+                policy_name  => 'vsphere_vm_policy',
+                service_name => 'vsphere_vm_service'
+            );
+            $service_provider->applyPolicies(pattern => { 'service_template_id' => $st->id });
 
             #Now set this manager as host manager for the new service provider
             $service_provider->addManager(manager_type => 'HostManager',
@@ -1492,6 +1498,37 @@ sub powerOnVm {
             $guest->PowerOnVM();
         }
     }
+}
+
+sub _registerTemplate {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['policy_name', 'service_name']);
+
+    my $hash = { policy_name => $args{policy_name}, policy_type => 'hosting_policy' };
+
+    # policy
+    my $hp;
+    eval {
+        $hp = Entity::Policy->find(hash => $hash);
+    };
+    if ($@) {
+        $hp = Entity::Policy->new(%{$hash});
+    }
+
+    # service template
+    my $st;
+    eval {
+        $st = Entity::ServiceTemplate->find(hash => { service_name => $args{service_name} });
+    };
+    if ($@) {
+        $st = Entity::ServiceTemplate->new(
+                  service_name      => $args{service_name},
+                  hosting_policy_id => $hp->id,
+              );
+    }
+
+    return $st;
 }
 
 =pod
