@@ -158,6 +158,7 @@ my %resources = (
     "syslogng3"                => "Entity::Component::Syslogng3",
     "systemimage"              => "Entity::Systemimage",
     "systempolicy"             => "Entity::Policy::SystemPolicy",
+    "tag"                      => "Entity::Tag",
     "timeperiod"               => "Entity::TimePeriod",
     "ucsmanager"               => "Entity::Component::UcsManager",
     "unifiedcomputingsystem"   => "Entity::ServiceProvider::UnifiedComputingSystem",

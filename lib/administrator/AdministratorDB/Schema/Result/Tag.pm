@@ -138,6 +138,11 @@ __PACKAGE__->many_to_many("entities", "entity_tags", "entity");
 # Created by DBIx::Class::Schema::Loader v0.07035 @ 2013-05-23 18:16:15
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Sp/zMF333N7h/q4yPVpmMw
 
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "tag_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

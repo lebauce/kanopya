@@ -24,6 +24,7 @@ use warnings;
 
 use Manager::HostManager;
 use Kanopya::Exceptions;
+use Entity::Tag;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -54,6 +55,12 @@ sub getHostManagerParams {
     my $self = shift;
     my %args = @_;
 
+    my $tags = { };
+    my @tags = Entity::Tag->search();
+    for my $tag (@tags) {
+        $tags->{$tag->id} = $tag->tag;
+    }
+
     return {
         cpu => {
             label        => 'Required CPU number',
@@ -69,6 +76,13 @@ sub getHostManagerParams {
             pattern      => '^\d*$',
             is_mandatory => 1
         },
+        tags => {
+            label        => 'Tags',
+            type         => 'enum',
+            relation     => 'multi',
+            is_mandatory => 0,
+            options      => $tags
+        }
     };
 }
 

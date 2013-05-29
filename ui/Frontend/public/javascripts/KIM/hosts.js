@@ -25,7 +25,7 @@ function host_addbutton_action(e, grid) {
         title      : ((e instanceof Object)) ? 'Create a host' : 'Edit a host',
         type       : 'host',
         id         : (!(e instanceof Object)) ? e : undefined,
-        displayed  : [ 'host_desc', 'host_core', 'host_ram', 'kernel_id', 'host_serial_number' ],
+        displayed  : [ 'host_desc', 'host_core', 'host_ram', 'kernel_id', 'host_serial_number', 'entity_tags' ],
         relations  : { 'ifaces'         : [ 'iface_name', 'iface_mac_addr', 'iface_pxe', 'netconf_ifaces' ],
                        'bonding_ifaces' : [ 'bonding_iface_name', 'slave_ifaces' ],
                        'harddisks'      : [ 'harddisk_device' ] },
@@ -109,7 +109,7 @@ function host_addbutton_action(e, grid) {
             }
         },
         valuesCallback  : function(type, id, attributes) {
-            var host = ajax('GET', '/api/' + type + '/' + id + '?expand=ifaces,ifaces.netconf_ifaces,harddisks');
+            var host = ajax('GET', '/api/' + type + '/' + id + '?expand=ifaces,ifaces.netconf_ifaces,harddisks,entity_tags');
             var ifaces = host['ifaces'];
             host['ifaces'] = [];
 
@@ -145,6 +145,11 @@ function host_addbutton_action(e, grid) {
             return host;
         },
         submitCallback  : function(data, $form, opts, onsuccess, onerror) {
+            // For some reason, the tags are in the 'ifaces' array...
+            if (data.ifaces.length) {
+                data.entity_tags = data.ifaces[0].entity_tags;
+                delete data.ifaces[0].entity_tags;
+            }
             for (var bonding_index in data['bonding_ifaces']) {
                 var bonding_iface = data['bonding_ifaces'][bonding_index];
 
