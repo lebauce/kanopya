@@ -18,7 +18,7 @@ use Kanopya::Exceptions;
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
     level=>'DEBUG',
-    file=>'start_physical_host.t.log',
+    file=>'add_component_node.t.log',
     layout=>'%F %L %p %m%n'
 });
 
