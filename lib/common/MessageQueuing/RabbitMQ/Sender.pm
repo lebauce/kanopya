@@ -152,12 +152,12 @@ sub AUTOLOAD {
                                   header => { delivery_mode => 2 });
 
     # Send message for the subscribers
-    $log->debug("Publishing on exchange <$channel>, body: $data");
-    $senders->{$channel}->publish(exchange    => $channel,
-                                  routing_key => '',
-                                  body        => $data,
-                                  # make message persistent
-                                  header => { delivery_mode => 2 });
+#    $log->debug("Publishing on exchange <$channel>, body: $data");
+#    $senders->{$channel}->publish(exchange    => $channel,
+#                                  routing_key => '',
+#                                  body        => $data,
+#                                  # make message persistent
+#                                  header => { delivery_mode => 2 });
 }
 
 
