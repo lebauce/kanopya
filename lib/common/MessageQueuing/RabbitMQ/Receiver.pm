@@ -476,11 +476,12 @@ sub cancel {
 
     General::checkParams(args => \%args, required => [ 'receiver' ]);
 
-    my $consumer = delete $args{receiver}->{consumer};
-    if ($consumer) {
+    if ($args{receiver}->{consumer}) {
         $log->debug("Unregistering (cancel) callback with tag <$consumer->{method_frame}->{consumer_tag}>");
         $self->_session->cancel(consumer_tag => $consumer->{method_frame}->{consumer_tag});
     }
+    $args{receiver}->{consumer} = undef;
+    $args{receiver}->{receiver} = undef;
 }
 
 
