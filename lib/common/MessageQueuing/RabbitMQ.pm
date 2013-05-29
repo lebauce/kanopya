@@ -103,8 +103,8 @@ sub connect {
         $log->debug("$self Openning channel");
         $channel = $self->_connection->open_channel();
 
-        $log->debug("Setting the QOS <prefetch_count => 1> on the channel");
-        $self->_channel->qos(prefetch_count => 1);
+#        $log->debug("Setting the QOS <prefetch_count => 1> on the channel");
+#        $self->_channel->qos(prefetch_count => 1);
     }
 
     $self->{_config} = \%args;
@@ -122,7 +122,7 @@ Disconnect from the message queuing server.
 sub disconnect {
     my ($self, %args) = @_;
 
-    for my $queue (keys $self->_queues) {
+    for my $queue (keys { $self->_queues }) {
         # TODO: Probably unbind the queues
         $self->_queues->{$queue} = undef
     }
