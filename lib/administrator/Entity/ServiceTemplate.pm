@@ -83,7 +83,7 @@ use constant ATTR_DEF => {
         type         => 'relation',
         relation     => 'single',
         pattern      => '^\d+$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_editable  => 1,
     },
     network_policy_id => {
@@ -91,7 +91,7 @@ use constant ATTR_DEF => {
         type         => 'relation',
         relation     => 'single',
         pattern      => '^\d+$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_editable  => 1,
     },
     scalability_policy_id => {
@@ -99,7 +99,7 @@ use constant ATTR_DEF => {
         type         => 'relation',
         relation     => 'single',
         pattern      => '^\d+$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_editable  => 1,
     },
     system_policy_id => {
@@ -107,7 +107,7 @@ use constant ATTR_DEF => {
         type         => 'relation',
         relation     => 'single',
         pattern      => '^\d+$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_editable  => 1,
     },
     billing_policy_id => {
@@ -115,7 +115,7 @@ use constant ATTR_DEF => {
         type         => 'relation',
         relation     => 'single',
         pattern      => '^\d+$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_editable  => 1,
     },
     orchestration_policy_id => {
@@ -123,7 +123,7 @@ use constant ATTR_DEF => {
         type         => 'relation',
         relation     => 'single',
         pattern      => '^\d+$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_editable  => 1,
     },
 };
