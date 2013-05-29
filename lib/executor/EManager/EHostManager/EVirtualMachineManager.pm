@@ -39,11 +39,11 @@ sub getFreeHost {
     $log->info("Looking for a virtual host");
     my $host;
     eval {
-        return $self->createVirtualHost(
-                   core   => $host_params->{core},
-                   ram    => $host_params->{ram},
-                   ifaces => scalar @interfaces,
-               );
+        $host = $self->createVirtualHost(
+                    core   => $host_params->{core},
+                    ram    => $host_params->{ram},
+                    ifaces => scalar @interfaces,
+                );
     };
     if ($@) {
         $errmsg = "Virtual Machine Manager component <" . $self->getAttr(name => 'component_id') .
