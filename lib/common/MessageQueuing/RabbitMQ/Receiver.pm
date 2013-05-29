@@ -223,6 +223,11 @@ sub cancelConsumer {
     $log->debug("Unregistering (cancel) callback with tag <$receiver->{consumer}>");
     $self->_channel->cancel(consumer_tag => $receiver->{consumer});
 
+    # Arg, the cancel do not revmove the callback for the channel hash. It seems
+    # to be done at channel closing, but we can't do that for instance.
+    # TODO: Explore the AnyEvent::RabbitMQ internals.
+    delete $self->_channel->{arc}->{_consumer_cbs}->{$receiver->{consumer}};
+
     # If the queue is bound to an exchange, unbind it.
     if ($args{type} eq 'topic') {
         $log->debug("Unbinding queue <$receiver->{queue}> from exchange <$args{channel}>");

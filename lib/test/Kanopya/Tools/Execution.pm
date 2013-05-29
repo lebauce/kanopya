@@ -135,7 +135,7 @@ sub executeOne {
         if ($@) {
             my $err = $@;
             if (not $err->isa('Kanopya::Exception::MessageQueuing::NoMessage')) {
-                $err->rethrow();
+                throw $err;
             }
             # If no message received, an operation is probably currently reported.
         }
