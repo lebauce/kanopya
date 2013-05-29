@@ -122,7 +122,7 @@ Disconnect from the message queuing server.
 sub disconnect {
     my ($self, %args) = @_;
 
-    for my $queue (keys { $self->_queues }) {
+    for my $queue (keys %{ $self->_queues }) {
         # TODO: Probably unbind the queues
         $self->_queues->{$queue} = undef
     }
