@@ -150,6 +150,9 @@ sub runWorkflow {
             msg   => "Executing " . $workflow->workflow_name . " first operation <" . $first->id . ">"
         );
 
+        # Set the operation as ready
+        $first->setState(state => 'ready');
+
         # Push the first operation on the execution channel
         $self->_component->execute(operation_id => $first->id);
     }
@@ -254,6 +257,9 @@ sub executeOperation {
                                              exception => $err);
         }
 
+        # Set the operation as proccessing
+        $operation->setState(state => 'processing');
+
         # Check preconditions for processing
         eval {
             $self->log(level => "info", msg => "Step <prerequisites>");
@@ -271,9 +277,6 @@ sub executeOperation {
                                              status    => 'prereported',
                                              time      => $delay > 0 ? time + $delay : undef);
         }
-
-        # Set the operation as proccessing
-        $operation->setState(state => 'processing');
 
         # Process the operation
         eval {
