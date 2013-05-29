@@ -258,7 +258,9 @@ sub executeOperation {
         }
 
         # Set the operation as proccessing
-        $operation->setState(state => 'processing');
+        if ($operation->state eq 'ready') {
+            $operation->setState(state => 'processing');
+        }
 
         # Check preconditions for processing
         eval {
