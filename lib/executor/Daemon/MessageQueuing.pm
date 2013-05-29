@@ -127,7 +127,7 @@ sub new {
                                       %$duration);
         }
     }
-    if (not defined $self->_receivers) {
+    if (not defined $self->_consumers) {
         throw Kanopya::Exception(
             error => "Could not start daemon $self->{name}, no callback defined..."
         );

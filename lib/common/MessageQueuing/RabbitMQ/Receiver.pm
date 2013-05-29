@@ -53,26 +53,6 @@ use constant DURATION => {
 =pod
 =begin classdoc
 
-Disconnect from the message queuing server.
-
-=end classdoc
-=cut
-
-sub disconnect {
-    my ($self, %args) = @_;
-
-    for my $type ('queue', 'topic') {
-        for my $receiver (values %{ $self->_receivers->{$type} }) {
-            delete $receiver->{receiver};
-        }
-    }
-    return $self->SUPER::disconnect(%args);
-}
-
-
-=pod
-=begin classdoc
-
 Register a callback on a specific channel.
 
 @param channel the channel on which the callback is resistred
@@ -105,21 +85,18 @@ sub register {
               );
     }
 
-    if (not defined $self->_receivers) {
-        $self->{_receivers} = {};
-    }
-
     # Register the method to call back at message recepetion
-    $self->_receivers->{$args{type}}->{$args{channel}} = {
+    $self->_consumers->{$args{type}}->{$args{channel}} = {
         callback  => $args{callback},
         duration  => DURATION->{$args{duration}},
         instances => $args{instances},
+        # the consumer tag stored when callback registred
+        consumer  => undef,
     };
 
     # Declare the queues if connected
     if ($self->connected) {
-        $self->_receivers->{$args{type}}->{$args{channel}}->{receiver}
-            = $self->createReceiver(channel => $args{channel}, type => $args{type})
+        $self->createConsumer(channel => $args{channel}, type => $args{type})
     }
 }
 
@@ -147,10 +124,14 @@ sub fetch {
     # Set a timer to wait messages for the specified duration only
     my $timeout = undef;
     if (defined $args{duration}) {
+        $log->debug("Fetch message for <$args{duration}> second(s).");
         $timeout = AnyEvent->timer(after => $args{duration}, cb => sub {
                        # Interupt the infinite loop
                        $args{condvar}->croak("No message recevied for $args{duration} second(s)");
                    });
+    }
+    else {
+        $log->debug("Fetch messages indefinitely...");
     }
 
     # Wait for the first send from callback
@@ -179,32 +160,78 @@ Declare queues and exchanges.
 =end classdoc
 =cut
 
-sub createReceiver {
+sub createConsumer {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'type', 'channel' ],
+                         optional => { 'force'   => 0,
+                                       'condvar' => undef });
+
+    # If the consumer exists, skip creation
+    my $receiver = $self->_consumers->{$args{type}}->{$args{channel}};
+    if (defined $receiver->{consumer}) {
+        # If force defined, remove the existing consumer
+        if ($args{force}) {
+            $self->cancelConsumer(%args);
+        }
+        else {
+            return;
+        }
+    }
+
+    # Declare queues or exchanges
+    if ($args{type} eq 'queue') {
+        $receiver->{queue} = $self->declareQueue(channel => $args{channel})->{method_frame}->{queue};
+    }
+    elsif ($args{type} eq 'topic') {
+        $log->debug("Declaring exchange <$args{channel}> of type <fanout>");
+        $self->declareExchange(channel => $args{channel});
+
+        $log->debug("Declaring exclusive queue in way to bind on exchange <$args{channel}>");
+        $receiver->{queue} = $self->_channel->declare_queue(exclusive => 1)->{method_frame}->{queue};
+        $log->debug("Binding queue $receiver->{queue} on exchange <$args{channel}>");
+        $self->_channel->bind_queue(exchange => $args{channel},
+                                    queue    => $receiver->{queue});
+    }
+
+    # Create the consumer on the channel for the queue
+    my $consumer = $self->consume(queue    => $receiver->{queue},
+                                  callback => $receiver->{callback},
+                                  condvar  => $args{condvar});
+
+    # Keep the consumer tag to know that the callback is already registred
+    $receiver->{consumer} = $consumer->{method_frame}->{consumer_tag};
+}
+
+
+=pod
+=begin classdoc
+
+Unregister the consumer callback from the channel.
+
+=end classdoc
+=cut
+
+sub cancelConsumer {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'type', 'channel' ]);
 
-    my $queue;
-    if ($args{type} eq 'queue') {
-        $log->debug("Declaring queue <$args{channel}>");
-        $queue = $self->_session->declare_queue(queue => $args{channel}, durable => 1);
-    }
-    elsif ($args{type} eq 'topic') {
-        $log->debug("Declaring exchange <$args{channel}> of type <fanout>");
-        $self->_session->declare_exchange(
-            exchange => $args{channel},
-            type     => 'fanout',
-        );
+    my $receiver = $self->_consumers->{$args{type}}->{$args{channel}};
 
-        $log->debug("Declaring exclusive queue in way to bind on exchange <$args{channel}>");
-        $queue = $self->_session->declare_queue(exclusive => 1);
-        $log->debug("Binding queue $queue->{method_frame}->{queue} on exchange <$args{channel}>");
-        $self->_session->bind_queue(
-            exchange => $args{channel},
-            queue    => $queue->{method_frame}->{queue},
-        );
+    $log->debug("Unregistering (cancel) callback with tag <$receiver->{consumer}>");
+    $self->_channel->cancel(consumer_tag => $receiver->{consumer});
+
+    # If the queue is bound to an exchange, unbind it.
+    if ($args{type} eq 'topic') {
+        $log->debug("Unbinding queue <$receiver->{queue}> from exchange <$args{channel}>");
+        $self->_channel->unbind_queue(queue    => $receiver->{queue},
+                                      exchange => $args{channel});
     }
-    return $queue;
+
+    $receiver->{queue}    = undef;
+    $receiver->{consumer} = undef;
 }
 
 
@@ -283,12 +310,9 @@ sub consume {
         }
     };
 
-    $log->debug("Setting the QOS <prefetch_count => 1> on the channel");
-    $self->_session->qos(prefetch_count => 1);
-
     # Register the method to call back at message consumption
     $log->debug("Registering (consume) callback on queue <$args{queue}>");
-    return $self->_session->consume(on_consume => \&$callback,
+    return $self->_channel->consume(on_consume => \&$callback,
                                     queue      => $args{queue},
                                     no_ack     => 0);
 }
@@ -310,39 +334,31 @@ sub receive {
 
     General::checkParams(args => \%args, required => [ 'type', 'channel' ]);
 
-    # Always reconnect the process at each receive, because the session and connection
-    # singleton grow in memoy at each call as 'consume' and 'cancel', whereas the following
-    # code should properly register a callback on a channel, and unregister it before re-fetch...
-    if ($self->connected) {
-        $self->disconnect();
-    }
-    $self->connect(%{$self->{_config}});
+    $log->debug("Receiving messages on <$args{type}>, channel <$args{channel}>");
+    my $duration = $self->_consumers->{$args{type}}->{$args{channel}}->{duration};
 
-    my $receiver = $self->_receivers->{$args{type}}->{$args{channel}};
-
-    # Register the consumer on the channel
-    if (not defined $receiver->{receiver}) {
-        $receiver->{receiver} = $self->createReceiver(channel => $args{channel}, type => $args{type});
+    if (not $self->connected) {
+        $self->connect(%{$self->{_config}});
     }
 
     # Share the AnyEvent condvar with the callback
     my $condvar = AnyEvent->condvar;
 
-    # Register the callback for the channel
-    if (defined $receiver->{consumer}) {
-        $self->cancel(receiver => $receiver);
-    }
-    $receiver->{consumer} = $self->consume(queue    => $receiver->{receiver}->{method_frame}->{queue},
-                                           callback => $receiver->{callback},
-                                           condvar  => $condvar);
+    # Register the consumer on the channel
+    $self->createConsumer(channel => $args{channel}, type => $args{type}, condvar => $condvar, force => 1);
 
     # Blocking call
-    $self->fetch(condvar => $condvar, duration => $receiver->{duration});
+    my $err;
+    eval {
+        $self->fetch(condvar => $condvar, duration => $duration);
+    };
+    if ($@) { $err = $@; }
 
     # Unregister the callback as we are in one by one fetch mode
-    $self->cancel(receiver => $receiver);
+    $self->cancelConsumer(channel => $args{channel}, type => $args{type});
 
-    $self->disconnect();
+    # If got an exception while fetching, rethrow.
+    if (defined $err) { throw $err; }
 }
 
 
@@ -360,33 +376,26 @@ sub receiveAll {
 
     General::checkParams(args => \%args, required => [ 'condvar' ]);
 
+    # Ensure to connect within child processes
+    if ($self->connected) {
+        $self->disconnect();
+    }
+
     # Run through all registred receviers
     my @childs;
     for my $type ('queue', 'topic') {
-        for my $channel (keys %{ $self->_receivers->{$type} }) {
-            my $receiver = $self->_receivers->{$type}->{$channel};
+        for my $channel (keys %{ $self->_consumers->{$type} }) {
+            my $receiver = $self->_consumers->{$type}->{$channel};
 
             # Define a common job for instances of this receiver
             my $job = AnyEvent::Subprocess->new(code => sub {
                 $log->info("Spawn child process <$$> for waiting on <$type>, channel <$channel>.");
 
                 # Connect to the broker within the child
-                if (not $self->connected) {
-                    $self->connect(%{$self->{_config}});
-                }
+                $self->connect(%{$self->{_config}});
 
-                # Create the receivers
-                if (not defined $receiver->{receiver}) {
-                    $receiver->{receiver} = $self->createReceiver(channel => $channel, type => $type);
-                }
-                # Register the callback for this channel
-                if (defined $receiver->{consumer}) {
-                    $self->cancel(receiver => $receiver);
-                }
-                $self->consume(
-                    queue    => $receiver->{receiver}->{method_frame}->{queue},
-                    callback => $receiver->{callback}
-                );
+                # Create the consumer
+                $self->createConsumer(channel => $channel, type => $type, force => 1);
 
                 # Infinite loop on fetch. The event loop should never stop itself,
                 # but looping here in a while, to re-trigger the event loop if anormaly fail.
@@ -420,6 +429,9 @@ sub receiveAll {
                     }
                 }
                 $log->info("Child process <$$> stop waiting on <$type>, channel <$channel>, exiting.");
+
+                # Unregister the callback as we are in one by one fetch mode
+                $self->cancelConsumer(channel => $channel, type => $type);
 
                 # Disconnect the child from the broker
                 $self->disconnect();
@@ -464,32 +476,6 @@ sub receiveAll {
 =pod
 =begin classdoc
 
-Register the callbck method for a specific channel and type.
-
-@param receiver the receiver data hash
-
-=end classdoc
-=cut
-
-sub cancel {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'receiver' ]);
-
-    if ($args{receiver}->{consumer}) {
-        my $tag = $args{receiver}->{consumer}->{method_frame}->{consumer_tag};
-
-        $log->debug("Unregistering (cancel) callback with tag <$tag>");
-        $self->_session->cancel(consumer_tag => $tag);
-    }
-    $args{receiver}->{consumer} = undef;
-    $args{receiver}->{receiver} = undef;
-}
-
-
-=pod
-=begin classdoc
-
 Acknowledge a message secified by tag.
 
 @param tag the delivery tag of the essage to ack
@@ -503,22 +489,25 @@ sub acknowledge {
     General::checkParams(args => \%args, required => [ 'tag' ]);
 
     $log->debug("Acknowledging message with tag <$args{tag}>");
-    $self->_session->ack(delivery_tag => $args{tag}, multiple => 0);
+    $self->_channel->ack(delivery_tag => $args{tag}, multiple => 0);
 }
 
 
 =pod
 =begin classdoc
 
-Return the receivers instances.
+Return the consumers infos.
 
 =end classdoc
 =cut
 
-sub _receivers {
+sub _consumers {
     my ($self, %args) = @_;
 
-    return $self->{_receivers};
+    if (not defined $self->{_consumers}) {
+        $self->{_consumers} = {}
+    }
+    return $self->{_consumers};
 }
 
 1;

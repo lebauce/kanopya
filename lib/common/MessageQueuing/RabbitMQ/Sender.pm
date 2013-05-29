@@ -50,8 +50,6 @@ sub methods {
     };
 }
 
-my $senders = {};
-
 my $merge = Hash::Merge->new('LEFT_PRECEDENT');
 
 
@@ -71,35 +69,10 @@ sub connect {
     # For each method declare the predefined channel
     for my $method (values %{ $self->methods }) {
         if (defined $method->{message_queuing}->{channel}) {
-            $self->declareChannel(channel => $method->{message_queuing}->{channel});
+            $self->declareQueue(channel => $method->{message_queuing}->{channel});
+            $self->declareExchange(channel => $method->{message_queuing}->{channel});
         }
     }
-}
-
-
-=pod
-=begin classdoc
-
-Declare the exchange and the queue for the specified channels.
-
-=end classdoc
-=cut
-
-sub declareChannel {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'channel' ]);
-
-    # Declare the exchange for the subscribers
-    $log->debug("Declaring exchange <$args{channel}> of type <fanout>");
-    $self->_session->declare_exchange(exchange => $args{channel}, type => 'fanout');
-
-    # Declare the queue for the workers
-    $log->debug("Declaring queue <$args{channel}>");
-    $self->_session->declare_queue(queue => $args{channel}, durable => 1);
-
-    # Keep the session to known if the exchange and the queue are created for this channel
-    $senders->{$args{channel}} = $self->_session;
 }
 
 
@@ -135,29 +108,29 @@ sub AUTOLOAD {
     if (not $self->connected) {
         $self->connect();
     }
-    # Declare the channel if not done at connect
-    if (not defined $senders->{$channel}) {
-        $self->declareChannel(channel => $channel);
-    }
+    # Declare the queue if not done at connect
+    $self->declareQueue(channel => $channel);
+    # Declare the exchange if not done at connect
+    $self->declareExchange(channel => $channel);
 
     # Serialize arguments
     my $data = JSON->new->utf8->encode(\%args);
 
     # Send message for the workers
     $log->debug("Publishing on queue <$channel>, body: $data");
-    $senders->{$channel}->publish(exchange    => '',
-                                  routing_key => $channel,
-                                  body        => $data,
-                                  # make message persistent
-                                  header => { delivery_mode => 2 });
+    $self->_channel->publish(exchange    => '',
+                             routing_key => $channel,
+                             body        => $data,
+                             # make message persistent
+                             header => { delivery_mode => 2 });
 
     # Send message for the subscribers
-#    $log->debug("Publishing on exchange <$channel>, body: $data");
-#    $senders->{$channel}->publish(exchange    => $channel,
-#                                  routing_key => '',
-#                                  body        => $data,
-#                                  # make message persistent
-#                                  header => { delivery_mode => 2 });
+    $log->debug("Publishing on exchange <$channel>, body: $data");
+    $self->_channel->publish(exchange    => $channel,
+                             routing_key => '',
+                             body        => $data,
+                             # make message persistent
+                             header => { delivery_mode => 2 });
 }
 
 

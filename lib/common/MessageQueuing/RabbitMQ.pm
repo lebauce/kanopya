@@ -45,7 +45,13 @@ my $log = get_logger("");
 my $connection;
 
 # The session singleton
-my $session;
+my $channel;
+
+# The queues singleton
+my $queues = {};
+
+# The exchanges singleton
+my $exchanges = {};
 
 
 =pod
@@ -85,7 +91,7 @@ sub connect {
                                        'user' => 'guest', 'password' => "guest" });
 
     if (not $self->connected) {
-        $log->debug("Connecting to broker <$args{ip}:$args{port}> as <$args{user}>");
+        $log->debug("$self Connecting to broker <$args{ip}:$args{port}> as <$args{user}>");
         $connection = Net::RabbitFoot->new()->load_xml_spec()->connect(
                           host => $args{ip},
                           port => $args{port},
@@ -93,8 +99,12 @@ sub connect {
                           pass => $args{password},
                           vhost => '/',
                       );
-        $log->debug("Openning channel");
-        $session = $self->_connection->open_channel();
+
+        $log->debug("$self Openning channel");
+        $channel = $self->_connection->open_channel();
+
+        $log->debug("Setting the QOS <prefetch_count => 1> on the channel");
+        $self->_channel->qos(prefetch_count => 1);
     }
 
     $self->{_config} = \%args;
@@ -112,11 +122,32 @@ Disconnect from the message queuing server.
 sub disconnect {
     my ($self, %args) = @_;
 
-    $log->debug("Closing channel");
-    $self->_session->close();
-    $log->debug("Disconnecting from broker");
-    $self->_connection->close();
-    $session = undef;
+    for my $queue (keys $self->_queues) {
+        # TODO: Probably unbind the queues
+        $self->_queues->{$queue} = undef
+    }
+
+    if (defined $channel) {
+        $log->debug("Closing channel");
+        eval {
+            $self->_channel->close();
+        };
+        if ($@) {
+            $log->warn("Unbale to close the channel: $@");
+        }
+    }
+
+    if (defined $connection) {
+        $log->debug("Disconnecting from broker");
+        eval {
+            $self->_connection->close();
+        };
+        if ($@) {
+            $log->warn("Unbale to disconnect from the broker: $@");
+        }
+    }
+
+    $channel = undef;
     $connection = undef;
 }
 
@@ -132,7 +163,51 @@ Return the connection status.
 sub connected {
     my ($self, %args) = @_;
 
-    return (defined $self->_connection and defined $self->_session);
+    return (defined $self->_connection and defined $self->_channel);
+}
+
+
+=pod
+=begin classdoc
+
+Declare a queue identified by the channel name.
+
+=end classdoc
+=cut
+
+sub declareQueue {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'channel' ]);
+
+    if (not defined $self->_queues->{$args{channel}}) {
+        $log->debug("Declaring queue <$args{channel}>");
+        $self->_queues->{$args{channel}} = $self->_channel->declare_queue(queue   => $args{channel},
+                                                                          durable => 1);
+    }
+    return $self->_queues->{$args{channel}};
+}
+
+
+=pod
+=begin classdoc
+
+Declare a queue identified by the channel name.
+
+=end classdoc
+=cut
+
+sub declareExchange {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'channel' ]);
+
+    if (not defined $self->_exchanges->{$args{channel}}) {
+        $log->debug("Declaring exchange <$args{channel}> of type <fanout>");
+        $self->_exchanges->{$args{channel}} = $self->_channel->declare_exchange(exchange => $args{channel},
+                                                                                type     => 'fanout');
+    }
+    return $self->_exchanges->{$args{channel}};
 }
 
 
@@ -144,10 +219,10 @@ Return the session private attribute.
 =end classdoc
 =cut
 
-sub _session {
+sub _channel {
     my ($self, %args) = @_;
 
-    return $session;
+    return $channel;
 }
 
 
@@ -163,6 +238,36 @@ sub _connection {
     my ($self, %args) = @_;
 
     return $connection;
+}
+
+
+=pod
+=begin classdoc
+
+Return the connection private attribute.
+
+=end classdoc
+=cut
+
+sub _queues {
+    my ($self, %args) = @_;
+
+    return $queues;
+}
+
+
+=pod
+=begin classdoc
+
+Return the connection private attribute.
+
+=end classdoc
+=cut
+
+sub _exchanges {
+    my ($self, %args) = @_;
+
+    return $exchanges;
 }
 
 1;
