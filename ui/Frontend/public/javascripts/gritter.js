@@ -74,7 +74,7 @@ function updateWorkflowGritter(workflow) {
     var gritterId = gritter[0].id.substr(13);
     var id = workflow.pk;
     var ul = gritter.find("ul.gritter-operations");
-    var operations = get("/api/operation?workflow_id=" + id);
+    var operations = get("/api/operation?workflow_id=" + id  + "&order_by=execution_rank");
     ul.empty().append(formatOperations(operations).children());
     if (workflow.state != "running" && workflow.state != "pending") {
         $.gritter.remove(gritterId);
@@ -84,7 +84,7 @@ function updateWorkflowGritter(workflow) {
 
 function showWorkflowGritter(workflow) {
     var id = workflow.pk;
-    var operations = get("/api/operation?workflow_id=" + id);
+    var operations = get("/api/operation?workflow_id=" + id + "&order_by=execution_rank");
     var title = "Running workflow";
     if (workflow.workflow_name != null) {
         title   += " '" + workflow.workflow_name + "'";
