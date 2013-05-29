@@ -98,6 +98,59 @@ sub addNode {
     );
 }
 
+sub postStartNode {
+    my ($self, %args) = @_;
+    
+    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+
+    my $route = 'os-security-groups';
+    my $resp = $self->api->tenant(id => $self->api->{tenant_id})->$route->get(target => "compute");
+    my $group = $resp->{security_groups}->[0]->{id};
+
+    $route = 'os-security-group-rules';
+    $self->api->tenant(id => $self->api->{tenant_id})->$route->post(
+        target  => "compute",
+        content => {
+            security_group_rule => {
+                from_port       => 1,
+                to_port         => 65535,
+                ip_protocol     => "tcp",
+                cidr            => "0.0.0.0/0",
+                parent_group_id => $group,
+                group_id        => undef
+            }
+        }
+    );
+
+    $self->api->tenant(id => $self->api->{tenant_id})->$route->post(
+        target => "compute",
+        content => {
+            security_group_rule => {
+                from_port       => 1,
+                to_port         => 65535,
+                ip_protocol     => "udp",
+                cidr            => "0.0.0.0/0",
+                parent_group_id => $group,
+                group_id        => undef
+            }
+        }
+    );
+
+    $self->api->tenant(id => $self->api->{tenant_id})->$route->post(
+        target  => "compute",
+        content => {
+            security_group_rule => {
+                from_port       => -1,
+                to_port         => -1,
+                ip_protocol     => "icmp",
+                cidr            => "0.0.0.0/0",
+                parent_group_id => $group,
+                group_id        => undef
+            }
+        }
+    );
+}
+
 sub registerHypervisor {
     my ($self, %args) = @_;
 
