@@ -73,4 +73,11 @@ class kanopya::openstack::glance($dbserver, $password, $keystone, $email) {
     class { 'glance::backend::file': }
 
     Class['kanopya::openstack::repository'] -> Class['kanopya::openstack::glance']
+
+    if defined(Mount['/var/lib/glance/images']) {
+        exec { 'chown glance:glance /var/lib/glance/images':
+            subscribe => Mount['/var/lib/glance/images'],
+            refreshonly => true
+        }
+    }
 }

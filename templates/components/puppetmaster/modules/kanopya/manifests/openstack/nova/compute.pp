@@ -85,4 +85,11 @@ class kanopya::openstack::nova::compute($amqpserver, $dbserver, $glance, $keysto
     }
 
     Class['kanopya::openstack::repository'] -> Class['kanopya::openstack::nova::compute']
+
+    if defined(Mount['/var/lib/nova/instances']) {
+        exec { 'chmod 777 /var/lib/nova/instances':
+            subscribe   => Mount['/var/lib/nova/instances'],
+            refreshonly => true
+        }
+    }
 }
