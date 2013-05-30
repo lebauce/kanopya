@@ -15,6 +15,18 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+=begin classdoc
+
+Prepare the node removal. Select a node to remove if not defined,
+
+@since    2012-Aug-20
+@instance hash
+@self     $self
+
+=end classdoc
+=cut
+
 package EEntity::EOperation::EPostStopNode;
 use base "EEntity::EOperation";
 
@@ -33,12 +45,30 @@ my $log = get_logger("");
 my $errmsg;
 
 
+=pod
+=begin classdoc
+
+@param cluster the cluster on which remove a node
+@param host    the host corresponding to the node to remove
+
+=end classdoc
+=cut
+
 sub check {
     my $self = shift;
     my %args = @_;
 
     General::checkParams(args => $self->{context}, required => [ "cluster", "host" ]);
 }
+
+
+=pod
+=begin classdoc
+
+Wait for the host shut done properly.
+
+=end classdoc
+=cut
 
 sub prerequisites {
     my $self  = shift;
@@ -88,16 +118,28 @@ sub prerequisites {
         $log->debug("Could not connect to host <$host_id> from cluster <$cluster_id> with ip <$node_ip>.");
     }
 
+    my $result;
     eval {
-        return $delay if $self->{context}->{host}->checkUp();
+        $result = $self->{context}->{host}->checkUp();
     };
-
+    if (not $@ and $result) {
+        return $delay;
+    }
     $self->{context}->{host}->setState(state => "down");
 
     $log->info("Host <$host_id> in cluster <$cluster_id> is 'down', preparing PostStopNode.");
     return 0;
 }
 
+
+=pod
+=begin classdoc
+
+Configure the cluster component due to the node removal, release user quotas,
+remove the system image if the cluster is non persistent.
+
+=end classdoc
+=cut
 
 sub execute {
     my $self = shift;
@@ -182,11 +224,30 @@ sub execute {
     } else {
         $log->info("cluster image persistence is set, keeping $systemimage_name image");
     }
+}
 
-    # If the cluster has no node any more, it has been properly stoped
-    if (scalar(@{ $self->{context}->{cluster}->getHosts() }) == 0) {
+
+=pod
+=begin classdoc
+
+Set the cluster as up.
+
+=end classdoc
+=cut
+
+sub finish {
+    my ($self, %args) = @_;
+    $self->SUPER::finish(%args);
+
+    # If the cluster has no node any more, it has been properly stopped
+    my @nodes = $self->{context}->{cluster}->nodes;
+    if (scalar (@nodes)) {
+        $self->{context}->{cluster}->restoreState();
+    }
+    else {
         $self->{context}->{cluster}->setState(state => "down");
     }
 }
+
 
 1;

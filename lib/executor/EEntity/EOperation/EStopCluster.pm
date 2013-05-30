@@ -15,6 +15,18 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+=begin classdoc
+
+Stop the cluster. Run as many StopNode wofkflows as number of remaning nodes.
+
+@since    2012-Aug-20
+@instance hash
+@self     $self
+
+=end classdoc
+=cut
+
 package EEntity::EOperation::EStopCluster;
 use base EEntity::EOperation;
 
@@ -26,6 +38,14 @@ my $log = get_logger("");
 my $errmsg;
 
 
+=pod
+=begin classdoc
+
+@param cluster the cluster to stop
+
+=end classdoc
+=cut
+
 sub check {
     my ($self, %args)  = @_;
     $self->SUPER::check();
@@ -34,17 +54,57 @@ sub check {
 }
 
 
+=pod
+=begin classdoc
+
+Check if the cluster is stable.
+
+=end classdoc
+=cut
+
+sub prepare {
+    my ($self, %args) = @_;
+    $self->SUPER::prepare(%args);
+
+    # Check the cluster state
+    my $state = $self->{context}->{cluster}->getState;
+    if ($state ne 'up') {
+        throw Kanopya::Exception::Execution::InvalidState(
+                  error => "The cluster <" . $self->{context}->{cluster} .
+                           "> has to be <starting|down>, not <$state>"
+              );
+    }
+    $self->{context}->{cluster}->setState(state => 'updating');
+}
+
+
+=pod
+=begin classdoc
+
+Fail if the cluster has no nodes.
+
+=end classdoc
+=cut
+
 sub execute {
     my ($self, %args)  = @_;
     $self->SUPER::execute();
 
-    my @nodes = $self->{context}->{cluster}->nodesByWeight();
+    my @nodes = $self->{context}->{cluster}->nodes;
     if (not scalar(@nodes)) {
         $errmsg = "This cluster <" . $self->{context}->{cluster}->id . "> seems to have no node.";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 }
 
+
+=pod
+=begin classdoc
+
+Run as many StopNode wofkflows as number of remaning nodes.
+
+=end classdoc
+=cut
 
 sub postrequisites {
     my ($self, %args)  = @_;
@@ -60,9 +120,23 @@ sub postrequisites {
         $self->{context}->{cluster}->removeNode(node_id => $node->id);
     }
 
-    $self->{context}->{cluster}->setState(state => 'stopping');
-
     return 0;
+}
+
+
+=pod
+=begin classdoc
+
+Set the cluster as stopping
+
+=end classdoc
+=cut
+
+sub finish {
+    my ($self, %args)  = @_;
+    $self->SUPER::finish();
+
+    $self->{context}->{cluster}->setState(state => 'stopping');
 }
 
 1;

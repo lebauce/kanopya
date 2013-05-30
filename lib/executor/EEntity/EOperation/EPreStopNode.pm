@@ -1,4 +1,4 @@
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -14,6 +14,18 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
+
+=pod
+=begin classdoc
+
+Prepare the node removal. Select a node to remove if not defined,
+
+@since    2012-Aug-20
+@instance hash
+@self     $self
+
+=end classdoc
+=cut
 
 package EEntity::EOperation::EPreStopNode;
 use base "EEntity::EOperation";
@@ -35,21 +47,69 @@ my $log = get_logger("");
 my $errmsg;
 
 
+=pod
+=begin classdoc
+
+@param cluster the cluster on which remove a node
+@param host    the host corresponding to the node to remove
+
+=end classdoc
+=cut
+
+sub check {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => $self->{context}, required => [ "cluster" ]);
+}
+
+
+=pod
+=begin classdoc
+
+Check if the cluster is stable.
+
+=end classdoc
+=cut
+
+sub prepare {
+    my ($self, %args) = @_;
+    $self->SUPER::prepare(%args);
+
+    # Check the cluster state
+    my $state = $self->{context}->{cluster}->getState;
+    if ($state !~ m/up|stopping/) {
+        throw Kanopya::Exception::Execution::InvalidState(
+                  error => "The cluster <" . $self->{context}->{cluster} .
+                           "> has to be <starting|down>, not <$state>"
+              );
+    }
+    $self->{context}->{cluster}->setState(state => 'updating');
+}
+
+
+=pod
+=begin classdoc
+
+Select a node to remove in function of its weight vis-a-vis of the cluster.
+
+=end classdoc
+=cut
+
 sub prerequisites {
     my ($self, %args) = @_;
-
-    General::checkParams(args => $self->{context}, required => []);
-
     my $delay = 10;
 
     # Choose a random non master node
-    if ((not defined $self->{context}->{host}) && (defined $self->{context}->{cluster})) {
+    if (not defined $self->{context}->{host}) {
         $log->info('No node selected, select a random node');
 
         # Search the less important non master node
         my @nodes = $self->{context}->{cluster}->nodesByWeight(master_node => 0);
         if (not scalar (@nodes)) {
-            throw Kanopya::Exception(error => 'Cannot remove a node from cluster <'.($self->{context}->{cluster}->id).'>, only master nodes left');
+            throw Kanopya::Exception(
+                      error => 'Cannot remove a node from cluster <' . $self->{context}->{cluster}->id .
+                               '>, only master nodes left');
         }
         my $node = pop @nodes;
 
@@ -71,12 +131,22 @@ sub prerequisites {
         return -1;
     }
 
-    if (not defined $self->{context}->{cluster}) {
-         my $cluster = Entity->get(id => $self->{context}->{host}->node->service_provider_id);
-         $self->{context}->{cluster} = $cluster;
-    }
+    # The cluster is now required in the context, so the following block do not make sens.
+    #if (not defined $self->{context}->{cluster}) {
+    #     my $cluster = Entity->get(id => $self->{context}->{host}->node->service_provider_id);
+    #     $self->{context}->{cluster} = $cluster;
+    #}
     return 0;
 }
+
+
+=pod
+=begin classdoc
+
+Configure the components for the node removal.
+
+=end classdoc
+=cut
 
 sub execute {
     my $self = shift;
@@ -93,6 +163,22 @@ sub execute {
         );
     }
     $self->{context}->{host}->setNodeState(state => "pregoingout");
+}
+
+
+=pod
+=begin classdoc
+
+Restore the clutser and host states.
+
+=end classdoc
+=cut
+
+sub cancel {
+    my ($self, %args) = @_;
+    $self->SUPER::finish(%args);
+
+    $self->{context}->{cluster}->restoreState();
 }
 
 1;

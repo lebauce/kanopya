@@ -1,4 +1,4 @@
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -14,6 +14,18 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
+
+=pod
+=begin classdoc
+
+Stop the host corresponding to the node to remove.
+
+@since    2012-Aug-20
+@instance hash
+@self     $self
+
+=end classdoc
+=cut
 
 package EEntity::EOperation::EStopNode;
 use base "EEntity::EOperation";
@@ -32,12 +44,31 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
+
+=pod
+=begin classdoc
+
+@param cluster the cluster on which remove a node
+@param host    the host corresponding to the node to remove
+
+=end classdoc
+=cut
+
 sub check {
     my $self = shift;
     my %args = @_;
 
     General::checkParams(args => $self->{context}, required => [ "cluster", "host" ]);
 }
+
+
+=pod
+=begin classdoc
+
+Ask to the cluster component if they are ready for th node removal
+
+=end classdoc
+=cut
 
 sub prerequisites {
     my $self  = shift;
@@ -55,18 +86,40 @@ sub prerequisites {
     return 0;
 }
 
+=pod
+=begin classdoc
+
+Stop the host, Set the node a as 'goingout'.
+
+=end classdoc
+=cut
+
 sub execute {
     my $self = shift;
     $self->SUPER::execute();
 
     $self->{context}->{cluster}->stopNode(host => $self->{context}->{host});
 
-    # finaly we halt the node
+    # Finaly halt the node
     $self->{context}->{host}->halt();
 
     $self->{context}->{host}->setNodeState(state => "goingout");
-    $self->{context}->{host}->save();
+}
 
+
+=pod
+=begin classdoc
+
+Restore the clutser and host states.
+
+=end classdoc
+=cut
+
+sub cancel {
+    my ($self, %args) = @_;
+    $self->SUPER::finish(%args);
+
+    $self->{context}->{cluster}->setState(state => 'up');
 }
 
 1;
