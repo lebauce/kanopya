@@ -77,5 +77,10 @@ class kanopya::openstack::cinder($rabbits, $dbpassword, $dbserver, $amqpserver, 
         path => "/usr/bin:/usr/sbin:/bin:/sbin",
     }
 
+    cinder_config {
+        "DEFAULT/enabled_backends": value => "nfs-backend,iscsi-backend";
+        "DEFAULT/nfs_mount_options": value => "rw"
+    }
+
     Class['kanopya::openstack::repository'] -> Class['kanopya::openstack::cinder']
 }
