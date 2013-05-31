@@ -116,8 +116,7 @@ sub getClusterizationType {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    my $definitions = "class { 'apache': }\n" .
-                      "class { 'kanopya::mod_status': }\n";
+    my $definitions = "class { 'kanopya::apache': }\n";
 
     for my $vhost ($self->apache2_virtualhosts) {
         $definitions .= "apache::vhost {\n";
