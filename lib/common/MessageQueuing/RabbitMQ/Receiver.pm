@@ -50,6 +50,14 @@ use constant DURATION => {
 };
 
 
+# The condition variable shared between the main thread that awaiting
+# messages and the callback executed at message receipt.
+my $condvar;
+
+# Timer ref to interut the wait of messages one a timeout exceed.
+my $timeout = undef;
+
+
 =pod
 =begin classdoc
 
@@ -96,7 +104,7 @@ sub register {
 
     # Declare the queues if connected
     if ($self->connected) {
-        $self->createConsumer(channel => $args{channel}, type => $args{type})
+        $self->createConsumer(channel => $args{channel}, type => $args{type});
     }
 }
 
@@ -106,8 +114,6 @@ sub register {
 
 Wait for message in an event loop, interupt the bloking call
 if the duration exceed.
-
-@param condvar the condition variable for the event loop
 
 @optional duration the maximum time to wait messages.
 
@@ -121,8 +127,6 @@ sub fetch {
                          required => [ 'condvar' ],
                          optional => { 'duration' => undef });
 
-    # Set a timer to wait messages for the specified duration only
-    my $timeout = undef;
     if (defined $args{duration}) {
         $log->debug("Fetch message for <$args{duration}> second(s).");
         $timeout = AnyEvent->timer(after => $args{duration}, cb => sub {
@@ -142,10 +146,6 @@ sub fetch {
         my $err = $@;
         throw Kanopya::Exception::MessageQueuing::NoMessage(error => $err);
     }
-
-    # Disarm the timer
-    # TODO: We probably need to disarm the timer within the callback
-    $timeout = undef;
 }
 
 
@@ -165,8 +165,7 @@ sub createConsumer {
 
     General::checkParams(args     => \%args,
                          required => [ 'type', 'channel' ],
-                         optional => { 'force'   => 0,
-                                       'condvar' => undef });
+                         optional => { 'force'   => 0 });
 
     # If the consumer exists, skip creation
     my $receiver = $self->_consumers->{$args{type}}->{$args{channel}};
@@ -197,8 +196,7 @@ sub createConsumer {
 
     # Create the consumer on the channel for the queue
     my $consumer = $self->consume(queue    => $receiver->{queue},
-                                  callback => $receiver->{callback},
-                                  condvar  => $args{condvar});
+                                  callback => $receiver->{callback});
 
     # Keep the consumer tag to know that the callback is already registred
     $receiver->{consumer} = $consumer->{method_frame}->{consumer_tag};
@@ -248,8 +246,6 @@ Register the callbck method for a specific channel and type.
 @param queue the queue on which register hte calback
 @param callback the callback method
 
-@optional condvar the condition variable to interupt the event loop
-
 =end classdoc
 =cut
 
@@ -257,15 +253,15 @@ sub consume {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'queue', 'callback' ],
-                         optional => { 'condvar' => undef });
+                         required => [ 'queue', 'callback' ]);
 
     # Define the callback called at message consumption, it simply call
     # the callback method given at registration on the queue.
     my $callback = sub {
         my $var = shift;
 
-        # TODO: Probably disarm the timer here...
+        # Disarm the timeout timer as the message is received
+        $timeout = undef;
 
         my ($type, $channel);
         if ($var->{deliver}->{method_frame}->{exchange} ne '') {
@@ -310,16 +306,18 @@ sub consume {
         }
 
         # Interupt the second infinite loop
-        if (defined $args{condvar}) {
-            $args{condvar}->send;
+        if (defined $condvar) {
+            $condvar->send;
         }
     };
 
     # Register the method to call back at message consumption
     $log->debug("Registering (consume) callback on queue <$args{queue}>");
-    return $self->_channel->consume(on_consume => \&$callback,
+    my $cons = $self->_channel->consume(on_consume => \&$callback,
                                     queue      => $args{queue},
                                     no_ack     => 0);
+    $log->debug("Registered (consume) callback on queue <$args{queue}>");
+    return $cons;
 }
 
 
@@ -346,21 +344,20 @@ sub receive {
         $self->connect(%{$self->{_config}});
     }
 
-    # Share the AnyEvent condvar with the callback
-    my $condvar = AnyEvent->condvar;
-
     # Register the consumer on the channel
-    $self->createConsumer(channel => $args{channel}, type => $args{type}, condvar => $condvar, force => 1);
+    $self->createConsumer(channel => $args{channel}, type => $args{type});
+
+    # Defined the condition variable of this fetch
+    $condvar = AnyEvent->condvar;
 
     # Blocking call
     my $err;
     eval {
-        $self->fetch(condvar => $condvar, duration => $duration);
+        $self->fetch(duration => $duration, condvar => $condvar);
     };
     if ($@) { $err = $@; }
 
-    # Unregister the callback as we are in one by one fetch mode
-    $self->cancelConsumer(channel => $args{channel}, type => $args{type});
+    $condvar = undef;
 
     # If got an exception while fetching, rethrow.
     if (defined $err) { throw $err; }
@@ -379,7 +376,7 @@ then wait on the $$running pointer to kill childs when the service is stopped.
 sub receiveAll {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'condvar' ]);
+    General::checkParams(args => \%args, required => [ 'stopcondvar' ]);
 
     # Ensure to connect within child processes
     if ($self->connected) {
@@ -400,13 +397,13 @@ sub receiveAll {
                 $self->connect(%{$self->{_config}});
 
                 # Create the consumer
-                $self->createConsumer(channel => $channel, type => $type, force => 1);
+                $self->createConsumer(channel => $channel, type => $type);
 
                 # Infinite loop on fetch. The event loop should never stop itself,
                 # but looping here in a while, to re-trigger the event loop if anormaly fail.
                 my $running = 1;
                 while ($running) {
-                    my $condvar = AnyEvent->condvar;
+                    my $stopcondvar = AnyEvent->condvar;
 
                     # Define an handler on sig TERM to stop the event loop
                     my $sigterm = sub {
@@ -417,13 +414,13 @@ sub receiveAll {
                         $running = 0;
 
                         # Interupt the event loop
-                        $condvar->send;
+                        $stopcondvar->send;
                     };
                     my $watcher = AnyEvent->signal(signal => "TERM", cb => \&$sigterm);
 
                     # Indefinitly fetch until sigterm handler send on the condvar
                     eval {
-                        $self->fetch(condvar => $condvar);
+                        $self->fetch(condvar => $stopcondvar);
                     };
                     if ($@) {
                         my $err = $@;
@@ -434,9 +431,6 @@ sub receiveAll {
                     }
                 }
                 $log->info("Child process <$$> stop waiting on <$type>, channel <$channel>, exiting.");
-
-                # Unregister the callback as we are in one by one fetch mode
-                $self->cancelConsumer(channel => $channel, type => $type);
 
                 # Disconnect the child from the broker
                 $self->disconnect();
@@ -451,21 +445,21 @@ sub receiveAll {
     }
 
     # Wait for daemon termination
-    $args{condvar}->recv;
-    $args{condvar} = AnyEvent->condvar;
+    $args{stopcondvar}->recv;
 
     # Register a callback on the child termination, then send the TERM signal
     # to ask it to stop fetching after a possible current job.
     my @watchers;
+    my $waitchild = AnyEvent->condvar;
     for my $child (@childs) {
         # Increase the condvar for each child
-        $args{condvar}->begin;
+        $waitchild->begin;
 
         # Define a callback that decrease the condvar at child exit
         my $exitcb = sub {
             my ($pid, $status) = @_;
             $log->info("Child process <$pid> exiting with status $status.");
-            $args{condvar}->end;
+            $waitchild->end;
         };
         push @watchers, AnyEvent->child(pid => $child->child_pid, cb => \&$exitcb);
 
@@ -474,7 +468,7 @@ sub receiveAll {
     }
 
     # Wait for childs
-    $args{condvar}->recv;
+    $waitchild->recv;
 }
 
 

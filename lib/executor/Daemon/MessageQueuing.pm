@@ -247,7 +247,7 @@ sub run {
     }
 
     # Wait on all channel of all types
-    $self->receiveAll(condvar => $args{condvar});
+    $self->receiveAll(stopcondvar => $args{condvar});
 
     # Never should aprear as the parent process loop on the running
     # pointer only, to properly stop the childs jobs at daemon stopping.
