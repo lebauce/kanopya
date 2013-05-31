@@ -750,6 +750,7 @@ var KanopyaFormWizard = (function() {
         }
 
         var rel_attr_names = {};
+        var current_multi;
         for (var index in arr) {
             var attr = arr[index];
 
@@ -771,7 +772,10 @@ var KanopyaFormWizard = (function() {
                 if ($.inArray(attr.name, rel_attr_names[belongs_to]) < 0 && rel_attr_names[belongs_to].length) {
                     rel_attr_names[belongs_to].push(attr.name);
 
-                } else if (rel_list[rel_list.length - 1] == undefined || ! $.isArray(rel_list[rel_list.length - 1][attr.name])) {
+                // If the attr is in the array but the type of the attr is a relation,
+                // then continue to fill the array only if the last value belongs to this mutli relation.
+                } else if (rel_list[rel_list.length - 1] == undefined ||
+                           ! ($.isArray(rel_list[rel_list.length - 1][attr.name]) && current_multi != undefined)) {
                     rel_attr_names[belongs_to] = [attr.name];
                     rel_list.push({});
                 }
@@ -783,11 +787,20 @@ var KanopyaFormWizard = (function() {
             if (this.attributedefs[attr.name].relation === 'multi') {
                 if (! hash_to_fill[attr.name]) {
                     hash_to_fill[attr.name] = [];
+
+                    // Keep the info that we are filling a multi relation
+                    current_multi = attr.name;
                 }
                 hash_to_fill[attr.name].push(attr.value);
 
             } else {
                 hash_to_fill[attr.name] = attr.value;
+
+                // If current_multi is defined, this becase the last field was a value of
+                // a multi relation, that ust finished to be filled.
+                if (current_multi != undefined) {
+                    current_multi = undefined;
+                }
             }
         }
 
