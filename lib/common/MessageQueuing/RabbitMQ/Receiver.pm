@@ -341,7 +341,7 @@ sub receive {
     my $duration = $self->_consumers->{$args{type}}->{$args{channel}}->{duration};
 
     if (not $self->connected) {
-        $self->connect(%{$self->{_config}});
+        $self->connect(%{$self->{config}->{amqp}});
     }
 
     # Register the consumer on the channel
@@ -394,7 +394,7 @@ sub receiveAll {
                 $log->info("Spawn child process <$$> for waiting on <$type>, channel <$channel>.");
 
                 # Connect to the broker within the child
-                $self->connect(%{$self->{_config}});
+                $self->connect(%{$self->{config}->{amqp}});
 
                 # Create the consumer
                 $self->createConsumer(channel => $channel, type => $type);
