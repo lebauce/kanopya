@@ -83,7 +83,7 @@ sub connect {
                                        'user'     => 'guest',
                                        'password' => 'guest' });
 
-    if (not $self->connected) {
+    if (not defined $self->_connection) {
         $log->debug("Connecting <$self> to broker <$args{ip}:$args{port}> as <$args{user}>");
         $connection = Net::RabbitFoot->new()->load_xml_spec()->connect(
                           host => $args{ip},
@@ -92,12 +92,14 @@ sub connect {
                           pass => $args{password},
                           vhost => '/',
                       );
+    }
 
+    if (not defined $self->_channel) {
         $log->debug("Openning channel for <$self>");
         $self->{_channel} = $self->_connection->open_channel();
 
-#        $log->debug("Setting the QOS <prefetch_count => 1> on the channel");
-#        $self->_channel->qos(prefetch_count => 1);
+        #$log->debug("Setting the QOS <prefetch_count => 1> on the channel");
+        #$self->_channel->qos(prefetch_count => 1);
     }
 
     $self->{_config} = \%args;
