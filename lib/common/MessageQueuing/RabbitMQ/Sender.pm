@@ -116,21 +116,56 @@ sub AUTOLOAD {
     # Serialize arguments
     my $data = JSON->new->utf8->encode(\%args);
 
-    # Send message for the workers
-    $log->debug("Publishing on queue <$channel>, body: $data");
-    $self->_channel->publish(exchange    => '',
-                             routing_key => $channel,
-                             body        => $data,
-                             # make message persistent
-                             header => { delivery_mode => 2 });
+    my $err;
+    my $send  = 0;
+    my $retry = 10;
+    while ($retry > 0 and not $send) {
+        $err = undef;
+        eval {
+            # Send message for the workers
+            $log->debug("Publishing on queue <$channel>, body: $data");
+            $self->_channel->publish(exchange    => '',
+                                     routing_key => $channel,
+                                     body        => $data,
+                                     # make message persistent
+                                     header => { delivery_mode => 2 });
+            $send = 1;
+        };
+        if ($@) {
+            my $err = $@;
+            $log->warn("Failed to publish on queue <$channel>, $retry left: $err");
+            $retry--;
+            sleep 1;
+        }
+    }
+    if (defined $err) {
+        throw Kanopya::Exception::MessageQueuing::PublishFailed(error => $err);
+    }
 
-    # Send message for the subscribers
-    $log->debug("Publishing on exchange <$channel>, body: $data");
-    $self->_channel->publish(exchange    => $channel,
-                             routing_key => '',
-                             body        => $data,
-                             # make message persistent
-                             header => { delivery_mode => 2 });
+#    $send  = 0;
+#    $retry = 5;
+#    while ($retry > 0 and not $send) {
+#        $err = undef;
+#        eval {
+#            # Send message for the subscribers
+#            $log->debug("Publishing on exchange <$channel>, body: $data");
+#            $self->_channel->publish(exchange    => $channel,
+#                                     routing_key => '',
+#                                     body        => $data,
+#                                     # make message persistent
+#                                     header => { delivery_mode => 2 });
+#            $send = 1;
+#        };
+#        if ($@) {
+#            my $err = $@;
+#            $log->warn("Failed to publish on queue <$channel>, $retry left: $err");
+#            $retry--;
+#            sleep 0.5;
+#        }
+#    }
+#    if (defined $err) {
+#        throw Kanopya::Exception::MessageQueuing::PublishFailed(error => $err);
+#    }
 }
 
 

@@ -143,6 +143,10 @@ use Exception::Class (
         isa         => 'Kanopya::Exception::MessageQueuing',
         description => 'No message to fetch'
     },
+    Kanopya::Exception::MessageQueuing::PublishFailed => {
+        isa         => 'Kanopya::Exception::MessageQueuing',
+        description => 'Unable to publish on channel.'
+    },
 );
 
 # Force print trace when exception is stringified
