@@ -254,6 +254,9 @@ sub isUp {
             EEntity->new(entity => $cluster)->reconfigure(tags => \@tags);
         }
 
+        $self->applyConfiguration(cluster => $args{cluster},
+                                  host    => $args{host});
+
         return 1;
     }
     else {
