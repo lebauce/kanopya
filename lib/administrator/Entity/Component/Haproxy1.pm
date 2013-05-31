@@ -16,7 +16,7 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 4 sept 2010
 
-package Entity::Component::HAProxy1;
+package Entity::Component::Haproxy1;
 use base "Entity::Component";
 
 use strict;
@@ -29,52 +29,51 @@ use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    haproxy1s_listen => {
+        label       => 'Listen enties',
+        type        => 'relation',
+        relation    => 'single_multi',
+        is_editable => 1
+    },
+};
+
 sub getAttrDef { return ATTR_DEF; }
 
-sub getNetConf {
-    my $self = shift;
-    
-    my $conf = $self->getConf();
-    
-    # TODO manage check depending on master node or not
-    return;
-    #return { $conf->{haproxy1_http_frontend_port} => ['tcp'],
-    #         $conf->{haproxy1_https_frontend_port} => ['tcp', 'ssl'] };
-
-}
-
 sub getBaseConfiguration {
-    return {
-        haproxy1_http_frontend_port => 80,
-        haproxy1_http_backend_port => 8080,
-        haproxy1_https_frontend_port => 443,
-        haproxy1_https_backend_port => 4443,
-        haproxy1_log_server_address => "0.0.0.0:514",
-    };
-}
-
-sub insertDefaultExtendedConfiguration {
-    my $self = shift;
-    my %args = @_;
-
-    # Retrieve admin ip
-    my $admin_ip = "0.0.0.0";
-
-    $self->setAttr(name => "haproxy1_log_server_address", value => "$admin_ip:514");
-    $self->save();
+    return {}
 }
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
+    my $manifest = $self->instanciatePuppetResource(
+                       name => "kanopya::haproxy",
+                   );
+
+    my @listens = $self->haproxy1s_listen;
+    for my $listen (@listens) {
+        $manifest .= $self->instanciatePuppetResource(
+                         resource => 'haproxy::listen',
+                         name => $listen->listen_name,
+                         params => {
+                            ipaddress => "'". $listen->listen_ip ."'",
+                            ports     => "'". $listen->listen_port ."'",
+                            mode      => "'". $listen->listen_mode ."'",
+                            options   => {
+                                option => ['tcplog'],
+                                balance => "'". $listen->listen_balance ."'"     
+                            }
+                        }
+                     );
+    }
+
     return merge($self->SUPER::getPuppetDefinition(%args), {
         haproxy => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::haproxy",
-                        )
+            manifest => $manifest
         }
     } );
+
 }
 
 1;

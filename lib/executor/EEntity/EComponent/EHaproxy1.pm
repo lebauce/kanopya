@@ -11,73 +11,7 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package EEntity::EComponent::EHAProxy1;
+package EEntity::EComponent::EHaproxy1;
 use base 'EEntity::EComponent';
-
-use strict;
-use warnings;
-use Log::Log4perl "get_logger";
-use General;
-
-my $log = get_logger("");
-my $errmsg;
-
-# generate configuration files on node
-sub configureNode {
-    my ($self, %args) = @_;
-    
-    General::checkParams(args => \%args, required => ['host', 'mount_point']);
-    
-    my $cluster = $self->service_provider;
-    my $conf = $self->getConf();
-    my %data;
-    # remove prefix of var name
-    for (keys %$conf) {
-        $_ =~ /haproxy1_(.*)/;
-        $data{$1} = $conf->{"haproxy1_$1"};
-    }
-    
-    my $publicips =  $args{cluster}->getPublicIps();
-    my $vip = shift @$publicips;
-    $data{public_ip} = defined $vip ? $vip->{address} : "127.0.0.1";
-    
-     my $file = $self->generateNodeFile(
-        cluster       => $cluster,
-        host          => $args{host},
-        file          => '/etc/haproxy/haproxy.cfg',
-        template_dir  => '/templates/components/haproxy',
-        template_file => 'haproxy.cfg.tt',
-        data          => \%data 
-    );
-    
-     $self->_host->getEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/haproxy'
-    );
-    
-    # send default haproxy conf (allowing haproxy to be started with init script)
-    $self->_host->getEContext->send(
-        src  => '/templates/components/haproxy/haproxy_default', 
-        dest => $args{mount_point} . '/etc/default/haproxy'
-    );
-}
-
-sub addNode {
-    my ($self, %args) = @_;
-    
-    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
-
-    # Run only on master node
-    if (not defined $self->getMasterNode) {
-	    $self->configureNode(%args);
-        	    
-	    $self->addInitScripts(
-            mountpoint => $args{mount_point}, 
-	        scriptname => 'haproxy', 
-        );
-    }
-}
-
-
 
 1;
