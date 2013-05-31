@@ -6,8 +6,9 @@ package AdministratorDB::Schema::Result::Haproxy1;
 use strict;
 use warnings;
 
-use base 'DBIx::Class::Core';
+use base 'DBIx::Class::IntrospectableM2M';
 
+use base qw/DBIx::Class::Core/;
 
 =head1 NAME
 
@@ -26,32 +27,6 @@ __PACKAGE__->table("haproxy1");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 haproxy1_http_frontend_port
-
-  data_type: 'integer'
-  is_nullable: 0
-
-=head2 haproxy1_http_backend_port
-
-  data_type: 'integer'
-  is_nullable: 0
-
-=head2 haproxy1_https_frontend_port
-
-  data_type: 'integer'
-  is_nullable: 0
-
-=head2 haproxy1_https_backend_port
-
-  data_type: 'integer'
-  is_nullable: 0
-
-=head2 haproxy1_log_server_address
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 32
-
 =cut
 
 __PACKAGE__->add_columns(
@@ -62,16 +37,6 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "haproxy1_http_frontend_port",
-  { data_type => "integer", is_nullable => 0 },
-  "haproxy1_http_backend_port",
-  { data_type => "integer", is_nullable => 0 },
-  "haproxy1_https_frontend_port",
-  { data_type => "integer", is_nullable => 0 },
-  "haproxy1_https_backend_port",
-  { data_type => "integer", is_nullable => 0 },
-  "haproxy1_log_server_address",
-  { data_type => "char", is_nullable => 0, size => 32 },
 );
 __PACKAGE__->set_primary_key("haproxy1_id");
 
@@ -92,12 +57,25 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 haproxy1s_listen
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-01-26 17:01:55
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:uWDMW6kj3jlh4aoolObFuA
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Haproxy1Listen>
+
+=cut
+
+__PACKAGE__->has_many(
+  "haproxy1s_listen",
+  "AdministratorDB::Schema::Result::Haproxy1Listen",
+  { "foreign.haproxy1_id" => "self.haproxy1_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2013-05-31 15:25:20
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:NwviNIQSSrd6SSBl0srjFg
+
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Component",
