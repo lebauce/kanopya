@@ -126,10 +126,6 @@ class kanopya::openstack::nova::controller($password, $dbserver, $amqpserver, $k
         'DEFAULT/cpu_allocation_ratio': value => '100'
     }
 
-    quantum_plugin_ovs {
-        'SECURITYGROUP/firewall_driver': value => "quantum.agent.linux.iptables_firewall.OVSHybridIptablesFirewallDriver";
-    }
-
     $inf = 100000
     class { 'nova::quota':
         quota_instances                       => $inf,

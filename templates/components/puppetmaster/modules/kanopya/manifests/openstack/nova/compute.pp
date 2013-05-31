@@ -54,16 +54,6 @@ class kanopya::openstack::nova::compute($amqpserver, $dbserver, $glance, $keysto
         }
     }
 
-    @@database_user { "nova@${ipaddress}":
-        password_hash => mysql_password("${password}"),
-        tag           => "${dbserver}",
-    }
-
-    @@database_grant { "nova@${ipaddress}/nova":
-        privileges => ['all'] ,
-        tag        => "${dbserver}"
-    }
-
     class { 'quantum::agents::ovs':
         integration_bridge  => 'br-int',
         bridge_mappings     => [ 'physnetflat:br-flat', 'physnetvlan:br-vlan' ],
@@ -74,14 +64,11 @@ class kanopya::openstack::nova::compute($amqpserver, $dbserver, $glance, $keysto
     class { 'quantum::client':
     }
 
-    class { 'quantum':
-        rabbit_password => "${qpassword}",
-        rabbit_host     => "${amqpserver}",
-        rabbit_user     => 'quantum'
-    }
-
-    quantum_plugin_ovs {
-        'SECURITYGROUP/firewall_driver': value => "quantum.agent.linux.iptables_firewall.OVSHybridIptablesFirewallDriver";
+    if ! defined(Class['kanopya::openstack::quantum::common']) {
+        class { 'kanopya::openstack::quantum::common':
+            rabbit_password => "${qpassword}",
+            rabbit_host     => "${amqpserver}"
+        }
     }
 
     Class['kanopya::openstack::repository'] -> Class['kanopya::openstack::nova::compute']

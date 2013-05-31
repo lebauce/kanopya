@@ -5,10 +5,12 @@ class kanopya::openstack::quantum::server($amqpserver, $dbserver, $keystone, $pa
         class { 'kanopya::openstack::repository': }
     }
 
-    class { '::quantum':
-        rabbit_password => "${password}",
-        rabbit_host     => "${amqpserver}",
-        rabbit_user     => 'quantum',
+    if ! defined(Class['kanopya::openstack::quantum::common']) {
+        class { 'kanopya::openstack::quantum::common':
+            rabbit_password => "${password}",
+            rabbit_host     => "${amqpserver}",
+            rabbit_user     => "quantum"
+        }
     }
 
     class { '::quantum::server':
