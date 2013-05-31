@@ -131,7 +131,8 @@ my @classes = (
     'Entity::Component::Apache2',
     'Entity::Component::Atftpd0',
     'Entity::Component::Dhcpd3',
-    'Entity::Component::HAProxy1',
+    'Entity::Component::Haproxy1',
+    'Entity::Component::Haproxy1::Haproxy1Listen',
     'Entity::Component::Keepalived1',
     'Entity::Component::Keepalived1::Keepalived1Vrrpinstance',
     'Entity::Component::Memcached1',
@@ -921,6 +922,12 @@ sub registerComponents {
         },
         {
             component_name         => 'Keepalived',
+            component_version      => 1,
+            component_categories   => [ 'LoadBalancer' ],
+            service_provider_types => [ 'Cluster' ],
+        },
+        {
+            component_name         => 'Haproxy',
             component_version      => 1,
             component_categories   => [ 'LoadBalancer' ],
             service_provider_types => [ 'Cluster' ],
