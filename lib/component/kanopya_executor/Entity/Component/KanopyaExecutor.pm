@@ -94,8 +94,13 @@ sub enqueue {
     my $operation = Entity::Operation->enqueue(%args);
 
     # Publish on the 'workflow' channel
-    MessageQueuing::RabbitMQ::Sender::run($self, workflow_id => $operation->workflow->id);
-
+    eval {
+        MessageQueuing::RabbitMQ::Sender::run($self, workflow_id => $operation->workflow->id);
+    };
+    if ($@) {
+        $log->error("Unbale to run workflow <" . $operation->workflow->id . ">, removing it.");
+        $operation->workflow->remove();
+    }
     return $operation;
 }
 
@@ -135,8 +140,13 @@ sub run {
     my $workflow = Entity::Workflow->run(%args);
 
     # Publish on the 'workflow' channel
-    MessageQueuing::RabbitMQ::Sender::run($self, workflow_id => $workflow->id);
-
+    eval {
+        MessageQueuing::RabbitMQ::Sender::run($self, workflow_id => $workflow->id);
+    };
+    if ($@) {
+        $log->error("Unbale to run workflow <" . $workflow->id . ">, removing it.");
+        $workflow->remove();
+    }
     return $workflow;
 }
 
