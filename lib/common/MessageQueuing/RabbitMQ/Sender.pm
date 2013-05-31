@@ -116,6 +116,10 @@ sub AUTOLOAD {
     # Serialize arguments
     my $data = JSON->new->utf8->encode(\%args);
 
+    my $on_inactive = sub {
+        $log->error("Channel <" . $self->_channel . ">is inactive...");
+    };
+
     my $err;
     my $send  = 0;
     my $retry = 10;
@@ -128,7 +132,8 @@ sub AUTOLOAD {
                                      routing_key => $channel,
                                      body        => $data,
                                      # make message persistent
-                                     header => { delivery_mode => 2 });
+                                     header      => { delivery_mode => 2 },
+                                     on_inactive => \&$on_inactive);
             $send = 1;
         };
         if ($@) {
@@ -153,7 +158,8 @@ sub AUTOLOAD {
 #                                     routing_key => '',
 #                                     body        => $data,
 #                                     # make message persistent
-#                                     header => { delivery_mode => 2 });
+#                                     header      => { delivery_mode => 2 },
+#                                     on_inactive => \&$on_inactive);
 #            $send = 1;
 #        };
 #        if ($@) {
