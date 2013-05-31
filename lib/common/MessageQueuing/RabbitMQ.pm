@@ -44,15 +44,6 @@ my $log = get_logger("");
 # The connection singleton
 my $connection;
 
-# The session singleton
-my $channel;
-
-# The queues singleton
-my $queues = {};
-
-# The exchanges singleton
-my $exchanges = {};
-
 
 =pod
 =begin classdoc
@@ -87,8 +78,10 @@ sub connect {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         optional => { 'ip' => '127.0.0.1', 'port' => 5672,
-                                       'user' => 'guest', 'password' => "guest" });
+                         optional => { 'ip'       => '127.0.0.1',
+                                       'port'     => 5672,
+                                       'user'     => 'guest',
+                                       'password' => 'guest' });
 
     if (not $self->connected) {
         $log->debug("Connecting to broker <$args{ip}:$args{port}> as <$args{user}>");
@@ -101,7 +94,7 @@ sub connect {
                       );
 
         $log->debug("Openning channel");
-        $channel = $self->_connection->open_channel();
+        $self->{_channel} = $self->_connection->open_channel();
 
 #        $log->debug("Setting the QOS <prefetch_count => 1> on the channel");
 #        $self->_channel->qos(prefetch_count => 1);
@@ -127,7 +120,7 @@ sub disconnect {
         $self->_queues->{$queue} = undef
     }
 
-    if (defined $channel) {
+    if (defined $self->_channel) {
         $log->debug("Closing channel");
         eval {
             $self->_channel->close();
@@ -137,7 +130,7 @@ sub disconnect {
         }
     }
 
-    if (defined $connection) {
+    if (defined $self->_connection) {
         $log->debug("Disconnecting from broker");
         eval {
             $self->_connection->close();
@@ -147,7 +140,7 @@ sub disconnect {
         }
     }
 
-    $channel = undef;
+    $self->{_channel} = undef;
     $connection = undef;
 }
 
@@ -222,7 +215,7 @@ Return the session private attribute.
 sub _channel {
     my ($self, %args) = @_;
 
-    return $channel;
+    return $self->{_channel};
 }
 
 
@@ -252,7 +245,10 @@ Return the connection private attribute.
 sub _queues {
     my ($self, %args) = @_;
 
-    return $queues;
+    if (not defined $self->{_queues}) {
+        $self->{_queues} = {};
+    }
+    return $self->{_queues};
 }
 
 
@@ -267,7 +263,10 @@ Return the connection private attribute.
 sub _exchanges {
     my ($self, %args) = @_;
 
-    return $exchanges;
+    if (not defined $self->{_exchanges}) {
+        $self->{_exchanges} = {};
+    }
+    return $self->{_exchanges};
 }
 
 1;
