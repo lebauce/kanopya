@@ -311,9 +311,26 @@ sub needBridge { return 0; }
 sub getHostsEntries { return; }
 
 sub getPuppetDefinition {
+    my ($self, %args) = @_;
+    my $manifest = "";
+    my @listens = $self->haproxy1s_listen;
+    for my $listen (@listens) {
+        $manifest .=  $self->instanciatePuppetResource(
+                         resource => '@@haproxy::listen',
+                         name => $listen->listen_name ."-\${::hostname}",
+                         params => {
+                            listening_service => $listen->listen_name,
+                            ports             => $listen->component_port,
+                            server_names      => "\${::hostname}",
+                            ipaddresses       => "\${::ipaddress}",
+                            options           => 'check'
+                         }
+                      );  
+    }
+    
     return {
-        component => {
-            manifest     => '',
+        loadbalanced => {
+            manifest     => $manifest,
             dependencies => []
         }
     };
