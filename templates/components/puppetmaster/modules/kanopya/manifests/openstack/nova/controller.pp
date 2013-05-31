@@ -143,6 +143,12 @@ class kanopya::openstack::nova::controller($password, $dbserver, $amqpserver, $k
         quota_key_pairs                       => $inf
     }
 
+    if defined(Class['kanopya::apache']) {
+        class { 'openstack::horizon':
+            secret_key => 'dummy_secret_key'
+        }
+    }
+
     Class['kanopya::openstack::repository'] -> Class['kanopya::openstack::nova::controller']
 }
 
