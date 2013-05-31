@@ -20,12 +20,6 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use BaseDB;
-use NetconfVlan;
-use Entity::Vlan;
-use Entity::Component::Lvm2::Lvm2Vg;
-use Entity::Component::Lvm2::Lvm2Pv;
-
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::Register;
 use Kanopya::Tools::Retrieve;
@@ -67,11 +61,13 @@ sub main {
     
     lives_ok {
         $haproxy->setConf(conf => {
-            haproxy1s_listen => [ { listen_name     => 'mysql',
-                                    listen_ip       => '0.0.0.0',
-                                    listen_port     => 33060,
-                                    listen_mode     => 'tcp',
-                                    listen_balance  => 'roundrobin'
+            haproxy1s_listen => [ { listen_name    => 'mysql',
+                                    listen_ip      => '0.0.0.0',
+                                    listen_port    => 33060,
+                                    listen_mode    => 'tcp',
+                                    listen_balance => 'roundrobin',
+                                    component_id   => $mysql->id,
+                                    component_port => 3306
                                   }
                                 ]
         });
@@ -81,5 +77,11 @@ sub main {
     lives_ok {
         Kanopya::Tools::Execution->startCluster(cluster => $cluster);
     } 'Start LoadBalancerService cluster';
+
+    diag("Add a second node");
+    $cluster->addNode();
+    lives_ok {
+        Kanopya::Tools::Execution->executeAll(timeout => 3600);
+    }
 
 }

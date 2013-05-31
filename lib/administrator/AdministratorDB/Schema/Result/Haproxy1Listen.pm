@@ -73,6 +73,12 @@ __PACKAGE__->table("haproxy1_listen");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 component_port
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -122,6 +128,8 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
+  "component_port",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
 );
 __PACKAGE__->set_primary_key("listen_id");
 
@@ -158,8 +166,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2013-05-31 15:25:20
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Yc3FQBpaVzs2uajYKMe32A
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2013-06-04 17:35:37
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:J03n9Mu3QI1tRf6vdcxitA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

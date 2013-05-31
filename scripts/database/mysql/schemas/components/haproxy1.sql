@@ -25,6 +25,7 @@ CREATE TABLE `haproxy1_listen` (
   `listen_mode` enum('tcp','http') NOT NULL DEFAULT 'tcp',
   `listen_balance` enum('roundrobin') NOT NULL DEFAULT 'roundrobin',
   `component_id` int(8) unsigned NOT NULL,
+  `component_port` int(8) unsigned NOT NULL,
   PRIMARY KEY (`listen_id`),
   CONSTRAINT `fk_haproxy1_listen_1` FOREIGN KEY (`haproxy1_id`) REFERENCES `haproxy1` (`haproxy1_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY `fk_haproxy1_listen_2` (`component_id`),

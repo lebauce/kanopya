@@ -333,7 +333,7 @@ sub getPuppetDefinition {
             manifest     => $manifest,
             dependencies => []
         }
-    };
+    }
 }
 
 sub instanciatePuppetResource {
