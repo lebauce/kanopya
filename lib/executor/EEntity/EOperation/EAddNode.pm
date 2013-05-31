@@ -68,9 +68,12 @@ sub check {
     # Add the manager to the context
     # TODO: Probably not the proper place...
     my $cluster = $self->{context}->{cluster};
-    $self->{context}->{host_manager}   = EEntity->new(entity => $cluster->getManager(manager_type => 'HostManager'));
-    $self->{context}->{disk_manager}   = EEntity->new(entity => $cluster->getManager(manager_type => 'DiskManager'));
-    $self->{context}->{export_manager} = EEntity->new(entity => $cluster->getManager(manager_type => 'ExportManager'));
+    $self->{context}->{host_manager}
+        = EEntity->new(entity => $cluster->getManager(manager_type => 'HostManager'));
+    $self->{context}->{disk_manager}
+        = EEntity->new(entity => $cluster->getManager(manager_type => 'DiskManager'));
+    $self->{context}->{export_manager}
+        = EEntity->new(entity => $cluster->getManager(manager_type => 'ExportManager'));
 }
 
 
@@ -91,7 +94,7 @@ sub prepare {
     if ($state !~ m/up|down/) {
         throw Kanopya::Exception::Execution::InvalidState(
                   error => "The cluster <" . $self->{context}->{cluster} .
-                           "> has to be <starting|down>, not <$state>"
+                           "> has to be <up|down>, not <$state>"
               );
     }
     $self->{context}->{cluster}->setState(state => 'updating');

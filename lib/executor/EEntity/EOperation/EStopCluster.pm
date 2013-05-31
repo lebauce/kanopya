@@ -67,11 +67,11 @@ sub prepare {
     $self->SUPER::prepare(%args);
 
     # Check the cluster state
-    my $state = $self->{context}->{cluster}->getState;
+    my ($state, $timestamp) = $self->{context}->{cluster}->getState;
     if ($state ne 'up') {
         throw Kanopya::Exception::Execution::InvalidState(
                   error => "The cluster <" . $self->{context}->{cluster} .
-                           "> has to be <starting|down>, not <$state>"
+                           "> has to be <up>, not <$state>"
               );
     }
     $self->{context}->{cluster}->setState(state => 'updating');
