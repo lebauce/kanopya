@@ -129,8 +129,12 @@ sub executeOne {
     WORKFLOW:
     while(1) {
         eval {
+            $log->debug("Calling oneRun with channel <operation> and type <queue>");
             $executor->oneRun(channel => 'operation', type => 'queue');
+            $log->debug("Called oneRun with channel <operation> and type <queue>");
+            $log->debug("Calling oneRun with channel <operation_result> and type <queue>");
             $executor->oneRun(channel => 'operation_result', type => 'queue');
+            $log->debug("Called oneRun with channel <operation_result> and type <queue>");
         };
         if ($@) {
             my $err = $@;
