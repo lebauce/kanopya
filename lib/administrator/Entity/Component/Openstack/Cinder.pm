@@ -147,7 +147,12 @@ sub getPuppetDefinition {
 
     my $amqp = $self->nova_controller->amqp->getMasterNode->fqdn;
     my $sql  = $self->mysql5;
-    my $keystone = $self->nova_controller->keystone;
+    my $controller = $self->nova_controller;
+    my $keystone = $controller->keystone;
+
+    my @repositories = map {
+        "'" . $_->container_access->container_access_export . "'"
+    } $controller->repositories;
 
     return {
         manifest     =>
@@ -159,7 +164,11 @@ sub getPuppetDefinition {
             "\trpassword  => 'cinder',\n" .
             "\tkpassword  => 'cinder',\n" .
             "\temail      => '" . $self->service_provider->user->user_email . "',\n" .
-            "\tkeystone   => '" . $keystone->getMasterNode->fqdn ."',\n" .
+            "\tkeystone   => '" . $keystone->getMasterNode->fqdn . "',\n" .
+           "}\n" .
+           "class { 'kanopya::openstack::cinder::iscsi': }\n" .
+           "class { 'kanopya::openstack::cinder::nfs':\n" .
+           "\tnfs_servers => [ " . join(', ', @repositories) . " ]\n" .
            "}\n",
         dependencies => [ $self->nova_controller->amqp , $sql , $keystone ]
     }

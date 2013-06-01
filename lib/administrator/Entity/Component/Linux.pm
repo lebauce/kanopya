@@ -123,9 +123,9 @@ sub getPuppetDefinition {
 
     # /etc/fstab et mounts
     foreach my $mount (@mount_entries) {
-        $str .= "file {'$mount->{linux_mount_point}': ensure => directory }\n";
+        $str .= "file {'$mount->{linux_mount_point}': ensure => directory, tag => 'mount' }\n";
         $str .= "mount {'$mount->{linux_mount_point}':\n";
-        $str .= "\tdevice => '$mount->{linux_mount_device}',\n";        
+        $str .= "\tdevice => '$mount->{linux_mount_device}',\n";
         $str .= "\tensure => mounted,\n";
         $str .= "\trequire => File['$mount->{linux_mount_point}'],\n";
         $str .= "\tfstype => '$mount->{linux_mount_filesystem}',\n";

@@ -45,8 +45,7 @@ sub createDisk {
     my $e_controller = EEntity->new(entity => $self->nova_controller);
     my $api = $e_controller->api;
 
-    my $req = $api->tenant(id => $api->{tenant_id})->volumes->post(
-                  target  => 'volume',
+    my $req = $api->volume->volumes->post(
                   content => {
                       "volume" => {
                           "name"         => $args{name},
@@ -110,6 +109,33 @@ sub addExportClient {
 
 sub getLunId {
     return 1;
+}
+
+sub postStartNode {
+    my ($self , %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+
+    $DB::single = 1;
+    my $e_controller = EEntity->new(entity => $self->nova_controller);
+    my $api = $e_controller->api;
+
+    my $req = $api->volume->types->post(
+                  content => {
+                      "volume_type" => {
+                          "name" => "nfs",
+                      }
+                  }
+              );
+
+    my $type = $req->{volume_type}->{id};
+    $api->volume->extra_specs->post(
+        content => {
+            "extra_specs" => {
+                "volume_backend_name" => "Generic_NFS"
+            }
+        }
+    );
 }
 
 1;
