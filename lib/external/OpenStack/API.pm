@@ -15,6 +15,7 @@
 package OpenStack::API;
 
 use OpenStack::Object;
+use OpenStack::Service;
 use General;
 use Kanopya::Exceptions;
 
@@ -33,7 +34,6 @@ sub new {
 
     $self->{config} = $args{config};
 
-    # $self->login(); (saving credentials in object instance ?
     $self->login(credentials => $args{credentials});
 
     return $self;
@@ -44,14 +44,16 @@ sub login {
 
     General::checkParams(args => \%args, required => [ 'credentials' ]);
 
-    my $response = $self->tokens->post(target => 'identity', content => $args{credentials});
+    my $response = $self->identity->tokens->post(content => $args{credentials});
 
-    # TODO serviceCatalog
+    for my $service (@{$response->{access}->{serviceCatalog}}) {
+        my $name = $service->{name};
+        $self->{config}->{$name}->{url} = $service->{endpoints}->[0]->{publicURL} .
+                                              ($name eq "quantum" ? "/v2.0" : "");
+    }
+
     $self->{token} = $response->{access}->{token}->{id};
-
-    my $tenants = $self->tenants->get(target => 'identity')->{tenants};
-    my @openstack_tenant = grep {$_->{name} eq 'openstack'} @$tenants;
-    $self->{tenant_id} = $openstack_tenant[0]->{id}; 
+    $self->{tenant} = $response->{access}->{token}->{tenant}->{id};
 
     # TODO process token expiration date (2013-01-25T16:21:38Z) => date_format()
     $self->{token_expiration} = $response->{access}->{token}->{expires};
@@ -60,50 +62,14 @@ sub login {
 sub logout {
 }
 
-# First AUTOLOAD() doesn't include args, they will be transmitted to OsObject.AUTOLOAD()
 sub AUTOLOAD {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, optional => { 'id' => undef, 'filter' => undef });
 
     my @autoload = split(/::/, $AUTOLOAD);
-    my $method = $autoload[-1];
+    my $service = $autoload[-1];
 
-    my $object = {
-        path                => $method,
-        config              => $self->{config},
-        token               => $self->{token} || undef,
-        token_expiration    => $self->{token_expiration} || undef,
-    };
-    # $args{id} is used to avoid methods starting with digit
-    # images(id => '022efa') <---> images/022efa
-    if ( defined $args{id} ) {
-        $object->{path} = $method . '/' . $args{id};
-    }
-    else {
-        $object->{path} = $method;
-    }
-    $object->{path} .= '?' . $args{filter} if ( defined $args{filter} );
-
-    bless $object, 'OpenStack::Object';
-
-    return $object;
-}
-
-# $os_api->tenant(id => '2abdf3')->servers->detail <---> 2abdf3/servers/detail
-# tenant(id) is replaced by id of tenant
-sub tenant {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'id' ]);
-
-    my $object = {
-        path    => $args{id},
-        config  => $self->{config},
-        token   => $self->{token} || undef,
-        token_expiration    => $self->{token_expiration} || undef,
-    };
-    bless $object, 'OpenStack::Object';
-
-    return $object;
+    return OpenStack::Service->new(name => $service,
+                                   api  => $self);
 }
 
 sub DESTROY {

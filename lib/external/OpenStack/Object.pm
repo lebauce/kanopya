@@ -23,31 +23,34 @@ use Data::Dumper;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
+sub new {
+    my ($self, %args) = @_;
+
+    return bless \%args;
+}
+
 sub AUTOLOAD {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, optional => { 'id' => undef, 'filter' => undef });
+    General::checkParams(args => \%args,
+                         optional => { 'id' => undef, 'filter' => undef });
 
     my @autoload = split(/::/, $AUTOLOAD);
     my $method = $autoload[-1];
 
-    my $object = {
-        config              => $self->{config},
-        token               => $self->{token} || undef,
-        token_expiration    => $self->{token_expiration} || undef,
-    };
-
+    my $path;
     # $args{id} is used to avoid methods starting with digit
     # abc->images(id => '022efa')->members <---> abc/images/022efa/members
     if ( defined $args{id} || defined $args{varchar} ) {
-        $object->{path} = $self->{path} . '/' . $method . '/' . $args{id};
+        $path = $self->{path} . '/' . $method . '/' . $args{id};
     }
     else {
-        $object->{path} = $self->{path} . '/' . $method;
+        $path = $self->{path} . '/' . $method;
     }
-    $object->{path} .= '?' . $args{filter} if ( defined $args{filter} );
 
-    bless $object, 'OpenStack::Object';
-    return $object;
+    $path .= '?' . $args{filter} if ( defined $args{filter} );
+
+    return OpenStack::Object->new(path    => $path,
+                                  service => $self->{service});
 }
 
 sub get {
@@ -89,7 +92,6 @@ sub request {
     my $parameters = $args{parameters};
     General::checkParams(
         args        => $parameters,
-        required    => ['target'],
         optional    => {
             'content'       => undef,
             'content_type'  => 'application/json',
@@ -97,12 +99,12 @@ sub request {
         }
     );
 
+    my $token = $self->{service}->{api}->{token};
     my $method_type = $args{method_type};
-    my $target = $parameters->{target};
     my $content = $parameters->{content};
     my $content_type = $parameters->{content_type};
     my $headers = $parameters->{headers};
-    my $complete_url = $self->{config}->{$target}->{url} . '/' . $self->{path};
+    my $url = $self->{service}->getEndpoint . '/' . $self->{path};
 
     my $request = '-H "Accept: application/json" -H "Expect: "';
     if (defined $content) {
@@ -117,7 +119,7 @@ sub request {
 
     # TODO if ( $self->{token_expiration} <= date('UTC') ) then $self->login();
     # Token is undefined for the first request (to obtain a token)
-    $request .= ' -H "X-Auth-Token:' . $self->{token} . '"' if (defined $self->{token});
+    $request .= ' -H "X-Auth-Token:' . $token . '"' if (defined $token);
 
     # Each header is jsonified and preceded by "-H" option of curl
     if (defined $headers) {
@@ -126,7 +128,8 @@ sub request {
         }
     }
 
-    my $response = `curl -X $method_type $request $complete_url`;
+    $log->debug("curl -X $method_type $request $url");
+    my $response = `curl -X $method_type $request $url`;
 
     my $json;
     eval {
