@@ -55,38 +55,15 @@ sub api {
     };
 
     my $keystone = $self->keystone;
-    my @glances  = $self->glances;
-    my $glance   = shift @glances;
-    my @computes = $self->novas_compute;
-    my $compute  = shift @computes;
-    my @quantums  = $self->quantums;
-    my $quantum  = shift @quantums;
-    my @cinders  = $self->cinders;
-    my $cinder  = shift @cinders;
-
     my $config = {
         verify_ssl => 0,
         identity => {
             url     => 'http://' . $keystone->getMasterNode->fqdn . ':5000/v2.0'
         },
-        image => {
-            url     => 'http://' . $glance->getMasterNode->fqdn  . ':9292/v1'
-        },
-        compute => {
-            url     => 'http://' . $self->getMasterNode->fqdn . ':8774/v2'
-        },
-        network => {
-            url     => 'http://' . $quantum->getMasterNode->fqdn . ':9696/v2.0'
-        },
-        volume => {
-            url     => 'http://' . $cinder->getMasterNode->fqdn . ':8776/v1'
-        }
     };
 
-    my $os_api = OpenStack::API->new(credentials => $credentials,
-                                     config      => $config);
-
-    return $os_api;
+    return OpenStack::API->new(credentials => $credentials,
+                               config      => $config);
 }
 
 sub addNode {
@@ -103,52 +80,52 @@ sub postStartNode {
     
     General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
 
-    my $route = 'os-security-groups';
-    my $resp = $self->api->tenant(id => $self->api->{tenant_id})->$route->get(target => "compute");
-    my $group = $resp->{security_groups}->[0]->{id};
+    eval {
+        my $api = $self->api;
+        my $route = 'os-security-groups';
+        my $resp = $api->compute->$route->get();
+        my $group = $resp->{security_groups}->[0]->{id};
 
-    $route = 'os-security-group-rules';
-    $self->api->tenant(id => $self->api->{tenant_id})->$route->post(
-        target  => "compute",
-        content => {
-            security_group_rule => {
-                from_port       => 1,
-                to_port         => 65535,
-                ip_protocol     => "tcp",
-                cidr            => "0.0.0.0/0",
-                parent_group_id => $group,
-                group_id        => undef
+        $route = 'os-security-group-rules';
+        $api->compute->$route->post(
+            content => {
+                security_group_rule => {
+                    from_port       => 1,
+                    to_port         => 65535,
+                    ip_protocol     => "tcp",
+                    cidr            => "0.0.0.0/0",
+                    parent_group_id => $group,
+                    group_id        => undef
+                }
             }
-        }
-    );
+        );
 
-    $self->api->tenant(id => $self->api->{tenant_id})->$route->post(
-        target => "compute",
-        content => {
-            security_group_rule => {
-                from_port       => 1,
-                to_port         => 65535,
-                ip_protocol     => "udp",
-                cidr            => "0.0.0.0/0",
-                parent_group_id => $group,
-                group_id        => undef
+        $api->compute->$route->post(
+            content => {
+                security_group_rule => {
+                    from_port       => 1,
+                    to_port         => 65535,
+                    ip_protocol     => "udp",
+                    cidr            => "0.0.0.0/0",
+                    parent_group_id => $group,
+                    group_id        => undef
+                }
             }
-        }
-    );
+        );
 
-    $self->api->tenant(id => $self->api->{tenant_id})->$route->post(
-        target  => "compute",
-        content => {
-            security_group_rule => {
-                from_port       => -1,
-                to_port         => -1,
-                ip_protocol     => "icmp",
-                cidr            => "0.0.0.0/0",
-                parent_group_id => $group,
-                group_id        => undef
+        $api->compute->$route->post(
+            content => {
+                security_group_rule => {
+                    from_port       => -1,
+                    to_port         => -1,
+                    ip_protocol     => "icmp",
+                    cidr            => "0.0.0.0/0",
+                    parent_group_id => $group,
+                    group_id        => undef
+                }
             }
-        }
-    );
+        );
+    };
 }
 
 sub registerHypervisor {
@@ -188,12 +165,11 @@ sub migrateHost {
     my $host = $args{host};
     my $hv   = $args{hypervisor_dst};
     my $uuid = $host->openstack_vm_uuid;
-    my $api = $self->api;
+    my $api  = $self->api;
 
     $log->info('migrating host <' . $host->id . '> on hypervisor < ' . $hv->id . '>');
 
-    $api->tenant(id => $api->{tenant_id})->servers(id => $uuid)->action->post(
-        target  => 'compute',
+    $api->compute->servers(id => $uuid)->action->post(
         content => {
             'os-migrateLive'  => {
                 disk_over_commit => JSON::false,
@@ -230,8 +206,10 @@ sub getHypervisorVMs {
 
     my $host = $args{host};
 
-    my $details = $self->api->tenant(id => $self->api->{tenant_id} . '/os-hypervisors/'.$host->node->node_hostname)
-                       ->servers()->get(target => 'compute')->{hypervisors};
+    my $route = 'os-hypervisors';
+    my $hostname = $host->node->node_hostname;
+    my $details = $self->api->compute->$route->$hostname
+                       ->servers->get->{hypervisors};
 
     my @vms;
     my @vm_ids;
@@ -278,16 +256,14 @@ sub getVMDetails {
     my $host = $args{host};
     my $uuid = $host->openstack_vm_uuid;
 
-    my $details =  $self->api->tenant(id => $self->api->{tenant_id})
-                       ->servers(id => $uuid)
-                       ->get(target => 'compute');
+    my $details =  $self->api->compute->servers(id => $uuid)->get;
 
     if (defined $details->{'itemNotFound'}) {
         throw Kanopya::Exception(error => "VM <".$args{host}->id."> not found in infrastructure");
     }
 
     return {
-        state     => $details->{server}->{status},
+        state      => $details->{server}->{status},
         hypervisor => $details->{server}->{'OS-EXT-SRV-ATTR:host'},
     };
 }
@@ -382,8 +358,7 @@ sub halt {
     my $uuid = $args{host}->openstack_vm_uuid;
     my $api = $self->api;
 
-    $api->tenant(id => $api->{tenant_id})->servers(id => $uuid)->action->post(
-        target  => 'compute',
+    $api->compute->servers(id => $uuid)->action->post(
         content => { 'os-stop' => undef }
     );
 }
@@ -444,16 +419,14 @@ sub startHost {
         $image_id = $self->registerPXEImage();
     }
 
-    my $flavor = $api->tenant(id => $api->{tenant_id})->flavors(id => $args{cluster}->id)
-                     ->get(target => 'compute')->{flavor};
+    my $flavor = $api->compute->flavors(id => $args{cluster}->id)
+                     ->get->{flavor};
 
     if ($flavor->{id}) {
-        $api->tenant(id => $api->{tenant_id})->flavors(id => $flavor->{id})
-            ->delete(target => 'compute');
+        $api->compute->flavors(id => $flavor->{id})->delete;
     }
 
-    $flavor = $api->tenant(id => $api->{tenant_id})->flavors->post(
-        target  => 'compute',
+    $flavor = $api->compute->flavors->post(
         content => {
             flavor => {
                 'name'                        => 'flavor_' . $args{host}->node->node_hostname,
@@ -483,8 +456,7 @@ sub startHost {
     }
 
     # create VM
-    my $response = $api->tenant(id => $api->{tenant_id})->servers->post(
-        target => 'compute',
+    my $response = $api->compute->servers->post(
         content => {
             server => {
                 availability_zone => 'nova:' . $args{hypervisor}->node->node_hostname,
@@ -538,8 +510,7 @@ sub registerSystemImage {
     my $image_container_format = 'bare'; # bare => no container or metadata envelope for the image
     my $image_is_public = 'True'; # accessible by all tenants
 
-    my $response = $self->api->images->post(
-        target          => 'image',
+    my $response = $self->api->glance->images->post(
         headers         => {
             'x-image-meta-name'             => $image_name,
             'x-image-meta-disk_format'      => $image_type,
@@ -573,7 +544,7 @@ If the PXE boot does not exist in Glance, register an empty one
 sub registerPXEImage {
     my ($self, %args) = @_;
 
-    my $images = $self->api->images->get(target => "image")->{images};
+    my $images = $self->api->glance->images->get->{images};
     my ($pxe_image) = grep { $_->{name} eq "__PXE__" } @{$images};
 
     if (!$pxe_image) {
@@ -581,8 +552,7 @@ sub registerPXEImage {
         print $fh " " x 512;
         $fh->autoflush();
 
-        my $response = $self->api->images->post(
-            target          => 'image',
+        my $response = $self->glance->image->images->post(
             headers         => {
                 'x-image-meta-name'             => '__PXE__',
                 'x-image-meta-disk_format'      => 'raw',
@@ -673,19 +643,16 @@ sub stopHost {
     my $uuid = $host->openstack_vm_uuid;
 
     # get image id from openstack
-    my $image_id = $api->tenant(id => $api->{tenant_id})->servers(id => $uuid)->get(
-        target => 'compute',
-    )->{server}->{image}->{id};
+    my $image_id = $api->compute->servers(id => $uuid)->get->{server}->{image}->{id};
 
     # delete image : set 'protected' attribute to false, then delete image
-    $api->images(id => $image_id)->put(
-        target => 'image',
+    $api->glance->images(id => $image_id)->put(
         headers => { 'x-image-meta-protected' => 'False' }
     );
-    $api->images(id => $image_id)->delete(target => 'image');
+    $api->glance->images(id => $image_id)->delete;
 
     # delete vm
-    $api->tenant(id => $api->{tenant_id})->servers(id => $uuid)->delete(target => 'compute');
+    $api->compute->servers(id => $uuid)->delete;
 
     # delete host
     $host->setAttr(name  => 'active', value => '0');
@@ -729,8 +696,7 @@ sub resubmitNode {
     #   - nova evacuate has not been used for vm because it requires an hypervisor down
 
     # set vm's state to active (state required prior a rebuild)
-    $api->tenant(id => $api->{tenant_id})->servers(id => $uuid)->action->post(
-        target  => 'compute',
+    $api->compute->servers(id => $uuid)->action->post(
         content => {
             'os-resetState' => {
                 'state' => 'active'
@@ -739,12 +705,9 @@ sub resubmitNode {
     );
 
     # rebuild vm (host expected to be up)
-    my $image_id = $api->tenant(id => $api->{tenant_id})->servers(id => $uuid)->get(
-        target => 'compute',
-    )->{server}->{image}->{id};
+    my $image_id = $api->compute->servers(id => $uuid)->get->{server}->{image}->{id};
 
-    my $response = $api->tenant(id => $api->{tenant_id})->servers(id => $uuid)->action->post(
-        target  => 'compute',
+    my $response = $api->compute->servers(id => $uuid)->action->post(
         content => {
             'rebuild' => {
                 'name'     => $vm_name,
@@ -825,9 +788,8 @@ sub _getInstanceName {
     my $uuid = $args{vm}->openstack_vm_uuid;
     my $api = $self->api;
 
-    my $instance_name = $api->tenant(id => $api->{tenant_id})->servers(id => $uuid)->get(
-        target => 'compute',
-    )->{server}->{'OS-EXT-SRV-ATTR:instance_name'};
+    my $instance_name = $api->compute->servers(id => $uuid)->get
+                            ->{server}->{'OS-EXT-SRV-ATTR:instance_name'};
 
     return $instance_name;
 }
@@ -855,7 +817,7 @@ sub _getOrRegisterNetwork {
 
     my $api = $self->api;
     my $network_id = undef;
-    my $networks = $api->networks->get(target => 'network');
+    my $networks = $api->quantum->networks->get;
     if (defined $vlan) { # check if a network has already been created for physical vlan interface
         VLAN:
         for my $network (@{ $networks->{networks} }) {
@@ -886,8 +848,7 @@ sub _getOrRegisterNetwork {
             }
         };
         $network_conf->{network}->{'provider:segmentation_id'} = $vlan->vlan_number if (defined $vlan);
-        $network_id = $api->networks->post(
-            target  => 'network',
+        $network_id = $api->quantum->networks->post(
             content => $network_conf
         )->{network}->{id};
     }
@@ -920,13 +881,13 @@ sub _getOrRegisterSubnet {
     my $network_id = $args{network_id};
 
     my $api = $self->api;
-
     my $poolip = $iface->getPoolip();
     my $network_addr = NetAddr::IP->new($poolip->network->network_addr,
-                                      $poolip->network->network_netmask);
+                                        $poolip->network->network_netmask);
+
     # check if kanopya.network already registered in openstack.subnet (for openstack.network previously created)
     my $subnet_id = undef;
-    my $subnets = $api->subnets(filter => "network-id=$network_id")->get(target => 'network');
+    my $subnets = $api->quantum->subnets(filter => "network-id=$network_id")->get;
     SUBNET:
     for my $subnet ( @{$subnets->{subnets}} ) {
         if ( $subnet->{'cidr'} eq $network_addr->cidr() ) { # network already registered
@@ -938,8 +899,7 @@ sub _getOrRegisterSubnet {
     # create a new subnet if no subnet found
     # one allocation_pool is created with all ip usable
     if (not defined $subnet_id) {
-        $subnet_id = $api->subnets->post(
-            target  => 'network',
+        $subnet_id = $api->quantum->subnets->post(
             content => {
                 'subnet' => {
                     'name'              => $cluster_name . '-subnet',
@@ -988,8 +948,7 @@ sub _registerPort {
 
     my $api = $self->api;
 
-    my $port_id = $api->ports->post(
-        target  => 'network',
+    my $port_id = $api->quantum->ports->post(
         content => {
             'port' => {
                 'name'          => $hostname . '-' . $iface->iface_name,
@@ -1028,8 +987,7 @@ sub registerFlavor {
     );
 
     my $api = $self->api;
-    my $id = $api->tenant(id => $api->{tenant_id})->flavors->post(
-        target => 'compute',
+    my $id = $api->compute->flavors->post(
         content => {
             flavor => {
                 'name'                        => $args{name},
@@ -1069,15 +1027,15 @@ sub _scaleHost {
         optional => { memory => undef, cpu_number => undef }
     );
 
-    my $api          = $self->api;
-    my $node         = $args{host}->node;
-    my $uuid         = $args{host}->openstack_vm_uuid;
-    my $flavor       = $api->tenant(id => $api->{tenant_id})->servers(id => $uuid)->get(target => 'compute')->{server}->{flavor};
-    $flavor          = $api->tenant(id => $api->{tenant_id})->flavors(id => $flavor->{id})->get(target => 'compute')->{flavor};
+    my $api    = $self->api;
+    my $node   = $args{host}->node;
+    my $uuid   = $args{host}->openstack_vm_uuid;
+    my $flavor = $api->compute->servers(id => $uuid)->get->{server}->{flavor};
+    $flavor    = $api->compute->flavors(id => $flavor->{id})->get->{flavor};
 
     my $newFlavor_id = undef;
     if ($flavor->{id} eq $args{host}->id) {
-        $api->tenant(id => $api->{tenant_id})->flavors(id => $flavor->{id})->delete(target => 'compute');
+        $api->compute->flavors(id => $flavor->{id})->delete;
         $newFlavor_id = $flavor->{id};
     }
     else {
@@ -1093,16 +1051,14 @@ sub _scaleHost {
     );
 
     # resize vm and confirm it
-    $api->tenant(id => $api->{tenant_id})->servers(id => $uuid)->action->post(
-        target  => 'compute',
+    $api->compute->servers(id => $uuid)->action->post(
         content => {
             resize  => {
                 flavorRef   => $newFlavor_id
             }
         }
     );
-    $api->tenant(id => $api->{tenant_id})->servers(id => $uuid)->action->post(
-        target  => 'compute',
+    $api->compute->servers(id => $uuid)->action->post(
         content => {
             confirmResize => undef
         }
@@ -1142,8 +1098,5 @@ sub _scaleHost {
 #    $args{host}->hypervisor_id($hypervisor_id);
 #    return;
 #}
-
-
-
 
 1;

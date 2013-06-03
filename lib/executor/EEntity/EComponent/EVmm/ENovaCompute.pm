@@ -46,10 +46,11 @@ sub getAvailableMemory {
 
     my $host = $args{host};
     my $hostname = $host->node->node_hostname;
-	my $e_controller = EEntity->new(entity => $self->nova_controller);
+    my $e_controller = EEntity->new(entity => $self->nova_controller);
 
-    my $host_details = $e_controller->api->tenant(id => $e_controller->api->{tenant_id} . '/os-hypervisors/detail')
-                           ->get(target => 'compute')->{hypervisors};
+    my $route = "os-hypervisors";
+    my $host_details = $e_controller->api->compute->$route->detail
+                                    ->get->{hypervisors};
 
     my ($hypervisor) = grep { $_->{hypervisor_hostname} eq $host->node->fqdn } @$host_details;
 
@@ -102,16 +103,11 @@ sub getVmResources {
         my $uuid = $vm->openstack_vm_uuid;
         my $e_controller = EEntity->new(entity=> $self->nova_controller);
  
-        my $details = $e_controller->api->tenant(id => $e_controller->api->{tenant_id})
-                          ->servers(id => $uuid)
-                          ->get(target => 'compute');
-
+        my $details = $e_controller->api->compute->servers(id => $uuid)->get;
         my $flavor = $details->{server}->{flavor}->{id};
 
         #get the flavor's details
-        my $f_details = $e_controller->api->tenant(id => $e_controller->api->{tenant_id})
-                          ->flavors(id => $flavor)
-                          ->get(target => 'compute');
+        my $f_details = $e_controller->api->compute->flavors(id => $flavor)->get;
    
         my $vm_resources = {};
         for my $resource (@{ $args{resources} }) {
@@ -150,10 +146,10 @@ sub getRamUsedByVm {
     my $vm_uuid = $vm->openstack_vm_uuid;
     my $e_controller = EEntity->new(entity=> $self->nova_controller);
 
-    my $details = $e_controller->api->tenant(id => $e_controller->api->{tenant_id})
+    my $details = $e_controller->api->compute
                       ->servers(id => $vm_uuid)
                       ->diagnostics
-                      ->get(target => 'compute');
+                      ->get;
 
 	#TODO find a way to retrieve swapped memory for the vm
     return {

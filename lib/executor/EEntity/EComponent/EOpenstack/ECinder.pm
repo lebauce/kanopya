@@ -45,7 +45,7 @@ sub createDisk {
     my $e_controller = EEntity->new(entity => $self->nova_controller);
     my $api = $e_controller->api;
 
-    my $req = $api->volume->volumes->post(
+    my $req = $api->cinder->volumes->post(
                   content => {
                       "volume" => {
                           "name"         => $args{name},
@@ -116,11 +116,10 @@ sub postStartNode {
 
     General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
 
-    $DB::single = 1;
     my $e_controller = EEntity->new(entity => $self->nova_controller);
     my $api = $e_controller->api;
 
-    my $req = $api->volume->types->post(
+    my $req = $api->cinder->types->post(
                   content => {
                       "volume_type" => {
                           "name" => "nfs",
@@ -129,7 +128,7 @@ sub postStartNode {
               );
 
     my $type = $req->{volume_type}->{id};
-    $api->volume->extra_specs->post(
+    $api->cinder->types(id => $type)->extra_specs->post(
         content => {
             "extra_specs" => {
                 "volume_backend_name" => "Generic_NFS"
