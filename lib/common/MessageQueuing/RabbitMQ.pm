@@ -86,11 +86,15 @@ sub connect {
     if (not defined $self->_connection) {
         $log->debug("Connecting <$self> to broker <$args{ip}:$args{port}> as <$args{user}>");
         $connection = Net::RabbitFoot->new()->load_xml_spec()->connect(
-                          host => $args{ip},
-                          port => $args{port},
-                          user => $args{user},
-                          pass => $args{password},
-                          vhost => '/',
+                          host      => $args{ip},
+                          port      => $args{port},
+                          user      => $args{user},
+                          pass      => $args{password},
+                          vhost     => '/',
+                          on_return => sub {
+                              my $frame = shift;
+                              $log->error("Unable to deliver: " . Dumper($frame));
+                          },
                       );
     }
 

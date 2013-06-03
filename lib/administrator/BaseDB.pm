@@ -2835,6 +2835,8 @@ sub _loadconfig {
 
     General::checkParams(args => $config->{dbconf}, required => [ 'name', 'password', 'type', 'host', 'user', 'port' ]);
 
+    General::checkParams(args => $config->{amqp}, required => [ 'user', 'password' ]);
+
     if (! defined ($config->{dbconf}->{txn_commit_retry})) {
         $config->{dbconf}->{txn_commit_retry} = 10;
     }

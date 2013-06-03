@@ -95,10 +95,13 @@ sub enqueue {
 
     # Publish on the 'workflow' channel
     eval {
-        MessageQueuing::RabbitMQ::Sender::run($self, workflow_id => $operation->workflow->id);
+        MessageQueuing::RabbitMQ::Sender::run($self,
+                                              workflow_id => $operation->workflow->id,
+                                              %{ $self->_adm->{config}->{amqp} });
     };
     if ($@) {
-        $log->error("Unbale to run workflow <" . $operation->workflow->id . ">, removing it.");
+        my $err = $@;
+        $log->error("Unbale to run workflow <" . $operation->workflow->id . ">, removing it: $err");
         $operation->workflow->remove();
     }
     return $operation;
@@ -111,7 +114,9 @@ sub execute {
     General::checkParams(args => \%args, required => [ 'operation_id' ]);
 
     # Publish on the 'operation' channel
-    MessageQueuing::RabbitMQ::Sender::execute($self, operation_id => $args{operation_id});
+    MessageQueuing::RabbitMQ::Sender::execute($self,
+                                              operation_id => $args{operation_id},
+                                              %{ $self->_adm->{config}->{amqp} });
 }
 
 
@@ -141,10 +146,13 @@ sub run {
 
     # Publish on the 'workflow' channel
     eval {
-        MessageQueuing::RabbitMQ::Sender::run($self, workflow_id => $workflow->id);
+        MessageQueuing::RabbitMQ::Sender::run($self,
+                                              workflow_id => $workflow->id,
+                                              %{ $self->_adm->{config}->{amqp} });
     };
     if ($@) {
-        $log->error("Unbale to run workflow <" . $workflow->id . ">, removing it.");
+        my $err = $@;
+        $log->error("Unbale to run workflow <" . $workflow->id . ">, removing it: $err");
         $workflow->remove();
     }
     return $workflow;

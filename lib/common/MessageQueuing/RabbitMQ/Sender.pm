@@ -106,7 +106,10 @@ sub AUTOLOAD {
 
     # Connect the sender if not done
     if (not $self->connected) {
-        $self->connect();
+        $self->connect(%args);
+        # Remove possibly defined connection options form args
+        delete $args{user};
+        delete $args{password};
     }
     # Declare the queue if not done at connect
     $self->declareQueue(channel => $channel);
@@ -117,7 +120,7 @@ sub AUTOLOAD {
     my $data = JSON->new->utf8->encode(\%args);
 
     my $on_inactive = sub {
-        $log->error("Channel <" . $self->_channel . ">is inactive...");
+        $log->error("Channel <" . $self->_channel . "> is inactive... \n");
     };
 
     my $err;
@@ -131,9 +134,12 @@ sub AUTOLOAD {
             $self->_channel->publish(exchange    => '',
                                      routing_key => $channel,
                                      body        => $data,
+                                     mandatory   => 1,
+                                     immediate   => 1,
                                      # make message persistent
                                      header      => { delivery_mode => 2 },
-                                     on_inactive => \&$on_inactive);
+                                     on_inactive => \&$on_inactive,
+                                     on_failure  => \&$on_inactive);
             $send = 1;
         };
         if ($@) {
@@ -178,11 +184,15 @@ sub AUTOLOAD {
 =pod
 =begin classdoc
 
-Method called at the object deletion.
+Method called at the object deletion. Disconnect from the broker.
 
 =end classdoc
 =cut
 
-sub DESTROY {}
+sub DESTROY {
+    my ($self, %args) = @_;
+
+    $self->disconnect();
+}
 
 1;
