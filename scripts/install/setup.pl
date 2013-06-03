@@ -472,7 +472,7 @@ sub createAMQPUser {
     }
 }
 
-for my $user ("executor", "aggregator", "rulesengine", "monitor") {
+for my $user ("executor", "aggregator", "rulesengine", "monitor", "api") {
     createAMQPUser($user, $answers->{dbpassword1});
 }
 

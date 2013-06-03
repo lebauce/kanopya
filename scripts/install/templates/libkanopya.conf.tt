@@ -1,4 +1,5 @@
 <config logdir="[% logdir %]">
 	<dbconf type="mysql" name="kanopya" user="[% db_user %]" password="[% admin_password %]" port="[% dbport %]" host="[% dbip %]" debug="0" txn_commit_retry="10"/>
     <crypt salt="[% crypt_salt %]"/>
+    <amqp user="api" password="[% admin_password %]" />
 </config>
