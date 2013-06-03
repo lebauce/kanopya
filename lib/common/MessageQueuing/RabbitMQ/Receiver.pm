@@ -391,44 +391,49 @@ sub receiveAll {
 
             # Define a common job for instances of this receiver
             my $job = AnyEvent::Subprocess->new(code => sub {
-                $log->info("Spawn child process <$$> for waiting on <$type>, channel <$channel>.");
+                $log->info("Spawn child process <$$> for waiting on <$type>, channel <$channel>. " . getppid);
+                eval {
+                    # Connect to the broker within the child
+                    $self->connect(%{$self->{config}->{amqp}});
 
-                # Connect to the broker within the child
-                $self->connect(%{$self->{config}->{amqp}});
+                    # Create the consumer
+                    $self->createConsumer(channel => $channel, type => $type);
 
-                # Create the consumer
-                $self->createConsumer(channel => $channel, type => $type);
+                    # Infinite loop on fetch. The event loop should never stop itself,
+                    # but looping here in a while, to re-trigger the event loop if anormaly fail.
+                    my $running = 1;
+                    while ($running) {
+                        my $stopcondvar = AnyEvent->condvar;
 
-                # Infinite loop on fetch. The event loop should never stop itself,
-                # but looping here in a while, to re-trigger the event loop if anormaly fail.
-                my $running = 1;
-                while ($running) {
-                    my $stopcondvar = AnyEvent->condvar;
+                        # Define an handler on sig TERM to stop the event loop
+                        my $sigterm = sub {
+                            my $sig = shift;
+                            $log->info("Child process <$$> received $sig: awaiting running job to exit...");
 
-                    # Define an handler on sig TERM to stop the event loop
-                    my $sigterm = sub {
-                        my $sig = shift;
-                        $log->info("Child process <$$> received $sig: awaiting running job to exit...");
+                            # Stop looping on the event loop
+                            $running = 0;
 
-                        # Stop looping on the event loop
-                        $running = 0;
+                            # Interupt the event loop
+                            $stopcondvar->send;
+                        };
+                        my $watcher = AnyEvent->signal(signal => "TERM", cb => \&$sigterm);
 
-                        # Interupt the event loop
-                        $stopcondvar->send;
-                    };
-                    my $watcher = AnyEvent->signal(signal => "TERM", cb => \&$sigterm);
-
-                    # Indefinitly fetch until sigterm handler send on the condvar
-                    eval {
-                        $self->fetch(condvar => $stopcondvar);
-                    };
-                    if ($@) {
-                        my $err = $@;
-                        # Excpetion should be Kanopya::Exception::MessageQueuing::NoMessage
-                        if (not $err->isa('Kanopya::Exception::MessageQueuing::NoMessage')) {
-                            $err->rethow();
+                        # Indefinitly fetch until sigterm handler send on the condvar
+                        eval {
+                            $self->fetch(condvar => $stopcondvar);
+                        };
+                        if ($@) {
+                            my $err = $@;
+                            # Excpetion should be Kanopya::Exception::MessageQueuing::NoMessage
+                            if (not $err->isa('Kanopya::Exception::MessageQueuing::NoMessage')) {
+                                $err->rethow();
+                            }
                         }
                     }
+                };
+                if ($@) {
+                    my $err = $@;
+                    $log->info("Child process <$$> failed: $err");
                 }
                 $log->info("Child process <$$> stop waiting on <$type>, channel <$channel>, exiting.");
 
@@ -444,31 +449,34 @@ sub receiveAll {
         }
     }
 
-    # Wait for daemon termination
-    $args{stopcondvar}->recv;
-
-    # Register a callback on the child termination, then send the TERM signal
-    # to ask it to stop fetching after a possible current job.
+    # Register a callback on the child termination
     my @watchers;
-    my $waitchild = AnyEvent->condvar;
     for my $child (@childs) {
         # Increase the condvar for each child
-        $waitchild->begin;
+        $args{stopcondvar}->begin;
 
         # Define a callback that decrease the condvar at child exit
         my $exitcb = sub {
             my ($pid, $status) = @_;
             $log->info("Child process <$pid> exiting with status $status.");
-            $waitchild->end;
+            $args{stopcondvar}->end;
         };
         push @watchers, AnyEvent->child(pid => $child->child_pid, cb => \&$exitcb);
-
-        # Sending TERM signal to the child
-        $child->kill(15);
     }
 
-    # Wait for childs
-    $waitchild->recv;
+    # Wait for childs or daemon termination
+    eval {
+        $args{stopcondvar}->recv;
+    };
+    if ($@) {
+        # Send the TERM signal to ask it to stop fetching after a possible current job.
+        for my $child (@childs) {
+            # Increase the condvar for each child
+            $args{stopcondvar}->begin;
+            # Sending TERM signal to the child
+            $child->kill(15);
+        }
+    }
 }
 
 
