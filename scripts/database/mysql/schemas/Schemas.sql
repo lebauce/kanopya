@@ -512,7 +512,7 @@ CREATE TABLE `iface` (
   `iface_id` int(8) UNSIGNED NOT NULL,
   `iface_name` char(32) NOT NULL,
   `iface_mac_addr` char(18) DEFAULT NULL,
-  `iface_pxe` int(10) UNSIGNED NOT NULL,
+  `iface_pxe` int(10) UNSIGNED DEFAULT 0,
   `host_id` int(8) UNSIGNED NOT NULL,
   `master` char(32) DEFAULT '',
   PRIMARY KEY (`iface_id`),
