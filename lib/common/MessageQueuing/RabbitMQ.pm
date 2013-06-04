@@ -101,6 +101,7 @@ sub connect {
     if (not defined $self->_channel) {
         $log->debug("Openning channel for <$self>");
         $self->{_channel} = $self->_connection->open_channel();
+        $log->debug("Channel opened <$self->{_channel}>, " . Dumper($self->{_channel}));
 
         #$log->debug("Setting the QOS <prefetch_count => 1> on the channel");
         #$self->_channel->qos(prefetch_count => 1);
