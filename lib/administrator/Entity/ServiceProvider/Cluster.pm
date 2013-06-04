@@ -843,7 +843,7 @@ sub setState {
 
     General::checkParams(args => \%args, required => [ 'state' ]);
 
-    my $state = $self->getState();
+    my ($state, $timestamp) = $self->getState();
     $self->setAttr(name => 'cluster_prev_state', value => $state);
     $self->setAttr(name => 'cluster_state', value => $args{state} . ":" . time);
     $self->save();
@@ -853,9 +853,10 @@ sub restoreState {
     my $self = shift;
     my %args = @_;
 
-    my ($previous, $timestamp) = split(/:/,  $self->cluster_prev_state);
+    my ($previous, $dummy) = split(/:/,  $self->cluster_prev_state);
+    my ($current, $timestamp) = $self->getState();
 
-    $self->setAttr(name => 'cluster_prev_state', value => $self->getState);
+    $self->setAttr(name => 'cluster_prev_state', value => $current . ":" . $timestamp);
     $self->setAttr(name => 'cluster_state', value => $previous . ":" . time, save => 1);
 }
 
