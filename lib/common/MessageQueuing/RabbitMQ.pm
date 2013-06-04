@@ -32,11 +32,12 @@ package MessageQueuing::RabbitMQ;
 use strict;
 use warnings;
 
+use General;
+
 use Net::RabbitFoot;
 use JSON;
 
 use Data::Dumper;
-
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -84,18 +85,23 @@ sub connect {
                                        'password' => 'guest' });
 
     if (not defined $self->_connection) {
-        $log->debug("Connecting <$self> to broker <$args{ip}:$args{port}> as <$args{user}>");
-        $connection = Net::RabbitFoot->new()->load_xml_spec()->connect(
-                          host      => $args{ip},
-                          port      => $args{port},
-                          user      => $args{user},
-                          pass      => $args{password},
-                          vhost     => '/',
-                          on_return => sub {
-                              my $frame = shift;
-                              $log->error("Unable to deliver: " . Dumper($frame));
-                          },
-                      );
+        eval {
+            $log->debug("Connecting <$self> to broker <$args{ip}:$args{port}> as <$args{user}>");
+            $connection = Net::RabbitFoot->new()->load_xml_spec()->connect(
+                              host      => $args{ip},
+                              port      => $args{port},
+                              user      => $args{user},
+                              pass      => $args{password},
+                              vhost     => '/',
+                              on_return => sub {
+                                  my $frame = shift;
+                                  $log->error("Unable to deliver: " . Dumper($frame));
+                              },
+                          );
+        };
+        if ($@) {
+            throw Kanopya::Exception::MessageQueuing::ConnectionFailed(error => $@);
+        }
     }
 
     if (not defined $self->_channel) {

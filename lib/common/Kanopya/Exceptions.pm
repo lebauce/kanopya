@@ -139,13 +139,17 @@ use Exception::Class (
         isa         => 'Kanopya::Exception',
         description => 'Kanopya MessageQueuing Exception'
     },
+    Kanopya::Exception::MessageQueuing::ConnectionFailed => {
+        isa         => 'Kanopya::Exception::MessageQueuing',
+        description => 'Connection failed'
+    },
     Kanopya::Exception::MessageQueuing::NoMessage => {
         isa         => 'Kanopya::Exception::MessageQueuing',
         description => 'No message to fetch'
     },
     Kanopya::Exception::MessageQueuing::PublishFailed => {
         isa         => 'Kanopya::Exception::MessageQueuing',
-        description => 'Unable to publish on channel.'
+        description => 'Unable to publish on channel'
     },
 );
 

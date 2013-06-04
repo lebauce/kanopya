@@ -105,6 +105,8 @@ sub enqueue {
         my $err = $@;
         $log->error("Unbale to run workflow <" . $operation->workflow->id . ">, removing it: $err");
         $operation->workflow->remove();
+
+        $err->rethrow();
     }
     return $operation;
 }
@@ -162,6 +164,8 @@ sub run {
         my $err = $@;
         $log->error("Unale to run workflow <" . $workflow->id . ">, removing it: $err");
         $workflow->remove();
+
+        $err->rethrow();
     }
     return $workflow;
 }

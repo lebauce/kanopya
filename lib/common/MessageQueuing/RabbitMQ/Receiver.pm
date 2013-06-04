@@ -165,7 +165,7 @@ sub createConsumer {
 
     General::checkParams(args     => \%args,
                          required => [ 'type', 'channel' ],
-                         optional => { 'force'   => 0 });
+                         optional => { 'force' => 0, 'interrupt' => 1 });
 
     # If the consumer exists, skip creation
     my $receiver = $self->_consumers->{$args{type}}->{$args{channel}};
@@ -195,8 +195,9 @@ sub createConsumer {
     }
 
     # Create the consumer on the channel for the queue
-    my $consumer = $self->consume(queue    => $receiver->{queue},
-                                  callback => $receiver->{callback});
+    my $consumer = $self->consume(queue     => $receiver->{queue},
+                                  callback  => $receiver->{callback},
+                                  interrupt => $args{interrupt});
 
     # Keep the consumer tag to know that the callback is already registred
     $receiver->{consumer} = $consumer->{method_frame}->{consumer_tag};
@@ -253,7 +254,8 @@ sub consume {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'queue', 'callback' ]);
+                         required => [ 'queue', 'callback' ],
+                         optional => { 'interrupt' => 1 });
 
     # Define the callback called at message consumption, it simply call
     # the callback method given at registration on the queue.
@@ -297,16 +299,22 @@ sub consume {
         my $ack_cb = sub {
             $self->acknowledge(tag => $var->{deliver}->{method_frame}->{delivery_tag});
         };
+        # Build a callback method to raise the reconnection at channel error
+        my $err_cb = sub {
+            my %args = @_;
+            $condvar->croak(\%args);
+        };
 
         # Call the corresponding method
-        $args->{acknowledge_cb} = $ack_cb;
+        $args->{acknowledge_cb}  = $ack_cb;
+        $args->{channelerror_cb} = $err_cb;
         if ($args{callback}->(%$args)) {
             # Acknowledge the message if specified by the callback
             $args->{acknowledge_cb}->();
         }
 
         # Interupt the second infinite loop
-        if (defined $condvar) {
+        if ($args{interrupt} and defined $condvar) {
             $condvar->send;
         }
     };
@@ -314,9 +322,9 @@ sub consume {
     # Register the method to call back at message consumption
     $log->debug("Registering (consume) callback on queue <$args{queue}>");
     my $cons = $self->_channel->consume(on_consume => \&$callback,
-                                    queue      => $args{queue},
-                                    no_ack     => 0);
-    $log->debug("Registered (consume) callback on queue <$args{queue}>");
+                                        queue      => $args{queue},
+                                        no_ack     => 0);
+    $log->debug("Registered (consume) callback <$cons>");
     return $cons;
 }
 
@@ -391,19 +399,19 @@ sub receiveAll {
 
             # Define a common job for instances of this receiver
             my $job = AnyEvent::Subprocess->new(code => sub {
-                $log->info("Spawn child process <$$> for waiting on <$type>, channel <$channel>. " . getppid);
+                $log->info("Spawn process <$$> for waiting on <$type>, channel <$channel>. " . getppid);
                 eval {
-                    # Connect to the broker within the child
-                    $self->connect(%{$self->{config}->{amqp}});
-
-                    # Create the consumer
-                    $self->createConsumer(channel => $channel, type => $type);
-
                     # Infinite loop on fetch. The event loop should never stop itself,
                     # but looping here in a while, to re-trigger the event loop if anormaly fail.
                     my $running = 1;
                     while ($running) {
-                        my $stopcondvar = AnyEvent->condvar;
+                        # Connect to the broker within the child
+                        $self->connect(%{$self->{config}->{amqp}});
+
+                        # Create the consumer
+                        $self->createConsumer(channel => $channel, type => $type, interrupt => 0);
+
+                        $condvar = AnyEvent->condvar;
 
                         # Define an handler on sig TERM to stop the event loop
                         my $sigterm = sub {
@@ -414,13 +422,13 @@ sub receiveAll {
                             $running = 0;
 
                             # Interupt the event loop
-                            $stopcondvar->send;
+                            $condvar->send;
                         };
                         my $watcher = AnyEvent->signal(signal => "TERM", cb => \&$sigterm);
 
                         # Indefinitly fetch until sigterm handler send on the condvar
                         eval {
-                            $self->fetch(condvar => $stopcondvar);
+                            $self->fetch(condvar => $condvar);
                         };
                         if ($@) {
                             my $err = $@;
@@ -429,16 +437,20 @@ sub receiveAll {
                                 $err->rethow();
                             }
                         }
+
+                        # Cancel the registred callback
+                        $self->cancelConsumer(channel => $channel, type => $type);
+
+                        # Disconnect the child from the broker
+                        $self->disconnect();
                     }
                 };
                 if ($@) {
                     my $err = $@;
                     $log->info("Child process <$$> failed: $err");
                 }
-                $log->info("Child process <$$> stop waiting on <$type>, channel <$channel>, exiting.");
 
-                # Disconnect the child from the broker
-                $self->disconnect();
+                $log->info("Child process <$$> stop waiting on <$type>, channel <$channel>, exiting.");
                 exit 0;
             });
 

@@ -196,7 +196,13 @@ Method called at the object deletion. Disconnect from the broker.
 sub DESTROY {
     my ($self, %args) = @_;
 
-    $self->disconnect();
+    eval {
+        $self->disconnect();
+    };
+    if ($@) {
+        my $err = $@;
+        $log->warn("Unable to disconnect at DESTROY: $err");
+    }
 }
 
 1;
