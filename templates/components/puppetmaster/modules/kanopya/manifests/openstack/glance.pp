@@ -49,9 +49,9 @@ class kanopya::openstack::glance(
 
     @@keystone_endpoint { "RegionOne/glance":
         ensure       => present,
-        public_url   => "http://${fqdn}:9292/v2",
-        admin_url    => "http://${fqdn}:9292/v2",
-        internal_url => "http://${fqdn}:9292/v2",
+        public_url   => "http://${fqdn}:9292/v1",
+        admin_url    => "http://${fqdn}:9292/v1",
+        internal_url => "http://${fqdn}:9292/v1",
         tag          => "${keystone}"
     }
 
