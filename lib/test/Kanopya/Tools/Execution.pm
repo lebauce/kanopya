@@ -124,7 +124,15 @@ sub executeOne {
     }
 
     # Run the workflow
-    $executor->oneRun(channel => 'workflow', type => 'queue');
+    eval {
+        $executor->oneRun(channel => 'workflow', type => 'queue');
+    };
+    if ($@) {
+        my $err = $@;
+        if (not $err->isa('Kanopya::Exception::MessageQueuing::NoMessage')) {
+            $err->rethrow();
+        }
+    }
 
     WORKFLOW:
     while(1) {
@@ -132,6 +140,14 @@ sub executeOne {
             $log->debug("Calling oneRun with channel <operation> and type <queue>");
             $executor->oneRun(channel => 'operation', type => 'queue');
             $log->debug("Called oneRun with channel <operation> and type <queue>");
+        };
+        if ($@) {
+            my $err = $@;
+            if (not $err->isa('Kanopya::Exception::MessageQueuing::NoMessage')) {
+                $err->rethrow();
+            }
+        }
+        eval {
             $log->debug("Calling oneRun with channel <operation_result> and type <queue>");
             $executor->oneRun(channel => 'operation_result', type => 'queue');
             $log->debug("Called oneRun with channel <operation_result> and type <queue>");
@@ -139,9 +155,8 @@ sub executeOne {
         if ($@) {
             my $err = $@;
             if (not $err->isa('Kanopya::Exception::MessageQueuing::NoMessage')) {
-                throw $err;
+                $err->rethrow();
             }
-            # If no message received, an operation is probably currently reported.
         }
 
         my $state = $workflow->reload->state;
