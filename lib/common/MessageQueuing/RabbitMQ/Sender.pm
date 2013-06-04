@@ -135,7 +135,6 @@ sub AUTOLOAD {
                                      routing_key => $channel,
                                      body        => $data,
                                      mandatory   => 1,
-                                     immediate   => 1,
                                      # make message persistent
                                      header      => { delivery_mode => 2 },
                                      on_inactive => \&$on_inactive,
