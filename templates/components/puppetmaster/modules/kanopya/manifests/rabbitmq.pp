@@ -24,5 +24,6 @@ class kanopya::rabbitmq ($disk_nodes, $cookie) {
     }
     Rabbitmq_user <<| tag == "${fqdn}" |>>
     Rabbitmq_user_permissions <<| tag == "${fqdn}" |>>
+    Rabbitmq_vhost <<| tag == "${fqdn}" |>>
 }
 

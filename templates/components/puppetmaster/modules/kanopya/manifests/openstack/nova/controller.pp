@@ -1,4 +1,20 @@
-class kanopya::openstack::nova::controller($password, $dbserver, $amqpserver, $keystone, $email, $glance, $quantum) {
+class kanopya::openstack::nova::controller(
+    $admin_password,
+    $dbserver,
+    $amqpserver,
+    $keystone,
+    $email,
+    $glance,
+    $quantum,
+    $keystone_user      = 'nova',
+    $keystone_password  = 'nova',
+    $database_user      = 'nova',
+    $database_password  = 'nova',
+    $database_name      = 'nova',
+    $rabbit_user        = 'nova',
+    $rabbit_password    = 'nova',
+    $rabbit_virtualhost = '/'
+) {
     tag("kanopya::novacontroller")
 
     if ! defined(Class['kanopya::openstack::repository']) {
@@ -9,14 +25,21 @@ class kanopya::openstack::nova::controller($password, $dbserver, $amqpserver, $k
         path => "/usr/bin:/usr/sbin:/bin:/sbin",
     }
 
-    @@rabbitmq_user { 'nova':
+    if $rabbit_virtualhost != "/" {
+        @@rabbitmq_vhost { "${rabbit_virtualhost}":
+            ensure => present,
+            provider => 'rabbitmqctl',
+        }
+    }
+
+    @@rabbitmq_user { "${rabbit_user}":
         admin    => true,
-        password => "${password}",
+        password => "${rabbit_password}",
         provider => 'rabbitmqctl',
         tag      => "${amqpserver}",
     }
 
-    @@rabbitmq_user_permissions { "nova@/":
+    @@rabbitmq_user_permissions { "${rabbit_user}@${rabbit_virtualhost}":
         configure_permission => '.*',
         write_permission     => '.*',
         read_permission      => '.*',
@@ -24,15 +47,15 @@ class kanopya::openstack::nova::controller($password, $dbserver, $amqpserver, $k
         tag                  => "${amqpserver}",
     }
 
-    @@keystone_user { 'nova':
+    @@keystone_user { "${keystone_user}":
         ensure   => present,
-        password => "${password}",
+        password => "${keystone_password}",
         email    => "${email}",
         tenant   => 'services',
         tag      => "${keystone}",
     }
 
-    @@keystone_user_role { 'nova@services':
+    @@keystone_user_role { "${keystone_user}@services":
         ensure  => present,
         roles   => 'admin',
         tag     => "${keystone}",
@@ -53,42 +76,52 @@ class kanopya::openstack::nova::controller($password, $dbserver, $amqpserver, $k
         tag          => "${keystone}"
     }
 
-    @@mysql::db { 'nova':
-            user     => 'nova',
-            password => "${password}",
-            host     => "${ipaddress}",
-            grant    => ['all'],
-            charset  => 'latin1',
-            tag      => "${dbserver}",
+    @@mysql::db { "${database_name}":
+        user     => "${database_user}",
+        password => "${database_password}",
+        host     => "${ipaddress}",
+        grant    => ['all'],
+        charset  => 'latin1',
+        tag      => "${dbserver}",
     }
 
-    @@database_user { "nova@${fqdn}":
-        password_hash => mysql_password("${password}"),
+    @@database_user { "${database_user}@${fqdn}":
+        password_hash => mysql_password("${database_password}"),
         tag           => "${dbserver}",
     }
 
-    @@database_grant { "nova@${fqdn}/nova":
+    @@database_grant { "${database_user}@${fqdn}/${database_name}":
         privileges => ['all'] ,
         tag        => "${dbserver}"
     }
 
     class { 'nova::api':
         enabled        => true,
-        admin_password => "${password}",
+        admin_password => "${admin_password}",
         auth_host      => "${keystone}",
         require        => [ Exec["/usr/bin/nova-manage db sync"],
                             Class['kanopya::openstack::repository'] ]
     }
 
+    nova_paste_api_ini {
+        'filter:ratelimit/paste.filter_factor': value => "nova.api.openstack.compute.limits:RateLimitingMiddleware.factory";
+        'filter:ratelimit/limits': value => '(POST, "*", .*, 100000, MINUTE);(POST, "*/servers", ^/servers, 500000, DAY);(PUT, "*", .*, 100000, MINUTE);(GET, "*changes-since*", .*changes-since.*, 3, MINUTE);(DELETE, "*", .*, 100000, MINUTE)';
+    }
+
     if ! defined(Class['kanopya::openstack::nova::common']) {
         class { 'kanopya::openstack::nova::common':
-            amqpserver => "${amqpserver}",
-            dbserver   => "${dbserver}",
-            glance     => "${glance}",
-            keystone   => "${keystone}",
-            quantum    => "${quantum}",
-            email      => "${email}",
-            password   => "${password}"
+            amqpserver         => "${amqpserver}",
+            dbserver           => "${dbserver}",
+            glance             => "${glance}",
+            keystone           => "${keystone}",
+            quantum            => "${quantum}",
+            email              => "${email}",
+            database_user      => "${database_user}",
+            database_password  => "${database_password}",
+            database_name      => "${database_name}",
+            rabbit_user        => "${rabbit_user}",
+            rabbit_password    => "${rabbit_password}",
+            rabbit_virtualhost => "${rabbit_virtualhost}",
         }
     }
 

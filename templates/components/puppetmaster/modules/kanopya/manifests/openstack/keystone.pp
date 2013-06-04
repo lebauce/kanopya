@@ -1,13 +1,21 @@
-class kanopya::openstack::keystone($dbserver, $dbip, $dbpassword, $adminpassword, $email) {
+class kanopya::openstack::keystone(
+    $dbserver,
+    $dbip,
+    $admin_password,
+    $email,
+    $database_name      = "keystone",
+    $database_user      = "keystone",
+    $database_password  = "keystone"
+) {
     tag("kanopya::keystone")
 
     if ! defined(Class['kanopya::openstack::repository']) {
         class { 'kanopya::openstack::repository': }
     }
 
-    @@mysql::db { 'keystone':
-        user     => 'keystone',
-        password => "${dbpassword}",
+    @@mysql::db { "${database_name}":
+        user     => "${database_user}",
+        password => "${database_password}",
         host     => "${ipaddress}",
         grant    => ['all'],
         tag      => "${dbserver}",
@@ -21,7 +29,7 @@ class kanopya::openstack::keystone($dbserver, $dbip, $dbpassword, $adminpassword
 
     class { 'keystone::roles::admin':
         email        => "${email}",
-        password     => "${adminpassword}",
+        password     => "${admin_password}",
         require      => Exec['/usr/bin/keystone-manage db_sync'],
         admin_tenant => 'openstack'
     }
@@ -29,7 +37,7 @@ class kanopya::openstack::keystone($dbserver, $dbip, $dbpassword, $adminpassword
     class { '::keystone':
         verbose        => true,
         debug          => true,
-        sql_connection => "mysql://keystone:${dbpassword}@${dbserver}/keystone",
+        sql_connection => "mysql://${database_user}:${database_password}@${dbserver}/${database_name}",
         catalog_type   => 'sql',
         admin_token    => 'admin_token',
         before         => [ Class['keystone::roles::admin'],

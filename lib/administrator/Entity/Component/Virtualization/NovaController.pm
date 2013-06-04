@@ -166,6 +166,7 @@ sub getPuppetDefinition {
     my $keystone   = $self->keystone;
     my $quantum    = ($self->quantums)[0];
     my $glance     = join(",", map { $_->getMasterNode->fqdn . ":9292" } $self->nova_controller->glances);
+    my $name       = "nova-" . $self->id;
 
     if (not ($sql and $keystone and $quantum)) {
         return;
@@ -174,11 +175,15 @@ sub getPuppetDefinition {
     my $definition = "class { 'kanopya::openstack::nova::controller':\n" .
                      "\tdbserver => '" . $sql->getMasterNode->fqdn . "',\n" .
                      "\tamqpserver => '" . $self->amqp->getMasterNode->fqdn . "',\n" .
-                     "\tpassword => 'nova',\n" .
+                     "\tadmin_password => 'nova',\n" .
                      "\tkeystone => '" . $keystone->getMasterNode->fqdn . "',\n" .
                      "\temail => '" . $self->service_provider->user->user_email . "',\n" .
                      "\tglance => '" . $glance . "',\n" .
                      "\tquantum => '" . $quantum->getMasterNode->fqdn . "',\n" .
+                     "\tdatabase_user => '" . $name . "',\n" .
+                     "\tdatabase_name => '" . $name . "',\n" .
+                     "\trabbit_user => '" . $name . "',\n" .
+                     "\trabbit_virtualhost => 'openstack-" . $self->id . "',\n" .
                      "}\n";
 
     return {

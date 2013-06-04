@@ -1,20 +1,35 @@
-class kanopya::openstack::cinder($rabbits, $dbpassword, $dbserver, $amqpserver, $rpassword, $kpassword, $email, $keystone) {
+class kanopya::openstack::cinder(
+    $rabbits,
+    $dbserver,
+    $amqpserver,
+    $email,
+    $keystone,
+    $database_name      = "cinder",
+    $database_user      = "cinder",
+    $database_password  = "cinder",
+    $keystone_user      = "cinder",
+    $keystone_password  = "cinder",
+    $rabbit_password    = "cinder",
+    $rabbit_user        = "cinder",
+    $rabbit_virtualhost = "/"
+) {
     tag("kanopya::cinder")
 
     if ! defined(Class['kanopya::openstack::repository']) {
         class { 'kanopya::openstack::repository': }
     }
 
-    class {'::cinder':
-        rabbit_hosts    => $rabbits,
-        sql_connection  => "mysql://cinder:${dbpassword}@${dbserver}/cinder",
-        rabbit_userid   => 'cinder',
-        rabbit_password => "${rpassword}",
+    class { '::cinder':
+        rabbit_hosts        => $rabbits,
+        sql_connection      => "mysql://${database_user}:${database_password}@${dbserver}/${database_name}",
+        rabbit_userid       => "${rabbit_user}",
+        rabbit_password     => "${rabbit_password}",
+        rabbit_virtual_host => "${rabbit_virtualhost}"
     }
 
     class { 'cinder::api':
         keystone_tenant   => 'services',
-        keystone_password => 'cinder',
+        keystone_password => "${keystone_password}",
         require           => Exec['/usr/bin/cinder-manage db sync'],
     }
 
@@ -22,21 +37,21 @@ class kanopya::openstack::cinder($rabbits, $dbpassword, $dbserver, $amqpserver, 
 
     class { 'cinder::volume': }
 
-    @@mysql::db { 'cinder':
-        user     => 'cinder',
-        password => "${dbpassword}",
+    @@mysql::db { "${database_name}":
+        user     => "${database_user}",
+        password => "${database_password}",
         host     => "${ipaddress}",
         tag      => "${dbserver}"
     }
 
-    @@rabbitmq_user { 'cinder':
+    @@rabbitmq_user { "${rabbit_user}":
         admin    => true,
-        password => "${rpassword}",
+        password => "${rabbit_password}",
         provider => 'rabbitmqctl',
         tag      => "${amqpserver}"
     }
 
-    @@rabbitmq_user_permissions { "cinder@/":
+    @@rabbitmq_user_permissions { "${rabbit_user}@${rabbit_virtualhost}":
         configure_permission => '.*',
         write_permission     => '.*',
         read_permission      => '.*',
@@ -44,15 +59,15 @@ class kanopya::openstack::cinder($rabbits, $dbpassword, $dbserver, $amqpserver, 
         tag                  => "${amqpserver}"
     }
 
-    @@keystone_user { 'cinder':
+    @@keystone_user { "${keystone_user}":
         ensure   => present,
-        password => "${kpassword}",
+        password => "${keystone_password}",
         email    => "${email}",
         tenant   => 'services',
         tag      => "${keystone}",
     }
 
-    @@keystone_user_role { 'cinder@services':
+    @@keystone_user_role { "${keystone_user}@services":
         ensure  => present,
         roles   => 'admin',
         tag     => "${keystone}",

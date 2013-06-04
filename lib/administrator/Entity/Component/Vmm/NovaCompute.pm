@@ -78,6 +78,7 @@ sub getPuppetDefinition {
     my $quantum = ($self->nova_controller->quantums)[0];
     my $amqp = $self->nova_controller->amqp->getMasterNode->fqdn;
     my $sql = $self->mysql5->getMasterNode->fqdn;
+    my $name = "nova-" . $self->nova_controller->id;
 
     my @uplinks;
 
@@ -99,9 +100,9 @@ sub getPuppetDefinition {
             "\tquantum => '" . $quantum->getMasterNode->fqdn . "',\n" .
             "\tbridge_uplinks => [ " . join(' ,', @uplinks) . " ],\n" .
             "\temail => '" . $self->nova_controller->service_provider->user->user_email . "',\n" .
-            "\tpassword => 'nova',\n" .
             "\tlibvirt_type => 'kvm',\n" .
-            "\tqpassword => 'quantum'\n" .
+            "\trabbit_user => '" . $name . "',\n" .
+            "\trabbit_virtualhost => 'openstack-" . $self->nova_controller->id . "',\n" .
             "}\n",
         dependencies => [ $self->mysql5 ]
     };
