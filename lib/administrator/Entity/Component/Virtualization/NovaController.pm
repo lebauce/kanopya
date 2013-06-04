@@ -53,6 +53,18 @@ use constant ATTR_DEF => {
         relation    => 'single',
         is_editable => 1
     },
+    mysql5_id => {
+        label       => 'Database server',
+        type        => 'relation',
+        relation    => 'single',
+        is_editable => 1
+    },
+    keystone_id => {
+        label       => 'Authentication server',
+        type        => 'relation',
+        relation    => 'single',
+        is_editable => 1
+    },
     host_type => {
         is_virtual => 1
     }
