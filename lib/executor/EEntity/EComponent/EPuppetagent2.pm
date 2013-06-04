@@ -125,8 +125,8 @@ sub generatePuppetDefinitions {
     my $puppetmaster = EEntity->new(entity => $self->getPuppetMaster);
     my $fqdn = $args{host}->node->fqdn;
     my $puppet_definitions = "";
-    my $cluster_components = $args{cluster}->getComponents(category => "all", order_by => "priority");
-    foreach my $component (@{ $cluster_components }) {
+    my @cluster_components = sort { $a->priority <=> $b->priority } $args{host}->node->components;
+    foreach my $component (@cluster_components) {
         my $ecomponent = EEntity->new(entity => $component);
         $ecomponent->generateConfiguration(
             cluster => $args{cluster},
