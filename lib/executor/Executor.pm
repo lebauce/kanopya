@@ -154,7 +154,7 @@ sub runWorkflow {
         $first->setState(state => 'ready');
 
         # Push the first operation on the execution channel
-        $self->_component->execute(operation_id => $first->id);
+        $self->_component->execute(operation_id => $first->id, keep_channel => 1);
     }
 
     # Acknowledge the message
@@ -389,7 +389,7 @@ sub terminateOperation {
     $operation->serializeParams(params => $params);
 
     # Produce a result on the operation_result channel
-    $self->_component->terminate(operation_id => $operation->id, %args);
+    $self->_component->terminate(operation_id => $operation->id, keep_channel => 1, %args);
 
     # Acknowledge the message
     return 1;
@@ -457,7 +457,7 @@ sub handleResult {
                 # Re-trigger the operation at proper time
                 my $report_cb = sub {
                     # Re-execute the operation
-                    $self->_component->execute(operation_id => $operation->id);
+                    $self->_component->execute(operation_id => $operation->id, keep_channel => 1);
 
                     # Acknowledge the message as the operation result is finally handled
                     $args{acknowledge_cb}->();
@@ -474,7 +474,7 @@ sub handleResult {
             }
             else {
                 # Re-trigger the operation now
-                $self->_component->execute(operation_id => $operation->id);
+                $self->_component->execute(operation_id => $operation->id, keep_channel => 1);
 
                 # Stop the workflow for now
                 return 1;
@@ -502,7 +502,7 @@ sub handleResult {
         $self->logWorkflowState(operation => $operation, state => 'VALIDATED');
 
         # Re-trigger the operation now
-        $self->_component->execute(operation_id => $operation->id);
+        $self->_component->execute(operation_id => $operation->id, keep_channel => 1);
 
         # Stop the workflow
         return 1;
@@ -581,7 +581,7 @@ sub handleResult {
         $next->setState(state => 'ready');
 
         # Push the next operation on the execution channel
-        $self->_component->execute(operation_id => $next->id);
+        $self->_component->execute(operation_id => $next->id, keep_channel => 1);
     }
 
     # Acknowledge the message

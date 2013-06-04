@@ -100,9 +100,10 @@ sub AUTOLOAD {
     # Merge the arguments with possibly prefined for this method.
     %args = %{ $merge->merge(\%args, $method->{message_queuing}) };
 
-    General::checkParams(args => \%args, required => [ 'channel' ]);
+    General::checkParams(args => \%args, required => [ 'channel' ], optional => { 'keep_channel' => 0 });
 
     my $channel = delete $args{channel};
+    my $keep    = delete $args{keep_channel};
 
     # Connect the sender if not done
     if (not $self->connected) {
@@ -178,6 +179,10 @@ sub AUTOLOAD {
 #    if (defined $err) {
 #        throw Kanopya::Exception::MessageQueuing::PublishFailed(error => $err);
 #    }
+
+    if (not $keep) {
+        $self->closeChannel();
+    }
 }
 
 

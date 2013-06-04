@@ -88,15 +88,17 @@ sub enqueue {
 
     General::checkParams(args     => \%args,
                          required => [ 'type' ],
-                         optional => { 'params'   => {},
-                                       'priority' => 200 });
+                         optional => { 'params'       => {},
+                                       'priority'     => 200,
+                                       'keep_channel' => 0 });
 
     my $operation = Entity::Operation->enqueue(%args);
 
     # Publish on the 'workflow' channel
     eval {
         MessageQueuing::RabbitMQ::Sender::run($self,
-                                              workflow_id => $operation->workflow->id,
+                                              workflow_id  => $operation->workflow->id,
+                                              keep_channel => $args{keep_channel},
                                               %{ $self->_adm->{config}->{amqp} });
     };
     if ($@) {
@@ -111,11 +113,14 @@ sub enqueue {
 sub execute {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'operation_id' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'operation_id' ],
+                         optional => { 'keep_channel' => 0 });
 
     # Publish on the 'operation' channel
     MessageQueuing::RabbitMQ::Sender::execute($self,
                                               operation_id => $args{operation_id},
+                                              keep_channel => $args{keep_channel},
                                               %{ $self->_adm->{config}->{amqp} });
 }
 
@@ -125,8 +130,9 @@ sub terminate {
 
     General::checkParams(args     => \%args,
                          required => [ 'operation_id', 'status' ],
-                         optional => { 'exception' => undef,
-                                       'delay'     => 0 });
+                         optional => { 'exception'    => undef,
+                                       'delay'        => 0,
+                                       'keep_channel' => 0 });
 
     # Publish on the 'operation_result' channel
     MessageQueuing::RabbitMQ::Sender::terminate($self, %args);
@@ -138,21 +144,23 @@ sub run {
 
     General::checkParams(args     => \%args,
                          required => [ 'name' ],
-                         optional => { 'params'     => undef,
-                                       'related_id' => undef,
-                                       'rule_id'    => undef });
+                         optional => { 'params'       => undef,
+                                       'related_id'   => undef,
+                                       'rule_id'      => undef,
+                                       'keep_channel' => 0 });
 
     my $workflow = Entity::Workflow->run(%args);
 
     # Publish on the 'workflow' channel
     eval {
         MessageQueuing::RabbitMQ::Sender::run($self,
-                                              workflow_id => $workflow->id,
+                                              workflow_id  => $workflow->id,
+                                              keep_channel => $args{keep_channel},
                                               %{ $self->_adm->{config}->{amqp} });
     };
     if ($@) {
         my $err = $@;
-        $log->error("Unbale to run workflow <" . $workflow->id . ">, removing it: $err");
+        $log->error("Unale to run workflow <" . $workflow->id . ">, removing it: $err");
         $workflow->remove();
     }
     return $workflow;

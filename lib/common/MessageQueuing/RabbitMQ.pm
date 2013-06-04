@@ -121,6 +121,34 @@ Disconnect from the message queuing server.
 sub disconnect {
     my ($self, %args) = @_;
 
+    $self->closeChannel();
+
+    if (defined $self->_connection) {
+        $log->debug("Disconnecting from broker");
+        eval {
+            $self->_connection->close();
+        };
+        if ($@) {
+            $log->warn("Unbale to disconnect from the broker: $@");
+        }
+    }
+
+    $self->{_channel} = undef;
+    $connection = undef;
+}
+
+
+=pod
+=begin classdoc
+
+Close the channel.
+
+=end classdoc
+=cut
+
+sub closeChannel {
+    my ($self, %args) = @_;
+
     for my $queue (keys %{ $self->_queues }) {
         # TODO: Probably unbind the queues
         $self->_queues->{$queue} = undef
@@ -135,19 +163,7 @@ sub disconnect {
             $log->warn("Unbale to close the channel: $@");
         }
     }
-
-    if (defined $self->_connection) {
-        $log->debug("Disconnecting from broker");
-        eval {
-            $self->_connection->close();
-        };
-        if ($@) {
-            $log->warn("Unbale to disconnect from the broker: $@");
-        }
-    }
-
     $self->{_channel} = undef;
-    $connection = undef;
 }
 
 
