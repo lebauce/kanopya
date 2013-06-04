@@ -1,6 +1,16 @@
-class kanopya::openstack::nova::compute($amqpserver, $dbserver, $glance, $keystone,
-                           $quantum, $email, $password, $libvirt_type,
-                           $qpassword, $bridge_uplinks) {
+class kanopya::openstack::nova::compute(
+    $amqpserver,
+    $dbserver,
+    $glance,
+    $keystone,
+    $quantum,
+    $email,
+    $libvirt_type,
+    $bridge_uplinks,
+    $rabbit_user        = 'nova',
+    $rabbit_password    = 'nova',
+    $rabbit_virtualhost = '/'
+) {
     tag("kanopya::novacompute")
 
     if ! defined(Class['kanopya::openstack::repository']) {
@@ -18,8 +28,7 @@ class kanopya::openstack::nova::compute($amqpserver, $dbserver, $glance, $keysto
             glance     => "${glance}",
             keystone   => "${keystone}",
             quantum    => "${quantum}",
-            email      => "${email}",
-            password   => "${password}"
+            email      => "${email}"
         }
     }
 
@@ -40,20 +49,6 @@ class kanopya::openstack::nova::compute($amqpserver, $dbserver, $glance, $keysto
         require           => Class['kanopya::openstack::repository']
     }
 
-    if ! defined(Class['nova::api']) {
-        class { 'nova::api':
-            enabled        => true,
-            admin_password => "${password}",
-            auth_host      => "${keystone}",
-            require        => Class['kanopya::openstack::repository']
-        }
-
-        nova_paste_api_ini {
-            'filter:ratelimit/paste.filter_factor': value => "nova.api.openstack.compute.limits:RateLimitingMiddleware.factory";
-            'filter:ratelimit/limits': value => '(POST, "*", .*, 100000, MINUTE);(POST, "*/servers", ^/servers, 500000, DAY);(PUT, "*", .*, 100000, MINUTE);(GET, "*changes-since*", .*changes-since.*, 3, MINUTE);(DELETE, "*", .*, 100000, MINUTE)';
-        }
-    }
-
     class { 'quantum::agents::ovs':
         integration_bridge  => 'br-int',
         bridge_mappings     => [ 'physnetflat:br-flat', 'physnetvlan:br-vlan' ],
@@ -66,8 +61,10 @@ class kanopya::openstack::nova::compute($amqpserver, $dbserver, $glance, $keysto
 
     if ! defined(Class['kanopya::openstack::quantum::common']) {
         class { 'kanopya::openstack::quantum::common':
-            rabbit_password => "${qpassword}",
-            rabbit_host     => "${amqpserver}"
+            rabbit_host        => "${amqpserver}",
+            rabbit_user        => "${rabbit_user}",
+            rabbit_password    => "${rabbit_password}",
+            rabbit_virtualhost => "${rabbit_virtualhost}"
         }
     }
 

@@ -59,17 +59,21 @@ sub getPuppetDefinition {
     my $keystone = $self->nova_controller->keystone->getMasterNode->fqdn;
     my $amqp = $self->nova_controller->amqp->getMasterNode->fqdn;
     my $sql = $self->mysql5->getMasterNode->fqdn;
+    my $name = "quantum-" . $self->id;
 
     return {
         manifest     =>
             "class { 'kanopya::openstack::quantum::server':\n" .
             "\tamqpserver => '" . $amqp . "',\n" .
-            "\tkeystone   => '" . $keystone . "',\n" .
-            "\tpassword   => 'quantum'," .
-            "\tbridge_flat => 'br-flat'," .
-            "\tbridge_vlan => 'br-vlan'," .
-            "\temail      => '" . $self->service_provider->user->user_email . "',\n" .
-            "\tdbserver   => '" . $sql . "'\n" .
+            "\tkeystone => '" . $keystone . "',\n" .
+            "\tbridge_flat => 'br-flat',\n" .
+            "\tbridge_vlan => 'br-vlan',\n" .
+            "\temail => '" . $self->service_provider->user->user_email . "',\n" .
+            "\tdbserver => '" . $sql . "',\n" .
+            "\tdatabase_user => '" . $name . "',\n" .
+            "\tdatabase_name => '" . $name . "',\n" .
+            "\trabbit_user => '" . $name . "',\n" .
+            "\trabbit_virtualhost => 'openstack-" . $self->nova_controller->id . "',\n" .
             "}\n",
         dependencies => [ $self->nova_controller->keystone,
                           $self->nova_controller->amqp,

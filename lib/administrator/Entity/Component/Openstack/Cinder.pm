@@ -149,6 +149,7 @@ sub getPuppetDefinition {
     my $sql  = $self->mysql5;
     my $controller = $self->nova_controller;
     my $keystone = $controller->keystone;
+    my $name = "cinder-" . $self->id;
 
     my @repositories = map {
         "'" . $_->container_access->container_access_export . "'"
@@ -158,14 +159,15 @@ sub getPuppetDefinition {
         manifest     =>
             "class { 'kanopya::openstack::cinder':\n" .
             "\tamqpserver => '" . $amqp . "',\n" .
-            "\trabbits    => ['" . $amqp . "', '" . $amqp . "'],\n" .
-            "\tdbpassword => 'cinder',\n" .
-            "\tdbserver   => '" . $sql->getMasterNode->fqdn . "',\n" .
-            "\trpassword  => 'cinder',\n" .
-            "\tkpassword  => 'cinder',\n" .
-            "\temail      => '" . $self->service_provider->user->user_email . "',\n" .
-            "\tkeystone   => '" . $keystone->getMasterNode->fqdn . "',\n" .
-           "}\n" .
+            "\trabbits => ['" . $amqp . "', '" . $amqp . "'],\n" .
+            "\tdbserver => '" . $sql->getMasterNode->fqdn . "',\n" .
+            "\tkeystone => '" . $keystone->getMasterNode->fqdn . "',\n" .
+            "\temail => '" . $self->service_provider->user->user_email . "',\n" .
+            "\tdatabase_user => '" . $name . "',\n" .
+            "\tdatabase_name => '" . $name . "',\n" .
+            "\trabbit_user => '" . $name . "',\n" .
+            "\trabbit_virtualhost => 'openstack-" . $self->nova_controller->id . "',\n" .
+            "}\n" .
            "class { 'kanopya::openstack::cinder::iscsi': }\n" .
            "class { 'kanopya::openstack::cinder::nfs':\n" .
            "\tnfs_servers => [ " . join(', ', @repositories) . " ]\n" .

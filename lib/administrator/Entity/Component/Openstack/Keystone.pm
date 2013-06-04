@@ -54,6 +54,7 @@ sub getPuppetDefinition {
     my $definition;
     my $sqlconnection;
     my $sql = $self->mysql5;
+    my $name = "keystone-" . $self->id;
 
     if (ref($sql) ne 'Entity::Component::Mysql5') {
         $errmsg = "Only mysql is currently supported as DB backend";
@@ -61,11 +62,12 @@ sub getPuppetDefinition {
     }
 
     $definition = "class { 'kanopya::openstack::keystone':\n" .
-                  "    dbserver      => '" . $sql->getMasterNode->fqdn . "',\n" .
-                  "    dbip          => '" . $sql->getMasterNode->adminIp . "',\n" .
-                  "    dbpassword    => 'keystone',\n" .
-                  "    adminpassword => 'keystone',\n" .
-                  "    email         => '" . $self->service_provider->user->user_email . "',\n" .
+                  "\tdbserver => '" . $sql->getMasterNode->fqdn . "',\n" .
+                  "\tdbip => '" . $sql->getMasterNode->adminIp . "',\n" .
+                  "\tadmin_password => 'keystone',\n" .
+                  "\temail => '" . $self->service_provider->user->user_email . "',\n" .
+                  "\tdatabase_user => '" . $name . "',\n" .
+                  "\tdatabase_name => '" . $name . "',\n" .
                   "}\n";
 
     return {

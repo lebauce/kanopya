@@ -60,6 +60,7 @@ sub getPuppetDefinition {
     my $sqlconnection;
     my $sql = $self->mysql5;
     my $keystone = $self->nova_controller->keystone;
+    my $name = "glance-" . $self->id;
     
     if (ref($sql) ne 'Entity::Component::Mysql5') {
         throw Kanopya::Exception::Internal(
@@ -73,7 +74,11 @@ sub getPuppetDefinition {
             "\tdbserver => '" . $sql->getMasterNode->fqdn . "',\n" .
             "\tpassword => 'glance',\n" .
             "\tkeystone => '" . $keystone->getMasterNode->fqdn . "',\n" .
-            "\temail    => '" . $self->service_provider->user->user_email . "'\n" .
+            "\temail => '" . $self->service_provider->user->user_email . "',\n" .
+            "\tdatabase_user => '" . $name . "',\n" .
+            "\tdatabase_name => '" . $name . "',\n" .
+            "\trabbit_user => '" . $name . "',\n" .
+            "\trabbit_virtualhost => 'openstack-" . $self->nova_controller->id . "',\n" .
             "}\n",
         dependencies => [ $sql , $keystone ]
     };
