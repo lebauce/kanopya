@@ -500,13 +500,13 @@ sub configureInterfaces {
 
     if (defined $args{interfaces}) {
         for my $interface_pattern (values %{ $args{interfaces} }) {
-            if ($interface_pattern->{interface_netconfs}) {
+            if ($interface_pattern->{netconfs}) {
                 # TODO: Search among existing interfaces to avoid to re-create its.
 
                 my $bonds_number = $interface_pattern->{bonds_number};
-                $bonds_number = defined $bonds_number ? $bonds_number : 0;
+                $bonds_number = $bonds_number ? $bonds_number : 0;
 
-                my @netconfs = values %{ $interface_pattern->{interface_netconfs} };
+                my @netconfs = values %{ $interface_pattern->{netconfs} };
                 $self->addNetworkInterface(netconfs     => \@netconfs,
                                            bonds_number => $bonds_number);
             }
