@@ -148,8 +148,10 @@ sub getPuppetDefinition {
             $manifest .= "  virtual_router_id => 1,\n";
             $manifest .= "  virtual_addresses => [";
             # ip must have format: 192.168.222.100/24 dev eth0
-            $manifest .= join(',', map { "'".$_->getStringFormat." dev ".$self->getHostIface(host => $args{host}, interface => $_->interface)."'" } 
-                                   $instance->keepalived1_virtualips);
+            $manifest .= "'".$instance->virtualip->getStringFormat()
+                         ." dev "
+                         .$self->getHostIface(host => $args{host}, interface => $instance->virtualip_interface)
+                         ."'";
             $manifest .= "]\n";
             $manifest .= "}\n\n";
         }
