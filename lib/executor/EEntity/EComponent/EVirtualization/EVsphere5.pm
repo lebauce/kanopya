@@ -51,10 +51,11 @@ my $errmsg;
 
 =begin classdoc
 
-Register a new datastore for an host in vSphere
+Register a new datastore for an host in vSphere or check existing one
 
-@param repository_name the name of the datastore
 @param container_access the Kanopya container access
+@param repository_name the name of the datastore
+@param host_view view of hypervisor
 
 @return repository
 
@@ -62,33 +63,32 @@ Register a new datastore for an host in vSphere
 
 =cut
 
-sub addRepository {
+sub addDatastore {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['hypervisor',
-                                                      'repository_name',
-                                                      'container_access']);
+    General::checkParams(args => \%args, required => ['container_access', 'repository_name', 'host_view']);
 
     $self->negociateConnection();
 
-    my $hypervisor_uuid     = $args{host}->vsphere5_uuid;
     my $container_access    = $args{container_access};
+    my $host_view           = $args{host_view};
     my $container_access_ip = $container_access->container_access_ip;
     my $export_full_path    = $container_access->container_access_export;
     my @export_path         = split (':', $export_full_path);
 
-    my $view = $self->findEntityView(view_type      => 'HostSystem',
-                                     hash_filter    => {
-                                         'hardware.systemInfo.uuid' => $hypervisor_uuid,
-                                     });
+    my $nas_vol_spec = HostNasVolumeSpec->new(accessMode => 'readWrite',
+            remoteHost => $container_access_ip,
+            localPath  => $args{repository_name},
+            remotePath => $export_path[1],
+       );
 
-    my $datastore = HostNasVolumeSpec->new(accessMode => 'readWrite',
-                                           remoteHost => $container_access_ip,
-                                           localPath  => $args{repository_name},
-                                           remotePath => $export_path[1],
-                    );
-
-    my $dsmv = $self->getView(mo_ref=>$view->configManager->datastoreSystem);
+    my $host_ds_sys = $self->getView(mo_ref => $host_view->configManager->datastoreSystem);
+    eval {
+        $host_ds_sys->CreateNasDatastore(spec => $nas_vol_spec);
+    };
+    if ($@) {
+        $log->debug('Use existing datastore ' . $args{repository_name});
+    }
 }
 
 =pod
