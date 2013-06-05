@@ -313,6 +313,7 @@ sub getHostsEntries { return; }
 sub getPuppetDefinition {
     my ($self, %args) = @_;
     my $manifest = "";
+    
     my @listens = $self->haproxy1s_listen;
     for my $listen (@listens) {
         $manifest .=  $self->instanciatePuppetResource(
@@ -325,7 +326,7 @@ sub getPuppetDefinition {
                             ipaddresses       => "\${::ipaddress}",
                             options           => 'check'
                          }
-                      );  
+                      );
     }
     
     return {
