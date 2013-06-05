@@ -116,7 +116,7 @@ sub connect {
             $log->debug("($$) Open channel failed, raise exception ChannelError: $err");
             throw Kanopya::Exception::MessageQueuing::ChannelError(error => $err);
         }
-        $log->debug("($$) Channel open <$self->{_channel}> for <$self>, " . Dumper($self->{_channel}));
+        $log->debug("($$) Channel open <$self->{_channel}> for <$self>, "); #. Dumper($self->{_channel}));
 
         #$log->debug("Setting the QOS <prefetch_count => 1> on the channel");
         #$self->_channel->qos(prefetch_count => 1);

@@ -143,6 +143,10 @@ use Exception::Class (
         isa         => 'Kanopya::Exception::MessageQueuing',
         description => 'Connection failed'
     },
+    Kanopya::Exception::MessageQueuing::ChannelError => {
+        isa         => 'Kanopya::Exception::MessageQueuing',
+        description => 'Channel error',
+    },
     Kanopya::Exception::MessageQueuing::NoMessage => {
         isa         => 'Kanopya::Exception::MessageQueuing',
         description => 'No message to fetch'

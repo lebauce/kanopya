@@ -39,6 +39,7 @@ use Data::Dumper;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
+use vars qw($AUTOLOAD);
 
 use constant CALLBACKS => {};
 
@@ -170,6 +171,23 @@ sub connect {
     }
 }
 
+=pod
+=begin classdoc
+
+Close the channel of the component before disconnecting.
+
+=end classdoc
+=cut
+
+sub disconnect {
+    my ($self, %args) = @_;
+
+    # Close the channel of the component.
+    $self->_component->closeChannel();
+
+    $self->SUPER::disconnect(%args);
+}
+
 
 =pod
 =begin classdoc
@@ -280,5 +298,84 @@ sub oneRun {
     # Blocking call
     $self->receive(type => $args{type}, channel => $args{channel});
 }
+
+
+=pod
+=begin classdoc
+
+Call a method on the component corresponding to the daemon.
+
+=end classdoc
+=cut
+
+sub callComponent {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'method', 'args' ]);
+
+    my $method = $args{method};
+    return $self->_component->$method(%{ $args{args} });
+}
+
+
+=pod
+=begin classdoc
+
+We define an AUTOLOAD to handle calls on the daemon component as we need
+to add fixed params, and cenralize the error handling about channel issues.
+
+=end classdoc
+=cut
+
+sub AUTOLOAD {
+    my ($self, %args) = @_;
+
+    my @autoload = split(/::/, $AUTOLOAD);
+    my $accessor = $autoload[-1];
+
+    my $method;
+    if (not defined $self->_component->methods()->{$accessor}) {
+        # The called method is not a defined message queuing method.
+        $method = 'SUPER::' . $accessor;
+        return $self->$method(%args);
+    }
+    $method = $accessor;
+
+    # Pop the error callback if defined
+    my $err_cb = delete $args{err_cb};
+
+    # Set the param keep_channel as we want to keep the sender channel open
+    $args{keep_channel} = 1;
+
+    my $result;
+    eval {
+        $result = $self->callComponent(method => $method, args => \%args);
+    };
+    if ($@) {
+        my $err = $@;
+        my $retrigger = sub {
+            $self->callComponent(method => $method, args => \%args);
+        };
+        if (defined $err_cb) {
+            $log->error("Channel error occurs, calling the error callback: $err");
+            $err_cb->(retrigger_cb => \&$retrigger);
+        }
+        else {
+            $log->error("Channel error occurs, but no error callback defined: $err");
+        }
+    }
+    return $result;
+}
+
+
+=pod
+=begin classdoc
+
+Method called at the object deletion.
+
+=end classdoc
+=cut
+
+sub DESTROY {}
 
 1;

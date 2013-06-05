@@ -112,46 +112,6 @@ sub register {
 =pod
 =begin classdoc
 
-Wait for message in an event loop, interupt the bloking call
-if the duration exceed.
-
-@optional duration the maximum time to wait messages.
-
-=end classdoc
-=cut
-
-sub fetch {
-    my ($self, %args) = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ 'condvar' ],
-                         optional => { 'duration' => undef });
-
-    if (defined $args{duration}) {
-        $log->debug("Fetch message for <$args{duration}> second(s).");
-        $timeout = AnyEvent->timer(after => $args{duration}, cb => sub {
-                       # Interupt the infinite loop
-                       $args{condvar}->croak("No message recevied for $args{duration} second(s)");
-                   });
-    }
-    else {
-        $log->debug("Fetch messages indefinitely...");
-    }
-
-    # Wait for the first send from callback
-    eval {
-        $args{condvar}->recv;
-    };
-    if ($@) {
-        my $err = $@;
-        throw Kanopya::Exception::MessageQueuing::NoMessage(error => $err);
-    }
-}
-
-
-=pod
-=begin classdoc
-
 Declare queues and exchanges.
 
 @param channel the channel on which the callback is resistred
@@ -306,11 +266,11 @@ sub consume {
         };
 
         # Call the corresponding method
-        $args->{acknowledge_cb}  = $ack_cb;
-        $args->{channelerror_cb} = $err_cb;
+        $args->{ack_cb} = $ack_cb;
+        $args->{err_cb} = $err_cb;
         if ($args{callback}->(%$args)) {
             # Acknowledge the message if specified by the callback
-            $args->{acknowledge_cb}->();
+            $args->{ack_cb}->();
         }
 
         # Interupt the second infinite loop
@@ -404,6 +364,7 @@ sub receiveAll {
                     # Infinite loop on fetch. The event loop should never stop itself,
                     # but looping here in a while, to re-trigger the event loop if anormaly fail.
                     my $running = 1;
+                    my $retrigger_cb = undef;
                     while ($running) {
                         # Connect to the broker within the child
                         $self->connect(%{$self->{config}->{amqp}});
@@ -426,9 +387,15 @@ sub receiveAll {
                         };
                         my $watcher = AnyEvent->signal(signal => "TERM", cb => \&$sigterm);
 
+                        # Retrrgier undelivred message if defined
+                        if (defined $retrigger_cb) {
+                            $retrigger_cb->();
+                            $retrigger_cb = undef;
+                        }
+
                         # Indefinitly fetch until sigterm handler send on the condvar
                         eval {
-                            $self->fetch(condvar => $condvar);
+                            $retrigger_cb = $self->fetch(condvar => $condvar);
                         };
                         if ($@) {
                             my $err = $@;
@@ -491,6 +458,54 @@ sub receiveAll {
     }
 }
 
+
+=pod
+=begin classdoc
+
+Wait for message in an event loop, interupt the bloking call
+if the duration exceed.
+
+@optional duration the maximum time to wait messages.
+
+=end classdoc
+=cut
+
+sub fetch {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'condvar' ],
+                         optional => { 'duration' => undef });
+
+    if (defined $args{duration}) {
+        $log->debug("Fetch message for <$args{duration}> second(s).");
+        $timeout = AnyEvent->timer(after => $args{duration}, cb => sub {
+                       # Interupt the infinite loop
+                       $args{condvar}->croak("No message recevied for $args{duration} second(s)");
+                   });
+    }
+    else {
+        $log->debug("Fetch messages indefinitely...");
+    }
+
+    # Wait for the first send from callback
+    eval {
+        $args{condvar}->recv;
+    };
+    if ($@) {
+        my $err = $@;
+        # If the error is a hash, this is the content of an undelivred message,
+        # due to a channel error. So keep it to re-send it at reconnection.
+        # TODO: Use a dedicated exception type with the undelivred message as attributes,
+        #       instead of using the return value of fetch
+        if (ref($err) eq "HASH" and defined $err->{retrigger_cb}) {
+            return $err->{retrigger_cb};
+        }
+        else {
+            throw Kanopya::Exception::MessageQueuing::NoMessage(error => $err);
+        }
+    }
+}
 
 =pod
 =begin classdoc
