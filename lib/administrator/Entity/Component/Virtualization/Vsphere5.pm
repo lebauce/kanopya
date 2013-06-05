@@ -969,7 +969,7 @@ sub registerVm {
             # policy and service template
             my $st = $self->_registerTemplate(
                 policy_name  => 'vsphere_vm_policy',
-                service_name => 'vsphere_vm_service'
+                service_name => 'vSphere Virtual Machines'
             );
             $service_provider->applyPolicies(pattern => { 'service_template_id' => $st->id });
 
