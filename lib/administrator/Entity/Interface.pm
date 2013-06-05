@@ -39,6 +39,13 @@ use constant ATTR_DEF => {
         pattern      => '^\d+$',
         is_mandatory => 0,
     },
+    interface_name => {
+        label        => 'Name',
+        type         => 'string',
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_editable  => 1
+    },
     netconf_interfaces => {
         label        => 'Network configurations',
         type         => 'relation',

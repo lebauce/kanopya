@@ -775,6 +775,7 @@ CREATE TABLE `interface` (
   `interface_id`        int(8) unsigned,
   `service_provider_id` int(8) unsigned NOT NULL,
   `bonds_number`        int(8) unsigned NOT NULL DEFAULT 0,
+  `interface_name`      char(32) NOT NULL,
   PRIMARY KEY (`interface_id`),
   FOREIGN KEY (`interface_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`service_provider_id`),

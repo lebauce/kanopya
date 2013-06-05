@@ -61,6 +61,12 @@ __PACKAGE__->table("interface");
   extra: {unsigned => 1}
   is_nullable: 0
 
+=head2 interface_name
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 32
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -85,6 +91,12 @@ __PACKAGE__->add_columns(
     default_value => 1,
     extra => { unsigned => 1 },
     is_nullable => 0,
+  },
+  "interface_name",
+  {
+    data_type => "char",
+    is_nullable => 0,
+    size => 32
   },
 );
 

@@ -102,6 +102,13 @@ use constant POLICY_ATTR_DEF => {
                     pattern     => '^\d*$',
                     is_editable => 1,
                 },
+                interface_name => {
+                    label        => 'Name',
+                    type         => 'string',
+                    pattern      => '^.*$',
+                    is_editable  => 1,
+                    is_mandatory => 1,
+                },
             },
         },
     }
@@ -168,7 +175,7 @@ sub getPolicyDef {
     },
 
     push @{ $attributes->{displayed} }, {
-        'interfaces' => [ 'netconfs', 'bonds_number' ]
+        'interfaces' => [ 'interface_name', 'netconfs', 'bonds_number' ]
     };
 
     $self->setValues(attributes          => $attributes,

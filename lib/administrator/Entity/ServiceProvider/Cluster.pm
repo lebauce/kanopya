@@ -507,8 +507,11 @@ sub configureInterfaces {
                 $bonds_number = $bonds_number ? $bonds_number : 0;
 
                 my @netconfs = values %{ $interface_pattern->{netconfs} };
-                $self->addNetworkInterface(netconfs     => \@netconfs,
-                                           bonds_number => $bonds_number);
+                $self->addNetworkInterface(
+                    netconfs        => \@netconfs,
+                    bonds_number    => $bonds_number,
+                    interface_name  => $interface_pattern->{interface_name}
+                );
             }
         }
     }
