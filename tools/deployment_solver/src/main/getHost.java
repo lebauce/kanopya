@@ -2,26 +2,16 @@ package main;
 
 import java.io.File;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-
-import utils.InstanceGenerator;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import model.Constraints;
 import model.Host;
 import model.JsonLoader;
 
-public class Main {
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-    private static long test(int infra_size) {
-        long t = System.currentTimeMillis();
-        Host[] hosts = InstanceGenerator.generateInfrastructure(infra_size);
-        Constraints c = InstanceGenerator.generateConstraints();
-        HostsDeployment hd = new HostsDeployment(hosts, c);
-        hd.execute();
-        return System.currentTimeMillis() - t;
-    }
+public class getHost {
 
     /**
      * Main method to call externally.
@@ -42,13 +32,20 @@ public class Main {
             Constraints constraints = JsonLoader.loadConstraints(constraints_dir);
 
             HostsDeployment deployment = new HostsDeployment(hosts, constraints);
-            deployment.execute();
-            int selected_host = deployment.getSelectedHost();
+
+            List<String> contradictions = deployment.checkContradictions();
 
             Map<String, Object> resultMap = new HashMap<String, Object>();
+            int selected_host = -1;
+
+            if (contradictions.isEmpty()) {
+                deployment.execute();
+                selected_host = deployment.getSelectedHost();
+            } else {
+                resultMap.put("contradictions", contradictions);
+            }
 
             resultMap.put("selectedHostIndex", selected_host);
-
             ObjectMapper mapper = new ObjectMapper();
             try {
               File f = new File(result_dir);

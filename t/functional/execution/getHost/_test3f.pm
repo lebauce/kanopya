@@ -45,7 +45,7 @@ sub test3f {
     ########################
     #### Create Tags    ####
     ########################
-    my $tag1 = Entity::Tag->new(tag => "Storage");
+    my $tag1 = Entity::Tag->new(tag => "Not free Massage");
     my $tag2 = Entity::Tag->new(tag => "High Performance");
     my $tag3 = Entity::Tag->new(tag => "Beer dispenser");
     my $tag4 = Entity::Tag->new(tag => "Free Massage");
@@ -65,9 +65,9 @@ sub test3f {
         managers              => {
             host_manager => {
                 manager_params => {
-                    core     => 1,
-                    ram      => 512*1024*1024,
-                    tags_ids => [$tag1->id, $tag2->id, $tag3->id],
+                    core => 1,
+                    ram  => 512*1024*1024,
+                    tags => [$tag1->id, $tag2->id, $tag3->id],
                 },
             },
         }

@@ -11,6 +11,7 @@ import solver.Solver;
 import solver.constraints.IntConstraintFactory;
 import solver.constraints.extension.LargeCSP;
 import solver.constraints.propagators.extension.nary.IterTuplesTable;
+import solver.search.loop.monitors.SearchMonitorFactory;
 import solver.search.solution.SolutionPoolFactory;
 import solver.variables.IntVar;
 import solver.variables.VariableFactory;
@@ -44,6 +45,10 @@ public class HostsDeployment extends AbstractProblem {
     private List<int[]> host_tuples;
     // Network cost matrixes
     private List<int[][]> network_matrices;
+
+    List<Integer> network_candidates;
+    List<Integer> tags_candidates;
+    List<Integer> candidates;
 
     //////////////////////
     /* User constraints */
@@ -190,6 +195,54 @@ public class HostsDeployment extends AbstractProblem {
 
         tags_coeff    = ( tags_cost_lowB == tags_cost_upB ) ?
                 0 : TAGS_WEIGHT * SCALE_FACTOR / (tags_cost_upB - tags_cost_lowB);
+
+        // Pre filtering
+        candidates = new ArrayList<Integer>();
+        /* Network */
+        network_candidates = NetworkUtils.matchingNetworks(network_matrices);
+        /* Tags */
+        tags_candidates = new ArrayList<Integer>();
+        List<Integer> tags_min = Arrays.asList(constraints.getTagsMin());
+        for (int h = 0; h < infrastructure.length; h++) {
+            Host host = infrastructure[h];
+            List<Integer> tags = Arrays.asList(host.getTags());
+            if (tags.containsAll(tags_min)) {
+                tags_candidates.add(h);
+                if (network_candidates.contains(h)) {
+                    candidates.add(h);
+                }
+            }
+        }
+    }
+
+    /**
+     * Check simple contradictions on the current instance and return their descriptions.
+     * @return A list of Strings containing the descriptions of found contradictions.
+     */
+    public List<String> checkContradictions() {
+        List<String> contradictions = new ArrayList<String>();
+        // Check if the infrastructure is empty
+        if (host_tuples.isEmpty()) {
+            contradictions.add("The list of hosts is empty");
+            return contradictions;
+        }
+        // Check CPU contradiction
+        if (cpu_nb_cores_upB < (int) (constraints.getCpu().getNbCoresMin() * CPU_FACTOR)) {
+            contradictions.add("None of the free hosts can match the minimum core number constraint");
+        }
+        // Check RAM contradiction
+        if (ram_qty_upB < (int) (constraints.getRam().getQtyMin() * RAM_FACTOR)) {
+            contradictions.add("None of the free hosts can match the minimum ram quantity constraint");
+        }
+        // Check Network contradiction
+        if (network_candidates.isEmpty()) {
+            contradictions.add("None of the free hosts can match the network configuration constraint");
+        }
+        // Check Tags contradiction
+        if (tags_candidates.isEmpty()) {
+            contradictions.add("None of the free hosts can match the minimal tags set constraint");
+        }
+        return contradictions;
     }
 
     @Override
@@ -236,24 +289,6 @@ public class HostsDeployment extends AbstractProblem {
                 SCALE_FACTOR * (cpu_coeff + ram_coeff + network_coeff + tags_coeff),
                 solver
         );
-
-        // Pre filtering
-
-        /* Network */
-        List<Integer> network_candidates = NetworkUtils.matchingNetworks(network_matrices);
-
-        /* Tags */
-        List<Integer> tags_candidates = new ArrayList<Integer>();
-        List<Integer> tags_min        = Arrays.asList(constraints.getTagsMin());
-        for (Integer h : network_candidates) {
-            Host host = infrastructure[h];
-            List<Integer> tags = Arrays.asList(host.getTags());
-            if (tags.containsAll(tags_min)) {
-                tags_candidates.add(h);
-            }
-        }
-
-        List<Integer> candidates = tags_candidates;
 
         // Post constraints
 
@@ -312,7 +347,6 @@ public class HostsDeployment extends AbstractProblem {
 
     @Override
     public void configureSearch() {
-//        SearchMonitorFactory.log(solver, true, false);
         solver.set(SolutionPoolFactory.LAST_ONE.make());
     }
 

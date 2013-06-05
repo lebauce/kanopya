@@ -165,7 +165,8 @@ sub getHost {
     }
 
     # Construct the constraint json object
-    my $tags = defined( $host_params->{tags_ids} ) ? $host_params->{tags_ids} : [];
+    my $tags = defined( $host_params->{tags} ) ? $host_params->{tags} : [];
+
     my $json_constraints = {
         cpu      => {
             nbCoresMin => $host_params->{core},
@@ -209,13 +210,23 @@ sub getHost {
 
     my $selected_host = $result->{selectedHostIndex};
 
+    my $log_message = "";
+    if ( defined($result->{contradictions}) ) {
+        $log_message = "The following contradictions had been found :\n";
+        my @contradictions = @{ $result->{contradictions} };
+        for my $contradiction (@contradictions) {
+            $log_message = $log_message . "    $contradiction\n";
+        }
+        $log->debug('HostSelector : No host could be found. ' . $log_message);
+    }
+
     unlink $infra_filename;
     unlink $constraints_filename;
     unlink $result_filename;
 
     if ($selected_host == -1) {
         throw Kanopya::Exception(error => 'HostSelector - getHost : None of the free hosts match the ' . 
-                                          'given cluster constraints.');
+                                          'given cluster constraints.\n' . $log_message);
     }
 
     return $free_hosts[$selected_host];

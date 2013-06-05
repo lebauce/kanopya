@@ -49,9 +49,9 @@ sub test3a {
         managers              => {
             host_manager => {
                 manager_params => {
-                    core     => 1,
-                    ram      => 1024*1024*1024,
-                    tags_ids => [],
+                    core => 1,
+                    ram  => 1024*1024*1024,
+                    tags => [],
                 },
             },
         }
