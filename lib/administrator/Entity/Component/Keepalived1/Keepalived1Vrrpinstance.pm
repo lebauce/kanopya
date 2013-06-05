@@ -26,7 +26,7 @@ use constant ATTR_DEF => {
     },
     vrrpinstance_password => {
         label        => 'Password',
-        type         => 'string',
+        type         => 'password',
         pattern      => '^.*$',
         is_mandatory => 1,
         is_editable  => 1,
@@ -39,10 +39,18 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_editable  => 1
     },
-    keepalived1_virtualips => {
-        label        => 'Virtual Ips',
+    virtualip_id => {
+        label        => 'Ip',
         type         => 'relation',
-        relation     => 'single_multi',
+        relation     => 'single',
+        is_mandatory => 0,
+        is_editable  => 0
+    },
+    virtualip_interface_id => {
+        label        => 'Ip interface',
+        type         => 'relation',
+        relation     => 'single',
+        is_mandatory => 1,
         is_editable  => 1
     },
 };

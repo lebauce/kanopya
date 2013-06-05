@@ -53,6 +53,20 @@ __PACKAGE__->table("keepalived1_vrrpinstance");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 virtualip_interface_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 0
+
+=head2 virtualip_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -81,25 +95,24 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
+  "virtualip_interface_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
+  "virtualip_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
 );
 __PACKAGE__->set_primary_key("vrrpinstance_id");
 
 =head1 RELATIONS
-
-=head2 keepalived1_virtualips
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Keepalived1Virtualip>
-
-=cut
-
-__PACKAGE__->has_many(
-  "keepalived1_virtualips",
-  "AdministratorDB::Schema::Result::Keepalived1Virtualip",
-  { "foreign.vrrpinstance_id" => "self.vrrpinstance_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
 
 =head2 keepalived
 
@@ -131,10 +144,40 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+=head2 virtualip_interface
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2013-05-30 10:47:07
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:j2VcM4QVinriKJUqWU9Oig
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Interface>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "virtualip_interface",
+  "AdministratorDB::Schema::Result::Interface",
+  { interface_id => "virtualip_interface_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 virtualip
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Ip>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "virtualip",
+  "AdministratorDB::Schema::Result::Ip",
+  { ip_id => "virtualip_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
+# Created by DBIx::Class::Schema::Loader v0.07002 @ 2013-06-04 17:47:16
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ElmbMvfnF7pkCsAoDVw9Sw
+
+
+# You can replace this text with custom content, and it will be preserved on regeneration
 1;
