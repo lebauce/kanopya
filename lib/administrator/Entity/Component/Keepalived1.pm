@@ -61,6 +61,44 @@ sub getBaseConfiguration {
     };
 }
 
+sub setConf {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'conf' ]);
+
+    my $conf = $args{conf};
+
+    # Pop and link an IP for each new vrrp instance (according to associated virtualip interface)
+    for my $instance (@{ $conf->{keepalived1_vrrpinstances} }) {
+        if (not exists $instance->{vrrpinstance_id}) {
+            my $interface = Entity::Interface->get(id => $instance->{virtualip_interface_id});
+
+            my @netconfs  = $interface->netconfs;
+            if (0 == scalar @netconfs) {
+                throw Kanopya::Exception::Internal(
+                    error => "No network configuration linked to interface '".$interface->interface_name."'"
+                );
+            }
+
+            my @poolips = $netconfs[0]->poolips;
+            if (0 == scalar @poolips) {
+                throw Kanopya::Exception::Internal(
+                    error => "No pool ips linked to first network configuration of interface '"
+                             .$interface->interface_name."'"
+                );
+            }
+
+            my $poolip = $poolips[0];
+            my $new_ip = $poolip->popIp();
+
+            $instance->{virtualip_id} = $new_ip->id;
+        }
+    }
+
+    $self->SUPER::setConf(%args);
+}
+
 sub getPuppetDefinition {
     my ($self, %args) = @_;
     my $manifest = "";
