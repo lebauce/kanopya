@@ -62,12 +62,6 @@ sub new {
 
     my $self = $class->SUPER::new(%args);
 
-    # Force the duration if defined
-    my $duration = {};
-    if (defined $args{duration}) {
-        $duration->{duration} = $args{duration};
-    }
-
     # Get the callback related amqp conf
     my $cbconf = $self->{config}->{amqp}->{callbacks};
 
@@ -119,13 +113,17 @@ sub new {
             $self->registerWorker(callback  => \&$cbmethod,
                                   channel   => $callback->{channel},
                                   instances => $instances,
-                                  %$duration);
+                                  # Force the duration if defined
+                                  duration  => $args{duration}
+                                                   ? $args{duration} : $callback->{duration});
         }
         else {
             $self->registerSubscriber(callback  => \&$cbmethod,
                                       channel   => $callback->{channel},
                                       instances => $instances,
-                                      %$duration);
+                                      # Force the duration if defined
+                                      duration  => $args{duration}
+                                                       ? $args{duration} : $callback->{duration});
         }
     }
     if (not defined $self->_consumers) {

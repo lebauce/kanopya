@@ -55,7 +55,7 @@ BEGIN {
     }
 }
 
-my $executor = Executor->new(duration => 'SECOND');
+my $executor = Executor->new(duration => 1);
 
 =pod
 

@@ -56,12 +56,12 @@ eval {
     $genericdaemon2->connect();
 
     # Register the generic daemons as workers on channel 'generic'
-    $genericdaemon->registerWorker(channel => $channel, callback => \&callback, duration => 'SECOND');
-    $genericdaemon2->registerWorker(channel => $channel, callback => \&callback, duration => 'SECOND');
+    $genericdaemon->registerWorker(channel => $channel, callback => \&callback, duration => 1);
+    $genericdaemon2->registerWorker(channel => $channel, callback => \&callback, duration => 1);
 
     # Register the generic daemon as subscribers on channel 'generic'
-    $genericdaemon->registerSubscriber(channel => $channel, callback => \&callback, duration => 'SECOND');
-    $genericdaemon2->registerSubscriber(channel => $channel, callback => \&callback, duration => 'SECOND');
+    $genericdaemon->registerSubscriber(channel => $channel, callback => \&callback, duration => 1);
+    $genericdaemon2->registerSubscriber(channel => $channel, callback => \&callback, duration => 1);
 
     # Firstly send a message on the channel $channel
     $genericclient->send(channel => $channel, test => 'test');

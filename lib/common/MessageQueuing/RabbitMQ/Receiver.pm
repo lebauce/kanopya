@@ -42,14 +42,6 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 
-use constant DURATION => {
-    FOREVER   => undef,
-    SECOND    => 1,
-    MINUTE    => 60,
-    IMMEDIATE => 0.5
-};
-
-
 # The condition variable shared between the main thread that awaiting
 # messages and the callback executed at message receipt.
 my $condvar;
@@ -77,7 +69,7 @@ sub register {
 
     General::checkParams(args     => \%args,
                          required => [ 'type', 'channel', 'callback' ],
-                         optional => { 'duration'  => 'FOREVER',
+                         optional => { 'duration'  => undef,
                                        'instances' => 1 });
 
     if ($args{type} !~ m/^(queue|topic)$/) {
@@ -86,17 +78,10 @@ sub register {
               );
     }
 
-    if ($args{duration} !~ m/^(FOREVER|SECOND|MINUTE|IMMEDIATE)$/) {
-        throw Kanopya::Exception::Internal::IncorrectParam(
-                  error => "Wrong value <$args{duration}> for argument <duration>, " .
-                           "must be <FOREVER|SECOND|MINUTE|IMMEDIATE>"
-              );
-    }
-
     # Register the method to call back at message recepetion
     $self->_consumers->{$args{type}}->{$args{channel}} = {
         callback  => $args{callback},
-        duration  => DURATION->{$args{duration}},
+        duration  => $args{duration},
         instances => $args{instances},
         # the consumer tag stored when callback registred
         consumer  => undef,
@@ -223,7 +208,9 @@ sub consume {
         my $var = shift;
 
         # Disarm the timeout timer as the message is received
-        $timeout = undef;
+        if ($args{interrupt}) {
+            $timeout = undef;
+        }
 
         my ($type, $channel);
         if ($var->{deliver}->{method_frame}->{exchange} ne '') {
@@ -393,15 +380,24 @@ sub receiveAll {
                             $retrigger_cb = undef;
                         }
 
+                        # Fetch for a short duration instead of indue to channel error when
+                        # connected for a long time.
+                        # TODO: Dig into the channel and heartbit management
+                        my $duration = $receiver->{duration};
+
                         # Indefinitly fetch until sigterm handler send on the condvar
                         eval {
-                            $retrigger_cb = $self->fetch(condvar => $condvar);
+                            $retrigger_cb = $self->fetch(condvar => $condvar, duration => $duration);
                         };
                         if ($@) {
                             my $err = $@;
                             # Excpetion should be Kanopya::Exception::MessageQueuing::NoMessage
                             if (not $err->isa('Kanopya::Exception::MessageQueuing::NoMessage')) {
-                                $err->rethow();
+                                # TODO: We probalby do not want to exit the process
+                                #$err->rethow();
+
+                                # Only log the error for instace.
+                                $log->error("Fetch on <$type>, channel <$channel> failed: $err");
                             }
                         }
 
@@ -501,8 +497,11 @@ sub fetch {
         if (ref($err) eq "HASH" and defined $err->{retrigger_cb}) {
             return $err->{retrigger_cb};
         }
-        else {
+        elsif ("$err" =~ m/^No message recevied/) {
             throw Kanopya::Exception::MessageQueuing::NoMessage(error => $err);
+        }
+        else {
+            $err->rethrow();
         }
     }
 }

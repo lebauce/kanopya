@@ -60,19 +60,22 @@ use constant CALLBACKS => {
         callback  => \&executeOperation,
         channel   => 'operation',
         type      => 'queue',
-        instances => 1
+        instances => 1,
+        duration  => 30,
     },
     handle_result => {
         callback  => \&handleResult,
         channel   => 'operation_result',
         type      => 'queue',
-        instances => 1
+        instances => 1,
+        duration  => 30,
     },
     run_workflow => {
         callback  => \&runWorkflow,
         channel   => 'workflow',
         type      => 'queue',
-        instances => 1
+        instances => 1,
+        duration  => 30,
     }
 };
 
