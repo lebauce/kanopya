@@ -84,6 +84,7 @@ sub connect {
                                        'user'     => 'guest',
                                        'password' => 'guest' });
 
+    $log->debug("($$) Is connected ? " . Dumper($self->_connection));
     if (not defined $self->_connection) {
         eval {
             $log->debug("($$) Connecting <$self> to broker <$args{ip}:$args{port}> as <$args{user}>");
@@ -106,6 +107,7 @@ sub connect {
         $log->debug("($$) Connected <$self> to broker.");
     }
 
+    $log->debug("($$) Is channel open ? " . Dumper($self->_channel));
     if (not defined $self->_channel) {
         $log->debug("($$) Openning channel for <$self:$$>");
         eval {
@@ -143,13 +145,13 @@ sub disconnect {
         $log->debug("($$) Disconnecting from broker");
         eval {
             $self->_connection->close();
+            $log->debug("($$) Disconnected from broker");
         };
         if ($@) {
             $log->warn("($$) Unable to disconnect from the broker: $@");
         }
     }
 
-    $self->{_channel} = undef;
     $connection = undef;
 }
 
