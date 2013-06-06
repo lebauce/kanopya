@@ -29,6 +29,7 @@ class kanopya::openstack::nova::controller(
         @@rabbitmq_vhost { "${rabbit_virtualhost}":
             ensure => present,
             provider => 'rabbitmqctl',
+            tag => "${amqpserver}"
         }
     }
 
