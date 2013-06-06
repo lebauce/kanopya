@@ -163,11 +163,6 @@ Close the channel.
 sub closeChannel {
     my ($self, %args) = @_;
 
-    for my $queue (keys %{ $self->_queues }) {
-        # TODO: Probably unbind the queues
-        $self->_queues->{$queue} = undef
-    }
-
     # If properly close the channel, the diconnect seems to not really close the connection,
     # thank to AnyEvent::RabbitMQ...
 #    if (defined $self->_channel) {
@@ -211,12 +206,8 @@ sub declareQueue {
 
     General::checkParams(args => \%args, required => [ 'channel' ]);
 
-    if (not defined $self->_queues->{$args{channel}}) {
-        $log->debug("($$) Declaring queue <$args{channel}>");
-        $self->_queues->{$args{channel}} = $self->_channel->declare_queue(queue   => $args{channel},
-                                                                          durable => 1);
-    }
-    return $self->_queues->{$args{channel}};
+    $log->debug("($$) Declaring queue <$args{channel}>");
+    return $self->_channel->declare_queue(queue => $args{channel}, durable => 1);
 }
 
 
@@ -233,12 +224,8 @@ sub declareExchange {
 
     General::checkParams(args => \%args, required => [ 'channel' ]);
 
-    if (not defined $self->_exchanges->{$args{channel}}) {
-        $log->debug("($$) Declaring exchange <$args{channel}> of type <fanout>");
-        $self->_exchanges->{$args{channel}} = $self->_channel->declare_exchange(exchange => $args{channel},
-                                                                                type     => 'fanout');
-    }
-    return $self->_exchanges->{$args{channel}};
+    $log->debug("($$) Declaring exchange <$args{channel}> of type <fanout>");
+    return $self->_channel->declare_exchange(exchange => $args{channel}, type => 'fanout');
 }
 
 
@@ -269,42 +256,6 @@ sub _connection {
     my ($self, %args) = @_;
 
     return $connection;
-}
-
-
-=pod
-=begin classdoc
-
-Return the connection private attribute.
-
-=end classdoc
-=cut
-
-sub _queues {
-    my ($self, %args) = @_;
-
-    if (not defined $self->{_queues}) {
-        $self->{_queues} = {};
-    }
-    return $self->{_queues};
-}
-
-
-=pod
-=begin classdoc
-
-Return the connection private attribute.
-
-=end classdoc
-=cut
-
-sub _exchanges {
-    my ($self, %args) = @_;
-
-    if (not defined $self->{_exchanges}) {
-        $self->{_exchanges} = {};
-    }
-    return $self->{_exchanges};
 }
 
 1;

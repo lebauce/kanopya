@@ -90,7 +90,7 @@ sub enqueue {
                          required => [ 'type' ],
                          optional => { 'params'       => {},
                                        'priority'     => 200,
-                                       'keep_channel' => 0 });
+                                       'in_eventloop' => 0 });
 
     my $operation = Entity::Operation->enqueue(%args);
 
@@ -98,7 +98,7 @@ sub enqueue {
     eval {
         MessageQueuing::RabbitMQ::Sender::run($self,
                                               workflow_id  => $operation->workflow->id,
-                                              keep_channel => $args{keep_channel},
+                                              in_eventloop => $args{in_eventloop},
                                               %{ $self->_adm->{config}->{amqp} });
     };
     if ($@) {
@@ -117,12 +117,12 @@ sub execute {
 
     General::checkParams(args     => \%args,
                          required => [ 'operation_id' ],
-                         optional => { 'keep_channel' => 0 });
+                         optional => { 'in_eventloop' => 0 });
 
     # Publish on the 'operation' channel
     MessageQueuing::RabbitMQ::Sender::execute($self,
                                               operation_id => $args{operation_id},
-                                              keep_channel => $args{keep_channel},
+                                              in_eventloop => $args{in_eventloop},
                                               %{ $self->_adm->{config}->{amqp} });
 }
 
@@ -134,7 +134,7 @@ sub terminate {
                          required => [ 'operation_id', 'status' ],
                          optional => { 'exception'    => undef,
                                        'delay'        => 0,
-                                       'keep_channel' => 0 });
+                                       'in_eventloop' => 0 });
 
     # Publish on the 'operation_result' channel
     MessageQueuing::RabbitMQ::Sender::terminate($self, %args);
@@ -149,7 +149,7 @@ sub run {
                          optional => { 'params'       => undef,
                                        'related_id'   => undef,
                                        'rule_id'      => undef,
-                                       'keep_channel' => 0 });
+                                       'in_eventloop' => 0 });
 
     my $workflow = Entity::Workflow->run(%args);
 
@@ -157,7 +157,7 @@ sub run {
     eval {
         MessageQueuing::RabbitMQ::Sender::run($self,
                                               workflow_id  => $workflow->id,
-                                              keep_channel => $args{keep_channel},
+                                              in_eventloop => $args{in_eventloop},
                                               %{ $self->_adm->{config}->{amqp} });
     };
     if ($@) {

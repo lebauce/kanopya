@@ -100,22 +100,26 @@ sub AUTOLOAD {
     # Merge the arguments with possibly prefined for this method.
     %args = %{ $merge->merge(\%args, $method->{message_queuing}) };
 
-    General::checkParams(args => \%args, required => [ 'channel' ], optional => { 'keep_channel' => 0 });
+    General::checkParams(args => \%args, required => [ 'channel' ], optional => { 'in_eventloop' => 0 });
 
     my $channel = delete $args{channel};
-    my $keep    = delete $args{keep_channel};
+    my $inloop  = delete $args{in_eventloop};
 
-    # Connect the sender if not done
-    if (not $self->connected) {
-        $self->connect(%args);
-        # Remove possibly defined connection options form args
-        delete $args{user};
-        delete $args{password};
+    # If we are in an event loop, cannot connect or declare,
+    # this should be done out of the event loop
+    if (not $inloop) {
+        # Connect the sender if not done
+        if (not $self->connected) {
+            $self->connect(%args);
+            # Remove possibly defined connection options form args
+            delete $args{user};
+            delete $args{password};
+        }
+        # Declare the queue if not done at connect
+        $self->declareQueue(channel => $channel);
+        # Declare the exchange if not done at connect
+        $self->declareExchange(channel => $channel);
     }
-    # Declare the queue if not done at connect
-    $self->declareQueue(channel => $channel);
-    # Declare the exchange if not done at connect
-    $self->declareExchange(channel => $channel);
 
     # Serialize arguments
     my $data = JSON->new->utf8->encode(\%args);
@@ -179,7 +183,7 @@ sub AUTOLOAD {
 #        throw Kanopya::Exception::MessageQueuing::PublishFailed(error => $err);
 #    }
 
-    if (not $keep) {
+    if (not $inloop) {
         $self->disconnect();
     }
 }

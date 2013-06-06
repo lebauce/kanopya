@@ -342,8 +342,9 @@ sub AUTOLOAD {
     # Pop the error callback if defined
     my $err_cb = delete $args{err_cb};
 
-    # Set the param keep_channel as we want to keep the sender channel open
-    $args{keep_channel} = 1;
+    # Set the param in_eventloop as we want to avoid the sender to connect
+    # or declare queues as it cannot be done in an event loop.
+    $args{in_eventloop} = 1;
 
     my $result;
     eval {
