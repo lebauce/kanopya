@@ -180,7 +180,7 @@ sub AUTOLOAD {
 #    }
 
     if (not $keep) {
-        $self->closeChannel();
+        $self->disconnect();
     }
 }
 
