@@ -310,6 +310,47 @@ sub needBridge { return 0; }
 
 sub getHostsEntries { return; }
 
+=pod
+=begin classdoc
+
+@return loadbalancer ip address for this component on this port or undef if not balanced.
+
+=end classdoc
+=cut
+
+sub getBalancerAddress {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['port']);
+    my $comp_name = $self->component_type->component_name;
+    if($comp_name eq 'Haproxy') {
+        return undef;
+    }
+    
+    my $listen_addr = 0;
+    my @haproxy_entries = $self->haproxy1s_listen;
+    LISTEN:
+    for my $listen (@haproxy_entries) {
+        if($listen->component_port ne "$args{port}") {
+            next LISTEN;
+        } else {
+            if($listen->listen_ip ne '0.0.0.0') {
+                $listen_addr = $listen->listen_ip;
+                last;
+            } else {
+                $listen_addr = $listen->haproxy1->getMasterNode->fqdn;
+                last;
+            }
+        }
+    }
+    if(! $listen_addr) {
+        $log->warn("No loalbalancer entry found for port $args{port} for ".$comp_name);
+        return undef;
+    } else {
+        return $listen_addr;
+    }
+}
+
+
 sub getPuppetDefinition {
     my ($self, %args) = @_;
     my $manifest = "";
