@@ -142,18 +142,12 @@ sub runWorkflow {
         $first = $workflow->getNextOperation();
     };
     if ($@) {
-        $self->log(level => 'warn', msg => "$@");
+        $log->warn("$@");
         $workflow->finish();
     }
     else {
-        $self->log(
-            level => "info",
-            msg   => "Running " . $workflow->workflow_name . " workflow <" . $workflow->id . "> "
-        );
-        $self->log(
-            level => "info",
-            msg   => "Executing " . $workflow->workflow_name . " first operation <" . $first->id . ">"
-        );
+        $log->info("Running " . $workflow->workflow_name . " workflow <" . $workflow->id . "> ");
+        $log->info("Executing " . $workflow->workflow_name . " first operation <" . $first->id . ">");
 
         # Set the operation as ready
         $first->setState(state => 'ready');
@@ -198,7 +192,7 @@ sub executeOperation {
 
     # Check parameters
     eval {
-        $self->log(level => "info", msg => "Step <check>");
+        $log->info("Step <check>");
         $operation->check();
     };
     if ($@) {
@@ -212,7 +206,7 @@ sub executeOperation {
     # Validate the operation
     my $valid;
     eval {
-        $self->log(level => "info", msg => "Step <validation>");
+        $log->info("Step <validation>");
         $valid = ($operation->state eq 'validated') ? 1 : $operation->validation();
     };
     if ($@) {
@@ -238,7 +232,7 @@ sub executeOperation {
             $self->lockOperationContext(operation => $operation);
 
             # Check/Update the state of the context objects atomically
-            $self->log(level => "info", msg => "Step <prepare>");
+            $log->info("Step <prepare>");
             $operation->beginTransaction;
 
             $operation->prepare();
@@ -277,7 +271,7 @@ sub executeOperation {
 
         # Check preconditions for processing
         eval {
-            $self->log(level => "info", msg => "Step <prerequisites>");
+            $log->info("Step <prerequisites>");
             $delay = $operation->prerequisites();
         };
         if ($@) {
@@ -299,7 +293,7 @@ sub executeOperation {
         eval {
             $operation->beginTransaction;
 
-            $self->log(level => "info", msg => "Step <process>");
+            $log->info("Step <process>");
             $operation->execute();
 
             $operation->commitTransaction;
@@ -315,7 +309,7 @@ sub executeOperation {
         }
     }
 
-    $self->log(level => "info", msg => "Step <postrequisites>");
+    $log->info("Step <postrequisites>");
     eval {
          $delay = $operation->postrequisites();
     };
@@ -342,7 +336,7 @@ sub executeOperation {
                                     skip_not_found => 1);
 
         # Update the state of the context objects atomically
-        $self->log(level => "info", msg => "Step <finish>");
+        $log->info("Step <finish>");
         $operation->finish();
 
         # Unlock the context objects
@@ -391,15 +385,15 @@ sub terminateOperation {
 
     my $operation = delete $args{operation};
 
-    $self->log(level => "info", msg => "Operation terminated with status <$args{status}>");
+    $log->info("Operation terminated with status <$args{status}>");
     if (defined $args{exception} and ref($args{exception})) {
         $args{exception} = "$args{exception}";
-        $self->log(level => "debug", msg => $args{exception});
+        $log->error($args{exception});
     }
 
     # If some rollback defined, undo them
     if ($args{status} eq 'cancelled' and defined $operation->{erollback}) {
-        $self->log(level => "debug", msg => "Undo rollbacks");
+        $log->debug("Undo rollbacks");
         $operation->{erollback}->undo();
     }
 
@@ -469,7 +463,7 @@ sub handleResult {
 
             $self->logWorkflowState(operation => $operation, state => "REPORTED while $delay s");
             if (defined $args{exception}) {
-                $self->log(level => "info", msg => "Report reason: " . $args{exception});
+                $log->info("Report reason: " . $args{exception});
             }
 
             # If the hoped execution time is in the future, report the operation 
@@ -536,17 +530,14 @@ sub handleResult {
         General::checkParams(args => \%args, optional => { 'exception' => undef });
 
         $self->logWorkflowState(operation => $operation, state => 'FAILED');
-        $self->log(level => "error", msg => $args{exception});
+        $log->error($args{exception});
 
         Message->send(from    => "Executor",
                       level   => "error",
                       content => "[$operation] Execution Aborted : $args{exception}");
 
         # Try to cancel all workflow operations, and delete them.
-        $self->log(
-            level => "info",
-            msg   => "Cancelling " . $workflow->workflow_name . " workflow <" . $workflow->id . ">"
-        );
+        $log->info("Cancelling " . $workflow->workflow_name . " workflow <" . $workflow->id . ">");
 
         # Restore context object states updated at 'prepare' step.
         eval {
@@ -587,18 +578,12 @@ sub handleResult {
         }
 
         # No remaning operation
-        $self->log(
-            level => "info",
-            msg   => "Finishing " . $workflow->workflow_name . " workflow <" . $workflow->id . ">"
-        );
+        $log->info("Finishing " . $workflow->workflow_name . " workflow <" . $workflow->id . ">");
         $workflow->finish();
     }
     else {
-        $self->log(
-            level => "info",
-            msg   => "Executing " . $workflow->workflow_name .
-                     " workflow next operation " . $operation->type . " <" . $next->id . ">"
-        );
+        $log->info("Executing " . $workflow->workflow_name .
+                   " workflow next operation " . $operation->type . " <" . $next->id . ">");
 
         # Set the operation as ready
         $next->setState(state => 'ready');
@@ -660,7 +645,7 @@ sub logWorkflowState {
                          optional => { 'state' => '' });
 
     my $msg = $args{operation}->type . " <" . $args{operation}->id . "> " . $args{state};
-    $self->log(level => "info", msg => "---- [ Operation " . $msg . " ] ----");
+    $log->info("---- [ Operation " . $msg . " ] ----");
 }
 
 
@@ -694,11 +679,8 @@ sub lockOperationContext {
             if (not $err->isa('Kanopya::Exception::Execution::Locked')) {
                 $err->rethrow();
             }
-            $self->log(
-                level => "info",
-                msg => "Operation <" . $args{operation}->id .
-                       ">, unable to get the context locks, $timeout second(s) left..."
-            );
+            $log->info("Operation <" . $args{operation}->id .
+                       ">, unable to get the context locks, $timeout second(s) left...");
             sleep 1;
         }
         else {
@@ -737,10 +719,7 @@ sub instantiateOperation {
         my $err = $@;
         if ($err->isa('Kanopya::Exception::Internal::NotFound')) {
             # The operation does not exists, probably due to a workflow cancel
-            $self->log(
-                level => 'warn',
-                msg   => "Operation <$args{id}> does not exists, skipping."
-            );
+            $log->warn("Operation <$args{id}> does not exists, skipping.");
         }
         if (ref($err)) {
             $err->rethrow();

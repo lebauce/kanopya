@@ -188,29 +188,6 @@ sub refreshConfiguration {
 =pod
 =begin classdoc
 
-Prefix all logs by the name and pid of the daemon.
-
-@param msg the log message
-@param level the log level
-
-=end classdoc
-=cut
-
-sub log {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'msg', 'level' ]);
-
-    my $prefix = "[ $self->{name} - PID $$ ] ";
-
-    my $method = $args{level};
-    $log->$method($prefix . $args{msg});
-}
-
-
-=pod
-=begin classdoc
-
 Return/instanciate the host singleton.
 
 =end classdoc

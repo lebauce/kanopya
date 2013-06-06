@@ -74,10 +74,7 @@ sub new {
         if (defined $cbconf) {
             # If callbacks specified in the conf, skip not defined ones
             if (not defined $cbconf->{$cbname}) {
-                $self->log(
-                    level => "info",
-                    msg   => "Skiping callback <$cbname> on channel <$callback->{channel}>",
-                );
+                $log->info("Skiping callback <$cbname> on channel <$callback->{channel}>");
                 next CALLBACK;
             }
             # If the number of instance is specified in conf,
@@ -95,7 +92,7 @@ sub new {
                 $ack = $callback->{callback}->($self, %cbargs);
             };
             if ($@) {
-                $self->log(level => 'error', msg => "$@");
+                $log->error("$@");
                 $ack = 1;
             }
             return $ack;
@@ -104,10 +101,7 @@ sub new {
         # Register worker/subscriber in function of the type
         my $instances = defined $callback->{instances} ? $callback->{instances} : 1;
 
-        $self->log(
-            level => "info",
-            msg   => "Registering $instances callback(s) <$cbname> on channel <$callback->{channel}>",
-        );
+        $log->info("Registering $instances callback(s) <$cbname> on channel <$callback->{channel}>");
 
         if ($callback->{type} eq 'queue') {
             $self->registerWorker(callback  => \&$cbmethod,
