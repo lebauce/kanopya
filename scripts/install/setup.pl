@@ -836,7 +836,7 @@ sub generatePuppetConfiguration {
     system('/etc/init.d/puppet', 'restart');
     system('/etc/init.d/puppetmaster', 'restart');
 
-    EEntity->new(entity => $kanopya)->reconfigure(tags => [ "system" ]);
+    EEntity->new(entity => $kanopya)->reconfigure(tags => [ "system", "rabbitmq" ]);
 }
 
 
