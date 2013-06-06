@@ -346,7 +346,7 @@ sub receiveAll {
 
             # Define a common job for instances of this receiver
             my $job = AnyEvent::Subprocess->new(code => sub {
-                $log->info("Spawn process <$$> for waiting on <$type>, channel <$channel>. " . getppid);
+                $log->info("Spawn process <$$> for waiting on <$type>, channel <$channel>. ");
                 eval {
                     # Infinite loop on fetch. The event loop should never stop itself,
                     # but looping here in a while, to re-trigger the event loop if anormaly fail.

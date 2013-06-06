@@ -86,7 +86,7 @@ sub connect {
 
     if (not defined $self->_connection or not $self->_connection->{_ar}->{_is_open}) {
         eval {
-            $log->debug("($$) Connecting <$self> to broker <$args{ip}:$args{port}> as <$args{user}>");
+            $log->debug("Connecting <$self> to broker <$args{ip}:$args{port}> as <$args{user}>");
             $connection = Net::RabbitFoot->new()->load_xml_spec()->connect(
                               host      => $args{ip},
                               port      => $args{port},
@@ -103,20 +103,20 @@ sub connect {
             my $err = $@;
             throw Kanopya::Exception::MessageQueuing::ConnectionFailed(error => $err);
         }
-        $log->debug("($$) Connected <$self> to broker.");
+        $log->debug("Connected <$self> to broker.");
     }
 
     if (not defined $self->_channel or not $self->_channel->{arc}->{_is_open}) {
-        $log->debug("($$) Openning channel for <$self:$$>");
+        $log->debug("Openning channel for <$self>");
         eval {
             $self->{_channel} = $self->_connection->open_channel();
         };
         if ($@) {
             my $err = $@;
-            $log->debug("($$) Open channel failed, raise exception ChannelError: $err");
+            $log->debug("Open channel failed, raise exception ChannelError: $err");
             throw Kanopya::Exception::MessageQueuing::ChannelError(error => $err);
         }
-        $log->debug("($$) Channel open <$self->{_channel}> for <$self>, " . Dumper($self->{_channel}));
+        $log->debug("Channel open <$self->{_channel}> for <$self>, " . Dumper($self->{_channel}));
 
         #$log->debug("Setting the QOS <prefetch_count => 1> on the channel");
         #$self->_channel->qos(prefetch_count => 1);
@@ -140,13 +140,13 @@ sub disconnect {
     $self->closeChannel();
 
     if (defined $self->_connection) {
-        $log->debug("($$) Disconnecting from broker");
+        $log->debug("Disconnecting from broker");
         eval {
             my $res = $self->_connection->close();
-            $log->debug("($$) Disconnected from broker");
+            $log->debug("Disconnected from broker");
         };
         if ($@) {
-            $log->warn("($$) Unable to disconnect from the broker: $@");
+            $log->warn("Unable to disconnect from the broker: $@");
         }
     }
 }
@@ -166,12 +166,12 @@ sub closeChannel {
     # If properly close the channel, the diconnect seems to not really close the connection,
     # thank to AnyEvent::RabbitMQ...
 #    if (defined $self->_channel) {
-#        $log->debug("($$) Closing channel");
+#        $log->debug("Closing channel");
 #        eval {
 #            $self->_channel->close();
 #        };
 #        if ($@) {
-#            $log->warn("($$) Unbale to close the channel: $@");
+#            $log->warn("Unbale to close the channel: $@");
 #        }
 #    }
 }
@@ -206,7 +206,7 @@ sub declareQueue {
 
     General::checkParams(args => \%args, required => [ 'channel' ]);
 
-    $log->debug("($$) Declaring queue <$args{channel}>");
+    $log->debug("Declaring queue <$args{channel}>");
     return $self->_channel->declare_queue(queue => $args{channel}, durable => 1);
 }
 
@@ -224,7 +224,7 @@ sub declareExchange {
 
     General::checkParams(args => \%args, required => [ 'channel' ]);
 
-    $log->debug("($$) Declaring exchange <$args{channel}> of type <fanout>");
+    $log->debug("Declaring exchange <$args{channel}> of type <fanout>");
     return $self->_channel->declare_exchange(exchange => $args{channel}, type => 'fanout');
 }
 
