@@ -105,15 +105,18 @@ sub AUTOLOAD {
     my $channel = delete $args{channel};
     my $inloop  = delete $args{in_eventloop};
 
+    # Remove possibly defined connection options form args
+    my $auth = {
+        user     => delete $args{user},
+        password => delete $args{password},
+    };
+
     # If we are in an event loop, cannot connect or declare,
     # this should be done out of the event loop
     if (not $inloop) {
         # Connect the sender if not done
         if (not $self->connected) {
-            $self->connect(%args);
-            # Remove possibly defined connection options form args
-            delete $args{user};
-            delete $args{password};
+            $self->connect(%$auth);
         }
         # Declare the queue if not done at connect
         $self->declareQueue(channel => $channel);
