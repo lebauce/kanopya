@@ -15,6 +15,7 @@
 
 package Entity::Component::Keepalived1::Keepalived1Vrrpinstance;
 use base 'BaseDB';
+use Ip;
 
 use constant ATTR_DEF => {
     vrrpinstance_name => {
@@ -56,5 +57,25 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+=pod
+
+=begin classdoc
+
+Method redefined to free the associated ip of this vrrp instance
+
+=end classdoc
+
+=cut
+
+sub remove {
+    my $self = shift;
+
+    my @netconfs = $self->virtualip_interface->netconfs;
+    my @poolips  = $netconfs[0]->poolips;
+    $poolips[0]->freeIp(ip => Ip->get(id => $self->virtualip_id));
+
+    $self->SUPER::delete();
+};
 
 1;

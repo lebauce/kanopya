@@ -68,9 +68,23 @@ sub setConf {
     General::checkParams(args => \%args, required => [ 'conf' ]);
 
     my $conf = $args{conf};
+    my @existing_vrrpinstances = $self->keepalived1_vrrpinstances;
 
     # Pop and link an IP for each new vrrp instance (according to associated virtualip interface)
     for my $instance (@{ $conf->{keepalived1_vrrpinstances} }) {
+
+        # Update existing instance
+        my @existing_instance = grep { $_->vrrpinstance_id == $instance->{vrrpinstance_id} } @existing_vrrpinstances;
+        if (scalar @existing_instance &&
+            $existing_instance[0]->virtualip_interface_id != $instance->{virtualip_interface_id}) {
+            # The associated interface has changed, need to remove old ip and pop a new one
+            # Cleanest way is to remove the entire instance
+            $existing_instance[0]->remove();
+            # Mark instance as new
+            delete $instance->{vrrpinstance_id};
+        }
+
+        # Pop ip for new instance
         if (not exists $instance->{vrrpinstance_id}) {
             my $interface = Entity::Interface->get(id => $instance->{virtualip_interface_id});
 
