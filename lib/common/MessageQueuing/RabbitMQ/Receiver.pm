@@ -314,6 +314,10 @@ sub receive {
 
     $condvar = undef;
 
+    $self->cancelConsumer(channel => $args{channel}, type => $args{type});
+
+    $self->disconnect();
+
     # If got an exception while fetching, rethrow.
     if (defined $err) { throw $err; }
 }
