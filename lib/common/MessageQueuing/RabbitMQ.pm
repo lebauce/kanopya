@@ -84,8 +84,7 @@ sub connect {
                                        'user'     => 'guest',
                                        'password' => 'guest' });
 
-    $log->debug("($$) Is connected ? " . Dumper($self->_connection));
-    if (not defined $self->_connection) {
+    if (not defined $self->_connection or not $self->_connection->{_ar}->{_is_open}) {
         eval {
             $log->debug("($$) Connecting <$self> to broker <$args{ip}:$args{port}> as <$args{user}>");
             $connection = Net::RabbitFoot->new()->load_xml_spec()->connect(
@@ -107,8 +106,7 @@ sub connect {
         $log->debug("($$) Connected <$self> to broker.");
     }
 
-    $log->debug("($$) Is channel open ? " . Dumper($self->_channel));
-    if (not defined $self->_channel) {
+    if (not defined $self->_channel or not $self->_channel->{arc}->{_is_open}) {
         $log->debug("($$) Openning channel for <$self:$$>");
         eval {
             $self->{_channel} = $self->_connection->open_channel();
@@ -118,7 +116,7 @@ sub connect {
             $log->debug("($$) Open channel failed, raise exception ChannelError: $err");
             throw Kanopya::Exception::MessageQueuing::ChannelError(error => $err);
         }
-        $log->debug("($$) Channel open <$self->{_channel}> for <$self>, "); #. Dumper($self->{_channel}));
+        $log->debug("($$) Channel open <$self->{_channel}> for <$self>, " . Dumper($self->{_channel}));
 
         #$log->debug("Setting the QOS <prefetch_count => 1> on the channel");
         #$self->_channel->qos(prefetch_count => 1);
@@ -144,15 +142,13 @@ sub disconnect {
     if (defined $self->_connection) {
         $log->debug("($$) Disconnecting from broker");
         eval {
-            $self->_connection->close();
+            my $res = $self->_connection->close();
             $log->debug("($$) Disconnected from broker");
         };
         if ($@) {
             $log->warn("($$) Unable to disconnect from the broker: $@");
         }
     }
-
-    $connection = undef;
 }
 
 
@@ -172,16 +168,17 @@ sub closeChannel {
         $self->_queues->{$queue} = undef
     }
 
-    if (defined $self->_channel) {
-        $log->debug("($$) Closing channel");
-        eval {
-            $self->_channel->close();
-        };
-        if ($@) {
-            $log->warn("($$) Unbale to close the channel: $@");
-        }
-    }
-    $self->{_channel} = undef;
+    # If properly close the channel, the diconnect seems to not really close the connection,
+    # thank to AnyEvent::RabbitMQ...
+#    if (defined $self->_channel) {
+#        $log->debug("($$) Closing channel");
+#        eval {
+#            $self->_channel->close();
+#        };
+#        if ($@) {
+#            $log->warn("($$) Unbale to close the channel: $@");
+#        }
+#    }
 }
 
 
@@ -196,7 +193,8 @@ Return the connection status.
 sub connected {
     my ($self, %args) = @_;
 
-    return (defined $self->_connection and defined $self->_channel);
+    return (defined $self->_connection and $self->_connection->{_ar}->{_is_open}) and
+           (defined $self->_channel and $self->_channel->{arc}->{_is_open});
 }
 
 
