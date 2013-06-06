@@ -84,7 +84,7 @@ sub connect {
                                        'user'     => 'guest',
                                        'password' => 'guest' });
 
-    if (not defined $self->_connection or not $self->_connection->{_ar}->{_is_open}) {
+    if (! (defined $self->_connection && $self->_connection->{_ar}->{_is_open})) {
         eval {
             $log->debug("Connecting <$self> to broker <$args{ip}:$args{port}> as <$args{user}>");
             $connection = Net::RabbitFoot->new()->load_xml_spec()->connect(
@@ -106,7 +106,7 @@ sub connect {
         $log->debug("Connected <$self> to broker.");
     }
 
-    if (not defined $self->_channel or not $self->_channel->{arc}->{_is_open}) {
+    if (! (defined $self->_channel && $self->_channel->{arc}->{_is_open})) {
         $log->debug("Openning channel for <$self>");
         eval {
             $self->{_channel} = $self->_connection->open_channel();
@@ -116,7 +116,7 @@ sub connect {
             $log->debug("Open channel failed, raise exception ChannelError: $err");
             throw Kanopya::Exception::MessageQueuing::ChannelError(error => $err);
         }
-        $log->debug("Channel open <$self->{_channel}> for <$self>, " . Dumper($self->{_channel}));
+        $log->debug("Channel open <$self->{_channel}> for <$self>");
 
         #$log->debug("Setting the QOS <prefetch_count => 1> on the channel");
         #$self->_channel->qos(prefetch_count => 1);
@@ -140,13 +140,13 @@ sub disconnect {
     $self->closeChannel();
 
     if (defined $self->_connection) {
-        $log->debug("Disconnecting from broker");
+        $log->debug("Disconnecting <$self> from broker");
         eval {
             my $res = $self->_connection->close();
-            $log->debug("Disconnected from broker");
+            $log->debug("Disconnected <$self> from broker");
         };
         if ($@) {
-            $log->warn("Unable to disconnect from the broker: $@");
+            $log->warn("Unable to disconnect <$self> from the broker: $@");
         }
     }
 }
@@ -174,6 +174,8 @@ sub closeChannel {
 #            $log->warn("Unbale to close the channel: $@");
 #        }
 #    }
+
+    $self->{_channel} = undef;
 }
 
 
@@ -188,8 +190,8 @@ Return the connection status.
 sub connected {
     my ($self, %args) = @_;
 
-    return (defined $self->_connection and $self->_connection->{_ar}->{_is_open}) and
-           (defined $self->_channel and $self->_channel->{arc}->{_is_open});
+    return ((defined $self->_connection && $self->_connection->{_ar}->{_is_open}) &&
+            (defined $self->_channel && $self->_channel->{arc}->{_is_open}));
 }
 
 
@@ -207,7 +209,15 @@ sub declareQueue {
     General::checkParams(args => \%args, required => [ 'channel' ]);
 
     $log->debug("Declaring queue <$args{channel}>");
-    return $self->_channel->declare_queue(queue => $args{channel}, durable => 1);
+    my $queue;
+    eval {
+        $queue = $self->_channel->declare_queue(queue => $args{channel}, durable => 1);
+    };
+    if ($@) {
+        my $err = $@;
+        throw Kanopya::Exception::MessageQueuing::ChannelError(error => $err);
+    }
+    return $queue;
 }
 
 
@@ -225,7 +235,15 @@ sub declareExchange {
     General::checkParams(args => \%args, required => [ 'channel' ]);
 
     $log->debug("Declaring exchange <$args{channel}> of type <fanout>");
-    return $self->_channel->declare_exchange(exchange => $args{channel}, type => 'fanout');
+    my $exchange;
+    eval {
+        $exchange = $self->_channel->declare_exchange(exchange => $args{channel}, type => 'fanout');
+    };
+    if ($@) {
+        my $err = $@;
+        throw Kanopya::Exception::MessageQueuing::ChannelError(error => $err);
+    }
+    return $exchange;
 }
 
 
