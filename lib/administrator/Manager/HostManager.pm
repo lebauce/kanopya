@@ -40,9 +40,6 @@ use constant BOOT_POLICIES => {
     boot_on_san  => 'BootOnSan',
 };
 
-=head2 checkHostManagerParams
-
-=cut
 
 sub checkHostManagerParams {
     my $self = shift;
@@ -58,10 +55,6 @@ sub getHostManagerParams {
     return {};
 }
 
-
-=head2 addHost
-
-=cut
 
 sub addHost {
     my $self = shift;
@@ -89,9 +82,6 @@ sub addHost {
     return $host;
 }
 
-=head2 delHost
-
-=cut
 
 sub delHost {
     my ($self, %args) = @_;
@@ -102,13 +92,6 @@ sub delHost {
     $args{host}->delete();
 }
 
-=head2 createHost
-
-    Desc : Implement createHost from HostManager interface.
-           This function enqueue a EAddHost operation.
-    args :
-
-=cut
 
 sub createHost {
     my $self = shift;
@@ -199,12 +182,6 @@ sub getOvercommitmentFactors {
 }
 
 
-=head2 getFreeHosts
-
-    Desc: return a list containing available hosts for this hosts manager
-
-=cut
-
 sub getFreeHosts {
     my ($self) = @_;
 
@@ -224,12 +201,6 @@ sub getFreeHosts {
     return @free;
 }
 
-=head2 getBootPolicies
-
-    Desc: return a list containing boot policies available
-        on hosts manager ; MUST BE IMPLEMENTED IN CHILD CLASSES
-
-=cut
 
 sub getBootPolicies {
     throw Kanopya::Exception::NotImplemented();
@@ -239,11 +210,6 @@ sub hostType {
     return "Host";
 }
 
-=head2 getRemoteSessionURL
-
-    Desc: return an URL to a remote session to the host
-
-=cut
 
 sub getRemoteSessionURL {
     throw Kanopya::Exception::NotImplemented();
