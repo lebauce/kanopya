@@ -141,7 +141,7 @@ connection of the deamon.
 sub connect {
     my ($self, %args) = @_;
 
-    $self->SUPER::connect(%args);
+    $self->SUPER::connect(%{ $self->{config}->{amqp} });
 
     # Connect the component as the connection can not be done
     # within a message callback.
@@ -161,7 +161,12 @@ sub connect {
                   );
         }
     }
+
+    # Set the in_eventloop mode on the sender as we want to avoid the sender to connect
+    # or declare queues as it cannot be done in an event loop.
+    $self->_component->setEventLoopMode;
 }
+
 
 =pod
 =begin classdoc
@@ -335,10 +340,6 @@ sub AUTOLOAD {
 
     # Pop the error callback if defined
     my $err_cb = delete $args{err_cb};
-
-    # Set the param in_eventloop as we want to avoid the sender to connect
-    # or declare queues as it cannot be done in an event loop.
-    $args{in_eventloop} = 1;
 
     my $result;
     eval {

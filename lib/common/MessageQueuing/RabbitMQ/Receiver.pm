@@ -296,7 +296,7 @@ sub receive {
     my $duration = $self->_consumers->{$args{type}}->{$args{channel}}->{duration};
 
     if (not $self->connected) {
-        $self->connect(%{$self->{config}->{amqp}});
+        $self->connect();
     }
 
     # Register the consumer on the channel
@@ -313,10 +313,6 @@ sub receive {
     if ($@) { $err = $@; }
 
     $condvar = undef;
-
-    $self->cancelConsumer(channel => $args{channel}, type => $args{type});
-
-    $self->disconnect();
 
     # If got an exception while fetching, rethrow.
     if (defined $err) { throw $err; }
@@ -358,7 +354,7 @@ sub receiveAll {
                     my $retrigger_cb = undef;
                     while ($running) {
                         # Connect to the broker within the child
-                        $self->connect(%{$self->{config}->{amqp}});
+                        $self->connect();
 
                         # Create the consumer
                         $self->createConsumer(channel => $channel, type => $type, interrupt => 0);
