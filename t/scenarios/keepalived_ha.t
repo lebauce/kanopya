@@ -66,8 +66,9 @@ sub main {
     }
 
     diag('Register master image');
+    my $masterimage;
     lives_ok {
-        Kanopya::Tools::Register::registerMasterImage('ubuntu-precise-amd64.tar.bz2');
+        $masterimage = Kanopya::Tools::Register::registerMasterImage('ubuntu-precise-amd64.tar.bz2');
     } 'Register master image';
 
     diag('Create and configure cluster');
@@ -79,6 +80,7 @@ sub main {
                 cluster_basehostname => 'hanode',
                 cluster_min_node     => 1,
                 cluster_max_node     => 3,
+                masterimage_id       => $masterimage->id
             },
             components => {
                 'keepalived' => {},
@@ -94,12 +96,6 @@ sub main {
     my $interface = $interfaces[0];
     isa_ok($interface, Entity::Interface, 'Get one interfaces');
     
-    my $vip1 = $adminpool->popIp();
-    isa_ok($vip1, Ip, 'virtual ip 1 created ('.$vip1->ip_addr.')');
-    
-    my $vip2 = $adminpool->popIp();
-    isa_ok($vip2, Ip, 'virtual ip 2 created ('.$vip2->ip_addr.')');
-    
     my $keepalived = $cluster->getComponent(name => 'Keepalived');
     isa_ok($keepalived, Entity::Component::Keepalived1, 'Get keepalived component');
     
@@ -111,15 +107,14 @@ sub main {
                 { vrrpinstance_name      => 'myvirtualip', 
                   vrrpinstance_password  => 'pass',
                   interface_id           => $interface->id,
-                  keepalived1_virtualips => [ { ip_id    => $vip1->id,
-                                                interface_id => $interface->id },
-                                              { ip_id    => $vip2->id,
-                                                interface_id => $interface->id },
-                                            ],
+                  virtualip_interface_id => $interface->id
                 },
             ]
         });
     } 'Configure keepalived';
+
+    my @vrrp_instances = $keepalived->keepalived1_vrrpinstances;
+    my $vip1 = $vrrp_instances[0]->virtualip;
 
     # start first keepalived node
 
@@ -144,9 +139,7 @@ sub main {
     diag("test virtual ips reachability");
     $p = Net::Ping->new('icmp', 10);
     my $addr1 = $vip1->ip_addr;
-    my $addr2 = $vip2->ip_addr;
     ok($p->ping($addr1), "vip $addr1 is reachable");
-    ok($p->ping($addr2), "vip $addr2 is reachable");
     
     # start second keepalived node
     
@@ -169,7 +162,7 @@ sub main {
     $result = $backup_econtext->execute(command => "grep BACKUP /etc/keepalived/keepalived.conf");
     ok($result->{stdout} ne "", "keepalived configured as BACKUP on node 2");
     
-    $cmd = "ip addr | grep -E \"inet ($addr1|$addr2)\"";
+    $cmd = "ip addr | grep -E \"inet ($addr1)\"";
     $result = $backup_econtext->execute(command => $cmd);
     ok($result->{stdout} eq "", "virtual ips not set on node 2");
     
@@ -183,12 +176,11 @@ sub main {
     diag("wait 10 seconds for vrrp");
     sleep(10);
     
-    $cmd = "ip addr | grep -E \"inet ($addr1|$addr2)\"";
+    $cmd = "ip addr | grep -E \"inet ($addr1)\"";
     $result = $backup_econtext->execute(command => $cmd);
     ok($result->{stdout} ne "", "virtual ips set on node 2");
     
     ok($p->ping($addr1), "vip $addr1 is reachable");
-    ok($p->ping($addr2), "vip $addr2 is reachable");
     
     # restore keepalived on master node 
     
@@ -200,12 +192,11 @@ sub main {
     diag("wait 10 seconds for vrrp");
     sleep(10);
     
-    $cmd = "ip addr | grep -E \"inet ($addr1|$addr2)\"";
+    $cmd = "ip addr | grep -E \"inet ($addr1)\"";
     $result = $backup_econtext->execute(command => $cmd);
     ok($result->{stdout} eq "", "virtual ips unset on node 2");
     
     ok($p->ping($addr1), "vip $addr1 is reachable");
-    ok($p->ping($addr2), "vip $addr2 is reachable");
     
     # start a third non-keepalived node 
     
