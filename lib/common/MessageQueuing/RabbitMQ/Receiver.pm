@@ -86,11 +86,6 @@ sub register {
         # the consumer tag stored when callback registred
         consumer  => undef,
     };
-
-    # Declare the queues if connected
-    if ($self->connected) {
-        $self->createConsumer(channel => $args{channel}, type => $args{type});
-    }
 }
 
 
@@ -109,78 +104,29 @@ sub createConsumer {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'type', 'channel' ],
+                         required => [ 'type', 'channel', 'callback' ],
                          optional => { 'force' => 0, 'interrupt' => 1 });
 
-    # If the consumer exists, skip creation
-    my $receiver = $self->_consumers->{$args{type}}->{$args{channel}};
-    if (defined $receiver->{consumer}) {
-        # If force defined, remove the existing consumer
-        if ($args{force}) {
-            $self->cancelConsumer(%args);
-        }
-        else {
-            return;
-        }
-    }
-
     # Declare queues or exchanges
+    my $queue;
     if ($args{type} eq 'queue') {
-        $receiver->{queue} = $self->declareQueue(channel => $args{channel})->{method_frame}->{queue};
+        $queue = $self->declareQueue(channel => $args{channel})->{method_frame}->{queue};
     }
     elsif ($args{type} eq 'topic') {
         $log->debug("Declaring exchange <$args{channel}> of type <fanout>");
         $self->declareExchange(channel => $args{channel});
 
         $log->debug("Declaring exclusive queue in way to bind on exchange <$args{channel}>");
-        $receiver->{queue} = $self->_channel->declare_queue(exclusive => 1)->{method_frame}->{queue};
-        $log->debug("Binding queue $receiver->{queue} on exchange <$args{channel}>");
+        $queue = $self->_channel->declare_queue(exclusive => 1)->{method_frame}->{queue};
+        $log->debug("Binding queue $queue on exchange <$args{channel}>");
         $self->_channel->bind_queue(exchange => $args{channel},
-                                    queue    => $receiver->{queue});
+                                    queue    => $queue);
     }
 
     # Create the consumer on the channel for the queue
-    my $consumer = $self->consume(queue     => $receiver->{queue},
-                                  callback  => $receiver->{callback},
+    my $consumer = $self->consume(queue     => $queue,
+                                  callback  => $args{callback},
                                   interrupt => $args{interrupt});
-
-    # Keep the consumer tag to know that the callback is already registred
-    $receiver->{consumer} = $consumer->{method_frame}->{consumer_tag};
-}
-
-
-=pod
-=begin classdoc
-
-Unregister the consumer callback from the channel.
-
-=end classdoc
-=cut
-
-sub cancelConsumer {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'type', 'channel' ]);
-
-    my $receiver = $self->_consumers->{$args{type}}->{$args{channel}};
-
-    $log->debug("Unregistering (cancel) callback with tag <$receiver->{consumer}>");
-    $self->_channel->cancel(consumer_tag => $receiver->{consumer});
-
-    # Arg, the cancel do not revmove the callback for the channel hash. It seems
-    # to be done at channel closing, but we can't do that for instance.
-    # TODO: Explore the AnyEvent::RabbitMQ internals.
-    delete $self->_channel->{arc}->{_consumer_cbs}->{$receiver->{consumer}};
-
-    # If the queue is bound to an exchange, unbind it.
-    if ($args{type} eq 'topic') {
-        $log->debug("Unbinding queue <$receiver->{queue}> from exchange <$args{channel}>");
-        $self->_channel->unbind_queue(queue    => $receiver->{queue},
-                                      exchange => $args{channel});
-    }
-
-    $receiver->{queue}    = undef;
-    $receiver->{consumer} = undef;
 }
 
 
@@ -294,13 +240,14 @@ sub receive {
 
     $log->debug("Receiving messages on <$args{type}>, channel <$args{channel}>");
     my $duration = $self->_consumers->{$args{type}}->{$args{channel}}->{duration};
+    my $callback = $self->_consumers->{$args{type}}->{$args{channel}}->{duration};
 
     if (not $self->connected) {
         $self->connect();
     }
 
     # Register the consumer on the channel
-    $self->createConsumer(channel => $args{channel}, type => $args{type});
+    $self->createConsumer(channel => $args{channel}, type => $args{type}, callback => $callback);
 
     # Defined the condition variable of this fetch
     $condvar = AnyEvent->condvar;
@@ -357,7 +304,10 @@ sub receiveAll {
                         $self->connect();
 
                         # Create the consumer
-                        $self->createConsumer(channel => $channel, type => $type, interrupt => 0);
+                        $self->createConsumer(callback  => $receiver->{callback},
+                                              channel   => $channel,
+                                              type      => $type,
+                                              interrupt => 0);
 
                         $condvar = AnyEvent->condvar;
 
@@ -380,29 +330,20 @@ sub receiveAll {
                             $retrigger_cb = undef;
                         }
 
-                        # Fetch for a short duration instead of indue to channel error when
-                        # connected for a long time.
-                        # TODO: Dig into the channel and heartbit management
-                        my $duration = $receiver->{duration};
-
                         # Indefinitly fetch until sigterm handler send on the condvar
                         eval {
-                            $retrigger_cb = $self->fetch(condvar => $condvar, duration => $duration);
+                            $retrigger_cb = $self->fetch(condvar => $condvar);
+
+                            # TODO: Use a dedicated exception in fetch taht can store the callback
+                            if (defined $retrigger_cb) {
+                                throw Kanopya::Exception::MessageQueuing::NoMessage(error => "Undelivred message...");
+                            }
                         };
                         if ($@) {
                             my $err = $@;
-                            # Excpetion should be Kanopya::Exception::MessageQueuing::NoMessage
-                            if (not $err->isa('Kanopya::Exception::MessageQueuing::NoMessage')) {
-                                # TODO: We probalby do not want to exit the process
-                                #$err->rethow();
-
-                                # Only log the error for instace.
-                                $log->error("Fetch on <$type>, channel <$channel> failed: $err");
-                            }
+                            # Only log the error for instace.
+                            $log->error("Fetch on <$type>, channel <$channel> failed: $err");
                         }
-
-                        # Cancel the registred callback
-                        $self->cancelConsumer(channel => $channel, type => $type);
 
                         # Disconnect the child from the broker
                         $self->disconnect();
