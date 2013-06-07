@@ -26,6 +26,7 @@ use Entity::Container::LvmContainer;
 use Entity::Component::Lvm2::Lvm2Lv;
 use Entity::Component::Lvm2::Lvm2Vg;
 
+use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -152,28 +153,41 @@ sub getPuppetDefinition {
     my $name = "cinder-" . $self->id;
 
     my @repositories = map {
-        "'" . $_->container_access->container_access_export . "'"
+        $_->container_access->container_access_export
     } $controller->repositories;
 
-    return {
-        manifest     =>
-            "class { 'kanopya::openstack::cinder':\n" .
-            "\tamqpserver => '" . $amqp . "',\n" .
-            "\trabbits => ['" . $amqp . "', '" . $amqp . "'],\n" .
-            "\tdbserver => '" . $sql->getMasterNode->fqdn . "',\n" .
-            "\tkeystone => '" . $keystone->getMasterNode->fqdn . "',\n" .
-            "\temail => '" . $self->service_provider->user->user_email . "',\n" .
-            "\tdatabase_user => '" . $name . "',\n" .
-            "\tdatabase_name => '" . $name . "',\n" .
-            "\trabbit_user => '" . $name . "',\n" .
-            "\trabbit_virtualhost => 'openstack-" . $self->nova_controller->id . "',\n" .
-            "}\n" .
-           "class { 'kanopya::openstack::cinder::iscsi': }\n" .
-           "class { 'kanopya::openstack::cinder::nfs':\n" .
-           "\tnfs_servers => [ " . join(', ', @repositories) . " ]\n" .
-           "}\n",
-        dependencies => [ $self->nova_controller->amqp , $sql , $keystone ]
-    }
+    my $manifest = $self->instanciatePuppetResource(
+        name   => 'kanopya::openstack::cinder',
+        params => {
+            amqpserver => $amqp,
+            rabbits => [ $amqp, $amqp ],
+            dbserver => $sql->getMasterNode->fqdn,
+            keystone => $keystone->getMasterNode->fqdn,
+            email => $self->service_provider->user->user_email,
+            database_user => $name,
+            database_name => $name,
+            rabbit_user => $name,
+            rabbit_virtualhost => 'openstack-' . $self->nova_controller->id
+        }
+    );
+
+    $manifest .= $self->instanciatePuppetResource(
+        name => 'kanopya::openstack::cinder::iscsi'
+    );
+
+    $manifest .= $self->instanciatePuppetResource(
+        name => 'kanopya::openstack::cinder::nfs',
+        params => {
+            nfs_servers => \@repositories
+        }
+    );
+
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        cinder => {
+            manifest     => $manifest,
+            dependencies => [ $self->nova_controller->amqp , $sql , $keystone ]
+        }
+    } );
 }
 
 sub getHostsEntries {

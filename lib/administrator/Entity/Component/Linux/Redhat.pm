@@ -20,8 +20,8 @@ use warnings;
 
 use Entity::Component::Linux::LinuxMount;
 
+use Hash::Merge qw(merge);
 use Log::Log4perl 'get_logger';
-use Data::Dumper;
 
 my $log = get_logger("");
 
@@ -30,20 +30,21 @@ sub getPuppetDefinition {
 
     General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
 
-    my $definition = "yumrepo {\n" .
-                     "\t\"epel\":\n" .
-                     "\t\tdescr          => \"Extra Packages for Enterprise Linux - \\\$basearch\",\n" .
-                     "\t\tmirrorlist     => \"http://mirrors.fedoraproject.org/mirrorlist?repo=epel-\\\$releasever&arch=\\\$basearch\",\n" .
-                     "\t\tfailovermethod => \"priority\",\n" .
-                     "\t\tgpgcheck       => \"0\",\n" .
-                     "\t\tenabled        => \"1\";\n" .
-                     "}\n";
-
-    my $superDef   = $self->SUPER::getPuppetDefinition(%args);
-    return {
-        manifest     => $superDef->{manifest} . $definition,
-        dependencies => []
-    };
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        redhat => {
+            manifest => $self->instanciatePuppetResource(
+                            name => 'epel',
+                            class => 'yumrepo',
+                            params => {
+                                descr => "Extra Packages for Enterprise Linux - \\\$basearch\"",
+                                mirrorlist => "http://mirrors.fedoraproject.org/mirrorlist?repo=epel-\\\$releasever&arch=\\\$basearch\"",
+                                failovermethod => 'priority',
+                                gpgcheck => 0,
+                                enabled  => 1
+                            }
+                        )
+        }
+    } );
 }
 
 1;

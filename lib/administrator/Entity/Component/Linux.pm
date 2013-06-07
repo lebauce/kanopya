@@ -25,6 +25,7 @@ use Kanopya::Exceptions;
 use Entity::Component::Linux::LinuxMount;
 use Entity::ServiceProvider::Cluster;
 
+use Hash::Merge qw(merge);
 use Log::Log4perl 'get_logger';
 
 my $log = get_logger("");
@@ -98,24 +99,36 @@ sub getPuppetDefinition {
 
     General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
 
-    my $ntp = $self->service_provider->getKanopyaCluster->getComponent(category => 'System');
-
-    my $conf = $self->getConf();
     my $nfs;
-    my $str = "";
+    my $ntp = $self->service_provider->getKanopyaCluster->getComponent(category => 'System');
+    my $conf = $self->getConf();
     my $tag = 'kanopya::' . lc($self->component_type->component_name);
-    my $definition = "class { 'kanopya::linux': sourcepath => \"" .
-                     $args{cluster}->cluster_name . '/' . $args{host}->node->node_hostname .
-                     "\", stage => system, tag => '$tag' }\n";
+
+    my $manifest = $self->instanciatePuppetResource(
+        name => 'kanopya::linux',
+        params => {
+            sourcepath => $args{cluster}->cluster_name . '/' . $args{host}->node->node_hostname,
+            stage => "system",
+            tag => $tag
+        }
+    );
 
     if (Entity::ServiceProvider::Cluster->getKanopyaCluster->id == $args{cluster}->id) {
-        $definition .= "class { 'kanopya::ntp::server': tag => '$tag' }\n";
+        $manifest .= $self->instanciatePuppetResource(
+            name => "kanopya::ntp::server",
+            params => {
+                tag => $tag
+            }
+        );
     }
     else {
-        $definition .= "class { 'kanopya::ntp::client':\n";
-        $definition .= "\tserver => '" . $ntp->getMasterNode->adminIp . "'\n,";
-        $definition .= "\ttag => '$tag'\n";
-        $definition .= "}\n";
+        $manifest .= $self->instanciatePuppetResource(
+            name => "kanopya::ntp::client",
+            params => {
+                server => $ntp->getMasterNode->adminIp,
+                tag => $tag
+            }
+        );
     }
 
     my @swap_entries = grep { $_->{linux_mount_filesystem} eq 'swap' } @{$conf->{linuxes_mount}};
@@ -123,18 +136,30 @@ sub getPuppetDefinition {
 
     # /etc/fstab et mounts
     foreach my $mount (@mount_entries) {
-        $str .= "file {'$mount->{linux_mount_point}': ensure => directory, tag => 'mount' }\n";
-        $str .= "mount {'$mount->{linux_mount_point}':\n";
-        $str .= "\tdevice => '$mount->{linux_mount_device}',\n";
-        $str .= "\tensure => mounted,\n";
-        $str .= "\trequire => File['$mount->{linux_mount_point}'],\n";
-        $str .= "\tfstype => '$mount->{linux_mount_filesystem}',\n";
-        $str .= "\tname   => '$mount->{linux_mount_point}',\n";
-        $str .= "\toptions => '$mount->{linux_mount_options}',\n";
-        $str .= "\tdump   => '$mount->{linux_mount_dumpfreq}',\n";
-        $str .= "\tpass   => '$mount->{linux_mount_passnum}',\n";
-        $str .= "\ttag    => '$tag'\n";
-        $str .= "}\n";
+        $manifest .= $self->instanciatePuppetResource(
+            resource => "file",
+            name => $mount->{linux_mount_point},
+            params => {
+                ensure => 'directory',
+                tag => 'mount'
+            }
+        );
+
+        $manifest .= $self->instanciatePuppetResource(
+            resource => "mount",
+            name => $mount->{linux_mount_point},
+            require => [ "File['" . $mount->{linux_mount_point} . "']" ],
+            params => {
+                device => $mount->{linux_mount_device},
+                ensure => "mounted",
+                fstype => $mount->{linux_mount_filesystem},
+                name => $mount->{linux_mount_point},
+                options => $mount->{linux_mount_options},
+                dump => $mount->{linux_mount_dumpfreq},
+                pass => $mount->{linux_mount_passnum},
+                tag => $tag
+            }
+        );
 
         $nfs = $nfs || ($mount->{linux_mount_filesystem} eq "nfs");
     }
@@ -144,33 +169,48 @@ sub getPuppetDefinition {
     # several entries invalidate the manifest due to name => 'none' repeats
 
     foreach my $swap (@swap_entries) {
-        $str .= "mount {'$swap->{linux_mount_device}':\n";
-        $str .= "\tensure => present,\n";
-        $str .= "\tdevice => '$swap->{linux_mount_device}',\n";   
-        $str .= "\tname   => 'none',\n";     
-        $str .= "\tfstype => 'swap',\n";
-        $str .= "\toptions => 'sw',\n";
-        $str .= "\tdump   => '0',\n";
-        $str .= "\tpass   => '0',\n";
-        $str .= "\ttag    => '$tag',\n";
-        $str .= "}\n";
+        $manifest .= $self->instanciatePuppetResource(
+            resource => 'mount',
+            name => $swap->{linux_mount_device},
+            params => {
+                device => $swap->{linux_mount_device},
+                ensure => 'present',
+                fstype => 'swap',
+                name => 'none',
+                options => 'sw',
+                dump => 0,
+                pass => 0,
+                tag => $tag
+            }
+        );
     }
     
-    if(@swap_entries) {
-        $str .= "swap {'swap' :\n";
-        $str .= "\tensure  => present,\n";
-        $str .= "\ttag     => '$tag',\n";
-        $str .= "\trequire => Mount['". $swap_entries[0]->{linux_mount_device} . "'] }\n";
+    if (@swap_entries) {
+        $manifest .= $self->instanciatePuppetResource(
+            resource => 'swap',
+            name => 'swap',
+            require => [ "Mount['". $swap_entries[0]->{linux_mount_device} . "']" ],
+            params => {
+                ensure => 'present',
+                tag => $tag
+            }
+        );
     }
 
     if ($nfs) {
-        $definition .= "class { 'kanopya::nfs': tag => '$tag'}\n";
+        $manifest .= $self->instanciatePuppetResource(
+            name => 'kanopya::nfs',
+            params => {
+                tag => $tag
+            }
+        );
     }
 
-    return {
-        manifest     => $definition . $str,
-        dependencies => [ ]
-    };
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        linux => {
+            manifest => $manifest
+        }
+    } );
 }
 
 1;

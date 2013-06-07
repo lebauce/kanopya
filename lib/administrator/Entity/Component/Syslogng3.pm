@@ -23,8 +23,9 @@ use warnings;
 
 use Kanopya::Config;
 use Kanopya::Exceptions;
+
+use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
-use Data::Dumper;
 
 my $log = get_logger("");
 my $errmsg;
@@ -173,10 +174,13 @@ sub getKanopyaNodesLogDirectories {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return {
-        manifest     => "class { 'kanopya::syslogng': }\n",
-        dependencies => []
-    };
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        syslogng => {
+            manifest => $self->instanciatePuppetResource(
+                            name => "kanopya::syslogng",
+                        )
+        }
+    } );
 }
 
 1;

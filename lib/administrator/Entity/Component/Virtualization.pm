@@ -72,15 +72,4 @@ sub getOvercommitmentFactors {
     }
 }
 
-sub getPuppetDefinition {
-    my ($self, %args) = @_;
-
-    my $definitions = "\n";
-
-    return {
-        manifest     => $definitions,
-        dependencies => []
-    };
-}
-
 1;

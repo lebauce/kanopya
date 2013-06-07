@@ -21,6 +21,7 @@ use base "Entity::Component::Vmm";
 use strict;
 use warnings;
 
+use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -90,22 +91,26 @@ sub getPuppetDefinition {
         push @uplinks, "'br-vlan:" . $bridge_vlan . "'";
     }
 
-    return {
-        manifest     =>
-            "class { 'kanopya::openstack::nova::compute':\n" .
-            "\tamqpserver => '" . $amqp . "',\n" .
-            "\tdbserver => '" . $sql . "',\n" .
-            "\tglance => '" . $glance . "',\n" .
-            "\tkeystone => '" . $keystone . "',\n" .
-            "\tquantum => '" . $quantum->getMasterNode->fqdn . "',\n" .
-            "\tbridge_uplinks => [ " . join(' ,', @uplinks) . " ],\n" .
-            "\temail => '" . $self->nova_controller->service_provider->user->user_email . "',\n" .
-            "\tlibvirt_type => 'kvm',\n" .
-            "\trabbit_user => '" . $name . "',\n" .
-            "\trabbit_virtualhost => 'openstack-" . $self->nova_controller->id . "',\n" .
-            "}\n",
-        dependencies => [ $self->mysql5 ]
-    };
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        novacompute => {
+            manifest => $self->instanciatePuppetResource(
+                            name => "kanopya::openstack::nova::compute",
+                            params => {
+                                amqpserver => $amqp,
+                                dbserver => $sql,
+                                glance => $glance,
+                                keystone => $keystone,
+                                quantum => $quantum->getMasterNode->fqdn,
+                                bridge_uplinks => \@uplinks,
+                                email => $self->nova_controller->service_provider->user->user_email,
+                                libvirt_type => 'kvm',
+                                rabbit_user => $name,
+                                rabbit_virtualhost => 'openstack-' . $self->nova_controller->id
+                            }
+                        ),
+            dependencies => [ $self->mysql5 ]
+        }
+    } );
 }
 
 sub getHostsEntries {

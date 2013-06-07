@@ -21,10 +21,11 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
+
+use Hash::Merge qw(merge);
 use Log::Log4perl 'get_logger';
 
 my $log = get_logger("");
-my $errmsg;
 
 use constant ATTR_DEF => {
 };
@@ -34,10 +35,13 @@ sub getAttrDef { return ATTR_DEF; }
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return {
-        manifest     => "class { 'kanopya::kvm': }\n",
-        dependencies => []
-    };
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        kvm => {
+            manifest => $self->instanciatePuppetResource(
+                            name => "kanopya::kvm",
+                        )
+        }
+    } );
 }
 
 1;

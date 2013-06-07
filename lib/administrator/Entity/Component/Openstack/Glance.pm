@@ -21,6 +21,7 @@ use base "Entity::Component";
 use strict;
 use warnings;
 
+use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -58,7 +59,6 @@ sub getPuppetDefinition {
     my ($self, %args) = @_;
     my $definition = $self->SUPER::getPuppetDefinition(%args);
 
-    my $sqlconnection;
     my $sql = $self->mysql5;
     my $keystone = $self->nova_controller->keystone;
     my $name = "glance-" . $self->id;
@@ -69,20 +69,26 @@ sub getPuppetDefinition {
         );
     }
 
-    return {
-        manifest     =>
-            "class { 'kanopya::openstack::glance':\n" .
-            "\tdbserver => '" . $sql->getMasterNode->fqdn . "',\n" .
-            "\tpassword => 'glance',\n" .
-            "\tkeystone => '" . $keystone->getMasterNode->fqdn . "',\n" .
-            "\temail => '" . $self->service_provider->user->user_email . "',\n" .
-            "\tdatabase_user => '" . $name . "',\n" .
-            "\tdatabase_name => '" . $name . "',\n" .
-            "\trabbit_user => '" . $name . "',\n" .
-            "\trabbit_virtualhost => 'openstack-" . $self->nova_controller->id . "',\n" .
-            "}\n",
-        dependencies => [ $sql , $keystone ]
-    };
+    my $manifest = $self->instanciatePuppetResource(
+        name => 'kanopya::openstack::glance',
+        params => {
+            dbserver => $sql->getMasterNode->fqdn,
+            password => 'glance',
+            keystone => $keystone->getMasterNode->fqdn,
+            email => $self->service_provider->user->user_email,
+            database_user => $name,
+            database_name => $name,
+            rabbit_user => $name,
+            rabbit_virtualhost => 'openstack-' . $self->nova_controller->id
+        }
+    );
+
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        glance => {
+            manifest     => $manifest,
+            dependencies => [ $sql , $keystone ]
+        }
+    } );
 }
 
 sub getHostsEntries {

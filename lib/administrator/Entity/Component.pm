@@ -310,11 +310,12 @@ sub needBridge { return 0; }
 
 sub getHostsEntries { return; }
 
-
 sub getPuppetDefinition {
     return {
-        manifest     => '',
-        dependencies => []
+        component => {
+            manifest     => '',
+            dependencies => []
+        }
     };
 }
 
@@ -322,8 +323,9 @@ sub instanciatePuppetResource {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'name' ],
-                                         optional => { 'params'   => {},
-                                                       'resource' => 'class' });
+                                         optional => { 'params' => {},
+                                                       'resource' => 'class',
+                                                       'require' => undef });
 
     $Data::Dumper::Terse = 1;
     $Data::Dumper::Quotekeys = 0;
@@ -333,6 +335,7 @@ sub instanciatePuppetResource {
     pop @dumper;
 
     return "$args{resource} { '$args{name}':\n" .
+           ($args{require} ? "  require => [ " . join(' ,', @{$args{require}}) . " ],\n" : '') .
            join("\n", @dumper) . "\n" .
            "}\n";
 }

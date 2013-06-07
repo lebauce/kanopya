@@ -23,9 +23,11 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use Log::Log4perl "get_logger";
 use Entity::Interface;
 use Entity::Component::Keepalived1::Keepalived1Vrrpinstance;
+
+use Hash::Merge qw(merge);
+use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
 my $errmsg;
@@ -68,23 +70,9 @@ sub setConf {
     General::checkParams(args => \%args, required => [ 'conf' ]);
 
     my $conf = $args{conf};
-    my @existing_vrrpinstances = $self->keepalived1_vrrpinstances;
 
     # Pop and link an IP for each new vrrp instance (according to associated virtualip interface)
     for my $instance (@{ $conf->{keepalived1_vrrpinstances} }) {
-
-        # Update existing instance
-        my @existing_instance = grep { $_->vrrpinstance_id == $instance->{vrrpinstance_id} } @existing_vrrpinstances;
-        if (scalar @existing_instance &&
-            $existing_instance[0]->virtualip_interface_id != $instance->{virtualip_interface_id}) {
-            # The associated interface has changed, need to remove old ip and pop a new one
-            # Cleanest way is to remove the entire instance
-            $existing_instance[0]->remove();
-            # Mark instance as new
-            delete $instance->{vrrpinstance_id};
-        }
-
-        # Pop ip for new instance
         if (not exists $instance->{vrrpinstance_id}) {
             my $interface = Entity::Interface->get(id => $instance->{virtualip_interface_id});
 
@@ -124,57 +112,64 @@ sub getPuppetDefinition {
     } elsif($node_number == 2) {
         $state = 'BACKUP';
     } else {
-        return $manifest;
+        return $self->SUPER::getPuppetDefinition(%args);
     }
-    
-    my $email = $self->notification_email;
-    my $smtp_server = $self->smtp_server;
-    
+
     my @vrrp_instances = $self->keepalived1_vrrpinstances;
+    my @vrrp_members = map { $_->vrrpinstance_name } @vrrp_instances;
     
     # global config
-    $manifest .= "class { 'kanopya::keepalived': }\n\n";
-    $manifest .= "class { 'concat::setup': }\n\n";
-    $manifest .= "class { 'keepalived':\n";
-    $manifest .= "   email       => '$email',\n";
-    $manifest .= "   smtp_server => '$smtp_server'\n";
-    $manifest .= "}\n\n";
-    
+    $manifest = $self->instanciatePuppetResource(
+                    name => "kanopya::keepalived",
+                    params => {
+                        email => $self->notification_email,
+                        smtp_server => $self->smtp_server
+                    }
+                );
+
     # vrrp config 
-    if(scalar(@vrrp_instances)) {
+    if (scalar(@vrrp_instances)) {
         # vrrp sync group
-        $manifest .= "keepalived::vrrp_sync_group { 'VG1':\n";
-        $manifest .= "  members => [";
-        $manifest .= join(',', map { "'".$_->vrrpinstance_name."'" } @vrrp_instances);
-        $manifest .= "]\n";
-        $manifest .= "}\n\n";
-    
+
+        $manifest .= $self->instanciatePuppetResource(
+                         name => 'VG1',
+                         resource => "keepalived::vrrp_sync_group",
+                         params => {
+                             members => \@vrrp_members
+                         }
+                     );
+
         # vrrp instances
         for my $instance (@vrrp_instances) {
             # we find host iface associated with cluster interface
             my $iface_name = $self->getHostIface(host => $args{host}, 
                                                  interface => $instance->interface);
         
-            $manifest .= "keepalived::vrrp_instance { '".$instance->vrrpinstance_name."':\n";
-            $manifest .= "  kind              => '".$state."',\n";
-            $manifest .= "  interface         => '".$iface_name."',\n"; 
-            $manifest .= "  password          => 'mypassword',\n";
-            $manifest .= "  virtual_router_id => 1,\n";
-            $manifest .= "  virtual_addresses => [";
             # ip must have format: 192.168.222.100/24 dev eth0
-            $manifest .= "'".$instance->virtualip->getStringFormat()
-                         ." dev "
-                         .$self->getHostIface(host => $args{host}, interface => $instance->virtualip_interface)
-                         ."'";
-            $manifest .= "]\n";
-            $manifest .= "}\n\n";
+            $manifest .= $self->instanciatePuppetResource(
+                name => $instance->vrrpinstance_name,
+                resource => "keepalived::vrrp_instance",
+                params => {
+                    kind => $state,
+                    interface => $iface_name,
+                    password => 'mypassword',
+                    virtual_router_id => 1,
+                    virtual_addresses => [ $instance->virtualip->getStringFormat .
+                                           " dev " .
+                                           $self->getHostIface(
+                                               host => $args{host},
+                                               interface => $instance->virtualip_interface
+                                           ) ]
+                }
+            );
         }
     }
 
-    return {
-        manifest     => $manifest,
-        dependencies => []
-    };
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        keepalived => {
+            manifest => $manifest
+        }
+    } );
 }
 
 sub getHostIface {

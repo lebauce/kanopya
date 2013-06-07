@@ -21,7 +21,9 @@ use base "Entity::Component";
 use strict;
 use warnings;
 
+use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
+
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
@@ -53,13 +55,18 @@ sub getPuppetDefinition {
     my $admin_network = $self->_getNetwork($admin);
     my $public_network =  $public ? $self->_getNetwork($public) : $admin_network;
  
-    my $definition = "class { 'kanopya::ceph':\n" .
-                     "  fsid => '" . $self->ceph_fsid . "',\n" .
-                     "  cluster_network => '" . $admin_network->cidr . "',\n" .
-                     "  public_network => '" . $public_network->cidr . "',\n" .
-                     "}\n";
-
-    return $definition;
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        ceph => {
+            manifest => $self->instanciatePuppetResource(
+                            name => "kanopya::ceph",
+                            params => {
+                                fsid => $self->ceph_fsid,
+                                cluster_network => $admin_network->cidr,
+                                public_network => $public_network->cidr
+                            }
+                        )
+        }
+    } );
 }
 
 1;

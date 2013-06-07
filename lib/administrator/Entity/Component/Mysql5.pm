@@ -23,6 +23,8 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
+
+use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
@@ -99,20 +101,24 @@ sub getPuppetDefinition {
     my @fqdns           = map { $_->fqdn } (grep { $_->node_id != $args{host}->node->node_id } $self->getActiveNodes);
     $cluster_address   .= join ',', @fqdns;
 
-    return {
-        manifest     => "class { 'kanopya::mysql':\n" .
-                        "\tconfig_hash => {\n" .
-                        "\t\t'port' => '" . $self->mysql5_port . "',\n" .
-                        "\t\t'bind_address' => '" . $self->mysql5_bindaddress . "',\n" .
-                        "\t\t'datadir' => '" . $self->mysql5_datadir . "',\n" .
-                        "\t},\n" .
-                        "\tgalera => {\n" .
-                        "\t\taddress => '" . $cluster_address . "',\n" .
-                        "\t\tname => '" . $self->service_provider->cluster_name . "'\n" .
-                        "\t}\n" .
-                        "}\n",
-        dependencies => []
-    };
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        mysql => {
+            manifest => $self->instanciatePuppetResource(
+                            name => "kanopya::mysql",
+                            params => {
+                                config_hash => {
+                                    port => $self->mysql5_port,
+                                    bind_address => $self->mysql5_bindaddress,
+                                    datadir => $self->mysql5_datadir
+                                },
+                                galera => {
+                                    address => $cluster_address,
+                                    name => $self->service_provider->cluster_name
+                                }
+                            }
+                        )
+        }
+    } );
 }
 
 1;

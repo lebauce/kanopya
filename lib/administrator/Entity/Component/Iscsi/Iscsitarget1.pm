@@ -34,13 +34,11 @@ use warnings;
 
 use General;
 use Kanopya::Exceptions;
-
 use Entity::Container;
 use Entity::ContainerAccess::IscsiContainerAccess;
 
+use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
-use Data::Dumper;
-
 
 my $log = get_logger("");
 my $errmsg;
@@ -249,10 +247,13 @@ sub createExport {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return {
-        manifest     => "class { 'kanopya::iscsitarget': }\n",
-        dependencies => []
-    };
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        iscsitarget => {
+            manifest => $self->instanciatePuppetResource(
+                            name => "kanopya::iscsitarget",
+                        )
+        }
+    } );
 }
 
 1;

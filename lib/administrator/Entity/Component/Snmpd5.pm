@@ -25,6 +25,8 @@ use warnings;
 use Kanopya::Config;
 use Kanopya::Exceptions;
 use Entity;
+
+use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
@@ -77,10 +79,13 @@ sub insertDefaultExtendedConfiguration {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return {
-        manifest     => "class { 'kanopya::snmpd': }\n",
-        dependencies => []
-    };
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        snmpd => {
+            manifest => $self->instanciatePuppetResource(
+                            name => "kanopya::snmpd",
+                        )
+        }
+    } );
 }
 
 1;

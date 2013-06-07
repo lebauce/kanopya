@@ -36,6 +36,7 @@ use warnings;
 use Entity::Host::Hypervisor::OpenstackHypervisor;
 use Entity::Host::VirtualMachine::OpenstackVm;
 
+use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -185,24 +186,27 @@ sub getPuppetDefinition {
         return;
     }
 
-    $definition   .= "class { 'kanopya::openstack::nova::controller':\n" .
-                     "\tdbserver => '" . $sql->getMasterNode->fqdn . "',\n" .
-                     "\tamqpserver => '" . $self->amqp->getMasterNode->fqdn . "',\n" .
-                     "\tadmin_password => 'nova',\n" .
-                     "\tkeystone => '" . $keystone->getMasterNode->fqdn . "',\n" .
-                     "\temail => '" . $self->service_provider->user->user_email . "',\n" .
-                     "\tglance => '" . $glance . "',\n" .
-                     "\tquantum => '" . $quantum->getMasterNode->fqdn . "',\n" .
-                     "\tdatabase_user => '" . $name . "',\n" .
-                     "\tdatabase_name => '" . $name . "',\n" .
-                     "\trabbit_user => '" . $name . "',\n" .
-                     "\trabbit_virtualhost => 'openstack-" . $self->id . "',\n" .
-                     "}\n";
-
-    return {
-        manifest     => $definition,
-        dependencies => [ $sql , $keystone , $self->amqp ]
-    };
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        novacontroller => {
+            manifest => $self->instanciatePuppetResource(
+                            name => "kanopya::openstack::nova::controller",
+                            params => {
+                                dbserver => $sql->getMasterNode->fqdn,
+                                amqpserver => $self->amqp->getMasterNode->fqdn,
+                                admin_password => 'nova',
+                                keystone => $keystone->getMasterNode->fqdn,
+                                email => $self->service_provider->user->user_email,
+                                glance => $glance,
+                                quantum => $quantum->getMasterNode->fqdn,
+                                database_user => $name,
+                                database_name => $name,
+                                rabbit_user => $name,
+                                rabbit_virtualhost => 'openstack-' . $self->id
+                            }
+                        ),
+            dependencies => [ $sql , $keystone , $self->amqp ]
+        }
+    } );
 }
 
 sub getHostsEntries {

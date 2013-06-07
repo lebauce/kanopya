@@ -21,13 +21,15 @@ use base "Entity::Component";
 use strict;
 use warnings;
 
+use Hash::Merge qw(merge);
+
 use constant ATTR_DEF => {
-        cookie => {
-            pattern        => '.*',
-            is_mandatory   => 0,
-            is_extended    => 0,
-            is_editable    => 1
-        },
+    cookie => {
+        pattern        => '.*',
+        is_mandatory   => 0,
+        is_extended    => 0,
+        is_editable    => 1
+    },
 };
 
 sub getAttrDef { return ATTR_DEF };
@@ -64,15 +66,17 @@ sub getPuppetDefinition {
     my @nodes = $self->service_provider->nodes;
     my @nodes_hostnames = map {$_->node_hostname} @nodes;
 
-    $definition    .= "class { 'kanopya::rabbitmq':\n" .
-                      "    disk_nodes => ['" . join ("','", @nodes_hostnames) . "'],\n" .
-                      "    cookie     => " . $self->cookie . ",\n" .
-                      "}\n";
-
-    return {
-        manifest     => $definition,
-        dependencies => []
-    };
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        amqp => {
+            manifest => $self->instanciatePuppetResource(
+                            name => 'kanopya::rabbitmq',
+                            params => {
+                                disk_nodes => \@nodes_hostnames,
+                                cookie => $self->cookie
+                            }
+                        )
+        }
+    } );
 }
 
 sub getExecToTest {

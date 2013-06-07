@@ -23,44 +23,14 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
+
+use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
-use Data::Dumper;
 
 my $log = get_logger("");
-my $errmsg;
 
 use constant ATTR_DEF => {};
 sub getAttrDef { return ATTR_DEF; }
-
-sub getConf {
-    my $self = shift;
-
-    my $conf = {};
-
-    my $confindb = $self->{_dbix};
-    if($confindb) {
-        my %row = $confindb->get_columns(); 
-        $conf = \%row;
-    }
-
-    return $conf;
-}
-
-sub setConf {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['conf']);
-
-    my $conf = $args{conf};
-    if (not $conf->{haproxy1_id}) {
-        # new configuration -> create
-        $self->{_dbix}->create($conf);
-    } else {
-        # old configuration -> update
-        $self->{_dbix}->update($conf);
-    }
-}
 
 sub getNetConf {
     my $self = shift;
@@ -98,10 +68,13 @@ sub insertDefaultExtendedConfiguration {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return {
-        manifest     => "class { 'kanopya::haproxy': }\n",
-        dependencies => []
-    };
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        haproxy => {
+            manifest => $self->instanciatePuppetResource(
+                            name => "kanopya::haproxy",
+                        )
+        }
+    } );
 }
 
 1;

@@ -23,6 +23,8 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
+use Hash::Merge qw(merge);
+
 my $log = get_logger("");
 my $errmsg;
 
@@ -52,28 +54,33 @@ sub getPuppetDefinition {
     my ($self, %args) = @_;
     my $definition = $self->SUPER::getPuppetDefinition(%args);
 
-    my $sqlconnection;
     my $sql = $self->mysql5;
     my $name = "keystone-" . $self->id;
 
     if (ref($sql) ne 'Entity::Component::Mysql5') {
-        $errmsg = "Only mysql is currently supported as DB backend";
-        throw Kanopya::Exception::Internal(error => $errmsg);
+        throw Kanopya::Exception::Internal(
+            error => "Only mysql is currently supported as DB backend"
+        );
     }
 
-    $definition .= "class { 'kanopya::openstack::keystone':\n" .
-                   "\tdbserver => '" . $sql->getMasterNode->fqdn . "',\n" .
-                   "\tdbip => '" . $sql->getMasterNode->adminIp . "',\n" .
-                   "\tadmin_password => 'keystone',\n" .
-                   "\temail => '" . $self->service_provider->user->user_email . "',\n" .
-                   "\tdatabase_user => '" . $name . "',\n" .
-                   "\tdatabase_name => '" . $name . "',\n" .
-                  "}\n";
+    my $manifest = $self->instanciatePuppetResource(
+        name => 'kanopya::openstack::keystone',
+        params => {
+            dbserver => $sql->getMasterNode->fqdn,
+            dbip => $sql->getMasterNode->adminIp,
+            admin_password => 'keystone',
+            email => $self->service_provider->user->user_email,
+            database_user => $name,
+            database_name => $name,
+        }
+    );
 
-    return {
-        manifest     => $definition,
-        dependencies => [ $sql ]
-    };
+    return merge($definition, {
+        keystone => {
+            manifest     => $manifest,
+            dependencies => [ $sql ]
+        }
+    } );
 }
 
 sub getHostsEntries {

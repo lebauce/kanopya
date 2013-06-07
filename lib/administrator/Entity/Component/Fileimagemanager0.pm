@@ -41,8 +41,8 @@ use Entity::ServiceProvider;
 use Manager::HostManager;
 use Kanopya::Exceptions;
 
+use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
-use Data::Dumper;
 
 my $log = get_logger("");
 my $errmsg;
@@ -273,10 +273,13 @@ sub createExport {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return {
-        manifest     => "class { 'kanopya::fileimagemanager': }\n",
-        dependencies => []
-    };
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        fileimagemanager => {
+            manifest => $self->instanciatePuppetResource(
+                            name => "kanopya::fileimagemanager",
+                        )
+        }
+    } );
 }
 
 1;

@@ -24,7 +24,7 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
-use Data::Dumper;
+use Hash::Merge qw(merge);
 
 my $log = get_logger("");
 my $errmsg;
@@ -63,33 +63,18 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub getConf{
-    my $self = shift;
-    my $conf_raw = $self->{_dbix};
-    return {options => $conf_raw->get_column('atftpd0_options'),
-               repository => $conf_raw->get_column('atftpd0_repository'),
-               use_inetd => $conf_raw->get_column('atftpd0_use_inetd'),
-               logfile => $conf_raw->get_column('atftpd0_logfile')};
-
-}
-
-=head2 getNetConf
-B<Class>   : Public
-B<Desc>    : This method return component network configuration in a hash ref, it's indexed by port and value is the port
-B<args>    : None
-B<Return>  : hash ref containing network configuration with following format : {port => protocol}
-B<Comment>  : None
-B<throws>  : Nothing
-=cut
-
 # Warning Atftp bug when a port scan is done
 #sub getNetConf {
 #    return {69=> ['udp']};
 #}
+
 sub getExecToTest {
-    return {atftp =>   {cmd => 'netstat -lnpu | grep 69',
-                         answer => '.+$',
-                         return_code => '0'}
+    return {
+        atftp => {
+            cmd => 'netstat -lnpu | grep 69',
+            answer => '.+$',
+            return_code => '0'
+        }
     };
 }
 
@@ -105,10 +90,13 @@ sub getBaseConfiguration {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return {
-        manifest     => "class { 'kanopya::atftpd': }\n",
-        dependencies => []
-    };
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        atftpd => {
+            manifest => $self->instanciatePuppetResource(
+                            name => "kanopya::atftpd",
+                        )
+        }
+    } );
 }
 
 sub getTftpDirectory {

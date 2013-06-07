@@ -21,6 +21,7 @@ use base "Entity::Component";
 use strict;
 use warnings;
 
+use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -38,14 +39,22 @@ sub getAttrDef { return ATTR_DEF; }
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    my $definition = "class { 'kanopya::ceph::osd':\n" .
-                     "}\n";
+    my $manifest = $self->instanciatePuppetResource(
+                       name => "kanopya::ceph::osd",
+                   );
 
     for my $harddisk ($args{host}->harddisks) {
-        $definition .= "ceph::osd::device { '" . $harddisk->harddisk_device . "': }\n";
+        $manifest .= $self->instanciatePuppetResource(
+                         resource => "ceph::osd::device",
+                         name => $harddisk->harddisk_device
+                     );
     }
 
-    return $definition;
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        cephosd => {
+            manifest => $manifest
+        }
+    } );
 }
 
 1;

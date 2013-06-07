@@ -23,11 +23,12 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-
 use Entity::Container;
 use Entity::ContainerAccess;
 use Entity::ContainerAccess::NfsContainerAccess;
 use Entity::NfsContainerAccessClient;
+
+use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
@@ -311,10 +312,13 @@ sub createExport {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return {
-        manifest     => "class { 'kanopya::nfsd': }\n",
-        dependencies => []
-    };
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        nfsd => {
+            manifest => $self->instanciatePuppetResource(
+                            name => "kanopya::nfsd",
+                        )
+        }
+    } );
 }
 
 1;

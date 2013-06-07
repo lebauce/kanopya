@@ -22,10 +22,12 @@ use base "Manager::HostManager::VirtualMachineManager";
 use strict;
 use warnings;
 
+use General;
 use Kanopya::Exceptions;
 use Manager::HostManager;
 use Entity::Workflow;
-
+use Entity::Kernel;
+use Entity::Host;
 use Entity::ContainerAccess;
 use Entity::ContainerAccess::NfsContainerAccess;
 use Entity::Host::Hypervisor::Opennebula3Hypervisor;
@@ -34,11 +36,8 @@ use Entity::Host::VirtualMachine::Opennebula3Vm;
 use Entity::Host::VirtualMachine::Opennebula3Vm::Opennebula3KvmVm;
 use Entity::Repository::Opennebula3Repository;
 
+use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
-use Data::Dumper;
-use General;
-use Entity::Kernel;
-use Entity::Host qw(get new);
 
 my $log = get_logger("");
 my $errmsg;
@@ -348,10 +347,13 @@ sub getTemplateDataOnedInitScript {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    return {
-        manifest     => "class { 'kanopya::opennebula': }\n",
-        dependencies => []
-    };
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        opennebula => {
+            manifest => $self->instanciatePuppetResource(
+                            name => "kanopya::opennebula",
+                        )
+        }
+    } );
 }
 
 ### hypervisors manipulation ###

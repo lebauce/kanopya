@@ -40,8 +40,8 @@ use Entity::Container::LvmContainer;
 use Entity::Component::Lvm2::Lvm2Pv;
 use Kanopya::Exceptions;
 
+use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
-use Data::Dumper;
 
 my $log = get_logger("");
 my $errmsg;
@@ -335,27 +335,41 @@ sub getFreeSpace {
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;
-    my $definition = "";
+    my $manifest = "";
+
+    $manifest .= $self->instanciatePuppetResource(
+        name => 'kanopya::lvm',
+    );
 
     for my $vg ($self->lvm2_vgs) {
         my @pvs = ();
         for my $pv ($vg->lvm2_pvs) {
-            $definition .= "physical_volume { '" . $pv->lvm2_pv_name . "':\n" .
-                           "    ensure => present\n" .
-                           "}\n";
+            $manifest .= $self->instanciatePuppetResource(
+                resource => 'physical_volume',
+                name => $pv->lvm2_pv_name,
+                params => {
+                    ensure => 'present'
+                }
+            );
 
-            push @pvs, '"' . $pv->lvm2_pv_name . '"';
+            push @pvs, $pv->lvm2_pv_name;
         }
 
-        $definition .= "volume_group { '" . $vg->lvm2_vg_name . "':\n" .
-                       "    ensure => present,\n" .
-                       "    physical_volumes => [ " . join(',', @pvs) . " ]\n" .
-                       "}\n";
+        $manifest .= $self->instanciatePuppetResource(
+            resource => 'volume_group',
+            name => $vg->lvm2_vg_name,
+            params => {
+                ensure => 'present',
+                physical_volumes => \@pvs
+            }
+        );
     }
 
-    return {
-        manifest => $definition . "class { 'kanopya::lvm': }\n"
-    };
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        lvm => {
+            manifest => $manifest
+        }
+    } );
 }
 
 1;

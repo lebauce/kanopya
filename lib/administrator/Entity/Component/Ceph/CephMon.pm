@@ -21,6 +21,7 @@ use base "Entity::Component";
 use strict;
 use warnings;
 
+use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -45,12 +46,17 @@ sub getAttrDef { return ATTR_DEF; }
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    my $definition = "class { 'kanopya::ceph::mon':\n" .
-                     "  mon_secret => '" . $self->ceph_mon_secret . "',\n" .
-                     "  mon_id => " . ($args{host}->node->node_number - 1) . ",\n" .
-                     "}\n";
-
-    return $definition;
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        cephmon => {
+            manifest => $self->instanciatePuppetResource(
+                            name => "kanopya::ceph::mon",
+                            params => {
+                                mon_secret => $self->ceph_mon_secret,
+                                mon_id => $args{host}->node->node_number - 1
+                            }
+                        )
+        }
+    } );
 }
 
 1;

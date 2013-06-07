@@ -124,7 +124,7 @@ sub generatePuppetDefinitions {
 
     my $puppetmaster = EEntity->new(entity => $self->getPuppetMaster);
     my $fqdn = $args{host}->node->fqdn;
-    my $puppet_definitions = "";
+    my $manifest = "";
     my @cluster_components = sort { $a->priority <=> $b->priority } $args{host}->node->components;
     foreach my $component (@cluster_components) {
         my $ecomponent = EEntity->new(entity => $component);
@@ -134,10 +134,14 @@ sub generatePuppetDefinitions {
         );
 
         # retrieve puppet definition to create manifest
-        $puppet_definitions .= $ecomponent->getPuppetDefinition(
+        my $puppet_definitions = $ecomponent->getPuppetDefinition(
             host    => $args{host},
             cluster => $args{cluster},
-        )->{manifest};
+        );
+
+        for my $chunk (keys %{$puppet_definitions}) {
+            $manifest .= $puppet_definitions->{$chunk}->{manifest} . "\n";
+        }
     }
 
     if ($self->puppetagent2_mode eq 'kanopya') {
@@ -147,7 +151,7 @@ sub generatePuppetDefinitions {
 
         $puppetmaster->createHostManifest(
             host_fqdn          => $args{host}->node->fqdn,
-            puppet_definitions => $puppet_definitions,
+            puppet_definitions => $manifest,
             sourcepath         => $args{cluster}->cluster_name . '/' . $args{host}->node->node_hostname
         );
     }
@@ -234,13 +238,15 @@ sub isUp {
         # Sort the components by service provider
         for my $component (@components) {
             my $defs = $component->getPuppetDefinition(%args);
-            my @dependencies = @{$defs->{dependencies} || []};
-            for my $dependency (@dependencies) {
-                my $key = $dependency->service_provider->id;
-                if (! defined ($reconfigure->{$key})) {
-                    $reconfigure->{$key} = [ $dependency ];
-                } else {
-                    push @{$reconfigure->{$key}}, $dependency;
+            for my $chunk (keys %{$defs}) {
+                my @dependencies = @{$defs->{$chunk}->{dependencies} || []};
+                for my $dependency (@dependencies) {
+                    my $key = $dependency->service_provider->id;
+                    if (! defined ($reconfigure->{$key})) {
+                        $reconfigure->{$key} = [ $dependency ];
+                    } else {
+                        push @{$reconfigure->{$key}}, $dependency;
+                    }
                 }
             }
         }

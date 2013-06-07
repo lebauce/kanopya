@@ -22,10 +22,11 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use Data::Dumper;
 use Entity::Component::Apache2::Apache2Virtualhost;
 
+use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
+
 my $log = get_logger("");
 my $errmsg;
 
@@ -116,24 +117,29 @@ sub getClusterizationType {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    my $definition = $self->SUPER::getPuppetDefinition(%args);
-    $definition .= "class { 'kanopya::apache': }\n";
+    my $manifest = $self->instanciatePuppetResource(
+        name => 'kanopya::apache'
+    );
 
     for my $vhost ($self->apache2_virtualhosts) {
-        $definition .= "apache::vhost {\n";
-        $definition .= "\t'" . $vhost->apache2_virtualhost_servername . "':\n";
-        $definition .= "\t\tvhost_name => '" . $vhost->apache2_virtualhost_servername . "',\n";
-        $definition .= "\t\tdocroot => '" . $vhost->apache2_virtualhost_documentroot . "',\n";
-        $definition .= "\t\tserveradmin => '" . $vhost->apache2_virtualhost_serveradmin . "',\n";
-        $definition .= "\t\tlogroot => '" . $vhost->apache2_virtualhost_log . "',\n";
-        $definition .= "\t\tport => '*',\n";
-        $definition .= "}\n";
+        $manifest .= $self->instanciatePuppetResource(
+            resource => "apache::vhost",
+            name => $vhost->apache2_virtualhost_servername,
+            params => {
+                vhost_name => $vhost->apache2_virtualhost_servername,
+                docroot => $vhost->apache2_virtualhost_documentroot,
+                serveradmin => $vhost->apache2_virtualhost_serveradmin,
+                logroot => $vhost->apache2_virtualhost_log,
+                port => '*'
+            }
+        );
     }
 
-    return {
-        manifest     => $definition,
-        dependencies => []
-    };
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        apache => {
+            manifest => $manifest
+        }
+    } );
 }
 
 1;
