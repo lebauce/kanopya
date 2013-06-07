@@ -56,6 +56,7 @@ sub getNetConf {
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;
+    my $definition = $self->SUPER::getPuppetDefinition(%args);
 
     my $sqlconnection;
     my $sql = $self->mysql5;

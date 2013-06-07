@@ -116,21 +116,22 @@ sub getClusterizationType {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    my $definitions = "class { 'kanopya::apache': }\n";
+    my $definition = $self->SUPER::getPuppetDefinition(%args);
+    $definition .= "class { 'kanopya::apache': }\n";
 
     for my $vhost ($self->apache2_virtualhosts) {
-        $definitions .= "apache::vhost {\n";
-        $definitions .= "\t'" . $vhost->apache2_virtualhost_servername . "':\n";
-        $definitions .= "\t\tvhost_name => '" . $vhost->apache2_virtualhost_servername . "',\n";
-        $definitions .= "\t\tdocroot => '" . $vhost->apache2_virtualhost_documentroot . "',\n";
-        $definitions .= "\t\tserveradmin => '" . $vhost->apache2_virtualhost_serveradmin . "',\n";
-        $definitions .= "\t\tlogroot => '" . $vhost->apache2_virtualhost_log . "',\n";
-        $definitions .= "\t\tport => '*',\n";
-        $definitions .= "}\n";
+        $definition .= "apache::vhost {\n";
+        $definition .= "\t'" . $vhost->apache2_virtualhost_servername . "':\n";
+        $definition .= "\t\tvhost_name => '" . $vhost->apache2_virtualhost_servername . "',\n";
+        $definition .= "\t\tdocroot => '" . $vhost->apache2_virtualhost_documentroot . "',\n";
+        $definition .= "\t\tserveradmin => '" . $vhost->apache2_virtualhost_serveradmin . "',\n";
+        $definition .= "\t\tlogroot => '" . $vhost->apache2_virtualhost_log . "',\n";
+        $definition .= "\t\tport => '*',\n";
+        $definition .= "}\n";
     }
 
     return {
-        manifest     => $definitions,
+        manifest     => $definition,
         dependencies => []
     };
 }

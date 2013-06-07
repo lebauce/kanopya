@@ -82,6 +82,7 @@ my %resources = (
     "kanopyafront"             => "Entity::Component::KanopyaFront",
     "kanopyarulesengine"       => "Entity::Component::KanopyaRulesEngine",
     "keepalived1"              => "Entity::Component::Keepalived1",
+    "keepalived1vrrpinstance"  => "Entity::Component::Keepalived1::Keepalived1Vrrpinstance",
     "kernel"                   => "Entity::Kernel",
     "keystone"                 => "Entity::Component::Openstack::Keystone",
     "linux"                    => "Entity::Component::Linux",

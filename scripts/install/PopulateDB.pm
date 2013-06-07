@@ -133,6 +133,7 @@ my @classes = (
     'Entity::Component::Dhcpd3',
     'Entity::Component::HAProxy1',
     'Entity::Component::Keepalived1',
+    'Entity::Component::Keepalived1::Keepalived1Vrrpinstance',
     'Entity::Component::Memcached1',
     'Entity::Component::Linux',
     'Entity::Component::Mysql5',
@@ -1551,6 +1552,7 @@ sub registerKanopyaMaster {
 
     my $admin_interface = Entity::Interface->new(
                               service_provider_id => $admin_cluster->id,
+                              interface_name      => 'interface1'
                           );
 
     my $physical_hoster = $admin_cluster->getComponent(name => 'Physicalhoster');
@@ -1981,7 +1983,7 @@ sub populate_policies {
         cluster_domainname   => 'hedera-technology.com',
         default_gateway_id   => $network->id,
         interfaces           => [
-            { netconfs => [ $netconf->id ] }
+            { netconfs => [ $netconf->id ], interface_name => 'interface1' }
         ],
     );
 
@@ -1998,8 +2000,8 @@ sub populate_policies {
         cluster_domainname   => 'hedera-technology.com',
         default_gateway_id   => $network->id,
         interfaces           => [
-            { netconfs => [ $netconf->id ] },
-            { netconfs => [ $vmsnetconf->id ] }
+            { netconfs => [ $netconf->id ],    interface_name => 'interface1' },
+            { netconfs => [ $vmsnetconf->id ], interface_name => 'interface2' }
         ],
     );
     $policies{'Standard OpenNebula Xen IAAS'}{network} = $policies{'Standard OpenNebula KVM IAAS'}{network};

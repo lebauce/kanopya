@@ -24,289 +24,176 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Log::Log4perl "get_logger";
-use Data::Dumper;
-
-use EEntity;
+use Entity::Interface;
+use Entity::Component::Keepalived1::Keepalived1Vrrpinstance;
 
 my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    notification_email_from => {
-        label           => 'Email from',
-        type            => 'string',
-        pattern         => '^.*$',
-        is_mandatory    => 1,
-        is_editable     => 1
+    notification_email => {
+        label          => 'Notification email',
+        type           => 'string',
+        pattern        => '^.*$',
+        is_mandatory   => 1,
+        is_editable    => 1
     },
-    notification_email      => {
-        label           => 'Notification email',
-        type            => 'string',
-        pattern         => '^.*$',
-        is_mandatory    => 1,
-        is_editable     => 1
+    smtp_server      => {
+        label        => 'SMTP server',
+        type         => 'string',
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_editable  => 1
     },
-    daemon_method           => {
-        label           => 'Daemon method',
-        type            => 'enum',
-        options         => ['master','backup','both'],
-        pattern         => '^.*$',
-        is_mandatory    => 1,
-        is_editable     => 1
+    keepalived1_vrrpinstances => {
+        label       => 'High Available IP',
+        type        => 'relation',
+        relation    => 'single_multi',
+        is_editable => 1
     },
-    smtp_connect_timeout    => {
-        label           => 'Connect timeout',
-        type            => 'string',
-        pattern         => '^[0-9]+$',
-        is_mandatory    => 1,
-        is_editable     => 1
-    },
-    smtp_server             => {
-        label           => 'SMTP server',
-        type            => 'string',
-        pattern         => '^.*$',
-        is_mandatory    => 1,
-        is_editable     => 1
-    },
-    lvs_id                  => {
-        label           => 'Lvs identificator',
-        type            => 'string',
-        pattern         => '^.*$',
-        is_mandatory    => 1,
-        is_editable     => 0
-    },
-    iface                   => {
-        label           => 'Interface',
-        type            => 'string',
-        pattern         => '^.*$',
-        is_mandatory    => 1,
-        is_editable     => 0
-    }
 };
 sub getAttrDef { return ATTR_DEF; }
 
-=head2 getVirtualservers
-    
-    Desc : return virtualservers list .
-        
-    return : array ref containing hasf ref virtualservers 
-
-=cut
-
-sub getVirtualservers {
-    my $self = shift;
-        
-    my $virtualserver_rs = $self->{_dbix}->keepalived1_virtualservers->search();
-    my $result = [];
-    while(my $vs = $virtualserver_rs->next) {
-        my $hashvs = {};
-        $hashvs->{virtualserver_id} = $vs->get_column('virtualserver_id');
-        $hashvs->{virtualserver_ip} = $vs->get_column('virtualserver_ip');
-        $hashvs->{virtualserver_port} = $vs->get_column('virtualserver_port');
-        $hashvs->{virtualserver_lbalgo} = $vs->get_column('virtualserver_lbalgo');
-        $hashvs->{virtualserver_lbkind} = $vs->get_column('virtualserver_lbkind');
-        push @$result, $hashvs;
-    }
-    $log->debug("returning ".scalar @$result." virtualservers");
-    return $result;
-}
-
-=head2 getRealserverId  
-
-    Desc : This method return realserver id given a virtualserver_id and a realserver_ip
-    args: virtualserver_id, realserver_ip
-        
-    return : realserver_id
-
-=cut
-
-sub getRealserverId {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['realserver_ip',
-                                                      'virtualserver_id']);
-    
-    my $virtualserver = $self->{_dbix}->keepalived1_virtualservers->find($args{virtualserver_id});
-    $log->debug("Virtualserver found with id <$args{virtualserver_id}>");
-    my $realserver = $virtualserver->keepalived1_realservers->search({ realserver_ip => $args{realserver_ip} })->single;
-    $log->debug("Realserver found with ip <$args{realserver_ip}>");
-    $log->debug("Returning realserver_id <".$realserver->get_column('realserver_id').">");
-    return $realserver->get_column('realserver_id');
-}
-
-=head2 addVirtualserver
-    
-    Desc : This method add a new virtual server entry into keepalived configuration.
-    args: virtualserver_ip, virtualserver_port, virtualserver_lbkind, virtualserver_lbalgo
-        
-    return : virtualserver_id added
-
-=cut
-
-sub addVirtualserver {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['virtualserver_ip',
-                                                      'virtualserver_port',
-                                                      'virtualserver_lbkind',
-                                                      'virtualserver_lbalgo']);
-    
-    my $virtualserver_rs = $self->{_dbix}->keepalived1_virtualservers;
-    my $row = $virtualserver_rs->create(\%args);
-    $log->info("New virtualserver added with ip $args{virtualserver_ip} and port $args{virtualserver_port}");
-    return $row->get_column("virtualserver_id");
-}
-
-=head2 addRealserver
-    
-    Desc : This function add a new real server associated a virtualserver.
-    args: virtualserver_id, realserver_ip, realserver_port,realserver_checkport , 
-        realserver_checktimeout, realserver_weight 
-    
-    return :  realserver_id
-
-=cut
-
-sub addRealserver {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['virtualserver_id',
-                                                      'realserver_ip',
-                                                      'realserver_port',
-                                                      'realserver_checkport',
-                                                      'realserver_checktimeout',
-                                                      'realserver_weight']);
-    
-    $log->debug("New real server try to be added on virtualserver_id <$args{virtualserver_id}>");
-    my $realserver_rs = $self->{_dbix}->keepalived1_virtualservers->find($args{virtualserver_id})->keepalived1_realservers;
-
-    my $row = $realserver_rs->create(\%args);
-    $log->info("New real server <$args{realserver_ip}> <$args{realserver_port}> added");
-    return $row->get_column('realserver_id');
-}
-
-=head2 removeVirtualserver
-    
-    Desc : This function a delete virtual server and all real servers associated.
-    args: virtualserver_id
-        
-    return : ?
-
-=cut
-
-sub removeVirtualserver {
-    my $self = shift;
-    my %args  = @_;
-    
-    General::checkParams(args => \%args, required => ['virtualserver_id']);
-    
-    $log->debug("Trying to delete virtualserver with id <$args{virtualserver_id}>");
-    return $self->{_dbix}->keepalived1_virtualservers->find($args{virtualserver_id})->delete;
-}
-
-=head2 removeRealserver
-    
-    Desc : This function remove a real server from a virtualserver.
-    args: virtualserver_id, realserver_id
-        
-    return : 
-
-=cut
-
-sub removeRealserver {
-    my $self = shift;
-    my %args  = @_;
-    
-    General::checkParams(args => \%args, required => ['virtualserver_id',
-                                                      'realserver_id']);
-    
-    $log->debug("Trying to delete realserver with id <$args{realserver_id}>");
-    return $self->{_dbix}->keepalived1_virtualservers->find($args{virtualserver_id})->keepalived1_realservers->find($args{realserver_id})->delete;
-}
-
-sub setRealServerWeightToZero {
-    my $self = shift;
-    my %args = @_;
-    
-    General::checkParams(args => \%args, require => ['realserver_id',
-                                                    'virtualserver_id']);
-    
-    $log->debug("Setting realserver <$args{realserver_id}> weight to 0");
-    my $virtualServer   = $self->{_dbix}->keepalived1_virtualservers->find($args{virtualserver_id});
-    my $realServer      = $virtualServer->keepalived1_realservers->find($args{realserver_id});
-    $realServer->set_column(realserver_weight => 0);
-    $realServer->update();
-}
-
-# return a data structure to pass to the template processor for ipvsadm file
-sub getTemplateDataIpvsadm {
-    my $self = shift;
-    my $data = {};
-    my $keepalived = $self->{_dbix};
-    $data->{daemon_method} = $keepalived->get_column('daemon_method');
-    $data->{iface} = $keepalived->get_column('iface');
-    return $data;      
-}
-
-# return a data structure to pass to the template processor for keepalived.conf file 
-sub getTemplateDataKeepalived {
-    my $self = shift;
-    my $data = {};
-    my $keepalived = $self->{_dbix};
-    $data->{notification_email} = $keepalived->get_column('notification_email');
-    $data->{notification_email_from} = $keepalived->get_column('notification_email_from');
-    $data->{smtp_server} = $keepalived->get_column('smtp_server');
-    $data->{smtp_connect_timeout} = $keepalived->get_column('smtp_connect_timeout');
-    $data->{lvs_id} = $keepalived->get_column('lvs_id');
-    $data->{virtualservers} = [];
-    my $virtualservers = $keepalived->keepalived1_virtualservers;
-    
-    while (my $vs = $virtualservers->next) {
-        my $record = {};
-        $record->{ip} = $vs->get_column('virtualserver_ip');
-        $record->{port} = $vs->get_column('virtualserver_port');
-        $record->{lb_algo} = $vs->get_column('virtualserver_lbalgo');
-        $record->{lb_kind} = $vs->get_column('virtualserver_lbkind');
-            
-        $record->{realservers} = [];
-        
-        my $realservers = $vs->keepalived1_realservers->search();
-        while(my $rs = $realservers->next) {
-            push @{$record->{realservers}}, { 
-                ip => $rs->get_column('realserver_ip'),
-                port => $rs->get_column('realserver_port'),
-                weight => $rs->get_column('realserver_weight'),
-                check_port => $rs->get_column('realserver_checkport'),
-                check_timeout => $rs->get_column('realserver_checktimeout'),
-            }; 
-        }
-        push @{$data->{virtualservers}}, $record;
-    }
-    return $data;      
-}
-
 sub getBaseConfiguration {
     return {
-        daemon_method           => 'both',
-        iface                   => 'eth0',
         notification_email      => 'admin@mycluster.com',
-        notification_email_from => 'keepalived@mycluster.com',
         smtp_server             => '127.0.0.1',
-        smtp_connect_timeout    => 30,
-        lvs_id                  => 'MAIN_LVS' 
     };
+}
+
+sub setConf {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'conf' ]);
+
+    my $conf = $args{conf};
+    my @existing_vrrpinstances = $self->keepalived1_vrrpinstances;
+
+    # Pop and link an IP for each new vrrp instance (according to associated virtualip interface)
+    for my $instance (@{ $conf->{keepalived1_vrrpinstances} }) {
+
+        # Update existing instance
+        my @existing_instance = grep { $_->vrrpinstance_id == $instance->{vrrpinstance_id} } @existing_vrrpinstances;
+        if (scalar @existing_instance &&
+            $existing_instance[0]->virtualip_interface_id != $instance->{virtualip_interface_id}) {
+            # The associated interface has changed, need to remove old ip and pop a new one
+            # Cleanest way is to remove the entire instance
+            $existing_instance[0]->remove();
+            # Mark instance as new
+            delete $instance->{vrrpinstance_id};
+        }
+
+        # Pop ip for new instance
+        if (not exists $instance->{vrrpinstance_id}) {
+            my $interface = Entity::Interface->get(id => $instance->{virtualip_interface_id});
+
+            my @netconfs  = $interface->netconfs;
+            if (0 == scalar @netconfs) {
+                throw Kanopya::Exception::Internal(
+                    error => "No network configuration linked to interface '".$interface->interface_name."'"
+                );
+            }
+
+            my @poolips = $netconfs[0]->poolips;
+            if (0 == scalar @poolips) {
+                throw Kanopya::Exception::Internal(
+                    error => "No pool ips linked to first network configuration of interface '"
+                             .$interface->interface_name."'"
+                );
+            }
+
+            my $poolip = $poolips[0];
+            my $new_ip = $poolip->popIp();
+
+            $instance->{virtualip_id} = $new_ip->id;
+        }
+    }
+
+    $self->SUPER::setConf(%args);
 }
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;
+    my $manifest = "";
+    my $state;
+    # first we check if we need to deploy a new keepalived 
+    my $node_number = $args{host}->node->node_number;
+    if($node_number == 1) {
+        $state = 'MASTER';
+    } elsif($node_number == 2) {
+        $state = 'BACKUP';
+    } else {
+        return $manifest;
+    }
+    
+    my $email = $self->notification_email;
+    my $smtp_server = $self->smtp_server;
+    
+    my @vrrp_instances = $self->keepalived1_vrrpinstances;
+    
+    # global config
+    $manifest .= "class { 'kanopya::keepalived': }\n\n";
+    $manifest .= "class { 'concat::setup': }\n\n";
+    $manifest .= "class { 'keepalived':\n";
+    $manifest .= "   email       => '$email',\n";
+    $manifest .= "   smtp_server => '$smtp_server'\n";
+    $manifest .= "}\n\n";
+    
+    # vrrp config 
+    if(scalar(@vrrp_instances)) {
+        # vrrp sync group
+        $manifest .= "keepalived::vrrp_sync_group { 'VG1':\n";
+        $manifest .= "  members => [";
+        $manifest .= join(',', map { "'".$_->vrrpinstance_name."'" } @vrrp_instances);
+        $manifest .= "]\n";
+        $manifest .= "}\n\n";
+    
+        # vrrp instances
+        for my $instance (@vrrp_instances) {
+            # we find host iface associated with cluster interface
+            my $iface_name = $self->getHostIface(host => $args{host}, 
+                                                 interface => $instance->interface);
+        
+            $manifest .= "keepalived::vrrp_instance { '".$instance->vrrpinstance_name."':\n";
+            $manifest .= "  kind              => '".$state."',\n";
+            $manifest .= "  interface         => '".$iface_name."',\n"; 
+            $manifest .= "  password          => 'mypassword',\n";
+            $manifest .= "  virtual_router_id => 1,\n";
+            $manifest .= "  virtual_addresses => [";
+            # ip must have format: 192.168.222.100/24 dev eth0
+            $manifest .= "'".$instance->virtualip->getStringFormat()
+                         ." dev "
+                         .$self->getHostIface(host => $args{host}, interface => $instance->virtualip_interface)
+                         ."'";
+            $manifest .= "]\n";
+            $manifest .= "}\n\n";
+        }
+    }
 
     return {
-        manifest     => "class { 'kanopya::keepalived': }\n",
+        manifest     => $manifest,
         dependencies => []
     };
+}
+
+sub getHostIface {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['interface','host']);
+    my @netconfs = $args{interface}->netconfs;
+    my $netconfig = pop @netconfs;
+    my $iface_name;
+    IFACE:
+    for my $iface ($args{host}->ifaces) {
+        NETCONF:
+        for my $netconf ($iface->netconfs) {
+            if($netconfig->id == $netconf->id) {
+                $iface_name = $iface->iface_name;
+                last IFACE;
+            }
+        }
+    }
+    return $iface_name;
 }
 
 1;

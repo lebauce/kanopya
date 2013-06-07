@@ -20,6 +20,7 @@ use base 'BaseDB';
 
 use strict;
 use warnings;
+use NetAddr::IP;
 
 use constant ATTR_DEF => {
     ip_addr => {
@@ -40,5 +41,17 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub getLabelAttr {
+    return 'ip_addr';
+}
+
+sub getStringFormat {
+    my ($self) = @_;
+    my $ipaddress = $self->ip_addr;
+    my $netmask   = $self->poolip->network->network_netmask;
+    my $ip = NetAddr::IP->new($ipaddress,$netmask);
+    return "$ip";
+}
 
 1;

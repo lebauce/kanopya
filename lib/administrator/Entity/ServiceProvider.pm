@@ -380,13 +380,14 @@ sub addNetworkInterface {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'netconfs' ],
+                         required => [ 'netconfs', 'interface_name' ],
                          optional => { 'bonds_number' => 0 });
 
     my $params = {
         service_provider_id => $self->id,
         bonds_number        => $args{bonds_number},
         netconf_interfaces  => $args{netconfs},
+        interface_name      => $args{interface_name},
     };
     return Entity::Interface->new(%$params);
 }

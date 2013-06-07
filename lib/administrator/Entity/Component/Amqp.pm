@@ -59,17 +59,18 @@ sub getNetConf {
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;
+    my $definition = $self->SUPER::getPuppetDefinition(%args);
 
     my @nodes = $self->service_provider->nodes;
     my @nodes_hostnames = map {$_->node_hostname} @nodes;
 
-    my $definitions = "class { 'kanopya::rabbitmq':\n" .
+    $definition    .= "class { 'kanopya::rabbitmq':\n" .
                       "    disk_nodes => ['" . join ("','", @nodes_hostnames) . "'],\n" .
                       "    cookie     => " . $self->cookie . ",\n" .
                       "}\n";
 
     return {
-        manifest     => $definitions,
+        manifest     => $definition,
         dependencies => []
     };
 }

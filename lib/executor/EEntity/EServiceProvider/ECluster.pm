@@ -101,7 +101,7 @@ sub create {
                         });
 
         my @netconfs = $interface->netconfs;
-        $self->addNetworkInterface(netconfs => \@netconfs);
+        $self->addNetworkInterface(netconfs => \@netconfs, interface_name => $interface->interface_name);
     }
 }
 

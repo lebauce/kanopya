@@ -992,7 +992,8 @@ var KanopyaFormWizard = (function() {
             submitCallback  : this.submitCallback,
             valuesCallback  : this.valuesCallback,
             attrsCallback   : this.attrsCallback,
-            cancelCallback  : this.cancelCallback
+            cancelCallback  : this.cancelCallback,
+            optionsCallback : this.optionsCallback
         };
     }
 

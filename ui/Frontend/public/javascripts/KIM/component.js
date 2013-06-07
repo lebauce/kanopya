@@ -30,7 +30,8 @@ var Component = (function() {
             attrsCallback  : $.proxy(this.attrsCallback, this),
             displayed      : this.displayed,
             relations      : this.relations,
-            actionsCallback: $.proxy(this.actionsCallback, this)
+            actionsCallback: $.proxy(this.actionsCallback, this),
+            optionsCallback: $.proxy(this.optionsCallback, this)
         })).start();
     };
 

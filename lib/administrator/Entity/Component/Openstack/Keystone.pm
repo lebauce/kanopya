@@ -50,8 +50,8 @@ sub getNetConf {
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;
+    my $definition = $self->SUPER::getPuppetDefinition(%args);
 
-    my $definition;
     my $sqlconnection;
     my $sql = $self->mysql5;
     my $name = "keystone-" . $self->id;
@@ -61,13 +61,13 @@ sub getPuppetDefinition {
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
-    $definition = "class { 'kanopya::openstack::keystone':\n" .
-                  "\tdbserver => '" . $sql->getMasterNode->fqdn . "',\n" .
-                  "\tdbip => '" . $sql->getMasterNode->adminIp . "',\n" .
-                  "\tadmin_password => 'keystone',\n" .
-                  "\temail => '" . $self->service_provider->user->user_email . "',\n" .
-                  "\tdatabase_user => '" . $name . "',\n" .
-                  "\tdatabase_name => '" . $name . "',\n" .
+    $definition .= "class { 'kanopya::openstack::keystone':\n" .
+                   "\tdbserver => '" . $sql->getMasterNode->fqdn . "',\n" .
+                   "\tdbip => '" . $sql->getMasterNode->adminIp . "',\n" .
+                   "\tadmin_password => 'keystone',\n" .
+                   "\temail => '" . $self->service_provider->user->user_email . "',\n" .
+                   "\tdatabase_user => '" . $name . "',\n" .
+                   "\tdatabase_name => '" . $name . "',\n" .
                   "}\n";
 
     return {

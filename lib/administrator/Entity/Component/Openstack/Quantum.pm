@@ -55,6 +55,7 @@ sub getNetConf {
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;
+    my $definition = $self->SUPER::getPuppetDefinition(%args);
 
     my $keystone = $self->nova_controller->keystone->getMasterNode->fqdn;
     my $amqp = $self->nova_controller->amqp->getMasterNode->fqdn;
