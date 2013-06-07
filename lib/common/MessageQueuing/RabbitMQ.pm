@@ -45,6 +45,9 @@ my $log = get_logger("");
 # The connection singleton
 my $connection;
 
+# Keep the channel as singleton for each entities of a same process.
+my $channels = {};
+
 
 =pod
 =begin classdoc
@@ -77,6 +80,7 @@ Connect to the message queuing server.
 
 sub connect {
     my ($self, %args) = @_;
+    my $class = ref($self) || $self;
 
     General::checkParams(args     => \%args,
                          optional => { 'ip'       => '127.0.0.1',
@@ -109,14 +113,14 @@ sub connect {
     if (! (defined $self->_channel && $self->_channel->{arc}->{_is_open})) {
         $log->debug("Openning channel for <$self>");
         eval {
-            $self->{_channel} = $self->_connection->open_channel();
+            $channels->{$class} = $self->_connection->open_channel();
         };
         if ($@) {
             my $err = $@;
             $log->debug("Open channel failed, raise exception ChannelError: $err");
             throw Kanopya::Exception::MessageQueuing::ChannelError(error => $err);
         }
-        $log->debug("Channel open <$self->{_channel}> for <$self>");
+        $log->debug("Channel open <" . $self->_channel . "> for <$self>");
 
         #$log->debug("Setting the QOS <prefetch_count => 1> on the channel");
         #$self->_channel->qos(prefetch_count => 1);
@@ -162,6 +166,7 @@ Close the channel.
 
 sub closeChannel {
     my ($self, %args) = @_;
+    my $class = ref($self) || $self;
 
     # If properly close the channel, the diconnect seems to not really close the connection,
     # thank to AnyEvent::RabbitMQ...
@@ -175,7 +180,7 @@ sub closeChannel {
 #        }
 #    }
 
-    $self->{_channel} = undef;
+    $channels->{$class} = undef;
 }
 
 
@@ -257,8 +262,9 @@ Return the session private attribute.
 
 sub _channel {
     my ($self, %args) = @_;
+    my $class = ref($self) || $self;
 
-    return $self->{_channel};
+    return $channels->{$class};
 }
 
 
