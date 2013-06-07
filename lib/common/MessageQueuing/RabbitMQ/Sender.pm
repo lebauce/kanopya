@@ -53,6 +53,12 @@ sub methods {
 my $merge = Hash::Merge->new('LEFT_PRECEDENT');
 
 
+# Define the event loop mode. If a process want to send messages within an event loop
+# (i.e. within a callback executed in a thread at message receipt), it cannot use
+# routine like connect/disconnect/declare_queue, this should be done out of the event loop.
+my $inloop;
+
+
 =pod
 =begin classdoc
 
@@ -100,10 +106,9 @@ sub AUTOLOAD {
     # Merge the arguments with possibly prefined for this method.
     %args = %{ $merge->merge(\%args, $method->{message_queuing}) };
 
-    General::checkParams(args => \%args, required => [ 'channel' ], optional => { 'in_eventloop' => 0 });
+    General::checkParams(args => \%args, required => [ 'channel' ]);
 
     my $channel = delete $args{channel};
-    my $inloop  = delete $args{in_eventloop};
 
     # Remove possibly defined connection options form args
     my $auth = {
@@ -112,7 +117,7 @@ sub AUTOLOAD {
     };
 
     # If we are in an event loop, cannot connect or declare,
-    # this should be done out of the event loop
+    # this should be done out of the event loop.
     if (not $inloop) {
         # Connect the sender if not done
         if (not $self->connected) {
@@ -210,6 +215,15 @@ sub DESTROY {
         my $err = $@;
         $log->warn("Unable to disconnect at DESTROY: $err");
     }
+}
+
+sub setEventLoopMode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { 'in_eventloop' => 1 });
+
+    $log->debug("Sender now in eventloop mode to $args{in_eventloop}");
+    $inloop = $args{in_eventloop};
 }
 
 1;
