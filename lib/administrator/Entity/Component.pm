@@ -359,7 +359,7 @@ sub getPuppetDefinition {
     for my $listen (@listens) {
         next LISTEN if $self->id != $listen->listen_component_id;    
         $manifest .=  $self->instanciatePuppetResource(
-                             resource => '@@haproxy::listen',
+                             resource => '@@haproxy::balancermember',
                              name => $listen->listen_name .'-'.$args{host}->node->node_hostname,
                              params => {
                                 listening_service => $listen->listen_name,
