@@ -57,12 +57,12 @@ sub getPuppetDefinition {
                          resource => 'haproxy::listen',
                          name => $listen->listen_name,
                          params => {
-                            ipaddress => "'". $listen->listen_ip ."'",
-                            ports     => "'". $listen->listen_port ."'",
-                            mode      => "'". $listen->listen_mode ."'",
+                            ipaddress => $listen->listen_ip,
+                            ports     => $listen->listen_port,
+                            mode      => $listen->listen_mode,
                             options   => {
                                 option => ['tcplog'],
-                                balance => "'". $listen->listen_balance ."'"     
+                                balance => $listen->listen_balance
                             }
                         }
                      );
