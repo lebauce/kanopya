@@ -42,6 +42,8 @@ use Entity::AggregateCondition;
 use Entity::Rule::AggregateRule;
 use Entity::Clustermetric;
 use Entity::CollectorIndicator;
+use Entity::ServiceProvider::Cluster;
+
 use Node;
 
 use Log::Log4perl "get_logger";
@@ -94,6 +96,20 @@ sub toString() {
 sub label {
     my $self = shift;
     return $self->externalcluster_name;
+}
+
+sub new {
+    my ($class, %args) = @_;
+    my $self = $class->SUPER::new(%args);
+    # Find the kanopya cluster
+    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
+
+    # Add default execution manager
+    my $execution_manager = $kanopya->getComponent(name => "KanopyaExecutor");
+    $self->addManager( manager_id   => $execution_manager->id,
+                       manager_type => "ExecutionManager" );
+
+    return $self;
 }
 
 =head2 addManager
