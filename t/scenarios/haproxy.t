@@ -66,8 +66,8 @@ sub main {
                                     listen_port    => 33060,
                                     listen_mode    => 'tcp',
                                     listen_balance => 'roundrobin',
-                                    component_id   => $mysql->id,
-                                    component_port => 3306
+                                    listen_component_id   => $mysql->id,
+                                    listen_component_port => 3306
                                   }
                                 ]
         });

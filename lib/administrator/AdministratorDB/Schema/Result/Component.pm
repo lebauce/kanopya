@@ -409,7 +409,7 @@ Related object: L<AdministratorDB::Schema::Result::Haproxy1Listen>
 __PACKAGE__->has_many(
   "haproxy1s_listen",
   "AdministratorDB::Schema::Result::Haproxy1Listen",
-  { "foreign.component_id" => "self.component_id" },
+  { "foreign.listen_component_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -984,9 +984,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2013-05-31 15:25:20
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:zKZq9FOz9uhHTi5eokV4gg
-
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2013-06-10 10:54:56
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:G/SWTyo5wazUYhbusrwd3w
 
 __PACKAGE__->has_many(
   "vmms",

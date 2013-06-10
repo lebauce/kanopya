@@ -66,14 +66,14 @@ __PACKAGE__->table("haproxy1_listen");
   extra: {list => ["roundrobin"]}
   is_nullable: 0
 
-=head2 component_id
+=head2 listen_component_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 component_port
+=head2 listen_component_port
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -121,14 +121,14 @@ __PACKAGE__->add_columns(
     extra => { list => ["roundrobin"] },
     is_nullable => 0,
   },
-  "component_id",
+  "listen_component_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "component_port",
+  "listen_component_port",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
 );
 __PACKAGE__->set_primary_key("listen_id");
@@ -150,7 +150,7 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 component
+=head2 listen_component
 
 Type: belongs_to
 
@@ -159,15 +159,15 @@ Related object: L<AdministratorDB::Schema::Result::Component>
 =cut
 
 __PACKAGE__->belongs_to(
-  "component",
+  "listen_component",
   "AdministratorDB::Schema::Result::Component",
-  { component_id => "component_id" },
+  { component_id => "listen_component_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2013-06-04 17:35:37
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:J03n9Mu3QI1tRf6vdcxitA
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2013-06-10 10:54:56
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:YEQ+T2aBP33uJ+d6nd9KBg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
