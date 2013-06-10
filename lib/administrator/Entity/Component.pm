@@ -364,8 +364,8 @@ sub getPuppetDefinition {
                              params => {
                                 listening_service => $listen->listen_name,
                                 ports             => $listen->listen_component_port,
-                                server_names      => "\${::hostname}",
-                                ipaddresses       => "\${::ipaddress}",
+                                server_names      => $args{host}->node->node_hostname,
+                                ipaddresses       => $args{host}->adminIp,
                                 options           => 'check'
                              }
                           );
