@@ -70,8 +70,12 @@ Launch 1 executor->oneRun
 sub oneRun {
     my ($self, %args) = @_;
 
-    $executor->oneRun(channel => 'operation', type => 'queue');
-    $executor->oneRun(channel => 'operation_result', type => 'queue');
+    $log->info("Fetching on channel <workflow>");
+    eval { $executor->oneRun(channel => 'workflow', type => 'queue'); };
+    $log->info("Fetching on channel <operation>");
+    eval { $executor->oneRun(channel => 'operation', type => 'queue'); };
+    $log->info("Fetching on channel <operation_result>");
+    eval { $executor->oneRun(channel => 'operation_result', type => 'queue'); };
 }
 
 =pod
