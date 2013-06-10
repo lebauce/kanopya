@@ -21,7 +21,7 @@ use Test::Exception;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
     level=>'DEBUG',
-    file=>'orchestrator_test.log',
+    file=>'sco_workflow_triggered_by_rule.log',
     layout=>'%F %L %p %m%n'
 });
 
@@ -104,10 +104,14 @@ sub sco_workflow_triggered_by_rule {
     my $agg_rule_ids  = _service_rule_objects_creation(indicators => \@indicators);
     my $node_rule_ids = _node_rule_objects_creation(indicators => \@indicators);
 
+    sleep 2;
     $aggregator->update();
 
     # Launch orchestrator with no workflow to trigger
     my $rulesengine = RulesEngine->new();
+    $rulesengine->_component->time_step(2);
+    $rulesengine->refreshConfiguration();
+
     $rulesengine->oneRun();
 
     diag('Check rules verification');
@@ -184,16 +188,17 @@ sub sco_workflow_triggered_by_rule {
     my ($node_workflow, $service_workflow, $sco_operation, $service_sco_operation);
     lives_ok {
         diag('Check triggered node workflow');
+
         $node_workflow = Entity::Workflow->find(hash=>{
             workflow_name => $node_rule_ids->{node_rule2_id}.'_'.($node_wf->workflow_def_name),
-            state => 'running',
+            state => 'pending',
             related_id => $service_provider->id,
         });
 
         diag('Check triggered service workflow');
         $service_workflow = Entity::Workflow->find(hash=>{
             workflow_name => $agg_rule_ids->{agg_rule2_id}.'_'.($service_wf->workflow_def_name),
-            state => 'running',
+            state => 'pending',
             related_id => $service_provider->id,
         });
 
@@ -205,21 +210,38 @@ sub sco_workflow_triggered_by_rule {
         });
 
         diag('Check triggered node enqueued operation');
-        Entity::Operation->find( hash => {
+        my $op_node = Entity::Operation->find( hash => {
             type => 'LaunchSCOWorkflow',
             state => 'pending',
             workflow_id => $node_workflow->id,
         });
 
         diag('Check triggered service enqueued operation');
-        Entity::Operation->find( hash => {
+        my $op_sco = Entity::Operation->find( hash => {
             type => 'LaunchSCOWorkflow',
             state => 'pending',
             workflow_id => $service_workflow->id,
         });
 
-        #Execute operation 4 times (1 time per trigerred rule * 2 (op confirmation + op workflow))
-        Kanopya::Tools::Execution->nRun(n => 4);
+        # Execute operation 4 times (1 time per trigerred rule * 2 (op confirmation + op workflow))
+        # Kanopya::Tools::Execution->nRun(n => 4);
+        # Kanopya::Tools::Execution->executeAll();
+
+        $DB::single = 1;
+
+        my $executor = Executor->new(duration => 'SECOND');
+        my @processes_rules = Entity::Operation->search(hash => {'operationtype.operationtype_name' => 'ProcessRule'});
+
+        my $p1 = (pop @processes_rules);
+        my $p2 = (pop @processes_rules);
+
+        $executor->executeOperation(operation_id => $p1->id);
+        $executor->handleResult(operation_id => $p1->id, status => $p1->state);
+
+        $executor->executeOperation(operation_id => $p2->id);
+        $executor->executeOperation(operation_id => $op_node->id);
+        $executor->executeOperation(operation_id => $op_sco->id);
+
 
         #  Check node rule output
         diag('Check postreported operation');

@@ -43,6 +43,8 @@ eval{
 
     $aggregator   = Aggregator->new();
     $rulesengine  = RulesEngine->new();
+    $rulesengine->_component->time_step(2);
+    $rulesengine  = RulesEngine->new();
 
     $service_provider = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Service Provider',

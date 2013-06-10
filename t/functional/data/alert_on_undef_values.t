@@ -32,6 +32,8 @@ my $rulesengine;
 eval{
     $aggregator  = Aggregator->new();
     $rulesengine = RulesEngine->new();
+    $rulesengine->_component->time_step(2);
+    $rulesengine  = RulesEngine->new();
 
     $service_provider = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Service Provider',
@@ -132,7 +134,7 @@ eval{
         state => 'enabled'
     );
 
-#    test_alerts_aggregator();
+    test_alerts_aggregator();
     test_alerts_orchestrator();
     test_rrd_remove();
     BaseDB->rollbackTransaction;
