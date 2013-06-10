@@ -354,21 +354,23 @@ sub getBalancerAddress {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
     my $manifest = "";
-    
     my @listens = $self->haproxy1s_listen;
+    LISTEN:
     for my $listen (@listens) {
+        next LISTEN if $self->id != $listen->listen_component_id;    
         $manifest .=  $self->instanciatePuppetResource(
-                         resource => '@@haproxy::listen',
-                         name => $listen->listen_name ."-\${::hostname}",
-                         params => {
-                            listening_service => $listen->listen_name,
-                            ports             => $listen->listen_component_port,
-                            server_names      => "\${::hostname}",
-                            ipaddresses       => "\${::ipaddress}",
-                            options           => 'check'
-                         }
-                      );
+                             resource => '@@haproxy::listen',
+                             name => $listen->listen_name .'-'.$args{host}->node->node_hostname,
+                             params => {
+                                listening_service => $listen->listen_name,
+                                ports             => $listen->listen_component_port,
+                                server_names      => "\${::hostname}",
+                                ipaddresses       => "\${::ipaddress}",
+                                options           => 'check'
+                             }
+                          );
     }
+    
     
     return {
         loadbalanced => {
