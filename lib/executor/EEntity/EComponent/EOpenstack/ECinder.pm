@@ -20,7 +20,15 @@ use strict;
 use warnings;
 
 use EEntity;
+use Entity::Container::FileContainer;
 use Entity::ContainerAccess::IscsiContainerAccess;
+use Entity::ContainerAccess::FileContainerAccess;
+use Entity::Repository;
+
+my $supported_volume_types = {
+    "NFS"   => "Generic_NFS",
+    "iSCSI" => "LVM_iSCSI"
+};
 
 =head
 
@@ -40,7 +48,20 @@ it into Kanopya
 sub createDisk {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ "name", "size" ]); 
+    General::checkParams(args     => \%args,
+                         required => [ "name", "size", "cluster" ]);
+
+    my $diskmanagerparams   = $args{cluster}->getManagerParameters(manager_type => 'DiskManager');
+    my $exportmanagerparams = $args{cluster}->getManagerParameters(manager_type => 'ExportManager');
+
+    $args{disk_type}           = $diskmanagerparams->{export_type} || 'iSCSI';
+    $args{repository}          = $exportmanagerparams->{repository};
+
+    if (defined $args{disk_type} && $args{disk_type} eq 'NFS') {
+        General::checkParams(args     => \%args,
+                             required => [ 'repository' ]
+        );
+    }
 
     my $e_controller = EEntity->new(entity => $self->nova_controller);
     my $api = $e_controller->api;
@@ -51,15 +72,33 @@ sub createDisk {
                           "name"         => $args{name},
                           "size"         => $args{size} / 1024 / 1024 / 1024,
                           "display_name" => $args{name},
+                          'volume_type'  => $args{disk_type}
                       }
                   }
               );
 
-    my $container = $self->lvcreate(
-                        volume_id    => $req->{volume}->{id},
-                        lvm2_lv_name => $args{name},
-                        lvm2_lv_size => $args{size},
-                    );
+    my $container;
+    if ($args{disk_type} eq 'iSCSI') {
+        $container = $self->lvcreate(
+                            volume_id    => $req->{volume}->{id},
+                            lvm2_lv_name => $args{name},
+                            lvm2_lv_size => $args{size},
+                        );
+    }
+    elsif ($args{disk_type} eq 'NFS') {
+        my $container_access_id = Entity::Repository->find(hash => {
+            repository_id => $args{repository}
+        })->container_access_id;
+        $container = Entity::Container::FileContainer->new(
+            disk_manager_id      => $self->id,
+            container_access_id  => $container_access_id,
+            container_name       => $args{name},
+            container_size       => $args{size},
+            container_filesystem => 'None',
+            container_freespace  => 0,
+            container_device     => 'volume-' . $req->{volume}->{id}
+        );
+    }
 
     return EEntity->new(entity => $container);
 }
@@ -79,18 +118,34 @@ sub createExport {
     General::checkParams(args     => \%args,
                          required => [ "container" ] );
 
-    my $id = join('-', (split('--', $args{container}->container_device))[-5..-1]);
+    my $export;
 
-    my $export = Entity::ContainerAccess::IscsiContainerAccess->new(
-        container_id            => $args{container}->id,
-        container_access_export => "iqn.2010-10.org.openstack:volume-" . $id,
-        container_access_port   => 3260,
-        container_access_ip     => $self->getMasterNode->adminIp,
-        export_manager_id       => $self->id,
-        typeio                  => "fileio",
-        iomode                  => "wb",
-        lun_name                => ""
-    );
+    if ($args{container}->isa('EEntity::EContainer::EFileContainer')) {
+        my $underlying  = Entity::ContainerAccess->get(
+            id => $args{container}->container_access_id
+        );
+        my $export_name = $underlying->container_access_export . '/' . $args{container}->container_device;
+        $export         = Entity::ContainerAccess::FileContainerAccess->new(
+            container_id            => $args{container}->id,
+            export_manager_id       => $self->id,
+            container_access_export => $export_name,
+            container_access_ip     => $underlying->container_access_ip,
+            container_access_port   => $underlying->container_access_port
+        );
+    }
+    else {
+        my $id  = $self->getVolumeId(container => $args{container});
+        $export = Entity::ContainerAccess::IscsiContainerAccess->new(
+            container_id            => $args{container}->id,
+            container_access_export => "iqn.2010-10.org.openstack:volume-" . $id,
+            container_access_port   => 3260,
+            container_access_ip     => $self->getMasterNode->adminIp,
+            export_manager_id       => $self->id,
+            typeio                  => "fileio",
+            iomode                  => "wb",
+            lun_name                => ""
+        );
+    }
 
     return EEntity->new(entity => $export);
 }
