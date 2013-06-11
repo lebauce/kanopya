@@ -79,4 +79,8 @@ class kanopya::openstack::nova::compute(
             refreshonly => true
         }
     }
+
+    nova_config {
+        'DEFAULT/nfs_mount_options': value => 'nolock';
+    }
 }
