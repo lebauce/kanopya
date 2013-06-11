@@ -127,19 +127,19 @@ sub executeOne {
         );
     }
 
-    # Run the workflow
-    eval {
-        $executor->oneRun(channel => 'workflow', type => 'queue');
-    };
-    if ($@) {
-        my $err = $@;
-        if (not $err->isa('Kanopya::Exception::MessageQueuing::NoMessage')) {
-            $err->rethrow();
-        }
-    }
-
     WORKFLOW:
     while(1) {
+        eval {
+            $log->debug("Calling oneRun with channel <workflow> and type <queue>");
+            $executor->oneRun(channel => 'workflow', type => 'queue');
+            $log->debug("Called oneRun with channel <workflow> and type <queue>");
+        };
+        if ($@) {
+            my $err = $@;
+            if (not $err->isa('Kanopya::Exception::MessageQueuing::NoMessage')) {
+                $err->rethrow();
+            }
+        }
         eval {
             $log->debug("Calling oneRun with channel <operation> and type <queue>");
             $executor->oneRun(channel => 'operation', type => 'queue');
