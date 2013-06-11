@@ -51,6 +51,7 @@ sub test3a {
                 manager_params => {
                     core => 1,
                     ram  => 1024*1024*1024,
+                    tags => [],
                 },
             },
         }

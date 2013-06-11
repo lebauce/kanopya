@@ -1,45 +1,61 @@
-#   TEST 3.D :
+#   TEST 1.F :
 #
-#     HOSTS :
+#       HOSTS :
 #        _______________________________________________________________________________________________
 #       |                               |                               |                               |
 #       | Host 1 -                      | Host 2 -                      | Host 3 -                      |
-#       |     CPU Core number = 1       |     CPU Core number = 1       |     CPU Core number = 1       |
+#       |     CPU Core number = 2       |     CPU Core number = 2       |     CPU Core number = 2       |
 #       |     RAM quantity    = 4096    |     RAM quantity    = 4096    |     RAM quantity    = 4096    |
 #       |     Ifaces :                  |     Ifaces :                  |     Ifaces :                  |
 #       |         iface 1 :             |         iface 1 :             |         iface 1 :             |
-#       |             Bonds number = 0  |             Bonds number = 2  |             Bonds number = 1  |
+#       |             Bonds number = 0  |             Bonds number = 0  |             Bonds number = 0  |
 #       |             NetIps       = [] |             NetIps       = [] |             NetIps       = [] |
+#       |     Tags : [1,2,3,5,6]        |     Tags : [1,2,3]            |     Tags : [1,2,3,4,5]        |
 #       |_______________________________|_______________________________|_______________________________|
 #        _______________________________________________________________________________________________
 #       |                               |                               |                               |
 #       | Host 4 -                      | Host 5 -                      | Host 6 -                      |
-#       |     CPU Core number = 1       |     CPU Core number = 1       |     CPU Core number = 1       |
+#       |     CPU Core number = 2       |     CPU Core number = 2       |     CPU Core number = 2       |
 #       |     RAM quantity    = 4096    |     RAM quantity    = 4096    |     RAM quantity    = 4096    |
 #       |     Ifaces :                  |     Ifaces :                  |     Ifaces :                  |
 #       |         iface 1 :             |         iface 1 :             |         iface 1 :             |
-#       |             Bonds number = 3  |             Bonds number = 4  |             Bonds number = 5  |
+#       |             Bonds number = 0  |             Bonds number = 0  |             Bonds number = 0  |
 #       |             NetIps       = [] |             NetIps       = [] |             NetIps       = [] |
+#       |     Tags : [1,2,3,4]          |     Tags : [1,2,3,6]          |     Tags : [1,2,3,5]          |
 #       |_______________________________|_______________________________|_______________________________|
 #
-#     CONSTRAINTS (Cluster) :
+#       CONSTRAINTS (Cluster) :
 #
 #       /---------------------------------\
 #       /                                 \
 #       /   Min CPU Core number = 1       \
-#       /   Min RAM quantity    = 4096    \
+#       /   Min RAM quantity    = 512     \
 #       /   Interfaces :                  \
 #       /       interface 1 :             \
 #       /           Min Bonds number = 0  \
 #       /           Min NetIps       = [] \
+#       /   Min Tags : [1,2,3]            \
 #       /                                 \
 #       /---------------------------------\
 #
-sub test3d {
+
+use Entity::Tag;
+
+sub test3f {
+    ########################
+    #### Create Tags    ####
+    ########################
+    my $tag1 = Entity::Tag->new(tag => "Not free Massage");
+    my $tag2 = Entity::Tag->new(tag => "High Performance");
+    my $tag3 = Entity::Tag->new(tag => "Beer dispenser");
+    my $tag4 = Entity::Tag->new(tag => "Free Massage");
+    my $tag5 = Entity::Tag->new(tag => "Popcorn Machine");
+    my $tag6 = Entity::Tag->new(tag => "PS3");
+
     ########################
     #### Create Cluster ####
     ########################
-    
+
     # Create NetConf
     my $netConf =  Entity::Netconf->create(
         netconf_name => 'netconf',
@@ -50,13 +66,13 @@ sub test3d {
             host_manager => {
                 manager_params => {
                     core => 1,
-                    ram  => 4096*1024*1024,
-                    tags => [],
+                    ram  => 512*1024*1024,
+                    tags => [$tag1->id, $tag2->id, $tag3->id],
                 },
             },
         }
     };
-    # Create Cluster and add network interfaces to it
+    # Create Cluster and add network interface to it
     my $cluster = Kanopya::Tools::Create->createCluster(
         cluster_conf => $host_manager_conf,
     );
@@ -80,165 +96,120 @@ sub test3d {
     my $host1 = Kanopya::Tools::Register->registerHost(
         board => {
             serial_number => 1,
-            core          => 1,
+            core          => 2,
             ram           => 4096*1024*1024,
             ifaces        => [
                 {
-                    name => 'iface1',
+                    name => 'iface',
                     pxe  => 0,
                 },
             ],
         },
     );
+    $host1->populateRelations(
+        relations => {
+            entity_tags => [$tag1, $tag2, $tag3, $tag4, $tag5, $tag6],
+        }
+    );
+
     # Create Host 2
-    my $master_iface_name2 = 'master_iface2';
     my $host2 = Kanopya::Tools::Register->registerHost(
         board => {
             serial_number => 2,
-            core          => 1,
+            core          => 2,
             ram           => 4096*1024*1024,
             ifaces        => [
                 {
-                    name => $master_iface_name2,
+                    name => 'iface',
                     pxe  => 0,
                 },
-                    {
-                        name   => 'slave_iface21',
-                        pxe    => 0,
-                        master => $master_iface_name2,
-                    },
-                    {
-                        name   => 'slave_iface22',
-                        pxe    => 0,
-                        master => $master_iface_name2,
-                    },
             ],
         },
     );
+    $host2->populateRelations(
+        relations => {
+            entity_tags => [$tag1, $tag2, $tag3],
+        }
+    );
+
     # Create Host 3
-    my $master_iface_name3 = 'master_iface3';
     my $host3 = Kanopya::Tools::Register->registerHost(
         board => {
             serial_number => 3,
-            core          => 1,
+            core          => 2,
             ram           => 4096*1024*1024,
             ifaces        => [
                 {
-                    name => $master_iface_name3,
+                    name => 'iface',
                     pxe  => 0,
                 },
-                    {
-                        name   => 'slave_iface31',
-                        pxe    => 0,
-                        master => $master_iface_name3,
-                    },
             ],
         },
     );
+    $host3->populateRelations(
+        relations => {
+            entity_tags => [$tag1, $tag2, $tag3, $tag4, $tag5],
+        }
+    );
+
     # Create Host 4
-    my $master_iface_name4 = 'master_iface4';
     my $host4 = Kanopya::Tools::Register->registerHost(
         board => {
             serial_number => 4,
-            core          => 1,
+            core          => 2,
             ram           => 4096*1024*1024,
             ifaces        => [
                 {
-                    name => $master_iface_name4,
+                    name => 'iface',
                     pxe  => 0,
                 },
-                    {
-                        name   => 'slave_iface41',
-                        pxe    => 0,
-                        master => $master_iface_name4,
-                    },
-                    {
-                        name   => 'slave_iface42',
-                        pxe    => 0,
-                        master => $master_iface_name4,
-                    },
-                    {
-                        name   => 'slave_iface43',
-                        pxe    => 0,
-                        master => $master_iface_name4,
-                    },
             ],
         },
     );
+    $host4->populateRelations(
+        relations => {
+            entity_tags => [$tag1, $tag2, $tag3, $tag4],
+        }
+    );
+
     # Create Host 5
-    my $master_iface_name5 = 'master_iface5';
     my $host5 = Kanopya::Tools::Register->registerHost(
         board => {
             serial_number => 5,
-            core          => 1,
+            core          => 2,
             ram           => 4096*1024*1024,
             ifaces        => [
                 {
-                    name => $master_iface_name5,
+                    name => 'iface',
                     pxe  => 0,
                 },
-                    {
-                        name   => 'slave_iface51',
-                        pxe    => 0,
-                        master => $master_iface_name5,
-                    },
-                    {
-                        name   => 'slave_iface52',
-                        pxe    => 0,
-                        master => $master_iface_name5,
-                    },
-                    {
-                        name   => 'slave_iface53',
-                        pxe    => 0,
-                        master => $master_iface_name5,
-                    },
-                    {
-                        name   => 'slave_iface54',
-                        pxe    => 0,
-                        master => $master_iface_name5,
-                    },
             ],
         },
     );
+    $host5->populateRelations(
+        relations => {
+            entity_tags => [$tag1, $tag2, $tag3, $tag6],
+        }
+    );
+
     # Create Host 6
-    my $master_iface_name6 = 'master_iface6';
     my $host6 = Kanopya::Tools::Register->registerHost(
         board => {
             serial_number => 6,
-            core          => 1,
+            core          => 2,
             ram           => 4096*1024*1024,
             ifaces        => [
                 {
-                    name => $master_iface_name6,
+                    name => 'iface',
                     pxe  => 0,
                 },
-                    {
-                        name   => 'slave_iface61',
-                        pxe    => 0,
-                        master => $master_iface_name6,
-                    },
-                    {
-                        name   => 'slave_iface62',
-                        pxe    => 0,
-                        master => $master_iface_name6,
-                    },
-                    {
-                        name   => 'slave_iface63',
-                        pxe    => 0,
-                        master => $master_iface_name6,
-                    },
-                    {
-                        name   => 'slave_iface64',
-                        pxe    => 0,
-                        master => $master_iface_name6,
-                    },
-                    {
-                        name   => 'slave_iface65',
-                        pxe    => 0,
-                        master => $master_iface_name6,
-                    },
             ],
         },
+    );
+    $host6->populateRelations(
+        relations => {
+            entity_tags => [$tag1, $tag2, $tag3, $tag5],
+        }
     );
 
     ##########################
@@ -248,11 +219,11 @@ sub test3d {
     lives_ok {
         my $selected_host = DecisionMaker::HostSelector->getHost(cluster => $cluster);
 
-        # The selected host must be the 1st.
-        if ($selected_host->id != $host1->id) {
-            die ("Test 3.d : Wrong host selected");
+        # The selected host must be the 2nd.
+        if ($selected_host->id != $host2->id) {
+            die ("Test 3.f : Wrong host selected");
         }
-    } "Test 3.d : Choosing the host with the best bonding configuration cost";
+    } "Test 3.f : Choosing the host with the best tags cost";
 }
 
 1;

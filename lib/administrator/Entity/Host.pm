@@ -141,6 +141,14 @@ use constant ATTR_DEF => {
         label        => 'Remote session url',
         is_virtual   => 1,
     },
+    entity_tags => {
+        label        => 'Tags',
+        type         => 'relation',
+        relation     => 'multi',
+        link_to      => 'tag',
+        is_editable  => 1,
+        is_mandatory => 0
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }

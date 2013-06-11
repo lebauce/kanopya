@@ -1767,5 +1767,29 @@ CREATE TABLE `entity_time_period` (
   FOREIGN KEY (`time_period_id`) REFERENCES `time_period` (`time_period_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Table structure for table `tag`
+--
+CREATE TABLE `tag` (
+  `tag_id` int(8) unsigned NOT NULL,
+  `tag`    char(32) NOT NULL,
+  PRIMARY KEY (`tag_id`),
+  FOREIGN KEY (`tag_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  UNIQUE KEY (`tag`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `entity_tag`
+--
+CREATE TABLE `entity_tag` (
+  `entity_id` int(8) unsigned NOT NULL,
+  `tag_id`    int(8) unsigned NOT NULL,
+  PRIMARY KEY (`entity_id`, `tag_id`),
+  KEY (`entity_id`),
+  FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`tag_id`),
+  FOREIGN KEY (`tag_id`) REFERENCES `tag` (`tag_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 SET foreign_key_checks=1;
 

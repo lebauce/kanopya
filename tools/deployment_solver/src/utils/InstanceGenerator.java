@@ -33,6 +33,8 @@ public class InstanceGenerator {
     private final static int NETWORK_MAX_BONDS_NUMBER  = 5;
     private final static int NETWORK_MAX_NETCONFS      = 5;
 
+    // Tags
+    private final static int TAGS_MAX_NUMBER           = 5;
 
     /* Private empty constructor : Utility class */
     private InstanceGenerator() {}
@@ -78,11 +80,23 @@ public class InstanceGenerator {
                 ifaces.add(iface);
             }
 
+            // Generate tags
+            int nb_tags         = (int) (Math.random() * TAGS_MAX_NUMBER + 1);
+            List<Integer> tags  = new ArrayList<Integer>();
+            for (int k = 0; k < nb_tags; k++) {
+                int tag;
+                do {
+                    tag = (int) (Math.random() * (TAGS_MAX_NUMBER + 1));
+                } while (tags.contains(tag));
+                tags.add(tag);
+            }
+
             // Generate host number i
             physical_infrastructure[i] =  new Host(
                     new Host.CPU(cpu_nb_cores),
                     new Host.RAM(ram_qty),
-                    new Host.Network(ifaces)
+                    new Host.Network(ifaces),
+                    tags.toArray(new Integer[tags.size()])
             );
         }
         return physical_infrastructure;
@@ -125,10 +139,22 @@ public class InstanceGenerator {
             interfaces.add(interf);
         }
 
+        // Generate tags
+        int nb_tags_min        = (int) (Math.random() * TAGS_MAX_NUMBER + 1);
+        List<Integer> tags_min = new ArrayList<Integer>();
+        for (int k = 0; k < nb_tags_min; k++) {
+            int tag;
+            do {
+                tag = (int) (Math.random() * (TAGS_MAX_NUMBER + 1));
+            } while (tags_min.contains(tag));
+            tags_min.add(tag);
+        }
+
         return new Constraints(
                 new Constraints.CPU(cpu_nb_cores_min),
                 new Constraints.RAM(ram_qty_min),
-                new Constraints.Network(interfaces)
+                new Constraints.Network(interfaces),
+                tags_min.toArray(new Integer[tags_min.size()])
         );
     }
 

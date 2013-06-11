@@ -1,5 +1,6 @@
 package model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -24,13 +25,24 @@ public class Constraints {
      */
     private Network m_network;
 
-    public Constraints() {}
+    /**
+     * The min set of tags constraint.
+     */
+    private Integer[] m_tags_min;
 
-    public Constraints(CPU cpu, RAM ram, Network network) {
+    public Constraints() {
+        this.m_cpu      = new CPU();
+        this.m_ram      = new RAM();
+        this.m_network  = new Network();
+        this.m_tags_min = new Integer[0];
+    }
+
+    public Constraints(CPU cpu, RAM ram, Network network, Integer[] tags_min) {
         super();
-        this.m_cpu = cpu;
-        this.m_ram = ram;
-        this.m_network = network;
+        this.m_cpu      = cpu;
+        this.m_ram      = ram;
+        this.m_network  = network;
+        this.m_tags_min = tags_min;
     }
 
     // GETTERS
@@ -47,6 +59,10 @@ public class Constraints {
         return m_network;
     }
 
+    public Integer[] getTagsMin() {
+        return m_tags_min;
+    }
+
     // SETTERS
 
     public void setCpu(CPU cpu) {
@@ -61,17 +77,24 @@ public class Constraints {
         this.m_network = network;
     }
 
+    public void setTagsMin(Integer[] tags_min) {
+        this.m_tags_min = tags_min;
+    }
+
     public String toString() {
         String constraints = "Constraints :";
         constraints += "\n" + "\t" + this.getCpu();
         constraints += "\n" + "\t" + this.getRam();
         constraints += "\n" + "\t" + this.getNetwork();
+        constraints += "\n" + "\t" + "Tags min :";
+        for (Integer tag : this.getTagsMin()) {
+            constraints += "\n" + "\t\t" + tag;
+        }
         return constraints;
     }
 
     /**
      * POJO representing user constraints on the CPU of a host.
-     *
      * @author Dimitri Justeau
      */
     public static class CPU {
@@ -111,7 +134,6 @@ public class Constraints {
 
     /**
      * POJO representing user constraints on the RAM of a host.
-     *
      * @author Dimitri Justeau
      */
     public static class RAM {
@@ -151,7 +173,6 @@ public class Constraints {
 
     /**
      * POJO representing user constraints on the network features of a host.
-     *
      * @author Dimitri Justeau
      */
     public static class Network {
@@ -162,7 +183,7 @@ public class Constraints {
         private List<Interface> m_interfaces;
 
         public Network() {
-            this.m_interfaces = null;
+            this.m_interfaces = new ArrayList<>();
         }
 
         public Network(List<Interface> interfaces) {
@@ -191,7 +212,6 @@ public class Constraints {
 
         /**
          * POJO representing a interface constraint.
-         *
          * @author Dimitri Justeau
          */
         public static class Interface {
@@ -209,7 +229,7 @@ public class Constraints {
 
             public Interface() {
                 m_bonds_number_min = -1;
-                m_netips_min = null;
+                m_netips_min = new ArrayList<Integer>();
             }
 
             // GETTERS AND SETTERS

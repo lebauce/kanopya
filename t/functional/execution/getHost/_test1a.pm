@@ -29,7 +29,7 @@ sub test1a {
     ########################
     #### Create Cluster ####
     ########################
-    
+
     # Create NetConf
     my $netConf =  Entity::Netconf->create(
         netconf_name => 'just another lonely netconf',
@@ -41,10 +41,12 @@ sub test1a {
                 manager_params => {
                     core => 1,
                     ram  => 8192*1024*1024,
+                    tags => [],
                 },
             },
         }
     };
+
     # Create Cluster and add network interface to it
     my $cluster = Kanopya::Tools::Create->createCluster(
         cluster_conf => $host_manager_conf,

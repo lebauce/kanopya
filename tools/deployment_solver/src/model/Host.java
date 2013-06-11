@@ -1,5 +1,6 @@
 package model;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -23,13 +24,24 @@ public class Host {
      */
     private Network m_network;
 
-    public Host() {}
+    /**
+     * The tags of the host.
+     */
+    private Integer[] m_tags;
 
-    public Host(CPU cpu, RAM ram, Network network) {
+    public Host() {
+        this.m_cpu     = new CPU();
+        this.m_ram     = new RAM();
+        this.m_network = new Network();
+        this.m_tags    = new Integer[0];
+    }
+
+    public Host(CPU cpu, RAM ram, Network network, Integer[] tags) {
         super();
         this.m_cpu = cpu;
         this.m_ram = ram;
         this.m_network = network;
+        this.m_tags = tags;
     }
 
     // GETTERS
@@ -46,6 +58,10 @@ public class Host {
         return m_network;
     }
 
+    public Integer[] getTags() {
+        return m_tags;
+    }
+
     // SETTERS
 
     public void setCpu(CPU cpu) {
@@ -60,17 +76,24 @@ public class Host {
         this.m_network = network;
     }
 
+    public void setTags(Integer[] tags) {
+        m_tags = tags;
+    }
+
     public String toString() {
         String host = "Host :";
         host += "\n" + "\t" + this.getCpu();
         host += "\n" + "\t" + this.getRam();
         host += "\n" + "\t" + this.getNetwork();
+        host += "\n" + "\t" + "Tags :";
+        for (Integer tag : this.getTags()) {
+            host += "\n" + "\t\t" + tag;
+        }
         return host;
     }
 
     /**
      * POJO representing the CPU of a host.
-     *
      * @author Dimitri Justeau
      */
     public static class CPU {
@@ -80,7 +103,9 @@ public class Host {
          */
         private int m_nb_cores;
 
-        public CPU() {}
+        public CPU() {
+            this.m_nb_cores = 0;
+        }
 
         public CPU(int nb_cores) {
             super();
@@ -106,7 +131,6 @@ public class Host {
 
     /**
      * POJO representing the RAM of a host.
-     *
      * @author Dimitri Justeau
      */
     public static class RAM {
@@ -116,7 +140,9 @@ public class Host {
          */
         private int m_qty;
 
-        public RAM() {}
+        public RAM() {
+            this.m_qty = 0;
+        }
 
         public RAM(int qty) {
             super();
@@ -142,7 +168,6 @@ public class Host {
 
     /**
      * POJO representing the network features of a host.
-     *
      * @author Dimitri Justeau
      */
     public static class Network {
@@ -153,7 +178,7 @@ public class Host {
         private List<Iface> m_ifaces;
 
         public Network() {
-            this.m_ifaces = null;
+            this.m_ifaces = new ArrayList<Iface>();
         }
 
         public Network(List<Iface> ifaces) {
@@ -182,7 +207,6 @@ public class Host {
 
         /**
          * POJO representing a iface.
-         *
          * @author Dimitri Justeau
          */
         public static class Iface {
@@ -200,7 +224,7 @@ public class Host {
 
             public Iface() {
                 m_bonds_number = 0;
-                m_netips = null;
+                m_netips = new ArrayList<Integer>();
             }
 
             // GETTERS AND SETTERS

@@ -172,7 +172,7 @@ __PACKAGE__->belongs_to(
   "class_type",
   "AdministratorDB::Schema::Result::ClassType",
   { class_type_id => "class_type_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "NO ACTION", on_update => "NO ACTION" },
 );
 
 =head2 clustermetric
@@ -296,7 +296,7 @@ __PACKAGE__->belongs_to(
     is_deferrable => 1,
     join_type     => "LEFT",
     on_delete     => "CASCADE",
-    on_update     => "CASCADE",
+    on_update     => "NO ACTION",
   },
 );
 
@@ -326,6 +326,21 @@ Related object: L<AdministratorDB::Schema::Result::EntityLock>
 __PACKAGE__->might_have(
   "entity_lock_entity",
   "AdministratorDB::Schema::Result::EntityLock",
+  { "foreign.entity_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 entity_tags
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::EntityTag>
+
+=cut
+
+__PACKAGE__->has_many(
+  "entity_tags",
+  "AdministratorDB::Schema::Result::EntityTag",
   { "foreign.entity_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -765,6 +780,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 tag
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Tag>
+
+=cut
+
+__PACKAGE__->might_have(
+  "tag",
+  "AdministratorDB::Schema::Result::Tag",
+  { "foreign.tag_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 time_period
 
 Type: might_have
@@ -825,6 +855,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 workflow_relateds
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Workflow>
+
+=cut
+
+__PACKAGE__->has_many(
+  "workflow_relateds",
+  "AdministratorDB::Schema::Result::Workflow",
+  { "foreign.related_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 workflow_workflow
 
 Type: might_have
@@ -840,21 +885,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 workflows_related
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Workflow>
-
-=cut
-
-__PACKAGE__->has_many(
-  "workflows_related",
-  "AdministratorDB::Schema::Result::Workflow",
-  { "foreign.related_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 gps
 
 Type: many_to_many
@@ -865,10 +895,19 @@ Composing rels: L</ingroups> -> gp
 
 __PACKAGE__->many_to_many("gps", "ingroups", "gp");
 
+=head2 tags
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-04-08 22:31:57
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:QMQMA2d16fJebhG5GsifsQ
+Type: many_to_many
 
+Composing rels: L</entity_tags> -> tag
+
+=cut
+
+__PACKAGE__->many_to_many("tags", "entity_tags", "tag");
+
+
+# Created by DBIx::Class::Schema::Loader v0.07035 @ 2013-05-23 18:14:11
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dqW3UiBQegf4PapERoVkFg
 __PACKAGE__->many_to_many("time_periods", "entity_time_periods", "time_period");
 
 __PACKAGE__->might_have(

@@ -114,6 +114,7 @@ sub getHost {
             push @json_ifaces, $json_iface;
         }
         # Construct the current host
+        my @tags = map { $_->id } $host->tags;
         my $current = {
             cpu     => {
                 nbCores => $host->host_core,
@@ -124,7 +125,9 @@ sub getHost {
             network => {
                 ifaces  => \@json_ifaces,
             },
+            tags => \@tags,
         };
+
         push @json_infrastructure, $current;
     }
 
@@ -150,22 +153,25 @@ sub getHost {
         }
         my $json_interface = {
             bondsNumberMin => $interface->bonds_number + 1,
-            netIPsMin    => \@networks,
+            netIPsMin      => \@networks,
         };
         push @json_interfaces, $json_interface;
     }
 
     # Construct the constraint json object
+    my $tags = defined( $host_params->{tags} ) ? $host_params->{tags} : [];
+
     my $json_constraints = {
-        cpu     => {
+        cpu      => {
             nbCoresMin => $host_params->{core},
         },
-        ram     => {
+        ram      => {
             qtyMin     => $host_params->{ram}/1024/1024,
         },
-        network => {
+        network  => {
             interfaces => \@json_interfaces,
         },
+        tagsMin => $tags,
     };
 
     $log->debug('HostSelector : Creating JSON temp files');
@@ -203,13 +209,23 @@ sub getHost {
 
     my $selected_host = $result->{selectedHostIndex};
 
+    my $log_message = "";
+    if ( defined($result->{contradictions}) ) {
+        $log_message = "The following contradictions had been found :\n";
+        my @contradictions = @{ $result->{contradictions} };
+        for my $contradiction (@contradictions) {
+            $log_message = $log_message . "    $contradiction\n";
+        }
+        $log->debug('HostSelector : No host could be found. ' . $log_message);
+    }
+
     unlink $infra_filename;
     unlink $constraints_filename;
     unlink $result_filename;
 
     if ($selected_host == -1) {
         throw Kanopya::Exception(error => 'HostSelector - getHost : None of the free hosts match the ' . 
-                                          'given cluster constraints.');
+                                          'given cluster constraints.\n' . $log_message);
     }
 
     return $free_hosts[$selected_host];

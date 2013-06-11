@@ -62,6 +62,14 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_editable  => 1,
     },
+    entity_tags => {
+        label        => 'Tags',
+        type         => 'relation',
+        relation     => 'multi',
+        link_to      => 'tag',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
     comment => {
         is_virtual   => 1,
     },

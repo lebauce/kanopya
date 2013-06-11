@@ -240,7 +240,8 @@ my @classes = (
     'Entity::TimePeriod',
     'Entity::Component::Ceph',
     'Entity::Component::Ceph::CephMon',
-    'Entity::Component::Ceph::CephOsd'
+    'Entity::Component::Ceph::CephOsd',
+    'Entity::Tag',
 );
 
 sub registerKernels {
@@ -755,6 +756,20 @@ sub registerDataModelTypes {
             data_model_type_label       => $data_model_labels[$i],
             data_model_type_description => $data_model_descriptions[$i],
         );
+    }
+}
+
+sub registerTags {
+    my %args = @_;
+
+    my @tags = (
+        'hypervisor',
+        'storage',
+        'high performance computing',
+    );
+
+    for my $tag (@tags) {
+        Entity::Tag->new(tag => $tag);
     }
 }
 
@@ -2267,7 +2282,7 @@ sub populateDB {
     registerManagerCategories(%args);
     registerUsers(%args);
     registerDataModelTypes(%args);
-
+    registerTags(%args);
     registerProcessorModels(%args);
     registerOperations(%args);
     registerServiceProviders(%args);
