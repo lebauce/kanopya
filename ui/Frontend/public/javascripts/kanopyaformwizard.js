@@ -124,6 +124,7 @@ var KanopyaFormWizard = (function() {
 
             // If creation, find the foreign key name to remove the attr from relation attrs
             var foreign;
+
             for (var cond in relationdef.cond) if (cond.indexOf('foreign.') >= 0) {
                 foreign = cond.substring(8);
             }
@@ -371,6 +372,10 @@ var KanopyaFormWizard = (function() {
 
         // Handle other field types
         } else {
+            if (listing && attr.size) {
+                var pixels_by_character = 13;
+                width = attr.size * pixels_by_character;
+            }
             input = $("<input>", { type : attr.type ? toInputType(attr.type) : 'text',
                                    class : 'ui-corner-all ui-widget-content', width: width - 1, height: 18 });
         }
