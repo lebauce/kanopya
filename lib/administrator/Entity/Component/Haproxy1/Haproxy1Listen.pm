@@ -24,7 +24,8 @@ use constant ATTR_DEF => {
         type        => 'string',
         pattern      => '^.*$',
         is_mandatory => 1,
-        is_editable  => 1
+        is_editable  => 1,
+        size         => 5
     },
     listen_mode => {
         label       => 'Listen mode',
@@ -41,7 +42,22 @@ use constant ATTR_DEF => {
         pattern      => '^.*$',
         is_mandatory => 1,
         is_editable  => 1
-    }
+    },
+    listen_component_id => {
+        label       => 'Component',
+        type        => 'relation',
+        relation    => 'single',
+        is_mandatory => 1,
+        is_editable => 1
+    },
+    listen_component_port => {
+        label       => 'Component port',
+        type        => 'integer',
+        pattern      => '^\d*$',
+        is_mandatory => 1,
+        is_editable  => 1,
+        size         => 5
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
