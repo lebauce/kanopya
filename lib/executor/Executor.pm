@@ -180,7 +180,8 @@ sub executeOperation {
                          required => [ "operation_id" ],
                          optional => { 'err_cb' => undef, 'ack_cb' => undef });
 
-    my $operation = $self->instantiateOperation(id => $args{operation_id});
+    my $operation = $self->instantiateOperation(id     => $args{operation_id},
+                                                ack_cb => $args{ack_cb});
 
     # Log in the proper file
     $self->setLogAppender(workflow => $operation->workflow);
@@ -432,7 +433,8 @@ sub handleResult {
                          required => [ 'operation_id', 'status' ],
                          optional => { 'err_cb' => undef, 'ack_cb' => undef });
 
-    my $operation = $self->instantiateOperation(id => $args{operation_id});
+    my $operation = $self->instantiateOperation(id     => $args{operation_id},
+                                                ack_cb => $args{ack_cb});
     my $workflow  = EEntity->new(entity => $operation->workflow);
 
     # Log in the proper file
@@ -720,6 +722,11 @@ sub instantiateOperation {
         if ($err->isa('Kanopya::Exception::Internal::NotFound')) {
             # The operation does not exists, probably due to a workflow cancel
             $log->warn("Operation <$args{id}> does not exists, skipping.");
+
+            # Acknowledge the message as the operation result is finally handled
+            if (defined $args{ack_cb}) {
+                $args{ack_cb}->();
+            }
         }
         if (ref($err)) {
             $err->rethrow();
