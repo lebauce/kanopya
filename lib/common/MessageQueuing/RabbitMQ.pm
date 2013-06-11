@@ -34,7 +34,7 @@ use warnings;
 
 use General;
 
-use Net::RabbitFoot;
+use Net::RabbitMQ;
 use JSON;
 
 use Data::Dumper;
@@ -88,20 +88,17 @@ sub connect {
                                        'user'     => 'guest',
                                        'password' => 'guest' });
 
-    if (! (defined $self->_connection && $self->_connection->{_ar}->{_is_open})) {
+    if (! (defined $self->_connection)) {
         eval {
             $log->debug("Connecting <$self> to broker <$args{ip}:$args{port}> as <$args{user}>");
-            $connection = Net::RabbitFoot->new()->load_xml_spec()->connect(
-                              host      => $args{ip},
-                              port      => $args{port},
-                              user      => $args{user},
-                              pass      => $args{password},
-                              vhost     => '/',
-                              on_return => sub {
-                                  my $frame = shift;
-                                  $log->error("Unable to deliver: " . Dumper($frame));
-                              },
-                          );
+            $connection = Net::RabbitMQ->new();
+            $self->_connection->connect($args{ip}, {
+                user      => $args{user},
+                password  => $args{password},
+                port      => $args{port},
+                vhost     => '/',
+                heartbeat => 0
+            });
         };
         if ($@) {
             my $err = $@;
@@ -110,20 +107,21 @@ sub connect {
         $log->debug("Connected <$self> to broker.");
     }
 
-    if (! (defined $self->_channel && $self->_channel->{arc}->{_is_open})) {
-        $log->debug("Openning channel for <$self>");
+    if (! (defined $self->_channel)) {
+        my $channel_number = scalar(keys %{ $channels }) + 1;
+        $log->debug("Openning channel for <$self>, number <$channel_number>");
+
         eval {
-            $channels->{$class} = $self->_connection->open_channel();
+            $self->_connection->channel_open($channel_number);
         };
         if ($@) {
             my $err = $@;
             $log->debug("Open channel failed, raise exception ChannelError: $err");
             throw Kanopya::Exception::MessageQueuing::ChannelError(error => $err);
         }
-        $log->debug("Channel open <" . $self->_channel . "> for <$self>");
+        $channels->{$class} = $channel_number;
 
-        #$log->debug("Setting the QOS <prefetch_count => 1> on the channel");
-        #$self->_channel->qos(prefetch_count => 1);
+        $log->debug("Channel open <" . $self->_channel . "> for <$self>, number <$channel_number>");
     }
 
     $self->{_config} = \%args;
@@ -141,46 +139,19 @@ Disconnect from the message queuing server.
 sub disconnect {
     my ($self, %args) = @_;
 
-    $self->closeChannel();
+    $channels = {};
 
     if (defined $self->_connection) {
         $log->debug("Disconnecting <$self> from broker");
         eval {
-            my $res = $self->_connection->close();
+            my $res = $self->_connection->disconnect();
             $log->debug("Disconnected <$self> from broker");
         };
         if ($@) {
             $log->warn("Unable to disconnect <$self> from the broker: $@");
         }
+        $connection = undef;
     }
-}
-
-
-=pod
-=begin classdoc
-
-Close the channel.
-
-=end classdoc
-=cut
-
-sub closeChannel {
-    my ($self, %args) = @_;
-    my $class = ref($self) || $self;
-
-    # If properly close the channel, the diconnect seems to not really close the connection,
-    # thank to AnyEvent::RabbitMQ...
-#    if (defined $self->_channel) {
-#        $log->debug("Closing channel");
-#        eval {
-#            $self->_channel->close();
-#        };
-#        if ($@) {
-#            $log->warn("Unbale to close the channel: $@");
-#        }
-#    }
-
-    $channels->{$class} = undef;
 }
 
 
@@ -195,8 +166,7 @@ Return the connection status.
 sub connected {
     my ($self, %args) = @_;
 
-    return ((defined $self->_connection && $self->_connection->{_ar}->{_is_open}) &&
-            (defined $self->_channel && $self->_channel->{arc}->{_is_open}));
+    return ((defined $self->_connection) && (defined $self->_channel));
 }
 
 
@@ -211,12 +181,21 @@ Declare a queue identified by the channel name.
 sub declareQueue {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'channel' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'channel' ],
+                         optional => { 'exclusive' => 0 });
+
+    my $name = ($args{exclusive} == 0) ? $args{channel} : '';
 
     $log->debug("Declaring queue <$args{channel}>");
     my $queue;
     eval {
-        $queue = $self->_channel->declare_queue(queue => $args{channel}, durable => 1);
+        $queue = $self->_connection->queue_declare($self->_channel, $name, {
+                     passive     => 0,
+                     durable     => 1,
+                     exclusive   => $args{exclusive},
+                     auto_delete => 0
+                 });
     };
     if ($@) {
         my $err = $@;
@@ -242,13 +221,86 @@ sub declareExchange {
     $log->debug("Declaring exchange <$args{channel}> of type <fanout>");
     my $exchange;
     eval {
-        $exchange = $self->_channel->declare_exchange(exchange => $args{channel}, type => 'fanout');
+        $exchange = $self->_connection->exchange_declare($self->_channel, $args{channel}, {
+                        exchange_type => "fanout",
+                        passive       => 0,
+                        durable       => 1,
+                        auto_delete   => 0
+                    });
     };
     if ($@) {
         my $err = $@;
         throw Kanopya::Exception::MessageQueuing::ChannelError(error => $err);
     }
     return $exchange;
+}
+
+
+=pod
+=begin classdoc
+
+Register the callbck method for a specific channel and type.
+
+@param queue the queue on which register hte calback
+@param callback the callback method
+
+=end classdoc
+=cut
+
+sub consume {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'queue' ]);
+
+    # Register the method to call back at message consumption
+    $log->debug("Registering (consume) callback on queue <$args{queue}>");
+    my $tag = $self->_connection->consume($self->_channel, $args{queue}, { no_ack => 0 });
+
+    $log->debug("Registered (consume) callback <$tag>");
+    return $tag;
+}
+
+
+=pod
+=begin classdoc
+
+Blokcing call that wait for messages.
+
+=end classdoc
+=cut
+
+sub recv {
+    my ($self, %args) = @_;
+
+    my $msg;
+    eval {
+        $msg = $self->_connection->recv();
+    };
+    if ($@) {
+        my $err = $@;
+        throw Kanopya::Exception::MessageQueuing::ChannelError(error => $err);
+    }
+    return $msg;
+}
+
+
+=pod
+=begin classdoc
+
+Acknowledge a message secified by tag.
+
+@param tag the delivery tag of the essage to ack
+
+=end classdoc
+=cut
+
+sub acknowledge {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'tag' ]);
+
+    $log->debug("Acknowledging message with tag <$args{tag}>");
+    $self->_connection->ack($self->_channel, $args{tag});
 }
 
 

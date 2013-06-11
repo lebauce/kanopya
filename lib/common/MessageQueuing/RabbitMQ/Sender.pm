@@ -53,12 +53,6 @@ sub methods {
 my $merge = Hash::Merge->new('LEFT_PRECEDENT');
 
 
-# Define the event loop mode. If a process want to send messages within an event loop
-# (i.e. within a callback executed in a thread at message receipt), it cannot use
-# routine like connect/disconnect/declare_queue, this should be done out of the event loop.
-my $inloop;
-
-
 =pod
 =begin classdoc
 
@@ -118,7 +112,7 @@ sub AUTOLOAD {
 
     # If we are in an event loop, cannot connect or declare,
     # this should be done out of the event loop.
-    if (not $inloop) {
+    if (not $self->{_incallback}) {
         # Connect the sender if not done
         if (not $self->connected) {
             $self->connect(%$auth);
@@ -144,14 +138,12 @@ sub AUTOLOAD {
         eval {
             # Send message for the workers
             $log->debug("Publishing on queue <$channel>, body: $data");
-            $self->_channel->publish(exchange    => '',
-                                     routing_key => $channel,
-                                     body        => $data,
-                                     mandatory   => 1,
-                                     # make message persistent
-                                     header      => { delivery_mode => 2 },
-                                     on_inactive => \&$on_inactive,
-                                     on_failure  => \&$on_inactive);
+            # TODO: Move the publish job in the parent package
+            $self->_connection->publish($self->_channel, $channel, $data, { mandatory => 1 }, {
+                content_type     => 'text/plain',
+                content_encoding => 'none',
+                delivery_mode    => 2,
+            });
             $send = 1;
         };
         if ($@) {
@@ -166,32 +158,32 @@ sub AUTOLOAD {
     }
 
 #    $send  = 0;
-#    $retry = 5;
+#    $retry = 10;
 #    while ($retry > 0 and not $send) {
 #        $err = undef;
 #        eval {
-#            # Send message for the subscribers
-#            $log->debug("Publishing on exchange <$channel>, body: $data");
-#            $self->_channel->publish(exchange    => $channel,
-#                                     routing_key => '',
-#                                     body        => $data,
-#                                     # make message persistent
-#                                     header      => { delivery_mode => 2 },
-#                                     on_inactive => \&$on_inactive);
+#            # Send message for the workers
+#            $log->debug("Publishing on queue <$channel>, body: $data");
+#            $self->_connection->publish($self->_channel, $channel, $data,
+#                { mandatory => 1, exchange => $channel }, {
+#                content_type     => 'text/plain',
+#                content_encoding => 'none',
+#                delivery_mode    => 2,
+#            });
 #            $send = 1;
 #        };
 #        if ($@) {
 #            my $err = $@;
-#            $log->warn("Failed to publish on queue <$channel>, $retry left: $err");
+#            $log->warn("Failed to publish on exchange <$channel>, $retry left: $err");
 #            $retry--;
-#            sleep 0.5;
+#            sleep 1;
 #        }
 #    }
 #    if (defined $err) {
 #        throw Kanopya::Exception::MessageQueuing::PublishFailed(error => $err);
 #    }
 
-    if (not $inloop) {
+    if (not $self->{_incallback}) {
         $self->disconnect();
     }
 }
@@ -217,13 +209,25 @@ sub DESTROY {
     }
 }
 
-sub setEventLoopMode {
+
+=pod
+=begin classdoc
+
+The callback mode indicate to the sender that it will be used
+within a callback executed by a daemon at message receipt.
+Then it won't try to connect or disconnect as the connection
+management is done by the daemon.
+
+=end classdoc
+=cut
+
+sub setCallBackMode {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, optional => { 'in_eventloop' => 1 });
 
     $log->debug("Sender now in eventloop mode to $args{in_eventloop}");
-    $inloop = $args{in_eventloop};
+    $self->{_incallback} = $args{in_eventloop};
 }
 
 1;

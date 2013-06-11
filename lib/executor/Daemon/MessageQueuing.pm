@@ -147,6 +147,10 @@ sub connect {
     # within a message callback.
     eval {
         $self->_component->connect(%{$self->{config}->{amqp}});
+
+        # Set the in_eventloop mode on the sender as we want to avoid the sender to connect
+        # or declare queues as it cannot be done in an event loop.
+        $self->_component->setCallBackMode;
     };
     if ($@) {
         my $err = $@;
@@ -161,10 +165,6 @@ sub connect {
                   );
         }
     }
-
-    # Set the in_eventloop mode on the sender as we want to avoid the sender to connect
-    # or declare queues as it cannot be done in an event loop.
-    $self->_component->setEventLoopMode;
 }
 
 
@@ -178,9 +178,6 @@ Close the channel of the component before disconnecting.
 
 sub disconnect {
     my ($self, %args) = @_;
-
-    # Close the channel of the component.
-    $self->_component->closeChannel();
 
     $self->SUPER::disconnect(%args);
 }
@@ -293,7 +290,15 @@ sub oneRun {
     General::checkParams(args => \%args, required => [ 'channel', 'type' ]);
 
     # Blocking call
-    $self->receive(type => $args{type}, channel => $args{channel});
+    eval {
+        $self->receive(type => $args{type}, channel => $args{channel});
+    };
+    if ($@) {
+        my $err = $@;
+        $self->disconnect();
+        $err->rethrow();
+    }
+    $self->disconnect();
 }
 
 

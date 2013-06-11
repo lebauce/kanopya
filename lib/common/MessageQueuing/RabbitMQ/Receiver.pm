@@ -42,14 +42,6 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 
-# The condition variable shared between the main thread that awaiting
-# messages and the callback executed at message receipt.
-my $condvar;
-
-# Timer ref to interut the wait of messages one a timeout exceed.
-my $timeout = undef;
-
-
 =pod
 =begin classdoc
 
@@ -68,7 +60,7 @@ sub register {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'type', 'channel', 'callback' ],
+                         required => [ 'type', 'channel' ],
                          optional => { 'duration'  => undef,
                                        'instances' => 1 });
 
@@ -83,8 +75,6 @@ sub register {
         callback  => $args{callback},
         duration  => $args{duration},
         instances => $args{instances},
-        # the consumer tag stored when callback registred
-        consumer  => undef,
     };
 }
 
@@ -104,121 +94,27 @@ sub createConsumer {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'type', 'channel', 'callback' ],
-                         optional => { 'force' => 0, 'interrupt' => 1 });
+                         required => [ 'type', 'channel' ],
+                         optional => { 'force' => 0 });
 
     # Declare queues or exchanges
     my $queue;
     if ($args{type} eq 'queue') {
-        $queue = $self->declareQueue(channel => $args{channel})->{method_frame}->{queue};
+        $queue = $self->declareQueue(channel => $args{channel});
     }
     elsif ($args{type} eq 'topic') {
         $log->debug("Declaring exchange <$args{channel}> of type <fanout>");
         $self->declareExchange(channel => $args{channel});
 
         $log->debug("Declaring exclusive queue in way to bind on exchange <$args{channel}>");
-        $queue = $self->_channel->declare_queue(exclusive => 1)->{method_frame}->{queue};
+        $queue = $self->declareQueue(channel => $args{channel}, exclusive => 1);
         $log->debug("Binding queue $queue on exchange <$args{channel}>");
-        $self->_channel->bind_queue(exchange => $args{channel},
-                                    queue    => $queue);
+        # TODO: Move the job for queue binding in the parent package.
+        $self->_connection->queue_bind($self->_channel, $queue, $args{channel}, $args{channel})
     }
 
     # Create the consumer on the channel for the queue
-    my $consumer = $self->consume(queue     => $queue,
-                                  callback  => $args{callback},
-                                  interrupt => $args{interrupt});
-}
-
-
-=pod
-=begin classdoc
-
-Register the callbck method for a specific channel and type.
-
-@param queue the queue on which register hte calback
-@param callback the callback method
-
-=end classdoc
-=cut
-
-sub consume {
-    my ($self, %args) = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ 'queue', 'callback' ],
-                         optional => { 'interrupt' => 1 });
-
-    # Define the callback called at message consumption, it simply call
-    # the callback method given at registration on the queue.
-    my $callback = sub {
-        my $var = shift;
-
-        # Disarm the timeout timer as the message is received
-        if ($args{interrupt}) {
-            $timeout = undef;
-        }
-
-        my ($type, $channel);
-        if ($var->{deliver}->{method_frame}->{exchange} ne '') {
-            # Seems to be a topic message
-            $type = 'topic';
-            $channel = $var->{deliver}->{method_frame}->{exchange};
-        }
-        elsif ($var->{deliver}->{method_frame}->{routing_key} ne '') {
-            # Seems to be a queue message
-            $type = 'queue';
-            $channel = $var->{deliver}->{method_frame}->{routing_key};
-        }
-        else {
-            throw Kanopya::Exception::Internal::IncorrectParam(
-                      error => "Unreconized message type:\n" . Dumper($var)
-                  );
-        }
-
-        # Decode the message content in way to use it as callback params
-        my $args;
-        eval {
-            $args = JSON->new->utf8->decode($var->{body}->{payload});
-        };
-        if ($@) {
-            my $err = $@;
-            if ($err =~ m/malformed JSON string/) {
-                $args = { data => $var->{body}->{payload} };
-            }
-            else { $err->rethrow(); }
-        }
-
-        # Build a callback method to ack the message
-        my $ack_cb = sub {
-            $self->acknowledge(tag => $var->{deliver}->{method_frame}->{delivery_tag});
-        };
-        # Build a callback method to raise the reconnection at channel error
-        my $err_cb = sub {
-            my %args = @_;
-            $condvar->croak(\%args);
-        };
-
-        # Call the corresponding method
-        $args->{ack_cb} = $ack_cb;
-        $args->{err_cb} = $err_cb;
-        if ($args{callback}->(%$args)) {
-            # Acknowledge the message if specified by the callback
-            $args->{ack_cb}->();
-        }
-
-        # Interupt the second infinite loop
-        if ($args{interrupt} and defined $condvar) {
-            $condvar->send;
-        }
-    };
-
-    # Register the method to call back at message consumption
-    $log->debug("Registering (consume) callback on queue <$args{queue}>");
-    my $cons = $self->_channel->consume(on_consume => \&$callback,
-                                        queue      => $args{queue},
-                                        no_ack     => 0);
-    $log->debug("Registered (consume) callback <$cons>");
-    return $cons;
+    $self->consume(queue => $queue);
 }
 
 
@@ -240,26 +136,22 @@ sub receive {
 
     $log->debug("Receiving messages on <$args{type}>, channel <$args{channel}>");
     my $duration = $self->_consumers->{$args{type}}->{$args{channel}}->{duration};
-    my $callback = $self->_consumers->{$args{type}}->{$args{channel}}->{duration};
 
     if (not $self->connected) {
         $self->connect();
     }
 
     # Register the consumer on the channel
-    $self->createConsumer(channel => $args{channel}, type => $args{type}, callback => $callback);
-
-    # Defined the condition variable of this fetch
-    $condvar = AnyEvent->condvar;
+    $self->createConsumer(channel => $args{channel}, type => $args{type});
 
     # Blocking call
     my $err;
     eval {
-        $self->fetch(duration => $duration, condvar => $condvar);
+        $self->fetch(duration => $duration);
     };
     if ($@) { $err = $@; }
 
-    $condvar = undef;
+    # TODO: Cancel the consumer.
 
     # If got an exception while fetching, rethrow.
     if (defined $err) { throw $err; }
@@ -304,12 +196,8 @@ sub receiveAll {
                         $self->connect();
 
                         # Create the consumer
-                        $self->createConsumer(callback  => $receiver->{callback},
-                                              channel   => $channel,
-                                              type      => $type,
-                                              interrupt => 0);
-
-                        $condvar = AnyEvent->condvar;
+                        $self->createConsumer(channel   => $channel,
+                                              type      => $type);
 
                         # Define an handler on sig TERM to stop the event loop
                         my $sigterm = sub {
@@ -319,30 +207,31 @@ sub receiveAll {
                             # Stop looping on the event loop
                             $running = 0;
 
-                            # Interupt the event loop
-                            $condvar->send;
+                            # TODO: Interupt the event loop
+                            alarm 1;
                         };
                         my $watcher = AnyEvent->signal(signal => "TERM", cb => \&$sigterm);
 
                         # Retrrgier undelivred message if defined
-                        if (defined $retrigger_cb) {
-                            $retrigger_cb->();
-                            $retrigger_cb = undef;
-                        }
+#                        if (defined $retrigger_cb) {
+#                            $retrigger_cb->();
+#                            $retrigger_cb = undef;
+#                        }
 
-                        # Indefinitly fetch until sigterm handler send on the condvar
-                        eval {
-                            $retrigger_cb = $self->fetch(condvar => $condvar);
-
-                            # TODO: Use a dedicated exception in fetch taht can store the callback
-                            if (defined $retrigger_cb) {
-                                throw Kanopya::Exception::MessageQueuing::NoMessage(error => "Undelivred message...");
+                        # Continue to fetch while duration not expired
+                        my $start = time;
+                        while ((time - $start) < $receiver->{duration}) {
+                            eval {
+                                $self->fetch(duration => $receiver->{duration});
+                            };
+                            if ($@) {
+                                my $err = $@;
+                                if (! $err->isa('Kanopya::Exception::MessageQueuing::NoMessage')) {
+                                    # Only log the error for instace, and exist the loop to try to reconnect
+                                    $log->error("Fetch on <$type>, channel <$channel> failed: $err");
+                                    last;
+                                }
                             }
-                        };
-                        if ($@) {
-                            my $err = $@;
-                            # Only log the error for instace.
-                            $log->error("Fetch on <$type>, channel <$channel> failed: $err");
                         }
 
                         # Disconnect the child from the broker
@@ -411,59 +300,93 @@ sub fetch {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'condvar' ],
-                         optional => { 'duration' => undef });
+                         optional => { 'duration' => 30 });
 
     if (defined $args{duration}) {
         $log->debug("Fetch message for <$args{duration}> second(s).");
-        $timeout = AnyEvent->timer(after => $args{duration}, cb => sub {
-                       # Interupt the infinite loop
-                       $args{condvar}->croak("No message recevied for $args{duration} second(s)");
-                   });
     }
     else {
         $log->debug("Fetch messages indefinitely...");
     }
 
-    # Wait for the first send from callback
+    # Wait for messages
+    my $rv;
     eval {
-        $args{condvar}->recv;
+        local $SIG{ALRM} = sub {
+            throw Kanopya::Exception::MessageQueuing::NoMessage(
+                      error => "No message received for $args{duration} (s)"
+                  );
+        };
+
+        alarm $args{duration};
+
+        # Receive the message
+        $rv = $self->recv();
+
+        # Reset the alarm
+        # TODO: The alarm should occurs between the previous line
+        #       and the following one, need semaphore stuff.
+        alarm 0;
+
+        my ($type, $channel);
+        if ($rv->{exchange} ne '') {
+            # Seems to be a topic message
+            $type = 'topic';
+            $channel = $rv->{exchange};
+        }
+        elsif ($rv->{routing_key} ne '') {
+            # Seems to be a queue message
+            $type = 'queue';
+            $channel = $rv->{routing_key};
+        }
+        else {
+            throw Kanopya::Exception::Internal::IncorrectParam(
+                      error => "Unreconized message type:\n" . Dumper($rv)
+                  );
+        }
+        # Retreive the method to call form type and channel
+        my $callback = $self->_consumers->{$type}->{$channel}->{callback};
+
+        if (! (ref($callback) eq 'CODE')) {
+            throw Kanopya::Exception::Internal::IncorrectParam(
+                      error => "Defined callback <$callback> is not valid."
+                  );
+        }
+
+        # Decode the message content in way to use it as callback params
+        my $args;
+        eval {
+            $args = JSON->new->utf8->decode($rv->{body});
+        };
+        if ($@) {
+            my $err = $@;
+            if ($err =~ m/malformed JSON string/) {
+                $args = { data => $rv->{body} };
+            }
+            else { $err->rethrow(); }
+        }
+
+        # Build a callback method to ack the message
+        my $ack_cb = sub {
+            $self->acknowledge(tag => $rv->{delivery_tag});
+        };
+        # Build a callback method to raise the reconnection at channel error
+        my $err_cb = sub {
+            my %args = @_;
+        };
+
+        # Call the corresponding method
+        $args->{ack_cb} = $ack_cb;
+        $args->{err_cb} = $err_cb;
+        if ($callback->(%$args)) {
+            # Acknowledge the message if specified by the callback
+            $args->{ack_cb}->();
+        }
     };
     if ($@) {
         my $err = $@;
-        # If the error is a hash, this is the content of an undelivred message,
-        # due to a channel error. So keep it to re-send it at reconnection.
-        # TODO: Use a dedicated exception type with the undelivred message as attributes,
-        #       instead of using the return value of fetch
-        if (ref($err) eq "HASH" and defined $err->{retrigger_cb}) {
-            return $err->{retrigger_cb};
-        }
-        elsif ("$err" =~ m/^No message recevied/) {
-            throw Kanopya::Exception::MessageQueuing::NoMessage(error => $err);
-        }
-        else {
-            $err->rethrow();
-        }
+        $err->rethrow();
     }
-}
-
-=pod
-=begin classdoc
-
-Acknowledge a message secified by tag.
-
-@param tag the delivery tag of the essage to ack
-
-=end classdoc
-=cut
-
-sub acknowledge {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'tag' ]);
-
-    $log->debug("Acknowledging message with tag <$args{tag}>");
-    $self->_channel->ack(delivery_tag => $args{tag}, multiple => 0);
 }
 
 
