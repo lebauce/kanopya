@@ -455,15 +455,34 @@ sub startHost {
         };
     }
 
+    my $disk_manager = $args{cluster}->getManager(manager_type => 'DiskManager');
+    my $isCinder     = 0;
+    my $volume       = undef;
+    my $apiRoute     = $api->compute->servers;
+    if ($disk_manager->isa('Entity::Component::Openstack::Cinder')) {
+        $isCinder    = 1;
+        my $volumeId = $disk_manager->getVolumeId(container => $args{host}->getNodeSystemimage->getContainer);
+        $volume      = [
+            {
+                volume_size           => '',
+                volume_id             => $volumeId,
+                delete_on_termination => 0,
+                device_name           => 'vda'
+            }
+        ];
+        my $route    = 'os-volumes_boot';
+        $apiRoute    = $api->compute->$route;
+    }
     # create VM
-    my $response = $api->compute->servers->post(
+    my $response = $apiRoute->post(
         content => {
             server => {
                 availability_zone => 'nova:' . $args{hypervisor}->node->node_hostname,
                 flavorRef         => $flavor->{flavor}->{id},
                 name              => $args{host}->node->node_hostname,
                 networks          => $ports,
-                imageRef          => $image_id
+                imageRef          => $image_id,
+                $isCinder ? ('block_device_mapping', $volume) : ()
             }
         }
     );

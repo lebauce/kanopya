@@ -174,22 +174,24 @@ sub postStartNode {
     my $e_controller = EEntity->new(entity => $self->nova_controller);
     my $api = $e_controller->api;
 
-    my $req = $api->cinder->types->post(
-                  content => {
-                      "volume_type" => {
-                          "name" => "nfs",
+    for my $type (keys %{$supported_volume_types}) {
+        my $req = $api->cinder->types->post(
+                      content => {
+                          "volume_type" => {
+                              "name" => $type,
+                          }
                       }
-                  }
-              );
+                  );
 
-    my $type = $req->{volume_type}->{id};
-    $api->cinder->types(id => $type)->extra_specs->post(
-        content => {
-            "extra_specs" => {
-                "volume_backend_name" => "Generic_NFS"
+        my $id = $req->{volume_type}->{id};
+        $req = $api->cinder->types(id => $id)->extra_specs->post(
+            content => {
+                "extra_specs" => {
+                    "volume_backend_name" => $supported_volume_types->{$type}
+                }
             }
-        }
-    );
+        );
+    }
 }
 
 1;
