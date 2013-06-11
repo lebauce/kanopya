@@ -93,7 +93,8 @@ sub _writeNetConf {
         template_file => 'network_interfaces.tt',
         data          => {
             deploy_on_disk => $host_params->{deploy_on_disk},
-            interfaces     => \@ifaces
+            interfaces     => \@ifaces,
+            boot_policy    => $args{cluster}->cluster_boot_policy
         }
     );
 
