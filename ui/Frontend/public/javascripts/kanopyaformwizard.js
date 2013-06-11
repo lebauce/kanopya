@@ -3,7 +3,7 @@ require('jquery/jquery.validate.js');
 require('jquery/jquery.form.wizard.js');
 require('jquery/jquery.qtip.min.js');
 require('jquery/jquery.multiselect.min.js');
-
+require('jquery/jquery.multiselect.filter.min.js');
 
 var attributes_blacklist = [ 'class_type_id', 'entity_comment_id' ];
 
@@ -1247,12 +1247,19 @@ var KanopyaFormWizard = (function() {
 
     KanopyaFormWizard.prototype.prettifyInputs = function() {
         // Use jQuery.mutiselect (after DOM loaded)
-        this.content.find('select[multiple="multiple"]').not('.multiselect').addClass('multiselect').multiselect({selectedList: 4});
+        this.content.find('select[multiple="multiple"]').not('.multiselect').addClass('multiselect').multiselect({selectedList: 4}).each(addFilter);
         this.content.find('select[multiple!="multiple"]').not('.multiselect').not('.unit').addClass('multiselect').multiselect({
             multiple: false,
             header: false,
-            selectedList: 1
-        });
+            selectedList: 1,
+        }).each(addFilter);
+
+        // Add a filter field if number of options is fairly high
+        function addFilter(i,e) {
+            if ($(e).find('option').length > 10) {
+                $(e).multiselect('option', 'header', true).multiselectfilter();
+            }
+        }
     }
 
     KanopyaFormWizard.prototype.resizeDialog = function() {
