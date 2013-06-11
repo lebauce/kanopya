@@ -91,7 +91,7 @@ sub getDiskManagerParams {
             label        => 'Backend',
             type         => 'enum',
             is_mandatory => 1,
-            options      => [ 'NFS', 'iSCSI' ]
+            options      => [ 'NFS', 'iSCSI', 'RADOS' ]
         }
     };
 }
@@ -218,6 +218,10 @@ sub getPuppetDefinition {
         params => {
             nfs_servers => \@repositories
         }
+    );
+
+    $manifest .= $self->instanciatePuppetResource(
+        name => 'kanopya::openstack::cinder::ceph',
     );
 
     return merge($self->SUPER::getPuppetDefinition(%args), {

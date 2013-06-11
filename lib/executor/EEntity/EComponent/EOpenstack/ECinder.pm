@@ -27,7 +27,8 @@ use Entity::Repository;
 
 my $supported_volume_types = {
     "NFS"   => "Generic_NFS",
-    "iSCSI" => "LVM_iSCSI"
+    "iSCSI" => "LVM_iSCSI",
+    "RADOS" => "RBD"
 };
 
 =head
