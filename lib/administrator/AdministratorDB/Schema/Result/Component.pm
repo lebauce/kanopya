@@ -398,6 +398,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 haproxy1s_listen
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Haproxy1Listen>
+
+=cut
+
+__PACKAGE__->has_many(
+  "haproxy1s_listen",
+  "AdministratorDB::Schema::Result::Haproxy1Listen",
+  { "foreign.listen_component_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 hosts
 
 Type: has_many
@@ -969,8 +984,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2013-05-30 10:47:07
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:1KDFWlcR3gx/Al16+F1Yww
+# Created by DBIx::Class::Schema::Loader v0.07010 @ 2013-06-10 10:54:56
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:G/SWTyo5wazUYhbusrwd3w
 
 __PACKAGE__->has_many(
   "vmms",
