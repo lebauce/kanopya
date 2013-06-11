@@ -31,7 +31,7 @@ my $log = get_logger("");
 
 use constant ATTR_DEF => {
     haproxy1s_listen => {
-        label       => 'Listen enties',
+        label       => 'Listen entries',
         type        => 'relation',
         relation    => 'single_multi',
         is_editable => 1
