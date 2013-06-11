@@ -60,8 +60,6 @@ class kanopya::openstack::glance(
     }
 
     class { 'glance::api':
-        verbose           => 'True',
-        debug             => 'True',
         auth_type         => '',
         auth_port         => '35357',
         keystone_tenant   => 'services',
@@ -73,8 +71,6 @@ class kanopya::openstack::glance(
     }
 
     class { 'glance::registry':
-        verbose           => 'True',
-        debug             => 'True',
         auth_type         => '',
         keystone_tenant   => 'services',
         keystone_user     => "${keystone_user}",
