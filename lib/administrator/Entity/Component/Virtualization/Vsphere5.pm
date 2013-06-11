@@ -607,6 +607,39 @@ sub getView {
 
 =begin classdoc
 
+Get views of vsphere managed objects
+
+@param mo_ref_array array of managed object references
+
+@return views of managed objects
+
+=end classdoc
+
+=cut
+
+sub getViews {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => ['mo_ref_array']);
+
+    $self->negociateConnection();
+
+    my $views;
+    eval {
+        $views = Vim::get_views(mo_ref_array => $args{mo_ref_array});
+    };
+    if ($@) {
+        $errmsg = 'Could not get views: '.$@;
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+
+    return $views;
+}
+
+=pod
+
+=begin classdoc
+
 Find a view of a specified managed object type
 
 @param view_type the type of the requested view. Can be one of the following:
@@ -1311,15 +1344,13 @@ Register a new repository in kanopya for vSphere usage
 sub addRepository {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['repository_name', 'container_access_id']);
+    General::checkParams(args => \%args, required => [ 'container_access']);
 
-    my $repository = Entity::Repository::Vsphere5Repository->new(
-                         virtualization_id   => $self->id,
-                         repository_name     => $args{repository_name},
-                         container_access_id => $args{container_access_id},
-                     );
-
-    return $repository;
+    return Entity::Repository::Vsphere5Repository->new(
+               virtualization_id   => $self->id,
+               repository_name     => $args{container_access}->container->container_name,
+               container_access_id => $args{container_access}->id,
+           );
 }
 
 =pod

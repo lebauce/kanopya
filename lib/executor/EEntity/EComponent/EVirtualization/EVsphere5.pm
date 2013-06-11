@@ -32,7 +32,6 @@ use base "EManager::EHostManager::EVirtualMachineManager";
 use strict;
 use warnings;
 
-use VMware::VIRuntime;
 use Entity::Component::Vsphere5::Vsphere5Datacenter;
 use Entity::Repository;
 use Entity::Repository::Vsphere5Repository;
@@ -114,8 +113,9 @@ sub startHost {
 
     $self->negociateConnection();
 
-    my $host       = $args{host};
+   my $host       = $args{host};
     my $hypervisor = $args{hypervisor};
+    # TODO depending on systemimage ?
     my $guest_id   = 'debian6_64Guest';
 
     $log->info('Start host on < hypervisor '. $hypervisor->id.' >');
@@ -125,77 +125,71 @@ sub startHost {
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
-    my %host_conf;
     my $cluster     = Entity->get(id => $host->getClusterId());
-    my $image       = $args{host}->getNodeSystemimage();
-    #TODO fix this way to get image disk file type
-    my $image_name  = $image->systemimage_name;
-    my $image_size  = $image->container->container_size;
     my $disk_params = $cluster->getManagerParameters(manager_type => 'DiskManager');
-    my $image_type = $disk_params->{image_type};
     my $host_params = $cluster->getManagerParameters(manager_type => 'HostManager');
     my $datacenter  = Entity::Component::Vsphere5::Vsphere5Datacenter->find(hash => {
                           vsphere5_datacenter_id => $hypervisor->vsphere5_datacenter_id
                       });
 
-    my $repo = Entity::Repository->find(hash => {
-        container_access_id => $disk_params->{container_access_id},
-        virtualization_id   => $self->id
-    });
-    my $container_access = Entity::ContainerAccess->get(id => $repo->container_access_id);
+    my $container_access = Entity::ContainerAccess->get(id => $disk_params->{container_access_id});
+
+    #retrieve datacenter view
+    my $datacenter_view = $self->findEntityView(view_type   => 'Datacenter',
+                                             hash_filter => {
+                                                 name => $datacenter->vsphere5_datacenter_name
+                                             });
+
+    #retrieve host view
+    my $host_view = $self->findEntityView(view_type   => 'HostSystem',
+                     hash_filter => {
+                         'hardware.systemInfo.uuid' => $hypervisor->vsphere5_uuid
+                     },
+                     begin_entity => $datacenter_view,
+                 );
 
     # register repo in kanopya
-    my $repository  = $self->_entity->addRepository(
-        virtualization_id   => $self->id,
-        repository_name     => $repo->repository_name,
-        container_access_id => $repo->container_access_id,
-    );
+    my $repository = $self->addRepository(container_access => $container_access);
     # register repo in VSphere
-    $self->addRepository(
-        hypervisor       => $hypervisor,
-        repository_name  => $repo->repository_name,
+    $self->addDatastore(
         container_access => $container_access,
+        repository_name  => $repository->repository_name,
+        host_view        => $host_view,
     );
 
-    $host_conf{hostname}   = $host->node->node_hostname;
-    $host_conf{hypervisor} = $hypervisor->node->node_hostname;
-    $host_conf{datacenter} = $datacenter->vsphere5_datacenter_name;
-    $host_conf{guest_id}   = $guest_id;
-    $host_conf{datastore}  = $repository->repository_name;
-    $host_conf{img_name}   = $image_name;
-    $host_conf{image_type} = $image_type;
-    $host_conf{img_size}   = $image_size;
-    $host_conf{memory}     = $host_params->{ram};
-    $host_conf{cores}      = $host_params->{core};
-    $host_conf{network}    = 'VM Network';
+    my @ifaces = $args{host}->getIfaces();
+    my %host_conf = (
+        hostname   => $host->node->node_hostname,
+        guest_id   => $guest_id,
+        datastore  => $repository->repository_name,
+        img_name   => $host->getNodeSystemimage()->systemimage_name,
+        image_type => $disk_params->{image_type},
+        img_size   => $host->getNodeSystemimage->getContainer->container_size,
+        memory     => $host_params->{ram},
+        cores      => $host_params->{core},
+        network    => 'VM Network',
+    );
 
     $log->debug('new VM configuration parameters: ');
     $log->debug(Dumper \%host_conf);
+    $host_conf{ifaces} = \@ifaces;
+    $log->debug('Ifaces => ' . scalar @ifaces);
 
     #Create vm in vsphere
-    $self->createVm(host_conf => \%host_conf);
+    my $vm_view = $self->createVm(
+                      host_conf       => \%host_conf,
+                      host_view       => $host_view,
+                      datacenter_view => $datacenter_view,
+                  );
 
     #Declare the vsphere5 vm in Kanopya
-    $self->addVM(
-        host     => $host->_entity,
-        guest_id => $guest_id,
-        uuid     => $host->vsphere5_uuid,
+    $self->promoteVm(
+        host          => $host->_entity,
+        vm_uuid       => $vm_view->config->uuid,
         hypervisor_id => $hypervisor->id,
+        guest_id      => $guest_id,
     );
 
-    #Power on the VM
-    #We retrieve a view of the newly created VM
-    my $hypervisor_hash_filter = {name => $hypervisor->node->node_hostname};
-    my $hypervisor_view        = findEntityView(
-                                    view_type   => 'HostSystem',
-                                    hash_filter => $hypervisor_hash_filter,
-                                 );
-    my $vm_hash_filter        = {name => $host->node->node_hostname};
-    my $vm_view               = findEntityView(
-                                    view_type    => 'VirtualMachine',
-                                    hash_filter  => $vm_hash_filter,
-                                    begin_entity => $hypervisor_view,
-                                );
     #Power On
     $vm_view->PowerOnVM();
 }
@@ -215,58 +209,52 @@ Create a new VM on a vSphere host
 sub createVm {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host_conf']);
+    General::checkParams(args => \%args, required => [ 'host_conf', 'datacenter_view', 'host_view']);
 
     my %host_conf = %{$args{host_conf}};
     my $ds_path   = '['.$host_conf{datastore}.']';
-    my $img_name  = $host_conf{img_name};
-    my $image_type = $host_conf{image_type};
-    my $img_size  = $host_conf{img_size};
-    my $path      = $ds_path . ' ' . $img_name . '.' . $image_type;
-    my $host_view;
-    my $datacenter_view;
+    my $path      = $ds_path . ' ' . $host_conf{img_name} . '.' . $host_conf{image_type};
+    my $host_view = $args{host_view};
+    my $datacenter_view = $args{datacenter_view};
     my $vm_folder_view;
     my $comp_res_view;
     my @vm_devices;
 
-    $log->info('trying to get Hypervisor ' .$host_conf{hypervisor}. ' view from vsphere');
-
-    #retrieve host view
-    $host_view = $self->findEntityView(view_type   => 'HostSystem',
-                                       hash_filter => {
-                                           'name' => $host_conf{hypervisor},
-                                       });
-
-    #retrieve datacenter view
-    $datacenter_view = $self->findEntityview(view_type   => 'Datacenter',
-                                             hash_filter => {
-                                                 name => $host_conf{datacenter}
-                                             });
-
     #Generate vm's devices specifications
-    my $controller_vm_dev_conf_spec = create_conf_spec();
-    push(@vm_devices, $controller_vm_dev_conf_spec);
+    my @controller_conf_spec = $self->create_conf_spec();
+    push @vm_devices, @controller_conf_spec;
 
-    my $disk_vm_dev_conf_spec = create_virtual_disk(path => $path, disksize => $img_size);
-    push(@vm_devices, $disk_vm_dev_conf_spec);
+    my $disk_conf_spec = $self->create_virtual_disk(
+                                    path => $path,
+                                    disksize => $host_conf{img_size}
+                                );
+    push(@vm_devices, $disk_conf_spec);
 
-    my %net_settings = get_network(network_name => $host_conf{network},
-                                    poweron      => 0,
-                                    host_view    => $host_view);
-    push(@vm_devices, $net_settings{network_conf});
+    my @net_settings = $self->get_network(
+                           network_name => $host_conf{network},
+                           ifaces       => $host_conf{ifaces},
+                           host_view    => $host_view,
+                           dc_view      => $datacenter_view,
+                       );
+    push(@vm_devices, @net_settings);
 
-    my $files = VirtualMachineFileInfo->new(logDirectory      => undef,
-                                            snapshotDirectory => undef,
-                                            suspendDirectory  => undef,
-                                            vmPathName        => $ds_path);
+    my $files = VirtualMachineFileInfo->new(
+                    logDirectory      => undef,
+                    snapshotDirectory => undef,
+                    suspendDirectory  => undef,
+                    vmPathName        => $ds_path
+                );
 
     my $vm_config_spec = VirtualMachineConfigSpec->new(
                              name         => $host_conf{hostname},
-                             memoryMB     => $host_conf{memory},
+                             memoryMB     => $host_conf{memory} / 1024 / 1024,
                              files        => $files,
                              numCPUs      => $host_conf{cores},
                              guestId      => $host_conf{guest_id},
-                             deviceChange => \@vm_devices);
+                             cpuHotAddEnabled => 1,
+                             memoryHotAddEnabled => 1,
+                             deviceChange => \@vm_devices
+                         );
 
     #retrieve the vm folder from vsphere inventory
     $vm_folder_view = $self->getView(mo_ref => $datacenter_view->vmFolder);
@@ -275,15 +263,22 @@ sub createVm {
     $comp_res_view  = $self->getView(mo_ref => $host_view->parent);
 
     #finally create the VM
+    my $vm_mor;
     eval {
-        $vm_folder_view->CreateVM(config => $vm_config_spec,
-                                  pool   => $comp_res_view->resourcePool);
+        # TODO task status for error management
+        $vm_mor = $vm_folder_view->CreateVM(
+            config => $vm_config_spec,
+            pool   => $comp_res_view->resourcePool,
+            host   => $host_view,
+        );
     };
     if ($@) {
         $errmsg = 'Error creating the virtual machine on host '.$host_conf{hypervisor}.': '.$@;
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
+    my $vm_view = $self->getView(mo_ref => $vm_mor);
+    return $vm_view;
 }
 
 =pod
@@ -370,7 +365,7 @@ Get the vm's hypervisor, get it's datacenter, then retrieve views
 sub scaleMemory {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['host','memory']);
+    General::checkParams(args => \%args, required => ['host', 'memory']);
 
     my $host   = $args{host};
     my $memory = $args{memory};
@@ -422,56 +417,56 @@ sub scaleMemory {
 }
 
 sub create_conf_spec {
-    my $controller;
-    my $controller_vm_dev_conf_spec;
+    my ($self, %args) = @_;
+
+    my ($controller_ide_spec, $controller_pci_spec);
 
     eval {
-        $controller =
-            VirtualLsiLogicController->new(key => 0,
-                                           device => [0],
-                                           busNumber => 0,
-                                           sharedBus => VirtualSCSISharing->new('noSharing')
-            );
+        $controller_ide_spec = VirtualDeviceConfigSpec->new(
+            device => VirtualIDEController->new(key => 200, busNumber => 0),
+            operation => VirtualDeviceConfigSpecOperation->new('add'),
+        );
 
-        $controller_vm_dev_conf_spec =
-            VirtualDeviceConfigSpec->new(
-                device => $controller,
-                operation => VirtualDeviceConfigSpecOperation->new('add')
-            );
+        $controller_pci_spec = VirtualDeviceConfigSpec->new(
+            device => VirtualPCIController->new(key => 100, busNumber => 0),
+            operation => VirtualDeviceConfigSpecOperation->new('add'),
+        );
     };
     if ($@) {
         $errmsg = 'Error creating the virtual machine controller configuration: '.$@;
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
-    return $controller_vm_dev_conf_spec;
+    return ($controller_ide_spec, $controller_pci_spec);
 }
 
 sub create_virtual_disk {
-    my %args     = @_;
-    my $path     = $args{path};
-    my $disksize = $args{disksize};
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'path', 'disksize']);
 
     my $disk_vm_dev_conf_spec;
     my $disk_backing_info;
     my $disk;
 
     eval {
-        $disk_backing_info =
-           VirtualDiskFlatVer2BackingInfo->new(diskMode => 'persistent',
-                                               fileName => $path);
+        $disk_backing_info = VirtualDiskFlatVer2BackingInfo->new(
+            diskMode => 'persistent',
+            fileName => $args{path}
+        );
 
-        $disk = VirtualDisk->new(backing       => $disk_backing_info,
-                                   controllerKey => 0,
-                                   key           => 0,
-                                   unitNumber    => 0,
-                                   capacityInKB  => $disksize);
+        $disk = VirtualDisk->new(
+            backing       => $disk_backing_info,
+            controllerKey => 200,
+            key           => 1,
+            unitNumber    => 0,
+            capacityInKB  => $args{disksize} / 1024
+        );
 
-        $disk_vm_dev_conf_spec =
-           VirtualDeviceConfigSpec->new(
-               device        => $disk,
-               operation     => VirtualDeviceConfigSpecOperation->new('add')
-           );
+        $disk_vm_dev_conf_spec = VirtualDeviceConfigSpec->new(
+            device        => $disk,
+            operation     => VirtualDeviceConfigSpecOperation->new('add')
+        );
     };
     if ($@) {
         $errmsg = 'Error creating the virtual machine disk configuration: '.$@;
@@ -482,60 +477,127 @@ sub create_virtual_disk {
 }
 
 sub get_network {
-    my %args         = @_;
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'network_name', 'host_view', 'dc_view' ]);
+
     my $network_name = $args{network_name};
-    my $poweron      = $args{poweron};
     my $host_view    = $args{host_view};
-    my $network      = undef;
-    my $unit_num     = 1;  # 1 since 0 is used by disk
+    my $datacenter_view    = $args{dc_view};
+    my $key          = 2;
+    my $unit_num     = 1;
+    my ($network_list, $network, $vlan, @vlans, $nic_backing_info, $vd_connect_info, $nic,
+    $nic_conf_spec, $desc);
 
+    my @network_conf = ();
     eval {
-        if($network_name) {
-        #TODO Use get view from an Mother entity + Eval{};
-            my $network_list = Vim::get_views(mo_ref_array => $host_view->network);
-            foreach (@$network_list) {
-                if($network_name eq $_->name) {
-                    $network             = $_;
-                    my $nic_backing_info =
-                        VirtualEthernetCardNetworkBackingInfo->new(
-                            deviceName => $network_name,
-                            network    => $network
-                        );
+        $network_list = $self->getViews(mo_ref_array => $host_view->network);
+        ($network) = grep { $_->name eq $network_name } @{$network_list};
 
-                    my $vd_connect_info =
-                        VirtualDeviceConnectInfo->new(allowGuestControl => 1,
-                                                      connected         => 0,
-                                                      startConnected    => $poweron);
+        if ($network) {
+            my $ipPoolManager = $self->getView(
+                mo_ref => $datacenter_view->{vim}->{service_content}->{ipPoolManager}
+            );
+            IFACE:
+            for my $iface (@{ $args{ifaces} }) {
+                # skip ifaces without ip address
+                eval {
+                    $iface->getIPAddr();
+                };
+                next IFACE if ($@);
 
-                    my $nic = VirtualPCNet32->new(backing     => $nic_backing_info,
-                                                  key         => 0,
-                                                  unitNumber  => $unit_num,
-                                                  addressType => 'generated',
-                                                  connectable => $vd_connect_info);
-
-                    my $nic_vm_dev_conf_spec =
-                        VirtualDeviceConfigSpec->new(
-                            device => $nic,
-                            operation => VirtualDeviceConfigSpecOperation->new('add')
-                        );
-
-                    return (error => 0, network_conf => $nic_vm_dev_conf_spec);
+                # TODO : register vlan on port group || synchronize NetConfs
+                $vlan = undef;
+                @vlans = $iface->getVlans();
+                if (scalar @vlans) {
+                    $vlan = pop @vlans;
                 }
-            }
 
-            if (!defined($network)) {
-                # no network found
-                return (error => 1);
+                my $poolip = $iface->getPoolip();
+
+                # create PoolIP and register  it to datacenter + associate network
+                my $ipv4Config = IpPoolIpPoolConfigInfo->new(
+                    ipPoolEnabled => 1,
+                    dns           => [
+                        $iface->host->getCluster->cluster_nameserver1,
+                        $iface->host->getCluster->cluster_nameserver2,
+                    ],
+                    gateway       => $poolip->network->network_gateway,
+                    range         => $poolip->poolip_first_addr . ' # ' . $poolip->poolip_size,
+                    netmask       => $poolip->network->network_netmask,
+                    subnetAddress => $poolip->network->network_addr,
+                    dhcpServerAvailable => 1,
+                );
+                my $networkAssociation = IpPoolAssociation->new(
+                    networkName => $network->name,
+                    network     => $network,
+                );
+                my $poolipSpec = IpPool->new(
+                    name       => $poolip->poolip_name,
+                    dnsDomain  => $iface->host->getCluster->cluster_domainname,
+                    ipv4Config => $ipv4Config,
+                    networkAssociation => [ $networkAssociation ],
+                );
+
+                eval {
+                    # TODO Synchronized IP Pools in stead of registering for each iface
+                    $ipPoolManager->CreateIpPool(dc => $datacenter_view, pool => $poolipSpec);
+                };
+                $log->debug('Pool ip ' . $poolip->poolip_name . ' already registered on datacenter '
+                    . $datacenter_view->name);
+
+                $nic_backing_info = VirtualEthernetCardNetworkBackingInfo->new(
+                    deviceName => $network_name, # network to which interface will be connected
+                        # TODO : portGroup/Vlan on an hypervisor + same name on all hypervisors of datacenter
+                    network    => $network
+                );
+
+                $vd_connect_info = VirtualDeviceConnectInfo->new(
+                    allowGuestControl => 1,
+                    connected         => 1,
+                    startConnected    => 1,
+                );
+
+                $desc = Description->new(
+                    label => $iface->host->node->node_hostname . '-' . $iface->iface_name,
+                    summary => 'Vitual Ethernet card ' . $iface->iface_name . ' for host '
+                                   . $iface->host->node->node_hostname,
+                );
+
+                #TODO: mac address pattern must be given as a host manager param
+                # for use in generateMacAddress method
+                (my $mac_address = $iface->iface_mac_addr) =~ s/^([a-f0-9]{2}:){4}/00:50:56:3f:/;
+                $iface->iface_mac_addr($mac_address);
+
+                $nic = VirtualE1000->new(
+                    controllerKey    => 100,
+                    backing          => $nic_backing_info,
+                    key              => $key,
+                    unitNumber       => $unit_num,
+                    addressType      => 'Manual',
+                    connectable      => $vd_connect_info,
+                    wakeOnLanEnabled => $iface->iface_pxe,
+                    macAddress       => $iface->iface_mac_addr,
+                    deviceInfo       => $desc,
+                );
+
+                $nic_conf_spec = VirtualDeviceConfigSpec->new(
+                    device => $nic,
+                    operation => VirtualDeviceConfigSpecOperation->new('add')
+                );
+
+                $key++;
+                $unit_num++;
+                push @network_conf, $nic_conf_spec;
             }
         }
     };
     if ($@) {
-        $errmsg = 'Error creating the virtual machine network configuration: '.$@;
+        $errmsg = 'Error creating the virtual machine network configuration: ' . $@;
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
-    # default network will be used
-    return (error => 2);
+    return @network_conf;
 }
 
 =pod
