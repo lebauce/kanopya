@@ -28,6 +28,7 @@ use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
 use EntityLock;
+use EntityState;
 use Entityright;
 use EntityComment;
 use ClassType;
@@ -259,6 +260,72 @@ sub promote {
     return $promoted;
 }
 
+
+=pod
+=begin classdoc
+
+@return the last set state of the entity
+
+=end classdoc
+=cut
+
+sub getState {
+    my $self = shift;
+
+    return (defined $self->entity_state) ? $self->entity_state->state : undef;
+}
+
+
+=pod
+=begin classdoc
+
+Set the state of the entity, if no consumer defined, use
+the entity itself. Consumers are the entities that hace change the state.
+
+=end classdoc
+=cut
+
+sub setState {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'state' ],
+                         optional => { 'consumer' => $self });
+
+    my $state = $self->entity_state;
+    if (! defined $state) {
+        EntityState->new(entity_id   => $self->id, 
+                         consumer_id => $args{consumer}->id,
+                         state       => $args{state});
+    }
+    else {
+        $state->setAttr(name => 'prev_state', value => $state->state);
+        $state->setAttr(name => 'state', value => $args{state}, save => 1);
+    }
+}
+
+
+=pod
+=begin classdoc
+
+Set the state of the entity, if no consumer defined, use
+the entity itself. Consumers are the entities that hace change the state.
+
+=end classdoc
+=cut
+
+sub restoreState {
+    my $self = shift;
+    my %args = @_;
+
+    my $state = $self->entity_state;
+    if (defined $state) {
+        my $current = $state->state;
+        $state->setAttr(name => 'state', value => $state->prev_state);
+        $state->setAttr(name => 'prev_state', value => $current, save => 1);
+    }
+}
 
 =pod
 =begin classdoc

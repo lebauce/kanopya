@@ -67,6 +67,24 @@ CREATE TABLE `entity_lock` (
   FOREIGN KEY (`consumer_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
+--
+-- Table structure for table `entity_lock`
+-- EntityComment class
+
+CREATE TABLE `entity_state` (
+  `entity_state_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `entity_id` int(8) unsigned NOT NULL,
+  `consumer_id` int(8) unsigned NOT NULL,
+  `state` char(32),
+  `prev_state` char(32),
+  PRIMARY KEY (`entity_state_id`),
+  UNIQUE KEY (`entity_id`),
+  FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`consumer_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
 --
 -- Table structure for table `service_provider`
 -- Entity::ServiceProvider class
