@@ -58,11 +58,11 @@ use constant ATTR_DEF => {
 sub getAttrDef { return ATTR_DEF; }
 
 sub diskType {
-    return "LVM logical volume";
+    return "Cinder";
 }
 
 sub exportType {
-    return "ISCSI target";
+    return "Cinder";
 }
 
 sub getExportManagerParams {
@@ -70,7 +70,7 @@ sub getExportManagerParams {
 }
 
 sub getBootPolicyFromExportManager {
-    return Manager::HostManager->BOOT_POLICIES->{pxe_iscsi};
+    return Manager::HostManager->BOOT_POLICIES->{local_disk};
 }
 
 sub getExportManagers {

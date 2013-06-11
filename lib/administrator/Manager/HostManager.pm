@@ -38,6 +38,7 @@ use constant BOOT_POLICIES => {
     root_iscsi   => 'Boot on root ISCSI',
     virtual_disk => 'BootOnVirtualDisk',
     boot_on_san  => 'BootOnSan',
+    local_disk   => 'BootOnLocalDisk'
 };
 
 
