@@ -81,4 +81,23 @@ __PACKAGE__->belongs_to(
   "AdministratorDB::Schema::Result::Component",
     { "foreign.component_id" => "self.haproxy1_id" },
     { cascade_copy => 0, cascade_delete => 1 });
+
+=head2 haproxy1_listens
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Haproxy1Listen>
+
+Created to be used instead of confusing haproxy1s_listen relationships
+(conflicting with the same relationship name in Component)
+
+=cut
+
+__PACKAGE__->has_many(
+  "haproxy1_listens",
+  "AdministratorDB::Schema::Result::Haproxy1Listen",
+  { "foreign.haproxy1_id" => "self.haproxy1_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 1;

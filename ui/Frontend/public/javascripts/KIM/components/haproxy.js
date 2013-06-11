@@ -8,7 +8,7 @@ var Haproxy = (function(_super) {
 
         this.displayed = [ ];
         this.relations = {
-                'haproxy1s_listen' : ['listen_name', 'listen_ip', 'listen_port', 'listen_mode', 'listen_balance', 'listen_component_id', 'listen_component_port']
+                'haproxy1_listens' : ['listen_name', 'listen_ip', 'listen_port', 'listen_mode', 'listen_balance', 'listen_component_id', 'listen_component_port']
         };
     };
 

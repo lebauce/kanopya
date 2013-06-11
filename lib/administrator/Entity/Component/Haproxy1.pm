@@ -30,7 +30,7 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
-    haproxy1s_listen => {
+    haproxy1_listens => {
         label       => 'Listen entries',
         type        => 'relation',
         relation    => 'single_multi',
