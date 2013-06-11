@@ -39,6 +39,7 @@ use Entity::Repository::Vsphere5Repository;
 use Entity;
 use Entity::Host::Hypervisor;
 use Entity::ContainerAccess;
+use Entity::Host::VirtualMachine::Vsphere5Vm;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -535,6 +536,135 @@ sub get_network {
 
     # default network will be used
     return (error => 2);
+}
+
+=pod
+
+=begin classdoc
+
+Get all the vms of an hypervisor
+
+@param host hypervisor
+
+=end classdoc
+
+=cut
+
+sub getHypervisorVMs {
+    my ($self, %args) = @_;
+
+    if (! defined $args{host_id}) {
+        General::checkParams(args => \%args, required => [ 'host' ]);
+    }
+    else {
+        $args{host} = Entity::Host->get(id => $args{host_id});
+        delete $args{host_id};
+    }
+
+    my $host = $args{host};
+    # TODO : search from begin entity datacenter view
+
+    my $host_view = $self->findEntityView(
+                        view_type   => 'HostSystem',
+                        hash_filter => {
+                            'hardware.systemInfo.uuid' => $host->vsphere5_uuid
+                    });
+
+    my $host_vms = $host_view->vm;
+    my @vms;
+    my @vm_ids;
+    my @unk_vm_uuids;
+
+    foreach my $vm (@$host_vms) {
+        my $uuid = $self->getView(mo_ref => $vm)->config->uuid;
+
+        my $e;
+        eval {
+            $e = Entity::Host::VirtualMachine::Vsphere5Vm->find(hash => { vsphere5_uuid => $uuid });
+            push @vms, $e;
+            push @vm_ids, $e->id;
+        };
+        if($@) {
+            push @unk_vm_uuids, $uuid;
+        }
+    }
+
+    return {
+        vm_ids       => \@vm_ids,
+        vms          => \@vms,
+        unk_vm_uuids => \@unk_vm_uuids,
+    };
+}
+
+=pod
+
+=begin classdoc
+
+Get the detail of a vm
+
+@params host vm
+
+=end classdoc
+
+=cut
+
+sub getVMDetails {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    my $vm_uuid = $args{host}->vsphere5_uuid;
+    my $vm_view;
+    eval {
+        $vm_view = $self->findEntityView(
+                       view_type    => 'VirtualMachine',
+                       hash_filter  => {
+                           'config.uuid' => $vm_uuid,
+                       },
+                   );
+    };
+    if ($@) {
+        throw Kanopya::Exception(error => "VM <".$args{host}->id."> not found in infrastructure");
+    }
+
+    return {
+        state      => $vm_view->runtime->powerState,
+        hypervisor => $self->getView($vm_view->host)->name,
+    };
+}
+
+=pod
+
+=begin classdoc
+
+Retrieve the state of a given VM
+
+@return state
+
+=end classdoc
+
+=cut
+
+sub getVMState {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    my $details;
+    eval {
+        $details =  $self->getVMDetails(%args);
+    };
+
+    my $state_map = {
+        'suspended'  => 'pend',
+        'poweredOn'  => 'runn',
+        'poweredOff' => 'shut',
+    };
+
+    return {
+        state      => $state_map->{ $details->{state} } || 'fail',
+        hypervisor => $details->{hypervisor},
+    };
 }
 
 1;

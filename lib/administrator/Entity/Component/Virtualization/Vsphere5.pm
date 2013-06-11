@@ -1036,11 +1036,11 @@ sub registerVm {
                  );
 
         #promote new virtual machine class to a vsphere5Vm one
-        $self->addVM(
-            host => $vm,
-            guest_id => $vm_view->config->guestId,
-            uuid => $vm_uuid,
-            hypervisor_id => $hosting_hypervisor_id
+        $self->promoteVm(
+            host          => $vm,
+            vm_uuid       => $vm_uuid,
+            hypervisor_id => $hosting_hypervisor_id,
+            guest_id      => $vm_view->config->guestId,
         );
 
         # Register the node
@@ -1404,18 +1404,22 @@ Promote a virtual machine object to a Vsphere5Vm one
 
 =cut
 
-sub addVM {
-    my ($self,%args) = @_;
+sub promoteVm {
+    my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host', 'guest_id', 'uuid', 'hypervisor_id' ]);
+    General::checkParams(args => \%args,
+                         required => [ 'host', 'vm_uuid', 'hypervisor_id' ],
+                         optional => { 'guest_id' => 'debian6_64Guest' });
 
-    return Entity::Host::VirtualMachine::Vsphere5Vm->promote(
-                         promoted          => $args{host},
-                         hypervisor_id     => $args{hypervisor_id},
-                         vsphere5_id       => $self->id,
-                         vsphere5_guest_id => $args{guest_id},
-                         vsphere5_uuid     => $args{uuid},
-           );
+    $args{host} = Entity::Host::VirtualMachine::Vsphere5Vm->promote(
+                      promoted           => $args{host},
+                      vsphere5_id        => $self->id,
+                      vsphere5_uuid      => $args{vm_uuid},
+                      vsphere5_guest_id  => $args{guest_id},
+                  );
+
+    $args{host}->hypervisor_id($args{hypervisor_id});
+    return $args{host};
 }
 
 =pod
