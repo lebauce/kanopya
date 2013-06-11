@@ -223,7 +223,9 @@ sub getHypervisorVMs {
             push @vms, $e;
             push @vm_ids, $e->id;
         };
-        if($@) {
+        if ($@) {
+            my $error = $@;
+            $log->info($uuid->{uuid}." => ".$error);
             push @unk_vm_uuids, $uuid->{uuid};
         }
     }
@@ -571,7 +573,7 @@ sub registerPXEImage {
         print $fh " " x 512;
         $fh->autoflush();
 
-        my $response = $self->glance->image->images->post(
+        my $response = $self->api->glance->images->post(
             headers         => {
                 'x-image-meta-name'             => '__PXE__',
                 'x-image-meta-disk_format'      => 'raw',
