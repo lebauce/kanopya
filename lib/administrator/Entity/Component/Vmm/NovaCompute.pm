@@ -84,11 +84,11 @@ sub getPuppetDefinition {
     my @uplinks;
 
     if ($bridge_flat) {
-        push @uplinks, "'br-flat:" . $bridge_flat . "'";
+        push @uplinks, "br-flat:" . $bridge_flat;
     }
 
     if ($bridge_vlan) {
-        push @uplinks, "'br-vlan:" . $bridge_vlan . "'";
+        push @uplinks, "br-vlan:" . $bridge_vlan;
     }
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
