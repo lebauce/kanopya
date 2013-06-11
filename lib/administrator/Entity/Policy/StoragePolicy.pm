@@ -204,7 +204,7 @@ sub getPolicyDef {
         if ($args{params}->{export_manager_id}) {
             # Get the export manager params from the selected export manager
             my $exportmanager = Entity->get(id => $args{params}->{export_manager_id});
-            $managerparams = $exportmanager->getExportManagerParams();
+            $managerparams = $exportmanager->getExportManagerParams(params => $args{params});
             for my $attrname (keys %{$managerparams}) {
                 $attributes->{attributes}->{$attrname} = $managerparams->{$attrname};
                 push @{ $attributes->{displayed} }, $attrname;

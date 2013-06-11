@@ -82,7 +82,45 @@ sub getExportManagers {
 sub getReadOnlyParameter {
 }
 
+sub getDiskManagerParams {
+    my $self = shift;
+    my %args = @_;
+
+    return {
+        export_type => {
+            label        => 'Backend',
+            type         => 'enum',
+            is_mandatory => 1,
+            options      => [ 'NFS', 'iSCSI' ]
+        }
+    };
+}
+
 sub checkExportManagerParams {
+}
+
+sub getExportManagerParams {
+    my $self = shift;
+    my %args = @_;
+
+    if (defined($args{params}->{export_type}) && $args{params}->{export_type} eq 'NFS') {
+        my @repositories = $self->nova_controller->repositories;
+        my $options      = {};
+        for my $repository (@repositories) {
+            $options->{$repository->id} = $repository->repository_name;
+        }
+        return {
+            repository   => {
+                is_mandatory => 1,
+                label        => 'Repository',
+                type         => 'enum',
+                options      => $options
+            }
+        };
+    }
+    else {
+        return { };
+    }
 }
 
 =head 2
@@ -221,6 +259,31 @@ sub createDisk {
                          required => [ "name", "size" ]);
 
     $self->SUPER::createDisk(%args);
+}
+
+=head2
+=begin classdoc
+
+Return volume_id for a given container
+
+=end classdoc
+=cut
+
+sub getVolumeId {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['container']);
+
+    my $volume_id = undef;
+
+    if ($args{container}->isa('Entity::Container::FileContainer')) {
+        $volume_id = (split '-', $args{container}->container_device, 2)[1];
+    }
+    else {
+        $volume_id = join('-', (split('--', $args{container}->container_device))[-5..-1]);
+    }
+
+    return $volume_id;
 }
 
 1;

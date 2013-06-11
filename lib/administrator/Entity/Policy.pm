@@ -381,6 +381,7 @@ sub getPatternFromParams {
 
     my $pattern = {};
     my $attrdef = $class->getPolicyAttrDef;
+    my %paramscopy = %{$args{params}};
 
     # Transform the policy form params to a cluster configuration pattern
     for my $name (keys %{$args{params}}) {
@@ -405,7 +406,7 @@ sub getPatternFromParams {
                 my $manager = Entity->get(id => $pattern->{managers}->{$manager_key}->{manager_id});
                 my $method = 'get' . $manager_type . 'Params';
 
-                my @params = keys % { $manager->$method };
+                my @params = keys % { $manager->$method(params => \%paramscopy) };
                 for my $param (@params) {
                     if (defined $args{params}->{$param} and $args{params}->{$param}) {
                         $pattern->{managers}->{$manager_key}->{manager_params}->{$param} = delete $args{params}->{$param};
