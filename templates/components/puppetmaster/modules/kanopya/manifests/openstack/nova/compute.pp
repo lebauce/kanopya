@@ -23,12 +23,15 @@ class kanopya::openstack::nova::compute(
 
     if ! defined(Class['kanopya::openstack::nova::common']) {
         class { 'kanopya::openstack::nova::common':
-            amqpserver => "${amqpserver}",
-            dbserver   => "${dbserver}",
-            glance     => "${glance}",
-            keystone   => "${keystone}",
-            quantum    => "${quantum}",
-            email      => "${email}"
+            amqpserver         => "${amqpserver}",
+            dbserver           => "${dbserver}",
+            glance             => "${glance}",
+            keystone           => "${keystone}",
+            quantum            => "${quantum}",
+            email              => "${email}",
+            rabbit_user        => "${rabbit_user}",
+            rabbit_password    => "${rabbit_password}",
+            rabbit_virtualhost => "${rabbit_virtualhost}"
         }
     }
 
