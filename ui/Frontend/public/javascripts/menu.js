@@ -6,7 +6,7 @@ function add_menu(container, label, submenu_links, elem_id) {
     var id_suffix = elem_id ? elem_id : 'static';
     var view_id = 'view_' + label.replace(/ /g, '_') + '_' + id_suffix;
     var link_id = 'link_' + view_id;
-    
+
     // If this link already exists for this menu then we don't repeat it
     var existing_link = container.find('#'+link_id);
     if (existing_link.length != 0) {
@@ -35,7 +35,7 @@ function add_menu(container, label, submenu_links, elem_id) {
 }
 
 function add_menutree(container, label, menu_info, elem_id) {
-    
+
     var link_li = $('<li>');
     var link_a = $('<a class="view_link"><span class="arrow"></span>' + label + '</a>');
     link_a.bind('click', function(event) {
@@ -221,8 +221,8 @@ function build_submenu(container, view_id, links, elem_id) {
     var view = $('<div class="'+class_master+'" id="' + view_id + '" '+style_master+'></div>').appendTo(container);
     // Tab container of the view
     var submenu_cont = $('<ul class="'+class_menu+' submenu"></ul>').appendTo(view);
-	
-    view.tabs({});
+
+    var tabs = view.tabs({});
 
     for (var smenu in links) {
         if (links[smenu].hidden) {
@@ -237,13 +237,23 @@ function build_submenu(container, view_id, links, elem_id) {
         view.tabs('add', '#' + content_id ,
                   (links[smenu]['icon'] ? "<span class='kanopya-tab-sprite kanopya-sprite ui-icon-" + links[smenu]['icon'] + "'></span>" : "" ) +
                   links[smenu]['label']);
-        
+
         if (links[smenu]['onLoad']) {
             _content_handlers[content_id] = {
                     'onLoad' : links[smenu]['onLoad'],
                     'info' : links[smenu]['info']
             };
         }
+    }
+    w_cont = view.innerWidth() - 20;
+    w_cont -= parseInt(submenu_cont.css('margin-left')) + parseInt(submenu_cont.css('margin-right'));
+    var w  = 0;
+    submenu_cont.find('li').each(function() {
+        w += $(this).width();
+    });
+
+    if (w_cont > 0 && w > 0 && w_cont <= w) {
+        tabs.scrollabletab();
     }
 
     // Load content on show event because we need the tab be visible to have a width and so scale content (grid autowidth)
