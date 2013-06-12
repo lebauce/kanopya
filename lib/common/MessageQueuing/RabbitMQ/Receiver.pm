@@ -121,41 +121,6 @@ sub createConsumer {
 =pod
 =begin classdoc
 
-Receive messages from the specific channel, and call the corresponding callbacks.
-
-@param channel the channel on which the callback is resistred
-@param type the type of the queue (queue or topic)
-
-=end classdoc
-=cut
-
-sub receive {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'type', 'channel' ]);
-
-    my $duration = $self->_consumers->{$args{type}}->{$args{channel}}->{duration};
-    $log->debug("Receiving messages on <$args{type}>, channel <$args{channel}>, for <$duration> s.");
-
-    if (not $self->connected) {
-        $self->connect();
-    }
-
-    # Register the consumer on the channel
-    $self->createConsumer(channel => $args{channel}, type => $args{type});
-
-    # Continue to fetch while duration not expired
-    my $start = time;
-    while ((time - $start) < $duration) {
-        # Blocking call
-        $self->fetch(timeout => $duration - (time - $start));
-    }
-}
-
-
-=pod
-=begin classdoc
-
 Wait for message in an event loop, interupt the bloking call
 if the duration exceed.
 

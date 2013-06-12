@@ -125,6 +125,11 @@ sub new {
             error => "Could not start daemon $self->{name}, no callback defined..."
         );
     }
+
+    # Private member usefull to stop receving until the specified duration
+    # when the deamon stop.
+    $self->{_running} = 1;
+
     return $self;
 }
 
@@ -305,8 +310,45 @@ sub oneRun {
 =pod
 =begin classdoc
 
+Receive messages from the specific channel, and call the corresponding callbacks.
+
+@param channel the channel on which the callback is resistred
+@param type the type of the queue (queue or topic)
+
+=end classdoc
+=cut
+
+sub receive {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'type', 'channel' ],
+                         optional => {});
+
+    my $duration = $self->_consumers->{$args{type}}->{$args{channel}}->{duration};
+    $log->debug("Receiving messages on <$args{type}>, channel <$args{channel}>, for <$duration> s.");
+
+    if (not $self->connected) {
+        $self->connect();
+    }
+
+    # Register the consumer on the channel
+    $self->createConsumer(channel => $args{channel}, type => $args{type});
+
+    # Continue to fetch while duration not expired
+    my $start = time;
+    while ((time - $start) < $duration && $self->isRunning) {
+        # Blocking call
+        $self->fetch(timeout => $duration - (time - $start));
+    }
+}
+
+
+=pod
+=begin classdoc
+
 Receive messages from all channels, spawn a child for each channel,
-then wait on the $$running pointer to kill childs when the service is stopped.
+then wait on the stop condition variable to kill childs when the service is stopped.
 
 =end classdoc
 =cut
@@ -334,21 +376,17 @@ sub receiveAll {
 
                     # Infinite loop on fetch. The event loop should never stop itself,
                     # but looping here in a while, to re-trigger the event loop if anormaly fail.
-                    my $running = 1;
                     my $publish_error = undef;
-                    while ($running) {
+                    while ($self->isRunning) {
                         # Connect to the broker within the child
                         $self->connect();
 
                         # Define an handler on sig TERM to stop the event loop
-                        $SIG{TERM} = sub {
+                        local $SIG{TERM} = sub {
                             $log->info("Child process <$$> received TERM: awaiting running job to exit...");
 
                             # Stop looping on the event loop
-                            $running = 0;
-
-                            # TODO: Interupt the event loop
-                            alarm 1;
+                            $self->setRunning(running => 0);
                         };
 
                         # Retrigger a message defined
@@ -370,7 +408,9 @@ sub receiveAll {
                                     $publish_error = $err;
                                 }
                                 # Log the error...
-                                $log->error("Fetch on <$type>, channel <$channel> failed: $err");
+                                if ($self->isRunning) {
+                                    $log->error("Fetch on <$type>, channel <$channel> failed: $err");
+                                }
                                 # ...and exist the loop to try to reconnect
                                 last;
                             }
@@ -416,6 +456,7 @@ sub receiveAll {
         $args{stopcondvar}->recv;
     };
     if ($@) {
+        $args{stopcondvar} = AnyEvent->condvar;
         # Send the TERM signal to ask it to stop fetching after a possible current job.
         for my $child (@childs) {
             # Increase the condvar for each child
@@ -423,17 +464,40 @@ sub receiveAll {
             # Sending TERM signal to the child
             $child->kill(15);
         }
+        $log->info("Daemon $self->{name} stopped, waiting for childs...");
+        $args{stopcondvar}->recv;
     }
 }
 
 =pod
 =begin classdoc
 
-Method called at the object deletion.
+Set the running prviate member.
 
 =end classdoc
 =cut
 
-sub DESTROY {}
+sub setRunning {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'running' ]);
+
+    $self->{_running} = $args{running};
+}
+
+
+=pod
+=begin classdoc
+
+@return the running private member.
+
+=end classdoc
+=cut
+
+sub isRunning {
+    my ($self, %args) = @_;
+
+    return ($self->{_running} == 1);
+}
 
 1;

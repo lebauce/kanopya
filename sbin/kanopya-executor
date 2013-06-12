@@ -56,7 +56,7 @@ sub signalHandler {
     $log->debug($sig." signal recieved : exiting main loop");
 
     # Interrupt the daemon event loop
-    $condvar->croak("Service manually stopped.");
+    $condvar->croak("Service stopped.");
 }
 
 $SIG{TERM} = \&signalHandler;
