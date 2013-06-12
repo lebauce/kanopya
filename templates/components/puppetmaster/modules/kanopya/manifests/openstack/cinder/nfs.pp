@@ -31,8 +31,9 @@ class kanopya::openstack::cinder::nfs (
   }
 
   file { "/tmp/0001-Use-the-local-configuration-in-the-nfs-drivers.patch":
-      source => "puppet:///modules/kanopya/0001-Use-the-local-configuration-in-the-nfs-drivers.patch",
-      notify => Exec["apply-cinder-patch"],
+      source    => "puppet:///modules/kanopya/0001-Use-the-local-configuration-in-the-nfs-drivers.patch",
+      notify    => Exec["apply-cinder-patch"],
+      subscribe => Package['cinder']
   }
 
   exec {"apply-cinder-patch":
