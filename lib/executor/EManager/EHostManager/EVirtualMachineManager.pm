@@ -149,7 +149,7 @@ sub isInfrastructureSynchronized {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'hash' ]);
 
-    $log->info(Dumper $args{hash});
+    $log->debug(Dumper $args{hash});
 
     return ! (keys %{$args{hash}->{wrong_hv}}              > 0 ||
               keys %{$args{hash}->{infra_not_hostmanager}} > 0 ||
@@ -216,7 +216,10 @@ sub checkHypervisorsVMPlacementIntegrity {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'hypervisors' ]);
 
-    my $diff_infra_db;
+    my $diff_infra_db = {infra_not_hostmanager => {},
+                         base_not_hv_infra     => {},
+                         wrong_hv              => {},
+                         unk_vm_uuids          => {}};
 
     for my $hypervisor (@{$args{hypervisors}}) {
         $diff_infra_db = $self->checkHypervisorVMPlacementIntegrity(
@@ -291,8 +294,6 @@ sub checkHypervisorVMPlacementIntegrity {
                                 unk_vm_uuids          => {},
                              }
                          });
-
-    $DB::single = 1;
 
     my $hypervisor = $args{host};
 
