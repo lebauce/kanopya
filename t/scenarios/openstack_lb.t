@@ -58,15 +58,15 @@ sub main {
                             'keepalived'     => {},
                             'haproxy'        => {},
                             'mysql'          => {},
-                            #'amqp'           => {},
-                            #'keystone'       => {},
-                            #'glance'         => {},
-                            #'quantum'        => {},
-                            #'novacompute'    => {},
-                            #'novacontroller' => {
-                            #    overcommitment_cpu_factor    => 1,
-                            #    overcommitment_memory_factor => 1
-                            #},
+                            'amqp'           => {},
+                            'keystone'       => {},
+                            'glance'         => {},
+                            'quantum'        => {},
+                            'novacompute'    => {},
+                            'novacontroller' => {
+                                overcommitment_cpu_factor    => 1,
+                                overcommitment_memory_factor => 1
+                            },
                         }
                     );
     } 'Create Openstack_lb cluster';
@@ -74,6 +74,12 @@ sub main {
     my $keepalived = $cluster->getComponent(name => 'Keepalived');
     my $haproxy = $cluster->getComponent(name => 'Haproxy');
     my $mysql = $cluster->getComponent(name => 'Mysql');
+    my $amqp = $cluster->getComponent(name => 'Amqp');
+    my $keystone = $cluster->getComponent(name => 'Keystone');
+    my $nova_controller = $cluster->getComponent(name => "NovaController");
+    my $glance = $cluster->getComponent(name => "Glance");
+    my $quantum = $cluster->getComponent(name => "Quantum");
+    my $nova_compute = $cluster->getComponent(name => "NovaCompute");
     
     lives_ok {
         my @interfaces = $cluster->interfaces;
@@ -98,56 +104,107 @@ sub main {
     
     lives_ok {
         $haproxy->setConf(conf => {
-            haproxy1s_listen => [ { listen_name    => 'mysql',
+            haproxy1s_listen => [ 
+                                  { listen_name    => 'mysql',
                                     listen_ip      => $vip->ip_addr,
                                     listen_port    => 3306,
                                     listen_mode    => 'tcp',
                                     listen_balance => 'roundrobin',
                                     listen_component_id   => $mysql->id,
                                     listen_component_port => 3306
-                                  }
+                                  },
+                                  { listen_name    => 'keystone-1',
+                                    listen_ip      => $vip->ip_addr,
+                                    listen_port    => 5000,
+                                    listen_mode    => 'http',
+                                    listen_balance => 'roundrobin',
+                                    listen_component_id   => $keystone->id,
+                                    listen_component_port => 5000
+                                  },
+                                  { listen_name    => 'keystone-2',
+                                    listen_ip      => $vip->ip_addr,
+                                    listen_port    => 35357,
+                                    listen_mode    => 'http',
+                                    listen_balance => 'roundrobin',
+                                    listen_component_id   => $keystone->id,
+                                    listen_component_port => 35357 
+                                  },
+                                  { listen_name    => 'nova-api-1',
+                                    listen_ip      => $vip->ip_addr,
+                                    listen_port    => 8773,
+                                    listen_mode    => 'http',
+                                    listen_balance => 'roundrobin',
+                                    listen_component_id   => $nova_controller->id,
+                                    listen_component_port => 8773 
+                                  },
+                                  { listen_name    => 'nova-api-2',
+                                    listen_ip      => $vip->ip_addr,
+                                    listen_port    => 8774,
+                                    listen_mode    => 'http',
+                                    listen_balance => 'roundrobin',
+                                    listen_component_id   => $nova_controller->id,
+                                    listen_component_port => 8774 
+                                  },
+                                  { listen_name    => 'nova-api-3',
+                                    listen_ip      => $vip->ip_addr,
+                                    listen_port    => 8775,
+                                    listen_mode    => 'http',
+                                    listen_balance => 'roundrobin',
+                                    listen_component_id   => $nova_controller->id,
+                                    listen_component_port => 8775 
+                                  },
+                                  { listen_name    => 'nova-api-4',
+                                    listen_ip      => $vip->ip_addr,
+                                    listen_port    => 8776,
+                                    listen_mode    => 'http',
+                                    listen_balance => 'roundrobin',
+                                    listen_component_id   => $nova_controller->id,
+                                    listen_component_port => 8776 
+                                  },
+                                  { listen_name    => 'glance-api',
+                                    listen_ip      => $vip->ip_addr,
+                                    listen_port    => 9292,
+                                    listen_mode    => 'http',
+                                    listen_balance => 'roundrobin',
+                                    listen_component_id   => $glance->id,
+                                    listen_component_port => 9292 
+                                  },
+                                  { listen_name    => 'quantum-api',
+                                    listen_ip      => $vip->ip_addr,
+                                    listen_port    => 9696,
+                                    listen_mode    => 'http',
+                                    listen_balance => 'roundrobin',
+                                    listen_component_id   => $quantum->id,
+                                    listen_component_port => 9696 
+                                  },
                                 ]
         });
     } 'Configure haproxy';
     
-    #my $amqp = $cluster->getComponent(name => 'Amqp');
-    #my $keystone = $cluster->getComponent(name => 'Keystone');
-    #my $nova_controller = $cluster->getComponent(name => "NovaController");
-    #my $glance = $cluster->getComponent(name => "Glance");
-    #my $quantum = $cluster->getComponent(name => "Quantum");
-    #my $nova_compute = $cluster->getComponent(name => "NovaCompute");
-#
-#
-    #$keystone->setConf(conf => {
-        #mysql5_id   => $sql->id,
-    #});
-#
-    #$nova_controller->setConf(conf => {
-        #mysql5_id   => $sql->id,
-        #keystone_id => $keystone->id,
-        #amqp_id     => $amqp->id
-    #});
-#
-    #$glance->setConf(conf => {
-        #mysql5_id          => $sql->id,
-        #nova_controller_id => $nova_controller->id
-    #});
-#
-    #$quantum->setConf(conf => {
-        #mysql5_id          => $sql->id,
-        #nova_controller_id => $nova_controller->id
-    #});
-#
-    #$nova_compute->setConf(conf => {
-        #nova_controller_id => $nova_controller->id,
-        #iaas_id            => $nova_controller->id,
-        #mysql5_id          => $sql->id
-    #});
 
+    $keystone->setConf(conf => {
+        mysql5_id   => $mysql->id,
+    });
 
-    #lives_ok {
-        #Kanopya::Tools::Execution->startCluster(cluster => $cluster);
-    #} 'Start database cluster';
+    $nova_controller->setConf(conf => {
+        mysql5_id   => $mysql->id,
+        keystone_id => $keystone->id,
+        amqp_id     => $amqp->id
+    });
 
+    $glance->setConf(conf => {
+        mysql5_id          => $mysql->id,
+        nova_controller_id => $nova_controller->id
+    });
 
+    $quantum->setConf(conf => {
+        mysql5_id          => $mysql->id,
+        nova_controller_id => $nova_controller->id
+    });
+
+    $nova_compute->setConf(conf => {
+        nova_controller_id => $nova_controller->id,
+        iaas_id            => $nova_controller->id,
+        mysql5_id          => $mysql->id
+    });
 }

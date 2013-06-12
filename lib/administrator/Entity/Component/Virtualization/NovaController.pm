@@ -179,7 +179,7 @@ sub getPuppetDefinition {
     my $sql        = $self->mysql5;
     my $keystone   = $self->keystone;
     my $quantum    = ($self->quantums)[0];
-    my $glance     = join(",", map { $_->getMasterNode->fqdn } $self->nova_controller->glances);
+    my $glance     = join(",", map { $_->getBalancerAddress(port => 9292) || $_->getMasterNode->fqdn } $self->nova_controller->glances);
     my $name       = "nova-" . $self->id;
     my @glances    = $self->nova_controller->glances;
     my $glance_id  = $glances[0]->id;
@@ -193,13 +193,20 @@ sub getPuppetDefinition {
             manifest => $self->instanciatePuppetResource(
                             name => "kanopya::openstack::nova::controller",
                             params => {
-                                dbserver => $sql->getMasterNode->fqdn,
+                                dbserver => $sql->getBalancerAddress(port => 3306) || 
+                                            $sql->getMasterNode->adminIp,
+                                            
                                 amqpserver => $self->amqp->getMasterNode->fqdn,
                                 admin_password => 'nova',
-                                keystone => $keystone->getMasterNode->fqdn,
+                                keystone => $keystone->getBalancerAddress(port => 5000) || 
+                                            $keystone->getMasterNode->fqdn,
+                                
                                 email => $self->service_provider->user->user_email,
                                 glance => $glance,
-                                quantum => $quantum->getMasterNode->fqdn,
+                                
+                                quantum => $quantum->getBalancerAddress(port => 9696) || 
+                                           $quantum->getMasterNode->fqdn,
+                                           
                                 database_user => $name,
                                 database_name => $name,
                                 glance_database_user => "glance-$glance_id",

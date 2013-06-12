@@ -199,8 +199,8 @@ sub getPuppetDefinition {
         params => {
             amqpserver => $amqp,
             rabbits => [ $amqp, $amqp ],
-            dbserver => $sql->getMasterNode->fqdn,
-            keystone => $keystone->getMasterNode->fqdn,
+            dbserver => $sql->getBalancerAddress(port => 3306) || $sql->getMasterNode->adminIp,
+            keystone =>  $keystone->getBalancerAddress(port => 5000) || $keystone->getMasterNode->fqdn,
             email => $self->service_provider->user->user_email,
             database_user => $name,
             database_name => $name,

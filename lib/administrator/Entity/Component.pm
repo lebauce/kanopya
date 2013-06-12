@@ -330,7 +330,7 @@ sub getBalancerAddress {
     my @haproxy_entries = $self->haproxy1s_listen;
     LISTEN:
     for my $listen (@haproxy_entries) {
-        if($listen->listen_component_port ne "$args{port}") {
+        if($listen->listen_component_port ne $args{port}) {
             next LISTEN;
         } else {
             if($listen->listen_ip ne '0.0.0.0') {
