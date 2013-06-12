@@ -354,6 +354,7 @@ sub getBalancerAddress {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
     my $manifest = "";
+    my $dependencies = [];
     my @listens = $self->haproxy1s_listen;
     LISTEN:
     for my $listen (@listens) {
@@ -369,13 +370,14 @@ sub getPuppetDefinition {
                                 options           => 'check'
                              }
                           );
+        push @$dependencies, $listen->haproxy1;
     }
     
     
     return {
         loadbalanced => {
             manifest     => $manifest,
-            dependencies => []
+            dependencies => $dependencies
         }
     }
 }
