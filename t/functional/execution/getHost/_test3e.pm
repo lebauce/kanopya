@@ -111,8 +111,9 @@ sub test3e {
     $cluster->configureInterfaces(
         interfaces => {
             interface1 => {
-                interface_netconfs => {$netConf1->netconf_name => $netConf1 },
-                bonds_number        => 0,
+                netconfs       => {$netConf1->netconf_name => $netConf1 },
+                bonds_number   => 0,
+                interface_name => interface1,
             },
         }
     );
