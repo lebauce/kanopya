@@ -246,7 +246,16 @@ sub finish {
     }
     else {
         $self->{context}->{cluster}->setState(state => "down");
+        if (defined $self->{context}->{host_manager_sp}) {
+            $self->{context}->{host_manager_sp}->setState(state => 'up');
+        }
     }
+
+    if (defined $self->{context}->{host_manager_sp}) {
+        $self->{context}->{host_manager_sp}->setState(state => 'up');
+        delete $self->{context}->{host_manager_sp};
+    }
+
 }
 
 
