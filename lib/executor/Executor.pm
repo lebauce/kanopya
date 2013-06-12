@@ -126,7 +126,7 @@ sub runWorkflow {
 
     General::checkParams(args     => \%args,
                          required => [ 'workflow_id' ],
-                         optional => { 'err_cb' => undef, 'ack_cb' => undef });
+                         optional => { 'ack_cb' => undef });
 
     my $workflow = EEntity->new(entity => Entity::Workflow->get(id => $args{workflow_id}));
 
@@ -153,8 +153,7 @@ sub runWorkflow {
         $first->setState(state => 'ready');
 
         # Push the first operation on the execution channel
-        $self->execute(operation_id => $first->id,
-                       err_cb       => $args{err_cb});
+        $self->_component->execute(operation_id => $first->id);
     }
 
     # Acknowledge the message
@@ -178,7 +177,7 @@ sub executeOperation {
 
     General::checkParams(args     => \%args,
                          required => [ "operation_id" ],
-                         optional => { 'err_cb' => undef, 'ack_cb' => undef });
+                         optional => { 'ack_cb' => undef });
 
     my $operation = $self->instantiateOperation(id     => $args{operation_id},
                                                 ack_cb => $args{ack_cb});
@@ -200,8 +199,7 @@ sub executeOperation {
         my $err = $@;
         return $self->terminateOperation(operation => $operation,
                                          status    => 'cancelled',
-                                         exception => $err,
-                                         err_cb    => $args{err_cb});
+                                         exception => $err);
     }
 
     # Validate the operation
@@ -214,14 +212,12 @@ sub executeOperation {
         my $err = $@;
         return $self->terminateOperation(operation => $operation,
                                          status    => 'cancelled',
-                                         exception => $err,
-                                         err_cb    => $args{err_cb});
+                                         exception => $err);
     }
     # Terminate if the operation require validation
     if (not $valid) {
         return $self->terminateOperation(operation => $operation,
-                                         status    => 'waiting_validation',
-                                         err_cb    => $args{err_cb});
+                                         status    => 'waiting_validation');
     }
 
     # Skip the proccessing steps if postreported
@@ -256,13 +252,11 @@ sub executeOperation {
                 return $self->terminateOperation(operation => $operation,
                                                  status    => 'prereported',
                                                  time      => time + 10,
-                                                 exception => $err,
-                                                 err_cb    => $args{err_cb});
+                                                 exception => $err);
             }
             return $self->terminateOperation(operation => $operation,
                                              status    => 'cancelled',
-                                             exception => $err,
-                                             err_cb    => $args{err_cb});
+                                             exception => $err);
         }
 
         # Set the operation as proccessing
@@ -279,15 +273,13 @@ sub executeOperation {
             my $err = $@;
             return $self->terminateOperation(operation => $operation,
                                              status    => 'cancelled',
-                                             exception => $err,
-                                             err_cb    => $args{err_cb});
+                                             exception => $err);
         }
         # Report the operation if delay is set
         if ($delay) {
             return $self->terminateOperation(operation => $operation,
                                              status    => 'prereported',
-                                             time      => $delay > 0 ? time + $delay : undef,
-                                             err_cb    => $args{err_cb});
+                                             time      => $delay > 0 ? time + $delay : undef);
         }
 
         # Process the operation
@@ -305,8 +297,7 @@ sub executeOperation {
 
             return $self->terminateOperation(operation => $operation,
                                              status    => 'cancelled',
-                                             exception => $err,
-                                             err_cb    => $args{err_cb});
+                                             exception => $err);
         }
     }
 
@@ -318,15 +309,13 @@ sub executeOperation {
         my $err = $@;
         return $self->terminateOperation(operation => $operation,
                                          status    => 'cancelled',
-                                         exception => $err,
-                                         err_cb    => $args{err_cb});
+                                         exception => $err);
     }
     # Report the operation if delay is set
     if ($delay) {
         return $self->terminateOperation(operation => $operation,
                                          status    => 'postreported',
-                                         time      => $delay > 0 ? time + $delay : undef,
-                                         err_cb    => $args{err_cb});
+                                         time      => $delay > 0 ? time + $delay : undef);
     }
 
     # Update the state of the context objects if required
@@ -351,19 +340,16 @@ sub executeOperation {
             return $self->terminateOperation(operation => $operation,
                                              status    => 'prereported',
                                              time      => time + 10,
-                                             exception => $err,
-                                             err_cb    => $args{err_cb});
+                                             exception => $err);
         }
         return $self->terminateOperation(operation => $operation,
                                          status    => 'cancelled',
-                                         exception => $err,
-                                         err_cb    => $args{err_cb});
+                                         exception => $err);
     }
 
     # Terminate the operation with success
     return $self->terminateOperation(operation => $operation,
-                                     status    => 'succeeded',
-                                     err_cb    => $args{err_cb});
+                                     status    => 'succeeded');
 }
 
 
@@ -382,7 +368,7 @@ the terminated operation parameters.
 sub terminateOperation {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'operation', 'status', 'err_cb' ]);
+    General::checkParams(args => \%args, required => [ 'operation', 'status' ]);
 
     my $operation = delete $args{operation};
 
@@ -405,7 +391,7 @@ sub terminateOperation {
     $operation->serializeParams(params => $params);
 
     # Produce a result on the operation_result channel
-    $self->terminate(operation_id => $operation->id, %args);
+    $self->_component->terminate(operation_id => $operation->id, %args);
 
     # Acknowledge the message
     return 1;
@@ -431,7 +417,7 @@ sub handleResult {
 
     General::checkParams(args     => \%args,
                          required => [ 'operation_id', 'status' ],
-                         optional => { 'err_cb' => undef, 'ack_cb' => undef });
+                         optional => { 'ack_cb' => undef });
 
     my $operation = $self->instantiateOperation(id     => $args{operation_id},
                                                 ack_cb => $args{ack_cb});
@@ -476,7 +462,7 @@ sub handleResult {
                 # Re-trigger the operation at proper time
                 my $report_cb = sub {
                     # Re-execute the operation
-                    $self->execute(operation_id => $operation->id, err_cb => $args{err_cb});
+                    $self->_component->execute(operation_id => $operation->id);
 
                     # Acknowledge the message as the operation result is finally handled
                     $args{ack_cb}->();
@@ -493,7 +479,7 @@ sub handleResult {
             }
             else {
                 # Re-trigger the operation now
-                $self->execute(operation_id => $operation->id, err_cb => $args{err_cb});
+                $self->_component->execute(operation_id => $operation->id);
 
                 # Stop the workflow for now
                 return 1;
@@ -521,7 +507,7 @@ sub handleResult {
         $self->logWorkflowState(operation => $operation, state => 'VALIDATED');
 
         # Re-trigger the operation now
-        $self->execute(operation_id => $operation->id, err_cb => $args{err_cb});
+        $self->_component->execute(operation_id => $operation->id);
 
         # Stop the workflow
         return 1;
@@ -591,7 +577,7 @@ sub handleResult {
         $next->setState(state => 'ready');
 
         # Push the next operation on the execution channel
-        $self->execute(operation_id => $next->id, err_cb => $args{err_cb});
+        $self->_component->execute(operation_id => $next->id);
     }
 
     # Acknowledge the message

@@ -305,67 +305,126 @@ sub oneRun {
 =pod
 =begin classdoc
 
-Call a method on the component corresponding to the daemon.
+Receive messages from all channels, spawn a child for each channel,
+then wait on the $$running pointer to kill childs when the service is stopped.
 
 =end classdoc
 =cut
 
-sub callComponent {
+sub receiveAll {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'method', 'args' ]);
+    General::checkParams(args => \%args, required => [ 'stopcondvar' ]);
 
-    my $method = $args{method};
-    return $self->_component->$method(%{ $args{args} });
-}
-
-
-=pod
-=begin classdoc
-
-We define an AUTOLOAD to handle calls on the daemon component as we need
-to add fixed params, and cenralize the error handling about channel issues.
-
-=end classdoc
-=cut
-
-sub AUTOLOAD {
-    my ($self, %args) = @_;
-
-    my @autoload = split(/::/, $AUTOLOAD);
-    my $accessor = $autoload[-1];
-
-    my $method;
-    if (not defined $self->_component->methods()->{$accessor}) {
-        # The called method is not a defined message queuing method.
-        $method = 'SUPER::' . $accessor;
-        return $self->$method(%args);
+    # Ensure to connect within child processes
+    if ($self->connected) {
+        $self->disconnect();
     }
-    $method = $accessor;
 
-    # Pop the error callback if defined
-    my $err_cb = delete $args{err_cb};
+    # Run through all registred receviers
+    my @childs;
+    for my $type ('queue', 'topic') {
+        for my $channel (keys %{ $self->_consumers->{$type} }) {
+            my $receiver = $self->_consumers->{$type}->{$channel};
 
-    my $result;
+            # Define a common job for instances of this receiver
+            my $job = AnyEvent::Subprocess->new(code => sub {
+                eval {
+                    $log->info("Spawn process <$$> for waiting on <$type>, channel <$channel>. ");
+
+                    # Infinite loop on fetch. The event loop should never stop itself,
+                    # but looping here in a while, to re-trigger the event loop if anormaly fail.
+                    my $running = 1;
+                    my $publish_error = undef;
+                    while ($running) {
+                        # Connect to the broker within the child
+                        $self->connect();
+
+                        # Define an handler on sig TERM to stop the event loop
+                        $SIG{TERM} = sub {
+                            $log->info("Child process <$$> received TERM: awaiting running job to exit...");
+
+                            # Stop looping on the event loop
+                            $running = 0;
+
+                            # TODO: Interupt the event loop
+                            alarm 1;
+                        };
+
+                        # Retrigger a message defined
+                        if (defined $publish_error) {
+                            # TODO: retrriger the message
+                            $publish_error = undef;
+                        }
+
+                        # Continue to fetch while duration not expired
+                        eval {
+                            $self->receive(type => $type, channel => $channel);
+                        };
+                        if ($@) {
+                            my $err = $@;
+                            if (! $err->isa('Kanopya::Exception::MessageQueuing::NoMessage')) {
+                                # If a publish error occurs, keep the undelivred message body
+                                # to retrigger it at reconnection.
+                                if ($err->isa('Kanopya::Exception::MessageQueuing::PublishFailed')) {
+                                    $publish_error = $err;
+                                }
+                                # Log the error...
+                                $log->error("Fetch on <$type>, channel <$channel> failed: $err");
+                                # ...and exist the loop to try to reconnect
+                                last;
+                            }
+                        }
+
+                        # Disconnect the child from the broker
+                        $self->disconnect();
+                    }
+                };
+                if ($@) {
+                    my $err = $@;
+                    $log->info("Child process <$$> failed: $err");
+                }
+
+                $log->info("Child process <$$> stop waiting on <$type>, channel <$channel>, exiting.");
+                exit 0;
+            });
+
+            # Create the specified number of instance of the worker/subscriber
+            for (1 .. $receiver->{instances}) {
+                push @childs, $job->run;
+            }
+        }
+    }
+
+    # Register a callback on the child termination
+    my @watchers;
+    for my $child (@childs) {
+        # Increase the condvar for each child
+        $args{stopcondvar}->begin;
+
+        # Define a callback that decrease the condvar at child exit
+        my $exitcb = sub {
+            my ($pid, $status) = @_;
+            $log->info("Child process <$pid> exiting with status $status.");
+            $args{stopcondvar}->end;
+        };
+        push @watchers, AnyEvent->child(pid => $child->child_pid, cb => \&$exitcb);
+    }
+
+    # Wait for childs or daemon termination
     eval {
-        $result = $self->callComponent(method => $method, args => \%args);
+        $args{stopcondvar}->recv;
     };
     if ($@) {
-        my $err = $@;
-        my $retrigger = sub {
-            $self->callComponent(method => $method, args => \%args);
-        };
-        if (defined $err_cb) {
-            $log->error("Channel error occurs, calling the error callback: $err");
-            $err_cb->(retrigger_cb => \&$retrigger);
-        }
-        else {
-            $log->error("Channel error occurs, but no error callback defined: $err");
+        # Send the TERM signal to ask it to stop fetching after a possible current job.
+        for my $child (@childs) {
+            # Increase the condvar for each child
+            $args{stopcondvar}->begin;
+            # Sending TERM signal to the child
+            $child->kill(15);
         }
     }
-    return $result;
 }
-
 
 =pod
 =begin classdoc

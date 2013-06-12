@@ -132,7 +132,7 @@ sub AUTOLOAD {
 
     my $err;
     my $send  = 0;
-    my $retry = 10;
+    my $retry = 5;
     while ($retry > 0 and not $send) {
         $err = undef;
         eval {
@@ -147,14 +147,11 @@ sub AUTOLOAD {
             $send = 1;
         };
         if ($@) {
-            my $err = $@;
+            $err = $@;
             $log->warn("Failed to publish on queue <$channel>, $retry left: $err");
             $retry--;
             sleep 1;
         }
-    }
-    if (defined $err) {
-        throw Kanopya::Exception::MessageQueuing::PublishFailed(error => $err);
     }
 
 #    $send  = 0;
@@ -185,6 +182,14 @@ sub AUTOLOAD {
 
     if (not $self->{_incallback}) {
         $self->disconnect();
+    }
+
+    if (defined $err) {
+        throw Kanopya::Exception::MessageQueuing::PublishFailed(
+                  error   => $err,
+                  channel => $channel,
+                  body    => $data,
+              );
     }
 }
 

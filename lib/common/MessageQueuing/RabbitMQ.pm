@@ -241,7 +241,7 @@ sub declareExchange {
 
 Register the callbck method for a specific channel and type.
 
-@param queue the queue on which register hte calback
+@param queue the queue on which register the callback
 @param callback the callback method
 
 =end classdoc

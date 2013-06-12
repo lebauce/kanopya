@@ -134,8 +134,8 @@ sub receive {
 
     General::checkParams(args => \%args, required => [ 'type', 'channel' ]);
 
-    $log->debug("Receiving messages on <$args{type}>, channel <$args{channel}>");
     my $duration = $self->_consumers->{$args{type}}->{$args{channel}}->{duration};
+    $log->debug("Receiving messages on <$args{type}>, channel <$args{channel}>, for <$duration> s.");
 
     if (not $self->connected) {
         $self->connect();
@@ -144,143 +144,11 @@ sub receive {
     # Register the consumer on the channel
     $self->createConsumer(channel => $args{channel}, type => $args{type});
 
-    # Blocking call
-    my $err;
-    eval {
-        $self->fetch(duration => $duration);
-    };
-    if ($@) { $err = $@; }
-
-    # TODO: Cancel the consumer.
-
-    # If got an exception while fetching, rethrow.
-    if (defined $err) { throw $err; }
-}
-
-
-=pod
-=begin classdoc
-
-Receive messages from all channels, spawn a child for each channel,
-then wait on the $$running pointer to kill childs when the service is stopped.
-
-=end classdoc
-=cut
-
-sub receiveAll {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'stopcondvar' ]);
-
-    # Ensure to connect within child processes
-    if ($self->connected) {
-        $self->disconnect();
-    }
-
-    # Run through all registred receviers
-    my @childs;
-    for my $type ('queue', 'topic') {
-        for my $channel (keys %{ $self->_consumers->{$type} }) {
-            my $receiver = $self->_consumers->{$type}->{$channel};
-
-            # Define a common job for instances of this receiver
-            my $job = AnyEvent::Subprocess->new(code => sub {
-                $log->info("Spawn process <$$> for waiting on <$type>, channel <$channel>. ");
-                eval {
-                    # Infinite loop on fetch. The event loop should never stop itself,
-                    # but looping here in a while, to re-trigger the event loop if anormaly fail.
-                    my $running = 1;
-                    my $retrigger_cb = undef;
-                    while ($running) {
-                        # Connect to the broker within the child
-                        $self->connect();
-
-                        # Create the consumer
-                        $self->createConsumer(channel   => $channel,
-                                              type      => $type);
-
-                        # Define an handler on sig TERM to stop the event loop
-                        my $sigterm = sub {
-                            my $sig = shift;
-                            $log->info("Child process <$$> received $sig: awaiting running job to exit...");
-
-                            # Stop looping on the event loop
-                            $running = 0;
-
-                            # TODO: Interupt the event loop
-                            alarm 1;
-                        };
-                        my $watcher = AnyEvent->signal(signal => "TERM", cb => \&$sigterm);
-
-                        # Retrrgier undelivred message if defined
-#                        if (defined $retrigger_cb) {
-#                            $retrigger_cb->();
-#                            $retrigger_cb = undef;
-#                        }
-
-                        # Continue to fetch while duration not expired
-                        my $start = time;
-                        while ((time - $start) < $receiver->{duration}) {
-                            eval {
-                                $self->fetch(duration => $receiver->{duration});
-                            };
-                            if ($@) {
-                                my $err = $@;
-                                if (! $err->isa('Kanopya::Exception::MessageQueuing::NoMessage')) {
-                                    # Only log the error for instace, and exist the loop to try to reconnect
-                                    $log->error("Fetch on <$type>, channel <$channel> failed: $err");
-                                    last;
-                                }
-                            }
-                        }
-
-                        # Disconnect the child from the broker
-                        $self->disconnect();
-                    }
-                };
-                if ($@) {
-                    my $err = $@;
-                    $log->info("Child process <$$> failed: $err");
-                }
-
-                $log->info("Child process <$$> stop waiting on <$type>, channel <$channel>, exiting.");
-                exit 0;
-            });
-
-            # Create the specified number of instance of the worker/subscriber
-            for (1 .. $receiver->{instances}) {
-                push @childs, $job->run;
-            }
-        }
-    }
-
-    # Register a callback on the child termination
-    my @watchers;
-    for my $child (@childs) {
-        # Increase the condvar for each child
-        $args{stopcondvar}->begin;
-
-        # Define a callback that decrease the condvar at child exit
-        my $exitcb = sub {
-            my ($pid, $status) = @_;
-            $log->info("Child process <$pid> exiting with status $status.");
-            $args{stopcondvar}->end;
-        };
-        push @watchers, AnyEvent->child(pid => $child->child_pid, cb => \&$exitcb);
-    }
-
-    # Wait for childs or daemon termination
-    eval {
-        $args{stopcondvar}->recv;
-    };
-    if ($@) {
-        # Send the TERM signal to ask it to stop fetching after a possible current job.
-        for my $child (@childs) {
-            # Increase the condvar for each child
-            $args{stopcondvar}->begin;
-            # Sending TERM signal to the child
-            $child->kill(15);
-        }
+    # Continue to fetch while duration not expired
+    my $start = time;
+    while ((time - $start) < $duration) {
+        # Blocking call
+        $self->fetch(timeout => $duration - (time - $start));
     }
 }
 
@@ -291,7 +159,7 @@ sub receiveAll {
 Wait for message in an event loop, interupt the bloking call
 if the duration exceed.
 
-@optional duration the maximum time to wait messages.
+@optional timeout the maximum time to wait messages.
 
 =end classdoc
 =cut
@@ -300,25 +168,20 @@ sub fetch {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         optional => { 'duration' => 30 });
+                         optional => { 'timeout' => 30 });
 
-    if (defined $args{duration}) {
-        $log->debug("Fetch message for <$args{duration}> second(s).");
-    }
-    else {
-        $log->debug("Fetch messages indefinitely...");
-    }
+    $log->debug("Fetch message for <$args{timeout}> second(s).");
 
     # Wait for messages
     my $rv;
     eval {
         local $SIG{ALRM} = sub {
             throw Kanopya::Exception::MessageQueuing::NoMessage(
-                      error => "No message received for $args{duration} (s)"
+                      error => "No message received for $args{timeout} (s)"
                   );
         };
 
-        alarm $args{duration};
+        alarm $args{timeout};
 
         # Receive the message
         $rv = $self->recv();
@@ -370,14 +233,9 @@ sub fetch {
         my $ack_cb = sub {
             $self->acknowledge(tag => $rv->{delivery_tag});
         };
-        # Build a callback method to raise the reconnection at channel error
-        my $err_cb = sub {
-            my %args = @_;
-        };
 
         # Call the corresponding method
         $args->{ack_cb} = $ack_cb;
-        $args->{err_cb} = $err_cb;
         if ($callback->(%$args)) {
             # Acknowledge the message if specified by the callback
             $args->{ack_cb}->();
@@ -385,7 +243,12 @@ sub fetch {
     };
     if ($@) {
         my $err = $@;
-        $err->rethrow();
+        if (ref($err)) {
+            $err->rethrow();
+        }
+        else {
+            throw Kanopya::Exception::Execution(error => "$err");
+        }
     }
 }
 
