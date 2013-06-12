@@ -110,6 +110,7 @@ sub prerequisites {
         # Repair infra before retrying AddNode
 
         $self->workflow->enqueueBefore(
+            current_operation => $self,
             operation => {
                 priority => 200,
                 type     => 'SynchronizeInfrastructure',

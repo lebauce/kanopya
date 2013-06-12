@@ -201,9 +201,14 @@ sub prerequisites {
         }
         else {
             $log->info('Need to start a new hypervisor');
-            my $hv_cluster = $self->{context}->{host_manager}->service_provider;
-            my $workflow_to_enqueue = { name => 'AddNode', params => { context => { cluster => $hv_cluster, }  }};
-            $self->workflow->enqueueBefore(workflow => $workflow_to_enqueue);
+            my $host_manager_sp = $self->{context}->{host_manager}->service_provider;
+            my $workflow_to_enqueue = { name => 'AddNode', params => { context => { cluster => $host_manager_sp, }  }};
+
+            $self->workflow->enqueueBefore(
+                current_operation => $self,
+                workflow          => $workflow_to_enqueue,
+            );
+
             $log->info('Enqueue "add hypervisor" operations before starting a new virtual machine');
             return -1;
         }

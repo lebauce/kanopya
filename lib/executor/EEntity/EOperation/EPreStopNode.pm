@@ -126,7 +126,10 @@ sub prerequisites {
             params   => { context => { host => $self->{context}->{host} } }
         };
 
-        $self->workflow->enqueueBefore(operation => $operation_to_enqueue);
+        $self->workflow->enqueueBefore(
+            operation         => $operation_to_enqueue,
+            current_operation => $self,
+        );
         $log->info('Enqueue "add hypervisor" operations before starting a new virtual machine');
         return -1;
     }

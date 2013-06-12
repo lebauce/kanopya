@@ -74,6 +74,7 @@ sub prerequisites {
     if (! $self->{context}->{cloud_manager}->isInfrastructureSynchronized(hash => $diff_infra_db)) {
 
         $self->workflow->enqueueBefore(
+            current_operation => $self,
             operation => {
                 priority => 200,
                 type     => 'SynchronizeInfrastructure',
