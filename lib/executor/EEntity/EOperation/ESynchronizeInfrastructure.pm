@@ -100,6 +100,7 @@ sub finish {
 
     delete $self->{context}->{hypervisor};
     delete $self->{context}->{cloud_manager};
+    delete $self->{params}->{diff_infra_db};
 }
 
 1;

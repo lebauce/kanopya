@@ -1608,7 +1608,7 @@ sub flushHypervisor {
     General::checkParams(args => \%args, required => ['hv_id']);
 
     if (not defined $self->{_infra}->{hvs}->{$args{hv_id}}) {
-        my $error = "Hypervisor <$args{hv_id}> is not an active host of the cloud manager";
+        my $error = "Hypervisor <$args{hv_id}> is not managed by the capacity manager (may be not active or not up)";
         throw Kanopya::Exception(error => $error);
     }
 
@@ -1681,7 +1681,7 @@ sub _getFlushHypervisorPlan {
             push @operation_plan, {vm_id => $vm_to_migrate_id, hv_id => $hv_dest_id->{hv_id}};
         }
         else{
-            $log->debug("___Cannot migrate VM $vm_to_migrate_id");
+            $log->debug("Cannot migrate VM $vm_to_migrate_id");
             $num_failed++;
         }
     }

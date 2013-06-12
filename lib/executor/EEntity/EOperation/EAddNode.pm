@@ -74,6 +74,11 @@ sub check {
         = EEntity->new(entity => $cluster->getManager(manager_type => 'DiskManager'));
     $self->{context}->{export_manager}
         = EEntity->new(entity => $cluster->getManager(manager_type => 'ExportManager'));
+
+    # TODO: Move this virtual machine specific code to the host manager
+    if ($self->{context}->{host_manager}->hostType eq 'Virtual Machine') {
+        $self->{context}->{host_manager_sp} = $self->{context}->{host_manager}->service_provider;
+    }
 }
 
 
@@ -90,14 +95,28 @@ sub prepare {
     $self->SUPER::prepare(%args);
 
     # Check the cluster state
-    my $state = $self->{context}->{cluster}->getState;
-    if ($state !~ m/up|down/) {
+    my ($state, $timestamp) = $self->{context}->{cluster}->reload->getState;
+
+    if (not (($state eq 'up') || ($state eq 'down'))) {
+        $log->debug("State is <$state> which is an invalid state");
         throw Kanopya::Exception::Execution::InvalidState(
-                  error => "The cluster <" . $self->{context}->{cluster} .
-                           "> has to be <up|down>, not <$state>"
+                  error => "The cluster <" . $self->{context}->{cluster}->cluster_name .
+                           "> has to be <up|down> not <$state>"
               );
     }
     $self->{context}->{cluster}->setState(state => 'updating');
+
+    if (defined $self->{context}->{host_manager_sp}) {
+        my ($hv_state, $hv_timestamp) = $self->{context}->{host_manager_sp}->reload->getState;
+        if (not ($hv_state eq 'up')) {
+            $log->debug("State of hypervisor cluster is <$hv_state> which is an invalid state");
+            throw Kanopya::Exception::Execution::InvalidState(
+                      error => "The hypervisor cluster <" . $self->{context}->{host_manager_sp}->cluster_name .
+                               "> has to be <up>, not <$hv_state>"
+                  );
+        }
+        $self->{context}->{host_manager_sp}->setState(state => 'updating');
+    }
 
     # Ask to the manager if we can use them
     $self->{context}->{host_manager}->increaseConsumers();
@@ -161,6 +180,7 @@ sub prerequisites {
 
                 # Repair infra before retrying AddNode
                 $self->workflow->enqueueBefore(
+                    current_operation => $self,
                     operation => {
                         priority => 200,
                         type     => 'SynchronizeInfrastructure',
@@ -181,9 +201,14 @@ sub prerequisites {
         }
         else {
             $log->info('Need to start a new hypervisor');
-            my $hv_cluster = $self->{context}->{host_manager}->service_provider;
-            my $workflow_to_enqueue = { name => 'AddNode', params => { context => { cluster => $hv_cluster, }  }};
-            $self->workflow->enqueueBefore(workflow => $workflow_to_enqueue);
+            my $host_manager_sp = $self->{context}->{host_manager}->service_provider;
+            my $workflow_to_enqueue = { name => 'AddNode', params => { context => { cluster => $host_manager_sp, }  }};
+
+            $self->workflow->enqueueBefore(
+                current_operation => $self,
+                workflow          => $workflow_to_enqueue,
+            );
+
             $log->info('Enqueue "add hypervisor" operations before starting a new virtual machine');
             return -1;
         }
@@ -316,6 +341,7 @@ sub execute {
                             # TODO: get this value from masterimage attrs.
                             filesystem => 'ext3',
                             erollback  => $self->{erollback},
+                            cluster    => $self->{context}->{cluster},
                             %{ $createdisk_params }
                         );
 
@@ -407,6 +433,10 @@ sub cancel {
     $self->SUPER::finish(%args);
 
     $self->{context}->{cluster}->restoreState();
+    if (defined $self->{context}->{host_manager_sp}) {
+        $self->{context}->{host_manager_sp}->setState(state => 'up');
+    }
+
 
     if (defined $self->{context}->{host}) {
         $self->{context}->{host}->setState(state => 'down');

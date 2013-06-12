@@ -35,13 +35,47 @@ sub check {
     my ($self, %args) = @_;
 
     General::checkParams(args => $self->{context}, required => [ "host", "vm" ]);
+
+    if (not defined $self->{context}->{cloudmanager_comp}) {
+        $self->{context}->{cloudmanager_comp} = $self->{context}->{vm}->getHostManager();
+    }
+
+    $self->{context}->{hv_cluster} = $self->{context}->{host}->node->service_provider;
+    $self->{context}->{host_manager_sp} = $self->{context}->{cloudmanager_comp}->service_provider;
+}
+
+sub prepare {
+    my ($self, %args) = @_;
+
+    # Check the hypervisor cluster state
+    my ($hv_cluster_state, $timestamp) = $self->{context}->{hv_cluster}->reload->getState;
+
+    if ($hv_cluster_state ne 'up') {
+        throw Kanopya::Exception::Execution::InvalidState(
+                  error => "The cluster <" . $self->{context}->{hv_cluster}->cluster_name .
+                           "> has to be <up>, not <$hv_cluster_state>"
+              );
+    }
+
+    # Check the hostmanager service provider state
+    my ($host_manager_sp_state, $host_manager_sp_timestamp) = $self->{context}->{host_manager_sp}->reload->getState;
+
+    if ($host_manager_sp_state ne 'up') {
+        throw Kanopya::Exception::Execution::InvalidState(
+                  error => "The cluster <" . $self->{context}->{host_manager_sp}->cluster_name .
+                           "> has to be <up>, not <$host_manager_sp_state>"
+              );
+    }
+
+    $self->{context}->{hv_cluster}->setState(state => 'migrating');
+    $self->{context}->{host_manager_sp}->setState(state => 'migrating');
 }
 
 sub prerequisites {
     my ($self, %args) = @_;
 
-    if (not defined $self->{context}->{cloudmanager_comp}) {
-        $self->{context}->{cloudmanager_comp} = $self->{context}->{vm}->getHostManager();
+    if (defined $self->{params}->{optimiaas}) {
+        return 0;
     }
 
     my $diff_infra_db = $self->{context}->{cloudmanager_comp}
@@ -76,6 +110,7 @@ sub prerequisites {
         # Repair infra before retrying AddNode
 
         $self->workflow->enqueueBefore(
+            current_operation => $self,
             operation => {
                 priority => 200,
                 type     => 'SynchronizeInfrastructure',
@@ -90,7 +125,7 @@ sub prerequisites {
         );
         return -1;
     }
-
+    return 0;
 }
 
 sub execute {
@@ -167,8 +202,21 @@ sub finish{
     my ($self, %args) = @_;
     $self->SUPER::execute(%args);
 
+    my ($hv_cluster_state, $timestamp) = $self->{context}->{hv_cluster}->reload->getState;
+    my ($host_manager_sp_state, $timestamp2) = $self->{context}->{host_manager_sp}->reload->getState;
+
+    if ($hv_cluster_state eq 'migrating') {
+        # In order to not restore state in optimiaas
+        $self->{context}->{hv_cluster}->setState(state => 'up');
+    }
+
+    if ($host_manager_sp_state eq 'migrating') {
+        $self->{context}->{host_manager_sp}->setState(state => 'up');
+    }
+
     delete $self->{context}->{vm};
     delete $self->{context}->{host};
+    delete $self->{context}->{hv_cluster};
 }
 
 sub postrequisites {
@@ -209,6 +257,37 @@ sub postrequisites {
         # vm is still migrating
         return 15;
     }
+    throw Kanopya::Exception(error => 'Unattended state <'.$migr_state->{state}.'>');
+}
+
+
+=pod
+=begin classdoc
+
+Restore
+
+=end classdoc
+=cut
+
+sub cancel {
+    my ($self, %args) = @_;
+    $self->SUPER::finish(%args);
+    $self->{context}->{host}->node->service_provider->setState(state => 'up');
+
+
+    my ($hv_cluster_state, $timestamp) = $self->{context}->{hv_cluster}->reload->getState;
+    my ($host_manager_sp_state, $timestamp2) = $self->{context}->{host_manager_sp}->reload->getState;
+
+    if ($hv_cluster_state eq 'migrating') {
+        # In order to not restore state in optimiaas
+        $self->{context}->{hv_cluster}->setState(state => 'up');
+    }
+
+    if ($host_manager_sp_state eq 'migrating') {
+        $self->{context}->{host_manager_sp}->setState(state => 'up');
+    }
+
+
 }
 
 1;

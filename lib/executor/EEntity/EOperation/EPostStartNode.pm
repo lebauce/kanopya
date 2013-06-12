@@ -133,12 +133,19 @@ sub execute {
         erollback => $self->{erollback},
     );
 
-    my $eagent = EEntity->new(
-                     entity => $self->{context}->{cluster}->getComponent(category => "Configurationagent")
-                 );
-
-    # And apply the configuration on every node of the cluster
-    $eagent->applyConfiguration(cluster => $self->{context}->{cluster});
+    eval {
+        my $eagent = EEntity->new(
+                         entity => $self->{context}->{cluster}->getComponent(category => "Configurationagent")
+                     );
+        # And apply the configuration on every node of the cluster
+        $eagent->applyConfiguration(cluster => $self->{context}->{cluster});
+    };
+    if ($@) {
+        my $err = $@;
+        if (! $err->isa("Kanopya::Exception::Internal::NotFound")) {
+           $err->rethrow();
+        }
+    }
 
     $self->{context}->{host}->postStart();
 
@@ -187,7 +194,11 @@ sub finish {
     $self->SUPER::finish(%args);
 
     $self->{context}->{cluster}->setState(state => "up");
-
+    if (defined $self->{context}->{host_manager_sp}) {
+        $self->{context}->{host_manager_sp}->setState(state => 'up');
+        delete $self->{context}->{host_manager_sp};
+    }
+    
     # WARNING: Do NOT delete $self->{context}->{host}, required in worflow addNode + VM migration
     # TODO: Definitly design a mechanism to bind output params to input one in workflows
     delete $self->{context}->{cluster}; # Need to be deleted for Add hypervisor followed by add Vm

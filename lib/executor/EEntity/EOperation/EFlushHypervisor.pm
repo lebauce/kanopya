@@ -74,6 +74,7 @@ sub prerequisites {
     if (! $self->{context}->{cloud_manager}->isInfrastructureSynchronized(hash => $diff_infra_db)) {
 
         $self->workflow->enqueueBefore(
+            current_operation => $self,
             operation => {
                 priority => 200,
                 type     => 'SynchronizeInfrastructure',
@@ -91,6 +92,14 @@ sub prerequisites {
     if ($flushRes->{num_failed} > 0) {
         throw Kanopya::Exception(error => "The hypervisor ".$self->{context}->{host}->node->node_hostname." can't be flushed");
     }
+
+    for my $operation (@{$flushRes->{ operation_plan }}) {
+        $operation->{params}->{context}->{host_id} = $operation->{params}->{context}->{host}->id,
+        $operation->{params}->{context}->{vm_id}  = $operation->{params}->{context}->{vm}->id,
+    }
+
+    $self->{params}->{flushRes} = $flushRes->{operation_plan};
+    return 0;
 }
 
 sub execute {
@@ -98,7 +107,13 @@ sub execute {
     $self->SUPER::execute();
     $log->info('Flush hypervisor '.$self->{context}->{host}->node->node_hostname);
 
-    for my $operation (@{$flushRes->{operation_plan}}) {
+    for my $operation (@{$self->{params}->{flushRes}}) {
+        $operation->{params}->{context}->{host} = Entity->get(id => $operation->{params}->{context}->{host_id}),
+        delete $operation->{params}->{context}->{host_id};
+
+        $operation->{params}->{context}->{vm}  = Entity->get(id => $operation->{params}->{context}->{vm_id}),
+        delete $operation->{params}->{context}->{vm_id};
+
         $log->debug('Operation enqueuing host = '.$operation->{params}->{context}->{host}->id);
         $self->workflow->enqueueNow(operation => $operation);
     }
@@ -107,6 +122,7 @@ sub execute {
 sub finish {
     my ($self) = @_;
 
+    delete $self->{params}->{flushRes};
     delete $self->{context}->{host};
 }
 

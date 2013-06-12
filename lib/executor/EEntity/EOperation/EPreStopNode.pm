@@ -61,6 +61,16 @@ sub check {
     my %args = @_;
 
     General::checkParams(args => $self->{context}, required => [ "cluster" ]);
+
+
+    my $cluster = $self->{context}->{cluster};
+    $self->{context}->{host_manager}
+        = EEntity->new(entity => $cluster->getManager(manager_type => 'HostManager'));
+
+    # TODO: Move this virtual machine specific code to the host manager
+    if ($self->{context}->{host_manager}->hostType eq 'Virtual Machine') {
+        $self->{context}->{host_manager_sp} = $self->{context}->{host_manager}->service_provider;
+    }
 }
 
 
@@ -76,15 +86,35 @@ sub prepare {
     my ($self, %args) = @_;
     $self->SUPER::prepare(%args);
 
+
     # Check the cluster state
-    my $state = $self->{context}->{cluster}->getState;
-    if ($state !~ m/up|stopping/) {
+    my ($state, $timestamp) = $self->{context}->{cluster}->reload->getState;
+    $log->debug("Cluster state <$state>");
+
+
+    if (not (($state eq 'up') || ($state eq 'down'))) {
+        $log->debug("State is <$state> which is an invalid state");
         throw Kanopya::Exception::Execution::InvalidState(
                   error => "The cluster <" . $self->{context}->{cluster} .
                            "> has to be <starting|down>, not <$state>"
               );
     }
     $self->{context}->{cluster}->setState(state => 'updating');
+
+    # Check the openstack state
+
+    if (defined $self->{context}->{host_manager_sp}) {
+        my ($hv_state, $hv_timestamp) = $self->{context}->{host_manager_sp}->reload->getState;
+        if (not ($hv_state eq 'up')) {
+            $log->debug("State of hypervisor cluster is <$hv_state> which is an invalid state");
+            throw Kanopya::Exception::Execution::InvalidState(
+                      error => "The hypervisor cluster <" . $self->{context}->{host_manager_sp}->cluster_name .
+                               "> has to be <up>, not <$hv_state>"
+                  );
+        }
+        $self->{context}->{host_manager_sp}->setState(state => 'updating');
+    }
+
 }
 
 
@@ -126,7 +156,10 @@ sub prerequisites {
             params   => { context => { host => $self->{context}->{host} } }
         };
 
-        $self->workflow->enqueueBefore(operation => $operation_to_enqueue);
+        $self->workflow->enqueueBefore(
+            operation         => $operation_to_enqueue,
+            current_operation => $self,
+        );
         $log->info('Enqueue "add hypervisor" operations before starting a new virtual machine');
         return -1;
     }
@@ -179,6 +212,9 @@ sub cancel {
     $self->SUPER::finish(%args);
 
     $self->{context}->{cluster}->restoreState();
+    if (defined $self->{context}->{host_manager_sp}) {
+        $self->{context}->{host_manager_sp}->setState(state => 'up');
+    }
 }
 
 1;
