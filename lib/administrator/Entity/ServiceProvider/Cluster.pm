@@ -850,6 +850,7 @@ sub setState {
     $self->setAttr(name => 'cluster_prev_state', value => $state);
     $self->setAttr(name => 'cluster_state', value => $args{state} . ":" . time);
     $self->save();
+    $log->debug('Changing cluster <'.$self->cluster_name.'> state from <'.$state.'> to <'.$args{state}.'>');
 }
 
 sub restoreState {
