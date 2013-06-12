@@ -336,6 +336,7 @@ sub execute {
                             # TODO: get this value from masterimage attrs.
                             filesystem => 'ext3',
                             erollback  => $self->{erollback},
+                            cluster    => $self->{context}->{cluster},
                             %{ $createdisk_params }
                         );
 
