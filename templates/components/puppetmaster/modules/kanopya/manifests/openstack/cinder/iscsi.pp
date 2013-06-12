@@ -14,6 +14,12 @@ class kanopya::openstack::cinder::iscsi (
     "${iscsi_backend_section}/volume_group":     value => $volume_group;
   }
 
+  exec { 'apply-cinder-lvm-patch':
+    command     => "sed -i -e s/\'IncomingUser/\'#IncomingUser/ /usr/lib/python2.7/dist-packages/cinder/volume/drivers/lvm.py",
+    refreshonly => true,
+    subscribe   => Package['cinder']
+  }
+
   if($iscsi_ip_address) {
       cinder_config {
         "${iscsi_backend_section}/iscsi_ip_address": value => $iscsi_ip_address;
