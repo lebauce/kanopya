@@ -34,6 +34,8 @@ use base MessageQueuing::RabbitMQ::Receiver;
 use strict;
 use warnings;
 
+use AnyEvent;
+use AnyEvent::Subprocess;
 use Data::Dumper;
 
 use Log::Log4perl "get_logger";

@@ -44,7 +44,6 @@ use Entity::Workflow;
 use Entity::Operation;
 use EEntity::EOperation;
 
-use AnyEvent;
 use XML::Simple;
 use Data::Dumper;
 
@@ -469,10 +468,7 @@ sub handleResult {
                     # Acknowledge the message as the operation result is finally handled
                     $args{ack_cb}->();
                 };
-                # Keep the timer ref
-                delete $self->{timerrefs}->{$operation->id};
-                $self->{timerrefs}->{$operation->id} = AnyEvent->timer(after => $delay,
-                                                                       cb    => $report_cb);
+                # TODO: Excecute the previous callback in $delay s.
 
                 # Do not acknowledge the message as it will be done by the timer.
                 # If the current proccess die while some timers still active,
