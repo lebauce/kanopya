@@ -36,7 +36,7 @@ use vars qw ( $AUTOLOAD );
 sub cancel {
     my ($self, %args) = @_;
 
-    for my $operation (Entity::Operation->search(order_by => 'execution_rank DESC')) {
+    for my $operation ($self->searchRelated(filters => ['operations'], order_by => 'execution_rank DESC')) {
         if ($operation->state ne 'pending') {
             eval {
                 $log->info("Cancelling operation <" . $operation->id . ">");
