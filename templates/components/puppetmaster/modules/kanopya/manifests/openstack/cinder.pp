@@ -27,12 +27,6 @@ class kanopya::openstack::cinder(
         rabbit_virtual_host => "${rabbit_virtualhost}"
     }
 
-    class { 'cinder::api':
-        keystone_tenant   => 'services',
-        keystone_password => "${keystone_password}",
-        require           => Exec['/usr/bin/cinder-manage db sync'],
-    }
-
     class { 'cinder::scheduler': }
 
     class { 'cinder::volume': }

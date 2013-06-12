@@ -59,19 +59,9 @@ class kanopya::openstack::glance(
         path => "/usr/bin:/usr/sbin:/bin:/sbin",
     }
 
-    class { 'glance::api':
-        auth_type         => '',
-        auth_port         => '35357',
-        keystone_tenant   => 'services',
-        keystone_user     => "${keystone_user}",
-        keystone_password => "${keystone_password}",
-        sql_connection    => "mysql://${database_user}:${database_password}@${dbserver}/${database_name}",
-        require           => [ Class['kanopya::openstack::repository'],
-                               Exec['/usr/bin/glance-manage db_sync'] ]
-    }
-
     class { 'glance::registry':
         auth_type         => '',
+        bind_host         => $admin_ip,
         keystone_tenant   => 'services',
         keystone_user     => "${keystone_user}",
         keystone_password => "${keystone_password}",

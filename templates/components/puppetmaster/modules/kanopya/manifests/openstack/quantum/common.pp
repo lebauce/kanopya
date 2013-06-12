@@ -5,6 +5,7 @@ class kanopya::openstack::quantum::common(
     $rabbit_virtualhost = "/"
 ) {
     class { 'quantum':
+        bind_host           => $admin_ip,
         rabbit_password     => "${rabbit_password}",
         rabbit_host         => "${rabbit_host}",
         rabbit_user         => "${rabbit_user}",

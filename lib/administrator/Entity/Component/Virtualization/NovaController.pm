@@ -179,8 +179,10 @@ sub getPuppetDefinition {
     my $sql        = $self->mysql5;
     my $keystone   = $self->keystone;
     my $quantum    = ($self->quantums)[0];
-    my $glance     = join(",", map { $_->getMasterNode->fqdn . ":9292" } $self->nova_controller->glances);
+    my $glance     = join(",", map { $_->getMasterNode->fqdn } $self->nova_controller->glances);
     my $name       = "nova-" . $self->id;
+    my @glances    = $self->nova_controller->glances;
+    my $glance_id  = $glances[0]->id;
 
     if (not ($sql and $keystone and $quantum)) {
         return;
@@ -200,6 +202,8 @@ sub getPuppetDefinition {
                                 quantum => $quantum->getMasterNode->fqdn,
                                 database_user => $name,
                                 database_name => $name,
+                                glance_database_user => "glance-$glance_id",
+                                glance_database_name => "glance-$glance_id",
                                 rabbit_user => $name,
                                 rabbit_virtualhost => 'openstack-' . $self->id
                             }

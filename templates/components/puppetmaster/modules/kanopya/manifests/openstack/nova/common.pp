@@ -20,7 +20,7 @@ class kanopya::openstack::nova::common(
         # set sql and rabbit to false so that the resources will be collected
         sql_connection      => "mysql://${database_user}:${database_password}@${dbserver}/${database_name}",
         image_service       => 'nova.image.glance.GlanceImageService',
-        glance_api_servers  => "${glance}",
+        glance_api_servers  => "${glance}:9292",
         rabbit_userid       => "${rabbit_user}",
         rabbit_password     => "${rabbit_password}",
         rabbit_host         => "${amqpserver}",

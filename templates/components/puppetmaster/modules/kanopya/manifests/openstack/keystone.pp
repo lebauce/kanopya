@@ -35,6 +35,7 @@ class kanopya::openstack::keystone(
     }
 
     class { '::keystone':
+        bind_host      => $admin_ip,
         verbose        => true,
         debug          => true,
         sql_connection => "mysql://${database_user}:${database_password}@${dbserver}/${database_name}",

@@ -6,14 +6,21 @@ class kanopya::openstack::nova::controller(
     $email,
     $glance,
     $quantum,
-    $keystone_user      = 'nova',
-    $keystone_password  = 'nova',
-    $database_user      = 'nova',
-    $database_password  = 'nova',
-    $database_name      = 'nova',
-    $rabbit_user        = 'nova',
-    $rabbit_password    = 'nova',
-    $rabbit_virtualhost = '/'
+    $keystone_user            = 'nova',
+    $keystone_password        = 'nova',
+    $cinder_keystone_user     = 'cinder',
+    $cinder_keystone_password = 'cinder',
+    $glance_keystone_user     = 'glance',
+    $glance_keystone_password = 'glance',
+    $glance_database_user     = 'glance',
+    $glance_database_password = 'glance',
+    $glance_database_name     = 'glance',
+    $database_user            = 'nova',
+    $database_password        = 'nova',
+    $database_name            = 'nova',
+    $rabbit_user              = 'nova',
+    $rabbit_password          = 'nova',
+    $rabbit_virtualhost       = '/'
 ) {
     tag("kanopya::novacontroller")
 
@@ -97,11 +104,35 @@ class kanopya::openstack::nova::controller(
     }
 
     class { 'nova::api':
-        enabled        => true,
-        admin_password => "${admin_password}",
-        auth_host      => "${keystone}",
-        require        => [ Exec["/usr/bin/nova-manage db sync"],
-                            Class['kanopya::openstack::repository'] ]
+        enabled          => true,
+        admin_password   => "${admin_password}",
+        auth_host        => $keystone,
+        api_bind_address => $admin_ip,
+        metadata_listen  => $admin_ip,
+        require          => [ Exec["/usr/bin/nova-manage db sync"],
+                              Class['kanopya::openstack::repository'] ]
+    }
+
+    class { 'cinder::api':
+        keystone_auth_host => $keystone,
+        keystone_tenant    => 'services',
+        keystone_password  => "${cinder_keystone_password}",
+        bind_host          => $admin_ip,
+        require            => Exec['/usr/bin/cinder-manage db sync'],
+    }
+
+    class { 'glance::api':
+        auth_type         => '',
+        auth_port         => '35357',
+        auth_host         => $keystone,
+        bind_host         => $admin_ip,
+        keystone_tenant   => 'services',
+        keystone_user     => "${glance_keystone_user}",
+        keystone_password => "${glance_keystone_password}",
+        registry_host     => $glance,
+        sql_connection    => "mysql://${glance_database_user}:${glance_database_password}@${dbserver}/${glance_database_name}",
+        require           => [ Class['kanopya::openstack::repository'],
+                               Exec['/usr/bin/glance-manage db_sync'] ]
     }
 
     nova_paste_api_ini {
