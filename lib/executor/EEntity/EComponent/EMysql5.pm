@@ -16,4 +16,15 @@ use base "EEntity::EComponent";
 
 use strict;
 
+sub isUp {
+    my ($self, %args) = @_;
+
+    General::checkParams( args => \%args, required => [ 'cluster', 'host' ] );
+    my $result = $self->SUPER::isUp(%args);
+    if($result) {
+        my $cmd = "mysqladmin flush-hosts";
+        $args{host}->getEContext->execute(command => $cmd);
+    }
+}
+
 1;
