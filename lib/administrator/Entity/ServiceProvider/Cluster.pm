@@ -110,7 +110,7 @@ use constant ATTR_DEF => {
     },
     cluster_state => {
         label        => 'State',
-        pattern      => '^up:\d*|down:\d*|updating:\d*|starting:\d*|stopping:\d*|warning:\d*',
+        pattern      => '^up:\d*|down:\d*|updating:\d*|starting:\d*|stopping:\d*|warning:\d*|migrating:\d*|optimizing:\d*',
         is_mandatory => 0,
         is_editable  => 0
     },
