@@ -58,9 +58,14 @@ sub getPuppetDefinition {
     my ($self, %args) = @_;
     my $definition = $self->SUPER::getPuppetDefinition(%args);
 
-    my $keystone = $self->nova_controller->keystone->getMasterNode->fqdn;
+    my $keystone =  $self->nova_controller->keystone->getBalancerAddress(port => 5000) ||
+                    $self->nova_controller->keystone->getMasterNode->fqdn;
+    
     my $amqp = $self->nova_controller->amqp->getMasterNode->fqdn;
-    my $sql = $self->mysql5->getMasterNode->fqdn;
+    
+    my $sql = $self->mysql5->getBalancerAddress(port => 3306) ||
+              $self->mysql5->getMasterNode->fqdn;
+    
     my $name = "quantum-" . $self->id;
 
     my $manifest = $self->instanciatePuppetResource(

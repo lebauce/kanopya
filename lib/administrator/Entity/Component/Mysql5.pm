@@ -107,7 +107,7 @@ sub getPuppetDefinition {
                             params => {
                                 config_hash => {
                                     port => $self->mysql5_port,
-                                    bind_address => $self->mysql5_bindaddress,
+                                    bind_address => $args{host}->adminIp,
                                     datadir => $self->mysql5_datadir
                                 },
                                 galera => {

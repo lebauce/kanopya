@@ -61,7 +61,8 @@ class kanopya::mysql::galera($galera) {
                 innodb_locks_unsafe_for_binlog => "1",
                 query_cache_size               => "0",
                 query_cache_type               => "0",
-                wsrep_sst_receive_address      => "$ipaddress"
+                wsrep_sst_receive_address      => "$ipaddress",
+                max_connect_errors             => "4294967295"
             }
         },
         require    => [ Database_grant['wsrep@localhost'],

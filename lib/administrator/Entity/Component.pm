@@ -330,7 +330,7 @@ sub getBalancerAddress {
     my @haproxy_entries = $self->haproxy1s_listen;
     LISTEN:
     for my $listen (@haproxy_entries) {
-        if($listen->listen_component_port ne "$args{port}") {
+        if($listen->listen_component_port ne $args{port}) {
             next LISTEN;
         } else {
             if($listen->listen_ip ne '0.0.0.0') {
@@ -354,6 +354,7 @@ sub getBalancerAddress {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
     my $manifest = "";
+    my $dependencies = [];
     my @listens = $self->haproxy1s_listen;
     LISTEN:
     for my $listen (@listens) {
@@ -369,13 +370,14 @@ sub getPuppetDefinition {
                                 options           => 'check'
                              }
                           );
+        push @$dependencies, $listen->haproxy1;
     }
     
     
     return {
         loadbalanced => {
             manifest     => $manifest,
-            dependencies => []
+            dependencies => $dependencies
         }
     }
 }
