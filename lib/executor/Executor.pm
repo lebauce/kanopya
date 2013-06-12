@@ -223,40 +223,42 @@ sub executeOperation {
     # Skip the proccessing steps if postreported
     my $delay;
     if ($operation->state ne 'postreported') {
-        # Check the required state of the context objects, and update its
-        eval {
-            # Firstly lock the context objects
-            $self->lockOperationContext(operation => $operation);
+        if ($operation->state ne 'prereported') {
+            # Check the required state of the context objects, and update its
+            eval {
+                # Firstly lock the context objects
+                $self->lockOperationContext(operation => $operation);
 
-            # Check/Update the state of the context objects atomically
-            $log->info("Step <prepare>");
-            $operation->beginTransaction;
+                # Check/Update the state of the context objects atomically
+                $log->info("Step <prepare>");
+                $operation->beginTransaction;
 
-            $operation->prepare();
+                $operation->prepare();
 
-            $operation->commitTransaction;
+                $operation->commitTransaction;
 
-            # Unlock the context objects
-            $operation->unlockContext();
-        };
-        if ($@) {
-            my $err = $@;
-            $operation->rollbackTransaction;
-            $operation->unlockContext();
+                # Unlock the context objects
+                $operation->unlockContext();
+            };
+            if ($@) {
+                my $err = $@;
+                $operation->rollbackTransaction;
+                $operation->unlockContext();
 
-            if ($err->isa('Kanopya::Exception::Execution::InvalidState') or
-                $err->isa('Kanopya::Exception::Execution::OperationReported')) {
-                # TODO: Do not report the operation, implement a mechanism
-                #       that re-trrgier operation that received InvalidState
-                #       when the coresponding state change...
+                if ($err->isa('Kanopya::Exception::Execution::InvalidState') or
+                    $err->isa('Kanopya::Exception::Execution::OperationReported')) {
+                    # TODO: Do not report the operation, implement a mechanism
+                    #       that re-trrgier operation that received InvalidState
+                    #       when the coresponding state change...
+                    return $self->terminateOperation(operation => $operation,
+                                                     status    => 'statereported',
+                                                     time      => time + 10,
+                                                     exception => $err);
+                }
                 return $self->terminateOperation(operation => $operation,
-                                                 status    => 'prereported',
-                                                 time      => time + 10,
+                                                 status    => 'cancelled',
                                                  exception => $err);
             }
-            return $self->terminateOperation(operation => $operation,
-                                             status    => 'cancelled',
-                                             exception => $err);
         }
 
         # Set the operation as proccessing
@@ -440,7 +442,7 @@ sub handleResult {
         # Continue the workflow
     }
     # Operation reported
-    elsif ($args{status} eq 'prereported' or $args{status} eq 'postreported'){
+    elsif ($args{status} eq 'prereported' or $args{status} eq 'postreported' or $args{status} eq 'statereported') {
 
         General::checkParams(args => \%args, optional => { 'time' => undef });
 
@@ -454,7 +456,7 @@ sub handleResult {
                 $log->info("Report reason: " . $args{exception});
             }
 
-            # If the hoped execution time is in the future, report the operation 
+            # If the hoped execution time is in the future, report the operation
             if ($delay > 0) {
                 # Update the hoped excution time of the operation
                 $operation->report(duration => $delay);
@@ -487,8 +489,7 @@ sub handleResult {
         }
         # The operation is indefinitely reported, execution is delegated to the workflow
         else {
-            $operation->setState(state => 'pending');
-
+            # $operation->setState(state => 'pending');
             # Continue the workflow
         }
     }
@@ -573,8 +574,13 @@ sub handleResult {
         $log->info("Executing " . $workflow->workflow_name .
                    " workflow next operation " . $operation->type . " <" . $next->id . ">");
 
-        # Set the operation as ready
-        $next->setState(state => 'ready');
+
+        if ($operation->state eq 'pending') {
+            # Set the operation as ready
+            $next->setState(state => 'ready');
+        }
+
+
 
         # Push the next operation on the execution channel
         $self->_component->execute(operation_id => $next->id);
