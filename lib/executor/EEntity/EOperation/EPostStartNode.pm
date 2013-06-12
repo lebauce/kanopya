@@ -133,12 +133,19 @@ sub execute {
         erollback => $self->{erollback},
     );
 
-    my $eagent = EEntity->new(
-                     entity => $self->{context}->{cluster}->getComponent(category => "Configurationagent")
-                 );
-
-    # And apply the configuration on every node of the cluster
-    $eagent->applyConfiguration(cluster => $self->{context}->{cluster});
+    eval {
+        my $eagent = EEntity->new(
+                         entity => $self->{context}->{cluster}->getComponent(category => "Configurationagent")
+                     );
+        # And apply the configuration on every node of the cluster
+        $eagent->applyConfiguration(cluster => $self->{context}->{cluster});
+    };
+    if ($@) {
+        my $err = $@;
+        if (! $err->isa("Kanopya::Exception::Internal::NotFound")) {
+           $err->rethrow();
+        }
+    }
 
     $self->{context}->{host}->postStart();
 
