@@ -162,4 +162,21 @@ sub run {
     return $workflow;
 }
 
+
+=pod
+=begin classdoc
+
+Generic method for sending messages.
+Should be not impemeted and the call handled by the AUTOLOAD in
+MessageQueuing::RabbitMQ::Sender, but we need to fix amultiautoload confilct.
+
+=end classdoc
+=cut
+
+sub send {
+    my ($self, %args) = @_;
+
+    MessageQueuing::RabbitMQ::Sender::send($self, %args);
+}
+
 1;

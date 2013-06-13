@@ -89,15 +89,7 @@ sub new {
         # Define a closure that call the specified callaback within eval
         my $cbmethod = sub {
             my %cbargs = @_;
-            my $ack = 0;
-            eval {
-                $ack = $callback->{callback}->($self, %cbargs);
-            };
-            if ($@) {
-                $log->error("$@");
-                $ack = 1;
-            }
-            return $ack;
+            return $callback->{callback}->($self, %cbargs);
         };
 
         # Register worker/subscriber in function of the type
@@ -153,7 +145,7 @@ sub connect {
     # Connect the component as the connection can not be done
     # within a message callback.
     eval {
-        $self->_component->connect(%{$self->{config}->{amqp}});
+        $self->_component->connect(%{ $self->{config}->{amqp} });
 
         # Set the in_eventloop mode on the sender as we want to avoid the sender to connect
         # or declare queues as it cannot be done in an event loop.
@@ -393,7 +385,10 @@ sub receiveAll {
 
                         # Retrigger a message defined
                         if (defined $publish_error) {
-                            # TODO: retrriger the message
+                            my $channel = $publish_error->channel;
+                            $log->info("Retriggering undelivred message on <" . $channel . ">");
+                            $self->_component->send(channel => $publish_error->channel,
+                                                    %{ $publish_error->body });
                             $publish_error = undef;
                         }
 
@@ -413,11 +408,8 @@ sub receiveAll {
                                 if ($self->isRunning) {
                                     $log->error("Fetch on <$type>, channel <$channel> failed: $err");
                                 }
-                                # ...and exist the loop to try to reconnect
-                                last;
                             }
                         }
-
                         # Disconnect the child from the broker
                         $self->disconnect();
                     }

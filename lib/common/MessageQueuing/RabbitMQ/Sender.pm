@@ -90,11 +90,11 @@ sub AUTOLOAD {
     my @autoload = split(/::/, $AUTOLOAD);
     my $accessor = $autoload[-1];
 
-    my $method = $self->methods()->{$accessor};
+    my $method = $self->getMethods()->{$accessor};
     if ((not defined $method) or not defined ($method->{message_queuing})) {
         # The called method is not a defined message queuing method.
         $method = 'SUPER::' . $accessor;
-        return $self->$method();
+        return $self->$method(%args);
     }
 
     # Merge the arguments with possibly prefined for this method.
@@ -188,7 +188,7 @@ sub AUTOLOAD {
         throw Kanopya::Exception::MessageQueuing::PublishFailed(
                   error   => $err,
                   channel => $channel,
-                  body    => $data,
+                  body    => \%args,
               );
     }
 }
@@ -234,5 +234,8 @@ sub setCallBackMode {
     $log->debug("Sender now in eventloop mode to $args{in_eventloop}");
     $self->{_incallback} = $args{in_eventloop};
 }
+
+
+
 
 1;

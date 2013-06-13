@@ -45,7 +45,6 @@ sub check {
     General::checkParams(args => $self->{params}, required => [ "file_path" ]);
 }
 
-
 sub execute {
     my $self = shift;
     $self->SUPER::execute();

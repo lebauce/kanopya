@@ -58,7 +58,7 @@ sub register {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'type', 'channel' ],
+                         required => [ 'type', 'channel', 'callback' ],
                          optional => { 'duration'  => undef,
                                        'instances' => 1 });
 
@@ -206,6 +206,11 @@ sub fetch {
     };
     if ($@) {
         my $err = $@;
+        # Acknowledge the message, and rethrow the error
+        if (defined $rv) {
+            $self->acknowledge(tag => $rv->{delivery_tag});
+        }
+
         if (ref($err)) {
             $err->rethrow();
         }
