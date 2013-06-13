@@ -25,10 +25,21 @@ function vmdetails(spid) {
 
 function load_iaas_detail_hypervisor (container_id, elem_id) {
     var container = $('#' + container_id);
-    var cloudmanagerid  = $('#iaas_list').jqGrid('getRowData', elem_id)['cloudmanager.pk'];
+
+    // Retrieve the cloud manager
+    var cloudmanagerid;
+    $.ajax({
+        url     : 'api/serviceprovider/'+elem_id+'/components?component_type.component_type_categories.component_category.category_name=HostManager',
+        async   : false,
+        success : function(host_manager) {
+           cloudmanagerid = host_manager[0].pk;
+        }
+    });
     if (cloudmanagerid == null) {
+        console.log('No cloud manager found');
         return;
     }
+
     $.ajax({
         url     : '/api/virtualization/' + cloudmanagerid + '/hypervisors?expand=node',
         type    : 'POST',
