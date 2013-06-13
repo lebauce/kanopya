@@ -26,26 +26,22 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
-    mysql5_id => {
-        label        => 'Database server',
-        type         => 'relation',
-        relation     => 'single',
-        pattern      => '^\d*$',
-        is_mandatory => 0,
-        is_editable  => 1,
-    },
-    nova_controller_id => {
+    iaas_id => {
         label        => 'Openstack controller',
         type         => 'relation',
         relation     => 'single',
         pattern      => '^\d*$',
         is_mandatory => 0,
         is_editable  => 1,
+        specialized  => 'nova_controller'
     },
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub nova_controller {
+    return shift->iaas;
+}
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;

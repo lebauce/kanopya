@@ -519,7 +519,7 @@ CREATE TABLE `vmm` (
   `iaas_id` int(8) unsigned NULL,
   PRIMARY KEY (`vmm_id`),
   FOREIGN KEY (`vmm_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`iaas_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`iaas_id`) REFERENCES `virtualization` (`virtualization_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --

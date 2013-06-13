@@ -17,6 +17,14 @@ package Entity::Component::Vmm;
 use base Entity::Component;
 
 use constant ATTR_DEF => {
+    iaas_id => {
+        label        => 'IAAS controller',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }

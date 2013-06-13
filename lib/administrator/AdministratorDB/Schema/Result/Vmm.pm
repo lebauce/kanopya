@@ -51,7 +51,7 @@ __PACKAGE__->table("vmm");
   data_type: 'integer'
   extra: {unsigned => 1}
   is_foreign_key: 1
-  is_nullable: 0
+  is_nullable: 1
 
 =cut
 
@@ -68,7 +68,7 @@ __PACKAGE__->add_columns(
     data_type => "integer",
     extra => { unsigned => 1 },
     is_foreign_key => 1,
-    is_nullable => 0,
+    is_nullable => 1,
   },
 );
 
@@ -86,19 +86,24 @@ __PACKAGE__->set_primary_key("vmm_id");
 
 =head1 RELATIONS
 
-=head2 iaas
+=head2 iaa
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Component>
+Related object: L<AdministratorDB::Schema::Result::Virtualization>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "iaas",
-  "AdministratorDB::Schema::Result::Component",
-  { component_id => "iaas_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  "iaa",
+  "AdministratorDB::Schema::Result::Virtualization",
+  { virtualization_id => "iaas_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "NO ACTION",
+  },
 );
 
 =head2 kvm
@@ -143,7 +148,7 @@ __PACKAGE__->belongs_to(
   "vmm",
   "AdministratorDB::Schema::Result::Component",
   { component_id => "vmm_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
 =head2 xen
@@ -162,8 +167,20 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-21 19:20:10
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:EBUob6FF/iAcYOVZVuGVKw
+# Created by DBIx::Class::Schema::Loader v0.07035 @ 2013-06-13 02:55:38
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:QAtITTkeLkV/keWm7DCaWA
+
+__PACKAGE__->belongs_to(
+  "iaas",
+  "AdministratorDB::Schema::Result::Virtualization",
+  { virtualization_id => "iaas_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "NO ACTION",
+  },
+);
 
 __PACKAGE__->belongs_to(
   "parent",

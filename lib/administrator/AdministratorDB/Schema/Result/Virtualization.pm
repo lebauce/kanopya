@@ -46,6 +46,20 @@ __PACKAGE__->table("virtualization");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 overcommitment_cpu_factor
+
+  data_type: 'double precision'
+  default_value: 1
+  extra: {unsigned => 1}
+  is_nullable: 0
+
+=head2 overcommitment_memory_factor
+
+  data_type: 'double precision'
+  default_value: 1
+  extra: {unsigned => 1}
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -58,19 +72,33 @@ __PACKAGE__->add_columns(
   },
   "overcommitment_cpu_factor",
   {
-    data_type => "double",
+    data_type => "double precision",
     default_value => 1,
     extra => { unsigned => 1 },
     is_nullable => 0,
   },
   "overcommitment_memory_factor",
   {
-    data_type => "double",
+    data_type => "double precision",
     default_value => 1,
     extra => { unsigned => 1 },
     is_nullable => 0,
   },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</virtualization_id>
+
+=back
+
+=cut
+
+__PACKAGE__->set_primary_key("virtualization_id");
+
+=head1 RELATIONS
 
 =head2 nova_controller
 
@@ -102,35 +130,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 vsphere5
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Vsphere5>
-
-=cut
-
-__PACKAGE__->might_have(
-  "vsphere5",
-  "AdministratorDB::Schema::Result::Vsphere5",
-  { "foreign.vsphere5_id" => "self.virtualization_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head1 PRIMARY KEY
-
-=over 4
-
-=item * L</virtualization_id>
-
-=back
-
-=cut
-
-__PACKAGE__->set_primary_key("virtualization_id");
-
-=head1 RELATIONS
-
 =head2 repositories
 
 Type: has_many
@@ -158,12 +157,43 @@ __PACKAGE__->belongs_to(
   "virtualization",
   "AdministratorDB::Schema::Result::Component",
   { component_id => "virtualization_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
+);
+
+=head2 vmms
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Vmm>
+
+=cut
+
+__PACKAGE__->has_many(
+  "vmms",
+  "AdministratorDB::Schema::Result::Vmm",
+  { "foreign.iaas_id" => "self.virtualization_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 vsphere5
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Vsphere5>
+
+=cut
+
+__PACKAGE__->might_have(
+  "vsphere5",
+  "AdministratorDB::Schema::Result::Vsphere5",
+  { "foreign.vsphere5_id" => "self.virtualization_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-02-20 14:07:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:rD0/OJhnsI4zlRPzS0yRfg
+# Created by DBIx::Class::Schema::Loader v0.07035 @ 2013-06-13 02:55:38
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:m9gZaD+kIARsZNKIwlbcQg
+
 
 __PACKAGE__->belongs_to(
   "parent",
@@ -172,5 +202,4 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;
