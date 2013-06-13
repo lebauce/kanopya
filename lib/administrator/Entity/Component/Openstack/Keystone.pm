@@ -95,4 +95,8 @@ sub getHostsEntries {
     return \@entries;
 }
 
+sub checkConfiguration {
+    shift->checkAttribute(attribute => "mysql5");
+}
+
 1;

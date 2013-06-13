@@ -170,17 +170,6 @@ sub lvcreate {
 
 }
 
-=head2
-
-=begin classdoc
-Generate component manifest
-
-@return content of the Cinder puppet manifest
-
-=end classdoc
-
-=cut
-
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
@@ -240,6 +229,14 @@ sub getHostsEntries {
                    $self->mysql5->service_provider->getHostEntries());
 
     return \@entries;
+}
+
+sub checkConfiguration {
+    my $self = shift;
+
+    for my $attr ("mysql5", "nova_controller") {
+        $self->checkAttribute(attribute => $self);
+    }
 }
 
 =head

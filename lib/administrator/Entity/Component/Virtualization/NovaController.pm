@@ -242,6 +242,14 @@ sub getHostsEntries {
     return \@entries;
 }
 
+sub checkConfiguration {
+    my $self = shift;
+
+    for my $attr ("mysql5", "amqp", "keystone") {
+        $self->checkAttribute(attribute => $attr);
+    }
+}
+
 =pod
 
 =begin classdoc
