@@ -2,6 +2,8 @@
 require('common/service_common.js');
 require('common/model.js');
 require('common/general.js');
+require('widgets/widget_common.js');
+require('jquery/jqplot/jqplot.donutRenderer.min.js');
 
 // Must progressively move functions in the Service class
 var Service = (function(_super) {
@@ -196,6 +198,149 @@ function servicesList (container_id, elem_id) {
     };
 	
     createAddServiceButton(container_id, grid);
+
+    createServiceGraphs(container_id);
+}
+
+/*
+ * For a specified service template, display core/ram usage by user and by service instance
+ *
+ * Add services graphs container
+ * Retrieve, compute and display services usage info
+ */
+function createServiceGraphs(cid, service_template_id) {
+    var graphs_visible = false;
+
+    // Create graph container
+    graph_cont_id = 'graphs_container';
+    $('#'+graph_cont_id).remove();
+    $('#'+cid)
+    .prepend(
+            $('<div>', {id : graph_cont_id})
+            .append($('<span>', {text : 'Resources usage', class : 'clickable'}).prepend($('<span>', {class:'ui-icon ui-icon-triangle-1-e'}))
+                    //.css({'font-size': '0.83em', 'font-weight': 'bold', 'display':'inline-block'})
+                    .css({'font-weight': 'normal', 'color' : '#555'})
+                    .click(function() {
+                        $(this).find('span').toggleClass('ui-icon-triangle-1-e ui-icon-triangle-1-s');
+                        $(this).next().slideToggle();
+                        if (!graphs_visible) {
+                            buildGraphs();
+                        }
+                    })
+             )
+             .append(
+                 $('<div>')
+                .append('<div class="loading"><img alt="Loading, please wait" src="/css/theme/loading.gif" /><p>Loading...</p></div>')
+                .append($('<div>', {id:'graph_users_core',    style:'width:20%;float:left'}))
+                .append($('<div>', {id:'graph_users_ram',     style:'width:20%;float:left'}))
+                .append($('<div>', {id:'graph_clusters_core', style:'width:20%;float:left'}))
+                .append($('<div>', {id:'graph_clusters_ram',  style:'width:20%;float:left'}))
+                .append($('<div>', {id:'graph_clusters_node', style:'width:20%;float:left'}))
+                .append($('<div>', {style:'clear:both'}))
+                .hide()
+            )
+    );
+
+    // Inner function used to retrieve, compute and display services data
+    function buildGraphs() {
+        graphs_visible = true;
+        // Get infos
+        var url = '/api/cluster?expand=nodes,nodes.host,user';
+        if (service_template_id) {
+            url += '&service_template.service_template_id=' + service_template_id;
+        }
+        $.get(url, function(clusters) {
+            var core_by_user  = {}, ram_by_user   = {},
+                users_core    = [], users_ram     = [],
+                clusters_core = [], clusters_ram  = [], clusters_nodes = [],
+                total_core = 0, total_ram = 0, total_node = 0;
+            // Retrieve and compute info for each cluster
+            $(clusters).each(function(i,cluster) {
+                var cluster_ram = 0, cluster_core = 0, cluster_nodes = 0;
+                $(cluster.nodes).each(function(i,node){
+                    cluster_core += parseFloat(node.host.host_core);
+                    cluster_ram  += parseFloat(node.host.host_ram);
+                    cluster_nodes++;
+                });
+                cluster_ram /= Math.pow(1024,2);
+                total_core += cluster_core;
+                total_ram  += cluster_ram;
+                total_node += cluster_nodes;
+                if (cluster_nodes !=0) {
+                    clusters_core.push([cluster.cluster_name, cluster_core]);
+                    clusters_ram.push([cluster.cluster_name, cluster_ram]);
+                    clusters_nodes.push([cluster.cluster_name, cluster_nodes]);
+                }
+                // Add values to user data
+                var user_name = cluster.user.user_firstname + ' ' + cluster.user.user_lastname;
+                core_by_user[user_name] = core_by_user[user_name] ? core_by_user[user_name] + cluster_core : cluster_core;
+                ram_by_user[user_name] = ram_by_user[user_name] ? ram_by_user[user_name] + cluster_ram : cluster_ram;
+            });
+            // Build users data as expected for plotting ({name:value} to [name,value])
+            $.each(core_by_user,function(name,value) {
+                if (value != 0) {
+                    users_core.push([name, value]);
+                }
+            });
+            $.each(ram_by_user,function(name,value) {
+                if (value != 0) {
+                    users_ram.push([name, value]);
+                }
+            });
+            total_ram = Math.round(total_ram);
+
+            // Draw graphs
+            $('.loading').remove();
+            if (users_core.length > 0) {
+                serviceGraph('graph_users_ram',     'Users RAM usage (MB)',    [users_ram],     total_ram);
+                serviceGraph('graph_clusters_core', 'Services core usage',     [clusters_core], total_core);
+                serviceGraph('graph_clusters_ram',  'Services RAM usage (MB)', [clusters_ram],  total_ram);
+                serviceGraph('graph_clusters_node', 'Services nodes',          [clusters_nodes],total_node);
+            } else {
+                $('#'+graph_cont_id).find('span').next().append($('<span>', {text : 'No instance is running'}));
+            }
+        });
+    }
+}
+
+// Create one donut graph with series data, using div_id as container
+function serviceGraph(div_id, title, series, middle_text) {
+    var g = $.jqplot(div_id, series, {
+        seriesDefaults: {
+          renderer:$.jqplot.DonutRenderer,
+          rendererOptions:{
+            sliceMargin     : 3,
+            startAngle      : -90,
+            showDataLabels  : true,
+            dataLabels      : 'value',
+            highlightMouseOver : true,
+            fill : true,
+          }
+        },
+        grid: {
+            drawBorder: false,
+            drawGridlines: false,
+            background: 'rgba(1,1,1,0)',
+            shadow:false
+        },
+        title : { text : title },
+        legend: { show : false, location : 's', placement : 'outside' },
+        highlighter: {
+            show: true,
+            formatString    :'%s : %s',
+            tooltipLocation :'se',
+            useAxesFormatters:false
+        },
+        cursor : {
+            show : false
+        }
+    });
+    setGraphResizeHandlers(div_id, g, addMiddleText);
+
+    function addMiddleText() {
+        $('#'+div_id).append($('<span>', {text:middle_text}).css({'position':'absolute', 'top':'50%', 'text-align':'center', 'width':'100%'}));
+    };
+    addMiddleText();
 }
 
 function loadServicesResources (container_id, elem_id) {
