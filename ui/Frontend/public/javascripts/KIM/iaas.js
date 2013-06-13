@@ -242,9 +242,14 @@ function load_iaas_content (container_id) {
     // Add the same tabs than 'Services'
     jQuery.extend(true, tabs, mainmenu_def.Services.jsontree.submenu);
     // Remove the Billing tab
-    tabs.pop();
+    for (var i = tabs.length -1; i >= 0; i--) {
+        if (tabs[i].id == 'billing') {
+            tabs.splice(i,1);
+            break;
+        }
+    }
     // Add the tab 'Hypervisor'
-    tabs.push({label : 'Hypervisors', id : 'hypervisors', onLoad : load_iaas_detail_hypervisor });
+    tabs.push({label : 'Hypervisors', id : 'hypervisors', onLoad : load_iaas_detail_hypervisor, icon : 'compute'});
     // change details tab callback to inform we are in IAAS mode
     var details_tab = $.grep(tabs, function (e) {return e.id == 'service_details'});
     details_tab[0].onLoad = function(cid, eid) { require('KIM/services_details.js'); loadServicesDetails(cid, eid, 1);};
