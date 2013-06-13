@@ -183,7 +183,7 @@ public class Constraints {
         private List<Interface> m_interfaces;
 
         public Network() {
-            this.m_interfaces = new ArrayList<>();
+            this.m_interfaces = new ArrayList();
         }
 
         public Network(List<Interface> interfaces) {

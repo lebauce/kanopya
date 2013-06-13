@@ -15,7 +15,7 @@
     <property name="build.home" value="." />
 
     <!-- Main class -->
-    <property name="main.class" value="main.Main" />
+    <property name="main.class" value="main.getHost" />
 
     <!-- The base directory for all libraries (jar) files -->
     <property name="lib.home" value="lib" />
