@@ -292,6 +292,7 @@ function createServiceGraphs(cid, service_template_id) {
             // Draw graphs
             $('.loading').remove();
             if (users_core.length > 0) {
+                serviceGraph('graph_users_core',    'Users core usage',        [users_core],    total_core);
                 serviceGraph('graph_users_ram',     'Users RAM usage (MB)',    [users_ram],     total_ram);
                 serviceGraph('graph_clusters_core', 'Services core usage',     [clusters_core], total_core);
                 serviceGraph('graph_clusters_ram',  'Services RAM usage (MB)', [clusters_ram],  total_ram);

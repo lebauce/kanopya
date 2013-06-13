@@ -79,6 +79,8 @@ function add_menutree(container, label, menu_info, elem_id) {
             details     : { link_to_menu : 'yes', label_key : 'cluster_name'},
             before_container : add_button
         });
+
+        createServiceGraphs(container_id, elem_id);
     });
     var sublevel = $('<ul>');
     sublevel.hide();
