@@ -101,7 +101,7 @@ sub oneRun {
 
     # Execute the callback
     eval {
-        $method->();
+        $method->($self);
     };
     if ($@) {
         $log->error("(Deamon $self->{name}) Pooling method failled:\n$@");

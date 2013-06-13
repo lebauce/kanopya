@@ -57,7 +57,7 @@ sub new {
     }
 
     # Register the method to call every loop
-    $self->registerPollingMethod(callback => \&$self->update);
+    $self->registerPollingMethod(callback => \&update);
 
     return $self;
 }
