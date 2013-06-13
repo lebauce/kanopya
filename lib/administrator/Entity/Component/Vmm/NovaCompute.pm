@@ -74,7 +74,6 @@ sub getPuppetDefinition {
     my $keystone = $self->nova_controller->keystone->getMasterNode->fqdn;
     my $quantum = ($self->nova_controller->quantums)[0];
     my $amqp = $self->nova_controller->amqp->getMasterNode->fqdn;
-    my $sql = $self->mysql5->getMasterNode->fqdn;
     my $name = "nova-" . $self->nova_controller->id;
 
     my @uplinks;
@@ -93,7 +92,6 @@ sub getPuppetDefinition {
                             name => "kanopya::openstack::nova::compute",
                             params => {
                                 amqpserver => $amqp,
-                                dbserver => $sql,
                                 glance => $glance,
                                 keystone => $keystone,
                                 quantum => $quantum->getMasterNode->fqdn,
@@ -104,7 +102,7 @@ sub getPuppetDefinition {
                                 rabbit_virtualhost => 'openstack-' . $self->nova_controller->id
                             }
                         ),
-            dependencies => [ $self->mysql5 ]
+            dependencies => [ ]
         }
     } );
 }
@@ -118,10 +116,13 @@ sub getHostsEntries {
     }
 
     @entries = ($self->nova_controller->keystone->service_provider->getHostEntries(),
-                $self->nova_controller->amqp->service_provider->getHostEntries(),
-                $self->mysql5->service_provider->getHostEntries());
+                $self->nova_controller->amqp->service_provider->getHostEntries());
 
     return \@entries;
+}
+
+sub checkConfiguration {
+    shift->checkAttribute(attribute => "iaas");
 }
 
 1;

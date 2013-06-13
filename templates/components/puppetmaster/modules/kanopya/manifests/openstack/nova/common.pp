@@ -1,10 +1,10 @@
 class kanopya::openstack::nova::common(
     $amqpserver,
-    $dbserver,
     $glance,
     $keystone,
     $quantum,
     $email,
+    $dbserver,          = '127.0.0.1',
     $database_user      = 'nova',
     $database_password  = 'nova',
     $database_name      = 'nova',

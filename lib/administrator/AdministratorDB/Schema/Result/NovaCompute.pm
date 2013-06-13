@@ -46,13 +46,6 @@ __PACKAGE__->table("nova_compute");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 mysql5_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 1
-
 =head2 nova_controller_id
 
   data_type: 'integer'
@@ -69,13 +62,6 @@ __PACKAGE__->add_columns(
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
-  },
-  "mysql5_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 1,
   },
   "nova_controller_id",
   {
@@ -99,26 +85,6 @@ __PACKAGE__->add_columns(
 __PACKAGE__->set_primary_key("nova_compute_id");
 
 =head1 RELATIONS
-
-=head2 mysql5
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Mysql5>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "mysql5",
-  "AdministratorDB::Schema::Result::Mysql5",
-  { mysql5_id => "mysql5_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
-);
 
 =head2 nova_compute
 

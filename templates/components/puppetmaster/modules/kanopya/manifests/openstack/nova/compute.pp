@@ -1,6 +1,5 @@
 class kanopya::openstack::nova::compute(
     $amqpserver,
-    $dbserver,
     $glance,
     $keystone,
     $quantum,
@@ -24,7 +23,6 @@ class kanopya::openstack::nova::compute(
     if ! defined(Class['kanopya::openstack::nova::common']) {
         class { 'kanopya::openstack::nova::common':
             amqpserver         => "${amqpserver}",
-            dbserver           => "${dbserver}",
             glance             => "${glance}",
             keystone           => "${keystone}",
             quantum            => "${quantum}",

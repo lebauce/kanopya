@@ -174,21 +174,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 novas_compute
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::NovaCompute>
-
-=cut
-
-__PACKAGE__->has_many(
-  "novas_compute",
-  "AdministratorDB::Schema::Result::NovaCompute",
-  { "foreign.mysql5_id" => "self.mysql5_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 quantums
 
 Type: has_many
