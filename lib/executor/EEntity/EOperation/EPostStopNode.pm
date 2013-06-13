@@ -125,9 +125,6 @@ sub prerequisites {
     if (not $@ and $result) {
         return $delay;
     }
-    $self->{context}->{host}->setState(state => "down");
-
-    $log->info("Host <$host_id> in cluster <$cluster_id> is 'down', preparing PostStopNode.");
     return 0;
 }
 
@@ -224,6 +221,23 @@ sub execute {
     } else {
         $log->info("cluster image persistence is set, keeping $systemimage_name image");
     }
+}
+
+
+=pod
+=begin classdoc
+
+Release the host here, because some host manager enqueue a RemoveHost operation.
+
+=end classdoc
+=cut
+
+sub postrequisites {
+    my ($self, %args) = @_;
+    $self->SUPER::postrequisite(%args);
+
+    # Release the host
+    $self->{context}->{host}->release();
 }
 
 

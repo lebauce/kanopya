@@ -110,6 +110,16 @@ sub stopHost {
     throw Kanopya::Exception::NotImplemented();
 }
 
+
+sub releaseHost {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "host" ]);
+
+    $args{host}->setState(state => "down");
+}
+
 =head2 postStart
 
     Desc : This function is called once a host has started

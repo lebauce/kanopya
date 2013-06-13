@@ -82,6 +82,13 @@ sub stop {
     $self->getHostManager->stopHost(host => $self);
 }
 
+sub release {
+    my $self = shift;
+    my %args = @_;
+
+    $self->getHostManager->releaseHost(host => $self);
+}
+
 sub postStart {
     my $self = shift;
     my %args = @_;

@@ -674,12 +674,20 @@ sub stopHost {
 
     # delete vm
     $api->compute->servers(id => $uuid)->delete;
-
-    # delete host
-    $host->setAttr(name  => 'active', value => '0');
-    $host->save;
-    $host->remove;
 }
+
+
+sub releaseHost {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "host" ]);
+
+    # In the case of OpenNebula, we delete the host once it's stopped
+    $args{host}->setAttr(name => 'active', value => '0', save => 1);
+    $args{host}->remove;
+}
+
 
 sub postStart {
     my ($self, %args) = @_;

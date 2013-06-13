@@ -563,13 +563,20 @@ sub stopHost {
     # delete the image
     my $name = $image->getAttr(name => 'systemimage_name');
     $self->oneimage_delete(image_nameorid => $name);
+}
+
+
+sub releaseHost {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "host" ]);
 
     # In the case of OpenNebula, we delete the host once it's stopped
-    $args{host}->setAttr(name  => 'active',
-                         value => '0');
-    $args{host}->save;
+    $args{host}->setAttr(name => 'active', value => '0', save => 1);
     $args{host}->remove;
 }
+
 
 # update a vm information (hypervisor host and vnc port)
 sub postStart {

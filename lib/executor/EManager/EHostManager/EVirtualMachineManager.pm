@@ -428,4 +428,15 @@ sub getVMDetails {
 
     throw Kanopya::Exception::NotImplemented();
 }
+
+sub releaseHost {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "host" ]);
+
+    throw Kanopya::Exception::NotImplemented();
+}
+
+
 1;
