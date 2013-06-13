@@ -1304,6 +1304,26 @@ sub registerCluster {
     return $service_provider;
 }
 
+=head2 scaleHost
+
+    Desc: launch a scale workflow that can be of type 'cpu' or 'memory'
+    Args: $host_id, $scalein_value, $scalein_type
+
+=cut
+
+sub scaleHost {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host_id', 'scalein_value', 'scalein_type' ]);
+
+    # vsphere requires memory value to be a multiple of 128 Mb
+    if ($args{scalein_type} eq 'memory') {
+        $args{scalein_value} -= $args{scalein_value} % (128 * 1024 * 1024);
+    }
+
+    $self->SUPER::scaleHost(%args);
+}
+
 =pod
 
 =begin classdoc
