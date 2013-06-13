@@ -79,7 +79,7 @@ CREATE TABLE `entity_state` (
   `state` char(32),
   `prev_state` char(32),
   PRIMARY KEY (`entity_state_id`),
-  UNIQUE KEY (`entity_id`),
+  UNIQUE KEY (`entity_id`, `consumer_id`),
   FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`consumer_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

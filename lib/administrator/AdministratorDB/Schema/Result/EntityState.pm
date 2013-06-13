@@ -122,11 +122,13 @@ __PACKAGE__->set_primary_key("entity_state_id");
 
 =item * L</entity_id>
 
+=item * L</consumer_id>
+
 =back
 
 =cut
 
-__PACKAGE__->add_unique_constraint("entity_id", ["entity_id"]);
+__PACKAGE__->add_unique_constraint("entity_id", ["entity_id", "consumer_id"]);
 
 =head1 RELATIONS
 
@@ -161,8 +163,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-06-11 15:06:16
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:qWlr9M74u97Pkc6fWk7+eA
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-06-13 10:51:12
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:bgiQQUaHtFcTgUrrE/TRug
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
