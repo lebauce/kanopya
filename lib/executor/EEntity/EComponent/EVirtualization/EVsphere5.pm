@@ -279,7 +279,7 @@ sub createVm {
         );
     };
     if ($@) {
-        $errmsg = 'Error creating the virtual machine on host '.$host_conf{hypervisor}.': '.$@;
+        $errmsg = 'Error while creating the virtual machine on host '.$host_conf{hypervisor}.': '.$@;
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 

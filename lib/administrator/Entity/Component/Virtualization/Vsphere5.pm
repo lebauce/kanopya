@@ -293,7 +293,7 @@ Check if a connection is established and if not create one using the component c
 sub negociateConnection {
     my ($self,%args) = @_;
 
-    $log->info('Checking if a session to vSphere is already opened');
+    $log->debug('Checking if a session to vSphere is already opened');
     #try to grab a dummy entity to check if a session is opened
     my $sc;
     eval {
@@ -1471,40 +1471,6 @@ sub promoteVm {
 
     $args{host}->hypervisor_id($args{hypervisor_id});
     return $args{host};
-}
-
-=pod
-
-=begin classdoc
-
-Start a vSphere VM registered in Kanopya
-
-=end classdoc
-
-=cut
-
-sub powerOnVm {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'hypervisor', 'vm']);
-
-    my $host_name = $args{hypervisor}->node->node_hostname;
-    my $vm_name   = $args{vm}->node->node_hostname;
-
-    #get the HostSystem view
-    my $host_view = $self->findEntityView(view_type   => 'HostSystem',
-                                          hash_filter => {
-                                              'name' => $host_name
-                                          });
-    my $host_vms = $host_view->vm;
-
-    #maybe find a better way to do that?
-    foreach my $vm (@$host_vms) {
-        my $guest = $self->getView(mo_ref => $vm);
-        if ($guest->name eq $vm_name) {
-            $guest->PowerOnVM();
-        }
-    }
 }
 
 sub _registerTemplate {
