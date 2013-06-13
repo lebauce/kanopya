@@ -41,7 +41,7 @@ sub execute {
         my $errmsg = "UpdatePuppetCluster Operation cannot be used without a puppet " .
                      "agent component configured on the cluster";
         $log->error($errmsg);
-        thow Kanopya::Exception::Internal(error => $errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
     } else {
         $self->{context}->{puppetagent} = EEntity->new(
             data => $puppetagent
