@@ -113,7 +113,7 @@ sub startHost {
 
     $self->negociateConnection();
 
-   my $host       = $args{host};
+    my $host       = $args{host};
     my $hypervisor = $args{hypervisor};
     # TODO depending on systemimage ?
     my $guest_id   = 'debian6_64Guest';
@@ -121,7 +121,7 @@ sub startHost {
     $log->info('Start host on < hypervisor '. $hypervisor->id.' >');
 
     if (!defined $hypervisor) {
-        my $errmsg = "Cannot add node in cluster ".$args{host}->getClusterId().", no hypervisor available";
+        my $errmsg = "Cannot add node in cluster ".$host->getClusterId().", no hypervisor available";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
@@ -182,6 +182,15 @@ sub startHost {
                       datacenter_view => $datacenter_view,
                   );
 
+    #Power On
+    eval {
+        $vm_view->PowerOnVM();
+    };
+    if ($@) {
+        my $errmsg = 'Error while powering on VM ' . $host->id . ' : ' . $@;
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+
     #Declare the vsphere5 vm in Kanopya
     $self->promoteVm(
         host          => $host->_entity,
@@ -189,9 +198,6 @@ sub startHost {
         hypervisor_id => $hypervisor->id,
         guest_id      => $guest_id,
     );
-
-    #Power On
-    $vm_view->PowerOnVM();
 }
 
 =pod
@@ -543,8 +549,10 @@ sub get_network {
                     # TODO Synchronized IP Pools in stead of registering for each iface
                     $ipPoolManager->CreateIpPool(dc => $datacenter_view, pool => $poolipSpec);
                 };
-                $log->debug('Pool ip ' . $poolip->poolip_name . ' already registered on datacenter '
-                    . $datacenter_view->name);
+                if ($@) {
+                    $log->debug('Pool ip ' . $poolip->poolip_name . ' already registered on datacenter '
+                        . $datacenter_view->name);
+                }
 
                 $nic_backing_info = VirtualEthernetCardNetworkBackingInfo->new(
                     deviceName => $network_name, # network to which interface will be connected
