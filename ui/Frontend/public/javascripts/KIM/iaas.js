@@ -61,11 +61,11 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
                             if (vms.length > 0) {
                                 hyp.vmcount     += vms.length
                                 hyp.isLeaf      = false;
-                                for (var j in vms) if (vms.hasOwnProperty(i)) {
+                                for (var j in vms) if (vms.hasOwnProperty(j)) {
                                     vms[j].id       = hyp.id + "_" + vms[j].pk;
                                     vms[j].isLeaf   = true;
                                     vms[j].level    = '1';
-                                    vms[j].parent   = data[i].id;
+                                    vms[j].parent   = hyp.id;
                                     vms[j].type     = 'vm';
                                     hyp.totalRamUsed    += parseInt(vms[j].host_ram);
                                     hyp.totalCoreUsed   += parseInt(vms[j].host_core);
