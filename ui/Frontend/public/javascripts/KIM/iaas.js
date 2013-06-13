@@ -128,7 +128,7 @@ function load_hypervisorvm_details(cid, eid, cmgrid) {
     if (data.type === 'hypervisor') {
         var table           = $('<table>', { width : '100%' }).appendTo($('#' + cid));
         $(table).append($('<tr>').append($('<th>', { text : 'Hostname : ', width : '100px' }))
-                                     .append($('<td>', { text : data.node.node_hostname })));
+                                     .append($('<td>', { text : data['node.node_hostname'] })));
         data.host_ram = data.host_ram / 1024 / 1024;
         data.totalRamUsed = data.totalRamUsed / 1024 / 1024;
         var hypervisorType  = $('<td>');

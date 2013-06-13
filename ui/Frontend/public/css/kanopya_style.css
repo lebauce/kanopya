@@ -298,6 +298,10 @@ button.ui-multiselect,.ui-multiselect-menu li label{cursor:pointer;}
     margin-right: 10px;
 }
 
+.ui-progressbar-value {
+    background : #7E388A;
+}
+
 /* About kanopya page */
 #logo-about{display:inline-block;vertical-align:top;margin:20px;}
 #content-about{display:inline-block;vertical-align:top;margin:20px 20px 20px 0;}
