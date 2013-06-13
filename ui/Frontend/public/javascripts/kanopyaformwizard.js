@@ -282,11 +282,12 @@ var KanopyaFormWizard = (function() {
 
         } else {
             // Relation is single to single
-            for (relation in relations) {
-                for (prop in relations[relation].cond) if (relations[relation].cond.hasOwnProperty(prop)) {
+            relations:
+            for (var relation in relations) {
+                for (var prop in relations[relation].cond) if (relations[relation].cond.hasOwnProperty(prop)) {
                     if (relations[relation].cond[prop] === 'self.' + name) {
                         resource = relations[relation].resource;
-                        break;
+                        break relations;
                     }
                 }
             }
