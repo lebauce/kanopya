@@ -52,6 +52,11 @@ sub methods {
 
 my $merge = Hash::Merge->new('LEFT_PRECEDENT');
 
+# Define the event loop mode. If a process want to send messages within an event loop
+# (i.e. within a callback executed in a thread at message receipt), it cannot use
+# routine like connect/disconnect/declare_queue, this should be done out of the event loop.
+my $incallback;
+
 
 =pod
 =begin classdoc
@@ -110,18 +115,14 @@ sub AUTOLOAD {
         password => delete $args{password},
     };
 
-    # If we are in an event loop, cannot connect or declare,
-    # this should be done out of the event loop.
-    if (not $self->{_incallback}) {
-        # Connect the sender if not done
-        if (not $self->connected) {
-            $self->connect(%$auth);
-        }
-        # Declare the queue if not done at connect
-        $self->declareQueue(channel => $channel);
-        # Declare the exchange if not done at connect
-        $self->declareExchange(channel => $channel);
+    # Connect the sender if not done
+    if (not $self->connected) {
+        $self->connect(%$auth);
     }
+    # Declare the queue if not done at connect
+    $self->declareQueue(channel => $channel);
+    # Declare the exchange if not done at connect
+    $self->declareExchange(channel => $channel);
 
     # Serialize arguments
     my $data = JSON->new->utf8->encode(\%args);
@@ -180,7 +181,7 @@ sub AUTOLOAD {
 #        throw Kanopya::Exception::MessageQueuing::PublishFailed(error => $err);
 #    }
 
-    if (not $self->{_incallback}) {
+    if (not $incallback) {
         $self->disconnect();
     }
 
@@ -232,10 +233,7 @@ sub setCallBackMode {
     General::checkParams(args => \%args, optional => { 'in_eventloop' => 1 });
 
     $log->debug("Sender now in eventloop mode to $args{in_eventloop}");
-    $self->{_incallback} = $args{in_eventloop};
+    $incallback = $args{in_eventloop};
 }
-
-
-
 
 1;
