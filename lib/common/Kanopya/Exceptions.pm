@@ -135,6 +135,11 @@ use Exception::Class (
         isa         => 'Kanopya::Exception',
         description => 'Method not implemented'
     },
+    Kanopya::Exception::InvalidConfiguration => {
+        isa         => 'Kanopya::Exception',
+        description => 'Invalid configuration',
+        fields      => [ 'component' ]
+    },
     Kanopya::Exception::MessageQueuing => {
         isa         => 'Kanopya::Exception',
         description => 'Kanopya MessageQueuing Exception'

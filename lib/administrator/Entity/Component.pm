@@ -300,13 +300,43 @@ Method to be overrided to insert in db default configuration for tables linked t
 
 sub insertDefaultExtendedConfiguration {}
 
+=pod
+=begin classdoc
+
+Check that the configuration of the component is correct, raise an exception otherwise
+
+=end classdoc
+=cut
+
+sub checkConfiguration {}
+
+sub checkAttribute {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'attribute' ]);
+
+    my $attribute = $args{attribute};
+    my $error = $args{error};
+    if (! $error) {
+        my $attrs = $self->getAttrDefs();
+        $attribute .= "_id" if ! defined $attrs->{$attribute};
+        $error = "There is no " . lcfirst($attrs->{$attribute}->{label}) .
+                 " configured for component ". $self->label;
+    }
+
+    if (! $self->$attribute) {
+        throw Kanopya::Exception::InvalidConfiguration(
+            error => $error,
+            component => $self
+        );
+    }
+}
+
 sub getClusterizationType {}
 
 sub getExecToTest {}
 
 sub getNetConf {}
-
-sub needBridge { return 0; }
 
 sub getHostsEntries { return; }
 

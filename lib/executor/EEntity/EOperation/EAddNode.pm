@@ -79,6 +79,10 @@ sub check {
     if ($self->{context}->{host_manager}->hostType eq 'Virtual Machine') {
         $self->{context}->{host_manager_sp} = $self->{context}->{host_manager}->service_provider;
     }
+
+    # Check all the components are properly configured
+    my @components = $self->{context}->{cluster}->components;
+    map { $_->checkConfiguration() } @components;
 }
 
 
