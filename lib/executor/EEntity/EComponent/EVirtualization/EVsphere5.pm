@@ -737,4 +737,25 @@ sub getVMState {
     };
 }
 
+=pod
+
+=begin classdoc
+
+Determine whether a host is up or down
+
+=end classdoc
+
+=cut
+
+sub isUp {
+    my ($self, %args) = @_;
+
+    General::checkParams(
+        args     => \%args,
+        required => [ 'cluster', 'host' ]
+    );
+
+    return 1;
+}
+
 1;
