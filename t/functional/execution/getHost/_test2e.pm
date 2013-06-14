@@ -137,16 +137,19 @@ sub test2e {
     $cluster->configureInterfaces(
         interfaces => {
             interface1 => {
-                interface_netconfs => {$netConf1->netconf_name => $netConf1 },
-                bonds_number        => 0,
+                netconfs       => {$netConf1->netconf_name => $netConf1 },
+                bonds_number   => 0,
+                interface_name => interface1,
             },
             interface2 => {
-                interface_netconfs => {$netConf2->netconf_name => $netConf2 },
-                bonds_number        => 0,
+                netconfs       => {$netConf2->netconf_name => $netConf2 },
+                bonds_number   => 0,
+                interface_name => interface2,
             },
             interface3 => {
-                interface_netconfs => {$netConf3->netconf_name => $netConf3 },
-                bonds_number        => 0,
+                netconfs => {$netConf3->netconf_name => $netConf3 },
+                bonds_number   => 0,
+                interface_name => interface3
             },
         }
     );
