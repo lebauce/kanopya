@@ -249,7 +249,7 @@ sub execute {
     # Check requested components for this node
     if (defined $self->{params}->{component_types}) {
         my @notavailable;
-        for my $component_type_id (@{ $self->{params}->{component_types}  }) {
+        for my $component_type_id (@{ $self->{params}->{component_types} }) {
             eval {
                 $self->{context}->{cluster}->findRelated(
                     filters => [ 'components' ],
