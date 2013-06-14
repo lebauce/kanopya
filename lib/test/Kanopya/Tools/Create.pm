@@ -292,6 +292,7 @@ sub createVmCluster {
     delete $args{iaas};
     delete $args{container_name};
     delete $args{container_type};
+    delete $args{managers};
 
     return $self->createCluster(
         %args,
@@ -322,6 +323,13 @@ sub createIaasCluster {
                          } );
 
     my $iaas_type = delete $args{iaas_type};
+
+    if ($iaas_type eq 'vsphere') {
+        General::checkParams(args     => \%args,
+                             required => ['vsphere_conf'],
+                            );
+    }
+
     my $kanopya_cluster = Kanopya::Tools::Retrieve->retrieveCluster();
 
     my $disk_manager = EEntity->new(
@@ -366,9 +374,9 @@ sub createIaasCluster {
         case 'opennebula' {
             $components =
                 {
-                    opennebula            => {},
-                    kvm                   => {},
-                    fileimagemanager      => {},
+                    opennebula       => {},
+                    kvm              => {},
+                    fileimagemanager => {},
                 };
             if (not defined $args{cluster_conf}{masterimage_id}) {
                 $masterimage_id = Kanopya::Tools::Register::registerMasterImage()->id;
@@ -401,6 +409,13 @@ sub createIaasCluster {
             }
         }
         case 'vsphere' {
+            $components = { vsphere => {}, };
+            if (not defined $args{cluster_conf}{masterimage_id}) {
+                $masterimage_id = Kanopya::Tools::Register::registerMasterImage()->id;
+            }
+            else {
+                $masterimage_id = $args{cluster_conf}{masterimage_id};
+            }
         }
     }
 
@@ -494,6 +509,11 @@ sub createIaasCluster {
             } );
         }
         case 'vsphere' {
+            my $vsphere = $iaas->getComponent(name => 'Vsphere');
+
+            $vsphere->setConf(conf =>
+                $args{vsphere_conf},
+            );
         }
     }
 
