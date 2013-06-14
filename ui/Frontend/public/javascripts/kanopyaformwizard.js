@@ -282,12 +282,13 @@ var KanopyaFormWizard = (function() {
 
         } else {
             // Relation is single to single
-            relations:
             for (var relation in relations) {
                 for (var prop in relations[relation].cond) if (relations[relation].cond.hasOwnProperty(prop)) {
                     if (relations[relation].cond[prop] === 'self.' + name) {
                         resource = relations[relation].resource;
-                        break relations;
+                        // We should really break out of the double loop
+                        // but it breaks the instance instanciation form
+                        break;
                     }
                 }
             }
