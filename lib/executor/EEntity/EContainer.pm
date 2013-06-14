@@ -37,7 +37,6 @@ use warnings;
 
 use General;
 use EEntity;
-use EEntity;
 use Kanopya::Exceptions;
 use Entity::Container::LocalContainer;
 

@@ -154,7 +154,7 @@ sub run {
     };
     if ($@) {
         my $err = $@;
-        $log->error("Unale to run workflow <" . $workflow->id . ">, removing it: $err");
+        $log->error("Unable to run workflow <" . $workflow->id . ">, removing it: $err");
         $workflow->remove();
 
         $err->rethrow();

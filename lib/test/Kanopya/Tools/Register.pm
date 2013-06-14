@@ -39,6 +39,7 @@ use Test::Exception;
 
 use Kanopya::Exceptions;
 use Kanopya::Tools::Retrieve;
+use Kanopya::Tools::Execution;
 use General;
 use Entity::Host;
 use Entity::ServiceProvider::Cluster;

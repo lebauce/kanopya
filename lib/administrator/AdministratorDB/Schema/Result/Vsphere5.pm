@@ -13,7 +13,23 @@ AdministratorDB::Schema::Result::Vsphere5
 use strict;
 use warnings;
 
-use base 'DBIx::Class::Core';
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
 
 =head1 TABLE: C<vsphere5>
 
@@ -48,20 +64,6 @@ __PACKAGE__->table("vsphere5");
   is_nullable: 1
   size: 255
 
-=head2 overcommitment_memory_factor
-
-  data_type: 'double precision'
-  default_value: 1
-  extra: {unsigned => 1}
-  is_nullable: 0
-
-=head2 overcommitment_cpu_factor
-
-  data_type: 'double precision'
-  default_value: 1
-  extra: {unsigned => 1}
-  is_nullable: 0
-
 =cut
 
 __PACKAGE__->add_columns(
@@ -78,20 +80,6 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 1, size => 255 },
   "vsphere5_url",
   { data_type => "char", is_nullable => 1, size => 255 },
-  "overcommitment_memory_factor",
-  {
-    data_type => "double precision",
-    default_value => 1,
-    extra => { unsigned => 1 },
-    is_nullable => 0,
-  },
-  "overcommitment_cpu_factor",
-  {
-    data_type => "double precision",
-    default_value => 1,
-    extra => { unsigned => 1 },
-    is_nullable => 0,
-  },
 );
 
 =head1 PRIMARY KEY
@@ -112,7 +100,7 @@ __PACKAGE__->set_primary_key("vsphere5_id");
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Component>
+Related object: L<AdministratorDB::Schema::Result::Virtualization>
 
 =cut
 
@@ -153,21 +141,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 vsphere5_repositories
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Vsphere5Repository>
-
-=cut
-
-__PACKAGE__->has_many(
-  "vsphere5_repositories",
-  "AdministratorDB::Schema::Result::Vsphere5Repository",
-  { "foreign.vsphere5_id" => "self.vsphere5_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 vsphere5_vms
 
 Type: has_many
@@ -183,10 +156,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2012-11-07 11:15:55
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:GkH+FA6YpO/ExjngID99lQ
-
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Virtualization",
@@ -194,4 +163,9 @@ __PACKAGE__->belongs_to(
     { cascade_copy => 0, cascade_delete => 1 }
 );
 
+# Created by DBIx::Class::Schema::Loader v0.07035 @ 2013-05-07 15:16:49
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:u8yzmABohZI1Ozg+JFQa8Q
+
+
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

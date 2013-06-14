@@ -11,9 +11,6 @@ CREATE TABLE `vsphere5` (
     `vsphere5_login` char(255),
     `vsphere5_pwd` char(255),
     `vsphere5_url` char(255),
-    `overcommitment_memory_factor` double unsigned NOT NULL DEFAULT '1',
-    `overcommitment_cpu_factor` double unsigned NOT NULL DEFAULT '1',
-    PRIMARY KEY (`vsphere5_id`),
     CONSTRAINT FOREIGN KEY (`vsphere5_id`) REFERENCES `virtualization` (`virtualization_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -50,20 +47,6 @@ CREATE TABLE `vsphere5_vm` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `vsphere5_repository`
---
-
-CREATE TABLE `vsphere5_repository` (
-    `vsphere5_repository_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-    `vsphere5_id` int(8) unsigned NOT NULL,
-    `repository_name` char(255) NOT NULL,
-    `container_access_id` int(8) unsigned NOT NULL,
-    PRIMARY KEY (`vsphere5_repository_id`),
-    FOREIGN KEY (`vsphere5_id`) REFERENCES `vsphere5` (`vsphere5_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-    FOREIGN KEY (`container_access_id`) REFERENCES `container_access` (`container_access_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
 -- Table structure for table `vsphere5_datacenter`
 --
 
@@ -73,6 +56,16 @@ CREATE TABLE `vsphere5_datacenter` (
     `vsphere5_id` int(8) unsigned NOT NULL,
     PRIMARY KEY (`vsphere5_datacenter_id`),
     FOREIGN KEY (`vsphere5_id`) REFERENCES `vsphere5` (`vsphere5_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `vsphere5_repository`
+--
+
+CREATE TABLE `vsphere5_repository` (
+  `vsphere5_repository_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`vsphere5_repository_id`),
+  FOREIGN KEY (`vsphere5_repository_id`) REFERENCES `repository` (`repository_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks=1;

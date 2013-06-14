@@ -233,7 +233,7 @@ sub umount {
                          required => [ 'econtext' ],
                          optional => { 'mountpoint' => $self->getMountPoint } );
 
-    $log->debug("Unmonting (<$args{mountpoint}>)");
+    $log->debug("Unmounting (<$args{mountpoint}>)");
 
     $command = "sync; echo 3 > /proc/sys/vm/drop_caches";
     $args{econtext}->execute(command => $command);

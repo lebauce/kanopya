@@ -159,6 +159,7 @@ my @classes = (
     'Entity::Component::Openstack::Glance',
     'Entity::Repository::OpenstackRepository',
     'Entity::Repository::Opennebula3Repository',
+    'Entity::Repository::Vsphere5Repository',
     'Entity::Component::Physicalhoster0',
     'Entity::Component::Apache2::Apache2Virtualhost',
     'Entity::Component::Linux::LinuxMount',
@@ -166,7 +167,6 @@ my @classes = (
     'Entity::Component::Lvm2::Lvm2Pv',
     'Entity::Component::Lvm2::Lvm2Lv',
     'Entity::Component::Vsphere5::Vsphere5Datacenter',
-    'Entity::Component::Vsphere5::Vsphere5Repository',
     'Entity::Component::Iscsi::IscsiPortal',
     'Entity::Component::Vmm',
     'Entity::Component::Vmm::Kvm',
@@ -974,7 +974,7 @@ sub registerComponents {
         {
             component_name         => 'Vsphere',
             component_version      => 5,
-            component_categories   => [ 'Hostmanager' ],
+            component_categories   => [ 'Hostmanager', 'Hypervisor' ],
             service_provider_types => [ 'Cluster' ],
         },
         {
