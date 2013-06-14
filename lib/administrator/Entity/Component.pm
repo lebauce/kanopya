@@ -380,6 +380,18 @@ sub getBalancerAddress {
     }
 }
 
+sub isBalanced {
+    my ($self, %args) = @_;
+    my $comp_name = $self->component_type->component_name;
+    if($comp_name eq 'Haproxy') {
+        return 0;
+    }
+    my @haproxy_entries = $self->haproxy1s_listen;
+    if(scalar(@haproxy_entries)) {
+        return 1;
+    }
+    return 0;
+}
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;

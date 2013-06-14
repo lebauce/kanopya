@@ -124,10 +124,15 @@ sub generatePuppetDefinitions {
 
     my $puppetmaster = EEntity->new(entity => $self->getPuppetMaster);
     my $fqdn = $args{host}->node->fqdn;
-    my $manifest = '$admin_ip = \'' . $args{host}->adminIp . "'\n";
+    my $manifest = "";
     my @cluster_components = sort { $a->priority <=> $b->priority } $args{host}->node->components;
     foreach my $component (@cluster_components) {
         my $ecomponent = EEntity->new(entity => $component);
+        if($ecomponent->isBalanced) {
+            $manifest = '$admin_ip = \'' . $args{host}->adminIp . "'\n";
+        } else {
+            $manifest = '$admin_ip = \'0.0.0.0' . "'\n";
+        }
         $ecomponent->generateConfiguration(
             cluster => $args{cluster},
             host    => $args{host}
