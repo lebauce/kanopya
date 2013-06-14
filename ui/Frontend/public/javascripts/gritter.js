@@ -135,11 +135,14 @@ function updateMessages( show_gritters ) {
                     newMsg = true;
                     // Check sender (if sender is Executor and level is Inof, do not display the gritter) :
                     if ( show_gritters && (sender != "Executor" || lvl != "info") ) {
-                        var content = "From : " + rows[row].message_from + " <br /> " + "Level : " + rows[row].message_level + " <br /> " + rows[row].message_content;
+                        var content = rows[row].message_content;
+                        // Clean message for user by removing first part of content (class name and address). And add icon.
+                        var formatted_content = content.replace(/\[.*\]\s/, '');
+                        formatted_content = '<div class="message-'+lvl+' message-level" style="float:left"/>' + formatted_content;
                         // Display the notification :
                         $.gritter.add({
-                            title: 'Message',
-                            text: content,
+                            title: ' ',
+                            text  : formatted_content,
                         });
                     }
                     if (parseInt(rows[row].pk) > maxID) {
