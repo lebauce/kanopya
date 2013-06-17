@@ -122,23 +122,30 @@ sub generatePuppetDefinitions {
 
     General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
 
+    my $manifest = "";
     my $puppetmaster = EEntity->new(entity => $self->getPuppetMaster);
     my $fqdn = $args{host}->node->fqdn;
-    my $manifest = "";
-    my @cluster_components = sort { $a->priority <=> $b->priority } $args{host}->node->components;
-    foreach my $component (@cluster_components) {
+    my @components = sort { $a->component->priority <=> $b->component->priority }
+                     $args{host}->node->component_nodes;
+
+    if ($args{cluster}->isLoadBalanced) {
+        $manifest .= '$admin_ip = \'' . $args{host}->adminIp . "'\n";
+    } else {
+        $manifest .= '$admin_ip = \'0.0.0.0' . "'\n";
+    }
+
+    foreach my $component_node (@components) {
+        my $component = $component_node->component;
         my $ecomponent = EEntity->new(entity => $component);
-        if($ecomponent->isBalanced) {
-            $manifest = '$admin_ip = \'' . $args{host}->adminIp . "'\n";
-        } else {
-            $manifest = '$admin_ip = \'0.0.0.0' . "'\n";
-        }
         $ecomponent->generateConfiguration(
             cluster => $args{cluster},
             host    => $args{host}
         );
 
         # retrieve puppet definition to create manifest
+        $manifest .= '$is_' . lcfirst($component->component_type->component_name) . "_master = " .
+                     ($component_node->master_node ? 1 : 0) . "\n";
+
         my $puppet_definitions = $ecomponent->getPuppetDefinition(
             host    => $args{host},
             cluster => $args{cluster},
@@ -205,7 +212,7 @@ sub applyConfiguration {
 
         my $command = "puppet kick --foreground --parallel " . (scalar @hosts);
         map { $command .= " --tag " . $_; } @{$args{tags}};
-        map { $command .= " --host " . $_; } @hosts;
+        map { $command .= " --tag $_ --host $_" } @hosts;
 
         $ret = $econtext->execute(command => $command);
 
@@ -265,8 +272,10 @@ sub isUp {
             EEntity->new(entity => $cluster)->reconfigure(tags => \@tags);
         }
 
-        $self->applyConfiguration(cluster => $args{cluster},
-                                  host    => $args{host});
+        if (scalar (keys %{$reconfigure})) {
+            $self->applyConfiguration(cluster => $args{cluster},
+                                      host    => $args{host});
+        }
 
         return 1;
     }
