@@ -12,7 +12,7 @@ var KanopyaFormWizard = (function() {
     function KanopyaFormWizard(args) {
         this.handleArgs(args);
 
-        this.content = $("<div>", { id : this.name });
+        this.content = $("<div>", { id : this.name }).css('overflow-x', 'hidden');
 
         this.validateRules    = {};
         this.validateMessages = {};
@@ -149,9 +149,9 @@ var KanopyaFormWizard = (function() {
 
                 var tag = this.attributedefs[relation_name].label || relation_name;
                 var table = this.findTable(this.attributedefs[relation_name].step, tag);
-                if (table.parent().is('fieldset') && table.parent().css('display') == 'none') {
-                    table.parent().css('display', 'block');
-                }
+
+                table.parents('fieldset').css('display', 'block');
+
                 table.append(add_button_line);
 
                 var _this = this;
@@ -451,9 +451,7 @@ var KanopyaFormWizard = (function() {
             input.attr('type', 'hidden');
 
         } else {
-            if (table.parent().is('fieldset') && table.parent().css('display') == 'none') {
-               table.parent().css('display', 'block');
-            }
+            table.parents('fieldset').css('display', 'block');
         }
 
         // Finally, insert DOM elements in the form
@@ -923,10 +921,12 @@ var KanopyaFormWizard = (function() {
         if (this.steps[step].tables[table] === undefined) {
             this.steps[step].tables[table] = $("<table>");
             if (tag) {
-                this.steps[step].tables[table].css('width', this.width).css('width', this.width - 50);
                 var fieldset = $("<fieldset>").css('border-color', '#ddd').css('display', 'none');
                 fieldset.append($("<legend>", { text : tag }).css('font-weight', 'bold'));
-                fieldset.append(this.steps[step].tables[table]);
+                fieldset.append(
+                        $('<div>').css('overflow', 'auto').css('width', this.width - 50)
+                        .append(this.steps[step].tables[table])
+                );
                 fieldset.appendTo(this.steps[step].div);
 
             } else {
