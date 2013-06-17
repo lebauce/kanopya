@@ -15,7 +15,7 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package EEntity::EOperation::EUpdatePuppetCluster;
+package EEntity::EOperation::EUpdateCluster;
 use base "EEntity::EOperation";
 
 use Kanopya::Exceptions;
@@ -28,7 +28,6 @@ use Log::Log4perl 'get_logger';
 my $log = get_logger("");
 my $errmsg;
 
-
 sub execute {
     my ($self, %args) = @_;
     $self->SUPER::execute();
@@ -39,7 +38,7 @@ sub execute {
         $puppetagent = $self->{context}->{cluster}->getComponent(category => 'Configurationagent');
     };
     if ($@) {
-        my $errmsg = "UpdatePuppetCluster Operation cannot be used without a puppet " .
+        my $errmsg = "UpdateCluster Operation cannot be used without a puppet " .
                      "agent component configured on the cluster : " . $@;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
@@ -47,19 +46,39 @@ sub execute {
         $self->{context}->{puppetagent} = EEntity->new(
             data => $puppetagent
         );
-    }
 
-    $self->{context}->{puppetagent} = EEntity->new(
-        data => $puppetagent
-    );
+        $self->{context}->{puppetagent}->applyConfiguration(
+            cluster => $self->{context}->{cluster}
+        );
+    }
 }
 
-sub execute {
+sub postrequisites {
     my ($self, %args) = @_;
+    my $delay = 10;
 
-    $self->{context}->{puppetagent}->applyConfiguration(
-        cluster => $self->{context}->{cluster}
-    );
+    $self->SUPER::postrequisites();
+
+    my @hosts;
+    if ($self->{context}->{host}) {
+        $log->info("Checking component on host " . $self->{context}->{host} . " only");
+        push @hosts, $self->{context}->{host};
+    }
+    else {
+        @hosts = map { EEntity->new(entity => $_->host) } $self->{context}->{cluster}->nodes;
+    }
+
+    # Check if all host components are up.
+    for my $host (@hosts) {
+        if (not $self->{context}->{cluster}->checkComponents(host => $host)) {
+            return $delay;
+        }
+
+        $self->{context}->{cluster}->postStartNode(
+            host      => $host,
+            erollback => $self->{erollback},
+        );
+    }
 }
 
 1;
