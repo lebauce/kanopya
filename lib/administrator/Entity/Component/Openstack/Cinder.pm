@@ -235,7 +235,7 @@ sub checkConfiguration {
     my $self = shift;
 
     for my $attr ("mysql5", "nova_controller") {
-        $self->checkAttribute(attribute => $self);
+        $self->checkAttribute(attribute => $attr);
     }
 }
 
