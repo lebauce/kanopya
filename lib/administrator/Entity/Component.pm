@@ -343,6 +343,55 @@ sub getHostsEntries { return; }
 =pod
 =begin classdoc
 
+getListenIp gives ip address to use as "bind address" for this component configuration.
+Today, Hard coded behaviors are:
+component is not loadbalance : 0.0.0.0
+component is loadbalanced : adminIp   
+
+@return ip address
+
+=end classdoc
+=cut
+
+sub getListenIp {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['host','port']);
+    my $ip = $self->getBalancerAddress(port => $args{port});
+    if(defined $ip) {
+        return $ip;
+    } else {
+        return $args{host}->adminIp;
+    }
+}
+
+=pod
+=begin classdoc
+
+getAccessIp gives ip address needed to contact this component.
+Today, Hard coded behaviors are:
+component is not highly available (no keepalived component) : masternode adminIp
+component is highly available : first keepalived vip
+
+@return ip address
+
+=end classdoc
+=cut
+
+sub getAccessIp {
+    my ($self, %args) = @_;
+    my $keepalived = eval { $self->service_provider->getComponent(name => 'Keepalived') };
+    my $ip;
+    if($keepalived) {
+        my @vrrpinstances = $keepalived->keepalived1_vrrpinstances;
+        return $vrrpinstances[0]->virtualip->ip_addr;
+    } else {
+        return $self->getMasterNode->adminIp;
+    }
+}
+
+=pod
+=begin classdoc
+
 @return loadbalancer ip address for this component on this port or undef if not balanced.
 
 =end classdoc
