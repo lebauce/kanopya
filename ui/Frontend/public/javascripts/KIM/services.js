@@ -510,12 +510,21 @@ function migrate(spid, eid) {
     });
 }
 
-function nodedetailsaction(cid, eid) {
-    if (eid.indexOf('_') !== -1) {
-        eid = (eid.split('_'))[0];
+// Create available actions buttons for a node
+// Alternatively, host id can be provided instead of node id
+function nodedetailsaction(cid, eid, host_id) {
+    var url;
+    if (eid) { // If node id is provided
+        if (eid.indexOf('_') !== -1) {
+            eid = (eid.split('_'))[0];
+        }
+        url = '/api/node/' + eid;
+    } else { // else host id is provided
+        url = '/api/host/' + host_id + '/node';
     }
+    url += '?expand=host';
     $.ajax({
-        url     : '/api/node/' + eid + '?expand=host',
+        url     : url,
         success : function(data) {
             var remoteUrl   = data.host.remote_session_url;
             var isActive    = data.host.active;
@@ -591,18 +600,22 @@ function nodedetailsaction(cid, eid) {
 }
 
 // load network interfaces details grid for a node
-function node_ifaces_tab(cid, eid) {
-    var node;
-    $.ajax({
-        url     : '/api/node?node_id=' + eid,
-        type    : 'GET',
-        async   : false,
-        success : function(data) {
-            node = data[0];
-        }
-    });
+// Alternatively, host id can be provided instead of node id
+function node_ifaces_tab(cid, eid, host_id) {
+    if (eid) {
+        var node;
+        $.ajax({
+            url     : '/api/node?node_id=' + eid,
+            type    : 'GET',
+            async   : false,
+            success : function(data) {
+                node = data[0];
+            }
+        });
+        host_id = node.host_id;
+    }
     create_grid( {
-        url: '/api/iface?host_id=' + node.host_id,
+        url: '/api/iface?host_id=' + host_id,
         content_container_id: cid,
         grid_id: 'node_ifaces_tab',
         grid_class: 'node_ifaces_tab',
