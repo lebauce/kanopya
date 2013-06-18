@@ -345,16 +345,16 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 entity_state_entity
+=head2 entity_state_entities
 
-Type: might_have
+Type: has_many
 
 Related object: L<AdministratorDB::Schema::Result::EntityState>
 
 =cut
 
-__PACKAGE__->might_have(
-  "entity_state_entity",
+__PACKAGE__->has_many(
+  "entity_state_entities",
   "AdministratorDB::Schema::Result::EntityState",
   { "foreign.entity_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
@@ -936,8 +936,8 @@ Composing rels: L</entity_tags> -> tag
 __PACKAGE__->many_to_many("tags", "entity_tags", "tag");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-06-11 15:45:47
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:jsBUhvSR0MssdWjbw2ehJA
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-06-13 10:51:12
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:EVEmvH8GeulhQJlXC7RNUA
 
 __PACKAGE__->many_to_many("time_periods", "entity_time_periods", "time_period");
 
@@ -955,8 +955,8 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-__PACKAGE__->might_have(
-  "entity_state",
+__PACKAGE__->has_many(
+  "entity_states",
   "AdministratorDB::Schema::Result::EntityState",
   { "foreign.entity_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
