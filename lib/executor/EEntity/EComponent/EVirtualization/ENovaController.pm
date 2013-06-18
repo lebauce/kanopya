@@ -369,27 +369,6 @@ sub halt {
 
 =begin classdoc
 
-Determine whether a host is up or down
-
-=end classdoc
-
-=cut
-
-sub isUp {
-    my ($self, %args) = @_;
-
-    General::checkParams(
-        args     => \%args,
-        required => [ 'cluster', 'host' ]
-    );
-
-    return 1;
-}
-
-=pod
-
-=begin classdoc
-
 Start a new server on an OpenStack compute service, and register it into Kanopya
 
 @return
