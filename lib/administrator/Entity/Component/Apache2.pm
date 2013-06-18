@@ -71,6 +71,10 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub priority {
+    return 40;
+}
+
 sub getBaseConfiguration {
     return {
         apache2_loglevel   => 'debug',
