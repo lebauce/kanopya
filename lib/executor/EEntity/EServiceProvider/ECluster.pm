@@ -110,7 +110,7 @@ sub checkComponents {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    my @components = $self->getComponents(category => "all", order_by => 'priority');
+    my @components = sort { $a->priority <=> $b->priority } $args{host}->node->components;
     foreach my $component (@components) {
         my $component_name = $component->component_type->component_name;
         $log->debug("Browsing component: " . $component_name);
