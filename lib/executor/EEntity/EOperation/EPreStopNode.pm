@@ -92,11 +92,11 @@ sub prepare {
     $log->debug("Cluster state <$state>");
 
 
-    if (not (($state eq 'up') || ($state eq 'down'))) {
+    if (not (($state eq 'up') || ($state eq 'down') || ($state eq 'stopping'))) {
         $log->debug("State is <$state> which is an invalid state");
         throw Kanopya::Exception::Execution::InvalidState(
                   error => "The cluster <" . $self->{context}->{cluster} .
-                           "> has to be <starting|down>, not <$state>"
+                           "> has to be <starting|down|stopping>, not <$state>"
               );
     }
     $self->{context}->{cluster}->setState(state => 'updating');
