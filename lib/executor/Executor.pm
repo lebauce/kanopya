@@ -427,6 +427,10 @@ sub handleResult {
     # Log in the proper file
     $self->setLogAppender(workflow => $workflow);
 
+    if ($workflow->state eq 'cancelled') {
+        $args{status} = 'cancelled';
+    }
+
     # Set the operation state
     $operation->setState(state => $args{status});
 

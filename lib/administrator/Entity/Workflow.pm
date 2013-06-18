@@ -286,28 +286,8 @@ sub prepareNextOperation {
 
 sub cancel {
     my $self = shift;
-    my %params;
 
-    eval {
-        $self->relatedServiceProvider->getManager(manager_type => 'ExecutionManager')->enqueue(
-            type     => 'CancelWorkflow',
-            priority => 1,
-            params   => {
-                workflow_id => $self->id,
-            },
-        );
-    };
-    if ($@) {
-        my $err = $@;
-        if ($@->isa('Kanopya::Exception::Internal')) {
-            throw Kanopya::Exception::Internal(
-                      error => "Can not cancel workflow <" . $self->id .  "> without related service provider."
-                  );
-        }
-        else {
-            $err->rethrow();
-        }
-    }
+    $self->setState(state => "cancelled");
 }
 
 sub setState {
