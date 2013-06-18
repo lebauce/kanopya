@@ -345,8 +345,8 @@ sub getHostsEntries { return; }
 
 getListenIp gives ip address to use as "bind address" for this component configuration.
 Today, Hard coded behaviors are:
-component is not loadbalance : 0.0.0.0
-component is loadbalanced : adminIp   
+component is not loadbalanced : 0.0.0.0
+component is loadbalanced : host adminIp   
 
 @return ip address
 
@@ -356,11 +356,10 @@ component is loadbalanced : adminIp
 sub getListenIp {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['host','port']);
-    my $ip = $self->getBalancerAddress(port => $args{port});
-    if(defined $ip) {
-        return $ip;
-    } else {
+    if($self->getBalancerAddress(port => $args{port})) {
         return $args{host}->adminIp;
+    } else {
+        return '0.0.0.0';
     }
 }
 
@@ -385,7 +384,12 @@ sub getAccessIp {
         my @vrrpinstances = $keepalived->keepalived1_vrrpinstances;
         return $vrrpinstances[0]->virtualip->ip_addr;
     } else {
-        return $self->getMasterNode->adminIp;
+        $ip = $self->getBalancerAddress(port => $args{port});
+        if($ip) {
+            return $ip;
+        } else {
+            return $self->getMasterNode->adminIp;
+        }
     }
 }
 
