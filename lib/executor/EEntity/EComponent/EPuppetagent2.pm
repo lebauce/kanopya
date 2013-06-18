@@ -129,12 +129,6 @@ sub generatePuppetDefinitions {
     my @components = sort { $a->component->priority <=> $b->component->priority }
                      $args{host}->node->component_nodes;
 
-    if ($args{cluster}->isLoadBalanced) {
-        $manifest .= '$admin_ip = \'' . $args{host}->adminIp . "'\n";
-    } else {
-        $manifest .= '$admin_ip = \'0.0.0.0' . "'\n";
-    }
-
     my $config_hash = { };
     foreach my $component_node (@components) {
         my $component = $component_node->component;
@@ -150,8 +144,18 @@ sub generatePuppetDefinitions {
             cluster => $args{cluster},
         );
 
+        my $listen = {};
+        my $netconf = $component->getNetConf;
+        for my $service (keys %{$netconf}) {
+            $listen->{$service} = {
+                ip => $component->getListenIp(host => $args{host},
+                                              port => $netconf->{$service}->{port})
+            }
+        }
+
         my $configuration = {
             master => ($component_node->master_node == 1 ? 1 : 0),
+            listen => $listen
         };
 
         for my $chunk (keys %{$puppet_definitions}) {
@@ -160,12 +164,10 @@ sub generatePuppetDefinitions {
                 my $name = lc($dependency->component_type->component_name);
                 my @nodes = map { $_->fqdn } $dependency->getActiveNodes;
                 my $hash = { nodes => \@nodes };
-                my $netconf = $dependency->getNetConf;
+                $netconf = $dependency->getNetConf;
                 for my $service (keys %{$netconf}) {
                     $hash->{$service} = {
-                        ip    => $dependency->getBalancerAddress(port => $netconf->{$service}->{port}) ||
-                                 $dependency->getAccessIp ||
-                                 $dependency->getMasterNode->adminIp,
+                        ip    => $dependency->getAccessIp(port => $netconf->{$service}->{port}),
                         tag   => $dependency->getMasterNode->fqdn,
                     };
                 }
