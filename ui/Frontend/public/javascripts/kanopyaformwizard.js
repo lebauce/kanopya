@@ -925,7 +925,7 @@ var KanopyaFormWizard = (function() {
                 fieldset.append($("<legend>", { text : tag }).css('font-weight', 'bold'));
                 fieldset.append(
                         $('<div>').css('overflow', 'auto').css('width', this.width - 50)
-                        .append(this.steps[step].tables[table])
+                        .append(this.steps[step].tables[table].css('width', this.width - 50))
                 );
                 fieldset.appendTo(this.steps[step].div);
 
