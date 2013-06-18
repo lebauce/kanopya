@@ -70,12 +70,6 @@ sub getPuppetDefinition {
     my $manifest = $self->instanciatePuppetResource(
         name => 'kanopya::openstack::keystone',
         params => {
-            dbserver => $sql->getBalancerAddress(port => 3306) || 
-                        $sql->getMasterNode->adminIp,
-            
-            dbip => $sql->getBalancerAddress(port => 3306) || 
-                    $sql->getMasterNode->adminIp,
-            
             admin_password => 'keystone',
             email => $self->service_provider->user->user_email,
             database_user => $name,

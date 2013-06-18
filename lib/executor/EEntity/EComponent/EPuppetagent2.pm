@@ -21,6 +21,7 @@ use EEntity;
 use Entity::ServiceProvider::Cluster;
 use Log::Log4perl "get_logger";
 use Kanopya::Exceptions;
+use Data::Dumper;
 
 my $log = get_logger("");
 my $errmsg;
@@ -134,27 +135,53 @@ sub generatePuppetDefinitions {
         $manifest .= '$admin_ip = \'0.0.0.0' . "'\n";
     }
 
+    my $config_hash = { };
     foreach my $component_node (@components) {
         my $component = $component_node->component;
+        my $component_name = lc($component->component_type->component_name);
         my $ecomponent = EEntity->new(entity => $component);
         $ecomponent->generateConfiguration(
             cluster => $args{cluster},
             host    => $args{host}
         );
 
-        # retrieve puppet definition to create manifest
-        $manifest .= '$is_' . lcfirst($component->component_type->component_name) . "_master = " .
-                     ($component_node->master_node ? 1 : 0) . "\n";
-
         my $puppet_definitions = $ecomponent->getPuppetDefinition(
             host    => $args{host},
             cluster => $args{cluster},
         );
 
+        my $configuration = {
+            master => ($component_node->master_node == 1 ? 1 : 0),
+        };
+
         for my $chunk (keys %{$puppet_definitions}) {
             $manifest .= $puppet_definitions->{$chunk}->{manifest} . "\n";
+            for my $dependency (@{$puppet_definitions->{$chunk}->{dependencies} || []}) {
+                my $name = lc($dependency->component_type->component_name);
+                my @nodes = map { $_->fqdn } $dependency->getActiveNodes;
+                my $hash = { nodes => \@nodes };
+                my $netconf = $dependency->getNetConf;
+                for my $service (keys %{$netconf}) {
+                    $hash->{$service} = {
+                        ip    => $dependency->getBalancerAddress(port => $netconf->{$service}->{port}) ||
+                                 $dependency->getAccessIp ||
+                                 $dependency->getMasterNode->adminIp,
+                        tag   => $dependency->getMasterNode->fqdn,
+                    };
+                }
+                $configuration->{$name} = $hash;
+            }
         }
+
+        $config_hash->{$component_name} = $configuration;
     }
+
+    $Data::Dumper::Terse = 1;
+    $Data::Dumper::Quotekeys = 0;
+
+    my @dumper = split('\n', Dumper($config_hash));
+    shift @dumper; pop @dumper;
+    $manifest = '$components = { ' . join("\n", @dumper) . " }\n" . $manifest;
 
     if ($self->puppetagent2_mode eq 'kanopya') {
         # create, sign and push a puppet certificate on the image

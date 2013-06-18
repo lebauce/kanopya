@@ -1,7 +1,4 @@
 class kanopya::openstack::quantum::server(
-    $amqpserver,
-    $dbserver,
-    $keystone,
     $email,
     $bridge_flat,
     $bridge_vlan,
@@ -16,6 +13,12 @@ class kanopya::openstack::quantum::server(
 ) {
     tag("kanopya::quantum")
 
+    $dbserver = $components[quantum][mysql][mysqld][tag]
+    $dbip = $components[quantum][mysql][mysqld][ip]
+    $keystone = $components[quantum][keystone][keystone_admin][tag]
+    $amqpserver = $components[quantum][amqp][amqp][tag]
+    $rabbits = $components[quantum][amqp][nodes]
+
     if ! defined(Class['kanopya::openstack::repository']) {
         class { 'kanopya::openstack::repository': }
     }
@@ -23,7 +26,7 @@ class kanopya::openstack::quantum::server(
     if ! defined(Class['kanopya::openstack::quantum::common']) {
         class { 'kanopya::openstack::quantum::common':
             rabbit_password    => "${rabbit_password}",
-            rabbit_host        => "${amqpserver}",
+            rabbit_hosts       => $rabbits,
             rabbit_user        => "${rabbit_user}",
             rabbit_virtualhost => "${rabbit_virtualhost}"
         }
@@ -35,55 +38,68 @@ class kanopya::openstack::quantum::server(
         require       => Class['kanopya::openstack::repository']
     }
 
-    @@mysql::db { "${database_name}":
-        user     => "${database_user}",
-        password => "${database_password}",
-        host     => "${ipaddress}",
-        tag      => "${dbserver}"
-    }
+    if ($components[quantum][master] == 1) {
+        @@mysql::db { "${database_name}":
+            user     => "${database_user}",
+            password => "${database_password}",
+            host     => "${ipaddress}",
+            tag      => "${dbserver}"
+        }
 
-    @@rabbitmq_user { "${rabbit_user}":
-        admin    => true,
-        password => "${rabbit_password}",
-        provider => 'rabbitmqctl',
-        tag      => "${amqpserver}"
-    }
+        @@rabbitmq_user { "${rabbit_user}":
+            admin    => true,
+            password => "${rabbit_password}",
+            provider => 'rabbitmqctl',
+            tag      => "${amqpserver}"
+        }
 
-    @@rabbitmq_user_permissions { "${rabbit_user}@${rabbit_virtualhost}":
-        configure_permission => '.*',
-        write_permission     => '.*',
-        read_permission      => '.*',
-        provider             => 'rabbitmqctl',
-        tag                  => "${amqpserver}"
-    }
+        @@rabbitmq_user_permissions { "${rabbit_user}@${rabbit_virtualhost}":
+            configure_permission => '.*',
+            write_permission     => '.*',
+            read_permission      => '.*',
+            provider             => 'rabbitmqctl',
+            tag                  => "${amqpserver}"
+        }
 
-    @@keystone_user { "${keystone_user}":
-        ensure   => present,
-        password => "${keystone_password}",
-        email    => "${email}",
-        tenant   => "services",
-        tag      => "${keystone}"
-    }
+        @@keystone_user { "${keystone_user}":
+            ensure   => present,
+            password => "${keystone_password}",
+            email    => "${email}",
+            tenant   => "services",
+            tag      => "${keystone}"
+        }
 
-    @@keystone_user_role { "${keystone_user}@services":
-        ensure  => present,
-        roles   => 'admin',
-        tag     => "${keystone}"
-    }
+        @@keystone_user_role { "${keystone_user}@services":
+            ensure  => present,
+            roles   => 'admin',
+            tag     => "${keystone}"
+        }
 
-    @@keystone_service { 'quantum':
-        ensure      => present,
-        type        => "network",
-        description => "Quantum Networking Service",
-        tag         => "${keystone}"
-    }
+        @@keystone_service { 'quantum':
+            ensure      => present,
+            type        => "network",
+            description => "Quantum Networking Service",
+            tag         => "${keystone}"
+        }
 
-    @@keystone_endpoint { "RegionOne/quantum":
-        ensure       => present,
-        public_url   => "http://${fqdn}:9696",
-        admin_url    => "http://${fqdn}:9696",
-        internal_url => "http://${fqdn}:9696",
-        tag          => "${keystone}"
+        @@keystone_endpoint { "RegionOne/quantum":
+            ensure       => present,
+            public_url   => "http://${fqdn}:9696",
+            admin_url    => "http://${fqdn}:9696",
+            internal_url => "http://${fqdn}:9696",
+            tag          => "${keystone}"
+        }
+    }
+    else {
+        @@database_user { "${database_user}@${fqdn}":
+            password_hash => mysql_password("${database_password}"),
+            tag           => "${dbserver}",
+        }
+
+        @@database_grant { "${database_user}@${fqdn}/${database_name}":
+            privileges => ['all'] ,
+            tag        => "${dbserver}"
+        }
     }
 
     class { 'quantum::plugins::ovs':

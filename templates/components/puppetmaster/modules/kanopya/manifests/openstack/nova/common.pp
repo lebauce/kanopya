@@ -1,13 +1,13 @@
 class kanopya::openstack::nova::common(
-    $amqpserver,
     $glance,
     $keystone,
     $quantum,
     $email,
-    $dbserver,          = '127.0.0.1',
+    $dbserver           = '127.0.0.1',
     $database_user      = 'nova',
     $database_password  = 'nova',
     $database_name      = 'nova',
+    $rabbits            = [ '127.0.0.1' ],
     $rabbit_user        = 'nova',
     $rabbit_password    = 'nova',
     $rabbit_virtualhost = '/'
@@ -23,7 +23,7 @@ class kanopya::openstack::nova::common(
         glance_api_servers  => "${glance}:9292",
         rabbit_userid       => "${rabbit_user}",
         rabbit_password     => "${rabbit_password}",
-        rabbit_host         => "${amqpserver}",
+        rabbit_hosts        => $rabbits,
         rabbit_virtual_host => "${rabbit_virtualhost}"
     }
 

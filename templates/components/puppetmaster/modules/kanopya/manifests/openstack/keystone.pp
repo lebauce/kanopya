@@ -1,6 +1,4 @@
 class kanopya::openstack::keystone(
-    $dbserver,
-    $dbip,
     $admin_password,
     $email,
     $database_name      = "keystone",
@@ -9,16 +7,32 @@ class kanopya::openstack::keystone(
 ) {
     tag("kanopya::keystone")
 
+    $dbserver = $components['keystone']['mysql']['mysqld']['tag']
+    $dbip = $components['keystone']['mysql']['mysqld']['ip']
+
     if ! defined(Class['kanopya::openstack::repository']) {
         class { 'kanopya::openstack::repository': }
     }
 
-    @@mysql::db { "${database_name}":
-        user     => "${database_user}",
-        password => "${database_password}",
-        host     => "${ipaddress}",
-        grant    => ['all'],
-        tag      => "${dbserver}",
+    if ($is_keystone_master == 1) {
+        @@mysql::db { "${database_name}":
+            user     => "${database_user}",
+            password => "${database_password}",
+            host     => "${ipaddress}",
+            grant    => ['all'],
+            tag      => "${dbserver}",
+        }
+    }
+    else {
+        @@database_user { "${database_user}@${ipaddress}":
+            password_hash => mysql_password("${database_password}"),
+            tag           => "${dbserver}"
+        }
+
+        @@database_grant { "${database_user}@${ipaddress}/${database_name}":
+            privileges => ['all'],
+            tag        => "${dbserver}"
+        }
     }
 
     class { 'keystone::endpoint':
@@ -38,7 +52,7 @@ class kanopya::openstack::keystone(
         bind_host      => $admin_ip,
         verbose        => true,
         debug          => true,
-        sql_connection => "mysql://${database_user}:${database_password}@${dbserver}/${database_name}",
+        sql_connection => "mysql://${database_user}:${database_password}@${dbip}/${database_name}",
         catalog_type   => 'sql',
         admin_token    => 'admin_token',
         before         => [ Class['keystone::roles::admin'],

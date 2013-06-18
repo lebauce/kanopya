@@ -1,20 +1,20 @@
 class kanopya::openstack::nova::controller(
     $admin_password,
-    $dbserver,
-    $amqpserver,
-    $keystone,
     $email,
     $glance,
     $quantum,
     $keystone_user            = 'nova',
     $keystone_password        = 'nova',
+    $cinder_database_user     = 'cinder',
+    $cinder_database_password = 'cinder',
+    $cinder_database_name     = 'cinder',
     $cinder_keystone_user     = 'cinder',
     $cinder_keystone_password = 'cinder',
-    $glance_keystone_user     = 'glance',
-    $glance_keystone_password = 'glance',
     $glance_database_user     = 'glance',
     $glance_database_password = 'glance',
     $glance_database_name     = 'glance',
+    $glance_keystone_user     = 'glance',
+    $glance_keystone_password = 'glance',
     $database_user            = 'nova',
     $database_password        = 'nova',
     $database_name            = 'nova',
@@ -24,6 +24,12 @@ class kanopya::openstack::nova::controller(
 ) {
     tag("kanopya::novacontroller")
 
+    $dbserver = $components[novacontroller][mysql][mysqld][tag]
+    $dbip = $components[novacontroller][mysql][mysqld][ip]
+    $keystone = $components[novacontroller][keystone][keystone_admin][tag]
+    $amqpserver = $components[novacontroller][amqp][amqp][tag]
+    $rabbits = $components[novacontroller][amqp][nodes]
+
     if ! defined(Class['kanopya::openstack::repository']) {
         class { 'kanopya::openstack::repository': }
     }
@@ -32,75 +38,110 @@ class kanopya::openstack::nova::controller(
         path => "/usr/bin:/usr/sbin:/bin:/sbin",
     }
 
-    if $rabbit_virtualhost != "/" {
-        @@rabbitmq_vhost { "${rabbit_virtualhost}":
-            ensure => present,
+    if ($components[novacontroller][master] == 1) {
+        if $rabbit_virtualhost != "/" {
+            @@rabbitmq_vhost { "${rabbit_virtualhost}":
+                ensure => present,
+                provider => 'rabbitmqctl',
+                tag => "${amqpserver}"
+            }
+        }
+
+        @@rabbitmq_user { "${rabbit_user}":
+            admin    => true,
+            password => "${rabbit_password}",
             provider => 'rabbitmqctl',
-            tag => "${amqpserver}"
+            tag      => "${amqpserver}",
+        }
+
+        @@rabbitmq_user_permissions { "${rabbit_user}@${rabbit_virtualhost}":
+            configure_permission => '.*',
+            write_permission     => '.*',
+            read_permission      => '.*',
+            provider             => 'rabbitmqctl',
+            tag                  => "${amqpserver}",
+        }
+
+        @@keystone_user { "${keystone_user}":
+            ensure   => present,
+            password => "${keystone_password}",
+            email    => "${email}",
+            tenant   => 'services',
+            tag      => "${keystone}",
+        }
+
+        @@keystone_user_role { "${keystone_user}@services":
+            ensure  => present,
+            roles   => 'admin',
+            tag     => "${keystone}",
+        }
+
+        @@keystone_service { 'compute':
+            ensure      => present,
+            type        => "compute",
+            description => "Nova Compute Service",
+            tag         => "${keystone}"
+        }
+
+        @@mysql::db { "${database_name}":
+            user     => "${database_user}",
+            password => "${database_password}",
+            host     => "${ipaddress}",
+            grant    => ['all'],
+            charset  => 'latin1',
+            tag      => "${dbserver}",
+        }
+
+        @@keystone_endpoint { "RegionOne/compute":
+            ensure       => present,
+            public_url   => "http://${fqdn}:8774/v2/\$(tenant_id)s",
+            admin_url    => "http://${fqdn}:8774/v2/\$(tenant_id)s",
+            internal_url => "http://${fqdn}:8774/v2/\$(tenant_id)s",
+            tag          => "${keystone}"
+        }
+
+        @@keystone_endpoint { "RegionOne/glance":
+            ensure       => present,
+            public_url   => "http://${fqdn}:9292/v1",
+            admin_url    => "http://${fqdn}:9292/v1",
+            internal_url => "http://${fqdn}:9292/v1",
+            tag          => "${keystone}"
+        }
+
+        @@keystone_endpoint { "RegionOne/cinder":
+            ensure       => present,
+            public_url   => "http://${fqdn}:8776/v1/\$(tenant_id)s",
+            admin_url    => "http://${fqdn}:8776/v1/\$(tenant_id)s",
+            internal_url => "http://${fqdn}:8776/v1/\$(tenant_id)s",
+            tag          => "$keystone"
+        }
+    }
+    else {
+        @@database_user { "${database_user}@${ipaddress}":
+            password_hash => mysql_password("${database_password}"),
+            tag           => "${dbserver}",
+        }
+
+        @@database_grant { "${database_user}@${ipaddress}/${database_name}":
+            privileges => ['all'] ,
+            tag        => "${dbserver}"
         }
     }
 
-    @@rabbitmq_user { "${rabbit_user}":
-        admin    => true,
-        password => "${rabbit_password}",
-        provider => 'rabbitmqctl',
-        tag      => "${amqpserver}",
-    }
-
-    @@rabbitmq_user_permissions { "${rabbit_user}@${rabbit_virtualhost}":
-        configure_permission => '.*',
-        write_permission     => '.*',
-        read_permission      => '.*',
-        provider             => 'rabbitmqctl',
-        tag                  => "${amqpserver}",
-    }
-
-    @@keystone_user { "${keystone_user}":
-        ensure   => present,
-        password => "${keystone_password}",
-        email    => "${email}",
-        tenant   => 'services',
-        tag      => "${keystone}",
-    }
-
-    @@keystone_user_role { "${keystone_user}@services":
-        ensure  => present,
-        roles   => 'admin',
-        tag     => "${keystone}",
-    }
-
-    @@keystone_service { 'compute':
-        ensure      => present,
-        type        => "compute",
-        description => "Nova Compute Service",
-        tag         => "${keystone}"
-    }
-
-    @@keystone_endpoint { "RegionOne/compute":
-        ensure       => present,
-        public_url   => "http://${fqdn}:8774/v2/\$(tenant_id)s",
-        admin_url    => "http://${fqdn}:8774/v2/\$(tenant_id)s",
-        internal_url => "http://${fqdn}:8774/v2/\$(tenant_id)s",
-        tag          => "${keystone}"
-    }
-
-    @@mysql::db { "${database_name}":
-        user     => "${database_user}",
-        password => "${database_password}",
-        host     => "${ipaddress}",
-        grant    => ['all'],
-        charset  => 'latin1',
-        tag      => "${dbserver}",
-    }
-
-    @@database_user { "${database_user}@${fqdn}":
-        password_hash => mysql_password("${database_password}"),
-        tag           => "${dbserver}",
-    }
-
-    @@database_grant { "${database_user}@${fqdn}/${database_name}":
-        privileges => ['all'] ,
-        tag        => "${dbserver}"
+    if ! defined(Class['kanopya::openstack::nova::common']) {
+        class { 'kanopya::openstack::nova::common':
+            glance             => "${glance}",
+            keystone           => "${keystone}",
+            quantum            => "${quantum}",
+            email              => "${email}",
+            dbserver           => "${dbserver}",
+            database_user      => "${database_user}",
+            database_name      => "${database_name}",
+            rabbits            => $rabbits,
+            rabbit_user        => "${rabbit_user}",
+            rabbit_password    => "${rabbit_password}",
+            rabbit_virtualhost => "${rabbit_virtualhost}"
+        }
     }
 
     class { 'nova::api':
@@ -113,12 +154,24 @@ class kanopya::openstack::nova::controller(
                               Class['kanopya::openstack::repository'] ]
     }
 
-    class { 'cinder::api':
-        keystone_auth_host => $keystone,
-        keystone_tenant    => 'services',
-        keystone_password  => "${cinder_keystone_password}",
-        bind_host          => $admin_ip,
-        require            => Exec['/usr/bin/cinder-manage db sync'],
+    if has_key($components, 'cinder') {
+        if ! defined(Class['cinder']) {
+            class { '::cinder':
+                rabbit_hosts        => $rabbits,
+                sql_connection      => "mysql://${cinder_database_user}:${cinder_database_password}@${components['cinder']['mysql']['mysqld']['ip']}/${cinder_database_name}",
+                rabbit_userid       => "${rabbit_user}",
+                rabbit_password     => "${rabbit_password}",
+                rabbit_virtual_host => "${rabbit_virtualhost}"
+            }
+        }
+
+        class { 'cinder::api':
+            keystone_auth_host => $keystone,
+            keystone_tenant    => 'services',
+            keystone_password  => "${cinder_keystone_password}",
+            bind_host          => $admin_ip,
+            require            => Exec['/usr/bin/cinder-manage db sync'],
+        }
     }
 
     class { 'glance::api':
@@ -130,31 +183,22 @@ class kanopya::openstack::nova::controller(
         keystone_user     => "${glance_keystone_user}",
         keystone_password => "${glance_keystone_password}",
         registry_host     => $glance,
-        sql_connection    => "mysql://${glance_database_user}:${glance_database_password}@${dbserver}/${glance_database_name}",
+        sql_connection    => "mysql://${glance_database_user}:${glance_database_password}@${dbip}/${glance_database_name}",
         require           => [ Class['kanopya::openstack::repository'],
                                Exec['/usr/bin/glance-manage db_sync'] ]
     }
 
+    if ! defined(Exec['/usr/bin/glance-manage db_sync']) {
+        exec { "/usr/bin/glance-manage db_sync":
+            path => "/usr/bin:/usr/sbin:/bin:/sbin",
+        }
+    }
+
+    class { 'glance::backend::file': }
+
     nova_paste_api_ini {
         'filter:ratelimit/paste.filter_factor': value => "nova.api.openstack.compute.limits:RateLimitingMiddleware.factory";
         'filter:ratelimit/limits': value => '(POST, "*", .*, 100000, MINUTE);(POST, "*/servers", ^/servers, 500000, DAY);(PUT, "*", .*, 100000, MINUTE);(GET, "*changes-since*", .*changes-since.*, 3, MINUTE);(DELETE, "*", .*, 100000, MINUTE)';
-    }
-
-    if ! defined(Class['kanopya::openstack::nova::common']) {
-        class { 'kanopya::openstack::nova::common':
-            amqpserver         => "${amqpserver}",
-            dbserver           => "${dbserver}",
-            glance             => "${glance}",
-            keystone           => "${keystone}",
-            quantum            => "${quantum}",
-            email              => "${email}",
-            database_user      => "${database_user}",
-            database_password  => "${database_password}",
-            database_name      => "${database_name}",
-            rabbit_user        => "${rabbit_user}",
-            rabbit_password    => "${rabbit_password}",
-            rabbit_virtualhost => "${rabbit_virtualhost}",
-        }
     }
 
     class { 'nova::scheduler':
@@ -210,7 +254,8 @@ class kanopya::openstack::nova::controller(
 
     if defined(Class['kanopya::apache']) {
         class { 'openstack::horizon':
-            secret_key => 'dummy_secret_key'
+            secret_key    => 'dummy_secret_key',
+            keystone_host => $keystone
         }
     }
 

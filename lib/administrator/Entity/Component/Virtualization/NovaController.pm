@@ -201,11 +201,23 @@ sub getPuppetDefinition {
     my $quantum    = ($self->quantums)[0];
     my $glance     = join(",", map { $_->getBalancerAddress(port => 9292) || $_->getMasterNode->fqdn } $self->nova_controller->glances);
     my $name       = "nova-" . $self->id;
-    my @glances    = $self->nova_controller->glances;
-    my $glance_id  = $glances[0]->id;
 
     if (not ($sql and $keystone and $quantum)) {
         return;
+    }
+
+    my %cinder_params;
+    if ($self->cinder) {
+        $cinder_params{cinder_database_user} = "cinder-" . $self->cinder->id;
+        $cinder_params{cinder_database_name} = "cinder-" . $self->cinder->id;
+    }
+
+    my %glance_params;
+    my @glances = $self->nova_controller->glances;
+    if (scalar @glances) {
+        my $glance_id = $glances[0]->id;
+        $glance_params{glance_database_user} = "glance-$glance_id";
+        $glance_params{glance_database_name} = "glance-$glance_id";
     }
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
@@ -213,26 +225,17 @@ sub getPuppetDefinition {
             manifest => $self->instanciatePuppetResource(
                             name => "kanopya::openstack::nova::controller",
                             params => {
-                                dbserver => $sql->getBalancerAddress(port => 3306) || 
-                                            $sql->getMasterNode->adminIp,
-                                            
-                                amqpserver => $self->amqp->getMasterNode->fqdn,
                                 admin_password => 'nova',
-                                keystone => $keystone->getBalancerAddress(port => 5000) || 
-                                            $keystone->getMasterNode->fqdn,
-                                
                                 email => $self->service_provider->user->user_email,
                                 glance => $glance,
-                                
-                                quantum => $quantum->getBalancerAddress(port => 9696) || 
+                                quantum => $quantum->getBalancerAddress(port => 9696) ||
                                            $quantum->getMasterNode->fqdn,
-                                           
                                 database_user => $name,
                                 database_name => $name,
-                                glance_database_user => "glance-$glance_id",
-                                glance_database_name => "glance-$glance_id",
                                 rabbit_user => $name,
-                                rabbit_virtualhost => 'openstack-' . $self->id
+                                rabbit_virtualhost => 'openstack-' . $self->id,
+                                %glance_params,
+                                %cinder_params
                             }
                         ),
             dependencies => [ $sql , $keystone , $self->amqp ]

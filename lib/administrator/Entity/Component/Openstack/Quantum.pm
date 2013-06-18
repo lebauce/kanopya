@@ -72,12 +72,9 @@ sub getPuppetDefinition {
     my $manifest = $self->instanciatePuppetResource(
         name => 'kanopya::openstack::quantum::server',
         params => {
-            amqpserver => $amqp,
-            keystone => $keystone,
             bridge_flat => 'br-flat',
             bridge_vlan => 'br-vlan',
             email => $self->service_provider->user->user_email,
-            dbserver => $sql,
             database_user => $name,
             database_name => $name,
             rabbit_user => $name,
