@@ -82,7 +82,7 @@ class kanopya::mysql::repos::deb {
         before     => Package['percona-xtrabackup'],
     }
     @apt::source { 'MariaDB':
-        location   => "http://ftp.igh.cnrs.fr/pub/mariadb/repo/5.5/${os}",
+        location   => "http://mariadb.mirror.nucleus.be/repo/5.5/${os}",
         release    => $release,
         repos      => 'main',
         key        => 'cbcb082a1bb943db',
