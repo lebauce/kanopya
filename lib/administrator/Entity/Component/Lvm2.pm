@@ -348,7 +348,8 @@ sub getPuppetDefinition {
                 resource => 'physical_volume',
                 name => $pv->lvm2_pv_name,
                 params => {
-                    ensure => 'present'
+                    ensure => 'present',
+                    tag => 'kanopya::lvm'
                 }
             );
 
@@ -360,7 +361,8 @@ sub getPuppetDefinition {
             name => $vg->lvm2_vg_name,
             params => {
                 ensure => 'present',
-                physical_volumes => \@pvs
+                physical_volumes => \@pvs,
+                tag => 'kanopya::lvm'
             }
         );
     }
