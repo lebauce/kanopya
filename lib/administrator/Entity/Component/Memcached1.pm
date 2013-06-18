@@ -89,11 +89,4 @@ sub getPuppetDefinition {
     } );
 }
 
-# Commented because we want check this component only on master node
-#sub getNetConf {
-#    my $self = shift;
-#    my $conf = $self->getConf();
-#    return { $conf->{memcached1_port} => 'tcp' };
-#}
-
 1;

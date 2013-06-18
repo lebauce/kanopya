@@ -42,12 +42,16 @@ use constant ATTR_DEF => {
 sub getAttrDef { return ATTR_DEF; }
 
 sub getNetConf {
-    my ($self) = @_;
-    my $conf = {
-         5000 => ['tcp'], # service port
-        35357 => ['tcp'], # admin port
+    return {
+        keystone_service => {
+            port => 5000,
+            protocols => ['tcp']
+        },
+        keystone_admin => {
+            port => 35357,
+            protocols => ['tcp']
+        }
     };
-    return $conf;
 }
 
 sub getPuppetDefinition {

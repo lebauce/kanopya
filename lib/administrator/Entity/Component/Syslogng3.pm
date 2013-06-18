@@ -108,12 +108,6 @@ sub setConf {
     
 }
 
-sub getNetConf {
-    # TODO return depending on conf
-    #return { 514 => ['udp'] };
-}
-
-
 sub insertDefaultExtendedConfiguration {
     my $self = shift;
     my %args = @_;

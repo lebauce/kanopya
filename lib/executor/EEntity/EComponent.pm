@@ -188,10 +188,10 @@ sub isUp {
 
     # Test Services
     my $ip = $args{host}->adminIp;
-    while(my ($port, $protocols) = each %$net_conf) {
+    while (my ($daemon, $conf) = each %$net_conf) {
         my $cmd = "nmap -n ";
         PROTO:
-        foreach my $proto (@$protocols) {
+        foreach my $proto (@{$conf->{protocols}}) {
             next PROTO if ($proto eq "ssl");
             if ($proto eq "udp") {
                 $cmd .= "-sU ";
@@ -199,7 +199,7 @@ sub isUp {
             else {
                 $cmd .= "-sT ";
             }
-            $cmd .= "-p $port $ip | grep $port | cut -d\" \" -f2";
+            $cmd .= "-p " . $conf->{port} . " $ip | grep " . $conf->{port} . " | cut -d\" \" -f2";
             my $result = $self->_host->getEContext->execute(command => $cmd);
             my $port_state = $result->{stdout};
             chomp($port_state);

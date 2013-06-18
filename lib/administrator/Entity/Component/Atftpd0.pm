@@ -63,11 +63,6 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-# Warning Atftp bug when a port scan is done
-#sub getNetConf {
-#    return {69=> ['udp']};
-#}
-
 sub getExecToTest {
     return {
         atftp => {

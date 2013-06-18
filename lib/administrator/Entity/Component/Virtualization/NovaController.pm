@@ -74,14 +74,34 @@ use constant ATTR_DEF => {
 sub getAttrDef { return ATTR_DEF; }
 
 sub getNetConf {
-    my ($self) = @_;
+    my $self = shift;
+
     my $conf = {
-        6080 => ['tcp'],  # novncproxy
-        8773 => ['tcp'],  # EC2 API
-        8774 => ['tcp'],  # os compute API
-        8775 => ['tcp'],  # metadata API
-        8776 => ['tcp'],  # volume API
+        novncproxy => {
+            port => 6080,
+            protocols => ['tcp']
+        },
+        ec2 => {
+            port => 8773,
+            protocols => ['tcp']
+        },
+        compute_api => {
+            port => 8774,
+            protocols => ['tcp']
+        },
+        metadata_api => {
+            port => 8775,
+            protocols => ['tcp']
+        },
     };
+
+    if ($self->cinder) {
+        $conf->{volume_api} = {
+            port => 8776,
+            protocols => ['tcp']
+        }
+    }
+
     return $conf;
 }
 

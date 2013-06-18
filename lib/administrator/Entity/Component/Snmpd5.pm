@@ -52,7 +52,12 @@ use constant ATTR_DEF => {
 sub getAttrDef { return ATTR_DEF; }
 
 sub getNetConf {
-    return { 161 => ['udp'] };
+    return {
+        snmpd => {
+            port => 161,
+            protocols => ['udp']
+        }
+    };
 }
 
 sub getBaseConfiguration {

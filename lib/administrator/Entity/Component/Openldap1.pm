@@ -32,7 +32,7 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-	openldap1_port      => { pattern        => '^\d*$',
+    openldap1_port      => { pattern        => '^\d*$',
                              is_mandatory   => 0,
                              is_extended    => 0,
                              is_editable    => 0
@@ -111,10 +111,14 @@ sub setConf {
 
 
 sub getNetConf {
-    #TODO return { port => [protocol] };
     my $self = shift;
-    my $port = $self->{_dbix}->get_column('openldap1_port');
-    return { $port => ['tcp'] };
+
+    return {
+        slapd => {
+            port => $self->openldap1_port,
+            protocols => ['tcp']
+        }
+    };
 }
 
 sub getPuppetDefinition {

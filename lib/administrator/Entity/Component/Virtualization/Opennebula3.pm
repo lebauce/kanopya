@@ -304,8 +304,13 @@ sub setConf {
 
 sub getNetConf {
     my $self = shift;
-    my $port = $self->port;
-    return { $port => ['tcp'] };
+
+    return {
+        oned => {
+            port => $self->port,
+            protocols => ['tcp']
+        }
+    };
 }
 
 sub needBridge {

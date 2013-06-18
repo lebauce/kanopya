@@ -213,17 +213,13 @@ sub removeHost{
     return $self->{_dbix}->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts->find( $args{dhcpd3_hosts_id})->delete();
 }
 
-=head2 getNetConf
-B<Class>   : Public
-B<Desc>    : This method return component network configuration in a hash ref, it's indexed by port and value is the port
-B<args>    : None
-B<Return>  : hash ref containing network configuration with following format : {port => protocol}
-B<Comment> : None
-B<throws>  : Nothing
-=cut
-
 sub getNetConf {
-    return { 67 => ['udp'] };
+    return {
+        dhcpd => {
+            port => 67,
+            protocols => ['udp']
+        }
+    };
 }
 
 sub getPuppetDefinition {

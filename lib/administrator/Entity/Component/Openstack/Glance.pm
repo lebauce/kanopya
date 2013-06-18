@@ -47,12 +47,16 @@ use constant ATTR_DEF => {
 sub getAttrDef { return ATTR_DEF; }
 
 sub getNetConf {
-    my ($self) = @_;
-    my $conf = {
-        9191 => ['tcp'],  # glance-registry
-        9292 => ['tcp']   # glance-api
+    return {
+        glance_registry => {
+            port => 9191,
+            protocols => ['tcp']
+        },
+        glance_api => {
+            port => 9292,
+            protocols => ['tcp']
+        }
     };
-    return $conf;
 }
 
 sub getPuppetDefinition {

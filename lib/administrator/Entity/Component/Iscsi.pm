@@ -168,7 +168,12 @@ sub insertDefaultExtendedConfiguration {
 }
 
 sub getNetConf {
-    return { 3260 => ['tcp'] };
+    return {
+        iscsid => {
+            port => 3260,
+            protocols => ['tcp']
+        }
+    };
 }
 
 sub getReadOnlyParameter {

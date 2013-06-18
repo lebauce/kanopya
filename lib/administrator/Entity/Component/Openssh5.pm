@@ -34,7 +34,12 @@ use constant ATTR_DEF => {};
 sub getAttrDef { return ATTR_DEF; }
 
 sub getNetConf {
-    return { 22 => ['tcp'] };
+    return {
+        sshd => {
+            port => 22,
+            protocols => ['tcp']
+        }
+    };
 }
 
 sub getPuppetDefinition {

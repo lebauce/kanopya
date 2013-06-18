@@ -55,7 +55,10 @@ sub _genCookie {
 
 sub getNetConf {
     return {
-        5672 => [ 'tcp' ]
+        amqp => {
+            port => 5672,
+            protocols => ['tcp']
+        }
     };
 }
 

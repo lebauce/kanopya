@@ -47,11 +47,12 @@ use constant ATTR_DEF => {
 sub getAttrDef { return ATTR_DEF; }
 
 sub getNetConf {
-    my ($self) = @_;
-    my $conf = {
-        9696 => ['tcp']
+    return {
+        quantum => {
+            port => 9696,
+            protocols => ['tcp']
+        }
     };
-    return $conf;
 }
 
 sub getPuppetDefinition {

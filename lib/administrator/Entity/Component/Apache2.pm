@@ -100,14 +100,23 @@ sub getNetConf {
     my $http_port = $self->apache2_ports;
     my $https_port = $self->apache2_sslports;
 
-    my %net_conf = ($http_port => ['tcp']);
+    my $net_conf = {
+        http => {
+            port => $http_port,
+            protocols => ['tcp']
+        }
+    };
 
     # manage ssl
     my @virtualhosts = $self->apache2_virtualhosts;
     my $ssl_enable = grep { $_->{apache2_virtualhost_sslenable} == 1 } @virtualhosts;
-    $net_conf{$https_port} = ['tcp', 'ssl'] if ($ssl_enable);
 
-    return \%net_conf;
+    $net_conf->{https} = {
+        port => $https_port,
+        protocols => ['tcp', 'ssl']
+    } if ($ssl_enable);
+
+    return $net_conf;
 }
 
 sub getClusterizationType {
