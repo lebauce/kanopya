@@ -78,6 +78,19 @@ sub createDisk {
                   }
               );
 
+    if (! $req->{volume}) {
+        throw Kanopya::Exception::Execution(
+                  error => "Failed to create volume of type $args{disk_type} on Cinder"
+              );
+    }
+
+    my $timeout = 30;
+    while (($req->{volume}->{status} eq "creating") && ($timeout > 0)) {
+        sleep 5;
+        $timeout -= 5;
+        $req = $api->cinder->volumes(id => $req->{volume}->{id})->get();
+    }
+
     my $container;
     if ($args{disk_type} eq 'iSCSI') {
         $container = $self->lvcreate(
