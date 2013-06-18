@@ -142,6 +142,13 @@ sub registerNode {
                    systemimage_id      => $args{systemimage} ? $args{systemimage}->id : undef,
                );
 
+    # Force to install required component if not defined
+    for my $required ($self->getRequiredComponents()) {
+        if (scalar(grep { $_->id == $required->id } @{ $args{components} }) <= 0) {
+            push @{ $args{components} }, $required;
+        }
+    }
+
     # Link the service provider components to the new node
     for my $component (@{ $args{components} }) {
         if ($component->service_provider->id != $self->id) {
@@ -600,6 +607,12 @@ sub getComponent {
     }
 
     return Entity::Component->find(%$findargs);
+}
+
+sub getRequiredComponents {
+    my ($self, %args) = @_;
+
+    throw Kanopya::Exception::NotImplemented();
 }
 
 sub nodesByWeight {

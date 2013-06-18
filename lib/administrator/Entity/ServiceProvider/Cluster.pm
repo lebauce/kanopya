@@ -679,7 +679,6 @@ sub addComponent {
     return $component;
 }
 
-
 =pod
 
 =begin classdoc
@@ -724,12 +723,26 @@ sub addComponents {
                              $self->id . ">"
                 );
             }
-            $component->registerNode(node => $node, master_node => ($node->node_number == 1));
+            $component->registerNode(node        => $node,
+                                     master_node => ($node->node_number == 1) ? 1 : 0);
         }
     }
 
     # update cluster
-    $self->update();
+    $self->update(node => $nodes[0]);
+}
+
+sub getRequiredComponents {
+    my ($self, %args) = @_;
+
+    my @required;
+    for my $category ('Configurationagent', 'System', 'Monitoragent') {
+        eval {
+            push @required, $self->getComponent(category => $category);
+        };
+    }
+
+    return @required;
 }
 
 sub getSharedSystemimage {
