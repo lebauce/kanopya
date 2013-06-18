@@ -142,14 +142,12 @@ function host_addbutton_action(e, grid) {
                     slave_ifaces : bonding_ifaces[bonding_iface_name]
                 });
             }
+
+            host['entity_tags'] = $.map(host['entity_tags'], function(e) {return e.tag_id});
+
             return host;
         },
         submitCallback  : function(data, $form, opts, onsuccess, onerror) {
-            // For some reason, the tags are in the 'ifaces' array...
-            if (data.ifaces.length) {
-                data.entity_tags = data.ifaces[0].entity_tags;
-                delete data.ifaces[0].entity_tags;
-            }
             for (var bonding_index in data['bonding_ifaces']) {
                 var bonding_iface = data['bonding_ifaces'][bonding_index];
 
