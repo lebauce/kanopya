@@ -155,7 +155,7 @@ class kanopya::openstack::nova::controller(
     }
 
     if has_key($components, 'cinder') {
-        if ! defined(Class['cinder']) {
+        if ! defined(Class['::cinder']) {
             class { '::cinder':
                 rabbit_hosts        => $rabbits,
                 sql_connection      => "mysql://${cinder_database_user}:${cinder_database_password}@${components['cinder']['mysql']['mysqld']['ip']}/${cinder_database_name}",

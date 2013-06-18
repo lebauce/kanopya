@@ -173,10 +173,7 @@ sub lvcreate {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    my $amqp = $self->nova_controller->amqp->getMasterNode->fqdn;
-    my $sql  = $self->mysql5;
     my $controller = $self->nova_controller;
-    my $keystone = $controller->keystone;
     my $name = "cinder-" . $self->id;
 
     my @repositories = map {
@@ -186,15 +183,11 @@ sub getPuppetDefinition {
     my $manifest = $self->instanciatePuppetResource(
         name   => 'kanopya::openstack::cinder',
         params => {
-            amqpserver => $amqp,
-            rabbits => [ $amqp, $amqp ],
-            dbserver => $sql->getBalancerAddress(port => 3306) || $sql->getMasterNode->adminIp,
-            keystone =>  $keystone->getBalancerAddress(port => 5000) || $keystone->getMasterNode->fqdn,
             email => $self->service_provider->user->user_email,
             database_user => $name,
             database_name => $name,
             rabbit_user => $name,
-            rabbit_virtualhost => 'openstack-' . $self->nova_controller->id
+            rabbit_virtualhost => 'openstack-' . $controller->id
         }
     );
 
@@ -216,7 +209,7 @@ sub getPuppetDefinition {
     return merge($self->SUPER::getPuppetDefinition(%args), {
         cinder => {
             manifest     => $manifest,
-            dependencies => [ $self->nova_controller->amqp , $sql , $keystone ]
+            dependencies => [ $controller->amqp , $self->mysql5, $controller->keystone ]
         }
     } );
 }

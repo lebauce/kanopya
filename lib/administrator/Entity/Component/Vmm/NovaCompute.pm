@@ -91,7 +91,6 @@ sub getPuppetDefinition {
             manifest => $self->instanciatePuppetResource(
                             name => "kanopya::openstack::nova::compute",
                             params => {
-                                amqpserver => $amqp,
                                 glance => $glance,
                                 keystone => $keystone,
                                 quantum => $quantum->getMasterNode->fqdn,
@@ -102,7 +101,7 @@ sub getPuppetDefinition {
                                 rabbit_virtualhost => 'openstack-' . $self->nova_controller->id
                             }
                         ),
-            dependencies => [ ]
+            dependencies => [ $self->nova_controller->amqp ]
         }
     } );
 }

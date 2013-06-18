@@ -26,20 +26,20 @@ class kanopya::openstack::glance(
             password => "${keystone_password}",
             email    => "${email}",
             tenant   => 'services',
-            tag      => "${components['glance']['keystone']['keystone']['tag']}"
+            tag      => "${components['glance']['keystone']['keystone_admin']['tag']}"
         }
 
         @@keystone_user_role { "${keystone_user}@services":
             ensure  => present,
             roles   => 'admin',
-            tag     => "${components['glance']['keystone']['keystone']['tag']}"
+            tag     => "${components['glance']['keystone']['keystone_admin']['tag']}"
         }
 
         @@keystone_service { 'glance':
             ensure      => present,
             type        => 'image',
             description => "Openstack Image Service",
-            tag         => "${components['glance']['keystone']['keystone']['tag']}"
+            tag         => "${components['glance']['keystone']['keystone_admin']['tag']}"
         }
     }
     else {

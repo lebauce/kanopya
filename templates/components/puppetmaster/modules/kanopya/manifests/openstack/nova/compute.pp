@@ -1,5 +1,4 @@
 class kanopya::openstack::nova::compute(
-    $amqpserver,
     $glance,
     $keystone,
     $quantum,
@@ -12,6 +11,9 @@ class kanopya::openstack::nova::compute(
 ) {
     tag("kanopya::novacompute")
 
+    $amqpserver = $components[novacompute][amqp][amqp][tag]
+    $rabbits = $components[novacompute][amqp][nodes]
+
     if ! defined(Class['kanopya::openstack::repository']) {
         class { 'kanopya::openstack::repository': }
     }
@@ -22,11 +24,11 @@ class kanopya::openstack::nova::compute(
 
     if ! defined(Class['kanopya::openstack::nova::common']) {
         class { 'kanopya::openstack::nova::common':
-            amqpserver         => "${amqpserver}",
             glance             => "${glance}",
             keystone           => "${keystone}",
             quantum            => "${quantum}",
             email              => "${email}",
+            rabbits            => $rabbits,
             rabbit_user        => "${rabbit_user}",
             rabbit_password    => "${rabbit_password}",
             rabbit_virtualhost => "${rabbit_virtualhost}"
@@ -34,8 +36,11 @@ class kanopya::openstack::nova::compute(
     }
 
     class { '::nova::compute':
-        enabled => true,
-        require => Class['kanopya::openstack::repository']
+        enabled                       => true,
+        vnc_enabled                   => true,
+        vncserver_proxyclient_address => $admin_ip,
+        vncproxy_host                 => $keystone,
+        require                       => Class['kanopya::openstack::repository']
     }
 
     class { 'nova::compute::quantum':
@@ -62,7 +67,7 @@ class kanopya::openstack::nova::compute(
 
     if ! defined(Class['kanopya::openstack::quantum::common']) {
         class { 'kanopya::openstack::quantum::common':
-            rabbit_host        => "${amqpserver}",
+            rabbit_hosts       => $rabbits,
             rabbit_user        => "${rabbit_user}",
             rabbit_password    => "${rabbit_password}",
             rabbit_virtualhost => "${rabbit_virtualhost}"
