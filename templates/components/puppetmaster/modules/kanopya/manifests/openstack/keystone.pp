@@ -7,14 +7,14 @@ class kanopya::openstack::keystone(
 ) {
     tag("kanopya::keystone")
 
-    $dbserver = $components['keystone']['mysql']['mysqld']['tag']
-    $dbip = $components['keystone']['mysql']['mysqld']['ip']
+    $dbserver = $components[keystone][mysql][mysqld][tag]
+    $dbip = $components[keystone][mysql][mysqld][ip]
 
     if ! defined(Class['kanopya::openstack::repository']) {
         class { 'kanopya::openstack::repository': }
     }
 
-    if ($is_keystone_master == 1) {
+    if ($components[keystone][master] == 1) {
         @@mysql::db { "${database_name}":
             user     => "${database_user}",
             password => "${database_password}",
