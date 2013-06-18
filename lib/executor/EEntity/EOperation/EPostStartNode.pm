@@ -138,7 +138,8 @@ sub execute {
                          entity => $self->{context}->{cluster}->getComponent(category => "Configurationagent")
                      );
         # And apply the configuration on every node of the cluster
-        $eagent->applyConfiguration(cluster => $self->{context}->{cluster});
+        $eagent->applyConfiguration(cluster => $self->{context}->{cluster},
+                                    tags    => [ "kanopya::operation::poststartnode" ]);
     };
     if ($@) {
         my $err = $@;

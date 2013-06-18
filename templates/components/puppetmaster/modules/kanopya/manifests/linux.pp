@@ -3,6 +3,8 @@ class kanopya::linux::repositories {
 }
 
 class kanopya::linux ($sourcepath) {
+    tag("kanopya::operation::poststartnode")
+
     case $operatingsystem {
         CentOS, Fedora: { $haltpath = "/etc/rc.d/rc0.d"
                           $netscript = "K[0-9][0-9]network"
