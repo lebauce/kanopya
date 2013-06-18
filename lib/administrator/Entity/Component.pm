@@ -251,7 +251,7 @@ sub getActiveNodes {
     for my $component_node (@component_nodes) {
         my $n = $component_node->node;
         if ($n->host->host_state =~ /^up:\d+$/ &&
-            $n->host->getNodeState() eq "in") {
+            ($n->host->getNodeState())[0] eq "in") {
             push @nodes, $n;
         }
     }
