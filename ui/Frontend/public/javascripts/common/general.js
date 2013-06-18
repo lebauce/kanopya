@@ -369,15 +369,15 @@ function handleCreate (grid) {
     }
 }
 
-function handleCreateOperation (data, grid, id) {
+function handleCreateOperation (data, grid, id, callback) {
     if (grid !== undefined && data !== undefined && data.operation_id !== undefined) {
         setTimeout(function() {
-            checkOperation(grid, data.operation_id, id);
+            checkOperation(grid, data.operation_id, id, callback);
         }, 3000);
     }
 }
 
-function checkOperation (grid, operation_id, id) {
+function checkOperation (grid, operation_id, id, callback) {
     var oldop = ajax('GET', '/api/oldoperation?operation_id=' + operation_id);
     if (oldop != undefined && oldop.length > 0 && oldop[0].execution_status == 'succeeded') {
         // Reload to handle the new element
@@ -387,12 +387,13 @@ function checkOperation (grid, operation_id, id) {
         if (id) page = "page";
         else    page = "lastpage";
 
-        $(grid).trigger("reloadGrid", [{ page : $(grid).getGridParam(page) }]);
+        if (callback) callback();
+        else $(grid).trigger("reloadGrid", [{ page : $(grid).getGridParam(page) }]);
     }
     else {
         if ($(grid).is(':visible')) {
             setTimeout(function() {
-                checkOperation(grid, operation_id, id);
+                checkOperation(grid, operation_id, id, callback);
             }, 5000);
         }
     }

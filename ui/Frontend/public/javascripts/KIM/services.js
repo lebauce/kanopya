@@ -189,7 +189,22 @@ function servicesList (container_id, elem_id) {
                     }
                 },
                 callback : function (data) {
-                    handleCreateOperation(data, grid);
+                    handleCreateOperation(data, $('#services_list'), null, function() {
+                        // When the service is instantiated, we click on Services menu to reload menu and grid
+                        // If a specific service type (in submenu) was selected by user, we click on it when it is loaded
+                        var selected = $('.selected_viewlink');
+                        service_menu_id = 'menuhead_Services';
+                        $('#'+service_menu_id).click()
+                        if (selected.attr('id') != service_menu_id) {
+                            var waiter = setInterval(function(){
+                                var link = $('#Services a:contains('+selected.text()+')');
+                                if (link) {
+                                    link.click();
+                                    clearInterval(waiter);
+                                }
+                             },100);
+                        }
+                    });
                 }
             })).start();
         });
