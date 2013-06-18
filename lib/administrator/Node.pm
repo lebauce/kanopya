@@ -73,11 +73,26 @@ use constant ATTR_DEF => {
     },
     rulestate       => {
         is_virtual   => 1
-    }
+    },
+    components => {
+        label        => 'Components',
+        type         => 'enum',
+        relation     => 'multi',
+        link_to      => 'component',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
 };
 
-
 sub getAttrDef { return ATTR_DEF; }
+
+sub methods {
+    return {
+        update => {
+            description => 'update a node',
+        },
+    };
+}
 
 sub new {
     my $class = shift;
@@ -88,6 +103,17 @@ sub new {
     $self->_undefRules();
 
     return $self;
+}
+
+sub update {
+    my ($self, %args) = @_;
+
+    my $component_types = delete $args{component_types};
+
+    $self->service_provider->addComponents(
+        nodes           => [ $self->id ],
+        component_types => $component_types
+    );
 }
 
 sub getComponent {

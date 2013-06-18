@@ -1154,18 +1154,29 @@ sub update {
     my $self = shift;
     my %args = @_;
 
+    my $context = {
+        cluster => $self
+    };
+
     if (defined ($args{components})) {
         for my $component (@{$args{components}}) {
             $self->addComponent(component_type_id => $component->{component_type_id});
         }
         delete $args{components};
     }
+
+    $log->info("Updating cluster");
+    if (defined ($args{node})) {
+        $log->info("Updating node $args{node} of cluster");
+        $context->{host} = (delete $args{node})->host;
+    }
+
+    $self->SUPER::update(%args);
+
     $self->getManager(manager_type => 'ExecutionManager')->enqueue(
-        type   => 'UpdatePuppetCluster',
+        type   => 'UpdateCluster',
         params => { 
-            context => {
-                cluster => $self,
-            }
+            context => $context
         }
     );
 }

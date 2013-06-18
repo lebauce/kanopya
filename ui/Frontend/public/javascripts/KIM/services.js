@@ -735,7 +735,7 @@ function node_components_tab(cid, eid) {
             submitCallback  : function(data, $form, opts, onsuccess, onerror) {
                 data['nodes'] = [eid];
                 var _this = this;
-                ajax('POST', '/api/cluster/' + sp_id + '/addComponents', data, function() {
+                ajax('PUT', '/api/node/' + eid, data, function() {
                     build_component_by_node_grid(grid, eid, node_component_types);
                     _this.closeDialog();
                 });
