@@ -115,6 +115,7 @@ class kanopya::mysql::repos::rh {
 class kanopya::mysql($config_hash, $galera) inherits kanopya::mysql::params {
     $config_hash['service_name'] = 'mysql'
     $config_hash['pidfile']      = "${fqdn}.pid"
+    $config_hash['bind_address'] = $components[mysql][listen][mysqld][ip]
     file { '/var/run/mysqld':
         ensure  => 'directory',
         owner   => 'mysql',
