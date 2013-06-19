@@ -258,7 +258,7 @@ sub getHostsEntries {
         push @entries, $self->mysql5->service_provider->getHostEntries();
     }
         
-    for my $component (($self->novas_compute, $self->glances, $self->quantums)) {
+    for my $component (($self->vmms, $self->glances, $self->quantums)) {
         @entries = (@entries, $component->service_provider->getHostEntries());
     }
 

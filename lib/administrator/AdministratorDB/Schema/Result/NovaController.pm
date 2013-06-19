@@ -219,21 +219,6 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
-=head2 novas_compute
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::NovaCompute>
-
-=cut
-
-__PACKAGE__->has_many(
-  "novas_compute",
-  "AdministratorDB::Schema::Result::NovaCompute",
-  { "foreign.nova_controller_id" => "self.nova_controller_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 openstack_hypervisors
 
 Type: has_many
