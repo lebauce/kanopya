@@ -1,4 +1,4 @@
-class kanopya::openstack::cinder(
+class kanopya::openstack::cinder::server(
     $email,
     $database_name      = "cinder",
     $database_user      = "cinder",
@@ -99,5 +99,5 @@ class kanopya::openstack::cinder(
         "DEFAULT/nfs_mount_options": value => "rw"
     }
 
-    Class['kanopya::openstack::repository'] -> Class['kanopya::openstack::cinder']
+    Class['kanopya::openstack::repository'] -> Class['kanopya::openstack::cinder::server']
 }

@@ -181,7 +181,7 @@ sub getPuppetDefinition {
     } $controller->repositories;
 
     my $manifest = $self->instanciatePuppetResource(
-        name   => 'kanopya::openstack::cinder',
+        name   => 'kanopya::openstack::cinder::server',
         params => {
             email => $self->service_provider->user->user_email,
             database_user => $name,

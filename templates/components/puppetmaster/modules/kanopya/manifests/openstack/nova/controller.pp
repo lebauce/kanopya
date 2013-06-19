@@ -154,24 +154,22 @@ class kanopya::openstack::nova::controller(
                               Class['kanopya::openstack::repository'] ]
     }
 
-    if has_key($components, 'cinder') {
-        if ! defined(Class['::cinder']) {
-            class { '::cinder':
-                rabbit_hosts        => $rabbits,
-                sql_connection      => "mysql://${cinder_database_user}:${cinder_database_password}@${components['cinder']['mysql']['mysqld']['ip']}/${cinder_database_name}",
-                rabbit_userid       => "${rabbit_user}",
-                rabbit_password     => "${rabbit_password}",
-                rabbit_virtual_host => "${rabbit_virtualhost}"
-            }
+    if ! defined(Class['cinder']) {
+        class { '::cinder':
+            rabbit_hosts        => $rabbits,
+            sql_connection      => "mysql://${cinder_database_user}:${cinder_database_password}@${components['cinder']['mysql']['mysqld']['ip']}/${cinder_database_name}",
+            rabbit_userid       => "${rabbit_user}",
+            rabbit_password     => "${rabbit_password}",
+            rabbit_virtual_host => "${rabbit_virtualhost}"
         }
+    }
 
-        class { 'cinder::api':
-            keystone_auth_host => $keystone,
-            keystone_tenant    => 'services',
-            keystone_password  => "${cinder_keystone_password}",
-            bind_host          => $admin_ip,
-            require            => Exec['/usr/bin/cinder-manage db sync'],
-        }
+    class { 'cinder::api':
+        keystone_auth_host => $keystone,
+        keystone_tenant    => 'services',
+        keystone_password  => "${cinder_keystone_password}",
+        bind_host          => $admin_ip,
+        require            => Exec['/usr/bin/cinder-manage db sync'],
     }
 
     class { 'glance::api':
