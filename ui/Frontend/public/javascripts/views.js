@@ -170,10 +170,34 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
     reload_content('content_' + details_info.tabs[0]['id'] + '_' + elem_id, elem_id, {keep_last : true, elem_data : row_data});
 }
 
-// Callback when click on remove icon for a row
-function removeGridEntry (grid_id, rowid, url, method, extraParams) {
+function _gridActionModalCommonParams() {
     var dialog_height   = 120;
     var dialog_width    = 300;
+    return {
+        modal           : true,
+        drag            : false,
+        resize          : false,
+        width           : dialog_width,
+        height          : dialog_height,
+        top             : ($(window).height() / 2) - (dialog_height / 2),
+        left            : ($(window).width() / 2) - (dialog_width / 2),
+        delicon         : [true,'left','ui-icon-ok'],
+        cancelicon      : [true,'left','ui-icon-closethick'],
+        closeOnEscape   : true, // Allow to close even if a error happened
+        beforeShowForm  : function (formid){
+            var divdelparents=formid.parents('.ui-jqdialog');
+            divdelparents.addClass('custom-delete-modal');
+        },
+        onClose         : function(diag_id) {
+            // If we don't manually remove the dialog it is just hidden
+            // and some params are not update for further dialog
+            $(diag_id).jqmHide().remove();
+        }
+    }
+}
+
+// Callback when click on remove icon for a row
+function removeGridEntry (grid_id, rowid, url, method, extraParams) {
     var delete_url      = url.split('?')[0] + '/' + rowid;
     var call_type       = 'DELETE';
     if (method) {
@@ -187,32 +211,18 @@ function removeGridEntry (grid_id, rowid, url, method, extraParams) {
         $("#"+grid_id).jqGrid(
             'delGridRow',
             rowid,
-            {
+            $.extend(_gridActionModalCommonParams(), {
                 url             : delete_url,
                 ajaxDelOptions  : { type : call_type },
-                modal           : true,
-                drag            : false,
-                resize          : false,
-                width           : dialog_width,
-                height          : dialog_height,
-                top             : ($(window).height() / 2) - (dialog_height / 2),
-                left            : ($(window).width() / 2) - (dialog_width / 2),
-                delicon         : [true,'left','ui-icon-ok'],
-                cancelicon      : [true,'left','ui-icon-closethick'],
                 afterComplete   : function (response) {
                     var json = $.parseJSON(response.responseText);
                     if (json.operation_id != undefined) {
                         handleCreateOperation(json, $("#"+grid_id), rowid);
-
                     } else {
                         $("#"+grid_id).trigger('gridChange')
                     }
                 },
-                beforeShowForm  : function (formid){
-                    var divdelparents=formid.parents('.ui-jqdialog');
-                    divdelparents.addClass('custom-delete-modal');
-                }
-            }
+            })
         );
     }
     else { // to remove one entry without confirm dialog (already done one time in multiaction.confirm)
@@ -246,32 +256,24 @@ function editEntityRights(grid, rowid, rowdata, rowelem, options) {
 
 // Callback when click on deactivate icon for a row
 function deactivateGridEntry (grid, id, url, active) {
-    var dialog_height   = 120;
-    var dialog_width    = 300;
     var deactivate_url  = url.split('?')[0] + '/' + id + '/' + (active ? "deactivate" : "activate");
     var call_type       = 'POST';
 
-    var mode = active ? "Deactivate" : "Activate"
+    var mode = active ? "Deactivate" : "Activate";
     $(grid).jqGrid(
         'delGridRow',
         id,
-        {
+        $.extend(_gridActionModalCommonParams(), {
             caption         : mode,
             msg             : mode + " selected record(s)?",
             bSubmit         : mode,
             url             : deactivate_url,
             ajaxDelOptions  : { type : call_type },
-            modal           : true,
-            drag            : false,
-            resize          : false,
-            width           : dialog_width,
-            height          : dialog_height,
-            top             : ($(window).height() / 2) - (dialog_height / 2),
-            left            : ($(window).width() / 2) - (dialog_width / 2),
             afterComplete   : function (response) {
                 handleCreateOperation($.parseJSON(response.responseText), grid, id);
-            }
-        }
+            },
+
+        })
     );
 }
 
@@ -483,14 +485,14 @@ function create_grid(options) {
             if (rowdata.active != undefined) {
                 if (rowdata.active == "1") {
                     $(this).find('#'+rowid+' .ui-inline-active').attr('title', 'Deactivate this ' + (options.elem_name || 'element'));
-                    $(this).find('#'+rowid+' .ui-inline-active').find('span').removeClass('ui-icon-locked');
-                    $(this).find('#'+rowid+' .ui-inline-active').find('span').addClass('ui-icon-unlocked');
+                    $(this).find('#'+rowid+' .ui-inline-active').find('span').removeClass('ui-icon-check');
+                    $(this).find('#'+rowid+' .ui-inline-active').find('span').addClass('ui-icon-close');
                     $(this).find('#'+rowid+' .ui-inline-del').find('span').attr('disabled', 'disabled').addClass("ui-state-disabled");
 
                 } else {
                     $(this).find('#'+rowid+' .ui-inline-active').attr('title', 'Activate this ' + (options.elem_name || 'element'));
-                    $(this).find('#'+rowid+' .ui-inline-active').find('span').removeClass('ui-icon-unlocked');
-                    $(this).find('#'+rowid+' .ui-inline-active').find('span').addClass('ui-icon-locked');
+                    $(this).find('#'+rowid+' .ui-inline-active').find('span').removeClass('ui-icon-close');
+                    $(this).find('#'+rowid+' .ui-inline-active').find('span').addClass('ui-icon-check');
 
                     // Manage delete action callback
                     $(this).find('#'+rowid+' .ui-inline-del').click( function() { deleteHandler(rowid) } );

@@ -67,17 +67,19 @@ function add_menutree(container, label, menu_info, elem_id) {
                 }
             },
             rowNum : 25,
-            colNames: [ 'ID', 'Instance Name', 'State', 'Rules State', 'Node Number' ],
+            colNames: [ 'ID', 'Instance Name', 'Active', 'State', 'Rules State', 'Node Number' ],
             colModel: [
                 { name: 'pk', index: 'pk', width: 60, sorttype: "int", hidden: true, key: true },
                 { name: 'cluster_name', index: 'service_name', width: 200 },
+                { name: 'active', index: 'active', width : 40, align : 'center', formatter : function(cell, formatopts, row) { return booleantostateformatter(cell, 'active', 'inactive') } },
                 { name: 'cluster_state', index: 'service_state', width: 90, formatter:StateFormatter },
                 { name: 'rulesstate', index : 'rulesstate' },
                 { name: 'node_number', index: 'node_number', width: 150 }
             ],
             elem_name   : 'service',
             details     : { link_to_menu : 'yes', label_key : 'cluster_name'},
-            before_container : add_button
+            before_container : add_button,
+            deactivate  : true
         });
 
         createServiceGraphs(container_id, elem_id);
