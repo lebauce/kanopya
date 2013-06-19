@@ -145,17 +145,23 @@ sub generatePuppetDefinitions {
         );
 
         my $listen = {};
+        my $access = {};
         my $netconf = $component->getNetConf;
         for my $service (keys %{$netconf}) {
             $listen->{$service} = {
                 ip => $component->getListenIp(host => $args{host},
                                               port => $netconf->{$service}->{port})
-            }
+            };
+            $access->{$service} = {
+                ip => $component->getAccessIp(host => $args{host},
+                                              port => $netconf->{$service}->{port})
+            };
         }
 
         my $configuration = {
             master => ($component_node->master_node == 1 ? 1 : 0),
-            listen => $listen
+            listen => $listen,
+            access => $access
         };
 
         for my $chunk (keys %{$puppet_definitions}) {
