@@ -66,6 +66,14 @@ function load_service_template_details (elem_id, row_data, grid_id) {
         type      : 'servicetemplate',
         displayed : [ 'service_name', 'service_desc', 'hosting_policy_id', 'storage_policy_id', 'network_policy_id',
                       'scalability_policy_id', 'system_policy_id', 'billing_policy_id', 'orchestration_policy_id' ],
+        optionsCallback : function(name) {
+            var type = name.match(/(.*)_policy_id/);
+            if (type.length == 2) {
+                var policies = ajax('GET', '/api/policy?policy_type=' + type[1]);
+                return policies;
+            }
+            return false;
+        },
         callback : function () { $('#' + grid_id).trigger("reloadGrid"); }
     })).start();
 }
