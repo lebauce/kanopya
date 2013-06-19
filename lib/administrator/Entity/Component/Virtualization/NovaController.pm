@@ -207,9 +207,11 @@ sub getPuppetDefinition {
     }
 
     my %cinder_params;
-    if ($self->cinder) {
-        $cinder_params{cinder_database_user} = "cinder-" . $self->cinder->id;
-        $cinder_params{cinder_database_name} = "cinder-" . $self->cinder->id;
+    my @cinders = $self->nova_controller->cinders;
+    if (scalar @cinders) {
+        my $cinder_id = $cinders[0]->id;
+        $cinder_params{cinder_database_user} = "cinder-$cinder_id";
+        $cinder_params{cinder_database_name} = "cinder-$cinder_id";
     }
 
     my %glance_params;
