@@ -661,10 +661,7 @@ sub releaseHost {
     my %args = @_;
 
     General::checkParams(args => \%args, required => [ "host" ]);
-
-    # In the case of OpenNebula, we delete the host once it's stopped
-    $args{host}->setAttr(name => 'active', value => '0', save => 1);
-    $args{host}->remove;
+    $args{host}->delete();
 }
 
 
