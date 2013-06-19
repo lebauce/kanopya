@@ -67,7 +67,7 @@ sub prepare {
     $self->SUPER::prepare(%args);
 
     # Check the cluster state
-    my ($state, $timestamp) = $self->{context}->{cluster}->getState;
+    my ($state, $timestamp) = $self->{context}->{cluster}->reload->getState;
     if ($state ne 'up') {
         throw Kanopya::Exception::Execution::InvalidState(
                   error => "The cluster <" . $self->{context}->{cluster} .

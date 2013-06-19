@@ -66,6 +66,10 @@ sub check {
     General::checkParams(args => $self->{params}, required => [ "node_number" ]);
 }
 
+sub prepare {
+    my ($self, %args) = @_;
+    $self->SUPER::prepare(%args);
+}
 
 =pod
 =begin classdoc

@@ -26,6 +26,7 @@ use Data::Dumper;
 use Kanopya::Exceptions;
 use Entity::ServiceProvider;
 use Entity::Host;
+use EntityState;
 use CapacityManagement;
 
 my $log = get_logger("");
@@ -47,26 +48,81 @@ sub check {
 sub prepare {
     my ($self, %args) = @_;
 
+    # Check the hostmanager service provider state
+    my ($host_manager_sp_state, $host_manager_sp_timestamp) = $self->{context}->{host_manager_sp}->reload->getState;
+
+    # TODO only use consumer states
+    my @entity_states = $self->{context}->{host_manager_sp}->entity_states;
+
+    if ($host_manager_sp_state eq 'up') {
+    }
+    elsif ($host_manager_sp_state eq 'migrating') {
+        eval {
+            # Check wether the hypervisor is concerned by the current migration
+            $self->{context}->{host}->findRelated(filters => ['entity_states'],
+                                                  hash    => {state => 'migrating'});
+        };
+        if ($@) {
+            $log->debug("Current migration in not in the hypervisor");
+        }
+        else {
+            throw Kanopya::Exception::Execution::InvalidState(
+                  error => "The hypervisor <" . $self->{context}->{host}->node->node_hostname.
+                           "> has already a current migration"
+            );
+        }
+    }
+    elsif ($host_manager_sp_state eq 'updating') {
+        for my $entity_state (@entity_states) {
+            if ($entity_state->state eq 'scaleout') {
+                # Check whether hypervisor is used by scaleout
+                eval {
+                    $self->{context}->{host}->findRelated(filters => ['entity_states'],
+                                              hash    => {
+                                                  state       => 'scaleout',
+                                                  consumer_id => $entity_state->consumer_id,
+                                              });
+                };
+                if ($@) {
+                    $log->debug('Hypervisor seems not used by consumer <'.$entity_state->consumer_id.'>');
+                }
+                else {
+                    throw Kanopya::Exception::Execution::InvalidState(
+                              error => 'Hypervisor <'
+                                       .$self->{context}->{host}->node->node_hostname
+                                       .'> is already used by consumer <'.$entity_state->consumer_id.'>'
+                          );
+                }
+            }
+            else {
+                throw Kanopya::Exception::Execution::InvalidState(
+                          error => 'The cluster <'.$self->{context}->{host_manager_sp}->cluster_name
+                                   .'> has a wrong entity state <'.$entity_state->state
+                                   .'> from consumer id <'.$entity_state->id.'>'
+                      );
+            }
+        }
+    }
+    else {
+        throw Kanopya::Exception::Execution::InvalidState(
+                  error => "The cluster <"
+                           .$self->{context}->{host_manager_sp}->cluster_name
+                           ."> is <$host_manager_sp_state> which is not a correct state to accept migration"
+              );
+    }
+
     # Check the hypervisor cluster state
     my ($hv_cluster_state, $timestamp) = $self->{context}->{hv_cluster}->reload->getState;
 
-    if ($hv_cluster_state ne 'up') {
+    if ($hv_cluster_state ne 'up' && $hv_cluster_state ne 'migrating') {
         throw Kanopya::Exception::Execution::InvalidState(
                   error => "The cluster <" . $self->{context}->{hv_cluster}->cluster_name .
                            "> has to be <up>, not <$hv_cluster_state>"
               );
     }
 
-    # Check the hostmanager service provider state
-    my ($host_manager_sp_state, $host_manager_sp_timestamp) = $self->{context}->{host_manager_sp}->reload->getState;
-
-    if ($host_manager_sp_state ne 'up') {
-        throw Kanopya::Exception::Execution::InvalidState(
-                  error => "The cluster <" . $self->{context}->{host_manager_sp}->cluster_name .
-                           "> has to be <up>, not <$host_manager_sp_state>"
-              );
-    }
-
+    $self->{context}->{vm}->setConsumerState(state => 'migrating', consumer => $self->workflow);
+    $self->{context}->{host}->setConsumerState(state => 'migrating', consumer => $self->workflow);
     $self->{context}->{hv_cluster}->setState(state => 'migrating');
     $self->{context}->{host_manager_sp}->setState(state => 'migrating');
 }
@@ -198,7 +254,7 @@ sub execute {
     }
 }
 
-sub finish{
+sub finish {
     my ($self, %args) = @_;
     $self->SUPER::execute(%args);
 
@@ -212,7 +268,11 @@ sub finish{
 
     if ($host_manager_sp_state eq 'migrating') {
         $self->{context}->{host_manager_sp}->setState(state => 'up');
+        delete $self->{context}->{host_manager_sp};
     }
+
+    $self->{context}->{vm}->removeState(consumer => $self->workflow);
+    $self->{context}->{host}->removeState(consumer => $self->workflow);
 
     delete $self->{context}->{vm};
     delete $self->{context}->{host};
@@ -287,7 +347,8 @@ sub cancel {
         $self->{context}->{host_manager_sp}->setState(state => 'up');
     }
 
-
+    $self->{context}->{vm}->removeState(consumer => $self->workflow);
+    $self->{context}->{host}->removeState(consumer => $self->workflow);
 }
 
 1;

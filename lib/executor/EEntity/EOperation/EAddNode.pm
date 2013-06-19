@@ -105,10 +105,9 @@ sub prepare {
         $log->debug("State is <$state> which is an invalid state");
         throw Kanopya::Exception::Execution::InvalidState(
                   error => "The cluster <" . $self->{context}->{cluster}->cluster_name .
-                           "> has to be <up|down> not <$state>"
+                           "> has to be <up||down> not <$state>"
               );
     }
-    $self->{context}->{cluster}->setState(state => 'updating');
 
     if (defined $self->{context}->{host_manager_sp}) {
         my ($hv_state, $hv_timestamp) = $self->{context}->{host_manager_sp}->reload->getState;
@@ -120,7 +119,11 @@ sub prepare {
                   );
         }
         $self->{context}->{host_manager_sp}->setState(state => 'updating');
+        $self->{context}->{host_manager_sp}->setConsumerState(state => 'updating', consumer => $self->workflow);
     }
+
+    $self->{context}->{cluster}->setState(state => 'updating');
+    $self->{context}->{cluster}->setConsumerState(state => 'updating', consumer => $self->workflow);
 
     # Ask to the manager if we can use them
     $self->{context}->{host_manager}->increaseConsumers();
@@ -204,17 +207,20 @@ sub prerequisites {
             return 0;
         }
         else {
-            $log->info('Need to start a new hypervisor');
-            my $host_manager_sp = $self->{context}->{host_manager}->service_provider;
-            my $workflow_to_enqueue = { name => 'AddNode', params => { context => { cluster => $host_manager_sp, }  }};
+            throw Kanopya::Exception::Internal('Hypervisor cluster is full ! Please start a new hypervisor');
+            # TODO debug with state management
 
-            $self->workflow->enqueueBefore(
-                current_operation => $self,
-                workflow          => $workflow_to_enqueue,
-            );
-
-            $log->info('Enqueue "add hypervisor" operations before starting a new virtual machine');
-            return -1;
+#            $log->info('Need to start a new hypervisor');
+#            my $host_manager_sp = $self->{context}->{host_manager}->service_provider;
+#            my $workflow_to_enqueue = { name => 'AddNode', params => { context => { cluster => $host_manager_sp, }  }};
+#
+#            $self->workflow->enqueueBefore(
+#                current_operation => $self,
+#                workflow          => $workflow_to_enqueue,
+#            );
+#
+#            $log->info('Enqueue "add hypervisor" operations before starting a new virtual machine');
+#            return -1;
         }
    }
    else {   #Physical
@@ -412,6 +418,13 @@ sub finish {
     $self->SUPER::finish(%args);
 
     $self->{context}->{host}->setState(state => "locked");
+    $self->{context}->{host}->setConsumerState(state => 'adding', consumer => $self->workflow);
+
+    # Add state to hypervisor if defined
+    if (defined $self->{context}->{hypervisor}) {
+        $self->{context}->{host_manager_sp}->setConsumerState(state => 'scaleout', consumer => $self->workflow);
+        $self->{context}->{hypervisor}->setConsumerState(state => 'scaleout', consumer => $self->workflow);
+    }
 
     # Release managers
     $self->{context}->{host_manager}->decreaseConsumers();
@@ -437,13 +450,21 @@ sub cancel {
     $self->SUPER::finish(%args);
 
     $self->{context}->{cluster}->restoreState();
+    $self->{context}->{cluster}->removeState(consumer => $self->workflow);
+
     if (defined $self->{context}->{host_manager_sp}) {
         $self->{context}->{host_manager_sp}->setState(state => 'up');
+        $self->{context}->{host_manager_sp}->removeState(consumer => $self->workflow);
     }
-
 
     if (defined $self->{context}->{host}) {
         $self->{context}->{host}->setState(state => 'down');
+        $self->{context}->{host}->removeState(consumer => $self->workflow);
+    }
+
+    # Add state to hypervisor if defined
+    if (defined $self->{context}->{hypervisor}) {
+        $self->{context}->{hypervisor}->removeState(consumer => $self->workflow);
     }
 }
 

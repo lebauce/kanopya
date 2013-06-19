@@ -119,7 +119,7 @@ sub cancel {
     my ($self, %args) = @_;
     $self->SUPER::finish(%args);
 
-    $self->{context}->{cluster}->setState(state => 'up');
+#    $self->{context}->{cluster}->setState(state => 'up');
 }
 
 1;

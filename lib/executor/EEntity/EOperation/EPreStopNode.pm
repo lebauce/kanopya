@@ -88,7 +88,8 @@ sub prepare {
 
 
     # Check the cluster state
-    my ($state, $timestamp) = $self->{context}->{cluster}->reload->getState;
+    $self->{context}->{cluster} = $self->{context}->{cluster}->reload;
+    my ($state, $timestamp) = $self->{context}->{cluster}->getState;
     $log->debug("Cluster state <$state>");
 
 
@@ -153,7 +154,7 @@ sub prerequisites {
         my $operation_to_enqueue = {
             type     => 'FlushHypervisor',
             priority => 1,
-            params   => { context => { host => $self->{context}->{host} } }
+            params   => { context => { flushed_hypervisor => $self->{context}->{host} } }
         };
 
         $self->workflow->enqueueBefore(

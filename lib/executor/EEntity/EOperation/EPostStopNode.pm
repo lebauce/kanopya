@@ -234,10 +234,12 @@ Release the host here, because some host manager enqueue a RemoveHost operation.
 
 sub postrequisites {
     my ($self, %args) = @_;
+
     $self->SUPER::postrequisites(%args);
 
     # Release the host
     $self->{context}->{host}->release();
+    return 0;
 }
 
 

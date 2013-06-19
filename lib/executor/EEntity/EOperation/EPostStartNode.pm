@@ -195,11 +195,21 @@ sub finish {
     $self->SUPER::finish(%args);
 
     $self->{context}->{cluster}->setState(state => "up");
+    $self->{context}->{cluster}->removeState(consumer => $self->workflow);
+
     if (defined $self->{context}->{host_manager_sp}) {
         $self->{context}->{host_manager_sp}->setState(state => 'up');
+        $self->{context}->{host_manager_sp}->removeState(consumer => $self->workflow);
         delete $self->{context}->{host_manager_sp};
     }
-    
+
+    $self->{context}->{host}->removeState(consumer => $self->workflow);
+
+    # Add state to hypervisor if defined
+    if (defined $self->{context}->{hypervisor}) {
+        $self->{context}->{hypervisor}->removeState(consumer => $self->workflow);
+    }
+
     # WARNING: Do NOT delete $self->{context}->{host}, required in worflow addNode + VM migration
     # TODO: Definitly design a mechanism to bind output params to input one in workflows
     delete $self->{context}->{cluster}; # Need to be deleted for Add hypervisor followed by add Vm
