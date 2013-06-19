@@ -24,8 +24,8 @@ sub preStartNode {
                          required => [ 'cluster', 'host' ]);
 
     if (!$self->ceph_mon_secret) {
-        my $secret = `ceph-authtool /dev/stdout --name=mon. --gen-key | grep "key =" | cut -f 2 -d '='`;
-        $secret =~ s/^\s+|\s+$//g;
+        my $secret = `ceph-authtool /dev/stdout --name=mon. --gen-key | grep "key =" | cut -f 2`;
+        $secret =~ s/key = //;
         $self->ceph_mon_secret($secret);
     }
 }
