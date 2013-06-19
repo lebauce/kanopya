@@ -42,6 +42,10 @@ sub connect {
     do {
         $result = $args{econtext}->execute(command => "[ -f $file ]");
         if ($result->{exitcode} != 0) {
+            if ($retry <= 0) {
+                my $errmsg = "Unable to find waited file <$file>";
+                throw Kanopya::Exception::Execution($errmsg);
+            }
             $retry -= 1;
             $log->debug("File  not found yet (<$file>), sleeping 1s and retry.");
             sleep 1;
