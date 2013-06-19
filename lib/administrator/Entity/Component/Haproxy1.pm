@@ -67,6 +67,12 @@ sub getPuppetDefinition {
                         }
                      );
     }
+    
+    $manifest .= $self->instanciatePuppetResource(
+        resource => 'sysctl::value',
+        name => 'net.ipv4.ip_nonlocal_ip',
+        params => { value => "1" }
+    );
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         haproxy => {
