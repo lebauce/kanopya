@@ -91,12 +91,12 @@ class kanopya::openstack::quantum::server(
         }
     }
     else {
-        @@database_user { "${database_user}@${fqdn}":
+        @@database_user { "${database_user}@${ipaddress}":
             password_hash => mysql_password("${database_password}"),
             tag           => "${dbserver}",
         }
 
-        @@database_grant { "${database_user}@${fqdn}/${database_name}":
+        @@database_grant { "${database_user}@${ipaddress}/${database_name}":
             privileges => ['all'] ,
             tag        => "${dbserver}"
         }
