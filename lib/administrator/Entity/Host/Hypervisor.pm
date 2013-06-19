@@ -54,12 +54,12 @@ sub checkStoppable {
     my $self = shift;
     my @vms = $self->getVms();
 
-    if (scalar @vms) {
-        throw Kanopya::Exception(error => "The hypervisor " . $self->node->node_hostname .
-                                          " can't be stopped as it still runs virtual machines");
-    }
+#    if (scalar @vms) {
+#        throw Kanopya::Exception(error => "The hypervisor " . $self->node->node_hostname .
+#                                          " can't be stopped as it still runs virtual machines");
+#    }
 
-    return 1;
+    return (scalar @vms) == 0 ? 1 : 0;
 }
 
 sub getCloudManager {
