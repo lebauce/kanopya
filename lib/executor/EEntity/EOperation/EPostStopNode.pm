@@ -139,6 +139,7 @@ remove the system image if the cluster is non persistent.
 =cut
 
 sub execute {
+
     my $self = shift;
     $self->SUPER::execute();
 

@@ -274,4 +274,20 @@ sub DESTROY {
     my %args = @_;
 }
 
+
+=pod
+=begin classdoc
+
+Reload entity from database
+
+@return the reloaded instance
+
+=end classdoc
+=cut
+
+sub reload {
+    my $self = shift;
+    return EEntity->new(entity => $self->_entity->reload);
+}
+
 1;

@@ -357,6 +357,7 @@ sub halt {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'host' ]);
+
     my $uuid = $args{host}->openstack_vm_uuid;
     my $api = $self->api;
 
@@ -427,57 +428,73 @@ sub startHost {
 
     $log->debug("Nova returned " . (Dumper $flavor));
 
-    # register network
-    my $interfaces = $self->registerNetwork(host => $args{host});
-    my $ports;
-    for my $interface (@$interfaces) {
-        push @$ports, {
-            port => $interface->{port}
-        };
-    }
-
-    my $disk_manager = $args{cluster}->getManager(manager_type => 'DiskManager');
-    my $isCinder     = 0;
-    my $volume       = undef;
-    my $apiRoute     = $api->compute->servers;
-    if ($disk_manager->isa('Entity::Component::Openstack::Cinder')) {
-        $isCinder    = 1;
-        my $volumeId = $disk_manager->getVolumeId(container => $args{host}->getNodeSystemimage->getContainer);
-        $volume      = [
-            {
-                volume_size           => '',
-                volume_id             => $volumeId,
-                delete_on_termination => 0,
-                device_name           => 'vda'
-            }
-        ];
-        my $route    = 'os-volumes_boot';
-        $apiRoute    = $api->compute->$route;
-    }
-    # create VM
-    my $response = $apiRoute->post(
-        content => {
-            server => {
-                availability_zone => 'nova:' . $args{hypervisor}->node->node_hostname,
-                flavorRef         => $flavor->{flavor}->{id},
-                name              => $args{host}->node->node_hostname,
-                networks          => $ports,
-                imageRef          => $image_id,
-                $isCinder ? ('block_device_mapping', $volume) : ()
-            }
+    my $interfaces;
+    eval {
+        # register network
+        $interfaces = $self->registerNetwork(host => $args{host});
+        my $ports;
+        for my $interface (@$interfaces) {
+            push @$ports, {
+                port => $interface->{port}
+            };
         }
-    );
 
-    $log->debug("Nova returned : " . (Dumper $response));
+        my $disk_manager = $args{cluster}->getManager(manager_type => 'DiskManager');
+        my $isCinder     = 0;
+        my $volume       = undef;
+        my $apiRoute     = $api->compute->servers;
+        if ($disk_manager->isa('Entity::Component::Openstack::Cinder')) {
+            $isCinder    = 1;
+            my $volumeId = $disk_manager->getVolumeId(container => $args{host}->getNodeSystemimage->getContainer);
+            $volume      = [
+                {
+                    volume_size           => '',
+                    volume_id             => $volumeId,
+                    delete_on_termination => 0,
+                    device_name           => 'vda'
+                }
+            ];
+            my $route    = 'os-volumes_boot';
+            $apiRoute    = $api->compute->$route;
+        }
 
-    $args{host} = Entity::Host::VirtualMachine::OpenstackVm->promote(
-                      promoted           => $args{host}->_entity,
-                      nova_controller_id => $self->id,
-                      openstack_vm_uuid  => $response->{server}->{id},
-                      hypervisor_id      => $args{hypervisor}->id
-                  );
+        # create VM
+        my $response = $apiRoute->post(
+            content => {
+                server => {
+                    availability_zone => 'nova:' . $args{hypervisor}->node->node_hostname,
+                    flavorRef         => $flavor->{flavor}->{id},
+                    name              => $args{host}->node->node_hostname,
+                    networks          => $ports,
+                    imageRef          => $image_id,
+                    $isCinder ? ('block_device_mapping', $volume) : ()
+                }
+            }
+        );
 
-    $args{host}->hypervisor_id($args{hypervisor}->id);
+        $log->debug("Nova returned : " . (Dumper $response));
+
+        $args{host} = Entity::Host::VirtualMachine::OpenstackVm->promote(
+                          promoted           => $args{host}->_entity,
+                          nova_controller_id => $self->id,
+                          openstack_vm_uuid  => $response->{server}->{id},
+                          hypervisor_id      => $args{hypervisor}->id
+                      );
+
+        $args{host}->hypervisor_id($args{hypervisor}->id);
+    };
+    if ($@) {
+        my $error = $@;
+        for my $interface (@$interfaces) {
+            $self->deletePort(port => $interface->{port});
+        }
+        if (ref($error)) {
+            $error->rethrow;
+        }
+        else {
+            throw Kanopya::Exception::Execution(error => "$error");
+        }
+    }
 }
 
 =pod
@@ -630,6 +647,15 @@ sub registerNetwork {
     }
 
     return $interfaces;
+}
+
+sub deletePort {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'port' ]);
+
+    my $api = $self->api;
+    my $port_id = $api->quantum->ports(id => $args{port})->delete();
 }
 
 sub stopHost {

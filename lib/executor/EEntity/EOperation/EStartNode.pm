@@ -201,10 +201,12 @@ sub execute {
 
     # Finally we start the node
     $self->{context}->{host} = $self->{context}->{host}->start(
-        erollback  => $self->{erollback},
-        hypervisor => $self->{context}->{hypervisor}, # Required for vm add only
-        cluster    => $self->{context}->{cluster}
-    );
+                                   erollback  => $self->{erollback},
+                                   hypervisor => $self->{context}->{hypervisor}, # Required for vm add only
+                                   cluster    => $self->{context}->{cluster}
+                               );
+
+    $self->{params}->{vminfo} = $self->{context}->{host}->getVmInfo();
 }
 
 
@@ -461,4 +463,33 @@ sub _generatePXEConf {
     my %subnet_hash = $dhcpd->getSubNet(dhcpd3_subnet_id => $subnet);
 }
 
+sub cancel {
+    my ($self, %args) = @_;
+
+     $log->debug(Dumper $self->{params}->{vminfo});
+
+    if (defined $self->{context}->{host}) {
+        if ($self->{context}->{host}->isa('EEntity::EHost::EVirtualMachine')) {
+            eval {
+                $self->{context}->{host}->getHostManager->promoteVm(
+                    host => $self->{context}->{host}->_entity,
+                    %{$self->{params}->{vminfo}}
+                );
+            }
+        }
+
+        eval {
+            $self->{context}->{host}->reload->halt();
+        };
+        if ($@) {
+            $log->warn($@);
+        }
+        eval {
+            $self->{context}->{host}->reload->stop();
+        };
+        if ($@) {
+            $log->warn($@);
+        }
+    }
+}
 1;

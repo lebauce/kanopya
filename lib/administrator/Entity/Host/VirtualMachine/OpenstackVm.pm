@@ -47,4 +47,11 @@ sub methods {
     return {};
 }
 
+sub getVmInfo {
+    my ($self, %args) = @_;
+    return {
+        vm_uuid        => $self->openstack_vm_uuid,
+        hypervisor_id  => $self->hypervisor_id,
+    };
+}
 1;
