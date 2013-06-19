@@ -162,7 +162,7 @@ sub generatePuppetDefinitions {
             $manifest .= $puppet_definitions->{$chunk}->{manifest} . "\n";
             for my $dependency (@{$puppet_definitions->{$chunk}->{dependencies} || []}) {
                 my $name = lc($dependency->component_type->component_name);
-                my @nodes = map { $_->fqdn } $dependency->getActiveNodes;
+                my @nodes = map { $_->fqdn } $dependency->nodes;
                 my $hash = { nodes => \@nodes };
                 $netconf = $dependency->getNetConf;
                 for my $service (keys %{$netconf}) {
