@@ -110,7 +110,7 @@ use constant ATTR_DEF => {
     },
     cluster_state => {
         label        => 'State',
-        pattern      => '^up:\d*|down:\d*|updating:\d*|starting:\d*|stopping:\d*|warning:\d*|migrating:\d*|optimizing:\d*',
+        pattern      => '^up:\d*|down:\d*|updating:\d*|starting:\d*|stopping:\d*|warning:\d*|migrating:\d*|optimizing:\d*|flushing:\d*',
         is_mandatory => 0,
         is_editable  => 0
     },
@@ -931,6 +931,7 @@ sub restoreState {
 
     $self->setAttr(name => 'cluster_prev_state', value => $current . ":" . $timestamp);
     $self->setAttr(name => 'cluster_state', value => $previous . ":" . time, save => 1);
+    $log->debug('Restoring cluster <'.$self->cluster_name.'> state from <'.$current.'> to <'.$previous.'>');
 }
 
 sub getNewNodeNumber {
