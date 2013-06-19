@@ -1024,4 +1024,6 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
+__PACKAGE__->many_to_many("nodes", "component_nodes", "node");
+
 1;
