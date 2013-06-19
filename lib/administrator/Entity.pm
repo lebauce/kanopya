@@ -285,7 +285,7 @@ the entity itself. Consumers are the entities that hace change the state.
 =end classdoc
 =cut
 
-sub setState {
+sub setConsumerState {
     my $self = shift;
     my %args = @_;
 
@@ -293,8 +293,12 @@ sub setState {
                          required => [ 'state' ],
                          optional => { 'consumer' => $self });
 
-    my $state = $self->entity_state;
-    if (! defined $state) {
+    my $state;
+    eval {
+        $state = $self->findRelated(filters => ['entity_states'],
+                                    hash    => {consumer_id => $args{consumer}->id});
+    };
+    if ($@) {
         EntityState->new(entity_id   => $self->id, 
                          consumer_id => $args{consumer}->id,
                          state       => $args{state});
@@ -305,6 +309,25 @@ sub setState {
     }
 }
 
+
+sub removeState {
+    my ($self, %args) = @_;
+    General::checkParams(args     => \%args,
+                         optional => { 'consumer' => $self });
+
+    my $estate;
+    eval {
+        $estate = $self->findRelated(filters => ['entity_states'],
+                                     hash    => {consumer_id => $args{consumer}->id});
+    };
+    if ($@) {
+        # Do not throw exception during state manipulation during cancel
+        $log->error('EntityState from entity <'.$self->id.'>, consumer_id <'.$args{consumer}->id.'> not found');
+    }
+    else {
+        $estate->delete();
+    }
+}
 
 =pod
 =begin classdoc
