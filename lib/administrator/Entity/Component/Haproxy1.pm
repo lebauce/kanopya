@@ -70,7 +70,7 @@ sub getPuppetDefinition {
     
     $manifest .= $self->instanciatePuppetResource(
         resource => 'sysctl::value',
-        name => 'net.ipv4.ip_nonlocal_ip',
+        name => 'net.ipv4.ip_nonlocal_bind',
         params => { value => "1" }
     );
 
