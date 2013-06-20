@@ -206,7 +206,7 @@ sub execute {
                                    cluster    => $self->{context}->{cluster}
                                );
 
-    $self->{params}->{vminfo} = $self->{context}->{host}->getVmInfo();
+    eval { $self->{params}->{vminfo} = $self->{context}->{host}->getVmInfo(); };
 }
 
 
