@@ -247,7 +247,7 @@ sub applyConfiguration {
 
         my $command = "puppet kick --foreground --parallel " . (scalar @hosts);
         map { $command .= " --tag " . $_; } @{$args{tags}};
-        map { $command .= " --tag $_ --host $_" } @hosts;
+        map { $command .= " --host $_" } @hosts;
 
         $ret = $econtext->execute(command => $command);
 
