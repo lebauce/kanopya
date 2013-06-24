@@ -2693,8 +2693,14 @@ sub checkUserPerm {
     General::checkParams(args => \%args, required => [ 'method', 'user_id' ],
                                          optional => { 'params' => {} });
 
+    # For the class method get, intanciate the specified object from the id,
+    # and delegate the permissions on get method to the object himself.
+    if (! $class && $args{method} eq 'get' && defined $args{params}->{id}) {
+        return $self->get(id => $args{params}->{id})->checkUserPerm(%args);
+    }
+
     # Firstly check permssions on parameters
-    foreach my $key (keys %{$args{params}}) {
+    foreach my $key (keys %{ $args{params} }) {
         my $param = $args{params}->{$key};
         if ((ref $param) eq "HASH" && defined ($param->{pk}) && defined ($param->{class_type_id})) {
             my $paramclass = $self->getClassType(id => $param->{class_type_id});
