@@ -43,7 +43,7 @@ my $created_workflow_operation = dancer_response GET => '/api/operation/' . $ope
 is $created_workflow_operation->{status}, '200', "response for GET /api/operation/$operation_id/workflow is 200";
 
 my $c_w_o_content = Dancer::from_json($created_workflow_operation->{content});
-is $c_w_o_content->{workflow_id}, $workflow_id, "workflow found in GET /api/operation/$operation_id/workflow has good id $workflow_id";             
+is $c_w_o_content->{workflow_id}, $workflow_id, "workflow found in GET /api/operation/$operation_id/workflow has good id $workflow_id";
 
 my $created_workflow = dancer_response GET => '/api/workflow/' . $workflow_id;
 is $created_workflow->{status}, '200', "response for GET /api/workflow/$workflow_id is 200";

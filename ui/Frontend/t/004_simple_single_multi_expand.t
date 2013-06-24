@@ -30,17 +30,17 @@ foreach my $host (@$hosts_content) {
 
     if (scalar $host_ifaces > 0) {
         #check le nombre d'iface
-        is scalar @{ $expand_content->{ifaces} }, 
-           $host_ifaces, 
+        is scalar @{ $expand_content->{ifaces} },
+           $host_ifaces,
            "expanded ifaces from GET /api/host match the number of iface on the host";
-        #check que chacune des iface présente dans expand_content appartient bien a l'host 
+        #check que chacune des iface présente dans expand_content appartient bien a l'host
         my @matched;
         my @grep;
         foreach my $iface (0..$host_ifaces) {
             @grep = grep { $_->{host_id} == $host->{host_id}} @{ $expand_content->{ifaces} };
         }
         push @matched, @grep;
-        is scalar @matched, 
+        is scalar @matched,
            $host_ifaces,
            "expanded ifaces from GET /api/host/$host_id are all correct expands";
     }
