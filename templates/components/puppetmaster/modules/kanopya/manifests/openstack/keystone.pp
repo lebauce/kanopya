@@ -22,6 +22,12 @@ class kanopya::openstack::keystone(
             grant    => ['all'],
             tag      => "${dbserver}",
         }
+
+        class { 'keystone::endpoint':
+            public_address   => $components[keystone][access][keystone_service][ip],
+            admin_address    => "${fqdn}",
+            internal_address => "${fqdn}",
+        }
     }
     else {
         @@database_user { "${database_user}@${ipaddress}":
@@ -33,12 +39,6 @@ class kanopya::openstack::keystone(
             privileges => ['all'],
             tag        => "${dbserver}"
         }
-    }
-
-    class { 'keystone::endpoint':
-        public_address   => $components[keystone][access][keystone_service][ip],
-        admin_address    => "${fqdn}",
-        internal_address => "${fqdn}",
     }
 
     class { 'keystone::roles::admin':
