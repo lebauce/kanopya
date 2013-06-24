@@ -166,7 +166,8 @@ sub generatePuppetDefinitions {
 
         for my $chunk (keys %{$puppet_definitions}) {
             $manifest .= $puppet_definitions->{$chunk}->{manifest} . "\n";
-            for my $dependency (@{$puppet_definitions->{$chunk}->{dependencies} || []}) {
+            for my $dependency (@{$puppet_definitions->{$chunk}->{dependencies} || []},
+                                @{$puppet_definitions->{$chunk}->{optionals} || []}) {
                 my $name = lc($dependency->component_type->component_name);
                 my @nodes = map { $_->fqdn } $dependency->nodes;
                 my $hash = { nodes => \@nodes };
