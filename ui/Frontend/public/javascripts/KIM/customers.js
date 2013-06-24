@@ -5,6 +5,7 @@ function Customers() {
     Customers.prototype.load_content = function(container_id, elem_id) {
         this.grid = create_grid({
             url: '/api/customer',
+            elem_name: 'customer',
             content_container_id: container_id,
             grid_id: 'customers_list',
             colNames: ['user id','First name','Last name','Email' ],
