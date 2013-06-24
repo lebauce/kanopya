@@ -93,9 +93,14 @@ sub getNetConf {
             port => 8775,
             protocols => ['tcp']
         },
+        image_api => {
+            port => 9292,
+            protocols => ['tcp']
+        }
     };
 
-    if ($self->cinder) {
+    my @cinders = $self->cinders;
+    if (scalar @cinders) {
         $conf->{volume_api} = {
             port => 8776,
             protocols => ['tcp']
@@ -199,7 +204,7 @@ sub getPuppetDefinition {
     my $sql        = $self->mysql5;
     my $keystone   = $self->keystone;
     my $quantum    = ($self->quantums)[0];
-    my $glance     = join(",", map { $_->getBalancerAddress(port => 9292) || $_->getMasterNode->fqdn } $self->nova_controller->glances);
+    my $glance     = join(",", map { $_->getBalancerAddress(port => 9292) || $_->getMasterNode->fqdn } $self->glances);
     my $name       = "nova-" . $self->id;
 
     if (not ($sql and $keystone and $quantum)) {
@@ -207,7 +212,7 @@ sub getPuppetDefinition {
     }
 
     my %cinder_params;
-    my @cinders = $self->nova_controller->cinders;
+    my @cinders = $self->cinders;
     if (scalar @cinders) {
         my $cinder_id = $cinders[0]->id;
         $cinder_params{cinder_database_user} = "cinder-$cinder_id";
@@ -215,12 +220,16 @@ sub getPuppetDefinition {
     }
 
     my %glance_params;
-    my @glances = $self->nova_controller->glances;
+    my @glances = $self->glances;
     if (scalar @glances) {
         my $glance_id = $glances[0]->id;
         $glance_params{glance_database_user} = "glance-$glance_id";
         $glance_params{glance_database_name} = "glance-$glance_id";
     }
+
+    my $optionals = [ ];
+    push @{$optionals}, $self->cinder if $self->cinder;
+    push @{$optionals}, $self->quantum if $self->quantum;
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         novacontroller => {
@@ -240,7 +249,8 @@ sub getPuppetDefinition {
                                 %cinder_params
                             }
                         ),
-            dependencies => [ $sql , $keystone , $self->amqp ]
+            dependencies => [ $sql , $keystone , $self->amqp ],
+            optionals => $optionals
         }
     } );
 }

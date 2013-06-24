@@ -92,28 +92,33 @@ class kanopya::openstack::nova::controller(
             tag      => "${dbserver}",
         }
 
+        $compute_access_ip = $components[novacontroller][access][compute_api][ip]
         @@keystone_endpoint { "RegionOne/compute":
             ensure       => present,
-            public_url   => "http://${fqdn}:8774/v2/\$(tenant_id)s",
+            public_url   => "http://${compute_access_ip}:8774/v2/\$(tenant_id)s",
             admin_url    => "http://${fqdn}:8774/v2/\$(tenant_id)s",
             internal_url => "http://${fqdn}:8774/v2/\$(tenant_id)s",
             tag          => "${keystone}"
         }
 
+        $glance_access_ip = $components[novacontroller][access][image_api][ip]
         @@keystone_endpoint { "RegionOne/glance":
             ensure       => present,
-            public_url   => "http://${fqdn}:9292/v1",
+            public_url   => "http://${glance_access_ip}:9292/v1",
             admin_url    => "http://${fqdn}:9292/v1",
             internal_url => "http://${fqdn}:9292/v1",
             tag          => "${keystone}"
         }
 
-        @@keystone_endpoint { "RegionOne/cinder":
-            ensure       => present,
-            public_url   => "http://${fqdn}:8776/v1/\$(tenant_id)s",
-            admin_url    => "http://${fqdn}:8776/v1/\$(tenant_id)s",
-            internal_url => "http://${fqdn}:8776/v1/\$(tenant_id)s",
-            tag          => "$keystone"
+        if has_key($components[novacontroller][access], 'volume_api') {
+            $cinder_access_ip = $components[novacontroller][access][volume_api][ip]
+            @@keystone_endpoint { "RegionOne/cinder":
+                ensure       => present,
+                public_url   => "http://${cinder_access_ip}:8776/v1/\$(tenant_id)s",
+                admin_url    => "http://${fqdn}:8776/v1/\$(tenant_id)s",
+                internal_url => "http://${fqdn}:8776/v1/\$(tenant_id)s",
+                tag          => "${keystone}"
+            }
         }
     }
     else {

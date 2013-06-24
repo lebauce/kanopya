@@ -82,9 +82,10 @@ class kanopya::openstack::quantum::server(
             tag         => "${keystone}"
         }
 
+        $quantum_access_ip = $components[quantum][access][quantum][ip]
         @@keystone_endpoint { "RegionOne/quantum":
             ensure       => present,
-            public_url   => "http://${fqdn}:9696",
+            public_url   => "http://${quantum_access_ip}:9696",
             admin_url    => "http://${fqdn}:9696",
             internal_url => "http://${fqdn}:9696",
             tag          => "${keystone}"

@@ -36,7 +36,7 @@ class kanopya::openstack::keystone(
     }
 
     class { 'keystone::endpoint':
-        public_address   => "${fqdn}",
+        public_address   => $components[keystone][access][keystone_service][ip],
         admin_address    => "${fqdn}",
         internal_address => "${fqdn}",
     }

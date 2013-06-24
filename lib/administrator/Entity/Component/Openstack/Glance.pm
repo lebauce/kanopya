@@ -52,10 +52,6 @@ sub getNetConf {
             port => 9191,
             protocols => ['tcp']
         },
-        glance_api => {
-            port => 9292,
-            protocols => ['tcp']
-        }
     };
 }
 
