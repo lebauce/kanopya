@@ -8,6 +8,10 @@ class kanopya::openstack::glance(
 ) {
     tag("kanopya::glance")
 
+    $dbip = $components[glance][mysql][mysqld][ip]
+    $dbserver = $components[glance][mysql][mysqld][tag]
+    $keystone = $components[glance][keystone][keystone_admin][tag]
+
     if ! defined(Class['kanopya::openstack::repository']) {
         class { 'kanopya::openstack::repository': }
     }
@@ -18,7 +22,7 @@ class kanopya::openstack::glance(
             password => "${database_password}",
             host     => "${ipaddress}",
             grant    => ['all'],
-            tag      => "${components['glance']['mysql']['mysqld']['tag']}",
+            tag      => $dbserver,
         }
 
         @@keystone_user { "${keystone_user}":
@@ -45,12 +49,12 @@ class kanopya::openstack::glance(
     else {
         @@database_user { "${database_user}@${ipaddress}":
             password_hash => mysql_password("${database_password}"),
-            tag           => "${components['glance']['mysql']['mysqld']['tag']}"
+            tag           => $dbserver
         }
 
         @@database_grant { "${database_user}@${ipaddress}/${database_name}":
             privileges => ['all'],
-            tag        => "${components['glance']['mysql']['mysqld']['tag']}"
+            tag        => $dbserver
         }
     }
 
@@ -62,11 +66,11 @@ class kanopya::openstack::glance(
 
     class { 'glance::registry':
         auth_type         => '',
-        bind_host         => $admin_ip,
+        bind_host         => $components[glance][listen][glance_registry][ip],
         keystone_tenant   => 'services',
         keystone_user     => "${keystone_user}",
         keystone_password => "${keystone_password}",
-        sql_connection    => "mysql://${database_user}:${database_password}@${components['glance']['mysql']['mysqld']['ip']}/${database_name}",
+        sql_connection    => "mysql://${database_user}:${database_password}@${dbip}/${database_name}",
         require           => [ Class['kanopya::openstack::repository'],
                                Exec['/usr/bin/glance-manage db_sync'] ]
     }

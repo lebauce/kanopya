@@ -153,8 +153,8 @@ class kanopya::openstack::nova::controller(
         enabled          => true,
         admin_password   => "${admin_password}",
         auth_host        => $keystone,
-        api_bind_address => $admin_ip,
-        metadata_listen  => $admin_ip,
+        api_bind_address => $components[novacontroller][listen][compute_api][ip],
+        metadata_listen  => $components[novacontroller][listen][metadata_api][ip],
         require          => [ Exec["/usr/bin/nova-manage db sync"],
                               Class['kanopya::openstack::repository'] ]
     }
@@ -173,7 +173,7 @@ class kanopya::openstack::nova::controller(
         keystone_auth_host => $keystone,
         keystone_tenant    => 'services',
         keystone_password  => "${cinder_keystone_password}",
-        bind_host          => $admin_ip,
+        bind_host          => $components[novacontroller][listen][volume_api][ip],
         require            => Exec['/usr/bin/cinder-manage db sync'],
     }
 
@@ -181,7 +181,7 @@ class kanopya::openstack::nova::controller(
         auth_type         => '',
         auth_port         => '35357',
         auth_host         => $keystone,
-        bind_host         => $admin_ip,
+        bind_host         => $components[novacontroller][listen][image_api][ip],
         keystone_tenant   => 'services',
         keystone_user     => "${glance_keystone_user}",
         keystone_password => "${glance_keystone_password}",
