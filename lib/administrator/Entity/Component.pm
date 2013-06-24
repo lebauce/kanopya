@@ -462,8 +462,9 @@ sub getPuppetDefinition {
                                 ports             => $listen->listen_component_port,
                                 server_names      => $args{host}->node->node_hostname,
                                 ipaddresses       => $args{host}->adminIp,
-                                options           => 'check'
-                             }
+                                options           => 'check',
+                                tag               => 'kanopya::haproxy'
+                             },
                           );
         push @$dependencies, $listen->haproxy1;
     }
