@@ -43,6 +43,19 @@ sub prepare {
     my $self = shift;
     $self->SUPER::prepare();
 
+    # Check the IAAS cluster state
+    my @entity_states = $self->{context}->{host_manager_sp}->entity_states;
+
+    for my $entity_state (@entity_states) {
+        throw Kanopya::Exception::Execution::InvalidState(
+                  error => "The iaas cluster <"
+                           .$self->{context}->{host_manager_sp}->cluster_name
+                           .'> is <'.$entity_state->state
+                           .'> which is not a correct state to launch optimiaas'
+              );
+    }
+
+
     my ($hv_state, $hv_timestamp) = $self->{context}->{host_manager_sp}->reload->getState;
     if (not ($hv_state eq 'up')) {
         $log->debug("State of hypervisor cluster is <$hv_state> which is an invalid state");
@@ -51,7 +64,9 @@ sub prepare {
                            "> has to be <up>, not <$hv_state>"
               );
     }
+
     $self->{context}->{host_manager_sp}->setState(state => 'optimizing');
+    $self->{context}->{host_manager_sp}->setConsumerState(state => 'optimizing', consumer => $self->workflow);
 }
 
 sub prerequisites {
@@ -118,7 +133,9 @@ sub execute{
 sub finish {
     my $self = shift;
     $self->SUPER::execute();
+
     $self->{context}->{host_manager_sp}->setState(state => 'up');
+    $self->{context}->{host_manager_sp}->removeState(consumer => $self->workflow);
 
     delete $self->{context}->{host_manager_sp};
     delete $self->{context}->{cloudmanager_comp};
@@ -129,5 +146,6 @@ sub cancel {
     $self->SUPER::cancel();
 
     $self->{context}->{host_manager_sp}->setState(state => 'up');
+    $self->{context}->{host_manager_sp}->removeState(consumer => $self->workflow);
 }
 1;
