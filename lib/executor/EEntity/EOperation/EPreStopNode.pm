@@ -87,11 +87,37 @@ sub prepare {
     $self->SUPER::prepare(%args);
 
 
+    # Check cluster states
+    my @entity_states = $self->{context}->{cluster}->entity_states;
+
+    for my $entity_state (@entity_states) {
+        throw Kanopya::Exception::Execution::InvalidState(
+                  error => "The cluster <"
+                           .$self->{context}->{cluster}->cluster_name
+                           .'> is <'.$entity_state->state
+                           .'> which is not a correct state to accept stopNode'
+              );
+    }
+
+    # Check host manager sp states
+    @entity_states = (defined $self->{context}->{host_manager_sp}) ?
+                         $self->{context}->{host_manager_sp}->entity_states :
+                         ();
+
+    for my $entity_state (@entity_states) {
+        throw Kanopya::Exception::Execution::InvalidState(
+                  error => "The host manager cluster <"
+                           .$self->{context}->{host_manager_sp}->cluster_name
+                           .'> is <'.$entity_state->state
+                           .'> which is not a correct state to accept stopNode'
+              );
+    }
+
+
     # Check the cluster state
     $self->{context}->{cluster} = $self->{context}->{cluster}->reload;
     my ($state, $timestamp) = $self->{context}->{cluster}->getState;
     $log->debug("Cluster state <$state>");
-
 
     if (not (($state eq 'up') || ($state eq 'down') || ($state eq 'stopping'))) {
         $log->debug("State is <$state> which is an invalid state");
@@ -107,15 +133,16 @@ sub prepare {
     if (defined $self->{context}->{host_manager_sp}) {
         my ($hv_state, $hv_timestamp) = $self->{context}->{host_manager_sp}->reload->getState;
         if (not ($hv_state eq 'up')) {
-            $log->debug("State of hypervisor cluster is <$hv_state> which is an invalid state");
             throw Kanopya::Exception::Execution::InvalidState(
                       error => "The hypervisor cluster <" . $self->{context}->{host_manager_sp}->cluster_name .
                                "> has to be <up>, not <$hv_state>"
                   );
         }
         $self->{context}->{host_manager_sp}->setState(state => 'updating');
+        $self->{context}->{host_manager_sp}->setConsumerState(state => 'stopping', consumer => $self->workflow);
     }
 
+    $self->{context}->{cluster}->setConsumerState(state => 'stopping', consumer => $self->workflow);
 }
 
 
@@ -203,6 +230,21 @@ sub execute {
 =pod
 =begin classdoc
 
+Set host state
+
+=end classdoc
+=cut
+
+sub postrequisites {
+    my ($self, %args) = @_;
+    $self->SUPER::cancel(%args);
+    $self->{context}->{host}->setConsumerState(state => 'stopping', consumer => $self->workflow);
+    return 0;
+}
+
+=pod
+=begin classdoc
+
 Restore the clutser and host states.
 
 =end classdoc
@@ -210,11 +252,21 @@ Restore the clutser and host states.
 
 sub cancel {
     my ($self, %args) = @_;
-    $self->SUPER::finish(%args);
+    $self->SUPER::cancel(%args);
 
     $self->{context}->{cluster}->restoreState();
     if (defined $self->{context}->{host_manager_sp}) {
         $self->{context}->{host_manager_sp}->setState(state => 'up');
+    }
+
+    $self->{context}->{cluster}->removeState(consumer => $self->workflow);
+
+    if (defined $self->{context}->{host_manager_sp}) {
+        $self->{context}->{host_manager_sp}->removeState(consumer => $self->workflow);
+    }
+
+    if (defined $self->{context}->{host}) {
+        $self->{context}->{host}->removeState(consumer => $self->workflow);
     }
 }
 
