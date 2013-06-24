@@ -666,7 +666,7 @@ sub addComponent {
     my ($self, %args) = @_;
 
     my $component = $self->SUPER::addComponent(%args);
-    for my $method ('getConf', 'setConf') {
+    for my $method ('get', 'getConf', 'setConf') {
         # TODO: probably should not occurs.
         eval {
             $component->addPerm(consumer => $self->user, method => $method);
