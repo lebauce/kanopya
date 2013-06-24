@@ -491,6 +491,15 @@ sub cancel {
     if (defined $self->{context}->{hypervisor}) {
         $self->{context}->{hypervisor}->removeState(consumer => $self->workflow);
     }
+
+    if (defined $self->{context}->{host}) {
+        eval {
+            $self->{context}->{host}->release();
+        };
+        if ($@) {
+            $log->warn("Cancel rollback failed: $@");
+        }
+    }
 }
 
 1;
