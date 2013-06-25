@@ -119,7 +119,7 @@ $(document).ready(function () {
                        togglerLength_open : 100,
                        spacing_open : 14,
                        initClosed : true
-                   },
+                   }
                }
     );
 
@@ -144,7 +144,9 @@ $(document).ready(function () {
 
 $(document).ajaxError(function(e, jqXHR, settings, exception) {
     if (jqXHR.status === 403) {
-        alert(JSON.parse(jqXHR.responseText).reason);
+        if (JSON.parse(jqXHR.responseText).reason != "Permission denied to get a Workflow") {
+            alert(JSON.parse(jqXHR.responseText).reason);
+        }
         throw new Error(JSON.parse(jqXHR.responseText).reason);
     }
 })
