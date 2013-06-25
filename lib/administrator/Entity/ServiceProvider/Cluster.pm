@@ -761,6 +761,52 @@ sub getRequiredComponents {
     return @required;
 }
 
+
+=pod
+=begin classdoc
+
+Call the parent method, add assign permissions on
+the host for the cluster user.
+
+@return the registered node
+
+=end classdoc
+=cut
+
+sub registerNode {
+    my ($self, %args) = @_;
+
+    my $node = $self->SUPER::registerNode(%args);
+    if (defined $args{host}) {
+        $args{host}->addPerm(consumer => $self->user, method => 'get');
+    }
+
+    return $node;
+}
+
+
+=pod
+=begin classdoc
+
+Call the parent method, remove the permissions on the host
+for the cluster user.
+
+@return the registered node
+
+=end classdoc
+=cut
+
+sub unregisterNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'node' ]);
+
+    if (defined $args{node}->host) {
+        $args{node}->host->removePerm(consumer => $self->user, method => 'get');
+    }
+    return $self->SUPER::unregisterNode(%args);
+}
+
 sub getSharedSystemimage {
     my $self = shift;
 
