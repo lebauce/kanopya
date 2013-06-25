@@ -49,7 +49,11 @@ use Log::Log4perl "get_logger";
 
 my $log = get_logger("basedb");
 my $errmsg;
+
+# In-memory cache for class types
 my %class_type_cache;
+
+# In-memory cache for atrributes definitions
 my %attr_defs_cache;
 
 use constant ATTR_DEF => {
@@ -63,7 +67,7 @@ sub getAttrDef { return ATTR_DEF; }
 sub methods {
     return {
         get => {
-            description => 'get an object',
+            description => 'get a <type>',
         },
     };
 }
@@ -76,7 +80,6 @@ my $adm = {
 
 
 =pod
-
 =begin classdoc
 
 @constructor
@@ -87,7 +90,6 @@ of the hierarchy, every entry having a foreign key to its parent entry
 @return a class instance
 
 =end classdoc
-
 =cut
 
 sub new {
@@ -145,8 +147,8 @@ sub new {
     return $self;
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Default label management
@@ -156,7 +158,6 @@ Subclass can redefined this method to return specific label
 @return the label string for this object
 
 =end classdoc
-
 =cut
 
 sub label {
@@ -166,8 +167,8 @@ sub label {
     return $label ? $self->$label : $self->id;
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Update an instance by setting values for attribute taht differs,
@@ -176,7 +177,6 @@ also handle the update of relations.
 @return the updated object
 
 =end classdoc
-
 =cut
 
 sub update {
@@ -217,7 +217,6 @@ sub update {
 
 
 =pod
-
 =begin classdoc
 
 Generic method for object creation.
@@ -225,7 +224,6 @@ Generic method for object creation.
 @return the created object instance
 
 =end classdoc
-
 =cut
 
 sub create {
@@ -237,13 +235,11 @@ sub create {
 
 
 =pod
-
 =begin classdoc
 
 Generic method for object deletion.
 
 =end classdoc
-
 =cut
 
 sub remove {
@@ -255,7 +251,6 @@ sub remove {
 
 
 =pod
-
 =begin classdoc
 
 Extend an object instance to a concreter type.
@@ -263,7 +258,6 @@ Extend an object instance to a concreter type.
 @return the promoted object
 
 =end classdoc
-
 =cut
 
 sub promote {
@@ -325,7 +319,6 @@ sub promote {
 
 
 =pod
-
 =begin classdoc
 
 Generalize an object instance to a parent type.
@@ -333,7 +326,6 @@ Generalize an object instance to a parent type.
 @return the demoted object
 
 =end classdoc
-
 =cut
 
 sub demote {
@@ -364,8 +356,8 @@ sub demote {
     return $args{demoted};
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Build the full list of methods by concatenating methods hash of each classes
@@ -374,7 +366,6 @@ in the hierarchy, it also support miulti inherintance by using Class::ISA::self_
 @return the hash of methods exported to the api for this class.
 
 =end classdoc
-
 =cut
 
 sub getMethods {
@@ -401,7 +392,6 @@ sub getMethods {
 
 
 =pod
-
 =begin classdoc
 
 Return a hash ref containing all ATTR_DEF for each class in the hierarchy.
@@ -411,7 +401,6 @@ Return a hash ref containing all ATTR_DEF for each class in the hierarchy.
 @return the updated object
 
 =end classdoc
-
 =cut
 
 sub getAttrDefs {
@@ -515,7 +504,6 @@ sub getAttrDefs {
 
 
 =pod
-
 =begin classdoc
 
 Check the value of an attrbiute with the pattertn defined in the ATTR_DEF.
@@ -524,7 +512,6 @@ Check the value of an attrbiute with the pattertn defined in the ATTR_DEF.
 @param value the value to check with pattern
 
 =end classdoc
-
 =cut
 
 sub checkAttr {
@@ -544,7 +531,6 @@ sub checkAttr {
 
 
 =pod
-
 =begin classdoc
 
 Check attributes validity in the class hierarchy and build as the same time
@@ -559,7 +545,6 @@ the root class of the hierarchy.
         sorted by module name.
 
 =end classdoc
-
 =cut
 
 sub checkAttrs {
@@ -640,7 +625,6 @@ sub checkAttrs {
 
 
 =pod
-
 =begin classdoc
 
 Build a new dbix from class name and attributes, and insert it in database.
@@ -651,7 +635,6 @@ Build a new dbix from class name and attributes, and insert it in database.
 @return the object hash with the private _dbix.
 
 =end classdoc
-
 =cut
 
 sub newDBix {
@@ -681,7 +664,6 @@ sub newDBix {
 
 
 =pod
-
 =begin classdoc
 
 Construct the proper BaseDB based instance from a DBIx row
@@ -691,7 +673,6 @@ Construct the proper BaseDB based instance from a DBIx row
 @return the object instance.
 
 =end classdoc
-
 =cut
 
 sub fromDBIx {
@@ -744,7 +725,6 @@ sub fromDBIx {
 
 
 =pod
-
 =begin classdoc
 
 Retrieve a value given a name attribute, search this atribute throw the whole class hierarchy.
@@ -754,7 +734,6 @@ Retrieve a value given a name attribute, search this atribute throw the whole cl
 @return the attribute value
 
 =end classdoc
-
 =cut
 
 sub getAttr {
@@ -838,7 +817,6 @@ sub getAttr {
 
 
 =pod
-
 =begin classdoc
 
 Retrieve all keys/values in the class hierarchy
@@ -846,7 +824,6 @@ Retrieve all keys/values in the class hierarchy
 @return a hash containing all object attributes with values
 
 =end classdoc
-
 =cut
 
 sub getAttrs {
@@ -872,7 +849,6 @@ sub getAttrs {
 
 
 =pod
-
 =begin classdoc
 
 Set one name attribute with the given value, search this attribute throw the whole
@@ -886,7 +862,6 @@ class hierarchy, and check attribute validity.
 @return the value set
 
 =end classdoc
-
 =cut
 
 sub setAttr {
@@ -951,7 +926,6 @@ sub setAttr {
 
 
 =pod
-
 =begin classdoc
 
 Retrieve one instance from an id
@@ -961,7 +935,6 @@ Retrieve one instance from an id
 @return the object instance
 
 =end classdoc
-
 =cut
 
 sub get {
@@ -975,8 +948,8 @@ sub get {
                         deep     => 1);
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Return the object that matches the criterias
@@ -985,7 +958,6 @@ or creates it if it doesn't exist
 @param args the criterias
 
 @return the object found or created
-
 =cut
 
 sub findOrCreate {
@@ -1002,8 +974,8 @@ sub findOrCreate {
     return $obj;
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Return the class type name from a class type id, at the first call,
@@ -1014,7 +986,6 @@ get all the entries and cache them into a hash for *LOT* faster accesses.
 @return the class type name
 
 =end classdoc
-
 =cut
 
 sub getClassType {
@@ -1046,7 +1017,6 @@ sub getClassType {
 
 
 =pod
-
 =begin classdoc
 
 Build the join query required to get all the attributes of the whole class hierarchy.
@@ -1054,7 +1024,6 @@ Build the join query required to get all the attributes of the whole class hiera
 @return the join query
 
 =end classdoc
-
 =cut
 
 sub getJoin {
@@ -1078,7 +1047,6 @@ sub getJoin {
 
 
 =pod
-
 =begin classdoc
 
 Build the JOIN query to get the attributes of a multi level depth relationship.
@@ -1086,7 +1054,6 @@ Build the JOIN query to get the attributes of a multi level depth relationship.
 @return the join query
 
 =end classdoc
-
 =cut
 
 sub getJoinQuery {
@@ -1177,7 +1144,6 @@ sub getJoinQuery {
 
 
 =pod
-
 =begin classdoc
 
 Return the entries that match the 'hash' filter. It also accepts more or less
@@ -1194,7 +1160,6 @@ the whole class hierarchy and returns an object as a BaseDB derived object.
 @return the matching object list
 
 =end classdoc
-
 =cut
 
 sub search {
@@ -1394,8 +1359,8 @@ sub searchRelated {
                                            join     => $join->{join});
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Return a single element matching the specified criterias take the same arguments as 'search'.
@@ -1403,7 +1368,6 @@ Return a single element matching the specified criterias take the same arguments
 @return the matching object
 
 =end classdoc
-
 =cut
 
 sub find {
@@ -1422,6 +1386,8 @@ sub find {
     return $object;
 }
 
+
+=pod
 =begin classdoc
 
 Return a single element matching the specified criterias take the same arguments as 'searchRelated'.
@@ -1429,7 +1395,6 @@ Return a single element matching the specified criterias take the same arguments
 @return the matching object
 
 =end classdoc
-
 =cut
 
 sub findRelated {
@@ -1449,8 +1414,9 @@ sub findRelated {
     }
     return $object;
 }
-=pod
 
+
+=pod
 =begin classdoc
 
 Return a single element matching the specified criterias take the same arguments as 'search'.
@@ -1458,7 +1424,6 @@ Return a single element matching the specified criterias take the same arguments
 @return the matching object
 
 =end classdoc
-
 =cut
 
 sub save {
@@ -1482,7 +1447,6 @@ sub save {
 
 
 =pod
-
 =begin classdoc
 
 Remove records from the entire class hierarchy.
@@ -1491,7 +1455,6 @@ Remove records from the entire class hierarchy.
           a part of the class hierachy only.
 
 =end classdoc
-
 =cut
 
 sub delete {
@@ -1527,8 +1490,8 @@ sub delete {
     $dbix->delete;
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Generic method to build the string representation of the object.
@@ -1536,7 +1499,6 @@ Generic method to build the string representation of the object.
 @return the string the representing the object
 
 =end classdoc
-
 =cut
 
 sub toString {
@@ -1546,7 +1508,6 @@ sub toString {
 
 
 =pod
-
 =begin classdoc
 
 Return the object as a hash so that it can be safely be converted to JSON.
@@ -1559,7 +1520,6 @@ Should be named differently but hey...
 @return the hash representing the object or the model depending on $args{model} option
 
 =end classdoc
-
 =cut
 
 sub toJSON {
@@ -1712,7 +1672,6 @@ sub toJSON {
 
 
 =pod
-
 =begin classdoc
 
 Extract relations sub hashes from the hash represeting the object.
@@ -1722,7 +1681,6 @@ Extract relations sub hashes from the hash represeting the object.
 @return the original hash containing the relations sub hashes only
 
 =end classdoc
-
 =cut
 
 sub extractRelations {
@@ -1743,7 +1701,6 @@ sub extractRelations {
 
 
 =pod
-
 =begin classdoc
 
 Create or update relations. If a relation has the primary key set in this attributes,
@@ -1755,7 +1712,6 @@ we update the object, create it instead.
        A value of '1' means we need to create the entities that 'self' points to
 
 =end classdoc
-
 =cut
 
 sub populateRelations {
@@ -1886,7 +1842,6 @@ sub getRelationship {
 }
 
 =pod
-
 =begin classdoc
 
 Return the dbix schema of an object of the given type and given id(s).
@@ -1897,7 +1852,6 @@ Return the dbix schema of an object of the given type and given id(s).
 @return the db schema (dbix)
 
 =end classdoc
-
 =cut
 
 sub getRow {
@@ -1929,7 +1883,6 @@ sub getRow {
 
 
 =pod
-
 =begin classdoc
 
 Instanciate dbix class mapped to corresponding raw in DB.
@@ -1940,7 +1893,6 @@ Instanciate dbix class mapped to corresponding raw in DB.
 @return the db schema (dbix)
 
 =end classdoc
-
 =cut
 
 sub _getDbixFromHash {
@@ -1984,7 +1936,6 @@ sub _getDbixFromHash {
 
 
 =pod
-
 =begin classdoc
 
 Instanciate dbix class filled with <params>, doesn't add in DB.
@@ -1995,7 +1946,6 @@ Instanciate dbix class filled with <params>, doesn't add in DB.
 @return the db schema (dbix)
 
 =end classdoc
-
 =cut
 
 sub _newDbix {
@@ -2009,7 +1959,6 @@ sub _newDbix {
 
 
 =pod
-
 =begin classdoc
 
 Return the primary(ies) key(s) of a row.
@@ -2019,7 +1968,6 @@ Return the primary(ies) key(s) of a row.
 @return the primary key value
 
 =end classdoc
-
 =cut
 
 sub getRowPrimaryKey {
@@ -2040,7 +1988,6 @@ sub getRowPrimaryKey {
 
 
 =pod
-
 =begin classdoc
 
 Generic method to get the name of the attribute that identify the object.
@@ -2051,7 +1998,6 @@ Search for an attribute ending by '_name' within all attributes.
 @return the name of the attribute that identify the object
 
 =end classdoc
-
 =cut
 
 sub getLabelAttr {
@@ -2072,7 +2018,6 @@ sub getLabelAttr {
 
 
 =pod
-
 =begin classdoc
 
 Get the primary key column name
@@ -2080,7 +2025,6 @@ Get the primary key column name
 @return the primary key column name.
 
 =end classdoc
-
 =cut
 
 sub getPrimaryKey {
@@ -2095,7 +2039,6 @@ sub getPrimaryKey {
 }
 
 =pod
-
 =begin classdoc
 
 Parse ths dbix object relation definition to extract the foreign key
@@ -2106,7 +2049,6 @@ of the relation that link it to the object.
 @return the foreign key name of the relation
 
 =end classdoc
-
 =cut
 
 sub getForeignKeyFromCond {
@@ -2120,7 +2062,6 @@ sub getForeignKeyFromCond {
 
 
 =pod
-
 =begin classdoc
 
 Parse ths dbix object relation definition to extract the foreign key
@@ -2131,7 +2072,6 @@ of the relation that link it to the object.
 @return the foreign key name of the relation
 
 =end classdoc
-
 =cut
 
 sub getKeyFromCond {
@@ -2145,7 +2085,6 @@ sub getKeyFromCond {
 
 
 =pod
-
 =begin classdoc
 
 Build an array of the base classes that have a schema
@@ -2153,7 +2092,6 @@ Build an array of the base classes that have a schema
 @return the array containing all classes in the hierarchy.
 
 =end classdoc
-
 =cut
 
 sub getClassHierarchy {
@@ -2180,7 +2118,6 @@ sub getClassHierarchy {
 
 
 =pod
-
 =begin classdoc
 
 @deprecated
@@ -2190,7 +2127,6 @@ Get the primary key of the object
 @return the primary key value
 
 =end classdoc
-
 =cut
 
 sub getId {
@@ -2201,7 +2137,6 @@ sub getId {
 
 
 =pod
-
 =begin classdoc
 
 Get the primary key of the object
@@ -2209,7 +2144,6 @@ Get the primary key of the object
 @return the primary key value
 
 =end classdoc
-
 =cut
 
 sub id {
@@ -2218,8 +2152,8 @@ sub id {
     return $self->{_dbix}->get_column($self->getPrimaryKey);
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 @param $class the full class name with the hierachy
@@ -2227,7 +2161,6 @@ sub id {
 @return the class name at the bottom of the hierarchy
 
 =end classdoc
-
 =cut
 
 sub _childClass {
@@ -2236,8 +2169,8 @@ sub _childClass {
     return $class;
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 @param $class the full class name with the hierachy
@@ -2245,7 +2178,6 @@ sub _childClass {
 @return the class name without its hierarchy
 
 =end classdoc
-
 =cut
 
 sub _buildClassNameFromString {
@@ -2256,7 +2188,6 @@ sub _buildClassNameFromString {
 
 
 =pod
-
 =begin classdoc
 
 @param $class the full class name with the hierachy
@@ -2264,7 +2195,6 @@ sub _buildClassNameFromString {
 @return the class name at the top of the hierarchy of a full class name.
 
 =end classdoc
-
 =cut
 
 sub _rootTable {
@@ -2277,7 +2207,6 @@ sub _rootTable {
 
 
 =pod
-
 =begin classdoc
 
 Convert a class name to table name
@@ -2287,7 +2216,6 @@ Convert a class name to table name
 @return the table name
 
 =end classdoc
-
 =cut
 
 sub _classToTable {
@@ -2301,7 +2229,6 @@ sub _classToTable {
 
 
 =pod
-
 =begin classdoc
 
 Normalize the specified name by removing underscores and upper casing
@@ -2312,7 +2239,6 @@ the characters that follows.
 @return the normalized name
 
 =end classdoc
-
 =cut
 
 sub normalizeName {
@@ -2321,7 +2247,6 @@ sub normalizeName {
 
 
 =pod
-
 =begin classdoc
 
 Normalize the specified name by removing underscores and upper casing
@@ -2332,7 +2257,6 @@ the characters that follows, excepted the first character.
 @return the normalized name
 
 =end classdoc
-
 =cut
 
 sub normalizeMethod {
@@ -2341,7 +2265,6 @@ sub normalizeMethod {
 
 
 =pod
-
 =begin classdoc
 
 Build the name of the Kanopya class for the specified DBIx table schema.
@@ -2351,7 +2274,6 @@ Build the name of the Kanopya class for the specified DBIx table schema.
 @return the class name
 
 =end classdoc
-
 =cut
 
 sub classFromDbix {
@@ -2372,13 +2294,11 @@ sub classFromDbix {
 }
 
 =pod
-
 =begin classdoc
 
 Return the DBIx ResultSource for this class.
 
 =end classdoc
-
 =cut
 
 sub getResultSource {
@@ -2389,12 +2309,12 @@ sub getResultSource {
     return BaseDB->_adm->{schema}->source(_buildClassNameFromString($class));
 }
 
+=pod
 =begin classdoc
 
 Return the related source for a relation
 
 =end classdoc
-
 =cut
 
 sub getRelatedSource {
@@ -2420,7 +2340,6 @@ sub getRelatedSource {
 }
 
 =pod
-
 =begin classdoc
 
 Dinamically load a module from the class name.
@@ -2428,7 +2347,6 @@ Dinamically load a module from the class name.
 @param $class Class name corresponding to the module to load.
 
 =end classdoc
-
 =cut
 
 sub requireClass {
@@ -2445,7 +2363,6 @@ sub requireClass {
 
 
 =pod
-
 =begin classdoc
 
 Method used during cloning and import process of object linked to another object (belongs_to relationship)
@@ -2460,7 +2377,6 @@ Only clone if object doesn't alredy exist in destination object (based on label_
 @return the cloned object
 
 =end classdoc
-
 =cut
 
 sub _importToRelated {
@@ -2507,7 +2423,6 @@ sub _importToRelated {
 
 
 =pod
-
 =begin classdoc
 
 Utility method used to clone a formula
@@ -2520,7 +2435,6 @@ Clone all objects used in formula and translate formula to use cloned object ids
 @return the cloned object
 
 =end classdoc
-
 =cut
 
 sub _cloneFormula {
@@ -2546,13 +2460,11 @@ sub _cloneFormula {
 
 
 =pod
-
 =begin classdoc
 
 Start a transction on the ORM.
 
 =end classdoc
-
 =cut
 
 sub beginTransaction {
@@ -2564,13 +2476,11 @@ sub beginTransaction {
 
 
 =pod
-
 =begin classdoc
 
 Commit a transaction according the database configuration.
 
 =end classdoc
-
 =cut
 
 sub commitTransaction {
@@ -2594,13 +2504,11 @@ sub commitTransaction {
 
 
 =pod
-
 =begin classdoc
 
 Rollback (cancel) an openned transaction.
 
 =end classdoc
-
 =cut
 
 sub rollbackTransaction {
@@ -2617,7 +2525,6 @@ sub rollbackTransaction {
 
 
 =pod
-
 =begin classdoc
 
 Return the delegatee entity on which the permissions must be checked.
@@ -2626,7 +2533,6 @@ By default, permissions are checked on the entity itself.
 @return the delegatee entity.
 
 =end classdoc
-
 =cut
 
 
@@ -2640,7 +2546,6 @@ sub getDelegatee {
 
 
 =pod
-
 =begin classdoc
 
 Method used by the api as entry point for methods calls.
@@ -2650,7 +2555,6 @@ It is convenient for centralizing permmissions checking.
 @optional params method call parameters
 
 =end classdoc
-
 =cut
 
 sub methodCall {
@@ -2663,8 +2567,8 @@ sub methodCall {
 
     my $userid   = BaseDB->_adm->{user}->{user_id};
     my $usertype = BaseDB->_adm->{user}->{user_system};
-    my $godmode = defined BaseDB->_adm->{config}->{dbconf}->{god_mode} &&
-                      BaseDB->_adm->{config}->{dbconf}->{god_mode} eq 1;
+    my $godmode  = defined BaseDB->_adm->{config}->{dbconf}->{god_mode} &&
+                       BaseDB->_adm->{config}->{dbconf}->{god_mode} eq 1;
 
     if (not ($godmode || $usertype)) {
         $self->checkUserPerm(user_id => $userid, %args);
@@ -2676,18 +2580,16 @@ sub methodCall {
 
 
 =pod
-
 =begin classdoc
 
 Check permmissions on a method for a user.
 
 =end classdoc
-
 =cut
 
 sub checkUserPerm {
     my $self  = shift;
-    my $class = ref ($self);
+    my $class = ref($self);
     my %args  = @_;
 
     General::checkParams(args => \%args, required => [ 'method', 'user_id' ],
@@ -2735,19 +2637,19 @@ sub checkUserPerm {
     };
     if ($@) {
         my $msg = "Permission denied to " . $self->getMethods->{$args{method}}->{description};
+        my $type = _buildClassNameFromString(ref($self) || $self);
+        $msg =~ s/<type>/$type/g;
         throw Kanopya::Exception::Permission::Denied(error => $msg);
     }
 }
 
 
 =pod
-
 =begin classdoc
 
 Authenticate the user on the permissions management system.
 
 =end classdoc
-
 =cut
 
 sub authenticate {
@@ -2771,8 +2673,8 @@ sub authenticate {
     }
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Return the $adm instance if defined, instanciate it instead.
@@ -2782,7 +2684,6 @@ queries, the loaded configuration and the current user informations.
 @return the adminitrator singleton
 
 =end classdoc
-
 =cut
 
 sub _adm {
@@ -2822,7 +2723,6 @@ sub _adm {
 
 
 =pod
-
 =begin classdoc
 
 Get the configuration config module and check the configuration
@@ -2831,7 +2731,6 @@ constants existance
 @return the configuration hash
 
 =end classdoc
-
 =cut
 
 sub _loadconfig {
@@ -2855,7 +2754,6 @@ sub _loadconfig {
 
 
 =pod
-
 =begin classdoc
 
 Get the DBIx schema by connecting to the database server.
@@ -2863,7 +2761,6 @@ Get the DBIx schema by connecting to the database server.
 @return the whole databse schema
 
 =end classdoc
-
 =cut
 
 sub _connectdb {
@@ -2888,7 +2785,6 @@ sub _connectdb {
 }
 
 =pod
-
 =begin classdoc
 
 We define an AUTOLOAD to mimic the DBIx behaviour, it simply calls 'getAttr'
@@ -2897,7 +2793,6 @@ that returns the specified attribute or the relation blessed to a BaseDB object.
 @return the value returned by the call of the requested attribute.
 
 =end classdoc
-
 =cut
 
 sub AUTOLOAD {
@@ -2915,13 +2810,11 @@ sub AUTOLOAD {
 
 
 =pod
-
 =begin classdoc
 
 Method called at the object deletion.
 
 =end classdoc
-
 =cut
 
 sub DESTROY {

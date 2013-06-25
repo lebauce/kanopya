@@ -385,8 +385,8 @@ sub registerUsers {
           desc    => 'Policy group containing all policies',
           system  => 1,
           methods => {
-              'ServiceDeveloper' => [ 'getPolicyDef' ],
-              'Sales'            => [ 'getPolicyDef' ]
+              'ServiceDeveloper' => [ 'getPolicyDef', 'create', 'remove', 'update', 'get' ],
+              'Sales'            => [ 'getPolicyDef', 'get' ],
           }
         },
         { name    => 'ServiceTemplate',

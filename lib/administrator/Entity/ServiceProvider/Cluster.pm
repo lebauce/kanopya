@@ -590,7 +590,7 @@ sub remove {
     my $self = shift;
 
     $log->debug("New Operation Remove Cluster with cluster id : " .  $self->id);
-    $self->getManager(manager_type => 'ExecutionManager')->enqueue(
+    my $workflow = $self->getManager(manager_type => 'ExecutionManager')->enqueue(
         type   => 'RemoveCluster',
         params => { 
             context => {
@@ -598,13 +598,16 @@ sub remove {
             }
         }
     );
+
+    $workflow->addPerm(consumer => $self->user, method => 'get');
+    return $workflow;
 }
 
 sub forceStop {
     my $self = shift;
 
     $log->debug("New Operation Force Stop Cluster with cluster: " . $self->id);
-    $self->getManager(manager_type => 'ExecutionManager')->enqueue(
+    my $workflow = $self->getManager(manager_type => 'ExecutionManager')->enqueue(
         type   => 'ForceStopCluster',
         params => { 
             context => {
@@ -612,13 +615,16 @@ sub forceStop {
             }
         }
     );
+
+    $workflow->addPerm(consumer => $self->user, method => 'get');
+    return $workflow;
 }
 
 sub activate {
     my $self = shift;
 
     $log->debug("New Operation ActivateCluster with cluster_id : " . $self->id);
-    $self->getManager(manager_type => 'ExecutionManager')->enqueue(
+    my $workflow = $self->getManager(manager_type => 'ExecutionManager')->enqueue(
         type   => 'ActivateCluster',
         params => { 
             context => {
@@ -626,13 +632,16 @@ sub activate {
             }
         }
     );
+
+    $workflow->addPerm(consumer => $self->user, method => 'get');
+    return $workflow;
 }
 
 sub deactivate {
     my $self = shift;
 
     $log->debug("New Operation DeactivateCluster with cluster_id : " . $self->id);
-    $self->getManager(manager_type => 'ExecutionManager')->enqueue(
+    my $workflow = $self->getManager(manager_type => 'ExecutionManager')->enqueue(
         type   => 'DeactivateCluster',
         params => { 
             context => {
@@ -640,6 +649,9 @@ sub deactivate {
             }
         }
     );
+
+    $workflow->addPerm(consumer => $self->user, method => 'get');
+    return $workflow;
 }
 
 sub toString {
@@ -852,7 +864,7 @@ sub addNode {
         };
     }
 
-    return $self->getManager(manager_type => 'ExecutionManager')->run(
+    my $workflow = $self->getManager(manager_type => 'ExecutionManager')->run(
         name       => 'AddNode',
         related_id => $self->id,
         params     => {
@@ -862,6 +874,9 @@ sub addNode {
             %$components_params
         }
     );
+
+    $workflow->addPerm(consumer => $self->user, method => 'get');
+    return $workflow;
 }
 
 sub removeNode {
@@ -871,7 +886,7 @@ sub removeNode {
     General::checkParams(args => \%args, required => ['node_id']);
 
     my $host = Node->get(id => $args{node_id})->host;
-    $self->getManager(manager_type => 'ExecutionManager')->run(
+    my $workflow = $self->getManager(manager_type => 'ExecutionManager')->run(
         name       => 'StopNode',
         related_id => $self->id,
         params     => {
@@ -881,19 +896,25 @@ sub removeNode {
             }
         }
      );
+
+     $workflow->addPerm(consumer => $self->user, method => 'get');
+     reutrn $workflow;
 }
 
 sub start {
     my $self = shift;
 
     # Enqueue operation AddNode.
-    return $self->addNode();
+    my $workflow = $self->addNode();
+
+    $workflow->addPerm(consumer => $self->user, method => 'get');
+    return $workflow;
 }
 
 sub stop {
     my $self = shift;
 
-    return $self->getManager(manager_type => 'ExecutionManager')->enqueue(
+    my $workflow = $self->getManager(manager_type => 'ExecutionManager')->enqueue(
         type   => 'StopCluster',
         params => { 
             context => {
@@ -901,6 +922,9 @@ sub stop {
             }
         }
     );
+
+    $workflow->addPerm(consumer => $self->user, method => 'get');
+    return $workflow;
 }
 
 sub getState {
@@ -1174,12 +1198,15 @@ sub update {
 
     $self->SUPER::update(%args);
 
-    $self->getManager(manager_type => 'ExecutionManager')->enqueue(
+    my $workflow = $self->getManager(manager_type => 'ExecutionManager')->enqueue(
         type   => 'UpdateCluster',
         params => { 
             context => $context
         }
     );
+
+    $workflow->addPerm(consumer => $self->user, method => 'get');
+    return $workflow;
 }
 
 sub getKanopyaCluster {

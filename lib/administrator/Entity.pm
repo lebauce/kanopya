@@ -81,25 +81,25 @@ sub getAttrDef { return ATTR_DEF; }
 sub methods {
     return {
         create => {
-            description => 'create a new entity',
+            description => 'create a new <type>.',
         },
         remove => {
-            description => 'remove an entity',
+            description => 'remove this <type>.',
         },
         update => {
-            description => 'update an entity',
+            description => 'update this <type>.',
         },
         subscribe => {
-            description => 'subscribe to notification about this entity.',
+            description => 'subscribe to notification about this <type>.',
         },
         unsubscribe => {
-            description => 'unsubscribe to notification about this entity.',
+            description => 'unsubscribe to notification about this <type>.',
         },
         addPerm => {
-            description => 'add a permission for this entity.',
+            description => 'add a permission for this <type>.',
         },
         removePerm => {
-            description => 'remove a permission for this entity.',
+            description => 'remove a permission for this <type>.',
         }
     };
 }
@@ -661,7 +661,6 @@ sub setAttr {
 }
 
 =pod
-
 =begin classdoc
 
 Return the delegatee entity on which the permissions must be checked.
@@ -670,9 +669,7 @@ By default, permissions are checked on the entity itself.
 @return the delegatee entity.
 
 =end classdoc
-
 =cut
-
 
 sub getDelegatee {
     my $self = shift;
