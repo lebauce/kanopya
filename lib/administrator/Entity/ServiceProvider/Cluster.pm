@@ -958,9 +958,6 @@ sub start {
 
     # Enqueue operation AddNode.
     my $workflow = $self->addNode();
-
-    $workflow->addPerm(consumer => $self->user, method => 'get');
-    $workflow->addPerm(consumer => $self->user, method => 'cancel');
     return $workflow;
 }
 
