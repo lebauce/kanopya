@@ -600,6 +600,7 @@ sub remove {
     );
 
     $workflow->addPerm(consumer => $self->user, method => 'get');
+    $workflow->addPerm(consumer => $self->user, method => 'cancel');
     return $workflow;
 }
 
@@ -617,6 +618,7 @@ sub forceStop {
     );
 
     $workflow->addPerm(consumer => $self->user, method => 'get');
+    $workflow->addPerm(consumer => $self->user, method => 'cancel');
     return $workflow;
 }
 
@@ -634,6 +636,7 @@ sub activate {
     );
 
     $workflow->addPerm(consumer => $self->user, method => 'get');
+    $workflow->addPerm(consumer => $self->user, method => 'cancel');
     return $workflow;
 }
 
@@ -651,6 +654,7 @@ sub deactivate {
     );
 
     $workflow->addPerm(consumer => $self->user, method => 'get');
+    $workflow->addPerm(consumer => $self->user, method => 'cancel');
     return $workflow;
 }
 
@@ -876,6 +880,7 @@ sub addNode {
     );
 
     $workflow->addPerm(consumer => $self->user, method => 'get');
+    $workflow->addPerm(consumer => $self->user, method => 'cancel');
     return $workflow;
 }
 
@@ -895,10 +900,11 @@ sub removeNode {
                 host    => $host,
             }
         }
-     );
+    );
 
-     $workflow->addPerm(consumer => $self->user, method => 'get');
-     reutrn $workflow;
+    $workflow->addPerm(consumer => $self->user, method => 'get');
+    $workflow->addPerm(consumer => $self->user, method => 'cancel');
+    return $workflow;
 }
 
 sub start {
@@ -908,6 +914,7 @@ sub start {
     my $workflow = $self->addNode();
 
     $workflow->addPerm(consumer => $self->user, method => 'get');
+    $workflow->addPerm(consumer => $self->user, method => 'cancel');
     return $workflow;
 }
 
@@ -924,6 +931,7 @@ sub stop {
     );
 
     $workflow->addPerm(consumer => $self->user, method => 'get');
+    $workflow->addPerm(consumer => $self->user, method => 'cancel');
     return $workflow;
 }
 
@@ -1206,6 +1214,7 @@ sub update {
     );
 
     $workflow->addPerm(consumer => $self->user, method => 'get');
+    $workflow->addPerm(consumer => $self->user, method => 'cancel');
     return $workflow;
 }
 
