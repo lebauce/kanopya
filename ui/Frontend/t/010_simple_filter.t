@@ -16,14 +16,54 @@ Log::Log4perl->easy_init({level=>'DEBUG', file=>'api.t.log', layout=>'%F %L %p %
 
 my $login = dancer_response(POST => '/login', { params => {login => 'admin', password => 'K4n0pY4'}});
 
-my $matrix = { eq => { operator => '=',        filter => 'disabled', param => 'monitoring_state'},
-               ne => { operator => '<>',       filter => 'enabled',  param => 'monitoring_state'},
-               le => { operator => '<=',       filter => 1,          param => 'node_id'},
-               lt => { operator => '<',        filter => 2,          param => 'node_id'},
-               ge => { operator => '>=',       filter => 2,          param => 'node_id'},
-               gt => { operator => '>',        filter => 1,          param => 'node_id'},
-               bw => { operator => 'LIKE',     filter => 'in%',      param => 'node_state'},
-               bn => { operator => 'NOT LIKE', filter => 'in%',      param => 'node_state'},
+my $matrix = { eq => {
+                   operator => '=',
+                   filter   => 'disabled',
+                   param    => 'monitoring_state',
+                   function => sub { my ($got, $operator, $filter, $msg) = @_; is $got, 'disabled', $msg; },
+               },
+               ne => {
+                   operator => '<>',
+                   filter   => 'enabled',
+                   param    => 'monitoring_state',
+                   function => sub { my ($got, $operator, $filter, $msg) = @_; is $got, 'disabled', $msg; },
+               },
+               le => {
+                   operator => '<=',
+                   filter   => 1,
+                   param    => 'node_id',
+                   function => sub { my ($got, $operator, $filter, $msg) = @_; cmp_ok $got, $operator, $filter, $msg; },
+               },
+               lt => {
+                   operator => '<',
+                   filter   => 2,
+                   param    => 'node_id',
+                   function => sub { my ($got, $operator, $filter, $msg) = @_; cmp_ok $got, $operator, $filter, $msg; },
+               },
+               ge => {
+                   operator => '>=',
+                   filter   => 2,
+                   param    => 'node_id',
+                   function => sub { my ($got, $operator, $filter, $msg) = @_; cmp_ok $got, $operator, $filter, $msg; },
+               },
+               gt => {
+                   operator => '>',
+                   filter   => 1,
+                   param    => 'node_id',
+                   function => sub { my ($got, $operator, $filter, $msg) = @_; cmp_ok $got, $operator, $filter, $msg; },
+               },
+               bw => {
+                   operator => 'LIKE',
+                   filter   => 'in%',
+                   param    => 'node_state',
+                   function => sub { my ($got, $operator, $filter, $msg) = @_; like $got, '/in:.*/', $msg; },
+               },
+               bn => {
+                   operator => 'NOT LIKE',
+                   filter   => 'in%',
+                   param    => 'node_state',
+                   function => sub { my ($got, $operator, $filter, $msg); like $got, ('/[^in]*/'), $msg; },
+               },
              };
 
 while (my ($line, $attributes) = each %$matrix) {
@@ -40,24 +80,8 @@ while (my ($line, $attributes) = each %$matrix) {
 
     foreach my $content (@$contents) {
         my $attr = $content->{$param};
+        my $msg = "attribute ($param) with value ($attr) on node $content->{node_id} was well filtered with ($operator,$filter)";
 
-        if ($operator eq 'LIKE') {
-            like $attr,
-                 '/in:.*/',
-                 "attribute ($param) with value ($attr) on node $content->{node_id} was well filtered with ($operator,$filter)";
-        }
-        elsif ($operator eq 'NOT LIKE') {
-            like $attr,
-                 '/[^in]*/',
-                 "attribute ($param) with value ($attr) on node $content->{node_id} was well filtered with ($operator,$filter)";
-        }
-        elsif ($operator eq '<' || $operator eq '<=' || $operator eq '>' || $operator eq '>=') {
-            cmp_ok $attr, $operator, $filter,
-                   "attribute ($param) with value ($attr) on node $content->{node_id} was well filtered with ($operator,$filter)";
-        }
-        elsif ($operator eq '=' || $operator eq '<>') {
-            is $attr, 'disabled',
-               "attribute ($param) with value ($attr) on node $content->{node_id} was well filtered with ($operator,$filter)";
-        }
+        $matrix->{$line}->{function}($attr, $operator, $filter ,$msg);
     }
 }
