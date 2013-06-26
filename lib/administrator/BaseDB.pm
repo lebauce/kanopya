@@ -67,7 +67,7 @@ sub getAttrDef { return ATTR_DEF; }
 sub methods {
     return {
         get => {
-            description => 'get a <type>',
+            description => 'get <object>',
         },
     };
 }
@@ -2636,9 +2636,10 @@ sub checkUserPerm {
         $perm_holder->checkPerm(user_id => $args{user_id}, method => $args{method});
     };
     if ($@) {
-        my $msg = "Permission denied to " . $self->getMethods->{$args{method}}->{description};
+        my $msg  = "Permission denied to " . $self->getMethods->{$args{method}}->{description};
         my $type = _buildClassNameFromString(ref($self) || $self);
-        $msg =~ s/<type>/$type/g;
+        $type = ref($self) ? ($type . " <" . $self->label . ">") : $type;
+        $msg =~ s/<object>/$type/g;
         throw Kanopya::Exception::Permission::Denied(error => $msg);
     }
 }

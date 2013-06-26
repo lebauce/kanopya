@@ -81,25 +81,25 @@ sub getAttrDef { return ATTR_DEF; }
 sub methods {
     return {
         create => {
-            description => 'create a new <type>.',
+            description => 'create a new <object>.',
         },
         remove => {
-            description => 'remove this <type>.',
+            description => 'remove <object>.',
         },
         update => {
-            description => 'update this <type>.',
+            description => 'update <object>.',
         },
         subscribe => {
-            description => 'subscribe to notification about this <type>.',
+            description => 'subscribe to notification about <object>.',
         },
         unsubscribe => {
-            description => 'unsubscribe to notification about this <type>.',
+            description => 'unsubscribe to notification about <object>.',
         },
         addPerm => {
-            description => 'add a permission for this <type>.',
+            description => 'add a permission for <object>.',
         },
         removePerm => {
-            description => 'remove a permission for this <type>.',
+            description => 'remove a permission for <object>.',
         }
     };
 }
