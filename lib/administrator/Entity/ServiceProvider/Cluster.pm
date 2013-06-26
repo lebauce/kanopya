@@ -214,7 +214,7 @@ sub methods {
             perm_holder => 'entity',
         },
         addComponents => {
-            description => 'add components to this node',
+            description => 'add components to this cluster',
         },
     };
 }
@@ -224,45 +224,53 @@ sub label {
     return $self->cluster_name;
 }
 
-=head2 create
 
-    %params => {
-        cluster_name     => 'foo',
-        cluster_desc     => 'bar',
-        cluster_min_node => 1,
-        cluster_max_node => 10,
-        masterimage_id   => 4,
+=pod
+=begin classdoc
+
+Build the cluster configuration pattern (CCP) from the service template
+and additional params, and call the executor to create the cluster.
+
+Example of CCP:
+
+%params => {
+    cluster_name     => 'foo',
+    cluster_desc     => 'bar',
+    cluster_min_node => 1,
+    cluster_max_node => 10,
+    masterimage_id   => 4,
+    ...
+    managers => {
+        host_manager => {
+            manager_id     => 2,
+            manager_type   => 'HostManager',
+            manager_params => {
+                cpu => 2,
+                ram => 1024,
+            },
+        },
+        disk_manager => { ... },
+    },
+    policies => {
+        hosting => 45,
+        storage => 54,
+        network => 32,
         ...
-        managers => {
-            host_manager => {
-                manager_id     => 2,
-                manager_type   => 'HostManager',
-                manager_params => {
-                    cpu => 2,
-                    ram => 1024,
-                },
-            },
-            disk_manager => { ... },
+    },
+    interfaces => {
+        admin => {
+            bonds_number => 2,
+            interfaces_netconfs => [ 1, 5 ],
+        }
+    },
+    components => {
+        puppet => {
+            component_type => 42,
         },
-        policies => {
-            hosting => 45,
-            storage => 54,
-            network => 32,
-            ...
-        },
-        interfaces => {
-            admin => {
-                bonds_number => 2,
-                interfaces_netconfs => [ 1, 5 ],
-            }
-        },
-        components => {
-            puppet => {
-                component_type => 42,
-            },
-        },
-    };
+    },
+};
 
+=end classdoc
 =cut
 
 sub create {
@@ -331,9 +339,8 @@ sub create {
 }
 
 sub checkConfigurationPattern {
-    my $self = shift;
+    my ($self, %args) = @_;
     my $class = ref($self) || $self;
-    my %args = @_;
 
     General::checkParams(args => \%args, required => [ 'attrs' ]);
 
@@ -359,8 +366,7 @@ sub checkConfigurationPattern {
 }
 
 sub applyPolicies {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ "pattern" ]);
 
@@ -403,8 +409,7 @@ sub applyPolicies {
 }
 
 sub configureManagers {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, optional => { 'managers' => undef });
 
@@ -439,14 +444,23 @@ sub configureManagers {
             };
             if ($@) {
                 next if not $manager->{manager_id};
-                $self->addManager(manager_id   => $manager->{manager_id},
-                                  manager_type => $manager->{manager_type});
+                my $spmanager = $self->addManager(manager_id   => $manager->{manager_id},
+                                                  manager_type => $manager->{manager_type});
 
-                if ($manager->{manager_type} eq 'CollectorManager') {
-                    $self->initCollectorManager(collector_manager => Entity->get(id => $manager->{manager_id}));
+                if ($manager->{manager_type} eq 'CollectorManager' ||
+                    $manager->{manager_type} eq 'WorkflowManager') {
+                    # Add permission on the manager methods to the user
+                    my $managerclass = 'Manager::' . $manager->{manager_type};
+                    for my $method (keys %{ $managerclass->methods }) {
+                        $spmanager->manager->addPerm(consumer => $self->user, method => $method);
+                    }
+                    if ($manager->{manager_type} eq 'CollectorManager') {
+                        $self->initCollectorManager(collector_manager => $spmanager->manager);
+                    }
                 }
             }
 
+            # Set the parameters if defined
             if ($manager->{manager_params}) {
                 $self->addManagerParameters(manager_type => $manager->{manager_type},
                                             params       => $manager->{manager_params},
@@ -568,8 +582,7 @@ sub configureBillingLimits {
 =cut
 
 sub configureOrchestration {
-    my $self    = shift;
-    my %args    = @_;
+    my ($self, %args) = @_;
 
     return if (not defined $args{service_provider_id});
 
@@ -660,8 +673,7 @@ sub deactivate {
 
 sub toString {
     my $self = shift;
-    my $string = $self->{_dbix}->get_column('cluster_name');
-    return $string.' (Cluster)';
+    return $self->cluster_name . ' (Cluster)';
 }
 
 
