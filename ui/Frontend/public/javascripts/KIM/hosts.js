@@ -28,7 +28,7 @@ function host_addbutton_action(e, grid) {
         displayed  : [ 'host_desc', 'host_core', 'host_ram', 'kernel_id', 'host_serial_number', 'entity_tags' ],
         relations  : { 'ifaces'         : [ 'iface_name', 'iface_mac_addr', 'iface_pxe', 'netconf_ifaces' ],
                        'bonding_ifaces' : [ 'bonding_iface_name', 'slave_ifaces' ],
-                       'harddisks'      : [ 'harddisk_device' ] },
+                       'harddisks'      : [ 'harddisk_device', 'harddisk_size' ] },
         rawattrdef : rawattrdef,
         attrsCallback  : function (resource) {
             var attributes;

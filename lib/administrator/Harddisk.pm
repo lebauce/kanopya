@@ -49,7 +49,8 @@ use constant ATTR_DEF => {
         type         => 'integer',
         unit         => 'byte',
         pattern      => '^\d*$',
-        is_mandatory => 0
+        is_mandatory => 0,
+        is_editable  => 1
     }
 };
 
