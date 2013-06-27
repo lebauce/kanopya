@@ -1,28 +1,26 @@
-class kanopya::iscsitarget::service {
-	service {
-		'iscsitarget':
-			name => $operatingsystem ? {
-				default => 'iscsitarget'
-			},
-			ensure => running,
-			hasstatus => true,
-			hasrestart => true,
-			enable => true,
-			require => Class['kanopya::iscsitarget::install'],
-	}
-}
-
-class kanopya::iscsitarget::install {
-	package {
-		'iscsitarget':
-			name => $operatingsystem ? {
-				default => 'iscsitarget'
-			},
-			ensure => present,
-	}
-}
-
 class kanopya::iscsitarget {
-	include kanopya::iscsitarget::install, kanopya::iscsitarget::service
+	package { 'iscsitarget':
+		ensure => present,
+	}
+
+	service { 'iscsitarget':
+		ensure   => running,
+		enable   => true,
+		require  => Package['iscsitarget'],
+	}
+
+	service { 'open-iscsi':
+		ensure   => running,
+		enable   => true,
+		require  => Service['iscsitarget'],
+	}
+
+	package { 'iscsitarget-dkms':
+		ensure => present,
+	}
+
+	file { '/etc/default/iscsitarget':
+		content => "ISCSITARGET_ENABLE=true\n",
+	}
 }
 
