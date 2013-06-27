@@ -74,7 +74,7 @@ use constant POLICY_ATTR_DEF => {
     cluster_basehostname => {
         label        => 'Cluster base hostname',
         type         => 'string',
-        pattern      => '^[a-z_0-9]+$',
+        pattern      => '^[A-Za-z0-9]+$',
         is_mandatory => 1
     },
     components => {
