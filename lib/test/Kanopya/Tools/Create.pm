@@ -111,6 +111,11 @@ sub createCluster {
         push @iscsi_portal_ids, $portal->id;
     }
 
+    my $service_template_id;
+    eval {
+        $service_template_id = Entity::ServiceTemplate->find(hash => { service_name => "Generic service" })->id;
+    };
+
     my %default_conf = (
         active                => 1,
         cluster_name          => 'DefaultCluster',
@@ -125,6 +130,7 @@ sub createCluster {
         cluster_basehostname  => 'default',
         user_id               => $admin_user->id,
         default_gateway_id    => ($adminnetconf->poolips)[0]->network->id,
+        service_template_id   => $service_template_id,
         managers              => {
             host_manager => {
                 manager_id     => $physical_hoster->id,
