@@ -26,5 +26,9 @@ class kanopya::nfsd::install {
 
 class kanopya::nfsd {
 	include kanopya::nfsd::install, kanopya::nfsd::service
+
+	file { '/nfsexports':
+		ensure => 'directory',
+	}
 }
 
