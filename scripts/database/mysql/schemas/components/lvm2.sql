@@ -35,7 +35,7 @@ CREATE TABLE `lvm2_pv` (
   `lvm2_vg_id` int(8) unsigned NOT NULL,
   `lvm2_pv_name` char(64) NOT NULL,
   PRIMARY KEY (`lvm2_pv_id`),
-  UNIQUE KEY `lvm2_UNIQUE` (`lvm2_pv_name`),
+  UNIQUE KEY `lvm2_UNIQUE` (`lvm2_pv_name`, `lvm2_vg_id`),
   KEY `fk_lvm2_pv_1` (`lvm2_vg_id`),
   CONSTRAINT `fk_lvm2_pv_1` FOREIGN KEY (`lvm2_vg_id`) REFERENCES `lvm2_vg` (`lvm2_vg_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
