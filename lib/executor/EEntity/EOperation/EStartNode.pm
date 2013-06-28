@@ -277,12 +277,7 @@ sub _generateBootConf {
                     error => "No hard disk to deploy the system on was found"
                 );
             }
-            if ($harddisk->service_provider_id != $cluster->id) {
-                $kernel_version = Entity::Kernel->find(hash => { kernel_name => 'deployment' })->kernel_version;
-            }
-            else {
-                return;
-            }
+            $kernel_version = Entity::Kernel->find(hash => { kernel_name => 'deployment' })->kernel_version;
         }
 
         my $linux_component = EEntity->new(entity => $cluster->getComponent(category => "System"));
