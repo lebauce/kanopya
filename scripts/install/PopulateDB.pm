@@ -1426,7 +1426,7 @@ sub registerKanopyaMaster {
                             cluster_nameserver1   => defined $args{kanopya_nameserver1} ? $args{kanopya_nameserver1} : '127.0.0.1',
                             cluster_nameserver2   => defined $args{kanopya_nameserver2} ? $args{kanopya_nameserver2} : '127.0.0.1',
                             cluster_state         => 'up:' . time(),
-                            cluster_basehostname  => 'kanopya_',
+                            cluster_basehostname  => 'kanopya',
                             default_gateway_id    => $admin_network->id,
                             active                => 1,
                             user_id               => $admin->id
