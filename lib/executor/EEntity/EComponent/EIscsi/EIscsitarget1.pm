@@ -22,6 +22,7 @@ use strict;
 use General;
 use EEntity;
 use Entity::ContainerAccess::IscsiContainerAccess;
+use Entity::Component::Iscsi::IscsiPortal;
 
 use Kanopya::Exceptions;
 
@@ -370,6 +371,19 @@ sub generate {
             parameters => [ $self ]
         );
     }
+}
+
+sub postStartNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'cluster', 'host' ]);
+
+    Entity::Component::Iscsi::IscsiPortal->findOrCreate(
+        iscsi_id          => $self->id,
+        iscsi_portal_ip   => $args{host}->adminIp,
+        iscsi_portal_port => 3260
+    );
 }
 
 1;
