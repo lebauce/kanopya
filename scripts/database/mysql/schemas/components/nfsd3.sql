@@ -16,7 +16,7 @@ CREATE TABLE `nfsd3` (
   `nfsd3_need_svcgssd` enum('yes','no') NOT NULL DEFAULT 'no',
   `nfsd3_rpcsvcgssdopts` char(255) NULL,
   PRIMARY KEY (`nfsd3_id`),
-  CONSTRAINT FOREIGN KEY (`nfsd3_id`) REFERENCES `component` (`component_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT FOREIGN KEY (`nfsd3_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks=1;
