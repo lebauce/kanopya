@@ -37,6 +37,7 @@ use warnings;
 use Switch;
 use Test::More;
 use Test::Exception;
+use Hash::Merge;
 
 use Kanopya::Exceptions;
 use General;
@@ -48,11 +49,29 @@ use Entity::Host;
 use Entity::Container;
 use Entity::ContainerAccess::NfsContainerAccess;
 use Entity::ServiceProvider::Cluster;
-use Hash::Merge qw(merge);
 use ClassType::ComponentType;
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::Register;
 use EEntity;
+
+my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
+$merge->specify_behavior( {
+    'SCALAR' => {
+        'SCALAR' => sub { $_[1] },
+        'ARRAY'  => sub { [ $_[0], @{$_[1]} ] },
+        'HASH'   => sub { $_[1] },
+    },
+    'ARRAY' => {
+        'SCALAR' => sub { $_[1] },
+        'ARRAY'  => sub { [ @{$_[1]} ] },
+        'HASH'   => sub { $_[1] },
+    },
+    'HASH' => {
+        'SCALAR' => sub { $_[1] },
+        'ARRAY'  => sub { [ values %{$_[0]}, @{$_[1]} ] },
+        'HASH'   => sub { Hash::Merge::_merge_hashes( $_[0], $_[1] ) },
+    },
+} );
 
 =pod
 
@@ -165,8 +184,7 @@ sub createCluster {
     );
 
     if (defined $args{cluster_conf}) {
-        Hash::Merge::set_behavior('RIGHT_PRECEDENT');
-        %cluster_conf = %{ merge(\%default_conf, $args{cluster_conf}) };
+        %cluster_conf = %{ $merge->merge(\%default_conf, $args{cluster_conf}) };
     }
     else {
         %cluster_conf = %default_conf;
@@ -185,10 +203,9 @@ sub createCluster {
                     }
                 }
             );
-            Hash::Merge::set_behavior('RIGHT_PRECEDENT');
-            %comps = %{ merge(\%comps, \%tmp) };
+            %comps = %{ $merge->merge(\%comps, \%tmp) };
         }
-        %cluster_conf = %{ merge(\%cluster_conf, \%comps) };
+        %cluster_conf = %{ $merge->merge(\%cluster_conf, \%comps) };
     }
 
     my %mgrs;
@@ -202,16 +219,14 @@ sub createCluster {
                     }
                 }
             );
-            Hash::Merge::set_behavior('RIGHT_PRECEDENT');
-            %mgrs = %{ merge(\%mgrs, \%tmp) };
+            %mgrs = %{ $merge->merge(\%mgrs, \%tmp) };
         }
-        %cluster_conf = %{ merge(\%cluster_conf, \%mgrs) };
+        %cluster_conf = %{ $merge->merge(\%cluster_conf, \%mgrs) };
     }
 
     if (defined $interfaces) {
         my %ifcs = (interfaces => $interfaces);
-        Hash::Merge::set_behavior('RIGHT_PRECEDENT');
-        %cluster_conf = %{ merge(\%cluster_conf, \%ifcs) };
+        %cluster_conf = %{ $merge->merge(\%cluster_conf, \%ifcs) };
     }
 
     diag('Create cluster');
@@ -293,7 +308,7 @@ sub createVmCluster {
         };
     }
 
-    $managers = merge($managers, $args{managers});  
+    $managers = $merge->merge($managers, $args{managers});
                         
     delete $args{iaas};
     delete $args{container_name};
