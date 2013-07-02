@@ -1255,7 +1255,7 @@ sub update {
 
     $log->info("Updating cluster");
     if (defined ($args{node})) {
-        $log->info("Updating node $args{node} of cluster");
+    $log->info("Updating node $args{node} of cluster");
         $context->{host} = (delete $args{node})->host;
     }
 
@@ -1271,6 +1271,20 @@ sub update {
     $workflow->addPerm(consumer => $self->user, method => 'get');
     $workflow->addPerm(consumer => $self->user, method => 'cancel');
     return $workflow;
+}
+
+sub propagatePermissions {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'related' ]);
+
+    # Add permssions on the related object methods
+    for my $method (keys %{ $args{related}->getMethods() }) {
+        if (! ($method eq "addPerm" || $method eq "removePerm")) {
+            $log->info("add permm $args{related} $method");
+            $args{related}->addPerm(consumer => $self->user, method => $method);
+        }
+    }
 }
 
 sub getKanopyaCluster {

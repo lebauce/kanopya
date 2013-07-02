@@ -1,4 +1,4 @@
-# Copyright © 2011 Hedera Technology SAS
+# Copyright © 2011-2013 Hedera Technology SAS
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -16,17 +16,15 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 =pod
-
 =begin classdoc
 
 TODO
 
-=end classdoc
-    
+=end classdoc 
 =cut
 
 package ClassType::ComponentType;
-use base 'ClassType';
+use base ClassType;
 
 use strict;
 use warnings;
@@ -64,7 +62,6 @@ sub getAttrDef { return ATTR_DEF; }
 
 
 =pod
-
 =begin classdoc
 
 Overrride the BaseDB search to make easier the search of ComponentType
@@ -73,7 +70,6 @@ in function of ComponentCategory.
 @return the search result
 
 =end classdoc
-
 =cut
 
 sub search {
@@ -95,27 +91,20 @@ sub search {
 }
 
 =pod
-
 =begin classdoc
 
-Return the delegatee entity on which the permissions must be checked.
-By default, permissions are checked on the entity itself.
+For component types, delegate the permissons to the Component master group.
 
 @return the delegatee entity.
 
 =end classdoc
-
 =cut
 
 sub getDelegatee {
     my $self = shift;
-    my $class = ref $self;
+    my $class = "Entity::Component";
 
-    if (not $class) {
-        return 'Entity::Component';
-    }
-
-    return $self->SUPER::getDelegatee;
+    return $class->getDelegatee;
 }
 
 1;

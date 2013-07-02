@@ -26,15 +26,15 @@ Mathematical formula of collector indicators
 =cut
 
 package Entity::Combination::NodemetricCombination;
-
-use base 'Entity::Combination';
+use base Entity::Combination;
 
 use strict;
 use warnings;
-require 'Entity/Indicator.pm';
+
+use Entity::Indicator;
 use Entity::CollectorIndicator;
 use Data::Dumper;
-# logger
+
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -81,17 +81,8 @@ sub getAttr {
 
 sub methods {
     return {
-        'toString'  => {
-            'description' => 'toString',
-            'perm_holder' => 'entity'
-        },
-        'getUnit'   => {
-            'description' => 'getUnit',
-            'perm_holder' => 'entity',
-        },
-        'getDependencies' => {
-            'description' => 'return dependencies tree for this object',
-            'perm_holder' => 'entity',
+        getUnit   => {
+            description => 'getUnit',
         },
     }
 }

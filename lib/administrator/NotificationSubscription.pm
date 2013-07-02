@@ -1,4 +1,4 @@
-# Copyright © 2012 Hedera Technology SAS
+# Copyright © 2012-2013 Hedera Technology SAS
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -31,35 +31,28 @@ use constant ATTR_DEF => {
     subscriber_id => {
         pattern      => '^\d*$',
         is_mandatory => 1,
-        is_extended  => 0,
+        is_delegatee => 1,
     },
     entity_id => {
         pattern      => '^\d*$',
         is_mandatory => 1,
-        is_extended  => 0,
     },
     operationtype_id => {
         pattern      => '^\d*$',
         is_mandatory => 1,
-        is_extended  => 0,
     },
     service_provider_id => {
         pattern      => '^\d*$',
         is_mandatory => 1,
-        is_extended  => 0,
     },
     validation => {
         pattern      => '^[01]$',
         is_mandatory => 0,
-        is_extended  => 0,
     },
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub getDelegatee {
-    my $self = shift;
-    return $self->entity;
-}
+sub methods { return {}; }
 
 1;

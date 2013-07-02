@@ -68,9 +68,7 @@ sub create {
     $self->save();
 
     # Set default permissions on this cluster for the related customer
-    for my $method (keys %{ $self->getMethods }) {
-        $self->addPerm(consumer => $self->user, method => $method);
-    }
+    $self->propagatePermissions(related => $self);
 
     # Use the method for policy applying to configure manager, components, and interfaces.
     $self->applyPolicies(
