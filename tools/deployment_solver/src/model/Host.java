@@ -25,6 +25,11 @@ public class Host {
     private Network m_network;
 
     /**
+     * The storage of the host.
+     */
+    private Storage m_storage;
+
+    /**
      * The tags of the host.
      */
     private Integer[] m_tags;
@@ -33,15 +38,17 @@ public class Host {
         this.m_cpu     = new CPU();
         this.m_ram     = new RAM();
         this.m_network = new Network();
+        this.m_storage = new Storage();
         this.m_tags    = new Integer[0];
     }
 
-    public Host(CPU cpu, RAM ram, Network network, Integer[] tags) {
+    public Host(CPU cpu, RAM ram, Network network, Storage storage, Integer[] tags) {
         super();
-        this.m_cpu = cpu;
-        this.m_ram = ram;
+        this.m_cpu     = cpu;
+        this.m_ram     = ram;
         this.m_network = network;
-        this.m_tags = tags;
+        this.m_storage = storage;
+        this.m_tags    = tags;
     }
 
     // GETTERS
@@ -56,6 +63,10 @@ public class Host {
 
     public Network getNetwork() {
         return m_network;
+    }
+
+    public Storage getStorage() {
+        return m_storage;
     }
 
     public Integer[] getTags() {
@@ -76,6 +87,10 @@ public class Host {
         this.m_network = network;
     }
 
+    public void setStorage(Storage storage) {
+        this.m_storage = storage;
+    }
+
     public void setTags(Integer[] tags) {
         m_tags = tags;
     }
@@ -85,6 +100,7 @@ public class Host {
         host += "\n" + "\t" + this.getCpu();
         host += "\n" + "\t" + this.getRam();
         host += "\n" + "\t" + this.getNetwork();
+        host += "\n" + "\t" + this.getStorage();
         host += "\n" + "\t" + "Tags :";
         for (Integer tag : this.getTags()) {
             host += "\n" + "\t\t" + tag;
@@ -255,6 +271,88 @@ public class Host {
                 }
                 net += "\n" + "\t\t\t\t" + "NetIPs : " + netips + "]";
                 return net;
+            }
+        }
+    }
+
+    /**
+     * POJO representing the storage devices of a host.
+     * @author Dimitri Justeau
+     */
+    public static class Storage {
+
+        /**
+         * The hard disks.
+         */
+        private List<HardDisk> m_hard_disks;
+
+        public Storage(List<HardDisk> hard_disks) {
+            this.m_hard_disks = hard_disks;
+        }
+
+        public Storage() {
+            this(new ArrayList<HardDisk>());
+        }
+
+        // GETTERS AND SETTERS
+
+        public List<HardDisk> getHardDisks() {
+            return this.m_hard_disks;
+        }
+
+        public void setHardDisks(List<HardDisk> hard_disks) {
+            this.m_hard_disks = hard_disks;
+        }
+
+        /**
+         * @return The total number of hard disks.
+         */
+        public int computeHardDisksNumber() {
+            return this.getHardDisks().size();
+        }
+
+        public String toString() {
+            String storage = "Storage :";
+            storage += "\n" + "\t\t" + "Hard Disks : ";
+            for (HardDisk hd : this.getHardDisks()) {
+                storage += "\n" + "\t\t\t" + hd;
+            }
+            return storage;
+        }
+
+        /**
+         * POJO representing a hard disk.
+         * @author Dimitri Justeau
+         */
+        public static class HardDisk {
+
+            /**
+             * The size of the hard disk, in Go.
+             */
+            private int m_size;
+
+            public HardDisk(int size) {
+                this.m_size = size;
+            }
+
+            public HardDisk() {
+                this(0);
+            }
+
+            // GETTERS AND SETTERS
+
+            public int getSize() {
+                return this.m_size;
+            }
+
+            public void setSize(int size) {
+                this.m_size = size;
+            }
+
+            public String toString() {
+                String hd = "HardDisk :";
+                hd += "\n" + "\t\t\t\t" + "Size (Go) : " + this.getSize();
+                return hd;
             }
         }
     }

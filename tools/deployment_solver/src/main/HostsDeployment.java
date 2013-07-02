@@ -30,13 +30,14 @@ public class HostsDeployment extends AbstractProblem {
 
     // Physical infrastructure instance's structure (all the simple characteristics that can be stored in a
     // tuple of integers).
-    private final static int INDEX_HOST         = 0;
-    private final static int INDEX_CPU_NB_CORES = 1;
-    private final static int INDEX_RAM_QTY      = 2;
-    private final static int INDEX_NETWORK_COST = 3;
-    private final static int INDEX_TAGS_COST    = 4;
+    private final static int INDEX_HOST             = 0;
+    private final static int INDEX_CPU_NB_CORES     = 1;
+    private final static int INDEX_RAM_QTY          = 2;
+    private final static int INDEX_NETWORK_COST     = 3;
+    private final static int INDEX_TAGS_COST        = 4;
+    private final static int INDEX_STORAGE_NB_DISKS = 5;
 
-    private final static int HOST_NB_PARAMS     = 5;
+    private final static int HOST_NB_PARAMS         = 6;
 
     // Physical infrastructure instance
     private Host[] infrastructure;
@@ -73,6 +74,9 @@ public class HostsDeployment extends AbstractProblem {
     // Tags Cost
     private int tags_cost_lowB;
     private int tags_cost_upB;
+    // Storage Hard Disks number
+    private int storage_nb_disks_lowB;
+    private int storage_nb_disks_upB;
 
     ////////////
     /* Coeffs */
@@ -112,6 +116,7 @@ public class HostsDeployment extends AbstractProblem {
     private IntVar ram_qty;
     private IntVar network_cost;
     private IntVar tags_cost;
+    private IntVar storage_nb_disks;
 
     private IntVar total_cost;
 
@@ -129,29 +134,32 @@ public class HostsDeployment extends AbstractProblem {
         network_matrices = NetworkUtils.constructNetworkMatrices(infrastructure, constraints);
 
         // Init bounds and tuples //
-        cpu_nb_cores_lowB = -1;
-        cpu_nb_cores_upB  = -1;
-        ram_qty_lowB      = -1;
-        ram_qty_upB       = -1;
-        network_cost_lowB = -1;
-        network_cost_upB  = -1;
-        tags_cost_lowB    = -1;
-        tags_cost_upB     = -1;
-        host_tuples       = new ArrayList<int[]>();
+        cpu_nb_cores_lowB     = -1;
+        cpu_nb_cores_upB      = -1;
+        ram_qty_lowB          = -1;
+        ram_qty_upB           = -1;
+        network_cost_lowB     = -1;
+        network_cost_upB      = -1;
+        tags_cost_lowB        = -1;
+        tags_cost_upB         = -1;
+        storage_nb_disks_lowB = -1;
+        storage_nb_disks_upB  = -1;
+        host_tuples           = new ArrayList<int[]>();
 
         for (int h = 0; h < infrastructure.length; h++) {
             Host host = infrastructure[h];
 
             // Tuple
             int[] tuple = new int[HOST_NB_PARAMS];
-            tuple[INDEX_HOST]         = h;
-            tuple[INDEX_CPU_NB_CORES] = (int) ( host.getCpu().getNbCores() * CPU_FACTOR);
-            tuple[INDEX_RAM_QTY]      = (int) ( host.getRam().getQty() * RAM_FACTOR );
-            tuple[INDEX_NETWORK_COST] = (int) ( NetworkUtils.computeNetworkCost(
+            tuple[INDEX_HOST]             = h;
+            tuple[INDEX_CPU_NB_CORES]     = (int) ( host.getCpu().getNbCores() * CPU_FACTOR);
+            tuple[INDEX_RAM_QTY]          = (int) ( host.getRam().getQty() * RAM_FACTOR );
+            tuple[INDEX_NETWORK_COST]     = (int) ( NetworkUtils.computeNetworkCost(
                                                     host,
                                                     NET_BOND_WEIGHT,
                                                     NET_IP_WEIGHT) * NETWORK_FACTOR );
-            tuple[INDEX_TAGS_COST]    = (int) ( host.getTags().length * TAGS_FACTOR );
+            tuple[INDEX_TAGS_COST]        = (int) ( host.getTags().length * TAGS_FACTOR );
+            tuple[INDEX_STORAGE_NB_DISKS] = (int) ( host.getStorage().computeHardDisksNumber() );
 
             host_tuples.add(tuple);
 
@@ -179,6 +187,12 @@ public class HostsDeployment extends AbstractProblem {
             }
             if ( tags_cost_upB == -1 || tuple[INDEX_TAGS_COST] > tags_cost_upB ) {
                 tags_cost_upB = tuple[INDEX_TAGS_COST];
+            }
+            if ( storage_nb_disks_lowB == -1 || tuple[INDEX_STORAGE_NB_DISKS] < storage_nb_disks_lowB ) {
+                storage_nb_disks_lowB = tuple[INDEX_STORAGE_NB_DISKS];
+            }
+            if (storage_nb_disks_upB == -1 || tuple[INDEX_STORAGE_NB_DISKS] > storage_nb_disks_upB ) {
+                storage_nb_disks_upB = tuple[INDEX_STORAGE_NB_DISKS];
             }
         }
 
@@ -242,6 +256,10 @@ public class HostsDeployment extends AbstractProblem {
         if (tags_candidates.isEmpty()) {
             contradictions.add("None of the free hosts can match the minimal tags set constraint");
         }
+        // Check Storage contradiction
+        if (storage_nb_disks_upB < (constraints.getStorage().getHardDisksNumberMin())) {
+            contradictions.add("None of the free hosts can match the minimal hard disks number constraint");
+        }
         return contradictions;
     }
 
@@ -283,6 +301,12 @@ public class HostsDeployment extends AbstractProblem {
                 tags_cost_upB,
                 solver
         );
+        storage_nb_disks = VariableFactory.bounded(
+                "storage_total_qty",
+                storage_nb_disks_lowB,
+                storage_nb_disks_upB,
+                solver
+        );
         total_cost = VariableFactory.bounded(
                 "total_cost",
                 0,
@@ -300,32 +324,41 @@ public class HostsDeployment extends AbstractProblem {
         int scaled_min_ram = (int) ( constraints.getRam().getQtyMin() * RAM_FACTOR );
         solver.post(IntConstraintFactory.arithm(ram_qty, ">=", scaled_min_ram));
 
+        /* Storage */
+        int min_disks_nb = constraints.getStorage().getHardDisksNumberMin();
+        solver.post(IntConstraintFactory.arithm(storage_nb_disks, ">=", min_disks_nb));
+
         /* Feasible tuples */
         List<int[]> feasible_tuples = new ArrayList<int[]>();
         for (Integer candidate : candidates) {
             feasible_tuples.add(host_tuples.get(candidate));
         }
+
         IntVar[] vars = {
                 index_host,
                 cpu_nb_cores,
                 ram_qty,
                 network_cost,
-                tags_cost
+                tags_cost,
+                storage_nb_disks
         };
         int[] offsets = {
                 index_host.getLB(),
                 cpu_nb_cores.getLB(),
                 ram_qty.getLB(),
                 network_cost.getLB(),
-                tags_cost.getLB()
+                tags_cost.getLB(),
+                storage_nb_disks.getLB()
         };
         int[] dom_sizes = {
                 index_host.getDomainSize(),
                 cpu_nb_cores.getDomainSize(),
                 ram_qty.getDomainSize(),
                 network_cost.getDomainSize(),
-                tags_cost.getDomainSize()
+                tags_cost.getDomainSize(),
+                storage_nb_disks.getDomainSize()
         };
+
         IterTuplesTable relation = new IterTuplesTable(feasible_tuples, offsets, dom_sizes);
         solver.post(IntConstraintFactory.table(vars, relation, LargeCSP.Type.AC32.name()));
 

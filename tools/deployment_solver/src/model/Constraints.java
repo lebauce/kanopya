@@ -26,6 +26,11 @@ public class Constraints {
     private Network m_network;
 
     /**
+     * Constraints on the storage.
+     */
+    private Storage m_storage;
+
+    /**
      * The min set of tags constraint.
      */
     private Integer[] m_tags_min;
@@ -34,14 +39,16 @@ public class Constraints {
         this.m_cpu      = new CPU();
         this.m_ram      = new RAM();
         this.m_network  = new Network();
+        this.m_storage  = new Storage();
         this.m_tags_min = new Integer[0];
     }
 
-    public Constraints(CPU cpu, RAM ram, Network network, Integer[] tags_min) {
+    public Constraints(CPU cpu, RAM ram, Network network, Storage storage, Integer[] tags_min) {
         super();
         this.m_cpu      = cpu;
         this.m_ram      = ram;
         this.m_network  = network;
+        this.m_storage  = storage;
         this.m_tags_min = tags_min;
     }
 
@@ -57,6 +64,10 @@ public class Constraints {
 
     public Network getNetwork() {
         return m_network;
+    }
+
+    public Storage getStorage() {
+        return m_storage;
     }
 
     public Integer[] getTagsMin() {
@@ -77,6 +88,10 @@ public class Constraints {
         this.m_network = network;
     }
 
+    public void setStorage(Storage storage) {
+        this.m_storage = storage;
+    }
+
     public void setTagsMin(Integer[] tags_min) {
         this.m_tags_min = tags_min;
     }
@@ -86,6 +101,7 @@ public class Constraints {
         constraints += "\n" + "\t" + this.getCpu();
         constraints += "\n" + "\t" + this.getRam();
         constraints += "\n" + "\t" + this.getNetwork();
+        constraints += "\n" + "\t" + this.getStorage();
         constraints += "\n" + "\t" + "Tags min :";
         for (Integer tag : this.getTagsMin()) {
             constraints += "\n" + "\t\t" + tag;
@@ -261,6 +277,42 @@ public class Constraints {
                 net += "\n" + "\t\t\t\t" + "NetIPs min : " + netips + "]";
                 return net;
             }
+        }
+    }
+
+    /**
+     * POJO representing user constraints on storage.
+     * @author Dimitri Justeau
+     */
+    public static class Storage {
+
+        /**
+         * The minimum total storage size.
+         */
+        private int m_harddisks_nb_min;
+
+        public Storage(int size_min) {
+            this.m_harddisks_nb_min = size_min;
+        }
+
+        public Storage() {
+            this(-1);
+        }
+
+        // GETTERS AND SETTERS
+
+        public int getHardDisksNumberMin() {
+            return this.m_harddisks_nb_min;
+        }
+
+        public void setHardDisksNumberMin(int total_size_min) {
+            this.m_harddisks_nb_min = total_size_min;
+        }
+
+        public String toString() {
+            String storage = "Storage :";
+            storage += "\n" + "\t\t" + "Hard Disks number min : " + this.getHardDisksNumberMin();
+            return storage;
         }
     }
 }

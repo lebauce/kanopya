@@ -7,6 +7,7 @@ import model.Constraints;
 import model.Host;
 import model.Constraints.Network.Interface;
 import model.Host.Network.Iface;
+import model.Host.Storage.HardDisk;
 
 
 /**
@@ -35,6 +36,11 @@ public class InstanceGenerator {
 
     // Tags
     private final static int TAGS_MAX_NUMBER           = 5;
+
+    // Storage
+    private final static int STORAGE_MAX_HDS_NUMBER    = 3;
+    private final static int STORAGE_MIN_HD_SIZE       = 20;
+    private final static int STORAGE_MAX_HD_SIZE       = 1000;
 
     /* Private empty constructor : Utility class */
     private InstanceGenerator() {}
@@ -80,6 +86,16 @@ public class InstanceGenerator {
                 ifaces.add(iface);
             }
 
+            // Generate Storage
+            int nb_hard_disks = (int) (Math.random() * (STORAGE_MAX_HDS_NUMBER + 1));
+            List<HardDisk> hard_disks = new ArrayList<HardDisk>();
+            for (int hd = 0; hd < nb_hard_disks; hd++) {
+                int size = (int) 
+                        (Math.random()*(STORAGE_MAX_HD_SIZE - STORAGE_MIN_HD_SIZE + 1) + STORAGE_MIN_HD_SIZE);
+                HardDisk harddisk = new HardDisk(size);
+                hard_disks.add(harddisk);
+            }
+
             // Generate tags
             int nb_tags         = (int) (Math.random() * TAGS_MAX_NUMBER + 1);
             List<Integer> tags  = new ArrayList<Integer>();
@@ -96,6 +112,7 @@ public class InstanceGenerator {
                     new Host.CPU(cpu_nb_cores),
                     new Host.RAM(ram_qty),
                     new Host.Network(ifaces),
+                    new Host.Storage(hard_disks),
                     tags.toArray(new Integer[tags.size()])
             );
         }
@@ -139,6 +156,9 @@ public class InstanceGenerator {
             interfaces.add(interf);
         }
 
+        // Generate storage constraints
+        int storage_hd_nb_min = (int) (Math.random() * (STORAGE_MAX_HDS_NUMBER + 1));
+
         // Generate tags
         int nb_tags_min        = (int) (Math.random() * TAGS_MAX_NUMBER + 1);
         List<Integer> tags_min = new ArrayList<Integer>();
@@ -154,6 +174,7 @@ public class InstanceGenerator {
                 new Constraints.CPU(cpu_nb_cores_min),
                 new Constraints.RAM(ram_qty_min),
                 new Constraints.Network(interfaces),
+                new Constraints.Storage(storage_hd_nb_min),
                 tags_min.toArray(new Integer[tags_min.size()])
         );
     }

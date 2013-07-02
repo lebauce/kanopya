@@ -53,9 +53,7 @@ Select and return the more suitable host according to constraints
 All constraints args are optional, not defined means no constraint for this arg
 Final constraints are intersection of input constraints and cluster components contraints.
 
-@optional core min number of desired core
-@optional ram  min amount of desired ram  # TODO manage unit (M,G,..)
-@optional interfaces Interfaces of the 
+@param cluster The cluster containing all the constraints, and a reference to the free hosts list.
 
 @return the selected host
 
@@ -113,17 +111,25 @@ sub getHost {
             };
             push @json_ifaces, $json_iface;
         }
+        # Construct hard disks structure
+        my @hard_disks;
+        for my $harddisk ($host->harddisks) {
+            push @hard_disks, { size => $harddisk->harddisk_size/1024/1024/1024 };
+        }
         # Construct the current host
         my @tags = map { $_->id } $host->tags;
         my $current = {
             cpu     => {
-                nbCores => $host->host_core,
+                nbCores   => $host->host_core,
             },
             ram     => {
-                qty     => $host->host_ram/1024/1024,
+                qty       => $host->host_ram/1024/1024,
             },
             network => {
-                ifaces  => \@json_ifaces,
+                ifaces    => \@json_ifaces,
+            },
+            storage => {
+                hardDisks => \@hard_disks,
             },
             tags => \@tags,
         };
@@ -159,19 +165,22 @@ sub getHost {
     }
 
     # Construct the constraint json object
-    my $tags = defined( $host_params->{tags} ) ? $host_params->{tags} : [];
-
+    my $tags             = defined( $host_params->{tags} ) ? $host_params->{tags} : [];
+    my $min_disks_number = $host_params->{deploy_on_disk} ? 1 : 0;
     my $json_constraints = {
         cpu      => {
-            nbCoresMin => $host_params->{core},
+            nbCoresMin         => $host_params->{core},
         },
         ram      => {
-            qtyMin     => $host_params->{ram}/1024/1024,
+            qtyMin             => $host_params->{ram}/1024/1024,
         },
         network  => {
-            interfaces => \@json_interfaces,
+            interfaces         => \@json_interfaces,
         },
-        tagsMin => $tags,
+        storage  => {
+            hardDisksNumberMin => $min_disks_number,
+        },
+        tagsMin  => $tags,
     };
 
     $log->debug('HostSelector : Creating JSON temp files');
