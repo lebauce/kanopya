@@ -347,7 +347,7 @@ sub registerUsers {
           desc    => 'Cluster master group containing all clusters',
           system  => 1,
           methods => {
-              'Sales' => [ 'subscribe' , 'unsubscribe' ],
+              'Sales' => [ 'create', 'subscribe', 'unsubscribe' ],
           }
         },
         { name    => 'Kernel',
@@ -394,8 +394,21 @@ sub registerUsers {
           desc    => 'ServiceTemplate group containing all service templates',
           system  => 1,
           methods => {
-              'ServiceDeveloper' => [ 'create', 'update', 'remove', 'get' ],
-              'Sales'            => [ 'get' ]
+              'ServiceDeveloper' => [ 'getServiceTemplateDef', 'create', 'update', 'remove', 'get' ],
+              'Sales'            => [ 'getServiceTemplateDef', 'get' ]
+          }
+        },
+        { name    => 'WorkflowDef',
+          type    => 'WorkflowDef',
+          desc    => 'WorkflowDef group containing all workflow definitions',
+          system  => 1,
+          # Required as service intance user need to get workflows definitions
+          # when associating workflow to rules. Better architecture should remove
+          # this requirement.
+          methods => {
+              'ServiceDeveloper' => [ 'get', 'updateParamPreset' ],
+              'Sales'            => [ 'get', 'updateParamPreset' ],
+              'Customer'         => [ 'get', 'updateParamPreset' ],
           }
         },
         { name    => 'Network',
@@ -407,6 +420,22 @@ sub registerUsers {
           type    => 'Gp',
           desc    => 'Groups master group containing all groups',
           system  => 1
+        },
+        { name    => 'Workflow',
+          type    => 'Workflow',
+          desc    => 'Workflow master group containing all workflows',
+          system  => 1,
+          methods => {
+              'Sales' => [ 'get', 'cancel' ],
+          }
+        },
+        { name    => 'Operation',
+          type    => 'Operation',
+          desc    => 'Operation master group containing all operations',
+          system  => 1,
+          methods => {
+              'Sales' => [ 'get' ],
+          }
         },
         # Re-handle the Entity group here to set permissions on methods,
         # indeed, we need have user groups created before setting permissions,
@@ -427,6 +456,7 @@ sub registerUsers {
 
         BaseDB::requireClass($classtype);
 
+        my $hierarchy = $classtype;
         my ($parenttype) = Class::ISA::super_path($classtype);
         my $methods    = $classtype->getMethods();
         for my $parentmethod (keys %{$parenttype->getMethods()}) {
@@ -437,11 +467,12 @@ sub registerUsers {
         if (scalar (@methodlist)) {
             $classtype =~ s/.*\:\://g;
             push @{$groups}, {
-                name    => $classtype,
-                type    => $classtype,
-                desc    => $classtype . " master group",
-                system  => 1,
-                methods => {
+                name      => $classtype,
+                type      => $classtype,
+                desc      => $classtype . " master group",
+                hierarchy => $hierarchy,
+                system    => 1,
+                methods   => {
                     'Administrator' => \@methodlist
                 }
             }
@@ -461,6 +492,9 @@ sub registerUsers {
                       gp_desc   => $group->{desc},
                       gp_type   => $group->{type}
                   );
+        }
+        if ($group->{hierarchy}) {
+            $gp->appendToHierarchyGroups(hierarchy => $group->{hierarchy});
         }
 
         if (defined ($group->{methods})) {
