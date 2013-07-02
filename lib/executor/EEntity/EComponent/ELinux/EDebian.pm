@@ -115,7 +115,13 @@ sub service {
             system("chroot $args{mount_point} invoke-rc.d " . $service . " " . $args{command});
         }
         if (defined ($args{state})) {
-            system("chroot $args{mount_point} /sbin/insserv -d $service");
+            # TODO : specialize EDebian class into EUbuntu and overwrite `service` sub
+            if (not system("[ -f $args{mount_point}/sbin/insserv ]")) {
+                system("chroot $args{mount_point} /sbin/insserv -d $service");
+            }
+            else {
+                system("chroot $args{mount_point} /usr/sbin/update-rc.d $service defaults");
+            }
         }
     }
 }
