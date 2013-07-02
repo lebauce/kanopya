@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head profile="http://selenium-ide.openqa.org/profiles/test-case">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<link rel="selenium.base" href="http://localhost:5000/" />
+<title>AddServiceCombination</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">AddServiceCombination</td></tr>
+</thead><tbody>
+<tr>
+	<td>click</td>
+	<td>css=#menuhead_Services &gt; a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForTextPresent</td>
+	<td>Standard physical cluster</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Standard physical cluster</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForTextPresent</td>
+	<td>MyService</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=MyService</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//div[starts-with(@id,'view_MyService_')]/ul/li[5]/a/span</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Service</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//div[@id='service_metric_comb_action_buttons']/button</td>
+	<td></td>
+</tr>
+<tr>
+	<td>type</td>
+	<td>id=input_aggregate_combination_label</td>
+	<td>MyServiceCombination</td>
+</tr>
+<tr>
+	<td>typeKeys</td>
+	<td>id=input_aggregate_combination_formula</td>
+	<td>sum</td>
+</tr>
+<tr>
+	<td>waitForElementPresent</td>
+	<td>//html/body/ul/li/a[. = &quot;sum(mem/Total)&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>mouseOver</td>
+	<td>//html/body/ul/li/a[. = &quot;sum(mem/Total)&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//html/body/ul/li/a[. = &quot;sum(mem/Total)&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>sendKeys</td>
+	<td>id=input_aggregate_combination_formula</td>
+	<td> + </td>
+</tr>
+<tr>
+	<td>waitForElementPresent</td>
+	<td>//html/body/ul/li/a[. = &quot;mean(mem/Total)&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>mouseOver</td>
+	<td>//html/body/ul/li/a[. = &quot;mean(mem/Total)&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//html/body/ul/li/a[. = &quot;mean(mem/Total)&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=button-ok</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#[id^= 'last_service_resources_aggregate_combinations_'] &gt; span.ui-icon.ui-icon-seek-end</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForTextPresent</td>
+	<td>MyServiceCombination</td>
+	<td></td>
+</tr>
+</tbody></table>
+</body>
+</html>
