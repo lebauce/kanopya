@@ -83,6 +83,12 @@ sub check {
     # Check all the components are properly configured
     my @components = $self->{context}->{cluster}->components;
     map { $_->checkConfiguration() } @components;
+
+    # Managing vm scale out after automatic hypervisor scale out (sorry...)
+    if (! defined $self->{params}->{needhypervisor} && defined $self->{context}->{vm_cluster}) {
+        $self->{context}->{cluster} = $self->{context}->{vm_cluster};
+        delete $self->{context}->{vm_cluster};
+    }
 }
 
 
@@ -98,13 +104,26 @@ sub prepare {
     my ($self, %args) = @_;
     $self->SUPER::prepare(%args);
 
+    # Ask to the manager if we can use them
+    $self->{context}->{host_manager}->increaseConsumers();
+    $self->{context}->{disk_manager}->increaseConsumers();
+    $self->{context}->{export_manager}->increaseConsumers();
+
+
+    # $self->{params}->{needhypervisor} comes from the case of automatic hypervisor scaleout when
+    # infrastructure needs more space
+
+    if (defined $self->{params}->{needhypervisor}) {
+        $log->debug('Do not manage EAddNode states when comming from automatic hypervideur add');
+        return 0;
+    }
 
     # Check cluster states
     my @entity_states = $self->{context}->{cluster}->entity_states;
 
     for my $entity_state (@entity_states) {
         throw Kanopya::Exception::Execution::InvalidState(
-                  error => "The vm cluster <"
+                  error => "The cluster <"
                            .$self->{context}->{host_manager_sp}->cluster_name
                            .'> is <'.$entity_state->state
                            .'> which is not a correct state to accept addnode'
@@ -149,11 +168,6 @@ sub prepare {
 
     $self->{context}->{cluster}->setState(state => 'updating');
     $self->{context}->{cluster}->setConsumerState(state => 'updating', consumer => $self->workflow);
-
-    # Ask to the manager if we can use them
-    $self->{context}->{host_manager}->increaseConsumers();
-    $self->{context}->{disk_manager}->increaseConsumers();
-    $self->{context}->{export_manager}->increaseConsumers();
 }
 
 
@@ -174,7 +188,7 @@ sub prerequisites {
 
     # TODO: Move this virtual machine specific code to the host manager
     if ($host_type eq 'Virtual Machine') {
-        my @hvs   = @{ $self->{context}->{host_manager}->hypervisors };
+        my @hvs = @{ $self->{context}->{host_manager}->hypervisors };
         my @hv_in_ids;
         for my $hv (@hvs) {
             my ($state,$time_stamp) = $hv->getNodeState();
@@ -232,20 +246,23 @@ sub prerequisites {
             return 0;
         }
         else {
-            throw Kanopya::Exception::Internal('Hypervisor cluster is full ! Please start a new hypervisor');
+#            throw Kanopya::Exception::Internal('Hypervisor cluster is full ! Please start a new hypervisor');
             # TODO debug with state management
 
-#            $log->info('Need to start a new hypervisor');
-#            my $host_manager_sp = $self->{context}->{host_manager}->service_provider;
-#            my $workflow_to_enqueue = { name => 'AddNode', params => { context => { cluster => $host_manager_sp, }  }};
-#
-#            $self->workflow->enqueueBefore(
-#                current_operation => $self,
-#                workflow          => $workflow_to_enqueue,
-#            );
-#
-#            $log->info('Enqueue "add hypervisor" operations before starting a new virtual machine');
-#            return -1;
+            $log->info('Need to start a new hypervisor');
+            $self->{context}->{vm_cluster} = $self->{context}->{cluster};
+            my @vmms = $self->{context}->{host_manager}->vmms;
+            my $host_manager_sp = $vmms[0]->service_provider;
+            my $workflow_to_enqueue = { name => 'AddNode', params => { context => { cluster => $host_manager_sp, }  }};
+
+            $self->workflow->enqueueBefore(
+                current_operation => $self,
+                workflow          => $workflow_to_enqueue,
+            );
+
+            $log->info('Enqueue "add hypervisor" operations before starting a new virtual machine');
+            $self->{params}->{needhypervisor} = 1;
+            return -1;
         }
    }
    else {   #Physical
@@ -472,25 +489,41 @@ Restore the clutser and host states.
 
 sub cancel {
     my ($self, %args) = @_;
-    $self->SUPER::finish(%args);
+    $self->SUPER::cancel(%args);
 
-    $self->{context}->{cluster}->restoreState();
+    if (defined $self->{params}->{needhypervisor}) {
+        $self->{context}->{cluster}->setState(state => 'up');
+    }
+    else {
+        $self->{context}->{cluster}->restoreState();
+    }
+
+
     $self->{context}->{cluster}->removeState(consumer => $self->workflow);
 
     if (defined $self->{context}->{host_manager_sp}) {
+        $log->debug('Remove host_manager sp <'.$self->{context}->{host_manager_sp}->id.'> state');
         $self->{context}->{host_manager_sp}->setState(state => 'up');
         $self->{context}->{host_manager_sp}->removeState(consumer => $self->workflow);
     }
 
     if (defined $self->{context}->{host}) {
+        $log->debug('Remove host <'.$self->{context}->{host}->id.'> state');
         $self->{context}->{host}->setState(state => 'down');
         $self->{context}->{host}->removeState(consumer => $self->workflow);
     }
 
-    # Add state to hypervisor if defined
     if (defined $self->{context}->{hypervisor}) {
+        $log->debug('Remove hypervisor <'.$self->{context}->{hypervisor}->id.'> state');
         $self->{context}->{hypervisor}->removeState(consumer => $self->workflow);
     }
+
+    if (defined $self->{context}->{vm_cluster}) {
+        $log->debug('Remove vm_cluster <'.$self->{context}->{vm_cluster}->id.'> state');
+        $self->{context}->{vm_cluster}->setState(state => 'up');
+        $self->{context}->{vm_cluster}->removeState(consumer => $self->workflow);
+    }
+
 
     if (defined $self->{context}->{host}) {
         eval {
