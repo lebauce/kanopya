@@ -24,6 +24,7 @@ use warnings;
 
 use Kanopya::Exceptions;
 
+use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
@@ -31,5 +32,33 @@ my $log = get_logger("");
 use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, require => [ 'host' ]);
+
+    my $host_params   = $args{host}->node->service_provider->getManagerParameters(
+        manager_type => 'HostManager'
+    );
+
+    my $initiatorname = '';
+    if ($host_params->{deploy_on_disk}) {
+        $initiatorname    = $args{host}->host_initiatorname;
+    }
+
+    my $manifest = $self->instanciatePuppetResource(
+        name   => "kanopya::openiscsi",
+        params => {
+            initiatorname => $initiatorname
+        }
+    );
+
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        openiscsi => {
+            manifest => $manifest
+        }
+    } );
+}
 
 1;
