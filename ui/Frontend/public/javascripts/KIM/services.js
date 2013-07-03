@@ -265,7 +265,7 @@ function createServiceGraphs(cid, service_template_id) {
         graphs_visible = true;
         var customer_filter = '';
         if (current_user.profiles.length == 1 && current_user.profiles[0].profile_name === "Customer") {
-            customer_filter = '&user_id=' + current_user.user_id;
+            customer_filter = '&user.user_id=' + current_user.user_id;
         }
         // Get infos
         var url = '/api/cluster?expand=nodes,nodes.host,user&cluster_name=<>,Kanopya' + customer_filter;
