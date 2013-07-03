@@ -100,7 +100,9 @@ function formatCheckedNodes (nodes) {
 function vsphereBrowser (vsphere_id) {
     require('jquery/jquery.jstree.js');
     var browser = $('<div>');
+    var error_import = $('<div>', {id : 'error_import'});
     var tree_container = $('<div>', {id : 'vsphere_tree'});
+    browser.append(error_import);
     browser.append(tree_container);
 
     var url_base = '/api/vsphere5/' + vsphere_id;
@@ -195,6 +197,7 @@ function vsphereBrowser (vsphere_id) {
                     return data_sent;
                 },
                 'success'   :   function (returnedData) {
+                    error_import.text('').removeClass('ui-state-error');
                     var id_response = returnedData.id_response;
                     var parentNodeTreeName = parents[id_response].parentNodeTreeName;
                     var parentNodeTreeType = parents[id_response].parentNodeTreeType;
@@ -207,6 +210,16 @@ function vsphereBrowser (vsphere_id) {
                         );
                         
                     return returnedFormattedData;
+                },
+                'error'   :   function (data) {
+                    var error_msg;
+                    try {
+                        error_msg = JSON.parse(data.responseText).reason;
+                    }
+                    catch (e) {
+                        error_msg = data.responseText;
+                    }
+                    error_import.text(error_msg).addClass('ui-state-error');
                 }
             }
         }
