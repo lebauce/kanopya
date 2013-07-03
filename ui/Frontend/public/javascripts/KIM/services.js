@@ -97,14 +97,14 @@ function servicesList (container_id, elem_id) {
                 displayed    : [ 'cluster_name', 'cluster_desc', 'user_id', 'service_template_id' ],
                 rawattrdef   : {
                     cluster_name : {
-                        label        : 'Service name',
+                        label        : 'Instance name',
                         type         : 'string',
                         pattern      : '^[a-zA-Z_0-9]+$',
                         is_mandatory : true,
                         is_editable  : true
                     },
                     cluster_desc : {
-                        label        : 'Service description',
+                        label        : 'Instance description',
                         type         : 'text',
                         pattern      : '^.*$',
                         is_mandatory : false,
