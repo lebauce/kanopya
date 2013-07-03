@@ -671,42 +671,31 @@ Find a view of a specified managed object type
 sub findEntityView {
     my ($self,%args) = @_;
 
-    #Check of Global parameters
-    General::checkParams(args     => \%args,
-                         required => ['view_type','hash_filter'],
-                         optional => {
-                             'array_property' => undef,
-                             'begin_entity'   => undef,
-                         });
+    General::checkParams(
+        args     => \%args,
+        required => ['view_type','hash_filter'],
+        optional => {
+            'array_property' => undef,
+            'begin_entity'   => undef,
+        }
+    );
 
     $self->negociateConnection();
 
-    my $hash_filter  = $args{hash_filter};
-    my $view_type    = $args{view_type};
-    my $begin_entity = $args{begin_entity};
-
-    my $array_property = undef;
-    if ($args{array_property}) {
-        $array_property = $args{array_property};
-    }
+    my $hash = {
+        view_type    => $args{view_type},
+        filter       => $args{hash_filter},
+        properties   => $args{array_property},
+    };
+    $hash->{begin_entity} = $args{begin_entity} if (defined $args{begin_entity});
 
     my $view;
     eval {
-        if (defined $begin_entity) {
-            $view = Vim::find_entity_view(view_type    => $view_type,
-                                          filter       => $hash_filter,
-                                          properties   => $array_property,
-                                          begin_entity => $begin_entity,);
-        }
-        else {
-            $view = Vim::find_entity_view(view_type  => $view_type,
-                                          filter     => $hash_filter,
-                                          properties => $array_property,);
-        }
+        $view = Vim::find_entity_view(%$hash);
     };
     if ($@) {
-        $errmsg = 'Could not get entity '.$hash_filter->{name}.' of type '.$view_type.': '.$@."\n";
-        $log->error($errmsg);
+        $errmsg = 'Could not get entity ' . keys(%{ $args{hash_filter} })
+                  . ' of type ' . $args{view_type} . ': '. $@;
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
@@ -742,7 +731,6 @@ Find some views of a specified managed object type
 sub findEntityViews {
     my ($self,%args) = @_;
 
-    #Check of Global parameters
     General::checkParams(args     => \%args,
                          required => ['view_type'],
                          optional => {
@@ -753,36 +741,19 @@ sub findEntityViews {
 
     $self->negociateConnection();
 
-    my $hash_filter  = $args{hash_filter};
-    my $view_type    = $args{view_type};
-    my $begin_entity = $args{begin_entity};
-
-    my $array_property = undef;
-    if ($args{array_property}) {
-        $array_property = $args{array_property};
-    }
+    my $hash = {
+        view_type    => $args{view_type},
+        filter       => $args{hash_filter},
+        properties   => $args{array_property},
+    };
+    $hash->{begin_entity} = $args{begin_entity} if (defined $args{begin_entity});
 
     my $views;
     eval {
-        if (defined $begin_entity) {
-            $views = Vim::find_entity_views(
-                         view_type    => $view_type,
-                         filter       => $hash_filter,
-                         properties   => $array_property,
-                         begin_entity => $begin_entity,
-                     );
-        }
-        else {
-            $views = Vim::find_entity_views(
-                         view_type  => $view_type,
-                         filter     => $hash_filter,
-                         properties => $array_property,
-                     );
-        }
+        $views = Vim::find_entity_views(%$hash);
     };
     if ($@) {
-        $errmsg = 'Could not get entities of type '.$view_type.': '.$@."\n";
-        $log->error($errmsg);
+        $errmsg = 'Could not get entities of type ' . $args{view_type} . ': ' . $@;
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
