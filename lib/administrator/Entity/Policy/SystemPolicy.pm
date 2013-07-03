@@ -162,17 +162,16 @@ sub getPolicyDef {
         pattern      => '^\d*$',
         is_mandatory => 1
     };
-    if (defined $args{params}->{masterimage_id}) {
-        $attributes->{attributes}->{systemimage_size} = {
-            label        => 'System image size',
-            type         => 'integer',
-            unit         => 'byte',
-            pattern      => '^\d*$',
-            is_mandatory => 1
-        };
-        # Insert systemimage_size after
-        splice @{ $attributes->{displayed} }, 2, 0, 'systemimage_size';
-    }
+
+    $attributes->{attributes}->{systemimage_size} = {
+        label        => 'System image size',
+        type         => 'integer',
+        unit         => 'byte',
+        pattern      => '^\d*$',
+        is_mandatory => 1
+    };
+    # Insert systemimage_size after
+    splice @{ $attributes->{displayed} }, 2, 0, 'systemimage_size';
 
     $attributes->{attributes}->{kernel_id}->{options} = \@kernels;
     $attributes->{attributes}->{masterimage_id}->{options} = \@masterimages;
