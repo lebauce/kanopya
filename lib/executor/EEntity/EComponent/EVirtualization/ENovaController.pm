@@ -84,8 +84,25 @@ sub postStartNode {
         my $api = $self->api;
         my $route = 'os-security-groups';
         my $resp = $api->compute->$route->get();
-        my $group = $resp->{security_groups}->[0]->{id};
 
+        if (! scalar(@{$resp->{security_groups}})) {
+            # We can't customize the default security group unless we create a
+            # network or an other security group https://bugs.launchpad.net/quantum/+bug/1148538
+            $resp = $api->compute->$route->post(
+                content => {
+                    security_group => {
+                        name => 'foo',
+                        description => 'removeme'
+                    }
+               }
+            );
+
+            if (defined ($resp->{security_group})) {
+                $api->compute->$route(id => $resp->{security_group}->{id})->delete;
+            }
+        }
+
+        my $group = $resp->{security_groups}->[0]->{id};
         $route = 'os-security-group-rules';
         $api->compute->$route->post(
             content => {
