@@ -430,7 +430,6 @@ function get_current_user () {
 
 function current_user_has_any_profiles (profiles) {
     for (var index in current_user.profiles) {
-        console.log(current_user.profiles[index]);
         if ($.inArray(current_user.profiles[index].profile_name, profiles) >= 0) {
             return 1;
         }
