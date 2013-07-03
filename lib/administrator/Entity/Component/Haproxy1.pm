@@ -63,7 +63,8 @@ sub getPuppetDefinition {
                             options   => {
                                 option => ['tcplog'],
                                 balance => $listen->listen_balance
-                            }
+                            },
+                            tag       => 'kanopya::haproxy'
                         }
                      );
     }
