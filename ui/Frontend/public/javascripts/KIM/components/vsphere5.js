@@ -227,7 +227,6 @@ function vsphereBrowser (event) {
     browser.dialog({
         title   :   'Import vSphere architecture',
         modal   :   true,
-        // TODO width's value in CSS
         width   :   '400 px',
         buttons :   {
             Cancel: function () {
@@ -237,19 +236,34 @@ function vsphereBrowser (event) {
                 var firstLevelTree = $(tree_container).children('ul').children('li');
                 var formattedCheckedNodes = formatCheckedNodes(firstLevelTree);
 
-                // send formatted checked nodes to API for insertion in Kanopya Database
-                $.ajax({
-                    type        :   'POST',
-                    url         :   url_base + '/register',
-                    contentType : 'application/json',
-                    data        :   JSON.stringify({
-                        'register_items'    :   formattedCheckedNodes,
-                    }),
-                }).done(function (success_msg){
-                    alert ('Data imported successfully in Kanopya');
-                }).fail(function (error_msg){
-                    alert ('Error in data import');
-                });
+                if (formattedCheckedNodes.length > 0) {
+                    var dialog = $("<div>", { id : "waiting_import", title : "Importing items", text : "Please wait..." });
+                    dialog.css('text-align', 'center');
+                    dialog.appendTo("body").dialog({
+                        resizable   : false
+                    });
+
+                    // send formatted checked nodes
+                    $.ajax({
+                        type        :   'POST',
+                        url         :   url_base + '/register',
+                        contentType : 'application/json',
+                        data        :   JSON.stringify({
+                            'register_items'    :   formattedCheckedNodes,
+                        }),
+                        success     : function() {
+                            dialog.remove();
+                            service_menu_id = 'menuhead_Services';
+                            // TODO improve click simulation
+                            $('#' + service_menu_id).click();
+                            alert ('Data imported successfully in Kanopya');
+                        },
+                        error       : function() {
+                            dialog.remove();
+                            alert ('Error in data import');
+                        },
+                    });
+                }
 
                 $(this).dialog('close');
             },
