@@ -186,7 +186,7 @@ function vsphereBrowser (event) {
                             // retrieve Virtual Machines on an Hypervisor hosted on a Cluster
                             data_sent = {
                                 'datacenter_name'    :    current_node.attr('grand_parent_name'),
-                                'hypervisor_name'    :    current_node.attr('name'),
+                                'hypervisor_uuid'    :    current_node.attr('uuid'),
                             };
                             parents[id_request].grandParentNodeTreeName = null;
                         }
@@ -194,7 +194,7 @@ function vsphereBrowser (event) {
                             // retrieve Virtual Machines on an Hypervisor hosted on a Datacenter
                             data_sent = {
                                 'datacenter_name'    :    current_node.attr('parent_name'),
-                                'hypervisor_name'    :    current_node.attr('name'),
+                                'hypervisor_uuid'    :    current_node.attr('uuid'),
                             };
                             parents[id_request].grandParentNodeTreeName = null;
                         }
