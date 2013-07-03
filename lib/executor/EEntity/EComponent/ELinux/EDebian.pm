@@ -115,7 +115,20 @@ sub service {
             system("chroot $args{mount_point} invoke-rc.d " . $service . " " . $args{command});
         }
         if (defined ($args{state})) {
-            system("chroot $args{mount_point} /sbin/insserv -d $service");
+            # TODO : specialize EDebian class into EUbuntu and overwrite `service` sub
+            if (not system("[ -f $args{mount_point}/sbin/insserv ]")) {
+                system("chroot $args{mount_point} /sbin/insserv -d $service");
+            }
+            else {
+                system("cp " . $args{mount_point} . "/etc/init.d/" . $service . " " . $args{mount_point} . "/etc/rc0.d/K30" . $service);
+                system("cp " . $args{mount_point} . "/etc/init.d/" . $service . " " . $args{mount_point} . "/etc/rc1.d/K30" . $service);
+                system("cp " . $args{mount_point} . "/etc/init.d/" . $service . " " . $args{mount_point} . "/etc/rc2.d/S30" . $service);
+                system("cp " . $args{mount_point} . "/etc/init.d/" . $service . " " . $args{mount_point} . "/etc/rc3.d/S30" . $service);
+                system("cp " . $args{mount_point} . "/etc/init.d/" . $service . " " . $args{mount_point} . "/etc/rc4.d/S30" . $service);
+                system("cp " . $args{mount_point} . "/etc/init.d/" . $service . " " . $args{mount_point} . "/etc/rc5.d/S30" . $service);
+                system("cp " . $args{mount_point} . "/etc/init.d/" . $service . " " . $args{mount_point} . "/etc/rc6.d/K30" . $service);
+                system("cp " . $args{mount_point} . "/etc/init.d/" . $service . " " . $args{mount_point} . "/etc/rcS.d/K30" . $service);
+            }
         }
     }
 }
