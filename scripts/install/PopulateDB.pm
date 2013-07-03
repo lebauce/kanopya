@@ -347,7 +347,7 @@ sub registerUsers {
           desc    => 'Cluster master group containing all clusters',
           system  => 1,
           methods => {
-              'Sales' => [ 'create', 'subscribe', 'unsubscribe' ],
+              'Sales' => [ 'get', 'create', 'subscribe', 'unsubscribe' ],
           }
         },
         { name    => 'Kernel',
@@ -376,8 +376,8 @@ sub registerUsers {
           system  => 1,
           methods => {
               'ServiceDeveloper' => [ 'get' ],
-              'Sales'            => [ 'get' ],
-              'Guest'            => [ 'getParamsDef' ]
+              'Sales'            => [ 'get', 'getConf' ],
+              'Guest'            => [ 'getManagerParamsDef' ]
           }
         },
         { name    => 'Policy',
