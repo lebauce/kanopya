@@ -70,12 +70,6 @@ sub getPuppetDefinition {
         $bridge_flat = $iface->iface_name if not $bridge_flat;
     }
 
-    my $glance = join(",", map { $_->getMasterNode->fqdn . ":9292" } $self->nova_controller->glances);
-    my $keystone = $self->nova_controller->keystone->getMasterNode->fqdn;
-    my $quantum = ($self->nova_controller->quantums)[0];
-    my $amqp = $self->nova_controller->amqp->getMasterNode->fqdn;
-    my $name = "nova-" . $self->nova_controller->id;
-
     my @uplinks;
 
     if ($bridge_flat) {
@@ -86,22 +80,25 @@ sub getPuppetDefinition {
         push @uplinks, "br-vlan:" . $bridge_vlan;
     }
 
+    my @optionals = ($self->nova_controller->amqp, $self->nova_controller->keystone);
+    my @quantums = $self->nova_controller->quantums;
+    my @glances = $self->nova_controller->glances;
+    push @optionals, $quantums[0] if @quantums;
+    push @optionals, $glances[0] if @glances;
+
     return merge($self->SUPER::getPuppetDefinition(%args), {
         novacompute => {
             manifest => $self->instanciatePuppetResource(
                             name => "kanopya::openstack::nova::compute",
                             params => {
-                                glance => $glance,
-                                keystone => $keystone,
-                                quantum => $quantum->getMasterNode->fqdn,
                                 bridge_uplinks => \@uplinks,
                                 email => $self->nova_controller->service_provider->user->user_email,
                                 libvirt_type => 'kvm',
-                                rabbit_user => $name,
+                                rabbit_user => "nova-" . $self->nova_controller->id,
                                 rabbit_virtualhost => 'openstack-' . $self->nova_controller->id
                             }
                         ),
-            dependencies => [ $self->nova_controller->amqp ]
+            optionals => \@optionals
         }
     } );
 }
@@ -121,7 +118,10 @@ sub getHostsEntries {
 }
 
 sub checkConfiguration {
-    shift->checkAttribute(attribute => "iaas");
+    my $self = shift;
+
+    $self->checkAttribute(attribute => "iaas");
+    $self->checkDependency(component => $self->iaas);
 }
 
 1;

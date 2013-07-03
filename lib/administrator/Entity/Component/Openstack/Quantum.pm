@@ -57,16 +57,8 @@ sub getNetConf {
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;
-    my $definition = $self->SUPER::getPuppetDefinition(%args);
 
-    my $keystone =  $self->nova_controller->keystone->getBalancerAddress(port => 5000) ||
-                    $self->nova_controller->keystone->getMasterNode->fqdn;
-    
-    my $amqp = $self->nova_controller->amqp->getMasterNode->fqdn;
-    
-    my $sql = $self->mysql5->getBalancerAddress(port => 3306) ||
-              $self->mysql5->getMasterNode->fqdn;
-    
+    my $definition = $self->SUPER::getPuppetDefinition(%args);
     my $name = "quantum-" . $self->id;
 
     my $manifest = $self->instanciatePuppetResource(
@@ -107,6 +99,10 @@ sub checkConfiguration {
 
     for my $attr ("mysql5", "nova_controller") {
         $self->checkAttribute(attribute => $attr);
+    }
+
+    for my $component ($self->mysql5, $self->nova_controller->keystone, $self->nova_controller->amqp) {
+        $self->checkDependency(component => $component);
     }
 }
 

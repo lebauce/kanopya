@@ -1,20 +1,8 @@
 class kanopya::openstack::nova::controller(
     $admin_password,
     $email,
-    $glance,
-    $quantum,
     $keystone_user            = 'nova',
     $keystone_password        = 'nova',
-    $cinder_database_user     = 'cinder',
-    $cinder_database_password = 'cinder',
-    $cinder_database_name     = 'cinder',
-    $cinder_keystone_user     = 'cinder',
-    $cinder_keystone_password = 'cinder',
-    $glance_database_user     = 'glance',
-    $glance_database_password = 'glance',
-    $glance_database_name     = 'glance',
-    $glance_keystone_user     = 'glance',
-    $glance_keystone_password = 'glance',
     $database_user            = 'nova',
     $database_password        = 'nova',
     $database_name            = 'nova',
@@ -27,8 +15,21 @@ class kanopya::openstack::nova::controller(
     $dbserver = $components[novacontroller][mysql][mysqld][tag]
     $dbip = $components[novacontroller][mysql][mysqld][ip]
     $keystone = $components[novacontroller][keystone][keystone_admin][tag]
+    $keystone_ip = $components[novacontroller][keystone][keystone_admin][ip]
     $amqpserver = $components[novacontroller][amqp][amqp][tag]
     $rabbits = $components[novacontroller][amqp][nodes]
+
+    if has_key($components[novacontroller], 'quantum') {
+        $quantum = $components[novacontroller][quantum][quantum][ip]
+    } else {
+        $quantum = undef
+    }
+
+    if has_key($components[novacontroller], 'glance') {
+        $glance_registry = $components[novacontroller][glance][glance_registry][ip]
+    } else {
+        $glance_registry = undef
+    }
 
     if ! defined(Class['kanopya::openstack::repository']) {
         class { 'kanopya::openstack::repository': }
@@ -100,26 +101,6 @@ class kanopya::openstack::nova::controller(
             internal_url => "http://${fqdn}:8774/v2/\$(tenant_id)s",
             tag          => "${keystone}"
         }
-
-        $glance_access_ip = $components[novacontroller][access][image_api][ip]
-        @@keystone_endpoint { "RegionOne/glance":
-            ensure       => present,
-            public_url   => "http://${glance_access_ip}:9292/v1",
-            admin_url    => "http://${fqdn}:9292/v1",
-            internal_url => "http://${fqdn}:9292/v1",
-            tag          => "${keystone}"
-        }
-
-        if has_key($components[novacontroller][access], 'volume_api') {
-            $cinder_access_ip = $components[novacontroller][access][volume_api][ip]
-            @@keystone_endpoint { "RegionOne/cinder":
-                ensure       => present,
-                public_url   => "http://${cinder_access_ip}:8776/v1/\$(tenant_id)s",
-                admin_url    => "http://${fqdn}:8776/v1/\$(tenant_id)s",
-                internal_url => "http://${fqdn}:8776/v1/\$(tenant_id)s",
-                tag          => "${keystone}"
-            }
-        }
     }
     else {
         @@database_user { "${database_user}@${ipaddress}":
@@ -135,69 +116,27 @@ class kanopya::openstack::nova::controller(
 
     if ! defined(Class['kanopya::openstack::nova::common']) {
         class { 'kanopya::openstack::nova::common':
-            glance             => "${glance}",
-            keystone           => "${keystone}",
-            quantum            => "${quantum}",
-            email              => "${email}",
-            dbserver           => "${dbserver}",
-            database_user      => "${database_user}",
-            database_name      => "${database_name}",
+            glance             => $glance_registry,
+            quantum            => $quantum,
+            keystone           => $keystone_ip,
+            email              => $email,
+            sql_connection     => "mysql://${database_user}:${database_password}@${dbip}/${database_name}",
             rabbits            => $rabbits,
-            rabbit_user        => "${rabbit_user}",
-            rabbit_password    => "${rabbit_password}",
-            rabbit_virtualhost => "${rabbit_virtualhost}"
+            rabbit_user        => $rabbit_user,
+            rabbit_password    => $rabbit_password,
+            rabbit_virtualhost => $rabbit_virtualhost
         }
     }
 
     class { 'nova::api':
         enabled          => true,
         admin_password   => "${admin_password}",
-        auth_host        => $keystone,
+        auth_host        => $keystone_ip,
         api_bind_address => $components[novacontroller][listen][compute_api][ip],
         metadata_listen  => $components[novacontroller][listen][metadata_api][ip],
         require          => [ Exec["/usr/bin/nova-manage db sync"],
                               Class['kanopya::openstack::repository'] ]
     }
-
-    if ! defined(Class['cinder']) {
-        class { '::cinder':
-            rabbit_hosts        => $rabbits,
-            sql_connection      => "mysql://${cinder_database_user}:${cinder_database_password}@${components['cinder']['mysql']['mysqld']['ip']}/${cinder_database_name}",
-            rabbit_userid       => "${rabbit_user}",
-            rabbit_password     => "${rabbit_password}",
-            rabbit_virtual_host => "${rabbit_virtualhost}"
-        }
-    }
-
-    class { 'cinder::api':
-        keystone_auth_host => $keystone,
-        keystone_tenant    => 'services',
-        keystone_password  => "${cinder_keystone_password}",
-        bind_host          => $components[novacontroller][listen][volume_api][ip],
-        require            => Exec['/usr/bin/cinder-manage db sync'],
-    }
-
-    class { 'glance::api':
-        auth_type         => '',
-        auth_port         => '35357',
-        auth_host         => $keystone,
-        bind_host         => $components[novacontroller][listen][image_api][ip],
-        keystone_tenant   => 'services',
-        keystone_user     => "${glance_keystone_user}",
-        keystone_password => "${glance_keystone_password}",
-        registry_host     => $glance,
-        sql_connection    => "mysql://${glance_database_user}:${glance_database_password}@${dbip}/${glance_database_name}",
-        require           => [ Class['kanopya::openstack::repository'],
-                               Exec['/usr/bin/glance-manage db_sync'] ]
-    }
-
-    if ! defined(Exec['/usr/bin/glance-manage db_sync']) {
-        exec { "/usr/bin/glance-manage db_sync":
-            path => "/usr/bin:/usr/sbin:/bin:/sbin",
-        }
-    }
-
-    class { 'glance::backend::file': }
 
     nova_paste_api_ini {
         'filter:ratelimit/paste.filter_factor': value => "nova.api.openstack.compute.limits:RateLimitingMiddleware.factory";
@@ -235,7 +174,7 @@ class kanopya::openstack::nova::controller(
 
     nova_config {
         'DEFAULT/ram_allocation_ratio': value => '100';
-        'DEFAULT/cpu_allocation_ratio': value => '100'
+        'DEFAULT/cpu_allocation_ratio': value => '100';
     }
 
     $inf = 100000
@@ -258,7 +197,7 @@ class kanopya::openstack::nova::controller(
     if defined(Class['kanopya::apache']) {
         class { 'openstack::horizon':
             secret_key    => 'dummy_secret_key',
-            keystone_host => $keystone
+            keystone_host => $keystone_ip
         }
     }
 

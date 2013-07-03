@@ -94,7 +94,10 @@ sub getHostsEntries {
 }
 
 sub checkConfiguration {
-    shift->checkAttribute(attribute => "mysql5");
+    my $self = shift;
+
+    $self->checkAttribute(attribute => "mysql5");
+    $self->checkDependency(component => $self->mysql5);
 }
 
 1;

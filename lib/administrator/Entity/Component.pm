@@ -251,7 +251,7 @@ sub getActiveNodes {
     for my $component_node (@component_nodes) {
         my $n = $component_node->node;
         if ($n->host->host_state =~ /^up:\d+$/ &&
-            ($n->host->getNodeState())[0] eq "in") {
+            ($n->host->getNodeState())[0] =~ m/^(in|pregoingin|goingin)$/) {
             push @nodes, $n;
         }
     }
@@ -312,21 +312,36 @@ sub checkConfiguration {}
 
 sub checkAttribute {
     my ($self, %args) = @_;
-
     General::checkParams(args => \%args, required => [ 'attribute' ]);
 
     my $attribute = $args{attribute};
-    my $error = $args{error};
-    if (! $error) {
-        my $attrs = $self->getAttrDefs();
-        $attribute .= "_id" if ! defined $attrs->{$attribute};
-        $error = "There is no " . lcfirst($attrs->{$attribute}->{label}) .
-                 " configured for component ". $self->label;
-    }
-
     if (! $self->$attribute) {
+        my $error = $args{error};
+        if (!$error) {
+            my $attrs = $self->getAttrDefs();
+            $attribute .= "_id" if ! defined $attrs->{$attribute};
+            $error = "There is no " . lcfirst($attrs->{$attribute}->{label}) .
+                     " configured for component ". $self->label;
+        }
+
         throw Kanopya::Exception::InvalidConfiguration(
             error => $error,
+            component => $self
+        );
+    }
+
+}
+
+sub checkDependency {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'component' ]);
+
+    my $component = $args{component};
+    my ($state, $uptime) = $component->service_provider->getState();
+    if ($component->service_provider->id != $self->service_provider->id &&
+        $state ne "up" && $state ne "updating") {
+        throw Kanopya::Exception::InvalidConfiguration(
+            error => "$component on ".$component->service_provider->cluster_name." has to be up to start $self (not $state)",
             component => $self
         );
     }
@@ -378,14 +393,15 @@ component is highly available : first keepalived vip
 
 sub getAccessIp {
     my ($self, %args) = @_;
+
     my $keepalived = eval { $self->service_provider->getComponent(name => 'Keepalived') };
-    my $ip;
-    if($keepalived) {
+    if ($keepalived) {
         my @vrrpinstances = $keepalived->keepalived1_vrrpinstances;
         return $vrrpinstances[0]->virtualip->ip_addr;
     } else {
-        $ip = $self->getBalancerAddress(port => $args{port});
-        if($ip) {
+        my $ip = $self->getBalancerAddress(port    => $args{port},
+                                           service => $args{service});
+        if ($ip) {
             return $ip;
         } else {
             return $self->getMasterNode->adminIp;
@@ -403,20 +419,31 @@ sub getAccessIp {
 
 sub getBalancerAddress {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['port']);
+
+    if (defined ($args{service})) {
+        my $conf = $self->getNetConf;
+        SERVICE:
+        for my $service (keys %{$conf}) {
+            if ($service eq $args{service}) {
+                $args{port} = $conf->{$service}->{port};
+                last SERVICE;
+            }
+        }
+    }
+
+    General::checkParams(args => \%args, required => [ 'port' ],
+                                         optional => { service => undef });
+
     my $comp_name = $self->component_type->component_name;
     if($comp_name eq 'Haproxy') {
         return undef;
     }
     
-    my $listen_addr = 0;
+    my $listen_addr = undef;
     my @haproxy_entries = $self->haproxy1s_listen;
-    LISTEN:
     for my $listen (@haproxy_entries) {
-        if($listen->listen_component_port ne $args{port}) {
-            next LISTEN;
-        } else {
-            if($listen->listen_ip ne '0.0.0.0') {
+        if ($listen->listen_component_port eq $args{port}) {
+            if ($listen->listen_ip ne '0.0.0.0') {
                 $listen_addr = $listen->listen_ip;
                 last;
             } else {
@@ -425,25 +452,22 @@ sub getBalancerAddress {
             }
         }
     }
-    if(! $listen_addr) {
-        $log->warn("No loalbalancer entry found for port $args{port} for ".$comp_name);
-        return undef;
-    } else {
-        return $listen_addr;
+
+    if (! $listen_addr) {
+        $log->warn("No loalbalancer entry found for port $args{port} for $comp_name");
     }
+
+    return $listen_addr;
 }
 
 sub isBalanced {
     my ($self, %args) = @_;
     my $comp_name = $self->component_type->component_name;
-    if($comp_name eq 'Haproxy') {
-        return 0;
-    }
+
+    return 0 if $comp_name eq 'Haproxy';
+
     my @haproxy_entries = $self->haproxy1s_listen;
-    if(scalar(@haproxy_entries)) {
-        return 1;
-    }
-    return 0;
+    return scalar(@haproxy_entries) ? 1 : 0;
 }
 
 sub getPuppetDefinition {
