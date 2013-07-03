@@ -170,15 +170,19 @@ sub generatePuppetDefinitions {
                                 @{$puppet_definitions->{$chunk}->{optionals} || []}) {
                 my $name = lc($dependency->component_type->component_name);
                 my @nodes = map { $_->fqdn } $dependency->nodes;
-                my $hash = { nodes => \@nodes };
-                $netconf = $dependency->getNetConf;
-                for my $service (keys %{$netconf}) {
-                    $hash->{$service} = {
-                        ip    => $dependency->getAccessIp(port => $netconf->{$service}->{port}),
-                        tag   => $dependency->getMasterNode->fqdn,
-                    };
+                my $hash = { nodes => \@nodes, %{$puppet_definitions->{$chunk}->{params} || {}} };
+
+                if (($dependency->service_provider->id == $self->service_provider->id) ||
+                    (($dependency->service_provider->getState)[0] eq "up")) {
+                    $netconf = $dependency->getNetConf;
+                    for my $service (keys %{$netconf}) {
+                        $hash->{$service} = {
+                            ip    => $dependency->getAccessIp(port => $netconf->{$service}->{port}),
+                            tag   => $dependency->getMasterNode->fqdn,
+                        };
+                    }
+                    $configuration->{$name} = $hash;
                 }
-                $configuration->{$name} = $hash;
             }
         }
 

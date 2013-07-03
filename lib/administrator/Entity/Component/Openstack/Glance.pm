@@ -52,6 +52,10 @@ sub getNetConf {
             port => 9191,
             protocols => ['tcp']
         },
+        image_api => {
+            port => 9292,
+            protocols => ['tcp']
+        }
     };
 }
 
@@ -100,6 +104,10 @@ sub checkConfiguration {
 
     for my $attr ("mysql5", "nova_controller") {
         $self->checkAttribute(attribute => $attr);
+    }
+
+    for my $component ($self->mysql5, $self->nova_controller->keystone) {
+        $self->checkDependency(component => $component);
     }
 }
 

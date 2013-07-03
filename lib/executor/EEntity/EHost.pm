@@ -71,7 +71,7 @@ sub halt {
     my $self = shift;
     my %args = @_;
 
-    my $result = $self->getEContext->execute(command => 'halt');
+    my $result = $self->getEContext->execute(command => 'poweroff');
     $self->setState(state => 'stopping');
 }
 

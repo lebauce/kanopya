@@ -57,6 +57,15 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub getNetConf {
+    return {
+        volume_api => {
+            port => 8776,
+            protocols => ['tcp']
+        }
+    };
+}
+
 sub diskType {
     return "Cinder";
 }
@@ -229,6 +238,11 @@ sub checkConfiguration {
 
     for my $attr ("mysql5", "nova_controller") {
         $self->checkAttribute(attribute => $attr);
+    }
+
+    for my $attr ("keystone", "amqp") {
+        $self->nova_controller->checkAttribute(attribute => $attr);
+        $self->checkDependency(component => $self->nova_controller->$attr);
     }
 }
 

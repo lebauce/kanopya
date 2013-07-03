@@ -93,19 +93,7 @@ sub getNetConf {
             port => 8775,
             protocols => ['tcp']
         },
-        image_api => {
-            port => 9292,
-            protocols => ['tcp']
-        }
     };
-
-    my @cinders = $self->cinders;
-    if (scalar @cinders) {
-        $conf->{volume_api} = {
-            port => 8776,
-            protocols => ['tcp']
-        }
-    }
 
     return $conf;
 }
@@ -199,37 +187,19 @@ Build the content of the puppet agent manifest for a node
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;
-    my $definition = $self->SUPER::getPuppetDefinition(%args);
 
-    my $sql        = $self->mysql5;
-    my $keystone   = $self->keystone;
-    my $quantum    = ($self->quantums)[0];
-    my $glance     = join(",", map { $_->getBalancerAddress(port => 9292) || $_->getMasterNode->fqdn } $self->glances);
-    my $name       = "nova-" . $self->id;
-
-    if (not ($sql and $keystone and $quantum)) {
+    if (not ($self->mysql5 and $self->keystone)) {
         return;
     }
 
-    my %cinder_params;
-    my @cinders = $self->cinders;
-    if (scalar @cinders) {
-        my $cinder_id = $cinders[0]->id;
-        $cinder_params{cinder_database_user} = "cinder-$cinder_id";
-        $cinder_params{cinder_database_name} = "cinder-$cinder_id";
-    }
+    my $definition = $self->SUPER::getPuppetDefinition(%args);
+    my $name       = "nova-" . $self->id;
 
-    my %glance_params;
+    my @optionals;
+    my @quantums = $self->quantums;
     my @glances = $self->glances;
-    if (scalar @glances) {
-        my $glance_id = $glances[0]->id;
-        $glance_params{glance_database_user} = "glance-$glance_id";
-        $glance_params{glance_database_name} = "glance-$glance_id";
-    }
-
-    my $optionals = [ ];
-    push @{$optionals}, $self->cinder if $self->cinder;
-    push @{$optionals}, $self->quantum if $self->quantum;
+    push @optionals, $quantums[0] if @quantums;
+    push @optionals, $glances[0] if @glances;
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         novacontroller => {
@@ -238,19 +208,14 @@ sub getPuppetDefinition {
                             params => {
                                 admin_password => 'nova',
                                 email => $self->service_provider->user->user_email,
-                                glance => $glance,
-                                quantum => $quantum->getBalancerAddress(port => 9696) ||
-                                           $quantum->getMasterNode->fqdn,
                                 database_user => $name,
                                 database_name => $name,
                                 rabbit_user => $name,
                                 rabbit_virtualhost => 'openstack-' . $self->id,
-                                %glance_params,
-                                %cinder_params
                             }
                         ),
-            dependencies => [ $sql , $keystone , $self->amqp ],
-            optionals => $optionals
+            dependencies => [ $self->mysql5, $self->keystone, $self->amqp ],
+            optionals => \@optionals
         }
     } );
 }
@@ -282,6 +247,11 @@ sub checkConfiguration {
 
     for my $attr ("mysql5", "amqp", "keystone") {
         $self->checkAttribute(attribute => $attr);
+    }
+
+    my @glances = $self->glances;
+    for my $component ($self->mysql5, $self->amqp, $self->keystone, @glances) {
+        $self->checkDependency(component => $component);
     }
 }
 

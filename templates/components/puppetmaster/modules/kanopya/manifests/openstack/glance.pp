@@ -11,6 +11,7 @@ class kanopya::openstack::glance(
     $dbip = $components[glance][mysql][mysqld][ip]
     $dbserver = $components[glance][mysql][mysqld][tag]
     $keystone = $components[glance][keystone][keystone_admin][tag]
+    $keystone_ip = $components[glance][keystone][keystone_admin][ip]
 
     if ! defined(Class['kanopya::openstack::repository']) {
         class { 'kanopya::openstack::repository': }
@@ -30,20 +31,29 @@ class kanopya::openstack::glance(
             password => "${keystone_password}",
             email    => "${email}",
             tenant   => 'services',
-            tag      => "${components['glance']['keystone']['keystone_admin']['tag']}"
+            tag      => $keystone
         }
 
         @@keystone_user_role { "${keystone_user}@services":
             ensure  => present,
             roles   => 'admin',
-            tag     => "${components['glance']['keystone']['keystone_admin']['tag']}"
+            tag     => $keystone
         }
 
         @@keystone_service { 'glance':
             ensure      => present,
             type        => 'image',
             description => "Openstack Image Service",
-            tag         => "${components['glance']['keystone']['keystone_admin']['tag']}"
+            tag         => $keystone
+        }
+
+        $glance_access_ip = $components[glance][access][image_api][ip]
+        @@keystone_endpoint { "RegionOne/glance":
+            ensure       => present,
+            public_url   => "http://${glance_access_ip}:9292/v1",
+            admin_url    => "http://${fqdn}:9292/v1",
+            internal_url => "http://${fqdn}:9292/v1",
+            tag          => $keystone
         }
     }
     else {
@@ -68,12 +78,28 @@ class kanopya::openstack::glance(
         auth_type         => '',
         bind_host         => $components[glance][listen][glance_registry][ip],
         keystone_tenant   => 'services',
-        keystone_user     => "${keystone_user}",
-        keystone_password => "${keystone_password}",
+        keystone_user     => $keystone_user,
+        keystone_password => $keystone_password,
         sql_connection    => "mysql://${database_user}:${database_password}@${dbip}/${database_name}",
         require           => [ Class['kanopya::openstack::repository'],
                                Exec['/usr/bin/glance-manage db_sync'] ]
     }
+
+    class { 'glance::api':
+        auth_type         => '',
+        auth_port         => '35357',
+        auth_host         => $keystone_ip,
+        bind_host         => $components[glance][listen][image_api][ip],
+        keystone_tenant   => 'services',
+        keystone_user     => "${keystone_user}",
+        keystone_password => "${keystone_password}",
+        registry_host     => $components[glance][access][glance_registry][ip],
+        sql_connection    => "mysql://${database_user}:${database_password}@${dbip}/${database_name}",
+        require           => [ Class['kanopya::openstack::repository'],
+                               Exec['/usr/bin/glance-manage db_sync'] ]
+    }
+
+    class { 'glance::backend::file': }
 
     Class['kanopya::openstack::repository'] -> Class['kanopya::openstack::glance']
 

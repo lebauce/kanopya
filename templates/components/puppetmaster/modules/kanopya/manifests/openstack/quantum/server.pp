@@ -104,7 +104,7 @@ class kanopya::openstack::quantum::server(
     }
 
     class { 'quantum::plugins::ovs':
-        sql_connection      => "mysql://${database_user}:${database_password}@${dbserver}/${database_name}",
+        sql_connection      => "mysql://${database_user}:${database_password}@${dbip}/${database_name}",
         tenant_network_type => 'vlan',
         network_vlan_ranges => 'physnetflat,physnetvlan:1:4094',
         require             => Class['kanopya::openstack::repository']
