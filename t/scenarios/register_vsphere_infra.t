@@ -74,7 +74,7 @@ lives_ok {
             if ($datacenterChildren->{type} eq 'hypervisor') {
                 my $vms = $vsphere->retrieveHypervisorVms(
                               datacenter_name => $datacenter->{name},
-                              hypervisor_name => $datacenterChildren->{name},
+                              hypervisor_uuid => $datacenterChildren->{uuid},
                           );
                 $datacenterChildren->{children} = $vms;
             }
@@ -105,7 +105,7 @@ lives_ok {
                     $clusterHypervisor->{type} = 'hypervisor';
                     my $vms = $vsphere->retrieveHypervisorVms(
                                   datacenter_name => $datacenter->{name},
-                                  hypervisor_name => $clusterHypervisor->{name},
+                                  hypervisor_uuid => $clusterHypervisor->{uuid},
                               );
                     $clusterHypervisor->{children} = $vms;
                 }
@@ -118,6 +118,7 @@ lives_ok {
     my $registered_items = $vsphere->register(register_items => $registerItems);
 } 'register items in Kanopya';
 
+# TODO : refresh retrieval
 diag('Search vSphere matches in Kanopya');
 my $total_items_nbr = 0;
 my $ko_items_nbr    = 0;
