@@ -194,6 +194,15 @@ sub finish {
     my ($self, %args) = @_;
     $self->SUPER::finish(%args);
 
+    if (defined $self->{params}->{needhypervisor}) {
+        $log->debug('Do not finish addNode workflow in case of automatic hypervisor scaleout');
+
+        # TODO: Definitly design a mechanism to bind output params to input one in workflows
+        $self->{context}->{cluster} = $self->{context}->{vm_cluster}; # Used in case of automatic hypervisor scaleout
+        delete $self->{params}->{needhypervisor};
+        return 0;
+    }
+
     $self->{context}->{cluster}->setState(state => "up");
     $self->{context}->{cluster}->removeState(consumer => $self->workflow);
 
@@ -211,8 +220,6 @@ sub finish {
     }
 
     # WARNING: Do NOT delete $self->{context}->{host}, required in worflow addNode + VM migration
-    # TODO: Definitly design a mechanism to bind output params to input one in workflows
-    delete $self->{context}->{cluster}; # Need to be deleted for Add hypervisor followed by add Vm
 }
 
 1;
