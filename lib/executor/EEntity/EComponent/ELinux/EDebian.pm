@@ -120,7 +120,14 @@ sub service {
                 system("chroot $args{mount_point} /sbin/insserv -d $service");
             }
             else {
-                system("chroot $args{mount_point} /usr/sbin/update-rc.d $service defaults");
+                system("cp " . $args{mount_point} . "/etc/init.d/" . $service . " " . $args{mount_point} . "/etc/rc0.d/K30" . $service);
+                system("cp " . $args{mount_point} . "/etc/init.d/" . $service . " " . $args{mount_point} . "/etc/rc1.d/K30" . $service);
+                system("cp " . $args{mount_point} . "/etc/init.d/" . $service . " " . $args{mount_point} . "/etc/rc2.d/S30" . $service);
+                system("cp " . $args{mount_point} . "/etc/init.d/" . $service . " " . $args{mount_point} . "/etc/rc3.d/S30" . $service);
+                system("cp " . $args{mount_point} . "/etc/init.d/" . $service . " " . $args{mount_point} . "/etc/rc4.d/S30" . $service);
+                system("cp " . $args{mount_point} . "/etc/init.d/" . $service . " " . $args{mount_point} . "/etc/rc5.d/S30" . $service);
+                system("cp " . $args{mount_point} . "/etc/init.d/" . $service . " " . $args{mount_point} . "/etc/rc6.d/K30" . $service);
+                system("cp " . $args{mount_point} . "/etc/init.d/" . $service . " " . $args{mount_point} . "/etc/rcS.d/K30" . $service);
             }
         }
     }
