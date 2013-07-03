@@ -67,7 +67,7 @@ sub main {
     ######## As admin on an admin cluster ##########
 
     # Firstly loggin in to Admin
-    BaseDB->authenticate(login => 'admin', password => '_tamere23');
+    BaseDB->authenticate(login => 'admin', password => 'K4n0pY4');
 
     # Create a node
     my $adminnode;
@@ -193,7 +193,7 @@ sub main {
     ######## As admin on an admin cluster ##########
 
     # Firstly loggin in to Admin
-    BaseDB->authenticate(login => 'admin', password => '_tamere23');
+    BaseDB->authenticate(login => 'admin', password => 'K4n0pY4');
 
     # Find a Clustermetric
     my $cm = Entity::Clustermetric->find(clustermetric_service_provider_id => $admincluster->id);

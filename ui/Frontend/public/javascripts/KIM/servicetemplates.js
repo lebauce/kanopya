@@ -55,7 +55,9 @@ function load_service_template_content (container_id) {
         }
     } );
 
-    createAddServiceTemplateButton(container_id, grid);
+    if (current_user_has_any_profiles([ "Administrator", "Services Developer" ])) {
+        createAddServiceTemplateButton(container_id, grid);
+    }
 }
 
 function load_service_template_details (elem_id, row_data, grid_id) {
