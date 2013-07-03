@@ -10,6 +10,8 @@ var Vsphere5 = (function(_super) {
 
         this.actionsCallback = function () {
             var vsphereButton = $('<input>', { type : 'button' }).val('Import vSphere').bind('click', function(event) {
+                // TODO confirmation of insertion
+                $('.ui-dialog').find('#button-ok').click();
                 vsphereBrowser(event);
             });
             var buttons = [ vsphereButton.button() ];
