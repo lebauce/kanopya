@@ -9,10 +9,10 @@ var Vsphere5 = (function(_super) {
         this.displayed = [ 'vsphere5_login', 'vsphere5_pwd', 'vsphere5_url', 'overcommitment_cpu_factor', 'overcommitment_memory_factor'];
 
         this.actionsCallback = function () {
-            var vsphereButton = $('<input>', { type : 'button' }).val('Import vSphere').bind('click', function(event) {
+            var vsphereButton = $('<input>', { type : 'button' }).val('Import vSphere').bind('click', function() {
                 // TODO confirmation of insertion
                 $('.ui-dialog').find('#button-ok').click();
-                vsphereBrowser(event);
+                vsphereBrowser(id);
             });
             var buttons = [ vsphereButton.button() ];
             return buttons;
@@ -23,7 +23,6 @@ var Vsphere5 = (function(_super) {
 })(Component);
 
 // VSPHERE BROWSER TREE
-
 var registered_nodes = [];// list of nodes already registered in Kanopya
 
 // format the data returned by API to respect jsTree structure
@@ -98,28 +97,17 @@ function formatCheckedNodes (nodes) {
 }
 
 // browse vSphere Infrastructure
-function vsphereBrowser (event) {
+function vsphereBrowser (vsphere_id) {
     require('jquery/jquery.jstree.js');
-    var browser        = $('<div>');
+    var browser = $('<div>');
     var tree_container = $('<div>', {id : 'vsphere_tree'});
+    browser.append(tree_container);
 
-    // get the vSphere Component ID
-    var vsphere_component_id;
-    $.ajax( {
-        url : '/api/vsphere5',
-        success : function (data) {
-                      vsphere_component_id = data[0].pk;
-                  },
-        contentType : 'application/json',
-        async : false
-    } );
-
-    var url_base = '/api/vsphere5/' + vsphere_component_id;
+    var url_base = '/api/vsphere5/' + vsphere_id;
 
     var parents = [];// to save parents of nodes
     var id_request = 0;
 
-    browser.append(tree_container);
     tree_container.jstree({
         'plugins'   :   ['themes', 'json_data', 'checkbox', 'ui'],
         'themes'    :   {
@@ -127,7 +115,7 @@ function vsphereBrowser (event) {
          },
         // TODO ckeck already registered nodes
         'checkbox'  :   {
-            'override_ui'         :   true,// for checking nodes on load
+            'override_ui'         :   true,
          },
         'ui'        :   {
             'initially_select'    :  registered_nodes,
