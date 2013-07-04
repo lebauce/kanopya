@@ -1285,11 +1285,15 @@ var KanopyaFormWizard = (function() {
         // Add validation rules for inputs inserted dynamically in the form.
         var _this = this;
         $(this.form).find(':input').each(function () {
+            var rules = $(this).rules();
             for (var rule in _this.validateRules[$(this).attr('name')]) {
-                var rules = $(this).rules();
                 if (rules[rule] === undefined) {
                     $(this).rules("add", _this.validateRules[$(this).attr('name')]);
-                    break;
+                }
+            }
+            for (var rule in rules) {
+                if (_this.validateRules[$(this).attr('name')][rule] === undefined) {
+                    $(this).rules("remove", rule);
                 }
             }
         });

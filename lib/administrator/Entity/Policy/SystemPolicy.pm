@@ -54,6 +54,7 @@ use constant POLICY_ATTR_DEF => {
         type         => 'relation',
         relation     => 'single',
         pattern      => '^\d*$',
+        reload       => 1,
     },
     kernel_id => {
         label        => 'Kernel',
@@ -138,7 +139,7 @@ sub getPolicyDef {
     # Complete the attributes with common ones
     my $attributes = $self->SUPER::getPolicyDef(%args);
 
-    my $displayed = [ 'kernel_id', 'masterimage_id', 'cluster_basehostname',
+    my $displayed = [ 'kernel_id', 'masterimage_id',  'systemimage_size', 'cluster_basehostname',
                       'cluster_si_persistent', 'cluster_si_shared', 'deploy_on_disk' ];
     $attributes = $merge->merge($attributes, { displayed => $displayed });
 
@@ -168,7 +169,7 @@ sub getPolicyDef {
         type         => 'integer',
         unit         => 'byte',
         pattern      => '^\d*$',
-        is_mandatory => 1
+        is_mandatory => defined $args{params}->{masterimage_id} ? 1 : 0,
     };
     # Insert systemimage_size after
     splice @{ $attributes->{displayed} }, 2, 0, 'systemimage_size';
