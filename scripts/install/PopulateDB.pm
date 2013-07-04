@@ -261,7 +261,7 @@ sub registerKernels {
 
 sub registerClassTypes {
     for my $class_type (@classes) {
-        ClassType->new(class_type => $class_type);
+        ClassType->findOrCreate(class_type => $class_type);
     }
 }
 
@@ -482,17 +482,10 @@ sub registerUsers {
     my @adminprofiles;
     my $profilegroups = {};
     for my $group (@{$groups}) {
-        my $gp;
-        eval {
-            $gp = Entity::Gp->find(hash => { gp_name => $group->{name} });
-        };
-        if ($@) {
-            $gp = Entity::Gp->new(
-                      gp_name   => $group->{name},
-                      gp_desc   => $group->{desc},
-                      gp_type   => $group->{type}
-                  );
-        }
+        my $gp = Entity::Gp->findOrCreate(gp_name => $group->{name},
+                                          gp_type => $group->{type});
+        $gp->gp_desc($group->{desc});
+
         if ($group->{hierarchy}) {
             $gp->appendToHierarchyGroups(hierarchy => $group->{hierarchy});
         }
@@ -503,7 +496,7 @@ sub registerUsers {
                     print "- Setting permissions for group " . $gpname .
                           ", on method " . $gp->gp_name . "->" . $method . "\n";
 
-                    Entityright->new(
+                    Entityright->findOrCreate(
                         entityright_consumed_id => $gp->id,
                         entityright_consumer_id => $profilegroups->{$gpname}->id,
                         entityright_method      => $method
@@ -513,13 +506,19 @@ sub registerUsers {
         }
 
         if (defined ($group->{profile})) {
-            my $prof = Profile->new(profile_name => $group->{profile}->[0],
-                                    profile_desc => $group->{profile}->[1]);
+            my $prof;
+            eval {
+                $prof = Profile->new(profile_name => $group->{profile}->[0],
+                                     profile_desc => $group->{profile}->[1]);
 
-            $prof->{_dbix}->profile_gps->create( {
-                profile_id => $prof->id,
-                gp_id      => $gp->id
-            } );
+                $prof->{_dbix}->profile_gps->create({
+                    profile_id => $prof->id,
+                    gp_id      => $gp->id
+                });
+            };
+            if ($@) {
+                $prof = Profile->find(profile_name => $group->{profile}->[0]);
+            }
 
             if ($group->{system} == 0) {
                 push @adminprofiles, $prof;
@@ -528,41 +527,51 @@ sub registerUsers {
         }
     }
 
-    my $admin_user = Entity::User->create(
-                         user_system       => 0,
-                         user_login        => "admin",
-                         user_password     => $args{admin_password},
-                         user_firstname    => 'Kanopya',
-                         user_lastname     => 'Administrator',
-                         user_email        => 'dev@hederatech.com',
-                         user_creationdate => today(),
-                         user_desc         => 'God user for administrative tasks.'
-                     );
+    eval {
+        Entity::User->find(user_login => "admin");
+    };
+    if ($@) {
+        my $admin_user = Entity::User->create(
+                             user_system       => 0,
+                             user_login        => "admin",
+                             user_password     => $args{admin_password},
+                             user_firstname    => 'Kanopya',
+                             user_lastname     => 'Administrator',
+                             user_email        => 'dev@hederatech.com',
+                             user_creationdate => today(),
+                             user_desc         => 'God user for administrative tasks.'
+                         );
 
-    for my $profile (@adminprofiles) {
-        UserProfile->new(
-            user_id    => $admin_user->id,
-            profile_id => $profile->id
-        );
+        for my $profile (@adminprofiles) {
+            UserProfile->new(
+                user_id    => $admin_user->id,
+                profile_id => $profile->id
+            );
+        }
     }
 
-    my $executor_user = Entity::User->create(
-        user_system       => 1,
-        user_login        => "executor",
-        user_password     => $args{admin_password},
-        user_firstname    => 'Kanopya',
-        user_lastname     => 'Executor',
-        user_email        => 'dev@hederatech.com',
-        user_creationdate => today(),
-        user_desc         => 'User used by executor'
-    );
+    eval {
+        Entity::User->find(user_login => "executor");
+    };
+    if ($@) {
+        my $executor_user = Entity::User->create(
+            user_system       => 1,
+            user_login        => "executor",
+            user_password     => $args{admin_password},
+            user_firstname    => 'Kanopya',
+            user_lastname     => 'Executor',
+            user_email        => 'dev@hederatech.com',
+            user_creationdate => today(),
+            user_desc         => 'User used by executor'
+        );
 
-#
-#    UserProfile->new(
-#        user_id    => $executor_user->id,
-#        profile_id => $admin_profile->id
-#    );
-#    $admin_group->appendEntity(entity => $executor_user);
+    #
+    #    UserProfile->new(
+    #        user_id    => $executor_user->id,
+    #        profile_id => $admin_profile->id
+    #    );
+    #    $admin_group->appendEntity(entity => $executor_user);
+    }
 }
 
 sub registerProcessorModels {
