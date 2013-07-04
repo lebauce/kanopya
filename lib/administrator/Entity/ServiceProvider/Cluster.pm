@@ -1281,7 +1281,6 @@ sub propagatePermissions {
     # Add permssions on the related object methods
     for my $method (keys %{ $args{related}->getMethods() }) {
         if (! ($method eq "addPerm" || $method eq "removePerm")) {
-            $log->info("add permm $args{related} $method");
             $args{related}->addPerm(consumer => $self->user, method => $method);
         }
     }
