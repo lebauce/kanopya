@@ -521,8 +521,7 @@ sub configureInterfaces {
 }
 
 sub configureBillingLimits {
-    my $self    = shift;
-    my %args    = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, optional => { 'billing_limits' => undef });
 
@@ -568,8 +567,7 @@ sub configureBillingLimits {
 =cut
 
 sub configureOrchestration {
-    my $self    = shift;
-    my %args    = @_;
+    my ($self, %args) = @_;
 
     return if (not defined $args{service_provider_id});
 
@@ -587,7 +585,9 @@ sub configureOrchestration {
 }
 
 sub remove {
-    my $self = shift;
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { 'keep_systemimages' => 0 });
 
     $log->debug("New Operation Remove Cluster with cluster id : " .  $self->id);
     my $workflow = $self->getManager(manager_type => 'ExecutionManager')->enqueue(
@@ -595,7 +595,8 @@ sub remove {
         params => { 
             context => {
                 cluster => $self,
-            }
+            },
+            keep_systemimages => $args{keep_systemimages}
         }
     );
 
