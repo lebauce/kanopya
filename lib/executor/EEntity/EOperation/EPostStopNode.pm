@@ -173,19 +173,6 @@ sub execute {
         $log->warn("Could not remove from DHCP configuration, the cluster may not be using PXE");
     }
 
-    # remove the node working directory where generated files are
-    # stored.
-    my $dir = $self->_executor->getConf->{clusters_directory};
-    $dir .= '/' . $self->{context}->{cluster}->cluster_name;
-    $dir .= '/' . $self->{context}->{host}->node->node_hostname;
-    my $econtext = $self->getEContext();
-    $econtext->execute(command => "rm -r $dir");
-    $econtext->execute(command => "rm /var/lib/puppet/yaml/node/" .
-                                  $self->{context}->{host}->node->fqdn . ".yaml");
-
-    $self->{context}->{host}->node->setAttr(name => "node_hostname", value => undef, save => 1);
-    $self->{context}->{host}->setAttr(name => "host_initiatorname", value => undef, save => 1);
-
     my $systemimage_name = $self->{context}->{cluster}->cluster_name;
     $systemimage_name .= '_' . $self->{context}->{host}->getNodeNumber();
 

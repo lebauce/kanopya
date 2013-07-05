@@ -178,9 +178,8 @@ sub postStopNode {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    my @components = $self->getComponents(category => "all");
-
     # Ask to all cluster component if they are ready for node addition.
+    my @components = $self->getComponents(category => "all");
     foreach my $component (@components) {
         EEntity->new(data => $component)->postStopNode(
             host    => $args{host},
@@ -195,6 +194,27 @@ sub reconfigure {
     my $agent = $self->getComponent(category => "Configurationagent");
     my $eagent = EEntity->new(data => $agent);
     $eagent->applyConfiguration(%args, cluster => $self);
+}
+
+sub unregisterNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'node' ]);
+
+    # remove the node working directory where generated files are
+    # stored.
+    my $dir = $self->_executor->getConf->{clusters_directory} . '/' .
+              $self->cluster_name . '/' . $args{node}->node_hostname;
+
+    $self->_host->getEContext->execute(command => "rm -r $dir");
+    $self->_host->getEContext->execute(
+        command => "rm /var/lib/puppet/yaml/node/" . $args{node}->fqdn . ".yaml"
+    );
+
+    $args{node}->setAttr(name => "node_hostname", value => undef, save => 1);
+    $args{node}->host->setAttr(name => "host_initiatorname", value => undef, save => 1);
+
+    return $self->_entity->unregisterNode(%args);
 }
 
 1;

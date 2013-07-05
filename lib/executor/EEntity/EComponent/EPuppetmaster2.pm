@@ -125,6 +125,21 @@ sub createHostCertificate {
     $self->updateSite;
 }
 
+
+sub removeHostCertificate {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host_fqdn' ]);
+
+    # Remove the certificate
+    my $command = "puppetca clean $args{host_fqdn}";
+    my $result = $self->getEContext->execute(command => $command);
+    if (! $result->{stdout}) {
+        # TODO check for error in command execution
+    }
+}
+
+
 sub createHostManifest {
     my ($self, %args) = @_;
     General::checkParams(args => \%args,
