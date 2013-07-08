@@ -118,13 +118,15 @@ var KanopyaFormWizard = (function() {
             // Tag attr defs as belongs to a relation
             var step = attributes[relation_name] ? attributes[relation_name].step : undefined;
             for (var name in rel_attributedefs) {
-                rel_attributedefs[name].belongs_to = relation_name;
-                rel_attributedefs[name].step = step;
+                // Do not support relation attr names that already exists on the master object.
+                if (this.attributedefs[name] == undefined) {
+                    rel_attributedefs[name].belongs_to = relation_name;
+                    rel_attributedefs[name].step = step;
+                }
             }
 
             // If creation, find the foreign key name to remove the attr from relation attrs
             var foreign;
-
             for (var cond in relationdef.cond) if (cond.indexOf('foreign.') >= 0) {
                 foreign = cond.substring(8);
             }
