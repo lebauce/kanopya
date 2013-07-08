@@ -37,6 +37,8 @@ sub check {
     $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "cluster" ]);
+
+    General::checkParams(args => $self->{params}, optional => { "keep_systemimages" => 0 });
 }
 
 sub execute {
@@ -47,6 +49,23 @@ sub execute {
     if ($self->{context}->{cluster}->active) {
         $errmsg = "Cluster <" . $self->{context}->{cluster}->id . "> is active";
         throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+
+    # Delete the cluster remaning systemimages
+    my @systemimages = Entity::Systemimage->search(
+                           hash => {
+                               systemimage_name => {
+                                   -like => $self->{context}->{cluster}->cluster_name . '_%'
+                               }
+                           }
+                       );
+
+    if (scalar(@systemimages) > 0 && ! $self->{params}->{keep_systemimages}) {
+        $log->info("Removing the <" . scalar(@systemimages) . "> cluster systemimage(s)");
+        for my $systemimage (map {  EEntity->new(entity => $_)  } @systemimages) {
+            $log->debug("Removing systemimage <" . $systemimage->systemimage_name . ">");
+            $systemimage->remove(erollback => $self->{erollback});
+        }
     }
 
     # Remove cluster directory

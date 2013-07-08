@@ -1,4 +1,4 @@
-# Copyright © 2011-2012 Hedera Technology SAS
+# Copyright © 2011-2013 Hedera Technology SAS
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -16,13 +16,11 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 =pod
-
 =begin classdoc
 
 TODO
 
 =end classdoc
-
 =cut
 
 package Harddisk;
@@ -35,6 +33,11 @@ use Log::Log4perl 'get_logger';
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
+    host_id => {
+        pattern      => '^\d+',
+        is_delegatee => 1,
+        is_mandatory => 1,
+    },
     harddisk_device => {
         label        => 'root device',
         type         => 'string',
@@ -56,29 +59,6 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-
-=pod
-
-=begin classdoc
-
-Return class Host as delegateee class for Harddisk permissions.
-
-@return the delegatee entity.
-
-=end classdoc
-
-=cut
-
-sub getDelegatee {
-    my ($self) = @_;
-    my $class = ref $self;
-
-    if (not $class) {
-        return "Entity::Host";
-    }
-    else {
-        return $self->host;
-    }
-}
+sub methods { return {}; }
 
 1;

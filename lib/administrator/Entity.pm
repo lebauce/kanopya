@@ -1,4 +1,4 @@
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -80,26 +80,17 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        create => {
-            description => 'create a new <type>.',
-        },
-        remove => {
-            description => 'remove this <type>.',
-        },
-        update => {
-            description => 'update this <type>.',
-        },
         subscribe => {
-            description => 'subscribe to notification about this <type>.',
+            description => 'subscribe to notification about <object>',
         },
         unsubscribe => {
-            description => 'unsubscribe to notification about this <type>.',
+            description => 'unsubscribe to notification about <object>',
         },
         addPerm => {
-            description => 'add a permission for this <type>.',
+            description => 'add a permission for <object>',
         },
         removePerm => {
-            description => 'remove a permission for this <type>.',
+            description => 'remove a permission for <object>',
         }
     };
 }
@@ -126,6 +117,13 @@ sub new {
     $args{class_type_id} = ClassType->find(hash => { class_type => $class })->id;
 
     my $self = $class->SUPER::new(%args);
+
+    # Call the delegatee object to process permissions propagation
+    my $delegateeattr = $self->getDelegateeAttr();
+    if (defined $delegateeattr) {
+        $delegateeattr =~ s/_id$//g;
+        $self->$delegateeattr->propagatePermissions(related => $self);
+    }
 
     # Try to add the instance to master groups of the whole hierachy.
     $self->appendToHierarchyGroups(hierarchy => $class);
@@ -414,25 +412,35 @@ sub addPerm {
 
     General::checkParams(args => \%args, required => [ 'method', 'consumer' ]);
 
-    if ($class) {
-        # Consumed is an entity instance
-        Entityright->addPerm(
-            consumer_id => $args{consumer}->id,
-            consumed_id => $self->id,
-            method      => $args{method},
-        );
-    }
-    else {
-        # Consumed is an entity type
-        my @list = split(/::/, "$self");
-        my $mastergroup = pop(@list);
-        my $entity_id = Entity::Gp->find(hash => { gp_name => $mastergroup })->id;
+    #$log->debug("Add permission on <$self>, for <$args{method}>, to <$args{consumer}>");
+    eval {
+        if ($class) {
+            # Consumed is an entity instance
+            Entityright->addPerm(
+                consumer_id => $args{consumer}->id,
+                consumed_id => $self->id,
+                method      => $args{method},
+            );
+        }
+        else {
+            # Consumed is an entity type
+            my @list = split(/::/, "$self");
+            my $mastergroup = pop(@list);
+            my $entity_id = Entity::Gp->find(hash => { gp_name => $mastergroup })->id;
 
-        Entityright->addPerm(
-            consumer_id => $args{consumer}->id,
-            consumed_id => $entity_id,
-            method      => $args{method},
-        );
+            Entityright->addPerm(
+                consumer_id => $args{consumer}->id,
+                consumed_id => $entity_id,
+                method      => $args{method},
+            );
+        }
+    };
+    if ($@) {
+        my $err = $@;
+        if (! $err->isa("Kanopya::Exception::DB")) {
+            $err->rethrow();
+        }
+        #$log->debug("Permission already exists, skipping.");
     }
 }
 
@@ -674,7 +682,12 @@ By default, permissions are checked on the entity itself.
 sub getDelegatee {
     my $self = shift;
 
-    return $self;
+    if (ref($self)) {
+        return $self;
+    }
+    else {
+        return $self->getMasterGroup;
+    }
 }
 
 sub toJSON {

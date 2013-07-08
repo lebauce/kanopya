@@ -225,12 +225,21 @@ sub postStopNode {
     $self->applyConfiguration(%args);
 }
 
+sub stopNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+
+    $log->info('Remove the certificate on the puppet master');
+    my $puppetmaster = EEntity->new(entity => $self->getPuppetMaster);
+    $puppetmaster->removeHostCertificate(host_fqdn => $args{host}->node->fqdn);
+}
+
 sub applyConfiguration {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'cluster' ],
-                                         optional => { 'host' => undef,
-                                                       'tags' => [ ] });
+                                         optional => { 'host' => undef, 'tags' => [] });
 
     my @ehosts = ($args{host}) || (map { EEntity->new(entity => $_) } @{ $args{cluster}->getHosts() });
     for my $ehost (@ehosts) {
@@ -271,10 +280,7 @@ sub applyConfiguration {
 sub isUp {
     my ($self, %args) = @_;
 
-    General::checkParams(
-        args     => \%args,
-        required => [ 'cluster', 'host' ]
-    );
+    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
 
     my $puppetmaster = (Entity::ServiceProvider::Cluster->getKanopyaCluster)->getComponent(name => 'Puppetmaster');
     my $econtext     = (EEntity->new(data => $puppetmaster))->getEContext;
@@ -316,7 +322,6 @@ sub isUp {
             $self->applyConfiguration(cluster => $args{cluster},
                                       host    => $args{host});
         }
-
         return 1;
     }
     else {

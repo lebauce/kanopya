@@ -212,7 +212,11 @@ function servicesList (container_id, elem_id) {
         $('#' + cid).append(button);
     };
 	
-    createAddServiceButton(container_id, grid);
+    // Hardcoded stuff...
+    // TODO: Get the permitted actions list from /api/attributes
+    if (current_user_has_any_profiles([ "Administrator", "Sales" ])) {
+        createAddServiceButton(container_id, grid);
+    }
 
     createServiceGraphs(container_id);
 }
@@ -259,8 +263,12 @@ function createServiceGraphs(cid, service_template_id) {
     // Inner function used to retrieve, compute and display services data
     function buildGraphs() {
         graphs_visible = true;
+        var customer_filter = '';
+        if (current_user.profiles.length == 1 && current_user.profiles[0].profile_name === "Customer") {
+            customer_filter = '&user.user_id=' + current_user.user_id;
+        }
         // Get infos
-        var url = '/api/cluster?expand=nodes,nodes.host,user';
+        var url = '/api/cluster?expand=nodes,nodes.host,user&cluster_name=<>,Kanopya' + customer_filter;
         if (service_template_id) {
             url += '&service_template.service_template_id=' + service_template_id;
         }

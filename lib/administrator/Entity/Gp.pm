@@ -63,19 +63,6 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-=head2 getSize
-
-    Class : public
-    Desc  : return the number of entities in this group
-    return : scalar (int)
-
-=cut
-
-sub getSize {
-    my ($self) = @_;
-    return $self->{_dbix}->ingroups->count();
-}
-
 
 =pod
 

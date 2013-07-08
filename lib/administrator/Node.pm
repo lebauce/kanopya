@@ -1,4 +1,4 @@
-# Copyright © 2011-2012 Hedera Technology SAS
+# Copyright © 2011-2013 Hedera Technology SAS
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -31,45 +31,38 @@ my $log = get_logger("");
 use constant ATTR_DEF => {
     service_provider_id => {
         pattern      => '^.*$',
+        is_delegatee => 1,
         is_mandatory => 1,
-        is_extended  => 0,
     },
     host_id => {
         pattern      => '^\d+$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     node_hostname => {
         label        => 'Hostname',
         type         => 'string',
         pattern      => '^[\w\d\-\.]*$',
         is_mandatory => 0,
-        is_editable  => 0,
     },
     node_number => {
         pattern      => '^\d+$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     systemimage_id => {
         pattern      => '^\d+$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     node_state => {
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     node_prev_state => {
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     monitoring_state => {
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     rulestate       => {
         is_virtual   => 1
@@ -86,13 +79,8 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub methods {
-    return {
-        update => {
-            description => 'update a node',
-        },
-    };
-}
+sub methods { return {}; }
+
 
 sub new {
     my $class = shift;
@@ -108,12 +96,15 @@ sub new {
 sub update {
     my ($self, %args) = @_;
 
-    my $component_types = delete $args{component_types};
+    General::checkParams(args => \%args, optional => { 'component_types' => undef });
 
-    $self->service_provider->addComponents(
-        nodes           => [ $self->id ],
-        component_types => $component_types
-    );
+    if (defined $args{component_types}) {
+        my $component_types = delete $args{component_types};
+        $self->service_provider->addComponents(
+            nodes           => [ $self->id ],
+            component_types => $component_types
+        );
+    }
 }
 
 sub getComponent {
@@ -187,9 +178,13 @@ sub getMonitoringData {
 }
 
 sub remove {
-    my $self = shift;
+    my ($self, %args) = @_;
 
-    $self->service_provider->removeNode('node_id' => $self->id);
+    General::checkParams(args => \%args, optional => { 'dryrun' => undef });
+
+    if (not defined $args{dryrun}) {
+        $self->service_provider->removeNode('node_id' => $self->id);
+    }
     return;
 }
 
@@ -210,18 +205,6 @@ sub getMasterComponents {
 
     my @masters = $self->searchRelated(filters => ['component_nodes'], hash => { master_node => 1 });
     return @masters;
-}
-
-sub getDelegatee {
-    my $self = shift;
-    my $class = ref $self;
-
-    if (not $class) {
-        return "Entity::ServiceProvider";
-    }
-    else {
-        return $self->service_provider;
-    }
 }
 
 1;

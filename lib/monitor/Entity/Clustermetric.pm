@@ -47,7 +47,8 @@ use constant ATTR_DEF => {
         pattern         => '^.*$',
         is_mandatory    => 1,
         is_extended     => 0,
-        is_editable     => 0
+        is_editable     => 0,
+        is_delegatee    => 1
     },
     clustermetric_label => {
         pattern         => '^.*$',
@@ -93,11 +94,11 @@ use constant ATTR_DEF => {
 sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
-  return {
-    getDependencies => {
-        description => 'return dependencies tree for this object',
-    },
-  }
+    return {
+        getDependencies => {
+            description => 'return dependencies tree for this object',
+        },
+    }
 }
 
 

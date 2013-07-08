@@ -1,4 +1,4 @@
-# Copyright © 2011-2012 Hedera Technology SAS
+# Copyright © 2011-2013 Hedera Technology SAS
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -16,13 +16,11 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 =pod
-
 =begin classdoc
 
 TODO
 
 =end classdoc
-
 =cut
 
 package UserExtension;
@@ -40,45 +38,20 @@ use constant ATTR_DEF => {
     user_id => {
         pattern      => '^\d+$',
         is_mandatory => 1,
-        is_extended  => 0
+        is_delegatee => 1,
     },
     user_extension_key => {
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     user_extension_value => {
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
     },
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
-
-=pod
-
-=begin classdoc
-
-Return class User as delegateee class for UserExtention permissions.
-
-@return the delegatee entity.
-
-=end classdoc
-
-=cut
-
-sub getDelegatee {
-    my $self = shift;
-    my $class = ref $self;
-
-    if (not $class) {
-        return "Entity::User";
-    }
-    else {
-        return $self->user;
-    }
-}
+sub methods { return {}; }
 
 1;

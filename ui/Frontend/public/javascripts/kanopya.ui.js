@@ -144,7 +144,7 @@ $(document).ready(function () {
 
 $(document).ajaxError(function(e, jqXHR, settings, exception) {
     if (jqXHR.status === 403) {
-        if (JSON.parse(jqXHR.responseText).reason != "Permission denied to get a Workflow") {
+        if (JSON.parse(jqXHR.responseText).reason.indexOf("Permission denied to get Workflow") < 0) {
             alert(JSON.parse(jqXHR.responseText).reason);
         }
         throw new Error(JSON.parse(jqXHR.responseText).reason);
