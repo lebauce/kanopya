@@ -21,23 +21,7 @@ var Service = (function(_super) {
     return Service;
 })(Model);
 
-var resources  = {};
-
-function servicesListFilter(elem) {
-    if (resources.hasOwnProperty(elem.pk)) {
-        return false;
-    } else {
-        return true;
-    }
-}
-
 function servicesList (container_id, elem_id) {
-    resources  = {};
-    var providers = getServiceProviders('HostManager');
-    for (var provider in providers) {
-        resources[providers[provider].pk] = true;
-    }
-
     var container = $('#' + container_id);
 
     $('a[href=#content_services_overview_static]').text('Service instances');
@@ -46,22 +30,20 @@ function servicesList (container_id, elem_id) {
         $('#services_list').jqGrid('GridDestroy');
     }
 
+    var kanopya_filter = '&cluster_id=<>,' + kanopya_cluster;
+
     // If the logged user is a customer, filter the list of service
     var customer_filter = '';
     if (current_user.profiles.length == 1 && current_user.profiles[0].profile_name === "Customer") {
         customer_filter = '&user_id=' + current_user.user_id;
     }
+
     var grid = create_grid( {
-        url: '/api/cluster?expand=service_template,nodes' + customer_filter,
+        url: '/api/cluster?expand=service_template,nodes' + kanopya_filter + customer_filter,
         content_container_id: container_id,
         grid_id: 'services_list',
         afterInsertRow: function (grid, rowid, rowdata, rowelem) {
-            if (!servicesListFilter(rowelem)) {
-                $(grid).jqGrid('delRowData', rowid);
-
-            } else {
-                addServiceExtraData(grid, rowid, rowdata, rowelem);
-            }
+            addServiceExtraData(grid, rowid, rowdata, rowelem);
         },
         rowNum : 25,
         colNames: [ 'ID', 'Service', 'Instance Name', 'Active', 'State', 'Rules State', 'Node Number' ],

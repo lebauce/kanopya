@@ -63,11 +63,7 @@ function add_menutree(container, label, menu_info, elem_id) {
             content_container_id: container_id,
             grid_id: 'services_list',
             afterInsertRow: function (grid, rowid, rowdata, rowelem) {
-                if (!servicesListFilter(rowelem)) {
-                    $(grid).jqGrid('delRowData', rowid);
-                } else {
-                    addServiceExtraData(grid, rowid, rowdata, rowelem);
-                }
+                addServiceExtraData(grid, rowid, rowdata, rowelem);
             },
             rowNum : 25,
             colNames: [ 'ID', 'Instance Name', 'Active', 'State', 'Rules State', 'Node Number' ],

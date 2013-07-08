@@ -76,7 +76,6 @@ var mainmenu_def = {
             level1_label_key : 'service_name',
             level2_url       : service_list_url,
             level2_label_key : 'cluster_name',
-            level2_filter    : function(elem) { return servicesListFilter(elem); }, 
             id_key           : 'pk',
             submenu          : [
                 { label : 'Overview',        id : 'service_overview',      onLoad : function(cid, eid) { require('common/service_dashboard.js'); loadServicesOverview(cid, eid); }, icon : 'dashboard' },
