@@ -13,7 +13,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 =pod
-
 =begin classdoc
 
 General Combination class. Implement delete function of combinations and getDependencies.
@@ -23,7 +22,6 @@ General Combination class. Implement delete function of combinations and getDepe
 @self     $self
 
 =end classdoc
-
 =cut
 
 package Entity::Combination;
@@ -43,19 +41,17 @@ use constant ATTR_DEF => {
     combination_id      =>  {
         pattern         => '^.*$',
         is_mandatory    => 0,
-        is_extended     => 0,
         is_editable     => 0,
     },
     service_provider_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,
-        is_extended     => 0,
         is_editable     => 1,
+        is_delegatee    => 1
     },
     combination_unit => {
         pattern         => '^.*$',
         is_mandatory    => 0,
-        is_extended     => 0,
         is_editable     => 1,
     },
     combination_formula_string => {
@@ -68,19 +64,22 @@ sub getAttrDef { return ATTR_DEF; }
 sub methods {
     return {
         evaluateTimeSerie => {
-            description => 'Retrieve historical value of combination.',
+            description => 'retrieve historical value of combination',
         },
         computeDataModel => {
-            description => 'Enqueue the select data model operation.',
+            description => 'enqueue the select data model operation',
         },
         autoPredict => {
-            description => 'Forecast combination values.',
+            description => 'forecast combination values',
+        },
+        getDependencies => {
+            description => 'return dependencies tree for this object',
         }
     };
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Get the list of conditions which depends on the combinations and all the combinations dependencies.
@@ -88,7 +87,6 @@ Get the list of conditions which depends on the combinations and all the combina
 @return the list of conditions which depends on the combination and all the combinations dependencies.
 
 =end classdoc
-
 =cut
 
 sub getDependencies {
@@ -105,7 +103,6 @@ sub getDependencies {
 
 
 =pod
-
 =begin classdoc
 
 Find AggregateConditions and NodemetricConditions which depends on the combination.
@@ -113,7 +110,6 @@ Find AggregateConditions and NodemetricConditions which depends on the combinati
 @return array of AggregateConditions and NodemetricConditions
 
 =end classdoc
-
 =cut
 
 sub getDependentConditions {
@@ -131,14 +127,12 @@ sub getDependentConditions {
 
 
 =pod
-
 =begin classdoc
 
 Abstract method implemented in ConstantCombination. Used when deleting a condition which has created
 a ConstantCombination. Also used to avoid deep recursion.
 
 =end classdoc
-
 =cut
 
 sub deleteIfConstant {
@@ -150,7 +144,6 @@ sub combination_formula_string {
 
 
 =pod
-
 =begin classdoc
 
 @deprecated
@@ -161,7 +154,6 @@ Preferable to get directly the attribute.
 @return combination_unit attribute
 
 =end classdoc
-
 =cut
 
 sub getUnit {
@@ -171,13 +163,11 @@ sub getUnit {
 
 
 =pod
-
 =begin classdoc
 
 Update the combination_unit attribute
 
 =end classdoc
-
 =cut
 
 sub updateUnit {
@@ -186,12 +176,10 @@ sub updateUnit {
     $self->save();
 }
 
-sub computeUnit {
-}
+sub computeUnit {}
 
 
 =pod
-
 =begin classdoc
 
 Enqueue ESelectDataModel operation
@@ -202,7 +190,6 @@ Enqueue ESelectDataModel operation
 @optional node_id modeled node in case of NodemetricCombination
 
 =end classdoc
-
 =cut
 
 sub computeDataModel {
@@ -227,7 +214,6 @@ sub computeDataModel {
 }
 
 =pod
-
 =begin classdoc
 
 Combination data forecasting.
@@ -248,7 +234,6 @@ Parameters are roughly the same than DataModelSelector::autoPredict()
 @return forecast data ref {timestamps => [t1,t2,...], values => [v1,v2,...]}
 
 =end classdoc
-
 =cut
 
 sub autoPredict {
@@ -279,7 +264,6 @@ sub autoPredict {
 }
 
 =pod
-
 =begin classdoc
 
 Remove duplicate from an array.
@@ -289,7 +273,6 @@ Remove duplicate from an array.
 @return array without doublons.
 
 =end classdoc
-
 =cut
 
 sub uniq {
@@ -298,8 +281,8 @@ sub uniq {
     return keys %{{ map { $_ => 1 } @{$args{data}}} };
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Dynamic param checker.
@@ -310,7 +293,6 @@ TODO Is it really necessary to have this specific method?
 @param args the checked args
 
 =end classdoc
-
 =cut
 
 sub checkMissingParams {

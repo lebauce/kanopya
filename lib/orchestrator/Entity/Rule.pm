@@ -23,12 +23,11 @@ General Rule class. Implement specific behavior for entity's subscribe method.
 =cut
 
 package Entity::Rule;
-use base "Entity";
+use base Entity;
 
 use strict;
 use warnings;
 
-# logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -38,58 +37,51 @@ use constant ATTR_DEF   => {
     service_provider_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,
-        is_extended     => 0,
         is_editable     => 1,
+        is_delegatee    => 1,
         label           => 'Service provider'
     },
     rule_name => {
         pattern         => '^.*$',
         is_mandatory    => 0,
-        is_extended     => 0,
         is_editable     => 1,
         label           => 'Name'
     },
     formula => {
         pattern         => '^((id\d+)|and|or|not|[ ()!&|])+$',
         is_mandatory    => 1,
-        is_extended     => 0,
         is_editable     => 1,
-        description     => "Construct a formula by condition's names with logical operators (and, or, not)."
-                           . " It's possible to use parenthesis with spaces between each element of the formula"
-                           . ". Press a letter key to obtain the available choice.",
+        description     => "Construct a formula by condition's names with logical operators (and, or, not)." .
+                           " It's possible to use parenthesis with spaces between each element of the formula" .
+                           ". Press a letter key to obtain the available choice.",
     },
     timestamp => {
         pattern         => '^.*$',
         is_mandatory    => 0,
-        is_extended     => 0,
         is_editable     => 1,
         label           => 'Timestamp'
     },
     state => {
         pattern         => '(enabled|disabled|disabled_temp|delayed|triggered)$',
         is_mandatory    => 1,
-        is_extended     => 0,
         is_editable     => 1,
         label           => 'State'
     },
     workflow_def_id => {
         pattern         => '^.*$',
         is_mandatory    => 0,
-        is_extended     => 0,
         is_editable     => 1,
         label           => 'Worflow'
     },
     description => {
         pattern         => '^.*$',
         is_mandatory    => 0,
-        is_extended     => 0,
         is_editable     => 1,
         label           => 'Description'
     },
     formula_string => {
         pattern         => '^.*$',
         is_mandatory    => 0,
-        is_extended     => 0,
         is_editable     => 1,
     },
 };
@@ -97,6 +89,7 @@ use constant ATTR_DEF   => {
 sub getAttrDef { return ATTR_DEF; }
 
 sub methods { return { }; }
+
 
 =pod
 =begin classdoc

@@ -3,6 +3,7 @@ require('common/users.js');
 require('KIM/customers.js');
 require('KIM/servicetemplates.js');
 require('KIM/policies.js');
+require('common/general.js');
 
 // Get the kanopya cluster id
 $.getJSON("/api/cluster?cluster_name=Kanopya", function (data) {

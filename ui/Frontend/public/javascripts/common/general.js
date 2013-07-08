@@ -1,5 +1,7 @@
 /* This file is a collection of general and common tools for javascript/jQuery Kanopya UI */
 
+var current_user = get_current_user();
+
 Object.size = function(obj) {
     var size = 0, key;
     for (key in obj) {
@@ -397,4 +399,40 @@ function checkOperation (grid, operation_id, id, callback) {
             }, 5000);
         }
     }
+}
+
+function get_current_user () {
+    // Get username of current logged user :
+    var username = '';
+    var user;
+    $.ajax({
+        async   : false,
+        url     : '/me',
+        type    : 'GET',
+        success : function(data) {
+            username = data.username;
+        }
+    });
+    // Get profile list for the username :
+    $.ajax({
+        async   : false,
+        url     : '/api/user?expand=profiles&user_login=' + username,
+        type    : 'GET',
+        success : function(data) {
+            user = {
+                user_id  : data[0].pk,
+                profiles : data[0].profiles
+            }
+        }
+    });
+    return user;
+}
+
+function current_user_has_any_profiles (profiles) {
+    for (var index in current_user.profiles) {
+        if ($.inArray(current_user.profiles[index].profile_name, profiles) >= 0) {
+            return 1;
+        }
+    }
+    return 0;
 }

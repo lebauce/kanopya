@@ -34,8 +34,7 @@ my $log = get_logger("");
 sub methods {
     return {
         getIndicators => {
-            description => 'create a new cluster',
-            perm_holder => 'entity',
+            description => 'get indicators',
         }
     },
 }

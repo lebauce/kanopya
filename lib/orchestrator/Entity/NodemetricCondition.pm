@@ -27,15 +27,16 @@ Condition on combination value
 =cut
 
 package Entity::NodemetricCondition;
+use base Entity;
 
 use strict;
 use warnings;
-use base 'Entity';
+
 use Entity::Combination;
-require 'Entity/Rule/NodemetricRule.pm';
+use Entity::Rule::NodemetricRule;
 use Entity::Combination::ConstantCombination;
+
 use Data::Dumper;
-# logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -43,37 +44,32 @@ use constant ATTR_DEF => {
     nodemetric_condition_label => {
         pattern         => '^.*$',
         is_mandatory    => 0,
-        is_extended     => 0,
         is_editable     => 1,
     },
     nodemetric_condition_service_provider_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,
-        is_extended     => 0,
+        is_delegatee    => 1,
         is_editable     => 1,
     },
     left_combination_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,
-        is_extended     => 0,
         is_editable     => 1,
     },
     nodemetric_condition_comparator => {
         pattern         => '^(>|<|>=|<=|==)$',
         is_mandatory    => 1,
-        is_extended     => 0,
         is_editable     => 1,
     },
     right_combination_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,
-        is_extended     => 0,
         is_editable     => 1,
     },
     nodemetric_condition_formula_string => {
         pattern         => '^.*$',
         is_mandatory    => 0,
-        is_extended     => 0,
         is_editable     => 1,
     },
 };
@@ -82,13 +78,11 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        'updateName'    => {
+        updateName => {
             description => 'updateName',
-            perm_holder => 'entity'
         },
-        'getDependencies' => {
-            'description' => 'return dependencies tree for this object',
-            'perm_holder' => 'entity',
+        getDependencies => {
+            description => 'return dependencies tree for this object',
         },
     };
 }

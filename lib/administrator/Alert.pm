@@ -46,6 +46,8 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub methods { return {}; }
+
 sub new {
     my ($class, %args) = @_;
 

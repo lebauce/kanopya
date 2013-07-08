@@ -76,6 +76,7 @@ function updateWorkflowGritter(workflow) {
     var ul = gritter.find("ul.gritter-operations");
     var operations = get("/api/operation?workflow_id=" + id  + "&order_by=execution_rank");
     ul.empty().append(formatOperations(operations).children());
+
     if (workflow.state != "running" && workflow.state != "pending") {
         $.gritter.remove(gritterId);
         return;
@@ -169,7 +170,14 @@ function updateMessages( show_gritters ) {
                 if (gritter.length) {
                     updateWorkflowGritter(workflows[i]);
                 } else {
-                    showWorkflowGritter(workflows[i]);
+                    try {
+                        // Try to get the workflow to check permissions
+                        get("/api/workflow/" + workflows[i].pk);
+
+                        // Display the popup
+                        showWorkflowGritter(workflows[i]);
+                    }
+                    catch (e) {}
                 }
             }
 
@@ -183,8 +191,12 @@ function updateMessages( show_gritters ) {
                     }
                 }
                 if (!displayed) {
-                    var workflow = get("/api/workflow/" + id);
-                    updateWorkflowGritter(workflow);
+                    try {
+                       updateWorkflowGritter(get("/api/workflow/" + id));
+                    }
+                    catch (e) {
+                        console.log(e);
+                    }
                 }
             });
         });

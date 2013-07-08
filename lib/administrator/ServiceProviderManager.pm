@@ -1,4 +1,4 @@
-# Copyright © 2011-2012 Hedera Technology SAS
+# Copyright © 2011-2013 Hedera Technology SAS
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -35,26 +35,26 @@ use constant ATTR_DEF => {
     service_provider_id => {
         pattern      => '^\d*$',
         is_mandatory => 1,
-        is_extended  => 0
+        is_delegatee => 1,
     },
     manager_category_id => {
         pattern      => '^\d*$',
         is_mandatory => 1,
-        is_extended  => 0
     },
     manager_id => {
         pattern      => '^\d*$',
         is_mandatory => 1,
-        is_extended  => 0
     },
     param_preset_id   => {
         pattern      => '^\d*$',
         is_mandatory => 0,
-        is_extended  => 0
     },
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub methods { return {}; }
+
 
 sub new {
     my $class = shift;
@@ -100,18 +100,6 @@ sub search {
     }
 
     return $class->SUPER::search(%args);
-}
-
-sub getDelegatee {
-    my $self = shift;
-    my $class = ref $self;
-
-    if (!$class) {
-        return "Entity::ServiceProvider";
-    }
-    else {
-        return $self->service_provider;
-    }
 }
 
 sub addParams {

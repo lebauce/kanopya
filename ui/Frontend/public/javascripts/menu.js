@@ -1,5 +1,4 @@
-
-var current_user = get_current_user();
+require('common/general.js');
 
 // mainmenu_def is set in product specific menu.conf.js
 function add_menu(container, label, submenu_links, elem_id) {
@@ -55,8 +54,12 @@ function add_menutree(container, label, menu_info, elem_id) {
 
         var container_id = 'content_services_overview_static';
 
+        var customer_filter = '';
+        if (current_user.profiles.length == 1 && current_user.profiles[0].profile_name === "Customer") {
+            customer_filter = '&user_id=' + current_user.user_id;
+        }
         create_grid( {
-            url: '/api/cluster?expand=service_template,nodes&service_template.service_template_id=' + elem_id,
+            url: '/api/cluster?expand=service_template,nodes' + customer_filter + '&service_template.service_template_id=' + elem_id,
             content_container_id: container_id,
             grid_id: 'services_list',
             afterInsertRow: function (grid, rowid, rowdata, rowelem) {
@@ -183,33 +186,6 @@ function build_mainmenu() {
         clearStyle  : true,     // size to content
         active      : false,    // all parts closed at start
     } );
-}
-
-function get_current_user () {
-    // Get username of current logged user :
-    var username = '';
-    var user;
-    $.ajax({
-        async   : false,
-        url     : '/me',
-        type    : 'GET',
-        success : function(data) {
-            username = data.username;
-        }
-    });
-    // Get profile list for the username :
-    $.ajax({
-        async   : false,
-        url     : '/api/user?expand=profiles&user_login=' + username,
-        type    : 'GET',
-        success : function(data) {
-            user = {
-                user_id  : data[0].pk,
-                profiles : data[0].profiles
-            }
-        }
-    });
-    return user;
 }
 
 function build_submenu(container, view_id, links, elem_id) {

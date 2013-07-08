@@ -42,55 +42,47 @@ use constant ATTR_DEF => {
     aggregate_condition_id => {
         pattern         => '^.*$',
         is_mandatory    => 0,
-        is_extended     => 0,
         is_editable     => 0,
     },
     aggregate_condition_label => {
         pattern         => '^.*$',
         is_mandatory    => 0,
-        is_extended     => 0,
         is_editable     => 1,
     },
     aggregate_condition_formula_string => {
         pattern         => '^.*$',
         is_mandatory    => 0,
-        is_extended     => 0,
         is_editable     => 1,
     },
     aggregate_condition_service_provider_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,
-        is_extended     => 0,
+        is_delegatee    => 1,
         is_editable     => 0,
     },
     left_combination_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,
-        is_extended     => 0,
         is_editable     => 1,
     },
     right_combination_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,
-        is_extended     => 0,
         is_editable     => 1,
     },
     comparator => {
         pattern         => '^(>|<|>=|<=|==)$',
         is_mandatory    => 1,
-        is_extended     => 0,
         is_editable     => 1,
     },
     time_limit => {
         pattern         => '^.*$',
         is_mandatory    => 0,
-        is_extended     => 0,
         is_editable     => 1,
     },
     last_eval => {
         pattern         => '^.*$',
         is_mandatory    => 0,
-        is_extended     => 0,
         is_editable     => 1,
     },
 };

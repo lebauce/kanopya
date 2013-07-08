@@ -1,4 +1,4 @@
-#    Copyright © 2012 Hedera Technology SAS
+#    Copyright © 2012-2013 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -67,14 +67,26 @@ sub getAttrDef { return ATTR_DEF; }
 sub methods {
     return {
         get => {
-            description => 'get a <type>',
+            description => 'get <object>',
+        },
+        create => {
+            description => 'create a new <object>',
+        },
+        remove => {
+            description => 'remove <object>',
+        },
+        update => {
+            description => 'update <object>',
         },
     };
 }
 
 my $adm = {
+    # DBix database schema
     schema => undef,
+    # Libkanopya configuration
     config => undef,
+    # Current logged in user
     user   => undef,
 };
 
@@ -378,7 +390,12 @@ sub getMethods {
     my @supers  = Class::ISA::self_and_super_path($class);
     my $merge   = Hash::Merge->new();
 
-    $args{depth} = $args{depth} or scalar @supers;
+    if (not defined $args{depth}) {
+        $args{depth} = scalar @supers;
+    }
+    elsif ($args{depth} < 0) {
+        $args{depth} = (scalar @supers) + $args{depth};
+    }
 
     SUPER:
     for my $sup (@supers) {
@@ -695,9 +712,7 @@ sub fromDBIx {
     # TODO: We need to use prefetch to get the parent/childs attrs,
     #       and use the concrete class type. Use 'get' for instance.
 
-    my $obj = bless {
-                  _dbix      => $args{row},
-              }, $modulename;
+    my $obj = bless { _dbix => $args{row} }, $modulename;
 
     # TODO: Do not hard code exceptions ("class_type", "component_type", "service_provider_type"),
     #       Those two types have no relation to class_type table,
@@ -744,10 +759,10 @@ sub getAttr {
     General::checkParams(args => \%args, required => [ 'name' ],
                                          optional => { deep => 0 });
 
+    my $found = 1;
+    my $value = undef;
     my $dbix = $self->{_dbix};
     my $attr = $class->getAttrDefs()->{$args{name}};
-    my $value = undef;
-    my $found = 1;
 
     # Recursively search in the dbix objets, following
     # the 'parent' relation
@@ -811,7 +826,6 @@ sub getAttr {
         $errmsg = ref($self) . " getAttr no attr name $args{name}.";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
-
     return $value;
 }
 
@@ -830,9 +844,9 @@ sub getAttrs {
     my ($self) = @_;
     my $dbix = $self->{_dbix};
 
-   # build hash corresponding to class table (with local changes)
-   my %attrs = ();
-       while(1) {
+    # build hash corresponding to class table (with local changes)
+    my %attrs = ();
+    while(1) {
         # Search for attr in this dbix
         my %currentattrs = $dbix->get_columns;
         %attrs = (%attrs, %currentattrs);
@@ -843,8 +857,7 @@ sub getAttrs {
             last;
         }
     }
-
-   return %attrs;
+    return %attrs;
 }
 
 
@@ -891,7 +904,6 @@ sub setAttr {
             # If failled with camel-cased, try the original attr name as method
             $self->$name($value);
         }
-
         return;
     }
 
@@ -1831,7 +1843,7 @@ sub getRelationship {
         relation => $attrdef->{relation}
     };
 
-    if ($attrdef->{relation} eq 'multi') {
+    if (defined $attrdef->{relation} && $attrdef->{relation} eq 'multi') {
         # Deduce the foreign key attr for link entries in relations multi
         my $linked_reldef = $relation_schema->relationship_info($attrdef->{link_to});
         my @conds = values %{$linked_reldef->{cond}};
@@ -2322,20 +2334,24 @@ sub getRelatedSource {
     my $class = ref($self) || $self;
 
     my $dbix = $class->getResultSource();
-    while ($dbix and (not $dbix->has_relationship($relation))) {
+    while ($dbix && (! $dbix->has_relationship($relation)) && $dbix->has_relationship("parent")) {
         $dbix = $dbix->related_source("parent");
     }
 
     my $relation_schema;
     my $attrdef = $class->getAttrDefs->{$relation};
-    if ($attrdef->{type} eq 'relation' and defined ($attrdef->{specialized})) {
+    if (defined ($attrdef->{type}) && $attrdef->{type} eq 'relation' and defined ($attrdef->{specialized})) {
         my $class = normalizeName($attrdef->{specialized});
         $relation_schema = BaseDB->_adm->{schema}->source($class);
     }
     else {
-        $relation_schema = $dbix->related_source($relation);
+        eval {
+            $relation_schema = $dbix->related_source($relation);
+        };
+        if ($@) {
+            throw Kanopya::Exception::Internal::NotFound(error => "$@");
+        }
     }
-
     return { dbix => $dbix, source => $relation_schema };
 }
 
@@ -2356,8 +2372,8 @@ sub requireClass {
     eval { require $location; };
     if ($@) {
         throw Kanopya::Exception::Internal::UnknownClass(
-            error => "Could not find $location :\n$@"
-        );
+                  error => "Could not find $location :\n$@"
+              );
     }
 }
 
@@ -2535,13 +2551,55 @@ By default, permissions are checked on the entity itself.
 =end classdoc
 =cut
 
-
 sub getDelegatee {
     my $self = shift;
 
     throw Kanopya::Exception::NotImplemented(
-              error => "Non entity class <$self> must implement getDelegatee method for permissions check."
+              error => "Unbale to check permissions on non entity class <$self>, " .
+                       "CRUD methods are supported by specifying a delegatee attr."
           );
+}
+
+
+=pod
+=begin classdoc
+
+Get the name of the attributue that define the relation to the delegatee object. 
+If exists, the permission to create an object of the class is delegated to
+the delegatee object on which the user need to have the 'update' permissions.
+
+@return the delegatee attr name.
+
+=end classdoc
+=cut
+
+sub getDelegateeAttr {
+    my $self  = shift;
+    my $class = ref($self) || $self;
+
+    my $attrs = $class->getAttrDefs();
+    my @delegatees = grep { defined $attrs->{$_}->{is_delegatee} && $attrs->{$_}->{is_delegatee} == 1 } keys %{ $attrs };
+
+    return (scalar(@delegatees) > 0) ? pop @delegatees : undef;
+}
+
+
+=pod
+=begin classdoc
+
+Propagate object specific permissions on a related object. This
+method is called at creation of related objects that have tagged
+the relation that link to this one as 'is_delegatee'.
+
+@param related the related object on which propagate permissions.
+
+=end classdoc
+=cut
+
+sub propagatePermissions {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'related' ]);
 }
 
 
@@ -2589,7 +2647,7 @@ Check permmissions on a method for a user.
 
 sub checkUserPerm {
     my $self  = shift;
-    my $class = ref($self);
+    my $class = ref($self) || $self;
     my %args  = @_;
 
     General::checkParams(args => \%args, required => [ 'method', 'user_id' ],
@@ -2597,8 +2655,50 @@ sub checkUserPerm {
 
     # For the class method get, intanciate the specified object from the id,
     # and delegate the permissions on get method to the object himself.
-    if (! $class && $args{method} eq 'get' && defined $args{params}->{id}) {
-        return $self->get(id => $args{params}->{id})->checkUserPerm(%args);
+    if (!ref($self) && $args{method} eq 'get' && defined $args{params}->{id}) {
+        return $class->get(id => $args{params}->{id})->checkUserPerm(%args);
+    }
+
+    # For delegated CRUD, check permission for 'update' on the delagated object
+    my $delegateeattr = $class->getDelegateeAttr();
+    if (defined $delegateeattr && $args{method} =~ m/^(get|create|update|remove)$/) {
+        (my $delegateerel = $delegateeattr) =~ s/_id$//g;
+
+        # If the method is 'create', or 'update' with the delegatee attr sepcified,
+        # instanciate the delegatee from the delegatee attr param
+        my $delegatee;
+        if ($args{method} =~ m/^(create|update)$/ && defined $args{params}->{$delegateeattr}) {
+            # Retreive the relation class to instanciate it
+            my $delegateeclass = $self->getRelationship(relation => $delegateerel)->{class};
+            $delegatee = $delegateeclass->get(id => $args{params}->{$delegateeattr});
+        }
+        # Else get the delegatee object from the instance
+        else {
+            $delegatee = $self->$delegateerel;
+        }
+
+        # Check the permission for update on the delagatee object
+        eval {
+            $delegatee->checkUserPerm(user_id => $args{user_id}, method => "update");
+        };
+        if ($@) {
+            my $err = $@;
+            if ($err->isa('Kanopya::Exception::Permission::Denied')) {
+                my $msg = $self->_buildPermissionDeniedErrorMessage(method => $args{method}) . " from " .
+                          _buildClassNameFromString(ref($delegatee)) . " <" . $delegatee->label . ">";
+                throw Kanopya::Exception::Permission::Denied(error => $msg);
+            }
+            else { $err->rethrow(); }
+        }
+
+        # Also check the permisions on the object himself if the other rights than CRUD are not delegated
+        $delegatee = undef;
+        eval {
+            $delegatee = $self->getDelegatee;
+        };
+        if (! (ref($self) && ref($delegatee) eq ref($self))) {
+            return;
+        }
     }
 
     # Firstly check permssions on parameters
@@ -2607,7 +2707,7 @@ sub checkUserPerm {
         if ((ref $param) eq "HASH" && defined ($param->{pk}) && defined ($param->{class_type_id})) {
             my $paramclass = $self->getClassType(id => $param->{class_type_id});
             eval {
-                $paramclass->getDelegatee->getMasterGroup->checkPerm(user_id => $args{user_id}, method => "get");
+                $paramclass->getDelegatee->checkPerm(user_id => $args{user_id}, method => "get");
             };
             if ($@) {
                 my $err = $@;
@@ -2622,25 +2722,41 @@ sub checkUserPerm {
         }
     }
 
-    # Retreive the perm holder if it is not a method call on a entity (usally class methods)
-    my $perm_holder;
-    if ($class) {
-        $perm_holder = $self->getDelegatee;
-    }
-    else {
-        $perm_holder = $self->getDelegatee->getMasterGroup;
-    }
+    $log->debug("Check permission for user <" . $args{user_id} . "> on <" . $self->getDelegatee .
+                "> to <$args{method}>");
 
     # Check the permissions for the logged user
     eval {
-        $perm_holder->checkPerm(user_id => $args{user_id}, method => $args{method});
+        $self->getDelegatee->checkPerm(user_id => $args{user_id}, method => $args{method});
     };
     if ($@) {
-        my $msg = "Permission denied to " . $self->getMethods->{$args{method}}->{description};
-        my $type = _buildClassNameFromString(ref($self) || $self);
-        $msg =~ s/<type>/$type/g;
-        throw Kanopya::Exception::Permission::Denied(error => $msg);
+        throw Kanopya::Exception::Permission::Denied(
+                  error => $self->_buildPermissionDeniedErrorMessage(method => $args{method})
+              );
     }
+}
+
+
+=pod
+=begin classdoc
+
+Build the permssions error message from the requested method.
+
+=end classdoc
+=cut
+
+sub _buildPermissionDeniedErrorMessage {
+    my $self  = shift;
+    my %args  = @_;
+    my $class = ref($self) || $self;
+
+    General::checkParams(args => \%args, required => [ 'method' ]);
+
+    my $msg  = "Permission denied to " . $self->getMethods->{$args{method}}->{description};
+    my $type = _buildClassNameFromString(ref($self) || $self);
+    $type = ref($self) ? ($type . " <" . $self->label . ">") : $type;
+    $msg =~ s/<object>/$type/g;
+    return $msg;
 }
 
 
@@ -2783,6 +2899,7 @@ sub _connectdb {
     }
     return $schema;
 }
+
 
 =pod
 =begin classdoc
