@@ -185,7 +185,7 @@ sub getPolicyDef {
             cond     => { 'foreign.policy_id' => 'self.policy_id' },
             resource => 'component'
         },
-    },
+    };
 
     push @{ $attributes->{displayed} }, {
         'components' => [ 'component_type' ]

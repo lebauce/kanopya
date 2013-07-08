@@ -90,6 +90,24 @@ function loadServicesDetails(cid, eid, is_iaas) {
 
     }
 
+    function removeClusterDialog (e) {
+        // Open a wizards to suggest component type to scale to the user
+        (new KanopyaFormWizard({
+            title      : 'Remove cluster',
+            displayed  : [ 'keep_systemimages' ],
+            rawattrdef : {
+                keep_systemimages : {
+                    label        : 'Keep the cluster system images',
+                    type         : 'boolean',
+                    is_mandatory : 1
+                }
+            },
+            submitCallback  : function(data, $form, opts, onsuccess, onerror) {
+                ajax('POST', '/api/cluster/' + eid + '/remove', data, onsuccess, onerror);
+            }
+        })).start();
+    }
+
     //$(actioncell).append($('<div>').append($('<h4>', { text : 'Actions' })));
     $.ajax({
         url     : '/api/serviceprovider/' + eid,
@@ -131,6 +149,11 @@ function loadServicesDetails(cid, eid, is_iaas) {
                     icon        : 'calculator',
                     action      : '/api/component/' + cloudmanager_id + '/optimiaas',
                     condition   : is_iaas !== undefined
+                },
+                {
+                    label       : 'Remove',
+                    icon        : 'trash',
+                    action      : removeClusterDialog
                 }
             ];
             createallbuttons(buttons, actioncell);
