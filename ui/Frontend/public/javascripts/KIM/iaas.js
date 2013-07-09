@@ -181,26 +181,6 @@ function load_hypervisorvm_details(cid, eid, cmgrid) {
 
 function load_iaas_content (container_id) {
     require('common/formatters.js');
-    var iaas   = [];
-    var iaases = getServiceProviders('HostManager');
-    for (var i in iaases) {
-        for (var component in iaases[i].components) {
-            var component = iaases[i].components[component];
-            if (component.host_type === undefined) {
-                continue;
-            } 
-            if (component.host_type === 'Virtual Machine') {
-                for (var index in component.component_type.component_type_categories) {
-                    var category = component.component_type.component_type_categories[index];
-                    if (category.component_category.category_name === 'HostManager') {
-                        iaases[i].cloudmanager = component;
-                        iaas.push(iaases[i]);
-                        break;
-                    }
-                } 
-            }
-        }
-    }
 
     var tabs = [];
     // Add the same tabs than 'Services'
@@ -218,20 +198,40 @@ function load_iaas_content (container_id) {
     var details_tab = $.grep(tabs, function (e) {return e.id == 'service_details'});
     details_tab[0].onLoad = function(cid, eid) { require('KIM/services_details.js'); loadServicesDetails(cid, eid, 1);};
 
+    // Get cluster
+    var url = '/api/cluster';
+    // Only cluster with a component of category 'HostManager'
+    url += '?components.component_type.component_type_categories.component_category.category_name=HostManager';
+    // Need component_type info to filter during afterInsertRow() callback
+    url += '&expand=components.component_type&deep=1';
+    // Exclude kanopya cluster
+    url += '&cluster_id=<>,' + kanopya_cluster;
+
     create_grid({
-        data                    : iaas,
+        url : url,
         content_container_id    : container_id,
         grid_id                 : 'iaas_list',
-        colNames                : [ 'ID', 'Name', 'State', 'ManagerID' ],
+        colNames                : [ 'ID', 'Name', 'State', 'Active' ],
         colModel                : [
             { name : 'pk', index : 'pk', width : 60, sorttype : 'int', hidden : true, key : true },
             { name : 'cluster_name', index : 'cluster_name', width : 200 },
             { name : 'cluster_state', index : 'cluster_state', width : 200, formatter : StateFormatter },
-            { name : 'cloudmanager.pk', index : 'cloudmanager.pk', width : 60, hidden : true, sorttype : 'int' }
+            { name: 'active', index: 'active', hidden : true}
         ],
+        afterInsertRow : function(grid, rowid, rowdata, rowelem) {
+            // Keep only instance where the component implementing HostManager manage hosts of type 'Virtual Machine'
+            // 'host_type' is a virtual attribute and so can not be filtered in the request
+            for (var i in rowelem.components) {
+                if (rowelem.components[i].host_type === 'Virtual Machine') {
+                    return true;
+                }
+            }
+            $(grid).jqGrid('delRowData', rowid);
+        },
         details                 : {
             noDialog    : true,
             tabs        : tabs
-        }
+        },
+        deactivate  : true,
     });
 }
