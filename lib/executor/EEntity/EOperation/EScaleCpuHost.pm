@@ -116,11 +116,11 @@ sub postrequisites {
     if ($vm_cpu == $self->{params}->{cpu_number}) {
         return 0;
     }
-    elsif ($time < 3*10) {
+    elsif ($time < 9*10) {
         return 5;
     }
     else {
-        my $error = 'ScaleIn of vm <' . $self->{context}->{host}->id . '> : Failed. Current CPU is <' . $vm_cpu . '>';
+        my $error = 'Timeout - ScaleIn of vm <' . $self->{context}->{host}->id . '> : Failed. Current CPU is <' . $vm_cpu . '>';
         $log->warn($error);
         Message->send(
              from    => 'EScaleCpuHost',

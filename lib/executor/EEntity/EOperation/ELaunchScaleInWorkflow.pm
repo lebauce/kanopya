@@ -37,11 +37,27 @@ sub check {
     $self->SUPER::check();
 
     General::checkParams(args => $self->{params}, required => [ 'scalein_value', 'scalein_type' ]);
-
-    General::checkParams(args => $self->{context}, required => [ "host" ]);
-
+    General::checkParams(args => $self->{context}, required => [ 'host', 'cloudmanager_comp' ]);
+    $self->{context}->{host_manager_sp} = $self->{context}->{cloudmanager_comp}->service_provider;
 }
 
+
+sub prepare {
+    my ($self, %args) = @_;
+    $self->SUPER::prepare();
+
+    # Check host manager sp states
+    my @entity_states =  $self->{context}->{host_manager_sp}->entity_states;
+
+    for my $entity_state (@entity_states) {
+        throw Kanopya::Exception::Execution::InvalidState(
+                  error => "The host manager cluster <" .$self->{context}->{host_manager_sp}->cluster_name .
+                           "> is <" . $entity_state->state .
+                           "> which is not a correct state to accept scale-in"
+              );
+    }
+    # TODO Manage 'scalein' state to controll operation allowed during scalein
+}
 
 sub execute{
     my $self = shift;
