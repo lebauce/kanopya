@@ -171,8 +171,6 @@ sub getPolicyDef {
         pattern      => '^\d*$',
         is_mandatory => defined $args{params}->{masterimage_id} ? 1 : 0,
     };
-    # Insert systemimage_size after
-    splice @{ $attributes->{displayed} }, 2, 0, 'systemimage_size';
 
     $attributes->{attributes}->{kernel_id}->{options} = \@kernels;
     $attributes->{attributes}->{masterimage_id}->{options} = \@masterimages;
