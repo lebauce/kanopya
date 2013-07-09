@@ -1075,6 +1075,8 @@ sub _scaleHost {
         optional => { memory => undef, cpu_number => undef }
     );
 
+    throw Kanopya::Exception::NotImplemented(error => 'Scale in not supported by Openstack');
+
     my $api    = $self->api;
     my $node   = $args{host}->node;
     my $uuid   = $args{host}->openstack_vm_uuid;
