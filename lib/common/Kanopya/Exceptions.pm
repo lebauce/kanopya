@@ -24,6 +24,8 @@ Kanopya Exceptions declaration
 
 package Kanopya::Exceptions;
 
+use TryCatch;
+
 use Exception::Class (
     Kanopya::Exception => {
         description => "Kanopya General Exception",

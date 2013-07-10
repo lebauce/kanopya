@@ -39,7 +39,7 @@ use warnings;
 
 use General;
 use Message;
-
+use Kanopya::Exceptions;
 use Entity::Workflow;
 use Entity::Operation;
 use EEntity::EOperation;
@@ -53,6 +53,10 @@ use Log::Log4perl::Appender;
 
 my $log = get_logger("");
 
+# Already used in Kanopya::Exception
+# but seems to not be propagated
+use TryCatch;
+my $err;
 
 use constant CALLBACKS => {
     execute_operation => {
@@ -137,14 +141,9 @@ sub runWorkflow {
 
     # Pop the first operation
     my $first;
-    eval {
+    try {
         $first = $workflow->getNextOperation();
-    };
-    if ($@) {
-        $log->warn("$@");
-        $workflow->finish();
-    }
-    else {
+
         $log->info("Running " . $workflow->workflow_name . " workflow <" . $workflow->id . "> ");
         $log->info("Executing " . $workflow->workflow_name . " first operation <" . $first->id . ">");
 
@@ -153,6 +152,10 @@ sub runWorkflow {
 
         # Push the first operation on the execution channel
         $self->_component->execute(operation_id => $first->id);
+    }
+    catch ($err) {
+        $log->warn("$err");
+        $workflow->finish();
     }
 
     # Acknowledge the message
@@ -190,12 +193,11 @@ sub executeOperation {
                   content => "Operation Processing [$operation]...");
 
     # Check parameters
-    eval {
+    try {
         $log->info("Step <check>");
         $operation->check();
-    };
-    if ($@) {
-        my $err = $@;
+    }
+    catch ($err) {
         return $self->terminateOperation(operation => $operation,
                                          status    => 'cancelled',
                                          exception => $err);
@@ -203,12 +205,11 @@ sub executeOperation {
 
     # Validate the operation
     my $valid;
-    eval {
+    try {
         $log->info("Step <validation>");
         $valid = ($operation->state eq 'validated') ? 1 : $operation->validation();
-    };
-    if ($@) {
-        my $err = $@;
+    }
+    catch ($err) {
         return $self->terminateOperation(operation => $operation,
                                          status    => 'cancelled',
                                          exception => $err);
@@ -224,7 +225,7 @@ sub executeOperation {
     if ($operation->state ne 'postreported') {
         if ($operation->state ne 'prereported') {
             # Check the required state of the context objects, and update its
-            eval {
+            try {
                 # Firstly lock the context objects
                 $self->lockOperationContext(operation => $operation);
 
@@ -238,9 +239,8 @@ sub executeOperation {
 
                 # Unlock the context objects
                 $operation->unlockContext();
-            };
-            if ($@) {
-                my $err = $@;
+            }
+            catch ($err) {
                 $operation->rollbackTransaction;
                 $operation->unlockContext();
 
@@ -266,12 +266,11 @@ sub executeOperation {
         }
 
         # Check preconditions for processing
-        eval {
+        try {
             $log->info("Step <prerequisites>");
             $delay = $operation->prerequisites();
-        };
-        if ($@) {
-            my $err = $@;
+        }
+        catch ($err) {
             return $self->terminateOperation(operation => $operation,
                                              status    => 'cancelled',
                                              exception => $err);
@@ -284,16 +283,15 @@ sub executeOperation {
         }
 
         # Process the operation
-        eval {
+        try {
             $operation->beginTransaction;
 
             $log->info("Step <process>");
             $operation->execute();
 
             $operation->commitTransaction;
-        };
-        if ($@) {
-            my $err = $@;
+        }
+        catch ($err) {
             $operation->rollbackTransaction;
 
             return $self->terminateOperation(operation => $operation,
@@ -303,11 +301,10 @@ sub executeOperation {
     }
 
     $log->info("Step <postrequisites>");
-    eval {
+    try {
          $delay = $operation->postrequisites();
-    };
-    if ($@) {
-        my $err = $@;
+    }
+    catch ($err) {
         return $self->terminateOperation(operation => $operation,
                                          status    => 'cancelled',
                                          exception => $err);
@@ -320,7 +317,7 @@ sub executeOperation {
     }
 
     # Update the state of the context objects if required
-    eval {
+    try {
         # Lock/Unlock the context with option 'skip_not_found',
         # as some context entities could be deleted by the operation
         $self->lockOperationContext(operation      => $operation,
@@ -332,9 +329,8 @@ sub executeOperation {
 
         # Unlock the context objects
         $operation->unlockContext(skip_not_found => 1);
-    };
-    if ($@) {
-        my $err = $@;
+    }
+    catch ($err) {
         $operation->unlockContext(skip_not_found => 1);
 
         if ($err->isa('Kanopya::Exception::Execution::OperationReported')) {
@@ -529,7 +525,7 @@ sub handleResult {
         $log->info("Cancelling " . $workflow->workflow_name . " workflow <" . $workflow->id . ">");
 
         # Restore context object states updated at 'prepare' step.
-        eval {
+        try {
             # Firstly lock the context objects
             $self->lockOperationContext(operation => $operation, skip_not_found => 1);
 
@@ -538,9 +534,8 @@ sub handleResult {
 
             # Unlock the context objects
             $operation->unlockContext(skip_not_found => 1);
-        };
-        if ($@) {
-            my $err = $@;
+        }
+        catch ($err) {
             $operation->unlockContext(skip_not_found => 1);
 
             if ($err->isa('Kanopya::Exception::Execution::OperationReported')) {
@@ -557,33 +552,27 @@ sub handleResult {
     # Compute the workflow status, push the next op if there is remaining one(s),
     # finish the workflow instead.
     my $next;
-    eval {
+    try {
         $next = $workflow->prepareNextOperation(current => $operation);
-    };
-    if ($@) {
-        my $err = $@;
-        if (not $err->isa('Kanopya::Exception::Internal::NotFound')) {
-            $err->rethrow();
-        }
 
-        # No remaning operation
-        $log->info("Finishing " . $workflow->workflow_name . " workflow <" . $workflow->id . ">");
-        $workflow->finish();
-    }
-    else {
         $log->info("Executing " . $workflow->workflow_name .
                    " workflow next operation " . $operation->type . " <" . $next->id . ">");
-
 
         if ($operation->state eq 'pending') {
             # Set the operation as ready
             $next->setState(state => 'ready');
         }
 
-
-
         # Push the next operation on the execution channel
         $self->_component->execute(operation_id => $next->id);
+    }
+    catch (Kanopya::Exception::Internal::NotFound $err) {
+        # No remaning operation
+        $log->info("Finishing " . $workflow->workflow_name . " workflow <" . $workflow->id . ">");
+        $workflow->finish();
+    }
+    catch ($err) {
+        $err->rethrow();
     }
 
     # Acknowledge the message
@@ -665,20 +654,19 @@ sub lockOperationContext {
 
     my $timeout = 10;
     while ($timeout >= 0) {
-        eval {
+        try {
             $args{operation}->lockContext(skip_not_found => $args{skip_not_found});
-        };
-        if ($@) {
-            my $err = $@;
-            if (not $err->isa('Kanopya::Exception::Execution::Locked')) {
-                $err->rethrow();
-            }
+
+            # Operation context successfully unlocked
+            return;
+        }
+        catch (Kanopya::Exception::Execution::Locked $err) {
             $log->info("Operation <" . $args{operation}->id .
                        ">, unable to get the context locks, $timeout second(s) left...");
             sleep 1;
         }
-        else {
-            return;
+        catch ($err) {
+            $err->rethrow();
         }
         $timeout--;
     }
@@ -704,29 +692,24 @@ sub instantiateOperation {
     General::checkParams(args => \%args, required => [ 'id' ]);
 
     my $operation;
-    eval {
+    try {
         $operation = EEntity::EOperation->new(
                          operation => Entity::Operation->get(id => $args{id})
                      );
-    };
-    if ($@) {
-        my $err = $@;
-        if ($err->isa('Kanopya::Exception::Internal::NotFound')) {
-            # The operation does not exists, probably due to a workflow cancel
-            $log->warn("Operation <$args{id}> does not exists, skipping.");
+    }
+    catch (Kanopya::Exception::Internal::NotFound $err) {
+        # The operation does not exists, probably due to a workflow cancel
+        $log->warn("Operation <$args{id}> does not exists, skipping.");
 
-            # Acknowledge the message as the operation result is finally handled
-            if (defined $args{ack_cb}) {
-                $args{ack_cb}->();
-            }
-        }
-        if (ref($err)) {
-            $err->rethrow();
-        }
-        else {
-            throw Kanopya::Exception::Execution(error => $err);
+        # Acknowledge the message as the operation result is finally handled
+        if (defined $args{ack_cb}) {
+            $args{ack_cb}->();
         }
     }
+    catch ($err) {
+        $err->rethrow();
+    }
+
     return $operation;
 }
 
