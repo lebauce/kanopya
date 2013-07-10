@@ -63,6 +63,15 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub getNetConf {
+    return {
+        tftp => {
+            port => 69,
+            protocols => ['udp']
+        }
+    }
+};
+
 sub getExecToTest {
     return {
         atftp => {
