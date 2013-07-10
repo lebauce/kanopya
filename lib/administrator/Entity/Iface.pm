@@ -201,6 +201,19 @@ sub getVlans {
     return @vlans;
 }
 
+sub networks {
+    my $self = shift;
+
+    my @networks;
+    for my $netconf ($self->netconfs) {
+        for my $poolip ($netconf->poolips) {
+            push @networks, $poolip->network;
+        }
+    }
+                    
+    return @networks;
+}
+
 sub slaves {
     my $self = shift;
     my %args = @_;
