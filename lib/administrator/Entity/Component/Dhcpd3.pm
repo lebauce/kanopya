@@ -21,196 +21,57 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Entity::ServiceProvider::Cluster;
+use Entity::Component::Dhcpd3::Dhcpd3Host;
+use Entity::Component::Dhcpd3::Dhcpd3Subnet;
 
 use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
+use NetAddr::IP;
 use General;
-
-my $log = get_logger("");
-my $errmsg;
 
 use constant ATTR_DEF => {};
 sub getAttrDef { return ATTR_DEF; }
 
-=head2 getInternalSubNetId
-B<Class>   : Public
-B<Desc>    : This method return internal network subnet id
-B<args>    : None
-B<Return>  : String : internal network subnet id
-B<Comment>  : TO Change when kanopya will manage different internal network
-    Or when component dhcp will be a available to be installed on a cluster
-    Before internal ip will be the first entry in dhcp component
-B<throws>  : None      
-=cut
-
-sub getInternalSubNetId{
-    #TODO Change when kanopya will manage different internal network
-    # Or when component dhcp will be a available to be installed on a cluster
-    # Before internal ip will be the first entry in dhcp component
-    return 1;
-}
-
-sub getSubNet {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['dhcpd3_subnet_id']);
-    
-    my $dhcpd3_subnet =  $self->{_dbix}->dhcpd3_subnets->find($args{dhcpd3_subnet_id});
-    return $dhcpd3_subnet->get_columns();
-}
-
-=head2 getConf
-B<Class>   : Public
-B<Desc>    : This method returns a structure to pass to the template processor 
-B<args>    : None
-B<Return>  : hashref : dhcpd configuration :
-    B<domain_name> : String : domain name
-    B<domain_name_server> : String : domain name server ip
-    B<servername> : String : dhcpd server name
-    B<server_ip> : String : dhcpd server ip
-    B<subnet> : hash ref containing
-        B<net> : String : network address of the subnet entry
-        B<mask> : String : network mask of the subnet entry
-        B<nodes> : table ref containing nodes (which are hash table) :
-            B<ip_address> : String : Node ip address\
-            B<mac_address> : String : Node mac address
-            B<hostname> : String : Node hostname
-            B<kernel_version> : String : Node kernel version
-B<Comment>  : TO Change when kanopya will manage different internal network
-    Or when component dhcp will be a available to be installed on a cluster
-    Before internal ip will be the first entry in dhcp component
-B<throws>  : None      
-=cut
-
-# return a data structure to pass to the template processor 
-sub getConf {
-    my $self = shift;
-
-    my $dhcpd3 = $self->{_dbix};
-    my $data   = {};
-
-    $data->{domain_name}        = $dhcpd3->get_column('dhcpd3_domain_name');
-    $data->{domain_name_server} = $dhcpd3->get_column('dhcpd3_domain_server');
-    $data->{server_name}        = $dhcpd3->get_column('dhcpd3_servername');
-    $data->{server_ip}          = $self->getMasterNode->adminIp;
-
-    my $subnets = $dhcpd3->dhcpd3_subnets;
-    my @data_subnets = ();
-    while(my $subnet = $subnets->next) {
-        my $hosts = $subnet->dhcpd3_hosts;
-        my @data_hosts = ();
-        while(my $host = $hosts->next) {
-            push @data_hosts, {
-                domain_name        => $host->get_column('dhcpd3_hosts_domain_name'),
-                domain_name_server => $host->get_column('dhcpd3_hosts_domain_name_server'),
-                ip_address         => $host->get_column('dhcpd3_hosts_ipaddr'),
-                ntp_server         => $host->get_column('dhcpd3_hosts_ntp_server'),
-                mac_address        => $host->get_column('dhcpd3_hosts_mac_address'),
-                hostname           => $host->get_column('dhcpd3_hosts_hostname'),
-                gateway            => $host->get_column('dhcpd3_hosts_gateway'),
-            };
-        }
-        push @data_subnets, {
-            net     => $subnet->get_column('dhcpd3_subnet_net'),
-            mask    => $subnet->get_column('dhcpd3_subnet_mask'),
-            gateway => $subnet->get_column('dhcpd3_subnet_gateway'),
-            nodes   => \@data_hosts
-        };
-    }
-
-    $data->{subnets} = \@data_subnets;
-    return $data;
-}
-
-=head2 addHost
-B<Class>   : Public
-B<Desc>    : This method returns a structure to pass to the template processor 
-B<args>    : 
-    B<dhcpd3_subnet_id> : Int : Subnet identifier
-    B<dhcpd3_hosts_ipaddr> : String : New host ip address
-    B<dhcpd3_hosts_mac_address> : String : New host mac address
-    B<dhcpd3_hosts_hostname> : String : New host hostname
-    B<kernel_id> : Int : New host kernel id
-B<Return>  : Int : New host id
-B<Comment>  : None
-B<throws>  : 
-Kanopya::Exception::Internal::IncorrectParam thrown when args missed      
-=cut
-
 sub addHost {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'host' ],
+                                         optional => { pxe => 0 });
 
-    General::checkParams(
-        args => \%args,
-        required => [   'dhcpd3_subnet_id',
-                        'dhcpd3_hosts_ipaddr',
-                        'dhcpd3_hosts_mac_address', 
-                        'dhcpd3_hosts_hostname',
-                        'kernel_id', 
-                        'dhcpd3_hosts_ntp_server',
-                        'dhcpd3_hosts_domain_name', 
-                        'dhcpd3_hosts_domain_name_server',
-                    ]
-    );
+    my $cluster = $args{host}->node->service_provider;
+    my $pxe_iface = $args{host}->getPXEIface;
+    my $subnet = ($pxe_iface->networks)[0];
 
-    my $dhcpd3_hosts_rs = $self->{_dbix}->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts;
-    my $res = $dhcpd3_hosts_rs->update_or_create(\%args);
-    return $res->get_column('dhcpd3_hosts_id');
+    my $dhcp_subnet = Entity::Component::Dhcpd3::Dhcpd3Subnet->findOrCreate(
+                          network_id => $subnet->id,
+                          dhcpd3_id => $self->id
+                      );
+
+    return Entity::Component::Dhcpd3::Dhcpd3Host->findOrCreate(
+               iface_id => $pxe_iface->id,
+               dhcpd3_hosts_pxe => $args{pxe},
+               dhcpd3_subnet_id => $dhcp_subnet->id
+           );
 }
 
-sub getHost {
-    my $self = shift;
-    my %args = @_;
+sub removeHost {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
-    General::checkParams(args => \%args, required => ['dhcpd3_hosts_id','dhcpd3_subnet_id']);
+    my $pxe_iface = $args{host}->getPXEIface;
+    my $network = ($pxe_iface->networks)[0];
     
-    my $dhcpd3_hosts_row = $self->{_dbix}->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts->find($args{dhcpd3_hosts_id});
-    my %host = $dhcpd3_hosts_row->get_columns();
-    return \%host;
-}
+    my $dhcp_subnet = $self->findRelated(
+                          filters => [ "dhcpd3_subnets" ],
+                          hash => {
+                              network_id => $network->id,
+                          }
+                      );
 
-=head2 getHostId
-B<Class>   : Public
-B<Desc>    : This method returns host id in dhcpd component instance 
-B<args>    : 
-    B<dhcpd3_subnet_id> : Int : Subnet identifier
-    B<dhcpd3_hosts_mac_address> : String : host mac address
-B<Return>  : Int : host id
-B<Comment>  : None
-B<throws>  : 
-Kanopya::Exception::Internal::IncorrectParam thrown when args missed      
-=cut
+    my $host = Entity::Component::Dhcpd3::Dhcpd3Host->find(
+                   hash => { iface_id => $pxe_iface->id }
+               );
 
-sub getHostId {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['dhcpd3_hosts_mac_address','dhcpd3_subnet_id']);
-    
-    return $self->{_dbix}->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts->search({ dhcpd3_hosts_mac_address=> $args{dhcpd3_hosts_mac_address}})->first()->get_column('dhcpd3_hosts_id');
-}
-
-=head2 removeHost
-B<Class>   : Public
-B<Desc>    : This method remove a host from dhcpd component configuration
-B<args>    : 
-    B<dhcpd3_subnet_id> : Int : Subnet identifier
-    B<dhcpd3_hosts_id> : Int : host identifier
-B<Return>  : None
-B<Comment>  : None
-B<throws>  : 
-Kanopya::Exception::Internal::IncorrectParam thrown when args missed      
-=cut
-
-sub removeHost{
-    my $self = shift;
-    my %args = @_;
-    
-    General::checkParams(args => \%args, required => ['dhcpd3_hosts_id','dhcpd3_subnet_id']);
-
-    return $self->{_dbix}->dhcpd3_subnets->find($args{dhcpd3_subnet_id})->dhcpd3_hosts->find( $args{dhcpd3_hosts_id})->delete();
+    $host->delete();
 }
 
 sub getNetConf {
@@ -224,12 +85,76 @@ sub getNetConf {
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+
+    my $cluster = $self->service_provider;
+    my $pxeserver = $cluster->getComponent(category => "Tftpserver");
+    my $ip = $pxeserver->getAccessIp(service => 'tftp');
+    my @interfaces = map { $_->iface_name } $args{host}->getIfaces();
+
+    my $manifest = $self->instanciatePuppetResource(
+                       name => "dhcp",
+                       params => {
+                           interfaces => \@interfaces,
+                           # pxeserver => $ip,
+                           # pxefilename => 'pxelinux.0',
+                           ntpservers => [ $ip ],
+                           dnsdomain => [ $cluster->cluster_domainname ],
+                           nameservers => [ $ip ],
+                           tag => 'kanopya::dhcpd'
+                       }
+                   );
+
+    for my $dhcp_subnet ($self->dhcpd3_subnets) {
+        my $subnet = $dhcp_subnet->network;
+        my $addr = NetAddr::IP->new($subnet->network_addr,
+                                    $subnet->network_netmask);
+        my $first = (split('/', $addr->first))[0];
+        my $last = (split('/', $addr->last))[0];
+
+        $manifest .= $self->instanciatePuppetResource(
+                         name => "pool-" . $subnet->id,
+                         resource => 'dhcp::pool',
+                         params => {
+                             network => $subnet->network_addr,
+                             gateway => $subnet->network_gateway,
+                             mask => $subnet->network_netmask,
+                             range => "$first $last",
+                             tag => 'kanopya::dhcpd'
+                         }
+                     );
+
+
+        for my $dhcp_host ($dhcp_subnet->dhcpd3_hosts) {
+            my $iface = $dhcp_host->iface;
+            my $host = $iface->host;
+            my $sp = $host->node->service_provider;
+
+            my $gateway = undef;
+            if (defined $args{cluster}->default_gateway) {
+                if ($iface->getPoolip->network->id == $args{cluster}->default_gateway->id) {
+                    $gateway = $args{cluster}->default_gateway->network_gateway;
+                }
+            }
+
+            $manifest .= $self->instanciatePuppetResource(
+                             resource => "dhcp::host",
+                             name => $host->node->node_hostname,
+                             params => {
+                                 mac => $iface->iface_mac_addr,
+                                 ip => $iface->getIPAddr,
+                                 tag => 'kanopya::dhcpd',
+                                 $dhcp_host->dhcpd3_hosts_pxe ?
+                                     (pxeserver   => $ip, pxefilename => "pxelinux.0")
+                                   : ()
+                             }
+                         );
+        };
+    }
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         dhcpd => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::dhcpd",
-                        )
+            manifest => $manifest
         }
     } );
 }
