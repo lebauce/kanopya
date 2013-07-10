@@ -2292,7 +2292,7 @@ sub classFromDbix {
     my $source = shift;
     my $args = @_;
 
-    my $name = normalizeName($source->from);
+    my $name = $source->source_name();
     my $class = BaseDB->getClassType(class => $name);
     if (!$class) {
         while (1) {
