@@ -131,6 +131,8 @@ my @classes = (
     'Entity::Component::Apache2',
     'Entity::Component::Atftpd0',
     'Entity::Component::Dhcpd3',
+    'Entity::Component::Dhcpd3::Dhcpd3Host',
+    'Entity::Component::Dhcpd3::Dhcpd3Subnet',
     'Entity::Component::Haproxy1',
     'Entity::Component::Haproxy1::Haproxy1Listen',
     'Entity::Component::Keepalived1',

@@ -1,17 +1,37 @@
+use utf8;
 package AdministratorDB::Schema::Result::Dhcpd3Host;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
-
-
 =head1 NAME
 
 AdministratorDB::Schema::Result::Dhcpd3Host
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
+
+=head1 TABLE: C<dhcpd3_hosts>
 
 =cut
 
@@ -26,6 +46,12 @@ __PACKAGE__->table("dhcpd3_hosts");
   is_auto_increment: 1
   is_nullable: 0
 
+=head2 dhcpd3_hosts_pxe
+
+  data_type: 'integer'
+  default_value: 0
+  is_nullable: 0
+
 =head2 dhcpd3_subnet_id
 
   data_type: 'integer'
@@ -33,49 +59,7 @@ __PACKAGE__->table("dhcpd3_hosts");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 dhcpd3_hosts_ipaddr
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 40
-
-=head2 dhcpd3_hosts_mac_address
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 40
-
-=head2 dhcpd3_hosts_hostname
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 40
-
-=head2 dhcpd3_hosts_domain_name
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 64
-
-=head2 dhcpd3_hosts_domain_name_server
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 15
-
-=head2 dhcpd3_hosts_ntp_server
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 15
-
-=head2 dhcpd3_hosts_gateway
-
-  data_type: 'char'
-  is_nullable: 1
-  size: 15
-
-=head2 kernel_id
+=head2 iface_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -92,6 +76,8 @@ __PACKAGE__->add_columns(
     is_auto_increment => 1,
     is_nullable => 0,
   },
+  "dhcpd3_hosts_pxe",
+  { data_type => "integer", default_value => 0, is_nullable => 0 },
   "dhcpd3_subnet_id",
   {
     data_type => "integer",
@@ -99,21 +85,7 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "dhcpd3_hosts_ipaddr",
-  { data_type => "char", is_nullable => 0, size => 40 },
-  "dhcpd3_hosts_mac_address",
-  { data_type => "char", is_nullable => 0, size => 40 },
-  "dhcpd3_hosts_hostname",
-  { data_type => "char", is_nullable => 0, size => 40 },
-  "dhcpd3_hosts_domain_name",
-  { data_type => "char", is_nullable => 0, size => 64 },
-  "dhcpd3_hosts_domain_name_server",
-  { data_type => "char", is_nullable => 0, size => 15 },
-  "dhcpd3_hosts_ntp_server",
-  { data_type => "char", is_nullable => 0, size => 15 },
-  "dhcpd3_hosts_gateway",
-  { data_type => "char", is_nullable => 1, size => 15 },
-  "kernel_id",
+  "iface_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -121,10 +93,18 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</dhcpd3_hosts_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("dhcpd3_hosts_id");
-__PACKAGE__->add_unique_constraint("ukey_dhcp3_host_mac", ["dhcpd3_hosts_mac_address"]);
-__PACKAGE__->add_unique_constraint("ukey_dhcp3_hostname", ["dhcpd3_hosts_hostname"]);
-__PACKAGE__->add_unique_constraint("ukey_dhcp3_host_ipaddr", ["dhcpd3_hosts_ipaddr"]);
 
 =head1 RELATIONS
 
@@ -140,28 +120,28 @@ __PACKAGE__->belongs_to(
   "dhcpd3_subnet",
   "AdministratorDB::Schema::Result::Dhcpd3Subnet",
   { dhcpd3_subnet_id => "dhcpd3_subnet_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
-=head2 kernel
+=head2 iface
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Kernel>
+Related object: L<AdministratorDB::Schema::Result::Iface>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "kernel",
-  "AdministratorDB::Schema::Result::Kernel",
-  { kernel_id => "kernel_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  "iface",
+  "AdministratorDB::Schema::Result::Iface",
+  { iface_id => "iface_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-07-03 10:54:19
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:dUGg3OJRJ8jfTjtUitTH9Q
+# Created by DBIx::Class::Schema::Loader v0.07035 @ 2013-07-10 02:56:45
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:wM84SSQvC5dX3Eu2rRQu5w
 
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;
