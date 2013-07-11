@@ -93,7 +93,7 @@ use constant POLICY_ATTR_DEF => {
                 repeats => {
                     label   => 'Repeat',
                     type    => 'enum',
-                    options => ['Daily'],
+                    options => {1 => 'Daily'},
                     is_editable  => 1,
                 },
                 repeat_start_time => {
