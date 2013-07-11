@@ -1,4 +1,5 @@
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -17,7 +18,7 @@
 
 Kanopya Exceptions declaration
 
-@since    2011-Jan-13
+@since 2011-Jan-13
 
 =end classdoc
 =cut
@@ -169,7 +170,15 @@ use Exception::Class (
 # For Kanopya::Exception and all its subclasses
 Kanopya::Exception->Trace(0);
 
-# Override method called when exception is stringified
+
+=pod
+=begin classdoc
+
+Override method called when exception is stringified.
+
+=end classdoc
+=cut
+
 sub Kanopya::Exception::full_message {
     my $self = shift;
     my $except_string = $self->description . ": ";
