@@ -550,7 +550,7 @@ sub configureBillingLimits {
 
         my @indicators = qw(Memory Cores);
         foreach my $name (@indicators) {
-            my $collector_manager = $self->getManager(manager_type => "collector_manager");
+            my $collector_manager = $self->getManager(manager_type => "CollectorManager");
             my $indicator = Entity::CollectorIndicator->find(
                                 hash => { "indicator.indicator_name" => $name,
                                           "collector_manager_id"     => $collector_manager->id }
