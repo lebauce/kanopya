@@ -139,7 +139,7 @@ function updateMessages( show_gritters ) {
                         var content = rows[row].message_content;
                         // Clean message for user by removing first part of content (class name and address). And add icon.
                         var formatted_content = content.replace(/\[.*\]\s/, '');
-                        formatted_content = '<div class="message-'+lvl+' message-level" style="float:left"/>' + formatted_content;
+                        formatted_content = '<div class="message-'+lvl+' message-level" style="float:left"/>' + escapeHtmlEntities(formatted_content);
                         // Display the notification :
                         $.gritter.add({
                             title: ' ',

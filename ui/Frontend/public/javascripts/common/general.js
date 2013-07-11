@@ -436,3 +436,7 @@ function current_user_has_any_profiles (profiles) {
     }
     return 0;
 }
+
+function escapeHtmlEntities (str) {
+    return $('<div/>').text(str).html();
+}
