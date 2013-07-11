@@ -89,6 +89,8 @@ sub createExport {
     my $manager_ip = $self->getMasterNode->adminIp;
     my $mount_dir  = $self->getMountDir(device => $args{container}->getAttr(name => 'container_device'));
 
+    system('chmod -R 777 ' . $mount_dir);
+
     my $entity = Entity::ContainerAccess::NfsContainerAccess->new(
                      container_id            => $args{container}->getAttr(name => 'container_id'),
                      export_manager_id       => $self->_entity->getAttr(name => 'entity_id'),
