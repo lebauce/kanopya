@@ -1696,12 +1696,10 @@ sub registerKanopyaMaster {
         );
     }
 
-    $args{db}->resultset('Dhcpd3Subnet')->create( {
-        dhcpd3_id             => $dhcp->id,
-        dhcpd3_subnet_net     => $args{ipv4_internal_network_ip},
-        dhcpd3_subnet_mask    => $args{poolip_netmask},
-        dhcpd3_subnet_gateway => $args{poolip_gateway}
-    } );
+    Entity::Component::Dhcpd3::Dhcpd3Subnet->new(
+        dhcpd3_id  => $dhcp->id,
+        network_id => $admin_network->id
+    );
 
     # TODO: insert IscsiPortals...
 
