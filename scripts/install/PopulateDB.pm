@@ -528,7 +528,7 @@ sub registerUsers {
     }
 
     eval {
-        Entity::User->find(user_login => "admin");
+        Entity::User->find(hash => { user_login => "admin" });
     };
     if ($@) {
         my $admin_user = Entity::User->create(
@@ -551,7 +551,7 @@ sub registerUsers {
     }
 
     eval {
-        Entity::User->find(user_login => "executor");
+        Entity::User->find(hash => { user_login => "executor" });
     };
     if ($@) {
         my $executor_user = Entity::User->create(
