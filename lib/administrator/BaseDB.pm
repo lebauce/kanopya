@@ -587,7 +587,7 @@ sub checkAttrs {
 
                 if (((not defined $value) and $attributes_def->{$module}->{$attr}->{is_mandatory}) or
                     ((defined $value and defined $pattern) and $value !~ m/($pattern)/) and
-                    (not $attributes_def->{$args{name}}->{is_virtual})) {
+                    (not $attributes_def->{$module}->{$attr}->{is_virtual})) {
 
                     $errmsg = "Wrong value detected <$value> for param <$attr> on class <$module>";
                     throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
