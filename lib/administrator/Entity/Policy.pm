@@ -111,7 +111,6 @@ my $merge = Hash::Merge->new('LEFT_PRECEDENT');
 
 
 =pod
-
 =begin classdoc
 
 @constructor
@@ -122,7 +121,6 @@ into a pattern that can be stored in the param preset table.
 @return a class instance
 
 =end classdoc
-
 =cut
 
 sub new {
@@ -147,7 +145,6 @@ sub new {
 
 
 =pod
-
 =begin classdoc
 
 As the same as the constructor, update the policy real attrs,
@@ -155,7 +152,6 @@ and override the params preset by storing a new pattern builded
 from keys/values parameters.
 
 =end classdoc
-
 =cut
 
 sub update {
@@ -178,14 +174,12 @@ sub update {
 
 
 =pod
-
 =begin classdoc
 
 Manualy remove the related param presets as delete on cascade
 could not be used here.
 
 =end classdoc
-
 =cut
 
 sub delete {
@@ -198,13 +192,11 @@ sub delete {
 
 
 =pod
-
 =begin classdoc
 
 Remove the related param preset from db.
 
 =end classdoc
-
 =cut
 
 sub removePresets {
@@ -224,7 +216,6 @@ sub removePresets {
 
 
 =pod
-
 =begin classdoc
 
 Like toJSON (with option 'model'), build the dynamic attribute definition
@@ -238,7 +229,6 @@ attribute list, dynamic ones are handled in concrete classes.
 @return the static attributes definiton.
 
 =end classdoc
-
 =cut
 
 sub getPolicyDef {
@@ -270,7 +260,6 @@ sub getPolicyDef {
 
 
 =pod
-
 =begin classdoc
 
 Update the params in function of the trigger effects.
@@ -280,7 +269,6 @@ with the existings values, and unset some params.
 @return the processed param hash
 
 =end classdoc
-
 =cut
 
 sub processParams {
@@ -310,7 +298,6 @@ sub processParams {
 
 
 =pod
-
 =begin classdoc
 
 Flat params given in parameters are merged with the exsting ones
@@ -325,7 +312,6 @@ additional params given by the user at cluster creation time.
 @return the policy pattern respecting the cluster configuration pattern format.
 
 =end classdoc
-
 =cut
 
 sub getPattern {
@@ -354,7 +340,6 @@ sub getPattern {
 
 
 =pod
-
 =begin classdoc
 
 Transform the keys/values parameters to a pattern respecting the cluster
@@ -369,7 +354,6 @@ specific parameters are handled in the concrete implementation.
 @return the policy pattern respecting the cluster configuration pattern format.
 
 =end classdoc
-
 =cut
 
 sub getPatternFromParams {
@@ -425,7 +409,6 @@ sub getPatternFromParams {
 
 
 =pod
-
 =begin classdoc
 
 Store params as a pattern in the policy param presets.
@@ -433,7 +416,6 @@ Store params as a pattern in the policy param presets.
 @param params the flat keys/values parameters describing the policy.
 
 =end classdoc
-
 =cut
 
 sub setPatternFromParams {
@@ -448,7 +430,6 @@ sub setPatternFromParams {
 
 
 =pod
-
 =begin classdoc
 
 Merge the values given in parameter with the instance ones.
@@ -458,7 +439,6 @@ Merge the values given in parameter with the instance ones.
 @return the values defining the policy.
 
 =end classdoc
-
 =cut
 
 sub mergeValues {
@@ -490,7 +470,6 @@ sub mergeValues {
 
 
 =pod
-
 =begin classdoc
 
 Add the defined values into the policy attribute definition hash map.
@@ -507,7 +486,6 @@ re-requesting the api to get values after getting the attributes.
           as non editable instead.
 
 =end classdoc
-
 =cut
 
 sub setValues {
@@ -554,7 +532,6 @@ sub setValues {
 
 
 =pod
-
 =begin classdoc
 
 Set to undef the values of paramters taht depends on an other one,
@@ -562,7 +539,6 @@ called a selector, in funtion of the selector relation map
 (see POLICY_SELECTOR_MAP constant).
 
 =end classdoc
-
 =cut
 
 sub unsetSelectors {
@@ -582,7 +558,6 @@ sub unsetSelectors {
 
 
 =pod
-
 =begin classdoc
 
 Get the non editable attributes list for the 'set_params_editable' mode
@@ -594,7 +569,6 @@ the stored param preset in the param format (not pattern).
 @return the non editable params list
 
 =end classdoc
-
 =cut
 
 sub getNonEditableAttributes {
@@ -605,7 +579,6 @@ sub getNonEditableAttributes {
 
 
 =pod
-
 =begin classdoc
 
 Get the param preset (dynamic attributes) of the policy in a flat
@@ -617,7 +590,6 @@ the policy pattern.
 @todo dispath policy type pecific params hnadling a concrete classes.
 
 =end classdoc
-
 =cut
 
 sub getParams {
@@ -698,7 +670,6 @@ sub getParams {
 
 
 =pod
-
 =begin classdoc
 
 Utility method to search among existing managers in function of
@@ -707,7 +678,6 @@ manager category.
 @return a manager list.
 
 =end classdoc
-
 =cut
 
 sub searchManagers {
@@ -730,14 +700,12 @@ sub searchManagers {
 
 
 =pod
-
 =begin classdoc
 
 Check if the given attr trigger the reload ofattr def
 by setting it to an undef value.
 
 =end classdoc
-
 =cut
 
 sub isAttributeUnset {
@@ -751,13 +719,48 @@ sub isAttributeUnset {
 
 
 =pod
+=begin classdoc
 
+Set the first options selected in params if the attribute is mandatory.
+
+=end classdoc
+=cut
+
+sub setFirstSelected {
+    my $self = shift;
+    my %args  = @_;
+
+    General::checkParams(args => \%args, required => [ 'name', 'attributes', 'params' ]);
+
+    if (defined $args{attributes}->{$args{name}}->{options}) {
+        my @options;
+        if (ref($args{attributes}->{$args{name}}->{options}) eq "ARRAY") {
+            @options = @{ $args{attributes}->{$args{name}}->{options} };
+        }
+        elsif (ref($args{attributes}->{$args{name}}->{options}) eq "HASH") {
+            @options = keys %{ $args{attributes}->{$args{name}}->{options} };
+        }
+
+        # Set the first option as seleted if the attr is mandatory
+        if ($args{attributes}->{$args{name}}->{is_mandatory} and scalar (@options) > 0) {
+            # If the options are json objects, use the pk as value
+            if (ref($options[0]) eq "HASH" && defined ($options[0]->{pk})) {
+                $args{params}->{$args{name}} = $options[0]->{pk};
+            }
+            else {
+                $args{params}->{$args{name}} = $options[0];
+            }
+        }
+    }
+}
+
+
+=pod
 =begin classdoc
 
 @return the master group name associated with this entity
 
 =end classdoc
-
 =cut
 
 sub getMasterGroupName {

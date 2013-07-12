@@ -134,13 +134,15 @@ sub getPolicyDef {
 
     # If storage_provider_id not defined, select it from the disk manager or
     # select the first one.
-    if (not $args{params}->{storage_provider_id}) {
+    if (! $args{params}->{storage_provider_id}) {
         if ($args{params}->{disk_manager_id}) {
             $args{params}->{storage_provider_id}
                 = Entity->get(id => $args{params}->{disk_manager_id})->service_provider->id;
         }
-        elsif ($args{set_mandatory} and scalar (@storageproviders) > 0) {
-            $args{params}->{storage_provider_id} = $storageproviders[0]->{pk};
+        elsif ($args{set_mandatory}) {
+            $self->setFirstSelected(name       => 'storage_provider_id',
+                                    attributes => $attributes->{attributes},
+                                    params     => $args{params});
         }
     }
 
@@ -161,9 +163,10 @@ sub getPolicyDef {
             delete $args{params}->{disk_manager_id};
         }
         # If no disk_manager_id defined and and attr is mandatory, use the first one as value
-        if (! $args{params}->{disk_manager_id} and $args{set_mandatory} and scalar (@diskmanageroptions) > 0) {
-
-            $args{params}->{disk_manager_id} = $diskmanageroptions[0]->{pk};
+        if (! $args{params}->{disk_manager_id} && $args{set_mandatory}) {
+            $self->setFirstSelected(name       => 'disk_manager_id',
+                                    attributes => $attributes->{attributes},
+                                    params     => $args{params});
         }
     }
 
@@ -173,6 +176,12 @@ sub getPolicyDef {
         my $managerparams = $diskmanager->getDiskManagerParams();
         for my $attrname (keys %{$managerparams}) {
             $attributes->{attributes}->{$attrname} = $managerparams->{$attrname};
+            # If no value defined in params, use the first one
+            if (! $args{params}->{$attrname} && $args{set_mandatory}) {
+                $self->setFirstSelected(name       => $attrname,
+                                        attributes => $attributes->{attributes},
+                                        params     => $args{params});
+            }
             push @{ $attributes->{displayed} }, $attrname;
         }
 
@@ -197,8 +206,10 @@ sub getPolicyDef {
             delete $args{params}->{export_manager_id};
         }
         # If no export_manager_id defined and and attr is mandatory, use the first one as value
-        if (! $args{params}->{export_manager_id} and $args{set_mandatory} and scalar (@expmanageroptions) > 0) {
-            $args{params}->{export_manager_id} = $expmanageroptions[0]->{pk};
+        if (! $args{params}->{export_manager_id} and $args{set_mandatory}) {
+            $self->setFirstSelected(name       => 'export_manager_id',
+                                    attributes => $attributes->{attributes},
+                                    params     => $args{params});
         }
 
         if ($args{params}->{export_manager_id}) {
@@ -207,6 +218,12 @@ sub getPolicyDef {
             $managerparams = $exportmanager->getExportManagerParams(params => $args{params});
             for my $attrname (keys %{$managerparams}) {
                 $attributes->{attributes}->{$attrname} = $managerparams->{$attrname};
+                # If no value defined in params, use the first one
+                if (! $args{params}->{$attrname} && $args{set_mandatory}) {
+                    $self->setFirstSelected(name       => $attrname,
+                                            attributes => $attributes->{attributes},
+                                            params     => $args{params});
+                }
                 push @{ $attributes->{displayed} }, $attrname;
             }
         }

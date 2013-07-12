@@ -131,9 +131,11 @@ sub getPolicyDef {
             $args{params}->{host_provider_id}
                 = Entity->get(id => $args{params}->{host_manager_id})->service_provider->id;
         }
-        elsif ($args{set_mandatory} and scalar (@hostproviders) > 0) {
+        elsif ($args{set_mandatory}) {
             # Use the first one in options instead
-            $args{params}->{host_provider_id} = $hostproviders[0]->{pk};
+            $self->setFirstSelected(name       => 'host_provider_id',
+                                    attributes => $attributes->{attributes},
+                                    params     => $args{params});
         }
     }
 
@@ -154,8 +156,10 @@ sub getPolicyDef {
             delete $args{params}->{host_manager_id};
         }
         # If no host_manager_id defined and and attr is mandatory, use the first one as value
-        if (! defined $args{params}->{host_manager_id} and $args{set_mandatory} and scalar (@options) > 0) {
-            $args{params}->{host_manager_id} = $options[0]->{pk};
+        if (! defined $args{params}->{host_manager_id} and $args{set_mandatory}) {
+            $self->setFirstSelected(name       => 'host_manager_id',
+                                    attributes => $attributes->{attributes},
+                                    params     => $args{params});
         }
     }
 
@@ -165,6 +169,12 @@ sub getPolicyDef {
         my $managerparams = $hostmanager->getHostManagerParams();
         for my $attrname (keys %{$managerparams}) {
             $attributes->{attributes}->{$attrname} = $managerparams->{$attrname};
+            # If no value defined in params, use the first one
+            if (! $args{params}->{$attrname} && $args{set_mandatory}) {
+                $self->setFirstSelected(name       => $attrname,
+                                        attributes => $attributes->{attributes},
+                                        params     => $args{params});
+            }
             push @{ $attributes->{displayed} }, $attrname;
         }
     }
