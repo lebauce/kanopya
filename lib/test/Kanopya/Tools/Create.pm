@@ -118,7 +118,7 @@ sub createCluster {
 
     diag('Retrieve the admin user');
     if (not defined $args{user_id}) {
-        $args{user_id} = Entity::User->find(hash => { user_login => 'admin' });
+        $args{user_id} = Entity::User->find(hash => { user_login => 'admin' })->id;
     }
 
     diag('Retrieve admin NetConf');
