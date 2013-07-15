@@ -77,12 +77,12 @@ function booleantostateformatter(val, yes, no) {
 
 function datetimeformatter(timestamp) {
     var d   = new Date(parseInt(timestamp));
-    return d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear() + ' '
-      + d.getHours() + ':' + d.getMinutes();
+    return $.datepicker.formatDate('dd/mm/yy', d);
 }
 
 function timeformatter(timestamp) {
-    return ((datetimeformatter(timestamp)).split(' '))[1];
+    var d   = new Date(parseInt(timestamp));
+    return d.toLocaleTimeString().replace(/:00$/, '');
 }
 
 function bytesToMegsFormatter(size) {

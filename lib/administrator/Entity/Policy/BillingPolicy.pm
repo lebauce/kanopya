@@ -77,6 +77,7 @@ use constant POLICY_ATTR_DEF => {
                     options => [ 'ram', 'cpu' ],
                     # Add a mechanism to have mutliple units in function of the option.
                     is_editable  => 1,
+                    is_mandatory => 1,
                 },
                 soft => {
                     label        => 'Soft limit ?',

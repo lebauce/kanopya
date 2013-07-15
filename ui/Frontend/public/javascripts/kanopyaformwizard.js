@@ -460,7 +460,20 @@ var KanopyaFormWizard = (function() {
         this.insertInput(input, label, table, attr.help || attr.description, listing, value);
 
         if ($(input).attr('type') === 'date') {
-            $(input).datepicker({ dateFormat : 'yy-mm-dd', constrainInput : true });
+            $(input).datepicker({ dateFormat : 'yy-mm-dd', constrainInput : true})
+                    .datepicker('setDate', new Date(parseFloat(value)));
+            this.attributedefs[name].formatValue = function(val) {
+                return (new Date(val)).getTime()
+            }
+        }
+
+        if ($(input).attr('type') === 'time') {
+            var t = $(input).timepicker({constrainInput : true })
+                    .timepicker('setDate', new Date(parseFloat(value)));
+            this.attributedefs[name].formatValue = function(val) {
+                if (val === '') {return val}
+                return (new Date('01-01-1970' + ' ' + val)).getTime();
+            }
         }
 
         // Set reload callback on onChange event if required
@@ -760,6 +773,11 @@ var KanopyaFormWizard = (function() {
         var current_multi;
         for (var index in arr) {
             var attr = arr[index];
+
+            // Transform value from input to expected format
+            if (this.attributedefs[attr.name].formatValue) {
+                attr.value = this.attributedefs[attr.name].formatValue(attr.value);
+            }
 
             // If the attr is an attr of a relation,
             // move value in the corresponding sub hash
