@@ -687,8 +687,8 @@ sub getVMDetails {
         throw Kanopya::Exception(error => "VM <".$args{host}->id."> not found in infrastructure");
     }
 
-    my $state = $vm_view->runtime->connectionState ne 'connected'
-                    ? 'error' : $vm_view->runtime->powerState;
+    my $state = $vm_view->runtime->connectionState->val ne 'connected'
+                    ? 'error' : $vm_view->runtime->powerState->val;
     # TODO : transition state MIGRATING using WaitForUpdatesEx
 
     return {
