@@ -77,7 +77,7 @@ sub insertDefaultExtendedConfiguration {
          $collector = $self->service_provider->getManager(manager_type => 'CollectorManager');
     };
     if (defined $collector and $collector->component_type->component_name eq 'Kanopyacollector') {
-        $self->monitor_server_ip($collector->getMasterNode->adminIp);
+        $self->monitor_server_ip('0.0.0.0');
     }
 }
 
