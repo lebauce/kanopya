@@ -243,6 +243,7 @@ my @classes = (
     'Entity::Component::Ceph::CephMon',
     'Entity::Component::Ceph::CephOsd',
     'Entity::Tag',
+    'Entity::Component::HpcManager'
 );
 
 sub registerKernels {
@@ -1184,6 +1185,12 @@ sub registerComponents {
             component_version      => 0,
             component_categories   => [ ],
             service_provider_types => [ 'Cluster' ],
+        },
+        {
+            component_name         => 'HpcManager',
+            component_version      => 0,
+            component_categories   => [ 'HostManager' ],
+            service_provider_types => [ ],
         },
     ];
 
