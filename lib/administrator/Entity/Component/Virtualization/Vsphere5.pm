@@ -1040,74 +1040,88 @@ sub registerHypervisor {
     my $node_renamed = $self->_formatName(name => $args{name}, type => 'node');
     my $hv_uuid      = $args{uuid};
 
-    my $datacenter_view = $self->findEntityView(
-                              view_type   => 'Datacenter',
-                              hash_filter => {
-                                  name => $dc_name
-                              }
-                          );
-    my $hypervisor_view = $self->findEntityView(
-                              view_type    => 'HostSystem',
-                              hash_filter  => {
-                                  'hardware.systemInfo.uuid' => $hv_uuid,
-                              },
-                              begin_entity => $datacenter_view,
-                          );
-
-    my $admin_user           = Entity::User->find(hash => { user_login => 'admin' });
-
-    my $service_provider = $self->service_provider;
-
-    # Now set this manager as host manager for service provider (if not yet done)
+    my $vsphere_hyp;
     eval {
-        $service_provider->getHostManager();
+        $vsphere_hyp = Entity::Host::Hypervisor::Vsphere5Hypervisor->find(
+            hash => { vsphere5_uuid => $hv_uuid }
+        );
     };
     if ($@) {
-        $service_provider->addManager(
-            manager_type => 'HostManager',
-            manager_id   => $self->id
+        my $datacenter_view = $self->findEntityView(
+                                  view_type   => 'Datacenter',
+                                  hash_filter => {
+                                      name => $dc_name
+                                  }
+                              );
+        my $hypervisor_view = $self->findEntityView(
+                                  view_type    => 'HostSystem',
+                                  hash_filter  => {
+                                      'hardware.systemInfo.uuid' => $hv_uuid,
+                                  },
+                                  begin_entity => $datacenter_view,
+                              );
+
+        my $admin_user           = Entity::User->find(hash => { user_login => 'admin' });
+
+        my $service_provider = $self->service_provider;
+
+        # Now set this manager as host manager for service provider (if not yet done)
+        eval {
+            $service_provider->getHostManager();
+        };
+        if ($@) {
+            $service_provider->addManager(
+                manager_type => 'HostManager',
+                manager_id   => $self->id
+            );
+        }
+        
+        # connected state : the fact that host is available or not for management
+        # power state will be managed by state-manager
+        my $host_state = $hypervisor_view->runtime->connectionState->val eq 'connected'
+                             ? 'up' : 'broken';
+
+        my $hv = Entity::Host->new(
+                     host_manager_id    => $self->id,
+                     host_serial_number => '',
+                     host_desc          => $dc_name . ' hypervisor',
+                     active             => 1,
+                     host_ram           => $hypervisor_view->hardware->memorySize,
+                     host_core          => $hypervisor_view->hardware->cpuInfo->numCpuCores,
+                     host_state         => $host_state . ':' . time(),
+                 );
+
+        # TODO : add MAC addresses for vSphere registered hosts
+
+        # promote new hypervisor class to a vsphere5Hypervisor one
+        $vsphere_hyp = $self->addHypervisor(
+                              host => $hv,
+                              datacenter_id => $datacenter->id,
+                              uuid => $hv_uuid
+                          );
+
+        # Register the node
+        $service_provider->registerNode(
+            host => $hv,
+            hostname => $node_renamed,
+            number   => 1,
+            state    => 'in'
         );
+
+        # TODO : state management + concurrent access
+        my ($sp_state, $sp_timestamp) = $service_provider->getState;
+        if ($host_state eq 'up' && $sp_state eq 'down') {
+            $service_provider->setState(state => 'up');
+        }
+
+        return $vsphere_hyp;
     }
+    else {
+        $errmsg  = 'Hypervisor '. $args{name} .' already registered';
+        $log->debug($errmsg);
 
-    # connected state : the fact that host is available or not for management
-    # power state will be managed by state-manager
-    my $host_state = $hypervisor_view->runtime->connectionState->val eq 'connected'
-                         ? 'up' : 'broken';
-
-    my $hv = Entity::Host->new(
-                 host_manager_id    => $self->id,
-                 host_serial_number => '',
-                 host_desc          => $dc_name . ' hypervisor',
-                 active             => 1,
-                 host_ram           => $hypervisor_view->hardware->memorySize,
-                 host_core          => $hypervisor_view->hardware->cpuInfo->numCpuCores,
-                 host_state         => $host_state . ':' . time(),
-             );
-
-    # TODO : register MAC addresses
-
-    # promote new hypervisor class to a vsphere5Hypervisor one
-    my $vsphere_hyp = $self->addHypervisor(
-                          host => $hv,
-                          datacenter_id => $datacenter->id,
-                          uuid => $hv_uuid
-                      );
-
-    # Register the node
-    $service_provider->registerNode(
-        host => $hv,
-        hostname => $node_renamed,
-        number   => 1,
-        state    => 'in'
-    );
-
-    # TODO : state management + concurrent access
-    my ($sp_state, $sp_timestamp) = $service_provider->getState;
-    if ($host_state eq 'up' && $sp_state eq 'down') {
-        $service_provider->setState(state => 'up');
+        return $vsphere_hyp;
     }
-
-    return $vsphere_hyp;
 }
 
 =pod
