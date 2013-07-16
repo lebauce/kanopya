@@ -128,12 +128,11 @@ sub startHost {
 
     my $host       = $args{host};
     my $hypervisor = $args{hypervisor};
-    # TODO depending on systemimage ?
     my $guest_id   = 'debian6_64Guest';
 
     $log->info('Start host on < hypervisor '. $hypervisor->id.' >');
 
-    if (!defined $hypervisor) {
+    if (not defined $hypervisor) {
         my $errmsg = "Cannot add node in cluster ".$host->getClusterId().", no hypervisor available";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
@@ -198,36 +197,60 @@ sub startHost {
     $host_conf{ifaces} = \@ifaces;
     $log->debug('Ifaces => ' . scalar @ifaces);
 
-    #Create vm in vsphere
-    my $vm_view = $self->createVm(
+    # create the VM
+    my $vm_config_spec = $self->createVmSpec(
                       host_conf       => \%host_conf,
                       host_view       => $host_view,
                       datacenter_view => $datacenter_view,
                   );
+    my $vm_folder_view = $self->getView(mo_ref => $datacenter_view->vmFolder);
+    my $comp_res_view  = $self->getView(mo_ref => $host_view->parent);
 
-    #Power On
+    my $vm_mor;
     eval {
-        $vm_view->PowerOnVM();
+        $vm_mor = $vm_folder_view->CreateVM(
+            config => $vm_config_spec,
+            pool   => $comp_res_view->resourcePool,
+            host   => $host_view,
+        );
+    };
+    if ($@) {
+        my $errmsg = 'Error while creating the virtual machine on host '. $host_conf{hypervisor} . ': '.$@;
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+
+    my $vm_view = $self->getView(mo_ref => $vm_mor);
+
+    # rollback
+    if (exists $args{erollback} and defined $args{erollback}) {
+        $args{erollback}->add(
+            function   => $self->can('removeVm'),
+            parameters => [ $self, 'host', $host, 'vm_view', $vm_view ]
+        );
+    }
+
+    # power on vm
+    eval {
+        $vm_view->PowerOnVM;
+
+        $self->promoteVm(
+            host          => $host->_entity,
+            vm_uuid       => $vm_view->config->uuid,
+            hypervisor_id => $hypervisor->id,
+            guest_id      => $guest_id,
+        );
     };
     if ($@) {
         my $errmsg = 'Error while powering on VM ' . $host->id . ' : ' . $@;
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
-
-    #Declare the vsphere5 vm in Kanopya
-    $self->promoteVm(
-        host          => $host->_entity,
-        vm_uuid       => $vm_view->config->uuid,
-        hypervisor_id => $hypervisor->id,
-        guest_id      => $guest_id,
-    );
 }
 
 =pod
 
 =begin classdoc
 
-Create a new VM on a vSphere host
+Create a VM specification on a vSphere host
 
 @param host_conf the new vm configuration
 
@@ -235,7 +258,7 @@ Create a new VM on a vSphere host
 
 =cut
 
-sub createVm {
+sub createVmSpec {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'host_conf', 'datacenter_view', 'host_view']);
@@ -244,8 +267,6 @@ sub createVm {
     my $ds_path   = '['.$host_conf{datastore}.']';
     my $host_view = $args{host_view};
     my $datacenter_view = $args{datacenter_view};
-    my $vm_folder_view;
-    my $comp_res_view;
     my @vm_devices;
 
     #Generate vm's devices specifications
@@ -288,29 +309,7 @@ sub createVm {
                              deviceChange => \@vm_devices
                          );
 
-    #retrieve the vm folder from vsphere inventory
-    $vm_folder_view = $self->getView(mo_ref => $datacenter_view->vmFolder);
-
-    #retrieve the host parent view
-    $comp_res_view  = $self->getView(mo_ref => $host_view->parent);
-
-    #finally create the VM
-    my $vm_mor;
-    eval {
-        # TODO task status for error management
-        $vm_mor = $vm_folder_view->CreateVM(
-            config => $vm_config_spec,
-            pool   => $comp_res_view->resourcePool,
-            host   => $host_view,
-        );
-    };
-    if ($@) {
-        $errmsg = 'Error while creating the virtual machine on host '.$host_conf{hypervisor}.': '.$@;
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-
-    my $vm_view = $self->getView(mo_ref => $vm_mor);
-    return $vm_view;
+    return $vm_config_spec;
 }
 
 =pod
@@ -440,6 +439,184 @@ sub scaleMemory {
     }
 }
 
+=pod
+
+=begin classdoc
+
+Terminate a host
+
+=end classdoc
+
+=cut
+
+sub halt {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    my $dc_name = $args{host}->hypervisor->vsphere5_datacenter->vsphere5_datacenter_name;
+
+    # get views
+    my $dc_view = $self->findEntityView(
+                      view_type   => 'Datacenter',
+                      hash_filter => {
+                          name => $dc_name,
+                      },
+                  );
+    my $vm_view = $self->findEntityView(
+                      view_type    => 'VirtualMachine',
+                      hash_filter  => {
+                          'config.uuid' => $args{host}->vsphere5_uuid,
+                      },
+                      begin_entity => $dc_view,
+                  );
+
+    # stop vm
+    $vm_view->PowerOffVM;
+}
+
+sub stopHost {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    my $host = $args{host};
+
+    my $dc_name = $host->hypervisor->vsphere5_datacenter->vsphere5_datacenter_name;
+
+    # get views
+    my $dc_view = $self->findEntityView(
+                      view_type   => 'Datacenter',
+                      hash_filter => {
+                          name => $dc_name,
+                      },
+                  );
+    my $vm_view = $self->findEntityView(
+                      view_type    => 'VirtualMachine',
+                      hash_filter  => {
+                          'config.uuid' => $host->vsphere5_uuid,
+                      },
+                      begin_entity => $dc_view,
+                  );
+
+    # Dissociate disks from VM + delete VM
+    $self->removeVm(host => $host, vm_view => $vm_view, rename_disk => 1);
+}
+
+sub releaseHost {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ "host" ]);
+
+    $args{host}->delete();
+}
+
+=pod
+
+=begin classdoc
+
+Dissociate disks from VM to prevent their removal on VM destroy, rename descriptor file then destroy VM
+
+=end classdoc
+
+=cut
+
+sub removeVm {
+    my ($self,%args) = @_;
+
+    General::checkParams(
+        args     => \%args,
+        required => [ 'host', 'vm_view' ],
+        optional => { 'rename_disk' => 0 }
+    );
+
+    $self->dissociateDisk(
+        host => $args{host},
+        vm_view => $args{vm_view},
+        rename_disk => $args{rename_disk}
+    );
+
+    # delete vm
+    $args{vm_view}->Destroy;
+}
+
+sub dissociateDisk {
+    my ($self,%args) = @_;
+
+    General::checkParams(
+        args     => \%args,
+        required => [ 'host', 'vm_view' ],
+        optional => { 'rename_disk' => 0 }
+    );
+
+    my $host = $args{host};
+    my $vm_view = $args{vm_view};
+
+    my $devices = $vm_view->config->hardware->device;
+    my @disks_remove_spec;
+    foreach my $device (@$devices) {
+        if ( $device->isa('VirtualDisk') ) {
+            my $disk_remove_spec = VirtualDeviceConfigSpec->new(
+                operation => VirtualDeviceConfigSpecOperation->new('remove'),
+                device    => $device
+            );
+            push @disks_remove_spec, $disk_remove_spec;
+        }
+    }
+
+    if (scalar @disks_remove_spec) {
+        $log->debug('Dissociate disks of vm ' . $host->id);
+
+        my $disk_files_info = $vm_view->layoutEx->file;
+        my $vm_config_spec = VirtualMachineConfigSpec->new(
+                                 deviceChange => \@disks_remove_spec
+                             );
+        eval {
+                $vm_view->ReconfigVM(
+                    spec => $vm_config_spec,
+                );
+        };
+        if ($@) {
+            $errmsg = 'Error in virtual disks removal on VM ' . $host->node->node_hostname.': '.$@;
+            throw Kanopya::Exception::Internal(error => $errmsg);
+        }
+
+        if ($args{rename_disk}) {
+            # Work around to rename systemimage disk file because vmware rename disk file to descriptor file
+            my $systemimage_name = $host->getNodeSystemimage->systemimage_name;
+            my $cluster     = Entity->get(id => $host->getClusterId());
+            my $disk_params = $cluster->getManagerParameters(manager_type => 'DiskManager');
+            my $container_access = Entity::ContainerAccess->get(id => $disk_params->{container_access_id});
+            my $image_type = $disk_params->{image_type};
+
+            my $econtext = $self->_host->getEContext;
+            my $e_container_access = EEntity->new(entity => $container_access);
+
+            # get disk filename
+            (my $disk_file_info) = grep {
+                ($_->type eq 'diskExtent') and ($_->name =~ m/$systemimage_name/)
+            } @$disk_files_info;
+            my $disk_filename = (split(/] /,$disk_file_info->name))[1];
+
+            # rename disk file
+            eval {
+                $log->debug("Rename systemimage file to it's original value");
+
+                my $mountpoint = $e_container_access->mount(econtext => $econtext);
+                my $command = 'mv ' . $mountpoint . '/' . $disk_filename . ' '
+                               . $mountpoint . '/' . $systemimage_name . '.' . $image_type;
+                $log->debug("command = $command");
+                $econtext->execute(command => $command);
+                $e_container_access->umount(econtext => $econtext);
+            };
+            if ($@) {
+                $errmsg = 'Error in systemimage rename on VM ' . $host->node->node_hostname.': '.$@;
+                throw Kanopya::Exception::Internal(error => $errmsg);
+            }
+        }
+    }
+}
+
 sub create_conf_spec {
     my ($self, %args) = @_;
 
@@ -479,7 +656,8 @@ sub create_virtual_disk {
     eval {
         $disk_backing_info = VirtualDiskFlatVer2BackingInfo->new(
             diskMode => 'persistent',
-            fileName => $args{path}
+            fileName => $args{path},
+            split    => 0
         );
 
         $disk = VirtualDisk->new(
@@ -613,7 +791,7 @@ sub getHypervisorVMs {
     }
 
     my $dc_name = $args{host}->vsphere5_datacenter->vsphere5_datacenter_name;
-    my $hv_uuid = $args{hv_uuid};
+    my $hv_uuid = $args{host}->vsphere5_uuid;
 
     # get views
     my $dc_view = $self->findEntityView(

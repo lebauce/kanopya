@@ -58,7 +58,8 @@ sub start {
 
     $self->getHostManager->startHost(host       => $self,
                                      hypervisor => $args{hypervisor},
-                                     cluster    => $args{cluster});
+                                     cluster    => $args{cluster},
+                                     erollback  => $args{erollback});
 
     $self->setState(state => 'starting');
 
