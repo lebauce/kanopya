@@ -243,7 +243,8 @@ my @classes = (
     'Entity::Component::Ceph::CephMon',
     'Entity::Component::Ceph::CephOsd',
     'Entity::Tag',
-    'Entity::Component::HpcManager'
+    'Entity::Component::HpcManager',
+    'Entity::ServiceProvider::Hpc7000'
 );
 
 sub registerKernels {
@@ -826,6 +827,7 @@ sub registerServiceProviders {
         { service_provider_name => 'Externalcluster' },
         { service_provider_name => 'Netapp' },
         { service_provider_name => 'UnifiedComputingSystem' },
+        { service_provider_name => 'Hpc7000' },
     ];
 
     for my $serviceprovider_type (@{ $serviceproviders }) {
@@ -1190,7 +1192,7 @@ sub registerComponents {
             component_name         => 'HpcManager',
             component_version      => 0,
             component_categories   => [ 'HostManager' ],
-            service_provider_types => [ ],
+            service_provider_types => [ 'Hpc7000' ],
         },
     ];
 

@@ -13,44 +13,30 @@
 # you should have received a copy of the gnu affero general public license
 # along with this program.  if not, see <http://www.gnu.org/licenses/>.
 
-package Entity::Component::HpcManager;
-use base "Entity::Component";
-use base "Manager::HostManager";
+package Entity::ServiceProvider::Hpc7000;
+use base 'Entity::ServiceProvider';
 
+use strict;
 use warnings;
 
 use constant ATTR_DEF => {
-    host_type => {
-        is_virtual => 1
-    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub getBootPolicies {
-    return (Manager::HostManager->BOOT_POLICIES->{pxe_iscsi},
-            Manager::HostManager->BOOT_POLICIES->{pxe_nfs});
+sub method {
+    return {
+        synchronize => {
+            description => 'synchronize Kanopya with the HPC device.'
+        }
+    };
 }
-
-sub hostType {
-    return 'HP Blade';
-}
-
-sub methods {
-    return { };
-}
-
-=head2 synchronize
-
-    Desc: synchronize hpc7000 information with kanopya database
-
-=cut
 
 sub synchronize {
-    my $self = shift;
-    my %args = @_;
+    my $self   = shift;
+    my $hpcmgr = $self->getComponent(name => 'HpcManager');
 
-    my @blades = $self->get_blades();
+    $hpcmgr->synchronize();
 }
 
 1;
