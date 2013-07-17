@@ -91,6 +91,17 @@ sub createDisk {
         $req = $api->cinder->volumes(id => $req->{volume}->{id})->get();
     }
 
+    if ($req->{volume}->{status} ne 'available') {
+        my $error = 'Error during cinder volume creation, volume status '.$req->{volume}->{status}.': ';
+        if ($req->{volume}->{status} eq 'error') {
+            $error .= ' Please check if cinder has enough space to create volume';
+        }
+        elsif ($req->{volume}->{status} eq 'creating') {
+            $error .= ' Time out creation exceeded';
+        }
+        throw Kanopya::Exception::Execution(error => $error);
+    }
+
     my $container;
     if ($args{disk_type} eq 'iSCSI') {
         $container = $self->lvcreate(
