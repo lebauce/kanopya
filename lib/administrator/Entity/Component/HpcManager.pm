@@ -40,20 +40,4 @@ sub methods {
     return { };
 }
 
-=head2 synchronize
-
-    Desc: synchronize hpc7000 information with kanopya database
-
-=cut
-
-sub synchronize {
-    my $self = shift;
-    my %args = @_;
-
-    my @blades = $self->get_blades();
-
-    foreach my $blade (@blades) {
-    }
-}
-
 1;
