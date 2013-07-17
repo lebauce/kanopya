@@ -182,7 +182,7 @@ sub resubmitHost {
         name   => 'ResubmitNode',
         params => {
             context => {
-                host => $self
+                host => $args{host}
             }
         }
     );

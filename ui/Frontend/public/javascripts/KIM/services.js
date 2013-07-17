@@ -590,6 +590,13 @@ function nodedetailsaction(cid, eid, host_id) {
                     confirm     : 'All the virtual machines will be migrated and the hypervisor will be put in maintenance'
                 },
                 {
+                    label       : 'Resubmit all vms',
+                    icon        : 'wrench',
+                    condition   : !isVirtual && isUp && isActive,
+                    action      : '/api/host/' + data.host.pk + '/resubmitVms',
+                    confirm     : 'All the virtual machines will be resubmited'
+                },
+                {
                     label       : 'Restore from maintenance',
                     icon        : 'gear',
                     condition   : !isVirtual && isUp && !isActive,

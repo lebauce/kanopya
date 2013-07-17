@@ -21,6 +21,7 @@ use base "EEntity::EOperation";
 use strict;
 use warnings;
 use Entity;
+use CapacityManagement;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -32,6 +33,10 @@ sub check {
     my $self = shift;
 
     General::checkParams(args => $self->{context}, required => [ "host" ]);
+
+    $self->{context}->{cloud_manager} = EEntity->new(
+                                            data => $self->{context}->{host}->getCloudManager(),
+                                        );
 }
 
 
@@ -44,48 +49,33 @@ sub execute {
         throw Kanopya::Exception(error => $error);
     }
 
-    $self->{context}->{host}->setAttr(name => 'active', value => 0);
-    $self->{context}->{host}->save();
-
-    $self->{context}->{cloud_manager} = EEntity->new(
-                                            data => $self->{context}->{host}->getCloudManager(),
-                                        );
-
-    my @vms = $self->{context}->{host}->virtual_machines;
-    my %vms_wanted_values;
-
-    for my $vm (@vms) {
-        $vms_wanted_values{$vm->id} = { ram => $vm->host->host_ram, cpu => $vm->host->host_core };
-    }
-
     my $cm = CapacityManagement->new(cloud_manager => $self->{context}->{cloud_manager});
 
-    my $resubmition_hv_ids = $cm->getHypervisorIdsForVMs(vms_wanted_values => \%vms_wanted_values);
+    my $resubmition_hv_ids = $cm->resubmitHypervisor(hv_id => $self->{context}->{host}->id);
 
     while (my ($vm_id, $hv_id) = each %{ $resubmition_hv_ids }) {
-        my $vm_host = Entity->get(id => $vm_id)->host;
-        my $hv      = Entity->get(id => $hv_id);
-
-        $log->info("Plan to move vm <".$vm_host->id."> on hypervisor <$hv_id>");
-
         $self->workflow->enqueueNow(workflow => {
              name   => 'ResubmitNode',
              params => {
                  context => {
-                     host        => $vm_host,
-                     hypervisor  => $hv,
+                     host        => Entity->get(id => $vm_id),
+                     hypervisor  => Entity->get(id => $hv_id),
                  }
              }
         });
     }
-
-    $self->{context}->{host}->setAttr(name => 'active', value => 1, save => 1);
 }
 
 sub finish {
     my ($self) = @_;
+    $self->SUPER::finish();
 
     delete $self->{context}->{host};
 }
 
+sub cancel {
+    my $self = shift;
+
+    $self->SUPER::cancel();
+}
 1;

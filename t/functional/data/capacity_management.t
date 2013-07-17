@@ -195,8 +195,8 @@ sub test_migration_authorization {
         my $cm = CapacityManagement->new(infra => getTestInfraForScaling());
 
         if ( not (
-             $cm->isMigrationAuthorized(vm_id => $vms[2]->id, hv_id => 1) == 0
-             && $cm->isMigrationAuthorized(vm_id => $vms[1]->id, hv_id => 2) == 1)) {
+             $cm->isMigrationAuthorized(vm_id => $vms[2]->id, hv_id => 1)->{authorization} == 0
+             && $cm->isMigrationAuthorized(vm_id => $vms[1]->id, hv_id => 2)->{authorization} == 1)) {
                  die 'Check Migration authorization';
         }
     } 'Migration authorized' ;
