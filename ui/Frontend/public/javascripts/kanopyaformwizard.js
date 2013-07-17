@@ -179,6 +179,9 @@ var KanopyaFormWizard = (function() {
 
             // For each relation entries, add filled inputs in one line
             for (var entry in entries) {
+//                console.log('debut');
+//                console.log(entries[entry]);
+//                console.log('fin');
                 this.buildFromAttrDef(rel_attributedefs, this.relations[relation_name], entries[entry], rel_relationdefs,
                                       this.attributedefs[relation_name].label || relation_name);
             }
@@ -678,13 +681,17 @@ var KanopyaFormWizard = (function() {
                     _this.validateRules[$(this).attr('name')].confirm_password = $(input);
                 });
                 lineclone.appendTo(table);
-            }   
+            }
         }
     }
 
     KanopyaFormWizard.prototype.disableInput = function(input) {
         $(input).attr('disabled', 'disabled');
-        $(input).addClass('wizard-ignore').addClass("ui-state-disabled");
+        $(input).addClass('wizard-ignore');
+
+        if (! this.noStateDisabled) {
+            $(input).addClass("ui-state-disabled");
+        }
     }
 
     KanopyaFormWizard.prototype.reload = function(event) {
@@ -990,6 +997,7 @@ var KanopyaFormWizard = (function() {
         this.reloadable      = args.reloadable      || false;
         this.hideDisabled    = args.hideDisabled    || false;
         this.stepsAsTags     = args.stepsAsTags     || false;
+        this.noStateDisabled = args.noStateDisabled || false;
         this.submitCallback  = args.submitCallback  || this.submit;
         this.valuesCallback  = args.valuesCallback  || this.getValues;
         this.attrsCallback   = args.attrsCallback   || (args.type ?
@@ -1016,6 +1024,7 @@ var KanopyaFormWizard = (function() {
             reloadable      : this.reloadable,
             hideDisabled    : this.hideDisabled,
             stepsAsTags     : this.stepsAsTags,
+            noStateDisabled : this.noStateDisabled,
             submitCallback  : this.submitCallback,
             valuesCallback  : this.valuesCallback,
             attrsCallback   : this.attrsCallback,
@@ -1281,11 +1290,16 @@ var KanopyaFormWizard = (function() {
             selectedList: 1,
         }).each(addFilter);
 
+        if (this.noStateDisabled) {
+            this.content.find('.ui-state-disabled').removeClass('ui-state-disabled');
+        }
+
         // Add a filter field if number of options is fairly high
         function addFilter(i,e) {
             if ($(e).find('option').length > 10) {
                 $(e).multiselect('option', 'header', true).multiselectfilter();
             }
+
         }
     }
 

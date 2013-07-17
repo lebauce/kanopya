@@ -1,6 +1,5 @@
-# CollectorManager.pm - Object class of Collector Manager included in Administrator
-
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,7 +14,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 20 april 2012
 
 package Manager::CollectorManager;
 use base "Manager";
@@ -65,61 +63,33 @@ sub createCollectorIndicators {
     return;
 }
 
-=head2 getIndicators
-
-    Desc: Retrieve a list of indicators available
-
-=cut
 
 sub getIndicators {
     my $self = shift;
+
     my @collector_indicators = $self->collector_indicators;
     my @indicators = map {$_->indicator} @collector_indicators;
     return \@indicators;
 }
 
-=head2 getIndicator
-
-    Desc: Return the indicator with the specified id
-    Args: indicator id
-    Return an indicator instance
-
-=cut
 
 sub getIndicator {
     my ($self, %args) = @_;
+
     General::checkParams(args => \%args, required => ['id']);
+
     my $collector_indicator = CollectorIndicator->get(id => $args{id});
     return $collector_indicator->indicator;
 }
 
-sub checkCollectorManagerParams {
-}
+sub checkCollectorManagerParams {}
 
-=head2
 
-    Desc: Call kanopya native monitoring API to retrieve indicators data
-    return \%monitored_values;
+sub retrieveData {}
 
-=cut
 
-sub retrieveData {
-}
+sub collectIndicator {}
 
-=head2 collectIndicator
-
-    Desc: Ensure the specified indicator is collected
-
-=cut
-
-sub collectIndicator {
-}
-
-=head2
-
-    Desc: Return an information string about the collector manager
-
-=cut
 
 sub getCollectorType { }
 

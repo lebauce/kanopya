@@ -60,22 +60,23 @@ sub methods {
   };
 }
 
-=head2 checkWorkflowManagerParams
-
-=cut
 
 sub checkWorkflowManagerParams {
     throw Kanopya::Exception::NotImplemented();
 }
 
-=head2 createWorkflow
-    Desc: Create a new instance of WorkflowDef. Can be use for initial workflow
-    instanciation, but also for workflow definition (with defined specific
-    parameters)
 
-    Args: $workflow_name (string), \%workflow_params, $workflow_def_origin (id)
+=pod
+=begin classdoc
 
-    Return: created workflow (object)
+Create a new instance of WorkflowDef. Can be use for initial workflow
+instanciation, but also for workflow definition (with defined specific parameters)
+
+@param workflow_name workflow_params, $workflow_def_origin (id)
+
+@return the created workflow instance
+
+=end classdoc
 =cut
 
 sub createWorkflow {
@@ -125,14 +126,6 @@ sub createWorkflow {
     return $workflow;
 }
 
-=head2 deassociateWorkflow
-    Desc: remove the instance of WorkflowDef associated to a rule
-
-    Args:
-          $rule_id
-          $workflow_def_id
-
-=cut
 
 sub deassociateWorkflow {
     my ($self,%args) = @_;
@@ -170,16 +163,16 @@ sub deassociateWorkflow {
     }
 }
 
-=head2 associateWorkflow
-    Desc: create a new instance of WorkflowDef that has defined specific
-          parameters. This instance will be used for future runs
 
-    Args: $new_workflow_name (string),
-          $origin_workflow_def_id,
-          \%specific_params,
-          $rule_id
+=pod
+=begin classdoc
 
-    Return: created workflow object (get by calling createWorkflow())
+Create a new instance of WorkflowDef that has defined specific 
+parameters. This instance will be used for future runs
+
+@return the created workflow object (get by calling createWorkflow())
+
+=end classdoc
 =cut
 
 sub associateWorkflow {
@@ -255,12 +248,13 @@ sub associateWorkflow {
     return $workflow;
 }
 
-=head2 cloneWorkflow
-    Desc: create a new instance of WorkflowDef from an existing instance
 
-    Args: workflow_def_id id of the workflow def to clone
-          rule_id id of the rule linked to the cloned instance
+=pod
+=begin classdoc
 
+Create a new instance of WorkflowDef from an existing instance
+
+=end classdoc
 =cut
 
 sub cloneWorkflow {
@@ -287,14 +281,13 @@ sub cloneWorkflow {
     );
 }
 
-=head2 _linkWorkflowToRule
-    Desc: link or unlink a workflow to a rule
 
-    Args:   $workflow (object to bind or undef for unbind current workflow)
-            $rule_id
-            $scope_id
+=pod
+=begin classdoc
 
-    Return:
+Link or unlink a workflow to a rule.
+
+=end classdoc
 =cut
 
 sub _linkWorkflowToRule {
@@ -319,12 +312,13 @@ sub _linkWorkflowToRule {
     $rule->save();
 }
 
-=head2 runWorkflow
-    Desc: run a workflow
 
-    Args:
+=pod
+=begin classdoc
 
-    Return:
+Run a workflow.
+
+=end classdoc
 =cut
 
 sub runWorkflow {
@@ -378,12 +372,13 @@ sub runWorkflow {
            );
 }
 
-=head2 getWorkflowDefs
-    Desc: Get a list of workflow defs related to the manager
 
-    Args: (optional) no_associate : if defined, returns only workflow defs not associated to a rule
+=pod
+=begin classdoc
 
-    Return: array of objects, \@manager_workflow_defs
+Get a list of workflow defs related to the manager.
+
+=end classdoc
 =cut
 
 sub getWorkflowDefs {
@@ -412,13 +407,6 @@ sub getWorkflowDefs {
     return \@workflow_defs;
 }
 
-=head2 getWorkflowDef
-    Desc: Get a workflow def from its id
-
-    Args: workflow_def_id
-
-    Return: reference on an object, $workflow_def
-=cut
 
 sub getWorkflowDef {
     my ($self,%args) = @_;
@@ -432,12 +420,13 @@ sub getWorkflowDef {
     return $workflow_def;
 }
 
-=head2 _getAutomaticParams
-    Desc: Get the automatic params list for a workflow def.
 
-    Args: workflow_def_id, \@all_params, $scope_id
+=pod
+=begin classdoc
 
-    Return: \%automatic_params (param name as keys, undef as value)
+Get the automatic params list for a workflow def.
+
+=end classdoc
 =cut
 
 sub _getAutomaticParams {
@@ -462,13 +451,14 @@ sub _getAutomaticParams {
     return \%automatic_params;
 }
 
-=head2 getParams
-    Desc: get specific and automatic params from workflow_def_id. Usefull for
-          GUI when retriving specific and automatic params is required
 
-    Args: $workflow_def_id
+=pod
+=begin classdoc
 
-    Return: \%params ($params{automatic}, $params{specific})
+Get specific and automatic params from workflow_def_id. Usefull for
+GUI when retriving specific and automatic params is required
+
+=end classdoc
 =cut
 
 sub getParams {
@@ -490,14 +480,15 @@ sub getParams {
     return \%params;
 }
 
-=head2 _getSortedParams
-    Desc: With the given params for a workflow def, extract the "data" params,
-    and then differenciate between them the automatic and specific
-    parameters.
 
-    Args: \%params
+=pod
+=begin classdoc
 
-    Return: \%sorted_params ($sorted_params{automatic}, $sorted_params{specific})
+With the given params for a workflow def, extract the "data" params,
+and then differenciate between them the automatic and specific
+parameters.
+
+=end classdoc
 =cut
 
 sub _getSortedParams {
@@ -535,13 +526,6 @@ sub _getSortedParams {
     return \%sorted_params;
 }
 
-=head2 getSpecificParams
-    Desc: Get the automatic params list for a workflow def.
-
-    Args: workflow_def_id, \@all_params, $scope_id
-
-    Return: \%all_params (param name as keys, undef as value)
-=cut
 
 sub getSpecificParams {
     my ($self,%args) = @_;
@@ -575,13 +559,6 @@ sub getWorkflowDefsIds() {
     return \@wfids;
 }
 
-=head2 _getAllParams
-    Desc: Get the full params list for a workflow def.
-
-    Args: workflow_def_id
-
-    Return: \%all_params
-=cut
 
 sub _getAllParams {
     my ($self,%args) = @_;
@@ -597,13 +574,6 @@ sub _getAllParams {
     return $all_params;
 }
 
-=head2 getScopeParameterNameList
-    Desc: Get a params list for a scope
-
-    Args: scope_id
-
-    Return: \@scope_params
-=cut
 
 sub getScopeParameterNameList {
     my ($self,%args) = @_;
@@ -618,15 +588,6 @@ sub getScopeParameterNameList {
 
     return \@scope_params;
 }
-
-=head2 _prepareParams
-    Desc: Retrieve the list of effective parameters desired by the user in the
-          final file
-
-    Args: \%brut_data_params
-
-    Return: \%prepared_data_params
-=cut
 
 sub _prepareParams { };
 

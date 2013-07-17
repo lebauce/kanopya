@@ -114,37 +114,31 @@ Declare the list of methods accessible from the API and their permissions
 
 sub methods {
     return {
-        'retrieveDatacenters'            =>  {
-            'description'   =>  'Retrieve a list of Datacenters',
-            'perm_holder'   =>  'entity',
+        retrieveDatacenters =>  {
+            description =>  'Retrieve a list of Datacenters',
         },
-        'retrieveClustersAndHypervisors' =>  {
-            'description'   =>  'Retrieve a list of Clusters and Hypervisors (that are not in a cluster) registered in a Datacenter',
-            'perm_holder'   =>  'entity',
+        retrieveClustersAndHypervisors =>  {
+            description =>  'Retrieve a list of Clusters and Hypervisors (that are not in a cluster) ' .
+                            'registered in a Datacenter',
         },
-        'retrieveClusterHypervisors'     =>  {
-            'description'   =>  'Retrieve a list of Hypervisors that are registered in a Cluster',
-            'perm_holder'   =>  'entity',
+        retrieveClusterHypervisors =>  {
+            description =>  'Retrieve a list of Hypervisors that are registered in a Cluster',
         },
-        'retrieveHypervisorVms'          =>  {
-            'description'   =>  'Retrieve a list of vms registered under a vsphere hypervisor',
-            'perm_holder'   =>  'entity',
+        retrieveHypervisorVms =>  {
+            description =>  'Retrieve a list of vms registered under a vsphere hypervisor',
         },
-        'register'                       =>  {
-            'description'   =>  'Register a new item with the vsphere component',
-            'perm_holder'   =>  'entity',
+        register =>  {
+            description =>  'Register a new item with the vsphere component',
         },
     };
 }
 
 =pod
-
 =begin classdoc
 
 Return the boot policies for the host ruled by this host manager
 
 =end classdoc
-
 =cut
 
 sub getBootPolicies {
@@ -153,27 +147,20 @@ sub getBootPolicies {
             Manager::HostManager->BOOT_POLICIES->{pxe_nfs});
 }
 
-=pod
 
+=pod
 =begin classdoc
 
-Not implemented
+@return the manager params definition.
 
 =end classdoc
-
 =cut
 
-sub checkHostManagerParams {
-    my ($self,%args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'ram', 'core' ]);
-}
-
-sub getHostManagerParams {
-    my $self = shift;
-    my %args = @_;
+sub getManagerParamsDef {
+    my ($self, %args) = @_;
 
     return {
+        %{ $self->SUPER::getManagerParamsDef },
         core => {
             label        => 'Initial CPU number',
             type         => 'integer',
@@ -205,18 +192,34 @@ sub getHostManagerParams {
     };
 }
 
+sub checkHostManagerParams {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'ram', 'core', 'max_core', 'max_ram' ]);
+}
+
+sub getHostManagerParams {
+    my $self = shift;
+    my %args = @_;
+
+    my $definition = $self->getManagerParamsDef();
+    return {
+        core     => $definition->{core},
+        ram      => $definition->{ram},
+        max_core => $definition->{max_core},
+        max_ram  => $definition->{max_ram},
+    };
+}
+
+
 =pod
-
 =begin classdoc
-
-=head2 getBaseConfiguration
 
 Get the basic configuration of the Vsphere component
 
 @return %base_configuration
 
 =end classdoc
-
 =cut
 
 sub getBaseConfiguration {

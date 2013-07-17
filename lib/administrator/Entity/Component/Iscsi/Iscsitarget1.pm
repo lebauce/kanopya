@@ -60,6 +60,22 @@ use constant ACCESS_MODE => {
     READ_ONLY  => 'ro',
 };
 
+
+=pod
+=begin classdoc
+
+@return the manager params definition.
+
+=end classdoc
+=cut
+
+sub getManagerParamsDef {
+    my ($self, %args) = @_;
+
+    return { iscsi_portals => $self->SUPER::getManagerParamsDef->{iscsi_portals} };
+}
+
+
 sub checkExportManagerParams {
     my $self = shift;
     my %args = @_;
@@ -67,35 +83,22 @@ sub checkExportManagerParams {
     General::checkParams(args => \%args, required => [ "iscsi_portals" ]);
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 @return the managers parameters as an attribute definition. 
 
 =end classdoc
-
 =cut
 
 sub getExportManagerParams {
     my $self = shift;
     my %args  = @_;
 
-    my $portals = {};
-    for my $portal (@{ $self->getConf->{iscsi_portals} }) {
-        $portals->{$portal->{iscsi_portal_id}} = $portal->{iscsi_portal_ip} . ':' . $portal->{iscsi_portal_port}
-    }
-
-    return {
-        iscsi_portals => {
-            label        => 'ISCSI portals to use',
-            type         => 'enum',
-            relation     => 'multi',
-            is_mandatory => 1,
-            options      => $portals
-        },
-    };
+    return { iscsi_portals => $self->SUPER::getExportManagerParams->{iscsi_portals} };
 }
+
 
 sub getConf {
     my $self = shift;

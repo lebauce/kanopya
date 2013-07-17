@@ -74,9 +74,59 @@ sub exportType {
     return "Cinder";
 }
 
-sub getExportManagerParams {
-    return { };
+=pod
+=begin classdoc
+
+@return the manager params definition.
+
+=end classdoc
+=cut
+
+sub getManagerParamsDef {
+    my ($self, %args) = @_;
+
+    return {
+        # TODO: call super on all Manager supers
+        %{ $self->SUPER::getManagerParamsDef },
+        export_type => {
+            label        => 'Backend',
+            type         => 'enum',
+            is_mandatory => 1,
+            options      => [ 'NFS', 'iSCSI', 'RADOS' ]
+        },
+        repository   => {
+            is_mandatory => 1,
+            label        => 'Repository',
+            type         => 'enum',
+        },
+    };
 }
+
+sub getDiskManagerParams {
+    my ($self, %args) = @_;
+
+    return { export_type => $self->getManagerParamsDef->{export_type} };
+}
+
+sub getExportManagerParams {
+    my ($self, %args) = @_;
+
+    if (defined($args{params}->{export_type}) && $args{params}->{export_type} eq 'NFS') {
+        my $repoparam = $self->getManagerParamsDef->{repository};
+        $repoparam->{options} = {};
+
+        my @repositories = $self->nova_controller->repositories;
+        for my $repository (@repositories) {
+            $repoparam->{options}->{$repository->id} = $repository->repository_name;
+        }
+        return { repository => $repoparam };
+    }
+    else {
+        return {};
+    }
+}
+
+sub checkExportManagerParams {}
 
 sub getBootPolicyFromExportManager {
     return Manager::HostManager->BOOT_POLICIES->{local_disk};
@@ -88,53 +138,11 @@ sub getExportManagers {
     return [ $self ];
 }
 
-sub getReadOnlyParameter {
-}
+sub getReadOnlyParameter {}
 
-sub getDiskManagerParams {
-    my $self = shift;
-    my %args = @_;
-
-    return {
-        export_type => {
-            label        => 'Backend',
-            type         => 'enum',
-            is_mandatory => 1,
-            options      => [ 'NFS', 'iSCSI', 'RADOS' ]
-        }
-    };
-}
-
-sub checkExportManagerParams {
-}
-
-sub getExportManagerParams {
-    my $self = shift;
-    my %args = @_;
-
-    if (defined($args{params}->{export_type}) && $args{params}->{export_type} eq 'NFS') {
-        my @repositories = $self->nova_controller->repositories;
-        my $options      = {};
-        for my $repository (@repositories) {
-            $options->{$repository->id} = $repository->repository_name;
-        }
-        return {
-            repository   => {
-                is_mandatory => 1,
-                label        => 'Repository',
-                type         => 'enum',
-                options      => $options
-            }
-        };
-    }
-    else {
-        return { };
-    }
-}
-
-=head 2
-
+=pod
 =begin classdoc
+
 Register a new logical volume into Kanopya (Lvm2Lv and LvmContainer)
 
 @param lvm2_lv_name the name of the logical volume
@@ -144,7 +152,6 @@ Register a new logical volume into Kanopya (Lvm2Lv and LvmContainer)
 @return the newly created lvmcontainer object
 
 =end classdoc
-
 =cut
 
 sub lvcreate {
@@ -246,9 +253,10 @@ sub checkConfiguration {
     }
 }
 
-=head
 
+=pod
 =begin classdoc
+
 Implement createDisk from DiskManager interface.
 This function enqueue a ECreateDisk operation.
 
@@ -257,7 +265,6 @@ This function enqueue a ECreateDisk operation.
 @param size size of the disk to be created
 
 =end classdoc
-
 =cut
 
 sub createDisk {
@@ -269,7 +276,8 @@ sub createDisk {
     $self->SUPER::createDisk(%args);
 }
 
-=head2
+
+=pod
 =begin classdoc
 
 Return volume_id for a given container

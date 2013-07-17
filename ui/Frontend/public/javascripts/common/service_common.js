@@ -241,7 +241,7 @@ function findManager(category, service_provider_id, exclude) {
     return managers;
 }
 
-function set_steps (service_attrdef) {
+function set_steps (service_attrdef, force_editable) {
     var step;
     for (var index in service_attrdef.displayed) {
         attrname = service_attrdef.displayed[index];
@@ -258,6 +258,9 @@ function set_steps (service_attrdef) {
             for (index in attrnames){
                 service_attrdef.attributes[attrnames[index]].step = step;
             }
+        }
+        if (force_editable !== undefined) {
+            service_attrdef.attributes[attrnames[index]].is_editable = force_editable;
         }
     }
 }

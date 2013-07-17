@@ -16,13 +16,11 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 =pod
-
 =begin classdoc
 
 TODO
 
 =end classdoc
-
 =cut
 
 package Manager::DiskManager;
@@ -39,21 +37,47 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
-=head2 checkDiskManagerParams
 
+=pod
+=begin classdoc
+
+Check params required for creating disks.
+
+=end classdoc
 =cut
 
 sub checkDiskManagerParams {}
 
 
 =pod
+=begin classdoc
 
+@return the manager params definition.
+
+=end classdoc
+=cut
+
+sub getManagerParamsDef {
+    my ($self, %args) = @_;
+
+    return {
+        systemimage_size => {
+            label        => 'System image size',
+            type         => 'integer',
+            unit         => 'byte',
+            pattern      => '^\d*$',
+            is_mandatory => 0,
+        },
+    };
+}
+
+
+=pod
 =begin classdoc
 
 @return the managers parameters as an attribute definition. 
 
 =end classdoc
-
 =cut
 
 sub getDiskManagerParams {
@@ -63,25 +87,11 @@ sub getDiskManagerParams {
     return {};
 }
 
-=head2 getFreeSpace
-
-    Desc : Implement getFreeSpace from DiskManager interface.
-           This function return the free space on the volume group.
-    args :
-
-=cut
 
 sub getFreeSpace {
     throw Kanopya::Exception::NotImplemented();
 }
 
-=head2 createDisk
-
-    Desc : Implement createDisk from DiskManager interface.
-           This function enqueue a ECreateDisk operation.
-    args :
-
-=cut
 
 sub createDisk {
     my $self = shift;
@@ -102,13 +112,6 @@ sub createDisk {
     );
 }
 
-=head2 removeDisk
-
-    Desc : Implement removeDisk from DiskManager interface.
-           This function enqueue a ERemoveDisk operation.
-    args :
-
-=cut
 
 sub removeDisk {
     my $self = shift;
@@ -127,12 +130,6 @@ sub removeDisk {
     );
 }
 
-=head2 removeDisk
-
-    Return the components available for exporting disk
-    provided by this disk manager.
-
-=cut
 
 sub getExportManagers {
     my $self = shift;
@@ -145,17 +142,11 @@ sub diskType {
     return '';
 }
 
-=head2 getExportManagerFromBootPolicy
-
-=cut
 
 sub getExportManagerFromBootPolicy {
     throw Kanopya::Exception::NotImplemented();
 }
 
-=head2 getBootPolicyFromExportManager
-
-=cut
 
 sub getBootPolicyFromExportManager {
     throw Kanopya::Exception::NotImplemented();

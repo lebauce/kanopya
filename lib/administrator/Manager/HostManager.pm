@@ -49,11 +49,26 @@ sub checkHostManagerParams {
     General::checkParams(args => \%args, required => [ "cpu", "ram" ]);
 }
 
-sub getHostManagerParams {
-    my $self = shift;
-    my %args  = @_;
 
-    return {};
+=pod
+=begin classdoc
+
+@return the manager params definition.
+
+=end classdoc
+=cut
+
+sub getManagerParamsDef {
+    my ($self, %args) = @_;
+
+    return {
+        deploy_on_disk => {
+            label        => 'Deploy on hard disk',
+            type         => 'boolean',
+            pattern      => '^\d*$',
+            is_mandatory => 1
+        }
+    };
 }
 
 

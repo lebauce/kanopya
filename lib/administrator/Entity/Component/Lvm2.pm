@@ -65,8 +65,35 @@ sub diskType {
     return "LVM logical volume";
 }
 
-=head2 checkDiskManagerParams
 
+=pod
+=begin classdoc
+
+@return the manager params definition.
+
+=end classdoc
+=cut
+
+sub getManagerParamsDef {
+    my ($self, %args) = @_;
+
+    return {
+        %{ $self->SUPER::getManagerParamsDef },
+        vg_id => {
+            label        => 'Volume group to use',
+            type         => 'enum',
+            is_mandatory => 1,
+        },
+    };
+}
+
+
+=pod
+=begin classdoc
+
+Check params required for creating disks.
+
+=end classdoc
 =cut
 
 sub checkDiskManagerParams {
@@ -78,32 +105,24 @@ sub checkDiskManagerParams {
 
 
 =pod
-
 =begin classdoc
 
 @return the managers parameters as an attribute definition. 
 
 =end classdoc
-
 =cut
 
 sub getDiskManagerParams {
     my $self = shift;
     my %args  = @_;
 
-    my $vgs = {};
-    for my $vg (@{ $self->getConf->{lvm2_vgs} }) {
-        $vgs->{$vg->{lvm2_vg_id}} = $vg->{lvm2_vg_name};
-    }
+    my $vgparam = $self->getManagerParamsDef->{vg_id};
+    $vgparam->{options} = {};
 
-    return {
-        vg_id => {
-            label        => 'Volume group to use',
-            type         => 'enum',
-            is_mandatory => 1,
-            options      => $vgs
-        }
-    };
+    for my $vg (@{ $self->getConf->{lvm2_vgs} }) {
+       $vgparam->{options}->{$vg->{lvm2_vg_id}} = $vg->{lvm2_vg_name};
+    }
+    return { vg_id => $vgparam };
 }
 
 sub getMainVg {
@@ -283,13 +302,6 @@ sub getExportManagers {
              $cluster->getComponent(name => "Nfsd", version => "3") ];
 }
 
-=head2 createDisk
-
-    Desc : Implement createDisk from DiskManager interface.
-           This function enqueue a ECreateDisk operation.
-    args :
-
-=cut
 
 sub createDisk {
     my $self = shift;
@@ -313,13 +325,6 @@ sub createDisk {
     );
 }
 
-=head2 getFreeSpace
-
-    Desc : Implement getFreeSpace from DiskManager interface.
-           This function return the free space on the volume group.
-    args :
-
-=cut
 
 sub getFreeSpace {
     my $self = shift;

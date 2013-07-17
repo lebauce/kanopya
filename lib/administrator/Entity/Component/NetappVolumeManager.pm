@@ -1,5 +1,4 @@
-#    NetappManager.pm - NetApp connector
-#    Copyright © 2012 Hedera Technology SAS
+#    Copyright © 2012-2013 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -52,9 +51,27 @@ sub diskType {
     return "NetApp volume";
 }
 
-=head2 checkDiskManagerParams
+=pod
+=begin classdoc
 
+@return the manager params definition.
+
+=end classdoc
 =cut
+
+sub getManagerParamsDef {
+    my ($self, %args) = @_;
+
+    return {
+        # TODO: call super on all Manager supers
+        %{ $self->SUPER::getManagerParamsDef },
+        aggregate_id => {
+            label        => 'Aggregate to use',
+            type         => 'enum',
+            is_mandatory => 1,
+        },
+    };
+}
 
 sub checkDiskManagerParams {
     my $self = shift;
@@ -63,23 +80,25 @@ sub checkDiskManagerParams {
     General::checkParams(args => \%args, required => [ "aggregate_id", "systemimage_size" ]);
 }
 
+
+=pod
+=begin classdoc
+
+@return the managers parameters as an attribute definition. 
+
+=end classdoc
+=cut
+
 sub getDiskManagerParams {
-    my $self = shift;
-    my %args  = @_;
+    my ($self, %args) = @_;
 
-    my $aggregates = {};
+    my $aggparam = $self->getManagerParamsDef->{aggregate_id};
+    $aggparam->{options} = {};
+
     for my $aggr (@{ $self->getConf->{aggregates} }) {
-        $aggregates->{$aggr->{aggregate_id}} = $aggr->{aggregate_name};
+        $aggparam->{options}->{$aggr->{aggregate_id}} = $aggr->{aggregate_name};
     }
-
-    return {
-        aggregate_id => {
-            label        => 'Aggregate to use',
-            type         => 'enum',
-            is_mandatory => 1,
-            options      => $aggregates
-        }
-    };
+    return { aggregate_id => $aggparam };
 }
 
 sub getExportManagerFromBootPolicy {
@@ -130,14 +149,6 @@ sub getReadOnlyParameter {
     return undef;
 }
 
-=head2 createDisk
-
-    Desc : Implement createDisk from DiskManager interface.
-           This function enqueue a ECreateDisk operation.
-    args :
-
-=cut
-
 sub createDisk {
     my $self = shift;
     my %args = @_;
@@ -160,13 +171,6 @@ sub createDisk {
     );
 }
 
-=head2 createExport
-
-    Desc : Implement createExport from ExportManager interface.
-           This function enqueue a ECreateExport operation.
-    args : export_name, device, typeio, iomode
-
-=cut
 
 sub createExport {
     my $self = shift;
@@ -190,11 +194,6 @@ sub createExport {
     );
 }
 
-=head2 synchronize 
-
-    Desc: synchronize netapp volumes information with kanopya database
-
-=cut 
 
 sub synchronize {
     my $self = shift;

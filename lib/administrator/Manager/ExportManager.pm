@@ -1,4 +1,4 @@
-# Copyright © 2012 Hedera Technology SAS
+# Copyright © 2012-2013 Hedera Technology SAS
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -16,13 +16,11 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 =pod
-
 =begin classdoc
 
 TODO
 
 =end classdoc
-
 =cut
 
 package Manager::ExportManager;
@@ -43,21 +41,16 @@ sub exportType {
     return '';
 }
 
-=head2 checkExportManagerParams
-
-=cut
 
 sub checkExportManagerParams {}
 
 
 =pod
-
 =begin classdoc
 
 @return the managers parameters as an attribute definition. 
 
 =end classdoc
-
 =cut
 
 sub getExportManagerParams {
@@ -67,17 +60,14 @@ sub getExportManagerParams {
     return {};
 }
 
-=head2 getReadOnlyParameter
-
-=cut
-
 sub getReadOnlyParameter {
     throw Kanopya::Exception::NotImplemented();
 }
 
-=head2
 
+=pod
 =begin classdoc
+
 Enqueue a CreateExport operation
 
 @param container the container from which the export must be created
@@ -86,7 +76,6 @@ Enqueue a CreateExport operation
 @return container_access
 
 =end classdoc
-
 =cut
 
 sub createExport {
@@ -111,13 +100,6 @@ sub createExport {
     );
 }
 
-=head2 removeExport
-
-    Desc : Implement createExport from ExportManager interface.
-           This function enqueue a ERemoveExport operation.
-    args : export_name
-
-=cut
 
 sub removeExport {
     my $self = shift;

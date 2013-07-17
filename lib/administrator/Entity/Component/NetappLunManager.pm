@@ -1,5 +1,4 @@
-#    NetappManager.pm - NetApp connector
-#    Copyright © 2012 Hedera Technology SAS
+#    Copyright © 2012-2013 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -53,37 +52,58 @@ sub diskType {
     return "NetApp lun";
 }
 
-=head2 checkDiskManagerParams
+=pod
+=begin classdoc
 
+@return the manager params definition.
+
+=end classdoc
 =cut
 
-sub checkDiskManagerParams {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "volume_id", "systemimage_size" ]);
-}
-
-sub getDiskManagerParams {
-    my $self = shift;
-    my %args  = @_;
-
-    my $volumes = {};
-    for my $aggr (@{ $self->getConf->{aggregates} }) {
-        for my $volume (@{ $aggr->{aggregates_volumes} }) {
-            $volumes->{$volume->{volume_id}} = '(' . $aggr->{aggregate_name} . ') ' . $volume->{volume_name};
-        }
-    }
+sub getManagerParamsDef {
+    my ($self, %args) = @_;
 
     return {
+        # TODO: call super on all Manager supers
+        %{ $self->SUPER::getManagerParamsDef },
         volume_id => {
             label        => 'Volume to use',
             type         => 'enum',
             is_mandatory => 1,
-            options      => $volumes
-        }
+        },
     };
 }
+
+sub checkDiskManagerParams {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ "volume_id", "systemimage_size" ]);
+}
+
+
+=pod
+=begin classdoc
+
+@return the managers parameters as an attribute definition. 
+
+=end classdoc
+=cut
+
+sub getDiskManagerParams {
+    my ($self, %args) = @_;
+
+    my $volparam = $self->getManagerParamsDef->{volume_id};
+    $volparam->{options} = {};
+
+    for my $aggr (@{ $self->getConf->{aggregates} }) {
+        for my $volume (@{ $aggr->{aggregates_volumes} }) {
+            $volparam->{options}->{$volume->{volume_id}} = '(' . $aggr->{aggregate_name} .
+                                                           ') ' . $volume->{volume_name};
+        }
+    }
+    return { volume_id => $volparam };
+}
+
 
 sub getExportManagerFromBootPolicy {
     my $self = shift;

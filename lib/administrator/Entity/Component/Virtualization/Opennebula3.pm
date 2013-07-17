@@ -133,17 +133,17 @@ sub opennebula3Repositories {
 
 sub getBaseConfiguration {
     return {
-        install_dir => '/srv/cloud/one',
-        host_monitoring_interval => '600',
-        vm_polling_interval => '600',
-        vm_dir => '/srv/cloud/one/var',
-        scripts_remote_dir => '/var/tmp/one',
-        image_repository_path => '/srv/cloud/images',
-        port => '2633',
-        hypervisor => 'kvm',
-        debug_level => '3',
+        install_dir                  => '/srv/cloud/one',
+        host_monitoring_interval     => '600',
+        vm_polling_interval          => '600',
+        vm_dir                       => '/srv/cloud/one/var',
+        scripts_remote_dir           => '/var/tmp/one',
+        image_repository_path        => '/srv/cloud/images',
+        port                         => '2633',
+        hypervisor                   => 'kvm',
+        debug_level                  => '3',
         overcommitment_memory_factor => 1,
-        overcommitment_cpu_factor => 1
+        overcommitment_cpu_factor    => 1
     };
 }
 
@@ -165,25 +165,12 @@ sub activeHypervisors {
     return wantarray ? @hypervisors : \@hypervisors;
 }
 
-=head2 getHypervisorType
-
-=cut
 
 sub getHypervisorType {
     my ($self) = @_;
     return $self->hypervisor;
 }
 
-=head2 checkHostManagerParams
-
-=cut
-
-sub checkHostManagerParams {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'ram', 'core' ]);
-}
 
 sub checkScaleMemory {
     my ($self, %args) = @_;
@@ -204,11 +191,20 @@ sub checkScaleMemory {
     return { ram_current => $ram_current, ram_before => $ram_before };
 }
 
-sub getHostManagerParams {
-    my $self = shift;
-    my %args = @_;
+
+=pod
+=begin classdoc
+
+@return the manager params definition.
+
+=end classdoc
+=cut
+
+sub getManagerParamsDef {
+    my ($self, %args) = @_;
 
     return {
+        %{ $self->SUPER::getManagerParamsDef },
         core => {
             label        => 'Initial CPU number',
             type         => 'integer',
@@ -236,15 +232,29 @@ sub getHostManagerParams {
             unit         => 'byte',
             pattern      => '^\d*$',
             is_mandatory => 1
-        }
+        },
     };
 }
 
-=head2 getBootPolicies
+sub checkHostManagerParams {
+    my ($self,%args) = @_;
 
-    Desc: return a list containing boot policies available
+    General::checkParams(args => \%args, required => [ 'ram', 'core', 'max_core', 'max_ram' ]);
+}
 
-=cut
+sub getHostManagerParams {
+    my $self = shift;
+    my %args = @_;
+
+    my $definition = $self->getManagerParamsDef();
+    return {
+        core     => $definition->{core},
+        ram      => $definition->{ram},
+        max_core => $definition->{max_core},
+        max_ram  => $definition->{max_ram},
+    };
+}
+
 
 sub getBootPolicies {
     return (Manager::HostManager->BOOT_POLICIES->{pxe_iscsi},

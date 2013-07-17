@@ -1,4 +1,5 @@
 require('common/general.js');
+require('common/service_common.js');
 
 function loadServicesDetails(cid, eid, is_iaas) {
         
@@ -7,64 +8,12 @@ function loadServicesDetails(cid, eid, is_iaas) {
     if (container.prevAll('.action_buttons').length === 0) {
         container.before('<div class="action_buttons"></div>');
     }
-    var table       = $("<tr>").appendTo($("<table>").css('width', '100%').appendTo(container));
-    var div = $('<div>', { id: divId}).appendTo($("<td>").appendTo(table));
-     $('<h4>Details</h4>').appendTo(div);
+    var table = $("<tr>").appendTo($("<table>").css('width', '100%').appendTo(container));
+    var div   = $('<div>', { id: divId}).appendTo($("<td>").appendTo(table));
+    $('<h4>Details</h4>').appendTo(div);
 
-    $("#" + divId).append(
-        new KanopyaFormWizard({
-            title      : 'Add components',
-            type       : 'cluster',
-            id         : eid,
-            relations  : { },
-            displayed  : [ 'cluster_name', 'cluster_state', 'active', 'cluster_min_node',
-                           'cluster_max_node', 'masterimage_id', 'kernel_id', 'user_id',
-                           'cluster_nameserver1', 'cluster_nameserver2', 'cluster_boot_policy',
-                           'cluster_basehostname' ],
-            rawattrdef : {
-                components : {
-                    hide_existing : 1
-                }
-            }
-        }).content);
-
-    $('<h4>', { text : 'Managers' }).appendTo(div);
-    var managerstable   = $('<table>').appendTo(div);
-
-    $.ajax({
-        url     : '/api/serviceprovider/' + eid + '/service_provider_managers?expand=manager_category,manager.component_type',
-        type    : 'GET',
-        success : function(data) {
-            for (var i in data) if (data.hasOwnProperty(i)) {
-                var tr = $('<tr>').appendTo(managerstable);
-                $(tr).append($('<th>', { text : data[i].manager_category.label + ' : ' }))
-                     .append($('<td>', { text : data[i].manager.component_type.label }));
-            }
-        }
-    });
-
-    // If this sp is a Iaas, we get its cloud manager component id (used for optimiaas)
-    var cloudmanager_id;
-    if (is_iaas) {
-        $.ajax({
-                url     : '/api/component',
-                data    : {
-                    'service_provider_id'               : eid,
-                    'component_type.component_type_categories.component_category.category_name' : 'HostManager'
-                },
-                async   : false,
-                success : function(data) {
-                    cloudmanager_id = data[0].pk;
-                }
-        });
-    }
-
-    //var actioncell  = $('<td>', {'class' : 'action-cell'}).css('text-align', 'right').appendTo(table);
-    var actioncell=$('#' + cid).prevAll('.action_buttons'); 
-
+    var components = [];
     function scaleOutComponentsDialog (e) {
-        // Get the component types list availabe on this service provider
-        var components = ajax('GET', '/api/serviceprovider/' + eid + '/components?expand=component_type');
         var component_types = {};
         for (var index in components) {
             component_types[components[index].component_type.pk] = components[index].component_type.component_name;
@@ -108,30 +57,43 @@ function loadServicesDetails(cid, eid, is_iaas) {
         })).start();
     }
 
-    //$(actioncell).append($('<div>').append($('<h4>', { text : 'Actions' })));
+    $("#" + divId).append('<div class="loading"><img alt="Loading, please wait" src="/css/theme/loading.gif" /><p>Loading...</p></div>');
     $.ajax({
-        url     : '/api/serviceprovider/' + eid,
-        success : function(data) {
-            var buttons     = [
+        url     : '/api/cluster/' + eid + '?expand=interfaces.netconfs,components.component_type,billinglimits,' +
+                  'service_provider_managers.manager_category,service_provider_managers.param_preset',
+        async   : true,
+        success : function(details) {
+            // If this sp is a Iaas, we get its cloud manager component id (used for optimiaas)
+            var cloudmanager_id;
+
+            //var actioncell  = $('<td>', {'class' : 'action-cell'}).css('text-align', 'right').appendTo(table);
+            var actioncell = $('#' + cid).prevAll('.action_buttons'); 
+
+            var buttons = [
+//                {
+//                    label       : 'Edit service',
+//                    icon        : 'pencil',
+//                    action      : removeClusterDialog
+//                },
                 {
                     label       : 'Start service',
                     sprite      : 'start',
                     action      : '/api/cluster/' + eid + '/start',
-                    condition   : (new RegExp('^down')).test(data.cluster_state),
+                    condition   : (new RegExp('^down')).test(details.cluster_state),
                     confirm     : 'This will start your instance'
                 },
                 {
                     label       : 'Stop service',
                     sprite      : 'stop',
                     action      : '/api/cluster/' + eid + '/stop',
-                    condition   : (new RegExp('^up')).test(data.cluster_state),
+                    condition   : (new RegExp('^up')).test(details.cluster_state),
                     confirm     : 'This will stop all your running instances'
                 },
                 {
                     label       : 'Force stop service',
                     sprite      : 'stop',
                     action      : '/api/cluster/' + eid + '/forceStop',
-                    condition   : (!(new RegExp('^down')).test(data.cluster_state)),
+                    condition   : (!(new RegExp('^down')).test(details.cluster_state)),
                     confirm     : 'This will stop all your running instances'
                 },
                 {
@@ -157,6 +119,176 @@ function loadServicesDetails(cid, eid, is_iaas) {
                 }
             ];
             createallbuttons(buttons, actioncell);
+
+            // Remove some fields because the api will unserialize this params as an object
+            delete details.class_type_id;
+            delete details.pk;
+
+            /*
+             * Format the values as the cluster json do not exactly fit to the service template def.
+             */
+
+            // Make an array of netconfs id instead of array of netconf object
+            if ($.isArray(details.interfaces)) {
+                for (var index in details.interfaces) {
+                    if ($.isArray(details.interfaces[index].netconfs)) {
+                        var netconfs = [];
+                        for (var index_netconfs in details.interfaces[index].netconfs) {
+                            netconfs.push(details.interfaces[index].netconfs[index_netconfs].pk);
+                        }
+                        details.interfaces[index].netconfs = netconfs;
+                    }
+                }
+            }
+
+            // Change the billing limite attr name
+            if ($.isArray(details.billinglimits)) {
+                details.billing_limits = details.billinglimits;
+                delete details.billinglimits;
+            }
+
+            // Change the component_type attr name
+            if ($.isArray(details.components)) {
+                for (var index in details.components) {
+                    details.components[index].component_type = details.components[index].component_type_id;
+                }
+            }
+
+            // Add managers ids as cluster attributes
+            if ($.isArray(details.service_provider_managers)) {
+                var managers = details.service_provider_managers;
+                delete details.service_provider_managers;
+                for (var index in managers) {
+                    var category = managers[index].manager_category.category_name;
+                    if (category == 'HostManager' && is_iaas) {
+                        cloudmanager_id = managers[index].manager_id;
+                    }
+                    var manager_attr_name = category.replace('Manager', '').toLowerCase() + "_manager_id";
+                    details[manager_attr_name] = managers[index].manager_id;
+                    // Handle manager params
+                    if ($.isPlainObject(managers[index].param_preset) && managers[index].param_preset.params != undefined) {
+                        $.extend(true, details, JSON.parse(managers[index].param_preset.params));
+                    }
+                }
+            }
+
+            // Store the cluster component list for "Sscale out component" action
+            components = details.components;
+
+            $('.loading').remove();
+
+            $("#" + divId).append(
+                new KanopyaFormWizard({
+                    title           : 'Service details',
+                    type            : 'cluster',
+                    id              : eid,
+                    reloadable      : true,
+                    hideDisabled    : false,
+                    stepsAsTags     : true,
+                    noStateDisabled : true,
+                    displayed       : [ 'cluster_name', 'cluster_desc', 'user_id', 'service_template_id' ],
+                    rawattrdef      : {
+                        cluster_name : {
+                            label        : 'Instance name',
+                            type         : 'string',
+                            pattern      : '^[a-zA-Z_0-9]+$',
+                            is_mandatory : true,
+                            is_editable  : false
+                        },
+                        cluster_desc : {
+                            label        : 'Instance description',
+                            type         : 'text',
+                            pattern      : '^.*$',
+                            is_mandatory : false,
+                            is_editable  : false
+                        },
+                        user_id : {
+                            label        : 'Customer',
+                            type         : 'relation',
+                            relation     : 'single',
+                            pattern      : "^[1-9][0-9]+$",
+                            is_mandatory : true,
+                            is_editable  : false
+                        },
+                        service_template_id : {
+                            label        : 'Service type',
+                            type         : 'relation',
+                            relation     : 'single',
+                            reload       : true,
+                            pattern      : "^[1-9][0-9]+$",
+                            welcome      : "Select a service type",
+                            is_mandatory : true,
+                            is_editable  : false
+                        }
+                    },
+                    attrsCallback : function (resource, data, trigger) {
+                        var attributes;
+                        if (Object.keys(data).length <= 0) {
+                            data = details;
+                        }
+
+                        // Define the cluster relation hard coded here, to avoid a call
+                        // to the cluster attributes for the relations only
+                        var cluster_relations = {
+                            user : {
+                                resource : "user",
+                                cond     : { "foreign.user_id" : "self.user_id" },
+                                attrs    : { accessor : "single" }
+                            },
+                            service_template : {
+                                resource : "servicetemplate",
+                                cond     : { "foreign.service_template_id" : "self.service_template_id" },
+                                attrs    : { accessor : "single" }
+                            }
+                        };
+
+                        // If the service template defined, fill the form with the service template definition
+                        if (data.service_template_id) {
+                            var args = { params : data, trigger : trigger };
+                            attributes = ajax('POST', '/api/servicetemplate/getServiceTemplateDef', args);
+
+                            // Delete the service template fields other than policies ids
+                            delete attributes.attributes['service_name'];
+                            delete attributes.attributes['service_desc'];
+
+                        } else {
+                            attributes = { attributes : {}, relations : {} };
+                        }
+                        $.extend(true, attributes.relations, cluster_relations);
+
+                        // Set steps
+                        set_steps(attributes, 0);
+
+                        // Filter displayed fields
+                        attributes.displayed = $.grep(attributes.displayed, function(n, i) {
+                                                   if ($.isPlainObject(n)) {
+                                                       if (n.components !== undefined) {
+                                                           // Remove the component list as component ha specific management
+                                                           return false;
+                                                       }
+                                                   } else if (n.match(/_policy_id$/) != undefined) {
+                                                        // Do not display policies
+                                                        return false;
+                                                   }
+                                                   return true;
+                                               });
+
+                        // Set the value if defined (at reload)
+                        $.each([ 'cluster_name', 'cluster_desc', 'user_id', 'service_template_id' ], function (index, attr) {
+                            if (data[attr] !== undefined) {
+                                if (attributes.attributes[attr] === undefined) {
+                                    attributes.attributes[attr] = {};
+                                }
+                                attributes.attributes[attr].value = data[attr];
+                            }
+                        });
+                        return attributes;
+                    },
+                    valuesCallback : function(type, id, attributes) {
+                        return details;
+                    }
+                }).content
+            );
         }
     });
 }

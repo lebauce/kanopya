@@ -16,13 +16,11 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 =pod
-
 =begin classdoc
 
 OpenStack component, used as host manager by Kanopya
 
 =end classdoc
-
 =cut
 
 package  Entity::Component::Virtualization::NovaController;
@@ -98,11 +96,20 @@ sub getNetConf {
     return $conf;
 }
 
-sub getHostManagerParams {
-    my $self = shift;
-    my %args = @_;
+
+=pod
+=begin classdoc
+
+@return the manager params definition.
+
+=end classdoc
+=cut
+
+sub getManagerParamsDef {
+    my ($self, %args) = @_;
 
     return {
+        %{ $self->SUPER::getManagerParamsDef },
         core => {
             label        => 'Initial CPU number',
             type         => 'integer',
@@ -134,21 +141,34 @@ sub getHostManagerParams {
     };
 }
 
+
 sub checkHostManagerParams {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'ram', 'core', 'max_core', 'max_ram' ]);
+}
+
+
+sub getHostManagerParams {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'ram', 'core' ]);
+    my $definition = $self->getManagerParamsDef();
+    return {
+        core     => $definition->{core},
+        ram      => $definition->{ram},
+        max_core => $definition->{max_core},
+        max_ram  => $definition->{max_ram},
+    }
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Return the boot policies for the host ruled by this host manager
 
 =end classdoc
-
 =cut
 
 sub getBootPolicies {
@@ -161,20 +181,8 @@ sub supportHotConfiguration {
     return 0;
 }
 
-=pod
-
-=begin classdoc
-
-Return the type of host managed
-
-@return "OpenStack VM"
-
-=end classdoc
-
-=cut
 
 =pod
-
 =begin classdoc
 
 Build the content of the puppet agent manifest for a node
@@ -182,7 +190,6 @@ Build the content of the puppet agent manifest for a node
 @return definition
 
 =end classdoc
-
 =cut
 
 sub getPuppetDefinition {
@@ -255,8 +262,8 @@ sub checkConfiguration {
     }
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Return a list of hypervisors under the rule of this instance of manager
@@ -264,7 +271,6 @@ Return a list of hypervisors under the rule of this instance of manager
 @return opnestack_hypervisors
 
 =end classdoc
-
 =cut
 
 sub hypervisors {
@@ -275,8 +281,8 @@ sub hypervisors {
     return \@hypervisors;
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Return a list of active hypervisors ruled by this manager
@@ -284,7 +290,6 @@ Return a list of active hypervisors ruled by this manager
 @return active_hypervisors
 
 =end classdoc
-
 =cut
 
 sub activeHypervisors {
@@ -298,8 +303,8 @@ sub activeHypervisors {
     return wantarray ? @hypervisors : \@hypervisors;
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Promote a host to the Entity::Host::Hypervisor::OpenstackHypervisor- class
@@ -307,7 +312,6 @@ Promote a host to the Entity::Host::Hypervisor::OpenstackHypervisor- class
 @return OpenstackHypervisor instance of OpenstackHypervisor
 
 =end classdoc
-
 =cut
 
 sub addHypervisor {
@@ -324,7 +328,6 @@ sub addHypervisor {
 
 
 =pod
-
 =begin classdoc
 
 Promote host into OpenstackVm and set its hypervisor id
@@ -336,7 +339,6 @@ Promote host into OpenstackVm and set its hypervisor id
 @return the promoted host
 
 =end classdoc
-
 =cut
 
 sub promoteVm {
@@ -353,8 +355,8 @@ sub promoteVm {
     return $args{host};
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Demote an OpenStack hypervisor to the Entity::Host::Hypervisor class
@@ -362,7 +364,6 @@ Demote an OpenStack hypervisor to the Entity::Host::Hypervisor class
 @return Hypervisor an instance of Hypervisor
 
 =end classdoc
-
 =cut
 
 sub removeHypervisor {
@@ -374,8 +375,8 @@ sub removeHypervisor {
     Entity::Host->demote(demoted => $args{host});
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Set the configuration of the component.
@@ -383,7 +384,6 @@ Set the configuration of the component.
 If repositories are specified, update the mount entries of all compute nodes
 
 =end classdoc
-
 =cut
 
 sub setConf {

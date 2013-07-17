@@ -1,4 +1,4 @@
-# Copyright © 2012 Hedera Technology SAS
+# Copyright © 2012-2013 Hedera Technology SAS
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -16,13 +16,11 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 =pod
-
 =begin classdoc
 
 TODO
 
 =end classdoc
-
 =cut
 
 package Entity::Component::Fileimagemanager0;
@@ -72,44 +70,24 @@ sub diskType {
     return "Virtual machine disk";
 }
 
-=head2 checkDiskManagerParams
-
-=cut
-
-sub checkDiskManagerParams {
-    my $self = shift;
-    my %args = @_;
-    
-    General::checkParams(args => \%args, required => [ "container_access_id", "systemimage_size" ]);
-}
-
-
 =pod
-
 =begin classdoc
 
-@return the managers parameters as an attribute definition. 
+@return the manager params definition.
 
 =end classdoc
-
 =cut
 
-sub getDiskManagerParams {
-    my $self = shift;
-    my %args  = @_;
-
-    my $accesses = {};
-    my @nfs = Entity::ContainerAccess::NfsContainerAccess->search();
-    for my $access (@nfs) {
-        $accesses->{$access->id} = $access->container_access_export;
-    }
+sub getManagerParamsDef {
+    my ($self, %args) = @_;
 
     return {
+        # TODO: call super on all Manager supers
+        %{ $self->SUPER::getManagerParamsDef },
         container_access_id => {
             label        => 'NFS repository to use',
             type         => 'enum',
             is_mandatory => 1,
-            options      => $accesses
         },
         image_type => {
             label        => 'Disk image format',
@@ -117,6 +95,41 @@ sub getDiskManagerParams {
             is_mandatory => 1,
             options      => [ "raw", "qcow2", "vmdk" ]
         },
+    };
+}
+
+
+sub checkDiskManagerParams {
+    my $self = shift;
+    my %args = @_;
+    
+    General::checkParams(args => \%args, required => [ "container_access_id", "systemimage_size", "image_type" ]);
+}
+
+
+=pod
+=begin classdoc
+
+@return the managers parameters as an attribute definition. 
+
+=end classdoc
+=cut
+
+sub getDiskManagerParams {
+    my $self = shift;
+    my %args  = @_;
+
+    my $definition = $self->getManagerParamsDef();
+    $definition->{container_access_id}->{options} = {};
+
+    my @nfs = Entity::ContainerAccess::NfsContainerAccess->search();
+    for my $access (@nfs) {
+        $definition->{container_access_id}->{options}->{$access->id} = $access->container_access_export;
+    }
+
+    return {
+        container_access_id => $definition->{container_access_id},
+        image_type          => $definition->{image_type}
     };
 }
 
@@ -168,14 +181,6 @@ sub getReadOnlyParameter {
     return undef;
 }
 
-=head2 createDisk
-
-    Desc : Implement createDisk from DiskManager interface.
-           This function enqueue a ECreateDisk operation.
-    args :
-
-=cut
-
 sub createDisk {
     my $self = shift;
     my %args = @_;
@@ -199,14 +204,6 @@ sub createDisk {
     );
 }
 
-=head2 getFreeSpace
-
-    Desc : Implement getFreeSpace from DiskManager interface.
-           This function return the free space on the volume group.
-    args :
-
-=cut
-
 sub getFreeSpace {
     my $self = shift;
     my %args = @_;
@@ -218,15 +215,6 @@ sub getFreeSpace {
 
     return $container_access->getContainer->getAttr(name => 'container_freespace');
 }
-
-
-=head2 createExport
-
-    Desc : Implement createExport from ExportManager interface.
-           This function enqueue a ECreateExport operation.
-    args : export_name, device, typeio, iomode
-
-=cut
 
 sub createExport {
     my $self = shift;

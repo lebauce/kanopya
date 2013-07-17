@@ -51,17 +51,20 @@ sub hostType {
     return "Physical host";
 }
 
-sub getHostManagerParams {
-    my $self = shift;
-    my %args = @_;
 
-    my $tags = { };
-    my @tags = Entity::Tag->search();
-    for my $tag (@tags) {
-        $tags->{$tag->id} = $tag->tag;
-    }
+=pod
+=begin classdoc
+
+@return the manager params definition.
+
+=end classdoc
+=cut
+
+sub getManagerParamsDef {
+    my ($self, %args) = @_;
 
     return {
+        %{ $self->SUPER::getManagerParamsDef },
         cpu => {
             label        => 'Required CPU number',
             type         => 'integer',
@@ -81,8 +84,26 @@ sub getHostManagerParams {
             type         => 'enum',
             relation     => 'multi',
             is_mandatory => 0,
-            options      => $tags
         }
+    };
+}
+
+sub getHostManagerParams {
+    my $self = shift;
+    my %args = @_;
+
+    my $definition = $self->getManagerParamsDef();
+    $definition->{tags}->{options} = {};
+
+    my @tags = Entity::Tag->search();
+    for my $tag (@tags) {
+        $definition->{tags}->{options}->{$tag->id} = $tag->tag;
+    }
+
+    return {
+        cpu  => $definition->{cpu},
+        ram  => $definition->{ram},
+        tags => $definition->{tags},
     };
 }
 

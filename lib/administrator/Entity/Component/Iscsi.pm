@@ -62,32 +62,17 @@ sub exportType {
     return "Unmanaged ISCSI target";
 }
 
-sub checkExportManagerParams {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ "iscsi_portals", "target", "lun" ]);
-}
-
 
 =pod
-
 =begin classdoc
 
-@return the managers parameters as an attribute definition. 
+@return the manager params definition.
 
 =end classdoc
-
 =cut
 
-sub getExportManagerParams {
-    my $self = shift;
-    my %args  = @_;
-
-    my $portals = {};
-    for my $portal (@{ $self->getConf->{iscsi_portals} }) {
-        $portals->{$portal->{iscsi_portal_id}} = $portal->{iscsi_portal_ip} . ':' . $portal->{iscsi_portal_port}
-    }
+sub getManagerParamsDef {
+    my ($self, %args) = @_;
 
     return {
         iscsi_portals => {
@@ -95,7 +80,6 @@ sub getExportManagerParams {
             type         => 'enum',
             relation     => 'multi',
             is_mandatory => 1,
-            options      => $portals
         },
         target => {
             label        => 'ISCSI target name',
@@ -109,6 +93,41 @@ sub getExportManagerParams {
             pattern      => '^\d+$',
             is_mandatory => 1,
         },
+    };
+}
+
+sub checkExportManagerParams {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "iscsi_portals", "target", "lun" ]);
+}
+
+
+=pod
+=begin classdoc
+
+@return the managers parameters as an attribute definition. 
+
+=end classdoc
+=cut
+
+sub getExportManagerParams {
+    my $self = shift;
+    my %args  = @_;
+
+    my $definition = $self->getManagerParamsDef();
+    $definition->{iscsi_portals}->{options} = {};
+
+    for my $portal (@{ $self->getConf->{iscsi_portals} }) {
+        $definition->{iscsi_portals}->{options}->{$portal->{iscsi_portal_id}}
+            = $portal->{iscsi_portal_ip} . ':' . $portal->{iscsi_portal_port};
+    }
+
+    return {
+        iscsi_portals => $definition->{iscsi_portals},
+        target        => $definition->{target},
+        lun           => $definition->{lun},
     };
 }
 
@@ -154,7 +173,15 @@ sub setConf {
     }
 }
 
-# Insert default configuration in db for this component 
+
+=pod
+=begin classdoc
+
+Insert default configuration in db for this component. 
+
+=end classdoc
+=cut
+
 sub insertDefaultExtendedConfiguration {
     my $self = shift;
 

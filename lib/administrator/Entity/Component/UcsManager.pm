@@ -121,6 +121,28 @@ sub DESTROY {
     }
 }
 
+=pod
+=begin classdoc
+
+@return the manager params definition.
+
+=end classdoc
+=cut
+
+sub getManagerParamsDef {
+    my ($self, %args) = @_;
+
+    return {
+        %{ $self->SUPER::getManagerParamsDef },
+        service_profile_template_id => {
+            label        => 'Service profile',
+            type         => 'enum',
+            is_mandatory => 1,
+            options      => [ 'sptmpl_kanopya01-A', 'sptmpl_kanopya01-B' ]
+        }
+    };
+}
+
 sub checkHostManagerParams {
     my $self = shift;
     my %args  = @_;
@@ -133,20 +155,10 @@ sub getHostManagerParams {
     my %args = @_;
 
     return {
-        service_profile_template_id => {
-            label        => 'Service profile',
-            type         => 'enum',
-            is_mandatory => 1,
-            options      => [ 'sptmpl_kanopya01-A', 'sptmpl_kanopya01-B' ]
-        }
+        service_profile_template_id => $self->getManagerParamsDef->{service_profile_template_id}
     };
 }
 
-=head2 synchronize
-
-    Desc: synchronize ucs information with kanopya database
-    
-=cut
 
 sub synchronize {
     my $self = shift;
@@ -281,11 +293,6 @@ sub synchronize {
     $self->logout();
 }
 
-=head2 getRemoteSessionURL
-
-    Desc: return an URL to a remote session to the host
-
-=cut
 
 sub getRemoteSessionURL {
     my $self = shift;

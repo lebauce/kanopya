@@ -37,6 +37,9 @@ use base 'Entity::Policy';
 use strict;
 use warnings;
 
+use Manager::HostManager;
+use Manager::DiskManager;
+
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
@@ -157,25 +160,15 @@ sub getPolicyDef {
     }
 
     # Manually add the systemimage_size and deploy_on_disk attrs because they are manager params
-    $attributes->{attributes}->{deploy_on_disk} = {
-        label        => 'Deploy on hard disk',
-        type         => 'boolean',
-        pattern      => '^\d*$',
-        is_mandatory => 1
-    };
-
-    $attributes->{attributes}->{systemimage_size} = {
-        label        => 'System image size',
-        type         => 'integer',
-        unit         => 'byte',
-        pattern      => '^\d*$',
-        is_mandatory => defined $args{params}->{masterimage_id} ? 1 : 0,
-    };
+    $attributes->{attributes}->{deploy_on_disk} = Manager::HostManager->getManagerParamsDef->{deploy_on_disk};
+    $attributes->{attributes}->{systemimage_size} = Manager::DiskManager->getManagerParamsDef->{systemimage_size};
+    $attributes->{attributes}->{systemimage_size}->{is_mandatory}
+        = defined $args{params}->{masterimage_id} ? 1 : 0;
 
     $attributes->{attributes}->{kernel_id}->{options} = \@kernels;
     $attributes->{attributes}->{masterimage_id}->{options} = \@masterimages;
-    $attributes->{attributes}->{components}->{attributes}
-        ->{attributes}->{component_type}->{options} = \@componenttypes;
+    $attributes->{attributes}->{components}->{attributes}->{attributes}->{component_type}->{options}
+        = \@componenttypes;
 
     $attributes->{relations} = {
         components => {
