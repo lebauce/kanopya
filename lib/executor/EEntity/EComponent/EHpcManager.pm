@@ -13,15 +13,37 @@
 # you should have received a copy of the gnu affero general public license
 # along with this program.  if not, see <http://www.gnu.org/licenses/>.
 
-package Entity::ServiceProvider::Hpc7000;
-use base 'Entity::ServiceProvider';
+package EEntity::EComponent::EHpcManager;
+use base "EEntity::EComponent";
+use base "EManager::EHostManager";
 
 use strict;
 use warnings;
 
-use constant ATTR_DEF => {
-};
+=head2 get_blades
 
-sub getAttrDef { return ATTR_DEF; }
+    Desc: retrieve informations about the HPC blades
+
+=cut
+
+sub get_blades {
+    my $self = shift;
+}
+
+=head2 synchronize
+
+    Desc: synchronize hpc7000 information with kanopya database
+
+=cut
+
+sub synchronize {
+    my $self = shift;
+    my %args = @_;
+
+    my @blades = $self->get_blades();
+
+    foreach my $blade (@blades) {
+    }
+}
 
 1;

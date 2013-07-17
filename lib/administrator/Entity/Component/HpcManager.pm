@@ -51,6 +51,9 @@ sub synchronize {
     my %args = @_;
 
     my @blades = $self->get_blades();
+
+    foreach my $blade (@blades) {
+    }
 }
 
 1;

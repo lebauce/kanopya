@@ -13,15 +13,17 @@
 # you should have received a copy of the gnu affero general public license
 # along with this program.  if not, see <http://www.gnu.org/licenses/>.
 
-package Entity::ServiceProvider::Hpc7000;
-use base 'Entity::ServiceProvider';
+package EEntity::EServiceProvider::EHpc7000;
+use base EEntity;
 
 use strict;
 use warnings;
 
-use constant ATTR_DEF => {
-};
+sub synchronize {
+    my $self   = shift;
+    my $hpcmgr = $self->getComponent(name => 'HpcManager');
 
-sub getAttrDef { return ATTR_DEF; }
+    $hpcmgr->synchronize();
+}
 
 1;
