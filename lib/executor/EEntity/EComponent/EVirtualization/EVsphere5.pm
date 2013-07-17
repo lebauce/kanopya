@@ -439,6 +439,14 @@ sub scaleMemory {
     }
 }
 
+sub migrateHost {
+    throw Kanopya::Exception::NotImplemented();
+}
+
+sub resubmitNode {
+    throw Kanopya::Exception::NotImplemented();
+}
+
 =pod
 
 =begin classdoc
