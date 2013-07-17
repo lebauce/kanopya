@@ -21,6 +21,8 @@ use strict;
 use warnings;
 
 use EContext::SSH;
+use Entity::Host;
+use Entity::Iface;
 
 use Text::CSV;
 use Data::Dumper;
@@ -49,8 +51,7 @@ sub get_blades {
     );
 
     my $bsReturn = $bladesystem_context->execute(command => 'SHOW SERVER INFO ALL');
-    # -output=script2 is actually CSV...
-    my $vcReturn = $virtualconnect_context->execute(command => 'show profile * -output=script2');
+    my $vcReturn = $virtualconnect_context->execute(command => 'show profile * -output=script2'); # -output=script2 is actually CSV...
     my @blades   = $self->_parseOutputs(
         bladesystem    => $bsReturn->{stdout},
         virtualconnect => $vcReturn->{stdout}
@@ -58,6 +59,12 @@ sub get_blades {
 
     return @blades;
 }
+
+=head2
+
+    Desc: Extract datas from BladeSystem and VirtualConnect CLIs' stdouts into a hash
+
+=cut
 
 sub _parseOutputs {
     my $self = shift;
@@ -68,6 +75,7 @@ sub _parseOutputs {
     my $_id   = 'Serial Number';
     my $_mac  = 'MAC Address';
     my $_pxe  = 'PXE';
+    my $_name = 'Network Name';
 
     my @bladesInfo   = split '\n', $args{bladesystem};
     my %blades       = ();
@@ -116,13 +124,16 @@ sub _parseOutputs {
             elsif ($bladeId ne '' && scalar grep /^$_mac$/, @columns) {
                 my ($macAddr) = grep { $columns[$_] =~ /^$_mac$/ } 0..$#columns;
                 my ($pxe)     = grep { $columns[$_] =~ /^$_pxe$/ } 0..$#columns;
+                my ($name)    = grep { $columns[$_] =~ /^$_name$/ } 0..$#columns;
                 for my $i (1..$#lines) {
                     $csv->parse($lines[$i]);
                     @columns  = $csv->fields;
                     my $iface = {
                         PXE     => ($columns[$pxe] eq 'Enabled') ? 1 : 0,
-                        MACAddr => $columns[$macAddr]
+                        MACAddr => lc $columns[$macAddr],
+                        name    => $columns[$name]
                     };
+                    $iface->{MACAddr} =~ s/-/:/g;
                     push @{$blades{$bladeId}->{ifaces}}, $iface;
                 }
             }
@@ -142,9 +153,40 @@ sub synchronize {
     my $self = shift;
     my %args = @_;
 
-    my @blades = $self->get_blades();
+    my $manager_id = $self->entity_id;
 
-    foreach my $blade (@blades) {
+    my %blades = $self->get_blades();
+
+    BLADE:
+    foreach my $blade_id (keys %blades) {
+        my $blade = $blades{$blade_id};
+        my @existing_host = Entity::Host->search(
+            hash => {
+                host_serial_number => $blade->{serial_number},
+                host_manager_id    => $manager_id
+            }
+        );
+        next BLADE if scalar @existing_host;
+
+        my $host = Entity::Host->new(
+            host_serial_number => $blade->{serial_number},
+            host_ram           => $blade->{memory},
+            host_core          => $blade->{cores},
+            active             => 1,
+            host_desc          => $blade->{name},
+            host_manager_id    => $manager_id
+        );
+
+        my $i = 0;
+        for my $iface (@{$blade->{ifaces}}) {
+            Entity::Iface->new(
+                iface_name     => "eth$i",
+                iface_mac_addr => $iface->{MACAddr},
+                iface_pxe      => $iface->{PXE},
+                host_id        => $host->id
+            );
+            ++$i;
+        }
     }
 }
 
