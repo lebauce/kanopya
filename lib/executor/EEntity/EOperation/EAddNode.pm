@@ -335,6 +335,29 @@ sub execute {
         }
     }
 
+    # Check service billing limits
+    my $service_ram_limit = $self->{context}->{cluster}->getLimit(type => 'ram');
+    my $service_cpu_limit = $self->{context}->{cluster}->getLimit(type => 'cpu');
+    my @cluster_nodes = $self->{context}->{cluster}->nodes;
+    my $current_service_ram = 0;
+    my $current_service_cpu = 0;
+
+    foreach my $node (@cluster_nodes) {
+        $current_service_ram += $node->host->host_ram;
+        $current_service_cpu += $node->host->host_core;
+    }
+
+    my $new_service_ram = $current_service_ram + $self->{context}->{host}->host_ram;
+    my $new_service_cpu = $current_service_cpu + $self->{context}->{host}->host_core;
+
+    if (defined $service_ram_limit && $new_service_ram > $service_ram_limit) {
+        throw Kanopya::Exception::Internal(error => "Service ram billing limit is reached");
+    }
+
+    if (defined $service_cpu_limit && $new_service_cpu > $service_cpu_limit) {
+        throw Kanopya::Exception::Internal(error => "Service cpu billing limit is reached");
+    }
+
     # Check the user quota on ram and cpu
     $self->{context}->{cluster}->user->canConsumeQuota(resource => 'ram',
                                                        amount   => $self->{context}->{host}->host_ram);
