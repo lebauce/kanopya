@@ -51,7 +51,6 @@ sub get_blades {
     my $bsReturn = $bladesystem_context->execute(command => 'SHOW SERVER INFO ALL');
     # -output=script2 is actually CSV...
     my $vcReturn = $virtualconnect_context->execute(command => 'show profile * -output=script2');
-    print $vcReturn->{stdout} . "\n";
     my @blades   = $self->_parseOutputs(
         bladesystem    => $bsReturn->{stdout},
         virtualconnect => $vcReturn->{stdout}
@@ -66,17 +65,18 @@ sub _parseOutputs {
 
     General::checkParams(args => \%args, required => [ 'bladesystem', 'virtualconnect' ]);
 
+    my $_id   = 'Serial Number';
+    my $_mac  = 'MAC Address';
+    my $_pxe  = 'PXE';
+
     my @bladesInfo   = split '\n', $args{bladesystem};
     my %blades       = ();
     my $currentBlade = undef;
-    
+
     for my $line (@bladesInfo) {
-        if ($line =~ /^(Server Blade \#(\d+)) Information:$/) {
-            if ($currentBlade != undef) {
-                $blades{$currentBlade->{number}} = $currentBlade;
-            }
+        if ($line =~ /^(Server Blade \#\d+) Information:$/) {
+            $blades{$currentBlade->{serial_number}} = $currentBlade if $currentBlade != undef;
             $currentBlade = {
-                number        => $2,
                 serial_number => undef,
                 cores         => 0,
                 memory        => undef,
@@ -84,49 +84,46 @@ sub _parseOutputs {
                 ifaces        => []
             };
         }
-        elsif ($currentBlade != undef && $line =~ /^\s*Serial Number: (\w+)\s*$/) {
+        elsif ($currentBlade != undef && $line =~ /^\s*Serial Number: (\w[\w|\s]*)$/) {
             $currentBlade->{serial_number} = $1;
         }
-        elsif ($currentBlade != undef && $line =~ /^\s*CPU \d+: .* \((\d+) cores\)\s*$/) {
+        elsif ($currentBlade != undef && $line =~ /^\s*CPU \d+: .* \((\d+) cores\)$/) {
             $currentBlade->{cores} += int($1);
         }
-        elsif ($currentBlade != undef && $line =~ /^\s*Memory: (\d+) (\D+)\s*$/) {
+        elsif ($currentBlade != undef && $line =~ /^\s*Memory: (\d+) (\D+)$/) {
             $currentBlade->{memory} = int($1) * 1024 * 1024;
         }
     }
-    if ($currentBlade != undef) {
-        $blades{$currentBlade->{number}} = $currentBlade;
-    }
+    $blades{$currentBlade->{serial_number}} = $currentBlade if $currentBlade != undef;
 
-    my $csvParser = Text::CSV->new({ binary => 1, sep_char => ';' });
-    @bladesInfo   = split /^-+\n/m, $args{virtualconnect};
+    return () if not scalar keys %blades;
+
+    my $csv     = Text::CSV->new({ binary => 1, sep_char => ';' });
+    @bladesInfo = split /^-+\n/m, $args{virtualconnect};
     for my $bladeInfo (@bladesInfo) {
-        my $bladeNumber = undef;
-        my @csvs        = split /^\s*\n/m, $bladeInfo;
-        for my $csv (@csvs) {
-            if ($csv ne "") {
-                my @lines   = split '\n', $csv;
-                $csvParser->parse($lines[0]);
-                my @columns = $csvParser->fields;
-                if (scalar grep /^Name$/, @columns) {
-                    my ( $name ) = grep { $columns[$_] =~ /^Name$/ } 0..$#columns;
-                    $csvParser->parse($lines[1]);
-                    @columns     = $csvParser->fields;
-                    $bladeNumber = int((split '-', $columns[$name])[1]);
-                }
-                elsif ($bladeNumber != undef && scalar grep /^MAC Address$/, @columns) {
-                    my $end       = (scalar @lines) - 1;
-                    my ($macAddr) = grep { $columns[$_] =~ /^MAC Address$/ } 0..$#columns;
-                    my ($pxe)     = grep { $columns[$_] =~ /^PXE$/ } 0..$#columns;
-                    for my $i (1..$end) {
-                        $csvParser->parse($lines[$i]);
-                        @columns  = $csvParser->fields;
-                        my $iface = {
-                            PXE     => ($columns[$pxe] eq 'Enabled') ? 1 : 0,
-                            MACAddr => $columns[$macAddr]
-                        };
-                        push $blades{$bladeNumber}->{ifaces}, $iface;
-                    }
+        my $bladeId = '';
+        my @chunks  = split /^\s*\n/m, $bladeInfo;
+        for my $chunk (@chunks) {
+            my @lines   = split '\n', $chunk;
+            $csv->parse($lines[0]);
+            my @columns = $csv->fields;
+            if (scalar grep /^$_id$/, @columns) {
+                my ($idIndex) = grep { $columns[$_] =~ /^$_id$/ } 0..$#columns;
+                $csv->parse($lines[1]);
+                @columns      = $csv->fields;
+                $bladeId      = $columns[$idIndex];
+            }
+            elsif ($bladeId ne '' && scalar grep /^$_mac$/, @columns) {
+                my ($macAddr) = grep { $columns[$_] =~ /^$_mac$/ } 0..$#columns;
+                my ($pxe)     = grep { $columns[$_] =~ /^$_pxe$/ } 0..$#columns;
+                for my $i (1..$#lines) {
+                    $csv->parse($lines[$i]);
+                    @columns  = $csv->fields;
+                    my $iface = {
+                        PXE     => ($columns[$pxe] eq 'Enabled') ? 1 : 0,
+                        MACAddr => $columns[$macAddr]
+                    };
+                    push @{$blades{$bladeId}->{ifaces}}, $iface;
                 }
             }
         }
