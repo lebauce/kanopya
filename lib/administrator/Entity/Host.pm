@@ -190,7 +190,6 @@ sub create {
 
 sub resubmit {
     my $self = shift;
-
     $self->host_manager->resubmitHost(host => $self);
 }
 

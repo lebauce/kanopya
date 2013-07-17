@@ -32,9 +32,31 @@ my $errmsg;
 
 sub check {
     my $self = shift;
-
     General::checkParams(args => $self->{context}, required => [ "host" ]);
+
+    $self->{context}->{host_manager_sp} = $self->{context}->{host}->getHostManager()->service_provider;
 }
+
+
+sub prepare {
+    my $self = shift;
+
+    # Check the IAAS cluster state
+    my @entity_states = $self->{context}->{host_manager_sp}->entity_states;
+
+    for my $entity_state (@entity_states) {
+        throw Kanopya::Exception::Execution::InvalidState(
+                  error => "The iaas cluster <"
+                           .$self->{context}->{host_manager_sp}->cluster_name
+                           .'> is <'.$entity_state->state
+                           .'> which is not a correct state to accept resubmit'
+              );
+    }
+
+    $self->{context}->{host_manager_sp}->setConsumerState(state    => 'resubmitting',
+                                                          consumer => $self->workflow);
+}
+
 
 sub execute {
     my ($self, %args) = @_;
@@ -88,12 +110,25 @@ sub execute {
 
     }
 
-    $self->{context}->{cloudmanager_comp}->resubmitNode(
+    my $rep = $self->{context}->{cloudmanager_comp}->resubmitNode(
         vm          => $self->{context}->{host},
         hypervisor  => $self->{context}->{hypervisor},
     );
 
     $self->{context}->{host}->setState(state => 'starting');
+
+    if (defined $rep->{need_to_scale} && $rep->{need_to_scale} == 1) {
+        # TODO insert scale params here instead of through context in fishish method
+
+        $self->workflow->enqueue(
+            type => 'ScaleMemoryHost',
+            priority => 200,
+        );
+        $self->workflow->enqueue(
+            type => 'ScaleCpuHost',
+            priority => 200,
+        );
+    }
 }
 
 # Almost the same code than postStartNode prerequisite
@@ -188,13 +223,23 @@ sub postrequisites {
 
 sub finish {
     my ($self) = @_;
-    # Insert context for next operation defined in workflow_def (scalecpu and scalememory)
+    $self->SUPER::finish();
+
+#    # Insert context for next operation defined in workflow_def (scalecpu and scalememory)
     $self->{params}->{cpu_number} = $self->{params}->{host_core_origin};
     $self->{params}->{memory}     = $self->{params}->{host_ram_origin};
+
+    $self->{context}->{host_manager_sp}->removeState(consumer => $self->workflow);
+
     delete $self->{params}->{host_core_origin};
     delete $self->{params}->{host_ram_origin};
     delete $self->{context}->{hypervisor};
     delete $self->{context}->{vm_cluster};
 }
 
+sub cancel {
+    my $self = shift;
+    $self->SUPER::cancel();
+    $self->{context}->{host_manager_sp}->removeState(consumer => $self->workflow);
+}
 1;

@@ -220,10 +220,8 @@ sub execute {
 
         my $check = $cm->isMigrationAuthorized(vm_id => $vm_id, hv_id => $hv_id);
 
-        if ($check == 0) {
-            my $errmsg = "Not enough resource in HV $hv_id for VM $vm_id migration";
-            $log->warn($errmsg);
-            throw Kanopya::Exception::Internal(error => $errmsg);
+        if ($check->{authorization} == 0) {
+            throw Kanopya::Exception::Internal(error => $check->{error});
         }
     }
 

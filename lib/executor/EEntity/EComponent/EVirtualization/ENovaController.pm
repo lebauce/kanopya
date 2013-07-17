@@ -714,14 +714,54 @@ sub postStart {
     General::checkParams(args => \%args, required => [ 'host' ]);
 }
 
+
 =pod
 
 =begin classdoc
 
-Resubmit a node in an OpenStack IAAS : set vm's state to active, then rebuild vm
+Evacuate a vm in a hypervisor using nova 'evacuate' method.
+Exception is thrown when hypervisor in not down for nova.
 
-@param $vm virtual machine to resubmit
-@param $hypervisor hypervisor on which vm will be placed
+@param vm virtual machine to evacuate
+@param hypervisor the hypervisor on which the vm is evacuated
+
+=end classdoc
+
+=cut
+
+sub evacuateNode {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['vm', 'hypervisor']);
+
+    $self->setState(vm => $args{vm}, state => 'active');
+
+    my $api = $self->api;
+    my $uuid = $args{vm}->openstack_vm_uuid;
+
+    my $response = $api->compute->servers(id => $uuid)->action->post(
+        content => {
+            'evacuate' => {
+                'host'            => $args{hypervisor}->node->node_hostname,
+                'onSharedStorage' => 'true',
+            }
+        }
+    );
+
+    if (defined $response->{badRequest}) {
+        throw Kanopya::Exception(error => 'Error from nova: '.$response->{badRequest}->{message});
+    }
+}
+
+=pod
+
+=begin classdoc
+
+Resubmit a node in an OpenStack IAAS using evacuating method
+
+@param vm virtual machine to resubmit
+@param hypervisor hypervisor on which vm will be placed
+
+return {need_to_scale => 0} indicating that nova does not need scale-in operation after resubmition
 
 =end classdoc
 
@@ -729,43 +769,11 @@ Resubmit a node in an OpenStack IAAS : set vm's state to active, then rebuild vm
 
 sub resubmitNode {
     my ($self, %args) = @_;
-
     General::checkParams(args => \%args, required => ['vm', 'hypervisor']);
 
-    my $vm = $args{vm};
-    my $uuid = $vm->openstack_vm_uuid;
-    my $vm_name = $vm->node->node_hostname;
-    my $api = $self->api;
+    $self->evacuateNode(%args);
 
-    # NOTE
-    #   - resubmit => state to active
-    #   - deploy => rebuild
-    #   - hypervisor is not used since rebuild is done on same host
-    #   - nova evacuate has not been used for vm because it requires an hypervisor down
-
-    # set vm's state to active (state required prior a rebuild)
-    $api->compute->servers(id => $uuid)->action->post(
-        content => {
-            'os-resetState' => {
-                'state' => 'active'
-            }
-        }
-    );
-
-    # rebuild vm (host expected to be up)
-    my $image_id = $api->compute->servers(id => $uuid)->get->{server}->{image}->{id};
-
-    my $response = $api->compute->servers(id => $uuid)->action->post(
-        content => {
-            'rebuild' => {
-                'name'     => $vm_name,
-                'imageRef' => $image_id,
-            }
-        }
-    );
-
-    $log->debug('Rebuild VM <' . $vm_name . '>. Compute response : '
-        . (Dumper $response));
+    return {need_to_scale => 0};
 }
 
 =pod
@@ -1115,38 +1123,36 @@ sub _scaleHost {
     );
 }
 
+=pod
 
-#sub _synchronizeVmHypervisor {
-#    my ($self, %args) = @_;
-#    General::checkParams(args => \%args, required => [ 'host' ]);
-#
-#    my $detail;
-#    eval {
-#        $detail = $self->getVMDetails(host => $args{host});
-#    };
-#    if ($@) {
-#        if (defined $args{host}->node) {
-#            $args{host}->node->disable();
-#            $args{host}->setNodeState(state => 'broken');
-#        }
-#        $args{host}->setAttr(name => 'hypervisor_id', value => undef);
-#        $args{host}->save();
-#        throw Kanopya::Exception(error => "VM <".$args{host}->id."> not found in infrastructure, node as been disabled and considered as broken");
-#    }
-#
-#    my $hypervisor_hostname = $detail->{server}->{'OS-EXT-SRV-ATTR:host'};
-#    $log->debug("According to infractructire VM hypervisor is <$hypervisor_hostname>");
-#
-#    my $hypervisor_id = Node->find(hash => {node_hostname => $hypervisor_hostname})->host->id;
-#
-#    my $db_hypervisor = $args{host}->hypervisor;
-#
-#    if (defined $db_hypervisor && ($hypervisor_id == $db_hypervisor->id)) {
-#        return;
-#    }
-#
-#    $args{host}->hypervisor_id($hypervisor_id);
-#    return;
-#}
+=begin classdoc
 
+Set nova vm state
+
+@param host vm host
+@param state force a particular state
+
+=end classdoc
+
+=cut
+
+sub setState {
+    my ($self, %args) = @_;
+
+    General::checkParams(
+        args     => \%args,
+        required => [ 'vm', 'state' ],
+    );
+
+    my $api = $self->api;
+    my $uuid = $args{vm}->openstack_vm_uuid;
+
+    my $response = $api->compute->servers(id => $uuid)->action->post(
+        content => {
+            'os-resetState' => {
+                'state'=> $args{state},
+            }
+        }
+    );
+}
 1;

@@ -124,7 +124,7 @@ sub _constructInfra {
     my $self = shift;
 
     # Get the list of all hypervisors
-    my @hypervisors_r = $self->{_cloud_manager}->activeHypervisors();
+    my @hypervisors_r = $self->{_cloud_manager}->activeAndInHypervisors();
     my $master_hv;
 
     my ($hvs, $vms);
@@ -227,7 +227,7 @@ Check if a migration is authorized w.r.t. the VM resources and the destination H
 
 =cut
 
-sub isMigrationAuthorized{
+sub isMigrationAuthorized {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['vm_id','hv_id']);
 
@@ -235,28 +235,38 @@ sub isMigrationAuthorized{
     my $hv_id = $args{hv_id};
 
     if (not defined $self->{_infra}->{hvs}->{$hv_id}) {
-        $log->error("Hypervisor <$hv_id> is not an active host of the cloud manager");
-        return 0;
+        return {
+            authorization => 0,
+            error         => "Hypervisor [$hv_id] is either not up or not an active host of the cloud manager",
+        };
     }
 
     # TODO better resource management
     my @resources = grep {! ($_ eq 'hv_id')} keys %{$self->{_infra}->{vms}->{$vm_id}};
 
     my $remaining_resources = $self->_getHvSizeRemaining(
-        hv_id => $hv_id,
-    );
+                                  hv_id => $hv_id,
+                              );
 
     for my $resource (@resources) {
-        $log->debug("Check $resource, good if :  ".$self->{_infra}->{vms}->{$vm_id}->{$resource}.' < '.$remaining_resources->{$resource});
+        $log->debug("Check $resource, good if :  ".$self->{_infra}->{vms}->{$vm_id}->{$resource}
+                     .' < '.$remaining_resources->{$resource});
 
         if ($self->{_infra}->{vms}->{$vm_id}->{$resource} > $remaining_resources->{$resource}) {
-            $log->info("Migration refused : not enough $resource to migrate VM $vm_id (".$self->{_infra}->{vms}->{$vm_id}->{$resource}.") in HV $hv_id (".$remaining_resources->{$resource} );
-            return 0;
+            my $error = "Migration refused : not enough $resource to migrate vm [$vm_id] ("
+                         .$self->{_infra}->{vms}->{$vm_id}->{$resource}
+                         .") in hypervisor [$hv_id] (".$remaining_resources->{$resource};
+
+            return {
+                authorization => 0,
+                error         => $error,
+            };
         }
     }
 
-    $log->info("Migration authorized to migrate VM $vm_id in HV $hv_id");
-    return 1;
+    return {
+        authorization => 1,
+    };
 }
 
 =pod
@@ -341,13 +351,30 @@ sub _applyMigrationPlan{
     $log->info("Simplified plan migration order @simplified_plan_order");
     $log->info(Dumper $simplified_plan_dest);
 
-    for my $vm_id (@simplified_plan_order){
+    for my $vm_id (@simplified_plan_order) {
         $self->_migrateVmOrder(
             vm_id      => $vm_id,
             hv_dest_id => $simplified_plan_dest->{$vm_id},
         );
     }
 }
+
+
+=pod
+
+=begin classdoc
+
+Find hypervisors for a list of vm with their ressources
+
+@param vms_wanted_values hash resource values of the the VMs
+
+@return hash associating a hypervisor id to each vm id. The hypervisor id is undef when no hypervisor
+        has been found for the vm
+
+=end classdoc
+
+=cut
+
 
 sub getHypervisorIdsForVMs{
     my ($self,%args) = @_;
@@ -360,6 +387,9 @@ sub getHypervisorIdsForVMs{
             $self->{_infra}->{hvs}->{$hv_id}->{vm_ids}->{$vm_id} = 1;
             $self->{_infra}->{vms}->{$vm_id} = $wanted_values;
             $rep{$vm_id} = $hv_id;
+        }
+        else {
+            $log->warn("No free hypervisor has been found to host vm <$vm_id>");
         }
     }
     return \%rep;
@@ -1691,5 +1721,46 @@ sub _getFlushHypervisorPlan {
         num_failed => $num_failed
     };
 };
+
+=pod
+
+=begin classdoc
+
+    Find a new hypervisor for each vms of a given hypervisor
+
+    @param hv_id the id of the hypervisor
+
+    @return hash with a new hypervisor for each vms
+
+=end classdoc
+
+=cut
+
+
+sub resubmitHypervisor {
+    my ($self,%args) = @_;
+    General::checkParams(args => \%args, required => ['hv_id']);
+
+    my %vms_wanted_values;
+
+    if (defined $self->{_infra}->{hvs}->{$args{hv_id}}) {
+        for my $vm_id (keys %{$self->{_infra}->{hvs}->{$args{hv_id}}->{vm_ids}}) {
+            $vms_wanted_values{$vm_id} = { ram => $self->{_infra}->{vms}->{$vm_id}->{ram},
+                                           cpu => $self->{_infra}->{vms}->{$vm_id}->{cpu}};
+        }
+    }
+    else {
+        # Capacity manager do not manage broken or unactive hypervisor.
+        # but resubmit is allowed in broken hypervisors
+
+        my $hypervisor = Entity->get(id => $args{hv_id});
+
+        for my $vm ($hypervisor->getVms()) {
+            $vms_wanted_values{$vm->id} = {ram => $vm->host_ram, cpu => $vm->host_core,};
+        }
+    }
+
+    return $self->getHypervisorIdsForVMs(vms_wanted_values => \%vms_wanted_values);
+}
 
 1;

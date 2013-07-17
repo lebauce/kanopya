@@ -37,6 +37,9 @@ sub methods {
     return {
         maintenance => {
             description => 'flush the hypervisor and deactivate it',
+        },
+        resubmitVms => {
+            description => 'resubmit all the virtual machines of the hypervisor',
         }
     }
 }

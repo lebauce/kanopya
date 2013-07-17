@@ -67,6 +67,37 @@ sub getBaseConfiguration {
     };
 }
 
+
+=pod
+
+=begin classdoc
+
+Return a list of active hypervisors whose nodes are 'in', ruled by this manager
+
+@return a list of active hypervisors whose nodes are 'in', ruled by this manager
+
+=end classdoc
+
+=cut
+
+sub activeAndInHypervisors {
+    my $self = shift;
+
+    my $active_hypervisors = $self->activeHypervisors;
+
+    my @active_in_hypervisors;
+
+    for my $active_hypervisor (@{$active_hypervisors}) {
+        my ($state,$time_stamp) = $active_hypervisor->getNodeState();
+        if ($state eq 'in') {
+            push @active_in_hypervisors, $active_hypervisor;
+        }
+    }
+
+    return @active_in_hypervisors;
+}
+
+
 sub getOvercommitmentFactors {
     my ($self) = @_;
     return {

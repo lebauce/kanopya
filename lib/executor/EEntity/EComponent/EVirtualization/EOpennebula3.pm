@@ -1471,6 +1471,8 @@ sub resubmitNode {
         vm_nameorid     => $vm_nameorid,
         host_nameorid   => $host_nameorid,
     );
+
+    return {need_to_scale => 1};
 }
 
 sub getMaxRamFreeHV{
