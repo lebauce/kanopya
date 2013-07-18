@@ -20,7 +20,6 @@ package Entity::Iface;
 use base "Entity";
 
 use Kanopya::Exceptions;
-use String::Random 'random_regex';
 use Entity::Poolip;
 use Ip;
 
@@ -157,27 +156,6 @@ sub getPoolip {
     return $ip->poolip;
 }
 
-=head generateMacAddress
-
-class method
-return a mac address auto generated and not used by any host
-
-=cut
-
-sub generateMacAddress {
-    my ($class) = @_;
-    my $macaddress;
-    my @ifaces = ();
-    my $regexp = '00:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}';  
-
-    do {
-         $macaddress = random_regex($regexp);
-         @ifaces = $class->search(hash => { iface_mac_addr => $macaddress },
-                                  rows => 1);
-    } while(scalar(@ifaces));
-
-    return $macaddress;
-}
 
 sub hasRole {
     my $self = shift;

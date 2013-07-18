@@ -9,8 +9,10 @@ var Vsphere5 = (function(_super) {
         this.displayed = [ 'vsphere5_login', 'vsphere5_pwd', 'vsphere5_url', 'overcommitment_cpu_factor', 'overcommitment_memory_factor'];
 
         this.actionsCallback = function () {
-            var vsphereButton = $('<input>', { type : 'button' }).val('Import vSphere').bind('click', function(event) {
-                vsphereBrowser(event);
+            var vsphereButton = $('<input>', { type : 'button' }).val('Import vSphere').bind('click', function() {
+                // TODO confirmation of insertion
+                $('.ui-dialog').find('#button-ok').click();
+                vsphereBrowser(id);
             });
             var buttons = [ vsphereButton.button() ];
             return buttons;
@@ -21,7 +23,6 @@ var Vsphere5 = (function(_super) {
 })(Component);
 
 // VSPHERE BROWSER TREE
-
 var registered_nodes = [];// list of nodes already registered in Kanopya
 
 // format the data returned by API to respect jsTree structure
@@ -96,28 +97,19 @@ function formatCheckedNodes (nodes) {
 }
 
 // browse vSphere Infrastructure
-function vsphereBrowser (event) {
+function vsphereBrowser (vsphere_id) {
     require('jquery/jquery.jstree.js');
-    var browser        = $('<div>');
+    var browser = $('<div>');
+    var error_import = $('<div>', {id : 'error_import'});
     var tree_container = $('<div>', {id : 'vsphere_tree'});
+    browser.append(error_import);
+    browser.append(tree_container);
 
-    // get the vSphere Component ID
-    var vsphere_component_id;
-    $.ajax( {
-        url : '/api/vsphere5',
-        success : function (data) {
-                      vsphere_component_id = data[0].pk;
-                  },
-        contentType : 'application/json',
-        async : false
-    } );
-
-    var url_base = '/api/vsphere5/' + vsphere_component_id;
+    var url_base = '/api/vsphere5/' + vsphere_id;
 
     var parents = [];// to save parents of nodes
     var id_request = 0;
 
-    browser.append(tree_container);
     tree_container.jstree({
         'plugins'   :   ['themes', 'json_data', 'checkbox', 'ui'],
         'themes'    :   {
@@ -125,7 +117,7 @@ function vsphereBrowser (event) {
          },
         // TODO ckeck already registered nodes
         'checkbox'  :   {
-            'override_ui'         :   true,// for checking nodes on load
+            'override_ui'         :   true,
          },
         'ui'        :   {
             'initially_select'    :  registered_nodes,
@@ -186,7 +178,7 @@ function vsphereBrowser (event) {
                             // retrieve Virtual Machines on an Hypervisor hosted on a Cluster
                             data_sent = {
                                 'datacenter_name'    :    current_node.attr('grand_parent_name'),
-                                'hypervisor_name'    :    current_node.attr('name'),
+                                'hypervisor_uuid'    :    current_node.attr('uuid'),
                             };
                             parents[id_request].grandParentNodeTreeName = null;
                         }
@@ -194,7 +186,7 @@ function vsphereBrowser (event) {
                             // retrieve Virtual Machines on an Hypervisor hosted on a Datacenter
                             data_sent = {
                                 'datacenter_name'    :    current_node.attr('parent_name'),
-                                'hypervisor_name'    :    current_node.attr('name'),
+                                'hypervisor_uuid'    :    current_node.attr('uuid'),
                             };
                             parents[id_request].grandParentNodeTreeName = null;
                         }
@@ -205,6 +197,7 @@ function vsphereBrowser (event) {
                     return data_sent;
                 },
                 'success'   :   function (returnedData) {
+                    error_import.text('').removeClass('ui-state-error');
                     var id_response = returnedData.id_response;
                     var parentNodeTreeName = parents[id_response].parentNodeTreeName;
                     var parentNodeTreeType = parents[id_response].parentNodeTreeType;
@@ -217,6 +210,16 @@ function vsphereBrowser (event) {
                         );
                         
                     return returnedFormattedData;
+                },
+                'error'   :   function (data) {
+                    var error_msg;
+                    try {
+                        error_msg = JSON.parse(data.responseText).reason;
+                    }
+                    catch (e) {
+                        error_msg = data.responseText;
+                    }
+                    error_import.text(error_msg).addClass('ui-state-error');
                 }
             }
         }
@@ -225,7 +228,6 @@ function vsphereBrowser (event) {
     browser.dialog({
         title   :   'Import vSphere architecture',
         modal   :   true,
-        // TODO width's value in CSS
         width   :   '400 px',
         buttons :   {
             Cancel: function () {
@@ -235,19 +237,34 @@ function vsphereBrowser (event) {
                 var firstLevelTree = $(tree_container).children('ul').children('li');
                 var formattedCheckedNodes = formatCheckedNodes(firstLevelTree);
 
-                // send formatted checked nodes to API for insertion in Kanopya Database
-                $.ajax({
-                    type        :   'POST',
-                    url         :   url_base + '/register',
-                    contentType : 'application/json',
-                    data        :   JSON.stringify({
-                        'register_items'    :   formattedCheckedNodes,
-                    }),
-                }).done(function (success_msg){
-                    alert ('Data imported successfully in Kanopya');
-                }).fail(function (error_msg){
-                    alert ('Error in data import');
-                });
+                if (formattedCheckedNodes.length > 0) {
+                    var dialog = $("<div>", { id : "waiting_import", title : "Importing items", text : "Please wait..." });
+                    dialog.css('text-align', 'center');
+                    dialog.appendTo("body").dialog({
+                        resizable   : false
+                    });
+
+                    // send formatted checked nodes
+                    $.ajax({
+                        type        :   'POST',
+                        url         :   url_base + '/register',
+                        contentType : 'application/json',
+                        data        :   JSON.stringify({
+                            'register_items'    :   formattedCheckedNodes,
+                        }),
+                        success     : function() {
+                            dialog.remove();
+                            service_menu_id = 'menuhead_Services';
+                            // TODO improve click simulation
+                            $('#' + service_menu_id).click();
+                            alert ('Data imported successfully in Kanopya');
+                        },
+                        error       : function() {
+                            dialog.remove();
+                            alert ('Error in data import');
+                        },
+                    });
+                }
 
                 $(this).dialog('close');
             },

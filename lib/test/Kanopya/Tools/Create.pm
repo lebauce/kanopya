@@ -116,7 +116,7 @@ sub createCluster {
                                                                       version => 1)
                          );
 
-    diag('Retrieve the admin user');
+    diag('Retrieve the admin user id');
     if (not defined $args{user_id}) {
         $args{user_id} = Entity::User->find(hash => { user_login => 'admin' })->id;
     }

@@ -36,4 +36,12 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub getVmInfo {
+    my ($self, %args) = @_;
+    return {
+        vm_uuid        => $self->vsphere5_uuid,
+        hypervisor_id  => $self->hypervisor_id,
+    };
+}
+
 1;

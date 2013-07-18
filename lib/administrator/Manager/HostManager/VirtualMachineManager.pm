@@ -31,6 +31,7 @@ use base "Manager::HostManager";
 use Entity::Host::Hypervisor;
 use Entity::Host::VirtualMachine;
 use Entity::Iface;
+use String::Random 'random_regex';
 use Entity::Workflow;
 use Log::Log4perl "get_logger";
 
@@ -81,13 +82,39 @@ sub createVirtualHost {
     foreach (0 .. $args{ifaces}-1) {
         $vm->addIface(
             iface_name     => 'eth' . $_,
-            iface_mac_addr => Entity::Iface->generateMacAddress(),
+            iface_mac_addr => $self->generateMacAddress(),
             iface_pxe      => $_ == 0 ? 1 : 0,
         );
     }
 
     $log->debug("Return host with <" . $vm->id . ">");
     return $vm;
+}
+
+=head generateMacAddress
+
+class method
+return a mac address auto generated and not used by any host
+
+=cut
+
+sub generateMacAddress {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args,
+        optional => { regexp => '00:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}:[a-f0-9]{2}', }
+    );
+
+    my $macaddress;
+    my @ifaces = ();
+
+    do {
+         $macaddress = random_regex($args{regexp});
+         @ifaces = Entity::Iface->search(hash => { iface_mac_addr => $macaddress },
+                                  rows => 1);
+    } while(scalar(@ifaces));
+
+    return $macaddress;
 }
 
 =head2 scaleHost
