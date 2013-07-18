@@ -642,17 +642,18 @@ sub registerNetwork {
             $vlan = pop @vlans;
         }
 
-        my $network_conf = $self->_registerNetworkAndSubnet(
-            vlan        => $vlan,
+        my $network_id = $self->_getOrRegisterNetwork(vlan => $vlan);
+        my $subnet_id = $self->_getOrRegisterSubnet(
+            host        => $host,
             iface       => $iface,
+            network_id  => $network_id
         );
-
         # create port to assign IP address
         my $port_id = $self->_registerPort(
             host        => $host,
             iface       => $iface,
-            network_id  => $network_conf->{network_id},
-            subnet_id   => $network_conf->{subnet_id}
+            network_id  => $network_id,
+            subnet_id   => $subnet_id
         );
 
         push @$interfaces, {
@@ -799,7 +800,7 @@ sub vmLoggedErrorMessage {
     my $e_hypervisor = EEntity->new(entity => $vm->hypervisor);
     my $command = 'tail -n 10 /var/log/libvirt/qemu/'. $instance_name . '.log';
 
-    $log->debug("command = $command");
+    $log->debug("commande = $command");
 
     my $result  = $e_hypervisor->getEContext->execute(command => $command);
     my $output  = $result->{stdout};
@@ -849,68 +850,158 @@ sub _getInstanceName {
     return $instance_name;
 }
 
-sub _registerNetworkAndSubnet {
+=pod
+
+=begin classdoc
+
+Search for an openstack network registered (for a flat or a specific vlan network) and create it not found
+
+@param $hostname name of node whose netconf must be registered
+@optional $vlan vlan of iface
+
+@return ID of openstack network found/created
+
+=end classdoc
+
+=cut
+
+sub _getOrRegisterNetwork {
     my ($self, %args) = @_;
 
-    General::checkParams(
-        args => \%args,
-        required => [ 'iface' ],
-        optional => { vlan => undef }
-    );
+    General::checkParams(args => \%args, optional => { vlan => undef });
+    my $vlan = $args{vlan};
 
     my $api = $self->api;
-    my $iface = $args{iface};
-    my $poolip = $iface->getPoolip();
-    my $network_addr = NetAddr::IP->new(
-                           $poolip->network->network_addr,
-                           $poolip->network->network_netmask
-                       );
     my $network_id = undef;
-    my $subnet_id = undef;
-
-    my $subnets = $api->quantum->subnets->get;
-    SUBNET:
-    for my $subnet (@{ $subnets->{subnets} }) {
-        if ( $subnet->{'cidr'} eq $network_addr->cidr ) {
-            $subnet_id = $subnet->{id};
-            # TODO comment + POD
-            # check vlan correspondance
-            my $network = $api->quantum->networks(id => $subnet->{network_id})->get;
-            if ( ( (not exists $args{vlan}) and (not exists $network->{'provider:segmentation_id'}) ) or
-                 ( (exists $args{vlan}) and ($network->{'provider:segmentation_id'} == $args{vlan}->vlan_number) )) {
+    my $networks = $api->quantum->networks->get;
+    if (defined $vlan) { # check if a network has already been created for physical vlan interface
+        VLAN:
+        for my $network (@{ $networks->{networks} }) {
+            if ($network->{'provider:segmentation_id'} == $vlan->vlan_number) {
                 $network_id = $network->{id};
-                last SUBNET;
+                last VLAN;
             }
-
-            # TODO : error management -> subnet overlaps, ... -- vlan with no ip
+        }
+    }
+    else { # check if a network has already been created for physical flat (no vlan) interface
+        NETWORK:
+        for my $network (@{ $networks->{networks} }) {
+            if ( not defined $network->{'provider:segmentation_id'} ) { # no vlan network
+                $network_id = $network->{id};
+                last NETWORK;
+            }
         }
     }
 
+    # create a network if no network found
     if (not defined $network_id) {
-        # TODO
-            # new mapping
-            # new network
+         my $network_conf = {
+            'network' => {
+                'name' => defined $vlan ? 'network-vlan' . $vlan->vlan_number : 'network-flat',
+                'admin_state_up' => JSON::true,
+                'provider:network_type' => defined $vlan ? 'vlan' : 'flat',
+                'provider:physical_network' => defined $vlan ? 'physnetvlan' : 'physnetflat',# mappings for bridge interfaces
+            }
+        };
+        $network_conf->{network}->{'provider:segmentation_id'} = $vlan->vlan_number if (defined $vlan);
+        $network_id = $api->quantum->networks->post(
+            content => $network_conf
+        )->{network}->{id};
     }
 
-    return {
-        network_id => $network_id,
-        subnet_id  => $subnet_id
-    };
+    return $network_id;
 }
 
-sub _createNetworkMapping {
-    # TODO : 1 mapping + update {compute,server}.pp + applyManifest
+=pod
+
+=begin classdoc
+
+Search for an openstack subnet registered (for a flat or a specific vlan network) and create it not found
+
+@param $hostname name of node whose netconf must be registered
+@param $iface iface to be registered
+@param $network_id ID of network on which subnet will be created
+
+@return ID of openstack subnet found/created
+
+=end classdoc
+
+=cut
+
+sub _getOrRegisterSubnet {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host', 'iface', 'network_id' ]);
+    my $cluster_name = $args{host}->node->service_provider->cluster_name;
+    my $iface = $args{iface};
+    my $network_id = $args{network_id};
+
+    my $api = $self->api;
+    my $poolip = $iface->getPoolip();
+    my $network_addr = NetAddr::IP->new($poolip->network->network_addr,
+                                        $poolip->network->network_netmask);
+
+    # check if kanopya.network already registered in openstack.subnet (for openstack.network previously created)
+    my $subnet_id = undef;
+    my $subnets = $api->quantum->subnets(filter => "network-id=$network_id")->get;
+    SUBNET:
+    for my $subnet ( @{$subnets->{subnets}} ) {
+        if ( $subnet->{'cidr'} eq $network_addr->cidr() ) { # network already registered
+            $subnet_id = $subnet->{id};
+            last SUBNET;
+        }
+    }
+
+    # create a new subnet if no subnet found
+    # one allocation_pool is created with all ip usable
+    if (not defined $subnet_id) {
+        $subnet_id = $api->quantum->subnets->post(
+            content => {
+                'subnet' => {
+                    'name'              => $cluster_name . '-subnet',
+                    'network_id'        => $network_id,
+                    'ip_version'        => 4,
+                    'cidr'              => $network_addr->cidr(),
+                    'allocation_pools'  => [
+                        {
+                            start   => ($network_addr->first() + 1)->addr(),
+                            end     => $network_addr->last()->addr()
+                        },
+                    ]
+                }
+            }
+        )->{subnet}->{id};
+    }
+
+    return $subnet_id;
 }
+
+=pod
+
+=begin classdoc
+
+Register a port in OpenStack
+
+@param $hostname name of node whose netconf must be registered
+@param $iface iface to be registered
+@param $network_id ID of network on which subnet will be created
+@param $subnet_id ID of subnet on which port will be created
+
+@return ID of port created
+
+=end classdoc
+
+=cut
 
 sub _registerPort {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'host', 'iface', 'network_id', 'subnet_id' ]);
-
     my $hostname    = $args{host}->node->node_hostname;
     my $iface       = $args{iface};
     my $network_id  = $args{network_id};
     my $subnet_id   = $args{subnet_id};
+
     my $api = $self->api;
 
     my $port_id = $api->quantum->ports->post(
@@ -928,8 +1019,6 @@ sub _registerPort {
             }
         }
     )->{port}->{id};
-
-    # TODO : log debug + err msg
 
     return $port_id;
 }
