@@ -947,7 +947,7 @@ sub registerVm {
                 cluster_si_shared      => 0,
                 cluster_si_persistent  => 1,
                 cluster_domainname     => 'my.domain',
-                cluster_basehostname   => 'vsphere-service-' . $vm_view->summary->vm->value,
+                cluster_basehostname   => 'vsphere-registered-vm' . $vm_view->summary->vm->value,
                 cluster_nameserver1    => '127.0.0.1',
                 cluster_nameserver2    => '127.0.0.1',
                 cluster_boot_policy    => '',
