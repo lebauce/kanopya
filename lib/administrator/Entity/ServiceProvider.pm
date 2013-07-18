@@ -638,4 +638,68 @@ sub nodesByWeight {
     } @nodes;
 }
 
+=pod
+
+=begin classdoc
+
+Check if billing limits will be reached for given metrics
+
+@param host a new host to be added to the service
+@return boolean
+
+=end classdoc
+
+=cut
+
+sub checkBillingLimits {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'metrics' ]);
+
+    my $cluster_metrics = $self->getServiceMetricsValues();
+
+    while ((my $metric, $value) = each %{ $args{metrics} }) {
+        $log->info("checking Billing limit for $metric");
+
+        my $service_metric_limit = $self->getLimit(type => $metric);
+
+        my $new_service_metric = $cluster_metrics->{$metric} + $value;
+
+        if (defined $service_metric_limit && $new_service_metric > $service_metric_limit) {
+            throw Kanopya::Exception::Internal(error => "Service $metric billing limit is reached");
+        }
+    }
+    return 1;
+}
+
+=pod
+
+=begin classdoc
+
+Retrieve ram and cores values for the whole cluster
+
+@return ram and cpu
+
+=end classdoc
+
+=cut
+
+sub getServiceMetricsValues {
+    my ($self,%args) = @_;
+
+    my @nodes = $self->nodes;
+    my $service_ram = 0;
+    my $service_cpu = 0;
+
+    foreach my $node (@nodes) {
+        $service_ram += $node->host->host_ram;
+        $service_cpu += $node->host->host_core;
+    }
+
+    return {
+        ram => $service_ram,
+        cpu => $service_cpu,
+    };
+}
+
 1;
