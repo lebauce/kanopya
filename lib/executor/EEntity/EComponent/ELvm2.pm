@@ -73,7 +73,7 @@ sub createDisk {
                  );
 
     my $container = EEntity->new(data => $entity);
-    if (exists $args{erollback} and defined $args{erollback}){
+    if (exists $args{erollback} and defined $args{erollback}) {
         $args{erollback}->add(
             function   => $self->can('removeDisk'),
             parameters => [ $self, "container", $container ]

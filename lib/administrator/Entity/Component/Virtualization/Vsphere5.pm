@@ -475,7 +475,7 @@ sub retrieveClusterHypervisors {
         optional => {'id_request' => undef}
     );
 
-    #retrieve datacenter and cluster views
+    # retrieve views
     my $datacenter_view = $self->findEntityView(
                               view_type   => 'Datacenter',
                               hash_filter => { name => $args{datacenter_name}},
@@ -487,7 +487,7 @@ sub retrieveClusterHypervisors {
                               begin_entity => $datacenter_view,
                           );
 
-    #retrieve the cluster's hypervisors details
+    # retrieve the cluster's hypervisors details
     my $hypervisor_views  = $self->getViews(mo_ref_array => $cluster_view->host);
     my @hypervisors_infos;
 
@@ -538,7 +538,7 @@ sub retrieveHypervisorVms {
         optional => { 'id_request' => undef }
     );
 
-    #retrieve views
+    # retrieve views
     my $datacenter_view = $self->findEntityView(
                               view_type   => 'Datacenter',
                               hash_filter => { name => $args{datacenter_name}},
@@ -552,7 +552,7 @@ sub retrieveHypervisorVms {
                               begin_entity => $datacenter_view,
                           );
 
-    #get vms details
+    # get vms details
     my $vm_views = $self->getViews(mo_ref_array => $hypervisor_view->vm);
     my @vms_infos;
 
@@ -793,7 +793,6 @@ sub register {
         'datacenter' => 'registerDatacenter',
         'hypervisor' => 'registerHypervisor',
         'vm'         => 'registerVm',
-        'network'    => 'registerNetwork',
     );
 
     my @registered_items;
@@ -846,7 +845,6 @@ sub registerDatacenter {
 
     General::checkParams(args => \%args, required => ['name']);
 
-    #First we check if the datacenter already exist in Kanopya
     my $datacenter;
     eval {
         $datacenter = Entity::Component::Vsphere5::Vsphere5Datacenter->find(hash => {
@@ -869,10 +867,8 @@ sub registerDatacenter {
         return $datacenter;
     }
     else {
-        $errmsg  = 'The datacenter '. $args{name} .' already exist in kanopya ';
-        $errmsg .= 'with ID '. $datacenter->id;
-        $errmsg .= ' and is already associated with this component (id '. $self->id .')';
-        $log->info($errmsg);
+        $errmsg  = 'Datacenter '. $args{name} .' already registered';
+        $log->debug($errmsg);
 
         return $datacenter;
     }
@@ -951,7 +947,7 @@ sub registerVm {
                 cluster_nameserver1    => '127.0.0.1',
                 cluster_nameserver2    => '127.0.0.1',
                 cluster_boot_policy    => '',
-                user_id                => $admin_user->user_id,
+                user_id                => $admin_user->id,
             );
 
             # policy and service template
@@ -985,7 +981,7 @@ sub registerVm {
                      host_state         => $host_state . ':' . time(),
                  );
 
-        # TODO : register MAC addresses
+        # TODO : add MAC addresses for vSphere registered hosts
 
         #promote new virtual machine class to a vsphere5Vm one
         $self->promoteVm(
@@ -1006,7 +1002,7 @@ sub registerVm {
         return $service_provider;
     }
     else {
-        $errmsg  = 'VM already registered';
+        $errmsg  = 'VM ' . $args{name} . 'already registered';
         $log->info($errmsg);
 
         return $service_provider;
@@ -1144,7 +1140,7 @@ sub registerCluster {
 
     General::checkParams(args => \%args, required => ['parent','name']);
 
-    # we return datacenter since vsphere's cluster is not registered in Kanopya
+    # we return datacenter since vsphere's clusters are not registered in Kanopya
     return $args{parent};
 }
 
@@ -1449,7 +1445,7 @@ sub activeHypervisors {
 
 =begin classdoc
 
-Format a name that will be used for cluster and nodes creation
+Format a name that will be used for clusters and nodes creation
 
 =end classdoc
 

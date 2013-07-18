@@ -215,7 +215,7 @@ sub startHost {
         );
     };
     if ($@) {
-        my $errmsg = 'Error while creating the virtual machine on host '. $host_conf{hypervisor} . ': '.$@;
+        my $errmsg = 'Error while creating the virtual machine on host '. $hypervisor->id . ' : '.$@;
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
@@ -338,15 +338,13 @@ sub scaleCpu {
     if (ref $host eq 'EEntity::EHost::EVirtualMachine::EVsphere5Vm') {
         my $dc_name    = $host->hypervisor->vsphere5_datacenter->vsphere5_datacenter_name;
 
-        #get datacenter's view
+        #get views
         my $dc_view = $self->findEntityView(
                           view_type   => 'Datacenter',
                           hash_filter => {
                               name => $dc_name,
                           },
                       );
-
-        #get the vm's view
         my $vm_view = $self->findEntityView(
                           view_type    => 'VirtualMachine',
                           hash_filter  => {
@@ -355,7 +353,7 @@ sub scaleCpu {
                           begin_entity => $dc_view,
                       );
 
-        #Now we do the VM Scale In through ReconfigVM() method
+        # scale VM cpu
         my $new_vm_config_spec = VirtualMachineConfigSpec->new(
                                      numCPUs => $cpu_number,
                                  );
@@ -401,15 +399,13 @@ sub scaleMemory {
     if (ref $host eq 'EEntity::EHost::EVirtualMachine::EVsphere5Vm') {
         my $dc_name    = $host->hypervisor->vsphere5_datacenter->vsphere5_datacenter_name;
 
-        #get datacenter's view
+        #get views
         my $dc_view = $self->findEntityView(
                           view_type   => 'Datacenter',
                           hash_filter => {
                               name => $dc_name,
                           },
                       );
-
-        #get the vm's view
         my $vm_view = $self->findEntityView(
                           view_type    => 'VirtualMachine',
                           hash_filter  => {
@@ -418,7 +414,7 @@ sub scaleMemory {
                           begin_entity => $dc_view,
                       );
 
-        #Now we do the VM Scale In through ReconfigVM() method
+        # scale VM memory
         my $vm_new_config_spec = VirtualMachineConfigSpec->new(
                                      memoryMB => $memory  / 1024 / 1024,
                                  );
@@ -726,9 +722,9 @@ sub get_network {
                     $vlan = pop @vlans;
                 }
 
+                # TODO : portGroup/Vlan on an hypervisor + same name on all hypervisors of datacenter
                 $nic_backing_info = VirtualEthernetCardNetworkBackingInfo->new(
                     deviceName => $network_name, # network to which interface will be connected
-                        # TODO : portGroup/Vlan on an hypervisor + same name on all hypervisors of datacenter
                     network    => $network
                 );
 
