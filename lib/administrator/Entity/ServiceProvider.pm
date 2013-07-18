@@ -414,15 +414,16 @@ sub getLimit {
     General::checkParams(args => \%args, required => [ "type" ]);
 
     #If there is a billing limit, use it, otherwise return undef
+    my @limits;
     eval {
         # Firtly get billing limit
         #
         # TODO: Use only one request
-        my @limits = Entity::Billinglimit->search(hash => {
-                         service_provider_id => $self->getId,
-                         soft                => 0,
-                         type                => $args{type},
-                     });
+        @limits = Entity::Billinglimit->search(hash => {
+                      service_provider_id => $self->getId,
+                      soft                => 0,
+                      type                => $args{type},
+                  });
     };
     if (scalar (@limits) != 0) {
         my $billing_limit_value;
@@ -666,7 +667,9 @@ sub checkBillingLimits {
         my $new_service_metric = $cluster_metrics->{$metric} + $value;
 
         if (defined $service_metric_limit && $new_service_metric > $service_metric_limit) {
-            throw Kanopya::Exception::Internal(error => "Service $metric billing limit is reached");
+            my $error = "Service $metric billing limit (<$service_metric_limit>) ";
+            $error   .= "would be oversteped (<$new_service_metric>): action is forbidden";
+            throw Kanopya::Exception::Internal(error => $error);
         }
     }
     return 1;
