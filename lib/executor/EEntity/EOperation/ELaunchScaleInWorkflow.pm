@@ -85,14 +85,12 @@ sub execute{
         $operation_plan = $cm->scaleMemoryHost(
             host_id      => $self->{context}->{host}->getId(),
             memory       => $scalein_value,
-            memory_limit => $service_provider->getLimit(type => 'ram'),
         );
     }
     elsif ($scalein_type eq 'cpu') {
         $operation_plan = $cm->scaleCpuHost(
             host_id      => $self->{context}->{host}->getId(),
             vcpu_number  => $scalein_value,
-            cpu_limit    => $service_provider->getLimit(type => 'cpu'),
         );
     }
     $log->info('Total of <'.(scalar @$operation_plan).'> operation(s) to enqueue');
