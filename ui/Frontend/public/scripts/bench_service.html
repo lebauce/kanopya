@@ -61,6 +61,8 @@
         <li>Check that the instance is correctly created and corresponds to your needs</li>
         <li>Fill the 'Number of instances' field</li>
         <li>Click on launch</li>
+        <li>Request are listed and when everything is marked 'Done' you can start managing instances</li>
+
     </ol>
     <h3>What happens</h3>
     The bench script will send a post request to create as many instances as defined.<br/>
@@ -78,8 +80,7 @@
 
     <h2>Manage</h2>
     The "Filter" field allow you to search all instances you want to manage.<br/>
-    Change the "bench_instance" part with the base name of instances previously created and click 'Get'.<br/>
-    You can see the list of retrieved instances corresponding to the filter,
+    Click the 'Get' button and you can see the list of retrieved instances corresponding to the filter,
     each instance name is followed by the instance activation info and the instance state.<br/>
     Then you can click on one of the action buttons to apply action on all the listed instances.
 </div>
@@ -100,9 +101,10 @@
         var posted = 0;
         while (count > 0) {
             var instance = template;
-            var instance_name = base_name + '_' + Date.now()
+            var date_now = Date.now();
+            var instance_name = base_name + '_' + date_now;
             instance.cluster_name = instance_name;
-            instance.cluster_basehostname = instance_name;
+            instance.cluster_basehostname = date_now;
             $('#result').append($('<span>',{text:'Creating ' + instance_name + '...'}))
                         .append($('<span>', {id:instance_name})).append('<br>');
             function instantiate(){
