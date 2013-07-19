@@ -335,6 +335,14 @@ sub execute {
         }
     }
 
+    # Check service billing limits
+    my $host_metrics = {
+        ram => $self->{context}->{host}->host_ram,
+        cpu => $self->{context}->{host}->host_core,
+    };
+
+    $self->{context}->{cluster}->checkBillingLimits(metrics => $host_metrics);
+
     # Check the user quota on ram and cpu
     $self->{context}->{cluster}->user->canConsumeQuota(resource => 'ram',
                                                        amount   => $self->{context}->{host}->host_ram);
