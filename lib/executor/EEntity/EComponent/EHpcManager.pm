@@ -36,16 +36,13 @@ use Data::Dumper;
 sub get_blades {
     my $self = shift;
 
-    my $bladesystem_ip    = '172.21.3.11';
-    my $virtualconnect_ip = '172.21.3.13';
-
     my $bladesystem_context    = EContext::SSH->new(
-        ip       => $bladesystem_ip,
+        ip       => $self->bladesystem_ip,
         timeout  => 30,
         username => 'Administrator'
     );
     my $virtualconnect_context = EContext::SSH->new(
-        ip       => $virtualconnect_ip,
+        ip       => $self->virtualconnect_ip,
         timeout  => 30,
         username => 'Administrator'
     );
