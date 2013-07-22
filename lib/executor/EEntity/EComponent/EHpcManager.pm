@@ -190,4 +190,18 @@ sub synchronize {
     }
 }
 
+sub startHost {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+}
+
+sub stopHost {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+}
+
 1;
