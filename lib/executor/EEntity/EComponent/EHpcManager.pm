@@ -187,18 +187,43 @@ sub synchronize {
     }
 }
 
+sub _startStopHost {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' , 'command' ]);
+
+    if ($args{host}->host_desc =~ /^Server Blade \#(\d+)$/) {
+        my $blade_id = $1;
+        my $bladesystem_context    = EContext::SSH->new(
+            ip       => $self->bladesystem_ip,
+            timeout  => 30,
+            username => 'Administrator'
+        );
+        my $force    = $args{command} eq 'POWEROFF' ? ' FORCE' : '';
+        my $bsReturn = $bladesystem_context->execute(command => $args{command} . ' SERVER ' . $blade_id . $force);
+    }
+    else {
+        throw Kanopya::Exception::Internal::IncorrectParam(
+            error => 'Provided host ' . $args{host}->id . ' is not a valid HP Blade'
+        );
+    }
+}
+
 sub startHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'host' ]);
+    $args{command} = 'POWERON';
+    $self->_startStopHost(%args);
 }
 
 sub stopHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'host' ]);
+    $args{command} = 'POWEROFF';
+    $self->_startStopHost(%args);
 }
 
 1;
