@@ -29,7 +29,8 @@ var mainmenu_def = {
     'Infrastructure' : {
         'Compute' : [
             { label : 'Hosts', id : 'hosts', onLoad : function(cid) { require('KIM/hosts.js'); hosts_list(cid, physical_hoster); } },
-            { label : 'UCS',   id : 'ucs',   onLoad : function(cid) { require('KIM/ucs.js'); ucs_list(cid); } }
+            { label : 'UCS',   id : 'ucs',   onLoad : function(cid) { require('KIM/ucs.js'); ucs_list(cid); } },
+            { label : 'HP C7000', id : 'hpc', onLoad : function(cid) { require('KIM/blades.js'); blade_manager_list(cid); } }
         ],
         'Storage' : [
             { label : 'Linux NAS', id : 'storage_linux', onLoad : function(cid) { require('KIM/storage.js'); linuxnas_list(cid); } },
