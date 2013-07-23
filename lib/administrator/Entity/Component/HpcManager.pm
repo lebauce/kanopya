@@ -23,12 +23,14 @@ use constant ATTR_DEF => {
     virtualconnect_ip => {
         label        => 'VirtualConnect IP',
         type         => 'string',
-        is_mandatory => 1
+        is_mandatory => 1,
+        is_editable  => 1
     },
     bladesystem_ip => {
         label        => 'BladeSystem IP',
         type         => 'string',
-        is_mandatory => 1
+        is_mandatory => 1,
+        is_editable  => 1
     },
     host_type => {
         is_virtual => 1
