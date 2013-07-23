@@ -20,19 +20,33 @@ use base "Manager::HostManager";
 use warnings;
 
 use constant ATTR_DEF => {
-    virtualconnect_ip => {
+    virtualconnect_ip   => {
         label        => 'VirtualConnect IP',
         type         => 'string',
         is_mandatory => 1,
-        is_editable  => 1
+        is_editable  => 1,
+        pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$'
     },
-    bladesystem_ip => {
-        label        => 'BladeSystem IP',
+    virtualconnect_user => {
+        label        => 'VirtualConnect User',
         type         => 'string',
         is_mandatory => 1,
         is_editable  => 1
     },
-    host_type => {
+    bladesystem_ip      => {
+        label        => 'BladeSystem IP',
+        type         => 'string',
+        is_mandatory => 1,
+        is_editable  => 1,
+        pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$'
+    },
+    bladesystem_user    => {
+        label        => 'BladeSystem User',
+        type         => 'string',
+        is_mandatory => 1,
+        is_editable  => 1
+    },
+    host_type           => {
         is_virtual => 1
     }
 };

@@ -52,7 +52,19 @@ __PACKAGE__->table("hpc_manager");
   is_nullable: 1
   size: 255
 
+=head2 virtualconnect_user
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 255
+
 =head2 bladesystem_ip
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 255
+
+=head2 bladesystem_user
 
   data_type: 'char'
   is_nullable: 1
@@ -70,7 +82,11 @@ __PACKAGE__->add_columns(
   },
   "virtualconnect_ip",
   { data_type => "char", is_nullable => 1, size => 255 },
+  "virtualconnect_user",
+  { data_type => "char", is_nullable => 1, size => 255 },
   "bladesystem_ip",
+  { data_type => "char", is_nullable => 1, size => 255 },
+  "bladesystem_user",
   { data_type => "char", is_nullable => 1, size => 255 },
 );
 
@@ -104,8 +120,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07036 @ 2013-07-22 12:11:03
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:/MS6K0XQiBtULK5XCirDlQ
+# Created by DBIx::Class::Schema::Loader v0.07036 @ 2013-07-23 12:25:28
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:hWz1OIHFO76mYrQ836BcWA
 
 __PACKAGE__->belongs_to(
   "parent",

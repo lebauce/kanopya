@@ -39,12 +39,12 @@ sub get_blades {
     my $bladesystem_context    = EContext::SSH->new(
         ip       => $self->bladesystem_ip,
         timeout  => 30,
-        username => 'Administrator'
+        username => $self->bladesystem_user
     );
     my $virtualconnect_context = EContext::SSH->new(
         ip       => $self->virtualconnect_ip,
         timeout  => 30,
-        username => 'Administrator'
+        username => $self->virtualconnect_user
     );
 
     my $bsReturn = $bladesystem_context->execute(command => 'SHOW SERVER INFO ALL');
@@ -198,7 +198,7 @@ sub _startStopHost {
         my $bladesystem_context    = EContext::SSH->new(
             ip       => $self->bladesystem_ip,
             timeout  => 30,
-            username => 'Administrator'
+            username => $self->bladesystem_user
         );
         my $force    = $args{command} eq 'POWEROFF' ? ' FORCE' : '';
         my $bsReturn = $bladesystem_context->execute(command => $args{command} . ' SERVER ' . $blade_id . $force);
