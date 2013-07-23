@@ -665,7 +665,7 @@ var KanopyaFormWizard = (function() {
                     _this.validateRules[$(this).attr('name')].confirm_password = $(input);
                 });
                 lineclone.appendTo(table);
-            }   
+            }
         }
     }
 
@@ -1203,7 +1203,7 @@ var KanopyaFormWizard = (function() {
             'Cancel' : $('#button-cancel'),
             'Back'   : $('#button-back')
         };
-        
+
         // If we are in the step mode, disable button as they will be
         // enabled by the changeStep method.
         if (Object.keys(this.steps).length > 1) {
@@ -1311,7 +1311,7 @@ var KanopyaFormWizard = (function() {
         }
     }
     return KanopyaFormWizard;
-    
+
 })();
 
 $.validator.addMethod("regex", function(value, element, regexp) {

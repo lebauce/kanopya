@@ -205,7 +205,7 @@ function hosts_list(cid, host_manager_id) {
     });
     /*var host_addbutton  = $('<a>', { text : 'Add a host' }).appendTo('#' + cid)
                             .button({ icons : { primary : 'ui-icon-plusthick' } });*/
-    var action_div=$('#' + cid).prevAll('.action_buttons');                     
+    var action_div=$('#' + cid).prevAll('.action_buttons');
     var host_addbutton  = $('<a>', { text : 'Add a host' }).appendTo(action_div)
                             .button({ icons : { primary : 'ui-icon-plusthick' } });
     $(host_addbutton).bind('click', function (e) {
