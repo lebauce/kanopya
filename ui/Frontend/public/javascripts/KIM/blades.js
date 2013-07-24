@@ -28,6 +28,7 @@ function add_hpc(id) {
                 kfw.submit(data, $form, opts);
             }
         },
+        callback       : function() { $('#blades_list').trigger('reloadGrid'); }
     });
     kfw.content.on('dialogopen', function(event) {
         var form        = $(event.currentTarget).find('form');
