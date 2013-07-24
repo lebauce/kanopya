@@ -79,8 +79,9 @@ sub execute {
 
     # Create new systemimage instance
     eval {
-        my $entity = Entity::Systemimage->new(systemimage_name => $self->{params}->{systemimage_name},
-                                              systemimage_desc => $self->{params}->{systemimage_desc});
+        my $entity = Entity::Systemimage->new(systemimage_name    => $self->{params}->{systemimage_name},
+                                              systemimage_desc    => $self->{params}->{systemimage_desc}
+                                              service_provider_id => $self->{params}->{service_provider_id});
         $self->{context}->{systemimage} = EEntity->new(data => $entity);
     };
     if($@) {
