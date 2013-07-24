@@ -16,12 +16,37 @@
 package Entity::ServiceProvider::Hpc7000;
 use base 'Entity::ServiceProvider';
 
+use Entity::ServiceProvider::Cluster;
+
 use strict;
 use warnings;
 
 use constant ATTR_DEF => {
 };
 
+sub methods {
+    return {
+        synchronize => {
+            description => 'synchronize Kanopya with the HP C7000 device.'
+        }
+    };
+}
+
 sub getAttrDef { return ATTR_DEF; }
+
+sub synchronize {
+    my $self = shift;
+
+    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
+
+    $kanopya->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+        name   => 'Synchronize',
+        params => {
+            context => {
+                entity => $self
+            }
+        }
+    );
+}
 
 1;

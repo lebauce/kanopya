@@ -1993,6 +1993,23 @@ sub populate_workflow_def {
             specific   => { }
         }
     );
+
+    # Synchronize workflow def
+    my $synchronize_wf = $kanopya_wf_manager->createWorkflow(
+        workflow_name => 'Synchronize',
+        params        => {
+            internal  => { },
+            automatic => { },
+            specific  => {
+                entity => { label => 'Entity' }
+            }
+        }
+    );
+    $synchronize_wf->addStep(
+        operationtype_id => Operationtype->find(
+            hash => { operationtype_name => 'Synchronize' }
+        )->id
+    );
 }
 
 sub populate_policies {
