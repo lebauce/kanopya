@@ -51,6 +51,9 @@ sub execute {
     # Verify if there is enough resource in HV
     my $vm_id = $self->{context}->{host}->getId;
     my $hv_id = $self->{context}->{host}->hypervisor->getId;
+    my $host_cluster = Entity::ServiceProvider::Cluster->find(hash => {
+                           cluster_id => $self->{context}->{host}->getClusterId(),
+                       });
 
     my $cm    = CapacityManagement->new(
         cluster_id    => $self->{context}->{host}->getClusterId(),
@@ -64,19 +67,23 @@ sub execute {
                     wanted_resource => $self->{params}->{cpu_number},
                 );
 
-    my $cpu_limit = $self->{context}->{host}->node->service_provider->getLimit(type => 'cpu');
-
-    if ($cpu_limit && ($check == 0 || $self->{params}->{cpu_number} > $cpu_limit)) {
+    if ($check == 0) {
         my $errmsg = "Not enough CPU in HV $hv_id for VM $vm_id. " . 
                      "Infrastructure may have change between operation queing and its execution";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
+    # Check billing limit before launching scale, but only in case of scale up
+    if ($self->{params}->{cpu_number} > $self->{context}->{host}->host_core) {
+        my $cpu_to_add = $self->{params}->{cpu_number} - $self->{context}->{host}->host_core;
+        $host_cluster->checkBillingLimits(metrics => { cpu => $cpu_to_add });
+    }
+
     $self->{context}->{cloudmanager_comp}->scaleCpu(host       => $self->{context}->{host},
                                                     cpu_number => $self->{params}->{cpu_number});
 
-    $log->info("Host <" .  $self->{context}->{host}->getAttr(name => 'entity_id') .
-               "> scale in to <$self->{params}->{cpu_number}> cpu number.");
+    $log->info("Host <" .  $self->{context}->{host}->id . "> " .
+               "scaled in to <$self->{params}->{cpu_number}> cpu number.");
 }
 
 

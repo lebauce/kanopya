@@ -564,14 +564,6 @@ sub scaleMemoryHost {
         );
         $log->warn("*** Cannot Scale Ram to a negative value (typed : $args{memory})*** ");
     }
-    elsif ($args{memory_limit} && ($memory > $args{memory_limit})) {
-        Message(
-            from    => 'Capacity Management',
-            level   => 'warn',
-            content => "Scale in is limited to <".($args{memory_limit})."> B, (<$memory> B requested)",
-        );
-        $log->warn("Scale in is limited to <".($args{memory_limit})."> B, (<$memory> B requested)");
-    }
     else {
         my @hv_selection_ids = keys %{$self->{_infra}->{hvs}};
         $log->info("Call scaleMemoryMetric for host $args{host_id} and new value = $args{memory}");
@@ -659,15 +651,6 @@ sub scaleCpuHost{
         );
 
         $log->warn("Cannot scale CPU to a negative value (typed : $args{vcpu_number})");
-    }
-    elsif ($args{cpu_limit} && ($cpu > $args{cpu_limit})) {
-        Message->send(
-            from    => 'Capacity Management',
-            level   => 'warn',
-            content => "Scale in is limited to $args{cpu_limit} CPU, ($cpu CPU requested)",
-        );
-
-        $log->warn("Scale in is limited to $args{cpu_limit} CPU, ($cpu CPU requested)");
     }
     else {
         my @hv_selection_ids = keys %{$self->{_infra}->{hvs}};

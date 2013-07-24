@@ -49,6 +49,9 @@ sub execute {
     # Verify if there is enough resource in HV
     my $vm_id = $self->{context}->{host}->getId;
     my $hv_id = $self->{context}->{host}->hypervisor->getId;
+    my $host_cluster = Entity::ServiceProvider::Cluster->find(hash => {
+                           cluster_id => $self->{context}->{host}->getClusterId(),
+                       });
 
     my $cm = CapacityManagement->new(
                  cluster_id    => $self->{context}->{host}->getClusterId(),
@@ -62,12 +65,16 @@ sub execute {
                     wanted_resource => $self->{params}->{memory},
                 );
 
-    my $mem_limit = $self->{context}->{host}->node->service_provider->getLimit(type => 'ram');
-
-    if ($mem_limit && ($check == 0 || $self->{params}->{memory} > $mem_limit)) {
+    if ($check == 0 ) {
         $errmsg = "Not enough memory in HV $hv_id for VM $vm_id. Infrastructure may have change between operation queing and its execution";
         $log->debug($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+
+    # Check billing limit before launching scale, but only in case of scale up
+    if ($self->{params}->{memory} > $self->{context}->{host}->host_ram) {
+        my $ram_to_add = $self->{params}->{memory} - $self->{context}->{host}->host_ram;
+        $host_cluster->checkBillingLimits(metrics => { ram => $ram_to_add });
     }
 
     # Check if the given ram amount is not bellow the initial ram.
