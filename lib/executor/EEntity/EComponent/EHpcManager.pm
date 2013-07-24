@@ -27,10 +27,12 @@ use Entity::Iface;
 use Text::CSV;
 use Data::Dumper;
 
-=head2 get_blades
+=pod
+=begin classdoc
 
-    Desc: retrieve informations about the HPC blades
+Retrieve informations about the HPC blades.
 
+=end classdoc
 =cut
 
 sub get_blades {
@@ -57,10 +59,12 @@ sub get_blades {
     return @blades;
 }
 
-=head2
+=pod
+=begin classdoc
 
-    Desc: Extract datas from BladeSystem and VirtualConnect CLIs' stdouts into a hash
+Extract datas from BladeSystem and VirtualConnect CLIs' stdouts into a hash.
 
+=end classdoc
 =cut
 
 sub _parseOutputs {
@@ -140,10 +144,12 @@ sub _parseOutputs {
     return %blades;
 }
 
-=head2 synchronize
+=pod
+=begin classdoc
 
-    Desc: synchronize hpc7000 information with kanopya database
+Synchronize hpc7000 information with kanopya database.
 
+=end classdoc
 =cut
 
 sub synchronize {
