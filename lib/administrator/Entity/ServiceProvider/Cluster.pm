@@ -89,19 +89,19 @@ use constant ATTR_DEF => {
         pattern      => '^(0|1)$',
         is_mandatory => 1,
         is_extended  => 0,
-        is_editable  => 0
+        is_editable  => 1
     },
     cluster_min_node => {
         label        => 'Minimum number of nodes',
         pattern      => '^\d*$',
         is_mandatory => 1,
-        is_editable  => 0
+        is_editable  => 1
     },
     cluster_max_node => {
         label        => 'Maximum number of nodes',
         pattern      => '^\d*$',
         is_mandatory => 1,
-        is_editable  => 0
+        is_editable  => 1
     },
     cluster_priority => {
         pattern      => '^\d*$',
@@ -124,19 +124,19 @@ use constant ATTR_DEF => {
         label        => 'Primary name server',
         pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
         is_mandatory => 1,
-        is_editable  => 0
+        is_editable  => 1
     },
     cluster_nameserver2 => {
         label        => 'Secondary name server',
         pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
         is_mandatory => 1,
-        is_editable  => 0
+        is_editable  => 1
     },
     cluster_basehostname => {
         label        => 'Base host name',
         pattern      => '^[A-Za-z0-9-]+$',
         is_mandatory => 1,
-        is_editable  => 0
+        is_editable  => 1
     },
     default_gateway_id => {
         pattern      => '\d+',
@@ -155,7 +155,7 @@ use constant ATTR_DEF => {
         type         => 'relation',
         relation     => 'single',
         is_mandatory => 0,
-        is_editable  => 0
+        is_editable  => 1
     },
     kernel_id => {
         label        => 'Kernel',
