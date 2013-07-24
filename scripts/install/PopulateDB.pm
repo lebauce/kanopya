@@ -243,6 +243,8 @@ my @classes = (
     'Entity::Component::Ceph::CephMon',
     'Entity::Component::Ceph::CephOsd',
     'Entity::Tag',
+    'Entity::Component::HpcManager',
+    'Entity::ServiceProvider::Hpc7000'
 );
 
 sub registerKernels {
@@ -825,6 +827,7 @@ sub registerServiceProviders {
         { service_provider_name => 'Externalcluster' },
         { service_provider_name => 'Netapp' },
         { service_provider_name => 'UnifiedComputingSystem' },
+        { service_provider_name => 'Hpc7000' },
     ];
 
     for my $serviceprovider_type (@{ $serviceproviders }) {
@@ -1184,6 +1187,12 @@ sub registerComponents {
             component_version      => 0,
             component_categories   => [ ],
             service_provider_types => [ 'Cluster' ],
+        },
+        {
+            component_name         => 'HpcManager',
+            component_version      => 0,
+            component_categories   => [ 'HostManager' ],
+            service_provider_types => [ 'Hpc7000' ],
         },
     ];
 
@@ -1983,6 +1992,23 @@ sub populate_workflow_def {
             automatic  => { },
             specific   => { }
         }
+    );
+
+    # Synchronize workflow def
+    my $synchronize_wf = $kanopya_wf_manager->createWorkflow(
+        workflow_name => 'Synchronize',
+        params        => {
+            internal  => { },
+            automatic => { },
+            specific  => {
+                entity => { label => 'Entity' }
+            }
+        }
+    );
+    $synchronize_wf->addStep(
+        operationtype_id => Operationtype->find(
+            hash => { operationtype_name => 'Synchronize' }
+        )->id
     );
 }
 

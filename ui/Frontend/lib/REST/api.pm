@@ -179,7 +179,9 @@ my %resources = (
     "workflow"                 => "Entity::Workflow",
     "workflowdef"              => "Entity::WorkflowDef",
     "repository"               => "Entity::Repository",
-    "virtualization"           => "Entity::Component::Virtualization"
+    "virtualization"           => "Entity::Component::Virtualization",
+    "hpc7000"                  => "Entity::ServiceProvider::Hpc7000",
+    "hpcmanager"               => "Entity::Component::HpcManager"
 );
 
 sub classFromResource {

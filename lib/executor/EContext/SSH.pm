@@ -68,11 +68,13 @@ Instanciate a SSH econtext using the ip of the destination host.
 sub new {
     my ($class, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'ip', 'timeout' ]);
+    General::checkParams(args => \%args, required => [ 'ip', 'timeout' ],
+                         optional => { username => 'root' });
 
     my $self = {
-        ip      => $args{ip},
-        timeout => $args{timeout}
+        ip       => $args{ip},
+        timeout  => $args{timeout},
+        username => $args{username}
     };
 
     # is the host available on ssh port 22
@@ -109,7 +111,7 @@ sub _init {
 
     $log->debug("Initialise ssh connection to $self->{ip}");
     my %opts = (
-        user        => 'root',                   # user login
+        user        => $self->{username},        # user login
         port        => 22,                       # TCP port number where the server is running
         key_path    => '/root/.ssh/kanopya_rsa', # Use the key stored on the given file path for authentication
         ssh_cmd     => '/usr/bin/ssh',           # full path to OpenSSH ssh binary

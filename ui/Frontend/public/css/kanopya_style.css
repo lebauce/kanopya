@@ -234,8 +234,12 @@ button.ui-multiselect,.ui-multiselect-menu li label{cursor:pointer;}
 .ui-jqdialog .ui-jqdialog-titlebar{margin: -10px -10px 0;padding: 10px 10px 0;}
 .ui-jqdialog .ui-jqdialog-titlebar-close{height: 20px;margin: -7px 0 0;right: 10px !important;width: 20px;background:none!important;border:none!important;}
 
-#sync-ucs .ui-button-text,#edit-ucs .ui-button-text{text-indent:-999999em;width:16px;height:16px;background-clip:content-box;padding:3px;}
-#sync-ucs.ui-widget .ui-icon,#edit-ucs.ui-widget .ui-icon{left:3px;margin-top:-8px;cursor:pointer!important;}
+#sync-ucs .ui-button-text,#edit-ucs .ui-button-text,
+#sync-hpc .ui-button-text,#edit-hpc .ui-button-text
+{text-indent:-999999em;width:16px;height:16px;background-clip:content-box;padding:3px;}
+#sync-ucs.ui-widget .ui-icon,#edit-ucs.ui-widget .ui-icon,
+#sync-hpc.ui-widget .ui-icon,#edit-hpc.ui-widget .ui-icon
+{left:3px;margin-top:-8px;cursor:pointer!important;}
 #users_list .ui-pg-div{background:none!important;border:none!important;}
 #users_list .ui-state-hover{margin-left:5px!important;}
 
