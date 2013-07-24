@@ -16,6 +16,8 @@
 package EEntity::EServiceProvider::EHpc7000;
 use base EEntity;
 
+use EEntity;
+
 use strict;
 use warnings;
 
@@ -23,7 +25,7 @@ sub synchronize {
     my $self   = shift;
     my $hpcmgr = $self->getComponent(name => 'HpcManager');
 
-    $hpcmgr->synchronize();
+    (EEntity->new(data => $hpcmgr))->synchronize();
 }
 
 1;
