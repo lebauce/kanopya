@@ -1564,8 +1564,9 @@ sub toJSON {
                 }
             }
             else {
-                if (($attributes->{$class}->{$attr}->{type} ne 'relation') &&
-                    ($args{virtuals} || ! $attributes->{$class}->{$attr}->{is_virtual})) {
+                if (($args{virtuals} || ! $attributes->{$class}->{$attr}->{is_virtual}) &&
+                    ($attributes->{$class}->{$attr}->{type} ne 'relation' ||
+                     $attributes->{$class}->{$attr}->{relation} eq 'single')) {
                     # Set the value of the attribute
                     $hash->{$attr} = $self->getAttr(name => $attr);
                 }
