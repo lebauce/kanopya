@@ -179,9 +179,6 @@ var KanopyaFormWizard = (function() {
 
             // For each relation entries, add filled inputs in one line
             for (var entry in entries) {
-//                console.log('debut');
-//                console.log(entries[entry]);
-//                console.log('fin');
                 this.buildFromAttrDef(rel_attributedefs, this.relations[relation_name], entries[entry], rel_relationdefs,
                                       this.attributedefs[relation_name].label || relation_name);
             }
@@ -247,8 +244,8 @@ var KanopyaFormWizard = (function() {
              * - virtual attributes as we can not set a value on,
              * - blacklisted attributes.
              */
-            if (!($.inArray(name, attributes_blacklist) >= 0) &&
-                !(this.attributedefs[name].type === 'relation' && this.attributedefs[name].relation === "single_multi")) {
+            if (! ($.inArray(name, attributes_blacklist) >= 0) &&
+                ! (this.attributedefs[name].type === 'relation' && this.attributedefs[name].relation === "single_multi")) {
                 var value = this.attributedefs[name].value || values[name] || undefined;
 
                 // Get options for select inputs
@@ -706,7 +703,7 @@ var KanopyaFormWizard = (function() {
         this.data = this.serialize($(this.form).serializeArray());
 
         // Then reload the form
-        this.load($(event.target).attr('name'));
+        this.load(event ? $(event.target).attr('name') : undefined);
     }
 
     KanopyaFormWizard.prototype.mustDisableField = function(name, value) {
@@ -971,11 +968,16 @@ var KanopyaFormWizard = (function() {
         this.steps[name] = { 'div' : $(div), 'tables' : {} };
     }
 
-    KanopyaFormWizard.prototype.start = function() {
-        $(document).append(this.content);
-        // Open the modal and start the form wizard
-        this.openDialog();
+    KanopyaFormWizard.prototype.start = function(embedded) {
+        if (embedded != true) {
+            $(document).append(this.content);
+            // Open the modal
+            this.openDialog();
+        }
+        // start the form wizard
         this.startWizard();
+
+        return this.content;
     }
 
     KanopyaFormWizard.prototype.handleArgs = function(args) {

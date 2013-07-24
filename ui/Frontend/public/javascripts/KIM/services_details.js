@@ -12,6 +12,9 @@ function loadServicesDetails(cid, eid, is_iaas) {
     var div   = $('<div>', { id: divId}).appendTo($("<td>").appendTo(table));
     $('<h4>Details</h4>').appendTo(div);
 
+    // Keep the detai form as it will be used in action button callbacks
+    var form;
+
     var components = [];
     function scaleOutComponentsDialog (e) {
         var component_types = {};
@@ -36,7 +39,6 @@ function loadServicesDetails(cid, eid, is_iaas) {
                 ajax('POST', '/api/cluster/' + eid + '/addNode', data, onsuccess, onerror);
             }
         })).start();
-
     }
 
     function removeClusterDialog (e) {
@@ -57,128 +59,156 @@ function loadServicesDetails(cid, eid, is_iaas) {
         })).start();
     }
 
-    $("#" + divId).append('<div class="loading"><img alt="Loading, please wait" src="/css/theme/loading.gif" /><p>Loading...</p></div>');
-    $.ajax({
-        url     : '/api/cluster/' + eid + '?expand=interfaces.netconfs,components.component_type,billinglimits,' +
-                  'service_provider_managers.manager_category,service_provider_managers.param_preset',
-        async   : true,
-        success : function(details) {
-            // If this sp is a Iaas, we get its cloud manager component id (used for optimiaas)
-            var cloudmanager_id;
+    function editCluster (e) {
+        // Open a wizards to suggest component type to scale to the user
+        var button = e.srcElement;
+        var span = button.parent;
 
-            //var actioncell  = $('<td>', {'class' : 'action-cell'}).css('text-align', 'right').appendTo(table);
-            var actioncell = $('#' + cid).prevAll('.action_buttons'); 
+        $(button).attr('disabled', 'disabled')
+        if ($(button).text() == 'Edit service') {
+            // Set the editable mode
+            form.noStateDisabled = false;
+            form.reload();
 
-            var buttons = [
-//                {
-//                    label       : 'Edit service',
-//                    icon        : 'pencil',
-//                    action      : removeClusterDialog
-//                },
-                {
-                    label       : 'Start service',
-                    sprite      : 'start',
-                    action      : '/api/cluster/' + eid + '/start',
-                    condition   : (new RegExp('^down')).test(details.cluster_state),
-                    confirm     : 'This will start your instance'
-                },
-                {
-                    label       : 'Stop service',
-                    sprite      : 'stop',
-                    action      : '/api/cluster/' + eid + '/stop',
-                    condition   : (new RegExp('^up')).test(details.cluster_state),
-                    confirm     : 'This will stop all your running instances'
-                },
-                {
-                    label       : 'Force stop service',
-                    sprite      : 'stop',
-                    action      : '/api/cluster/' + eid + '/forceStop',
-                    condition   : (!(new RegExp('^down')).test(details.cluster_state)),
-                    confirm     : 'This will stop all your running instances'
-                },
-                {
-                    label       : 'Scale out',
-                    icon        : 'arrowthick-2-e-w',
-                    action      : '/api/cluster/' + eid + '/addNode'
-                },
-                {
-                    label       : 'Scale out components',
-                    icon        : 'arrowthick-2-e-w',
-                    action      : scaleOutComponentsDialog
-                },
-                {
-                    label       : 'Optimize IaaS',
-                    icon        : 'calculator',
-                    action      : '/api/component/' + cloudmanager_id + '/optimiaas',
-                    condition   : is_iaas !== undefined
-                },
-                {
-                    label       : 'Remove',
-                    icon        : 'trash',
-                    action      : removeClusterDialog
+            $(button).text('Save changes');
+
+        } else {
+            // Validate the form
+            form.validateForm();
+
+            $(button).text('Edit service');
+
+            $("#" + divId).empty();
+            displayDetails();
+        }
+        $(button).removeAttr("disabled");
+    }
+
+    function displayDetails () {
+        $("#" + divId).append('<div class="loading"><img alt="Loading, please wait" src="/css/theme/loading.gif" /><p>Loading...</p></div>');
+        $.ajax({
+            url     : '/api/cluster/' + eid + '?expand=interfaces.netconfs,components.component_type,billinglimits,' +
+                      'service_provider_managers.manager_category,service_provider_managers.param_preset',
+            async   : true,
+            success : function(details) {
+                // If this sp is a Iaas, we get its cloud manager component id (used for optimiaas)
+                var cloudmanager_id;
+
+                //var actioncell  = $('<td>', {'class' : 'action-cell'}).css('text-align', 'right').appendTo(table);
+                var actioncell = $('#' + cid).prevAll('.action_buttons');
+
+                var buttons = [
+                    {
+                        label       : 'Edit service',
+                        sprite      : 'pencil',
+                        action      : editCluster,
+                        condition   : (new RegExp('^down')).test(details.cluster_state)
+                    },
+                    {
+                        label       : 'Start service',
+                        sprite      : 'start',
+                        action      : '/api/cluster/' + eid + '/start',
+                        condition   : (new RegExp('^down')).test(details.cluster_state),
+                        confirm     : 'This will start your instance'
+                    },
+                    {
+                        label       : 'Stop service',
+                        sprite      : 'stop',
+                        action      : '/api/cluster/' + eid + '/stop',
+                        condition   : (new RegExp('^up')).test(details.cluster_state),
+                        confirm     : 'This will stop all your running instances'
+                    },
+                    {
+                        label       : 'Force stop service',
+                        sprite      : 'stop',
+                        action      : '/api/cluster/' + eid + '/forceStop',
+                        condition   : (!(new RegExp('^down')).test(details.cluster_state)),
+                        confirm     : 'This will stop all your running instances'
+                    },
+                    {
+                        label       : 'Scale out',
+                        icon        : 'arrowthick-2-e-w',
+                        action      : '/api/cluster/' + eid + '/addNode'
+                    },
+                    {
+                        label       : 'Scale out components',
+                        icon        : 'arrowthick-2-e-w',
+                        action      : scaleOutComponentsDialog
+                    },
+                    {
+                        label       : 'Optimize IaaS',
+                        icon        : 'calculator',
+                        action      : '/api/component/' + cloudmanager_id + '/optimiaas',
+                        condition   : is_iaas !== undefined
+                    },
+                    {
+                        label       : 'Remove',
+                        icon        : 'trash',
+                        action      : removeClusterDialog
+                    }
+                ];
+                if (actioncell.find('span').length === 0) {
+                    createallbuttons(buttons, actioncell);
                 }
-            ];
-            createallbuttons(buttons, actioncell);
 
-            // Remove some fields because the api will unserialize this params as an object
-            delete details.class_type_id;
-            delete details.pk;
+                // Remove some fields because the api will unserialize this params as an object
+                delete details.class_type_id;
+                delete details.pk;
 
-            /*
-             * Format the values as the cluster json do not exactly fit to the service template def.
-             */
+                /*
+                 * Format the values as the cluster json do not exactly fit to the service template def.
+                 */
 
-            // Make an array of netconfs id instead of array of netconf object
-            if ($.isArray(details.interfaces)) {
-                for (var index in details.interfaces) {
-                    if ($.isArray(details.interfaces[index].netconfs)) {
-                        var netconfs = [];
-                        for (var index_netconfs in details.interfaces[index].netconfs) {
-                            netconfs.push(details.interfaces[index].netconfs[index_netconfs].pk);
+                // Make an array of netconfs id instead of array of netconf object
+                if ($.isArray(details.interfaces)) {
+                    for (var index in details.interfaces) {
+                        if ($.isArray(details.interfaces[index].netconfs)) {
+                            var netconfs = [];
+                            for (var index_netconfs in details.interfaces[index].netconfs) {
+                                netconfs.push(details.interfaces[index].netconfs[index_netconfs].pk);
+                            }
+                            details.interfaces[index].netconfs = netconfs;
                         }
-                        details.interfaces[index].netconfs = netconfs;
                     }
                 }
-            }
 
-            // Change the billing limite attr name
-            if ($.isArray(details.billinglimits)) {
-                details.billing_limits = details.billinglimits;
-                delete details.billinglimits;
-            }
-
-            // Change the component_type attr name
-            if ($.isArray(details.components)) {
-                for (var index in details.components) {
-                    details.components[index].component_type = details.components[index].component_type_id;
+                // Change the billing limite attr name
+                if ($.isArray(details.billinglimits)) {
+                    details.billing_limits = details.billinglimits;
+                    delete details.billinglimits;
                 }
-            }
 
-            // Add managers ids as cluster attributes
-            if ($.isArray(details.service_provider_managers)) {
-                var managers = details.service_provider_managers;
-                delete details.service_provider_managers;
-                for (var index in managers) {
-                    var category = managers[index].manager_category.category_name;
-                    if (category == 'HostManager' && is_iaas) {
-                        cloudmanager_id = managers[index].manager_id;
-                    }
-                    var manager_attr_name = category.replace('Manager', '').toLowerCase() + "_manager_id";
-                    details[manager_attr_name] = managers[index].manager_id;
-                    // Handle manager params
-                    if ($.isPlainObject(managers[index].param_preset) && managers[index].param_preset.params != undefined) {
-                        $.extend(true, details, JSON.parse(managers[index].param_preset.params));
+                // Change the component_type attr name
+                if ($.isArray(details.components)) {
+                    for (var index in details.components) {
+                        details.components[index].component_type = details.components[index].component_type_id;
                     }
                 }
-            }
 
-            // Store the cluster component list for "Sscale out component" action
-            components = details.components;
+                // Add managers ids as cluster attributes
+                if ($.isArray(details.service_provider_managers)) {
+                    var managers = details.service_provider_managers;
+                    delete details.service_provider_managers;
+                    for (var index in managers) {
+                        var category = managers[index].manager_category.category_name;
+                        if (category == 'HostManager' && is_iaas) {
+                            cloudmanager_id = managers[index].manager_id;
+                        }
+                        var manager_attr_name = category.replace('Manager', '').toLowerCase() + "_manager_id";
+                        details[manager_attr_name] = managers[index].manager_id;
+                        // Handle manager params
+                        if ($.isPlainObject(managers[index].param_preset) && managers[index].param_preset.params != undefined) {
+                            $.extend(true, details, JSON.parse(managers[index].param_preset.params));
+                        }
+                    }
+                }
 
-            $('.loading').remove();
+                // Store the cluster component list for "Sscale out component" action
+                components = details.components;
 
-            $("#" + divId).append(
-                new KanopyaFormWizard({
+                $('.loading').remove();
+
+                $("#" + divId).append((form = new KanopyaFormWizard({
                     title           : 'Service details',
                     type            : 'cluster',
                     id              : eid,
@@ -200,7 +230,7 @@ function loadServicesDetails(cid, eid, is_iaas) {
                             type         : 'text',
                             pattern      : '^.*$',
                             is_mandatory : false,
-                            is_editable  : false
+                            is_editable  : true
                         },
                         user_id : {
                             label        : 'Customer',
@@ -223,9 +253,6 @@ function loadServicesDetails(cid, eid, is_iaas) {
                     },
                     attrsCallback : function (resource, data, trigger) {
                         var attributes;
-                        if (Object.keys(data).length <= 0) {
-                            data = details;
-                        }
 
                         // Define the cluster relation hard coded here, to avoid a call
                         // to the cluster attributes for the relations only
@@ -243,13 +270,17 @@ function loadServicesDetails(cid, eid, is_iaas) {
                         };
 
                         // If the service template defined, fill the form with the service template definition
-                        if (data.service_template_id) {
-                            var args = { params : data, trigger : trigger };
+                        if (details.service_template_id) {
+                            var args = { params : details, trigger : trigger };
                             attributes = ajax('POST', '/api/servicetemplate/getServiceTemplateDef', args);
 
                             // Delete the service template fields other than policies ids
                             delete attributes.attributes['service_name'];
                             delete attributes.attributes['service_desc'];
+
+                            if (this.noStateDisabled == false) {
+                                $.extend(true, attributes.attributes, ajax('GET', '/api/attributes/cluster').attributes);
+                            }
 
                         } else {
                             attributes = { attributes : {}, relations : {} };
@@ -257,7 +288,7 @@ function loadServicesDetails(cid, eid, is_iaas) {
                         $.extend(true, attributes.relations, cluster_relations);
 
                         // Set steps
-                        set_steps(attributes, 0);
+                        set_steps(attributes, this.noStateDisabled == true ? 0 : undefined);
 
                         // Filter displayed fields
                         attributes.displayed = $.grep(attributes.displayed, function(n, i) {
@@ -275,22 +306,30 @@ function loadServicesDetails(cid, eid, is_iaas) {
 
                         // Set the value if defined (at reload)
                         $.each([ 'cluster_name', 'cluster_desc', 'user_id', 'service_template_id' ], function (index, attr) {
-                            if (data[attr] !== undefined) {
+                            if (details[attr] !== undefined) {
                                 if (attributes.attributes[attr] === undefined) {
                                     attributes.attributes[attr] = {};
                                 }
-                                attributes.attributes[attr].value = data[attr];
+                                attributes.attributes[attr].value = details[attr];
                             }
                         });
                         return attributes;
                     },
                     valuesCallback : function(type, id, attributes) {
                         return details;
+                    },
+                    submitCallback : function(data, $form, opts, onsuccess, onerror) {
+                        // Manually add the service_template_id as it is deisabled in the form
+                        data.service_template_id = details.service_template_id;
+
+                        // Manually update the cluster
+                        return ajax('PUT', '/api/cluster/' + eid, data, onsuccess, onerror);
                     }
-                }).content
-            );
-        }
-    });
+                })).start(true));
+            }
+        });
+    }
+    displayDetails();
 }
 
 function createallbuttons(buttons, container) {
@@ -312,18 +351,18 @@ function createbutton(button) {
            ).append(
                $('<a>', { text : button.label })
            ).button().bind('click', function (e) {
-        if (button.confirm && !confirm(button.confirm + ". Do you want to continue ?")) {
-            return false;
-        }
-        if (typeof(button.action) === 'string') {
-            $.ajax({
-                url         : button.action,
-                type        : 'POST',
-                contentType : 'application/json',
-                data        : JSON.stringify((button.data !== undefined) ? button.data : {})
-            });
-        } else {
-            button.action(e);
-        }
+                if (button.confirm && !confirm(button.confirm + ". Do you want to continue ?")) {
+                    return false;
+                }
+                if (typeof(button.action) === 'string') {
+                    $.ajax({
+                        url         : button.action,
+                        type        : 'POST',
+                        contentType : 'application/json',
+                        data        : JSON.stringify((button.data !== undefined) ? button.data : {})
+                    });
+                } else {
+                    button.action(e);
+                }
     });
 }
