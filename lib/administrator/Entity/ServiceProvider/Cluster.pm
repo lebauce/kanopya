@@ -95,13 +95,13 @@ use constant ATTR_DEF => {
         label        => 'Minimum number of nodes',
         pattern      => '^\d*$',
         is_mandatory => 1,
-        is_editable  => 1
+        is_editable  => 0
     },
     cluster_max_node => {
         label        => 'Maximum number of nodes',
         pattern      => '^\d*$',
         is_mandatory => 1,
-        is_editable  => 1
+        is_editable  => 0
     },
     cluster_priority => {
         pattern      => '^\d*$',
@@ -136,7 +136,7 @@ use constant ATTR_DEF => {
         label        => 'Base host name',
         pattern      => '^[A-Za-z0-9-]+$',
         is_mandatory => 1,
-        is_editable  => 1
+        is_editable  => 0
     },
     default_gateway_id => {
         pattern      => '\d+',
@@ -179,7 +179,7 @@ use constant ATTR_DEF => {
         relation     => 'single_multi',
         link_to      => 'component',
         is_mandatory => 0,
-        is_editable  => 1,
+        is_editable  => 0,
     },
 };
 
@@ -278,8 +278,49 @@ sub create {
 
     General::checkParams(args => \%args, required => [ 'cluster_name', 'user_id' ]);
 
+    # Firstly build the configuration pattern from args.
+    my $confpattern = $class->buildConfigurationPattern(%args);
+
+    General::checkParams(args => $confpattern, required => [ 'managers' ]);
+    General::checkParams(args => $confpattern->{managers}, required => [ 'host_manager', 'disk_manager' ]);
+
+    #$log->info("Final parameters after applying policies:\n" . Dumper($confpattern));
+
+    my $composite_params;
+    for my $name ('managers', 'interfaces', 'components', 'billing_limits', 'orchestration') {
+        if ($confpattern->{$name}) {
+            $composite_params->{$name} = delete $confpattern->{$name};
+        }
+    }
+
+    $class->checkConfigurationPattern(attrs => $confpattern, composite => $composite_params);
+
+    my $op_params = {
+        cluster_params => $confpattern,
+        %$composite_params
+    };
+
+    # If the cluster created from a service template, add it in the context
+    # to handle notification/validation on cluster instanciation.
+    if (defined $args{service_template_id}) {
+        $op_params->{context}->{service_template}
+            = Entity::ServiceTemplate->get(id => $args{service_template_id});
+    } 
+
+    my $kanopya = $class->getKanopyaCluster;
+    $kanopya->getManager(manager_type => 'ExecutionManager')->enqueue(
+        type       => 'AddCluster',
+        params     => $op_params,
+        related_id => $kanopya->id
+    );
+}
+
+sub buildConfigurationPattern {
+    my ($self, %args) = @_;
+    my $class = ref($self) || $self;
+
     # Override params with policies param presets
-    my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
+    my $merge = Hash::Merge->new('LEFT_PRECEDENT');
 
     my $service_template;
     my $confpattern = {};
@@ -303,39 +344,7 @@ sub create {
     }
 
     # Then merge the configuration pattern with the remaining cluster params
-    $confpattern = $merge->merge($confpattern, \%args);
-
-    General::checkParams(args => $confpattern, required => [ 'managers' ]);
-    General::checkParams(args => $confpattern->{managers}, required => [ 'host_manager', 'disk_manager' ]);
-
-    #$log->info("Final parameters after applying policies:\n" . Dumper($confpattern));
-
-    my $composite_params;
-    for my $name ('managers', 'interfaces', 'components', 'billing_limits', 'orchestration') {
-        if ($confpattern->{$name}) {
-            $composite_params->{$name} = delete $confpattern->{$name};
-        }
-    }
-
-    $class->checkConfigurationPattern(attrs => $confpattern, composite => $composite_params);
-
-    my $op_params = {
-        cluster_params => $confpattern,
-        %$composite_params
-    };
-
-    # If the cluster created from a service template, add it in the context
-    # to handle notification/validation on cluster instanciation.
-    if ($service_template) {
-        $op_params->{context}->{service_template} = $service_template;
-    } 
-
-    my $kanopya = $class->getKanopyaCluster;
-    $kanopya->getManager(manager_type => 'ExecutionManager')->enqueue(
-        type       => 'AddCluster',
-        params     => $op_params,
-        related_id => $kanopya->id
-    );
+    return $merge->merge($confpattern, \%args);
 }
 
 sub checkConfigurationPattern {
@@ -368,12 +377,12 @@ sub checkConfigurationPattern {
 sub applyPolicies {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ "pattern" ]);
+    General::checkParams(args => \%args, required => [ "pattern" ], optional => { 'update' => 0 });
 
     # First, configure managers (potentially needed by other policies)
-    if (exists $args{pattern}{managers}) {
-        $self->configureManagers(managers => $args{pattern}{managers});
-        delete $args{pattern}{managers};
+    if (exists $args{pattern}->{managers}) {
+        $self->configureManagers(managers => $args{pattern}->{managers});
+        delete $args{pattern}->{managers};
     }
 
     # Then, configure cluster using policies
@@ -383,6 +392,8 @@ sub applyPolicies {
 
         # Handle components cluster config
         if ($name eq 'components') {
+            if ($args{update}) { next; }
+
             for my $component (values %$value) {
                 # TODO: Check if the component is already installed
                 $self->addComponent(
@@ -399,13 +410,15 @@ sub applyPolicies {
             $self->configureBillingLimits(billing_limits => $value);
         }
         elsif ($name eq 'orchestration') {
+            if ($args{update}) { next; }
+
             $self->configureOrchestration(%$value);
         }
         else {
             $self->setAttr(name => $name, value => $value);
         }
     }
-    $self->save();
+    return $self->save();
 }
 
 sub configureManagers {
@@ -515,23 +528,14 @@ sub configureInterfaces {
 
     General::checkParams(args => \%args, optional => { 'interfaces' => undef });
 
-    if (defined $args{interfaces}) {
-        for my $interface_pattern (values %{ $args{interfaces} }) {
-            if ($interface_pattern->{netconfs}) {
-                # TODO: Search among existing interfaces to avoid to re-create its.
-
-                my $bonds_number = $interface_pattern->{bonds_number};
-                $bonds_number = $bonds_number ? $bonds_number : 0;
-
-                my @netconfs = values %{ $interface_pattern->{netconfs} };
-                $self->addNetworkInterface(
-                    netconfs        => \@netconfs,
-                    bonds_number    => $bonds_number,
-                    interface_name  => $interface_pattern->{interface_name}
-                );
-            }
-        }
+    my @interfaces = grep { defined $_->{netconfs} } values %{ $args{interfaces} };
+    for my $interface (@interfaces) {
+        my @netconfs = values %{ delete $interface->{netconfs} };
+        $interface->{netconf_interfaces} = \@netconfs;
+        $interface->{bonds_number} = $interface->{bonds_number} ? $interface->{bonds_number} : 0;
     }
+
+    $self->populateRelations(relations => { interfaces => \@interfaces }, override => 1);
 }
 
 sub configureBillingLimits {
@@ -539,14 +543,9 @@ sub configureBillingLimits {
 
     General::checkParams(args => \%args, optional => { 'billing_limits' => undef });
 
-    if (defined($args{billing_limits})) {
-        foreach my $name (keys %{$args{billing_limits}}) {
-            my $value = $args{billing_limits}->{$name};
-            Entity::Billinglimit->new(
-                %$value,
-                service_provider_id => $self->getAttr(name => 'entity_id'),
-            );
-        }
+    if (defined $args{billing_limits}) {
+        my @limits = values %{ $args{billing_limits} };
+        $self->populateRelations(relations => { billinglimits => \@limits }, override => 1);
 
         my @indicators = qw(Memory Cores);
         foreach my $name (@indicators) {
@@ -556,29 +555,23 @@ sub configureBillingLimits {
                                           "collector_manager_id"     => $collector_manager->id }
                             );
 
-            my $cm = Entity::Clustermetric->new(
+            my $cm = Entity::Clustermetric->findOrCreate(
                 clustermetric_label                    => "Billing" . $name,
-                clustermetric_service_provider_id      => $self->getId,
-                clustermetric_indicator_id             => $indicator->getId,
+                clustermetric_service_provider_id      => $self->id,
+                clustermetric_indicator_id             => $indicator->id,
                 clustermetric_statistics_function_name => "sum",
                 clustermetric_window_time              => '1200',
             );
 
-            Entity::Combination::AggregateCombination->new(
+            Entity::Combination::AggregateCombination->findOrCreate(
                 aggregate_combination_label     => "Billing" . $name,
-                service_provider_id             => $self->getId,
-                aggregate_combination_formula   => 'id' . $cm->getId
+                service_provider_id             => $self->id,
+                aggregate_combination_formula   => 'id' . $cm->id
             );
         }
     }
 }
 
-=head2 configureOrchestration
-
-    desc :
-        Use the linked policy service provider and clone its orchestration data in $self
-
-=cut
 
 sub configureOrchestration {
     my ($self, %args) = @_;
@@ -1213,9 +1206,7 @@ sub getMonthlyConsommation {
 }
 
 sub lock {
-    my $self = shift;
-    my %args = @_;
-
+    my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'consumer' ]);
 
     # Lock the cluster himself
@@ -1227,8 +1218,7 @@ sub lock {
 }
 
 sub unlock {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'consumer' ]);
 
@@ -1241,38 +1231,46 @@ sub unlock {
 }
 
 sub update {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
-    my $context = {
-        cluster => $self
-    };
+    # Initialize operation context
+    my $context = { cluster => $self };
 
+    my $require_op = 0;
     if (defined ($args{components})) {
         for my $component (@{$args{components}}) {
             $self->addComponent(component_type_id => $component->{component_type_id});
         }
         delete $args{components};
+
+        $require_op = 1;
     }
 
-    $log->info("Updating cluster");
     if (defined ($args{node})) {
-    $log->info("Updating node $args{node} of cluster");
+        $log->info("Updating node $args{node} of cluster");
         $context->{host} = (delete $args{node})->host;
+
+        $require_op = 1;
     }
 
-    $self->SUPER::update(%args);
+    # Build the configuration pattern from args and
+    # update the cluster attributes and manager params.
+    my $updated = $self->applyPolicies(pattern => $self->buildConfigurationPattern(%args),
+                                       update  => 1);
 
-    my $workflow = $self->getManager(manager_type => 'ExecutionManager')->enqueue(
-        type   => 'UpdateCluster',
-        params => { 
-            context => $context
-        }
-    );
+    if ($require_op) {
+        my $workflow = $self->getManager(manager_type => 'ExecutionManager')->enqueue(
+            type   => 'UpdateCluster',
+            params => {
+                context => $context
+            }
+        );
 
-    $workflow->addPerm(consumer => $self->user, method => 'get');
-    $workflow->addPerm(consumer => $self->user, method => 'cancel');
-    return $workflow;
+        $workflow->addPerm(consumer => $self->user, method => 'get');
+        $workflow->addPerm(consumer => $self->user, method => 'cancel');
+        return $workflow;
+    }
+    return $updated;
 }
 
 sub propagatePermissions {

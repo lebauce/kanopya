@@ -51,12 +51,13 @@ sub addInitScripts {
     $self->_host->getEContext->execute(command => $cmd);
 }
 
-=head2 generateFile
 
-    Class : Public
+=pod
+=begin classdoc
 
-    Desc : Generate a file using a template file and data, and send it to the desired location using econtext
+Generate a file using a template file and data, and send it to the desired location using econtext
 
+=end classdoc
 =cut
 
 sub generateFile {

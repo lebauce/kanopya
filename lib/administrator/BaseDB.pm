@@ -14,7 +14,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 =pod
-
 =begin classdoc
 
 Base class to manage inheritance throw relational database.
@@ -24,7 +23,6 @@ Base class to manage inheritance throw relational database.
 @self     $self
 
 =end classdoc
-
 =cut
 
 package BaseDB;
@@ -1179,9 +1177,15 @@ sub search {
     my @objs = ();
 
     General::checkParams(args     => \%args,
-                         optional => { 'hash' => {}, 'page' => undef, 'rows' => undef,
+                         optional => { 'hash' => {}, 'page' => undef, 'rows' => undef, 'related' => undef,
                                        'join' => undef, 'order_by' => undef, 'dataType' => undef,
                                        'prefetch' => [], 'raw_hash' => {}, 'presets' => {} });
+
+    # Syntax improvement to avoid to call searchRelated
+    if (defined $args{related}) {
+        my $related = delete $args{related};
+        $class->searchRelated(filters => $related, %args);
+    }
 
     my $merge = Hash::Merge->new('STORAGE_PRECEDENT');
 
@@ -1454,7 +1458,7 @@ sub save {
         $errmsg = "$self" . "->save can't be called on a non saved instance! (new has not be called)";
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
-    return $id;
+    return $self;
 }
 
 
@@ -1560,10 +1564,10 @@ sub toJSON {
                 }
             }
             else {
-                if ((not $args{no_empty}) or (defined $self->getAttr(name => $attr))) {
-                    if (! (!$args{virtuals} && $attributes->{$class}->{$attr}->{is_virtual})) {
-                        $hash->{$attr} = $self->getAttr(name => $attr);
-                    }
+                if (($attributes->{$class}->{$attr}->{type} ne 'relation') &&
+                    ($args{virtuals} || ! $attributes->{$class}->{$attr}->{is_virtual})) {
+                    # Set the value of the attribute
+                    $hash->{$attr} = $self->getAttr(name => $attr);
                 }
             }
         }
@@ -1740,9 +1744,8 @@ sub populateRelations {
 
     # For each relations type
     RELATION:
-    for my $relation (keys %{$args{relations}}) {
+    for my $relation (keys %{ $args{relations} }) {
         my $rel_infos = $self->getRelationship(relation => $relation);
-
         if (($args{foreign} == 0 && $rel_infos->{relation} ne "single") ||
             ($args{override} == 0 && $args{foreign} == 1 && $rel_infos->{relation} eq "single")) {
             next RELATION;
@@ -1764,7 +1767,6 @@ sub populateRelations {
                 $args{attrs}->{$obj->getPrimaryKey} = $obj->id;
             }
         }
-
         else {
             my $existing = {};
             my @entries = $self->searchRelated(filters => [ $relation ]);

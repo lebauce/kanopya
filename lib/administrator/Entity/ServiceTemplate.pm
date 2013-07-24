@@ -16,7 +16,6 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 =pod
-
 =begin classdoc
 
 A service template is a set of policies. A cluster could be associated to
@@ -30,7 +29,6 @@ when one or more of the service template policies is updated.
 @self     $self
 
 =end classdoc
-
 =cut
 
 package Entity::ServiceTemplate;
@@ -144,7 +142,6 @@ my $merge = Hash::Merge->new('LEFT_PRECEDENT');
 
 
 =pod
-
 =begin classdoc
 
 @constructor
@@ -158,7 +155,6 @@ update with the additional parameters.
 @return a class instance
 
 =end classdoc
-
 =cut
 
 sub new {
@@ -210,7 +206,6 @@ sub new {
 
 
 =pod
-
 =begin classdoc
 
 Merge all it's policies attributes definition to build the complete hash
@@ -222,7 +217,6 @@ service template.
 @return the dynamic attributes definition.
 
 =end classdoc
-
 =cut
 
 sub getServiceTemplateDef {
@@ -324,13 +318,11 @@ sub getServiceTemplateDef {
 
 
 =pod
-
 =begin classdoc
 
 @return the service template policies instance list.
 
 =end classdoc
-
 =cut
 
 sub getPolicies {

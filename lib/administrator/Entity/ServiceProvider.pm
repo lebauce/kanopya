@@ -47,6 +47,22 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_extended  => 0
     },
+    interfaces => {
+        label        => 'Interfaces',
+        type         => 'relation',
+        relation     => 'single_multi',
+        link_to      => 'interface',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
+    billinglimits => {
+        label        => 'Limits',
+        type         => 'relation',
+        relation     => 'single_multi',
+        link_to      => 'billinglimit',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }

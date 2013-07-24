@@ -324,7 +324,7 @@ sub getPattern {
     # Set the option 'noarrays' for getting policy params because
     # the merge module is not able to merge arrays, so the resulting
     # merged params will have duplicated values in arrays.
-    my $params  = $merge->merge($args{params}, $self->getParams(noarrays => 1));
+    my $params  = $merge->merge($self->getParams(noarrays => 1), $args{params});
     my $pattern = $self->getPatternFromParams(params => $params);
 
     # Manually remove deleted params from the original params hashes,
