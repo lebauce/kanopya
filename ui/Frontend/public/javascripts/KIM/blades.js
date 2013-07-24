@@ -4,7 +4,8 @@ function add_hpc(id) {
         title          : 'HP C7000',
         id             : (id instanceof Object) ? undefined : id,
         type           : 'hpcmanager',
-        displayed      : [ 'bladesystem_ip', 'virtualconnect_ip' ],
+        displayed      : [ 'bladesystem_ip', 'virtualconnect_ip',
+                           'bladesystem_user', 'virtualconnect_user' ],
         submitCallback : function(data, $form, opts, onsuccess, onerror) {
             var sp_id = $form.find('#input_service_provider_id').val();
             if (sp_id == 0) {
@@ -49,12 +50,15 @@ function blade_manager_list(cid) {
         content_container_id : cid,
         grid_id              : 'blades_list',
         url                  : '/api/hpcmanager?expand=service_provider',
-        colNames             : [ 'Id', 'Label', 'BladeSystem IP', 'VirtualConnect IP', '' ],
+        colNames             : [ 'Id', 'Label', 'BladeSystem IP', 'VirtualConnect IP',
+                                 'BladeSystem User', 'VirtualConnect User', '' ],
         colModel             : [
             { name : 'pk', index : 'pk', hidden : true, key : true, sorttype : 'int' },
             { name : 'label', index : 'label' },
             { name : 'bladesystem_ip', index : 'bladesystem_ip' },
             { name : 'virtualconnect_ip', index : 'virtualconnect_ip' },
+            { name : 'bladesystem_user', index : 'bladesystem_user' },
+            { name : 'virtualconnect_user', index : 'virtualconnect_user' },
             { name : 'synchronize', index : 'synchronize', width : 40, align : 'center', nodetails : true }
         ],
         details              : { tabs : [
