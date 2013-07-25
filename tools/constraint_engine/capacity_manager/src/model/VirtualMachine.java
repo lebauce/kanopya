@@ -3,6 +3,7 @@ package model;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -57,10 +58,12 @@ public class VirtualMachine {
         this(DEFAULT_ID, new HashMap<String, Integer>(), NO_HOST_HV_ID);
     }
 
+    @JsonIgnore
     public int getId() {
         return this.m_id;
     }
 
+    @JsonIgnore
     public void setId(int id) {
         this.m_id = id;
     }

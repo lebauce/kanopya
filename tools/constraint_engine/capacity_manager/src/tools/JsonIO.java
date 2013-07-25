@@ -3,6 +3,7 @@ package tools;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonParser;
@@ -87,9 +88,20 @@ public class JsonIO {
                 new TypeReference<Map<Integer, VirtualMachine>>() {}
         );
 
-        return new InfraConfiguration(
-                new ArrayList<Hypervisor>( hvs.values() ),
-                new ArrayList<VirtualMachine> ( vms.values() )
-        );
+        List<Hypervisor> list_hvs = new ArrayList<Hypervisor>();
+        for(Integer key : hvs.keySet()) {
+            Hypervisor hv = hvs.get(key);
+            hv.setId(key);
+            list_hvs.add(hv);
+        }
+
+        List<VirtualMachine> list_vms = new ArrayList<VirtualMachine>();
+        for(Integer key : vms.keySet()) {
+            VirtualMachine vm = vms.get(key);
+            vm.setId(key);
+            list_vms.add(vm);
+        }
+
+        return new InfraConfiguration(list_hvs, list_vms);
     }
 }
