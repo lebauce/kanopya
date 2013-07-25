@@ -94,7 +94,8 @@ public class VMsPackingProblem extends CapacityManagementProblem {
                 hv.setHostedVirtualMachinesIds(new HashMap<Integer, Boolean>());
             }
             for (int vm = 0; vm < this.m_final_config.getVirtualMachines().size(); vm++) {
-                vms.get(vm).setHypervisorId(this.m_VMs[vm].getValue());
+                int hv_id = this.m_final_config.getHypervisors().get(this.m_VMs[vm].getValue()).getId();
+                vms.get(vm).setHypervisorId(hv_id);
                 Hypervisor hosting_hv = this.m_final_config.getHostingHypervisor(vms.get(vm));
                 hosting_hv.getHostedVirtualMachinesIds().put(vms.get(vm).getId(), true);
             }
