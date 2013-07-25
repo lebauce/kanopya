@@ -33,7 +33,6 @@ use Template;
 use String::Random;
 use IO::Socket;
 use Net::Ping;
-
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
@@ -46,6 +45,16 @@ sub create {
     General::checkParams(args     => \%args,
                          required => [ 'managers' ],
                          optional => { 'interfaces' => {}, 'components' => {} });
+
+    # Generate cluster base hostname
+    # Who will dare using that pattern? $str =~ s/([_.])/${ \($1 eq q?_??"-":$,) }/g;
+    if (!defined $self->cluster_basehostname || $self->cluster_basehostname eq '') {
+        my $base_hostname = $self->cluster_name;
+        $base_hostname =~ s/_/-/g;
+        $base_hostname =~ s/\.//g;
+
+        $self->cluster_basehostname($base_hostname);
+    }
 
     # Create cluster directory
     my $dir = $self->_executor->getConf->{clusters_directory} . '/' . $self->cluster_name;

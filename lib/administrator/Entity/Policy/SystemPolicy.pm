@@ -79,7 +79,7 @@ use constant POLICY_ATTR_DEF => {
         label        => 'Cluster base hostname',
         type         => 'string',
         pattern      => '^[A-Za-z0-9]+$',
-        is_mandatory => 1
+        is_mandatory => 0
     },
     components => {
         label        => 'Components',

@@ -135,7 +135,7 @@ use constant ATTR_DEF => {
     cluster_basehostname => {
         label        => 'Base host name',
         pattern      => '^[A-Za-z0-9-]+$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_editable  => 1
     },
     default_gateway_id => {
