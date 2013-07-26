@@ -2,7 +2,6 @@ require('common/general.js');
 require('common/service_common.js');
 
 function loadServicesDetails(cid, eid, is_iaas) {
-        
     var divId = 'service_details';
     var container = $('#'+ cid);
     if (container.prevAll('.action_buttons').length === 0) {
@@ -17,9 +16,9 @@ function loadServicesDetails(cid, eid, is_iaas) {
 
     var components = [];
     function scaleOutComponentsDialog (e) {
-        var component_types = {};
+        var installed_types = {};
         for (var index in components) {
-            component_types[components[index].component_type.pk] = components[index].component_type.component_name;
+            installed_types[components[index].component_type.pk] = components[index].component_type.component_name;
         }
 
         // Open a wizards to suggest component type to scale to the user
@@ -32,7 +31,7 @@ function loadServicesDetails(cid, eid, is_iaas) {
                     type         : 'relation',
                     relation     : 'multi',
                     is_mandatory : 1,
-                    options      : component_types
+                    options      : installed_types
                 }
             },
             submitCallback  : function(data, $form, opts, onsuccess, onerror) {
@@ -172,11 +171,14 @@ function loadServicesDetails(cid, eid, is_iaas) {
                     }
                 }
 
-                // Change the billing limite attr name
+                // Change the billing limit attr name
                 if ($.isArray(details.billinglimits)) {
                     details.billing_limits = details.billinglimits;
                     delete details.billinglimits;
                 }
+
+                // Store the cluster component list for "Scale out component" action
+                jQuery.extend(true, components, details.components);
 
                 // Change the component_type attr name
                 if ($.isArray(details.components)) {
@@ -202,9 +204,6 @@ function loadServicesDetails(cid, eid, is_iaas) {
                         }
                     }
                 }
-
-                // Store the cluster component list for "Sscale out component" action
-                components = details.components;
 
                 $('.loading').remove();
 

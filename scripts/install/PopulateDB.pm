@@ -30,6 +30,7 @@ use EEntity;
 use ClassType;
 use ClassType::ComponentType;
 use ClassType::ServiceProviderType;
+use ClassType::ServiceProviderType::ClusterType;
 use Profile;
 use Entity::Gp;
 use Entity::User;
@@ -89,6 +90,9 @@ use ComponentCategory;
 use ComponentCategory::ManagerCategory;
 use ClassType::DataModelType;
 
+use TryCatch;
+my $err;
+
 # Catch warnings to clean the setup output (this warnings are not kanopya code related)
 $SIG{__WARN__} = sub {
     my $warn_msg = $_[0];
@@ -104,6 +108,11 @@ my @classes = (
     'Entity::User',
     'Entity::User::Customer',
     'Entity::ServiceProvider::Cluster',
+    'Entity::ServiceProvider::Cluster::Unbuntu12',
+    'Entity::ServiceProvider::Cluster::Centos6',
+    'Entity::ServiceProvider::Cluster::Debian6',
+    'Entity::ServiceProvider::Cluster::Sles6',
+    'Entity::ServiceProvider::Cluster::Kanopya',
     'Entity::ServiceProvider::Netapp',
     'Entity::ServiceProvider::UnifiedComputingSystem',
     'Entity::ContainerAccess::IscsiContainerAccess',
@@ -454,9 +463,19 @@ sub registerUsers {
     ];
 
     # Browse all class types to find api methods
+    CLASSTYPE:
     for my $classtype (@classes) {
-
-        BaseDB::requireClass($classtype);
+        try {
+            BaseDB::requireClass($classtype);
+        }
+        catch ($err) {
+            # For instance, only some service provider has a concrete type
+            # without the coresponding class.
+            if ($classtype !~ m/^Entity::ServiceProvider.*/) {
+                $err->rethrow();
+            }
+            next CLASSTYPE;
+        }
 
         my $hierarchy = $classtype;
         my ($parenttype) = Class::ISA::super_path($classtype);
@@ -830,6 +849,14 @@ sub registerServiceProviders {
         { service_provider_name => 'Hpc7000' },
     ];
 
+    my $clusters = [
+        { service_provider_name => 'Unbuntu12' },
+        { service_provider_name => 'Centos6' },
+        { service_provider_name => 'Debian6' },
+        { service_provider_name => 'Sles6' },
+        { service_provider_name => 'Kanopya' },
+    ];
+
     for my $serviceprovider_type (@{ $serviceproviders }) {
         my $class_type = ClassType->find(hash => {
                              class_type => {
@@ -837,10 +864,23 @@ sub registerServiceProviders {
                              }
                          });
 
-        my $type = ClassType::ServiceProviderType->promote(
-                       promoted                  => $class_type,
-                       service_provider_name     => $serviceprovider_type->{service_provider_name},
-                   );
+        ClassType::ServiceProviderType->promote(
+            promoted              => $class_type,
+            service_provider_name => $serviceprovider_type->{service_provider_name},
+        );
+    }
+
+    for my $cluster_type (@{ $clusters }) {
+        my $class_type = ClassType->find(hash => {
+                             class_type => {
+                                 like => "Entity::ServiceProvider::Cluster::%" . $cluster_type->{service_provider_name}
+                             }
+                         });
+
+        ClassType::ServiceProviderType::ClusterType->promote(
+            promoted              => $class_type,
+            service_provider_name => $cluster_type->{service_provider_name},
+        );
     }
 }
 
@@ -852,72 +892,72 @@ sub registerComponents {
             component_name         => 'Openssh',
             component_version      => 5,
             component_categories   => [ 'Secureshell' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'Storage',
             component_version      => 0,
             component_categories   => [ 'DiskManager' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya' ],
         },
         {
             component_name         => 'Lvm',
             component_version      => 2,
             component_categories   => [ 'DiskManager' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'Apache',
             component_version      => 2,
             component_categories   => [ 'Webserver' ],
             component_template     => '/templates/components/apache2',
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'Iscsi',
             component_version      => 0,
             component_categories   => [ 'ExportManager' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya' ],
         },
         {
             component_name         => 'Iscsitarget',
             component_version      => 1,
             component_categories   => [ 'ExportManager', 'BlockExportManager' ],
             component_template     => '/templates/components/ietd',
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Debian6' ],
         },
         {
             component_name         => 'Openiscsi',
             component_version      => 2,
             component_categories   => [ 'Exportclient' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'Dhcpd',
             component_version      => 3,
             component_categories   => [ 'Dhcpserver' ],
             component_template     => '/templates/components/dhcpd',
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya' ],
         },
         {
             component_name         => 'Atftpd',
             component_version      => 0,
             component_categories   => [ 'Tftpserver' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya' ],
         },
         {
             component_name         => 'Snmpd',
             component_version      => 5,
             component_categories   => [ 'Monitoragent' ],
             component_template     => '/templates/components/snmpd',
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'Nfsd',
             component_version      => 3,
             component_categories   => [ 'ExportManager' ],
             component_template     => '/templates/components/nfsd3',
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'Linux',
@@ -931,13 +971,13 @@ sub registerComponents {
             component_version      => 5,
             component_categories   => [ 'DBMS' ],
             component_template     => '/templates/components/nfsd3',
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'Syslogng',
             component_version      => 3,
             component_categories   => [ 'Logger' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'Openldap',
@@ -949,73 +989,73 @@ sub registerComponents {
             component_name         => 'Opennebula',
             component_version      => 3,
             component_categories   => [ 'HostManager' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'Physicalhoster',
             component_version      => 0,
             component_categories   => [ 'Hostmanager' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya' ],
         },
         {
             component_name         => 'Fileimagemanager',
             component_version      => 0,
             component_categories   => [ 'DiskManager', 'ExportManager' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'Puppetagent',
             component_version      => 2,
             component_categories   => [ 'Configurationagent' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'Puppetmaster',
             component_version      => 2,
             component_categories   => [ 'Configurationserver' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya' ],
         },
         {
             component_name         => 'Kanopyacollector',
             component_version      => 1,
             component_categories   => [ 'CollectorManager' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya' ],
         },
         {
             component_name         => 'Keepalived',
             component_version      => 1,
             component_categories   => [ 'LoadBalancer' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'Haproxy',
             component_version      => 1,
             component_categories   => [ 'LoadBalancer' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'Kanopyaworkflow',
             component_version      => 0,
             component_categories   => [ 'WorkflowManager' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya' ],
         },
         {
             component_name         => 'Mailnotifier',
             component_version      => 0,
             component_categories   => [ 'NotificationManager' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya' ],
         },
         {
             component_name         => 'Memcached',
             component_version      => 1,
             component_categories   => [ 'Cache' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'Php',
             component_version      => 5,
             component_categories   => [ 'Lib' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'Vsphere',
@@ -1028,33 +1068,33 @@ sub registerComponents {
             component_version      => 6,
             component_categories   => [ 'System' ],
             component_template     => '/templates/components/debian',
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Unbuntu12', 'Debian6' ],
         },
         {
             component_name         => 'Redhat',
             component_version      => 6,
             component_categories   => [ 'System' ],
             component_template     => '/templates/components/redhat',
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Centos6', 'Debian6' ],
         },
         {
             component_name         => 'Suse',
             component_version      => 11,
             component_categories   => [ 'System' ],
             component_template     => '/templates/components/suse',
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Sles6' ],
         },
         {
             component_name         => 'Kvm',
             component_version      => 1,
             component_categories   => [ 'Hypervisor' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'Xen',
             component_version      => 1,
             component_categories   => [ 'Hypervisor' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'ActiveDirectory',
@@ -1102,91 +1142,91 @@ sub registerComponents {
             component_name         => 'Cinder',
             component_version      => 6,
             component_categories   => [ 'DiskManager', 'ExportManager', 'BlockExportManager' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'Glance',
             component_version      => 6,
             component_categories   => [ ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'Keystone',
             component_version      => 6,
             component_categories   => [ ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'NovaCompute',
             component_version      => 6,
             component_categories   => [ 'Hypervisor' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'NovaController',
             component_version      => 6,
             component_categories   => [ 'HostManager' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'Quantum',
             component_version      => 6,
             component_categories   => [ ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'Amqp',
             component_version      => 6,
             component_categories   => [ 'MessageQueuing' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'Virtualization',
             component_version      => 0,
             component_categories   => [ ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ ],
         },
         {
             component_name         => 'KanopyaFront',
             component_version      => 0,
             component_categories   => [ ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya' ],
         },
         {
             component_name         => 'KanopyaExecutor',
             component_version      => 0,
             component_categories   => [ 'ExecutionManager' ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya' ],
         },
         {
             component_name         => 'KanopyaAggregator',
             component_version      => 0,
             component_categories   => [ ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya' ],
         },
         {
             component_name         => 'KanopyaRulesEngine',
             component_version      => 0,
             component_categories   => [ ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Kanopya' ],
         },
         {
             component_name         => 'Ceph',
             component_version      => 0,
             component_categories   => [ ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [  ],
         },
         {
             component_name         => 'CephMon',
             component_version      => 0,
             component_categories   => [ ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'CephOsd',
             component_version      => 0,
             component_categories   => [ ],
-            service_provider_types => [ 'Cluster' ],
+            service_provider_types => [ 'Cluster', 'Unbuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'HpcManager',

@@ -54,6 +54,9 @@ sub create {
 
     # Add all the components provided by the master image
     if ($self->masterimage) {
+        # Firstly set the service provider type from masterimage
+        $self->service_provider_type_id($self->masterimage->masterimage_cluster_type->id);
+
         foreach my $component ($self->masterimage->components_provided) {
             $args{components}->{$component->component_type->component_name} = {
                 component_type => $component->component_type_id
@@ -61,8 +64,7 @@ sub create {
         }
 
         if ($self->masterimage->masterimage_defaultkernel && ! $self->kernel) {
-            $self->setAttr(name  => "kernel_id",
-                           value => $self->masterimage->masterimage_defaultkernel->id);
+            $self->kernel_id($self->masterimage->masterimage_defaultkernel->id);
         }
     }
     $self->save();

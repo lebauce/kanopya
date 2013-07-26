@@ -32,6 +32,9 @@ use Entity::ServiceProvider::Cluster;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
+use TryCatch;
+my $err;
+
 my $log = get_logger("");
 my $errmsg;
 
@@ -112,15 +115,27 @@ sub toString {
 sub setProvidedComponent {
     my $self = shift;
     my %args = @_;
-    
+
     General::checkParams(args => \%args, required => [ 'component_name', 'component_version' ]);
 
-    my @component_types = ClassType::ComponentType->search(hash => {
-                              component_name    => $args{component_name},
-                              component_version => $args{component_version},
-                          });
+    my $component_type;
+    try {
+        $component_type = $self->masterimage_cluster_type->find(
+                              related => 'component_types',
+                              hash    => {
+                                  component_name    => $args{component_name},
+                                  component_version => $args{component_version},
+                              }
+                          );
+    }
+    catch ($err) {
+        my $type_name = $self->masterimage_cluster_type->service_provider_name;
+        $log->warn("Unable to set provided component <$args{component_name}$args{component_version}>, " .
+                   "it seems to be not supported for the cluster type <$type_name>");
+        return;
+    }
 
-    $self->populateRelations(relations => { components_provided => \@component_types });
+    $self->populateRelations(relations => { components_provided => [ $component_type ] });
 }
 
 1;
