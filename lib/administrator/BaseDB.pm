@@ -45,6 +45,9 @@ use Clone qw(clone);
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 
+use TryCatch;
+my $err;
+
 my $log = get_logger("basedb");
 my $errmsg;
 
@@ -310,20 +313,19 @@ sub promote {
     bless $self, $class;
 
     # Populate relations
-    $self->populateRelations(relations => $relations,
-                             foreign   => 1);
+    $self->populateRelations(relations => $relations, foreign   => 1);
 
     # Set the class type to the new promotion class
-    eval {
+    try {
         my $rs = $class->_getDbixFromHash(table => "ClassType",
                                           hash  => { class_type => $class })->single;
 
-        $self->setAttr(name => 'class_type_id', value => $rs->get_column('class_type_id'));
-        $self->save();
-    };
-    if ($@) {
+        $self->class_type_id($rs->get_column('class_type_id'));
+    }
+    catch ($err) {
         # Unregistred or abstract class name <$class>, assuming it is not an Entity.
     }
+
     return $self;
 }
 
@@ -359,9 +361,7 @@ sub demote {
     my $rs = $class->_getDbixFromHash(table => "ClassType",
                                       hash  => { class_type => $class })->single;
 
-    $args{demoted}->setAttr(name  => 'class_type_id',
-                            value => $rs->get_column('class_type_id'));
-    $args{demoted}->save();
+    $args{demoted}->class_type_id($rs->get_column('class_type_id'));
 
     return $args{demoted};
 }
@@ -437,10 +437,10 @@ sub getAttrDefs {
         my $attr_def = {};
 
         if ($modulename ne "BaseDB") {
-            eval {
+            try {
                 requireClass($modulename);
-            };
-            if ($@) {
+            }
+            catch ($err) {
                 # For component internal classes
                 my $source = BaseDB->_adm->{schema}->source(_buildClassNameFromString($modulename));
                 $modulename = classFromDbix($source);
@@ -450,10 +450,10 @@ sub getAttrDefs {
             $attr_def = clone($modulename->getAttrDef());
 
             my $schema;
-            eval {
+            try {
                 $schema = $class->{_dbix}->result_source();
-            };
-            if ($@) {
+            }
+            catch ($err) {
                 $schema = BaseDB->_adm->{schema}->source(_buildClassNameFromString($modulename));
             }
 
@@ -662,16 +662,14 @@ sub newDBix {
     my $dbixroot = $class->_newDbix(table => $args{table} || _rootTable($class),
                                     row   => $args{attrs});
 
-    eval {
+    try {
         $dbixroot->insert;
-    };
-    if ($@) {
-        $errmsg = $@;
-
+    }
+    catch ($err) {
         # Try to extract the reason msg only
-        $errmsg =~ s/\[.*$//g;
-        $errmsg =~ s/^.*://g;
-        throw Kanopya::Exception::DB(error => "Unable to create a new $class: " .  $errmsg);
+        $err =~ s/\[.*$//g;
+        $err =~ s/^.*://g;
+        throw Kanopya::Exception::DB(error => "Unable to create a new $class: " .  $err);
     }
 
     return $class->get(id => getRowPrimaryKey(row => $dbixroot));
@@ -698,11 +696,10 @@ sub fromDBIx {
 
     my $modulename = classFromDbix($args{row}->result_source);
 
-    eval {
+    try {
         requireClass($modulename);
-    };
-    if ($@) {
-        my $err = $@;
+    }
+    catch ($err) {
         $modulename = $class->getClassType(class => $modulename) || $modulename;
         requireClass($modulename);
     }
@@ -716,9 +713,7 @@ sub fromDBIx {
     #       Those two types have no relation to class_type table,
     #       but have class_type_id as primary key column name.
     if ($args{deep} &&
-        $args{row}->result_source->from() ne "class_type" &&
-        $args{row}->result_source->from() ne "component_type" &&
-        $args{row}->result_source->from() ne "service_provider_type") {
+        $args{row}->result_source->from() !~ m/^.*_type$/) {
 
         my $dbix = $args{row};
         do {
@@ -790,11 +785,10 @@ sub getAttr {
             return map { $class->fromDBIx(row => $_, deep => $args{deep}) } $dbix->$name;
         }
         # The attr is a virtual attr
-        elsif (($self->can($args{name}) or $self->can(normalizeMethod($args{name}))) and
+        elsif (($self->can($args{name}) or $self->can(normalizeMethod($args{name}))) &&
                defined $attr and $attr->{is_virtual}) {
-
-            my $method = $args{name};
             # Firstly try to call method with camel-case style
+            my $method = $args{name};
             eval {
                 my $camelcased_method = normalizeMethod($method);
                 $value = $self->$camelcased_method();
@@ -808,6 +802,7 @@ sub getAttr {
                     $value = $@;
                 }
             }
+
             last;
         }
         elsif ($dbix->can('parent')) {
@@ -912,11 +907,13 @@ sub setAttr {
             $dbix->set_column($name, $value);
             $found = 1;
             last;
-        } elsif($dbix->can('parent')) {
+        }
+        elsif($dbix->can('parent')) {
             # go to parent dbix
             $dbix = $dbix->parent;
             next;
-        } else {
+        }
+        else {
             last;
         }
     }
@@ -973,15 +970,12 @@ or creates it if it doesn't exist
 sub findOrCreate {
     my ($class, %args) = @_;
 
-    my $obj;
-    eval {
-        $obj = $class->find(hash => \%args);
-    };
-    if ($@) {
-        $obj = $class->new(%args);
+    try {
+        return $class->find(hash => \%args);
     }
-
-    return $obj;
+    catch ($err) {
+        return $class->new(%args);
+    }
 }
 
 
@@ -1078,55 +1072,61 @@ sub getJoinQuery {
 
     my @joins;
     my $i = 0;
-    while ($i < scalar @comps) {
-        my $comp = $comps[$i];
-        my $many_to_many = $source->result_class->can("_m2m_metadata") &&
-                           defined ($source->result_class->_m2m_metadata->{$comp});
-        my @segment = ();
+    try {
+        COMP:
+        while ($i < scalar @comps) {
+            my $comp = $comps[$i];
+            my $many_to_many = $source->result_class->can("_m2m_metadata") &&
+                               defined ($source->result_class->_m2m_metadata->{$comp});
+            my @segment = ();
 
-        while (!$source->has_relationship($comp) && !$many_to_many) {
+            M2M:
+            while (!$source->has_relationship($comp) && !$many_to_many) {
+                if ($args{reverse}) {
+                    $relation = $source->reverse_relationship_info("parent");
+                    @segment = ((keys %$relation)[0], @segment);
+                }
+                else {
+                    @segment = ("parent", @segment);
+                }
+                last M2M if ! $source->has_relationship("parent");
+                $source = $source->related_source("parent");
+                $many_to_many = $source->result_class->can("_m2m_metadata") &&
+                                defined ($source->result_class->_m2m_metadata->{$comp});
+            }
+
+            if ($source->result_class->can("_m2m_metadata") &&
+                defined ($source->result_class->_m2m_metadata->{$comp})) {
+                splice @comps, $i, 1, ($source->result_class->_m2m_metadata->{$comp}->{relation},
+                                       $source->result_class->_m2m_metadata->{$comp}->{foreign_relation});
+                @joins = (@joins, @segment);
+                next COMP;
+            }
+
             if ($args{reverse}) {
-                $relation = $source->reverse_relationship_info("parent");
-                @segment = ((keys %$relation)[0], @segment);
+                $relation = $source->reverse_relationship_info($comp);
+                my $name = (keys %$relation)[0];
+                @joins = ($name, @segment, @joins);
+                if (!$on) {
+                    $on = $name . "." . ($relation->{$name}->{source}->primary_columns)[0];
+                }
             }
             else {
-                @segment = ("parent", @segment);
+                @joins = (@joins, @segment, $comp);
             }
-            last if ! $source->has_relationship("parent");
-            $source = $source->related_source("parent");
-            $many_to_many = $source->result_class->can("_m2m_metadata") &&
-                            defined ($source->result_class->_m2m_metadata->{$comp});
-        }
 
-        if ($source->result_class->can("_m2m_metadata") &&
-            defined ($source->result_class->_m2m_metadata->{$comp})) {
-            splice @comps, $i, 1, ($source->result_class->_m2m_metadata->{$comp}->{relation},
-                                   $source->result_class->_m2m_metadata->{$comp}->{foreign_relation});
-            @joins = (@joins, @segment);
-            next;
-        }
-
-        if ($args{reverse}) {
-            $relation = $source->reverse_relationship_info($comp);
-            my $name = (keys %$relation)[0];
-            @joins = ($name, @segment, @joins);
-            if (!$on) {
-                $on = $name . "." . ($relation->{$name}->{source}->primary_columns)[0];
+            $relation = $source->relationship_info($comp);
+            if ($relation->{attrs}->{accessor} eq "multi") {
+                $accessor = "multi";
             }
-        }
-        else {
-            @joins = (@joins, @segment, $comp);
-        }
 
-        $relation = $source->relationship_info($comp);
-        if ($relation->{attrs}->{accessor} eq "multi") {
-            $accessor = "multi";
+            $where  = $relation->{attrs}->{where};
+            $source = $source->related_source($comp);
+            $i += 1;
         }
-
-        $where = $relation->{attrs}->{where};
-
-        $source = $source->related_source($comp);
-        $i += 1;
+    }
+    catch ($err) {
+        throw Kanopya::Exception::Internal(error => "$err");
     }
 
     # Get all the hierarchy of the relation
@@ -1184,7 +1184,7 @@ sub search {
     # Syntax improvement to avoid to call searchRelated
     if (defined $args{related}) {
         my $related = delete $args{related};
-        $class->searchRelated(filters => $related, %args);
+        return $class->searchRelated(filters => [ $related ], %args);
     }
 
     my $merge = Hash::Merge->new('STORAGE_PRECEDENT');
@@ -1274,32 +1274,41 @@ sub search {
                                       'rows'  => $args{rows}, 'order_by' => $args{order_by},
                                       'join'  => $args{join});
 
-    while (my $row = $rs->next) {
-        my $obj = { _dbix => $row };
+    # Instanciate Kanopya classes from DBIx result set
+    try {
+        while (my $row = $rs->next) {
+            my $obj = { _dbix => $row };
 
-        my $parent = $row;
-        while ($parent->can('parent')) {
-            $parent = $parent->parent;
-        }
+            my $parent = $row;
+            while ($parent->can('parent')) {
+                $parent = $parent->parent;
+            }
 
-        my $class_type;
-        if ($parent->has_column("class_type_id") and not ($class =~ m/^ClassType.*/)) {
-            $class_type = $class->getClassType(id => $parent->get_column("class_type_id"));
+            my $class_type;
+            if ($parent->has_column("class_type_id") and not ($class =~ m/^ClassType.*/)) {
+                $class_type = $class->getClassType(id => $parent->get_column("class_type_id"));
 
-            if (length($class_type) > length($class)) {
-                requireClass($class_type);
-                $obj = $class_type->get(id => $parent->get_column("entity_id"));
+                if (length($class_type) > length($class)) {
+                    requireClass($class_type);
+                    $obj = $class_type->get(id => $parent->get_column("entity_id"));
+                }
+                else {
+                    bless $obj, $class_type;
+                }
             }
             else {
+                $class_type = $class;
                 bless $obj, $class_type;
             }
-        }
-        else {
-            $class_type = $class;
-            bless $obj, $class_type;
-        }
 
-        push @objs, $obj;
+            push @objs, $obj;
+        }
+    }
+    catch (Kanopya::Exception $err) {
+        $err->rethrow();
+    }
+    catch ($err) {
+        throw Kanopya::Exception::Internal(error => "$err");
     }
 
     # Finally filter on virtual attributes if required
@@ -1349,17 +1358,17 @@ sub searchRelated {
 
     my $source = $class->getResultSource();
     my $join;
-    eval {
+    try {
         # If the function is called on a class that is only a base class of the
         # class the relation is on (for example 'virtual_machines' on a Host),
         # return a more understandable error message
         $join = $class->getJoinQuery(comps   => $args{filters},
                                      reverse => 1);
-    };
-    if ($@) {
+    }
+    catch ($err) {
         throw Kanopya::Exception::Internal::NotFound(
                   error => "Could not find a relation " .
-                           join('.', @{$args{filters}}) . " on $self"
+                           join('.', @{ $args{filters} }) . " on $self"
               );
     }
 
@@ -1856,6 +1865,7 @@ sub getRelationship {
     return $infos;
 }
 
+
 =pod
 =begin classdoc
 
@@ -1876,15 +1886,15 @@ sub getRow {
     General::checkParams(args => \%args, required => [ 'id', 'table' ]);
 
     my $dbix;
-    eval {
+    try {
         if (ref($args{id}) eq 'ARRAY') {
-            $dbix = BaseDB->_adm->{schema}->resultset( $args{table} )->find(@{$args{id}});
+            $dbix = BaseDB->_adm->{schema}->resultset($args{table})->find(@{$args{id}});
         } else {
-            $dbix = BaseDB->_adm->{schema}->resultset( $args{table} )->find($args{id});
+            $dbix = BaseDB->_adm->{schema}->resultset($args{table})->find($args{id});
         }
-    };
-    if ($@) {
-        throw Kanopya::Exception::DB(error => $@);
+    }
+    catch ($err) {
+        throw Kanopya::Exception::DB(error => $err);
     }
 
     if (not $dbix) {
@@ -1924,8 +1934,7 @@ sub _getDbixFromHash {
     $SIG{__WARN__} = sub {
         my $warn_msg = $_[0];
         if ($warn_msg =~ m/Prefetching multiple has_many rel/) {
-            # Just debug level because we know what we are doing (prefetch multi)
-            $log->debug($warn_msg);
+            $log->warn($warn_msg);
         }
         else {
             # TODO Test number of logs if we log in warn level
@@ -1933,20 +1942,18 @@ sub _getDbixFromHash {
         }
     };
 
-    my $dbix;
-    eval {
-        $dbix = BaseDB->_adm->{schema}->resultset($args{table})->search($args{hash}, {
-                    prefetch => $args{prefetch},
-                    join     => $args{join},
-                    rows     => $args{rows},
-                    page     => $args{page},
-                    order_by => $args{order_by}
-                });
-    };
-    if ($@) {
-        throw Kanopya::Exception::Internal(error =>  $@);
+    try {
+        return BaseDB->_adm->{schema}->resultset($args{table})->search($args{hash}, {
+                   prefetch => $args{prefetch},
+                   join     => $args{join},
+                   rows     => $args{rows},
+                   page     => $args{page},
+                   order_by => $args{order_by}
+               });
     }
-    return $dbix;
+    catch ($err) {
+        throw Kanopya::Exception::Internal(error => "$err");
+    }
 }
 
 
@@ -1967,9 +1974,14 @@ sub _newDbix {
     my $class = shift;
     my %args  = @_;
 
-    General::checkParams(args => \%args, required => ['table', 'row']);
+    General::checkParams(args => \%args, required => [ 'table', 'row' ]);
 
-    return BaseDB->_adm->{schema}->resultset($args{table})->new($args{row});
+    try {
+        return BaseDB->_adm->{schema}->resultset($args{table})->new($args{row});
+    }
+    catch ($err) {
+        throw Kanopya::Exception::Internal(error => "$err");
+    }
 }
 
 
@@ -2348,11 +2360,11 @@ sub getRelatedSource {
         $relation_schema = BaseDB->_adm->{schema}->source($class);
     }
     else {
-        eval {
+        try {
             $relation_schema = $dbix->related_source($relation);
-        };
-        if ($@) {
-            throw Kanopya::Exception::Internal::NotFound(error => "$@");
+        }
+        catch ($err) {
+            throw Kanopya::Exception::Internal::NotFound(error => "$err");
         }
     }
     return { dbix => $dbix, source => $relation_schema };
@@ -2372,10 +2384,12 @@ sub requireClass {
     my $class = shift;
     my $location = General::getLocFromClass(entityclass => $class);
 
-    eval { require $location; };
-    if ($@) {
+    try {
+        require $location;
+    }
+    catch ($err) {
         throw Kanopya::Exception::Internal::UnknownClass(
-                  error => "Could not find $location :\n$@"
+                  error => "Could not find $location :\n$err"
               );
     }
 }
@@ -2403,23 +2417,24 @@ sub _importToRelated {
 
     General::checkParams(args => \%args, required => ['dest_obj_id', 'relationship']);
 
-    my $dest_obj_id  = $args{dest_obj_id};
-    my %attrs       = $self->getAttrs();
-
+    my %attrs = $self->getAttrs();
     my $caller_class = caller();
 
     # Don't clone If already exists (based on label_attr_name)
-    my $obj = eval {
-        return undef if (!$args{label_attr_name});
-        return $caller_class->find( hash => {
-            $args{relationship} . '_id' => $dest_obj_id,
-            $args{label_attr_name}      => $attrs{$args{label_attr_name}}
-        });
-    };
-    return $obj if $obj;
+    if (defined $args{label_attr_name}) {
+        try {
+            return $caller_class->find(hash => {
+                       $args{relationship} . '_id' => $args{dest_obj_id},
+                       $args{label_attr_name}      => $attrs{$args{label_attr_name}}
+                   });
+        }
+        catch ($err) {
+            # Do not exists, create it.
+        }
+    }
 
     # Set the linked entity id to the dest entity id
-    $attrs{$args{relationship} . '_id'} = $dest_obj_id;
+    $attrs{$args{relationship} . '_id'} = $args{dest_obj_id};
 
     # Specific attrs cloning handler callback
     if ($args{attrs_clone_handler}) {
@@ -2435,9 +2450,7 @@ sub _importToRelated {
     }
 
     # Create the object
-    my $clone_elem = $caller_class->new( %attrs );
-
-    return $clone_elem;
+    return $caller_class->new(%attrs);
 }
 
 
@@ -2506,19 +2519,18 @@ sub commitTransaction {
     my $self = shift;
     my $counter = 0;
 
+    COMMIT:
     while ($counter++ < $self->_adm->{config}->{dbconf}->{txn_commit_retry}) {
-        eval {
+        try {
             $log->debug("Committing transaction to database");
+
             $self->_adm->{schema}->txn_commit;
-        };
-        if ($@) {
-            $log->error("Transaction commit failed: $@");
+            last COMMIT;
         }
-        else {
-            last;
+        catch ($err) {
+            $log->error("Transaction commit failed: $err");
         }
     }
-
 }
 
 
@@ -2534,11 +2546,11 @@ sub rollbackTransaction {
     my $self = shift;
 
     $log->debug("Rollbacking database transaction");
-    eval {
+    try {
         $self->_adm->{schema}->txn_rollback;
-    };
-    if ($@) {
-        $log->warn($@);
+    }
+    catch ($err) {
+        $log->warn($err);
     }
 }
 
@@ -2681,17 +2693,16 @@ sub checkUserPerm {
         }
 
         # Check the permission for update on the delagatee object
-        eval {
+        try {
             $delegatee->checkUserPerm(user_id => $args{user_id}, method => "update");
-        };
-        if ($@) {
-            my $err = $@;
-            if ($err->isa('Kanopya::Exception::Permission::Denied')) {
-                my $msg = $self->_buildPermissionDeniedErrorMessage(method => $args{method}) . " from " .
-                          _buildClassNameFromString(ref($delegatee)) . " <" . $delegatee->label . ">";
-                throw Kanopya::Exception::Permission::Denied(error => $msg);
-            }
-            else { $err->rethrow(); }
+        }
+        catch (Kanopya::Exception::Permission::Denied $err) {
+            my $msg = $self->_buildPermissionDeniedErrorMessage(method => $args{method}) . " from " .
+                      _buildClassNameFromString(ref($delegatee)) . " <" . $delegatee->label . ">";
+            throw Kanopya::Exception::Permission::Denied(error => $msg);
+        }
+        catch ($err) {
+            $err->rethrow();
         }
 
         # Also check the permisions on the object himself if the other rights than CRUD are not delegated
@@ -2709,17 +2720,17 @@ sub checkUserPerm {
         my $param = $args{params}->{$key};
         if ((ref $param) eq "HASH" && defined ($param->{pk}) && defined ($param->{class_type_id})) {
             my $paramclass = $self->getClassType(id => $param->{class_type_id});
-            eval {
+            try {
                 $paramclass->getDelegatee->checkPerm(user_id => $args{user_id}, method => "get");
-            };
-            if ($@) {
-                my $err = $@;
-                if ($err->isa('Kanopya::Exception::Permission::Denied')) {
-                    my $msg = "Permission denied to get parameter " . $param->{pk};
-                    throw Kanopya::Exception::Permission::Denied(error => $msg);
-                }
-                else { $err->rethrow(); }
             }
+            catch (Kanopya::Exception::Permission::Denied $err) {
+                my $msg = "Permission denied to get parameter " . $param->{pk};
+                throw Kanopya::Exception::Permission::Denied(error => $msg);
+            }
+            catch ($err) {
+                $err->rethrow();
+            }
+
             # TODO: use DBIx::Class::ResultSet->new_result and bless it to 'class' instead of a 'get'
             $args{params}->{$key} = $paramclass->get(id => $param->{pk});
         }
@@ -2729,10 +2740,10 @@ sub checkUserPerm {
                 "> to <$args{method}>");
 
     # Check the permissions for the logged user
-    eval {
+    try {
         $self->getDelegatee->checkPerm(user_id => $args{user_id}, method => $args{method});
-    };
-    if ($@) {
+    }
+    catch ($err) {
         throw Kanopya::Exception::Permission::Denied(
                   error => $self->_buildPermissionDeniedErrorMessage(method => $args{method})
               );
@@ -2888,19 +2899,15 @@ sub _connectdb {
 
     General::checkParams(args => \%args, required => [ 'config' ]);
 
-    my $schema;
-    eval {
-        $schema = AdministratorDB::Schema->connect(
-                      $args{config}->{dbi},
-                      $args{config}->{dbconf}->{user},
-                      $args{config}->{dbconf}->{password},
-                      { mysql_enable_utf8 => 1 }
-                  );
-    };
-    if ($@) {
-        throw Kanopya::Exception::Internal(error => $@);
+    try {
+        return AdministratorDB::Schema->connect($args{config}->{dbi},
+                                                $args{config}->{dbconf}->{user},
+                                                $args{config}->{dbconf}->{password},
+                                                { mysql_enable_utf8 => 1 });
     }
-    return $schema;
+    catch ($err) {
+        throw Kanopya::Exception::Internal(error => $err);
+    }
 }
 
 

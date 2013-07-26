@@ -48,8 +48,19 @@ function loadServicesConfig(cid, eid) {
             displayed  : [ 'cluster_name', 'components' ],
             rawattrdef : {
                 components : {
-                    hide_existing : 1
+                    hide_existing : 1,
+                    is_editable   : 1
                 }
-            } })).start();
+            },
+            optionsCallback  : function (name) {
+                console.log(name);
+                if (name === 'component_type_id') {
+                    // Get the component types supported by this service rovider only
+                    return ajax('GET', '/api/cluster/' + eid + '/service_provider_type/component_types');
+
+                }
+                return false;
+            }
+        })).start();
     });
 }

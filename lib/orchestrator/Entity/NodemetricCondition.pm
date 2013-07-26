@@ -36,6 +36,9 @@ use Entity::Combination;
 use Entity::Rule::NodemetricRule;
 use Entity::Combination::ConstantCombination;
 
+use TryCatch;
+my $err;
+
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -439,14 +442,22 @@ sub clone {
         my %args = @_;
         my $attrs = $args{attrs};
         for my $operand ('left_combination', 'right_combination') {
-            $attrs->{ $operand . '_id' } = $self->$operand->clone(
-                dest_service_provider_id => $attrs->{nodemetric_condition_service_provider_id}
-            )->id;
+            try {
+                $attrs->{$operand . '_id'} = $self->$operand->clone(
+                    dest_service_provider_id => $attrs->{nodemetric_condition_service_provider_id}
+                )->id;
+            }
+            catch (Kanopya::Exception $err) {
+                $err->rethrow();
+            }
+            catch ($err) {
+                throw Kanopya::Exception::Internal(error => "$err");
+            }
         }
         return %$attrs;
     };
 
-    $self->_importToRelated(
+    return $self->_importToRelated(
         dest_obj_id         => $args{'dest_service_provider_id'},
         relationship        => 'nodemetric_condition_service_provider',
         label_attr_name     => 'nodemetric_condition_label',

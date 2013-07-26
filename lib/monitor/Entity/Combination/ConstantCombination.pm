@@ -141,9 +141,9 @@ sub clone {
 
     General::checkParams(args => \%args, required => ['dest_service_provider_id']);
 
-    $self->_importToRelated(
-        dest_obj_id         => $args{'dest_service_provider_id'},
-        relationship        => 'service_provider',
+    return $self->_importToRelated(
+        dest_obj_id  => $args{dest_service_provider_id},
+        relationship => 'service_provider',
     );
 }
 

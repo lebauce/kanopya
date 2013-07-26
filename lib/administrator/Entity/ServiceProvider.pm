@@ -32,10 +32,13 @@ use ClassType::ServiceProviderType;
 use ComponentCategory::ManagerCategory;
 use Entity::Component;
 use Entity::Interface;
-
 use ServiceProviderManager;
 
 use List::Util qw[min max];
+
+use TryCatch;
+my $err;
+
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
@@ -116,7 +119,7 @@ sub new {
     my $class = shift;
     my %args = @_;
 
-    if ($class ne 'Entity::ServiceProvider') {
+    if (! defined $args{service_provider_type_id} && $class ne 'Entity::ServiceProvider') {
         (my $type = $class) =~ s/^.*:://g;
         $args{service_provider_type_id}
             = ClassType::ServiceProviderType->find(hash => { service_provider_name => $type })->id;
@@ -526,13 +529,12 @@ sub addComponent {
     }
 
     # If the component is already installed, just return it
-    my $installed;
-    eval {
-        $installed = $self->findRelated(filters => [ 'components' ],
-                                        hash    => { component_type_id   => $args{component_type_id} });
-    };
-    if (not $@) {
-        return $installed;
+    try {
+        return $self->find(related => 'components',
+                           hash    => { component_type_id   => $args{component_type_id} });
+    }
+    catch ($err) {
+        # Component do not exists yet, add it.
     }
 
     my $comp_class = $component_type->class_type;

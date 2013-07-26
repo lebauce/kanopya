@@ -30,8 +30,12 @@ use Kanopya::Config;
 use Kanopya::Exceptions;
 use Entity::Masterimage;
 use Entity::ServiceProvider::Cluster;
+use ClassType::ServiceProviderType::ClusterType;
 use Entity::Gp;
 use EEntity;
+
+use TryCatch;
+my $err;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -58,7 +62,7 @@ sub execute {
                   error => "Invalid operation argument ; $file_path not defined !"
               );
     }
-    
+
     # check tarball existence
     if (! -e $file_path) {
         throw Kanopya::Exception::Internal(
@@ -97,6 +101,11 @@ sub execute {
     # parse and validate metadata file
     # TODO check metadata format and values
     my $metadata = XMLin($metadatafile, ForceArray => [ "kernel", "component" ]); # , ForceArray => 'name');
+
+    General::checkParams(args     => $metadata,
+                         required => [ "file", "name" ],
+                         optional => { "type" => "Cluster", "kernel" => undef });
+
     my $imagefile = $metadata->{file};
     
     # retrieve master images directory
@@ -115,6 +124,22 @@ sub execute {
     # move image and metadata to the directory
     move("$tmpdir/$imagefile", "$directory/$imagefile");
     move($metadatafile, "$directory/$imagefile");
+
+    # Get the cluster type
+    my $clustertype;
+    try {
+        $clustertype = ClassType::ServiceProviderType::ClusterType->find(hash => {
+                            service_provider_name => $metadata->{type}
+                       });
+    }
+    catch (Kanopya::Exception::Internal::NotFound $err) {
+        throw Kanopya::Exception::Internal::NotFound(
+                  error => "Unknown distribution type <$metadata->{type}>"
+              );
+    }
+    catch ($err) {
+        $err->rethrow();
+    }
 
     # register the available kernels
     my $defaultkernel;
@@ -151,25 +176,23 @@ sub execute {
         unlink $self->{params}->{file};
     }
 
-    my $args = {
-        masterimage_name => $metadata->{name},
-        masterimage_file => "$directory/$imagefile/$imagefile",
-        masterimage_desc => $metadata->{description},
-        masterimage_os   => $metadata->{os},
-        masterimage_size => $image_size,
-        masterimage_defaultkernel_id => $defaultkernel
-    };
-    
-    my $masterimage = Entity::Masterimage->new(%$args);
-    
+    my $masterimage = Entity::Masterimage->new(
+                          masterimage_name             => $metadata->{name},
+                          masterimage_file             => "$directory/$imagefile/$imagefile",
+                          masterimage_desc             => $metadata->{description},
+                          masterimage_os               => $metadata->{os},
+                          masterimage_size             => $image_size,
+                          masterimage_cluster_type_id  => $clustertype->id,
+                          masterimage_defaultkernel_id => $defaultkernel
+                      );
+
     # set components
-    foreach my $name (keys %{$metadata->{component}}) {
+    $metadata->{component}->{debian} = { version => 6 };
+    foreach my $name (keys %{ $metadata->{component} }) {
         my $vers = $metadata->{component}->{$name}->{version};
-        $log->debug("component to set : $name, $vers");
-        $masterimage->setProvidedComponent(
-            component_name    => $name,
-            component_version => $vers
-        );
+        $log->debug("Set provided component: $name, $vers");
+        $masterimage->setProvidedComponent(component_name    => $name,
+                                           component_version => $vers);
     }
 }
 

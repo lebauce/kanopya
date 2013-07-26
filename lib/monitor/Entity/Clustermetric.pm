@@ -424,7 +424,7 @@ sub clone {
         );
     }
 
-    $self->_importToRelated(
+    return $self->_importToRelated(
         dest_obj_id         => $args{dest_service_provider_id},
         relationship        => 'clustermetric_service_provider',
         label_attr_name     => 'clustermetric_label',

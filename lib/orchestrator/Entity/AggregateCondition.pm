@@ -453,7 +453,7 @@ sub clone {
         return %$attrs;
     };
 
-    $self->_importToRelated(
+    return $self->_importToRelated(
         dest_obj_id         => $args{'dest_service_provider_id'},
         relationship        => 'aggregate_condition_service_provider',
         label_attr_name     => 'aggregate_condition_label',

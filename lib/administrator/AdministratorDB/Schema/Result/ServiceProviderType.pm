@@ -80,6 +80,21 @@ __PACKAGE__->set_primary_key("service_provider_type_id");
 
 =head1 RELATIONS
 
+=head2 cluster_type
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::ClusterType>
+
+=cut
+
+__PACKAGE__->might_have(
+  "cluster_type",
+  "AdministratorDB::Schema::Result::ClusterType",
+  { "foreign.cluster_type_id" => "self.service_provider_type_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 service_provider_type
 
 Type: belongs_to
@@ -144,8 +159,8 @@ __PACKAGE__->many_to_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-02-13 14:18:41
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:iGCA3Rphd54mvTPqt9ZRnw
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-07-25 14:35:37
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Vy7X0ZuoTXO9kMuq1eQdtQ
 
 __PACKAGE__->belongs_to(
   "parent",
