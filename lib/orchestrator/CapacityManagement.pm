@@ -101,8 +101,8 @@ sub _applyOvercommitmentFactors {
 
    for my $hv_id (keys %{$self->{_infra}->{hvs}}) {
         # Non execution dependant information
-        $self->{_infra}->{hvs}->{$hv_id}->{hv_capa}->{cpu} *= $overcommitment_factors->{overcommitment_cpu_factor};
-        $self->{_infra}->{hvs}->{$hv_id}->{hv_capa}->{ram} *= $overcommitment_factors->{overcommitment_memory_factor};
+        $self->{_infra}->{hvs}->{$hv_id}->{resources}->{cpu} *= $overcommitment_factors->{overcommitment_cpu_factor};
+        $self->{_infra}->{hvs}->{$hv_id}->{resources}->{ram} *= $overcommitment_factors->{overcommitment_memory_factor};
    }
 }
 
@@ -130,7 +130,7 @@ sub _constructInfra {
     my ($hvs, $vms);
     for my $hypervisor (@hypervisors_r) {
         $hvs->{$hypervisor->id} = {
-            hv_capa => {
+            resources => {
                 ram => $hypervisor->host_ram,
                 cpu => $hypervisor->host_core,
             },
@@ -139,8 +139,10 @@ sub _constructInfra {
         my @hypervisor_vms = $hypervisor->getVms();
         for my $vm (@hypervisor_vms) {
             $vms->{$vm->id} = {
-                ram   => $vm->host_ram,
-                cpu   => $vm->host_core,
+                resources => {
+                    ram   => $vm->host_ram,
+                    cpu   => $vm->host_core,
+                },
                 hv_id => $hypervisor->getId,
             };
             $hvs->{$hypervisor->getId}->{vm_ids}->{$vm->id} = 1;
@@ -162,7 +164,6 @@ sub _constructInfra {
 Check if a scale-in is authorized w.r.t. the VM resources and the destination HV resources.
 
 @param vm_id id of the checked vm
-@param hv_id id of the hypervisor of the vm
 @param resource_type scaled resource
 @param wanted_resource value of the resource you want to scale
 
@@ -173,14 +174,15 @@ Check if a scale-in is authorized w.r.t. the VM resources and the destination HV
 =cut
 
 
-sub isScalingAuthorized{
+sub isScalingAuthorized {
     my ($self, %args)   = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'vm_id', 'hv_id', 'resource_type', 'wanted_resource' ]);
-    #TODO : remove hv_id param since we can get it
+                         required => [ 'vm_id', 'resource_type', 'wanted_resource' ]);
+
     my $vm_id           = $args{vm_id};
-    my $hv_id           = $args{hv_id};
+    my $hv_id           = $self->{_infra}->{vms}->{$vm_id}->{hv_id};
+
     my $resource_type   = $args{resource_type};
     my $wanted_resource = $args{wanted_resource}; # Mem must be in bytes
 
@@ -192,11 +194,11 @@ sub isScalingAuthorized{
     my $remaining_resource;
 
     if($resource_type eq 'ram'){
-        $current_resource   = $self->{_infra}->{vms}->{$vm_id}->{ram};
+        $current_resource   = $self->{_infra}->{vms}->{$vm_id}->{resources}->{ram};
         $remaining_resource = $remaining->{ram};
     }
     elsif($resource_type eq 'cpu'){
-        $current_resource   = $self->{_infra}->{vms}->{$vm_id}->{cpu};
+        $current_resource   = $self->{_infra}->{vms}->{$vm_id}->{resources}->{cpu};
         $remaining_resource = $remaining->{cpu};
     }
 
@@ -241,20 +243,19 @@ sub isMigrationAuthorized {
         };
     }
 
-    # TODO better resource management
-    my @resources = grep {! ($_ eq 'hv_id')} keys %{$self->{_infra}->{vms}->{$vm_id}};
+    my @resources = keys %{$self->{_infra}->{vms}->{$vm_id}->{resources}};
 
     my $remaining_resources = $self->_getHvSizeRemaining(
                                   hv_id => $hv_id,
                               );
 
     for my $resource (@resources) {
-        $log->debug("Check $resource, good if :  ".$self->{_infra}->{vms}->{$vm_id}->{$resource}
+        $log->debug("Check $resource, good if :  ".$self->{_infra}->{vms}->{$vm_id}->{resources}->{$resource}
                      .' < '.$remaining_resources->{$resource});
 
-        if ($self->{_infra}->{vms}->{$vm_id}->{$resource} > $remaining_resources->{$resource}) {
+        if ($self->{_infra}->{vms}->{$vm_id}->{resources}->{$resource} > $remaining_resources->{$resource}) {
             my $error = "Migration refused : not enough $resource to migrate vm [$vm_id] ("
-                         .$self->{_infra}->{vms}->{$vm_id}->{$resource}
+                         .$self->{_infra}->{vms}->{$vm_id}->{resources}->{$resource}
                          .") in hypervisor [$hv_id] (".$remaining_resources->{$resource};
 
             return {
@@ -283,7 +284,7 @@ from all its VMs).
 
 =cut
 
-sub optimIaas{
+sub optimIaas {
     my $self = shift;
 
     $self->{_operationPlan} = [];
@@ -376,7 +377,7 @@ Find hypervisors for a list of vm with their ressources
 =cut
 
 
-sub getHypervisorIdsForVMs{
+sub getHypervisorIdsForVMs {
     my ($self,%args) = @_;
     General::checkParams(args => \%args, required => ['vms_wanted_values']);
 
@@ -518,7 +519,7 @@ sub scaleMemoryHost {
     my $sign = substr($args{memory},0,1); # get the first value
     my $mem_input;
 
-    if($sign eq '+' || $sign eq '-'){
+    if ($sign eq '+' || $sign eq '-') {
         $mem_input = substr $args{memory},1; # remove sign
     }
     else {
@@ -538,10 +539,10 @@ sub scaleMemoryHost {
     # Compute absolute memory instead of relative
     my $memory;
     if ($sign eq '+') {
-        $memory = $self->{_infra}->{vms}->{$args{host_id}}->{ram} + $mem_input;
+        $memory = $self->{_infra}->{vms}->{$args{host_id}}->{resources}->{ram} + $mem_input;
     }
     elsif ($sign eq '-') {
-        $memory = $self->{_infra}->{vms}->{$args{host_id}}->{ram} - $mem_input;
+        $memory = $self->{_infra}->{vms}->{$args{host_id}}->{resources}->{ram} - $mem_input;
     }
     elsif ($sign =~ /\d/) {
         $memory = $mem_input;
@@ -616,10 +617,10 @@ sub scaleCpuHost{
      # Compute absolute memory instead of relative
     my $cpu;
     if ($sign eq '+') {
-        $cpu = $self->{_infra}->{vms}->{$args{host_id}}->{cpu} + $vcpu_input;
+        $cpu = $self->{_infra}->{vms}->{$args{host_id}}->{resources}->{cpu} + $vcpu_input;
     }
     elsif ($sign eq '-') {
-        $cpu = $self->{_infra}->{vms}->{$args{host_id}}->{cpu} - $vcpu_input;
+        $cpu = $self->{_infra}->{vms}->{$args{host_id}}->{resources}->{cpu} - $vcpu_input;
     }
     elsif ($sign =~ /\d/) {
         $cpu = $vcpu_input;
@@ -689,7 +690,7 @@ sub _scaleMetric {
     my $new_value        = $args{new_value};
     my $hv_selection_ids = $args{hv_selection_ids};
 
-    my $old_value = $self->{_infra}->{vms}->{$vm_id}->{$scale_metric};
+    my $old_value = $self->{_infra}->{vms}->{$vm_id}->{resources}->{$scale_metric};
     my $delta     = $new_value - $old_value;
 
     my $hv_id = $self->_getHvIdFromVmId(vm_id => $vm_id);
@@ -882,13 +883,13 @@ sub _getHvSizeOccupied{
     my $size   = {cpu => 0, ram => 0};
 
     for my $vm_id (keys %{$self->{_infra}->{hvs}->{$hv_id}->{vm_ids}}) {
-        $size->{cpu} += $self->{_infra}->{vms}->{$vm_id}->{cpu};
-        $size->{ram} += $self->{_infra}->{vms}->{$vm_id}->{ram};
+        $size->{cpu} += $self->{_infra}->{vms}->{$vm_id}->{resources}->{cpu};
+        $size->{ram} += $self->{_infra}->{vms}->{$vm_id}->{resources}->{ram};
         #TODO margin used originally for Xen. Can be parametered
     }
 
-    my $all_the_ram  = $self->{_infra}->{hvs}->{$hv_id}->{hv_capa}->{ram};
-    my $all_the_cpu  = $self->{_infra}->{hvs}->{$hv_id}->{hv_capa}->{cpu};
+    my $all_the_ram  = $self->{_infra}->{hvs}->{$hv_id}->{resources}->{ram};
+    my $all_the_cpu  = $self->{_infra}->{hvs}->{$hv_id}->{resources}->{cpu};
     $size->{cpu_p} = $size->{cpu} / $all_the_cpu;
     $size->{ram_p} = $size->{ram} / $all_the_ram;
     return $size;
@@ -915,8 +916,8 @@ sub _getHvSizeRemaining {
 
     my $size = $self->_getHvSizeOccupied(hv_id => $hv_id);
 
-    my $all_the_ram   = $self->{_infra}->{hvs}->{$hv_id}->{hv_capa}->{ram};
-    my $all_the_cpu   = $self->{_infra}->{hvs}->{$hv_id}->{hv_capa}->{cpu};
+    my $all_the_ram   = $self->{_infra}->{hvs}->{$hv_id}->{resources}->{ram};
+    my $all_the_cpu   = $self->{_infra}->{hvs}->{$hv_id}->{resources}->{cpu};
 
     my $remaining_cpu = $all_the_cpu - $size->{cpu};
     my $remaining_ram;
@@ -933,11 +934,11 @@ sub _getHvSizeRemaining {
         cpu           => $remaining_cpu,
         ram_p         => $remaining_ram / $all_the_ram,
         cpu_p         => $remaining_cpu / $all_the_cpu,
-        ram_effective => $self->{_infra}->{hvs}->{$hv_id}->{hv_capa}->{ram_effective},
+        ram_effective => $self->{_infra}->{hvs}->{$hv_id}->{resources}->{ram_effective},
     };
 
-    if (defined  $self->{_infra}->{hvs}->{$hv_id}->{hv_capa}->{ram_free_effective}) {
-       $size_rem->{ram_free_effective} = $self->{_infra}->{hvs}->{$hv_id}->{hv_capa}->{ram_free_effective};
+    if (defined  $self->{_infra}->{hvs}->{$hv_id}->{resources}->{ram_free_effective}) {
+       $size_rem->{ram_free_effective} = $self->{_infra}->{hvs}->{$hv_id}->{resources}->{ram_free_effective};
     }
 
     return $size_rem;
@@ -984,7 +985,7 @@ sub _scaleOrder{
     my $new_value     = $args{new_value};
     my $scale_metric  = $args{scale_metric};
 
-    $self->{_infra}->{vms}->{$vm_id}->{$scale_metric} = $new_value;
+    $self->{_infra}->{vms}->{$vm_id}->{resources}->{$scale_metric} = $new_value;
 
     if ($scale_metric eq 'ram') {
         $log->debug("=> Operation scaling $scale_metric of vm $vm_id to $new_value");
@@ -1065,18 +1066,18 @@ sub _migrateVmModifyInfra{
     $self->_removeVmFromHV(vm_id => $vm_id, hv_id => $hv_from_id);
     $self->_addVmInHV(vm_id => $vm_id, hv_id => $hv_dest_id);
 
-    $log->debug("Infra modified => migration <$vm_id> (ram: ".($self->{_infra}->{vms}->{$vm_id}->{'ram'}).") from <$hv_from_id> to <$hv_dest_id>");
+    $log->debug("Infra modified => migration <$vm_id> (ram: ".($self->{_infra}->{vms}->{$vm_id}->{resources}->{ram}).") from <$hv_from_id> to <$hv_dest_id>");
 
     # Modify available memory
     if (defined $self->{_hvs_mem_available}) {
-        $self->{_hvs_mem_available}->{$hv_dest_id} -= $self->{_infra}->{vms}->{$vm_id}->{'ram'};
-        $self->{_hvs_mem_available}->{$hv_from_id} += $self->{_infra}->{vms}->{$vm_id}->{'ram'};
+        $self->{_hvs_mem_available}->{$hv_dest_id} -= $self->{_infra}->{vms}->{$vm_id}->{resources}->{ram};
+        $self->{_hvs_mem_available}->{$hv_from_id} += $self->{_infra}->{vms}->{$vm_id}->{resources}->{ram};
     }
 
     # Modify RAM effective when overcommitment
-    if( defined $self->{_infra}->{hvs}->{$hv_from_id}->{hv_capa}->{ram_effective}) {
-        $self->{_infra}->{hvs}->{$hv_dest_id}->{hv_capa}->{ram_effective} -= $self->{_infra}->{vms}->{$vm_id}->{'ram_effective'};
-        $self->{_infra}->{hvs}->{$hv_from_id}->{hv_capa}->{ram_effective} += $self->{_infra}->{vms}->{$vm_id}->{'ram_effective'};
+    if( defined $self->{_infra}->{hvs}->{$hv_from_id}->{resources}->{ram_effective}) {
+        $self->{_infra}->{hvs}->{$hv_dest_id}->{resources}->{ram_effective} -= $self->{_infra}->{vms}->{$vm_id}->{resources}->{'ram_effective'};
+        $self->{_infra}->{hvs}->{$hv_from_id}->{resources}->{ram_effective} += $self->{_infra}->{vms}->{$vm_id}->{resources}->{'ram_effective'};
     }
 }
 
@@ -1138,7 +1139,7 @@ sub _migrateVmToScale{
     my $hv_selection_ids = $args{hv_selection_ids};
     my $scale_metric     = $args{scale_metric};
 
-    my $wanted_metrics  = clone($self->{_infra}->{vms}->{$vm_id});
+    my $wanted_metrics  = clone($self->{_infra}->{vms}->{$vm_id}->{resources});
     $wanted_metrics->{$scale_metric} = $new_value;
 
     my $hv_dest_id = $self->_findMinHVidRespectCapa(
@@ -1252,15 +1253,15 @@ sub _migrateOtherVmToScale{
 
     my $hv_id            = $self->_getHvIdFromVmId(vm_id => $vm_id);
 
-    my $delta            = $new_value - $self->{_infra}->{vms}->{$vm_id}->{$scale_metric};
+    my $delta            = $new_value - $self->{_infra}->{vms}->{$vm_id}->{resources}->{$scale_metric};
     my $remaining_size   = $self->_getHvSizeRemaining(
                                hv_id => $hv_id,
                            );
 
     #Other vm which could be migrated instead of current vm (according to analyzed metric)
     my @other_vms = grep {
-                        $self->{_infra}->{vms}->{$_}->{$scale_metric} + $remaining_size->{$scale_metric} >= $delta   #otherwise too small
-                        && $self->{_infra}->{vms}->{$_}->{$scale_metric} < $new_value #otherwise the other one could have been migrated
+                        $self->{_infra}->{vms}->{$_}->{resources}->{$scale_metric} + $remaining_size->{$scale_metric} >= $delta   #otherwise too small
+                        && $self->{_infra}->{vms}->{$_}->{resources}->{$scale_metric} < $new_value #otherwise the other one could have been migrated
                         &&  $_ != $vm_id
                     } keys %{$self->{_infra}->{hvs}->{$hv_id}->{vm_ids}};
 
@@ -1270,7 +1271,7 @@ sub _migrateOtherVmToScale{
 
     #Find one with other metric OK
     my @sorted_vms = sort {
-        $self->{_infra}->{vms}->{$b}->{$scale_metric} <=> $self->{_infra}->{vms}->{$a}->{$scale_metric}
+        $self->{_infra}->{vms}->{$b}->{resources}->{$scale_metric} <=> $self->{_infra}->{vms}->{$a}->{resources}->{$scale_metric}
     } @other_vms;
 
     my $hv_dest_id;
@@ -1376,7 +1377,7 @@ sub _optimStep {
         for my $vm_to_migrate_id (@vmlist){
             my $hv_dest_id = $self->_findMinHVidRespectCapa(
                 hv_selection_ids => \@hv_selection_ids,
-                wanted_metrics   => $self->{_infra}->{vms}->{$vm_to_migrate_id},
+                wanted_metrics   => $self->{_infra}->{vms}->{$vm_to_migrate_id}->{resources},
             );
 
             my $msg;
@@ -1487,22 +1488,6 @@ sub _findHvIdWithMinVmSize{
 
 =begin classdoc
 
-    Public method calling private method _computeInfraChargeStat
-
-=end classdoc
-
-=cut
-
-sub computeInfraChargeStat{
-    my $self = shift;
-    return $self->_computeInfraChargeStat();
-}
-
-
-=pod
-
-=begin classdoc
-
     Compute the average load of the HVs and the num of free HV
 
 =end classdoc
@@ -1559,8 +1544,8 @@ sub _computeRelativeResourceSize{
     my $vm_id = $args{vm_id};
     my $hv_id = $self->_getHvIdFromVmId(vm_id => $vm_id);
 
-    my $cpu_relative = $self->{_infra}->{vms}->{$vm_id}->{cpu} / $self->{_infra}->{hvs}->{$hv_id}->{hv_capa}->{cpu};
-    my $ram_relative = $self->{_infra}->{vms}->{$vm_id}->{ram} / $self->{_infra}->{hvs}->{$hv_id}->{hv_capa}->{ram};
+    my $cpu_relative = $self->{_infra}->{vms}->{$vm_id}->{resources}->{cpu} / $self->{_infra}->{hvs}->{$hv_id}->{resources}->{cpu};
+    my $ram_relative = $self->{_infra}->{vms}->{$vm_id}->{resources}->{ram} / $self->{_infra}->{hvs}->{$hv_id}->{resources}->{ram};
     return List::Util::max ($cpu_relative, $ram_relative);
 }
 
@@ -1682,7 +1667,7 @@ sub _getFlushHypervisorPlan {
     for my $vm_to_migrate_id (@vmlist) {
         my $hv_dest_id = $self->_findMinHVidRespectCapa(
             hv_selection_ids => \@hv_selection_ids,
-            wanted_metrics   => $self->{_infra}->{vms}->{$vm_to_migrate_id},
+            wanted_metrics   => $self->{_infra}->{vms}->{$vm_to_migrate_id}->{resources},
         );
 
         if(defined $hv_dest_id){
@@ -1725,12 +1710,14 @@ sub resubmitHypervisor {
     General::checkParams(args => \%args, required => ['hv_id']);
 
     my %vms_wanted_values;
-
+    my $deleted_hv;
     if (defined $self->{_infra}->{hvs}->{$args{hv_id}}) {
         for my $vm_id (keys %{$self->{_infra}->{hvs}->{$args{hv_id}}->{vm_ids}}) {
-            $vms_wanted_values{$vm_id} = { ram => $self->{_infra}->{vms}->{$vm_id}->{ram},
-                                           cpu => $self->{_infra}->{vms}->{$vm_id}->{cpu}};
+            $vms_wanted_values{$vm_id} = { ram => $self->{_infra}->{vms}->{$vm_id}->{resources}->{ram},
+                                           cpu => $self->{_infra}->{vms}->{$vm_id}->{resources}->{cpu}};
         }
+        # Do not resubmit on same hypervisor
+        $deleted_hv = delete $self->{_infra}->{hvs}->{$args{hv_id}};
     }
     else {
         # Capacity manager do not manage broken or unactive hypervisor.
@@ -1743,7 +1730,8 @@ sub resubmitHypervisor {
         }
     }
 
-    return $self->getHypervisorIdsForVMs(vms_wanted_values => \%vms_wanted_values);
+    my $return = $self->getHypervisorIdsForVMs(vms_wanted_values => \%vms_wanted_values);
+    return $return;
 }
 
 1;

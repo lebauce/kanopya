@@ -50,7 +50,6 @@ sub execute {
 
     # Verify if there is enough resource in HV
     my $vm_id = $self->{context}->{host}->getId;
-    my $hv_id = $self->{context}->{host}->hypervisor->getId;
     my $host_cluster = Entity::ServiceProvider::Cluster->find(hash => {
                            cluster_id => $self->{context}->{host}->getClusterId(),
                        });
@@ -62,13 +61,13 @@ sub execute {
 
     my $check = $cm->isScalingAuthorized(
                     vm_id           => $vm_id,
-                    hv_id           => $hv_id,
                     resource_type   => 'cpu',
                     wanted_resource => $self->{params}->{cpu_number},
                 );
 
     if ($check == 0) {
-        my $errmsg = "Not enough CPU in HV $hv_id for VM $vm_id. " . 
+        my $hv_id = $self->{context}->{host}->hypervisor->getId;
+        my $errmsg = "Not enough CPU in HV $hv_id for VM $vm_id. " .
                      "Infrastructure may have change between operation queing and its execution";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
