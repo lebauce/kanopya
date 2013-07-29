@@ -1200,12 +1200,11 @@ sub search {
     my $prefetch = $class->getJoin() || {};
     $prefetch = $merge->merge($prefetch, $args{join});
 
-    my $source = $class->getResultSource;
-    for my $relation (@{$args{prefetch}}) {
+    for my $relation (@{ $args{prefetch} }) {
         my @comps = split(/\./, $relation);
         while (scalar @comps) {
-            my $join_query = $class->getJoinQuery(comps   => \@comps,
-                                                  indepth => 1);
+            my $join_query = $class->getJoinQuery(comps => \@comps, indepth => 1);
+
             $prefetch = $merge->merge($prefetch, $join_query->{join});
             $args{hash} = $merge->merge($args{hash}, $join_query->{where});
             pop @comps;
@@ -1356,7 +1355,6 @@ sub searchRelated {
                          required => [ 'filters' ],
                          optional => { 'hash' => { } });
 
-    my $source = $class->getResultSource();
     my $join;
     try {
         # If the function is called on a class that is only a base class of the
@@ -1568,14 +1566,15 @@ sub toJSON {
 
             if (defined $args{model}) {
                 # Only add primary key attrs from the lower class in the hierarchy
-                if (not ($attributes->{$class}->{$attr}->{is_primary} and $class ne $conreteclass)) {
+                if (! ($attributes->{$class}->{$attr}->{is_primary} && "$class" ne "$conreteclass")) {
                     $hash->{attributes}->{$attr} = $attributes->{$class}->{$attr};
                 }
             }
             else {
+                my $type     = $attributes->{$class}->{$attr}->{type} || '';
+                my $relation = $attributes->{$class}->{$attr}->{relation} || '';
                 if (($args{virtuals} || ! $attributes->{$class}->{$attr}->{is_virtual}) &&
-                    ($attributes->{$class}->{$attr}->{type} ne 'relation' ||
-                     $attributes->{$class}->{$attr}->{relation} eq 'single')) {
+                    ($type ne 'relation' || $relation eq 'single')) {
                     # Set the value of the attribute
                     $hash->{$attr} = $self->getAttr(name => $attr);
                 }
@@ -1627,8 +1626,7 @@ sub toJSON {
 
             if ($is_relation) {
                 $hash->{$expand} = [];
-                if ($is_relation eq 'single_multi' ||
-                    $is_relation eq 'multi') {
+                if ($is_relation eq 'single_multi' || $is_relation eq 'multi') {
                     for my $item ($obj->getAttr(name => $expand, deep => $args{deep})) {
                         push @{$hash->{$expand}}, $item->toJSON(expand => $expands->{$expand},
                                                                 deep   => $args{deep});
