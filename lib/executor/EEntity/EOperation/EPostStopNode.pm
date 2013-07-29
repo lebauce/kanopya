@@ -175,6 +175,7 @@ sub execute {
 
     my $systemimage_name = $self->{context}->{cluster}->cluster_name;
     $systemimage_name .= '_' . $self->{context}->{host}->getNodeNumber();
+    my $systemimage = $self->{context}->{host}->node->systemimage;
 
     # Finally save the host
     $self->{context}->{host}->save();
@@ -198,8 +199,7 @@ sub execute {
     if ($self->{context}->{cluster}->cluster_si_persistent eq '0') {
         $log->info("cluster image persistence is not set, deleting $systemimage_name");
         eval {
-            my $entity = Entity::Systemimage->find(hash => { systemimage_name => $systemimage_name });
-            $self->{context}->{systemimage} = EEntity->new(data => $entity);   
+            $self->{context}->{systemimage} = EEntity->new(data => $systemimage);
         };
         if ($@) {
             $log->debug("Could not find systemimage with name <$systemimage_name> for removal.");
