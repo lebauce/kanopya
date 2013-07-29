@@ -62,7 +62,7 @@ my $matrix = { eq => {
                    operator => 'NOT LIKE',
                    filter   => 'in%',
                    param    => 'node_state',
-                   function => sub { my ($got, $operator, $filter, $msg); like $got, ('/[^in]*/'), $msg; },
+                   function => sub { my ($got, $operator, $filter, $msg) = @_; unlike $got, '/in:.*/', $msg; },
                },
              };
 
