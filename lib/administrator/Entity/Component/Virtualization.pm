@@ -31,14 +31,14 @@ use constant ATTR_DEF => {
     overcommitment_cpu_factor => {
         label        => 'Overcommitment cpu factor',
         type         => 'string',
-        pattern      => '^\d*$',
+        pattern      => '^\d*\.?\d+$',
         is_mandatory => 0,
         is_editable  => 1
     },
     overcommitment_memory_factor => {
         label        => 'Overcommitment memory factor',
         type         => 'string',
-        pattern      => '^\d*$',
+        pattern      => '^\d*\.?\d+$',
         is_mandatory => 0,
         is_editable  => 1
     },
