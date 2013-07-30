@@ -57,11 +57,11 @@ sub startHost {
 
     if (exists $args{erollback}) {
         $args{erollback}->add(
-            function   => $args{host}->can('save'),
+            function   => $args{host}->_entity->can('save'),
             parameters => [ $args{host} ]
         );
         $args{erollback}->add(
-            function   => $args{host}->can('setAttr'),
+            function   => $args{host}->_entity->can('setAttr'),
             parameters => [ $args{host}, "name" ,"host_state", "value", $current_state ]
         );
     }
