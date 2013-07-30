@@ -48,7 +48,6 @@ sub execute {
 
     # Verify if there is enough resource in HV
     my $vm_id = $self->{context}->{host}->getId;
-    my $hv_id = $self->{context}->{host}->hypervisor->getId;
     my $host_cluster = Entity::ServiceProvider::Cluster->find(hash => {
                            cluster_id => $self->{context}->{host}->getClusterId(),
                        });
@@ -60,12 +59,12 @@ sub execute {
 
     my $check = $cm->isScalingAuthorized(
                     vm_id           => $vm_id,
-                    hv_id           => $hv_id,
                     resource_type   => 'ram',
                     wanted_resource => $self->{params}->{memory},
                 );
 
     if ($check == 0 ) {
+        my $hv_id = $self->{context}->{host}->hypervisor->getId;
         $errmsg = "Not enough memory in HV $hv_id for VM $vm_id. Infrastructure may have change between operation queing and its execution";
         $log->debug($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);

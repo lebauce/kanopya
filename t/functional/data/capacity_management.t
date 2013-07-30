@@ -26,11 +26,13 @@ BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
 BaseDB->beginTransaction;
 
 my @vms;
+my @hvs;
 my $coef = 1024**3;
 my $service_provider;
 my $service_provider_hypervisors;
 my $one;
 my %vm_index;
+my %hv_index;
 
 main();
 
@@ -53,13 +55,16 @@ sub main {
     );
 
     # Create entity with random arguments because only used for their ids
-    for my $i (1..3) {
-        push @vms, Entity::Host->new(
-            host_core => 1,
-            host_ram => 1,
-            host_manager_id =>Entity::Component->find(hash => {})->id,
-            host_serial_number => 'sn',
-        );
+    @vms = ();
+    for my $i (1..10) {
+        my $e = Entity::Host->new(
+                    host_core          => 1,
+                    host_ram           => 1,
+                    host_manager_id    => Entity::Component->find(hash => {})->id,
+                    host_serial_number => 'sn',
+                );
+        push @vms, $e;
+        $vm_index{$e->id} = $i;
     }
 
     $service_provider->addManager(
@@ -67,8 +72,6 @@ sub main {
         manager_type => 'HostManager',
     );
 
-
-    test_resubmit();
     test_hypervisor_selection_multi();
     test_hypervisor_selection();
     test_migration_authorization();
@@ -76,6 +79,7 @@ sub main {
     test_scale_cpu();
     test_optimiaas();
     test_flushhypervisor();
+    test_resubmit();
 
     if ($testing == 1) {
         BaseDB->rollbackTransaction;
@@ -155,12 +159,12 @@ sub test_resubmit {
     lives_ok {
         my $infra = {
             vms => {
-                $vms[0]->id => {cpu => 8, ram => 8*1024*1024*1024, hv_id => 1},
-                $vms[1]->id => {cpu => 2, ram => 2*1024*1024*1024, hv_id => 1},
-                $vms[2]->id => {cpu => 1, ram => 1*1024*1024*1024, hv_id => 2},
+                $vms[0]->id => {resources => {cpu => 8, ram => 8*1024*1024*1024}, hv_id => 1},
+                $vms[1]->id => {resources => {cpu => 2, ram => 2*1024*1024*1024}, hv_id => 1},
+                $vms[2]->id => {resources => {cpu => 1, ram => 1*1024*1024*1024}, hv_id => 2},
             },
-            hvs => { 1 => {hv_capa => {cpu => 10,ram => 10*1024*1024*1024}},
-                     2 => {hv_capa => {cpu => 10,ram => 10*1024*1024*1024}},
+            hvs => { 1 => {resources => {cpu => 10,ram => 10*1024*1024*1024}},
+                     2 => {resources => {cpu => 10,ram => 10*1024*1024*1024}},
             }
         };
 
@@ -187,7 +191,44 @@ sub test_resubmit {
         if ($hv_resubmit_id != 2) {
             die 'Error in resubmition in the same HV (get <'.$hv_resubmit_id.'> instead of 2)';
         }
+
+
+       # Second part Using directly resubmitVm() method
+
+        $infra = _getTestInfraForResubmit();
+        $cm = CapacityManagement->new(infra => $infra);
+        my $placement = $cm->resubmitHypervisor(hv_id => 1);
+
+        if ($placement->{$vms[0]->id} != 2) {
+            print Dumper $placement;
+            die 'Error in resubmition through method resubmitVm() (get <'.$placement->{$vms[0]->id}.'> instead of 2)';
+        }
+        if ($placement->{$vms[1]->id} != 3) {
+            die 'Error in resubmition through method resubmitVm() (get <'.$placement->{$vms[1]->id}.'> instead of 3)';
+        }
+
+        $infra = _getTestInfraForResubmit();
+        $cm = CapacityManagement->new(infra => $infra);
+        $placement = $cm->resubmitHypervisor(hv_id => 2);
+
+        if ($placement->{$vms[3]->id} != 1) {
+            die 'Error in resubmition through method resubmitVm() (get <'.$placement->{$vms[3]->id}.'> instead of 1)';
+        }
+        if ($placement->{$vms[2]->id} != 3) {
+            die 'Error in resubmition through method resubmitVm() (get <'.$placement->{$vms[2]->id}.'> instead of 3)';
+        }
+
+        $infra = _getTestInfraForResubmit();
+        $cm = CapacityManagement->new(infra => $infra);
+        $placement = $cm->resubmitHypervisor(hv_id => 3);
+
+        if (defined $placement->{$vms[4]->id}) {
+            die 'Error in resubmition through method resubmitVm() (get <'.$placement->{$vms[4]->id}.'> instead of no placement)';
+        }
+
     } 'Hypervisor selection for vm resubmition' ;
+
+
 }
 
 sub test_migration_authorization {
@@ -292,25 +333,48 @@ sub test_hypervisor_selection {
     } 'Hyperivsor selection for a Vm';
 }
 
-sub _getTestInfraForFlush {
+
+sub _getTestInfraForResubmit {
     my $infra = {
         vms => {
-            $vms[0]->id => {cpu => 1, ram => 3*$coef, hv_id => 6},
-            $vms[1]->id => {cpu => 1, ram => 2*$coef, hv_id => 1},
-            $vms[2]->id => {cpu => 1, ram => 2*$coef, hv_id => 4},
-            $vms[3]->id => {cpu => 1, ram => 2*$coef, hv_id => 1},
-            $vms[4]->id => {cpu => 1, ram => 2*$coef, hv_id => 4},
-            $vms[5]->id => {cpu => 1, ram => 3*$coef, hv_id => 6},
-            $vms[6]->id => {cpu => 1, ram => 2*$coef, hv_id => 4},
-            $vms[7]->id => {cpu => 1, ram => 2*$coef, hv_id => 4},
-            $vms[8]->id => {cpu => 1, ram => 3*$coef, hv_id => 6},
-            $vms[9]->id => {cpu => 1, ram => 5*$coef, hv_id => 1},
+            $vms[0]->id => {resources => {cpu => 1, ram => 2.5*$coef}, hv_id => 1},
+            $vms[1]->id => {resources => {cpu => 1, ram => 1*$coef}, hv_id => 1},
+            $vms[2]->id => {resources => {cpu => 1, ram => 1*$coef}, hv_id => 2},
+            $vms[3]->id => {resources => {cpu => 3, ram => 1*$coef}, hv_id => 2},
+            $vms[4]->id => {resources => {cpu => 4, ram => 4*$coef}, hv_id => 3},
         },
 
         hvs => {
-            1 => {hv_capa => {cpu => 10,ram => 9.5*$coef}},
-            4 => {hv_capa => {cpu => 10,ram => 9.5*$coef}},
-            6 => {hv_capa => {cpu => 10,ram => 9.5*$coef}},
+            1 => {resources => {cpu => 5,ram => 5*$coef}},
+            2 => {resources => {cpu => 5,ram => 5*$coef}},
+            3 => {resources => {cpu => 5,ram => 5*$coef}},
+        },
+   };
+    while (my ($vm_id, $vm) = each(%{$infra->{vms}})) {
+        $infra->{hvs}->{$vm->{hv_id}}->{vm_ids}->{$vm_id} = 1;
+    }
+    return  $infra;
+};
+
+sub _getTestInfraForFlush {
+    my $infra = {
+        vms => {
+            $vms[0]->id => {resources => {cpu => 1, ram => 3*$coef}, hv_id => 6},
+            $vms[1]->id => {resources => {cpu => 1, ram => 2*$coef}, hv_id => 1},
+            $vms[2]->id => {resources => {cpu => 1, ram => 2*$coef}, hv_id => 4},
+            $vms[3]->id => {resources => {cpu => 1, ram => 2*$coef}, hv_id => 1},
+            $vms[4]->id => {resources => {cpu => 1, ram => 2*$coef}, hv_id => 4},
+            $vms[5]->id => {resources => {cpu => 1, ram => 3*$coef}, hv_id => 6},
+            $vms[6]->id => {resources => {cpu => 1, ram => 2*$coef}, hv_id => 4},
+            $vms[7]->id => {resources => {cpu => 1, ram => 2*$coef}, hv_id => 4},
+            $vms[8]->id => {resources => {cpu => 1, ram => 3*$coef}, hv_id => 6},
+            $vms[9]->id => {resources => {cpu => 1, ram => 5*$coef}, hv_id => 1},
+        },
+
+        hvs => {
+            1 => {resources => {cpu => 10,ram => 9.5*$coef}},
+            4 => {resources => {cpu => 10,ram => 9.5*$coef}},
+            6 => {resources => {cpu => 10,ram => 9.5*$coef}},
         },
    };
     while (my ($vm_id, $vm) = each(%{$infra->{vms}})) {
@@ -322,24 +386,24 @@ sub _getTestInfraForFlush {
 sub _getTestInfraForOptimiaas {
     my $infra = {
         vms => {
-            $vms[0]->id => {cpu => 1, ram => 1*$coef, hv_id => 1},
-            $vms[1]->id => {cpu => 1, ram => 2*$coef, hv_id => 1},
-            $vms[2]->id => {cpu => 1, ram => 3*$coef, hv_id => 2},
-            $vms[3]->id => {cpu => 1, ram => 4*$coef, hv_id => 3},
-            $vms[4]->id => {cpu => 1, ram => 5*$coef, hv_id => 4},
-            $vms[5]->id => {cpu => 1, ram => 6*$coef, hv_id => 5},
-            $vms[6]->id => {cpu => 1, ram => 7*$coef, hv_id => 6},
-            $vms[7]->id => {cpu => 1, ram => 8*$coef, hv_id => 7},
+            $vms[0]->id => {resources => {cpu => 1, ram => 1*$coef}, hv_id => 1},
+            $vms[1]->id => {resources => {cpu => 1, ram => 2*$coef}, hv_id => 1},
+            $vms[2]->id => {resources => {cpu => 1, ram => 3*$coef}, hv_id => 2},
+            $vms[3]->id => {resources => {cpu => 1, ram => 4*$coef}, hv_id => 3},
+            $vms[4]->id => {resources => {cpu => 1, ram => 5*$coef}, hv_id => 4},
+            $vms[5]->id => {resources => {cpu => 1, ram => 6*$coef}, hv_id => 5},
+            $vms[6]->id => {resources => {cpu => 1, ram => 7*$coef}, hv_id => 6},
+            $vms[7]->id => {resources => {cpu => 1, ram => 8*$coef}, hv_id => 7},
         },
 
         hvs => {
-            1 => {hv_capa => {cpu => 10,ram => 9.5*$coef}},
-            2 => {hv_capa => {cpu => 10,ram => 9.5*$coef}},
-            3 => {hv_capa => {cpu => 10,ram => 9.5*$coef}},
-            4 => {hv_capa => {cpu => 10,ram => 9.5*$coef}},
-            5 => {hv_capa => {cpu => 10,ram => 9.5*$coef}},
-            6 => {hv_capa => {cpu => 10,ram => 9.5*$coef}},
-            7 => {hv_capa => {cpu => 10,ram => 9.5*$coef}},
+            1 => {resources => {cpu => 10,ram => 9.5*$coef}},
+            2 => {resources => {cpu => 10,ram => 9.5*$coef}},
+            3 => {resources => {cpu => 10,ram => 9.5*$coef}},
+            4 => {resources => {cpu => 10,ram => 9.5*$coef}},
+            5 => {resources => {cpu => 10,ram => 9.5*$coef}},
+            6 => {resources => {cpu => 10,ram => 9.5*$coef}},
+            7 => {resources => {cpu => 10,ram => 9.5*$coef}},
         },
     };
 
@@ -353,13 +417,13 @@ sub getTestInfraForScaling {
 
     my $infra = {
         vms => {
-            $vms[0]->id => {cpu => 6, ram => 6*1024*1024*1024, hv_id => 1},
-            $vms[1]->id => {cpu => 2, ram => 2*1024*1024*1024, hv_id => 1},
-            $vms[2]->id => {cpu => 3, ram => 3*1024*1024*1024, hv_id => 2},
+            $vms[0]->id => {resources => {cpu => 6, ram => 6*1024*1024*1024}, hv_id => 1},
+            $vms[1]->id => {resources => {cpu => 2, ram => 2*1024*1024*1024}, hv_id => 1},
+            $vms[2]->id => {resources => {cpu => 3, ram => 3*1024*1024*1024}, hv_id => 2},
         },
         hvs => {
-            1 => { hv_capa => {cpu => 10,ram => 10*1024*1024*1024}},
-            2 => { hv_capa => {cpu => 10,ram => 10*1024*1024*1024}},
+            1 => { resources => {cpu => 10,ram => 10*1024*1024*1024}},
+            2 => { resources => {cpu => 10,ram => 10*1024*1024*1024}},
         }
     };
 
@@ -420,22 +484,11 @@ sub test_scale_cpu {
 }
 
 sub test_optimiaas {
-    @vms = ();
+
     my %waited_migrations;
     my $cm;
     # Create entity with random arguments because only used for their ids
     lives_ok {
-        for my $i (1..10) {
-            my $e = Entity::Host->new(
-                        host_core          => 1,
-                        host_ram           => 1,
-                        host_manager_id    => Entity::Component->find(hash => {})->id,
-                        host_serial_number => 'sn',
-                    );
-            push @vms, $e;
-            $vm_index{$e->id} = $i;
-        }
-
         my $infra = _getTestInfraForOptimiaas();
         $cm = CapacityManagement->new(infra=>$infra);
         my $operations = $cm->optimIaas();
@@ -468,8 +521,8 @@ sub test_scale_memory {
         my $cm    = CapacityManagement->new(infra => $infra);
 
         if ( not (
-            $cm->isScalingAuthorized(vm_id => $vms[1]->id, hv_id => 1, resource_type => 'ram', wanted_resource => 3*$coef) == 1
-            && $cm->isScalingAuthorized(vm_id => $vms[1]->id, hv_id => 1, resource_type => 'ram', wanted_resource => 5*$coef) == 0))
+            $cm->isScalingAuthorized(vm_id => $vms[1]->id, resource_type => 'ram', wanted_resource => 3*$coef) == 1
+            && $cm->isScalingAuthorized(vm_id => $vms[1]->id, resource_type => 'ram', wanted_resource => 5*$coef) == 0))
         {
             die 'Check scale memory authorization';
         }
@@ -532,3 +585,4 @@ sub test_scale_memory {
         }
     } 'Scale memory algorithms';
 }
+
