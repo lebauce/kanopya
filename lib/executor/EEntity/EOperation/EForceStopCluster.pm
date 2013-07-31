@@ -53,8 +53,6 @@ sub execute {
     $self->{context}->{component_dhcpd}
         = EEntity->new(data => $bootserver->getComponent(name => "Dhcpd", version => "3"));
  
-    my $subnet = $self->{context}->{component_dhcpd}->getInternalSubNetId();
-
     foreach my $node (reverse $self->{context}->{cluster}->nodesByWeight()) {
         my $ehost = EEntity->new(data => $node->host);
         eval {
@@ -69,18 +67,9 @@ sub execute {
 
         eval {
             # Update Dhcp component conf
-            my $host_mac = $node->host->getPXEIface->iface_mac_addr;
-            if ($host_mac) {
-                my $hostid = $self->{context}->{component_dhcpd}->getHostId(
-                                 dhcpd3_subnet_id         => $subnet,
-                                 dhcpd3_hosts_mac_address => $host_mac
-                             );
-
-                $self->{context}->{component_dhcpd}->removeHost(
-                    dhcpd3_subnet_id => $subnet,
-                    dhcpd3_hosts_id  => $hostid
-                );
-            }
+            $self->{context}->{component_dhcpd}->removeHost(
+                host => $node->host
+            );
         };
         if ($@) {
             my $error = $@;
@@ -108,8 +97,7 @@ sub execute {
     }
 
     # Generate and reload Dhcp conf
-    $self->{context}->{component_dhcpd}->generate();
-    $self->{context}->{component_dhcpd}->reload();
+    $self->{context}->{component_dhcpd}->applyConfiguration();
 
     $self->{context}->{cluster}->setState(state => "down");
 }

@@ -22,37 +22,24 @@ CREATE TABLE `dhcpd3` (
 CREATE TABLE `dhcpd3_subnet` (
   `dhcpd3_subnet_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `dhcpd3_id` int(8) unsigned NOT NULL,
-  `dhcpd3_subnet_net` char(40) NOT NULL,
-  `dhcpd3_subnet_mask` char(40) NOT NULL,
-  `dhcpd3_subnet_gateway` char(40),
+  `network_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`dhcpd3_subnet_id`),
   KEY `fk_dhcpd3_subnet_1` (`dhcpd3_id`),
-  CONSTRAINT `fk_dhcpd3_subnet_1` FOREIGN KEY (`dhcpd3_id`) REFERENCES `dhcpd3` (`dhcpd3_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  KEY `fk_dhcpd3_subnet_2` (`network_id`),
+  CONSTRAINT `fk_dhcpd3_subnet_1` FOREIGN KEY (`dhcpd3_id`) REFERENCES `dhcpd3` (`dhcpd3_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  CONSTRAINT `fk_dhcpd3_subnet_2` FOREIGN KEY (`network_id`) REFERENCES `network` (`network_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for dhcpd3_hosts
---
 
 CREATE TABLE `dhcpd3_hosts` (
   `dhcpd3_hosts_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `dhcpd3_hosts_pxe` int(2) DEFAULT 0,
   `dhcpd3_subnet_id` int(8) unsigned NOT NULL,
-  `dhcpd3_hosts_ipaddr` char(40) NOT NULL,
-  `dhcpd3_hosts_mac_address` char(40) NOT NULL,
-  `dhcpd3_hosts_hostname` char(40) NOT NULL,
-  `dhcpd3_hosts_domain_name` char(64) NOT NULL,
-  `dhcpd3_hosts_domain_name_server` char(15) NOT NULL,
-  `dhcpd3_hosts_ntp_server` char(15) NOT NULL,
-  `dhcpd3_hosts_gateway` char(15) NULL DEFAULT NULL,
-  `kernel_id` int(8) unsigned NOT NULL,
+  `iface_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`dhcpd3_hosts_id`),
-  UNIQUE KEY `ukey_dhcp3_host_mac` (`dhcpd3_hosts_mac_address`),
-  UNIQUE KEY `ukey_dhcp3_host_ipaddr` (`dhcpd3_hosts_ipaddr`),
-  UNIQUE KEY `ukey_dhcp3_hostname` (`dhcpd3_hosts_hostname`),
   KEY `fk_dhcpd3_hosts_1` (`dhcpd3_subnet_id`),
-  KEY `fk_dhcpd3_hosts_2` (`kernel_id`),
+  KEY `fk_dhcpd3_hosts_2` (`iface_id`),
   CONSTRAINT `fk_dhcpd3_hosts_1` FOREIGN KEY (`dhcpd3_subnet_id`) REFERENCES `dhcpd3_subnet` (`dhcpd3_subnet_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  CONSTRAINT `fk_dhcpd3_hosts_2` FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  CONSTRAINT `fk_dhcpd3_hosts_2` FOREIGN KEY (`iface_id`) REFERENCES `iface` (`iface_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks=1;

@@ -120,6 +120,36 @@ __PACKAGE__->add_unique_constraint("network_name", ["network_name"]);
 
 =head1 RELATIONS
 
+=head2 clusters
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Cluster>
+
+=cut
+
+__PACKAGE__->has_many(
+  "clusters",
+  "AdministratorDB::Schema::Result::Cluster",
+  { "foreign.default_gateway_id" => "self.network_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 dhcpd3_subnets
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Dhcpd3Subnet>
+
+=cut
+
+__PACKAGE__->has_many(
+  "dhcpd3_subnets",
+  "AdministratorDB::Schema::Result::Dhcpd3Subnet",
+  { "foreign.network_id" => "self.network_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 network
 
 Type: belongs_to

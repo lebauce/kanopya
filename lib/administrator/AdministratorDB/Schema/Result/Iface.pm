@@ -147,6 +147,21 @@ __PACKAGE__->add_unique_constraint("iface_name", ["iface_name", "host_id"]);
 
 =head1 RELATIONS
 
+=head2 dhcpd3_hosts
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Dhcpd3Host>
+
+=cut
+
+__PACKAGE__->has_many(
+  "dhcpd3_hosts",
+  "AdministratorDB::Schema::Result::Dhcpd3Host",
+  { "foreign.iface_id" => "self.iface_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 host
 
 Type: belongs_to

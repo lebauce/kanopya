@@ -25,117 +25,33 @@ my $log = get_logger("");
 my $errmsg;
 
 sub addHost {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
-    General::checkParams(
-        args => \%args,
-        required => [   'dhcpd3_subnet_id',
-                        'dhcpd3_hosts_ipaddr',
-                        'dhcpd3_hosts_mac_address',
-                        'dhcpd3_hosts_hostname',
-                        'kernel_id', 
-                        'dhcpd3_hosts_ntp_server',
-                        'dhcpd3_hosts_domain_name',
-                        'dhcpd3_hosts_domain_name_server',
-                    ]
-    );
+    General::checkParams(args => \%args, required => [ 'host' ]);
     
     my $erollback = $args{erollback};
     delete $args{erollback};
+    $self->_entity->addHost(%args);
 
-    my $host_id = $self->_entity->addHost(%args);
-    $args{erollback} = $erollback;
-
-    if(exists $args{erollback}) {
-        $args{erollback}->add(function   =>$self->can('removeHost'),
-                              parameters => [$self,
-                                            "dhcpd3_subnet_id", $args{dhcpd3_subnet_id},
-                                            "dhcpd3_hosts_id", $host_id]);
+    if ($erollback) {
+        $erollback->add(function   => $self->can('removeHost'),
+                        parameters => [ $self, $args{host} ]);
     }
-    return $host_id;
 }
 
 sub removeHost {
-    my $self = shift;
-    my %args = @_;
-    my $host;
+    my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => ['dhcpd3_subnet_id','dhcpd3_hosts_id']);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
-    if (exists $args{erollback}){
-        $host = $self->_entity->getHost(dhcpd3_subnet_id    => $args{dhcpd3_subnet_id},
-                                                dhcpd3_hosts_id     =>$args{dhcpd3_hosts_id});
-    }
-    
     my $ret = $self->_entity->removeHost(%args);
     
-    if(exists $args{erollback}) {
+    if (exists $args{erollback}) {
         $args{erollback}->add(
             function   => $self->can('addHost'),
-            parameters => [ $self,
-                            'dhcpd3_subnet_id', $host->{dhcpd3_subnet_id},
-                            'dhcpd3_hosts_ipaddr', $host->{dhcpd3_hosts_ipaddr},
-                            'dhcpd3_hosts_mac_address', $host->{dhcpd3_hosts_mac_address}, 
-                            'dhcpd3_hosts_hostname', $host->{dhcpd3_hosts_hostname},
-                            'kernel_id', $host->{kernel_id},
-                            'dhcpd3_hosts_ntp_server', $host->{dhcpd3_hosts_ntp_server},
-                            'dhcpd3_hosts_domain_name', $host->{dhcpd3_hosts_domain_name},
-                            'dhcpd3_hosts_domain_name_server', $host->{dhcpd3_hosts_domain_name_server},
-                            'dhcpd3_hosts_gateway', $host->{dhcpd3_hosts_gateway},
-                            ]
+            parameters => [ $self, $args{host} ]
         );
     }
-
-    return $ret;
-}
-
-# generate edhcpd configuration files
-sub generate {
-    my $self = shift;
-    my %args = @_;
-
-    my $config = {
-        INCLUDE_PATH => $self->_entity->getTemplateDirectory(),
-        INTERPOLATE  => 1,               # expand "$var" in plain text
-        POST_CHOMP   => 0,               # cleanup whitespace 
-        EVAL_PERL    => 1,               # evaluate Perl code blocks
-        RELATIVE     => 1,               # desactive par defaut
-    };
-    
-    my $rand = new String::Random;
-    my $tmpfile = $rand->randpattern("cccccccc");
-    # create Template object
-    my $template = Template->new($config);
-    my $input = "dhcpd.conf.tt";
-    my $data = $self->_entity->getConf();
-    
-    $template->process($input, $data, "/tmp/".$tmpfile) || do {
-        $errmsg = "EComponent::EDhcpd3->generate : error during template generation : $template->error;";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);    
-    };
-    $self->getEContext->send(src => "/tmp/$tmpfile", dest => "/etc/dhcp/dhcpd.conf");
-    unlink "/tmp/$tmpfile";
-    $log->debug("Dhcp server conf generate and sent");
-    if(exists $args{erollback}){
-        $args{erollback}->add(function => $self->can('generate'), parameters => [ $self ]);
-    }
-
-}
-
-# Reload conf on edhcp
-sub reload {
-    my $self = shift;
-    my %args = @_;
-    
-    my $command = "invoke-rc.d isc-dhcp-server restart";
-    my $result = $self->getEContext->execute(command => $command);
-    
-    if(exists $args{erollback}){
-        $args{erollback}->add(function => $self->can('reload'), parameters => [ $self ]);
-    }
-    return;
 }
 
 1;

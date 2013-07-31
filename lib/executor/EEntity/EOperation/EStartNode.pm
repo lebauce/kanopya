@@ -381,41 +381,16 @@ sub _generatePXEConf {
         $nfsexport = $self->{context}->{container_access}->container_access_export;
     }
 
-    my $gateway  = undef;
-    my $pxeiface = $args{host}->getPXEIface;
-    if (defined $args{cluster}->default_gateway) {
-        if ($pxeiface->getPoolip->network->id == $args{cluster}->default_gateway->id) {
-            $gateway = $args{cluster}->default_gateway->network_gateway;
-        }
-    }
-
-    # Add host in the dhcp
-    my $subnet = $dhcpd->getInternalSubNetId();
-
     # Configure DHCP Component
-    my $tmp_kernel_id = $self->{context}->{cluster}->kernel_id;
-    my $host_kernel_id = $tmp_kernel_id ? $tmp_kernel_id : $self->{context}->{host}->kernel_id;
-
-    my $ntpserver = $args{bootserver}->getComponent(category => 'System');
-    $dhcpd->addHost(
-        dhcpd3_subnet_id                => $subnet,
-        dhcpd3_hosts_ipaddr             => $pxeiface->getIPAddr,
-        dhcpd3_hosts_mac_address        => $pxeiface->iface_mac_addr,
-        dhcpd3_hosts_hostname           => $hostname,
-        # While we do not have a ntp or bootserver component, use the system component on kanopya master
-        dhcpd3_hosts_ntp_server         => $ntpserver->getMasterNode->adminIp,
-        dhcpd3_hosts_domain_name        => $self->{context}->{cluster}->cluster_domainname,
-        dhcpd3_hosts_domain_name_server => $self->{context}->{cluster}->cluster_nameserver1,
-        dhcpd3_hosts_gateway            => $gateway,
-        kernel_id                       => $host_kernel_id,
-        erollback                       => $self->{erollback}
-    );
+    $dhcpd->addHost(host      => $self->{context}->{host},
+                    pxe       => 1,
+                    erollback => $self->{erollback});
 
     my $eroll_add_dhcp_host = $self->{erollback}->getLastInserted();
     $self->{erollback}->insertNextErollBefore(erollback => $eroll_add_dhcp_host);
 
     # Generate new configuration file
-    $dhcpd->generate(erollback => $self->{erollback});
+    $dhcpd->applyConfiguration();
 
     my $eroll_dhcp_generate = $self->{erollback}->getLastInserted();
     $self->{erollback}->insertNextErollBefore(erollback=>$eroll_dhcp_generate);
@@ -446,16 +421,13 @@ sub _generatePXEConf {
                      error => "Error when processing template $input."
                  );
 
+    my $pxeiface = $self->{context}->{host}->getPXEIface;
     my $node_mac_addr = $pxeiface->iface_mac_addr;
     $node_mac_addr =~ s/:/-/g;
     my $dest = $tftpdir . '/pxelinux.cfg/01-' . lc $node_mac_addr ;
 
     $self->getEContext->send(src => "/tmp/$tmpfile", dest => "$dest");
     unlink "/tmp/$tmpfile";
-
-    # Update Host internal ip
-    $log->debug("Get subnet <$subnet> and have host ip <$pxeiface->getIPAddr>");
-    my %subnet_hash = $dhcpd->getSubNet(dhcpd3_subnet_id => $subnet);
 }
 
 sub cancel {

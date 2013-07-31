@@ -131,6 +131,8 @@ my @classes = (
     'Entity::Component::Apache2',
     'Entity::Component::Atftpd0',
     'Entity::Component::Dhcpd3',
+    'Entity::Component::Dhcpd3::Dhcpd3Host',
+    'Entity::Component::Dhcpd3::Dhcpd3Subnet',
     'Entity::Component::Haproxy1',
     'Entity::Component::Haproxy1::Haproxy1Listen',
     'Entity::Component::Keepalived1',
@@ -1703,12 +1705,10 @@ sub registerKanopyaMaster {
         );
     }
 
-    $args{db}->resultset('Dhcpd3Subnet')->create( {
-        dhcpd3_id             => $dhcp->id,
-        dhcpd3_subnet_net     => $args{ipv4_internal_network_ip},
-        dhcpd3_subnet_mask    => $args{poolip_netmask},
-        dhcpd3_subnet_gateway => $args{poolip_gateway}
-    } );
+    Entity::Component::Dhcpd3::Dhcpd3Subnet->new(
+        dhcpd3_id  => $dhcp->id,
+        network_id => $admin_network->id
+    );
 
     # TODO: insert IscsiPortals...
 

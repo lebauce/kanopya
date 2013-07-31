@@ -106,24 +106,16 @@ sub isUp {
         eval { $args{host}->getEContext->execute(command => "true"); };
         return 0 if $@;
 
-        # Remove the DHCP entry for the host
+        # Disable PXE boot but keep the host entry
         eval {
             $harddisk->service_provider_id($args{cluster}->id);
-            my $kanopya  = Entity::ServiceProvider::Cluster->getKanopyaCluster;
-            my $dhcp     = EEntity->new(data => $kanopya->getComponent(name => "Dhcpd", version => "3"));
-            my $subnetid = $dhcp->getInternalSubNetId;
+            my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster;
+            my $dhcp    = EEntity->new(data => $kanopya->getComponent(name => "Dhcpd"));
             eval {
-                my $PXEIface = $args{host}->getPXEIface;
-                my $hostid   = $dhcp->getHostId(
-                    dhcpd3_subnet_id         => $subnetid,
-                    dhcpd3_hosts_mac_address => $PXEIface->iface_mac_addr
-                );
-                $dhcp->removeHost(
-                    dhcpd3_hosts_id  => $hostid,
-                    dhcpd3_subnet_id => $subnetid
-                );
-                $dhcp->generate;
-                $dhcp->reload;
+                $dhcp->removeHost(host => $args{host});
+                $dhcp->addHost(host => $args{host},
+                               pxe  => 0);
+                $dhcp->applyConfiguration();
             };
             if ($@) {
                 throw Kanopya::Exception::Internal::NotFound(
@@ -133,13 +125,13 @@ sub isUp {
 
             # Now reboot the host
             $args{host}->getEContext->execute(command => "reboot");
-            return 0;
         };
         if ($@) {
             throw Kanopya::Exception::Internal::NotFound(
                 error => "No hard disk to deploy the system on was found"
             );
         }
+        return 0;
     }
 
     return 1;
@@ -467,7 +459,11 @@ sub _generateNetConf {
 
         my ($gateway, $netmask, $ip, $method);
 
-        if ($iface->hasIp) {
+        my $params = $args{cluster}->getManagerParameters(manager_type => 'HostManager');
+        if ($params->{deploy_on_disk}) {
+            $method = "dhcp";
+        }
+        elsif ($iface->hasIp) {
             my $network = $iface->getPoolip->network;
             $netmask    = $network->network_netmask;
             $ip         = $iface->getIPAddr;
@@ -478,6 +474,7 @@ sub _generateNetConf {
             else {
                 $gateway = ($network->id == $args{cluster}->default_gateway_id) ? $network->network_gateway : undef;
             }
+
             $method = "static";
         }
         else {
