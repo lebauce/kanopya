@@ -82,10 +82,12 @@ sub main {
     diag('Stopping cluster');
     lives_ok {
         Kanopya::Tools::Execution->executeOne(entity => $cluster->stop());
+        Kanopya::Tools::Execution->executeAll(timeout => 3600);
     } 'Stopping cluster';
 
     diag('Remove cluster');
     lives_ok {
+        Kanopya::Tools::Execution->executeOne(entity => $cluster->deactivate());
         Kanopya::Tools::Execution->executeOne(entity => $cluster->remove());
         Kanopya::Tools::Execution->executeAll(timeout => 3600);
     } 'Removing cluster';
