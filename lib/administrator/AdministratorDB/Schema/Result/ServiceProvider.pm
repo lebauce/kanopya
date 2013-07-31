@@ -384,6 +384,21 @@ __PACKAGE__->belongs_to(
   },
 );
 
+=head2 systemimages
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Systemimage>
+
+=cut
+
+__PACKAGE__->has_many(
+  "systemimages",
+  "AdministratorDB::Schema::Result::Systemimage",
+  { "foreign.service_provider_id" => "self.service_provider_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 unified_computing_system
 
 Type: might_have

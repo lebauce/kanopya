@@ -375,8 +375,9 @@ sub execute {
                                    $self->{context}->{cluster}->cluster_name . '.';
 
             eval {
-               my $entity = Entity::Systemimage->new(systemimage_name => $systemimage_name,
-                                                     systemimage_desc => $systemimage_desc);
+               my $entity = Entity::Systemimage->new(systemimage_name    => $systemimage_name,
+                                                     systemimage_desc    => $systemimage_desc,
+                                                     service_provider_id => $self->{context}->{cluster}->id);
                $self->{context}->{systemimage} = EEntity->new(data => $entity);
             };
             if($@) {

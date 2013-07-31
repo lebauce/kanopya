@@ -52,13 +52,7 @@ sub execute {
     }
 
     # Delete the cluster remaning systemimages
-    my @systemimages = Entity::Systemimage->search(
-                           hash => {
-                               systemimage_name => {
-                                   -like => $self->{context}->{cluster}->cluster_name . '_%'
-                               }
-                           }
-                       );
+    my @systemimages = $self->{context}->{cluster}->systemimages;
 
     if (scalar(@systemimages) > 0 && ! $self->{params}->{keep_systemimages}) {
         $log->info("Removing the <" . scalar(@systemimages) . "> cluster systemimage(s)");
