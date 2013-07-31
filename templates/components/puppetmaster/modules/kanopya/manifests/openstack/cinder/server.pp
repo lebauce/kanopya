@@ -116,6 +116,7 @@ class kanopya::openstack::cinder::server(
 
     cinder_config {
         "DEFAULT/enabled_backends": value => "nfs-backend,iscsi-backend";
+        "DEFAULT/quota_volumes": value => -1;
         "DEFAULT/nfs_mount_options": value => "rw"
     }
 

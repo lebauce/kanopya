@@ -110,5 +110,16 @@ class kanopya::openstack::quantum::server(
         require             => Class['kanopya::openstack::repository']
     }
 
+    class { 'quantum::quota':
+        default_quota             => -1,
+        quota_network             => -1,
+        quota_subnet              => -1,
+        quota_port                => -1,
+        quota_router              => -1,
+        quota_floatingip          => -1,
+        quota_security_group      => -1,
+        quota_security_group_rule => -1
+    }
+
     Class['kanopya::openstack::repository'] -> Class['kanopya::openstack::quantum::server']
 }

@@ -177,21 +177,20 @@ class kanopya::openstack::nova::controller(
         'DEFAULT/cpu_allocation_ratio': value => '100';
     }
 
-    $inf = 100000
     class { 'nova::quota':
-        quota_instances                       => $inf,
-        quota_cores                           => $inf,
-        quota_ram                             => $inf,
-        quota_volumes                         => $inf,
-        quota_gigabytes                       => $inf,
-        quota_floating_ips                    => $inf,
-        quota_metadata_items                  => $inf,
-        quota_max_injected_files              => $inf,
-        quota_max_injected_file_content_bytes => $inf,
-        quota_max_injected_file_path_bytes    => $inf,
-        quota_security_groups                 => $inf,
-        quota_security_group_rules            => $inf,
-        quota_key_pairs                       => $inf
+        quota_instances                       => -1,
+        quota_cores                           => -1,
+        quota_ram                             => -1,
+        quota_volumes                         => -1,
+        quota_gigabytes                       => -1,
+        quota_floating_ips                    => -1,
+        quota_metadata_items                  => -1,
+        quota_max_injected_files              => -1,
+        quota_max_injected_file_content_bytes => -1,
+        quota_max_injected_file_path_bytes    => -1,
+        quota_security_groups                 => -1,
+        quota_security_group_rules            => -1,
+        quota_key_pairs                       => -1
     }
 
     if defined(Class['kanopya::apache']) {
