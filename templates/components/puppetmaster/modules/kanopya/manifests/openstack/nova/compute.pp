@@ -86,6 +86,10 @@ class kanopya::openstack::nova::compute(
 
     Class['kanopya::openstack::repository'] -> Class['kanopya::openstack::nova::compute']
 
+    if ! defined(Class['kanopya::nfs']) {
+        class { 'kanopya::nfs': }
+    }
+
     if defined(Mount['/var/lib/nova/instances']) {
         exec { 'chmod 777 /var/lib/nova/instances':
             subscribe   => Mount['/var/lib/nova/instances'],
