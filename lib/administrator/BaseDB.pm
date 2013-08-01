@@ -814,10 +814,8 @@ sub getAttr {
             last;
         }
     }
-
     if (not $found) {
-        $errmsg = ref($self) . " getAttr no attr name $args{name}.";
-        throw Kanopya::Exception::Internal(error => $errmsg);
+        throw Kanopya::Exception::Internal(error => "$self has no attribute <$args{name}>.");
     }
     return $value;
 }
@@ -1740,15 +1738,10 @@ we update the object, create it instead.
 
 sub populateRelations {
     my ($self, %args) = @_;
-    my $class = ref($self) || $self;
 
     General::checkParams(args     => \%args,
                          required => [ 'relations' ],
-                         optional => { 'override' => 0,
-                                       'foreign'  => 1,
-                                       'attrs'    => undef });
-
-    requireClass($class);
+                         optional => { 'override' => 0, 'foreign' => 1, 'attrs' => undef });
 
     # For each relations type
     RELATION:
@@ -1763,7 +1756,8 @@ sub populateRelations {
         my $relation_schema = $rel_infos->{schema};
         my $key = $rel_infos->{linkfk} || "id";
 
-        if ($rel_infos->{relation} eq "single") {
+        # For single relations, create or update the related instance
+        if (defined $rel_infos->{relation} && $rel_infos->{relation} eq "single") {
             my $entry = $args{relations}->{$relation};
             if (ref($self) && $self->$relation) {
                 # We have the relation id, it is a relation update
@@ -1775,14 +1769,16 @@ sub populateRelations {
                 $args{attrs}->{$obj->getPrimaryKey} = $obj->id;
             }
         }
+        # For multi relations, create/update/remove the related instances in funtion
+        # of existing entries.
         else {
             my $existing = {};
             my @entries = $self->searchRelated(filters => [ $relation ]);
             %$existing = map { $_->$key => $_ } @entries;
 
             # Create/update all entries
-            for my $entry (@{$args{relations}->{$relation}}) {
-                if ($rel_infos->{relation} eq 'single_multi') {
+            for my $entry (@{ $args{relations}->{$relation} }) {
+                if (defined $rel_infos->{relation} && $rel_infos->{relation} eq 'single_multi') {
                     my $id = delete $entry->{@{$relation_schema->_primaries}[0]};
                     if ($id) {
                         # We have the relation id, it is a relation update
@@ -1796,7 +1792,7 @@ sub populateRelations {
                         $relation_class->create(%$entry);
                     }
                 }
-                elsif ($rel_infos->{relation} eq 'multi') {
+                elsif (defined $rel_infos->{relation} && $rel_infos->{relation} eq 'multi') {
                     # If instances are given in parameters instead of ids, use the ids
                     if (ref($entry)) {
                         $entry = $entry->id;
@@ -2453,7 +2449,6 @@ sub _importToRelated {
 
 
 =pod
-=begin classdoc
 
 Utility method used to clone a formula
 Clone all objects used in formula and translate formula to use cloned object ids
@@ -2516,6 +2511,7 @@ Commit a transaction according the database configuration.
 sub commitTransaction {
     my $self = shift;
     my $counter = 0;
+    my $commited = 0;
 
     COMMIT:
     while ($counter++ < $self->_adm->{config}->{dbconf}->{txn_commit_retry}) {
@@ -2523,11 +2519,12 @@ sub commitTransaction {
             $log->debug("Committing transaction to database");
 
             $self->_adm->{schema}->txn_commit;
-            last COMMIT;
+            $commited = 1;;
         }
         catch ($err) {
             $log->error("Transaction commit failed: $err");
         }
+        if ($commited) { last COMMIT; }
     }
 }
 
