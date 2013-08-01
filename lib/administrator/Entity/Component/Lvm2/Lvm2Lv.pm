@@ -16,7 +16,13 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 package Entity::Component::Lvm2::Lvm2Lv;
-use base 'BaseDB';
+use base BaseDB;
+
+use Entity::Component::Lvm2::Lvm2Vg;
+use Entity::Container::LvmContainer;
+
+use Log::Log4perl "get_logger";
+my $log = get_logger("");
 
 use constant ATTR_DEF => {
     lvm2_vg_id => {
@@ -28,7 +34,7 @@ use constant ATTR_DEF => {
     lvm2_lv_name => {
         label        => 'Name',
         type         => 'string',
-        is_mandatory => 0,
+        is_mandatory => 1,
         is_editable  => 0,
     },
     lvm2_lv_freespace => {
@@ -42,18 +48,50 @@ use constant ATTR_DEF => {
         label        => 'Total size',
         type         => 'string',
         unit         => 'byte',
-        is_mandatory => 0,
+        is_mandatory => 1,
         is_editable  => 0,
     },
     lvm2_lv_filesystem => {
-        label        => 'Total size',
+        label        => 'Filesystem',
         type         => 'string',
-        unit         => 'byte',
-        is_mandatory => 0,
+        is_mandatory => 1,
         is_editable  => 0,
     },
+    container_device => {
+        label        => 'Device',
+        type         => 'string',
+        is_virtual   => 1,
+        is_editable  => 0,
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub create {
+    my ($class, %args) = @_;
+
+    $class->checkAttrs(attrs => \%args);
+
+    my $vg = Entity::Component::Lvm2::Lvm2Vg->get(id => $args{lvm2_vg_id});
+    $vg->lvm2->createDisk(vg_id      => $args{lvm2_vg_id},
+                          name       => $args{lvm2_lv_name},
+                          size       => $args{lvm2_lv_size},
+                          filesystem => $args{lvm2_lv_filesystem});
+}
+
+sub remove {
+    my ($self, %args) = @_;
+
+    $self->lvm2_vg->lvm2->removeDisk(
+        container => Entity::Container::LvmContainer->find(hash => { lv_id => $self->id })
+    );
+}
+
+sub containerDevice {
+    my ($self, %args) = @_;
+
+    return Entity::Container::LvmContainer->find(hash => { lv_id => $self->id })->container_device;
+}
+
 
 1;

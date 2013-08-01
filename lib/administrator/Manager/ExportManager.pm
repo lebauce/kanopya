@@ -71,9 +71,8 @@ sub getReadOnlyParameter {
 Enqueue a CreateExport operation
 
 @param container the container from which the export must be created
-@param export_name the name of the export
 
-@return container_access
+@return the created workflow
 
 =end classdoc
 =cut
@@ -83,7 +82,7 @@ sub createExport {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "container", "export_name" ]);
+                         required => [ "container" ]);
 
     $log->debug("New Operation CreateExport with attrs : " . %args);
     $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
@@ -93,13 +92,23 @@ sub createExport {
                 export_manager => $self,
                 container      => $args{container},
             },
-            manager_params => {
-                export_name => $args{export_name},
-            },
+            manager_params => {},
         },
     );
 }
 
+
+=pod
+=begin classdoc
+
+Enqueue a RemoveExport operation
+
+@param container_access the container access to remove
+
+@return the created workflow
+
+=end classdoc
+=cut
 
 sub removeExport {
     my $self = shift;
@@ -112,6 +121,7 @@ sub removeExport {
         type     => 'RemoveExport',
         params   => {
             context => {
+                export_manager   => $self,
                 container_access => $args{container_access},
             }
         },

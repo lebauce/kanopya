@@ -124,8 +124,9 @@ sub removeDisk {
         type     => 'RemoveDisk',
         params   => {
             context => {
-                container => $args{container},
-            }
+                disk_manager => $self,
+                container    => $args{container},
+            },
         },
     );
 }

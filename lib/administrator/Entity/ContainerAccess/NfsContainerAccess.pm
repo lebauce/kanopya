@@ -39,35 +39,75 @@ use Entity::NfsContainerAccessClient;
 
 use constant ATTR_DEF => {
     options => {
-        pattern => '^.*$',
+        pattern      => '^.*$',
         is_mandatory => 1,
-        is_extended => 0
     },
+    nfs_container_access_client_options => {
+        label        => 'Client options',
+        type         => 'string',
+        is_mandatory => 1,
+        is_editable  => 1,
+        is_virtual   => 1
+    },
+    nfs_container_access_client_name => {
+        label        => 'Client name',
+        type         => 'string',
+        is_mandatory => 1,
+        is_editable  => 1,
+        is_virtual   => 1
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
 
 =pod
-
 =begin classdoc
 
-Accessor to get nfs container access clients for this access.
+Delegate the creation of the export to the export manager.
 
-@return the access clients list
+@return the container
 
 =end classdoc
-
 =cut
 
-sub getClients {
-    my $self = shift;
+sub create {
+    my ($class, %args) = @_;
 
-    return Entity::NfsContainerAccessClient->find(
-               hash => {
-                   nfs_container_access_id => $self->getAttr(name => "nfs_container_access_id")
-               }
-           );
+    $class->SUPER::create(client_name    => delete $args{nfs_container_access_client_name},
+                          client_options => delete $args{nfs_container_access_client_options},
+                          %args);
+}
+
+
+=pod
+=begin classdoc
+
+Delegate the removal of the export to the export manager.
+
+@return the container
+
+=end classdoc
+=cut
+
+sub remove {
+    my ($self, %args) = @_;
+
+    $self->export_manager->removeExport(container_access => $self);
+}
+
+
+sub nfsContainerAccessClientOptions {
+    my ($self) = @_;
+
+    return $self->find(related => 'nfs_container_access_clients')->options;
+}
+
+
+sub nfsContainerAccessClientName {
+    my ($self) = @_;
+
+    return $self->find(related => 'nfs_container_access_clients')->name;
 }
 
 1;

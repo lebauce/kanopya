@@ -43,10 +43,17 @@ use constant ATTR_DEF => {
         type         => 'string',
         unit         => 'byte',
         is_mandatory => 1,
-        is_editable  => 1,
+        is_editable  => 0,
     },
     lvm2_pvs => {
         label        => 'Physical volumes',
+        type         => 'relation',
+        relation     => 'single_multi',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
+    lvm2_lvs => {
+        label        => 'Logical volumes',
         type         => 'relation',
         relation     => 'single_multi',
         is_mandatory => 0,

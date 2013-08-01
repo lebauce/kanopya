@@ -13,7 +13,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package EEntity::EComponent::ENetappLunManager;
-use base "EEntity::EComponent";
+use base EEntity::EComponent;
 
 use warnings;
 use strict;
@@ -28,19 +28,6 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 my $errmsg;
 
-=head2 createDisk
-
-createDisk ( name, size, filesystem)
-    desc: This function creates a new volume on NetApp.
-    args:
-        name : string : new volume name
-        size : String : disk size finishing by unit (M : Mega, K : kilo, G : Giga)
-        filesystem : String : filesystem type
-
-    return:
-        1 if an error occurred, 0 otherwise
-    
-=cut
 
 sub createDisk {
     my $self = shift;
@@ -101,9 +88,6 @@ sub createDisk {
     return $container;
 }
 
-=head2 removeDisk
-
-=cut
 
 sub removeDisk {
     my $self = shift;
@@ -128,11 +112,6 @@ sub removeDisk {
     #TODO: insert erollback ?
 }
 
-=head2 createExport
-
-    Desc : This method allow to create a new export in 1 call
-
-=cut
 
 sub createExport {
     my $self = shift;
@@ -191,11 +170,6 @@ sub createExport {
     return $container_access;
 }
 
-=head2 removeExport
-
-    Desc : This method allow to remove an export in 1 call
-
-=cut
 
 sub removeExport {
     my $self = shift;
@@ -213,14 +187,6 @@ sub removeExport {
     $args{container_access}->delete();
 }
 
-=head2 addExportClient
-
-    Desc : Autorize client to access an export
-    args:
-        export : export to give access to
-        host : host to autorize
-
-=cut
 
 sub addExportClient {
     my $self = shift;
@@ -259,14 +225,6 @@ sub removeExportClient {
     # TODO: implement removeExportClient
 }
 
-=head2
-
-    Desc : Get the LUN id assigned for a client
-    args:
-        lun : the LUN to get the id from
-        host : host to autorize
-
-=cut
 
 sub getLunId {
     my $self = shift;

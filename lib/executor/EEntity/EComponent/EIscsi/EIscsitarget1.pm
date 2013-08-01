@@ -35,11 +35,6 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 my $errmsg;
 
-=head2 createExport
-
-    Desc : This method allow to create a new export in 1 call
-
-=cut
 
 sub createExport {
     my $self = shift;
@@ -85,11 +80,6 @@ sub createExport {
     return $container_access;
 }
 
-=head2 removeExport
-
-    Desc : This method allow to remove an export in 1 call
-
-=cut
 
 sub removeExport {
     my $self = shift;
@@ -243,12 +233,6 @@ sub removeTarget {
     }
 }
 
-=head2 _getIetdSessions
-
-    return an arrayref contening /proc/net/iet/session content
-
-=cut
-
 sub _getIetdSessions {
     my $self = shift;
     my %args = @_;
@@ -290,11 +274,6 @@ sub _getIetdSessions {
     return $ietdsessions;
 }
 
-=head2 cleanTargetSession
-
-    try to remove any sessions on a target
-
-=cut
 
 sub cleanTargetSession {
     my $self = shift;
@@ -322,11 +301,6 @@ sub cleanTargetSession {
     }
 }
 
-=head2 cleanInitiatorSession
-
-    try to remove all sessions for an initiator
-
-=cut
 
 sub cleanInitiatorSession {
     my $self = shift;

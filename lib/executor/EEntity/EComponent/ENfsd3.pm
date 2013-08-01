@@ -38,7 +38,7 @@ sub createExport {
     my %args  = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'container', 'export_name' ],
+                         required => [ 'container' ],
                          optional => { 'client_name'    => '*',
                                        'client_options' => 'rw,sync,no_root_squash' });
 
@@ -57,12 +57,12 @@ sub createExport {
     my $old_data = $self->getTemplateDataExports();
 
     my $mountpoint = $self->getMountDir(
-                         device => $args{container}->getAttr(name => 'container_device')
+                         device => $args{container}->container_device
                      );
 
     # Create a local access to the container to be able to mount localy the device
     # and then export the mountpoint with NFS.
-    my $elocal_access = EEntity->new(entity => Entity::ContainerAccess::LocalContainerAccess->create(
+    my $elocal_access = EEntity->new(entity => Entity::ContainerAccess::LocalContainerAccess->new(
                             container_id => $args{container}->id,
                         ));
 
@@ -115,7 +115,7 @@ sub createExport {
 
     $self->updateExports();
 
-    $log->info("Added NFS Export of device <$args{export_name}>");
+    $log->info("Added NFS Export <" . $container_access->container_access_export . ">");
 
     if (exists $args{erollback}) {
         $args{erollback}->add(
