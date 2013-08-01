@@ -34,6 +34,7 @@ use Entity::Network;
 use Entity::Netconf;
 use Entity::Poolip;
 use Entity::Operation;
+use Entity::Systemimage;
 
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::Register;
@@ -84,6 +85,17 @@ sub main {
         Kanopya::Tools::Execution->executeOne(entity => $cluster->stop());
         Kanopya::Tools::Execution->executeAll(timeout => 3600);
     } 'Stopping cluster';
+
+    diag('Remove cluster');
+    lives_ok {
+        Kanopya::Tools::Execution->executeOne(entity => $cluster->deactivate());
+        Kanopya::Tools::Execution->executeOne(entity => $cluster->remove());
+        Kanopya::Tools::Execution->executeAll(timeout => 3600);
+    } 'Removing cluster';
+
+    my @systemimages = Entity::Systemimage->search();
+    diag('Check if systemimage have been deleted');
+    ok(scalar(@systemimages) == 0);
 
     if ($testing == 1) {
         BaseDB->rollbackTransaction;
