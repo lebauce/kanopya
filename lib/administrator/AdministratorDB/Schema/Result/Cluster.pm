@@ -228,7 +228,7 @@ __PACKAGE__->add_columns(
   "cluster_prev_state",
   { data_type => "char", is_nullable => 1, size => 32 },
   "cluster_basehostname",
-  { data_type => "char", is_nullable => 0, size => 64 },
+  { data_type => "char", is_nullable => 1, size => 64 },
   "default_gateway_id",
   {
     data_type => "integer",

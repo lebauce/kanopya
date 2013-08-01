@@ -141,7 +141,7 @@ CREATE TABLE `cluster` (
   `cluster_nameserver2` char(15) NOT NULL,
   `cluster_state` char(32) NOT NULL DEFAULT 'down:0',
   `cluster_prev_state` char(32),
-  `cluster_basehostname` char(64) NOT NULL,
+  `cluster_basehostname` char(64) NULL DEFAULT NULL,
   `default_gateway_id` int(8) unsigned DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
   `user_id` int(8) unsigned NOT NULL,
