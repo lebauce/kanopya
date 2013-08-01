@@ -18,6 +18,10 @@ use KIM::MasterImage;
 use KIM::WorkflowLogs;
 use Services;
 
+use Log::Log4perl "get_logger";
+my $log = get_logger("");
+my $errmsg;
+
 our $VERSION = '0.1';
 
 prefix undef;
@@ -71,6 +75,9 @@ sub exception_to_status {
     my $status;
 
     return "error" if not defined $exception;
+
+    # Log the execption
+    $log->error("$exception");
 
     if ($exception->isa("Kanopya::Exception::Permission::Denied")) {
         $status = 'forbidden';
