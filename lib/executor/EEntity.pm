@@ -142,6 +142,42 @@ sub new {
 =pod
 =begin classdoc
 
+Forbid to call create on the encapsulated entity.
+
+@return the created object instance
+
+=end classdoc
+=cut
+
+sub create {
+    my $class = shift;
+    my %args = @_;
+
+    throw Kanopya::Exception::Internal(
+              error => "Cannot call create on a EEntity instance, you must implement this method in sub classes."
+          );
+}
+
+
+=pod
+=begin classdoc
+
+Forbid to call remove on the encapsulated entity.
+
+=end classdoc
+=cut
+
+sub remove {
+    my $self = shift;
+    my %args = @_;
+
+    $self->delete();
+}
+
+
+=pod
+=begin classdoc
+
 Build the execution class name correspondinf to the class
 given in parameter.
 
