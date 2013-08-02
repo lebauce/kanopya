@@ -1,4 +1,4 @@
-#    Copyright © 2012 Hedera Technology SAS
+#    Copyright © 2012-2013 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -13,14 +13,25 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package EManager::EExportManager;
-use base "EManager";
+use base EManager;
 
-=head2 createExport
 
-    Parent method to check prerequisites for exporting disk.
-    Call this method in overriden method in sub classes.
+=pod
+=begin classdoc
 
+Parent method to check prerequisites for exporting disk.
+Call this method in overriden method in sub classes.
+
+=end classdoc
 =cut
 
 sub createExport {
@@ -44,28 +55,37 @@ sub createExport {
     }
 }
 
-=head2 removeExport
 
-    desc: Remove an export
+=pod
+=begin classdoc
 
+Remove an export
+
+=end classdoc
 =cut
 
 sub removeExport {}
 
-=head2 addExportClient
 
-    desc: Autorize a client to this container access.
-          By default do nothing
+=pod
+=begin classdoc
 
+Autorize a client to this container access.
+By default do nothing
+
+=end classdoc
 =cut
 
 sub addExportClient {}
 
-=head2 removeExportClient
 
-    desc: Remove access of a client to this container access.
-          By default do nothing
+=pod
+=begin classdoc
 
+Remove access of a client to this container access.
+By default do nothing
+
+=end classdoc
 =cut
 
 sub removeExportClient {}

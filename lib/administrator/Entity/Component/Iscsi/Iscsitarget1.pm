@@ -16,13 +16,11 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 =pod
-
 =begin classdoc
 
 TODO
 
 =end classdoc
-
 =cut
 
 package Entity::Component::Iscsi::Iscsitarget1;
@@ -174,7 +172,7 @@ sub setConf {
     }
 }
 
-# return a data structure to pass to the template processor 
+
 sub getTemplateData {
     my $self = shift;
     my $targets = { };
@@ -215,14 +213,6 @@ sub getTemplateData {
     return { targets => \@values };
 }
 
-=head2 createExport
-
-    Desc : Implement createExport from ExportManager interface.
-           This function enqueue a ECreateExport operation.
-    args : export_name, device, typeio, iomode
-
-=cut
-
 sub createExport {
     my $self = shift;
     my %args = @_;
@@ -251,12 +241,10 @@ sub getPuppetDefinition {
     my ($self, %args) = @_;
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
-        iscsitarget => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::iscsitarget",
-                        )
-        }
-    } );
+               iscsitarget => {
+                   manifest => $self->instanciatePuppetResource(name => "kanopya::iscsitarget")
+               }
+           });
 }
 
 1;

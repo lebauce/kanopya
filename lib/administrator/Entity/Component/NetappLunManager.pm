@@ -159,13 +159,6 @@ sub getReadOnlyParameter {
     }
 }
 
-=head2 createDisk
-
-    Desc : Implement createDisk from DiskManager interface.
-           This function enqueue a ECreateDisk operation.
-    args :
-
-=cut
 
 sub createDisk {
     my $self = shift;
@@ -190,13 +183,6 @@ sub createDisk {
     );
 }
 
-=head2 createExport
-
-    Desc : Implement createExport from ExportManager interface.
-           This function enqueue a ECreateExport operation.
-    args : export_name, device, typeio, iomode
-
-=cut
 
 sub createExport {
     my $self = shift;
@@ -222,11 +208,6 @@ sub createExport {
     );
 }
 
-=head2 synchronize 
-
-    Desc: synchronize netapp lun information with kanopya database
-
-=cut
 
 sub synchronize {
     my $self = shift;
@@ -259,16 +240,6 @@ sub synchronize {
     }
 }
 
-
-=head2 getConf 
-
-    Desc: return hash structure containing luns
-    
-    Return: Scalar $config
-    
-    Info: ReWrited on April 20 2012 by jlevasseur
-
-=cut
 
 sub getConf {
     my ($self) = @_;
@@ -330,12 +301,9 @@ sub getConf {
                     }
                 }    
                 push @{$tmp->{aggregates_volumes}}, $tmp2;
-            #}    
         }
         push @$aggregates, $tmp;
     }
-    # Must be remove :
-    #$log->info(Dumper($aggregates));
     return {
             "aggregates"=>$aggregates,
     };

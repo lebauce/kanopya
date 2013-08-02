@@ -76,6 +76,13 @@ __PACKAGE__->table("masterimage");
   extra: {unsigned => 1}
   is_nullable: 0
 
+=head2 masterimage_cluster_type_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 0
+
 =head2 masterimage_defaultkernel_id
 
   data_type: 'integer'
@@ -103,6 +110,13 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 1, size => 64 },
   "masterimage_size",
   { data_type => "bigint", extra => { unsigned => 1 }, is_nullable => 0 },
+  "masterimage_cluster_type_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
   "masterimage_defaultkernel_id",
   {
     data_type => "integer",
@@ -168,7 +182,22 @@ __PACKAGE__->belongs_to(
   "masterimage",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "masterimage_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 masterimage_cluster_type
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::ClusterType>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "masterimage_cluster_type",
+  "AdministratorDB::Schema::Result::ClusterType",
+  { cluster_type_id => "masterimage_cluster_type_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head2 masterimage_defaultkernel
@@ -186,8 +215,8 @@ __PACKAGE__->belongs_to(
   {
     is_deferrable => 1,
     join_type     => "LEFT",
-    on_delete     => "NO ACTION",
-    on_update     => "NO ACTION",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
   },
 );
 
@@ -202,8 +231,8 @@ Composing rels: L</components_provided> -> component_type
 __PACKAGE__->many_to_many("component_types", "components_provided", "component_type");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-06 11:22:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:VtJs72bW3BdEisL0uAagNw
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-07-25 17:17:33
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:QaQwly127Tfs/wjyHCjdkQ
 
 __PACKAGE__->belongs_to(
   "parent",

@@ -579,14 +579,10 @@ sub configureOrchestration {
     return if (not defined $args{service_provider_id});
 
     my $sp = Entity::ServiceProvider->get(id => $args{service_provider_id});
+    my @toclone = ($sp->clustermetrics, $sp->combinations, $sp->nodemetric_conditions,
+                   $sp->aggregate_conditions, $sp->rules);
 
-    for (
-        $sp->clustermetrics,
-        $sp->combinations,
-        $sp->nodemetric_conditions,
-        $sp->aggregate_conditions,
-        $sp->rules
-        ) {
+    for (@toclone) {
         $_->clone(dest_service_provider_id => $self->id);
     }
 }
@@ -726,9 +722,10 @@ sub addComponents {
         # check if component if installed on node's cluster
         my $component;
         eval {
-            my %params = defined($component_type->component_version) ?
-                (name => $component_type->component_name, version => $component_type->component_version)
-                : (name => $component_type->component_name);
+            my %params = defined($component_type->component_version)
+                             ? (name => $component_type->component_name, version => $component_type->component_version)
+                             : (name => $component_type->component_name);
+
             $component = $self->getComponent(%params);
         };
         if($@) {

@@ -456,10 +456,10 @@ sub mergeValues {
         # Here we need to manually override the existing list values with
         # list value from paramters as the merge extends the list contents.
         for my $attrname (keys %{ $args{values} }) {
-            if (ref($args{values}->{$attrname}) eq 'ARRAY') {
+            if (defined ref($args{values}->{$attrname}) && ref($args{values}->{$attrname}) eq 'ARRAY') {
                 $existing->{$attrname} = [];
             }
-            elsif ("$args{values}->{$attrname}" eq "") {
+            elsif (defined $args{values}->{$attrname} && "$args{values}->{$attrname}" eq "") {
                 delete $args{values}->{$attrname};
             }
         }
@@ -609,14 +609,16 @@ sub getParams {
         if ($name eq 'managers') {
             for my $manager (keys %{$pattern->{$name}}) {
                 my $manager_type = $pattern->{$name}->{$manager}->{manager_type};
-                $manager_type =~ s/Manager$//g;
-                $manager_type = lcfirst($manager_type) . '_manager';
+                if (defined $manager_type) {
+                    $manager_type =~ s/Manager$//g;
+                    $manager_type = lcfirst($manager_type) . '_manager';
 
-                # Set the manager id
-                $flat_hash->{$manager_type . '_id'} = $pattern->{$name}->{$manager}->{manager_id};
+                    # Set the manager id
+                    $flat_hash->{$manager_type . '_id'} = $pattern->{$name}->{$manager}->{manager_id};
+                }
 
                 # Set the manager parameters
-                for my $manager_param (keys %{$pattern->{$name}->{$manager}->{manager_params}}) {
+                for my $manager_param (keys %{ $pattern->{$name}->{$manager}->{manager_params} }) {
                     $flat_hash->{$manager_param} = $pattern->{$name}->{$manager}->{manager_params}->{$manager_param};
                 }
             }

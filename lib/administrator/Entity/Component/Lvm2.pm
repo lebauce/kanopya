@@ -16,13 +16,11 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 =pod
-
 =begin classdoc
 
 TODO
 
 =end classdoc
-
 =cut
 
 package Entity::Component::Lvm2;
@@ -41,8 +39,8 @@ use Entity::Component::Lvm2::Lvm2Pv;
 use Kanopya::Exceptions;
 
 use Hash::Merge qw(merge);
-use Log::Log4perl "get_logger";
 
+use Log::Log4perl "get_logger";
 my $log = get_logger("");
 my $errmsg;
 
@@ -206,51 +204,12 @@ sub lvRemove{
 sub getConf {
     my $self = shift;
 
-    my @lvm2_vgs = $self->lvm2_vgs;
-    my @volumegroups = map {
-        my $vg   = $_;
-        my $json = $vg->toJSON(raw => 1);
-
-        my @lvm2_lvs = $vg->lvm2_lvs;
-        my @logicalvolumes = map { $_->toJSON(raw => 1) } @lvm2_lvs;
-        $json->{lvm2_lvs} = \@logicalvolumes;
-
-        my @lvm2_pvs = $vg->lvm2_pvs;
-        my @physical_volumes = map { $_->toJSON(raw => 1) } @lvm2_pvs;
-        $json->{lvm2_pvs} = \@physical_volumes;
-
-        $json;
-    } @lvm2_vgs;
-
-    return {
-        lvm2_vgs => \@volumegroups
-    };
+    # Overrive the generic getConf as it handle one level of relations only.
+    return $self->toJSON(raw    => 1,
+                         deep   => 1,
+                         expand => [ 'lvm2_vgs.lvm2_pvs', 'lvm2_vgs.lvm2_lvs' ]);
 }
 
-sub setConf {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'conf' ]);
-
-    my $conf = $args{conf};
-    for my $vg ( @{ $conf->{lvm2_vgs} }) {
-        for my $new_lv ( @{ $vg->{lvm2_lvs} }) {
-            if (keys %$new_lv and not $new_lv->{lvm2_lv_id}) {
-                $self->createDisk(
-                    name       => $new_lv->{lvm2_lv_name},
-                    size       => $new_lv->{lvm2_lv_size},
-                    filesystem => $new_lv->{lvm2_lv_filesystem},
-                    vg_id      => $new_lv->{lvm2_vg}
-                );
-            }
-        }
-
-        delete $vg->{lvm2_lvs};
-    }
-
-    $self->SUPER::setConf(%args);
-}
 
 sub getExportManagerFromBootPolicy {
     my $self = shift;

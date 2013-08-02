@@ -40,6 +40,9 @@ use warnings;
 use Manager::HostManager;
 use Manager::DiskManager;
 
+use Entity::Masterimage;
+use ClassType::ServiceProviderType;
+
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
@@ -154,8 +157,20 @@ sub getPolicyDef {
     for my $kernel (Entity::Kernel->search(hash => {})) {
         push @kernels, $kernel->toJSON();
     }
+
+    # Get the list of possible component types from the cluster type
+    my $clustertype;
+    if (defined $args{params}->{masterimage_id}) {
+        $clustertype
+            = Entity::Masterimage->get(id => $args{params}->{masterimage_id})->masterimage_cluster_type;
+    }
+    else {
+        $clustertype = ClassType::ServiceProviderType->find(hash => {
+                            service_provider_name => "Cluster"
+                       });
+    }
     my @componenttypes;
-    for my $componenttype (ClassType::ComponentType->search(hash => {})) {
+    for my $componenttype ($clustertype->search(related => 'component_types')) {
         push @componenttypes, $componenttype->toJSON();
     }
 

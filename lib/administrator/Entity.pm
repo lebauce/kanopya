@@ -22,10 +22,7 @@ Entity base class
 =cut
 
 package Entity;
-use base 'BaseDB';
-
-use Data::Dumper;
-use Log::Log4perl 'get_logger';
+use base BaseDB;
 
 use EntityLock;
 use EntityState;
@@ -38,6 +35,12 @@ use Kanopya::Exceptions;
 use NotificationSubscription;
 use Entity::ServiceProvider::Cluster;
 
+use Data::Dumper;
+
+use TryCatch;
+my $err;
+
+use Log::Log4perl 'get_logger';
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
@@ -148,14 +151,18 @@ sub update {
     # Try to lock the entity while updating it
     $self->lock(consumer => $self);
 
-    eval {
+    try {
         $self->SUPER::update(%args);
-    };
-    if ($@) {
-        my $exception = $@;
+    }
+    catch (Kanopya::Exception $err) {
         $self->unlock(consumer => $self);
 
-        $exception->rethrow();
+        $err->rethrow();
+    }
+    catch ($err) {
+        $self->unlock(consumer => $self);
+
+        throw Kanopya::Exception::Internal(error => "$err");
     }
     $self->unlock(consumer => $self);
 
@@ -193,14 +200,18 @@ sub remove {
     # Try to lock the entoty while updating it
     $self->lock(consumer => $self);
 
-    eval {
+    try {
         $self->SUPER::remove(%args);
-    };
-    if ($@) {
-        my $exception = $@;
+    }
+    catch (Kanopya::Exception $err) {
         $self->unlock(consumer => $self);
 
-        $exception->rethrow();
+        $err->rethrow();
+    }
+    catch ($err) {
+        $self->unlock(consumer => $self);
+
+        throw Kanopya::Exception::Internal(error => "$err");
     }
 
     $self->unlock(consumer => $self);

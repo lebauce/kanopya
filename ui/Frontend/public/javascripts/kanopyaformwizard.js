@@ -105,8 +105,16 @@ var KanopyaFormWizard = (function() {
             var response;
             if (attributes[relation_name] !== undefined && attributes[relation_name].attributes !== undefined) {
                 response = attributes[relation_name].attributes;
+
+            } else if (relationdef === undefined) {
+                throw new Error("KanopyaFormWizard: Could not find relation <" + relation_name + "> in the relation definition");
+
             } else {
-                response = this.attrsCallback(relationdef.resource, this.data, trigger);
+                var resource = relationdef.resource;
+                if (attributes[relation_name].specialized !== undefined) {
+                    resource = attributes[relation_name].specialized.replace(/_/g, "");
+                }
+                response = this.attrsCallback(resource, this.data, trigger);
             }
             if (response == undefined) {
                 throw new Error("KanopyaFormWizard: Could not get attributes of: " + relationdef.resource);
@@ -244,8 +252,15 @@ var KanopyaFormWizard = (function() {
              * - virtual attributes as we can not set a value on,
              * - blacklisted attributes.
              */
+            var type;
+            try {
+                type = this.attributedefs[name].type;
+            }
+            catch (e) {
+                throw new Error("KanopyaFormWizard: Unable to find attribute definition for <" + name + ">");
+            }
             if (! ($.inArray(name, attributes_blacklist) >= 0) &&
-                ! (this.attributedefs[name].type === 'relation' && this.attributedefs[name].relation === "single_multi")) {
+                ! (type === 'relation' && this.attributedefs[name].relation === "single_multi")) {
                 var value = this.attributedefs[name].value || values[name] || undefined;
 
                 // Get options for select inputs
@@ -833,12 +848,15 @@ var KanopyaFormWizard = (function() {
             }
         }
 
-        // Once data has been serialized, browse the relation to initialize lists of
+        // Once data has been serialized, browse the relations to initialize lists of
         // relations of relations if not defined.
+
         for (var relation in this.relations) {
+            if (data[relation] === undefined) {
+                data[relation] = [];
+            }
             for (var index in this.relations[relation]) {
                 var attr = this.attributedefs[this.relations[relation][index]];
-
                 if (attr !== undefined && attr.type === 'relation' && attr.relation != 'single') {
                     for (var entryindex in data[relation]) {
                         if (data[relation][entryindex][this.relations[relation][index]] === undefined) {
