@@ -2519,7 +2519,7 @@ sub commitTransaction {
             $log->debug("Committing transaction to database");
 
             $self->_adm->{schema}->txn_commit;
-            $commited = 1;;
+            last COMMIT;
         }
         catch ($err) {
             $log->error("Transaction commit failed: $err");
