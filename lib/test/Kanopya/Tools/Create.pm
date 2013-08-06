@@ -274,9 +274,11 @@ sub createVmCluster {
         host_manager => {
             manager_id     => $host_manager->id,
             manager_params => {
-                core    => 2,
-                ram     => 512 * 1024 * 1024,
-                ifaces  => 1,
+                core     => 2,
+                ram      => 512 * 1024 * 1024,
+                max_core => 2,
+                max_ram  => 1024 * 1024 * 1024,
+                ifaces   => 1,
             },
         }
     };
