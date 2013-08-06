@@ -13,7 +13,7 @@ class kanopya::mysql::params {
         /(?i)(centos)/ : {
             $mysql_package_name        = 'MariaDB-Galera-server'
             $mysql_client_package_name = 'MariaDB-client'
-            $mysql_service_provider    = 'base'
+            $mysql_service_provider    = 'redhat'
             class { 'kanopya::mysql::repos::rh': }
         }
         default : {
