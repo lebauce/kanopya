@@ -153,9 +153,7 @@ sub main {
                        },
                        components => {
                            'novacompute'  => {
-                               nova_controller_id => $nova_controller->id,
                                iaas_id            => $nova_controller->id,
-                               mysql5_id          => $sql->id
                            },
                        }
                    );
