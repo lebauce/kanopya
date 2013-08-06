@@ -4,7 +4,8 @@ class kanopya::snmpd::service {
 		ensure  => present,
 		mode    => 0644,
 		source  => "puppet:///kanopyafiles/${sourcepath}/etc/snmp/snmpd.conf",
-		notify  => Service['snmpd']
+		notify  => Service['snmpd'],
+		require => Package['snmpd']
 	}
 
 	if $operatingsystem =~ /(?i)(debian|ubuntu)/ {
