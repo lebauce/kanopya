@@ -79,6 +79,13 @@ sub main {
                             cluster_basehostname => 'cloud',
                             masterimage_id       => $masterimage->id
                         },
+                        managers => {
+                            host_manager => {
+                                manager_params => {
+                                    deploy_on_disk => 1
+                                }
+                            }
+                        },
                         components => {
                             'keystone' => {
                             },
@@ -149,7 +156,14 @@ sub main {
                        cluster_conf => {
                            cluster_name         => 'Compute',
                            cluster_basehostname => 'compute',
-                            masterimage_id       => $masterimage->id
+                           masterimage_id       => $masterimage->id
+                       },
+                       managers => {
+                           host_manager => {
+                               manager_params => {
+                                   deploy_on_disk => 1
+                               }
+                           }
                        },
                        components => {
                            'novacompute'  => {
