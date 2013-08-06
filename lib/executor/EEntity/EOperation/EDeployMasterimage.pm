@@ -187,7 +187,6 @@ sub execute {
                       );
 
     # set components
-    $metadata->{component}->{debian} = { version => 6 };
     foreach my $name (keys %{ $metadata->{component} }) {
         my $vers = $metadata->{component}->{$name}->{version};
         $log->debug("Set provided component: $name, $vers");
