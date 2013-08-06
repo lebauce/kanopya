@@ -64,6 +64,7 @@ sub _load_file {
             $parameters_values->{$key} = $value;
         }
     }
+
     return $parameters_values;
 }
 
@@ -79,9 +80,9 @@ Initialize structure used to ask/set parameters for setup processing
 
 sub _init {
     my ($self) = @_;
-    $self->{licence_path} = $self->{installpath}.'/UserLicence';
-    $self->{template_path} = $self->{installpath}.'/scripts/install/templates';
-    $self->{dbschema_path} = $self->{installpath}.'/scripts/database/mysql';
+    $self->{licence_path} = $self->{installpath} . '/UserLicence';
+    $self->{template_path} = $self->{installpath} . '/scripts/install/templates';
+    $self->{dbschema_path} = $self->{installpath} . '/scripts/database/mysql';
     $self->{kanopya_services} = [
         'kanopya-executor',
         'kanopya-state-manager',
@@ -90,92 +91,92 @@ sub _init {
         'kanopya-rulesengine',
         'kanopya-front',
     ];
-    
+
     $self->{parameters} = [
         { title => 'Directories setting' },
-        
+
         { keyname  => 'clusters_dir',
           caption  => 'Configuration nodes files directory',
           default  => '/var/lib/kanopya/clusters',
           validate => '_validate_dir' },
-        
+
         { keyname  => 'masterimages_dir',
           caption  => 'Master images directory',
           default  => '/var/lib/kanopya/masterimages',
           validate => '_validate_dir' },
-        
+
         { keyname  => 'tftp_dir',
           caption  => 'Tftp boot files directory',
           default  => '/var/lib/kanopya/tftp',
           validate => '_validate_dir', },  
-        
+
         { keyname  => 'log_dir',
           caption  => 'Log files directory',
           default  => '/var/log/kanopya',
           validate => '_validate_dir', },
-        
+
         { keyname  => 'sessions_dir',
           caption  => 'Sessions files directory',
           default  => '/tmp/kanopya-sessions',
           validate => '_validate_dir', },    
-        
+
         { title => 'Database setting' },
-        
+
         { keyname => 'mysql_host',
           caption => 'Mysql server ip address',
           default => '127.0.0.1',
           validate => '_validate_ip', },
-        
+
         { keyname => 'mysql_port',
           caption => 'Mysql port',
           default => 3306,
           validate => '_validate_port', },
-        
+
         { keyname   => 'mysql_root_passwd',
           caption   => 'Mysql root password',
           hideinput => 1,
           validate => '_validate_mysql_connection', },
-        
+
         { keyname => 'mysql_kanopya_passwd',
           caption => 'Mysql kanopya user password',
           default => 'K4n0pY4', },
-        
+
         { title => 'Network setting' },
-        
+
         { keyname  => 'domainname',
           caption  => 'Domain name for kanopya administration',
           default  => 'kanopya.localdomain',
           validate => '_validate_domainname', }, 
-        
+
         { keyname  => 'admin_iface',
           choices  => \&_get_ifaces,
           caption  => 'Network interface for kanopya administration',
           default  => sub { return ($self->_get_ifaces())[0] }, 
           validate => '_validate_iface' }, 
-        
+
         { keyname  => 'admin_net_ip',
           caption  => 'Network ip address for kanopya administration network',
           default  => '10.0.0.0',
           validate => '_validate_ip' }, 
-          
+
         { keyname => 'admin_net_mask',
           caption => 'Ip mask for kanopya administration network',
           default => '255.255.255.0', },
-          
+
         { keyname => 'admin_ip',
           caption => 'First ip address to use in the administration network (kanopya host must be configured with this ip)',
           default => sub { return $self->_get_first_ip } },
-          
+
         { keyname => 'admin_net_size',
           caption => 'Ip addresses count to use in this pool',
           default => '250', },
-          
+
         { keyname => 'admin_net_gateway',
           caption => 'Ip address gateway for kanopya administration network',
           default => '0.0.0.0', },
-          
+
         { title => 'NAS setting' },
-        
+
         { keyname  => 'vg_name',
           caption  => 'LVM volume group dedicated to kanopya',
           default  => sub { return ($self->_get_vgs())[0] }, 
@@ -184,7 +185,6 @@ sub _init {
 }
 
 =pod
-
 =begin classdoc
 
 Test directory validity
@@ -407,10 +407,6 @@ sub _create_directories {
     print "$self->{parameters_values}->{sessions_dir}\n";
     make_path($self->{parameters_values}->{sessions_dir});
     system('chown -R kanopya.kanopya '.$self->{parameters_values}->{sessions_dir});
-    
-    # ? est bien utile ?
-    #system('chown -R kanopya.kanopya '.$self->{installpath});
-    
 }
 
 =pod
@@ -453,28 +449,28 @@ sub _generate_kanopya_conf {
         { path     => $self->{installpath} . '/conf/monitor.conf',
           template => 'monitor.conf.tt',
           data     => { internal_net_add  => $self->{parameters_values}->{admin_ip},
-                        internal_net_mask => $self->{parameters_values}->{admin_net_mask}, 
+                        internal_net_mask => $self->{parameters_values}->{admin_net_mask},
                         admin_password    => $self->{parameters_values}->{mysql_kanopya_passwd},}
         },
         { path     => $self->{installpath} . '/conf/libkanopya.conf',
           template => 'libkanopya.conf.tt',
           data     => { internal_net_add  => $self->{parameters_values}->{admin_ip},
-                        internal_net_mask => $self->{parameters_values}->{admin_net_mask}, 
+                        internal_net_mask => $self->{parameters_values}->{admin_net_mask},
                         db_user           => 'kanopya',
-                        dbip              => $self->{parameters_values}->{mysql_host}, 
-                        dbport            => $self->{parameters_values}->{mysql_port},   
+                        dbip              => $self->{parameters_values}->{mysql_host},
+                        dbport            => $self->{parameters_values}->{mysql_port},
                         admin_password    => $self->{parameters_values}->{mysql_kanopya_passwd},
-                        logdir            => $self->{parameters_values}->{log_dir}, 
+                        logdir            => $self->{parameters_values}->{log_dir},
                         crypt_salt        => $self->{parameters_values}->{crypt_salt}}
         },
         { path     => $self->{installpath} . '/ui/Frontend/config.yml',
           template => 'dancer_cfg.tt',
-          data     => { product       => 'KIM', 
+          data     => { product       => 'KIM',
                         show_gritters => 1,
                         sessions_dir  => $self->{parameters_values}->{sessions_dir},
                         log_directory => $self->{parameters_values}->{log_dir}, }
         },
-        
+
         # log files
         { path     => $self->{installpath} . '/conf/executor-log.conf',
           template => 'executor-log.conf.tt',
@@ -504,32 +500,23 @@ sub _generate_kanopya_conf {
           template => 'webui-log.conf.tt',
           data     => { logdir => $self->{parameters_values}->{log_dir}.'/' }
         },
-        
     ];
-    
-    my $template_config = {
-        INCLUDE_PATH => $self->{template_path},
-        INTERPOLATE  => 1,
-        POST_CHOMP   => 1,
-        EVAL_PERL    => 1,
-    };
-    
-    my $template = Template->new($template_config);
+
     for my $file (@$configfiles) {
-        print "$file->{path}\n";
-        $template->process($file->{template}, 
-                           $file->{data}, 
-                           $file->{path}) || 
-            die $template->error(), "\n"; 
-    
-    }                    
+        useTemplate(
+            include  => $self->{template_path},
+            template => $file->{template},
+            datas    => $file->{data},
+            conf     => $file->{path},
+        );
+    }
 }
 
 =pod
 
 =begin classdoc
 
-SSH key creation for root 
+SSH key creation for root
 
 =end classdoc
 
@@ -539,7 +526,7 @@ sub _generate_ssh_key {
     my ($self) = @_;
     if ( (! -e '/root/.ssh/kanopya_rsa') && (! -e '/root/.ssh/kanopya_rsa.pub') ) {
         if (! -e '/root/.ssh') {
-            make_path('/root/.ssh') 
+            make_path('/root/.ssh')
         }
         print "\n - Dedicated root SSH keys generation\n";
         system("ssh-keygen -q -t rsa -N '' -f /root/.ssh/kanopya_rsa");
@@ -582,12 +569,17 @@ sub _create_database {
     $query = "GRANT ALL PRIVILEGES ON kanopya.* TO 'kanopya' WITH GRANT OPTION";
     $output = `mysql -h $host -P $port -u root -p$passwd -e "$query"`;
 
+    # drop previous kanopya database
+    print " - Drop old Kanopya database if present\n";
+    $query = 'drop database kanopya';
+    $output = `mysql -h $host -P $port -u kanopya -p$userpasswd -e "$query"`;
+
     # schema creation
     print " - Create kanopya database...";
     system("mysql -h $host  -P $port -u kanopya -p$userpasswd < $self->{dbschema_path}/schemas/Schemas.sql");
     print "ok\n";
 
-    # components schema 
+    # components schema
     print " - Create components schemas...";
     open(my $FILE, '<', $self->{installpath} . '/conf/components.conf');
     my @lines = <$FILE>;
@@ -598,10 +590,10 @@ sub _create_database {
        if(( ! $line ) || ( $line =~ /^#/ )) {
            next LINE;
        }
-       system("mysql -h $host  -P $port -u kanopya -p$userpasswd < $self->{dbschema_path}/schemas/components/$line.sql");  
+       system("mysql -h $host  -P $port -u kanopya -p$userpasswd < $self->{dbschema_path}/schemas/components/$line.sql");
     }
     print "ok\n";
-    
+
     # populate initial data
     my %datas = (
         kanopya_vg_name          => $self->{parameters_values}->{vg_name},
@@ -642,16 +634,16 @@ Configure dhcpd
 
 sub _configure_dhcpd {
     my ($self) = @_;
+
     print " - Dhcpd reconfiguration\n";
-    my $configfile = '/etc/dhcp/dhcpd.conf';
-    open(my $FILE, '>', $configfile) or die "$!\n";
-    print $FILE "ddns-update-style none;\n" .
-                "default-lease-time 600;\n" .
-                "max-lease-time 7200;\n" .
-                "log-facility local7;\n" .
-                'subnet ' . $self->{parameters_values}->{admin_net_ip} . ' ' .
-                'netmask ' . $self->{parameters_values}->{admin_net_mask} . "{}\n";
-    close($FILE);
+
+    writeFile('/etc/dhcp/dhcpd.conf',
+              "ddns-update-style none;\n" .
+              "default-lease-time 600;\n" .
+              "max-lease-time 7200;\n" .
+              "log-facility local7;\n" .
+              'subnet ' . $self->{parameters_values}->{admin_net_ip} . ' ' .
+              'netmask ' . $self->{parameters_values}->{admin_net_mask} . "{}\n");
 }
 
 =pod
@@ -666,16 +658,16 @@ Configure atftpd
 
 sub _configure_atftpd {
     my ($self) = @_;
+
     print " - Atftpd reconfiguration\n";
-    my $configfile = '/etc/default/atftpd';
-    open(my $FILE, '>', $configfile) or die "$!\n";
-    print $FILE "USE_INETD=false\n" .
-                "OPTIONS=\"--daemon --tftpd-timeout 300 " .
-                "--retry-timeout 5 --no-multicast " .
-                "--bind-address ".$self->{parameters_values}->{admin_ip}." ".
-                "--maxthread 100 --verbose=5 " .
-                "--logfile=/var/log/tftp.log ".$self->{parameters_values}->{tftp_dir}."\"";
-    close($FILE);
+
+    writeFile('/etc/default/atftpd',
+              "USE_INETD=false\n" .
+              "OPTIONS=\"--daemon --tftpd-timeout 300 " .
+              "--retry-timeout 5 --no-multicast " .
+              "--bind-address " . $self->{parameters_values}->{admin_ip} . " " .
+              "--maxthread 100 --verbose=5 " .
+              "--logfile=/var/log/tftp.log " . $self->{parameters_values}->{tftp_dir} . "\"");
 }
 
 =pod
@@ -691,15 +683,10 @@ Configure iscsitarget
 sub _configure_iscsitarget {
     my ($self) = @_;
     print " - Iscsitarget reconfiguration\n";
-    my $configfile = '/etc/iet/ietd.conf';
-    open(my $FILE, '>', $configfile) or die "$!\n";
-    print $FILE "";
-    close($FILE);
-    
-    $configfile = '/etc/default/iscsitarget';
-    open($FILE, '>', $configfile) or die "$!\n";
-    print $FILE "ISCSITARGET_ENABLE=true";
-    close($FILE);
+
+    writeFile('/etc/iet/ietd.conf', "");
+
+    writeFile('/etc/default/iscsitarget', "ISCSITARGET_ENABLE=true");
 }
 
 =pod
@@ -743,23 +730,21 @@ Configure snmpd
 sub _configure_snmpd {
     my ($self) = @_;
     print " - Snmpd reconfiguration\n";
-    my $template_config = {
-        INCLUDE_PATH => $self->{installpath}.'/templates/components/snmpd',
-        INTERPOLATE  => 1,
-        POST_CHOMP   => 1,
-        EVAL_PERL    => 1,
-    };
 
-    my $template = Template->new($template_config);
-    $template->process('snmpd.conf.tt',
-                       { internal_ip_add => $self->{parameters_values}->{admin_ip} },
-                       '/etc/snmp/snmpd.conf') ||
-            die $template->error(), "\n";
+    useTemplate(
+        include  => $self->{installpath} . '/templates/components/snmpd',
+        data     => { internal_ip_add => $self->{parameters_values}->{admin_ip} },
+        conf     => '/etc/snmp/snmpd.conf',
+        template => 'snmpd.conf.tt',
+    );
 
-    $template->process('default_snmpd.tt',
-                       { internal_ip_add => $self->{parameters_values}->{admin_ip} },
-                       '/etc/default/snmpd') ||
-            die $template->error(), "\n";
+    useTemplate(
+        include  => $self->{installpath} . '/templates/components/snmpd',
+        data     => { internal_ip_add => $self->{parameters_values}->{admin_ip} },
+        conf     => '/etc/default/snmpd',
+        template => 'default_snmpd.tt',
+    );
+
 }
 
 =pod
@@ -775,27 +760,92 @@ Configure puppetmaster
 sub _configure_puppetmaster {
     my ($self) = @_;
     print " - Puppet master reconfiguration\n";
-    my $template_config = {
-        INCLUDE_PATH => $self->{installpath} . '/templates/components/puppetmaster',
-        INTERPOLATE  => 1,
-        POST_CHOMP   => 1,
-        EVAL_PERL    => 1,
+
+    my $path = $self->{parameters_values}->{clusters_dir};
+    if($path =~ /\/$/) {
+        chop($path);
+    }
+
+    my $data = {
+        kanopya_puppet_modules => '/opt/kanopya/templates/components/puppetmaster/modules',
+        admin_domainname       => $self->{parameters_values}->{domainname},
+        clusters_directory     => $path,
+        kanopya_hostname       => $self->{parameters_values}->{hostname},
+        dbserver               => 'localhost',
+        dbpassword             => $self->{parameters_values}->{mysql_kanopya_passwd},
+        puppetagent2_bootstart => 'yes',
+
     };
 
-    my $template = Template->new($template_config);
-    $template->process('puppet.conf.tt',
-                       { kanopya_puppet_modules =>
-                             $self->{installpath} . '/templates/components/puppetmaster/modules'
-                       },
-                       '/etc/puppet/puppet.conf') ||
-            die $template->error(), "\n";
+    useTemplate(
+        include  => '/opt/kanopya/templates/components/puppetmaster',
+        template => 'puppet.conf.tt',
+        datas    => $data,
+        conf     => '/etc/puppet/puppet.conf',
+    );
 
-    $template->process('fileserver.conf.tt',
-                   { domainname           => $self->{parameters_values}->{domainname},
-                     clusters_directories => $self->{parameters_values}->{clusters_dir},
-                    },
-                   '/etc/puppet/fileserver.conf') ||
-        die $template->error(), "\n";
+    useTemplate(
+        include  => '/opt/kanopya/templates/components/puppetmaster',
+        template => 'fileserver.conf.tt',
+        datas    => $data,
+        conf     => '/etc/puppet/fileserver.conf',
+    );
+
+    useTemplate(
+        include  => '/opt/kanopya/templates/components/puppetmaster',
+        template => 'auth.conf.tt',
+        datas    => $data,
+        conf     => '/etc/puppet/auth.conf',
+    );
+
+    useTemplate(
+        include  => '/opt/kanopya/templates/components/puppetagent',
+        template => 'default_puppet.tt',
+        conf     => '/etc/default/puppet',
+        datas    => $data,
+    );
+
+    writeFile('/etc/puppet/manifests/site.pp',
+          "Exec {\n" .
+          "  path    => '/usr/bin:/usr/sbin:/bin:/sbin'\n" .
+          "}\n" .
+          "stage { 'system': before => Stage['main'], }\n" .
+          "stage { 'finished': }\n" .
+          "import \"nodes/*.pp\"\n");
+
+    use Kanopya::Config;
+    use EEntity;
+
+    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
+    my $linux = $kanopya->getComponent(category => "System");
+
+    my @hosts = $kanopya->getHosts();
+    my $kanopya_master = $hosts[0];
+    my $puppetmaster = $kanopya->getComponent(name => "Puppetmaster");
+    my $fstab_puppet_definitions = $linux->getPuppetDefinition(
+                                       host    => $kanopya_master,
+                                       cluster => $kanopya,
+                                   );
+
+    my $epuppetmaster = EEntity->new(entity => $puppetmaster);
+    my $fqdn = $kanopya_master->node->node_hostname . "." . $kanopya->cluster_domainname;
+
+    $epuppetmaster->createHostCertificate(
+        mount_point => "/tmp",
+        host_fqdn   => $fqdn
+    );
+
+    $epuppetmaster->createHostManifest(
+        host_fqdn          => $fqdn,
+        puppet_definitions => $fstab_puppet_definitions,
+        sourcepath         => $kanopya->cluster_name . '/' . $kanopya_master->node->node_hostname
+    );
+
+    system('/etc/init.d/puppet', 'restart');
+    system('/etc/init.d/puppetmaster', 'restart');
+
+    EEntity->new(entity => $kanopya)->reconfigure(tags => [ "system", "kanopya::amqp" ]);
+
 }
 
 =pod
@@ -886,10 +936,10 @@ sub process {
     $self->_configure_rabbitmq();
 
     # copy logrotate file
-    copy($self->{installpath}.'/scripts/install/templates/logrotate-kanopya', '/etc/logrotate.d') || die "$!";
+    copy($self->{installpath} . '/scripts/install/templates/logrotate-kanopya', '/etc/logrotate.d') || die "$!";
 
     # copy syslog-ng config
-    copy($self->{installpath}.'/scripts/install/templates/syslog-ng.conf', '/etc/syslog-ng') || die "$!";
+    copy($self->{installpath} . '/scripts/install/templates/syslog-ng.conf', '/etc/syslog-ng') || die "$!";
 
     $self->_retrieve_tftp_content();
 
@@ -912,5 +962,54 @@ don't forget to reconfigure it\n";
 # 24 write /etc/hosts
 # restart des services kanopya
 
+=pod
+
+=begin classod
+
+Init and process Template
+
+=end classdoc
+
+=cut
+
+sub useTemplate {
+    my %args = @_;
+
+    my $input   = $args{template};
+    my $include = $args{include};
+    my $dat     = $args{datas};
+    my $output  = $args{conf};
+
+    my $config = {
+            INCLUDE_PATH => $include,
+            INTERPOLATE  => 1,
+            POST_CHOMP   => 1,
+            EVAL_PERL    => 1,
+    };
+    my $template = Template->new($config);
+
+    $template->process($input, $dat, $output) || do {
+            print "error while generating $output: $!";
+    };
+}
+
+=pod
+
+=begin classod
+
+ Write into a file in '>' mode
+
+=end classdoc
+
+=cut
+
+sub writeFile {
+    my ($path_file, $line) = @_;
+
+    open (my $FILE, ">", $path_file)
+        or die "an error occured while opening $path_file: $!";
+    print $FILE $line;
+    close($FILE);
+}
 
 1;

@@ -146,7 +146,7 @@ sub createHostManifest {
                          required => [ 'puppet_definitions', 'host_fqdn', 'sourcepath' ]);
 
     my $config = {
-        INCLUDE_PATH => '/templates/components/puppetmaster',
+        INCLUDE_PATH => '/opt/kanopya/templates/components/puppetmaster',
         INTERPOLATE  => 0,               # expand "$var" in plain text
         POST_CHOMP   => 0,               # cleanup whitespace
         EVAL_PERL    => 1,               # evaluate Perl code blocks
