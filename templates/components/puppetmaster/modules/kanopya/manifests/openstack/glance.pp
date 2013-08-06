@@ -82,8 +82,8 @@ class kanopya::openstack::glance(
         keystone_user     => $keystone_user,
         keystone_password => $keystone_password,
         sql_connection    => "mysql://${database_user}:${database_password}@${dbip}/${database_name}",
-        require           => [ Class['kanopya::openstack::repository'],
-                               Exec['/usr/bin/glance-manage db_sync'] ]
+        before            => Exec['/usr/bin/glance-manage db_sync'],
+        require           => Class['kanopya::openstack::repository']
     }
 
     class { 'glance::api':
@@ -96,8 +96,8 @@ class kanopya::openstack::glance(
         keystone_password => "${keystone_password}",
         registry_host     => $components[glance][access][glance_registry][ip],
         sql_connection    => "mysql://${database_user}:${database_password}@${dbip}/${database_name}",
-        require           => [ Class['kanopya::openstack::repository'],
-                               Exec['/usr/bin/glance-manage db_sync'] ]
+        before            => Exec['/usr/bin/glance-manage db_sync'],
+        require           => Class['kanopya::openstack::repository']
     }
 
     class { 'glance::backend::file': }
