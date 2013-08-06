@@ -71,6 +71,7 @@ class kanopya::openstack::glance(
     if ! defined(Exec['/usr/bin/glance-manage db_sync']) {
         exec { "/usr/bin/glance-manage db_sync":
             path => "/usr/bin:/usr/sbin:/bin:/sbin",
+            user => "glance"
         }
     }
 
