@@ -5,7 +5,6 @@ class kanopya::syslogng::service {
 				default => 'syslog-ng'
 			},
 			ensure => running,
-			hasstatus => true,
 			hasrestart => true,
 			enable => true,
 			require => Class['kanopya::syslogng::install']

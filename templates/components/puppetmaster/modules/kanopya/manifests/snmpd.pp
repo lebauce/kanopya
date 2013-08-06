@@ -23,10 +23,9 @@ class kanopya::snmpd::service {
 				default => 'snmpd'
 			},
 			ensure => running,
-			hasstatus => true,
 			hasrestart => true,
 			enable => true,
-			require => [ Class['kanopya::snmpd::install'],
+			require => [ Package['snmpd'],
 			             File['/etc/snmp/snmpd.conf'] ]
 	}
 }
