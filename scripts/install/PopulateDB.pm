@@ -871,19 +871,6 @@ sub registerServiceProviders {
         );
     }
 
-    for my $cluster_type (@{ $clusters }) {
-        my $class_type = ClassType->find(hash => {
-                             class_type => {
-                                 like => "Entity::ServiceProvider::Cluster::%" . $cluster_type->{service_provider_name}
-                             }
-                         });
-
-        ClassType::ServiceProviderType::ClusterType->promote(
-            promoted              => $class_type,
-            service_provider_name => $cluster_type->{service_provider_name},
-        );
-    }
-
     ClassType::ServiceProviderType::ClusterType->promote(
         promoted              => ClassType->find(hash => { class_type => 'Entity::ServiceProvider::Cluster' }),
         service_provider_name => 'Cluster',
