@@ -33,14 +33,9 @@ sub getPuppetDefinition {
     return merge($self->SUPER::getPuppetDefinition(%args), {
         redhat => {
             manifest => $self->instanciatePuppetResource(
-                            name => 'epel',
-                            class => 'yumrepo',
+                            name => "openstack::repo",
                             params => {
-                                descr => "Extra Packages for Enterprise Linux - \\\$basearch\"",
-                                mirrorlist => "http://mirrors.fedoraproject.org/mirrorlist?repo=epel-\\\$releasever&arch=\\\$basearch\"",
-                                failovermethod => 'priority',
-                                gpgcheck => 0,
-                                enabled  => 1
+                                stage => "system"
                             }
                         )
         }
