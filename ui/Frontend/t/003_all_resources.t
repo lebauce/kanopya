@@ -16,5 +16,5 @@ my $response = dancer_response(POST => '/login', { params => {login => 'admin', 
 
 my @api_resources = keys %REST::api::resources;
 for my $resource_route (keys %REST::api::resources) {
-    response_status_is ['GET' => "/api/$resource_route"], 200, "response status is 200 for /api/$resource_route";
+    response_status_is ['GET' => "/api/$resource_route"], 200, "response status is 200 for GET /api/$resource_route";
 }
