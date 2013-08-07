@@ -32,6 +32,11 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_extended  => 0
     },
+    dashboard_service_provider_id => {
+        pattern      => '\d+',
+        is_mandatory => 1,
+        is_extended  => 0
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
