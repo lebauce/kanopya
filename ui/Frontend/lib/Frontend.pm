@@ -17,6 +17,7 @@ use KIM::Consommation;
 use KIM::MasterImage;
 use KIM::WorkflowLogs;
 use Services;
+use REST::Documentation;
 
 our $VERSION = '0.1';
 

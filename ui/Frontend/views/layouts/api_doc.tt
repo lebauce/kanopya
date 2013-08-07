@@ -1,0 +1,46 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+        "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <meta http-equiv="Content-type" content="text/html; charset=<% settings.charset %>" />
+        <title>Kanopya API</title>
+        <link rel="stylesheet" href="<% request.uri_base %>/css/bootstrap.min.css" />
+        <script src="/javascripts/jquery/jquery-1.7.2.js"></script>
+        <script src="/javascripts/bootstrap/bootstrap.min.js"></script>
+        <style>
+            html, .container-fluid, .row-fluid, .column {
+                height: 100%;
+            }
+
+            body { padding-top : 50px; height:90% }
+
+            .column { overflow : auto; }
+
+            table {
+                table-layout : fixed;
+                word-wrap : break-word;
+            }
+        </style>
+        <script>
+            $(document).ready(function() {
+                $('.navbar [href="'+window.location.pathname+'"]').parent().addClass('active');
+            });
+        </script>
+    </head>
+
+    <body data-spy="scroll" data-target="#doc-menu" data-offset="70">
+
+        <div class="navbar navbar-fixed-top">
+          <div class="navbar-inner">
+            <a class="brand" href="/doc/api/general">Kanopya API v<% version %></a>
+            <ul class="nav">
+                <li><a href="/doc/api/general">Documentation</a></li>
+                <li><a href="/doc/api/resources">Resources</a></li>
+            </ul>
+          </div>
+        </div>
+
+        <% content %>
+
+    </body>
+</html>

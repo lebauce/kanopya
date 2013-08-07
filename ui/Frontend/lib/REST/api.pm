@@ -19,7 +19,7 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
-my $API_VERSION = "0.1";
+our $API_VERSION = "0.1";
 
 prepare_serializer_for_format;
 
@@ -475,32 +475,6 @@ get '/api' => sub {
         version   => $API_VERSION,
         resources => \@resources
     });
-};
-
-get '/api/doc' => sub {
-    my @resources = sort keys %resources;
-
-    template 'API/doc',
-             {
-                version   => $API_VERSION,
-                resources => \@resources
-             },
-             {layout => ''};
-};
-
-get '/api/doc/:resource' => sub {
-    my $class = classFromResource(resource => params->{resource});
-
-    require (General::getLocFromClass(entityclass => $class));
-
-    #to_json($class->toJSON(model => 1));
-
-    template 'API/resource',
-             {
-                resource_name => params->{resource},
-                resource_info => $class->toJSON(model => 1)
-             },
-             {layout => ''};
 };
 
 setupREST;

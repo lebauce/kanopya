@@ -1,0 +1,663 @@
+<style>
+    /* Anchor positioning */
+    section, h2 {
+        padding-top:50px;
+        margin-top:-50px;
+    }
+</style>
+<div class="container-fluid">
+
+    <!-- Docs nav
+    ================================================== -->
+    <div class="row-fluid">
+        <div class="span3" id="doc-menu">
+                <!--ul class="nav nav-list affix" id="doc-menu"-->
+                <ul class="nav nav-list nav-pills nav-stacked" data-spy="affix">
+                  <li><a href="#general">General</a></li>
+                  <li><a href="#create">Create</a></li>
+                  <li><a href="#read">Read</a></li>
+                  <ul class="nav nav-list nav-pills nav-stacked" >
+                     <li><a href="#get_related">Related resources</a></li>
+                     <li><a href="#filter">Filtering</a></li>
+                     <li><a href="#expand">Expand</a></li>
+                     <li><a href="#pagination">Pagination</a></li>
+                     <li><a href="#sort">Ordering</a></li>
+                     <li><a href="#format">Format</a></li>
+                  </ul>
+                  <li><a href="#update">Update</a></li>
+                  <li><a href="#delete">Delete</a></li>
+                  <li><a href="#jsonrpc">Method call (JSONRPC)</a></li>
+                  <li><a href="#metadata">Resource information</a></li>
+                  <li><a href="#issues">Known issues</a></li>
+                </ul>
+        </div>
+        <div class="span9" >
+
+        <!-- General
+        ================================================== -->
+        <section id="general">
+              <div class="page-header">
+                <h1>General</h1>
+              </div>
+
+              <h2>CRUD</h2>
+              <p>
+                Kanopya REST API allows to manipulate most of Kanopya entities (host, cluster, user, operation,...)
+                and notably <a href="#create">create</a>,  <a href="#update">update</a>, <a href="#delete">delete</a>,
+                 <a href="#filter">filter</a>,  <a href="#sort">sort</a>,...<br/>
+                See <a href='resources'>resources</a> page for a list of all available resources.
+              </p>
+              <h2>Authentication</h2>
+              <p>
+                Before manipulate resources, authentication is required.<br/>
+                Request:
+<pre>
+POST /login
+{
+    login    : 'admin'
+    password : 'admin_password'
+}
+</pre>
+              </p>
+        </section>
+
+        <!-- Create
+        ================================================== -->
+        <section id="create">
+              <div class="page-header">
+                <h1>Create</h1>
+              </div>
+              <div class="alert alert-info">
+                <strong>POST /api/[type]</strong> : create a new resource of type [type]<br/>
+              </div>
+
+              <h2>Example</h2>
+                Request:
+<pre>
+POST /api/user
+{
+    "user_creationdate" : "2012-05-02",
+    "user_login" : "bob",
+    "user_lastname" : "Lebauce",
+    "user_desc" : "Test User",
+    "user_email" : "dev@hederatech.com",
+    "user_firstname" : "Bob"
+}
+</pre>
+                Response (the created object):
+<pre>
+{
+    "pk" : "412",
+    "user_id" : "412",
+    "user_creationdate" : "2012-05-02",
+    "user_login" : "bob",
+    "user_lastname" : "Lebauce",
+    [...]
+}
+</pre>
+
+              <div class="alert alert-block">
+                <h4>Creation operation</h4>
+                <p>
+                    Some resources will no be instantly created but a create operation will be enqueued.<br/>
+                    In this case, the returned resource will be the operation object.
+                </p>
+              </div>
+        </section>
+
+        <!-- Read
+        ================================================== -->
+        <section id="read">
+              <div class="page-header">
+                <h1>Read</h1>
+              </div>
+              <div class="alert alert-info">
+                <strong>GET /api/[type]</strong> : return a list of all resources of type [type]<br/>
+              </div>
+              <div class="alert alert-info">
+                <strong>GET /api/[type]/[id]</strong> : return the resource of type [type] with id [id]
+              </div>
+              <h2>Example</h2>
+                Request:
+<pre>
+GET /api/host
+</pre>
+                Response:
+<pre>
+[
+  { "pk" : "51",
+    "host_core":"4",
+    "host_state":"up:1335916976",
+    "host_ram":"4294967296",
+    "entity_id":"51",
+    "class_type_id":"3",
+    "host_hostname":"node001",
+    [...] },
+
+  { "pk" : "53",
+    "host_core":"2",
+    "host_state":"up:1335916976",
+    "host_ram":"4294967296",
+    "entity_id":"53",
+    "class_type_id":"3",
+    "host_hostname":"node002",
+    [...] }
+]
+</pre>
+
+                Request:
+<pre>
+GET /api/host/51
+</pre>
+                Response:
+<pre>
+{ "pk" : "51",
+  "host_core":"4",
+  "host_state":"up:1335916976",
+  "host_ram":"4294967296",
+  "entity_id":"51",
+  "class_type_id":"3",
+  "host_hostname":"node001",
+  [...] }
+</pre>
+
+              <h2 id='get_related'>Related resources</h2>
+                  <div class="alert alert-info">
+                    <strong>GET /api/[type]/[id]/[relation]</strong> : return the related resource(s) [relation] of the resource [type] with id [id]
+                  </div>
+                  <p>
+                    If the relation is 'single' then return the related resource.<br/>
+                    If the relation is 'multi' then return a list of related resources.
+                   </p>
+                  <p>
+                    Follow relation of a relation is available, at any depth, i.e.: /relation1/relation2/relation3
+                  </p>
+<pre>
+GET /api/cluster/1/user
+
+GET /api/cluster/1/nodes/host
+</pre>
+              <h2 id='filter'>Filtering</h2>
+                <h3>Filter on attribute value</h3>
+                  <div class="alert alert-info">
+                    <strong>?[attribute]=[comparator],[value]</strong> : filter resources according to [attribute]
+                  </div>
+                  A comparison operator can be specified (=, <, >, <=, >=, LIKE, <>, ...) and must be followed by a coma ','.<br/>
+                  If no operator is specified then '=' is used, and the coma is not required.<br/><br/>
+                  Multi criteria filtering is available by separating each condition by '&'.
+
+                  <div class="alert alert-block">
+                    <h4>Virtual attributes</h4>
+                    <p>
+                        Filtering on virtual attributes (e.g. 'label') will not work and response status will be 500.<br/>
+                        See <a href='#virtual_attributes'>virtual attributes</a>.
+                    </p>
+                  </div>
+
+                  <div class="alert alert-block">
+                    <h4>Multi filters on the same attribute</h4>
+                    <p>
+                        Filtering on the same attribute with different value will be taken as a OR.
+                        <pre>GET /api/cluster?cluster_name=cluster1&cluster_name=cluster2</pre> will return clusters with name "cluster1" or "cluter2"
+                    </p>
+                  </div>
+
+                  <h4>Example</h4>
+<pre>
+GET /api/cluster?host_core=2
+
+GET /api/externalnode?externalnode_state=<>,disabled
+
+GET /api/cluster?host_core=>,2&cluster_state=LIKE,up%
+</pre>
+                <h3>Filter on related resource attribute value</h3>
+                  <div class="alert alert-info">
+                    <strong>?[relation].[attribute]=[comparator],[value]</strong> : filter resources according to [attribute] of a related resource
+                  </div>
+                  <p>
+                    Filtering on relation of a relation is available, at any depth, i.e.: ?relation1.relation2.relation3.attribute=...
+                  </p>
+                  <p>
+                    Relation can be of type 'single' or 'multi'.
+                    In the case of a 'multi' relation then resource will be returned if one of its related resources match the filter.
+                    (see example)
+                  </p>
+                  <h4>Example</h4>
+                    All clusters owned by user with login 'admin':
+                    <pre>GET /api/cluster?user.user_login=admin</pre>
+                    All clusters with at least one node not broken (and not all clusters without broken node):
+                    <pre>GET /api/cluster?nodes.node_state=NOT LIKE,broken%</pre>
+                    All clusters with at least one node hosted on a host with 4 or more cores:
+                    <pre>GET /api/cluster?nodes.host.host_core=>=,4</pre>
+                    All clusters without component:
+                    <pre>GET /api/cluster?components.component_id=</pre>
+              <h2 id='expand'>Expand</h2>
+                <div class="alert alert-info">
+                    <strong>?expand=[relation]</strong> : add related resource(s) as attributes of the returned resource(s)
+                </div>
+                <p>
+                    Can be done on a list of resources or on a particular resource.
+                </p>
+                <p>
+                    Expand relation of relation is available, at any depth, i.e.: ?expand=relation1.relations2 will expand relation1 and expand relation2 of relation1
+                </p>
+<pre>
+GET /api/host?expand=node
+
+GET /api/cluster?expand=nodes
+
+GET /api/cluster/1?expand=nodes
+
+GET /api/cluster?expand=nodes.host
+</pre>
+                <div class="alert alert-block">
+                    <h4>Warning</h4>
+                    <p>
+                        Expand multiple relationships can lead to performance issue and even unusable response data. In particular when manipulating "multi" relations.
+                        It is better to avoid multi expands or use with caution.
+                    </p>
+                </div>
+                <div class="alert alert-block">
+                    <h4>Expand and filtering on the same relation</h4>
+                    <p>
+                        Only filtered related resources will appears in the list of extended resources.
+                    </p>
+                </div>
+              <h2 id='pagination'>Pagination</h2>
+                <div class="alert alert-info">
+                    <strong>?page=[page]&rows=[rows]</strong> : ask for [rows] number of rows of the page [page]
+                </div>
+                <pre>GET /api/cluster?page=2&rows=20</pre>
+              <h2 id='sort'>Ordering</h2>
+                <div class="alert alert-info">
+                    <strong>?order_by=[attribute] [ASC|DESC]</strong> : sort results according to attribute [attribute]
+                </div>
+<pre>
+GET /api/cluster?order_by=cluster_state
+
+GET /api/cluster?page=2&rows=20&order_by=cluster_state DESC
+</pre>
+              <h2 id='format'>Format</h2>
+                <div class="alert alert-info">
+                    <strong>?dataType=[flat|jqGrid]</strong> : format of the returned JSON object
+                </div>
+                <p>
+                    Default format is 'flat'.<br/>
+                    'jqGrid' format will add pagination informations.
+                </p>
+                Request:
+<pre>
+GET /api/host
+GET /api/host?dataType=flat
+</pre>
+                Response:
+<pre>
+[
+  { "pk" : "51",
+    "host_core":"4",
+    "host_state":"up:1335916976",
+    "host_ram":"4294967296",
+    "entity_id":"51",
+    [...] },
+
+  { "pk" : "53",
+    "host_core":"2",
+    "host_state":"up:1335916976",
+    "host_ram":"4294967296",
+    "entity_id":"53",
+    [...] }
+]
+</pre>
+                Request:
+<pre>
+GET /api/host?dataType=jqGrid
+</pre>
+                Response:
+<pre>
+{
+    "page" : 1,
+    "records : 2,
+    "total" : 2,
+    "rows" :
+        [
+          { "pk" : "51",
+            "host_core":"4",
+            "host_state":"up:1335916976",
+            "host_ram":"4294967296",
+            "entity_id":"51",
+            [...] },
+
+          { "pk" : "53",
+            "host_core":"2",
+            "host_state":"up:1335916976",
+            "host_ram":"4294967296",
+            "entity_id":"53",
+            [...] }
+        ]
+}
+</pre>
+        </section>
+
+        <!-- Update
+        ================================================== -->
+        <section id="update">
+              <div class="page-header">
+                <h1>Update</h1>
+              </div>
+              <div class="alert alert-info">
+                <strong>POST /api/[type]/[id]</strong> : update resource of type [type] and id [id]<br/>
+              </div>
+              <h2>Example</h2>
+                Request:
+<pre>
+PUT /api/user/412
+{
+    "user_firstname" : "newname"
+}
+</pre>
+                Response:
+<pre>
+{"status":"success"}
+</pre>
+        </section>
+
+        <!-- Delete
+        ================================================== -->
+        <section id="delete">
+              <div class="page-header">
+                <h1>Delete</h1>
+              </div>
+              <div class="alert alert-info">
+                <strong>DELETE /api/[type]/[id]</strong> : delete resource of type [type] and id [id]<br/>
+              </div>
+              <h2>Example</h2>
+                Request:
+<pre>
+DELETE /api/user/412
+</pre>
+                Response:
+<pre>
+{"status":"success"}
+</pre>
+        </section>
+
+        <!-- Jsonrpc
+        ================================================== -->
+        <section id="jsonrpc">
+              <div class="page-header">
+                <h1>Method call (JSONRPC)</h1>
+              </div>
+              <p>
+              Methods can be called on resources.
+              The list of available methods is returned by the resource information route /api/attributes/[resource] in the field "methods" (see <a href='#metadata'>resource information</a>)
+              </p>
+              <p>
+                Method call is done with a POST request. Parameters can be transmitted using one of the both way:
+              </p>
+              <p>
+                Classical way (application/x-www-form-urlencoded):
+<pre>
+$.ajax( {
+    "url" : "/api/cluster/1/mymethod",
+    "data" : { arg1 : 1, arg2 : "test" },
+    "type" : 'POST'
+} )
+</pre>
+              </p>
+              <p>
+                As JSON object in the request body:
+<pre>
+$.ajax( {
+    "url" : "/api/cluster/1/mymethod",
+    "data" : JSON.stringify(mon_object_javascript),
+    "type" : 'POST',
+    "contentType" : 'application/json'
+} )
+</pre>
+              </p>
+              <p>
+                Returned value is put in the response body. If it is a hash, a Kanopya object or a list of Kanopya object, it is first converted in JSON.
+              </p>
+        </section>
+
+        <!-- Resource information
+        ================================================== -->
+        <section id="metadata">
+              <div class="page-header">
+                <h1>Resource informations</h1>
+              </div>
+              <div class="alert alert-info">
+                <strong>GET /api/attributes/[type]</strong> : get data structure information for resource of type [type]<br/>
+              </div>
+              API allows to get informations about data structures of resources:
+              <ul>
+                <li>attributes</li>
+                <li>relations and hierarchy</li>
+                <li>methods</li>
+              </ul>
+              All informations in the <a href='resources'>resources page</a> are available using this route.
+
+              <h2>'pk' attribute</h2>
+                All resources have a 'pk' attribute which has the same value than the id attribute of the resource (e.g. 'cluster_id, 'user_id')
+
+              <h2 id='virtual_attributes'>Virtual attributes</h2>
+                Some attributes have the property 'is_virtual' set to true.<br/>
+                Virtual attributes are not stored, they are computed on demand. So they can not be directly updated and can not be used for filtering.
+              <h2>Exemple</h2>
+                Request:
+<pre>
+GET /api/attributes/user
+</pre>
+                Response:
+<pre style="height:300px;overflow-y:auto">
+{
+   "pk" : {
+      "is_mandatory" : 1,
+      "pattern" : "^\\d*$",
+      "is_extended" : 0
+   },
+   "relations" : {
+      "ingroups" : {
+         "cond" : {
+            "foreign.entity_id" : "self.entity_id"
+         },
+         "source" : "AdministratorDB::Schema::Result::Ingroup",
+         "attrs" : {
+            "join_type" : "LEFT",
+            "cascade_copy" : 0,
+            "cascade_delete" : 0,
+            "accessor" : "multi"
+         },
+         "from" : "Entity",
+         "class" : "AdministratorDB::Schema::Result::Ingroup"
+      },
+      "messages" : {
+         "cond" : {
+            "foreign.user_id" : "self.user_id"
+         },
+         "source" : "AdministratorDB::Schema::Result::Message",
+         "attrs" : {
+            "join_type" : "LEFT",
+            "cascade_copy" : 0,
+            "cascade_delete" : 0,
+            "accessor" : "multi"
+         },
+         "from" : "User",
+         "class" : "AdministratorDB::Schema::Result::Message"
+      },
+      "entityright_entityright_consumers" : {
+         "cond" : {
+            "foreign.entityright_consumer_id" : "self.entity_id"
+         },
+         "source" : "AdministratorDB::Schema::Result::Entityright",
+         "attrs" : {
+            "join_type" : "LEFT",
+            "cascade_copy" : 0,
+            "cascade_delete" : 0,
+            "accessor" : "multi"
+         },
+         "from" : "Entity",
+         "class" : "AdministratorDB::Schema::Result::Entityright"
+      },
+      "entityright_entityrights_consumed" : {
+         "cond" : {
+            "foreign.entityright_consumed_id" : "self.entity_id"
+         },
+         "source" : "AdministratorDB::Schema::Result::Entityright",
+         "attrs" : {
+            "join_type" : "LEFT",
+            "cascade_copy" : 0,
+            "cascade_delete" : 0,
+            "accessor" : "multi"
+         },
+         "from" : "Entity",
+         "class" : "AdministratorDB::Schema::Result::Entityright"
+      },
+      "operations" : {
+         "cond" : {
+            "foreign.user_id" : "self.user_id"
+         },
+         "source" : "AdministratorDB::Schema::Result::Operation",
+         "attrs" : {
+            "join_type" : "LEFT",
+            "cascade_copy" : 0,
+            "cascade_delete" : 0,
+            "accessor" : "multi"
+         },
+         "from" : "User",
+         "class" : "AdministratorDB::Schema::Result::Operation"
+      },
+      "old_operations" : {
+         "cond" : {
+            "foreign.user_id" : "self.user_id"
+         },
+         "source" : "AdministratorDB::Schema::Result::OldOperation",
+         "attrs" : {
+            "join_type" : "LEFT",
+            "cascade_copy" : 0,
+            "cascade_delete" : 0,
+            "accessor" : "multi"
+         },
+         "from" : "User",
+         "class" : "AdministratorDB::Schema::Result::OldOperation"
+      },
+      "clusters" : {
+         "cond" : {
+            "foreign.user_id" : "self.user_id"
+         },
+         "source" : "AdministratorDB::Schema::Result::Cluster",
+         "attrs" : {
+            "join_type" : "LEFT",
+            "cascade_copy" : 0,
+            "cascade_delete" : 0,
+            "accessor" : "multi"
+         },
+         "from" : "User",
+         "class" : "AdministratorDB::Schema::Result::Cluster"
+      },
+      "class_type" : {
+         "cond" : {
+            "foreign.class_type_id" : "self.class_type_id"
+         },
+         "source" : "AdministratorDB::Schema::Result::ClassType",
+         "attrs" : {
+            "is_foreign_key_constraint" : 1,
+            "fk_columns" : {
+               "class_type_id" : 1
+            },
+            "on_delete" : "CASCADE",
+            "on_update" : "CASCADE",
+            "undef_on_null_fk" : 1,
+            "accessor" : "single"
+         },
+         "from" : "Entity",
+         "class" : "AdministratorDB::Schema::Result::ClassType"
+      },
+      "entity_comment" : {
+         "cond" : {
+            "foreign.entity_comment_id" : "self.entity_comment_id"
+         },
+         "source" : "AdministratorDB::Schema::Result::EntityComment",
+         "attrs" : {
+            "is_foreign_key_constraint" : 1,
+            "fk_columns" : {
+               "entity_comment_id" : 1
+            },
+            "on_delete" : "CASCADE",
+            "join_type" : "LEFT",
+            "on_update" : "CASCADE",
+            "undef_on_null_fk" : 1,
+            "accessor" : "single"
+         },
+         "from" : "Entity",
+         "class" : "AdministratorDB::Schema::Result::EntityComment"
+      }
+   },
+   "attributes" : {
+      "user_creationdate" : {
+         "is_mandatory" : 0,
+         "pattern" : "^*$",
+         "is_editable" : 0,
+         "is_extended" : 0
+      },
+      "user_login" : {
+         "is_mandatory" : 1,
+         "pattern" : "^\\w*$",
+         "is_editable" : 0,
+         "is_extended" : 0
+      },
+      "user_lastname" : {
+         "is_mandatory" : 1,
+         "pattern" : "^\\w*$",
+         "is_editable" : 0,
+         "is_extended" : 0
+      },
+      "user_password" : {
+         "is_mandatory" : 1,
+         "pattern" : "^.*$",
+         "is_editable" : 1,
+         "is_extended" : 0
+      },
+      "user_desc" : {
+         "is_mandatory" : 0,
+         "pattern" : "^.*$",
+         "is_editable" : 1,
+         "is_extended" : 0
+      },
+      "user_email" : {
+         "is_mandatory" : 1,
+         "pattern" : "^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}$",
+         "is_editable" : 1,
+         "is_extended" : 0
+      },
+      "user_firstname" : {
+         "is_mandatory" : 1,
+         "pattern" : "^\\w*$",
+         "is_editable" : 0,
+         "is_extended" : 0
+      },
+      "user_lastaccess" : {
+         "is_mandatory" : 0,
+         "pattern" : "^\\w*$",
+         "is_editable" : 1,
+         "is_extended" : 0
+      }
+   }
+}
+</pre>
+        </section>
+
+         <!-- Issues
+        ================================================== -->
+        <section id="issues">
+              <div class="page-header">
+                <h1>Known issues</h1>
+              </div>
+              <ul>
+                <li>Multi expands on has_many relationships</li>
+              </ul>
+        </section>
+
+        </div>
+    </div>
+</div>
