@@ -216,6 +216,10 @@ sub _startStopHost {
     }
 }
 
+sub checkUp {
+    return 1;
+}
+
 sub startHost {
     my $self = shift;
     my %args = @_;
