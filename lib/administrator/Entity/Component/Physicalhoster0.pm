@@ -51,62 +51,6 @@ sub hostType {
     return "Physical host";
 }
 
-
-=pod
-=begin classdoc
-
-@return the manager params definition.
-
-=end classdoc
-=cut
-
-sub getManagerParamsDef {
-    my ($self, %args) = @_;
-
-    return {
-        %{ $self->SUPER::getManagerParamsDef },
-        cpu => {
-            label        => 'Required CPU number',
-            type         => 'integer',
-            unit         => 'core(s)',
-            pattern      => '^\d*$',
-            is_mandatory => 1
-        },
-        ram => {
-            label        => 'Required RAM amount',
-            type         => 'integer',
-            unit         => 'byte',
-            pattern      => '^\d*$',
-            is_mandatory => 1
-        },
-        tags => {
-            label        => 'Tags',
-            type         => 'enum',
-            relation     => 'multi',
-            is_mandatory => 0,
-        }
-    };
-}
-
-sub getHostManagerParams {
-    my $self = shift;
-    my %args = @_;
-
-    my $definition = $self->getManagerParamsDef();
-    $definition->{tags}->{options} = {};
-
-    my @tags = Entity::Tag->search();
-    for my $tag (@tags) {
-        $definition->{tags}->{options}->{$tag->id} = $tag->tag;
-    }
-
-    return {
-        cpu  => $definition->{cpu},
-        ram  => $definition->{ram},
-        tags => $definition->{tags},
-    };
-}
-
 sub getConf {
     return {};
 }
