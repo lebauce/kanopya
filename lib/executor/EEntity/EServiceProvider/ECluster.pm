@@ -49,7 +49,7 @@ sub create {
     # Generate cluster base hostname
     # Who will dare using that pattern? $str =~ s/([_.])/${ \($1 eq q?_??"-":$,) }/g;
     if (!defined $self->cluster_basehostname || $self->cluster_basehostname eq '') {
-        my $base_hostname = $self->cluster_name;
+        my $base_hostname = lc($self->cluster_name);
         $base_hostname =~ s/_/-/g;
         $base_hostname =~ s/\.//g;
 
