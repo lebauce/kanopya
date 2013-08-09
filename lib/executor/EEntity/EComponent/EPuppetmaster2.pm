@@ -146,7 +146,7 @@ sub createHostManifest {
                          required => [ 'puppet_definitions', 'host_fqdn', 'sourcepath' ]);
 
     my $config = {
-        INCLUDE_PATH => '/opt/kanopya/templates/components/puppetmaster',
+        INCLUDE_PATH => '/templates/components/puppetmaster',
         INTERPOLATE  => 0,               # expand "$var" in plain text
         POST_CHOMP   => 0,               # cleanup whitespace
         EVAL_PERL    => 1,               # evaluate Perl code blocks
@@ -155,7 +155,7 @@ sub createHostManifest {
 
     my $input = 'host_manifest.pp.tt';
     my $output = '/etc/puppet/manifests/nodes/';
-    $output .= $args{host_fqdn}.'.pp';
+    $output .= $args{host_fqdn} . '.pp';
 
     my $data = {
         host_fqdn          => $args{host_fqdn},
@@ -165,11 +165,11 @@ sub createHostManifest {
 
     my $template = Template->new($config);
     $template->process($input, $data, $output) || do {
-        $errmsg = "error during generation from '$input':" .  $template->error;
+        $errmsg = "error during generation from '$input':" . $template->error;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     };
-    
+
     $self->updateSite;
 }
 

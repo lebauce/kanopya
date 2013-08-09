@@ -119,7 +119,7 @@ sub new {
 
     # Check the ehost definition
     if (not defined $args{ehost}) {
-        # Chicken and egg situation, the first EEntity instanciated in  a process
+        # Chicken and egg situation, the first EEntity instanciated in a process
         # is the EHost to give in paramater to others EEntity.
         if ($self->isa('EEntity::EHost')) {
             $host = $self;

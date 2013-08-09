@@ -197,8 +197,8 @@ Test directory validity
 
 sub _validate_dir {
     my ($self, $value) = @_;
-    if(-e $value) {
-        return { error => 1, msg => "$value already exists" };
+    if (-e $value) {
+        return { msg => "WARNING: $value already exists" };
     }
     return { value => $value };
 }
@@ -275,8 +275,12 @@ Retrieve volume groups
 =cut
 
 sub _get_vgs {
+
     my @vgs_list = `vgs  --noheadings -o vg_name`;
+    chomp(@vgs_list);
+
     my @vgs = map { my $vg = $_; $vg =~ s/\s//g; return $vg } @vgs_list;
+
     return @vgs;
 }
 
@@ -345,15 +349,18 @@ sub complete_parameters {
     # retrieve physical volumes of volume group
     my @pvs = `pvs --noheadings --separator '|' -o pv_name,vg_name  | grep $vg_name | cut -d'|' -f1`;
     chomp(@pvs);
+    foreach my $pv (@pvs) {
+        $pv =~ s/^\s+//;
+    }
+
     $self->{parameters_values}->{pvs} = \@pvs;
-    
+
     # get hostname
     $self->{parameters_values}->{hostname} = `hostname`;
-    
+    chomp($self->{parameters_values}->{hostname});
+
     # generate iscsi initiatorname
     $self->{parameters_values}->{initiatorname} = 'iqn.toto';
-    
-    
 }
 
 =pod
@@ -369,7 +376,7 @@ Create kanopya linux user
 sub _create_kanopya_account {
     my ($self) = @_;
     my $output = `grep kanopya /etc/passwd`;
-    
+
     if(not $output) {
         print "\n - kanopya account creation\n";
         system("useradd kanopya -r -c 'Kanopya User' -s '/bin/false' -b '/opt'");
@@ -503,7 +510,7 @@ sub _generate_kanopya_conf {
     ];
 
     for my $file (@$configfiles) {
-        useTemplate(
+        _useTemplate(
             include  => $self->{template_path},
             template => $file->{template},
             datas    => $file->{data},
@@ -547,32 +554,19 @@ Create user and database shema
 
 sub _create_database {
     my ($self) = @_;
+
     my $host = $self->{parameters_values}->{mysql_host};
     my $port = $self->{parameters_values}->{mysql_port};
     my $passwd = $self->{parameters_values}->{mysql_root_passwd};
     my $userpasswd = $self->{parameters_values}->{mysql_kanopya_passwd};
 
-    # kanopya user creation
-    my $query = "use mysql; SELECT user FROM mysql.user WHERE user='kanopya' LIMIT 1;";
-    my $output = `mysql -h $host -P $port -u root -p$passwd -e "$query"`;
-    if ($output !~ /kanopya/) {
-        print " - Creating kanopya mysql user\n";
-        $query = "CREATE USER 'kanopya'\@'localhost' IDENTIFIED BY '$userpasswd'";
-        $output = `mysql -h $host  -P $port -u root -p$passwd -e "$query"`;
-    }
-    else {
-        print " - Mysql kanopya user already exists\n";
-    }
-
-    # kanopya user privileges
-    print " - Granting all privileges on kanopya database to kanopya user\n";
-    $query = "GRANT ALL PRIVILEGES ON kanopya.* TO 'kanopya' WITH GRANT OPTION";
-    $output = `mysql -h $host -P $port -u root -p$passwd -e "$query"`;
+    $self->_createMySQLUser(user       => 'kanopya',
+                            password   => $self->{parameters_values}->{mysql_kanopya_passwd},
+                            privileges => "ALL PRIVILEGES",);
 
     # drop previous kanopya database
     print " - Drop old Kanopya database if present\n";
-    $query = 'drop database kanopya';
-    $output = `mysql -h $host -P $port -u kanopya -p$userpasswd -e "$query"`;
+    $self->_execSQL('drop database if exists kanopya');
 
     # schema creation
     print " - Create kanopya database...";
@@ -614,6 +608,17 @@ sub _create_database {
         admin_kernel             => undef,
         tmstp                    => time()
     );
+
+
+    my %nsinfo = $self-> _getNameServerInfo();
+    if (@{ $nsinfo{nameservers} } > 0) {
+        $datas{kanopya_nameserver1} = $nsinfo{nameservers}->[0];
+    }
+
+    if (@{ $nsinfo{nameservers} } > 1) {
+        $datas{kanopya_nameserver2} = $nsinfo{nameservers}->[2];
+    }
+
     require PopulateDB;
     print " - Populate database...";
     populateDB(login    => 'admin',
@@ -637,7 +642,7 @@ sub _configure_dhcpd {
 
     print " - Dhcpd reconfiguration\n";
 
-    writeFile('/etc/dhcp/dhcpd.conf',
+    _writeFile('/etc/dhcp/dhcpd.conf',
               "ddns-update-style none;\n" .
               "default-lease-time 600;\n" .
               "max-lease-time 7200;\n" .
@@ -661,7 +666,7 @@ sub _configure_atftpd {
 
     print " - Atftpd reconfiguration\n";
 
-    writeFile('/etc/default/atftpd',
+    _writeFile('/etc/default/atftpd',
               "USE_INETD=false\n" .
               "OPTIONS=\"--daemon --tftpd-timeout 300 " .
               "--retry-timeout 5 --no-multicast " .
@@ -684,9 +689,9 @@ sub _configure_iscsitarget {
     my ($self) = @_;
     print " - Iscsitarget reconfiguration\n";
 
-    writeFile('/etc/iet/ietd.conf', "");
+    _writeFile('/etc/iet/ietd.conf', "");
 
-    writeFile('/etc/default/iscsitarget', "ISCSITARGET_ENABLE=true");
+    _writeFile('/etc/default/iscsitarget', "ISCSITARGET_ENABLE=true");
 }
 
 =pod
@@ -731,14 +736,14 @@ sub _configure_snmpd {
     my ($self) = @_;
     print " - Snmpd reconfiguration\n";
 
-    useTemplate(
+    _useTemplate(
         include  => $self->{installpath} . '/templates/components/snmpd',
         data     => { internal_ip_add => $self->{parameters_values}->{admin_ip} },
         conf     => '/etc/snmp/snmpd.conf',
         template => 'snmpd.conf.tt',
     );
 
-    useTemplate(
+    _useTemplate(
         include  => $self->{installpath} . '/templates/components/snmpd',
         data     => { internal_ip_add => $self->{parameters_values}->{admin_ip} },
         conf     => '/etc/default/snmpd',
@@ -761,51 +766,56 @@ sub _configure_puppetmaster {
     my ($self) = @_;
     print " - Puppet master reconfiguration\n";
 
+    $self->_execSQL("drop database if exists puppet");
+    $self->_execSQL("CREATE DATABASE puppet");
+    $self->_createMySQLUser(user       => "puppet",
+                            password   => $self->{parameters_values}->{mysql_kanopya_passwd},
+                            privileges => "ALL PRIVILEGES");
+
     my $path = $self->{parameters_values}->{clusters_dir};
     if($path =~ /\/$/) {
         chop($path);
     }
 
     my $data = {
-        kanopya_puppet_modules => '/opt/kanopya/templates/components/puppetmaster/modules',
+        kanopya_puppet_modules => '/templates/components/puppetmaster/modules',
         admin_domainname       => $self->{parameters_values}->{domainname},
         clusters_directory     => $path,
         kanopya_hostname       => $self->{parameters_values}->{hostname},
         dbserver               => 'localhost',
         dbpassword             => $self->{parameters_values}->{mysql_kanopya_passwd},
         puppetagent2_bootstart => 'yes',
-
     };
 
-    useTemplate(
-        include  => '/opt/kanopya/templates/components/puppetmaster',
+    _useTemplate(
+        include  => '/templates/components/puppetmaster',
         template => 'puppet.conf.tt',
         datas    => $data,
         conf     => '/etc/puppet/puppet.conf',
     );
 
-    useTemplate(
-        include  => '/opt/kanopya/templates/components/puppetmaster',
+    _useTemplate(
+        include  => '/templates/components/puppetmaster',
         template => 'fileserver.conf.tt',
         datas    => $data,
         conf     => '/etc/puppet/fileserver.conf',
     );
 
-    useTemplate(
-        include  => '/opt/kanopya/templates/components/puppetmaster',
+    _useTemplate(
+        include  => '/templates/components/puppetmaster',
         template => 'auth.conf.tt',
         datas    => $data,
         conf     => '/etc/puppet/auth.conf',
     );
 
-    useTemplate(
-        include  => '/opt/kanopya/templates/components/puppetagent',
+    _useTemplate(
+        include  => '/templates/components/puppetagent',
         template => 'default_puppet.tt',
         conf     => '/etc/default/puppet',
         datas    => $data,
     );
 
-    writeFile('/etc/puppet/manifests/site.pp',
+    _writeFile('/etc/puppet/manifests/site.pp',
           "Exec {\n" .
           "  path    => '/usr/bin:/usr/sbin:/bin:/sbin'\n" .
           "}\n" .
@@ -815,6 +825,7 @@ sub _configure_puppetmaster {
 
     use Kanopya::Config;
     use EEntity;
+    use Entity::ServiceProvider::Cluster;
 
     my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
     my $linux = $kanopya->getComponent(category => "System");
@@ -907,6 +918,39 @@ sub _start_kanopya_services {
     }
 }
 
+sub _getNameServerInfo {
+    my ($domain, @nameservers);
+
+    open my $FILE, '<', '/etc/resolv.conf';
+    my @lines = <$FILE>;
+    close($FILE);
+
+    for my $line (@lines) {
+        if($line =~ /^nameserver (.+)/) {
+            push @nameservers, $1;
+            next;
+        }
+
+        if($line =~ /^domain (.+)/) {
+            $domain = $1;
+            next;
+        }
+    }
+
+    return ( domain => $domain, nameservers => \@nameservers );
+}
+
+sub _createTemplatesSymLink {
+
+    my $templateslink = '/templates';
+    if (not -e $templateslink) {
+        eval {
+            symlink('/opt/kanopya/templates', $templateslink);
+        };
+    print "Your system does not support symbolic links", "\n" if $@; 
+    }
+}
+
 =pod
 
 =begin classdoc
@@ -922,6 +966,8 @@ Process setup with given parameters
 sub process {
     my ($self) = @_;
     print "\n = Setup processing = \n";
+
+    $self->_createTemplatesSymLink();
     $self->_create_kanopya_account();
     $self->_create_directories();
     $self->_generate_kanopya_conf();
@@ -972,7 +1018,7 @@ Init and process Template
 
 =cut
 
-sub useTemplate {
+sub _useTemplate {
     my %args = @_;
 
     my $input   = $args{template};
@@ -1003,13 +1049,78 @@ sub useTemplate {
 
 =cut
 
-sub writeFile {
+sub _writeFile {
     my ($path_file, $line) = @_;
 
     open (my $FILE, ">", $path_file)
         or die "an error occured while opening $path_file: $!";
     print $FILE $line;
     close($FILE);
+}
+
+=pod
+
+=begin classod
+
+Execute a given SQL query
+
+=end classdoc
+
+=cut
+
+sub _execSQL {
+    my ($self,$sql) = @_;
+
+    my $host = $self->{parameters_values}->{mysql_host};
+    my $port = $self->{parameters_values}->{mysql_port};
+    my $pwd  = $self->{parameters_values}->{mysql_root_passwd};
+
+    return system("mysql -h $host -P $port -u root -p$pwd -e \"$sql\"");
+}
+
+=pod
+
+=begin classod
+
+Create a mysql user and grand him rights
+
+=end classdoc
+
+=cut
+
+sub _createMySQLUser {
+    my ($self,%args) = @_;
+
+    $args{database} = $args{database} || $args{user};
+
+    my $query = "mysql -h $self->{parameters_values}->{mysql_host} " .
+                "-P $self->{parameters_values}->{mysql_port} " .
+                "-u root -p$self->{parameters_values}->{mysql_root_passwd} " .
+                "-e \"use mysql; " .
+                "SELECT user FROM mysql.user WHERE user='$args{user}';\" " .
+                " | grep $args{user};";
+    my $user = `$query`;
+
+    if (!$user) {
+        $self->_execSQL("CREATE USER '" . $args{user} . "'\@'localhost' " .
+                "IDENTIFIED BY '$args{password}'") == 0
+            or die "error while creating mysql user: $!" == 0
+            or die "error while creating mysql user: $!";
+        eval {
+            $self->_execSQL("CREATE USER '$args{user}' IDENTIFIED BY '$args{password}'");
+        };
+        print "done\n";
+    }
+    else {
+        print "User $args{user} already exists\n";
+    }
+
+    #We grant all privileges to kanopya database for $db_user
+    print "granting all privileges on $args{database} database to $args{user}...\n";
+    $self->_execSQL("GRANT " . $args{privileges} . " ON $args{database}.* TO '$args{user}' WITH GRANT OPTION") == 0
+         or die "error while granting privileges to $args{user}: $!";
+
+    print "done\n";
 }
 
 1;
