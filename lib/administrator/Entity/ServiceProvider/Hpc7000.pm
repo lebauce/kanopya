@@ -34,6 +34,13 @@ sub methods {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub label {
+    my $self = shift;
+
+    my $comp = $self->getComponent(name => 'HpcManager');
+    return 'HP C7000 at ' . $comp->virtualconnect_ip;
+}
+
 sub synchronize {
     my $self = shift;
 
