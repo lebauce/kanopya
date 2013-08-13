@@ -38,7 +38,7 @@ use constant ATTR_DEF => {
         label        => 'Param preset',
         type         => 'relation',
         relation     => 'single',
-        is_mandatory => 0,
+        is_mandatory => 1,
         is_editable  => 1,
     },
     limits => {
