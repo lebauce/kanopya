@@ -54,7 +54,7 @@
     <% FOREACH method IN resource_info.methods.keys %>
         <tr>
           <td><% method %></td>
-          <td><% resource_info.methods.$method.description %></td>
+          <td><% resource_info.methods.$method.description.replace('<object>', resource_name) %></td>
         </tr>
     <% END %>
   </tbody>
