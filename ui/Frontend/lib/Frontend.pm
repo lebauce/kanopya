@@ -17,6 +17,7 @@ use KIM::Consommation;
 use KIM::MasterImage;
 use KIM::WorkflowLogs;
 use Services;
+use REST::Documentation;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");

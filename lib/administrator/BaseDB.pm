@@ -1509,6 +1509,8 @@ sub delete {
     }
 
     $dbix->delete;
+
+    return undef;
 }
 
 

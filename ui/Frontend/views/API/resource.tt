@@ -1,0 +1,61 @@
+<h1>/api/<% resource_name %></h1>
+
+<h2>Attributes</h2>
+<table class="table table-striped table-condensed">
+  <thead>
+    <tr>
+      <th>Name</th><th>Label</th><th>Pattern</th><th>Editable</th><th>Type</th><th>Relation</th><th style="width:60px">Virtual</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% FOREACH attr_name IN resource_info.attributes.keys %>
+        <% attribute =  resource_info.attributes.$attr_name %>
+        <tr>
+          <td><% attr_name %> <b><% attribute.is_mandatory ? '*' : '' %></b></td>
+          <td><% attribute.label %></td>
+          <td><% attribute.pattern %></td>
+          <td><% attribute.is_editable ? 'yes' : '' %></td>
+          <td><% attribute.type %></td>
+          <td><% attribute.relation %></td>
+          <td><% attribute.is_virtual ? 'yes' : '' %></td>
+        </tr>
+    <% END %>
+  </tbody>
+</table>
+
+<h2>Relations</h2>
+<table class="table table-striped table-condensed">
+  <thead>
+    <tr>
+      <th>Name</th><th>Resource</th><th>From</th><th>Accessor</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% FOREACH rel_name IN resource_info.relations.keys %>
+        <% rel =  resource_info.relations.$rel_name %>
+        <tr>
+          <td><% rel_name %></td>
+          <td class='resource_link'><a href='#<% rel.resource %>'><% rel.resource %></a></td>
+          <td><% rel.from %></td>
+          <td><% rel.attrs.accessor %></td>
+        </tr>
+    <% END %>
+  </tbody>
+</table>
+
+<h2>Methods</h2>
+<table class="table table-striped table-condensed">
+  <thead>
+    <tr>
+      <th>Name</th><th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <% FOREACH method IN resource_info.methods.keys %>
+        <tr>
+          <td><% method %></td>
+          <td><% resource_info.methods.$method.description %></td>
+        </tr>
+    <% END %>
+  </tbody>
+</table>

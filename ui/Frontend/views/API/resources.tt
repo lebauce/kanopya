@@ -1,0 +1,36 @@
+<script>
+    $(document).ready(function() {
+        var onResourceClick = function(){
+            $('.nav-list .active').removeClass('active');
+            var resource_name = $(this).text();
+            $('.nav-list li').filter(function(){return $(this).text() == resource_name}).addClass('active');
+            $('#resource-details').load('/doc/api/resources/' + $(this).text(), function() {
+                $('.resource_link a').click(onResourceClick);
+            }).scrollTop(0);
+        }
+        $('#resource-list li').click(onResourceClick);
+        $('#resource-list [href='+window.location.hash+']').click();
+    });
+</script>
+
+<div class="container-fluid">
+    <div class="row-fluid">
+        <div class="column span2">
+            <ul id="resource-list" class="nav nav-list nav-fixed-sidebar">
+              <li class="nav-header">Resources</li>
+              <% FOREACH resource IN resources %>
+                <li ><a href="#<% resource %>"><% resource %></a></li>
+              <% END %>
+            </ul>
+        </div>
+        <div id="resource-details" class="column span10">
+            <p>
+                The list of resources can be retrieved using the request to api root : <pre>GET /api</pre>
+            </p>
+            <p>
+                All informations displayed for a particular resource (attributes, relations and methods) are available using a request like:
+                <pre>GET /api/attributes/[type]</pre>
+            </p>
+        </div>
+    </div>
+</div>

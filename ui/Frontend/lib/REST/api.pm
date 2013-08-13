@@ -19,14 +19,13 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
-my $API_VERSION = "0.1";
+our $API_VERSION = "0.1";
 
 prepare_serializer_for_format;
 
-my %resources = (
+our %resources = (
     "activedirectory"          => "Entity::Component::ActiveDirectory",
     "alert"                    => "Alert",
-    "aggregator"               => "Aggregator",
     "amqp"                     => "Entity::Component::Amqp",
     "atftpd0"                  => "Entity::Component::Atftpd0",
     "aggregatecombination"     => "Entity::Combination::AggregateCombination",
@@ -49,7 +48,6 @@ my %resources = (
     "customer"                 => "Entity::User::Customer",
     "dashboard"                => "Dashboard",
     "datamodel"                => "Entity::DataModel",
-    "datamodelselector"        => "DataModelSelector",
     "datamodeltype"            => "ClassType::DataModelType",
     "debian"                   => "Entity::Component::Linux::Debian",
     "entity"                   => "Entity",
@@ -92,12 +90,10 @@ my %resources = (
     "lvm2"                     => "Entity::Component::Lvm2",
     "lvmcontainer"             => "Entity::Container::LvmContainer",
     "mailnotifier0"            => "Entity::Component::Mailnotifier0",
-    "managerparam"             => "Entity::ManagerParameter",
     "masterimage"              => "Entity::Masterimage",
     "memcached1"               => "Entity::Component::Memcached1",
     "message"                  => "Message",
     "mockmonitor"              => "Entity::Component::MockMonitor",
-    "mounttable1"              => "Entity::Component::Mounttable1",
     "mysql5"                   => "Entity::Component::Mysql5",
     "netapp"                   => "Entity::ServiceProvider::Netapp",
     "netappaggregate"          => "Entity::NetappAggregate",
@@ -134,12 +130,9 @@ my %resources = (
     "operation"                => "Entity::Operation",
     "operationtype"            => "Operationtype",
     "orchestrationpolicy"      => "Entity::Policy::OrchestrationPolicy",
-    "orchestrator"             => "Orchestrator",
     "parampreset"              => "ParamPreset",
-    "permission"               => "Permissions",
     "php5"                     => "Entity::Component::Php5",
     "physicalhoster0"          => "Entity::Component::Physicalhoster0",
-    "pleskpanel10"             => "Entity::ParallelsProduct::Pleskpanel10",
     "policy"                   => "Entity::Policy",
     "poolip"                   => "Entity::Poolip",
     "processormodel"           => "Entity::Processormodel",
