@@ -1,0 +1,8 @@
+Tests must be run from the parent directory, with command like this:
+# PERL5LIB=$PERL5LIB:/opt/kanopya/ui/Frontend/lib/ perl t/001_base.t
+
+Run all tests files with nice report:
+# PERL5LIB=$PERL5LIB:/opt/kanopya/ui/Frontend/lib/ prove t/*.t
+
+-- WARNING --
+Some tests POST data and do not remove them, so let the database dirty (enqueued operations, fake entities)
