@@ -400,7 +400,7 @@ sub _create_directories {
     print "\n - Directories creation\n";
     
     print "$self->{parameters_values}->{log_dir}\n";
-    make_path($self->{parameters_values}->{log_dir});
+    make_path($self->{parameters_values}->{log_dir} . "/workflows");
     
     print "$self->{parameters_values}->{clusters_dir}\n";
     make_path($self->{parameters_values}->{clusters_dir});
