@@ -1525,6 +1525,8 @@ sub delete {
     }
 
     $dbix->delete;
+
+    return undef;
 }
 
 =pod
