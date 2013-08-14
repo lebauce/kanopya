@@ -155,7 +155,7 @@ sub createHostManifest {
 
     my $input = 'host_manifest.pp.tt';
     my $output = '/etc/puppet/manifests/nodes/';
-    $output .= $args{host_fqdn}.'.pp';
+    $output .= $args{host_fqdn} . '.pp';
 
     my $data = {
         host_fqdn          => $args{host_fqdn},
@@ -165,11 +165,11 @@ sub createHostManifest {
 
     my $template = Template->new($config);
     $template->process($input, $data, $output) || do {
-        $errmsg = "error during generation from '$input':" .  $template->error;
+        $errmsg = "error during generation from '$input':" . $template->error;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     };
-    
+
     $self->updateSite;
 }
 

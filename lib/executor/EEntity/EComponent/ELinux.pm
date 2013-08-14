@@ -280,6 +280,7 @@ sub _generateHosts {
 
     my @hosts_entries = $args{cluster}->getHostEntries(components => 1);
 
+    $DB::single = 1;
     $log->debug('Generate /etc/hosts file');
     my $file = $self->generateNodeFile(
         cluster       => $args{cluster},
@@ -699,14 +700,14 @@ sub _initrd_iscsi {
 
         $self->generateFile(mount_point => $st_dir,
                             input_file  => 'st_config.tt',
-                            template_dir => '/opt/kanopya/templates/internal/initrd/sles',
+                            template_dir => '/templates/internal/initrd/sles',
                             output      => '/st_config',
                             data        => { ip => $portal->{ip}, port => $portal->{port} }
                             );
 
         $self->generateFile(mount_point => $target_dir,
                             input_file  => 'default.tt',
-                            template_dir => '/opt/kanopya/templates/internal/initrd/sles',
+                            template_dir => '/templates/internal/initrd/sles',
                             output      => '/default',
                             data        => { target => $target, ip => $portal->{ip}, port => $portal->{port} }
                             );
@@ -751,7 +752,7 @@ sub _initrd_deployment {
     $self->generateFile(
         mount_point  => $args{initrd_dir} . '/config',
         input_file   => 'deploy.sh.tt',
-        template_dir => '/opt/kanopya/templates/internal/initrd/sles',
+        template_dir => '/templates/internal/initrd/sles',
         output       => '/deploy.sh',
         data         => { deploy_src_dev   => $args{src_device},
                           deploy_dest_dev  => $args{dest_device},
@@ -785,7 +786,7 @@ sub _initrd_config {
 
     $self->generateFile(mount_point => $args{initrd_dir}.'/config',
                         input_file  => 'storage.sh.tt',
-                        template_dir => '/opt/kanopya/templates/internal/initrd/sles',
+                        template_dir => '/templates/internal/initrd/sles',
                         output      => '/storage.sh',
                         data        => { rootdev => $args{rootdev} }
                         );
@@ -813,7 +814,7 @@ sub _initrd_config {
 
     $self->generateFile(mount_point => $args{initrd_dir}.'/config',
                         input_file  => 'network.sh.tt',
-                        template_dir => '/opt/kanopya/templates/internal/initrd/sles',
+                        template_dir => '/templates/internal/initrd/sles',
                         output      => '/network.sh',
                         data        => { static_macaddress => $static_macaddress,
                                          static_ips =>  $static_ips }
@@ -821,7 +822,7 @@ sub _initrd_config {
 
     $self->generateFile(mount_point => $args{initrd_dir}.'/config',
                         input_file  => 'mount.sh.tt',
-                        template_dir => '/opt/kanopya/templates/internal/initrd/sles',
+                        template_dir => '/templates/internal/initrd/sles',
                         output      => '/mount.sh',
                         data        => { rootdev => $args{rootdev},
                                          rootfsck => '/sbin/fsck.ext3' }
