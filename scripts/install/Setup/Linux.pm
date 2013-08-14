@@ -899,6 +899,7 @@ sub _restart_middlewares {
     for my $service ('isc-dhcp-server','iscsitarget','puppetmaster','atftpd','snmpd', 'rabbitmq-server') {
         system("service $service restart");
     }
+    system("service inetutils-inetd stop");
 }
 
 =pod
