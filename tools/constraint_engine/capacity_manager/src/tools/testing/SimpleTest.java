@@ -1,8 +1,12 @@
 package tools.testing;
 
+import java.util.ArrayList;
+
+import model.Hypervisor;
 import model.InfraConfiguration;
 import solver.CapacityManagementProblem;
-import solver.VMsPPNoMigrations;
+import solver.VMsPPMinMigrations;
+import solver.VMsPPNoMigration;
 import solver.VMsPackingProblem;
 import tools.JsonIO;
 
@@ -34,13 +38,14 @@ public class SimpleTest {
 
     public static void main(String[] args) {
 
-            String dir = "resources/";
-            String filename = "test";
+            String dir = "";
+            String filename = "scale_in";
             InfraConfiguration config;
             try {
                 config = JsonIO.loadConfiguration(dir+filename+".json");
                 if (config != null) {
-                    VMsPackingProblem problem = new VMsPPNoMigrations(config);
+                    VMsPackingProblem problem = new VMsPPNoMigration(config);
+
                     SimpleTest test = new SimpleTest(problem);
 
                     test.solveProblem();

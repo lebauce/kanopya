@@ -17,6 +17,8 @@ import model.VirtualMachine;
  */
 public abstract class CapacityManagementProblem {
 
+    public static final String VM_ASSIGN_PREFIX = "VM_assign";
+
     /**
      * The Choco solver.
      */
@@ -98,7 +100,7 @@ public abstract class CapacityManagementProblem {
     /**
      * Build virtual machines resources values and hypervisors resources variables.
      */
-    private void buildResources() {
+    protected void buildResources() {
         // Build VMs resources
         List<VirtualMachine> vms = this.m_initial_config.getVirtualMachines();
         int[] cpu_values         = new int[vms.size()];
@@ -137,13 +139,14 @@ public abstract class CapacityManagementProblem {
         this.m_HVsUsages.put(Hypervisor.RAM_QTY_KEY, ram_used_vars);
     }
 
+
     /**
      * Build the abstract problem, ie initialize variables and post channeling constraint between boolean
      * assignment variable and VM assignment vector.
      */
-    private void buildAbstractProblem() {
+    protected void buildAbstractProblem() {
         List<VirtualMachine> vms = this.m_initial_config.getVirtualMachines();
-        List<Hypervisor> hvs     = this.m_initial_config.getHypervisors(); 
+        List<Hypervisor> hvs     = this.m_initial_config.getHypervisors();
 
         // Build boolean variable assignment matrixes
         this.m_bool_matrix     = new BoolVar[vms.size()][hvs.size()];
@@ -156,7 +159,7 @@ public abstract class CapacityManagementProblem {
         }
 
         // Build vm variable assignment vector
-        this.m_VMs = VariableFactory.enumeratedArray("VM_assign", vms.size(), 0, hvs.size(), this.m_solver);
+        this.m_VMs = VariableFactory.enumeratedArray(VM_ASSIGN_PREFIX, vms.size(), 0, hvs.size(), this.m_solver);
 
         // Post Channeling constraint between boolean assignment variables and assignement vector
         for (int i = 0; i < vms.size(); i++) {

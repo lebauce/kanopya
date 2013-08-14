@@ -88,6 +88,13 @@ public class Hypervisor {
         this.m_hosted_vms_ids = hosted_vms_ids;
     }
 
+    /**
+     * Clear the list of hypervisor hosted vms
+     */
+    public void emptyHostedVms() {
+        this.m_hosted_vms_ids.clear();
+    }
+
     public String toString() {
         ObjectMapper mapper  = new ObjectMapper();
         ObjectWriter writter = mapper.writer().withDefaultPrettyPrinter();

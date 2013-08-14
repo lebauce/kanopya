@@ -10,7 +10,7 @@ import solver.variables.IntVar;
 import static tools.Utils.*;
 
 /**
- * Virtual Machine selection heuristic : Select the relatively biggest virtual machine to assign. A decreasing 
+ * Virtual Machine selection heuristic : Select the relatively biggest virtual machine to assign. A decreasing
  * ranking is initialy given to each virtual machine according to the cpu and ram criterions, the selected
  * virtual machine is the one with the lowest sum (called score) of those rankings (0 corresponds to the
  * biggest value for a given criterion).
@@ -40,22 +40,42 @@ public class BiggestUnassignedVM implements VariableSelector<IntVar> {
         int[] cpu     = resources.get(CPU_KEY);
         int[] ram     = resources.get(RAM_KEY);
         int length    = this.m_VMs.length;
-        int[] scores  = new int[length];
-        for (int i = 0; i < length; i++) {
-            scores[i] = 0;
-        }
+
         // Compute scores
         Integer[] sorted_cpu = makeIndexArray(length);
         Integer[] sorted_ram = makeIndexArray(length);
         Arrays.sort(sorted_cpu, makeArrayIndexDecreasingComparator(cpu));
         Arrays.sort(sorted_ram, makeArrayIndexDecreasingComparator(ram));
+        Integer[] score_cpu = this.manageDraw(sorted_cpu, cpu);
+        Integer[] score_ram = this.manageDraw(sorted_ram, ram);
+        int[] scores  = new int[length];
+        Arrays.fill(scores, 0);
+
         for (int i = 0; i < length; i++) {
-            scores[ sorted_cpu[i] ] += i;
-            scores[ sorted_ram[i] ] += i;
+            scores[ i ] += score_cpu[i];
+            scores[ i ] += score_ram[i];
         }
+
         this.m_sorted_scores_indexes = makeIndexArray(length);
-        Arrays.sort(sorted_cpu, makeArrayIndexIncreasingComparator(scores));
+        Arrays.sort(m_sorted_scores_indexes, makeArrayIndexIncreasingComparator(scores));
+
         this.m_biggest_index = 0;
+    }
+
+    private Integer[] manageDraw(Integer[] sorted_index, int[] original_tab) {
+        Integer[] result = new Integer[sorted_index.length];
+
+        result[sorted_index [0]] = 0;
+
+        for (int i = 1; i < sorted_index.length; i++) {
+            if (original_tab[ sorted_index[i] ] == original_tab[ sorted_index[i - 1] ]) {
+                result[ sorted_index[i] ] = result[ sorted_index[i-1] ];
+            }
+            else {
+                result[ sorted_index[i] ] = i;
+            }
+        }
+        return result;
     }
 
     @Override

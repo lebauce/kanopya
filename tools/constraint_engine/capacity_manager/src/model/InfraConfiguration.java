@@ -126,6 +126,60 @@ public class InfraConfiguration {
         this.m_vms_ids_mapping.put(virtual_machine.getId(), this.getVirtualMachines().size() - 1);
     }
 
+
+    /**
+     * Remove hypervisor and set -1 to all its hosted virtual machines hv_id
+     * @param hypervisor hypervisor to remove from infrastructure
+     * @return Set of vm ids previously hosted in hypervisor
+     */
+    public List<VirtualMachine> removeHypervisor(Hypervisor hypervisor) {
+        List<VirtualMachine> vms = this.getHostedVirtualMachines(hypervisor);
+
+        hypervisor.emptyHostedVms();
+        this.m_hypervisors.remove(hypervisor);
+
+        /* Reconstruct all the mapping since removing hypervisor from its List has changed all indexes */
+        this.m_hvs_ids_mapping.clear();
+        for (int i = 0; i < this.m_hypervisors.size(); i++) {
+            this.m_hvs_ids_mapping.put(this.m_hypervisors.get(i).getId(), i);
+        }
+
+        /* Set unassigned all virtual machines previously assigned to the hypervisor */
+        for (VirtualMachine vm : vms) {
+            vm.setHypervisorId(-1);
+        }
+
+        return vms;
+    }
+
+
+    /**
+     * Set -1 to all its hosted virtual machines hv_id
+     * @param hypervisor hypervisor to remove from infrastructure
+     * @return Set of vm ids previously hosted in hypervisor
+     */
+    public List<VirtualMachine> unassignVMs(Hypervisor hypervisor) {
+        List<VirtualMachine> vms = this.getHostedVirtualMachines(hypervisor);
+        for (VirtualMachine vm : vms) {
+            vm.setHypervisorId(-1);
+        }
+        return vms;
+    }
+
+    /**
+     * Return a list of unassigned virtual machines
+     * @return List of unassigned virtual machines
+     */
+    public List<VirtualMachine> getUnassignedVirtualMachines() {
+        List<VirtualMachine> vms = new ArrayList<VirtualMachine>(this.getVirtualMachines().size());
+        for (VirtualMachine vm : this.getVirtualMachines()) {
+            if (vm.getHypervisorId() == -1) {
+                vms.add(vm);
+            }
+        }
+        return vms;
+    }
+
     public String toString() {
         String toReturn ="*** Hypervisors ***\n";
 

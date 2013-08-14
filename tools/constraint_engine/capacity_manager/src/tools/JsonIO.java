@@ -6,7 +6,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
@@ -103,5 +102,46 @@ public class JsonIO {
         }
 
         return new InfraConfiguration(list_hvs, list_vms);
+    }
+
+    /**
+     *
+     * @param resource_json JSON String representing vm resources in hash map e.g. { "ram" : 1024, "cpu" : 2}
+     * @return Corresponding Java hash map
+     * @throws Exception Parsing or I/O errors
+     */
+
+    public static Map<String,Integer> loadVmResource(String resource_json) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, Integer> resources = mapper.readValue(resource_json, new TypeReference<Map<String, Integer>>() {});
+        return resources;
+    }
+
+
+    public static List<Map<String, Integer>> loadVmsResource(String resources_json) throws Exception {
+            ObjectMapper mapper = new ObjectMapper();
+            List<Map<String, Integer>> resources = mapper.readValue(
+                                                               resources_json,
+                                                               new TypeReference<List<Map<String, Integer>>>() {}
+                                                           );
+            return resources;
+    }
+
+    public static Map<Integer, Map <String,Integer>> loadVmResources(String vms_resources_json)  throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        Map<Integer, Map <String,Integer>> resources = mapper.readValue(vms_resources_json, new TypeReference<Map<Integer, Map <String,Integer>>>() {});
+        return resources;
+    }
+
+    public static void main(String[] args) {
+        String s = "{ \"ram\" : 1024, \"cpu\" : 2}";
+        Map<String, Integer> resources;
+        try {
+            resources = loadVmResource(s);
+            System.out.println(resources.get("ram"));
+            System.out.println(resources.get("cpu"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

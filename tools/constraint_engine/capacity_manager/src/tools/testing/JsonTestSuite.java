@@ -18,7 +18,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 
 import solver.CapacityManagementProblem;
-import solver.VMsPPNoMigrations;
+import solver.VMsPPNoMigration;
 
 /**
  * Test suite that is instanciated from json files all stored in the same folder.
@@ -101,7 +101,7 @@ public class JsonTestSuite {
 
     public static void main(String[] args) {
         JsonTestSuite test = new JsonTestSuite(
-                VMsPPNoMigrations.class,
+                VMsPPNoMigration.class,
                 "resources/selectHypervisorSingleNoMigrations/(50)hvs_(0-50)assigned_vms"
         );
         test.launchTestSuite();
