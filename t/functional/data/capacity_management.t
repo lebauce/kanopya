@@ -7,6 +7,8 @@ use Test::More 'no_plan';
 use Test::Exception;
 use Test::Pod;
 use Data::Dumper;
+use JSON;
+use File::Temp;
 
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'capacity_management.log', layout=>'%F %L %p %m%n'});
@@ -18,6 +20,7 @@ use BaseDB;
 use Entity::Component;
 use Entity::ServiceProvider::Externalcluster;
 use CapacityManagement;
+use ChocoCapacityManagement;
 use Entity::Component::Virtualization::Opennebula3;
 use ClassType::ComponentType;
 
@@ -33,6 +36,7 @@ my $service_provider_hypervisors;
 my $one;
 my %vm_index;
 my %hv_index;
+my $cm_class;
 
 main();
 
@@ -72,6 +76,10 @@ sub main {
         manager_type => 'HostManager',
     );
 
+
+    $cm_class = 'CapacityManagement';
+    diag($cm_class);
+
     test_hypervisor_selection_multi();
     test_hypervisor_selection();
     test_migration_authorization();
@@ -80,10 +88,69 @@ sub main {
     test_optimiaas();
     test_flushhypervisor();
     test_resubmit();
+    test_flushhypervisor_need_csp();
+    test_scale_in_need_csp();
+
+    $cm_class = 'ChocoCapacityManagement';
+    diag($cm_class);
+
+    test_hypervisor_selection_multi();
+    test_hypervisor_selection();
+    test_migration_authorization();
+    test_scale_memory();
+    test_scale_cpu();
+#    test_optimiaas();
+    test_flushhypervisor();
+    test_resubmit();
+    test_flushhypervisor_need_csp();
+    test_scale_in_need_csp();
 
     if ($testing == 1) {
         BaseDB->rollbackTransaction;
     }
+}
+
+sub test_flushhypervisor_need_csp {
+    lives_ok {
+        my $infra = _getTestInfraForFlushNeedCSP();
+        my $cm = $cm_class->new(infra => $infra);
+        my $result = $cm->flushHypervisor(hv_id => 3);
+
+        # Flush fails for KanopyaCM but successes with ChocoCM
+        if ( $cm_class eq 'CapacityManagement' && ! ($result->{num_failed} == 1)) {
+            die "CapacityManagement had to fail flushing ($cm_class, ".$result->{num_failed}.")";
+        }
+
+        if ( $cm_class eq 'ChocoCapacityManagement' && ! ($result->{num_failed} == 0)) {
+            die "ChocoCapacityManagement had to success flushing ($cm_class, ".$result->{num_failed}.")";
+        }
+
+    } 'Flush Hypervisor need CSP';
+}
+
+sub test_scale_in_need_csp {
+    lives_ok {
+        my $infra = _getTestInfraForScaleInNeedCSP();
+        my $cm = $cm_class->new(infra => $infra);
+
+        my $operations = $cm->scaleMemoryHost(host_id => $vms[2]->id, memory => 10*$coef);
+
+        my $waited_operations = {
+            CapacityManagement      => ['AddNode', 'PreStartNode', 'StartNode', 'PostStartNode', 'MigrateHost', 'ScaleMemoryHost'],
+            ChocoCapacityManagement => ['MigrateHost', 'MigrateHost', 'ScaleMemoryHost'],
+        };
+
+        if ((scalar @$operations) != (scalar @{$waited_operations->{$cm_class}})) {
+            die "Wrong number of operations";
+        }
+
+        for my $i (0..(scalar @$operations)-1) {
+            if ($operations->[$i]->{type} ne $waited_operations->{$cm_class}->[$i]) {
+                die "Wrong operation sequentiality <".$operations->[$i]->{type}."> vs <".$waited_operations->{$cm_class}->[$i].">";
+            }
+        }
+
+    } 'Scale memory Hypervisor need CSP';
 }
 
 sub test_flushhypervisor {
@@ -91,10 +158,12 @@ sub test_flushhypervisor {
     lives_ok {
 
         my $infra = _getTestInfraForFlush();
-        my $cm    = CapacityManagement->new(infra=>$infra);
+        my $cm    = $cm_class->new(infra => $infra);
 
-        if ( not ( $cm->flushHypervisor(hv_id => 4)->{num_failed} == 4 &&
-            scalar @{$cm->flushHypervisor(hv_id => 4)->{operation_plan}} == 0)) {
+        my $res = $cm->flushHypervisor(hv_id => 4);
+
+        if ( not ( $res->{num_failed} == 4 &&
+            scalar @{$res->{operation_plan}} == 0)) {
             die 'Error in flush hypervisor - case: no vm can migrate';
         }
 
@@ -149,7 +218,10 @@ sub test_flushhypervisor {
                 && ($operation->{params}->{context}->{vm}->id == $hv_4_vms[0]
                     || $operation->{params}->{context}->{vm}->id == $hv_4_vms[1])
             )) {
-                die 'Error in flush hypervisor vm '.($vm_index{$operation->{params}->{context}->{vm}->id});
+                die 'Error in flush hypervisor vm '.
+                    ($vm_index{$operation->{params}->{context}->{vm}->id}).
+                    ' on hypervisor '.
+                    $operation->{params}->{context}->{host}->id;
             }
         }
     } 'Flush hypervisor';
@@ -172,7 +244,7 @@ sub test_resubmit {
             $infra->{hvs}->{$vm->{hv_id}}->{vm_ids}->{$vm_id} = 1;
         }
 
-        my $cm = CapacityManagement->new(infra => $infra);
+        my $cm = $cm_class->new(infra => $infra);
 
         my $hv_resubmit_id = $cm->getHypervisorIdResubmitVM(
                                  vm_id         => $vms[0]->id,
@@ -196,7 +268,7 @@ sub test_resubmit {
        # Second part Using directly resubmitVm() method
 
         $infra = _getTestInfraForResubmit();
-        $cm = CapacityManagement->new(infra => $infra);
+        $cm = $cm_class->new(infra => $infra);
         my $placement = $cm->resubmitHypervisor(hv_id => 1);
 
         if ($placement->{$vms[0]->id} != 2) {
@@ -208,7 +280,7 @@ sub test_resubmit {
         }
 
         $infra = _getTestInfraForResubmit();
-        $cm = CapacityManagement->new(infra => $infra);
+        $cm = $cm_class->new(infra => $infra);
         $placement = $cm->resubmitHypervisor(hv_id => 2);
 
         if ($placement->{$vms[3]->id} != 1) {
@@ -219,7 +291,8 @@ sub test_resubmit {
         }
 
         $infra = _getTestInfraForResubmit();
-        $cm = CapacityManagement->new(infra => $infra);
+        $cm = $cm_class->new(infra => $infra);
+
         $placement = $cm->resubmitHypervisor(hv_id => 3);
 
         if (defined $placement->{$vms[4]->id}) {
@@ -233,7 +306,7 @@ sub test_resubmit {
 
 sub test_migration_authorization {
     lives_ok {
-        my $cm = CapacityManagement->new(infra => getTestInfraForScaling());
+        my $cm = $cm_class->new(infra => getTestInfraForScaling());
 
         if ( not (
              $cm->isMigrationAuthorized(vm_id => $vms[2]->id, hv_id => 1)->{authorization} == 0
@@ -252,7 +325,7 @@ sub test_hypervisor_selection_multi {
             1983 => { cpu => 1, ram => 2*$coef },
         };
 
-        my $rep = CapacityManagement->new(infra => $infra)->getHypervisorIdsForVMs(vms_wanted_values => $vms_wanted_values);
+        my $rep = $cm_class->new(infra => $infra)->getHypervisorIdsForVMs(vms_resources_hash => $vms_wanted_values);
 
         if ($rep->{2101} != 2) { die 'Error in placement of vm1 (memory)';}
         if ($rep->{1983} != 1) { die 'Error in placement of vm2 (memory)';}
@@ -262,8 +335,8 @@ sub test_hypervisor_selection_multi {
             1983 => { cpu => 7, ram => 1*$coef },
         };
 
-        $rep = CapacityManagement->new(infra => getTestInfraForScaling())
-                                 ->getHypervisorIdsForVMs(vms_wanted_values => $vms_wanted_values);
+        $rep = $cm_class->new(infra => getTestInfraForScaling())
+                        ->getHypervisorIdsForVMs(vms_resources_hash => $vms_wanted_values);
 
         if ($rep->{2101} != 1) { die 'Error in placement of vm1 (cpu)';}
         if ($rep->{1983} != 2) { die 'Error in placement of vm2 (cpu)';}
@@ -277,8 +350,8 @@ sub test_hypervisor_selection_multi {
             1985 => { cpu => 1, ram => 1*$coef }, #1
         };
 
-        $rep = CapacityManagement->new(infra => getTestInfraForScaling())
-                                 ->getHypervisorIdsForVMs(vms_wanted_values => $vms_wanted_values);
+        $rep = $cm_class->new(infra => getTestInfraForScaling())
+                                 ->getHypervisorIdsForVMs(vms_resources_hash => $vms_wanted_values);
 
         if (defined $rep->{2101}) {die 'Wrong check ram/cpu placement';}
         if (defined $rep->{1983}) {die 'Wrong check ram/cpu placement';}
@@ -289,48 +362,49 @@ sub test_hypervisor_selection_multi {
     } 'Selection of hypervisors for multiple vms';
 }
 
+
 sub test_hypervisor_selection {
     my %args = @_;
 
     lives_ok {
+
         my $infra = getTestInfraForScaling();
-        my $cm    = CapacityManagement->new(infra => $infra);
+        my $cm = $cm_class->new(infra => $infra);
 
         my %wanted_values;
+        %wanted_values = (cpu => 1, ram => 6*$coef);
 
-        %wanted_values = ( cpu => 1, ram => 6*$coef);
-
-        if ($cm->getHypervisorIdForVM ( wanted_values => \%wanted_values) != 2) {
+        if ($cm->getHypervisorIdForVM(resources => \%wanted_values) != 2) {
             die 'wrong vm placement';
         }
 
-        %wanted_values = ( cpu => 1, ram => 1*$coef);
+        %wanted_values = (cpu => 1, ram => 1*$coef);
 
-        if ($cm->getHypervisorIdForVM ( wanted_values => \%wanted_values) != 1) {
+        if ($cm->getHypervisorIdForVM(resources => \%wanted_values) != 1) {
             die 'wrong vm placement';
         }
 
-        %wanted_values = ( cpu => 1, ram => 8*$coef);
-        if (defined $cm->getHypervisorIdForVM ( wanted_values => \%wanted_values)) {
+        %wanted_values = (cpu => 1, ram => 8*$coef);
+        if (defined $cm->getHypervisorIdForVM(resources => \%wanted_values)) {
             die 'wrong vm placement';
         }
 
-        %wanted_values = ( cpu => 6, ram => 1*$coef);
-        if ($cm->getHypervisorIdForVM ( wanted_values => \%wanted_values) != 2) {
+        %wanted_values = (cpu => 6, ram => 1*$coef);
+        if ($cm->getHypervisorIdForVM(resources => \%wanted_values) != 2) {
             die 'wrong vm placement';
         }
 
-        %wanted_values = ( cpu => 1, ram => 1*$coef);
+        %wanted_values = (cpu => 1, ram => 1*$coef);
 
-        if ($cm->getHypervisorIdForVM ( wanted_values => \%wanted_values) != 1) {
+        if ($cm->getHypervisorIdForVM(resources => \%wanted_values) != 1) {
             die 'wrong vm placement';
         }
 
-        %wanted_values = ( cpu => 8, ram => 1*$coef);
-        if (defined $cm->getHypervisorIdForVM ( wanted_values => \%wanted_values)) {
+        %wanted_values = (cpu => 8, ram => 1*$coef);
+        if (defined $cm->getHypervisorIdForVM(resources => \%wanted_values)) {
             die 'wrong vm placement';
         }
-    } 'Hyperivsor selection for a Vm';
+    } 'Hypervisor selection for a Vm';
 }
 
 
@@ -355,6 +429,79 @@ sub _getTestInfraForResubmit {
     }
     return  $infra;
 };
+
+sub _getTestInfraForFlushNeedCSP {
+    my $infra = {
+        vms => {
+            $vms[0]->id => {resources => {cpu => 1, ram => 5*$coef}, hv_id => 3},
+            $vms[1]->id => {resources => {cpu => 1, ram => 4*$coef}, hv_id => 3},
+            $vms[2]->id => {resources => {cpu => 1, ram => 3*$coef}, hv_id => 3},
+            $vms[3]->id => {resources => {cpu => 1, ram => 2*$coef}, hv_id => 3},
+            $vms[4]->id => {resources => {cpu => 1, ram => 2*$coef}, hv_id => 3},
+            $vms[5]->id => {resources => {cpu => 1, ram => 2*$coef}, hv_id => 3},
+            $vms[6]->id => {resources => {cpu => 1, ram => 2*$coef}, hv_id => 3},
+        },
+
+        hvs => {
+            1 => {resources => {cpu => 10,ram => 10*$coef}},
+            2 => {resources => {cpu => 10,ram => 10*$coef}},
+            3 => {resources => {cpu => 20,ram => 20*$coef}},
+        },
+   };
+    while (my ($vm_id, $vm) = each(%{$infra->{vms}})) {
+        $infra->{hvs}->{$vm->{hv_id}}->{vm_ids}->{$vm_id} = 1;
+    }
+    return  $infra;
+};
+
+sub _getTestInfraForScaleInNeedCSP {
+    my $infra = {
+        vms => {
+            $vms[0]->id => {resources => {cpu => 1, ram => 8*$coef}, hv_id => 1},
+            $vms[2]->id => {resources => {cpu => 1, ram => 6*$coef}, hv_id => 2},
+            $vms[1]->id => {resources => {cpu => 1, ram => 4*$coef}, hv_id => 2},
+            $vms[3]->id => {resources => {cpu => 1, ram => 2*$coef}, hv_id => 2},
+            $vms[4]->id => {resources => {cpu => 1, ram => 3*$coef}, hv_id => 2},
+            $vms[5]->id => {resources => {cpu => 1, ram => 3*$coef}, hv_id => 2},
+            $vms[6]->id => {resources => {cpu => 1, ram => 1*$coef}, hv_id => 2},
+            $vms[7]->id => {resources => {cpu => 1, ram => 1*$coef}, hv_id => 2},
+            $vms[8]->id => {resources => {cpu => 1, ram => 7*$coef}, hv_id => 3},
+        },
+
+        hvs => {
+            1 => {resources => {cpu => 10,ram => 10*$coef}},
+            2 => {resources => {cpu => 10,ram => 20*$coef}},
+            3 => {resources => {cpu => 10,ram => 10*$coef}},
+        },
+   };
+    while (my ($vm_id, $vm) = each(%{$infra->{vms}})) {
+        $infra->{hvs}->{$vm->{hv_id}}->{vm_ids}->{$vm_id} = 1;
+    }
+    return  $infra;
+}
+
+
+sub _getTestInfraForScaleInNeedCSP2 {
+    my $infra = {
+        vms => {
+            $vms[0]->id => {resources => {cpu => 1, ram => 8*$coef}, hv_id => 1},
+            $vms[1]->id => {resources => {cpu => 1, ram => 2*$coef}, hv_id => 2},
+            $vms[2]->id => {resources => {cpu => 1, ram => 6*$coef}, hv_id => 2},
+            $vms[3]->id => {resources => {cpu => 1, ram => 2*$coef}, hv_id => 2},
+            $vms[4]->id => {resources => {cpu => 1, ram => 8*$coef}, hv_id => 3},
+        },
+
+        hvs => {
+            1 => {resources => {cpu => 10,ram => 10*$coef}},
+            2 => {resources => {cpu => 10,ram => 10*$coef}},
+            3 => {resources => {cpu => 10,ram => 10*$coef}},
+        },
+   };
+    while (my ($vm_id, $vm) = each(%{$infra->{vms}})) {
+        $infra->{hvs}->{$vm->{hv_id}}->{vm_ids}->{$vm_id} = 1;
+    }
+    return  $infra;
+}
 
 sub _getTestInfraForFlush {
     my $infra = {
@@ -439,7 +586,7 @@ sub test_scale_cpu {
 
     lives_ok {
         my $infra = getTestInfraForScaling();
-        my $cm = CapacityManagement->new(infra=>$infra);
+        my $cm = $cm_class->new(infra=>$infra);
 
         if (scalar @{$cm->scaleCpuHost(host_id => $vms[1]->id, vcpu_number => 2)} != 0) {
             die 'Error in scale in cpu - case: same value';
@@ -490,7 +637,7 @@ sub test_optimiaas {
     # Create entity with random arguments because only used for their ids
     lives_ok {
         my $infra = _getTestInfraForOptimiaas();
-        $cm = CapacityManagement->new(infra=>$infra);
+        $cm = $cm_class->new(infra=>$infra);
         my $operations = $cm->optimIaas();
 
         %waited_migrations = (1 => 7, 2 => 6, 3 => 5, 4 => 4);
@@ -518,7 +665,7 @@ sub test_scale_memory {
 
         my $infra = getTestInfraForScaling(vms => \@vms);
 
-        my $cm    = CapacityManagement->new(infra => $infra);
+        my $cm    = $cm_class->new(infra => $infra);
 
         if ( not (
             $cm->isScalingAuthorized(vm_id => $vms[1]->id, resource_type => 'ram', wanted_resource => 3*$coef) == 1
