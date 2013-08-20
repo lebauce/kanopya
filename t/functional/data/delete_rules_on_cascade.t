@@ -9,7 +9,7 @@ use Test::Pod;
 use Data::Dumper;
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level=>'DEBUG', file=>'delete_rule.log', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>'delete_rules_on_cascade.log', layout=>'%F %L %p %m%n'});
 my $log = get_logger("");
 
 use BaseDB;
@@ -27,7 +27,8 @@ use Entity::Clustermetric;
 use Entity::AggregateCondition;
 use Entity::Combination::AggregateCombination;
 use Kanopya::Tools::TestUtils 'expectedException';
-
+use TryCatch;
+use Aggregator;
 BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
 
 my $indicator_deleted;
@@ -58,16 +59,27 @@ my $nrule1d;
 my $nrule2d;
 my $nrule3d;
 my $nrule4;
-
+my $node;
+my $indicator_deleted_id;
+my $aggregator;
 my $testing = 0;
 
-main ();
+try {
+    main ();
+}
+catch ($err) {
+    clean_test();
+    throw Kanopya::Exception::Internal(error => "$err");
+}
+
 
 sub main {
 
     if ($testing == 1) {
         BaseDB->beginTransaction;
     }
+
+    diag('Creating general objects...');
 
     $service_provider = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Service Provider',
@@ -87,7 +99,7 @@ sub main {
     );
 
     # Create one node
-    my $node = Node->new(
+    $node = Node->new(
         node_hostname => 'test_node',
         service_provider_id   => $service_provider->id,
         monitoring_state    => 'up',
@@ -107,11 +119,79 @@ sub main {
                             }
                         );
 
-    _service_rule_objects_creation();
-    _node_rule_objects_creation();
+    service_rule_objects_creation();
+    node_rule_objects_creation();
+    rrd_creation();
+    indicator_deletion();
+    rrd_deletion();
+    clean_test();
+
+    if ($testing == 1) {
+        BaseDB->rollbackTransaction;
+    }
+}
+
+
+sub rrd_creation {
+    diag('Launch aggregator to create RRD');
+    my $aggregator = Aggregator->new();
+    $aggregator->update();
 
     lives_ok {
-        Entity::Indicator->find(hash => {indicator_oid => $indicator_deleted->indicator->indicator_oid})->delete();
+
+        my @cms = Entity::Clustermetric->search (hash => {
+            clustermetric_service_provider_id => $service_provider->id
+        });
+
+        for my $cm (@cms) {
+            if (! defined open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$cm->id.'.rrd')) {
+                die('RRD of clustermetric <'.$cm->id.'> not created');
+                close(FILE);
+            }
+        }
+
+        my @nms = Entity::Clustermetric->search (hash => {
+            clustermetric_service_provider_id => $service_provider->id
+        });
+
+
+        my $used_indicators = $aggregator->_getUsedIndicators(service_provider     => $service_provider,
+                                                              include_nodemetric   => 1);
+
+        for my $indicator (values %{$used_indicators->{indicators}}) {
+            my $rrd_name = '/var/cache/kanopya/monitor/timeDB_'.$indicator->id.'_'.$node->node_hostname.'.rrd';
+            if (! defined open(FILE,$rrd_name)) {
+                die('RRD Datacache for node <'.$node->node_hostname
+                     .'> and indicator <'.$indicator->id.'> ('.$rrd_name.')not created');
+                close(FILE);
+            }
+        }
+
+    } 'RRD creation';
+}
+
+sub clean_test {
+    diag('Cleaning DB...');
+    $service_provider->delete();
+    $external_cluster_mockmonitor->delete();
+    Entity::Indicator->new(
+        indicator_label => 'RAM used',
+        indicator_name => 'RAM used',
+        indicator_oid => 'Memory/PercentMemoryUsed',
+        indicator_color => 'FF000099',
+        indicatorset_id => 5,
+        indicator_unit => '%'
+    );
+}
+
+sub indicator_deletion {
+
+    lives_ok {
+        diag('Deleting indicator and related objects on cascade');
+
+        my $deleted_indicator = Entity::Indicator->find(hash => {indicator_oid => $indicator_deleted->indicator->indicator_oid});
+        $indicator_deleted_id = $deleted_indicator->id;
+        $deleted_indicator->delete();
 
         expectedException {
             Entity::Clustermetric->get(id => $cmd->id);
@@ -215,57 +295,63 @@ sub main {
         Entity::Rule::NodemetricRule->get(id => $nrule4->id);
 
     } 'Delete indicator on cascade';
-
-    test_rrd_remove();
-
-    Entity::Indicator->new(
-        indicator_label => 'RAM used',
-        indicator_name => 'RAM used',
-        indicator_oid => 'Memory/PercentMemoryUsed',
-        indicator_color => 'FF000099',
-        indicatorset_id => 5,
-        indicator_unit => '%'
-    );
-
-    if ($testing == 1) {
-        BaseDB->rollbackTransaction;
-    }
 }
 
-sub test_rrd_remove {
-    my @cms = Entity::Clustermetric->search (hash => {
-        clustermetric_service_provider_id => $service_provider->id
-    });
+sub rrd_deletion {
+    lives_ok {
+        my @cms = Entity::Clustermetric->search (hash => {
+            clustermetric_service_provider_id => $service_provider->id
+        });
 
-    my @cm_ids = map {$_->id} @cms;
-    while (@cms) { (pop @cms)->delete(); };
+        my @cm_ids = map {$_->id} @cms;
+        while (@cms) { (pop @cms)->delete(); };
 
-    my @acs = Entity::Combination::AggregateCombination->search (hash => {
-        service_provider_id => $service_provider->id
-    });
+        my @acs = Entity::Combination::AggregateCombination->search (hash => {
+            service_provider_id => $service_provider->id
+        });
 
-    if ((scalar @acs) != 0) { die 'Error in all aggregate combinations are deleted';}
+        if ((scalar @acs) != 0) { die 'Error in all aggregate combinations are deleted';}
 
-    my @ars = Entity::Rule::AggregateRule->search (hash => {
-        service_provider_id => $service_provider->id
-    });
-    
-    if ((scalar @acs) != 0) {die 'Error in all aggregate rules are deleted'; }
+        my @ars = Entity::Rule::AggregateRule->search (hash => {
+            service_provider_id => $service_provider->id
+        });
 
-    my $one_rrd_remove = 0;
-    for my $cm_id (@cm_ids) {
-        if (defined open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$cm_id.'.rrd')) {
-            $one_rrd_remove++;
+        if ((scalar @acs) != 0) {die 'Error in all aggregate rules are deleted'; }
+
+        my $one_rrd_remove = 0;
+        for my $cm_id (@cm_ids) {
+            if (defined open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$cm_id.'.rrd')) {
+                $one_rrd_remove++;
+            }
+            close(FILE);
         }
-        close(FILE);
-    }
-    if ($one_rrd_remove != 0) { die "Error in check all have been removed, still $one_rrd_remove rrd";}
-    $service_provider->delete();
-    $external_cluster_mockmonitor->delete();
+        if ($one_rrd_remove != 0) { die "Error in check all have been removed, still $one_rrd_remove rrd";}
+
+        my $rrd_name = '/var/cache/kanopya/monitor/timeDB_'.$indicator_deleted_id.'_'.$node->node_hostname.'.rrd';
+        if (defined open(FILE,$rrd_name)) {
+            die('RRD Datacache for node <'.$node->node_hostname
+                 .'> and indicator <'.$indicator_deleted_id.'> ('.$rrd_name.') not deleted !');
+            close(FILE);
+        }
+
+        my $node_hostname = $node->delete();
+        my $used_indicators = $aggregator->_getUsedIndicators(service_provider     => $service_provider,
+                                                              include_nodemetric   => 1);
+
+        for my $indicator (values %{$used_indicators->{indicators}}) {
+            my $rrd_name = '/var/cache/kanopya/monitor/timeDB_'.$indicator->id.'_'.$node_hostname.'.rrd';
+            if (defined open(FILE,$rrd_name)) {
+                die('RRD Datacache for node <'.$node_hostname
+                     .'> and indicator <'.$indicator->id.'> ('.$rrd_name.') not deleted');
+                close(FILE);
+            }
+        }
+    } 'Testing rrd remove'
 }
 
-sub _service_rule_objects_creation {
+sub service_rule_objects_creation {
 
+    diag('Service rules related objects creation...');
     $cmd = Entity::Clustermetric->new(
         clustermetric_service_provider_id => $service_provider->id,
         clustermetric_indicator_id => ($indicator_deleted->id),
@@ -354,8 +440,8 @@ sub _service_rule_objects_creation {
 }
 
 
-
-sub _node_rule_objects_creation {
+sub node_rule_objects_creation {
+    diag('Node rules related objects creation...');
     my $rule1;
     my $rule2;
 
