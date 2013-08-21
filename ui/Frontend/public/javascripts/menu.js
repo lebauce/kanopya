@@ -47,7 +47,7 @@ function add_menutree(container, label, menu_info, elem_id) {
 
         $('#services_list').jqGrid('GridDestroy');
         $('#view-container .master_view').hide();
-        $('#view_Services').show();
+        $('#view_Instances').show();
         $('a[href=#content_services_overview_static]').text(label +' instances');
         $('.selected_viewlink').removeClass('selected_viewlink')
         $(this).addClass('selected_viewlink');

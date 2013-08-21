@@ -18,7 +18,7 @@
 </tr>
 <tr>
 	<td>click</td>
-	<td>css=#menuhead_Services &gt; a</td>
+	<td>css=#menuhead_Instances &gt; a</td>
 	<td></td>
 </tr>
 <tr>
@@ -43,21 +43,6 @@
 </tr>
 <tr>
 	<td>click</td>
-	<td>xpath=(//button[@type='button'])[14]</td>
-	<td></td>
-</tr>
-<tr>
-	<td>click</td>
-	<td>id=ui-multiselect-input_iscsi_portals-option-0</td>
-	<td></td>
-</tr>
-<tr>
-	<td>type</td>
-	<td>id=input_cluster_basehostname</td>
-	<td>basename</td>
-</tr>
-<tr>
-	<td>click</td>
 	<td>id=button-ok</td>
 	<td></td>
 </tr>
@@ -68,7 +53,7 @@
 </tr>
 <tr>
 	<td>click</td>
-	<td>css=#menuhead_Services &gt; a</td>
+	<td>css=#menuhead_Instances &gt; a</td>
 	<td></td>
 </tr>
 </tbody></table>

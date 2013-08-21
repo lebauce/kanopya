@@ -108,7 +108,7 @@ function Customers() {
                     // Yes, this scope is ugly
                     // But opening the service view from here is quite difficult
                     $('#' + cid).parents('.ui-dialog').find('.ui-dialog-buttonset').find('button').first().trigger('click');
-                    $('#menuhead_Services').find('a').trigger('click');
+                    reloadServices();
                     setTimeout(function() { 
                         $('#link_view_' + e.cluster_name + '_' + eid).find('a').trigger('click');
                     }, 400);

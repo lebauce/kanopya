@@ -254,9 +254,7 @@ function vsphereBrowser (vsphere_id) {
                         }),
                         success     : function() {
                             dialog.remove();
-                            service_menu_id = 'menuhead_Services';
-                            // TODO improve click simulation
-                            $('#' + service_menu_id).click();
+                            reloadServices();
                             alert ('Data imported successfully in Kanopya');
                         },
                         error       : function() {

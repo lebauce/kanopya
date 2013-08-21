@@ -175,9 +175,8 @@ function servicesList (container_id, elem_id) {
                         // When the service is instantiated, we click on Services menu to reload menu and grid
                         // If a specific service type (in submenu) was selected by user, we click on it when it is loaded
                         var selected = $('.selected_viewlink');
-                        service_menu_id = 'menuhead_Services';
-                        $('#'+service_menu_id).click()
-                        if (selected.attr('id') != service_menu_id) {
+                        reloadServices();
+                        if (selected.attr('id') != getInstancesMenuId()) {
                             var waiter = setInterval(function(){
                                 var link = $('#Services a:contains('+selected.text()+')');
                                 if (link) {

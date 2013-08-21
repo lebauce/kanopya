@@ -129,7 +129,11 @@ var details_def = {
     }
 };
 
+function getInstancesMenuId() {
+    return 'menuhead_Instances';
+}
+
 function reloadServices () {
     // Trigger click callback wich relaod grid content and dynamic menu
-    $('#menuhead_Services').click();
+    $('#'+getInstancesMenuId()).click();
 }

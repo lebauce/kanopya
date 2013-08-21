@@ -13,7 +13,7 @@
 </thead><tbody>
 <tr>
 	<td>click</td>
-	<td>css=#menuhead_Services &gt; a</td>
+	<td>css=#menuhead_Instances &gt; a</td>
 	<td></td>
 </tr>
 <tr>
@@ -38,7 +38,7 @@
 </tr>
 <tr>
 	<td>click</td>
-	<td>//div[starts-with(@id,'view_MyService_')]/ul/li[5]/a/span</td>
+	<td>//div[starts-with(@id,'view_MyService_')]//a[starts-with(@href,'#content_service_monitoring_')]</td>
 	<td></td>
 </tr>
 <tr>
