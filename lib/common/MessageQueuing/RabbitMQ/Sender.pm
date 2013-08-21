@@ -110,10 +110,15 @@ sub AUTOLOAD {
     my $channel = delete $args{channel};
 
     # Remove possibly defined connection options form args
-    my $auth = {
-        user     => delete $args{user},
-        password => delete $args{password},
-    };
+    my $auth = {};
+
+    if (defined $args{user}) {
+        $auth->{user} = delete $args{user};
+    }
+
+    if (defined $args{password}) {
+        $auth->{password} = delete $args{password};
+    }
 
     # Connect the sender if not done
     if (not $self->connected) {

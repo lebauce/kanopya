@@ -601,7 +601,7 @@ sub setLogAppender {
 
     my $appender = Log::Log4perl::Appender->new("Log::Dispatch::File",
                        name      => "workflow",
-                       filename  => $self->{config}->{logdir} . "workflows/" . $args{workflow}->id . ".log"
+                       filename  => $self->{config}->{logdir} . "/workflows/" . $args{workflow}->id . ".log"
                    );
 
     $appender->layout(Log::Log4perl::Layout::PatternLayout->new("%d %c %p> %M - %m%n"));
