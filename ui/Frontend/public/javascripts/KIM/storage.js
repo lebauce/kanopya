@@ -79,7 +79,7 @@ function linuxnas_list(cid) {
         elem_name   : 'service',
         details                 : {
             noDialog    : true,
-            tabs        : mainmenu_def.Services.jsontree.submenu
+            tabs        : mainmenu_def.Instances.jsontree.submenu
         },
     });
 }

@@ -184,7 +184,7 @@ function load_iaas_content (container_id) {
 
     var tabs = [];
     // Add the same tabs than 'Services'
-    jQuery.extend(true, tabs, mainmenu_def.Services.jsontree.submenu);
+    jQuery.extend(true, tabs, mainmenu_def.Instances.jsontree.submenu);
     // Remove the Billing tab
     for (var i = tabs.length -1; i >= 0; i--) {
         if (tabs[i].id == 'billing') {
