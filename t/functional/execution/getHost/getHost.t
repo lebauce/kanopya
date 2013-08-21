@@ -10,6 +10,7 @@
 #       1.D - There is only one host matching the minimum bonding configuration.
 #       1.E - There is only one host matching the minimum network configuration constraint.
 #       1.F - There is only one host matching the minimum tags constraint.
+#       1.G - There is only one host allowing a deployment on disk.
 #
 #       * There must be at least one host matching all the constraints but the one tested among the
 #         invalid ones.
@@ -22,6 +23,7 @@
 #       2.D - None of the hosts match the minimum bonding configuration.
 #       2.E - None of the hosts match the minimum network configuration constraint.
 #       2.F - None of the hosts match the minimum tags constraint.
+#       2.G - None of the hosts have a disk for a deployment on disk.
 #
 #       * There must be at least one host matching all the constraints but the one tested among the hosts.
 #
@@ -56,6 +58,7 @@ use _test1c;
 use _test1d;
 use _test1e;
 use _test1f;
+use _test1g;
 
 use _test2a;
 use _test2b;
@@ -63,6 +66,7 @@ use _test2c;
 use _test2d;
 use _test2e;
 use _test2f;
+use _test2g;
 
 use _test3a;
 use _test3b;
@@ -112,6 +116,10 @@ sub main {
     test1f();
     BaseDB->rollbackTransaction;
 
+    BaseDB->beginTransaction;
+    test1g();
+    BaseDB->rollbackTransaction;
+
     # 2nd serie of tests : None of the hosts match the constraints.
 
     BaseDB->beginTransaction;
@@ -136,6 +144,10 @@ sub main {
 
     BaseDB->beginTransaction;
     test2f();
+    BaseDB->rollbackTransaction;
+
+    BaseDB->beginTransaction;
+    test2g();
     BaseDB->rollbackTransaction;
 
     # 3rd serie of tests : Choosing the host with the best cost for a given criterion.
