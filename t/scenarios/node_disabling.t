@@ -115,6 +115,7 @@ sub node_disabling {
             die 'Presence of values before launching aggregator';
         }
 
+        sleep 5;
         $aggregator->update();
 
         diag('Check if 3 nodes in aggregator');
