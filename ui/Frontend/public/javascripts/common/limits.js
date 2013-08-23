@@ -44,7 +44,7 @@ function Periods() {
             url: '/api/timeperiod?expand=param_preset',
             elem_name: 'timeperiod',
             content_container_id: container_id,
-            grid_id: 'users_list',
+            grid_id: 'timeperiods_list',
             details: { onSelectRow : $.proxy(this.add, this) },
             colNames: [ 'time_period_id', 'time_period_name' ],
             colModel: [ {
