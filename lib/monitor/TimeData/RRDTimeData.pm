@@ -77,7 +77,7 @@ sub createTimeDataStore {
 
     General::checkParams(args     => \%args,
                          required => [ 'name', 'collect_frequency', 'storage_duration' ],
-                         optional => { 'skip_if_exists' => undef });
+                         optional => { 'skip_if_exists' => undef, time => undef });
 
     my $name = _formatName(name => $args{'name'});
 
@@ -102,7 +102,7 @@ sub createTimeDataStore {
         if (defined $options->{start}) {
             $opts .= '-b '.$options->{'start'}.' ';
         } else {
-            my $time = time();
+            my $time = $args{time} || time();
             my $moduloTime = $time % 60;
             my $finalTime = $time - $moduloTime;
             $opts .= '-b '.$finalTime.' ';
@@ -115,7 +115,7 @@ sub createTimeDataStore {
         }
     } else {
         $opts .= '-s '.$config->{step}.' ';
-        my $time = time();
+        my $time = $args{time} || time();
         my $moduloTime = $time % 60;
         my $finalTime = $time - $moduloTime;
         $opts .= '-b '.$finalTime.' ';
@@ -305,7 +305,8 @@ sub updateTimeDataStore {
     TimeData::RRDTimeData::createTimeDataStore(skip_if_exists    => 1,
                                                name              => $args{'clustermetric_id'},
                                                collect_frequency => $args{'time_step'},
-                                               storage_duration  => $args{'storage_duration'});
+                                               storage_duration  => $args{'storage_duration'},
+                                               time              => $args{time});
 
     my $datasource = (defined $args{'datasource'}) ? $args{'datasource'} : 'aggregate';
     my $value      = (defined $args{'value'})      ? $args{'value'}      : 'U';
