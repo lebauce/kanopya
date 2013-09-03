@@ -1,35 +1,42 @@
 #!/usr/bin/perl -w
 use strict;
 use warnings;
+
+use Kanopya::Exceptions;
+
 use Getopt::Std;
-use Data::Dumper;
+
+use TryCatch;
+my $err;
 
 sub print_usage {
     print "Usage: setup.pl\n";
     print "       setup.pl -d\n";
-    print "       setup.pl -f yamlfile\n";
+    print "       setup.pl -f yaml_file\n";
+    print "       setup.pl -s file_to_generate\n";
     print "Process initial Kanopya configuration\n";
     exit(1);
 }
 
 my %opts = ();
-getopts("df:", \%opts) or print_usage;
+getopts("df:s:", \%opts) or print_usage;
 
-# check operating system and load corresponding setup class
+# Check operating system and load corresponding setup class
 my $setup;
 
-if($^O eq 'linux') {
+if ($^O eq 'linux') {
     if($< != 0) {
         die "You must be root to execute this script\n";
     }
     use Setup::Linux;
     $setup = Setup::Linux->new(%opts);
-} 
-elsif($^O eq 'MSWin32') {
+}
+elsif ($^O eq 'MSWin32') {
     # TODO test admin privilieges
     use Setup::MSWin32;
     $setup = Setup::MSWin32->new(%opts);
-} else {
+}
+else {
     die "$^O is not supported\n";
 }
 
@@ -38,17 +45,32 @@ elsif($^O eq 'MSWin32') {
 # if mode is file (-f command line parameter), do not ask user but 
 #  automatically use the provided file to take answers
 
-# show licence 
+# Show licence 
 
 #if(not $setup->accept_licence()) {
 #   exit(1);
 #}
 
-# ask parameters 
+# Generate parameters files if required
+if (defined $opts{s}) {
+    try {
+        $setup->serialize_parameters(output_file => $opts{s}, test => 1);
+    }
+    catch {
+        throw Kanopya::Exception::IO(error => "Unable to create/write the specified file <$opts{s}> for parameters serialization.\n");
+    }
+}
+
+# Ask parameters 
 $setup->ask_parameters();
 
-# complete parameters with additionnal informations
+# Complete parameters with additionnal informations
 $setup->complete_parameters();
 
-# process setup
+# Process setup
 $setup->process();
+
+# Generate parameters files if required
+if (defined $opts{s}) {
+    $setup->serialize_parameters(output_file => $opts{s});
+}

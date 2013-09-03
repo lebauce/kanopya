@@ -516,7 +516,7 @@ sub registerUsers {
         if (defined ($group->{methods})) {
             for my $gpname (keys %{ $group->{methods} }) {
                 for my $method (@{ $group->{methods}->{$gpname} }) {
-                    print "- Setting permissions for group " . $gpname .
+                    print "\t\t- Setting permissions for group " . $gpname .
                           ", on method " . $gp->gp_name . "->" . $method . "\n";
 
                     Entityright->findOrCreate(
@@ -2397,27 +2397,57 @@ sub populateDB {
 
     $args{db} = BaseDB->_adm->{schema};
 
+    print "\t- Registering class types...\n";
     registerClassTypes(%args);
+
+    print "\t- Registering kernels...\n";
     registerKernels(%args);
+
+    print "\t- Registering component/manager categories...\n";
     registerManagerCategories(%args);
+
+    print "\t- Registering users and groups...\n";
     registerUsers(%args);
+
+    print "\t- Registering data model types...\n";
     registerDataModelTypes(%args);
+
+    print "\t- Registering tags...\n";
     registerTags(%args);
+
+    print "\t- Registering processors models ;)\n";
     registerProcessorModels(%args);
+
+    print "\t- Registering operation types...\n";
     registerOperations(%args);
+
+    print "\t- Registering service provider types...\n";
     registerServiceProviders(%args);
+
+    print "\t- Registering component types...\n";
     registerComponents(%args);
+
+    print "\t- Registering network configuration roles...\n";
     registerNetconfRoles(%args);
+
+    print "\t- Registering monitoring indicators...\n";
     registerIndicators(%args);
 
+    print "\t- Registering Kanopya master...\n";
     my $kanopya_master = registerKanopyaMaster(%args);
 
     registerScopes(%args);
+
+    print "\t- Registering workflow definitions...\n";
     populate_workflow_def(kanopya_master => $kanopya_master);
 
+    print "\t- Create default policies...\n";
     my $policies = populate_policies(kanopya_master => $kanopya_master);
 
+    print "\t- Create default service templates...\n";
     populate_servicetemplates($policies);
+
+    print "\t- Populating DB done.\n"; 
 }
 
 1;

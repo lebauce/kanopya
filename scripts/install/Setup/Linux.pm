@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 =pod
-
 =begin classdoc
 
 Setup class implementing linux setup questions and actions
@@ -24,7 +23,6 @@ Setup class implementing linux setup questions and actions
 @self     $self
 
 =end classdoc
-
 =cut
 
 package Setup::Linux;
@@ -37,8 +35,11 @@ use NetAddr::IP;
 use File::Path qw(make_path);
 use File::Copy;
 
-=pod
+use TryCatch;
+my $err;
 
+
+=pod
 =begin classdoc
 
 Load structure from file to set parameters for setup processing
@@ -46,7 +47,6 @@ Load structure from file to set parameters for setup processing
 @param $file file to read
 
 =end classdoc
-
 =cut
 
 sub _load_file {
@@ -68,14 +68,13 @@ sub _load_file {
     return $parameters_values;
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Initialize structure used to ask/set parameters for setup processing
 
 =end classdoc
-
 =cut
 
 sub _init {
@@ -184,6 +183,7 @@ sub _init {
     ];
 }
 
+
 =pod
 =begin classdoc
 
@@ -192,7 +192,6 @@ Test directory validity
 @param $value directory to test
 
 =end classdoc
-
 =cut
 
 sub _validate_dir {
@@ -203,8 +202,8 @@ sub _validate_dir {
     return { value => $value };
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Retrieve network interfaces
@@ -212,7 +211,6 @@ Retrieve network interfaces
 @return @ifaces list of detected network interfaces
 
 =end classdoc
-
 =cut
 
 sub _get_ifaces {
@@ -221,8 +219,8 @@ sub _get_ifaces {
     return @ifaces;
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Test network interface validity
@@ -230,7 +228,6 @@ Test network interface validity
 @param @value network interface name
 
 =end classdoc
-
 =cut
 
 sub _validate_iface {
@@ -244,14 +241,13 @@ sub _validate_iface {
     return { error => 1, msg => "Invalid interface $value" };
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Generate first ip address from admin network parameters
 
 =end classdoc
-
 =cut
 
 sub _get_first_ip {
@@ -262,8 +258,8 @@ sub _get_first_ip {
     return $ip->first()->addr();
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Retrieve volume groups
@@ -271,7 +267,6 @@ Retrieve volume groups
 @return @vgs list of detected volume groups
 
 =end classdoc
-
 =cut
 
 sub _get_vgs {
@@ -284,8 +279,8 @@ sub _get_vgs {
     return @vgs;
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Test volume group validity
@@ -293,7 +288,6 @@ Test volume group validity
 @param @value volume group name
 
 =end classdoc
-
 =cut
 
 sub _validate_vg {
@@ -307,14 +301,13 @@ sub _validate_vg {
     return { error => 1, msg => "Invalid volume group $value" };
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Retrieve/generate additionnal data parameters
 
 =end classdoc
-
 =cut
 
 sub complete_parameters {
@@ -364,71 +357,95 @@ sub complete_parameters {
 }
 
 =pod
+=begin classdoc
 
+Serialize final parameters on disk.
+
+=end classdoc
+=cut
+
+sub serialize_parameters {
+    my $self  = shift;
+    my %args  = @_;
+
+    General::checkParams(args => \%args, required => [ 'output_file' ], optional => { 'test' => 0 });
+
+    my $serialized = '';
+    if (! $args{test}) {
+        for my $key (keys %{ $self->{parameters_values} }) {
+            if (! ref($self->{parameters_values}->{$key})) {
+                $serialized .= "$key $self->{parameters_values}->{$key}\n";
+            }
+        }
+    }
+
+    _writeFile($args{output_file}, $serialized);
+}
+
+
+=pod
 =begin classdoc
 
 Create kanopya linux user
 
 =end classdoc
-
 =cut
 
 sub _create_kanopya_account {
     my ($self) = @_;
-    my $output = `grep kanopya /etc/passwd`;
+    my $output = `grep kanopya /etc/passwd 2>/dev/null`;
 
-    if(not $output) {
-        print "\n - kanopya account creation\n";
+    if (not $output) {
+        print "\n - kanopya account creation...";
         system("useradd kanopya -r -c 'Kanopya User' -s '/bin/false' -b '/opt'");
+        print "ok\n";
     } else {
-        print "\n - kanopya account already exists, skipping creation\n";
+        print "\n - kanopya account already exists, skipping creation.\n";
     }
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 create directories 
 
 =end classdoc
-
 =cut
 
 sub _create_directories {
     my ($self) = @_;
-    print "\n - Directories creation\n";
+    print "\n - Directories creation...\n";
     
-    print "$self->{parameters_values}->{log_dir}\n";
+    print "\t$self->{parameters_values}->{log_dir}\n";
     make_path($self->{parameters_values}->{log_dir} . "/workflows");
     
-    print "$self->{parameters_values}->{clusters_dir}\n";
+    print "\t$self->{parameters_values}->{clusters_dir}\n";
     make_path($self->{parameters_values}->{clusters_dir});
     
-    print "$self->{parameters_values}->{masterimages_dir}\n";
+    print "\t$self->{parameters_values}->{masterimages_dir}\n";
     make_path($self->{parameters_values}->{masterimages_dir});
     
-    print "$self->{parameters_values}->{tftp_dir}\n";
+    print "\t$self->{parameters_values}->{tftp_dir}\n";
     system('mkdir -p '.$self->{parameters_values}->{tftp_dir});
     
-    print "$self->{parameters_values}->{sessions_dir}\n";
+    print "\t$self->{parameters_values}->{sessions_dir}\n";
     make_path($self->{parameters_values}->{sessions_dir});
     system('chown -R kanopya.kanopya '.$self->{parameters_values}->{sessions_dir});
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Generate kanopya config and log files
 
 =end classdoc
-
 =cut
 
 sub _generate_kanopya_conf {
     my ($self) = @_;
-    print "\n - Configuration files generation\n";
+    print "\n - Configuration files generation...";
     my $configfiles = [
         # components list
         { path => $self->{installpath} . '/conf/components.conf',
@@ -517,16 +534,16 @@ sub _generate_kanopya_conf {
             conf     => $file->{path},
         );
     }
+    print "ok\n";
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 SSH key creation for root
 
 =end classdoc
-
 =cut
 
 sub _generate_ssh_key {
@@ -535,21 +552,22 @@ sub _generate_ssh_key {
         if (! -e '/root/.ssh') {
             make_path('/root/.ssh')
         }
-        print "\n - Dedicated root SSH keys generation\n";
+        print "\n - Dedicated root SSH keys generation...";
         system("ssh-keygen -q -t rsa -N '' -f /root/.ssh/kanopya_rsa");
+        print "ok\n";
+
     } else {
-        print "\n - Dedicated root SSH keys already exists, skipping generation\n";
+        print "\n - Dedicated root SSH keys already exists, skipping generation.\n";
     }
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Create user and database shema
 
 =end classdoc
-
 =cut
 
 sub _create_database {
@@ -565,16 +583,17 @@ sub _create_database {
                             privileges => "ALL PRIVILEGES",);
 
     # drop previous kanopya database
-    print " - Drop old Kanopya database if present\n";
+    print "\n - Drop old Kanopya database if present...";
     $self->_execSQL('drop database if exists kanopya');
+    print "ok\n";
 
     # schema creation
-    print " - Create kanopya database...";
+    print "\n - Create kanopya database...";
     system("mysql -h $host  -P $port -u kanopya -p$userpasswd < $self->{dbschema_path}/schemas/Schemas.sql");
     print "ok\n";
 
     # components schema
-    print " - Create components schemas...";
+    print "\n - Create components schemas...";
     open(my $FILE, '<', $self->{installpath} . '/conf/components.conf');
     my @lines = <$FILE>;
     close($FILE);
@@ -620,27 +639,25 @@ sub _create_database {
     }
 
     require PopulateDB;
-    print " - Populate database...";
+    print "\n - Populating database...\n";
     populateDB(login    => 'admin',
                password => $self->{parameters_values}->{mysql_kanopya_passwd},
                %datas);
-    print "ok\n";
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Configure dhcpd
 
 =end classdoc
-
 =cut
 
 sub _configure_dhcpd {
     my ($self) = @_;
 
-    print " - Dhcpd reconfiguration\n";
+    print "\n - Dhcpd reconfiguration...";
 
     _writeFile('/etc/dhcp/dhcpd.conf',
               "ddns-update-style none;\n" .
@@ -649,22 +666,22 @@ sub _configure_dhcpd {
               "log-facility local7;\n" .
               'subnet ' . $self->{parameters_values}->{admin_net_ip} . ' ' .
               'netmask ' . $self->{parameters_values}->{admin_net_mask} . "{}\n");
+    print "ok\n";
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Configure atftpd
 
 =end classdoc
-
 =cut
 
 sub _configure_atftpd {
     my ($self) = @_;
 
-    print " - Atftpd reconfiguration\n";
+    print "\n - Atftpd reconfiguration...";
 
     _writeFile('/etc/default/atftpd',
               "USE_INETD=false\n" .
@@ -673,40 +690,48 @@ sub _configure_atftpd {
               "--bind-address " . $self->{parameters_values}->{admin_ip} . " " .
               "--maxthread 100 --verbose=5 " .
               "--logfile=/var/log/tftp.log " . $self->{parameters_values}->{tftp_dir} . "\"");
+    print "ok\n";
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Configure iscsitarget
 
 =end classdoc
-
 =cut
 
 sub _configure_iscsitarget {
     my ($self) = @_;
-    print " - Iscsitarget reconfiguration\n";
+    print "\n - Iscsitarget reconfiguration...";
 
-    _writeFile('/etc/iet/ietd.conf', "");
+    try {
+        _writeFile('/etc/iet/ietd.conf', "");
+        _writeFile('/etc/default/iscsitarget', "ISCSITARGET_ENABLE=true");
 
-    _writeFile('/etc/default/iscsitarget', "ISCSITARGET_ENABLE=true");
+        print "ok\n";
+    }
+    catch (Kanopya::Exception::IO $err) {
+        print "failed ! Your system seems to do not support ietd daemon, $err";
+    }
+    catch ($err) {
+        $err->rethrow();
+    }
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Configure rabbitmq
 
 =end classdoc
-
 =cut
 
 sub _configure_rabbitmq {
     my ($self) = @_;
-    print " - Rabbitmq configuration\n";
+    print "\n - Rabbitmq configuration...";
 
     my $password = $self->{parameters_values}->{mysql_kanopya_passwd};
 
@@ -720,21 +745,21 @@ sub _configure_rabbitmq {
             system ("rabbitmqctl change_password $user $password");
         }
     }
+    print "ok\n";
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Configure snmpd
 
 =end classdoc
-
 =cut
 
 sub _configure_snmpd {
     my ($self) = @_;
-    print " - Snmpd reconfiguration\n";
+    print "\n - Snmpd reconfiguration...";
 
     _useTemplate(
         include  => $self->{installpath} . '/templates/components/snmpd',
@@ -749,22 +774,21 @@ sub _configure_snmpd {
         conf     => '/etc/default/snmpd',
         template => 'default_snmpd.tt',
     );
-
+    print "ok\n";
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Configure puppetmaster
 
 =end classdoc
-
 =cut
 
 sub _configure_puppetmaster {
     my ($self) = @_;
-    print " - Puppet master reconfiguration\n";
+    print "\n - Puppet master reconfiguration...\n";
 
     $self->_execSQL("drop database if exists puppet");
     $self->_execSQL("CREATE DATABASE puppet");
@@ -856,21 +880,21 @@ sub _configure_puppetmaster {
     system('/etc/init.d/puppetmaster', 'restart');
 
     EEntity->new(entity => $kanopya)->reconfigure(tags => [ "system", "kanopya::amqp" ]);
-
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Retrieve tftp files from download.kanopya.org
 
 =end classdoc
-
 =cut
 
 sub _retrieve_tftp_content {
     my ($self) = @_;
+
+    print "\n - Retrieving TFTP directory contents from http://download.kanopya.org...\n";
 
     my $rsync_sshkey = '~/.ssh/rsync_rsa';
     # Check if rsync sshkey exist on right place :
@@ -884,36 +908,40 @@ sub _retrieve_tftp_content {
     system('rsync -var -e "ssh -p 2211 -i /root/.ssh/rsync_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" rsync@download.kanopya.org:/pub/tftp/* '.$self->{parameters_values}->{tftp_dir});
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Restart middleware processes
 
 =end classdoc
-
 =cut
 
 sub _restart_middlewares {
     my ($self) = @_;
+
+    print "\n - Restarting required services...\n";
+
     for my $service ('isc-dhcp-server','iscsitarget','puppetmaster','atftpd','snmpd', 'rabbitmq-server') {
         system("service $service restart");
     }
     system("service inetutils-inetd stop");
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Start kanopya processes
 
 =end classdoc
-
 =cut
 
 sub _start_kanopya_services {
     my ($self) = @_;
+
+    print "\n - Restarting Kanopya services...\n";
+
     for my $service (@{$self->{kanopya_services}}) {
         system("service $service start");
     }
@@ -952,8 +980,8 @@ sub _createTemplatesSymLink {
     }
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Process setup with given parameters
@@ -961,7 +989,6 @@ Process setup with given parameters
 @param $parameters hash reference return by SETUP::ask_parameters method
 
 =end classdoc
-
 =cut
 
 sub process {
@@ -1002,21 +1029,12 @@ don't forget to reconfigure it\n";
 }
 
 
-
-#   - /etc/iscsi/initiatorname.iscsi
-
-
-# 24 write /etc/hosts
-# restart des services kanopya
-
 =pod
-
 =begin classod
 
 Init and process Template
 
 =end classdoc
-
 =cut
 
 sub _useTemplate {
@@ -1040,33 +1058,31 @@ sub _useTemplate {
     };
 }
 
-=pod
 
+=pod
 =begin classod
 
  Write into a file in '>' mode
 
 =end classdoc
-
 =cut
 
 sub _writeFile {
     my ($path_file, $line) = @_;
 
     open (my $FILE, ">", $path_file)
-        or die "an error occured while opening $path_file: $!";
+        or throw Kanopya::Exception::IO(error => "an error occured while opening $path_file: $!");
     print $FILE $line;
     close($FILE);
 }
 
-=pod
 
+=pod
 =begin classod
 
 Execute a given SQL query
 
 =end classdoc
-
 =cut
 
 sub _execSQL {
@@ -1079,14 +1095,13 @@ sub _execSQL {
     return system("mysql -h $host -P $port -u root -p$pwd -e \"$sql\"");
 }
 
-=pod
 
+=pod
 =begin classod
 
 Create a mysql user and grand him rights
 
 =end classdoc
-
 =cut
 
 sub _createMySQLUser {
@@ -1103,6 +1118,8 @@ sub _createMySQLUser {
     my $user = `$query`;
 
     if (!$user) {
+        print "\n - Creating user $args{user}...";
+
         $self->_execSQL("CREATE USER '" . $args{user} . "'\@'localhost' " .
                 "IDENTIFIED BY '$args{password}'") == 0
             or die "error while creating mysql user: $!" == 0
@@ -1110,18 +1127,16 @@ sub _createMySQLUser {
         eval {
             $self->_execSQL("CREATE USER '$args{user}' IDENTIFIED BY '$args{password}'");
         };
-        print "done\n";
+        print "ok\n";
     }
     else {
-        print "User $args{user} already exists\n";
+        print "\n - User $args{user} already exists, skipping creation.\n";
     }
 
     #We grant all privileges to kanopya database for $db_user
-    print "granting all privileges on $args{database} database to $args{user}...\n";
+    print "\n - Granting all privileges on $args{database} database to $args{user}...";
     $self->_execSQL("GRANT " . $args{privileges} . " ON $args{database}.* TO '$args{user}' WITH GRANT OPTION") == 0
          or die "error while granting privileges to $args{user}: $!";
-
-    print "done\n";
 }
 
 1;

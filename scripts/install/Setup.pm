@@ -14,7 +14,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 =pod
-
 =begin classdoc
 
 Base class implementing operating system independant actions
@@ -24,16 +23,18 @@ Base class implementing operating system independant actions
 @self     $self
 
 =end classdoc
-
 =cut
 
 package Setup;
+
+use Kanopya::Exceptions;
+
 use Cwd;
 use Term::ReadKey;
 use Data::Dumper;
 
-=pod
 
+=pod
 =begin classdoc
 
 @constructor
@@ -47,7 +48,6 @@ Base initialization of Setup instance.
 @return a Setup instance
 
 =end classdoc
-
 =cut
 
 sub new {
@@ -61,8 +61,10 @@ sub new {
     if(defined $args{f}) {
         $self->{mode} = 'file';
         $self->{parameters_values} = $self->_load_file($args{f});
+
     } elsif(defined $args{d}) {
         $self->{mode} = 'default';
+
     } else {
         $self->{mode} = 'ask';
     }
@@ -72,15 +74,14 @@ sub new {
     return $self;
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Display kanopya licence and ask to accept by typing yes.
 If mode is not 'ask', automatically answer y
 
 =end classdoc
-
 =cut
 
 sub accept_licence {
@@ -102,22 +103,30 @@ sub accept_licence {
     }
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Retrieve/generate additionnal data parameters
 
 =end classdoc
-
 =cut
 
-sub complete_parameters {
+sub complete_parameters {}
 
-}
 
 =pod
+=begin classdoc
 
+Serialize final parameters on disk.
+
+=end classdoc
+=cut
+
+sub serialize_parameters {}
+
+
+=pod
 =begin classdoc
 
 Depending of the process mode, ask the user for parameters.
@@ -127,7 +136,6 @@ If mode is file (-f command line parameter), do not ask user but
   automatically use the provided file to take answers
 
 =end classdoc
-
 =cut
 
 sub ask_parameters {

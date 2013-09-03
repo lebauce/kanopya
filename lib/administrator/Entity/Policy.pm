@@ -365,10 +365,10 @@ sub getPatternFromParams {
 
     my $pattern = {};
     my $attrdef = $class->getPolicyAttrDef;
-    my %paramscopy = %{$args{params}};
+    my %paramscopy = %{ $args{params} };
 
     # Transform the policy form params to a cluster configuration pattern
-    for my $name (keys %{$args{params}}) {
+    for my $name (keys %{ $args{params} }) {
         # Handle defined values that belongs to the attrdef of the policy only
         if (defined $args{params}->{$name} and $args{params}->{$name} ne '' and exists $attrdef->{$name} and
             not ($attrdef->{$name}->{type} eq 'relation' and $attrdef->{$name}->{relation} eq 'single_multi')) {
