@@ -37,6 +37,7 @@ use Entity::CollectorIndicator;
 use Entity::Combination::AggregateCombination;
 
 use DescriptiveStatisticsFunction;
+use TryCatch;
 
 use Data::Dumper;
 use Log::Log4perl "get_logger";
@@ -246,14 +247,25 @@ sub lastValue {
         return $args{memoization}->{$self->id};
     }
 
-    my %last_value = TimeData::RRDTimeData::getLastUpdatedValue(metric_uid => $self->id);
-    my @indicator = (values %last_value);
+    my $result;
+    try {
+        my %last_value = TimeData::RRDTimeData::getLastUpdatedValue(metric_uid => $self->id);
+        my @indicator = (values %last_value);
 
-    if (defined $args{memoization}) {
-        $args{memoization}->{$self->id} = $indicator[0];
+        if (defined $args{memoization}) {
+            $args{memoization}->{$self->id} = $indicator[0];
+        }
+
+        $result = $indicator[0];
+    }
+    catch (Kanopya::Exception::Internal $err) {
+        $result = undef;
+    }
+    catch ($err) {
+        $err->rethrow();
     }
 
-    return $indicator[0];
+    return $result;
 }
 
 

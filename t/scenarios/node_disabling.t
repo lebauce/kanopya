@@ -78,13 +78,12 @@ sub node_disabling {
         externalcluster_name => 'Test Service Provider',
     );
 
-    diag('Add mock monitor to service provider');
     $service_provider->addManager(
         manager_id   => $mock_monitor->id,
         manager_type => 'CollectorManager',
     );
 
-    # Create two nodes
+    # Create three nodes
     my $node1 = Node->new(
         node_hostname => 'test_node_1',
         service_provider_id   => $service_provider->id,
@@ -107,125 +106,137 @@ sub node_disabling {
     my $agg_rule_ids  = _service_rule_objects_creation(indicators => \@indicators);
     my $node_rule_ids = _node_rule_objects_creation(indicators => \@indicators);
 
-    diag('Check if no values before launching aggregator');
-    if ( not defined $acomb1->evaluate() ) {
-        diag('## checked');
-    }
-    else {
-        die 'Presence of values before launching aggregator';
-    }
+    lives_ok {
+        diag('Check if no values before launching aggregator');
+        if ( not defined $acomb1->evaluate() ) {
+            diag('## checked');
+        }
+        else {
+            die 'Presence of values before launching aggregator';
+        }
 
-    $aggregator->update();
+        sleep 5;
+        $aggregator->update();
 
-    diag('Check if 3 nodes in aggregator');
-    if ( $acomb1->evaluate() == 3 ) {
-        diag('## checked');
-    }
-    else {
-        die 'Not 3 nodes in aggregator';
-    }
+        diag('Check if 3 nodes in aggregator');
+        my $node_num = $acomb1->evaluate();
+        if ($node_num == 3) {
+            diag('## checked');
+        }
+        else {
+            die 'Not 3 nodes in aggregator (got <'.$node_num.'> instead)';
+        }
 
-    $node3->disable();
-    sleep(5);
-    $aggregator->update();
-    # Reload object to get changes
-    $node3 = Node->get(id => $node3->id);
-    diag('Check disabling node 3');
-    if ( $node3->monitoring_state eq 'disabled' ) {
-        diag('## disabled');
-    }
-    else {
-        die 'Node 3 not disabled';
-    }
+        $node3->disable();
 
-    diag('Check if 2 nodes in aggregator');
-    if ( $acomb1->evaluate() == 2 ) {
-        diag('## checked');
-    }
-    else {
-        die 'Not 2 nodes in aggregator';
-    }
+        sleep(5);
+        $aggregator->update();
 
-    $node3->enable();
-    $node3 = Node->get(id => $node3->id);
-    diag('Check enabling node 3');
-    if ( $node3->monitoring_state ne 'disabled' ) {
-        diag('## enabled');
-    }
-    else {
-        die 'Node 3 not enabled';
-    }
+        # Reload object to get changes
+        $node3 = Node->get(id => $node3->id);
+        diag('Check disabling node 3');
+        if ( $node3->monitoring_state eq 'disabled' ) {
+            diag('## disabled');
+        }
+        else {
+            die 'Node 3 not disabled';
+        }
 
-    $aggregator->update();
-    diag('Check if 3 nodes in aggregator');
-    if ( $acomb1->evaluate() == 3 ) {
-        diag('## checked');
-    }
-    else {
-        die 'Not 3 nodes in aggregator';
-    }
+        diag('Check if 2 nodes in aggregator');
+        if ( $acomb1->evaluate() == 2 ) {
+            diag('## checked');
+        }
+        else {
+            die 'Not 2 nodes in aggregator';
+        }
 
-    $rulesengine->oneRun();
+        $node3->enable();
+        $node3 = Node->get(id => $node3->id);
+        diag('Check enabling node 3');
+        if ( $node3->monitoring_state ne 'disabled' ) {
+            diag('## enabled');
+        }
+        else {
+            die 'Node 3 not enabled';
+        }
 
-    diag('Check nodes rule verification');
-    check_rule_verification(
-        nrule1_id => $nrule1->id,
-        node1_id  => $node1->id,
-        node2_id  => $node2->id,
-        node3_id  => $node3->id
-    );
+        sleep(5);
+        $aggregator->update();
 
-    $node3->disable();
+        diag('Check if 3 nodes in aggregator');
+        if ( $acomb1->evaluate() == 3 ) {
+            diag('## checked');
+        }
+        else {
+            die 'Not 3 nodes in aggregator';
+        }
+    } 'Aggregator behavior when disabling nodes';
 
-    expectedException {
-        VerifiedNoderule->find(hash => {
-            verified_noderule_node_id    => $node3->id,
-            verified_noderule_nodemetric_rule_id => $nrule1->id,
-            verified_noderule_state              => 'verified',
-        });
-    } 'Kanopya::Exception::Internal::NotFound',
-    'Disabled node 3 and check rule not verified';
+    lives_ok {
 
-    $rulesengine->oneRun();
+        sleep 5;
+        $aggregator->update();
+        $rulesengine->oneRun();
 
-    expectedException {
-        VerifiedNoderule->find(hash => {
-            verified_noderule_node_id    => $node3->id,
-            verified_noderule_nodemetric_rule_id => $nrule1->id,
-            verified_noderule_state              => 'verified',
-        });
-    } 'Kanopya::Exception::Internal::NotFound',
-    'Run orchestrator, disabled node 3 and check rule not verified';
+        diag('Check nodes rule verification');
+        check_rule_verification(
+            nrule1_id => $nrule1->id,
+            node1_id  => $node1->id,
+            node2_id  => $node2->id,
+            node3_id  => $node3->id
+        );
+
+        $node3->disable();
+
+        expectedException {
+            VerifiedNoderule->find(hash => {
+                verified_noderule_node_id    => $node3->id,
+                verified_noderule_nodemetric_rule_id => $nrule1->id,
+                verified_noderule_state              => 'verified',
+            });
+        } 'Kanopya::Exception::Internal::NotFound',
+        'Disabled node 3 and check rule not verified';
+
+        sleep 5;
+        $aggregator->update();
+        $rulesengine->oneRun();
+
+        expectedException {
+            VerifiedNoderule->find(hash => {
+                verified_noderule_node_id    => $node3->id,
+                verified_noderule_nodemetric_rule_id => $nrule1->id,
+                verified_noderule_state              => 'verified',
+            });
+        } 'Kanopya::Exception::Internal::NotFound',
+        'Run rules engine, disabled node 3 and check rule not verified';
+    } 'Rules Engine behavior when disabling nodes';
 }
 
 sub check_rule_verification {
     my %args = @_;
+    diag('# Node 1 rule verification');
+    VerifiedNoderule->find(hash => {
+        verified_noderule_node_id    => $args{node1_id},
+        verified_noderule_nodemetric_rule_id => $args{nrule1_id},
+        verified_noderule_state              => 'verified',
+    });
+    diag('## verified');
 
-    lives_ok {
-        diag('# Node 1 rule verification');
-        VerifiedNoderule->find(hash => {
-            verified_noderule_node_id    => $args{node1_id},
-            verified_noderule_nodemetric_rule_id => $args{nrule1_id},
-            verified_noderule_state              => 'verified',
-        });
-        diag('## verified');
+    diag('# Node 2 rule verification');
+    VerifiedNoderule->find(hash => {
+        verified_noderule_node_id    => $args{node2_id},
+        verified_noderule_nodemetric_rule_id => $args{nrule1_id},
+        verified_noderule_state              => 'verified',
+    });
+    diag('## verified');
 
-        diag('# Node 2 rule verification');
-        VerifiedNoderule->find(hash => {
-            verified_noderule_node_id    => $args{node2_id},
-            verified_noderule_nodemetric_rule_id => $args{nrule1_id},
-            verified_noderule_state              => 'verified',
-        });
-        diag('## verified');
-
-        diag('# Node 3 rule verification');
-        VerifiedNoderule->find(hash => {
-            verified_noderule_node_id    => $args{node3_id},
-            verified_noderule_nodemetric_rule_id => $args{nrule1_id},
-            verified_noderule_state              => 'verified',
-        });
-        diag('## verified');
-    } 'Check node rules are all verified';
+    diag('# Node 3 rule verification');
+    VerifiedNoderule->find(hash => {
+        verified_noderule_node_id    => $args{node3_id},
+        verified_noderule_nodemetric_rule_id => $args{nrule1_id},
+        verified_noderule_state              => 'verified',
+    });
+    diag('## verified');
 }
 
 sub test_rrd_remove {

@@ -45,15 +45,22 @@ use Entity::Clustermetric;
 use Entity::AggregateCondition;
 use Entity::Combination::AggregateCombination;
 use Entity::Rule::AggregateRule;
-
+use TryCatch;
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::TestUtils 'expectedException';
 
 my $testing = 0;
 
 my $service_provider;
+my @all_objects = ();
 
-main();
+try {
+    main();
+}
+catch ($err) {
+    clean_infra();
+    throw Kanopya::Exception::Internal(error => "$err");
+}
 
 sub main {
     BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
@@ -63,7 +70,7 @@ sub main {
     }
 
     sco_workflow_triggered_by_rule();
-#    clean_infra();
+    clean_infra();
 
     if ($testing == 1) {
         BaseDB->rollbackTransaction;
@@ -76,14 +83,17 @@ sub sco_workflow_triggered_by_rule {
     my $external_cluster_mockmonitor = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Monitor',
     );
+    push @all_objects, $external_cluster_mockmonitor;
 
     my $mock_monitor = Entity::Component::MockMonitor->new(
             service_provider_id => $external_cluster_mockmonitor->id,
     );
+    push @all_objects, $mock_monitor;
 
     $service_provider = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Service Provider',
     );
+    push @all_objects, $service_provider;
 
     # Create one node
     my $node = Node->new(
@@ -91,13 +101,15 @@ sub sco_workflow_triggered_by_rule {
         service_provider_id   => $service_provider->id,
         monitoring_state    => 'up',
     );
+    push @all_objects, $node;
 
     diag('Add mock monitor to service provider');
-    $service_provider->addManager(
+    my $manager = $service_provider->addManager(
         manager_id      => $mock_monitor->id,
         manager_type    => 'CollectorManager',
         no_default_conf => 1,
     );
+    push @all_objects, $manager;
 
     my @indicators = Entity::CollectorIndicator->search(hash => {collector_manager_id => $mock_monitor->id});
 
@@ -128,15 +140,20 @@ sub sco_workflow_triggered_by_rule {
             externalcluster_name => 'Test SCO Workflow Manager',
     );
 
+    push @all_objects, $external_cluster_sco;
+
     my $sco = Entity::Component::Sco->new(
             service_provider_id => $external_cluster_sco->id,
     );
 
+    push @all_objects, $sco;
+
     diag('Add workflow manager to service provider');
-    $service_provider->addManager(
+    my $manager2 = $service_provider->addManager(
         manager_id   => $sco->id,
         manager_type => 'WorkflowManager',
     );
+    push @all_objects, $manager2;
 
     diag('Create a new node workflow');
     my $node_wf = $sco->createWorkflow(
@@ -151,6 +168,7 @@ sub sco_workflow_triggered_by_rule {
             }
         }
     );
+    push @all_objects, $node_wf;
 
     diag('Create a new service workflow');
     my $service_wf = $sco->createWorkflow(
@@ -165,25 +183,31 @@ sub sco_workflow_triggered_by_rule {
             }
         }
     );
+    push @all_objects, $service_wf;
+
 
     diag('Associate node workflow to node rule 2');
-    $sco->associateWorkflow (
+    my $aw1 = $sco->associateWorkflow (
         new_workflow_name => $node_rule_ids->{node_rule2_id}.'_'.($node_wf->workflow_def_name),
         origin_workflow_def_id => $node_wf->id,
         specific_params => {},
         rule_id         =>  $node_rule_ids->{node_rule2_id},
     );
+    push @all_objects, Entity::Rule->get(id => $node_rule_ids->{node_rule2_id});
 
     diag('Associate service workflow to service rule 2');
-    $sco->associateWorkflow (
+    my $aw2 = $sco->associateWorkflow (
         new_workflow_name => $agg_rule_ids->{agg_rule2_id}.'_'.($service_wf->workflow_def_name),
         origin_workflow_def_id => $service_wf->id,
         specific_params => {specific_attribute => 'hello world!'},
         rule_id         => $agg_rule_ids->{agg_rule2_id},
     );
 
+    push @all_objects, Entity::Rule->get(id => $agg_rule_ids->{agg_rule2_id});
+
     #Launch orchestrator a workflow must be enqueued
     $rulesengine->oneRun();
+
 
     my ($node_workflow, $service_workflow, $sco_operation, $service_sco_operation);
     lives_ok {
@@ -224,24 +248,18 @@ sub sco_workflow_triggered_by_rule {
         });
 
         # Execute operation 4 times (1 time per trigerred rule * 2 (op confirmation + op workflow))
-        # Kanopya::Tools::Execution->nRun(n => 4);
-        # Kanopya::Tools::Execution->executeAll();
+        # Warning, excecutor may execute twice a postreported operation then the test may fail
+        # with 8 executions we decrease the probability a bit but the problem is not solved
+        # TODO try to use executeOperation + handleResult like the followed commented part
 
-        $DB::single = 1;
+        Kanopya::Tools::Execution->nRun(n => 8);
 
-        my $executor = Executor->new(duration => 'SECOND');
-        my @processes_rules = Entity::Operation->search(hash => {'operationtype.operationtype_name' => 'ProcessRule'});
-
-        my $p1 = (pop @processes_rules);
-        my $p2 = (pop @processes_rules);
-
-        $executor->executeOperation(operation_id => $p1->id);
-        $executor->handleResult(operation_id => $p1->id, status => $p1->state);
-
-        $executor->executeOperation(operation_id => $p2->id);
-        $executor->executeOperation(operation_id => $op_node->id);
-        $executor->executeOperation(operation_id => $op_sco->id);
-
+ 
+#        my $executor = Executor->new(duration => 'SECOND');
+#        my @processes_rules = Entity::Operation->search(hash => {'operationtype.operationtype_name' => 'ProcessRule'});
+#        my $p1 = (pop @processes_rules);
+#        $executor->executeOperation(operation_id => $p1->id);
+#        $executor->handleResult(operation_id => $p1->id, status => $p1->state);
 
         #  Check node rule output
         diag('Check postreported operation');
@@ -310,19 +328,24 @@ sub sco_workflow_triggered_by_rule {
         close(FILE);
     } 'Triggering of SCO workflow using rule (node and service scope)';
 
-    # Modify hoped_execution_time in order to avoid waiting for the delayed time
-    $sco_operation->setAttr( name => 'hoped_execution_time', value => time() - 1);
-    $sco_operation->save();
-
-    # Modify hoped_execution_time in order to avoid waiting for the delayed time
-    $service_sco_operation->setAttr( name => 'hoped_execution_time', value => time() - 1);
-    $service_sco_operation->save();
-
-    # Execute operation 2 times (1 time per operation enqueud)
-    Kanopya::Tools::Execution->oneRun();
-    Kanopya::Tools::Execution->oneRun();
 
     lives_ok {
+
+        # Warning : the hoped_execution_time modification does not decrease the postreported
+        # time anymore. So the test has to wait the delay of the postreported operation
+        # (currently 600 seconds)
+        # TODO Find another way to decrease the time
+
+        # Modify hoped_execution_time in order to avoid waiting for the delayed time
+        $sco_operation->setAttr( name => 'hoped_execution_time', value => time() - 1);
+        $sco_operation->save();
+
+        # Modify hoped_execution_time in order to avoid waiting for the delayed time
+        $service_sco_operation->setAttr( name => 'hoped_execution_time', value => time() - 1);
+        $service_sco_operation->save();
+
+        Kanopya::Tools::Execution->executeAll(timeout => 660);
+
         expectedException {
             Entity::Operation->find( hash => {
                 type => 'LaunchSCOWorkflow',
@@ -452,49 +475,65 @@ sub check_rule_verification {
 }
 
 sub clean_infra {
-    my @cms = Entity::Clustermetric->search (hash => {
-        clustermetric_service_provider_id => $service_provider->id
-    });
 
-    my @cm_ids = map {$_->id} @cms;
-    while (@cms) { (pop @cms)->delete(); };
+    my $service_provider_id = $service_provider ? $service_provider->id : undef;
 
-    diag('Check if all aggregrate combinations have been deleted');
-    my @acs = Entity::Combination::AggregateCombination->search (hash => {
-        service_provider_id => $service_provider->id
-    });
-    if ( scalar @acs == 0 ) {
-        diag('## checked');
-    }
-    else {
-        die 'All aggregate combinations have not been deleted';
-    }
-
-    diag('Check if all aggregrate rules have been deleted');
-    my @ars = Entity::Rule::AggregateRule->search (hash => {
-        service_provider_id => $service_provider->id
-    });
-    if ( scalar @ars == 0 ) {
-        diag('## checked');
-    }
-    else {
-        die 'All aggregate rules have not been deleted';
-    }
-
-    diag('Check if all rrd have been deleted');
-    my $one_rrd_remove = 0;
-    for my $cm_id (@cm_ids) {
-        if (defined open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$cm_id.'.rrd')) {
-            $one_rrd_remove++;
+    while (@all_objects) {
+        my $object = (pop @all_objects);
+        try {
+            $object->delete();
         }
-        close(FILE);
+        catch ($err) {
+            print $err;
+        }
     }
-    if ($one_rrd_remove == 0) {
-        diag('## checked');
+
+    if (defined $service_provider_id) {
+        my @cms = Entity::Clustermetric->search (hash => {
+            clustermetric_service_provider_id => $service_provider->id
+        });
+        my @cm_ids = map {$_->id} @cms;
+
+        diag('Check if all aggregrate combinations have been deleted');
+        my @acs = Entity::Combination::AggregateCombination->search (hash => {
+            service_provider_id => $service_provider->id
+        });
+        if ( scalar @acs == 0 ) {
+            diag('-> checked');
+        }
+        else {
+            die 'All aggregate combinations have not been deleted';
+        }
+
+        diag('Check if all aggregrate rules have been deleted');
+        my @ars = Entity::Rule::AggregateRule->search (hash => {
+            service_provider_id => $service_provider->id
+        });
+        if ( scalar @ars == 0 ) {
+            diag('-> checked');
+        }
+        else {
+            die 'All aggregate rules have not been deleted';
+        }
+
+        diag('Check if all rrd have been deleted');
+        my $one_rrd_remove = 0;
+        for my $cm_id (@cm_ids) {
+            if (defined open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$cm_id.'.rrd')) {
+                $one_rrd_remove++;
+            }
+            close(FILE);
+        }
+        if ($one_rrd_remove == 0) {
+            diag('-> checked');
+        }
+        else {
+             die "All rrd have not been removed, still $one_rrd_remove rrd";
+        }
     }
-    else {
-         die "All rrd have not been removed, still $one_rrd_remove rrd";
-    }
+
+
+
 }
 
 sub _service_rule_objects_creation {

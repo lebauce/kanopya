@@ -53,6 +53,8 @@ sub associateWorkflow {
             operationtype_id => $step->getAttr(name => 'operationtype_id'),
         );
     }
+
+    return $new_wf_def;
 }
 
 sub _getAutomaticValues{
