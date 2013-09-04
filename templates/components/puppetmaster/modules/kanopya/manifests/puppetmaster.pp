@@ -1,29 +1,39 @@
-class kanopya::puppetmaster::service {
-	service {
-		'puppetmaster':
-			name => $operatingsystem ? {
-				default => 'puppetmaster'
-			},
-			ensure => running,
-			hasstatus => true,
-			hasrestart => true,
-			enable => true,
-			require => Class['kanopya::puppetmaster::install'],
-	}
+class kanopya::puppetmaster::repository {
+    $release = downcase($lsbdistcodename)
+    $os = downcase($operatingsystem)
+
+    case $operatingsystem {
+        /(?i)(debian|ubuntu)/ : {
+            @apt::source { 'puppetlabs':
+                location   => "http://apt.puppetlabs.com/",
+                release    => $release,
+                repos      => 'main',
+                key        => '4BD6EC30',
+                key_server => 'keyserver.ubuntu.com',
+            }
+        }
+        default : {
+            fail("Unsupported operatingsystem : ${operatingsystem}. Only Debian, Ubuntu and Debian are supported")
+        }
+    }
 }
 
 class kanopya::puppetmaster::install {
-	package {
-		'puppetmaster':
-			name => $operatingsystem ? {
-				/(Red Hat|CentOS|Fedora)/ => 'puppet-server',
-				default => 'puppetmaster'
-			},
-			ensure => present,
-	}
+    package { 'puppetmaster':
+        name => $operatingsystem ? {
+            /(Red Hat|CentOS|Fedora)/ => 'puppet-server',
+            default => 'puppetmaster'
+        },
+        ensure => present,
+        require => Class['kanopya::puppetmaster::repository'],
+    }
+
+    class { 'puppetdb': }
+    class { 'puppetdb::master::config': }
 }
 
 class kanopya::puppetmaster {
-	include kanopya::puppetmaster::install, kanopya::puppetmaster::service
+    include kanopya::puppetmaster::repository,
+            kanopya::puppetmaster::install
 }
 
