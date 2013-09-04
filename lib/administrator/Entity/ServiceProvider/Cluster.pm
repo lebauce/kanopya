@@ -500,12 +500,6 @@ sub configureManagers {
             $self->addManager(manager_id => $export_manager->id, manager_type => "ExportManager");
         }
     }
-    
-    if ($self->cluster_boot_policy eq Manager::HostManager->BOOT_POLICIES->{pxe_iscsi}) {
-        $self->addComponent(
-            component_type_id => ClassType::ComponentType->find(hash => { component_name => "Openiscsi" })->id
-        );
-    }
 
     # Get export manager parameter related to si shared value.
     my $readonly_param = $export_manager->getReadOnlyParameter(
