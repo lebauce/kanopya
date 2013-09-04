@@ -325,6 +325,8 @@ sub isUp {
         return 1;
     }
     else {
+        $self->applyConfiguration(cluster => $args{cluster},
+                                  host    => $args{host});
         return 0;
     }
 }
