@@ -1,4 +1,4 @@
-# Atftpd0.pm atftp (trivial ftp, part of pxe) component (Adminstrator side)
+# Tftpd.pm TFTP server (trivial ftp, part of pxe) component (Adminstrator side)
 #    Copyright © 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -16,7 +16,7 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 24 july 2010
 
-package Entity::Component::Atftpd0;
+package Entity::Component::Tftpd;
 use base "Entity::Component";
 
 use strict;
@@ -30,30 +30,8 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    atftpd0_options => { 
-        label        => 'Daemon options',
-        type         => 'string',
-        pattern      => '^.*$',
-        is_mandatory => 1,
-        is_editable  => 1,
-    },
-    atftpd0_repository => { 
+    tftpd_repository => {
         label        => 'Repository path',
-        type         => 'string',
-        pattern      => '^.*$',
-        is_mandatory => 1,
-        is_editable  => 1
-    },
-    atftpd0_use_inetd => {
-        label        => 'Use inetd',
-        type         => 'enum',
-        options      => ['TRUE','FALSE'],
-        pattern      => '^.*$',
-        is_mandatory => 1,
-        is_editable  => 1
-    },
-    atftpd0_logfile => {
-        label        => 'Log file path',
         type         => 'string',
         pattern      => '^.*$',
         is_mandatory => 1,
@@ -74,7 +52,7 @@ sub getNetConf {
 
 sub getExecToTest {
     return {
-        atftp => {
+        tftp => {
             cmd => 'netstat -lnpu | grep 69',
             answer => '.+$',
             return_code => '0'
@@ -84,10 +62,7 @@ sub getExecToTest {
 
 sub getBaseConfiguration {
     return {
-        atftpd0_options    => '--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --maxthread 100 --verbose=5',
-        atftpd0_repository => '/tftp',
-        atftpd0_use_inetd  => 'FALSE',
-        atftpd0_logfile    => '/var/log/atftpd.log',
+        tftpd_repository => '/var/lib/kanopya/tftp',
     };
 }
 
@@ -95,9 +70,12 @@ sub getPuppetDefinition {
     my ($self, %args) = @_;
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
-        atftpd => {
+        tftpd => {
             manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::atftpd",
+                            name => "kanopya::tftpd",
+                            params => {
+                                tftpdir => $self->tftpd_repository
+                            }
                         )
         }
     } );
@@ -106,7 +84,7 @@ sub getPuppetDefinition {
 sub getTftpDirectory {
     my ($self, %args) = @_;
 
-    return $self->atftpd0_repository;
+    return $self->tftpd_repository;
 }
 
 1;

@@ -1,4 +1,4 @@
-package AdministratorDB::Schema::Result::Atftpd0;
+package AdministratorDB::Schema::Result::Tftpd;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
@@ -11,40 +11,22 @@ use base 'DBIx::Class::Core';
 
 =head1 NAME
 
-AdministratorDB::Schema::Result::Atftpd0
+AdministratorDB::Schema::Result::Tftpd
 
 =cut
 
-__PACKAGE__->table("atftpd0");
+__PACKAGE__->table("tftpd");
 
 =head1 ACCESSORS
 
-=head2 atftpd0_id
+=head2 tftpd_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 atftpd0_options
-
-  data_type: 'char'
-  is_nullable: 1
-  size: 128
-
-=head2 atftpd0_use_inetd
-
-  data_type: 'char'
-  is_nullable: 1
-  size: 32
-
-=head2 atftpd0_logfile
-
-  data_type: 'char'
-  is_nullable: 1
-  size: 128
-
-=head2 atftpd0_repository
+=head2 tftpd_repository
 
   data_type: 'char'
   is_nullable: 1
@@ -53,27 +35,21 @@ __PACKAGE__->table("atftpd0");
 =cut
 
 __PACKAGE__->add_columns(
-  "atftpd0_id",
+  "tftpd_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "atftpd0_options",
-  { data_type => "char", is_nullable => 1, size => 128 },
-  "atftpd0_use_inetd",
-  { data_type => "char", is_nullable => 1, size => 32 },
-  "atftpd0_logfile",
-  { data_type => "char", is_nullable => 1, size => 128 },
-  "atftpd0_repository",
+  "tftpd_repository",
   { data_type => "char", is_nullable => 1, size => 64 },
 );
-__PACKAGE__->set_primary_key("atftpd0_id");
+__PACKAGE__->set_primary_key("tftpd_id");
 
 =head1 RELATIONS
 
-=head2 atftpd0
+=head2 tftpd
 
 Type: belongs_to
 
@@ -82,9 +58,9 @@ Related object: L<AdministratorDB::Schema::Result::Component>
 =cut
 
 __PACKAGE__->belongs_to(
-  "atftpd0",
+  "tftpd",
   "AdministratorDB::Schema::Result::Component",
-  { component_id => "atftpd0_id" },
+  { component_id => "tftpd_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
@@ -97,6 +73,6 @@ __PACKAGE__->belongs_to(
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Component",
-    { "foreign.component_id" => "self.atftpd0_id" },
+    { "foreign.component_id" => "self.tftpd_id" },
     { cascade_copy => 0, cascade_delete => 1 });
 1;

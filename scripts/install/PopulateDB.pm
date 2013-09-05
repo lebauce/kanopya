@@ -61,7 +61,7 @@ use ScopeParameter;
 use Entity::Component::Lvm2;
 use Entity::Component::Iscsi::Iscsitarget1;
 use Entity::Component::Dhcpd3;
-use Entity::Component::Atftpd0;
+use Entity::Component::Tftpd;
 use Entity::Component::Snmpd5;
 use Entity::Component::Nfsd3;
 use Entity::Component::Syslogng3;
@@ -138,7 +138,7 @@ my @classes = (
     'Entity::Component::Iscsi',
     'Entity::Component::Iscsi::Iscsitarget1',
     'Entity::Component::Apache2',
-    'Entity::Component::Atftpd0',
+    'Entity::Component::Tftpd',
     'Entity::Component::Dhcpd3',
     'Entity::Component::Dhcpd3::Dhcpd3Host',
     'Entity::Component::Dhcpd3::Dhcpd3Subnet',
@@ -946,8 +946,8 @@ sub registerComponents {
             service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
-            component_name         => 'Atftpd',
-            component_version      => 0,
+            component_name         => 'Tftpd',
+            component_version      => 5,
             component_categories   => [ 'Tftpserver' ],
             service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Debian6' ],
         },
@@ -1575,12 +1575,9 @@ sub registerKanopyaMaster {
             }
         },
         {
-            name => "Atftpd",
+            name => "Tftpd",
             conf => {
-                atftpd0_options    => '--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --maxthread 100 --verbose=5',
-                atftpd0_use_inetd  => 'FALSE',
-                atftpd0_logfile    => '/var/log/atftpd.log',
-                atftpd0_repository => defined $args{tftp_directory} ? $args{tftp_directory} : "/var/lib/kanopya/tftp/"
+                tftpd_repository => defined $args{tftp_directory} ? $args{tftp_directory} : "/var/lib/kanopya/tftp/"
             }
         },
         {

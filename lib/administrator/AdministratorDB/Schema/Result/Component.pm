@@ -178,18 +178,18 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 atftpd0
+=head2 tftpd
 
 Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::Atftpd0>
+Related object: L<AdministratorDB::Schema::Result::Tftpd>
 
 =cut
 
 __PACKAGE__->might_have(
-  "atftpd0",
-  "AdministratorDB::Schema::Result::Atftpd0",
-  { "foreign.atftpd0_id" => "self.component_id" },
+  "tftpd",
+  "AdministratorDB::Schema::Result::Tftpd",
+  { "foreign.tftpd_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 

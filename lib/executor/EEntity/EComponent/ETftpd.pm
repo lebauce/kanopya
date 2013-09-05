@@ -11,11 +11,10 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package EEntity::EComponent::EAtftpd0;
+package EEntity::EComponent::ETftpd;
 
 use strict;
 
 use base "EEntity::EComponent";
-
 
 1;
