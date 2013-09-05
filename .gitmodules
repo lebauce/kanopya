@@ -80,3 +80,6 @@
 [submodule "templates/components/puppetmaster/modules/puppetdb"]
 	path = templates/components/puppetmaster/modules/puppetdb
 	url = https://github.com/puppetlabs/puppetlabs-puppetdb.git
+[submodule "templates/components/puppetmaster/modules/xinetd"]
+	path = templates/components/puppetmaster/modules/xinetd
+	url = https://github.com/puppetlabs/puppetlabs-xinetd
