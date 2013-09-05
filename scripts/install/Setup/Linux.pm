@@ -669,31 +669,6 @@ sub _configure_dhcpd {
     print "ok\n";
 }
 
-
-=pod
-=begin classdoc
-
-Configure atftpd
-
-=end classdoc
-=cut
-
-sub _configure_atftpd {
-    my ($self) = @_;
-
-    print "\n - Atftpd reconfiguration...";
-
-    _writeFile('/etc/default/atftpd',
-              "USE_INETD=false\n" .
-              "OPTIONS=\"--daemon --tftpd-timeout 300 " .
-              "--retry-timeout 5 --no-multicast " .
-              "--bind-address " . $self->{parameters_values}->{admin_ip} . " " .
-              "--maxthread 100 --verbose=5 " .
-              "--logfile=/var/log/tftp.log " . $self->{parameters_values}->{tftp_dir} . "\"");
-    print "ok\n";
-}
-
-
 =pod
 =begin classdoc
 
@@ -881,14 +856,15 @@ sub _configure_puppetmaster {
 
     system('mkdir -m 750 /var/lib/puppet/concat && chown puppet:puppet /var/lib/puppet/concat');
 
-    EEntity->new(entity => $kanopya)->reconfigure(tags => [ "system", "kanopya::amqp", "kanopya::puppetmaster" ]);
+    EEntity->new(entity => $kanopya)->reconfigure(tags => [ "system", "kanopya::amqp",
+                                                            "kanopya::puppetmaster", "kanopya::tftpd" ]);
 }
 
 
 =pod
 =begin classdoc
 
-Retrieve tftp files from download.kanopya.org
+Retrieve tftp files from 192.168.0.173
 
 =end classdoc
 =cut
@@ -896,18 +872,18 @@ Retrieve tftp files from download.kanopya.org
 sub _retrieve_tftp_content {
     my ($self) = @_;
 
-    print "\n - Retrieving TFTP directory contents from http://download.kanopya.org...\n";
+    print "\n - Retrieving TFTP directory contents from http://192.168.0.173...\n";
 
     my $rsync_sshkey = '~/.ssh/rsync_rsa';
     # Check if rsync sshkey exist on right place :
     if ( ! -e $rsync_sshkey) {
         # Get the rsync_rsa key :
-        system('wget http://download.kanopya.org:8011/rsync_rsa');
+        system('wget http://192.168.0.173:8011/rsync_rsa');
         # Move the key and set the correct rights ;
         system('mv rsync_rsa ~/.ssh/;chmod 400 ~/.ssh/rsync_rsa');
     }
-    # Do a Rsync from download.kanopya.org of tftp directory content :
-    system('rsync -var -e "ssh -p 2211 -i /root/.ssh/rsync_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" rsync@download.kanopya.org:/pub/tftp/* '.$self->{parameters_values}->{tftp_dir});
+    # Do a Rsync from 192.168.0.173 of tftp directory content :
+    system('rsync -var -e "ssh -p 2211 -i /root/.ssh/rsync_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" rsync@192.168.0.173:/pub/tftp/* '.$self->{parameters_values}->{tftp_dir});
 }
 
 
@@ -924,7 +900,7 @@ sub _restart_middlewares {
 
     print "\n - Restarting required services...\n";
 
-    for my $service ('isc-dhcp-server','iscsitarget','puppetmaster','atftpd','snmpd', 'rabbitmq-server') {
+    for my $service ('isc-dhcp-server','iscsitarget','puppetmaster', 'tftpd-hpa', 'snmpd', 'rabbitmq-server') {
         system("service $service restart");
     }
     system("service inetutils-inetd stop");
@@ -1005,7 +981,6 @@ sub process {
     $self->_create_database();
 
     $self->_configure_dhcpd();
-    $self->_configure_atftpd();
     $self->_configure_snmpd();
     $self->_configure_iscsitarget();
     $self->_configure_puppetmaster();

@@ -5,7 +5,7 @@ iscsi
 iscsitarget1
 openiscsi2
 apache2
-atftpd0
+tftpd
 dhcpd3
 snmpd5
 nfsd3
