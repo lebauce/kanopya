@@ -372,12 +372,13 @@ sub setupREST {
                 content_type 'application/json';
                 require (General::getLocFromClass(entityclass => $class));
 
-                my %params = params;
-                my $obj = $class->get(id => params->{id});
+                my %params;
+                my $obj = $class->get(id => delete params->{id});
                 if (request->content_type && (split(/;/, request->content_type))[0] eq "application/json") {
                     %params = %{from_json(request->body)};
                 } else {
                     %params = params;
+                    delete $params{splat};
                 }
 
                 $obj->methodCall(method => 'update', params => \%params);
@@ -427,6 +428,7 @@ sub setupREST {
                 %params = %{from_json(request->body)};
             } else {
                 %params = params;
+                delete $params{splat};
             }
 
             my $ret = $obj->methodCall(method => $method, params => \%params);

@@ -77,3 +77,9 @@
 [submodule "templates/components/puppetmaster/modules/tftp"]
 	path = templates/components/puppetmaster/modules/tftp
 	url = https://github.com/puppetlabs/puppetlabs-tftp.git
+[submodule "templates/components/puppetmaster/modules/postgresql"]
+	path = templates/components/puppetmaster/modules/postgresql
+	url = https://github.com/puppetlabs/puppetlabs-postgresql.git
+[submodule "templates/components/puppetmaster/modules/puppetdb"]
+	path = templates/components/puppetmaster/modules/puppetdb
+	url = https://github.com/puppetlabs/puppetlabs-puppetdb.git

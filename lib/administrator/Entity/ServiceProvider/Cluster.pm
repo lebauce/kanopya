@@ -51,7 +51,6 @@ use Hash::Merge;
 use DateTime;
 
 use Log::Log4perl "get_logger";
-use Data::Dumper;
 
 my $log = get_logger("");
 my $errmsg;
@@ -204,14 +203,15 @@ sub methods {
         },
         stop => {
             description => 'stop this cluster',
-            perm_holder => 'entity',
         },
         forceStop => {
             description => 'force stop this cluster',
         },
         update => {
-            description => 'reconfigure the cluster',
-            perm_holder => 'entity',
+            description => 'update the cluster',
+        },
+        reconfigure => {
+            description => 'reconfigure the cluster'
         },
         addComponents => {
             description => 'add components to this cluster',
@@ -283,8 +283,6 @@ sub create {
 
     General::checkParams(args => $confpattern, required => [ 'managers' ]);
     General::checkParams(args => $confpattern->{managers}, required => [ 'host_manager', 'disk_manager' ]);
-
-    #$log->info("Final parameters after applying policies:\n" . Dumper($confpattern));
 
     my $composite_params;
     for my $name ('managers', 'interfaces', 'components', 'billing_limits', 'orchestration') {
@@ -1221,13 +1219,29 @@ sub unlock {
     $self->SUPER::unlock(%args);
 }
 
+sub reconfigure {
+    my ($self, %args) = @_;
+
+    $args{cluster} = $self;
+    my $workflow = $self->getManager(manager_type => 'ExecutionManager')->enqueue(
+        type   => 'UpdateCluster',
+        params => {
+            context => \%args
+        }
+    );
+
+    $workflow->addPerm(consumer => $self->user, method => 'get');
+    $workflow->addPerm(consumer => $self->user, method => 'cancel');
+
+    return $workflow;
+}
+
 sub update {
     my ($self, %args) = @_;
 
-    # Initialize operation context
-    my $context = { cluster => $self };
-
+    my $context = { };
     my $require_op = 0;
+
     if (defined ($args{components})) {
         for my $component (@{$args{components}}) {
             $self->addComponent(component_type_id => $component->{component_type_id});
@@ -1250,17 +1264,9 @@ sub update {
                                        update  => 1);
 
     if ($require_op) {
-        my $workflow = $self->getManager(manager_type => 'ExecutionManager')->enqueue(
-            type   => 'UpdateCluster',
-            params => {
-                context => $context
-            }
-        );
-
-        $workflow->addPerm(consumer => $self->user, method => 'get');
-        $workflow->addPerm(consumer => $self->user, method => 'cancel');
-        return $workflow;
+        return $self->reconfigure(%$context);
     }
+
     return $updated;
 }
 
