@@ -150,7 +150,6 @@ my @classes = (
     'Entity::Component::Linux',
     'Entity::Component::Mysql5',
     'Entity::Component::Openiscsi2',
-    'Entity::Component::Openldap1',
     'Entity::Component::Virtualization',
     'Entity::Component::Virtualization::Opennebula3',
     'Entity::Component::Openssh5',
@@ -984,12 +983,6 @@ sub registerComponents {
             component_version      => 3,
             component_categories   => [ 'Logger' ],
             service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
-        },
-        {
-            component_name         => 'Openldap',
-            component_version      => 1,
-            component_categories   => [ 'Annuary' ],
-            service_provider_types => [ 'Cluster' ],
         },
         {
             component_name         => 'Opennebula',

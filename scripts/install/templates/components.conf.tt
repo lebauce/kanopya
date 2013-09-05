@@ -12,7 +12,6 @@ nfsd3
 linux
 syslogng3
 mysql5
-openldap1
 virtualization
 opennebula3
 haproxy1

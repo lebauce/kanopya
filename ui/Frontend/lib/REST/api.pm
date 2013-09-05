@@ -119,7 +119,6 @@ our %resources = (
     "novacompute"              => "Entity::Component::Vmm::NovaCompute",
     "novacontroller"           => "Entity::Component::Virtualization::NovaController",
     "openiscsi2"               => "Entity::Component::Openiscsi2",
-    "openldap1"                => "Entity::Component::Openldap1",
     "opennebula3"              => "Entity::Component::Virtualization::Opennebula3",
     "opennebula3repository"    => "Entity::Repository::Opennebula3Repository",
     "opennebula3hypervisor"    => "Entity::Host::Hypervisor::Opennebula3Hypervisor",
