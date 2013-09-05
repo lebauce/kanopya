@@ -879,7 +879,7 @@ sub _configure_puppetmaster {
     system('/etc/init.d/puppet', 'restart');
     system('/etc/init.d/puppetmaster', 'restart');
 
-    EEntity->new(entity => $kanopya)->reconfigure(tags => [ "system", "kanopya::amqp" ]);
+    EEntity->new(entity => $kanopya)->reconfigure(tags => [ "system", "kanopya::amqp", "kanopya::puppetmaster" ]);
 }
 
 
