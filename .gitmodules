@@ -24,9 +24,6 @@
 [submodule "templates/components/puppetmaster/modules/apt"]
 	path = templates/components/puppetmaster/modules/apt
 	url = https://github.com/puppetlabs/puppetlabs-apt.git
-[submodule "templates/components/puppetmaster/modules/concat"]
-	path = templates/components/puppetmaster/modules/concat
-	url = https://github.com/puppetlabs/puppetlabs-concat.git
 [submodule "templates/components/puppetmaster/modules/inifile"]
 	path = templates/components/puppetmaster/modules/inifile
 	url = https://github.com/puppetlabs/puppetlabs-inifile.git
