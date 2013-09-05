@@ -10,6 +10,8 @@ class kanopya::puppetmaster::repository {
                 repos      => 'main',
                 key        => '4BD6EC30',
                 key_server => 'keyserver.ubuntu.com',
+                before     => [ Package['puppetdb'],
+                                Package['puppetdb-terminus'] ]
             }
         }
         default : {
@@ -25,15 +27,18 @@ class kanopya::puppetmaster::install {
             default => 'puppetmaster'
         },
         ensure => present,
-        require => Class['kanopya::puppetmaster::repository'],
+        require => Apt::Source['puppetlabs'],
     }
 
-    class { 'puppetdb': }
-    class { 'puppetdb::master::config': }
+    class { 'puppetdb':
+    }
+
+    class { 'puppetdb::master::config':
+        require => Class['puppetdb']
+    }
 }
 
 class kanopya::puppetmaster {
-    include kanopya::puppetmaster::repository,
-            kanopya::puppetmaster::install
+    class { 'kanopya::puppetmaster::repository': } ->
+    class { 'kanopya::puppetmaster::install': }
 }
-
