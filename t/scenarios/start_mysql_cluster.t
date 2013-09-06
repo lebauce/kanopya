@@ -52,10 +52,8 @@ sub main {
     }
 
     diag('Register master image');
-    lives_ok {
-        Kanopya::Tools::Register::registerMasterImage();
-    } 'Register master image';
-
+    my $masterimage = Kanopya::Tools::Register::registerMasterImage();
+    
     diag('Create and configure cluster');
     my $cluster;
     lives_ok {
@@ -65,7 +63,8 @@ sub main {
                        },
                        cluster_conf => {
                            cluster_name => 'MySQL',
-                           cluster_min_node => 3
+                           cluster_min_node => 3,
+                           masterimage_id => $masterimage->id
                        }
                    );
     } 'Create cluster';
