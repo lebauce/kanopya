@@ -206,7 +206,7 @@ sub prerequisites {
 
         my $hypervisor_id = $cm->getHypervisorIdForVM(
                                 selected_hv_ids => \@hv_in_ids,
-                                wanted_values   => {
+                                resources       => {
                                     ram           => $host_manager_params->{ram},
                                     cpu           => $host_manager_params->{core},
                                     # Even if there is memory overcommitment VM needs effectively 1GB to boot the OS
