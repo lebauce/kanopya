@@ -74,6 +74,12 @@ sub main {
         Kanopya::Tools::Execution->startCluster(cluster => $cluster);
         Kanopya::Tools::Execution->executeAll();
     } 'Start cluster';
+    
+    diag('Stopping cluster');
+    lives_ok {
+        Kanopya::Tools::Execution->executeOne(entity => $cluster->stop());
+        Kanopya::Tools::Execution->executeAll(timeout => 3600);
+    } 'Stopping cluster';
 
     if ($testing == 1) {
         BaseDB->rollbackTransaction;

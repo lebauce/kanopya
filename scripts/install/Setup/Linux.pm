@@ -784,6 +784,7 @@ sub _configure_puppetmaster {
         dbserver               => 'localhost',
         dbpassword             => $self->{parameters_values}->{mysql_kanopya_passwd},
         puppetagent2_bootstart => 'yes',
+        puppetagent2_options   => '--no-client'
     };
 
     _useTemplate(
@@ -851,13 +852,20 @@ sub _configure_puppetmaster {
         sourcepath         => $kanopya->cluster_name . '/' . $kanopya_master->node->node_hostname
     );
 
-    system('/etc/init.d/puppet', 'restart');
-    system('/etc/init.d/puppetmaster', 'restart');
+    my $puppetagent_action = 'start';
+    my $puppetmaster_action = 'start';
+    if(-e '/var/run/puppet/agent.pid') {
+        $puppetagent_action = 'restart';
+    }
+    if(-e '/var/run/puppet/master.pid') {
+        $puppetmaster_action = 'restart';
+    }
+    system('/etc/init.d/puppetmaster', $puppetmaster_action);
+    system('/etc/init.d/puppet', $puppetagent_action);
 
     system('mkdir -m 750 /var/lib/puppet/concat && chown puppet:puppet /var/lib/puppet/concat');
+    EEntity->new(entity => $kanopya)->reconfigure();
 
-    EEntity->new(entity => $kanopya)->reconfigure(tags => [ "system", "kanopya::amqp",
-                                                            "kanopya::puppetmaster", "kanopya::tftpd" ]);
 }
 
 
