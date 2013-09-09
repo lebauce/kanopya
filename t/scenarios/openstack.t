@@ -187,7 +187,7 @@ sub main {
 
     lives_ok {
         my $cinder_vm = Kanopya::Tools::Create->createVmCluster(
-                            iaas => $iaas,
+                            iaas => $cloud,
                             container_type => 'iscsi',
                             cluster_conf => {
                                 cluster_name         => 'CinderVmCluster',
