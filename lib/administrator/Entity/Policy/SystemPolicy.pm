@@ -115,17 +115,14 @@ my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
 
 
 =pod
-
 =begin classdoc
 
-Get the static policy attributes definition from the parent,
-and merge with the policy type specific dynamic attributes
-depending on attributes values given in parameters.
+Build the dynamic attributes definition depending on attributes
+values given in parameters.
 
 @return the dynamic attributes definition.
 
 =end classdoc
-
 =cut
 
 sub getPolicyDef {
@@ -134,20 +131,25 @@ sub getPolicyDef {
     my %args  = @_;
 
     General::checkParams(args     => \%args,
-                         optional => { 'params'              => {},
-                                       'set_mandatory'       => 0,
-                                       'set_editable'        => 1,
-                                       'set_params_editable' => 0 });
+                         required => [ 'attributes' ],
+                         optional => { 'params' => {}, 'trigger' => undef });
 
-    # Merge params wirh existing values
-    $args{params} = $self->processParams(%args);
+    # Add the dynamic attributes to displayed
+    push @{ $args{attributes}->{displayed} }, 'kernel_id';
+    push @{ $args{attributes}->{displayed} }, 'masterimage_id';
+    push @{ $args{attributes}->{displayed} }, 'systemimage_size';
+    push @{ $args{attributes}->{displayed} }, 'cluster_basehostname';
+    push @{ $args{attributes}->{displayed} }, 'cluster_si_persistent';
+    push @{ $args{attributes}->{displayed} }, 'cluster_si_shared';
+    push @{ $args{attributes}->{displayed} }, 'deploy_on_disk';
+    push @{ $args{attributes}->{displayed} }, { components => [ 'component_type' ] };
 
-    # Complete the attributes with common ones
-    my $attributes = $self->SUPER::getPolicyDef(%args);
-
-    my $displayed = [ 'kernel_id', 'masterimage_id',  'systemimage_size', 'cluster_basehostname',
-                      'cluster_si_persistent', 'cluster_si_shared', 'deploy_on_disk' ];
-    $attributes = $merge->merge($attributes, { displayed => $displayed });
+    # Add the components to the relations definition
+    $args{attributes}->{relations}->{components} = {
+        attrs    => { accessor => 'multi' },
+        cond     => { 'foreign.policy_id' => 'self.policy_id' },
+        resource => 'component'
+    };
 
     my @masterimages;
     for my $masterimage (Entity::Masterimage->search(hash => {})) {
@@ -175,35 +177,21 @@ sub getPolicyDef {
     }
 
     # Manually add the systemimage_size and deploy_on_disk attrs because they are manager params
-    $attributes->{attributes}->{deploy_on_disk} = Manager::HostManager->getManagerParamsDef->{deploy_on_disk};
-    $attributes->{attributes}->{systemimage_size} = Manager::DiskManager->getManagerParamsDef->{systemimage_size};
-    $attributes->{attributes}->{systemimage_size}->{is_mandatory}
+    $args{attributes}->{attributes}->{deploy_on_disk}
+        = Manager::HostManager->getManagerParamsDef->{deploy_on_disk};
+
+    $args{attributes}->{attributes}->{systemimage_size}
+        = Manager::DiskManager->getManagerParamsDef->{systemimage_size};
+
+    $args{attributes}->{attributes}->{systemimage_size}->{is_mandatory}
         = defined $args{params}->{masterimage_id} ? 1 : 0;
 
-    $attributes->{attributes}->{kernel_id}->{options} = \@kernels;
-    $attributes->{attributes}->{masterimage_id}->{options} = \@masterimages;
-    $attributes->{attributes}->{components}->{attributes}->{attributes}->{component_type}->{options}
+    $args{attributes}->{attributes}->{kernel_id}->{options} = \@kernels;
+    $args{attributes}->{attributes}->{masterimage_id}->{options} = \@masterimages;
+    $args{attributes}->{attributes}->{components}->{attributes}->{attributes}->{component_type}->{options}
         = \@componenttypes;
 
-    $attributes->{relations} = {
-        components => {
-            attrs    => { accessor => 'multi' },
-            cond     => { 'foreign.policy_id' => 'self.policy_id' },
-            resource => 'component'
-        },
-    };
-
-    push @{ $attributes->{displayed} }, {
-        'components' => [ 'component_type' ]
-    };
-
-    $self->setValues(attributes          => $attributes,
-                     values              => $args{params},
-                     set_mandatory       => delete $args{set_mandatory},
-                     set_editable        => delete $args{set_editable},
-                     set_params_editable => delete $args{set_params_editable});
-
-    return $attributes;
+    return $args{attributes};
 }
 
 

@@ -78,6 +78,7 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_editable  => 1,
     },
+    # TODO: Do not store the policy type in db.
     policy_type => {
         pattern      => '^.*$',
         is_mandatory => 1,
@@ -90,14 +91,6 @@ use constant ATTR_DEF => {
 
 
 sub getAttrDef { return ATTR_DEF; }
-
-sub methods {
-    return {
-        getPolicyDef => {
-            description => 'build the policy definition in function of policy attributes values.',
-        },
-    };
-}
 
 use constant POLICY_ATTR_DEF          => {};
 use constant POLICY_SELECTOR_ATTR_DEF => {};
@@ -200,8 +193,8 @@ Remove the related param preset from db.
 =cut
 
 sub removePresets {
-    my $self  = shift;
-    my %args  = @_;
+    my $self = shift;
+    my %args = @_;
 
     # Firstly empty the old pattern
     my $presets = $self->param_preset;
@@ -218,15 +211,81 @@ sub removePresets {
 =pod
 =begin classdoc
 
-Like toJSON (with option 'model'), build the dynamic attribute definition
-of the policy. The attribute definition depends of possibly defined values of some
+If called on an instance, return the JSON from database, and add the attributes
+from the dynamic defintion that have values.
+
+The dynamic attribute definition depends of possibly defined values of some
 attributes, for example, the complete list of attributes of an hosting policy depends
 of the value of the attribute 'host_manager'.
 
-This method implemented in the base class of policies only build the real (static)
-attribute list, dynamic ones are handled in concrete classes.
+This method implemented in the base class of policies build the static attributes definition,
+and then call getPolicyDef on the conrete policy to merge the dynamic attributes definition.
 
-@return the static attributes definiton.
+@return the attributes definiton.
+
+=end classdoc
+=cut
+
+sub toJSON {
+    my $self  = shift;
+    my $class = ref($self) || $self;
+    my %args  = @_;
+
+    General::checkParams(args     => \%args,
+                         optional => { 'params'        => {},
+                                       'trigger'       => undef,
+                                       'set_mandatory' => 0 });
+
+    # If called on the class, return the attribute definition
+    if (not ref($self)) {
+        # Build the static attribute definition
+        my $attributes = {
+            displayed  => [ 'policy_name', 'policy_desc' ],
+            attributes => $merge->merge(clone($class->getPolicyAttrDef),
+                                        clone($class->getPolicySelectorAttrDef)),
+        };
+        $attributes = $merge->merge($attributes, clone($class->SUPER::toJSON()));
+
+        # Merge params with existing values
+        # If the policy if is defined in params, instanciate it to merge params
+        # with fixed values and force its as non editable.
+        my $policy;
+        if (defined $args{params}->{$class->policy_type . '_policy_id'}) {
+            $policy = $class->get(id => $args{params}->{$class->policy_type . '_policy_id'});
+            $args{params} = $policy->processParams(%args);
+        }
+        else {
+            $args{params} = $class->processParams(%args);
+        }
+
+        # Merge with the dynamic attribute definition built from params
+        my $policydef = $class->getPolicyDef(attributes => $attributes, %args);
+        # Set the values of attributes from params and fixed values
+        $class->setValues(attributes    => $policydef,
+                          values        => $args{params},
+                          set_mandatory => delete $args{set_mandatory},
+                          non_editable  => defined $policy ? $policy->getNonEditableAttributes() : {});
+
+        # Remove the param_preset_id form the json, as
+        # the contents of params preset are added to the json.
+        delete $policydef->{attributes}->{param_preset_id};
+
+        return $policydef;
+    }
+    # If called on an instance, return the attributes values
+    else {
+        return $merge->merge($self->SUPER::toJSON(), $self->getParams());
+    }
+}
+
+
+=pod
+=begin classdoc
+
+Build the dynamic attributes definition depending on attributes
+values given in parameters.
+
+@return the dynamic attributes definition.
 
 =end classdoc
 =cut
@@ -237,25 +296,10 @@ sub getPolicyDef {
     my %args  = @_;
 
     General::checkParams(args     => \%args,
-                         optional => { 'params'  => {},
-                                       'trigger' => undef });
+                         required => [ 'attributes' ],
+                         optional => { 'params' => {}, 'trigger' => undef });
 
-    # Firstly Merge policy attr def with selector only attr def
-    my $policy_attrdef = $merge->merge(clone($class->getPolicyAttrDef),
-                                       clone($class->getPolicySelectorAttrDef));
-
-    my $attributes = {
-        displayed  => [ 'policy_name', 'policy_desc' ],
-        attributes => $policy_attrdef,
-    };
-
-    my $json = clone($class->toJSON(model => 1));
-
-    # Remove the param_preset_id form the json, as
-    # the contents of params preset are added to the json.
-    delete $json->{attributes}->{param_preset_id};
-
-    return $merge->merge($attributes, $json);
+    return $args{attributes};
 }
 
 
@@ -358,7 +402,7 @@ specific parameters are handled in the concrete implementation.
 
 sub getPatternFromParams {
     my $self  = shift;
-    my $class = ref($self);
+    my $class = ref($self) or throw Kanopya::Exception::Method();
     my %args  = @_;
 
     General::checkParams(args => \%args, optional => { 'params' => {} });
@@ -370,9 +414,8 @@ sub getPatternFromParams {
     # Transform the policy form params to a cluster configuration pattern
     for my $name (keys %{ $args{params} }) {
         # Handle defined values that belongs to the attrdef of the policy only
-        if (defined $args{params}->{$name} and $args{params}->{$name} ne '' and exists $attrdef->{$name} and
-            not ($attrdef->{$name}->{type} eq 'relation' and $attrdef->{$name}->{relation} eq 'single_multi')) {
-
+        if (defined $args{params}->{$name} && $args{params}->{$name} ne '' && exists $attrdef->{$name} &&
+            ! ($attrdef->{$name}->{type} eq 'relation' && $attrdef->{$name}->{relation} eq 'single_multi')) {
             # Handle managers
             if ($name =~ m/_manager_id/) {
                 my $manager_key = $name;
@@ -480,10 +523,6 @@ re-requesting the api to get values after getting the attributes.
 @param values to add to the attrdef
 
 @optional set_mandatory force to set attrbiutes as mandatory
-@optional set_editable force to set attributes as editable
-@optional set_params_editable force to set attributes as editable
-          only if they are not stored in param preset, set attributes
-          as non editable instead.
 
 =end classdoc
 =cut
@@ -495,30 +534,16 @@ sub setValues {
 
     General::checkParams(args     => \%args,
                          required => [ 'attributes', 'values' ],
-                         optional => { 'set_mandatory'       => 0,
-                                       'set_editable'        => 1,
-                                       'set_params_editable' => 0 });
-
-    # If set_params_editable defined, we must to set non editable all
-    # attributes that comme from the policy instance only, all others are
-    # some parameters added to the original policy definition.
-    my $noneditable = {};
-    if (ref($self) and $args{set_params_editable}) {
-        $noneditable = $self->getNonEditableAttributes(%{ $args{values} });
-    }
+                         optional => { 'set_mandatory' => 0,
+                                       'non_editable'  => {} });
 
     # Set the values
     for my $attrname (keys %{ $args{attributes}->{attributes} }) {
         if (defined ($args{values}->{$attrname}) && "$args{values}->{$attrname}" ne "") {
             $args{attributes}->{attributes}->{$attrname}->{value} = $args{values}->{$attrname};
-
-            # Set attributes editable in function of parameters
-            if (($args{set_params_editable} and not defined $noneditable->{$attrname}) or
-                $args{set_editable}) {
-                $args{attributes}->{attributes}->{$attrname}->{is_editable} = 1;
-            }
         }
-        else {
+        # Set attributes editable in function of parameters
+        if (! defined $args{non_editable}->{$attrname}) {
             $args{attributes}->{attributes}->{$attrname}->{is_editable} = 1;
         }
 
@@ -534,7 +559,7 @@ sub setValues {
 =pod
 =begin classdoc
 
-Set to undef the values of paramters taht depends on an other one,
+Set to undef the values of paramters that depends on an other one,
 called a selector, in funtion of the selector relation map
 (see POLICY_SELECTOR_MAP constant).
 
@@ -548,7 +573,7 @@ sub unsetSelectors {
 
     General::checkParams(args => \%args, required => [ 'selector', 'params' ]);
 
-    my $map = $self->getPolicySelectorMap();
+    my $map = $class->getPolicySelectorMap();
     if (ref($map->{$args{selector}}) eq "ARRAY") {
         for my $relation (@{ $map->{$args{selector}} }) {
             delete $args{params}->{$relation};
@@ -560,8 +585,7 @@ sub unsetSelectors {
 =pod
 =begin classdoc
 
-Get the non editable attributes list for the 'set_params_editable' mode
-of the method setValues.
+Get the non editable attributes list (fixed values in param presets).
 
 This method implemented in the base class of policies simply return
 the stored param preset in the param format (not pattern).
@@ -756,6 +780,27 @@ sub setFirstSelected {
     }
 }
 
+
+=pod
+=begin classdoc
+
+@return the policy type
+
+=end classdoc
+=cut
+
+sub policy_type {
+    my $self = shift;
+
+    if (ref($self)) {
+        return $self->getAttr(name => 'policy_type');
+    }
+    else {
+        (my $type = $self) =~ s/^Entity::Policy:://g;
+        $type =~ s/Policy$//g;
+        return lc($type);
+    }
+}
 
 =pod
 =begin classdoc

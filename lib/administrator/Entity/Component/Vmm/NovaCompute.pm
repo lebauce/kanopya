@@ -33,7 +33,7 @@ use constant ATTR_DEF => {
         pattern      => '^\d*$',
         is_mandatory => 0,
         is_editable  => 1,
-        specialized  => 'nova_controller'
+        specialized  => 'NovaController'
     },
 };
 

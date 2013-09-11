@@ -196,25 +196,6 @@ function makeAutocompleteAndTranslate(field, availableTags) {
 }
 
 
-function getServiceProviders(category) {
-    if (category['category'] !== undefined) {
-        category = category['category'];
-    }
-
-    var providers = [];
-    var expand = 'components.component_type.component_type_categories.component_category';
-    var filter = 'components.component_type.component_type_categories.component_category.category_name=' + category;
-    $.ajax({
-        url         : '/api/serviceprovider?' + filter + '&expand=' + expand + '&deep=1',
-        type        : 'GET',
-        async       : false,
-        success     : function(data) {
-            providers = data;
-        }
-    });
-    return providers;
-}
-
 function findManager(category, service_provider_id, exclude) {
     if (category['category'] !== undefined) {
         service_provider_id = category['service_provider_id'];

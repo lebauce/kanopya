@@ -70,7 +70,7 @@ use constant ATTR_DEF => {
         type        => 'relation',
         relation    => 'single_multi',
         is_editable => 1,
-        specialized => 'vsphere5_repository'
+        specialized => 'Vsphere5Repository'
     },
     vsphere5_login => {
         label        => 'Login',

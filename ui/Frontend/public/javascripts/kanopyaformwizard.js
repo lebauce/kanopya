@@ -5,7 +5,7 @@ require('jquery/jquery.qtip.min.js');
 require('jquery/jquery.multiselect.min.js');
 require('jquery/jquery.multiselect.filter.min.js');
 
-var attributes_blacklist = [ 'class_type_id', 'entity_comment_id' ];
+var attributes_blacklist = [ 'class_type_id', 'entity_comment_id', 'entity_time_periods' ];
 
 
 var KanopyaFormWizard = (function() {
@@ -230,6 +230,9 @@ var KanopyaFormWizard = (function() {
 
         // Building a new hash according to the orderer list of displayed attrs
         for (name in displayed) {
+            if (ordered_attributes[displayed[name]] !== undefined) {
+                throw new Error("KanopyaFormWizard: attribute <" + displayed[name] + "> specified twice in displayed.");
+            }
             ordered_attributes[displayed[name]] = attributes[displayed[name]];
             delete attributes[displayed[name]];
         }
@@ -911,7 +914,9 @@ var KanopyaFormWizard = (function() {
         if (relations && ! $.isEmptyObject(relations)) {
             var expands = [];
             for (relation in relations) if (relations.hasOwnProperty(relation)) {
-                expands.push(relation);
+                if ($.inArray(relation, attributes_blacklist) < 0) {
+                    expands.push(relation);
+                }
             }
             url += '?expand=' + expands.join(',');
         }
@@ -929,9 +934,6 @@ var KanopyaFormWizard = (function() {
     }
 
     KanopyaFormWizard.prototype.getAttributes = function(resource, data, trigger) {
-        if (trigger) {
-            data['trigger'] = trigger;
-        }
         return ajax('GET', '/api/attributes/' + resource, data);
     }
 

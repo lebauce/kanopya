@@ -19,7 +19,7 @@ function load_service_template_content (container_id) {
                         params  : data,
                         trigger : reloaded
                     };
-                    var attributes = ajax('POST', '/api/' + resource + '/getServiceTemplateDef', args);
+                    var attributes = ajax('POST', '/api/attributes/' + resource, args);
 
                     // Set steps
                     set_steps(attributes);
@@ -61,13 +61,77 @@ function load_service_template_content (container_id) {
 }
 
 function load_service_template_details (elem_id, row_data, grid_id) {
-    // Use the kanopyaformwizard for policies
+    // USe a rax attr def for the service template update,
+    // we dont want to edit policies contents, only policies ids
     (new KanopyaFormWizard({
         title     : 'Edit service template: ' + row_data.service_name,
         id        : elem_id,
         type      : 'servicetemplate',
         displayed : [ 'service_name', 'service_desc', 'hosting_policy_id', 'storage_policy_id', 'network_policy_id',
                       'scalability_policy_id', 'system_policy_id', 'billing_policy_id', 'orchestration_policy_id' ],
+        rawattrdef   : {
+            service_name : {
+                label        : 'Service name',
+                type         : 'string',
+                is_mandatory : 1,
+                is_editable  : 1
+            },
+            service_desc : {
+                label        : 'Description',
+                type         : 'text',
+                is_mandatory : 0,
+                is_editable  : 1
+            },
+            hosting_policy_id : {
+                label        : 'Hosting policy',
+                type         : 'relation',
+                relation     : 'single',
+                is_mandatory : 1,
+                is_editable  : 1
+            },
+            storage_policy_id : {
+                label        : 'Storage policy',
+                type         : 'relation',
+                relation     : 'single',
+                is_mandatory : 1,
+                is_editable  : 1
+            },
+            network_policy_id : {
+                label        : 'Network policy',
+                type         : 'relation',
+                relation     : 'single',
+                is_mandatory : 1,
+                is_editable  : 1
+            },
+            scalability_policy_id : {
+                label        : 'Scalability policy',
+                type         : 'relation',
+                relation     : 'single',
+                is_mandatory : 1,
+                is_editable  : 1
+            },
+            system_policy_id : {
+                label        : 'System policy',
+                type         : 'relation',
+                relation     : 'single',
+                is_mandatory : 1,
+                is_editable  : 1
+            },
+            billing_policy_id : {
+                label        : 'Billing policy',
+                type         : 'relation',
+                relation     : 'single',
+                is_mandatory : 1,
+                is_editable  : 1
+            },
+            orchestration_policy_id : {
+                label        : 'Orchestration policy',
+                type         : 'relation',
+                relation     : 'single',
+                is_mandatory : 1,
+                is_editable  : 1
+            }
+        },
         optionsCallback : function(name) {
             var type = name.match(/(.*)_policy_id/);
             if (type.length == 2) {
@@ -75,6 +139,9 @@ function load_service_template_details (elem_id, row_data, grid_id) {
                 return policies;
             }
             return false;
+        },
+        attrsCallback : function (resource, data, reloaded) {
+            return { attributes : {}, relations : {} };;
         },
         callback : function () { $('#' + grid_id).trigger("reloadGrid"); }
     })).start();

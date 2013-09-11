@@ -312,6 +312,7 @@ sub checkConfiguration {}
 
 sub checkAttribute {
     my ($self, %args) = @_;
+
     General::checkParams(args => \%args, required => [ 'attribute' ]);
 
     my $attribute = $args{attribute};
