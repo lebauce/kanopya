@@ -75,6 +75,7 @@ use constant ATTR_DEF => {
         pattern      => '^\d+$',
         is_mandatory => 1,
         is_editable  => 1,
+        specialized  => 'HostingPolicy'
     },
     storage_policy_id => {
         label        => 'Storage policy',
@@ -83,6 +84,7 @@ use constant ATTR_DEF => {
         pattern      => '^\d+$',
         is_mandatory => 0,
         is_editable  => 1,
+        specialized  => 'StoragePolicy'
     },
     network_policy_id => {
         label        => 'Network policy',
@@ -91,6 +93,7 @@ use constant ATTR_DEF => {
         pattern      => '^\d+$',
         is_mandatory => 0,
         is_editable  => 1,
+        specialized  => 'NetworkPolicy'
     },
     scalability_policy_id => {
         label        => 'Scalability policy',
@@ -99,6 +102,7 @@ use constant ATTR_DEF => {
         pattern      => '^\d+$',
         is_mandatory => 0,
         is_editable  => 1,
+        specialized  => 'ScalabilityPolicy'
     },
     system_policy_id => {
         label        => 'System policy',
@@ -107,6 +111,7 @@ use constant ATTR_DEF => {
         pattern      => '^\d+$',
         is_mandatory => 0,
         is_editable  => 1,
+        specialized  => 'SystemPolicy'
     },
     billing_policy_id => {
         label        => 'Billing policy',
@@ -115,6 +120,7 @@ use constant ATTR_DEF => {
         pattern      => '^\d+$',
         is_mandatory => 0,
         is_editable  => 1,
+        specialized  => 'BillingPolicy'
     },
     orchestration_policy_id => {
         label        => 'Orchestration policy',
@@ -123,18 +129,12 @@ use constant ATTR_DEF => {
         pattern      => '^\d+$',
         is_mandatory => 0,
         is_editable  => 1,
+        specialized  => 'OrchestrationPolicy'
     },
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub methods {
-    return {
-        getServiceTemplateDef => {
-            description => 'build the service definition.',
-        },
-    };
-}
 
 my $POLICY_TYPES = [ 'hosting', 'storage', 'network', 'scalability', 'system', 'billing', 'orchestration' ];
 
@@ -146,11 +146,7 @@ my $merge = Hash::Merge->new('LEFT_PRECEDENT');
 
 @constructor
 
-Create a service template from a set of policy ids. Policy parameters
-(see Policy.pm) could be given with policy ids, and will be considered as
-addtional params of policies. When creating a service template, if additonal
-parameters found for a policy, the policy is duplicated and it's pattern is
-update with the additional parameters.
+Create a service template from a set of policy ids.
 
 @return a class instance
 
@@ -160,30 +156,72 @@ update with the additional parameters.
 sub new {
     my $class = shift;
     my %args = @_;
-    my $self;
 
-    # Firstly pop the service template attributes
     delete $args{class_type_id};
-    my $attrs = {
-        service_name => delete $args{service_name},
-        service_desc => delete $args{service_desc},
-    };
 
-    # Then extract the policies ids
-    for my $arg (grep /_policy_id/, keys %args) {
-        my $policy = Entity::Policy->get(id => delete $args{$arg});
+    my $attrs = $class->processAlteredPolicies(%args);
+    $attrs->{service_name} = $args{service_name};
+    $attrs->{service_desc} = $args{service_desc};
+
+    return $class->SUPER::new(%$attrs);
+}
+
+
+=pod
+=begin classdoc
+
+Update a service template from a set of policy ids.
+
+@return the updated instance
+
+=end classdoc
+=cut
+
+sub update {
+    my $self = shift;
+    my %args = @_;
+
+    my $attrs = $self->processAlteredPolicies(%args);
+    $attrs->{service_name} = $args{service_name};
+    $attrs->{service_desc} = $args{service_desc};
+
+    return $self->SUPER::update(%$attrs);
+}
+
+
+=pod
+=begin classdoc
+
+Policy parameters (see Policy.pm) could be given with policy ids, and will be considered as
+addtional params of policies. When creating a service template, if additonal
+parameters found for a policy, the policy is duplicated and it's pattern is
+update with the additional parameters.
+
+=end classdoc
+=cut
+
+sub processAlteredPolicies {
+    my $self = shift;
+    my %args = @_;
+
+    # Browse policies and check if altered
+    my $attrs = {};
+    for my $policy_id (grep /_policy_id/, keys %args) {
+        my $policy = Entity::Policy->get(id => delete $args{$policy_id});
+        my $policyclass = ref($policy);
 
         # Remove param_preset_id from the policy JSON
-        my $json = $merge->merge($policy->toJSON, $policy->getParams(noarrays => 1));
+        my $json = $policy->toJSON();
         delete $json->{param_preset_id};
 
         # Browse the policy definition and create a derivated policy
         # if some empty attributes has been filled.
         my $altered = 0;
-        for my $attrname (keys %{ $policy->getPolicyDef->{attributes} }) {
-            if (defined $args{$attrname} and "$args{$attrname}" ne "$json->{$attrname}" and
-                not $policy->getPolicyDef->{attributes}->{$attrname}->{is_virtual} and
-                ref($args{$attrname}) ne "ARRAY") {
+        my $policyattrs = $policyclass->toJSON(params => $json)->{attributes};
+        for my $attrname (keys %{ $policyattrs }) {
+            if (defined $args{$attrname} && "$args{$attrname}" ne "$json->{$attrname}" &&
+                ! $policyattrs->{$attrname}->{is_virtual} && ref($args{$attrname}) ne "ARRAY" &&
+                ! exists $policyclass->getPolicySelectorAttrDef->{$attrname}) {
 
                 $log->debug("$policy <" . $policy->id . ">, attr <$attrname> value has been set: " . 
                             "$json->{$attrname} => $args{$attrname}.");
@@ -193,15 +231,14 @@ sub new {
             }
         };
         if ($altered) {
-            $json->{policy_name} .= ' (for service "' . $attrs->{service_name} .  '")';
+            $json->{policy_name} .= ' (for service "' . $args{service_name} .  '")';
 
             my $policyclass = 'Entity::Policy::' . ucfirst($json->{policy_type}) . 'Policy';
             $policy = $policyclass->new(%$json);
         }
-
-        $attrs->{$arg} = $policy->id;
+        $attrs->{$policy_id} = $policy->id;
     }
-    return $class->SUPER::new(%$attrs);
+    return $attrs;
 }
 
 
@@ -219,7 +256,7 @@ service template.
 =end classdoc
 =cut
 
-sub getServiceTemplateDef {
+sub toJSON {
     my $self  = shift;
     my $class = ref($self) || $self;
     my %args  = @_;
@@ -227,13 +264,28 @@ sub getServiceTemplateDef {
     General::checkParams(args     => \%args,
                          optional => { 'params' => {}, 'trigger' => undef });
 
-    my $attributes = clone($class->toJSON(model => 1));
+    # If called n an instace, return the object JSON
+    if (ref($self)) {
+        return $self->SUPER::toJSON();
+    }
+
+    my $attributes = clone($class->SUPER::toJSON());
 
     # Instanciate the service template if the id is defined,
     # this should occurs at the service instanciation only.
+    my @policies;
     my $servicetemplate;
     if (defined $args{params}->{service_template_id}) {
         $servicetemplate = Entity::ServiceTemplate->get(id => $args{params}->{service_template_id});
+        # Use the service template policies as options
+        @policies = $servicetemplate->getPolicies();
+        if (defined $args{trigger} && $args{trigger} eq 'service_template_id') {
+            $args{params} = { service_template_id => $args{params}->{service_template_id} };
+        }
+    }
+    else {
+        # Use all policies as options
+        @policies = Entity::Policy->search();
     }
 
     for my $policy_type (@$POLICY_TYPES) {
@@ -243,64 +295,52 @@ sub getServiceTemplateDef {
         $attributes->{attributes}->{$policy_type . '_policy_id'}->{is_mandatory} = 1;
         push @ { $attributes->{displayed} }, $policy_type . '_policy_id';
 
-        # If the service template id is defined, use its policies ids.
-        if (defined $servicetemplate) {
-            my $policy = $servicetemplate->getAttr(name => $policy_type . '_policy');
-            $args{params}->{$policy_type . '_policy_id'} = $policy->id;
+        # Build the list of json options from all policies of this type
+        my @oftype  = grep { $_->policy_type eq $policy_type } @policies;
+        my @options = map { { pk => $_->id, label => $_->policy_name } } @oftype;
 
-            # Set the policy id non editable
-            $attributes->{attributes}->{$policy_type . '_policy_id'}->{options} = [ $policy->toJSON ];
+        # And fill the options for this attribute
+        $attributes->{attributes}->{$policy_type . '_policy_id'}->{options} = \@options;
+
+        # If the service template defined in params, set the policy id non editable
+        if (defined $servicetemplate) {
             $attributes->{attributes}->{$policy_type . '_policy_id'}->{is_editable} = 0;
+            $args{params}->{$policy_type . '_policy_id'} = $options[0]->{pk};
         }
         else {
-            # Add the policy select box for the current policy type with options
-            my @policies;
-            for my $policy ($policy_class->search(hash => { policy_type => $policy_type })) {
-                push @policies, $policy->toJSON();
-            }
-            $attributes->{attributes}->{$policy_type . '_policy_id'}->{options} = \@policies;
             $attributes->{attributes}->{$policy_type . '_policy_id'}->{reload}  = 1;
-
-            # If the value for the policy not defined and the policy is mandatory...
-            if ($attributes->{attributes}->{$policy_type . '_policy_id'}->{is_mandatory} and
-                ! defined $args{params}->{$policy_type . '_policy_id'} and scalar(@policies)) {
-
-                # ...set the value to the first policy in options
-                $args{params}->{$policy_type . '_policy_id'} = $policies[0]->{pk};
-            }
         }
 
-        # Merge the current policy attrbiutes
-        my $holder;
+        # If the value for the policy not defined and the policy is mandatory...
+        if ($attributes->{attributes}->{$policy_type . '_policy_id'}->{is_mandatory} and
+            ! defined $args{params}->{$policy_type . '_policy_id'} and scalar(@options)) {
+
+            # ...set the value to the first policy in options
+            $args{params}->{$policy_type . '_policy_id'} = $options[0]->{pk};
+        }
+
+        # Then merge the current policy attributes
         my $policy_attributes;
         my $policy_args = { params        => $args{params},
                             trigger       => $args{trigger},
                             set_mandatory => defined $servicetemplate ? 1 : 0 };
 
-        # If the policy id defined, use the the instance, use the class instead
+        # Add the policy attributes
         if (defined $args{params}->{$policy_type . '_policy_id'}) {
             $attributes->{attributes}->{$policy_type . '_policy_id'}->{value}
                 = $args{params}->{$policy_type . '_policy_id'};
 
-            # Get the policy defintion from the policy instance if the id is defined
-            $holder = Entity::Policy->get(id => $args{params}->{$policy_type . '_policy_id'});
-
-            $policy_args->{set_editable} = 0;
-            $policy_args->{set_params_editable} = 1;
-
-            # If the changed attribute that trigger the call to getServiceTemplateDef is
+            # If the changed attribute that triggered the call to toJSON is
             # the policy id, then do not forward params to getPolicyDef.
-            my $params = {};
             if (defined $args{trigger} and $args{trigger} eq $policy_type . '_policy_id') {
-                delete $policy_args->{params};
+                $policy_args->{params} = {
+                    $policy_type . '_policy_id' => $args{params}->{$policy_type . '_policy_id'}
+                };
             }
         }
-        else {
-            $holder = $policy_class;
-        }
 
-        # Finaly get the attribute defintion from the policy instance
-        $policy_attributes = $holder->getPolicyDef(%$policy_args);
+        # Finaly get the attribute definition from the policy instance
+        $policy_attributes = $policy_class->toJSON(%$policy_args);
 
         # Removed policy_name and policy_desc from the displayed attr list
         shift @{ $policy_attributes->{displayed} };
@@ -313,6 +353,7 @@ sub getServiceTemplateDef {
 
         $attributes = $merge->merge($attributes, $policy_attributes);
     }
+
     return $attributes;
 }
 
@@ -329,16 +370,15 @@ sub getPolicies {
     my $self = shift;
     my %args = @_;
 
-    my $policies = [];
-
     # The service template known the type of policies
+    my @policies;
     for my $policy_type (@$POLICY_TYPES) {
-        # For instance do not handle orchestration policy
-        if ($self->getAttr(name => $policy_type . '_policy_id')) {
-            push @$policies, Entity::Policy->get(id => $self->getAttr(name => $policy_type . '_policy_id'));
+        my $policy = $self->getAttr(name => $policy_type . '_policy', deep => 1);
+        if (defined $policy) {
+            push @policies, $policy;
         }
     }
-    return $policies;
+    return @policies;
 }
 
 1;

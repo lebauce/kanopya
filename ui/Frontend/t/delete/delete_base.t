@@ -8,13 +8,16 @@ use warnings;
 use Dancer::Test;
 use Frontend;
 use REST::api;
+use APITestLib;
+
 use Data::Dumper;
 $DB::deep = 500;
 
 use Log::Log4perl;
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'api.t.log', layout=>'%F %L %p %m%n'});
 
-my $login = dancer_response(POST => '/login', { params => {login => 'admin', password => 'K4n0pY4'}});
+# Firstly login to the api
+APITestLib::login();
 
 my $post = dancer_response POST => '/api/vlan', { params => { vlan_name => 'testvlan', vlan_number => '102' } };
 is $post->{status}, "200", "response for POST /vlan is 200";

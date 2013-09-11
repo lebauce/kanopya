@@ -270,7 +270,7 @@ function loadServicesDetails(cid, eid, is_iaas) {
 
                         // If the service template defined, fill the form with the service template definition
                         var args = { params : details, trigger : trigger };
-                        attributes = ajax('POST', '/api/servicetemplate/getServiceTemplateDef', args);
+                        attributes = ajax('POST', '/api/attributes/servicetemplate', args);
 
                         // Delete the service template fields other than policies ids
                         delete attributes.attributes['service_name'];

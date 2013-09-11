@@ -120,17 +120,14 @@ my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
 
 
 =pod
-
 =begin classdoc
 
-Get the static policy attributes definition from the parent,
-and merge with the policy type specific dynamic attributes
-depending on attributes values given in parameters.
+Build the dynamic attributes definition depending on attributes
+values given in parameters.
 
 @return the dynamic attributes definition.
 
 =end classdoc
-
 =cut
 
 sub getPolicyDef {
@@ -139,19 +136,23 @@ sub getPolicyDef {
     my %args  = @_;
 
     General::checkParams(args     => \%args,
-                         optional => { 'params'              => {},
-                                       'set_mandatory'       => 0,
-                                       'set_editable'        => 1,
-                                       'set_params_editable' => 0 });
+                         required => [ 'attributes' ],
+                         optional => { 'params' => {}, 'trigger' => undef });
 
-    # Merge params wirh existing values
-    $args{params} = $self->processParams(%args);
+    # Add the dynamic attributes to displayed
+    push @{ $args{attributes}->{displayed} }, 'cluster_domainname';
+    push @{ $args{attributes}->{displayed} }, 'cluster_nameserver1';
+    push @{ $args{attributes}->{displayed} }, 'cluster_nameserver2';
+    push @{ $args{attributes}->{displayed} }, 'default_gateway_id';
+    push @{ $args{attributes}->{displayed} },
+        { interfaces => [ 'interface_name', 'netconfs', 'bonds_number' ] };
 
-    # Complete the attributes with common ones
-    my $attributes = $self->SUPER::getPolicyDef(%args);
-
-    my $displayed = [ 'cluster_domainname', 'cluster_nameserver1', 'cluster_nameserver2', 'default_gateway_id' ];
-    $attributes = $merge->merge($attributes, { displayed => $displayed });
+    # Add the network interfaces to the relations definition
+    $args{attributes}->{relations}->{interfaces} = {
+        attrs    => { accessor => 'multi' },
+        cond     => { 'foreign.policy_id' => 'self.policy_id' },
+        resource => 'interface'
+    };
 
     # Build the default gateway network list
     my @networks;
@@ -163,33 +164,15 @@ sub getPolicyDef {
         push @netconfs, $netconf->toJSON();
     }
 
-    $attributes->{attributes}->{default_gateway_id}->{options} = \@networks;
-    $attributes->{attributes}->{interfaces}->{attributes}->{attributes}->{netconfs}->{options} = \@netconfs;
+    $args{attributes}->{attributes}->{default_gateway_id}->{options} = \@networks;
+    $args{attributes}->{attributes}->{interfaces}->{attributes}->{attributes}->{netconfs}->{options}
+        = \@netconfs;
 
-    $attributes->{relations} = {
-        interfaces => {
-            attrs    => { accessor => 'multi' },
-            cond     => { 'foreign.policy_id' => 'self.policy_id' },
-            resource => 'interface'
-        },
-    },
-
-    push @{ $attributes->{displayed} }, {
-        'interfaces' => [ 'interface_name', 'netconfs', 'bonds_number' ]
-    };
-
-    $self->setValues(attributes          => $attributes,
-                     values              => $args{params},
-                     set_mandatory       => delete $args{set_mandatory},
-                     set_editable        => delete $args{set_editable},
-                     set_params_editable => delete $args{set_params_editable});
-
-    return $attributes;
+    return $args{attributes};
 }
 
 
 =pod
-
 =begin classdoc
 
 Handle network policy specific parameters to build
@@ -200,7 +183,6 @@ keys to allows to merge with another policies.
 @return a policy pattern fragment
 
 =end classdoc
-
 =cut
 
 sub getPatternFromParams {

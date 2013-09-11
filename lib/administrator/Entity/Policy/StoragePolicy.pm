@@ -91,17 +91,14 @@ my $merge = Hash::Merge->new('LEFT_PRECEDENT');
 
 
 =pod
-
 =begin classdoc
 
-Get the static policy attributes definition from the parent,
-and merge with the policy type specific dynamic attributes
-depending on attributes values given in parameters.
+Build the dynamic attributes definition depending on attributes
+values given in parameters.
 
 @return the dynamic attributes definition.
 
 =end classdoc
-
 =cut
 
 sub getPolicyDef {
@@ -110,19 +107,12 @@ sub getPolicyDef {
     my %args  = @_;
 
     General::checkParams(args     => \%args,
-                         optional => { 'params'              => {},
-                                       'set_mandatory'       => 0,
-                                       'set_editable'        => 1,
-                                       'set_params_editable' => 0 });
+                         required => [ 'attributes' ],
+                         optional => { 'params' => {}, 'trigger' => undef });
 
-    # Apply the trigger effect on params
-    $args{params} = $self->processParams(%args);
-
-    # Complete the attributes with common ones
-    my $attributes = $self->SUPER::getPolicyDef(%args);
-
-    my $displayed = [ 'storage_provider_id', 'disk_manager_id' ];
-    $attributes = $merge->merge($attributes, { displayed => $displayed });
+    # Add the dynamic attributes to displayed
+    push @{ $args{attributes}->{displayed} }, 'storage_provider_id';
+    push @{ $args{attributes}->{displayed} }, 'disk_manager_id';
 
     # Build the storage provider list
     my $providers = {};
@@ -130,7 +120,7 @@ sub getPolicyDef {
         $providers->{$component->service_provider->id} = $component->service_provider->toJSON;
     }
     my @storageproviders = values %{$providers};
-    $attributes->{attributes}->{storage_provider_id}->{options} = \@storageproviders;
+    $args{attributes}->{attributes}->{storage_provider_id}->{options} = \@storageproviders;
 
     # If storage_provider_id not defined, select it from the disk manager or
     # select the first one.
@@ -141,7 +131,7 @@ sub getPolicyDef {
         }
         elsif ($args{set_mandatory}) {
             $self->setFirstSelected(name       => 'storage_provider_id',
-                                    attributes => $attributes->{attributes},
+                                    attributes => $args{attributes}->{attributes},
                                     params     => $args{params});
         }
     }
@@ -149,13 +139,15 @@ sub getPolicyDef {
     # Build the list of disk manager of the storage provider
     if ($args{params}->{storage_provider_id}) {
         my $manager_options = {};
-        for my $component ($class->searchManagers(component_category  => 'DiskManager',
-                                                  service_provider_id => $args{params}->{storage_provider_id})) {
+        my @managers = $class->searchManagers(component_category  => 'DiskManager',
+                                              service_provider_id => $args{params}->{storage_provider_id});
+
+        for my $component (@managers) {
             $manager_options->{$component->id} = $component->toJSON;
             $manager_options->{$component->id}->{label} = $component->disk_type;
         }
         my @diskmanageroptions = values %{$manager_options};
-        $attributes->{attributes}->{disk_manager_id}->{options} = \@diskmanageroptions;
+        $args{attributes}->{attributes}->{disk_manager_id}->{options} = \@diskmanageroptions;
 
         # If disk_manager_id defined but do not corresponding to a available value,
         # it is an old value, so delete it.
@@ -165,7 +157,7 @@ sub getPolicyDef {
         # If no disk_manager_id defined and and attr is mandatory, use the first one as value
         if (! $args{params}->{disk_manager_id} && $args{set_mandatory}) {
             $self->setFirstSelected(name       => 'disk_manager_id',
-                                    attributes => $attributes->{attributes},
+                                    attributes => $args{attributes}->{attributes},
                                     params     => $args{params});
         }
     }
@@ -175,18 +167,18 @@ sub getPolicyDef {
         my $diskmanager = Entity->get(id => $args{params}->{disk_manager_id});
         my $managerparams = $diskmanager->getDiskManagerParams();
         for my $attrname (keys %{$managerparams}) {
-            $attributes->{attributes}->{$attrname} = $managerparams->{$attrname};
+            $args{attributes}->{attributes}->{$attrname} = $managerparams->{$attrname};
             # If no value defined in params, use the first one
             if (! $args{params}->{$attrname} && $args{set_mandatory}) {
                 $self->setFirstSelected(name       => $attrname,
-                                        attributes => $attributes->{attributes},
+                                        attributes => $args{attributes}->{attributes},
                                         params     => $args{params});
             }
-            push @{ $attributes->{displayed} }, $attrname;
+            push @{ $args{attributes}->{displayed} }, $attrname;
         }
 
         # Once the disk manager parameters added, handle the export manager and its params
-        push @{ $attributes->{displayed} }, 'export_manager_id';
+        push @{ $args{attributes}->{displayed} }, 'export_manager_id';
 
         # Build the list of export manager usable for the disk manager
         my $manager_options = {};
@@ -195,7 +187,7 @@ sub getPolicyDef {
             $manager_options->{$component->id}->{label} = $component->export_type;
         }
         my @expmanageroptions = values %{$manager_options};
-        $attributes->{attributes}->{export_manager_id}->{options} = \@expmanageroptions;
+        $args{attributes}->{attributes}->{export_manager_id}->{options} = \@expmanageroptions;
 
         # TODO: factorize the code that handle the export manager as it is
         #       the as the disk manager one.
@@ -208,7 +200,7 @@ sub getPolicyDef {
         # If no export_manager_id defined and and attr is mandatory, use the first one as value
         if (! $args{params}->{export_manager_id} and $args{set_mandatory}) {
             $self->setFirstSelected(name       => 'export_manager_id',
-                                    attributes => $attributes->{attributes},
+                                    attributes => $args{attributes}->{attributes},
                                     params     => $args{params});
         }
 
@@ -217,14 +209,14 @@ sub getPolicyDef {
             my $exportmanager = Entity->get(id => $args{params}->{export_manager_id});
             $managerparams = $exportmanager->getExportManagerParams(params => $args{params});
             for my $attrname (keys %{$managerparams}) {
-                $attributes->{attributes}->{$attrname} = $managerparams->{$attrname};
+                $args{attributes}->{attributes}->{$attrname} = $managerparams->{$attrname};
                 # If no value defined in params, use the first one
                 if (! $args{params}->{$attrname} && $args{set_mandatory}) {
                     $self->setFirstSelected(name       => $attrname,
-                                            attributes => $attributes->{attributes},
+                                            attributes => $args{attributes}->{attributes},
                                             params     => $args{params});
                 }
-                push @{ $attributes->{displayed} }, $attrname;
+                push @{ $args{attributes}->{displayed} }, $attrname;
             }
         }
     }
@@ -237,13 +229,7 @@ sub getPolicyDef {
         }
     }
 
-    $self->setValues(attributes          => $attributes,
-                     values              => $args{params},
-                     set_mandatory       => delete $args{set_mandatory},
-                     set_editable        => delete $args{set_editable},
-                     set_params_editable => delete $args{set_params_editable});
-
-    return $attributes;
+    return $args{attributes};
 }
 
 

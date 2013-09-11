@@ -745,9 +745,8 @@ Retrieve a value given a name attribute, search this atribute throw the whole cl
 =cut
 
 sub getAttr {
-    my $self  = shift;
-    my $class = ref($self);
-    my %args  = @_;
+    my ($self, %args) = @_;
+    my $class = ref($self) or throw Kanopya::Exception::Method();
 
     General::checkParams(args => \%args, required => [ 'name' ],
                                          optional => { deep => 0 });
@@ -870,7 +869,7 @@ class hierarchy, and check attribute validity.
 
 sub setAttr {
     my ($self, %args) = @_;
-    my $class = ref($self);
+    my $class = ref($self) or throw Kanopya::Exception::Method();
 
     General::checkParams(args     => \%args,
                          required => [ 'name' ],
@@ -1535,12 +1534,11 @@ sub toString {
 
 Return the object as a hash so that it can be safely be converted to JSON.
 Should be named differently but hey...
+If called on the class, return the object description instead of attributes values
 
-@optional model switch to model mode, return the object description
-          instead of attributes values
 @optional no_relations force to remove the relations from the atrribute definition
 
-@return the hash representing the object or the model depending on $args{model} option
+@return the hash representing the object or the model
 
 =end classdoc
 =cut
@@ -1550,7 +1548,7 @@ sub toJSON {
     my $class = ref ($self) || $self;
 
     General::checkParams(args     => \%args,
-                         optional => { 'no_relations' => 0, 'model' => undef, 'raw' => 0,
+                         optional => { 'no_relations' => 0, 'raw' => 0,
                                        'virtuals' => 1, 'expand' => [], 'deep' => 0 });
 
     my $pk;
@@ -1564,7 +1562,7 @@ sub toJSON {
         foreach my $attr (keys %{$attributes->{$class}}) {
             next if ($args{raw} && $attributes->{$class}->{$attr}->{is_virtual});
 
-            if (defined $args{model}) {
+            if (not ref($self)) {
                 # Only add primary key attrs from the lower class in the hierarchy
                 if (! ($attributes->{$class}->{$attr}->{is_primary} && "$class" ne "$conreteclass")) {
                     $hash->{attributes}->{$attr} = $attributes->{$class}->{$attr};
@@ -1643,7 +1641,7 @@ sub toJSON {
        }
     }
 
-    if ($args{model}) {
+    if (not ref($self)) {
         my $table = _buildClassNameFromString($class);
         my @hierarchy = getClassHierarchy($class);
         my $depth = scalar @hierarchy;
@@ -2352,8 +2350,7 @@ sub getRelatedSource {
     my $relation_schema;
     my $attrdef = $class->getAttrDefs->{$relation};
     if (defined ($attrdef->{type}) && $attrdef->{type} eq 'relation' and defined ($attrdef->{specialized})) {
-        my $class = normalizeName($attrdef->{specialized});
-        $relation_schema = BaseDB->_adm->{schema}->source($class);
+        $relation_schema = BaseDB->_adm->{schema}->source($attrdef->{specialized});
     }
     else {
         try {

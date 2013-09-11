@@ -67,6 +67,8 @@ use warnings;
 use Frontend;
 use Dancer::Test;
 use REST::api;
+use APITestLib;
+
 use String::Random 'random_regex';
 use Data::Dumper;
 
@@ -181,7 +183,8 @@ my %attribute_fixed_value = (
 sub run {
     my $resource = shift;
 
-    my $response = dancer_response(POST => '/login', { params => {login => 'admin', password => 'K4n0pY4'}});
+    # Firstly login to the api
+    APITestLib::login();
 
     my %_skip_resources = map {$_ => 1} @skip_resources;
     my @api_resources = $resource ? ($resource) : keys %REST::api::resources;

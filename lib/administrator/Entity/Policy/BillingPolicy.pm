@@ -118,17 +118,14 @@ my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
 
 
 =pod
-
 =begin classdoc
 
-Get the static policy attributes definition from the parent,
-and merge with the policy type specific dynamic attributes
-depending on attributes values given in parameters.
+Build the dynamic attributes definition depending on attributes
+values given in parameters.
 
 @return the dynamic attributes definition.
 
 =end classdoc
-
 =cut
 
 sub getPolicyDef {
@@ -137,38 +134,22 @@ sub getPolicyDef {
     my %args  = @_;
 
     General::checkParams(args     => \%args,
-                         optional => { 'params'              => {},
-                                       'set_mandatory'       => 0,
-                                       'set_editable'        => 1,
-                                       'set_params_editable' => 0 });
+                         required => [ 'attributes' ],
+                         optional => { 'params' => {}, 'trigger' => undef });
 
-    # Merge params wirh existing values
-    $args{params} = $self->processParams(%args);
+    # Add the billing limits to the displayed attributes
+    my $displayed = { billing_limits => [ 'start', 'ending', 'type', 'soft', 'value', 'repeats',
+                                          'repeat_start_time', 'repeat_end_time' ] };
+    push @{ $args{attributes}->{displayed} }, $displayed;
 
-    # Complete the attributes with common ones
-    my $attributes = $self->SUPER::getPolicyDef(%args);
-
-    $attributes->{relations} = {
-        billing_limits => {
-            attrs    => { accessor => 'multi' },
-            cond     => { 'foreign.policy_id' => 'self.policy_id' },
-            resource => 'billing_limit'
-        }
+    # Add the billing limits to the relations definition
+    $args{attributes}->{relations}->{billing_limits} = {
+        attrs    => { accessor => 'multi' },
+        cond     => { 'foreign.policy_id' => 'self.policy_id' },
+        resource => 'billing_limit'
     };
 
-    push @{ $attributes->{displayed} }, {
-        'billing_limits' => [ 'start', 'ending', 'type',
-                              'soft', 'value', 'repeats',
-                              'repeat_start_time', 'repeat_end_time' ]
-    };
-
-    $self->setValues(attributes          => $attributes,
-                     values              => $args{params},
-                     set_mandatory       => delete $args{set_mandatory},
-                     set_editable        => delete $args{set_editable},
-                     set_params_editable => delete $args{set_params_editable});
-
-    return $attributes;
+    return $args{attributes};
 }
 
 =pod

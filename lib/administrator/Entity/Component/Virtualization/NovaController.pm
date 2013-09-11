@@ -44,7 +44,7 @@ use constant ATTR_DEF => {
         type        => 'relation',
         relation    => 'single_multi',
         is_editable => 1,
-        specialized => 'openstack_repository'
+        specialized => 'OpenstackRepository'
     },
     amqp_id => {
         label       => 'Message queuing server',

@@ -51,7 +51,7 @@ use constant ATTR_DEF => {
         relation     => 'single_multi',
         is_mandatory => 0,
         is_editable  => 1,
-        specialized  => 'nfs_container_access'
+        specialized  => 'NfsContainerAccess'
     },
     export_type => {
         is_virtual => 1

@@ -60,7 +60,7 @@ function servicesList (container_id, elem_id) {
         details     : { link_to_menu : 'yes', label_key : 'cluster_name'},
         deactivate  : true
     });
-    
+
     //$("#services_list").on('gridChange', reloadServices);
 
     function createAddServiceButton(cid, grid) {
@@ -137,7 +137,7 @@ function servicesList (container_id, elem_id) {
                     // If the service template defined, fill the form with the service template definition
                     if (data.service_template_id) {
                         var args = { params : data, trigger : trigger };
-                        attributes = ajax('POST', '/api/servicetemplate/getServiceTemplateDef', args);
+                        attributes = ajax('POST', '/api/attributes/servicetemplate', args);
 
                         // Delete the service template fields other than policies ids
                         delete attributes.attributes['service_name'];

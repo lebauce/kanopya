@@ -25,7 +25,10 @@ function load_policy_content (container_id) {
                     },
                     attrsCallback : function (resource, data, trigger) {
                         var args = { params : data, trigger : trigger };
-                        return ajax('POST', '/api/' + policy_type + 'policy/getPolicyDef', args);
+
+                        // Make the call to attributes our  self to force using POST, as
+                        // we need to give JSON formated params
+                        return ajax('POST', '/api/attributes/' + policy_type + 'policy', args);
                     },
                     callback : function () { grid.trigger("reloadGrid"); }
                 })).start();
@@ -69,6 +72,7 @@ function load_policy_details (elem_id, row_data, grid_id) {
         load_orchestration_policy_details(policy, grid_id);
 
     } else {
+        var currentdata = policy;
         // Use the kanopyaformwizard for policies
         (new KanopyaFormWizard({
             title      : 'Edit the ' + policy.policy_type + ' policy: ' + policy.policy_name,
@@ -76,11 +80,23 @@ function load_policy_details (elem_id, row_data, grid_id) {
             id         : policy.pk,
             reloadable : true,
             attrsCallback : function (resource, data, trigger) {
-                var args = { params : data, trigger : trigger };
-                return ajax('POST', '/api/' + policy.policy_type + 'policy/' + policy.pk + '/getPolicyDef', args);
+                // If it is the first call to get attributes, use the original policy as params
+                // to get the proper dynamic attr defintion.
+                if (! $.isEmptyObject(data)) {
+                    currentdata = data;
+                }
+
+                var args = { params : currentdata, trigger : trigger };
+                var attrsdef = ajax('POST', '/api/attributes/' + policy.policy_type + 'policy', args);
+                for (var attr in attrsdef.attributes) {
+                    if (attrsdef.attributes[attr].value == undefined) {
+                        delete currentdata[attr];
+                    }
+                }
+                return attrsdef;
             },
             valuesCallback : function (type, id, attributes) {
-                return ajax('GET', '/api/' + policy.policy_type + 'policy/' + policy.pk);
+                return currentdata;
             },
             callback : function () { $('#' + grid_id).trigger("reloadGrid"); }
         })).start();

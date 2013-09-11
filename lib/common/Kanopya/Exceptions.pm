@@ -25,7 +25,6 @@ Kanopya Exceptions declaration
 
 package Kanopya::Exceptions;
 
-use TryCatch;
 
 use Exception::Class (
     Kanopya::Exception => {
@@ -51,6 +50,10 @@ use Exception::Class (
     Kanopya::Exception::Quota => {
         isa         => 'Kanopya::Exception',
         description => 'Quota exceeded',
+    },
+    Kanopya::Exception::Method => {
+        isa         => 'Kanopya::Exception',
+        description => 'Can\'t call method on class',
     },
     Kanopya::Exception::Internal => {
         isa         => 'Kanopya::Exception',

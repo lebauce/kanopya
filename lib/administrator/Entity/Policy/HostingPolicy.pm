@@ -16,7 +16,6 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 =pod
-
 =begin classdoc
 
 The hosting policy defines the hosting parameters describing how
@@ -28,7 +27,6 @@ the service life cycle.
 @self     $self
 
 =end classdoc
-
 =cut
 
 package Entity::Policy::HostingPolicy;
@@ -82,17 +80,14 @@ my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
 
 
 =pod
-
 =begin classdoc
 
-Get the static policy attributes definition from the parent,
-and merge with the policy type specific dynamic attributes
-depending on attributes values given in parameters.
+Build the dynamic attributes definition depending on attributes
+values given in parameters.
 
 @return the dynamic attributes definition.
 
 =end classdoc
-
 =cut
 
 sub getPolicyDef {
@@ -101,20 +96,12 @@ sub getPolicyDef {
     my %args  = @_;
 
     General::checkParams(args     => \%args,
-                         optional => { 'params'              => {},
-                                       'trigger'             => undef,
-                                       'set_mandatory'       => 0,
-                                       'set_editable'        => 1,
-                                       'set_params_editable' => 0 });
+                         required => [ 'attributes' ],
+                         optional => { 'params' => {}, 'trigger' => undef });
 
-    # Apply the trigger effect on params
-    $args{params} = $self->processParams(%args);
-
-    # Complete the attributes with common ones
-    my $attributes = $self->SUPER::getPolicyDef(%args);
-
-    my $displayed = [ 'host_provider_id', 'host_manager_id' ];
-    $attributes = $merge->merge($attributes, { displayed => $displayed });
+    # Add the dynamic attributes to displayed
+    push @{ $args{attributes}->{displayed} }, 'host_provider_id';
+    push @{ $args{attributes}->{displayed} }, 'host_manager_id';
 
     # Build the host provider list
     my $providers = {};
@@ -122,7 +109,7 @@ sub getPolicyDef {
         $providers->{$component->service_provider->id} = $component->service_provider->toJSON;
     }
     my @hostproviders = values %{ $providers };
-    $attributes->{attributes}->{host_provider_id}->{options} = \@hostproviders;
+    $args{attributes}->{attributes}->{host_provider_id}->{options} = \@hostproviders;
 
     # Fill the value of host provider if not defined in params
     if (not defined $args{params}->{host_provider_id}) {
@@ -134,7 +121,7 @@ sub getPolicyDef {
         elsif ($args{set_mandatory}) {
             # Use the first one in options instead
             $self->setFirstSelected(name       => 'host_provider_id',
-                                    attributes => $attributes->{attributes},
+                                    attributes => $args{attributes}->{attributes},
                                     params     => $args{params});
         }
     }
@@ -148,7 +135,7 @@ sub getPolicyDef {
             $manager_options->{$component->id}->{label} = $component->host_type;
         }
         my @options = values %{ $manager_options };
-        $attributes->{attributes}->{host_manager_id}->{options} = \@options;
+        $args{attributes}->{attributes}->{host_manager_id}->{options} = \@options;
 
         # If host_manager_id defined but do not corresponding to a available value,
         # it is an old value, so delete it.
@@ -158,7 +145,7 @@ sub getPolicyDef {
         # If no host_manager_id defined and and attr is mandatory, use the first one as value
         if (! defined $args{params}->{host_manager_id} and $args{set_mandatory}) {
             $self->setFirstSelected(name       => 'host_manager_id',
-                                    attributes => $attributes->{attributes},
+                                    attributes => $args{attributes}->{attributes},
                                     params     => $args{params});
         }
     }
@@ -168,29 +155,22 @@ sub getPolicyDef {
         my $hostmanager = Entity->get(id => $args{params}->{host_manager_id});
         my $managerparams = $hostmanager->getHostManagerParams();
         for my $attrname (keys %{$managerparams}) {
-            $attributes->{attributes}->{$attrname} = $managerparams->{$attrname};
+            $args{attributes}->{attributes}->{$attrname} = $managerparams->{$attrname};
             # If no value defined in params, use the first one
             if (! $args{params}->{$attrname} && $args{set_mandatory}) {
                 $self->setFirstSelected(name       => $attrname,
-                                        attributes => $attributes->{attributes},
+                                        attributes => $args{attributes}->{attributes},
                                         params     => $args{params});
             }
-            push @{ $attributes->{displayed} }, $attrname;
+            push @{ $args{attributes}->{displayed} }, $attrname;
         }
     }
 
-    $self->setValues(attributes          => $attributes,
-                     values              => $args{params},
-                     set_mandatory       => delete $args{set_mandatory},
-                     set_editable        => delete $args{set_editable},
-                     set_params_editable => delete $args{set_params_editable});
-
-    return $attributes;
+    return $args{attributes};
 }
 
 
 =pod
-
 =begin classdoc
 
 For the hosting policy, the attribute host_manager_id is
@@ -200,7 +180,6 @@ the params preset of the policy.
 @return the non editable params list
 
 =end classdoc
-
 =cut
 
 sub getNonEditableAttributes {
@@ -218,7 +197,6 @@ sub getNonEditableAttributes {
 
 
 =pod
-
 =begin classdoc
 
 Remove possibly defined host_provider_id from params, as it is a
@@ -227,7 +205,6 @@ field convenient for manager selection only.
 @return a policy pattern fragment
 
 =end classdoc
-
 =cut
 
 sub getPatternFromParams {
