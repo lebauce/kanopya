@@ -326,7 +326,19 @@ sub jsonify {
     return $var;
 }
 
+sub attributes {
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'resource', 'params' ]);
+
+    my $class = classFromResource(resource => $args{resource});
+    require (General::getLocFromClass(entityclass => $class));
+
+    return to_json($class->toJSON(%{ $args{params} }));
+}
+
 sub setupREST {
+    my %args = @_;
 
     foreach my $resource (keys %resources) {
         my $class = classFromResource(resource => $resource);
@@ -349,7 +361,7 @@ sub setupREST {
                 my $hash = {};
                 my %params = params;
                 if (request->content_type && (split(/;/, request->content_type))[0] eq "application/json") {
-                    %params = %{from_json(request->body)};
+                    %params = %{ from_json(request->body) };
                 } else {
                     %params = params;
                 }
@@ -461,12 +473,21 @@ sub setupREST {
 get '/api/attributes/:resource' => sub {
     content_type 'application/json';
 
-    my $class = classFromResource(resource => params->{resource});
+    my %params = params;
+    return attributes(resource => delete $params{resource}, params => \%params);
+};
 
-    require (General::getLocFromClass(entityclass => $class));
+post '/api/attributes/:resource' => sub {
+    content_type 'application/json';
 
-    return to_json($class->toJSON(model => 1,
-                                  no_relations => params->{no_relations}));
+    my %params;
+    my $resource = delete params->{resource};
+    if (request->content_type && (split(/;/, request->content_type))[0] eq "application/json") {
+        %params = %{ from_json(request->body) };
+    } else {
+        %params = params;
+    }
+    return attributes(resource => $resource, params => \%params);
 };
 
 get '/api' => sub {
