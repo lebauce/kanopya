@@ -397,8 +397,8 @@ sub registerUsers {
           desc    => 'Policy group containing all policies',
           system  => 1,
           methods => {
-              'ServiceDeveloper' => [ 'getPolicyDef', 'create', 'remove', 'update', 'get' ],
-              'Sales'            => [ 'getPolicyDef', 'get' ],
+              'ServiceDeveloper' => [ 'create', 'remove', 'update', 'get' ],
+              'Sales'            => [ 'get' ],
           }
         },
         { name    => 'ServiceTemplate',
@@ -406,8 +406,8 @@ sub registerUsers {
           desc    => 'ServiceTemplate group containing all service templates',
           system  => 1,
           methods => {
-              'ServiceDeveloper' => [ 'getServiceTemplateDef', 'create', 'update', 'remove', 'get' ],
-              'Sales'            => [ 'getServiceTemplateDef', 'get' ]
+              'ServiceDeveloper' => [ 'create', 'update', 'remove', 'get' ],
+              'Sales'            => [ 'get' ]
           }
         },
         { name    => 'WorkflowDef',
@@ -955,7 +955,7 @@ sub registerComponents {
             component_version      => 5,
             component_categories   => [ 'Monitoragent' ],
             component_template     => '/templates/components/snmpd',
-            service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
             component_name         => 'Nfsd',
@@ -1189,31 +1189,31 @@ sub registerComponents {
             component_name         => 'KanopyaFront',
             component_version      => 0,
             component_categories   => [ ],
-            service_provider_types => [ 'Cluster', 'Kanopya' ],
+            service_provider_types => [ 'Kanopya' ],
         },
         {
             component_name         => 'KanopyaExecutor',
             component_version      => 0,
             component_categories   => [ 'ExecutionManager' ],
-            service_provider_types => [ 'Cluster', 'Kanopya' ],
+            service_provider_types => [ 'Kanopya' ],
         },
         {
             component_name         => 'KanopyaAggregator',
             component_version      => 0,
             component_categories   => [ ],
-            service_provider_types => [ 'Cluster', 'Kanopya' ],
+            service_provider_types => [ 'Kanopya' ],
         },
         {
             component_name         => 'KanopyaRulesEngine',
             component_version      => 0,
             component_categories   => [ ],
-            service_provider_types => [ 'Cluster', 'Kanopya' ],
+            service_provider_types => [ 'Kanopya' ],
         },
         {
             component_name         => 'Ceph',
             component_version      => 0,
             component_categories   => [ ],
-            service_provider_types => [  ],
+            service_provider_types => [ ],
         },
         {
             component_name         => 'CephMon',
@@ -1520,7 +1520,8 @@ sub registerKanopyaMaster {
                             cluster_basehostname  => 'kanopya',
                             default_gateway_id    => $admin_network->id,
                             active                => 1,
-                            user_id               => $admin->id
+                            user_id               => $admin->id,
+                            service_provider_type_id => ClassType::ServiceProviderType->find(hash => { service_provider_name => "Kanopya" })->id
                         );
 
 
