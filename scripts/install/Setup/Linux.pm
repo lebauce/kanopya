@@ -353,7 +353,7 @@ sub complete_parameters {
     chomp($self->{parameters_values}->{hostname});
 
     # generate iscsi initiatorname
-    $self->{parameters_values}->{initiatorname} = 'iqn.toto';
+    $self->{parameters_values}->{initiatorname} = 'iqn.kanopya';
 }
 
 =pod
