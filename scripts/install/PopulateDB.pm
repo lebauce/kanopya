@@ -1213,7 +1213,7 @@ sub registerComponents {
             component_name         => 'Ceph',
             component_version      => 0,
             component_categories   => [ ],
-            service_provider_types => [ ],
+            service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6' ],
         },
         {
             component_name         => 'CephMon',
