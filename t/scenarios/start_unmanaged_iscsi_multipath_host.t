@@ -35,7 +35,7 @@ use NetconfPoolip;
 use NetconfIface;
 use Entity::Poolip;
 use Entity::Operation;
-use Entity::Component::Iscsi::IscsiPortal;
+use IscsiPortal;
 use ClassType::ComponentType;
 use Entity::Workflow;
 
@@ -224,7 +224,7 @@ sub _create_and_configure_cluster {
 
     diag('Retrieve iscsi portals');
     my @iscsi_portal_ids;
-    for my $portal (Entity::Component::Iscsi::IscsiPortal->search(hash => { iscsi_id => $export_manager->id })) {
+    for my $portal (IscsiPortal->search(hash => { iscsi_id => $export_manager->id })) {
         push @iscsi_portal_ids, $portal->id;
     }
 

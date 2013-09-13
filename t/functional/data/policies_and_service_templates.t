@@ -21,7 +21,7 @@ use Entity::User;
 use Entity::ServiceProvider::Cluster;
 use Entity::ServiceTemplate;
 use Entity::Policy;
-use Entity::Component::Lvm2::Lvm2Vg;
+use Lvm2Vg;
 use Entity::Policy::HostingPolicy;
 use Entity::Component::Physicalhoster0;
 
@@ -188,8 +188,8 @@ sub test_service_creation_from_service_template {
     my $service_template = Entity::ServiceTemplate->find(hash => { service_name =>  "Standard physical cluster" });
     lives_ok {
         my $additional_policy_aprams = {
-            vg_id         => Entity::Component::Lvm2::Lvm2Vg->find()->id,
-            iscsi_portals => [ Entity::Component::Iscsi::IscsiPortal->find()->id ]
+            vg_id         => Lvm2Vg->find()->id,
+            iscsi_portals => [ IscsiPortal->find()->id ]
         };
 
         Entity::ServiceProvider::Cluster->create(cluster_name        => "test_cluster",

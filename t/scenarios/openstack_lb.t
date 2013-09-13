@@ -23,8 +23,8 @@ Log::Log4perl->easy_init({
 use BaseDB;
 use NetconfVlan;
 use Entity::Vlan;
-use Entity::Component::Lvm2::Lvm2Vg;
-use Entity::Component::Lvm2::Lvm2Pv;
+use Lvm2Vg;
+use Lvm2Pv;
 
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::Register;

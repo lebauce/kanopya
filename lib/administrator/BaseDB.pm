@@ -51,6 +51,7 @@ my $err;
 my $log = get_logger("basedb");
 my $errmsg;
 
+
 # In-memory cache for class types
 my %class_type_cache;
 
@@ -112,7 +113,7 @@ sub new {
     my $attrdef = $class->getAttrDefs();
 
     # Extract relation for futher handling
-    my $relations = $class->extractRelations(hash => $hash);
+    my $relations = $class->_extractRelations(hash => $hash);
 
     my @attrs = keys %args;
     foreach my $attr (@attrs) {
@@ -140,9 +141,9 @@ sub new {
         }
     }
 
-    $class->populateRelations(relations => $relations,
-                              foreign   => 0,
-                              attrs     => $hash);
+    $class->_populateRelations(relations => $relations,
+                               foreign   => 0,
+                               attrs     => $hash);
 
     my $attrs = $class->checkAttrs(attrs => $hash);
     my $self = $class->newDBix(attrs => $attrs);
@@ -153,31 +154,11 @@ sub new {
     }
 
     # Populate relations
-    $self->populateRelations(relations => $relations);
+    $self->_populateRelations(relations => $relations);
 
 #    $self->{_altered} = 0;
 
     return $self;
-}
-
-
-=pod
-=begin classdoc
-
-Default label management
-Label is the value of the attr returned by getLabelAttr() or the object id
-Subclass can redefined this method to return specific label
-
-@return the label string for this object
-
-=end classdoc
-=cut
-
-sub label {
-    my $self = shift;
-
-    my $label = $self->getLabelAttr();
-    return $label ? $self->$label : $self->id;
 }
 
 
@@ -194,12 +175,15 @@ also handle the update of relations.
 
 sub update {
     my ($self, %args) = @_;
-
     my $class = ref($self) || $self;
-    my $hash  = \%args;
+
+    General::checkParams(args => \%args, optional => { 'override_relations' => 1 });
+
+    my $override = delete $args{override_relations};
+    my $hash = \%args;
 
     # Extract relation for futher handling
-    my $relations = $class->extractRelations(hash => $hash);
+    my $relations = $class->_extractRelations(hash => $hash);
     delete $hash->{id};
 
     my $updated = 0;
@@ -207,8 +191,8 @@ sub update {
     for my $attr (keys %$hash) {
         if (not $attrdef->{$attr}->{is_virtual}) {
             my $currentvalue = $self->getAttr(name => $attr);
-            if ((defined $currentvalue and "$hash->{$attr}" ne "$currentvalue") or
-                (not defined $currentvalue and defined $hash->{$attr})) {
+            if ((defined $currentvalue && "$hash->{$attr}" ne "$currentvalue") ||
+                (not defined $currentvalue && defined $hash->{$attr})) {
                 $self->setAttr(name => $attr, value => $hash->{$attr});
 
                 if (not $updated) { $updated = 1; }
@@ -223,9 +207,56 @@ sub update {
     if ($updated) { $self->save(); }
 
     # Populate relations
-    $self->populateRelations(relations => $relations, override => 1);
+    $self->_populateRelations(relations => $relations, override => $args{override_relations});
 
     return $self;
+}
+
+
+=pod
+=begin classdoc
+
+Remove records from the entire class hierarchy.
+
+@optional trunc a class name with its hierachy, allows to delete
+          a part of the class hierachy only.
+
+=end classdoc
+=cut
+
+sub delete {
+    my ($self, %args) = @_;
+    my $dbix = $self->{_dbix};
+
+    General::checkParams(args => \%args, optional => { 'trunc' => undef });
+
+    if (defined $args{trunc}) {
+        $args{trunc} = _buildClassNameFromString($args{trunc});
+    }
+
+    # Search for first mother table in the hierarchy
+    while(1) {
+        if ($dbix->can('parent')) {
+            my $parentclass = _buildClassNameFromString(ref($dbix->parent));
+
+            if (defined $args{trunc} and $parentclass eq $args{trunc}) {
+                last;
+            }
+
+            # go to parent dbix
+            $dbix = $dbix->parent;
+            next;
+
+        } else { last; }
+    }
+
+    if (defined $args{trunc}) {
+        $self->{_dbix} = $dbix->parent;
+    }
+
+    $dbix->delete;
+
+    return undef;
 }
 
 
@@ -299,7 +330,7 @@ sub promote {
     $args{$primary_key} = $promoted->id;
 
     # Extract relation for futher handling
-    my $relations = $class->extractRelations(hash => \%args);
+    my $relations = $class->_extractRelations(hash => \%args);
 
     # Merge the base object attributtes and new ones for attrs checking
     my %totalargs = (%args, $promoted->getAttrs);
@@ -313,7 +344,7 @@ sub promote {
     bless $self, $class;
 
     # Populate relations
-    $self->populateRelations(relations => $relations, foreign   => 1);
+    $self->_populateRelations(relations => $relations, foreign   => 1);
 
     # Set the class type to the new promotion class
     try {
@@ -370,6 +401,535 @@ sub demote {
 =pod
 =begin classdoc
 
+Retrieve a value given a name attribute, search this atribute throw the whole class hierarchy.
+
+@param name name of the attribute to get the value
+
+@return the attribute value
+
+=end classdoc
+=cut
+
+sub getAttr {
+    my ($self, %args) = @_;
+    my $class = ref($self) or throw Kanopya::Exception::Method();
+
+    General::checkParams(args => \%args, required => [ 'name' ],
+                                         optional => { deep => 0 });
+
+    my $found = 1;
+    my $value = undef;
+    my $dbix = $self->{_dbix};
+    my $attr = $class->getAttrDefs()->{$args{name}};
+
+    # Recursively search in the dbix objets, following
+    # the 'parent' relation
+    while ($found) {
+        # The attr is a column
+        if ($dbix->has_column($args{name})) {
+            $value = $dbix->get_column($args{name});
+            last;
+        }
+        # The attr is a relation
+        elsif ($dbix->has_relationship($args{name})) {
+            my $name = $args{name};
+            my $relinfo = $dbix->relationship_info($args{name});
+            if ($relinfo->{attrs}->{accessor} eq "multi") {
+                return map { $class->fromDBIx(row => $_, deep => $args{deep}) } $dbix->$name;
+            }
+            else {
+                if ($dbix->$name) {
+                    $value = $class->fromDBIx(row => $dbix->$name, deep => $args{deep});
+                }
+            }
+            last;
+        }
+        # The attr is a many to many relation
+        elsif ($dbix->can($args{name})) {
+            my $name = $args{name};
+            return map { $class->fromDBIx(row => $_, deep => $args{deep}) } $dbix->$name;
+        }
+        # The attr is a virtual attr
+        elsif (($self->can($args{name}) or $self->can(normalizeMethod($args{name}))) &&
+               defined $attr and $attr->{is_virtual}) {
+            # Firstly try to call method with camel-case style
+            my $method = $args{name};
+            eval {
+                my $camelcased_method = normalizeMethod($method);
+                $value = $self->$camelcased_method();
+            };
+            if ($@ and $self->can($method)) {
+                # If failled with camel-cased, try the original attr name as method
+                eval {
+                    $value = $self->$method();
+                };
+                if ($@) {
+                    $value = $@;
+                }
+            }
+
+            last;
+        }
+        elsif ($dbix->can('parent')) {
+            $dbix = $dbix->parent;
+            next;
+        }
+        else {
+            $found = 0;
+            last;
+        }
+    }
+    if (not $found) {
+        throw Kanopya::Exception::Internal(error => "$self has no attribute <$args{name}>.");
+    }
+    return $value;
+}
+
+
+=pod
+=begin classdoc
+
+Set one name attribute with the given value, search this attribute throw the whole
+class hierarchy, and check attribute validity.
+
+@param name the name of the attribute to set the value
+
+@optional value the value to set
+@optional save a flag to save the object
+
+@return the value set
+
+=end classdoc
+=cut
+
+sub setAttr {
+    my ($self, %args) = @_;
+    my $class = ref($self) or throw Kanopya::Exception::Method();
+
+    General::checkParams(args     => \%args,
+                         required => [ 'name' ],
+                         optional => { 'value' => undef, 'save'  => 0 });
+
+    my ($name, $value) = ($args{name}, $args{value});
+    my $dbix = $self->{_dbix};
+
+    $self->checkAttr(%args);
+    my $attr = $class->getAttrDefs()->{$name};
+
+    # The attr is a virtual attr
+    if (($self->can($args{name}) or $self->can(normalizeMethod($args{name}))) and
+        defined $attr and $attr->{is_virtual}) {
+
+        # Firstly try to call method with camel-case style
+        eval {
+            my $camelcased_method = normalizeMethod($name);
+            $self->$camelcased_method($value);
+        };
+        if ($@ and $self->can($name)) {
+            # If failled with camel-cased, try the original attr name as method
+            $self->$name($value);
+        }
+        return;
+    }
+
+    my $found = 0;
+    while(1) {
+        # Search for attr in this dbix
+        if ($dbix->has_column($name)) {
+            $dbix->set_column($name, $value);
+            $found = 1;
+            last;
+        }
+        elsif($dbix->can('parent')) {
+            # go to parent dbix
+            $dbix = $dbix->parent;
+            next;
+        }
+        else {
+            last;
+        }
+    }
+
+    if (not $found) {
+        $errmsg = ref($self) . " setAttr no attr name $args{name}!";
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+
+    if ($args{save}) {
+        $self->save();
+    }
+#    $self->{_altered} = 1;
+
+    return $value;
+}
+
+
+=pod
+=begin classdoc
+
+Retrieve one instance from an id
+
+@param id the id of the object to get
+
+@return the object instance
+
+=end classdoc
+=cut
+
+sub get {
+    my ($class, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'id' ],
+                                         optional => { 'prefetch' => [ ] });
+
+    return $class->find(hash     => { 'me.' . $class->getPrimaryKey => $args{id} },
+                        prefetch => $args{prefetch},
+                        deep     => 1);
+}
+
+
+=pod
+=begin classdoc
+
+Return the entries that match the 'hash' filter. It also accepts more or less
+the same parameters than DBIx 'search' method. It fetches the attributes of
+the whole class hierarchy and returns an object as a BaseDB derived object.
+
+@param hash the keys/values describing the researched objects
+@optional page the number of the requested page among all pages
+          of the object list.
+@optional rows the number of object entry in a page
+@optional order_by the sorting policy for output list
+@optional dataType the output format
+
+@return the matching object list
+
+=end classdoc
+=cut
+
+sub search {
+    my ($class, %args) = @_;
+    my @objs = ();
+
+    General::checkParams(args     => \%args,
+                         optional => { 'hash' => {}, 'page' => undef, 'rows' => undef, 'related' => undef,
+                                       'join' => undef, 'order_by' => undef, 'dataType' => undef,
+                                       'prefetch' => [], 'raw_hash' => {}, 'presets' => {} });
+
+    # Syntax improvement to avoid to call searchRelated
+    if (defined $args{related}) {
+        my $related = delete $args{related};
+        return $class->searchRelated(filters => [ $related ], %args);
+    }
+
+    my $merge = Hash::Merge->new('STORAGE_PRECEDENT');
+
+    my $table = _buildClassNameFromString(join('::', getClassHierarchy($class)));
+
+    # If the table does not match the class, the conrete table does not exists,
+    # so filter on the class type.
+    if ($class =~ m/::/ and $class !~ m/::$table$/) {
+        $args{hash}->{'class_type.class_type'} = $class;
+    }
+
+    my $prefetch = $class->getJoin() || {};
+    $prefetch = $merge->merge($prefetch, $args{join});
+
+    for my $relation (@{ $args{prefetch} }) {
+        my @comps = split(/\./, $relation);
+        while (scalar @comps) {
+            my $join_query = $class->getJoinQuery(comps => \@comps, indepth => 1);
+
+            $prefetch = $merge->merge($prefetch, $join_query->{join});
+            $args{hash} = $merge->merge($args{hash}, $join_query->{where});
+            pop @comps;
+        }
+    }
+
+    my $virtuals = {};
+    my $attrdefs = $class->getAttrDefs();
+
+    FILTER:
+    for my $filter (keys %{ $args{hash} }) {
+        # If the attr is virtual, move the filter to the virtuals hash
+        if ($attrdefs->{$filter}->{is_virtual}) {
+            $virtuals->{$filter} = delete $args{hash}->{$filter};
+            next FILTER;
+        }
+        next FILTER if substr($filter, 0, 3) eq "me.";
+
+        my @comps = split('\.', $filter);
+        my $value = $args{hash}->{$filter};
+
+        if (scalar (@comps) > 1) {
+            my $value = $args{hash}->{$filter};
+            my $attr = pop @comps;
+
+            delete $args{hash}->{$filter};
+
+            my $join_query = $class->getJoinQuery(comps => \@comps);
+            $prefetch = $merge->merge($prefetch, $join_query->{join});
+            $args{hash}->{$comps[-1] . '.' . $attr} = $value;
+            $args{hash} = $merge->merge($args{hash}, $join_query->{where});
+        }
+    }
+
+    my $virtual_order_by;
+    if (defined $args{order_by}) {
+        # TODO: handle multiple order_by
+        my @orders = split(/ /, $args{order_by});
+        $args{order_by} = '';
+
+        ORDER:
+        for my $order (@orders) {
+            if (lc($order) =~ m/asc|desc/) {
+                if (defined $virtual_order_by) {
+                    $virtual_order_by .= ' ' . $order;
+                }
+                else {
+                    $args{order_by} .= ' ' . $order;
+                }
+            }
+            else {
+                if ($attrdefs->{$order}->{is_virtual}) {
+                    $virtual_order_by = $order;
+                }
+                else {
+                    $args{order_by} .= ' ' . $order;
+                }
+            }
+        }
+    }
+
+    $args{hash} = $merge->merge($args{hash}, $args{raw_hash});
+
+    my $rs = $class->_getDbixFromHash('table' => $table,      'hash'     => $args{hash},
+                                      'page'  => $args{page}, 'prefetch' => $prefetch,
+                                      'rows'  => $args{rows}, 'order_by' => $args{order_by},
+                                      'join'  => $args{join});
+
+    # Instanciate Kanopya classes from DBIx result set
+    try {
+        while (my $row = $rs->next) {
+            my $obj = { _dbix => $row };
+
+            my $parent = $row;
+            while ($parent->can('parent')) {
+                $parent = $parent->parent;
+            }
+
+            my $class_type;
+            if ($parent->has_column("class_type_id") and not ($class =~ m/^ClassType.*/)) {
+                $class_type = $class->getClassType(id => $parent->get_column("class_type_id"));
+
+                if (length($class_type) > length($class)) {
+                    requireClass($class_type);
+                    $obj = $class_type->get(id => $parent->get_column("entity_id"));
+                }
+                else {
+                    bless $obj, $class_type;
+                }
+            }
+            else {
+                $class_type = $class;
+                bless $obj, $class_type;
+            }
+
+            push @objs, $obj;
+        }
+    }
+    catch (Kanopya::Exception $err) {
+        $err->rethrow();
+    }
+    catch ($err) {
+        throw Kanopya::Exception::Internal(error => "$err");
+    }
+
+    # Finally filter on virtual attributes if required
+    for my $virtual (keys %{ $virtuals }) {
+        my $op = '=';
+        if (ref($virtuals->{$virtual}) eq "HASH") {
+            map { $op = $_; $virtuals->{$virtual} = $virtuals->{$virtual}->{$_} } keys %{ $virtuals->{$virtual} };
+        }
+        @objs = grep { General::compareScalars(left_op  => $_->$virtual,
+                                               right_op => $virtuals->{$virtual},
+                                               op       => $op) } @objs;
+    }
+
+    # Sort by virtual attribute if required
+    if ($virtual_order_by) {
+        my ($attribute, $order) = split(/ /, $virtual_order_by);
+        if (defined $order and lc($order) eq 'desc') {
+            @objs = sort { $b->$attribute <=> $a->$attribute } @objs;
+        }
+        else {
+            @objs = sort { $a->$attribute <=> $b->$attribute } @objs;
+        }
+    }
+
+    if (defined ($args{dataType}) and $args{dataType} eq "hash") {
+        my $total = (defined $args{page} or defined $args{rows}) ? $rs->pager->total_entries : $rs->count;
+
+        return {
+            page    => $args{page} || 1,
+            pages   => ceil($total / ($args{rows} || ($args{page} ? 10 : 1))),
+            records => scalar @objs,
+            rows    => \@objs,
+            total   => $total,
+        }
+    }
+
+    return wantarray ? @objs : \@objs;
+}
+
+sub searchRelated {
+    my ($self, %args) = @_;
+    my $class = ref ($self) || $self;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'filters' ],
+                         optional => { 'hash' => { } });
+
+    my $join;
+    try {
+        # If the function is called on a class that is only a base class of the
+        # class the relation is on (for example 'virtual_machines' on a Host),
+        # return a more understandable error message
+        $join = $class->getJoinQuery(comps   => $args{filters},
+                                     reverse => 1);
+    }
+    catch ($err) {
+        throw Kanopya::Exception::Internal::NotFound(
+                  error => "Could not find a relation " .
+                           join('.', @{ $args{filters} }) . " on $self"
+              );
+    }
+
+    my $merge = Hash::Merge->new('STORAGE_PRECEDENT');
+    $args{hash} = $merge->merge($args{hash}, $join->{where});
+
+    my $searched_class = classFromDbix($join->{source});
+    requireClass($searched_class);
+
+    my $method = $join->{accessor} eq "single" ? "find" : "search";
+    return $searched_class->$method(%args, raw_hash => { $join->{on} => ref ($self) ? $self->id : $args{id} },
+                                           hash     => $args{hash},
+                                           join     => $join->{join});
+}
+
+
+=pod
+=begin classdoc
+
+Return a single element matching the specified criterias take the same arguments as 'search'.
+
+@return the matching object
+
+=end classdoc
+=cut
+
+sub find {
+    my ($class, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { 'hash' => {}, 'deep' => 0 });
+
+    my @objects = $class->search(%args);
+
+    my $object = shift @objects;
+    if (! defined $object) {
+        throw Kanopya::Exception::Internal::NotFound(
+                  error => "No entry found for " . $class . ", with hash " . Dumper($args{hash})
+              );
+    }
+    return $object;
+}
+
+
+=pod
+=begin classdoc
+
+Return a single element matching the specified criterias take the same arguments as 'searchRelated'.
+
+@return the matching object
+
+=end classdoc
+=cut
+
+sub findRelated {
+    my ($class, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'filters' ],
+                         optional => { 'hash' => { } });
+
+    my @objects = $class->searchRelated(%args);
+
+    my $object = pop @objects;
+    if (! defined $object) {
+        throw Kanopya::Exception::Internal::NotFound(
+                  error => "No entry found for " . $class . ", with hash " . Dumper($args{hash})
+              );
+    }
+    return $object;
+}
+
+
+=pod
+=begin classdoc
+
+Return the object that matches the criterias
+or creates it if it doesn't exist
+
+@param args the criterias
+
+@return the object found or created
+=cut
+
+sub findOrCreate {
+    my ($class, %args) = @_;
+
+    try {
+        return $class->find(hash => \%args);
+    }
+    catch ($err) {
+        return $class->new(%args);
+    }
+}
+
+
+=pod
+=begin classdoc
+
+Return a single element matching the specified criterias take the same arguments as 'search'.
+
+@return the matching object
+
+=end classdoc
+=cut
+
+sub save {
+    my ($self) = @_;
+    my $dbix = $self->{_dbix};
+
+    my $id;
+    if ( $dbix->in_storage ) {
+        $dbix->update;
+        $self->{_dbix} = $dbix->get_from_storage;
+        while ($dbix->can('parent')) {
+            $dbix = $dbix->parent;
+            $dbix->update;
+        }
+    } else {
+        $errmsg = "$self" . "->save can't be called on a non saved instance! (new has not be called)";
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+    return $self;
+}
+
+
+=pod
+=begin classdoc
+
 Build the full list of methods by concatenating methods hash of each classes
 in the hierarchy, it also support miulti inherintance by using Class::ISA::self_and_super_path.
 
@@ -403,6 +963,227 @@ sub getMethods {
         last SUPER if --$args{depth} == 0;
      }
      return $methods;
+}
+
+
+=pod
+=begin classdoc
+
+Authenticate the user on the permissions management system.
+
+=end classdoc
+=cut
+
+sub authenticate {
+    my $class = shift;
+    my %args  = @_;
+
+    General::checkParams(args => \%args, required => [ 'login', 'password' ]);
+
+    my $user_data = BaseDB->_adm(no_user_check => 1)->{schema}->resultset('User')->search({
+                        user_login    => $args{login},
+                        user_password => General::cryptPassword(password => $args{password}),
+                    })->single;
+
+    if(not defined $user_data) {
+        $errmsg = "Authentication failed for login " . $args{login};
+        throw Kanopya::Exception::AuthenticationFailed(error => $errmsg);
+    }
+    else {
+        $log->debug("Authentication succeed for login " . $args{login});
+        $ENV{EID} = $user_data->id;
+    }
+}
+
+
+=pod
+=begin classdoc
+
+Start a transction on the ORM.
+
+=end classdoc
+=cut
+
+sub beginTransaction {
+    my $self = shift;
+
+    $log->debug("Beginning database transaction");
+    $self->_adm->{schema}->txn_begin;
+}
+
+
+=pod
+=begin classdoc
+
+Commit a transaction according the database configuration.
+
+=end classdoc
+=cut
+
+sub commitTransaction {
+    my $self = shift;
+    my $counter = 0;
+    my $commited = 0;
+
+    COMMIT:
+    while ($counter++ < $self->_adm->{config}->{dbconf}->{txn_commit_retry}) {
+        try {
+            $log->debug("Committing transaction to database");
+
+            $self->_adm->{schema}->txn_commit;
+            last COMMIT;
+        }
+        catch ($err) {
+            $log->error("Transaction commit failed: $err");
+        }
+        if ($commited) { last COMMIT; }
+    }
+}
+
+
+=pod
+=begin classdoc
+
+Rollback (cancel) an openned transaction.
+
+=end classdoc
+=cut
+
+sub rollbackTransaction {
+    my $self = shift;
+
+    $log->debug("Rollbacking database transaction");
+    try {
+        $self->_adm->{schema}->txn_rollback;
+    }
+    catch ($err) {
+        $log->warn($err);
+    }
+}
+
+
+=pod
+=begin classdoc
+
+Extract relations sub hashes from the hash represeting the object.
+
+@param hash hash representing the object.
+
+@return the original hash containing the relations sub hashes only
+
+=end classdoc
+=cut
+
+sub _extractRelations {
+    my ($self, %args) = @_;
+    my $class = ref($self) || $self;
+
+    General::checkParams(args => \%args, required => [ 'hash' ]);
+
+    # Extrating relation from attrs
+    my $relations = {};
+    for my $attr (keys %{$args{hash}}) {
+        if (ref($args{hash}->{$attr}) =~ m/ARRAY|HASH/) {
+            $relations->{$attr} = delete $args{hash}->{$attr};
+        }
+    }
+    return $relations;
+}
+
+
+=pod
+=begin classdoc
+
+Create or update relations. If a relation has the primary key set in this attributes,
+we update the object, create it instead.
+
+@param relations hash containing object relations only
+@param foreign boolean to indicate the relations the create
+       A value of '0' means we need to create the entities that have a foreign key to 'self'
+       A value of '1' means we need to create the entities that 'self' points to
+
+=end classdoc
+=cut
+
+sub _populateRelations {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'relations' ],
+                         optional => { 'override' => 0, 'foreign' => 1, 'attrs' => undef });
+
+    # For each relations type
+    RELATION:
+    for my $relation (keys %{ $args{relations} }) {
+        my $rel_infos = $self->getRelationship(relation => $relation);
+        if (($args{foreign} == 0 && $rel_infos->{relation} ne "single") ||
+            ($args{override} == 0 && $args{foreign} == 1 && $rel_infos->{relation} eq "single")) {
+            next RELATION;
+        }
+
+        my $relation_class = $rel_infos->{class};
+        my $relation_schema = $rel_infos->{schema};
+        my $key = $rel_infos->{linkfk} || "id";
+
+        # For single relations, create or update the related instance
+        if (defined $rel_infos->{relation} && $rel_infos->{relation} eq "single") {
+            my $entry = $args{relations}->{$relation};
+            if (ref($self) && $self->$relation) {
+                # We have the relation id, it is a relation update
+                $self->$relation->update(%$entry, override => $args{override});
+            }
+            else {
+                # Id do not exists, it is a relation creation
+                my $obj = $relation_class->create(%$entry);
+                $args{attrs}->{$obj->getPrimaryKey} = $obj->id;
+            }
+        }
+        # For multi relations, create/update/remove the related instances in funtion
+        # of existing entries.
+        else {
+            my $existing = {};
+            my @entries = $self->searchRelated(filters => [ $relation ]);
+            %$existing = map { $_->$key => $_ } @entries;
+
+            # Create/update all entries
+            for my $entry (@{ $args{relations}->{$relation} }) {
+                if (defined $rel_infos->{relation} && $rel_infos->{relation} eq 'single_multi') {
+                    my $id = delete $entry->{@{$relation_schema->_primaries}[0]};
+                    if ($id) {
+                        # We have the relation id, it is a relation update
+                        $relation_class->get(id => $id)->update(%$entry);
+                        delete $existing->{$id};
+                    }
+                    else {
+                        # Create the new relationships
+                        $entry->{$rel_infos->{fk}} = $self->id;
+                        # Id do not exists, it is a relation creation
+                        $relation_class->create(%$entry);
+                    }
+                }
+                elsif (defined $rel_infos->{relation} && $rel_infos->{relation} eq 'multi') {
+                    # If instances are given in parameters instead of ids, use the ids
+                    if (ref($entry)) {
+                        $entry = $entry->id;
+                    }
+
+                    my $exists = delete $existing->{$entry};
+                    if (not $exists) {
+                        # Create entries in the link table
+                        $relation_class->create($rel_infos->{fk}     => $self->id,
+                                                $rel_infos->{linkfk} => $entry);
+                    }
+                }
+            }
+
+            # Finally delete remaining entries
+            if ($args{override}) {
+                for my $remaning (values %$existing) {
+                    $remaning->remove();
+                }
+            }
+        }
+    }
 }
 
 
@@ -735,94 +1516,6 @@ sub fromDBIx {
 =pod
 =begin classdoc
 
-Retrieve a value given a name attribute, search this atribute throw the whole class hierarchy.
-
-@param name name of the attribute to get the value
-
-@return the attribute value
-
-=end classdoc
-=cut
-
-sub getAttr {
-    my ($self, %args) = @_;
-    my $class = ref($self) or throw Kanopya::Exception::Method();
-
-    General::checkParams(args => \%args, required => [ 'name' ],
-                                         optional => { deep => 0 });
-
-    my $found = 1;
-    my $value = undef;
-    my $dbix = $self->{_dbix};
-    my $attr = $class->getAttrDefs()->{$args{name}};
-
-    # Recursively search in the dbix objets, following
-    # the 'parent' relation
-    while ($found) {
-        # The attr is a column
-        if ($dbix->has_column($args{name})) {
-            $value = $dbix->get_column($args{name});
-            last;
-        }
-        # The attr is a relation
-        elsif ($dbix->has_relationship($args{name})) {
-            my $name = $args{name};
-            my $relinfo = $dbix->relationship_info($args{name});
-            if ($relinfo->{attrs}->{accessor} eq "multi") {
-                return map { $class->fromDBIx(row => $_, deep => $args{deep}) } $dbix->$name;
-            }
-            else {
-                if ($dbix->$name) {
-                    $value = $class->fromDBIx(row => $dbix->$name, deep => $args{deep});
-                }
-            }
-            last;
-        }
-        # The attr is a many to many relation
-        elsif ($dbix->can($args{name})) {
-            my $name = $args{name};
-            return map { $class->fromDBIx(row => $_, deep => $args{deep}) } $dbix->$name;
-        }
-        # The attr is a virtual attr
-        elsif (($self->can($args{name}) or $self->can(normalizeMethod($args{name}))) &&
-               defined $attr and $attr->{is_virtual}) {
-            # Firstly try to call method with camel-case style
-            my $method = $args{name};
-            eval {
-                my $camelcased_method = normalizeMethod($method);
-                $value = $self->$camelcased_method();
-            };
-            if ($@ and $self->can($method)) {
-                # If failled with camel-cased, try the original attr name as method
-                eval {
-                    $value = $self->$method();
-                };
-                if ($@) {
-                    $value = $@;
-                }
-            }
-
-            last;
-        }
-        elsif ($dbix->can('parent')) {
-            $dbix = $dbix->parent;
-            next;
-        }
-        else {
-            $found = 0;
-            last;
-        }
-    }
-    if (not $found) {
-        throw Kanopya::Exception::Internal(error => "$self has no attribute <$args{name}>.");
-    }
-    return $value;
-}
-
-
-=pod
-=begin classdoc
-
 Retrieve all keys/values in the class hierarchy
 
 @return a hash containing all object attributes with values
@@ -848,131 +1541,6 @@ sub getAttrs {
         }
     }
     return %attrs;
-}
-
-
-=pod
-=begin classdoc
-
-Set one name attribute with the given value, search this attribute throw the whole
-class hierarchy, and check attribute validity.
-
-@param name the name of the attribute to set the value
-
-@optional value the value to set
-@optional save a flag to save the object
-
-@return the value set
-
-=end classdoc
-=cut
-
-sub setAttr {
-    my ($self, %args) = @_;
-    my $class = ref($self) or throw Kanopya::Exception::Method();
-
-    General::checkParams(args     => \%args,
-                         required => [ 'name' ],
-                         optional => { 'value' => undef, 'save'  => 0 });
-
-    my ($name, $value) = ($args{name}, $args{value});
-    my $dbix = $self->{_dbix};
-
-    $self->checkAttr(%args);
-    my $attr = $class->getAttrDefs()->{$name};
-
-    # The attr is a virtual attr
-    if (($self->can($args{name}) or $self->can(normalizeMethod($args{name}))) and
-        defined $attr and $attr->{is_virtual}) {
-
-        # Firstly try to call method with camel-case style
-        eval {
-            my $camelcased_method = normalizeMethod($name);
-            $self->$camelcased_method($value);
-        };
-        if ($@ and $self->can($name)) {
-            # If failled with camel-cased, try the original attr name as method
-            $self->$name($value);
-        }
-        return;
-    }
-
-    my $found = 0;
-    while(1) {
-        # Search for attr in this dbix
-        if ($dbix->has_column($name)) {
-            $dbix->set_column($name, $value);
-            $found = 1;
-            last;
-        }
-        elsif($dbix->can('parent')) {
-            # go to parent dbix
-            $dbix = $dbix->parent;
-            next;
-        }
-        else {
-            last;
-        }
-    }
-
-    if (not $found) {
-        $errmsg = ref($self) . " setAttr no attr name $args{name}!";
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-
-    if ($args{save}) {
-        $self->save();
-    }
-#    $self->{_altered} = 1;
-
-    return $value;
-}
-
-
-=pod
-=begin classdoc
-
-Retrieve one instance from an id
-
-@param id the id of the object to get
-
-@return the object instance
-
-=end classdoc
-=cut
-
-sub get {
-    my ($class, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'id' ],
-                                         optional => { 'prefetch' => [ ] });
-
-    return $class->find(hash     => { 'me.' . $class->getPrimaryKey => $args{id} },
-                        prefetch => $args{prefetch},
-                        deep     => 1);
-}
-
-
-=pod
-=begin classdoc
-
-Return the object that matches the criterias
-or creates it if it doesn't exist
-
-@param args the criterias
-
-@return the object found or created
-=cut
-
-sub findOrCreate {
-    my ($class, %args) = @_;
-
-    try {
-        return $class->find(hash => \%args);
-    }
-    catch ($err) {
-        return $class->new(%args);
-    }
 }
 
 
@@ -1147,369 +1715,6 @@ sub getJoinQuery {
              on       => $on,
              accessor => $accessor,
              where    => $where };
-}
-
-
-=pod
-=begin classdoc
-
-Return the entries that match the 'hash' filter. It also accepts more or less
-the same parameters than DBIx 'search' method. It fetches the attributes of
-the whole class hierarchy and returns an object as a BaseDB derived object.
-
-@param hash the keys/values describing the researched objects
-@optional page the number of the requested page among all pages
-          of the object list.
-@optional rows the number of object entry in a page
-@optional order_by the sorting policy for output list
-@optional dataType the output format
-
-@return the matching object list
-
-=end classdoc
-=cut
-
-sub search {
-    my ($class, %args) = @_;
-    my @objs = ();
-
-    General::checkParams(args     => \%args,
-                         optional => { 'hash' => {}, 'page' => undef, 'rows' => undef, 'related' => undef,
-                                       'join' => undef, 'order_by' => undef, 'dataType' => undef,
-                                       'prefetch' => [], 'raw_hash' => {}, 'presets' => {} });
-
-    # Syntax improvement to avoid to call searchRelated
-    if (defined $args{related}) {
-        my $related = delete $args{related};
-        return $class->searchRelated(filters => [ $related ], %args);
-    }
-
-    my $merge = Hash::Merge->new('STORAGE_PRECEDENT');
-
-    my $table = _buildClassNameFromString(join('::', getClassHierarchy($class)));
-
-    # If the table does not match the class, the conrete table does not exists,
-    # so filter on the class type.
-    if ($class =~ m/::/ and $class !~ m/::$table$/) {
-        $args{hash}->{'class_type.class_type'} = $class;
-    }
-
-    my $prefetch = $class->getJoin() || {};
-    $prefetch = $merge->merge($prefetch, $args{join});
-
-    for my $relation (@{ $args{prefetch} }) {
-        my @comps = split(/\./, $relation);
-        while (scalar @comps) {
-            my $join_query = $class->getJoinQuery(comps => \@comps, indepth => 1);
-
-            $prefetch = $merge->merge($prefetch, $join_query->{join});
-            $args{hash} = $merge->merge($args{hash}, $join_query->{where});
-            pop @comps;
-        }
-    }
-
-    my $virtuals = {};
-    my $attrdefs = $class->getAttrDefs();
-
-    FILTER:
-    for my $filter (keys %{ $args{hash} }) {
-        # If the attr is virtual, move the filter to the virtuals hash
-        if ($attrdefs->{$filter}->{is_virtual}) {
-            $virtuals->{$filter} = delete $args{hash}->{$filter};
-            next FILTER;
-        }
-        next FILTER if substr($filter, 0, 3) eq "me.";
-
-        my @comps = split('\.', $filter);
-        my $value = $args{hash}->{$filter};
-
-        if (scalar (@comps) > 1) {
-            my $value = $args{hash}->{$filter};
-            my $attr = pop @comps;
-
-            delete $args{hash}->{$filter};
-
-            my $join_query = $class->getJoinQuery(comps => \@comps);
-            $prefetch = $merge->merge($prefetch, $join_query->{join});
-            $args{hash}->{$comps[-1] . '.' . $attr} = $value;
-            $args{hash} = $merge->merge($args{hash}, $join_query->{where});
-        }
-    }
-
-    my $virtual_order_by;
-    if (defined $args{order_by}) {
-        # TODO: handle multiple order_by
-        my @orders = split(/ /, $args{order_by});
-        $args{order_by} = '';
-
-        ORDER:
-        for my $order (@orders) {
-            if (lc($order) =~ m/asc|desc/) {
-                if (defined $virtual_order_by) {
-                    $virtual_order_by .= ' ' . $order;
-                }
-                else {
-                    $args{order_by} .= ' ' . $order;
-                }
-            }
-            else {
-                if ($attrdefs->{$order}->{is_virtual}) {
-                    $virtual_order_by = $order;
-                }
-                else {
-                    $args{order_by} .= ' ' . $order;
-                }
-            }
-        }
-    }
-
-    $args{hash} = $merge->merge($args{hash}, $args{raw_hash});
-
-    my $rs = $class->_getDbixFromHash('table' => $table,      'hash'     => $args{hash},
-                                      'page'  => $args{page}, 'prefetch' => $prefetch,
-                                      'rows'  => $args{rows}, 'order_by' => $args{order_by},
-                                      'join'  => $args{join});
-
-    # Instanciate Kanopya classes from DBIx result set
-    try {
-        while (my $row = $rs->next) {
-            my $obj = { _dbix => $row };
-
-            my $parent = $row;
-            while ($parent->can('parent')) {
-                $parent = $parent->parent;
-            }
-
-            my $class_type;
-            if ($parent->has_column("class_type_id") and not ($class =~ m/^ClassType.*/)) {
-                $class_type = $class->getClassType(id => $parent->get_column("class_type_id"));
-
-                if (length($class_type) > length($class)) {
-                    requireClass($class_type);
-                    $obj = $class_type->get(id => $parent->get_column("entity_id"));
-                }
-                else {
-                    bless $obj, $class_type;
-                }
-            }
-            else {
-                $class_type = $class;
-                bless $obj, $class_type;
-            }
-
-            push @objs, $obj;
-        }
-    }
-    catch (Kanopya::Exception $err) {
-        $err->rethrow();
-    }
-    catch ($err) {
-        throw Kanopya::Exception::Internal(error => "$err");
-    }
-
-    # Finally filter on virtual attributes if required
-    for my $virtual (keys %{ $virtuals }) {
-        my $op = '=';
-        if (ref($virtuals->{$virtual}) eq "HASH") {
-            map { $op = $_; $virtuals->{$virtual} = $virtuals->{$virtual}->{$_} } keys %{ $virtuals->{$virtual} };
-        }
-        @objs = grep { General::compareScalars(left_op  => $_->$virtual,
-                                               right_op => $virtuals->{$virtual},
-                                               op       => $op) } @objs;
-    }
-
-    # Sort by virtual attribute if required
-    if ($virtual_order_by) {
-        my ($attribute, $order) = split(/ /, $virtual_order_by);
-        if (defined $order and lc($order) eq 'desc') {
-            @objs = sort { $b->$attribute <=> $a->$attribute } @objs;
-        }
-        else {
-            @objs = sort { $a->$attribute <=> $b->$attribute } @objs;
-        }
-    }
-
-    if (defined ($args{dataType}) and $args{dataType} eq "hash") {
-        my $total = (defined $args{page} or defined $args{rows}) ? $rs->pager->total_entries : $rs->count;
-
-        return {
-            page    => $args{page} || 1,
-            pages   => ceil($total / ($args{rows} || ($args{page} ? 10 : 1))),
-            records => scalar @objs,
-            rows    => \@objs,
-            total   => $total,
-        }
-    }
-
-    return wantarray ? @objs : \@objs;
-}
-
-sub searchRelated {
-    my ($self, %args) = @_;
-    my $class = ref ($self) || $self;
-
-    General::checkParams(args     => \%args,
-                         required => [ 'filters' ],
-                         optional => { 'hash' => { } });
-
-    my $join;
-    try {
-        # If the function is called on a class that is only a base class of the
-        # class the relation is on (for example 'virtual_machines' on a Host),
-        # return a more understandable error message
-        $join = $class->getJoinQuery(comps   => $args{filters},
-                                     reverse => 1);
-    }
-    catch ($err) {
-        throw Kanopya::Exception::Internal::NotFound(
-                  error => "Could not find a relation " .
-                           join('.', @{ $args{filters} }) . " on $self"
-              );
-    }
-
-    my $merge = Hash::Merge->new('STORAGE_PRECEDENT');
-    $args{hash} = $merge->merge($args{hash}, $join->{where});
-
-    my $searched_class = classFromDbix($join->{source});
-    requireClass($searched_class);
-
-    my $method = $join->{accessor} eq "single" ? "find" : "search";
-    return $searched_class->$method(%args, raw_hash => { $join->{on} => ref ($self) ? $self->id : $args{id} },
-                                           hash     => $args{hash},
-                                           join     => $join->{join});
-}
-
-
-=pod
-=begin classdoc
-
-Return a single element matching the specified criterias take the same arguments as 'search'.
-
-@return the matching object
-
-=end classdoc
-=cut
-
-sub find {
-    my ($class, %args) = @_;
-
-    General::checkParams(args => \%args, optional => { 'hash' => {}, 'deep' => 0 });
-
-    my @objects = $class->search(%args);
-
-    my $object = shift @objects;
-    if (! defined $object) {
-        throw Kanopya::Exception::Internal::NotFound(
-                  error => "No entry found for " . $class . ", with hash " . Dumper($args{hash})
-              );
-    }
-    return $object;
-}
-
-
-=pod
-=begin classdoc
-
-Return a single element matching the specified criterias take the same arguments as 'searchRelated'.
-
-@return the matching object
-
-=end classdoc
-=cut
-
-sub findRelated {
-    my ($class, %args) = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ 'filters' ],
-                         optional => { 'hash' => { } });
-
-    my @objects = $class->searchRelated(%args);
-
-    my $object = pop @objects;
-    if (! defined $object) {
-        throw Kanopya::Exception::Internal::NotFound(
-                  error => "No entry found for " . $class . ", with hash " . Dumper($args{hash})
-              );
-    }
-    return $object;
-}
-
-
-=pod
-=begin classdoc
-
-Return a single element matching the specified criterias take the same arguments as 'search'.
-
-@return the matching object
-
-=end classdoc
-=cut
-
-sub save {
-    my ($self) = @_;
-    my $dbix = $self->{_dbix};
-
-    my $id;
-    if ( $dbix->in_storage ) {
-        $dbix->update;
-        $self->{_dbix} = $dbix->get_from_storage;
-        while ($dbix->can('parent')) {
-            $dbix = $dbix->parent;
-            $dbix->update;
-        }
-    } else {
-        $errmsg = "$self" . "->save can't be called on a non saved instance! (new has not be called)";
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
-    }
-    return $self;
-}
-
-
-=pod
-=begin classdoc
-
-Remove records from the entire class hierarchy.
-
-@optional trunc a class name with its hierachy, allows to delete
-          a part of the class hierachy only.
-
-=end classdoc
-=cut
-
-sub delete {
-    my ($self, %args) = @_;
-    my $dbix = $self->{_dbix};
-
-    General::checkParams(args => \%args, optional => { 'trunc' => undef });
-
-    if (defined $args{trunc}) {
-        $args{trunc} = _buildClassNameFromString($args{trunc});
-    }
-
-    # Search for first mother table in the hierarchy
-    while(1) {
-        if ($dbix->can('parent')) {
-            my $parentclass = _buildClassNameFromString(ref($dbix->parent));
-
-            if (defined $args{trunc} and $parentclass eq $args{trunc}) {
-                last;
-            }
-
-            # go to parent dbix
-            $dbix = $dbix->parent;
-            next;
-
-        } else { last; }
-    }
-
-    if (defined $args{trunc}) {
-        $self->{_dbix} = $dbix->parent;
-    }
-
-    $dbix->delete;
-
-    return undef;
 }
 
 
@@ -1692,130 +1897,6 @@ sub toJSON {
     return $hash;
 }
 
-
-=pod
-=begin classdoc
-
-Extract relations sub hashes from the hash represeting the object.
-
-@param hash hash representing the object.
-
-@return the original hash containing the relations sub hashes only
-
-=end classdoc
-=cut
-
-sub extractRelations {
-    my ($self, %args) = @_;
-    my $class = ref($self) || $self;
-
-    General::checkParams(args => \%args, required => [ 'hash' ]);
-
-    # Extrating relation from attrs
-    my $relations = {};
-    for my $attr (keys %{$args{hash}}) {
-        if (ref($args{hash}->{$attr}) =~ m/ARRAY|HASH/) {
-            $relations->{$attr} = delete $args{hash}->{$attr};
-        }
-    }
-    return $relations;
-}
-
-
-=pod
-=begin classdoc
-
-Create or update relations. If a relation has the primary key set in this attributes,
-we update the object, create it instead.
-
-@param relations hash containing object relations only
-@param foreign boolean to indicate the relations the create
-       A value of '0' means we need to create the entities that have a foreign key to 'self'
-       A value of '1' means we need to create the entities that 'self' points to
-
-=end classdoc
-=cut
-
-sub populateRelations {
-    my ($self, %args) = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ 'relations' ],
-                         optional => { 'override' => 0, 'foreign' => 1, 'attrs' => undef });
-
-    # For each relations type
-    RELATION:
-    for my $relation (keys %{ $args{relations} }) {
-        my $rel_infos = $self->getRelationship(relation => $relation);
-        if (($args{foreign} == 0 && $rel_infos->{relation} ne "single") ||
-            ($args{override} == 0 && $args{foreign} == 1 && $rel_infos->{relation} eq "single")) {
-            next RELATION;
-        }
-
-        my $relation_class = $rel_infos->{class};
-        my $relation_schema = $rel_infos->{schema};
-        my $key = $rel_infos->{linkfk} || "id";
-
-        # For single relations, create or update the related instance
-        if (defined $rel_infos->{relation} && $rel_infos->{relation} eq "single") {
-            my $entry = $args{relations}->{$relation};
-            if (ref($self) && $self->$relation) {
-                # We have the relation id, it is a relation update
-                $self->$relation->update(%$entry, override => $args{override});
-            }
-            else {
-                # Id do not exists, it is a relation creation
-                my $obj = $relation_class->create(%$entry);
-                $args{attrs}->{$obj->getPrimaryKey} = $obj->id;
-            }
-        }
-        # For multi relations, create/update/remove the related instances in funtion
-        # of existing entries.
-        else {
-            my $existing = {};
-            my @entries = $self->searchRelated(filters => [ $relation ]);
-            %$existing = map { $_->$key => $_ } @entries;
-
-            # Create/update all entries
-            for my $entry (@{ $args{relations}->{$relation} }) {
-                if (defined $rel_infos->{relation} && $rel_infos->{relation} eq 'single_multi') {
-                    my $id = delete $entry->{@{$relation_schema->_primaries}[0]};
-                    if ($id) {
-                        # We have the relation id, it is a relation update
-                        $relation_class->get(id => $id)->update(%$entry);
-                        delete $existing->{$id};
-                    }
-                    else {
-                        # Create the new relationships
-                        $entry->{$rel_infos->{fk}} = $self->id;
-                        # Id do not exists, it is a relation creation
-                        $relation_class->create(%$entry);
-                    }
-                }
-                elsif (defined $rel_infos->{relation} && $rel_infos->{relation} eq 'multi') {
-                    # If instances are given in parameters instead of ids, use the ids
-                    if (ref($entry)) {
-                        $entry = $entry->id;
-                    }
-
-                    my $exists = delete $existing->{$entry};
-                    if (not $exists) {
-                        # Create entries in the link table
-                        $relation_class->create($rel_infos->{fk}     => $self->id,
-                                                $rel_infos->{linkfk} => $entry);
-                    }
-                }
-            }
-
-            # Finally delete remaining entries
-            if ($args{override}) {
-                for my $remaning (values %$existing) {
-                    $remaning->remove();
-                }
-            }
-        }
-    }
-}
 
 sub getRelationship {
     my ($self, %args) = @_;
@@ -2391,6 +2472,26 @@ sub requireClass {
 =pod
 =begin classdoc
 
+Default label management
+Label is the value of the attr returned by getLabelAttr() or the object id
+Subclass can redefined this method to return specific label
+
+@return the label string for this object
+
+=end classdoc
+=cut
+
+sub label {
+    my $self = shift;
+
+    my $label = $self->getLabelAttr();
+    return $label ? $self->$label : $self->id;
+}
+
+
+=pod
+=begin classdoc
+
 Method used during cloning and import process of object linked to another object (belongs_to relationship)
 Clone this object and link the clone to the specified related object
 Only clone if object doesn't alredy exist in destination object (based on label_attr_name arg)
@@ -2486,72 +2587,6 @@ sub _cloneFormula {
 =pod
 =begin classdoc
 
-Start a transction on the ORM.
-
-=end classdoc
-=cut
-
-sub beginTransaction {
-    my $self = shift;
-
-    $log->debug("Beginning database transaction");
-    $self->_adm->{schema}->txn_begin;
-}
-
-
-=pod
-=begin classdoc
-
-Commit a transaction according the database configuration.
-
-=end classdoc
-=cut
-
-sub commitTransaction {
-    my $self = shift;
-    my $counter = 0;
-    my $commited = 0;
-
-    COMMIT:
-    while ($counter++ < $self->_adm->{config}->{dbconf}->{txn_commit_retry}) {
-        try {
-            $log->debug("Committing transaction to database");
-
-            $self->_adm->{schema}->txn_commit;
-            last COMMIT;
-        }
-        catch ($err) {
-            $log->error("Transaction commit failed: $err");
-        }
-        if ($commited) { last COMMIT; }
-    }
-}
-
-
-=pod
-=begin classdoc
-
-Rollback (cancel) an openned transaction.
-
-=end classdoc
-=cut
-
-sub rollbackTransaction {
-    my $self = shift;
-
-    $log->debug("Rollbacking database transaction");
-    try {
-        $self->_adm->{schema}->txn_rollback;
-    }
-    catch ($err) {
-        $log->warn($err);
-    }
-}
-
-
-=pod
-=begin classdoc
-
 Return the delegatee entity on which the permissions must be checked.
 By default, permissions are checked on the entity itself.
 
@@ -2587,7 +2622,8 @@ sub getDelegateeAttr {
     my $class = ref($self) || $self;
 
     my $attrs = $class->getAttrDefs();
-    my @delegatees = grep { defined $attrs->{$_}->{is_delegatee} && $attrs->{$_}->{is_delegatee} == 1 } keys %{ $attrs };
+    my @delegatees = grep { defined $attrs->{$_}->{is_delegatee} && $attrs->{$_}->{is_delegatee} == 1 }
+                         keys %{ $attrs };
 
     return (scalar(@delegatees) > 0) ? pop @delegatees : undef;
 }
@@ -2771,36 +2807,6 @@ sub _buildPermissionDeniedErrorMessage {
 =pod
 =begin classdoc
 
-Authenticate the user on the permissions management system.
-
-=end classdoc
-=cut
-
-sub authenticate {
-    my $class = shift;
-    my %args  = @_;
-
-    General::checkParams(args => \%args, required => [ 'login', 'password' ]);
-
-    my $user_data = BaseDB->_adm(no_user_check => 1)->{schema}->resultset('User')->search({
-                        user_login    => $args{login},
-                        user_password => General::cryptPassword(password => $args{password}),
-                    })->single;
-
-    if(not defined $user_data) {
-        $errmsg = "Authentication failed for login " . $args{login};
-        throw Kanopya::Exception::AuthenticationFailed(error => $errmsg);
-    }
-    else {
-        $log->debug("Authentication succeed for login " . $args{login});
-        $ENV{EID} = $user_data->id;
-    }
-}
-
-
-=pod
-=begin classdoc
-
 Return the $adm instance if defined, instanciate it instead.
 The $adm singleton contains the database schema to proccess
 queries, the loaded configuration and the current user informations.
@@ -2908,6 +2914,23 @@ sub _connectdb {
 =pod
 =begin classdoc
 
+Update the PERL5LIB by adding additional components paths.
+
+=end classdoc
+=cut
+
+sub _load_components {
+    my ($self, @args) = @_;
+
+    for my $component (glob(Kanopya::Config::getKanopyaDir . "/lib/component/*")) {
+        push @INC, $component;
+    }
+}
+
+
+=pod
+=begin classdoc
+
 We define an AUTOLOAD to mimic the DBIx behaviour, it simply calls 'getAttr'
 that returns the specified attribute or the relation blessed to a BaseDB object.
 
@@ -2952,6 +2975,12 @@ sub DESTROY {
 #        my $err = $@;
 #        $log->debug("Unable to save <$self> at destroy: $err");
 #    }
+}
+
+
+# Update the PERL5LIB for components
+BEGIN {
+    _load_components();
 }
 
 1;

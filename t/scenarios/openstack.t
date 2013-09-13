@@ -23,8 +23,8 @@ Log::Log4perl->easy_init({
 use BaseDB;
 use NetconfVlan;
 use Entity::Vlan;
-use Entity::Component::Lvm2::Lvm2Vg;
-use Entity::Component::Lvm2::Lvm2Pv;
+use Lvm2Vg;
+use Lvm2Pv;
 
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::Register;
@@ -139,14 +139,14 @@ sub main {
         nova_controller_id => $nova_controller->id
     });
 
-    my $vg = Entity::Component::Lvm2::Lvm2Vg->new(
+    my $vg = Lvm2Vg->new(
         lvm2_id           => $lvm->id,
         lvm2_vg_name      => "cinder-volumes",
         lvm2_vg_freespace => 0,
         lvm2_vg_size      => 10 * 1024 * 1024 * 1024
     );
 
-    my $pv = Entity::Component::Lvm2::Lvm2Pv->new(
+    my $pv = Lvm2Pv->new(
         lvm2_vg_id   => $vg->id,
         lvm2_pv_name => "/dev/sda"
     );

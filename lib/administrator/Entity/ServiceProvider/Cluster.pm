@@ -524,8 +524,7 @@ sub configureInterfaces {
         $interface->{netconf_interfaces} = \@netconfs;
         $interface->{bonds_number} = $interface->{bonds_number} ? $interface->{bonds_number} : 0;
     }
-
-    $self->populateRelations(relations => { interfaces => \@interfaces }, override => 1);
+    $self->update(interfaces => \@interfaces);
 }
 
 sub configureBillingLimits {
@@ -535,7 +534,7 @@ sub configureBillingLimits {
 
     if (defined $args{billing_limits}) {
         my @limits = values %{ $args{billing_limits} };
-        $self->populateRelations(relations => { billinglimits => \@limits }, override => 1);
+        $self->update(billinglimits => \@limits);
 
         my @indicators = qw(Memory Cores);
         foreach my $name (@indicators) {

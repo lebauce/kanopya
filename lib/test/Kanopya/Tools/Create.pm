@@ -128,7 +128,7 @@ sub createCluster {
 
     diag('Retrieve iSCSI portals');
     my @iscsi_portal_ids;
-    for my $portal (Entity::Component::Iscsi::IscsiPortal->search(hash => { iscsi_id => $export_manager->id })) {
+    for my $portal (IscsiPortal->search(hash => { iscsi_id => $export_manager->id })) {
         push @iscsi_portal_ids, $portal->id;
     }
 

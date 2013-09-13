@@ -79,7 +79,7 @@ genConf();
 
 #init PERL5LIB
 print "- Initialazing PERL5LIB\n";
-my $cmd = qq[setx PERL5LIB "$kanopya_dir\\kanopya\\lib\\common;$kanopya_dir\\kanopya\\lib\\administrator;$kanopya_dir\\kanopya\\lib\\executor;$kanopya_dir\\kanopya\\lib\\monitor;$kanopya_dir\\kanopya\\lib\\orchestrator;$kanopya_dir\\kanopya\\lib\\external;$kanopya_dir\\kanopya\\lib\\external\\NetApp;$kanopya_dir\\kanopya\\lib\\component\\kanopya_front;$kanopya_dir\\kanopya\\lib\\component\\kanopya_executor;$kanopya_dir\\kanopya\\lib\\component\\kanopya_aggregator;$kanopya_dir\\kanopya\\lib\\component\\kanopya_rulesengine"];
+my $cmd = qq[setx PERL5LIB "$kanopya_dir\\kanopya\\lib\\common;$kanopya_dir\\kanopya\\lib\\administrator;$kanopya_dir\\kanopya\\lib\\executor;$kanopya_dir\\kanopya\\lib\\monitor;$kanopya_dir\\kanopya\\lib\\orchestrator;$kanopya_dir\\kanopya\\lib\\external;$kanopya_dir\\kanopya\\lib\\external\\NetApp"];
 
 my $exec = `$cmd 2>&1`;
 `powershell New-EventLog Application -Source KanopyaAggregator`;
@@ -94,11 +94,7 @@ push @INC, ("$kanopya_dir" . 'kanopya\lib\common',
             "$kanopya_dir" . 'kanopya\lib\monitor',
             "$kanopya_dir" . 'kanopya\lib\orchestrator',
             "$kanopya_dir" . 'kanopya\lib\external',
-            "$kanopya_dir" . 'kanopya\lib\external\NetApp',
-            "$kanopya_dir" . 'kanopya\lib\component\kanopya_front',
-            "$kanopya_dir" . 'kanopya\lib\component\kanopya_executor',
-            "$kanopya_dir" . 'kanopya\lib\component\kanopya_aggregator',
-            "$kanopya_dir" . 'kanopya\lib\component\kanopya_rulesengine');
+            "$kanopya_dir" . 'kanopya\lib\external\NetApp');
 
 ######################
 #Directories Creation#

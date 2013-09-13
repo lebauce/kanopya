@@ -22,7 +22,7 @@ use BaseDB;
 use General;
 use Entity::Host;
 use Entity::Policy::HostingPolicy;
-use Entity::Component::Lvm2::Lvm2Vg;
+use Lvm2Vg;
 use Entity::Component::Physicalhoster0;
 
 BaseDB->authenticate(login => 'admin', password => 'K4n0pY4');
@@ -37,24 +37,14 @@ sub main {
     # Search on component inner classes
 
     lives_ok {
-        for my $innnerclass (Entity::Component::Lvm2::Lvm2Vg->search()) {
-            if (not $innnerclass->isa("Entity::Component::Lvm2::Lvm2Vg")) {
+        for my $innnerclass (Lvm2Vg->search()) {
+            if (not $innnerclass->isa("Lvm2Vg")) {
                throw Kanopya::Exception::Internal(
-                         error => "Search on component inner class Entity::Component::Lvm2::Lvm2Vg return wrong object type $innnerclass"
+                         error => "Search on component inner class Lvm2Vg return wrong object type $innnerclass"
                      );
             }
         }
     } 'Search on component inner classes';
-
-    lives_ok {
-        for my $hostingpolicy (Entity::Policy::HostingPolicy->search()) {
-            if (not $hostingpolicy->isa("Entity::Policy::HostingPolicy")) {
-               throw Kanopya::Exception::Internal(
-                         error => "Search on concrete policy return wrong policy type $hostingpolicy"
-                     );
-            }
-        }
-    } 'Search on concrete classes without tables';
 
     # Search on concrete classes without tables
 

@@ -53,9 +53,9 @@ use Entity::Repository;
 use Ip;
 use Node;
 use ServiceProviderManager;
-use Entity::Component::Lvm2::Lvm2Vg;
-use Entity::Component::Lvm2::Lvm2Pv;
-use Entity::Component::Lvm2::Lvm2Lv;
+use Lvm2Vg;
+use Lvm2Pv;
+use Lvm2Lv;
 use Scope;
 use ScopeParameter;
 use Entity::Component::Lvm2;
@@ -140,12 +140,8 @@ my @classes = (
     'Entity::Component::Apache2',
     'Entity::Component::Tftpd',
     'Entity::Component::Dhcpd3',
-    'Entity::Component::Dhcpd3::Dhcpd3Host',
-    'Entity::Component::Dhcpd3::Dhcpd3Subnet',
     'Entity::Component::Haproxy1',
-    'Entity::Component::Haproxy1::Haproxy1Listen',
     'Entity::Component::Keepalived1',
-    'Entity::Component::Keepalived1::Keepalived1Vrrpinstance',
     'Entity::Component::Memcached1',
     'Entity::Component::Linux',
     'Entity::Component::Mysql5',
@@ -171,13 +167,6 @@ my @classes = (
     'Entity::Repository::Opennebula3Repository',
     'Entity::Repository::Vsphere5Repository',
     'Entity::Component::Physicalhoster0',
-    'Entity::Component::Apache2::Apache2Virtualhost',
-    'Entity::Component::Linux::LinuxMount',
-    'Entity::Component::Lvm2::Lvm2Vg',
-    'Entity::Component::Lvm2::Lvm2Pv',
-    'Entity::Component::Lvm2::Lvm2Lv',
-    'Entity::Component::Vsphere5::Vsphere5Datacenter',
-    'Entity::Component::Iscsi::IscsiPortal',
     'Entity::Component::Vmm',
     'Entity::Component::Vmm::Kvm',
     'Entity::Component::Vmm::Xen',
@@ -1735,7 +1724,7 @@ sub registerKanopyaMaster {
         service_provider_id => $admin_cluster->id
     );
 
-    my $vg = Entity::Component::Lvm2::Lvm2Vg->new(
+    my $vg = Lvm2Vg->new(
         lvm2_id           => $lvm->id,
         lvm2_vg_name      => $args{kanopya_vg_name},
         lvm2_vg_freespace => $args{kanopya_vg_free_space},
@@ -1743,13 +1732,13 @@ sub registerKanopyaMaster {
     );
 
     for my $pv (@{$args{kanopya_pvs}}) {
-        Entity::Component::Lvm2::Lvm2Pv->new(
+        Lvm2Pv->new(
             lvm2_vg_id   => $vg->id,
             lvm2_pv_name => $pv
         );
     }
 
-    Entity::Component::Dhcpd3::Dhcpd3Subnet->new(
+    Dhcpd3Subnet->new(
         dhcpd3_id  => $dhcp->id,
         network_id => $admin_network->id
     );
