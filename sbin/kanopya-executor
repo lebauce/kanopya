@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
-# kanopya-executor - This is the main script to run Kanopya Executor server.
 
+#    kanopya-executor - This is the main script to run Kanopya Executor server.
+#
 #    Copyright © 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -15,64 +16,31 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
-
-=head1 NAME
-
-kanopya-executor - kanopya-executor Server
-
-=head1 SYNOPSIS
-
-    $ ./kanopya-executor
-
-=head1 DESCRIPTION
-
-Executor is the main script to run microCluster Executor server.
-
-=head1 METHODS
-
-=cut
-
-
 use strict;
 use warnings;
 
 use Executor;
-use AnyEvent;
-
 use Kanopya::Config;
+
+use Getopt::Std;
 use Log::Log4perl 'get_logger';
 
 my $dir = Kanopya::Config::getKanopyaDir();
 Log::Log4perl->init($dir . '/conf/executor-log.conf');
 my $log = get_logger("");
 
-# Instantiate a condition variable to stop the service
-my $condvar = AnyEvent->condvar;
-
-sub signalHandler {
-    my ($sig) = @_;
-    $log->debug($sig." signal recieved : exiting main loop");
-
-    # Interrupt the daemon event loop
-    $condvar->croak("Service stopped.");
+sub print_usage {
+    print "Usage: kanopya-executor\n";
+    print "       kanopya-executor [-b|--background] [-p pidfile]\n";
+    exit(1);
 }
 
-$SIG{TERM} = \&signalHandler;
+my %opts = ();
+getopts("bp:", \%opts) or print_usage;
 
-
-eval {
-    my $exec = Executor->new();
-    $log->info("Entering main loop");
-
-    # enter in the main loop and continue while $$running is true
-    $exec->run(condvar => $condvar);
-};
-if($@) {
-    my $err = $@;
-    $log->error("$err");
-    die("$err");
-}
+my $executor = Executor->new();
+$executor->run(name       => "kanopya-executor",
+               daemonize  => $opts{b},
+               pidfile    => $opts{p});
 
 $log->warn("kanopya-executor stopped");

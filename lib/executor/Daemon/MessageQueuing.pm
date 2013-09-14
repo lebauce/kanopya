@@ -239,17 +239,11 @@ Override the parent method, create a child process for each registration on chan
 =end classdoc
 =cut
 
-sub run {
+sub runLoop {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
                          optional => { 'condvar' => AnyEvent->condvar });
-
-    Message->send(
-        from    => $self->{name},
-        level   => 'info',
-        content => "Kanopya $self->{name} started."
-    );
 
     # Disconnect possibly connected session, as we must do
     # the connection inside the childs created for each channel.
@@ -265,12 +259,6 @@ sub run {
     if ($self->connected) {
         $self->disconnect();
     }
-
-    Message->send(
-        from    => $self->{name},
-        level   => 'warning',
-        content => "Kanopya $self->{name} stopped"
-    );
 }
 
 
