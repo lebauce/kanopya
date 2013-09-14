@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
-# kanopya-collector.pl - This is the main script to run kanopya monitoring data collect.
 
+#    kanopya-collector.pl - This is the main script to run kanopya monitoring data collect.
+#
 #    Copyright © 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -18,74 +19,32 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 14 july 2010
 
-=head1 NAME
-
-kanopya-collector - Collector
-
-=head1 SYNOPSIS	    
-
-	$ ./kanopya-collector
-
-=head1 DESCRIPTION
-
-Collector is the main script to run monitoring data collection.
-Collector dynamically gather informations about clustered nodes and aggregates data for each cluster.
-
-=head1 METHODS
-
-=cut
-
 use strict;
 use warnings;
+
 use Collector;
 use Kanopya::Config;
-use Log::Log4perl "get_logger";
+
+use Getopt::Std;
 use Error qw(:try);
+use Log::Log4perl "get_logger";
 
 my $dir = Kanopya::Config::getKanopyaDir();
 Log::Log4perl->init($dir . '/conf/collector-log.conf');
 my $log = get_logger("");
 
-
-my $running = 1;
-
-sub signalHandler {
-	my $sig = shift;
-	$log->info($sig." received : stopping main loop");
-	$running = 0;
+sub print_usage {
+    print "Usage: kanopya-collector\n";
+    print "       kanopya-collector [-b|--background] [-p pidfile]\n";
+    exit(1);
 }
 
-#sub segfaultHandler {
-#	use Devel::StackTrace;
-#  	my $trace = Devel::StackTrace->new;
-#	$log->error("SEGFAULT");
-#	$log->debug( $trace->as_string );
-#	$running = 0;
-#}
+my %opts = ();
+getopts("bp:", \%opts) or print_usage;
 
-$SIG{TERM} = \&signalHandler;
-#$SIG{SEGV} = \&segfaultHandler;
+my $collector = Collector->new();
+$collector->run(name       => "kanopya-collector",
+                daemonize  => $opts{b},
+                pidfile    => $opts{p});
 
-eval	{
-	my $collector = Collector->new();
-	$log->info("Starting main loop");
-	# enter in the main loop and continue while $$running is true
-	$collector->run(\$running);
-};
-if ($@) {
-	my $ex = $@;
-	$log->error("error in collector instanciation: $ex");
-	die "Catch error in Monitoring::Collector instanciation: $ex";
-};
-
-$log->info("kanopya-collector end.");
-
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut
+$log->info("kanopya-collector stopped");

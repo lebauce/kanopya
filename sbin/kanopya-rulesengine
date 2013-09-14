@@ -1,7 +1,8 @@
 #!/usr/bin/perl -w
-# kanopya-rulesengine.pl - This is the main script to run kanopya orchestration rules engine.
 
-#    Copyright © 2013 Hedera Technology SAS
+#    kanopya-rulesengine - Main script to run kanopya orchestration rules engine.
+#
+#    Copyright © 2011 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,69 +16,31 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 04 March 2013
-
-=head1 NAME
-
-kanopya-rulesengine - Rules Engine
-
-=head1 SYNOPSIS
-
-	$ ./kanopya-rulesengine
-
-=head1 DESCRIPTION
-
-rulesengine is the main script to run Kanopya rules engine.
-Rules Engine evaluate rules and apply associated workflow.
-
-=head1 METHODS
-
-=cut
-
 use strict;
 use warnings;
 
-use General;
 use RulesEngine;
 use Kanopya::Config;
-use Log::Log4perl "get_logger";
+
+use Getopt::Std;
+use Log::Log4perl 'get_logger';
 
 my $dir = Kanopya::Config::getKanopyaDir();
 Log::Log4perl->init($dir . '/conf/rulesengine-log.conf');
 my $log = get_logger("");
 
-
-my $running = 1;
-
-sub signalHandler {
-	my $sig = shift;
-	$log->info($sig." received : stopping main loop");
-	$running = 0;
+sub print_usage {
+    print "Usage: kanopya-rulesengine\n";
+    print "       kanopya-rulesengine [-b|--background] [-p pidfile]\n";
+    exit(1);
 }
 
-$SIG{TERM} = \&signalHandler;
+my %opts = ();
+getopts("bp:", \%opts) or print_usage;
 
-eval {
-    my $rulesengine = RulesEngine->new();
+my $rules_engine = RulesEngine->new();
+$rules_engine->run(name       => "kanopya-rulesengine",
+                   daemonize  => $opts{b},
+                   pidfile    => $opts{p});
 
-    # enter in the main loop and continue while $$running is true
-    $rulesengine->run(\$running);
-};
-if ($@) {
-	my $ex = $@;
-	$log->error("error in rulesengine instanciation: $ex");
-	die "Catch error in rulesengine instanciation: $ex";
-};
-
-$log->info("kanopya-rulesengine end.");
-
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut
+$log->warn("kanopya-rulesengine stopped");
