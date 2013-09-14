@@ -32,14 +32,16 @@ package Daemon;
 use strict;
 use warnings;
 
+use POSIX qw(setsid);
+use File::Pid;
+use AnyEvent;
+
 use Kanopya::Exceptions;
 use Kanopya::Config;
 
 use Message;
 use EEntity;
 use Entity::Host;
-
-use Data::Dumper;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -71,6 +73,9 @@ sub new {
 
     my $self = { name => $args{name}, component => undef };
     bless $self, $class;
+
+    # Instantiate a condition variable to stop the service
+    $self->{condvar} = AnyEvent->condvar;
 
     # Get the authentication configuration
     $self->{config} = defined $args{confkey} ? Kanopya::Config::get($args{confkey}) : $args{config};
@@ -104,7 +109,33 @@ Base method to run the daemon.
 =cut
 
 sub run {
-    my ($self, $running) = @_;
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         optional => { 'daemonize' => 0,
+                                       'pidfile' => undef });
+
+    $SIG{TERM} = $SIG{HUP} = $SIG{INT} = $SIG{QUIT} = sub {
+        my ($sig) = @_;
+        $log->debug($sig . " signal received : exiting main loop");
+
+        # Interrupt the daemon event loop
+        $self->{condvar}->croak("Service stopped.");
+
+        $log->debug("Service stopped");
+    };
+
+    if ($args{daemonize}) {
+        $self->daemonize(%args);
+    }
+
+    my $pidfile;
+    if ($args{pidfile}) {
+        $pidfile = File::Pid->new( { file => $args{pidfile} } );
+        die("$args{name} is already running") if $pidfile->running;
+
+        $pidfile->write;
+    }
 
     Message->send(
         from    => $self->{name},
@@ -112,9 +143,19 @@ sub run {
         content => "Kanopya $self->{name} started."
     );
 
-    while ($$running) {
-        $self->execnround(run => 1);
+    eval {
+        $log->info("Entering main loop");
+
+        # execute the daemon main loop
+        $self->runLoop(condvar => $self->{condvar});
+    };
+    if ($@) {
+        my $err = $@;
+        $log->error("$err");
+        die("$err");
     }
+
+    $pidfile->remove if $args{pidfile};
 
     Message->send(
         from    => $self->{name},
@@ -123,6 +164,19 @@ sub run {
     );
 }
 
+=pod
+=begin classdoc
+
+=end classdoc
+=cut
+
+sub runLoop {
+    my $self = shift;
+
+    while (! $self->{condvar}->ready) {
+        $self->execnround(run => 1);
+    }
+}
 
 =pod
 =begin classdoc
@@ -184,6 +238,33 @@ sub refreshConfiguration {
     }
 }
 
+=pod
+=begin
+
+Daemonize the current process
+
+=end classdoc
+=cut
+
+sub daemonize {
+    my ($self, %args) = @_;
+
+    $log->info("Daemonizing process");
+
+    chdir '/';
+    umask 0;
+
+    open STDIN,  '/dev/null'   or die "Can't read /dev/null: $!";
+    open STDOUT, '>>/dev/null' or die "Can't write to /dev/null: $!";
+    open STDERR, '>>/dev/null' or die "Can't write to /dev/null: $!";
+
+    defined (my $pid = fork) or die "Can't fork: $!";
+    exit if $pid;
+
+    # dissociate this process from the controlling terminal that started it and stop being part
+    # of whatever process group this process was a part of.
+    POSIX::setsid() or die "Can't start a new session.";
+}
 
 =pod
 =begin classdoc
