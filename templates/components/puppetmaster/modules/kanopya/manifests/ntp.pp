@@ -2,16 +2,15 @@ class kanopya::ntp::server {
     $servers = [ "ntp.pool.org", "ntp.lip6.fr", "ntp.ubuntu.com" ]
 
     class { '::ntp':
-        ensure   => running,
-        servers  => $servers,
-        restrict => false
+        service_ensure => running,
+        servers        => $servers,
     }
 }
 
 class kanopya::ntp::ntpdate($server) {
     class { '::ntp':
-        ensure     => stopped,
-        servers    => [ $server ],
+        service_ensure => stopped,
+        servers        => [ $server ],
     }
 
     exec { "ntpdate -b -u ${server}":
