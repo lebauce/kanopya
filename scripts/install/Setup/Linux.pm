@@ -777,7 +777,7 @@ sub _configure_puppetmaster {
     }
 
     my $data = {
-        kanopya_puppet_modules => '/templates/components/puppetmaster/modules',
+        kanopya_puppet_modules => '/opt/kanopya/templates/components/puppetmaster/modules',
         admin_domainname       => $self->{parameters_values}->{domainname},
         clusters_directory     => $path,
         kanopya_hostname       => $self->{parameters_values}->{hostname},
