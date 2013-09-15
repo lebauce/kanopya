@@ -18,7 +18,7 @@ class kanopya::rabbitmq ($disk_nodes, $cookie) {
         erlang_cookie            => $cookie,
         require                  => Class["$rabbitmq_repo"],
         package_name             => $operatingsystem ? {
-            /(?i)(centos|redhat|fedora)/ => 'rabbitmq-server.noarch',
+            /(?i)(centos|redhat|fedora)/ => 'rabbitmq-server',
             default                      => 'rabbitmq-server'
         }
     }
