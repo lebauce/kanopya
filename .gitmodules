@@ -58,6 +58,7 @@
 [submodule "templates/components/puppetmaster/modules/rabbitmq"]
 	path = templates/components/puppetmaster/modules/rabbitmq
 	url = https://github.com/puppetlabs/puppetlabs-rabbitmq.git
+	branch = 2.x
 [submodule "templates/components/puppetmaster/modules/stdlib"]
 	path = templates/components/puppetmaster/modules/stdlib
 	url = https://github.com/puppetlabs/puppetlabs-stdlib.git
