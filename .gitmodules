@@ -84,3 +84,6 @@
 [submodule "templates/components/puppetmaster/modules/xinetd"]
 	path = templates/components/puppetmaster/modules/xinetd
 	url = https://github.com/puppetlabs/puppetlabs-xinetd
+[submodule "templates/components/puppetmaster/modules/concat"]
+	path = templates/components/puppetmaster/modules/concat
+	url = https://github.com/puppetlabs/puppetlabs-concat.git
