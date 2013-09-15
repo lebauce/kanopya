@@ -126,6 +126,10 @@ class kanopya::mysql($config_hash, $galera) inherits kanopya::mysql::params {
         ensure  => installed,
         require => Package['mysql-server']
     }
+    class { '::mysql':
+        client_package_name => $kanopya::mysql::params::mysql_client_package_name,
+        require      => Package['mysql-server']
+    }
     class { '::mysql::server':
         service_name     => 'mysql',
         service_provider => $kanopya::mysql::params::mysql_service_provider,
@@ -137,10 +141,6 @@ class kanopya::mysql($config_hash, $galera) inherits kanopya::mysql::params {
     Database_grant <<| tag == "${fqdn}" |>>
     class { 'kanopya::mysql::galera':
         galera       => $galera
-    }
-    class { '::mysql':
-        package_name => $kanopya::mysql::params::mysql_client_package_name,
-        require      => Package['mysql-server']
     }
 }
 
