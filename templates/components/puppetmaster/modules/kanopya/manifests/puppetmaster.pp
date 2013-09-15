@@ -14,6 +14,20 @@ class kanopya::puppetmaster::repository {
                                 Package['puppetdb-terminus'] ]
             }
         }
+        /(?i)(centos|redhat)/ : {
+            yumrepo { 'puppetlabs-products':
+                baseurl  => 'http://yum.puppetlabs.com/el/$releasever/products/$basearch/',
+                enabled  => '1',
+                gpgcheck => '1',
+                gpgkey   => 'http://yum.puppetlabs.com/RPM-GPG-KEY-puppetlabs',
+            }
+            yumrepo { 'puppetlabs-deps':
+                baseurl  => 'http://yum.puppetlabs.com/el/$releasever/dependencies/$basearch/',
+                enabled  => '1',
+                gpgcheck => '1',
+                gpgkey   => 'http://yum.puppetlabs.com/RPM-GPG-KEY-puppetlabs',
+            }
+        }
         default : {
             fail("Unsupported operatingsystem : ${operatingsystem}. Only Debian, Ubuntu and Debian are supported")
         }
@@ -27,7 +41,7 @@ class kanopya::puppetmaster::install {
             default => 'puppetmaster'
         },
         ensure => present,
-        require => Apt::Source['puppetlabs'],
+        require => Class["kanopya::puppetmaster::repository"],
     }
 
     class { 'puppetdb':
