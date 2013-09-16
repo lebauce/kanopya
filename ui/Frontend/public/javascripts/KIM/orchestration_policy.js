@@ -89,10 +89,9 @@ function load_orchestration_policy_details(policy, grid_id) {
     $.get(
             '/api/orchestrationpolicy/' + policy.pk + '?expand=param_preset',
             function (data) {
-                var params = JSON.parse(data.param_preset.params);
                 var sp_id;
-                if (params.orchestration && params.orchestration.service_provider_id) {
-                    sp_id = params.orchestration.service_provider_id;
+                if (data.orchestration && data.orchestration.service_provider_id) {
+                    sp_id = data.orchestration.service_provider_id;
                 } else {
                     // default orchestration policy is not linked to a sp, so we create it
                     sp_id = createPolicyServiceProvider();
