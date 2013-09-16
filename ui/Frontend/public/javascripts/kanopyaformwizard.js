@@ -1340,7 +1340,7 @@ var KanopyaFormWizard = (function() {
 
         // Add validation rules for inputs inserted dynamically in the form.
         var _this = this;
-        $(this.form).find(':input').each(function () {
+        $(this.form).find(':input:not(.wizard-ignore)').each(function () {
             var rules = $(this).rules();
             for (var rule in _this.validateRules[$(this).attr('name')]) {
                 if (rules[rule] === undefined) {
