@@ -1608,9 +1608,6 @@ sub registerKanopyaMaster {
             }
         },
         {
-            name => "Openiscsi"
-        },
-        {
             name => "Mysql"
         },
         {
