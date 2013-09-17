@@ -61,7 +61,7 @@ Final constraints are intersection of input constraints and cluster components c
 =cut
 
 sub getHost {
-    my ($self, %args) = @_;
+    my ($class, %args) = @_;
 
     General::checkParams(args => \%args, required => [ "cluster" ]);
 
@@ -165,8 +165,7 @@ sub getHost {
     }
 
     # Construct the constraint json object
-    my $tags             = defined( $host_params->{tags} ) ? $host_params->{tags} : [];
-    my $min_disks_number = $host_params->{deploy_on_disk} ? 1 : 0;
+
     my $json_constraints = {
         cpu      => {
             nbCoresMin         => $host_params->{core},
@@ -178,9 +177,10 @@ sub getHost {
             interfaces         => \@json_interfaces,
         },
         storage  => {
-            hardDisksNumberMin => $min_disks_number,
+            hardDisksNumberMin => $host_params->{deploy_on_disk} ? 1 : 0,
         },
-        tagsMin  => $tags,
+        tagsMin  => defined( $host_params->{tags} ) ? $host_params->{tags} : [],
+        noTags   => defined( $host_params->{no_tags} ) ? $host_params->{no_tags} : [],
     };
 
     $log->debug('HostSelector : Creating JSON temp files');
@@ -197,9 +197,11 @@ sub getHost {
     my $constraints_json = JSON->new->utf8->encode($json_constraints);
     print $constraints_file $constraints_json;
 
+    $log->debug($constraints_json);
+
     my $jar = Kanopya::Config->getKanopyaDir() . JAR_DIR . JAR_NAME;
 
-    $log->debug('HostSelector : Calling the Jar');
+    $log->debug('HostSelector : Calling the Jar:');
 
     my $econtext = EContext::Local->new();
     my $command  = "java -jar $jar $infra_filename $constraints_filename $result_filename";
@@ -207,7 +209,7 @@ sub getHost {
     if ($result->{stderr} and ($result->{exitcode} != 0)) {
         throw Kanopya::Exception(error => $result->{stderr});
     }
-
+    $log->debug($command);
     $log->debug('HostSelector : Retrieving the result and unlink the files');
 
     my $import;

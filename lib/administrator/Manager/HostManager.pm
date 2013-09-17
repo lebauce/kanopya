@@ -49,16 +49,20 @@ sub getHostManagerParams {
 
     my $definition = $self->getManagerParamsDef();
     $definition->{tags}->{options} = {};
+    $definition->{no_tags}->{options} = {};
 
     my @tags = Entity::Tag->search();
     for my $tag (@tags) {
         $definition->{tags}->{options}->{$tag->id} = $tag->tag;
+        $definition->{no_tags}->{options}->{$tag->id} = $tag->tag;
     }
 
     return {
-        cpu  => $definition->{cpu},
-        ram  => $definition->{ram},
-        tags => $definition->{tags},
+        cpu     => $definition->{cpu},
+        ram     => $definition->{ram},
+        tags    => $definition->{tags},
+	no_tags => $definition->{no_tags},
+
     };
 }
 
@@ -97,7 +101,13 @@ sub getManagerParamsDef {
             is_mandatory => 1
         },
         tags => {
-            label        => 'Tags',
+            label        => 'Mandatory Tags',
+            type         => 'enum',
+            relation     => 'multi',
+            is_mandatory => 0,
+        },
+        no_tags => {
+            label        => 'Forbidden Tags',
             type         => 'enum',
             relation     => 'multi',
             is_mandatory => 0,
