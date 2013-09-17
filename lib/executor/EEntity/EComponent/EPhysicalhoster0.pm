@@ -31,6 +31,7 @@ use strict;
 use warnings;
 
 use Net::Ping;
+
 use General;
 use DecisionMaker::HostSelector;
 
@@ -38,19 +39,26 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 my $errmsg;
 
-
 sub startHost {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ "host" ]);
 
-    if (not -e '/usr/sbin/etherwake') {
-        $errmsg = "EOperation::EStartNode->startNode : /usr/sbin/etherwake not found";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Execution(error => $errmsg);
+    my $wol = '/usr/sbin/etherwake';
+    if (not -e $wol) {
+        $wol = '/usr/bin/wol';
+        if (not -e $wol) {
+            $errmsg = "EOperation::EStartNode->startNode : Neither 'etherwake' nor 'wol' command where found";
+            $log->error($errmsg);
+            throw Kanopya::Exception::Execution(error => $errmsg);
+        }
+        $wol .= " --host " . $args{host}->host->getPXEIface->getIPAddr;
     }
-    my $iface = $self->getMasterNode->host->getAdminIface->iface_name;
-    my $command = "/usr/sbin/etherwake -i " . $iface . " " . $args{host}->getPXEIface->iface_mac_addr;
+    else {
+        $wol .= " -i " . $self->getMasterNode->host->getAdminIface->iface_name;
+    }
+
+    my $command = $wol . " " . $args{host}->getPXEIface->iface_mac_addr;
     my $result = $self->_host->getEContext->execute(command => $command);
 
     my $current_state = $args{host}->getState();
