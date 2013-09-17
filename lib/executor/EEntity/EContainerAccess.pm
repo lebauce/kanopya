@@ -91,9 +91,12 @@ sub copy {
         my $source_size = $source_access->getContainer->getAttr(name => 'container_size');
         my $dest_size   = $dest_access->getContainer->getAttr(name => 'container_size');
 
-        $command = "SRCDEV=`readlink -f $source_device`;" .
-                   "DSTDEV=`readlink -f $dest_device`;" .
-                   "virt-resize --expand /dev/sda1 \$SRCDEV \$DSTDEV";
+        my $srcdev = `readlink -f $source_device`;
+        my $dstdev = `readlink -f $dest_device`;
+        $srcdev =~ s/^\s+|\s+$//g;
+        $dstdev =~ s/^\s+|\s+$//g;
+
+        $command = "virt-resize --expand /dev/sda1 $srcdev $dstdev";
         $result  = $args{econtext}->execute(command => $command);
 
         if ($result->{stderr} and ($result->{exitcode} != 0)) {
