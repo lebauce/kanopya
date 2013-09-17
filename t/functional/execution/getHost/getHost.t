@@ -74,6 +74,8 @@ use _test3c;
 use _test3d;
 use _test3e;
 use _test3f;
+use _test4a;
+use _test4b;
 
 use DecisionMaker::HostSelector;
 
@@ -174,5 +176,13 @@ sub main {
 
     BaseDB->beginTransaction;
     test3f();
+    BaseDB->rollbackTransaction;
+
+    BaseDB->beginTransaction;
+    test4a();
+    BaseDB->rollbackTransaction;
+
+    BaseDB->beginTransaction;
+    test4b();
     BaseDB->rollbackTransaction;
 }
