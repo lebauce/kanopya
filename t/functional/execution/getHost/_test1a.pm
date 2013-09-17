@@ -51,6 +51,9 @@ sub test1a {
     my $cluster = Kanopya::Tools::Create->createCluster(
         cluster_conf => $host_manager_conf,
     );
+
+    Kanopya::Tools::Execution->executeAll();
+
     for my $interface ($cluster->interfaces) {
         $interface->delete();
     }
