@@ -688,7 +688,7 @@ sub _configure_iscsitarget {
         print "ok\n";
     }
     catch (Kanopya::Exception::IO $err) {
-        print "failed ! Your system seems to do not support ietd daemon, $err";
+        print "failed ! Your system seems to do not support ietd daemon, $err\n";
     }
     catch ($err) {
         $err->rethrow();
@@ -815,13 +815,24 @@ sub _configure_puppetmaster {
         datas    => $data,
     );
 
-    _writeFile('/etc/puppet/manifests/site.pp',
-          "Exec {\n" .
-          "  path    => '/usr/bin:/usr/sbin:/bin:/sbin'\n" .
-          "}\n" .
-          "stage { 'system': before => Stage['main'], }\n" .
-          "stage { 'finished': }\n" .
-          "import \"nodes/*.pp\"\n");
+    try {
+        _writeFile('/etc/puppet/manifests/site.pp',
+               "Exec {\n" .
+               "  path    => '/usr/bin:/usr/sbin:/bin:/sbin'\n" .
+               "}\n" .
+               "stage { 'system': before => Stage['main'], }\n" .
+               "stage { 'finished': }\n" .
+               "import \"nodes/*.pp\"\n");
+
+    print 'ok';
+    }
+    catch (Kanopya::Exception::IO $err) {
+        print "failed ! Please check your puppet configuration, $err\n";
+        return;
+    }
+    catch ($err) {
+        $err->rethrow();
+    }
 
     use Kanopya::Config;
     use EEntity;
@@ -841,10 +852,19 @@ sub _configure_puppetmaster {
     my $epuppetmaster = EEntity->new(entity => $puppetmaster);
     my $fqdn = $kanopya_master->node->node_hostname . "." . $kanopya->cluster_domainname;
 
-    $epuppetmaster->createHostCertificate(
-        mount_point => "/tmp",
-        host_fqdn   => $fqdn
-    );
+    try {
+        $epuppetmaster->createHostCertificate(
+            mount_point => "/tmp",
+            host_fqdn   => $fqdn
+        );
+    }
+    catch (Kanopya::Exception::IO $err) {
+        print "failed ! Please chack your puppet configuration, $err\n";
+        return;
+    }
+    catch ($err) {
+        $err->rethrow();
+    }
 
     $epuppetmaster->createHostManifest(
         host_fqdn          => $fqdn,
