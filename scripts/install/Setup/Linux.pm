@@ -902,13 +902,13 @@ sub _retrieve_tftp_content {
 
     print "\n - Retrieving TFTP directory contents from http://192.168.0.173...\n";
 
-    my $rsync_sshkey = '~/.ssh/rsync_rsa';
+    my $rsync_sshkey = '/root/.ssh/rsync_rsa';
     # Check if rsync sshkey exist on right place :
     if ( ! -e $rsync_sshkey) {
         # Get the rsync_rsa key :
         system('wget http://192.168.0.173:8011/rsync_rsa');
         # Move the key and set the correct rights ;
-        system('mv rsync_rsa ~/.ssh/;chmod 400 ~/.ssh/rsync_rsa');
+        system('mv rsync_rsa /root/.ssh/;chmod 400 /root/.ssh/rsync_rsa');
     }
     # Do a Rsync from 192.168.0.173 of tftp directory content :
     system('rsync -var -e "ssh -p 2211 -i /root/.ssh/rsync_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" rsync@192.168.0.173:/pub/tftp/* '.$self->{parameters_values}->{tftp_dir});
