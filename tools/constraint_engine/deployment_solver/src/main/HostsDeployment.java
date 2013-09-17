@@ -11,7 +11,6 @@ import solver.Solver;
 import solver.constraints.IntConstraintFactory;
 import solver.constraints.extension.LargeCSP;
 import solver.constraints.propagators.extension.nary.IterTuplesTable;
-import solver.search.loop.monitors.SearchMonitorFactory;
 import solver.search.solution.SolutionPoolFactory;
 import solver.variables.IntVar;
 import solver.variables.VariableFactory;
@@ -217,10 +216,17 @@ public class HostsDeployment extends AbstractProblem {
         /* Tags */
         tags_candidates = new ArrayList<Integer>();
         List<Integer> tags_min = Arrays.asList(constraints.getTagsMin());
+        List<Integer> noTags   = Arrays.asList(constraints.getNoTags());
+
+        hosts:
         for (int h = 0; h < infrastructure.length; h++) {
             Host host = infrastructure[h];
             List<Integer> tags = Arrays.asList(host.getTags());
             if (tags.containsAll(tags_min)) {
+            	for (Integer tag : noTags) {
+            		if (tags.contains(tag))
+            			continue hosts;
+            	}
                 tags_candidates.add(h);
                 if (network_candidates.contains(h)) {
                     candidates.add(h);
