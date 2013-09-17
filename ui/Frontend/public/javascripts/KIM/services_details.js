@@ -60,7 +60,7 @@ function loadServicesDetails(cid, eid, is_iaas) {
 
     function editCluster (e) {
         // Open a wizards to suggest component type to scale to the user
-        var button = e.srcElement;
+        var button = e.target;
         var span = button.parent;
 
         $(button).attr('disabled', 'disabled')
