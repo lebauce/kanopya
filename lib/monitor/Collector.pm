@@ -320,7 +320,6 @@ sub updateHostData {
         #For each required set of indicators
         SET:
         foreach my $set ( @{ $args{sets} } ) {
-
             #############################################################
             # Skip this set if associated component is not on this host #
             #############################################################
@@ -337,7 +336,7 @@ sub updateHostData {
             # Build the required var map: ( var_name => oid ) #
             ###################################################
             my %var_map = map { $_->indicator_name => $_->indicator_oid } $set->indicators;
-            
+
             my ($time, $update_values);
             my $retrieve_set_time;
             my $provider_class;
@@ -357,7 +356,7 @@ sub updateHostData {
                     );
                     $providers{$provider_class} = $data_provider;
                 }
-                
+
                 ############################################################################################################
                 # Retrieve the map ref { index => { var_name => value } } corresponding to required var_map for each entry #
                 ############################################################################################################
@@ -632,7 +631,7 @@ sub update {
             my @net_monitored_sets = ();
 
             for my $monitor_set (@monitored_sets) {
-                if ($monitor_set->{data_provider} eq 'KanopyaDatabaseProvider') {
+                if ($monitor_set->indicatorset_provider eq 'KanopyaDatabaseProvider') {
                     push @db_monitored_sets, $monitor_set;
                 }
                 else {
