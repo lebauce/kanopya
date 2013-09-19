@@ -96,10 +96,15 @@ sub retrieveData {
     my @OID_list = values( %$var_map );
     my $time = time();
 
+    my $node_state = ($host->getNodeState())[0];
+
     my %all_values = (
         "Cores"  => $host->host_core,
         "Memory" => $host->host_ram,
-        "Up"     => (($host->getNodeState())[0] eq 'in') ? 1 : 0,
+        "Up"     => ($node_state eq 'in') ? 1 : 0,
+        "Starting" => ($node_state =~ 'goingin') ? 1 : 0,
+        "Stopping" => ($node_state =~ 'goingout') ? 1 : 0,
+        "Broken" => ($node_state eq 'broken') ? 1 : 0,
     );
 
     my %values;
