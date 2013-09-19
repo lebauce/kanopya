@@ -1410,7 +1410,16 @@ sub registerIndicators {
                 [ 'state/Broken', 'Broken', 'Host is broken', undef, undef, 'FF000099', '', undef ],
             ]
         },
-
+        {
+            set => {
+                name      => 'virtualization',
+                provider  => 'KanopyaDatabaseProvider',
+                type      => 'GAUGE',
+            },
+            indicators => [
+                [ 'VMs count', 'VMs', 'Number of VMs', undef, undef, 'FF000099', 'VMs', undef ],
+            ]
+        },
         {
             set => {
                 name      => 'diskIOTable',
