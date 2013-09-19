@@ -2277,6 +2277,7 @@ sub configureDefaultOrchestrationPolicyService {
         }
     );
 
+    # Generic creation of node and service combinations and rules
     for my $indic (@indics) {
         my $indic_label = $indic->indicator->indicator_label;
 
@@ -2338,6 +2339,40 @@ sub configureDefaultOrchestrationPolicyService {
             }
         }
     }
+
+    # Nodes state monitoring (node level and count at service level)
+    my @state_indics = Entity::CollectorIndicator->search (
+        hash => {
+            collector_manager_id                        => $collector_manager->id,
+            'indicator.indicatorset.indicatorset_name'  => 'state',
+        }
+    );
+    my @total_ids;
+    for my $indic (@state_indics) {
+        Entity::Combination::NodemetricCombination->new(
+            service_provider_id             => $sp->id,
+            nodemetric_combination_formula  => 'id'.$indic->id,
+            nodemetric_combination_label    => 'is'.$indic->indicator->indicator_name,
+        );
+        my $cm = Entity::Clustermetric->new(
+            clustermetric_service_provider_id       => $sp->id,
+            clustermetric_indicator_id              => $indic->id,
+            clustermetric_statistics_function_name  => 'sum',
+            clustermetric_window_time               => '600',
+        );
+        Entity::Combination::AggregateCombination->new(
+            service_provider_id             => $sp->id,
+            aggregate_combination_formula   => 'id'.$cm->id,
+            aggregate_combination_label     => $indic->indicator->indicator_name . ' nodes',
+        );
+        push @total_ids, $cm->id;
+    }
+    my @total_formula = join ' + ', map { 'id'.$_} @total_ids;
+    my $acomb = Entity::Combination::AggregateCombination->new(
+        service_provider_id             => $sp->id,
+        aggregate_combination_formula   => @total_formula,
+        aggregate_combination_label     => 'All nodes',
+    );
 
     return $sp;
 }
