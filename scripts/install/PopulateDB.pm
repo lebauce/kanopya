@@ -1405,6 +1405,9 @@ sub registerIndicators {
             },
             indicators => [
                 [ 'state/Up', 'Up', 'Host is up', undef, undef, 'FF000099', '', undef ],
+                [ 'state/Starting', 'Starting', 'Host is starting', undef, undef, 'FF000099', '', undef ],
+                [ 'state/Stopping', 'Stopping', 'Host is stopping', undef, undef, 'FF000099', '', undef ],
+                [ 'state/Broken', 'Broken', 'Host is broken', undef, undef, 'FF000099', '', undef ],
             ]
         },
 
