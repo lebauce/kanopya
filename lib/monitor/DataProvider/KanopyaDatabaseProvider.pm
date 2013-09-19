@@ -105,7 +105,14 @@ sub retrieveData {
         "Starting" => ($node_state =~ 'goingin') ? 1 : 0,
         "Stopping" => ($node_state =~ 'goingout') ? 1 : 0,
         "Broken" => ($node_state eq 'broken') ? 1 : 0,
+        "VMs"    => 0,
     );
+
+    # VMs info when host is a hypervisor
+    if ($host->isa('Entity::Host::Hypervisor')) {
+        my @vms = $host->virtual_machines;
+        $all_values{'VMs'} = scalar @vms;
+    }
 
     my %values;
     for my $name (keys %$var_map) {
