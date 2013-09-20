@@ -87,3 +87,6 @@
 [submodule "templates/components/puppetmaster/modules/concat"]
 	path = templates/components/puppetmaster/modules/concat
 	url = https://github.com/puppetlabs/puppetlabs-concat.git
+[submodule "templates/components/puppetmaster/modules/ceph"]
+	path = templates/components/puppetmaster/modules/ceph
+	url = https://github.com/enovance/puppet-ceph.git
