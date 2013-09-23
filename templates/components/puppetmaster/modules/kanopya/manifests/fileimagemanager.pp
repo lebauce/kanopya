@@ -2,7 +2,7 @@ class kanopya::fileimagemanager {
     package { 'libguestfs':
         audit => all,
         name => $operatingsystem ? {
-            /(Red Hat|CentOS|Fedora)/ => [ 'libguestfs', 'libguestfs-tools', 'qemu-img' ],
+            /(RedHat|CentOS|Fedora)/ => [ 'libguestfs', 'libguestfs-tools', 'qemu-img' ],
             default => [ 'libguestfs0', 'guestmount', 'qemu-utils', 'libguestfs-tools' ]
         },
         ensure => present,
@@ -15,7 +15,7 @@ class kanopya::fileimagemanager {
         subscribe => Package['libguestfs'],
         require => Package['libguestfs'],
         command => $operatingsystem ? {
-            /(Red Hat|CentOS|Fedora)/ => 'true',
+            /(RedHat|CentOS|Fedora)/ => 'true',
             default => 'update-guestfs-appliance'
         }
     }

@@ -37,7 +37,7 @@ class kanopya::puppetmaster::repository {
 class kanopya::puppetmaster::install {
     package { 'puppetmaster':
         name => $operatingsystem ? {
-            /(Red Hat|CentOS|Fedora)/ => 'puppet-server',
+            /(RedHat|CentOS|Fedora)/ => 'puppet-server',
             default => 'puppetmaster'
         },
         ensure => present,
