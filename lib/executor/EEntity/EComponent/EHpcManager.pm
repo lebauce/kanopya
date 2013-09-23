@@ -13,6 +13,14 @@
 # you should have received a copy of the gnu affero general public license
 # along with this program.  if not, see <http://www.gnu.org/licenses/>.
 
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package EEntity::EComponent::EHpcManager;
 use base "EEntity::EComponent";
 use base "EManager::EHostManager";
