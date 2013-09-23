@@ -2,7 +2,7 @@ class kanopya::openssh::service {
 	service {
 		'openssh':
 			name => $operatingsystem ? {
-				/(Red Hat|CentOS|Fedora)/ => 'sshd',
+				/(RedHat|CentOS|Fedora)/ => 'sshd',
 				default => 'ssh'
 			},
 			ensure => running,

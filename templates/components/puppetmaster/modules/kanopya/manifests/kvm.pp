@@ -2,7 +2,7 @@ class kanopya::kvm::service {
 	service {
 		'kvm':
 			name => $operatingsystem ? {
-				/(Red Hat|CentOS|Fedora)/ => 'libvirtd',
+				/(RedHat|CentOS|Fedora)/ => 'libvirtd',
 				default => 'libvirt-bin'
 			},
 			ensure => running,
@@ -25,7 +25,7 @@ class kanopya::kvm::install {
 	package {
 		'kvm':
 			name => $operatingsystem ? {
-				/(Red Hat|CentOS|Fedora)/ => 'libvirt',
+				/(RedHat|CentOS|Fedora)/ => 'libvirt',
 				default => 'libvirt-bin'
 			},
 			ensure => present,

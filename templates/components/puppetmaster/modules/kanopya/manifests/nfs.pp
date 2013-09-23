@@ -1,5 +1,5 @@
 class kanopya::nfs::service {
-	if $operatingsystem =~ /(Red Hat|CentOS|Fedora)/ {
+	if $operatingsystem =~ /(RedHat|CentOS|Fedora)/ {
 		service {
 			'nfs':
 				name => 'rpcbind',
@@ -16,7 +16,7 @@ class kanopya::nfs::install {
 	package {
 		'nfs':
 			name => $operatingsystem ? {
-				/(Red Hat|CentOS|Fedora)/ => 'nfs-utils',
+				/(RedHat|CentOS|Fedora)/ => 'nfs-utils',
 				default => 'nfs-common'
 			},
 			ensure => present,

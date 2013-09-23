@@ -10,14 +10,14 @@ class kanopya::mysql::params {
                 require => Class['kanopya::mysql::repos::deb']
             }
         }
-        /(?i)(centos)/ : {
+        /(?i)(redhat,centos)/ : {
             $mysql_package_name        = 'MariaDB-Galera-server'
             $mysql_client_package_name = 'MariaDB-client'
             $mysql_service_provider    = 'redhat'
             class { 'kanopya::mysql::repos::rh': }
         }
         default : {
-            fail("Unsupported operatingsystem : ${operatingsystem}. Only Debian, Ubuntu and CentOS are supported")
+            fail("Unsupported operatingsystem : ${operatingsystem}. Only Debian, Ubuntu, RedHat and CentOS are supported")
         }
     }
 }

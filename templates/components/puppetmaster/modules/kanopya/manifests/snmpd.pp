@@ -35,7 +35,7 @@ class kanopya::snmpd::install {
 	package {
 		'snmpd':
 			name => $operatingsystem ? {
-				/(Red Hat|CentOS|Fedora)/ => 'net-snmp',
+				/(RedHat|CentOS|Fedora)/ => 'net-snmp',
 				default => 'snmpd'
 			},
 			ensure => present,

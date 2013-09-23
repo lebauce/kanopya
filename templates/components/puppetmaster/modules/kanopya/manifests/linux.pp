@@ -6,22 +6,27 @@ class kanopya::linux ($sourcepath) {
     tag("kanopya::operation::poststartnode")
 
     case $operatingsystem {
-        CentOS, Fedora: { $haltpath = "/etc/rc.d/rc0.d"
-                          $netscript = "K[0-9][0-9]network"
-                          $iscsiscript = "K[0-9][0-9]iscsi" 
-                        }
-        
-        Ubuntu:         { $haltpath = "/etc/rc0.d" 
-                          $netscript = "S[0-9][0-9]networking"
-                          $iscsiscript = "S[0-9][0-9]open-iscsi" 
-                        }
-        
-        Debian:         { $haltpath = "/etc/rc0.d"
-                          $netscript = "K[0-9][0-9]networking"
-                          $iscsiscript = "K[0-9][0-9]umountiscsi" 
-                        }
-        
-        default:        { fail("Unrecognized operating system") }
+        RedHat, CentOS, Fedora: {
+            $haltpath = "/etc/rc.d/rc0.d"
+            $netscript = "K[0-9][0-9]network"
+            $iscsiscript = "K[0-9][0-9]iscsi"
+        }
+
+        Ubuntu: {
+            $haltpath = "/etc/rc0.d"
+            $netscript = "S[0-9][0-9]networking"
+            $iscsiscript = "S[0-9][0-9]open-iscsi"
+        }
+
+        Debian: {
+            $haltpath = "/etc/rc0.d"
+            $netscript = "K[0-9][0-9]networking"
+            $iscsiscript = "K[0-9][0-9]umountiscsi"
+        }
+
+        default: {
+            fail("Unrecognized operating system")
+        }
     }
 
     file { '/etc/hosts':
@@ -87,20 +92,19 @@ class kanopya::linux ($sourcepath) {
 }
 
 define swap($ensure = present) {
-
-  Exec {
-    path => ['/bin', '/sbin', '/usr/bin', '/usr/sbin'],
-  }
-
-  if $ensure == present {
-    exec { 'swap-on':
-      command => 'swapon -a',
-      unless  => 'grep partition /proc/swaps',
+    Exec {
+        path => ['/bin', '/sbin', '/usr/bin', '/usr/sbin'],
     }
-  } else {
-    exec { 'swap-off':
-      command => 'swapoff -a',
-      onlyif  => 'grep partition /proc/swaps',
+
+    if $ensure == present {
+        exec { 'swap-on':
+            command => 'swapon -a',
+            unless  => 'grep partition /proc/swaps',
+        }
+    } else {
+        exec { 'swap-off':
+            command => 'swapoff -a',
+            onlyif  => 'grep partition /proc/swaps',
+        }
     }
-  }
 }
