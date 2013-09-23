@@ -15,6 +15,14 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+=begin classdoc
+
+Kanopya executor runs workflows and operations
+
+=end classdoc
+=cut
+
 package Entity::Component::KanopyaExecutor;
 use base Entity::Component;
 use base MessageQueuing::RabbitMQ::Sender;

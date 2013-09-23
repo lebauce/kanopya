@@ -17,6 +17,14 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 7 June 2012
 
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package Manager::WorkflowManager;
 use base "Manager";
 
