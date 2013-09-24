@@ -52,6 +52,10 @@ use Kanopya::Tools::Register;
 
 use BaseDB;
 
+# Allow the test to be launched from an external repository
+use File::Basename;
+use lib dirname (__FILE__);
+
 use _test1a;
 use _test1b;
 use _test1c;
