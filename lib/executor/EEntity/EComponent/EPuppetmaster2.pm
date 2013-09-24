@@ -21,6 +21,7 @@ use Template;
 use File::Path qw/ mkpath /;
 use File::Temp qw/ tempdir /;
 use Log::Log4perl 'get_logger';
+use TryCatch;
 
 my $log = get_logger("");
 my $errmsg;
@@ -105,10 +106,16 @@ sub createHostCertificate {
     );
 
     # copy master certificate to the image
-    $self->getEContext->send(
-        src  => '/var/lib/puppet/ssl/certs/ca.pem',
-        dest => $args{mount_point} . '/var/lib/puppet/ssl/certs/ca.pem'
-    );
+    try {
+        $self->getEContext->send(
+            src  => '/var/lib/puppet/ssl/certs/ca.pem',
+            dest => $args{mount_point} . '/var/lib/puppet/ssl/certs/ca.pem'
+        );
+    }
+    catch ($err) {
+        my $msg = "Error while copying master certificate to the images, $err\n";
+        throw Kanopya::Exception::IO(error => $msg);
+    }
     
     # copy host certificate to the image
     $self->getEContext->send(

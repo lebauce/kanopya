@@ -175,7 +175,8 @@ public class InstanceGenerator {
                 new Constraints.RAM(ram_qty_min),
                 new Constraints.Network(interfaces),
                 new Constraints.Storage(storage_hd_nb_min),
-                tags_min.toArray(new Integer[tags_min.size()])
+                tags_min.toArray(new Integer[tags_min.size()]),
+                new Integer[0]
         );
     }
 

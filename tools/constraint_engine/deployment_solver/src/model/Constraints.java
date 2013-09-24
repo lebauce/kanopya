@@ -35,21 +35,29 @@ public class Constraints {
      */
     private Integer[] m_tags_min;
 
+    /**
+     * The min set of tags constraint.
+     */
+    private Integer[] m_noTags;
+
+
     public Constraints() {
         this.m_cpu      = new CPU();
         this.m_ram      = new RAM();
         this.m_network  = new Network();
         this.m_storage  = new Storage();
         this.m_tags_min = new Integer[0];
+        this.m_noTags  = new Integer[0];
     }
 
-    public Constraints(CPU cpu, RAM ram, Network network, Storage storage, Integer[] tags_min) {
+    public Constraints(CPU cpu, RAM ram, Network network, Storage storage, Integer[] tags_min, Integer[] noTags) {
         super();
         this.m_cpu      = cpu;
         this.m_ram      = ram;
         this.m_network  = network;
         this.m_storage  = storage;
         this.m_tags_min = tags_min;
+        this.m_noTags   = noTags;
     }
 
     // GETTERS
@@ -74,6 +82,10 @@ public class Constraints {
         return m_tags_min;
     }
 
+    public Integer[] getNoTags() {
+        return m_noTags;
+    }
+
     // SETTERS
 
     public void setCpu(CPU cpu) {
@@ -96,6 +108,10 @@ public class Constraints {
         this.m_tags_min = tags_min;
     }
 
+    public void setNoTags(Integer[] noTags) {
+        this.m_noTags = noTags;
+    }
+
     public String toString() {
         String constraints = "Constraints :";
         constraints += "\n" + "\t" + this.getCpu();
@@ -104,6 +120,10 @@ public class Constraints {
         constraints += "\n" + "\t" + this.getStorage();
         constraints += "\n" + "\t" + "Tags min :";
         for (Integer tag : this.getTagsMin()) {
+            constraints += "\n" + "\t\t" + tag;
+        }
+        constraints += "\n" + "\t" + "No tags :";
+        for (Integer tag : this.getNoTags()) {
             constraints += "\n" + "\t\t" + tag;
         }
         return constraints;

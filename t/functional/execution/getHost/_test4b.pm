@@ -1,4 +1,4 @@
-#   TEST 1.F :
+#   TEST 4.a :
 #
 #       HOSTS :
 #        _______________________________________________________________________________________________
@@ -10,7 +10,7 @@
 #       |         iface 1 :             |         iface 1 :             |         iface 1 :             |
 #       |             Bonds number = 0  |             Bonds number = 0  |             Bonds number = 0  |
 #       |             NetIps       = [] |             NetIps       = [] |             NetIps       = [] |
-#       |     Tags : [1,2,3,5,6]        |     Tags : [1,2,3]            |     Tags : [1,2,3,4,5]        |
+#       |     Tags : [1,2,3]            |     Tags : [1,2,4]            |     Tags : [1,5]              |
 #       |_______________________________|_______________________________|_______________________________|
 #        _______________________________________________________________________________________________
 #       |                               |                               |                               |
@@ -21,7 +21,7 @@
 #       |         iface 1 :             |         iface 1 :             |         iface 1 :             |
 #       |             Bonds number = 0  |             Bonds number = 0  |             Bonds number = 0  |
 #       |             NetIps       = [] |             NetIps       = [] |             NetIps       = [] |
-#       |     Tags : [1,2,3,4]          |     Tags : [1,2,3,6]          |     Tags : [1,2,3,5]          |
+#       |     Tags : [1,6]              |     Tags : [1]                |     Tags : [1,2,7]            |
 #       |_______________________________|_______________________________|_______________________________|
 #
 #       CONSTRAINTS (Cluster) :
@@ -34,48 +34,51 @@
 #       /       interface 1 :             \
 #       /           Min Bonds number = 0  \
 #       /           Min NetIps       = [] \
-#       /   Min Tags : [1,2,3]            \
-#       /                                 \
+#       /   Min Tags : [1,2]              \
+#       /   No  Tags : [3,4]              \
 #       /---------------------------------\
 #
 
 use Entity::Tag;
+use Kanopya::Tools::TestUtils 'expectedException';
+#use strict;
+#use warnings;
 
-sub test3f {
+sub test4b {
     ########################
     #### Create Tags    ####
     ########################
-    my $tag1 = Entity::Tag->new(tag => "Not free Massage");
-    my $tag2 = Entity::Tag->new(tag => "High Performance");
-    my $tag3 = Entity::Tag->new(tag => "Beer dispenser");
-    my $tag4 = Entity::Tag->new(tag => "Free Massage");
-    my $tag5 = Entity::Tag->new(tag => "Popcorn Machine");
-    my $tag6 = Entity::Tag->new(tag => "PS3");
+
+    my @tags= ();
+    for my $i (0..6) {
+        push @tags, Entity::Tag->findOrCreate(tag => "test_4b_".$i);
+    }
 
     ########################
     #### Create Cluster ####
     ########################
 
     # Create NetConf
-    my $netConf =  Entity::Netconf->create(
-        netconf_name => 'netconf',
-    );
+    my $netConf =  Entity::Netconf->findOrCreate(netconf_name => 'netconf');
+
     # Host Manager config
     my $host_manager_conf = {
-        managers              => {
+        managers => {
             host_manager => {
                 manager_params => {
                     core => 1,
                     ram  => 512*1024*1024,
-                    tags => [$tag1->id, $tag2->id, $tag3->id],
+                    tags => [$tags[0]->id, $tags[1]->id],
+                    no_tags => [$tags[2]->id, $tags[3]->id],
                 },
             },
         }
     };
+
     # Create Cluster and add network interface to it
     my $cluster = Kanopya::Tools::Create->createCluster(
-        cluster_conf => $host_manager_conf,
-    );
+                     cluster_conf => $host_manager_conf,
+                  );
 
     Kanopya::Tools::Execution->executeAll();
 
@@ -96,8 +99,10 @@ sub test3f {
     #### Create Hosts ####
     ######################
 
+    my @hosts = ();
+    my $host;
     # Create Host 1
-    my $host1 = Kanopya::Tools::Register->registerHost(
+    $host = Kanopya::Tools::Register->registerHost(
         board => {
             serial_number => 1,
             core          => 2,
@@ -110,14 +115,15 @@ sub test3f {
             ],
         },
     );
-    $host1->populateRelations(
+    $host->populateRelations(
         relations => {
-            entity_tags => [$tag1, $tag2, $tag3, $tag4, $tag5, $tag6],
+            entity_tags => [$tags[0], $tags[1], $tags[2]],
         }
     );
+    push @hosts, $host;
 
     # Create Host 2
-    my $host2 = Kanopya::Tools::Register->registerHost(
+    $host = Kanopya::Tools::Register->registerHost(
         board => {
             serial_number => 2,
             core          => 2,
@@ -130,14 +136,15 @@ sub test3f {
             ],
         },
     );
-    $host2->populateRelations(
+    $host->populateRelations(
         relations => {
-            entity_tags => [$tag1, $tag2, $tag3],
+            entity_tags => [$tags[0], $tags[1], $tags[3]],
         }
     );
+    push @hosts, $host;
 
     # Create Host 3
-    my $host3 = Kanopya::Tools::Register->registerHost(
+    $host = Kanopya::Tools::Register->registerHost(
         board => {
             serial_number => 3,
             core          => 2,
@@ -150,54 +157,15 @@ sub test3f {
             ],
         },
     );
-    $host3->populateRelations(
+    $host->populateRelations(
         relations => {
-            entity_tags => [$tag1, $tag2, $tag3, $tag4, $tag5],
+            entity_tags => [$tags[0], $tags[4]],
         }
     );
+    push @hosts, $host;
 
     # Create Host 4
-    my $host4 = Kanopya::Tools::Register->registerHost(
-        board => {
-            serial_number => 4,
-            core          => 2,
-            ram           => 4096*1024*1024,
-            ifaces        => [
-                {
-                    name => 'iface',
-                    pxe  => 0,
-                },
-            ],
-        },
-    );
-    $host4->populateRelations(
-        relations => {
-            entity_tags => [$tag1, $tag2, $tag3, $tag4],
-        }
-    );
-
-    # Create Host 5
-    my $host5 = Kanopya::Tools::Register->registerHost(
-        board => {
-            serial_number => 5,
-            core          => 2,
-            ram           => 4096*1024*1024,
-            ifaces        => [
-                {
-                    name => 'iface',
-                    pxe  => 0,
-                },
-            ],
-        },
-    );
-    $host5->populateRelations(
-        relations => {
-            entity_tags => [$tag1, $tag2, $tag3, $tag6],
-        }
-    );
-
-    # Create Host 6
-    my $host6 = Kanopya::Tools::Register->registerHost(
+    $host = Kanopya::Tools::Register->registerHost(
         board => {
             serial_number => 6,
             core          => 2,
@@ -210,24 +178,85 @@ sub test3f {
             ],
         },
     );
-    $host6->populateRelations(
+    $host->populateRelations(
         relations => {
-            entity_tags => [$tag1, $tag2, $tag3, $tag5],
+            entity_tags => [$tags[0], $tags[5]],
         }
     );
+    push @hosts, $host;
 
-    ##########################
-    #### Perform the test ####
-    ##########################
+    # Create Host 5
+    $host = Kanopya::Tools::Register->registerHost(
+        board => {
+            serial_number => 5,
+            core          => 2,
+            ram           => 4096*1024*1024,
+            ifaces        => [
+                {
+                    name => 'iface',
+                    pxe  => 0,
+                },
+            ],
+        },
+    );
+    $host->populateRelations(
+        relations => {
+            entity_tags => [$tags[0]],
+        }
+    );
+    push @hosts, $host;
+
+
+    #########################################
+    #### Perform the test without host 6 ####
+    #########################################
 
     lives_ok {
-        my $selected_host = DecisionMaker::HostSelector->getHost(cluster => $cluster);
 
-        # The selected host must be the 2nd.
-        if ($selected_host->id != $host2->id) {
-            die ("Test 3.f : Wrong host selected");
+        expectedException {
+            my $selected_host = DecisionMaker::HostSelector->getHost(cluster => $cluster);
+        } 'Kanopya::Exception', 'Test 4.b : Wrong host selected expected no host';
+
+        # Create Host 6
+        $host = Kanopya::Tools::Register->registerHost(
+            board => {
+                serial_number => 4,
+                core          => 2,
+                ram           => 4096*1024*1024,
+                ifaces        => [
+                    {
+                        name => 'iface',
+                        pxe  => 0,
+                    },
+                ],
+            },
+        );
+        $host->populateRelations(
+            relations => {
+                entity_tags => [$tags[0], $tags[1], $tags[6]],
+            }
+        );
+        push @hosts, $host;
+
+
+        $selected_host = DecisionMaker::HostSelector->getHost(cluster => $cluster);
+        # The selected host must be the last one.
+        if ($selected_host->id != $hosts[-1]->id) {
+            die ('Test 4.b : Wrong host <'.($selected_host->id).'> selected, expected <'.($hosts[3]->id).'>');
         }
-    } "Test 3.f : Choosing the host with the best tags cost";
+
+    } "Test 4.b : Choosing the host with no tags";
+
+    for my $host (@hosts) {
+        $host->delete();
+    }
+
+    $cluster->delete();
+
+    for my $tag (@tags) {
+        $tag->delete();
+    }
+
 }
 
 1;

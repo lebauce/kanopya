@@ -52,6 +52,10 @@ use Kanopya::Tools::Register;
 
 use BaseDB;
 
+# Allow the test to be launched from an external repository
+use File::Basename;
+use lib dirname (__FILE__);
+
 use _test1a;
 use _test1b;
 use _test1c;
@@ -74,6 +78,8 @@ use _test3c;
 use _test3d;
 use _test3e;
 use _test3f;
+use _test4a;
+use _test4b;
 
 use DecisionMaker::HostSelector;
 
@@ -174,5 +180,13 @@ sub main {
 
     BaseDB->beginTransaction;
     test3f();
+    BaseDB->rollbackTransaction;
+
+    BaseDB->beginTransaction;
+    test4a();
+    BaseDB->rollbackTransaction;
+
+    BaseDB->beginTransaction;
+    test4b();
     BaseDB->rollbackTransaction;
 }
