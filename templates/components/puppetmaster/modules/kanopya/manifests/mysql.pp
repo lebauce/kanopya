@@ -10,7 +10,7 @@ class kanopya::mysql::params {
                 require => Class['kanopya::mysql::repos::deb']
             }
         }
-        /(?i)(redhat,centos)/ : {
+        /(?i)(redhat|centos)/ : {
             $mysql_package_name        = 'MariaDB-Galera-server'
             $mysql_client_package_name = 'MariaDB-client'
             $mysql_service_provider    = 'redhat'
