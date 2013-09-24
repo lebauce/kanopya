@@ -40,7 +40,7 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant {
-    JAR_DIR  => "/tools/deployment_solver/",
+    JAR_DIR  => "/tools/constraint_engine/deployment_solver/",
     JAR_NAME => "deployment_solver.jar",
 };
 
