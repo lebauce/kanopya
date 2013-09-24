@@ -288,7 +288,6 @@ scripts/database/mysql/sbin/initialise_clientbench.sh
 scripts/database/mysql/sbin/initialise_demo.sh
 scripts/database/mysql/sbin/initialise_serverbench.sh
 scripts/database/mysql/sbin/MakeSchema.pl
-scripts/database/mysql/sbin/resetdb.sh
 scripts/database/mysql/schemas/components/apache2.sql
 scripts/database/mysql/schemas/components/atftpd0.sql
 scripts/database/mysql/schemas/components/dhcpd3.sql

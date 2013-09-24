@@ -2,7 +2,6 @@ Bin/initialise_clientbench.sh
 Bin/initialise_demo.sh
 Bin/initialise_serverbench.sh
 Bin/MakeSchema.pl
-Bin/resetdb.sh
 build_package.sh
 Conf/administrator.conf
 Conf/bck_20100812.sql
