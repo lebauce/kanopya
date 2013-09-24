@@ -1,0 +1,30 @@
+diff --git a/manifests/host.pp b/manifests/host.pp
+index adb9722..f899c32 100644
+--- a/manifests/host.pp
++++ b/manifests/host.pp
+@@ -1,7 +1,9 @@
+ define dhcp::host (
+   $ip,
+   $mac,
+-  $comment=''
++  $pxeserver           = undef,
++  $pxefilename         = undef,
++  $comment             = ''
+ ) {
+ 
+   $host = $name
+diff --git a/templates/dhcpd.host.erb b/templates/dhcpd.host.erb
+index c9c704d..beee71b 100644
+--- a/templates/dhcpd.host.erb
++++ b/templates/dhcpd.host.erb
+@@ -2,4 +2,10 @@ host <%= host %> {
+   hardware ethernet   <%= mac %>;
+   fixed-address       <%= ip %>;
+   option host-name    "<%= name %>";
++  # BEGIN PXE Section
++  <% if @pxeserver and @pxefilename then -%>
++next-server <%= @pxeserver %>;   
++  filename "<%= @pxefilename %>";
++  <% end -%>
++# END PXE Section
+ }

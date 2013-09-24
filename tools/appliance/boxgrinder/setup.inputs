@@ -1,0 +1,24 @@
+initiatorname iqn.toto
+mysql_kanopya_passwd K4n0pY4
+mysql_root_passwd K4n0pY4
+admin_net_mask 255.255.255.0
+hostname localhost
+admin_actual_ip 
+vg_name kanopya
+domainname kanopya.localdomain
+masterimages_dir /var/lib/kanopya/masterimages
+log_dir /var/log/kanopya
+vg_size 20476592128
+admin_iface eth1
+mysql_port 3306
+vg_free_space 20476592128
+clusters_dir /var/lib/kanopya/clusters
+sessions_dir /tmp/kanopya-sessions
+admin_net_size 250
+mysql_host 127.0.0.1
+admin_net_gateway 0.0.0.0
+admin_iface_mac 52:54:00:46:ab:33
+admin_net_ip 10.0.0.0
+admin_ip 10.0.0.1
+tftp_dir /var/lib/kanopya/tftp
+crypt_salt SG
