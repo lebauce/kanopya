@@ -1,4 +1,4 @@
-package MasterImage;
+package KIM::MasterImage;
 
 use Dancer ':syntax';
 use Dancer::Plugin::Ajax;

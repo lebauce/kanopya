@@ -1,4 +1,4 @@
-package Services;
+package KIO::Services;
 
 use Dancer ':syntax';
 use Dancer::Plugin::Ajax;

@@ -1,4 +1,4 @@
-package Consommation;
+package KIM::Consommation;
 
 use Dancer ':syntax';
 
