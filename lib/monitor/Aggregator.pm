@@ -24,21 +24,25 @@ This option avoids frequent requests on the collector manager (monitoring tool r
 accelerates data access, but needs more storage space.
 
 For each service provider, Aggregator retrieves values for indicators used at both level:
-- service level, i.e. in ClusterMetric
-- node level, i.e in NodeMetricCombination
+
+* service level, i.e. in Clustermetric
+* node level, i.e in NodemetricCombination
+
 using the linked collector manager (which could be an external monitoring tool or the kanopya collector).
+
 Then Aggregator will:
-- check data (raising Alert if missing data)
-- store values for each indicator for each nodes
-- compute and store ClusterMetric
+
+1. check data (raising Alert if missing data)
+2. store values for each indicator for each nodes
+3. compute and store ClusterMetric
 
 Aggregator uses RRDTimeData to store data at service level
 and uses DataCache to (possibly) store data at node level.
 
-@see <package>Entity::Combination::NodeMetricCombination</package>
-@see <package>Entity::ClusterMetric</package>
-@see <package>Entity::TimeData::RRDTimeData</package>
-@see <package>Entity::Manager::CollectorManager</package>
+@see <package>Entity::Combination::NodemetricCombination</package>
+@see <package>Entity::Clustermetric</package>
+@see <package>TimeData::RRDTimeData</package>
+@see <package>Manager::CollectorManager</package>
 
 =end classdoc
 =cut
@@ -99,8 +103,6 @@ sub new {
 =begin classdoc
 
 Check the elapsed time of the main loop.
-
-@constructor
 
 =end classdoc
 =cut
