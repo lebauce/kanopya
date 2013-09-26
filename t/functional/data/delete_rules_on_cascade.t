@@ -158,6 +158,7 @@ sub main {
     rrd_creation();
     indicator_deletion();
     rrd_deletion();
+    delete_node();
     clean_test();
 
     if ($testing == 1) {
@@ -165,6 +166,23 @@ sub main {
     }
 }
 
+sub delete_node {
+    lives_ok {
+        diag('Deleting node...');
+        my $node_hostname = $node->node_hostname;
+        $node->remove();
+        my $used_indicators = $aggregator->_getUsedIndicators(service_provider     => $service_provider,
+                                                              include_nodemetric   => 1);
+
+        for my $indicator (values %{$used_indicators->{indicators}}) {
+            my $rrd_name = '/var/cache/kanopya/monitor/timeDB_'.$indicator->id.'_'.$node_hostname.'.rrd';
+            if (defined open(FILE,$rrd_name)) {
+                die("RRD Datacache for node $rrd_name not deleted");
+                close(FILE);
+            }
+        }
+    } 'Deleting rrd after deleting a node'
+}
 
 sub rrd_creation {
     diag('Launch aggregator to create RRD');
@@ -375,18 +393,6 @@ sub rrd_deletion {
             close(FILE);
         }
 
-        my $node_hostname = $node->delete();
-        my $used_indicators = $aggregator->_getUsedIndicators(service_provider     => $service_provider,
-                                                              include_nodemetric   => 1);
-
-        for my $indicator (values %{$used_indicators->{indicators}}) {
-            my $rrd_name = '/var/cache/kanopya/monitor/timeDB_'.$indicator->id.'_'.$node_hostname.'.rrd';
-            if (defined open(FILE,$rrd_name)) {
-                die('RRD Datacache for node <'.$node_hostname
-                     .'> and indicator <'.$indicator->id.'> ('.$rrd_name.') not deleted');
-                close(FILE);
-            }
-        }
     } 'Testing rrd remove'
 }
 
