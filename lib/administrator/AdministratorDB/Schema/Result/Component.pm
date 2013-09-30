@@ -178,21 +178,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 tftpd
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Tftpd>
-
-=cut
-
-__PACKAGE__->might_have(
-  "tftpd",
-  "AdministratorDB::Schema::Result::Tftpd",
-  { "foreign.tftpd_id" => "self.component_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 ceph
 
 Type: might_have
@@ -450,6 +435,21 @@ __PACKAGE__->has_many(
   "hosts",
   "AdministratorDB::Schema::Result::Host",
   { "foreign.host_manager_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 hpc_manager
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::HpcManager>
+
+=cut
+
+__PACKAGE__->might_have(
+  "hpc_manager",
+  "AdministratorDB::Schema::Result::HpcManager",
+  { "foreign.hpc_manager_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -923,6 +923,36 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 swift_proxy
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::SwiftProxy>
+
+=cut
+
+__PACKAGE__->might_have(
+  "swift_proxy",
+  "AdministratorDB::Schema::Result::SwiftProxy",
+  { "foreign.swift_proxy_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 swift_storage
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::SwiftStorage>
+
+=cut
+
+__PACKAGE__->might_have(
+  "swift_storage",
+  "AdministratorDB::Schema::Result::SwiftStorage",
+  { "foreign.swift_storage_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 syslogng3
 
 Type: might_have
@@ -935,6 +965,21 @@ __PACKAGE__->might_have(
   "syslogng3",
   "AdministratorDB::Schema::Result::Syslogng3",
   { "foreign.syslogng3_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 tftpd
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Tftpd>
+
+=cut
+
+__PACKAGE__->might_have(
+  "tftpd",
+  "AdministratorDB::Schema::Result::Tftpd",
+  { "foreign.tftpd_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -983,21 +1028,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 hpc_manager
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::HpcManager>
-
-=cut
-
-__PACKAGE__->might_have(
-  "hpc_manager",
-  "AdministratorDB::Schema::Result::HpcManager",
-  { "foreign.hpc_manager_id" => "self.component_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 workflow_def_managers
 
 Type: has_many
@@ -1014,8 +1044,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07035 @ 2013-06-13 02:55:37
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ryRfMmeEB8gHg4/MpXxcuw
+# Created by DBIx::Class::Schema::Loader v0.07036 @ 2013-09-26 16:07:43
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UzHtet/dLCMTqtYgfBHNVA
 
 __PACKAGE__->belongs_to(
   "parent",

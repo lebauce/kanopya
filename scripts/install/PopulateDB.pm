@@ -166,6 +166,8 @@ my @classes = (
     'Entity::Component::Openstack::Quantum',
     'Entity::Component::Openstack::Keystone',
     'Entity::Component::Openstack::Glance',
+    'Entity::Component::Openstack::SwiftProxy',
+    'Entity::Component::Openstack::SwiftStorage',
     'Entity::Repository::OpenstackRepository',
     'Entity::Repository::Opennebula3Repository',
     'Entity::Repository::Vsphere5Repository',
@@ -1224,6 +1226,18 @@ sub registerComponents {
             component_version      => 0,
             component_categories   => [ 'HostManager' ],
             service_provider_types => [ 'Hpc7000' ],
+        },
+        {
+            component_name         => 'SwiftProxy',
+            component_version      => 1,
+            component_categories   => [ ],
+            service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6' ],
+        },
+        {
+            component_name         => 'SwiftStorage',
+            component_version      => 1,
+            component_categories   => [ ],
+            service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6' ],
         },
     ];
 
