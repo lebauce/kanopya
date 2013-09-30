@@ -928,7 +928,8 @@ sub _restart_middlewares {
 
     print "\n - Restarting required services...\n";
 
-    for my $service ('isc-dhcp-server','iscsitarget','puppetmaster', 'tftpd-hpa', 'snmpd', 'rabbitmq-server') {
+    for my $service ('isc-dhcp-server','iscsitarget','puppetmaster', 'xinetd',
+                     'tftpd-hpa', 'snmpd', 'rabbitmq-server') {
         system("service $service restart");
     }
     system("service inetutils-inetd stop");
