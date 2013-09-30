@@ -90,3 +90,9 @@
 [submodule "templates/components/puppetmaster/modules/ceph"]
 	path = templates/components/puppetmaster/modules/ceph
 	url = https://github.com/enovance/puppet-ceph.git
+[submodule "templates/components/puppetmaster/modules/ssh"]
+	path = templates/components/puppetmaster/modules/ssh
+	url = https://github.com/saz/puppet-ssh.git
+[submodule "templates/components/puppetmaster/modules/rsync"]
+	path = templates/components/puppetmaster/modules/rsync
+	url = https://github.com/puppetlabs/puppetlabs-rsync.git
