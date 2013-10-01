@@ -101,6 +101,8 @@ sub main {
                             },
                             'quantum' => {
                             },
+                            'apache' => {
+                            }
                         }
                     );
     } 'Create Nova controller cluster';
