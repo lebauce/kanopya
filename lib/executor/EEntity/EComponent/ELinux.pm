@@ -124,7 +124,11 @@ sub isUp {
             }
 
             # Now reboot the host
-            $args{host}->getEContext->execute(command => "reboot");
+            eval {
+                $args{host}->getEContext->execute(command => "sync;" .
+                                                             "echo 1 > /proc/sys/kernel/sysrq;" .
+                                                             "echo b > /proc/sysrq-trigger");
+            };
         };
         if ($@) {
             throw Kanopya::Exception::Internal::NotFound(
