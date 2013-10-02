@@ -14,6 +14,8 @@ virtualbox: centos-6.4-kanopya.vmdk
 	VBoxManage modifyvm "Kanopya CentOS Appliance" --cpus 2
 	VBoxManage modifyvm "Kanopya CentOS Appliance" --nic1 nat
 	VBoxManage modifyvm "Kanopya CentOS Appliance" --nic2 bridged
+	VBoxManage modifyvm "Kanopya CentOS Appliance" --natpf1 Front,tcp,,5000,,5000
+	VBoxManage modifyvm "Kanopya CentOS Appliance" --natpf1 SSH,tcp,,2222,,22
 	VBoxManage storagectl "Kanopya CentOS Appliance" --name SATA --add sata --bootable on
 	VBoxManage storageattach "Kanopya CentOS Appliance" --storagectl SATA --type hdd --medium centos-6.4-kanopya.vmdk --port 0
 	VBoxManage export "Kanopya CentOS Appliance" --output kanopya-centos-appliance.ova --vsys 0 --product "Kanopya" --producturl "http://www.kanopya.org" --vendor "Hedera Technology" --vendorurl "http://www.hederatech.com"
