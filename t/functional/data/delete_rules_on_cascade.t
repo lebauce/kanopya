@@ -63,6 +63,7 @@ my $node;
 my $indicator_deleted_id;
 my $aggregator;
 my $testing = 0;
+my @entities = ();
 
 try {
     main ();
@@ -85,18 +86,26 @@ sub main {
             externalcluster_name => 'Test Service Provider',
     );
 
-    $external_cluster_mockmonitor = Entity::ServiceProvider::Externalcluster->new(
+    push @entities, $service_provider;
+
+    my $external_cluster_mockmonitor = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Monitor',
     );
+
+    push @entities, $external_cluster_mockmonitor;
 
     my $mock_monitor = Entity::Component::MockMonitor->new(
             service_provider_id => $external_cluster_mockmonitor->id,
     );
 
-    $service_provider->addManager(
-        manager_id   => $mock_monitor->id,
-        manager_type => 'CollectorManager',
-    );
+    push @entities, $mock_monitor;
+
+    my $manager = $service_provider->addManager(
+                      manager_id   => $mock_monitor->id,
+                      manager_type => 'CollectorManager',
+                  );
+
+    push @entities, $manager;
 
     # Create one node
     $node = Node->new(
@@ -119,11 +128,37 @@ sub main {
                             }
                         );
 
+    my $service_provider2 = Entity::ServiceProvider::Externalcluster->new(
+            externalcluster_name => 'Test Service Provider 2',
+    );
+
+    push @entities, $service_provider2;
+
+    my $m2 = $service_provider2->addManager(
+        manager_id   => $mock_monitor->id,
+        manager_type => 'CollectorManager',
+    );
+
+    push @entities, $m2;
+
+    Node->new(
+        node_hostname => 'test_node2_sp1',
+        service_provider_id   => $service_provider->id,
+        monitoring_state    => 'up',
+    );
+
+    Node->new(
+        node_hostname => 'test_node1_sp2',
+        service_provider_id   => $service_provider2->id,
+        monitoring_state    => 'up',
+    );
+
     service_rule_objects_creation();
     node_rule_objects_creation();
     rrd_creation();
     indicator_deletion();
     rrd_deletion();
+    delete_node();
     clean_test();
 
     if ($testing == 1) {
@@ -131,10 +166,27 @@ sub main {
     }
 }
 
+sub delete_node {
+    lives_ok {
+        diag('Deleting node...');
+        my $node_hostname = $node->node_hostname;
+        $node->remove();
+        my $used_indicators = $aggregator->_getUsedIndicators(service_provider     => $service_provider,
+                                                              include_nodemetric   => 1);
+
+        for my $indicator (values %{$used_indicators->{indicators}}) {
+            my $rrd_name = '/var/cache/kanopya/monitor/timeDB_'.$indicator->id.'_'.$node_hostname.'.rrd';
+            if (defined open(FILE,$rrd_name)) {
+                die("RRD Datacache for node $rrd_name not deleted");
+                close(FILE);
+            }
+        }
+    } 'Deleting rrd after deleting a node'
+}
 
 sub rrd_creation {
     diag('Launch aggregator to create RRD');
-    my $aggregator = Aggregator->new();
+    $aggregator = Aggregator->new();
     $aggregator->update();
 
     lives_ok {
@@ -172,8 +224,11 @@ sub rrd_creation {
 
 sub clean_test {
     diag('Cleaning DB...');
-    $service_provider->delete();
-    $external_cluster_mockmonitor->delete();
+
+    while (scalar @entities) {
+        (pop @entities)->delete();
+    }
+
     Entity::Indicator->new(
         indicator_label => 'RAM used',
         indicator_name => 'RAM used',
@@ -189,8 +244,12 @@ sub indicator_deletion {
     lives_ok {
         diag('Deleting indicator and related objects on cascade');
 
-        my $deleted_indicator = Entity::Indicator->find(hash => {indicator_oid => $indicator_deleted->indicator->indicator_oid});
+        my $deleted_indicator = Entity::Indicator->find(
+                                    hash => {indicator_oid => $indicator_deleted->indicator->indicator_oid}
+                                );
+
         $indicator_deleted_id = $deleted_indicator->id;
+        diag("Deleting indicator <$indicator_deleted_id>");
         $deleted_indicator->delete();
 
         expectedException {
@@ -334,18 +393,6 @@ sub rrd_deletion {
             close(FILE);
         }
 
-        my $node_hostname = $node->delete();
-        my $used_indicators = $aggregator->_getUsedIndicators(service_provider     => $service_provider,
-                                                              include_nodemetric   => 1);
-
-        for my $indicator (values %{$used_indicators->{indicators}}) {
-            my $rrd_name = '/var/cache/kanopya/monitor/timeDB_'.$indicator->id.'_'.$node_hostname.'.rrd';
-            if (defined open(FILE,$rrd_name)) {
-                die('RRD Datacache for node <'.$node_hostname
-                     .'> and indicator <'.$indicator->id.'> ('.$rrd_name.') not deleted');
-                close(FILE);
-            }
-        }
     } 'Testing rrd remove'
 }
 

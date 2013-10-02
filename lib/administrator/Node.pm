@@ -185,6 +185,22 @@ sub remove {
     if (not defined $args{dryrun}) {
         $self->service_provider->removeNode('node_id' => $self->id);
     }
+
+    my $manager;
+    eval {
+        $manager = $self->service_provider->getManager(manager_type => 'CollectorManager');
+    };
+
+    if (defined $manager) {
+        my @collector_indicators = $manager->collector_indicators;
+
+        for my $collector_indicator (@collector_indicators) {
+            my $indicator = $collector_indicator->indicator;
+            my $rrd_name = $indicator->id.'_'.$self->node_hostname;
+            $log->info('delete '.$rrd_name);
+            TimeData::RRDTimeData::deleteTimeDataStore(name => $rrd_name);
+        }
+    }
     return;
 }
 

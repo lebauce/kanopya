@@ -19,6 +19,7 @@ use warnings;
 
 use Entity::Clustermetric;
 use Entity::Combination::NodemetricCombination;
+use TimeData::RRDTimeData;
 
 use Data::Dumper;
 use Log::Log4perl "get_logger";
@@ -188,6 +189,17 @@ sub delete {
                 }
             }
         }
+
+        my @service_provider_managers = $collector_indicator->collector_manager->service_provider_managers;
+        for my $spm (@service_provider_managers) {
+            my @nodes = $spm->service_provider->nodes;
+            for my $node (@nodes) {
+                my $rrd_name = $self->id.'_'.$node->node_hostname;
+                $log->info('delete '.$rrd_name);
+                TimeData::RRDTimeData::deleteTimeDataStore(name => $rrd_name);
+            }
+        }
+
         $collector_indicator->delete();
     }
     return $self->SUPER::delete();
