@@ -14,13 +14,13 @@ hardware:
       type: ext4
 repos:
   - name: MariaDB
-    baseurl: http://yum.mariadb.org/5.5/centos6-amd64
+    baseurl: http://yum.mariadb.org/5.5.32/centos6-amd64/
   - name: rpmforge
     baseurl: http://apt.sw.be/redhat/el6/en/x86_64/rpmforge
   - name: magnum
     baseurl: http://rpm.mag-sol.com/Centos/6/x86_64/
   - name: "kanopya"
-    baseurl: "http://download.kanopya.org/yum/centos/6/x86_64/"
+    baseurl: http://download.kanopya.org/yum/centos/6/x86_64/
   - name: PerconaDB
     baseurl: http://repo.percona.com/centos/6/os/x86_64/
   - name: EPEL
@@ -112,12 +112,19 @@ packages:
   - wget
   - python-requests
   - kanopya
+  - mod_ssl
+  - rubygem-passenger
+  - mod_passenger
 files:
   "/root":
     - setup.inputs
     - puppet-dhcp-pxefilename.patch
   "/etc/sysconfig/network-scripts":
     - ifcfg-eth1
+  "/etc/httpd/conf.d":
+    - rack.conf
+  "/etc/init.d":
+    - motd
 post:
   base:
     - "/usr/sbin/brctl addbr eth1"
@@ -143,13 +150,18 @@ post:
 #   - "cp /opt/kanopya/scripts/init/* /etc/init.d/"
     - "patch -d /opt/kanopya/templates/components/puppetmaster/modules/dhcp/ -p1 < /root/puppet-dhcp-pxefilename.patch"
     - "export PERL5LIB=/opt/kanopya/lib/common:/opt/kanopya/lib/administrator:/opt/kanopya/lib/monitor:/opt/kanopya/lib/executor:/opt/kanopya/lib/external:/opt/kanopya/lib/external/NetApp:/opt/kanopya/lib/orchestrator:/opt/kanopya/lib/component/kanopya_front:/opt/kanopya/lib/component/kanopya_executor:/opt/kanopya/lib/component/kanopya_aggregator:/opt/kanopya/lib/component/kanopya_rulesengine:/opt/kanopya/lib/mock; cd /opt/kanopya/scripts/install; ./setup.pl -f /root/setup.inputs &> /root/setup.log || true"
-    - "wget -P /opt/kanopya/tools/deployment_solver/ http://192.168.0.173:8011/deployment_solver/1.7/deployment_solver.jar"
+    - "mkdir -p /etc/puppet/rack/public"
+    - "mkdir -p /etc/puppet/rack/tmp"
+    - "cp /usr/share/puppet/ext/rack/files/config.ru /etc/puppet/rack"
+    - "chown puppet /etc/puppet/rack/config.ru"
+    - "wget -P /opt/kanopya/tools/deployment_solver/ http://download.kanopya.org/constraint_engine/deployment_solver/deployment_solver.jar"
     - "sed -i 's/disable\(\t*\)= yes/disable\1= no/' /etc/xinetd.d/tftp"
     - "/sbin/chkconfig postfix off"
     - "/sbin/chkconfig snmpd on"
     - "/sbin/chkconfig puppet on"
     - "/sbin/chkconfig rabbitmq-server on"
-    - "/sbin/chkconfig puppetmaster on"
+    - "/sbin/chkconfig puppetmaster off"
+    - "/sbin/chkconfig httpd on"
     - "/sbin/chkconfig mysql on"
     - "/sbin/chkconfig rpcbind on"
     - "/sbin/chkconfig nfs on"
@@ -160,6 +172,7 @@ post:
     - "/sbin/chkconfig kanopya-front on"
     - "/sbin/chkconfig kanopya-rulesengine on"
     - "/sbin/chkconfig kanopya-state-manager on"
+    - "/sbin/chkconfig motd on"
     - "/sbin/service puppetmaster stop"
     - "/sbin/service rabbitmq-server stop"
     - "/sbin/service mysql stop"

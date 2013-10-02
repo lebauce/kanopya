@@ -1,0 +1,39 @@
+#!/bin/sh
+#
+# motd	Prepares /etc/motd file
+#
+# chkconfig: 2345 99 05
+# description: Prepares /etc/motd file
+#
+### BEGIN INIT INFO
+# Provides: ec2
+# Default-Start: 2345
+# Default-Stop: 0 1 6
+# Short-Description: Prepares /etc/motd file
+# Description: Prepares /etc/motd file
+### END INIT INFO
+
+HOSTNAME=`/bin/uname -a | awk '{print $2}'`
+IP_ADDRESS=`ip addr list eth0 | grep "inet " | cut -d' ' -f6 | cut -d/ -f1`
+
+cat > /etc/motd <<-'EOF'  
+.--.   .--.     ____    ,---.   .--.    ,-----.    .-------.  ____     __   ____     
+|  | _/  /    .'  __ `. |    \  |  |  .'  .-,  '.  \  _(`)_ \ \   \   /  /.'  __ `.  
+| (`' ) /    /   '  \  \|  ,  \ |  | / ,-.|  \ _ \ | (_ o._)|  \  _. /  '/   '  \  \ 
+|(_ ()_)     |___|  /  ||  |\_ \|  |;  \  '_ /  | :|  (_,_) /   _( )_ .' |___|  /  | 
+| (_,_)   __    _.-`   ||  _( )_\  ||  _`,/ \ _/  ||   '-.-'___(_ o _)'     _.-`   | 
+|  |\ \  |  |.'   _    || (_ o _)  |: (  '\_/ \   ;|   |   |   |(_,_)'   .'   _    | 
+|  | \ `'   /|  _( )_  ||  (_,_)\  | \ `"/  \  ) / |   |   |   `-'  /    |  _( )_  | 
+|  |  \    / \ (_ o _) /|  |    |  |  '. \_/``".'  /   )    \      /     \ (_ o _) / 
+`--'   `'-'   '.(_,_).' '--'    '--'    '-----'    `---'     `-..-'       '.(_,_).'  
+EOF
+
+cat >> /etc/motd <<-EOF
+Kanopya Appliance 1.8                    
+                                                    
+      Homepage: http://www.kanopya.org/
+           IRC: #kanopya @ irc.freenode.net    
+      Hostname: $HOSTNAME
+    IP Address: $IP_ADDRESS
+
+EOF
