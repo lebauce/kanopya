@@ -143,7 +143,6 @@ sub getPuppetDefinition {
                 docroot => $vhost->apache2_virtualhost_documentroot,
                 serveradmin => $vhost->apache2_virtualhost_serveradmin,
                 logroot => $vhost->apache2_virtualhost_log,
-                port => '*'
             }
         );
     }
