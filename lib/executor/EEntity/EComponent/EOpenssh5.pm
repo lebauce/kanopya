@@ -73,8 +73,8 @@ sub addNode {
 
     General::checkParams(args => \%args, required => [ 'host', 'mount_point' ]);
 
-    my $rsapubkey_cmd = "mkdir -p $args{mount_point}/root/.ssh ; " .
-                        "cat /root/.ssh/kanopya_rsa.pub > " .
+    my $rsapubkey_cmd = "mkdir -m 600 -p $args{mount_point}/root/.ssh ; " .
+                        "install -m 600 /root/.ssh/kanopya_rsa.pub " .
                         "$args{mount_point}/root/.ssh/authorized_keys";
 
     $self->_host->getEContext->execute(command => $rsapubkey_cmd);
