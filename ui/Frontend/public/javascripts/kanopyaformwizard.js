@@ -225,7 +225,8 @@ var KanopyaFormWizard = (function() {
         return values;
     }
 
-    KanopyaFormWizard.prototype.buildFromAttrDef = function(attributes, displayed, values, relations, listing) {
+    KanopyaFormWizard.prototype.buildFromAttrDef = function(attrs, displayed, values, relations, listing) {
+        var attributes = $.extend({},attrs); // Clone attributes to not modify reference object
         var ordered_attributes = {};
 
         // Building a new hash according to the orderer list of displayed attrs
