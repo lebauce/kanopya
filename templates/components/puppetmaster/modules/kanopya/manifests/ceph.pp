@@ -36,4 +36,6 @@ class kanopya::ceph::osd {
   }
 
   Class['kanopya::ceph'] -> Class['kanopya::ceph::osd']
+
+  Ceph::Key <<| title == 'admin' |>>
 }
