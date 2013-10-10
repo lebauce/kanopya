@@ -26,7 +26,7 @@ function displayRulesGraph(widget, sp_id) {
     var srules_graph_div_id = 'srules_state_graph_' + widget_id;
     serv_graph_cont.append($('<div>', {id : srules_graph_div_id}));
     $.get(
-            '/api/serviceprovider/' + sp_id + '/aggregate_rules',
+            '/api/aggregaterule?service_provider_id=' + sp_id,
             function (rules) {
                 if (rules.length == 0) {
                     serv_graph_cont.find('.title').html('No service rules');
@@ -52,7 +52,7 @@ function displayRulesGraph(widget, sp_id) {
     var nodes_graph_cont  = widget.element.find('.node_rules_state_overview');
     nodes_graph_cont.append($('<div>', {id : nrules_graph_div_id}));
     $.get(
-            'api/serviceprovider/' + sp_id + '/externalnodes?externalnode_state=<>,disabled',
+            'api/serviceprovider/' + sp_id + '/nodes?monitoring_state=<>,disabled',
             function(nodes) {
                 var total_nodes = nodes.length;
                 var checked_nodes = 0;
@@ -60,7 +60,7 @@ function displayRulesGraph(widget, sp_id) {
                 var undef_rules = 0;
                 $.each(nodes, function(idx,node) {
                     $.get(
-                            'api/externalnode/' + node.pk + '/verified_noderules',
+                            'api/node/' + node.pk + '/verified_noderules',
                             function(verified_rules) {
                                 $.each(verified_rules, function(i,e) {
                                     (e.verified_noderule_state === 'verified') ? warn_rules++ : undef_rules++;
@@ -73,7 +73,7 @@ function displayRulesGraph(widget, sp_id) {
                 function manageEndCounting() {
                     if (total_nodes === checked_nodes) {
                         $.get(
-                                '/api/serviceprovider/' + sp_id + '/nodemetric_rules',
+                                '/api/nodemetricrule?service_provider_id=' + sp_id,
                                 function(node_rules) {
                                     master_cont.hide();
                                     if (total_nodes == 0) {
@@ -123,6 +123,9 @@ function rulesStateGraph(div_id, series) {
             tooltipLocation :'n',
             useAxesFormatters:false
         },
-      });
-      setGraphResizeHandlers(div_id, rules_graph);
+        cursor : {
+            show : false
+        }
+    });
+    setGraphResizeHandlers(div_id, rules_graph);
 }

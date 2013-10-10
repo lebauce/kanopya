@@ -36,10 +36,11 @@ Virtual status var names correspond to strings in virtual_nodes.adm
 
 =cut
 
-package VirtualProvider;
+package DataProvider::VirtualProvider;
 
 use strict;
 use warnings;
+use base 'DataProvider';
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 

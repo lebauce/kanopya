@@ -1,37 +1,47 @@
 require('jquery/jquery.form.js');
 require('jquery/jquery.validate.js');
 require('jquery/jquery.form.wizard.js');
-require('KIM/policiesdefs.js');
-require('KIM/policiesform.js');
 require('KIM/orchestration_policy.js');
 
 function load_policy_content (container_id) {
     var policy_type = container_id.split('_')[1];
 
     function createAddPolicyButton(cid, grid) {
-        var policy_opts = {
-            title       : 'Add a ' + policy_type + ' policy',
-            name        : 'policy',
-            callback    : function () { grid.trigger("reloadGrid"); }
-        };
-
         var button = $("<button>", {html : 'Add a ' + policy_type + ' policy'}).button({
             icons   : { primary : 'ui-icon-plusthick' }
         });
 
         button.bind('click', function() {
-            policy_opts.fields  = jQuery.extend(true, {}, policies[policy_type]);
             if (policy_type != 'orchestration') {
-                new PolicyForm(policy_opts).start();
+                // Use the kanopyaformwizard for policies
+                (new KanopyaFormWizard({
+                    title      : 'Add a ' + policy_type + ' policy',
+                    type       : policy_type + 'policy',
+                    reloadable : true,
+                    rawattrdef : {
+                        policy_type : {
+                            value : policy_type
+                        }
+                    },
+                    attrsCallback : function (resource, data, trigger) {
+                        var args = { params : data, trigger : trigger };
+
+                        // Make the call to attributes our  self to force using POST, as
+                        // we need to give JSON formated params
+                        return ajax('POST', '/api/attributes/' + policy_type + 'policy', args);
+                    },
+                    callback : function () { grid.trigger("reloadGrid"); }
+                })).start();
             } else {
-                addOrchestrationPolicy(policy_opts, grid);
+                addOrchestrationPolicy(grid);
             }
         });
-        $('#' + cid).append(button);
+        var action_div=$('#' + cid).prevAll('.action_buttons');
+        $(action_div).append(button);
     };
 
     var container = $('#' + container_id);
-    var grid = create_grid( {
+    var grid = create_grid({
         url: '/api/policy?policy_type=' + policy_type,
         content_container_id: container_id,
         grid_id: policy_type + '_policy_list',
@@ -40,7 +50,7 @@ function load_policy_content (container_id) {
                     { name:'policy_name', index:'policy_name', width:300 },
                     { name:'policy_desc', index:'policy_desc', width:500 } ],
         details: { onSelectRow : load_policy_details }
-    } );
+    });
 
     createAddPolicyButton(container_id, grid);
 }
@@ -57,38 +67,38 @@ function load_policy_details (elem_id, row_data, grid_id) {
         }, this)
     });
 
-    var flattened_policy;
-    $.ajax({
-        type     : 'POST',
-        async    : false,
-        url      : '/api/policy/' + elem_id + '/getFlattenedHash',
-        dataTYpe : 'json',
-        success  : $.proxy(function(d) {
-            flattened_policy = d;
-        }, this)
-    });
-
-    jQuery.extend(true, flattened_policy, policy);
-
-    var fields = jQuery.extend(true, {}, policies[policy.policy_type]);
-    fields['policy_id'] = {
-        label        : 'Policy id',
-        type         : 'hidden',
-        value        : policy.policy_id,
-    };
-
-    var policy_opts = {
-        title       : 'Edit the ' + policy.policy_type + ' policy: ' + policy.policy_name,
-        name        : 'policy',
-        fields      : fields,
-        values      : flattened_policy,
-        callback    : function () { $('#' + grid_id).trigger("reloadGrid"); }
-    };
-
     // Special management for Orchestration policy
     if (policy.policy_type == 'orchestration') {
-        load_orchestration_policy_details(policy_opts, flattened_policy, grid_id);
+        load_orchestration_policy_details(policy, grid_id);
+
     } else {
-        new PolicyForm(policy_opts).start();
+        var currentdata = policy;
+        // Use the kanopyaformwizard for policies
+        (new KanopyaFormWizard({
+            title      : 'Edit the ' + policy.policy_type + ' policy: ' + policy.policy_name,
+            type       : policy.policy_type + 'policy',
+            id         : policy.pk,
+            reloadable : true,
+            attrsCallback : function (resource, data, trigger) {
+                // If it is the first call to get attributes, use the original policy as params
+                // to get the proper dynamic attr defintion.
+                if (! $.isEmptyObject(data)) {
+                    currentdata = data;
+                }
+
+                var args = { params : currentdata, trigger : trigger };
+                var attrsdef = ajax('POST', '/api/attributes/' + policy.policy_type + 'policy', args);
+                for (var attr in attrsdef.attributes) {
+                    if (attrsdef.attributes[attr].value == undefined) {
+                        delete currentdata[attr];
+                    }
+                }
+                return attrsdef;
+            },
+            valuesCallback : function (type, id, attributes) {
+                return currentdata;
+            },
+            callback : function () { $('#' + grid_id).trigger("reloadGrid"); }
+        })).start();
     }
 }

@@ -1,0 +1,31 @@
+<script>
+    require('widgets/widget_historical_view.js');
+</script>
+
+<span class='widget_part widget_part_config'>Configuration</span>
+<div class="clustermetric_options">
+    <div class="field">
+        <span class='graph_time_settings'></span>
+        <button class='refresh_button hidden'>Refresh</button>
+    </div>
+    <div class="dropdown_container">
+        <select class="servicecombination_list" multiple="multiple"></select>
+    </div>
+    <div class="nodelevel_config">
+        <select class="nodemetriccombination_list" multiple="multiple"></select>
+        <span class='node_list_label'>for </span><select class="node_list" multiple="multiple"></select>
+    </div>
+    <!--input id="trendlineinput" type="checkbox" onclick="toggleTrendLine()" value="show"> Trend line</input-->
+</div>
+<br/>
+<span class='widget_part widget_part_forcasting disabled'>Forecasting</span>
+<div class='datamodel_fields hidden'>
+    <ol>
+        <li><i>Click on the graph to select start and end of training data</i></li>
+        <li><i>Automatic model selection</i><input type='checkbox' class='auto-forecast'>
+        <li class='modeltype-select'><i>Choose models to use: </i><select class="datamodel_type_list" multiple="multiple"></select></li>
+        <li><button class='instant_predict'>Predict</button></li>
+    </ol>
+</div>
+
+<div class="clusterCombinationView"></div>

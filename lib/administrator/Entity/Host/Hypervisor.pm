@@ -33,6 +33,16 @@ use constant ATTR_DEF => {};
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub methods {
+    return {
+        maintenance => {
+            description => 'flush the hypervisor and deactivate it',
+        },
+        resubmitVms => {
+            description => 'resubmit all the virtual machines of the hypervisor',
+        }
+    }
+}
 
 sub getVms {
     my $self = shift;
@@ -47,10 +57,42 @@ sub checkStoppable {
     my $self = shift;
     my @vms = $self->getVms();
 
-    if (scalar @vms) {
-        throw Kanopya::Exception(error => "The hypervisor " . $self->host_hostname .
-                                          " can't be stopped as it still runs virtual machines");
-    }
+#    if (scalar @vms) {
+#        throw Kanopya::Exception(error => "The hypervisor " . $self->node->node_hostname .
+#                                          " can't be stopped as it still runs virtual machines");
+#    }
+
+    return (scalar @vms) == 0 ? 1 : 0;
+}
+
+sub getCloudManager {
+    throw Kanopya::Exception::NotImplemented();
+}
+
+sub maintenance {
+    my $self = shift;
+
+    $self->getCloudManager->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+        name   => 'HypervisorMaintenance',
+        params => {
+            context => {
+                host => $self,
+            }
+        }
+    );
+}
+
+sub resubmitVms {
+    my $self = shift;
+
+    $self->getCloudManager->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+        name   => 'ResubmitHypervisor',
+        params => {
+            context => {
+                host => $self,
+            }
+        }
+    );
 }
 
 1;

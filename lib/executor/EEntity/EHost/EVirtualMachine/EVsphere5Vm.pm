@@ -39,27 +39,6 @@ my $errmsg;
 
 =begin classdoc
 
-Return the state of the VM
-
-=end classdoc
-
-=cut
-
-sub checkUp {
-    my $self = shift;
-
-#    my $vm_state = $self->{host_manager}->getVMState(host => $self);
-
-#    $log->info('Vm <'.$self->{host}->getId().'> vsphere status <'.($vm_state->{state}).'>');
-
-    return 1;
-    #return $self->SUPER::checkUp();
-}
-
-=pod
-
-=begin classdoc
-
 Retrieve the memory currently used by a vsphere5 vm, in Bytes
 
 =end classdoc
@@ -98,7 +77,7 @@ sub getRamUsedByVm {
         }
     }
     else {
-        $errmsg = 'Vm\'s used memory not available for vm '. $self->host_hostname;
+        $errmsg = 'Vm\'s used memory not available for vm '. $self->node->node_hostname;
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 }

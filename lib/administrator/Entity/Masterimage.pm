@@ -1,5 +1,5 @@
-# Masterimage.pm - This object allows to manipulate Master image configuration
-#    Copyright 2011 Hedera Technology SAS
+#    Copyright 2011-2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -14,7 +14,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 17 july 2010
 
 package Entity::Masterimage;
 use base "Entity";
@@ -22,15 +21,19 @@ use base "Entity";
 use strict;
 use warnings;
 
-use Kanopya::Exceptions;
-use Administrator;
-use Entity::Operation;
-use General;
+use ClassType::ComponentType;
 
-use Entity::Container;
+# Used to get the Kanopya cluster statically
+# TODO: Implement a component KanopyaMasterimage of type MasterimageManager,
+#       then the executor will be get by using the execution manager of 
+#       the cluster on which is installed the component
+use Entity::ServiceProvider::Cluster;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
+
+use TryCatch;
+my $err;
 
 my $log = get_logger("");
 my $errmsg;
@@ -56,40 +59,44 @@ use constant ATTR_DEF => {
         pattern      => '^[0-9]+$',
         is_mandatory => 1,
     },
+    masterimage_defaultkernel_id => {
+        pattern      => '^[0-9]*$',
+        is_mandatory => 0
+    },
+    components_provided => {
+        type         => 'relation',
+        relation     => 'multi',
+        link_to      => 'component_type',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
-
-=head2 create
-
-=cut
 
 sub create {
     my $class = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'file_path' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'file_path' ],
+                         optional => { 'keep_file' => 0 });
 
-    Entity::Operation->enqueue(
-        priority    => 200,
-        type        => 'DeployMasterimage',
-        params      => {
-            file_path   => $args{file_path}
+    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster;
+    $kanopya->getManager(manager_type => 'ExecutionManager')->enqueue(
+        type   => 'DeployMasterimage',
+        params => {
+            file_path => $args{file_path},
+            keep_file => $args{keep_file}
         }
     );
 }
 
-=head2 remove
-
-=cut
-
 sub remove {
     my $self = shift;
-    my $id = $self->getAttr(name=> 'masterimage_id');
-    
-    $log->debug("New Operation RemoveMasterimage with masterimage_id : <".$id.">");
-    Entity::Operation->enqueue(
-        priority => 200,
+
+    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster;
+    $kanopya->getManager(manager_type => 'ExecutionManager')->enqueue(
         type     => 'RemoveMasterimage',
         params  => {
             context => {
@@ -99,47 +106,36 @@ sub remove {
     );
 }
 
-=head2 toString
-
-    desc: return a string representation of the entity
-
-=cut
-
 sub toString {
     my $self = shift;
-    my $string = $self->{_dbix}->get_column('masterimage_name');
-    return $string;
+
+    return $self->masterimage_name;
 }
-
-=head setProvidedComponent
-
-specify a component as installed on this master image
-
-=cut
 
 sub setProvidedComponent {
     my $self = shift;
-    if(! $self->{_dbix}->in_storage) {
-        $errmsg = "Entity::Masterimages->setProvidedComponent must be called on an already save instance";
-        $log->error($errmsg);
-        throw Kanopya::Exception(error => $errmsg);
-    }
-    
     my %args = @_;
-    
-    General::checkParams(args => \%args, required => ['component_name', 'component_version']);
-    
-    my $adm = Administrator->new;
-    my $component = $adm->{db}->resultset('ComponentType')->search({
-        component_name    => $args{component_name},
-        component_version => $args{component_version},
-    })->single;
-    
-    if(defined $component) {
-        $self->{_dbix}->components_provided->find_or_create({
-            component_type_id => $component->get_column('component_type_id')
-        });
+
+    General::checkParams(args => \%args, required => [ 'component_name', 'component_version' ]);
+
+    my $component_type;
+    try {
+        $component_type = $self->masterimage_cluster_type->find(
+                              related => 'component_types',
+                              hash    => {
+                                  component_name    => $args{component_name},
+                                  component_version => $args{component_version},
+                              }
+                          );
     }
+    catch ($err) {
+        my $type_name = $self->masterimage_cluster_type->service_provider_name;
+        $log->warn("Unable to set provided component <$args{component_name}$args{component_version}>, " .
+                   "it seems to be not supported for the cluster type <$type_name>");
+        return;
+    }
+
+    $self->populateRelations(relations => { components_provided => [ $component_type ] });
 }
 
 1;

@@ -1,0 +1,1 @@
+up /sbin/ifenslave [% interface.name %] [% FOREACH slave=interface.slaves %][% slave.iface_name() %] [% END %]

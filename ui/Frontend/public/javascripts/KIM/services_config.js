@@ -1,5 +1,5 @@
 require('common/general.js');
-require('kanopyaformwizard.js');
+//require('kanopyaformwizard.js');
 
 function loadServicesConfig(cid, eid) {
         create_grid({
@@ -23,6 +23,12 @@ function loadServicesConfig(cid, eid) {
 
                     // Find the component class, use generix component instead.
                     var componentClass;
+
+                    // Work around to handle components without version number
+                    if (window[componentName.ucfirst()] == undefined) {
+                        componentName = componentName.substring(0, componentName.length - 1);
+                        require('KIM/components/' + componentName + '.js');
+                    }
                     if (componentClass = window[componentName.ucfirst()]) {
                         // Open the configuration modal
                         (new componentClass(e.pk)).configure();
@@ -30,4 +36,29 @@ function loadServicesConfig(cid, eid) {
                 }
             }
         });
+	var action_div=$('#' + cid).prevAll('.action_buttons');
+    var addButton   = $('<a>', { text : 'Add component' }).appendTo(action_div)
+                        .button({ icons : { primary : 'ui-icon-plusthick' } });
+    $(addButton).bind('click', function (e) {
+        (new KanopyaFormWizard({
+            title      : 'Add components',
+            type       : 'cluster',
+            id         : eid,
+            relations  : { 'components' : [ "component_type_id" ] },
+            displayed  : [ 'cluster_name', 'components' ],
+            rawattrdef : {
+                components : {
+                    hide_existing : 1,
+                    is_editable   : 1
+                }
+            },
+            optionsCallback  : function (name) {
+                if (name === 'component_type_id') {
+                    // Get the component types supported by this service rovider only
+                    return ajax('GET', '/api/cluster/' + eid + '/service_provider_type/component_types');
+                }
+                return false;
+            },
+        })).start();
+    });
 }

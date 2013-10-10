@@ -1,4 +1,5 @@
-#    Copyright © 2012 Hedera Technology SAS                                                                                                                                                                       
+#    Copyright © 2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -12,13 +13,13 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package VsphereProvider;
+package DataProvider::VsphereProvider;
 
 use strict;
 use warnings;
-
+use base 'DataProvider';
 use Entity::Host::Hypervisor::Vsphere5Hypervisor;
-use Vsphere5Datacenter;
+use Entity::Component::Vsphere5::Vsphere5Datacenter;
 use Kanopya::Exceptions;
 
 use Data::Dumper;
@@ -114,7 +115,7 @@ sub _retrieveVmData {
     my $hv_view = $args{vsphere}->findEntityView(
                       view_type    => 'HostSystem',
                       hash_filter  => {
-                            name => $hypervisor->host_hostname
+                            name => $hypervisor->node->node_hostname
                       },
                       begin_entity => $dc_view,
                   );
@@ -123,7 +124,7 @@ sub _retrieveVmData {
     my $vm_view = $args{vsphere}->findEntityView(
                       view_type    => 'VirtualMachine',
                       hash_filter  => {
-                          name => $self->{host}->host_hostname
+                          name => $self->{host}->node->node_hostname
                       },
                       begin_entity => $hv_view,
                    )->summary;
@@ -168,7 +169,7 @@ sub _retrieveHypervisorData {
     my $hv_view = $args{vsphere}->findEntityView(
                       view_type    => 'HostSystem',
                       hash_filter  => {
-                            name => $self->{host}->host_hostname
+                            name => $self->{host}->node->node_hostname
                       },
                       begin_entity => $dc_view,
                   )->summary;

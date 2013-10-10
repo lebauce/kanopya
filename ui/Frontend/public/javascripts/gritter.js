@@ -74,8 +74,9 @@ function updateWorkflowGritter(workflow) {
     var gritterId = gritter[0].id.substr(13);
     var id = workflow.pk;
     var ul = gritter.find("ul.gritter-operations");
-    var operations = get("/api/operation?workflow_id=" + id);
+    var operations = get("/api/operation?workflow_id=" + id  + "&order_by=execution_rank");
     ul.empty().append(formatOperations(operations).children());
+
     if (workflow.state != "running" && workflow.state != "pending") {
         $.gritter.remove(gritterId);
         return;
@@ -84,7 +85,7 @@ function updateWorkflowGritter(workflow) {
 
 function showWorkflowGritter(workflow) {
     var id = workflow.pk;
-    var operations = get("/api/operation?workflow_id=" + id);
+    var operations = get("/api/operation?workflow_id=" + id + "&order_by=execution_rank");
     var title = "Running workflow";
     if (workflow.workflow_name != null) {
         title   += " '" + workflow.workflow_name + "'";
@@ -135,11 +136,14 @@ function updateMessages( show_gritters ) {
                     newMsg = true;
                     // Check sender (if sender is Executor and level is Inof, do not display the gritter) :
                     if ( show_gritters && (sender != "Executor" || lvl != "info") ) {
-                        var content = "From : " + rows[row].message_from + " <br /> " + "Level : " + rows[row].message_level + " <br /> " + rows[row].message_content;
+                        var content = rows[row].message_content;
+                        // Clean message for user by removing first part of content (class name and address). And add icon.
+                        var formatted_content = content.replace(/\[.*\]\s/, '');
+                        formatted_content = '<div class="message-'+lvl+' message-level" style="float:left"/>' + escapeHtmlEntities(formatted_content);
                         // Display the notification :
                         $.gritter.add({
-                            title: 'Message',
-                            text: content,
+                            title: ' ',
+                            text  : formatted_content,
                         });
                     }
                     if (parseInt(rows[row].pk) > maxID) {
@@ -166,7 +170,14 @@ function updateMessages( show_gritters ) {
                 if (gritter.length) {
                     updateWorkflowGritter(workflows[i]);
                 } else {
-                    showWorkflowGritter(workflows[i]);
+                    try {
+                        // Try to get the workflow to check permissions
+                        get("/api/workflow/" + workflows[i].pk);
+
+                        // Display the popup
+                        showWorkflowGritter(workflows[i]);
+                    }
+                    catch (e) {}
                 }
             }
 
@@ -180,8 +191,12 @@ function updateMessages( show_gritters ) {
                     }
                 }
                 if (!displayed) {
-                    var workflow = get("/api/workflow/" + id);
-                    updateWorkflowGritter(workflow);
+                    try {
+                       updateWorkflowGritter(get("/api/workflow/" + id));
+                    }
+                    catch (e) {
+                        console.log(e);
+                    }
                 }
             });
         });

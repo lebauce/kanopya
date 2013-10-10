@@ -21,7 +21,6 @@ use base "Entity";
 use strict;
 use warnings;
 
-use Administrator;
 use DateTime;
 use Kanopya::Exceptions;
 use General;
@@ -49,7 +48,7 @@ use constant ATTR_DEF => {
         label        => 'Description',
         type         => 'text',
         # Impossible to check char used because of \n doesn't match with \w
-        pattern      => '^.*$',
+        pattern      => '.*',
         is_mandatory => 0,
         is_editable  => 1
     },
@@ -123,7 +122,7 @@ use constant ATTR_DEF => {
         link_to      => 'profile',
         is_mandatory => 0,
         is_editable  => 1,
-    }
+    },
 };
 
 sub getAttrDef{ return ATTR_DEF; }
@@ -167,6 +166,12 @@ sub setAttr {
         $args{value} = General::cryptPassword(password => $args{value});
     }
     $self->SUPER::setAttr(%args);
+}
+
+sub label {
+    my ($self, %args) = @_;
+
+    return $self->user_firstname . ' ' . $self->user_lastname . ' (' . $self->user_login . ')';
 }
 
 =head2 consumeQuota

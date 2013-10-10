@@ -39,7 +39,7 @@ use strict;
 use warnings;
 
 use General;
-use EFactory;
+use EEntity;
 use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
@@ -91,7 +91,12 @@ sub copy {
         my $source_size = $source_access->getContainer->getAttr(name => 'container_size');
         my $dest_size   = $dest_access->getContainer->getAttr(name => 'container_size');
 
-        $command = "virt-resize --expand /dev/sda1 " . $source_device . " " . $dest_device;
+        my $srcdev = `readlink -f $source_device`;
+        my $dstdev = `readlink -f $dest_device`;
+        $srcdev =~ s/^\s+|\s+$//g;
+        $dstdev =~ s/^\s+|\s+$//g;
+
+        $command = "virt-resize --expand /dev/sda1 $srcdev $dstdev";
         $result  = $args{econtext}->execute(command => $command);
 
         if ($result->{stderr} and ($result->{exitcode} != 0)) {
@@ -115,8 +120,8 @@ sub copy {
     # One or both container access do not support device level (e.g. Nfs)
     else {
         # Mount the containers on the executor.
-        my $source_mountpoint = $source_access->getContainer->getMountPoint;
-        my $dest_mountpoint   = $dest_access->getContainer->getMountPoint;
+        my $source_mountpoint = $source_access->getMountPoint;
+        my $dest_mountpoint   = $dest_access->getMountPoint;
 
         $log->debug('Mounting source container <' . $source_mountpoint . '>');
         $source_access->mount(mountpoint => $source_mountpoint,
@@ -171,7 +176,9 @@ sub mount {
 
     my ($command, $result);
 
-    General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'econtext' ],
+                         optional => { 'mountpoint' => $self->getMountPoint } );
 
     # Connecting to the container access.
     my $device = $self->tryConnect(econtext  => $args{econtext},  
@@ -182,7 +189,8 @@ sub mount {
 
     $log->debug("Mounting <$device> on <$args{mountpoint}>.");
 
-    $command = "guestmount -a " . $device . " -m /dev/sda1 " . $args{mountpoint};
+    $command = "DEV=`readlink -f $device`; " .
+               "guestmount -a \$DEV -m /dev/sda1 " . $args{mountpoint};
     $result  = $args{econtext}->execute(command => $command);
 
     if ($result->{exitcode} != 0) {
@@ -200,6 +208,7 @@ sub mount {
             parameters => [ $self, "mountpoint", $args{mountpoint}, "econtext", $args{econtext} ]
         );
     }
+    return $args{mountpoint};
 }
 
 =pod
@@ -223,9 +232,11 @@ sub umount {
 
     my ($command, $result);
 
-    General::checkParams(args => \%args, required => [ 'mountpoint', 'econtext' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'econtext' ],
+                         optional => { 'mountpoint' => $self->getMountPoint } );
 
-    $log->debug("Unmonting (<$args{mountpoint}>)");
+    $log->debug("Unmounting (<$args{mountpoint}>)");
 
     $command = "sync; echo 3 > /proc/sys/vm/drop_caches";
     $args{econtext}->execute(command => $command);

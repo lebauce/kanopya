@@ -13,7 +13,23 @@ AdministratorDB::Schema::Result::CollectorIndicator
 use strict;
 use warnings;
 
-use base 'DBIx::Class::Core';
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
 
 =head1 TABLE: C<collector_indicator>
 
@@ -120,14 +136,14 @@ __PACKAGE__->belongs_to(
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Entity>
+Related object: L<AdministratorDB::Schema::Result::Component>
 
 =cut
 
 __PACKAGE__->belongs_to(
   "collector_manager",
-  "AdministratorDB::Schema::Result::Entity",
-  { entity_id => "collector_manager_id" },
+  "AdministratorDB::Schema::Result::Component",
+  { component_id => "collector_manager_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
@@ -147,16 +163,14 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07015 @ 2012-10-31 16:06:37
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:KAh8UC087CsY5P7QZupIHg
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-02-04 17:48:40
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:aLghKruexFiNWDfu0vxUbg
 
- __PACKAGE__->belongs_to(
-   "parent",
-     "AdministratorDB::Schema::Result::Entity",
-         { "foreign.entity_id" => "self.collector_indicator_id" },
-             { cascade_copy => 0, cascade_delete => 1 }
- );
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Entity",
+  { entity_id => "collector_indicator_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
 
-
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

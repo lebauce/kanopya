@@ -43,24 +43,30 @@ my $errmsg;
 
 use constant ATTR_DEF => {
     poolip_name => {
+        label        => 'Name',
         pattern      => '.*',
         is_mandatory => 1,
+        is_editable  => 1,
     },
-    poolip_addr => {
+    poolip_first_addr => {
+        label        => 'First Address',
         pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
         is_mandatory => 1,
+        is_editable  => 1,
     },
-    poolip_mask => {
+    poolip_size => {
+        label        => 'Size',
         pattern      => '[0-9]{1,2}',
         is_mandatory => 1,
+        is_editable  => 1,
     },
-    poolip_netmask => {
-        pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
+    network_id => {
+        label        => 'Network',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^\d*$',
         is_mandatory => 1,
-    },
-    poolip_gateway => {
-        pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
-        is_mandatory => 1,
+        is_editable  => 1,
     },
 };
 
@@ -70,10 +76,8 @@ sub popIp {
     my $self = shift;
     my %args = @_;
 
-    my $network = NetAddr::IP->new(
-                      $self->getAttr(name => 'poolip_addr'),
-                      $self->getAttr(name => 'poolip_netmask'),
-                  );
+    my $network = NetAddr::IP->new($self->poolip_first_addr,
+                                   $self->network->network_netmask);
 
     # Firstly iterate until the first ip of the range.
     # TODO: make it smarter...
@@ -87,27 +91,24 @@ sub popIp {
             next;
         }
         # If current ip index is higher than poolip size, exit loop
-        elsif (($ipaddr - $network + 1 ) > $self->getAttr(name => 'poolip_mask')) {
+        elsif (($ipaddr - $network + 1) > $self->poolip_size) {
             last;
         }
 
         # Check if the current ip isn't already used
         eval {
-            Ip->find(hash => { ip_addr   => $ipaddr->addr,
-                               poolip_id => $self->getAttr(name => 'entity_id') });
+            Ip->find(hash => { ip_addr => $ipaddr->addr, poolip_id => $self->id });
         };
         if ($@) {
             # Create a new Ip instead.
-            $log->debug("New ip <" . $ipaddr->addr . "> from pool <" .
-                        $self->getAttr(name => 'poolip_name') . ">");
+            $log->debug("New ip <" . $ipaddr->addr . "> from pool <" . $self->poolip_name . ">");
 
-            return Ip->new(ip_addr   => $ipaddr->addr,
-                           poolip_id => $self->getAttr(name => 'entity_id'));
+            return Ip->new(ip_addr => $ipaddr->addr, poolip_id => $self->id);
         }
         next;
     }
     throw Kanopya::Exception::Internal::NotFound(
-              error => "No free ip in pool <" . $self->getAttr(name => 'poolip_name') . ">"
+              error => "No free ip in pool <" . $self->poolip_name . ">"
           );
 }
 
@@ -130,25 +131,17 @@ sub getPoolip {
     return $class->search(%args);
 }
 
-sub create {
+sub new {
     my ($class, %args) = @_;
 
-    $class->checkAttrs(attrs => \%args);
-
-    my $addrip = new NetAddr::IP($args{poolip_addr});
+    my $addrip = new NetAddr::IP($args{poolip_first_addr});
     if(not defined $addrip) {
-        $errmsg = "Poolip->create : wrong value for address!";
+        $errmsg = "Wrong value for poolip_first_addr!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
-    my $poolip = Entity::Poolip->new(
-        poolip_name    => $args{poolip_name},
-        poolip_addr    => $args{poolip_addr},
-        poolip_mask    => $args{poolip_mask},
-        poolip_netmask => $args{poolip_netmask},
-        poolip_gateway => $args{poolip_gateway},
-    );
+    return $class->SUPER::new(%args);
 }
 
 sub remove {
@@ -158,7 +151,7 @@ sub remove {
 
 sub toString {
     my $self = shift;
-    my $string = $self->{_dbix}->get_column('poolip_name'). " ". $self->{_dbix}->get_column('poolip_addr');
+    my $string = $self->poolip_name . " ". $self->poolip_first_addr;
     return $string;
 }
 
@@ -166,16 +159,13 @@ sub toString {
 sub getAllIps {
     my $self = shift;
     my $ips = [];
- 
-    my $ip = new NetAddr::IP($self->getAttr(name => 'poolip_addr'), $self->getAttr(name => 'poolip_netmask'));   
-    
-    for (my $i = 0; $i < $self->getAttr(name => 'poolip_mask'); ++$i) {
+
+    my $ip = new NetAddr::IP($self->poolip_first_addr, $self->network->network_netmask);
+        for (my $i = 0; $i < $self->poolip_size; ++$i) {
         push(@{$ips}, $ip);
         ++$ip;
     }
-    
     return $ips;
 }
-
 
 1;

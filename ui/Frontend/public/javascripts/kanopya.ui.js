@@ -1,5 +1,6 @@
 require('messages.js');
 require('gritter.js');
+require('about.js');
 
 var lastMsgId = 0;
 
@@ -41,7 +42,7 @@ $(document).ready(function () {
             $(form).dialog({
                 resizable       : false,
                 closeOnEscape   : false,
-                close           : function() { $(this).remove(); },
+                dialogClass: "no-close",
                 modal           : true,
                 buttons         : {
                     'Ok'    : function() {
@@ -67,7 +68,6 @@ $(document).ready(function () {
                     }
                 }
             });
-            $("a.ui-dialog-titlebar-close").remove();
         } else if (jqXHR.responseXML !== undefined && !mustOpen) {
           mustOpen  = true;
         }
@@ -103,7 +103,7 @@ $(document).ready(function () {
                        closable : false
                    },
                    west : {
-                       minSize   : 220,
+                       minSize   : 260,
                        closable  : false,
                        resizable : true
                    },
@@ -119,7 +119,7 @@ $(document).ready(function () {
                        togglerLength_open : 100,
                        spacing_open : 14,
                        initClosed : true
-                   },
+                   }
                }
     );
 
@@ -137,13 +137,16 @@ $(document).ready(function () {
         }
     });
 
+    jQuery('#about').click(function () {openAbout('about_templates.html');});
     // call for the themeswitcher
     //$('#switcher').themeswitcher();
 });
 
 $(document).ajaxError(function(e, jqXHR, settings, exception) {
     if (jqXHR.status === 403) {
-        alert(JSON.parse(jqXHR.responseText).reason);
+        if (JSON.parse(jqXHR.responseText).reason.indexOf("Permission denied to get Workflow") < 0) {
+            alert(JSON.parse(jqXHR.responseText).reason);
+        }
         throw new Error(JSON.parse(jqXHR.responseText).reason);
     }
 })

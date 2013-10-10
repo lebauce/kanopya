@@ -1,6 +1,5 @@
-# EPostStartNode.pm - Operation class implementing Cluster creation operation
-
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,24 +14,19 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
-=head1 NAME
+=pod
+=begin classdoc
 
-EEntity::Operation::EAddHost - Operation class implementing Host creation operation
+Ensure the components are up on the new node, and configure them.
 
-=head1 SYNOPSIS
+@since    2012-Aug-20
+@instance hash
+@self     $self
 
-This Object represent an operation.
-It allows to implement Host creation operation
-
-=head1 DESCRIPTION
-
-Component is an abstract class of operation objects
-
-=head1 METHODS
-
+=end classdoc
 =cut
+
 package EEntity::EOperation::EPostStartNode;
 use base "EEntity::EOperation";
 
@@ -40,9 +34,9 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use EFactory;
+use EEntity;
 use Entity::ServiceProvider;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 use Entity::Host;
 
 use Log::Log4perl "get_logger";
@@ -54,20 +48,33 @@ use Template;
 my $log = get_logger("");
 my $errmsg;
 
+
+=pod
+=begin classdoc
+
+@param cluster the cluster to add node
+@param host    the host selected registred as node
+
+=end classdoc
+=cut
+
 sub check {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => $self->{context}, required => [ "cluster", "host" ]);
 }
 
-=head2 prepare
 
+=pod
+=begin classdoc
+
+Wait for the to be up.
+
+=end classdoc
 =cut
 
 sub prerequisites {
-    my $self  = shift;
-    my %args  = @_;
+    my ($self, %args) = @_;
 
     # Duration to wait before retrying prerequistes
     my $delay = 10;
@@ -75,8 +82,7 @@ sub prerequisites {
     # Duration to wait for setting host broken
     my $broken_time = 240;
 
-    my $cluster_id = $self->{context}->{cluster}->getAttr(name => 'entity_id');
-    my $host_id    = $self->{context}->{host}->getAttr(name => 'entity_id');
+    my $host_id = $self->{context}->{host}->id;
 
     # Check how long the host is 'starting'
     my @state = $self->{context}->{host}->getState;
@@ -91,57 +97,55 @@ sub prerequisites {
     }
     
     if (! $self->{context}->{host}->checkUp()) {
-        $log->info("Host <$host_id> not yet reachable at <$node_ip>");
+        $log->debug("Host <$host_id> not yet reachable at <$node_ip>");
         return $delay;
     }
 
     # Check if all host components are up.
-    my @components = $self->{context}->{cluster}->getComponents(category => "all");
-    foreach my $component (@components) {
-        my $component_name = $component->component_type->component_name;
-        $log->debug("Browse component: " . $component_name);
-
-        my $ecomponent = EFactory::newEEntity(data => $component);
-
-        if (not $ecomponent->isUp(host => $self->{context}->{host}, cluster => $self->{context}->{cluster})) {
-            $log->info("Component <$component_name> not yet operational on host <$host_id>");
-            return $delay;
-        }
+    if (not $self->{context}->{cluster}->checkComponents(host => $self->{context}->{host})) {
+        return $delay;
     }
 
     # Node is up
     $self->{context}->{host}->setState(state => "up");
     $self->{context}->{host}->setNodeState(state => "in");
 
-    $log->debug("Host <$host_id> is 'up'");
+    $log->info("Host <$host_id> is 'up'");
 
     return 0;
 }
 
-sub prepare {
-    my ($self, %args) = @_;
 
-    $self->SUPER::prepare();
-}
+=pod
+=begin classdoc
+
+Configure the component as the new node is up.
+
+=end classdoc
+=cut
 
 sub execute {
     my ($self, %args) = @_;
-
     $self->SUPER::execute();
 
-    if (not $self->{context}->{cluster}->getMasterNodeId()) {
-        $self->{context}->{host}->becomeMasterNode();
-    }
+    $self->{context}->{cluster}->postStartNode(
+        host      => $self->{context}->{host},
+        erollback => $self->{erollback},
+    );
 
-    my @components = $self->{context}->{cluster}->getComponents(category => "all",
-                                                                order_by => "priority");
-    $log->info('Processing cluster components configuration for this node');
-    foreach my $component (@components) {
-        EFactory::newEEntity(data => $component)->postStartNode(
-            host      => $self->{context}->{host},
-            cluster   => $self->{context}->{cluster},
-            erollback => $self->{erollback}
-        );
+    eval {
+        my $eagent = EEntity->new(
+                         entity => $self->{context}->{cluster}->getComponent(category => "Configurationagent")
+                     );
+        # And apply the configuration on every node of the cluster
+        $eagent->applyConfiguration(cluster => $self->{context}->{cluster},
+                                    tags    => [ "kanopya::operation::poststartnode" ]);
+    };
+    if ($@) {
+        my $err = $@;
+        if (! $err->isa("Kanopya::Exception::Internal::NotFound")) {
+           $err->rethrow();
+        }
     }
 
     $self->{context}->{host}->postStart();
@@ -157,61 +161,65 @@ sub execute {
     );
 }
 
-sub finish {
-    my $self = shift;
 
-    my $cluster_nodes = $self->{context}->{cluster}->getHosts();
+=pod
+=begin classdoc
+
+Add another node if the number of nodes not reach the min node number
+
+=end classdoc
+=cut
+
+sub postrequisites {
+    my ($self, %args)  = @_;
 
     # Add another node if required
-    if ((scalar keys %$cluster_nodes) < $self->{context}->{cluster}->getAttr(name => "cluster_min_node")) {
-        # _getEntity is important here, cause we want to enqueue AddNode operation.
-        $self->{context}->{cluster}->_getEntity->addNode();
+    my @nodes = $self->{context}->{cluster}->nodes;
+    if (scalar(@nodes) < $self->{context}->{cluster}->cluster_min_node) {
+        $self->{context}->{cluster}->addNode();
     }
-    else {
-        my $nodes_states = 1;
-        foreach my $node (keys %$cluster_nodes) {
-            my @node_state = $cluster_nodes->{$node}->getNodeState();
-            if ($node_state[0] ne "in"){
-                $nodes_states = 0;
-            }
-        }
-        if ($nodes_states) {
-            $self->{context}->{cluster}->setState(state => "up");
-        }
-        else {
-            # Another node that the current one is broken
-        }
-    }
-
-    # /!\ WARNING: DO NOT DELETE $self->{context}->{host} ! needed in worflow addNode + VM migration
+    return 0;
 }
 
-sub _cancel {
-    my $self = shift;
 
-    $log->info("Cancel post start node, we will try to remove node link for <" .
-               $self->{context}->{host}->getAttr(name => "entity_id") . ">");
+=pod
+=begin classdoc
 
-    eval {
-        $self->{context}->{host}->stopToBeNode();
-    };
-    if ($@) {
-        $log->debug($@);
+Set the cluster as up.
+
+=end classdoc
+=cut
+
+sub finish {
+    my ($self, %args) = @_;
+    $self->SUPER::finish(%args);
+
+    if (defined $self->{params}->{needhypervisor}) {
+        $log->debug('Do not finish addNode workflow in case of automatic hypervisor scaleout');
+
+        # TODO: Definitly design a mechanism to bind output params to input one in workflows
+        $self->{context}->{cluster} = $self->{context}->{vm_cluster}; # Used in case of automatic hypervisor scaleout
+        delete $self->{params}->{needhypervisor};
+        return 0;
     }
 
-    my $hosts = $self->{context}->{cluster}->getHosts();
-    if (! scalar keys %$hosts) {
-        $self->{context}->{cluster}->setState(state => "down");
+    $self->{context}->{cluster}->setState(state => "up");
+    $self->{context}->{cluster}->removeState(consumer => $self->workflow);
+
+    if (defined $self->{context}->{host_manager_sp}) {
+        $self->{context}->{host_manager_sp}->setState(state => 'up');
+        $self->{context}->{host_manager_sp}->removeState(consumer => $self->workflow);
+        delete $self->{context}->{host_manager_sp};
     }
+
+    $self->{context}->{host}->removeState(consumer => $self->workflow);
+
+    # Add state to hypervisor if defined
+    if (defined $self->{context}->{hypervisor}) {
+        $self->{context}->{hypervisor}->removeState(consumer => $self->workflow);
+    }
+
+    # WARNING: Do NOT delete $self->{context}->{host}, required in worflow addNode + VM migration
 }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut

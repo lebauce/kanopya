@@ -15,15 +15,44 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package EEntity::EHost::EHypervisor;
 use base "EEntity::EHost";
 
 use strict;
 use warnings;
 
+use EEntity;
+
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
+
+sub vmm {
+    my $self = shift;
+
+    return EEntity->new(entity => $self->node->service_provider->getComponent(category => "Hypervisor"));
+}
+
+=head2 getAvailableMemory
+
+    Return the available memory amount.
+
+=cut
+
+sub getAvailableMemory {
+    my ($self, %args) = @_;
+
+    return $self->vmm->getAvailableMemory(host => $self,
+                                          %args);
+}
 
 =head2 getVmResources
 
@@ -34,13 +63,52 @@ my $log = get_logger("");
 
 sub getVmResources {
     my ($self, %args) = @_;
+    return $self->vmm->getVmResources(host => $self, %args);
+}
 
-    General::checkParams(
-        args     => \%args,
-        optional => { vm => undef, resources => [ 'ram', 'cpu' ] }
+=head2 getAvailableMemory
+
+    Update the CPU pinning of the hypervisor
+
+=cut
+
+sub updatePinning {
+    my ($self, %args) = @_;
+
+    return $self->vmm->updatePinning(host => $self,
+                                     %args);
+}
+
+sub getMinEffectiveRamVm {
+    my ($self, %args) = @_;
+
+    return $self->vmm->getMinEffectiveRamVm(host => $self,
+                                            %args);
+}
+
+=pod
+
+=begin classdoc
+
+prompt an Openstack host for ram used by a given vm
+
+@param $host the desired vm
+
+@return ram used by vm
+
+=end classdoc
+
+=cut
+
+sub getRamUsedByVm {
+    my ($self,%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    return $self->vmm->getRamUsedByVm(
+        host       => $args{host},
+        hypervisor => $self
     );
-
-    throw Kanopya::Exception::NotImplemented();
-};
-
+}
+            
 1;

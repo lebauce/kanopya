@@ -19,131 +19,161 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
-my $API_VERSION = "0.1";
+our $API_VERSION = "0.1";
 
 prepare_serializer_for_format;
 
-my %resources = (
-    "activedirectory"          => "Entity::Connector::ActiveDirectory",
+our %resources = (
+    "activedirectory"          => "Entity::Component::ActiveDirectory",
     "alert"                    => "Alert",
-    "aggregator"               => "Aggregator",
-    "atftpd0"                  => "Entity::Component::Atftpd0",
+    "amqp"                     => "Entity::Component::Amqp",
+    "tftpd"                    => "Entity::Component::Tftpd",
     "aggregatecombination"     => "Entity::Combination::AggregateCombination",
     "aggregatecondition"       => "Entity::AggregateCondition",
-    "aggregaterule"            => "Entity::AggregateRule",
+    "aggregaterule"            => "Entity::Rule::AggregateRule",
     "apache2"                  => "Entity::Component::Apache2",
     "apache2virtualhost"       => "Entity::Component::Apache2::Apache2Virtualhost",
     "billinglimit"             => "Entity::Billinglimit",
+    "billingpolicy"            => "Entity::Policy::BillingPolicy",
+    "cinder"                   => "Entity::Component::Openstack::Cinder",
     "classtype"                => "ClassType",
-    "cluster"                  => "Entity::ServiceProvider::Inside::Cluster",
+    "cluster"                  => "Entity::ServiceProvider::Cluster",
     "clustermetric"            => "Entity::Clustermetric",
     "collectorindicator"       => "Entity::CollectorIndicator",
     "combination"              => "Entity::Combination",
     "component"                => "Entity::Component",
-    "componenttype"            => "ComponentType",
-    "connector"                => "Entity::Connector",
-    "connectortype"            => "ConnectorType",
+    "componenttype"            => "ClassType::ComponentType",
     "container"                => "Entity::Container",
     "containeraccess"          => "Entity::ContainerAccess",
     "customer"                 => "Entity::User::Customer",
     "dashboard"                => "Dashboard",
-    "debian"                   => "Entity::Component::Debian",
+    "datamodel"                => "Entity::DataModel",
+    "datamodeltype"            => "ClassType::DataModelType",
+    "debian"                   => "Entity::Component::Linux::Debian",
     "entity"                   => "Entity",
     "entitycomment"            => "EntityComment",
     "entityright"              => "Entityright",
-    "externalcluster"          => "Entity::ServiceProvider::Outside::Externalcluster",
-    "externalnode"             => "Externalnode",
+    "entitytimeperiod"         => "EntityTimePeriod",
+    "externalcluster"          => "Entity::ServiceProvider::Externalcluster",
     "filecontaineraccess"      => "Entity::ContainerAccess::FileContainerAccess",
     "fileimagemanager0"        => "Entity::Component::Fileimagemanager0",
+    "glance"                   => "Entity::Component::Openstack::Glance",
     "gp"                       => "Entity::Gp",
-    "haproxy1"                 => "Entity::Component::HAProxy1",
+    "haproxy"                  => "Entity::Component::Haproxy1",
+    "haproxy1listen"           => "Entity::Component::Haproxy1::Haproxy1Listen",
+    "harddisk"                 => "Harddisk",
     "host"                     => "Entity::Host",
+    "hostingpolicy"            => "Entity::Policy::HostingPolicy",
     "hostmodel"                => "Entity::Hostmodel",
     "hypervisor"               => "Entity::Host::Hypervisor",
     "iface"                    => "Entity::Iface",
     "indicator"                => "Entity::Indicator",
     "indicatorset"             => "Indicatorset",
     "interface"                => "Entity::Interface",
-    "interfacerole"            => "Entity::InterfaceRole",
-    "inside"                   => "Entity::ServiceProvider::Inside",
     "ip"                       => "Ip",
-    "iptables1"                => "Entity::Component::Iptables1",
     "iscsicontaineraccess"     => "Entity::ContainerAccess::IscsiContainerAccess",
-    "iscsitarget1"             => "Entity::Component::Iscsitarget1",
-    "kanopyacollector1"        => "Entity::Component::Kanopyacollector1",
+    "iscsi"                    => "Entity::Component::Iscsi",
+    "iscsiportal"              => "Entity::Component::Iscsi::IscsiPortal",
+    "iscsitarget1"             => "Entity::Component::Iscsi::Iscsitarget1",
+    "kanopyaaggregator"        => "Entity::Component::KanopyaAggregator",
+    "kanopyacollector"         => "Entity::Component::Kanopyacollector1",
+    "kanopyaexecutor"          => "Entity::Component::KanopyaExecutor",
+    "kanopyafront"             => "Entity::Component::KanopyaFront",
+    "kanopyarulesengine"       => "Entity::Component::KanopyaRulesEngine",
     "keepalived1"              => "Entity::Component::Keepalived1",
+    "keepalived1vrrpinstance"  => "Entity::Component::Keepalived1::Keepalived1Vrrpinstance",
     "kernel"                   => "Entity::Kernel",
+    "keystone"                 => "Entity::Component::Openstack::Keystone",
     "linux"                    => "Entity::Component::Linux",
     "linuxmount"               => "Entity::Component::Linux::LinuxMount",
     "lvm2vg"                   => "Entity::Component::Lvm2::Lvm2Vg",
     "lvm2"                     => "Entity::Component::Lvm2",
     "lvmcontainer"             => "Entity::Container::LvmContainer",
     "mailnotifier0"            => "Entity::Component::Mailnotifier0",
-    "managerparam"             => "Entity::ManagerParameter",
     "masterimage"              => "Entity::Masterimage",
     "memcached1"               => "Entity::Component::Memcached1",
     "message"                  => "Message",
-    "mockmonitor"              => "Entity::Connector::MockMonitor",
-    "mounttable1"              => "Entity::Component::Mounttable1",
+    "mockmonitor"              => "Entity::Component::MockMonitor",
     "mysql5"                   => "Entity::Component::Mysql5",
-    "netapp"                   => "Entity::ServiceProvider::Outside::Netapp",
+    "netapp"                   => "Entity::ServiceProvider::Netapp",
     "netappaggregate"          => "Entity::NetappAggregate",
     "netapplun"                => "Entity::Container::NetappLun",
-    "netapplunmanager"         => "Entity::Connector::NetappLunManager",
+    "netapplunmanager"         => "Entity::Component::NetappLunManager",
     "netappvolume"             => "Entity::Container::NetappVolume",
-    "netappvolumemanager"      => "Entity::Connector::NetappVolumeManager",
+    "netappvolumemanager"      => "Entity::Component::NetappVolumeManager",
+    "netconf"                  => "Entity::Netconf",
+    "netconfiface"             => "NetconfIface",
+    "netconfinterface"         => "NetconfInterface",
+    "netconfpoolip"            => "NetconfPoolip",
+    "netconfrole"              => "Entity::NetconfRole",
     "network"                  => "Entity::Network",
+    "networkpolicy"            => "Entity::Policy::NetworkPolicy",
     "nfscontaineraccessclient" => "Entity::NfsContainerAccessClient",
     "nfscontaineraccess"       => "Entity::ContainerAccess::NfsContainerAccess",
     "nfsd3"                    => "Entity::Component::Nfsd3",
     "nodemetriccombination"    => "Entity::Combination::NodemetricCombination",
     "nodemetriccondition"      => "Entity::NodemetricCondition",
-    "nodemetricrule"           => "Entity::NodemetricRule",
-    "node"                     => "Externalnode::Node",
+    "nodemetricrule"           => "Entity::Rule::NodemetricRule",
+    "node"                     => "Node",
     "notificationsubscription" => "NotificationSubscription",
+    "novacompute"              => "Entity::Component::Vmm::NovaCompute",
+    "novacontroller"           => "Entity::Component::Virtualization::NovaController",
     "openiscsi2"               => "Entity::Component::Openiscsi2",
-    "openldap1"                => "Entity::Component::Openldap1",
-    "opennebula3"              => "Entity::Component::Opennebula3",
-    "opennebula3repository"    => "Opennebula3Repository",
-    "opennebula3hypervisor"    => "Opennebula3Hypervisor",
+    "opennebula3"              => "Entity::Component::Virtualization::Opennebula3",
+    "opennebula3repository"    => "Entity::Repository::Opennebula3Repository",
+    "opennebula3hypervisor"    => "Entity::Host::Hypervisor::Opennebula3Hypervisor",
+    "opennebula3vm"            => "Entity::Host::VirtualMachine::Opennebula3Vm",
+    "openstackrepository"      => "Entity::Repository::OpenstackRepository",
     "openssh5"                 => "Entity::Component::Openssh5",
+    "oldoperation"             => "OldOperation",
     "operation"                => "Entity::Operation",
     "operationtype"            => "Operationtype",
-    "orchestrator"             => "Orchestrator",
-    "outside"                  => "Entity::ServiceProvider::Outside",
+    "orchestrationpolicy"      => "Entity::Policy::OrchestrationPolicy",
     "parampreset"              => "ParamPreset",
-    "permission"               => "Permissions",
     "php5"                     => "Entity::Component::Php5",
     "physicalhoster0"          => "Entity::Component::Physicalhoster0",
-    "pleskpanel10"             => "Entity::ParallelsProduct::Pleskpanel10",
     "policy"                   => "Entity::Policy",
     "poolip"                   => "Entity::Poolip",
     "processormodel"           => "Entity::Processormodel",
     "profile"                  => "Profile",
     "puppetagent2"             => "Entity::Component::Puppetagent2",
     "puppetmaster2"            => "Entity::Component::Puppetmaster2",
+    "quantum"                  => "Entity::Component::Openstack::Quantum",
     "quota"                    => "Quota",
-    "redhat"                   => "Entity::Component::Redhat",
-    "sco"                      => "Entity::Connector::Sco",
-    "scom"                     => "Entity::Connector::Scom",
+    "redhat"                   => "Entity::Component::Linux::Redhat",
+    "sco"                      => "Entity::Component::Sco",
+    "scom"                     => "Entity::Component::Scom",
     "scope"                    => "Scope",
     "scopeparameter"           => "ScopeParameter",
     "snmpd5"                   => "Entity::Component::Snmpd5",
+    "scalabilitypolicy"        => "Entity::Policy::ScalabilityPolicy",
     "serviceprovider"          => "Entity::ServiceProvider",
+    "serviceprovidertype"      => "ClassType::ServiceProviderType",
     "serviceprovidermanager"   => "ServiceProviderManager",
     "servicetemplate"          => "Entity::ServiceTemplate",
-    "suse"                     => "Entity::Component::Suse",
+    "storage"                  => "Entity::Component::Storage",
+    "storagepolicy"            => "Entity::Policy::StoragePolicy",
+    "suse"                     => "Entity::Component::Linux::Suse",
     "syslogng3"                => "Entity::Component::Syslogng3",
     "systemimage"              => "Entity::Systemimage",
-    "ucsmanager"               => "Entity::Connector::UcsManager",
-    "unifiedcomputingsystem"   => "Entity::ServiceProvider::Outside::UnifiedComputingSystem",
+    "systempolicy"             => "Entity::Policy::SystemPolicy",
+    "tag"                      => "Entity::Tag",
+    "timeperiod"               => "Entity::TimePeriod",
+    "ucsmanager"               => "Entity::Component::UcsManager",
+    "unifiedcomputingsystem"   => "Entity::ServiceProvider::UnifiedComputingSystem",
     "user"                     => "Entity::User",
     "userextension"            => "UserExtension",
     "userprofile"              => "UserProfile",
-    "vlan"                     => "Entity::Network::Vlan",
-    "vsphere5"                 => "Entity::Component::Vsphere5",
+    "virtualmachine"           => "Entity::Host::VirtualMachine",
+    "vlan"                     => "Entity::Vlan",
+    "vsphere5"                 => "Entity::Component::Virtualization::Vsphere5",
+    "vsphere5repository"       => "Entity::Repository::Vsphere5Repository",
     "workflow"                 => "Entity::Workflow",
     "workflowdef"              => "Entity::WorkflowDef",
+    "repository"               => "Entity::Repository",
+    "virtualization"           => "Entity::Component::Virtualization",
+    "hpc7000"                  => "Entity::ServiceProvider::Hpc7000",
+    "hpcmanager"               => "Entity::Component::HpcManager"
 );
 
 sub classFromResource {
@@ -220,6 +250,15 @@ sub getResources {
         delete $query{expand};
     }
 
+    # Handle custom search options
+    my @customs = grep { $_ =~ '^custom\.' } keys %query;
+    for my $custom (map { s/^custom\.//g; $_; } @customs) {
+        if (not defined $params{custom}) {
+            $params{custom} = {};
+        }
+        $params{custom}->{$custom} = delete $query{'custom.' . $custom};
+    }
+
     foreach my $attr (keys %query) {
         my @filter = split(',', $query{$attr}, -1);
         if (scalar (@filter) > 1) {
@@ -269,25 +308,37 @@ sub getResources {
 }
 
 sub jsonify {
-    my $var = shift;
+    my ($var, %args) = @_;
 
     # Jsonify the non scalar only
-    if (ref($var) and ref($var) ne "HASH") {
+    if (ref($var) and (ref($var) ne "HASH") and (ref($var) ne "ARRAY")) {
         if ($var->can("toJSON")) {
             if ($var->isa("Entity::Operation")) {
-                return Entity::Operation->methodCall(method => 'get', params => { id => $var->id })->toJSON;
+                return Entity::Operation->methodCall(method => 'get', params => { id => $var->id })->toJSON(%args);
             }
             elsif ($var->isa("Entity::Workflow")) {
-                return Entity::Workflow->methodCall(method => 'get', params => { id => $var->id })->toJSON;
+                return Entity::Workflow->methodCall(method => 'get', params => { id => $var->id })->toJSON(%args);
             } else {
-                return $var->toJSON();
+                return $var->toJSON(%args);
             }
         }
     }
     return $var;
 }
 
+sub attributes {
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'resource', 'params' ]);
+
+    my $class = classFromResource(resource => $args{resource});
+    require (General::getLocFromClass(entityclass => $class));
+
+    return to_json($class->toJSON(%{ $args{params} }));
+}
+
 sub setupREST {
+    my %args = @_;
 
     foreach my $resource (keys %resources) {
         my $class = classFromResource(resource => $resource);
@@ -310,7 +361,7 @@ sub setupREST {
                 my $hash = {};
                 my %params = params;
                 if (request->content_type && (split(/;/, request->content_type))[0] eq "application/json") {
-                    %params = %{from_json(request->body)};
+                    %params = %{ from_json(request->body) };
                 } else {
                     %params = params;
                 }
@@ -323,22 +374,22 @@ sub setupREST {
                 content_type 'application/json';
                 require (General::getLocFromClass(entityclass => $class));
 
-                my $obj = $class->get(id => params->{id});
-                $obj->methodCall(method => 'remove');
+                my $result = $class->get(id => params->{id})->methodCall(method => 'remove');
 
-                return to_json( { status => "success" } );
+                return to_json(ref($result) ? jsonify($result) : { status => "success" } );
             },
 
             update => sub {
                 content_type 'application/json';
                 require (General::getLocFromClass(entityclass => $class));
 
-                my %params = params;
-                my $obj = $class->get(id => params->{id});
+                my %params;
+                my $obj = $class->get(id => delete params->{id});
                 if (request->content_type && (split(/;/, request->content_type))[0] eq "application/json") {
                     %params = %{from_json(request->body)};
                 } else {
                     %params = params;
+                    delete $params{splat};
                 }
 
                 $obj->methodCall(method => 'update', params => \%params);
@@ -377,6 +428,7 @@ sub setupREST {
             }
 
             my $methods = $obj->getMethods();
+            my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
 
             if (not defined $methods->{$method}) {
                 throw Kanopya::Exception::NotImplemented(error => "Method not implemented");
@@ -387,6 +439,7 @@ sub setupREST {
                 %params = %{from_json(request->body)};
             } else {
                 %params = params;
+                delete $params{splat};
             }
 
             my $ret = $obj->methodCall(method => $method, params => \%params);
@@ -394,11 +447,11 @@ sub setupREST {
             if (ref($ret) eq "ARRAY") {
                 my @jsons;
                 for my $elem (@{$ret}) {
-                    push @jsons, jsonify($elem);
+                    push @jsons, jsonify($elem, expand => \@expand);
                 }
                 $ret = \@jsons;
             } elsif ($ret) {
-                $ret = jsonify($ret);
+                $ret = jsonify($ret, expand => \@expand);
             } else {
                 $ret = jsonify({});
             }
@@ -420,12 +473,21 @@ sub setupREST {
 get '/api/attributes/:resource' => sub {
     content_type 'application/json';
 
-    my $class = classFromResource(resource => params->{resource});
+    my %params = params;
+    return attributes(resource => delete $params{resource}, params => \%params);
+};
 
-    require (General::getLocFromClass(entityclass => $class));
+post '/api/attributes/:resource' => sub {
+    content_type 'application/json';
 
-    return to_json($class->toJSON(model => 1,
-                                  no_relations => params->{no_relations}));
+    my %params;
+    my $resource = delete params->{resource};
+    if (request->content_type && (split(/;/, request->content_type))[0] eq "application/json") {
+        %params = %{ from_json(request->body) };
+    } else {
+        %params = params;
+    }
+    return attributes(resource => $resource, params => \%params);
 };
 
 get '/api' => sub {

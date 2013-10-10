@@ -70,41 +70,6 @@ sub combination_formula_string {
     my $self = shift;
     return $self->value
 }
-=pod
-
-=begin classdoc
-
-Return the value attribute. Use to be compatible with other Combination subclasses.
-
-@return value attribute.
-
-=end classdoc
-
-=cut
-
-sub computeValueFromMonitoredValues {
-    my $self = shift;
-    return $self->value;
-}
-
-
-=pod
-
-=begin classdoc
-
-Return the value attribute. Use to be compatible with other Combination subclasses.
-
-@return value attribute.
-
-=end classdoc
-
-=cut
-
-sub computeLastValue {
-    my $self = shift;
-    return $self->value;
-}
-
 
 =pod
 
@@ -176,10 +141,32 @@ sub clone {
 
     General::checkParams(args => \%args, required => ['dest_service_provider_id']);
 
-    $self->_importToRelated(
-        dest_obj_id         => $args{'dest_service_provider_id'},
-        relationship        => 'service_provider',
+    return $self->_importToRelated(
+        dest_obj_id  => $args{dest_service_provider_id},
+        relationship => 'service_provider',
     );
 }
 
+=pod
+
+=begin classdoc
+
+Return the value attribute.
+
+=end classdoc
+
+=cut
+
+sub evaluate {
+    my ($self, %args) = @_;
+
+    if (defined $args{nodes}) {
+        my %rep;
+        for my $node (@{$args{nodes}}) { $rep{$node->id} = $self->value } ;
+        return \%rep;
+    }
+    else {
+        return $self->value;
+    }
+}
 1;

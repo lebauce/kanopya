@@ -1,0 +1,359 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head profile="http://selenium-ide.openqa.org/profiles/test-case">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<link rel="selenium.base" href="http://localhost:5000/" />
+<title>kanopya_instance</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">kanopya_instance</td></tr>
+</thead><tbody>
+<tr>
+	<td>open</td>
+	<td>/</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Administration</td>
+	<td></td>
+</tr>
+<!--Kanopya-->
+<tr>
+	<td>click</td>
+	<td>//li[@id = &quot;link_view_Kanopya_static&quot;]/a</td>
+	<td></td>
+</tr>
+<!--Overview-->
+<tr>
+	<td>pause</td>
+	<td>1000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Add Widget')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Save Dashboard')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>id=service_dashboard</td>
+	<td></td>
+</tr>
+<!--Details-->
+<tr>
+	<td>click</td>
+	<td>//a[@href = &quot;#content_service_details_static&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>5000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Stop service')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Force stop service')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Scale out')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Scale out components')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Remove')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=legend:contains('Hosting')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=legend:contains('Storage')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=legend:contains('Network')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=legend:contains('Scalability')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=legend:contains('System')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=legend:contains('Interface')</td>
+	<td></td>
+</tr>
+<!--Configuration-->
+<tr>
+	<td>click</td>
+	<td>//a[@href = &quot;#content_service_configuration_static&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Add component')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>id=services_components</td>
+	<td></td>
+</tr>
+<!--Resources-->
+<tr>
+	<td>click</td>
+	<td>//a[@href = &quot;#content_service_resources_static&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=table.service_resources_list</td>
+	<td></td>
+</tr>
+<!--Monitoring-->
+<tr>
+	<td>click</td>
+	<td>//a[@href = &quot;#content_service_monitoring_static&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#content_service_monitoring_static a:contains('Node')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>1000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Add a combination')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Delete node combination(s)')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Import combinations')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=table[id^=service_resources_nodemetric_combination]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#content_service_monitoring_static a:contains('Service')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>1000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForVisible</td>
+	<td>css=span:contains('Add a service metric')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Delete service metric(s)')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=table[id^=service_resources_clustermetrics]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=#service_metric_comb_action_buttons span:contains('Add a combination')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Delete service combination(s)')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=#service_metric_comb_action_buttons span:contains('Import combinations')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=table[id^=service_resources_aggregate_combinations]</td>
+	<td></td>
+</tr>
+<!--Rules-->
+<tr>
+	<td>click</td>
+	<td>//a[@href = &quot;#content_service_rules_static&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#content_service_rules_static a:contains('Node')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>1000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Add condition')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Delete node condition(s)')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=table[id^=service_resources_nodemetric_conditions]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Add a rule')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Delete node rule(s)')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Associate time periods')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Import node rules')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=table[id^=service_resources_nodemetric_rules]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#content_service_rules_static a:contains('Service')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>1000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Add a Service Condition')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Delete service condition(s)')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=table[id^=service_resources_aggregate_conditions]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=#service_accordion_container span:contains('Add a rule')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Delete service rule(s)')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=#service_accordion_container span:contains('Associate time periods')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Import service rules')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=table[id^=service_resources_aggregate_rules]</td>
+	<td></td>
+</tr>
+<!--Events and Alerts-->
+<tr>
+	<td>click</td>
+	<td>//a[@href = &quot;#content_events_alerts_static&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=table#runningworkflowsgrid</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=table#historicworkflowsgrid</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=table#currentalertsgrid</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=table#historyalertsgrid</td>
+	<td></td>
+</tr>
+</tbody></table>
+</body>
+</html>

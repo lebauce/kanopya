@@ -17,13 +17,13 @@ use base "EManager::EDiskManager";
 use base "EEntity::EComponent";
 
 use strict;
+use warnings;
 
 use General;
 use Kanopya::Exceptions;
+use Entity::Component::Lvm2::Lvm2Vg;
 
-use Data::Dumper;
 use Log::Log4perl "get_logger";
-
 my $log = get_logger("");
 my $errmsg;
 
@@ -46,15 +46,34 @@ sub createDisk {
 
     General::checkParams(args     => \%args,
                          required => [ 'name', 'size', 'filesystem' ],
-                         optional => { 'vg_id' => $self->getMainVg->{vgid} });
+                         optional => { 'vg_id' => undef });
 
-    my $entity = $self->lvCreate(lvm2_vg_id         => $args{vg_id},
-                                 lvm2_lv_name       => $args{name},
-                                 lvm2_lv_filesystem => $args{filesystem},
-                                 lvm2_lv_size       => $args{size});
+    my $vg = $args{vg_id} ? Entity::Component::Lvm2::Lvm2Vg->get(id => $args{vg_id})
+                          : $self->getMainVg;
 
-    my $container = EFactory::newEEntity(data => $entity);
-    if (exists $args{erollback} and defined $args{erollback}){
+    $self->lvCreate(vg_name            => $vg->lvm2_vg_name,
+                    lvm2_lv_name       => $args{name},
+                    lvm2_lv_filesystem => $args{filesystem},
+                    lvm2_lv_size       => $args{size});
+
+    my $newdevice = "/dev/" . $vg->lvm2_vg_name . "/$args{name}";
+    if (! defined $args{"noformat"}) {
+        $self->mkfs(device => $newdevice, fstype => $args{filesystem});
+    }
+    delete $args{noformat};
+    
+    $self->vgSpaceUpdate(lvm2_vg_id   => $vg->id,
+                         lvm2_vg_name => $vg->lvm2_vg_name);
+
+    my $entity = $self->_entity->lvCreate(
+                     lvm2_vg_id         => $vg->id,
+                     lvm2_lv_name       => $args{name},
+                     lvm2_lv_filesystem => $args{filesystem},
+                     lvm2_lv_size       => $args{size}
+                 );
+
+    my $container = EEntity->new(data => $entity);
+    if (exists $args{erollback} and defined $args{erollback}) {
         $args{erollback}->add(
             function   => $self->can('removeDisk'),
             parameters => [ $self, "container", $container ]
@@ -85,9 +104,15 @@ sub removeDisk{
     $self->SUPER::removeDisk(%args);
 
     my $vg = $self->getMainVg();
-    $self->lvRemove(lvm2_vg_id   => $vg->{vgid},
-                    lvm2_lv_name => $args{container}->getAttr(name => 'container_name'),
-                    lvm2_vg_name => $vg->{vgname});
+    $self->lvRemove(lvm2_vg_id   => $vg->id,
+                    lvm2_lv_name => $args{container}->container_name,
+                    lvm2_vg_name => $vg->lvm2_vg_name);
+
+    $self->_entity->lvRemove(lvm2_vg_id   => $vg->id,
+                             lvm2_lv_name => $args{container}->container_name);
+
+    $self->vgSpaceUpdate(lvm2_vg_id   => $vg->id,
+                         lvm2_vg_name => $vg->lvm2_vg_name);
 
     $args{container}->delete();
 
@@ -109,17 +134,15 @@ createDisk ( lvm2_lv_name, lvm2_lv_size, lvm2_lv_filesystem, lvm2_vg_id, lvm2_vg
     
 =cut
 
-sub lvCreate{
+sub lvCreate {
     my $self = shift;
     my %args = @_;
     
     General::checkParams(args     => \%args,
                          required => [ "lvm2_lv_name", "lvm2_lv_size",
-                                       "lvm2_lv_filesystem", "lvm2_vg_id" ]);
+                                       "lvm2_lv_filesystem", "vg_name" ]);
 
-    my $vg_name = $self->_getEntity()->getVg(lvm2_vg_id => $args{lvm2_vg_id});
-
-    my $command = "lvcreate $vg_name -n $args{lvm2_lv_name} -L $args{lvm2_lv_size}B";
+    my $command = "lvcreate $args{vg_name} -n $args{lvm2_lv_name} -L $args{lvm2_lv_size}B";
     $log->debug($command);
 
     my $ret = $self->getEContext->execute(command => $command);
@@ -128,17 +151,39 @@ sub lvCreate{
         $log->error($errmsg);
         throw Kanopya::Exception::Execution(error => $errmsg);
     }
+}
 
-    my $newdevice = "/dev/$vg_name/$args{lvm2_lv_name}";
-    if (! defined $args{"noformat"}) {
-        $self->mkfs(device => $newdevice, fstype => $args{lvm2_lv_filesystem});
+=head2 mkfs
+
+_mkfs ( device, fstype, fsoptions, econtext)
+    desc: This function create a filesystem on a device.
+    args:
+        device : string: device full path (like /dev/sda2 or /dev/vg/lv)
+        fstype : string: name of filesystem (ext2, ext3, ext4)
+        fsoptions : string: filesystem options to use during creation (optional)
+        econtext : Econtext : execution context on the storage server
+
+=cut
+
+sub mkfs {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ "device", "fstype" ]);
+    
+    my $command = "mkfs -F -t $args{fstype} ";
+    if ($args{fsoptions}) {
+        $command .= "$args{fsoptions} ";
     }
-    delete $args{noformat};
-    
-    $self->vgSpaceUpdate(lvm2_vg_id   => $args{lvm2_vg_id},
-                         lvm2_vg_name => $vg_name);
-    
-    return $self->_getEntity()->lvCreate(%args);
+
+    $command .= " $args{device}";
+    my $ret = $self->getEContext->execute(command => $command);
+    if($ret->{exitcode} != 0) {
+        my $errmsg = "Error during execution of $command ; stderr is : $ret->{stderr}";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Execution(error => $errmsg);
+    }
 }
 
 =head2 vgSizeUpdate
@@ -152,6 +197,7 @@ vgSizeUpdate ( lvm2_vg_id, lvm2_vg_name)
         code returned by Entity::Component::Lvm2->vgSpaceUpdate
     
 =cut
+
 sub vgSpaceUpdate {
     my $self = shift;
     my %args = @_;
@@ -172,7 +218,7 @@ sub vgSpaceUpdate {
     $freespace =~ s/^[ \t]+//;
     $freespace =~ s/,\d*$//;
 
-    return $self->_getEntity()->vgSizeUpdate(lvm2_vg_freespace => $freespace,
+    return $self->_entity->vgSizeUpdate(lvm2_vg_freespace => $freespace,
                                              lvm2_vg_id        => $args{lvm2_vg_id});
 }
 
@@ -210,10 +256,6 @@ sub lvRemove{
         # removed from vg.
         throw Kanopya::Exception::Execution(error => $errmsg);
     }
-
-    $self->_getEntity()->lvRemove(%args);
-    $self->vgSpaceUpdate(lvm2_vg_id   => $args{lvm2_vg_id}, 
-                         lvm2_vg_name => $args{lvm2_vg_name});
 }
 
 1;

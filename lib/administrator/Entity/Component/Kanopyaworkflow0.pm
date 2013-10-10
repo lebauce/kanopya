@@ -53,6 +53,8 @@ sub associateWorkflow {
             operationtype_id => $step->getAttr(name => 'operationtype_id'),
         );
     }
+
+    return $new_wf_def;
 }
 
 sub _getAutomaticValues{
@@ -63,11 +65,11 @@ sub _getAutomaticValues{
     my $automatic_params = $args{automatic_params};
 
     if (exists $automatic_params->{context}->{host}) {
-        my $host = Entity::Host->find(hash => {'host_hostname' => $args{host_name}}); 
+        my $host = Entity::Host->find(hash => {'node.node_hostname' => $args{host_name}}); 
         $automatic_params->{context}->{host} = $host;
     }
     if (exists $automatic_params->{context}->{cloudmanager_comp}) {
-        my $host = Entity::Host->find(hash => {'host_hostname' => $args{host_name}});
+        my $host = Entity::Host->find(hash => {'node.node_hostname' => $args{host_name}});
         my $cloudmanager_id   = $host->getAttr(name => 'host_manager_id');
         my $cloudmanager_comp = Entity->get(id => $cloudmanager_id);
         $automatic_params->{context}->{cloudmanager_comp} = $cloudmanager_comp;

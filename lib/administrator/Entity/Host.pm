@@ -21,16 +21,10 @@ use base "Entity";
 use strict;
 use warnings;
 
-use Kanopya::Exceptions;
-use Entity::Operation;
 use General;
-use Externalnode::Node;
-
-use Entity::ServiceProvider;
-use Entity::Container;
-use Entity::Interface;
+use Node;
+use Harddisk;
 use Entity::Iface;
-use Entity::Operation;
 use Entity::Workflow;
 
 use Log::Log4perl "get_logger";
@@ -70,7 +64,7 @@ use constant ATTR_DEF => {
         type         => 'relation',
         relation     => 'single',
         pattern      => '^\d*$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_editable  => 1,
     },
     host_serial_number => {
@@ -94,13 +88,6 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_editable  => 0,
     },
-    host_hostname => {
-        label        => 'Hostname',
-        type         => 'string',
-        pattern      => '^[\w\d\-\.]*$',
-        is_mandatory => 0,
-        is_editable  => 0,
-    },
     host_ram => {
         label        => 'RAM capability',
         description  => 'Memory capability of the physical host',
@@ -113,6 +100,7 @@ use constant ATTR_DEF => {
     host_core => {
         label        => 'CPU capability',
         type         => 'integer',
+        unit         => 'core(s)',
         pattern      => '^\d*$',
         is_mandatory => 1,
         is_editable  => 1,
@@ -138,6 +126,13 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_editable  => 1,
     },
+    harddisks => {
+        label        => 'Hard disks',
+        type         => 'relation',
+        relation     => 'single_multi',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
     admin_ip => {
         label        => 'Administration ip',
         is_virtual   => 1,
@@ -146,6 +141,14 @@ use constant ATTR_DEF => {
         label        => 'Remote session url',
         is_virtual   => 1,
     },
+    entity_tags => {
+        label        => 'Tags',
+        type         => 'relation',
+        relation     => 'multi',
+        link_to      => 'tag',
+        is_editable  => 1,
+        is_mandatory => 0
+    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -175,42 +178,21 @@ sub methods {
     };
 }
 
-=head2 create
-
-=cut
-
 sub create {
     my $class = shift;
     my %args  = @_;
 
     General::checkParams(args   => \%args,
-                         required => ['host_manager_id', 'host_core', 'kernel_id',
-                                      'host_ram', 'host_serial_number' ]);
+                         required => [ 'host_manager_id', 'host_core', 'host_ram', 'host_serial_number' ]);
 
     Entity->get(id => $args{host_manager_id})->createHost(%args);
 }
 
-sub resubmit() {
+sub resubmit {
     my $self = shift;
-
-    Entity::Workflow->run(name => 'ResubmitNode', params => { context => { host => $self } });
+    $self->host_manager->resubmitHost(host => $self);
 }
 
-
-
-=head2 getServiceProvider
-
-    desc: Return the service provider that provides the host.
-
-=cut
-
-sub getServiceProvider {
-    my $self = shift;
-
-    my $service_provider_id = $self->getHostManager->getAttr(name => 'service_provider_id');
-
-    return Entity::ServiceProvider->get(id => $service_provider_id);
-}
 
 =head2 getHostManager
 
@@ -221,12 +203,8 @@ sub getServiceProvider {
 sub getHostManager {
     my $self = shift;
 
-    return Entity->get(id => $self->getAttr(name => 'host_manager_id'));
+    return $self->host_manager;
 }
-
-=head2 getState
-
-=cut
 
 sub getState {
     my $self = shift;
@@ -239,10 +217,6 @@ sub getPrevState {
     my $state = $self->host_prev_state;
     return wantarray ? split(/:/, $state) : $state;
 }
-
-=head2 setState
-
-=cut
 
 sub setState {
     my $self = shift;
@@ -257,28 +231,17 @@ sub setState {
     $self->save();
 }
 
-=head2 getNodeState
-
-=cut
-
 sub getNodeState {
     my $self = shift;
     my $state = $self->node->node_state;
     return wantarray ? split(/:/, $state) : $state;
 }
 
-=head2 getNodeNumber
-
-=cut
 sub getNodeNumber {
     my $self = shift;
     my $node_number = $self->node->node_number;
     return $node_number;
 }
-
-=head2 getNodeSystemimage
-
-=cut
 
 sub getNodeSystemimage {
     my $self = shift;
@@ -296,10 +259,6 @@ sub getPrevNodeState {
     return wantarray ? split(/:/, $state) : $state;
 }
 
-=head2 setNodeState
-
-=cut
-
 sub setNodeState {
     my $self = shift;
     my %args = @_;
@@ -315,9 +274,6 @@ sub setNodeState {
     $node->save();
 }
 
-=head2 updateCPU
-
-=cut
 
 sub updateCPU {
     my ($self, %args) = @_;
@@ -327,7 +283,7 @@ sub updateCPU {
     # If the host is a node, then it is used in a cluster
     # belonging to a user, so update quota
     if ($self->node) {
-        my $user = $self->node->inside->user;
+        my $user = $self->node->service_provider->user;
 
         if ($args{cpu_number} < $self->host_core) {
             $user->releaseQuota(resource => 'cpu',
@@ -342,10 +298,6 @@ sub updateCPU {
     $self->save();
 }
 
-=head2 updateMemory
-
-=cut
-
 sub updateMemory {
     my ($self, %args) = @_;
 
@@ -354,7 +306,7 @@ sub updateMemory {
     # If the host is a node, then it is used in a cluster
     # belonging to a user, so update quota
     if ($self->node) {
-        my $user = $self->node->inside->user;
+        my $user = $self->node->service_provider->user;
 
         if ($args{memory} < $self->host_ram) {
             $user->releaseQuota(resource => 'ram',
@@ -369,88 +321,21 @@ sub updateMemory {
     $self->save();
 }
 
-=head2 Entity::Host->becomeNode (%args)
-
-    Class : Public
-
-    Desc : Create a new node instance in db from host linked to cluster (in params).
-
-    args:
-        inside_id : Int : inside identifier
-        master_node : Int : 0 or 1 to say if the host is the master node
-    return: Node identifier
-
-=cut
-
-sub becomeNode {
+sub configuredIfaces {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args     => \%args,
-                         required => [ 'inside_id', 'master_node',
-                                       'node_number', 'systemimage_id' ]);
-
-    my $adm = Administrator->new();
-    my $node = Externalnode::Node->new(
-                   inside_id           => $args{inside_id},
-                   host_id             => $self->getAttr(name => 'host_id'),
-                   master_node         => $args{master_node},
-                   node_number         => $args{node_number},
-                   systemimage_id      => $args{systemimage_id},
-               );
-
-    my $cluster = Entity::ServiceProvider->get(id => $args{inside_id});
-    $log->info("Associate host ifaces with service network interfaces");
-    $self->associateInterfaces(cluster => $cluster);
-
-    return $node->id;
-}
-
-sub becomeMasterNode {
-    my $self = shift;
-    my $node = $self->node;
-
-    if (not defined $node) {
-        $errmsg = "Entity::Host->becomeMasterNode :Host " . $self->id . " is not a node!";
-        $log->error($errmsg);
-        throw Kanopya::Exception::DB(error => $errmsg);
+    my @configured;
+    for my $iface ($self->ifaces) {
+        if (scalar $iface->netconfs > 0) {
+            push @configured, $iface;
+        }
     }
 
-    $node->setAttr(name => 'master_node', value => 1);
-    $node->save();
+    return wantarray ? @configured : \@configured;
 }
 
-=head2 Entity::Host->stopToBeNode (%args)
-
-    Class : Public
-
-    Desc : Remove a node instance for a dedicated host.
-
-    args:
-        cluster_id : Int : Cluster identifier
-
-=cut
-
-sub stopToBeNode{
-    my $self = shift;
-
-    if (not defined $self->node) {
-        $errmsg = "Host " . $self->id . " is not a node!";
-        $log->error($errmsg);
-        #throw Kanopya::Exception::DB(error => $errmsg);
-    }
-    else {
-        $self->node->delete();
-    }
-
-    # Dissociate iface from cluster interfaces
-    $self->dissociateInterfaces();
-
-    # Remove node entry
-    $self->setState(state => 'down');
-}
-
-sub associateInterfaces {
+sub configureIfaces {
     my $self = shift;
     my %args = @_;
 
@@ -458,121 +343,94 @@ sub associateInterfaces {
 
     my @ifaces = $self->getIfaces;
 
-    # Try to find a proper iface to assign to each interfaces.
-    foreach my $interface (@{$args{cluster}->getNetworkInterfaces}) {
-        my $assigned = 0;
-        for my $iface (@ifaces) {
-            if (not $iface->isAssociated) {
-                eval {
-                    $iface->associateInterface(interface => $interface);
-                    $assigned = 1;
-                };
-                if ($@) { $log->debug($@); }
-                if ($assigned) { last; }
-            }
-        }
-        if (not $assigned) {
-            throw Kanopya::Exception::Internal(
-                      error => "Unable to associate interface <" . $interface->getAttr(name => 'entity_id') .
-                               "> to any iface of the host <" . $self->getAttr(name => 'entity_id') . ">"
-                  );
-        }
+    # Set the ifaces netconf according to the cluster interfaces
+    # We consider that the available ifaces match the cluster interfaces since getFreeHost selection
+    foreach my $interface ($args{cluster}->interfaces) {
+        my @netconfs = $interface->netconfs;
+        my $nbbonds  = $interface->bonds_number > 0 ? $interface->bonds_number : 0;
+
+        my @valid_ifaces = grep { scalar @{ $_->slaves } == $nbbonds } @ifaces;
+        $valid_ifaces[0]->populateRelations(relations => { netconf_ifaces => \@netconfs });
+
+        # Remove the iface form the list
+        @ifaces = grep { $valid_ifaces[0] ne $_ } @ifaces;
     }
 }
-
-sub dissociateInterfaces {
-    my $self = shift;
-    my %args = @_;
-
-    for my $iface (@{$self->getIfaces}) {
-        if ($iface->isAssociated) {
-            $iface->dissociateInterface();
-        }
-    }
-}
-
-=head2 Entity::Host->addIface (%args)
-
-    Class : Public
-
-    Desc : Create a new iface instance in db.
-
-    args:
-        iface_name : Char : interface identifier
-        iface_mac_addr : Char : the mac address linked to iface
-        iface_pxe:Int :0 or 1
-        host_id: Int
-
-    return: iface identifier
-
-=cut
 
 sub addIface {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'iface_name', 'iface_mac_addr', 'iface_pxe' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'iface_name' ],
+                         optional => { 'iface_mac_addr' => undef, 'iface_pxe' => 0 });
 
     my $iface = Entity::Iface->new(iface_name     => $args{iface_name},
                                    iface_mac_addr => $args{iface_mac_addr},
                                    iface_pxe      => $args{iface_pxe},
-                                   host_id        => $self->getAttr(name => 'host_id'));
-
-    return $iface->getAttr(name => 'entity_id');
+                                   host_id        => $self->id);
+    return $iface;
 }
-
-=head2 getIfaces
-
-=cut
 
 sub getIfaces {
     my $self = shift;
     my %args = @_;
     my @ifaces = ();
 
+    General::checkParams(args => \%args, optional => { 'role' => undef });
+
     # Make sure to have all pxe ifaces before non pxe ones within the resulting array
     foreach my $pxe (1, 0) {
-        my @ifcs = Entity::Iface->search(hash => { host_id   => $self->getAttr(name => 'host_id'),
-                                                   iface_pxe => $pxe });
+        my @ifcs = Entity::Iface->search(hash => {
+                       host_id   => $self->id,
+                       iface_pxe => $pxe,
+                       # Do not search bonding slave ifaces
+                       master    => ''
+                   });
+
+        IFACE:
         for my $iface (@ifcs) {
-            if (defined ($args{role})) {
-                if (my $interface_id = $iface->isAssociated) {
-                    my $interface = Entity::Interface->get(id => $iface->getAttr(name => 'interface_id'));
-                    if ($interface->getRole->getAttr(name => 'interface_role_name') ne $args{role}) {
-                        next;
+            if (defined $args{role}) {
+                my $hasrole = 0;
+
+                NETCONFROLE:
+                for my $netconf ($iface->netconfs) {
+                    if(! $netconf->netconf_role) {
+                        last NETCONFROLE;
+                    }
+                    if ($netconf->netconf_role->netconf_role_name eq $args{role}) {
+                        $hasrole = 1;
+                        last NETCONFROLE;
                     }
                 }
+                if (not $hasrole) {
+                    next IFACE;
+                }
             }
-
             push @ifaces, $iface;
         }
     }
-
     return wantarray ? @ifaces : \@ifaces;
 }
-
-=head2 getPXEIface
-
-=cut
 
 sub getPXEIface {
     my $self = shift;
 
-    my @pxe_ifaces = Entity::Iface->search(hash => {
-                         host_id   => $self->getAttr(name => 'host_id'),
+    my $pxe_iface;
+    eval {
+        $pxe_iface = Entity::Iface->find(hash => {
+                         host_id   => $self->host_id,
                          iface_pxe => 1,
+                         # Do not search bonding slave ifaces
+                         master    => ''
                      });
-
-    for my $iface (@pxe_ifaces) {
-        # An iface not associated to any cluster interface
-        # will not be assigned to an ip.
-        if ($iface->getAttr(name => 'interface_id')) {
-            return $iface;
-        }
+    };
+    if ($@) {
+        throw Kanopya::Exception::Internal::NotFound(
+                  error => "No pxe iface found."
+              );
     }
-    throw Kanopya::Exception::Internal::NotFound(
-              error => "No pxe iface associated to a cluster interface found."
-          );
+    return $pxe_iface;
 }
 
 sub removeIface {
@@ -593,8 +451,7 @@ sub getAdminIface {
     my @ifaces = $self->getIfaces(role => "admin");
     if (scalar (@ifaces) == 0 and defined $args{throw}) {
         throw Kanopya::Exception::Internal::NotFound(
-                  error => "Host <" . $self->getAttr(name => 'entity_id') .
-                           "> Could not find any iface associate to a admin interface."
+                  error => "Host <" . $self->id . "> could not find any iface associate to a admin role."
               );
     }
     return $ifaces[0];
@@ -605,41 +462,9 @@ sub adminIp {
     my %args = @_;
 
     my $iface = $self->getAdminIface();
-    if ($iface and $iface->hasIp) {
-        if (defined ($iface) and $iface->hasIp) {
-            return $iface->getIPAddr;
-        }
+    if (defined $iface and $iface->hasIp) {
+        return $iface->getIPAddr;
     }
-}
-
-=head2 getHosts
-
-=cut
-
-sub getHosts {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['hash']);
-
-    return $class->search(%args);
-}
-
-sub getHost {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['hash']);
-
-    my @Hosts = $class->search(%args);
-    return pop @Hosts;
-}
-
-sub getHostFromIP {
-    my $class = shift;
-    my %args = @_;
-
-    throw Kanopya::Exception::NotImplemented();
 }
 
 sub getFreeHosts {
@@ -652,7 +477,7 @@ sub getFreeHosts {
         $hash->{host_manager_id} = $args{host_manager_id}
     }
 
-    my @hosts = $class->getHosts(hash => $hash);
+    my @hosts = $class->search(hash => $hash);
     my @free;
     foreach my $m (@hosts) {
         if(not $m->node) {
@@ -662,42 +487,10 @@ sub getFreeHosts {
     return @free;
 }
 
-=head2 remove
-
-=cut
-
 sub remove {
     my $self = shift;
 
-    $log->debug("New Operation RemoveHost with host_id : <" . $self->getAttr(name => "host_id") . ">");
-
-    Entity::Operation->enqueue(
-        priority => 200,
-        type     => 'RemoveHost',
-        params   => {
-            context  => {
-                host => $self,
-            },
-        },
-    );
-}
-
-sub extension {
-    return "hostdetails";
-}
-
-sub getHarddisks {
-    my $self = shift;
-    my $hds = [];
-    my $harddisks = $self->{_dbix}->harddisks;
-    while(my $hd = $harddisks->next) {
-        my $tmp = {};
-        $tmp->{harddisk_id} = $hd->get_column('harddisk_id');
-        $tmp->{harddisk_device} = $hd->get_column('harddisk_device');
-        push @$hds, $tmp;
-    }
-    return $hds;
-
+    return $self->host_manager->removeHost(host => $self);
 }
 
 sub addHarddisk {
@@ -706,10 +499,8 @@ sub addHarddisk {
 
     General::checkParams(args => \%args, required => ['device']);
 
-    $self->{_dbix}->harddisks->create({
-        harddisk_device => $args{device},
-        host_id => $self->getAttr(name => 'host_id'),
-    });
+    return Harddisk->create(host_id         => $self->id,
+                            harddisk_device => $args{device});
 }
 
 sub removeHarddisk {
@@ -718,38 +509,19 @@ sub removeHarddisk {
 
     General::checkParams(args => \%args, required => ['harddisk_id']);
 
-    my $hd = $self->{_dbix}->harddisks->find($args{harddisk_id});
-    $hd->delete();
+    $self->findRelated(filters => [ 'harddisks' ], hash => { harddisk_id => $args{harddisk_id} })->remove();
 }
 
 sub activate{
     my $self = shift;
 
-    $log->debug("New Operation ActivateHost with host_id : " . $self->getAttr(name=>'host_id'));
-    Entity::Operation->enqueue(
-        priority => 200,
-        type     => 'ActivateHost',
-        params   => {
-            context => {
-                host => $self
-           }
-       }
-   );
+    return $self->host_manager->activateHost(host => $self);
 }
 
 sub deactivate{
     my $self = shift;
 
-    $log->debug("New Operation EDeactivateHost with host_id : " . $self->getAttr(name=>'host_id'));
-    Entity::Operation->enqueue(
-        priority => 200,
-        type     => 'DeactivateHost',
-        params   => {
-            context => {
-                host => $self
-           }
-       }
-   );
+    return $self->host_manager->deactivateHost(host => $self);
 }
 
 =head2 toString
@@ -792,7 +564,7 @@ sub remoteSessionUrl {
 =cut
 
 sub checkStoppable {
-    return {};
+    return 1;
 }
 
 1;

@@ -1,4 +1,5 @@
-#    Copyright © 2011-2012 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -13,25 +14,45 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 5 august 2010
+
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
 
 package Entity::Component::Nfsd3;
-use base "Entity::Component";
-use base "Manager::ExportManager";
+use base Entity::Component;
+use base Manager::ExportManager;
 
 use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use Entity::Operation;
 use Entity::Container;
+use Entity::ContainerAccess;
+use Entity::ContainerAccess::NfsContainerAccess;
 use Entity::NfsContainerAccessClient;
+
+use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
+
+use Data::Dumper;
 
 my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
+    container_accesses => {
+        label        => 'Exports',
+        type         => 'relation',
+        relation     => 'single_multi',
+        is_mandatory => 0,
+        is_editable  => 1,
+        specialized  => 'NfsContainerAccess'
+    },
     export_type => {
         is_virtual => 1
     }
@@ -44,114 +65,24 @@ sub exportType {
     return "NFS export";
 }
 
-sub getExports {
-    my $self = shift;
-    my @result = ();
-
-    if ($self->{_dbix}) {
-        my @exports = Entity::ContainerAccess->search(
-                          hash => { export_manager_id => $self->getAttr(name => "component_id") }
-                      );
-
-        for my $export (@exports) {
-            my @clients = ();
-            for my $client ($export->getClients()) {
-                push @clients, {
-                    nfsd3_exportclient_name    => $client->getAttr(name => 'name'),
-                    nfsd3_exportclient_options => $client->getAttr(name => 'options'),
-                };
-            }
-            push @result, {
-                container_access_export => $export->getAttr(name => 'container_access_export'),
-                nfsd3_export_path       => $export->getContainer->container_device,
-                nfsd3_export_id         => $export->getContainer->id,
-                clients     => \@clients,
-            };
-        }
-    }
-    return @result;
-}
-
 sub getConf {
     my $self = shift;
-    my %conf = ( );
 
-    if ($self->{_dbix}) {
-        my @exports = $self->getExports();
+    my $conf = $self->toJSON(raw    => 1,
+                             deep   => 1,
+                             expand => [ 'container_accesses' ]);
 
-        return {
-            nfsd3_statdopts       => $self->getAttr(name => 'nfsd3_statdopts'),
-            nfsd3_need_gssd       => $self->getAttr(name => 'nfsd3_need_gssd'),
-            nfsd3_rpcnfsdcount    => $self->getAttr(name => 'nfsd3_rpcnfsdcount'),
-            nfsd3_rpcnfsdpriority => $self->getAttr(name => 'nfsd3_rpcnfsdpriority'),
-            nfsd3_rpcmountopts    => $self->getAttr(name => 'nfsd3_rpcmountopts'),
-            nfsd3_need_svcgssd    => $self->getAttr(name => 'nfsd3_need_svcgssd'),
-            nfsd3_rpcsvcgssdopts  => $self->getAttr(name => 'nfsd3_rpcsvcgssdopts'),
-            exports               => \@exports
-        };
-    }
-    else {
-        return {
-            nfsd3_statdopts       => '',
-            nfsd3_need_gssd       => 'no',
-            nfsd3_rpcnfsdcount    => '8',
-            nfsd3_rpcnfsdpriority => '0',
-            nfsd3_rpcmountopts    => '',
-            nfsd3_need_svcgssd    => 'no',
-            nfsd3_rpcsvcgssdopts  => '',
-            exports               => []
-        };
-    }
+    # Overrive the generic getConf as it handle one level of relations only.
+    return $conf;
 }
 
-sub setConf {
-    my $self = shift;
-    my %args = @_;
 
-    General::checkParams(args => \%args, required => ['conf']);
+=pod
+=begin classdoc
 
-    my $conf = $args{conf};
-    my @containers = Entity::Container->search(hash => {});
-    EXPORT:
-    for my $export (@{ $conf->{exports} }) {
-        
-        if($export->{nfsd3_export_id}) {
-            next EXPORT;
-        }
-        
-        # Check if specified device match to a registred container.
-        my $container;
-        my $device;
-        foreach my $cont (@containers) {
-            $device = $cont->getAttr(name => 'container_device');
-            if ("$device" eq "$export->{nfsd3_export_path}") {
-                $container = $cont;
-                last;
-            }
-        }
-        if (! defined $container) {
-            $errmsg = "Specified device <$device> " .
-                      "does not match to an existing container.";
-            $log->error($errmsg);
-            throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-        }
+Return directory where a device will be mounted for nfs export.
 
-        CLIENT:
-        for my $client ( @{ $export->{clients} } ) {
-            $self->createExport(export_name    => $export->{nfsd3_export_path},
-                                container      => $container,
-                                client_name    => $client->{nfsd3_exportclient_name},
-                                client_options => $client->{nfsd3_exportclient_options});
-            last CLIENT;
-        }
-    }
-}
-
-=head2 getMountDir
-    
-    Desc : Return directory where a device will be mounted for nfs export 
-    args : device
-
+=end classdoc
 =cut
 
 sub getMountDir {
@@ -165,11 +96,13 @@ sub getMountDir {
     return "/nfsexports/" . $dev;
 }
 
-=head2 addExportClient
-    
-    Desc : This function a new client with options to an export.
-    args : export_id, client_name, client_options
 
+=pod
+=begin classdoc
+
+This function a new client with options to an export.
+
+=end classdoc
 =cut
 
 sub addExportClient {
@@ -188,11 +121,13 @@ sub addExportClient {
     return $exportclient;
 }
 
-=head2 getTemplateDataExports
-    
-    Desc : Return a data structure to pass to the template processor
-           for /etc/exports file
 
+=pod
+=begin classdoc
+
+Return a data structure to pass to the template processor for /etc/exports file.
+
+=end classdoc
 =cut
 
 sub getTemplateDataExports {
@@ -228,11 +163,13 @@ sub getTemplateDataExports {
     };
 }
 
-=head2 getTemplateDataNfsCommon
-    
-    Desc : Return a data structure to pass to the template processor
-           for /etc/default/nfs-common file
 
+=pod
+=begin classdoc
+
+Return a data structure to pass to the template processor for /etc/default/nfs-common file.
+
+=end classdoc
 =cut
 
 sub getTemplateDataNfsCommon {
@@ -244,11 +181,14 @@ sub getTemplateDataNfsCommon {
     };
 }
 
-=head2 getTemplateDataNfsKernelServer
-    
-    Desc : Return a data structure to pass to the template processor
-           for /etc/default/nfs-kernel-server file
-    
+
+=pod
+=begin classdoc
+
+Return a data structure to pass to the template processor
+for /etc/default/nfs-kernel-server file.
+
+=end classdoc
 =cut
 
 sub getTemplateDataNfsKernelServer {
@@ -272,26 +212,16 @@ sub getReadOnlyParameter {
     return undef;
 }
 
-=head2 createExport
-    
-    Desc : Implement createExport from ExportManager interface.
-           This function enqueue a ECreateExport operation.
-    args : export_name, device, client_name, client_options
-    
-=cut
 
 sub createExport {
     my $self = shift;
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "export_name", "container",
-                                       "client_name", "client_options" ]);
+                         required => [ "container", "client_name", "client_options" ]);
 
-    my %params = $self->getAttrs();
     $log->debug("New Operation CreateExport with attrs : " . %args);
-    Entity::Operation->enqueue(
-        priority => 200,
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
         type     => 'CreateExport',
         params   => {
             context => {
@@ -299,12 +229,23 @@ sub createExport {
                 container      => $args{container},
             },
             manager_params => {
-                export_name    => $args{export_name},
                 client_name    => $args{client_name},
                 client_options => $args{client_options},
             },
         },
     );
+}
+
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        nfsd => {
+            manifest => $self->instanciatePuppetResource(
+                            name => "kanopya::nfsd",
+                        )
+        }
+    } );
 }
 
 1;

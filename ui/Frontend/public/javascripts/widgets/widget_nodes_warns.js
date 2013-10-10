@@ -39,7 +39,7 @@ function displayWarningNodesGrid(widget, sp_id) {
         subGrid         : true,
         subGridOptions: {
             "plusicon"  : "ui-icon-triangle-1-e",
-            "minusicon" :"ui-icon-triangle-1-s",
+            "minusicon" : "ui-icon-triangle-1-s",
             "openicon"  : "ui-icon-arrowreturn-1-e",
             "reloadOnExpand" : false,
             "selectOnExpand" : true
@@ -50,9 +50,10 @@ function displayWarningNodesGrid(widget, sp_id) {
             var rules_grid_cont = $("#" + subgridTableId);
             rules_grid_cont.jqGrid({
                 datatype    : 'local',
-                colNames    : ['Rule'],
+                colNames    : ['Rule', 'Description'],
                 colModel    : [
-                    { name: 'name' }
+                    { name  : 'label', width: '40' },
+                    { name  : 'description', width: '60' }
                 ],
                 height      : 'auto',
                 autowidth   : true,
@@ -66,7 +67,7 @@ function displayWarningNodesGrid(widget, sp_id) {
                 $.get(
                         'api/nodemetricrule/' + warnrule.verified_noderule_nodemetric_rule_id,
                         function(rule) {
-                            rules_grid_cont.jqGrid('addRowData', rule.pk, {name : rule.nodemetric_rule_label});
+                            rules_grid_cont.jqGrid('addRowData', rule.pk, rule);
                         }
                 );
             });
@@ -78,14 +79,14 @@ function displayWarningNodesGrid(widget, sp_id) {
 
     // Populate grid with nodes having at least one verified rule
     $.get(
-            'api/serviceprovider/' + sp_id + '/externalnodes?externalnode_state=<>,disabled',
+            'api/serviceprovider/' + sp_id + '/nodes?monitoring_state=<>,disabled',
             function(nodes) {
                 var total_nodes = nodes.length;
                 var checked_nodes = 0;
                 var warn_nodes = 0;
                 $.each(nodes, function(idx,node) {
                     $.get(
-                            'api/externalnode/' + node.pk + '/verified_noderules',
+                            'api/node/' + node.pk + '/verified_noderules',
                             function(verified_rules) {
                                 var warn_rules = [];
                                 $.each(verified_rules, function(i,e) {
@@ -95,7 +96,7 @@ function displayWarningNodesGrid(widget, sp_id) {
                                 if (nb_warn_rules > 0) {
                                     nodes_grid.jqGrid('addRowData',
                                                 node.pk,
-                                                {name : node.externalnode_hostname, warn_count : nb_warn_rules});
+                                                {name : node.node_hostname, warn_count : nb_warn_rules});
                                     warn_noderules[node.pk] = warn_rules;
                                     // reload grid to apply sorting options at each addRow (progressive sorting)
                                     //nodes_grid.trigger('reloadGrid');

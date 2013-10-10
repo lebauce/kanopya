@@ -13,7 +13,23 @@ AdministratorDB::Schema::Result::Kanopyaworkflow0
 use strict;
 use warnings;
 
-use base 'DBIx::Class::Core';
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
 
 =head1 TABLE: C<kanopyaworkflow0>
 
@@ -74,15 +90,14 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2012-06-14 15:52:19
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:tSy3RjKkchIl47Ag8StLaw
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-03-27 16:05:57
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:e6zm40fj7FQF635vkMHUkg
+
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Component",
-    { "foreign.component_id" => "self.kanopyaworkflow_id" },
-    { cascade_copy => 0, cascade_delete => 1 }
+  { component_id => "kanopyaworkflow_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

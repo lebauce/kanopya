@@ -17,8 +17,7 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 03/02/2012
 
-package RRDTimeData;
-
+package TimeData::RRDTimeData;
 use base TimeData;
 
 use strict;
@@ -58,7 +57,7 @@ if ($^O eq 'MSWin32') {
 
     <Class>   : Public
     <Desc>    : This method create a RRD file.
-    <args>    : name, options, RRA, DS
+    <args>    : name, options, RRA, DS, skip_if_exists
     <Comment> : Only name is mandatory. Default RRD configuration are: step = 60, 1 RRA with 
                 1 PDP per CPD, and 1440 CDP (60x1x1440 = 86400scd/ 1 day). 
                 Standard is 1 RRA and 1 DS per RRD
@@ -67,7 +66,7 @@ if ($^O eq 'MSWin32') {
 
 =cut
 
-sub createTimeDataStore{
+sub createTimeDataStore {
     #rrd creation example: system ('$rrd create target.rrd --start 1328190055 
     #                                                      --step 300 
     #                                                      DS:mem:GAUGE:600:0:671744 
@@ -75,25 +74,24 @@ sub createTimeDataStore{
     #                             );
 
     my %args = @_;
-    $log->debug(Dumper(\%args));
 
-    General::checkParams(args => \%args, required => ['name']);
+    General::checkParams(args     => \%args,
+                         required => [ 'name', 'collect_frequency', 'storage_duration' ],
+                         optional => { 'skip_if_exists' => undef, time => undef });
 
     my $name = _formatName(name => $args{'name'});
+
+    # Do nothing if rrd already exists and skip_if_exists option is set
+    return if (-e $dir.$name && $args{'skip_if_exists'});
 
     my $RRA_chain;
     my $DS_chain;
     my $opts = '';
 
-    #get collect TimeData configuration 
-    my $configuration     = _getConfiguration();
-    my $collect_frequency = $configuration->{collect_frequency};
-    my $storage_duration  = $configuration->{storage_duration};
-
     #configure the heartbeat, number of CDP and step according to the configuration
     my $config    = _configTimeDataStore(
-                        'collect_frequency' => $collect_frequency,
-                        'storage_duration'  => $storage_duration,
+                        'collect_frequency' => $args{collect_frequency},
+                        'storage_duration'  => $args{storage_duration},
                     );
 
 
@@ -104,7 +102,7 @@ sub createTimeDataStore{
         if (defined $options->{start}) {
             $opts .= '-b '.$options->{'start'}.' ';
         } else {
-            my $time = time();
+            my $time = $args{time} || time();
             my $moduloTime = $time % 60;
             my $finalTime = $time - $moduloTime;
             $opts .= '-b '.$finalTime.' ';
@@ -117,7 +115,7 @@ sub createTimeDataStore{
         }
     } else {
         $opts .= '-s '.$config->{step}.' ';
-        my $time = time();
+        my $time = $args{time} || time();
         my $moduloTime = $time % 60;
         my $finalTime = $time - $moduloTime;
         $opts .= '-b '.$finalTime.' ';
@@ -168,7 +166,7 @@ sub createTimeDataStore{
     #final command
     my $cmd = $rrd.' create '.$dir.$name.' '.$opts.' '.$DS_chain.' '.$RRA_chain;
     # print $cmd."\n";
-    $log->info($cmd);
+    $log->debug($cmd);
     $log->info("creating rrd $dir$name");
 
     #execution of the command
@@ -249,7 +247,7 @@ sub fetchTimeDataStore {
         $cmd .= ' -e '.$end;
     }
 
-    $log->info($cmd);
+    $log->debug($cmd);
 
     #we store the ouput of the command into a string
     my $exec = `$cmd 2>&1`;
@@ -298,21 +296,28 @@ sub fetchTimeDataStore {
 
 sub updateTimeDataStore {
     my %args = @_;
-    General::checkParams(args => \%args, required => ['clustermetric_id', 'time']);
+
+    General::checkParams(args => \%args, required => [ 'clustermetric_id', 'time', 'time_step', 'storage_duration' ]);
 
     my $time = $args{'time'};
     my $name = _formatName(name => $args{'clustermetric_id'});
+
+    TimeData::RRDTimeData::createTimeDataStore(skip_if_exists    => 1,
+                                               name              => $args{'clustermetric_id'},
+                                               collect_frequency => $args{'time_step'},
+                                               storage_duration  => $args{'storage_duration'},
+                                               time              => $args{time});
 
     my $datasource = (defined $args{'datasource'}) ? $args{'datasource'} : 'aggregate';
     my $value      = (defined $args{'value'})      ? $args{'value'}      : 'U';
 
     my $cmd = $rrd.' updatev '.$dir.$name.' -t '.$datasource.' '.$time.':'.$value;
-    $log->debug($cmd);
+#    $log->debug($cmd);
     # print $cmd."\n";
 
     my $exec =`$cmd 2>&1`;
     # print $exec."\n";
-    $log->debug($exec);
+#    $log->debug($exec);
 
     if ($exec =~ m/^ERROR.*/) {
         throw Kanopya::Exception::Internal(error => 'RRD update failed: '.$exec);
@@ -323,7 +328,7 @@ sub updateTimeDataStore {
 
     <Class>   : Public
     <Desc>    : This method get the last updated value into a RRD file.
-    <args>    : clustermetric_id
+    <args>    : metric_uid, fresh_only (optional: return undef if last value date is < now - heartbeat)
     <Return>  : %values
     <throws>  : 'RRD fetch failed for last updated value' if the fetch is a failure 
     §WARNING§: the code only catch the keyword 'ERROR' in the command return...
@@ -332,15 +337,13 @@ sub updateTimeDataStore {
 
 sub getLastUpdatedValue {
     my %args = @_;
-    General::checkParams(args => \%args, required => ['clustermetric_id']);
+    General::checkParams(args => \%args, required => ['metric_uid'], optional => {fresh_only => undef});
 
-    my $name = _formatName(name => $args{'clustermetric_id'});
+    my $name = _formatName(name => $args{'metric_uid'});
 
     my $cmd = $rrd.' lastupdate '.$dir.$name;
-    $log->info($cmd);
 
     my $exec =`$cmd 2>&1`;
-    #print $exec."\n";
 
     if ($exec =~ m/^ERROR.*/) {
         throw Kanopya::Exception::Internal(error => 'RRD fetch failed for last updated value: '.$exec);
@@ -363,15 +366,29 @@ sub getLastUpdatedValue {
         throw  Kanopya::Exception::Internal(error => 'no values could be retrieved from RRD');
     }
 
+    my $heartbeat = 0;
+    if ($args{fresh_only}) {
+        $cmd = $rrd.' info '.$dir.$name;
+        my $res = `$cmd`;
+        if ($res =~ /minimal_heartbeat = (\d+)/) {
+            $heartbeat = $1;
+        }
+    }
+
     #we replace the '-1.#IND000000e+000' values for "undef"
+    # and we keep only fresh value if wanted
     while (my ($timestamp, $value) = each %values) {
         if ($value eq '-1.#IND000000e+000' || $value eq 'U') {
             $values{$timestamp} = undef;
         }
+        if ($args{fresh_only} && (time() - $timestamp > $heartbeat)) {
+            delete $values{$timestamp};
+        }
     }
 
+
     #print Dumper(\%values);
-    $log->debug(Dumper(\%values));
+#    $log->debug(Dumper(\%values));
     return %values;
 }
 
@@ -386,15 +403,16 @@ sub getLastUpdatedValue {
 sub resizeTimeDataStore {
     my %args = @_;
 
-    General::checkParams(args => \%args, required => ['storage_duration', 'clustermetric_id']);
+    General::checkParams(args     => \%args,
+                         required => [ 'storage_duration', 'old_storage_duration',
+                                       'collect_frequency', 'clustermetric_id' ]);
 
     my $new_duration = $args{storage_duration};
-    my $rrd_name     = _formatName(name => $args{'clustermetric_id'});
+    my $rrd_name     = _formatName(name => $args{clustermetric_id});
 
-    #get collect frequency value 
-    my $configuration     = _getConfiguration();
-    my $collect_frequency = $configuration->{collect_frequency};
-    my $old_duration      = $configuration->{storage_duration};
+    #get collect frequency value
+    my $collect_frequency = $args{collect_frequency};
+    my $old_duration      = $args{old_storage_duration};
 
     my $delta       = abs($new_duration - $old_duration);
     my $resize_type = ($new_duration > $old_duration) ? 'GROW' : 'SHRINK';
@@ -484,28 +502,6 @@ sub _formatName {
     my %args = @_;
     my $name = 'timeDB_'.$args{'name'}.'.rrd';
     return $name;
-}
-
-=head2 _getConfiguration
-
-    <Class>   : Private
-    <Desc>    : This method returns the configuration values in aggregator.conf 
-    <Return>  : \%configuration
-
-=cut
-
-sub _getConfiguration {
-    my %args = @_;
-
-    #get collect TimeData configuration from aggregator.conf
-    my $monitor_configuration = Kanopya::Config::get('aggregator');
-
-    my %configuration;
-    #set the returned hash
-    $configuration{collect_frequency} = $monitor_configuration->{time_step};
-    $configuration{storage_duration}  = $monitor_configuration->{storage_duration}->{duration};
-
-    return \%configuration;
 }
 
 1;

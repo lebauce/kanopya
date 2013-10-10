@@ -23,8 +23,6 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use Administrator;
-use Entity::Operation;
 use General;
 
 use Entity::Container;
@@ -46,15 +44,18 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_extended  => 0
     },
-    container_id => {
-        pattern      => '^\d*$',
-        is_mandatory => 0,
-        is_extended  => 0
-    },
     active => {
         pattern      => '^[01]$',
         is_mandatory => 0,
         is_extended  => 0
+    },
+    systemimage_container_accesses => {
+        label        => 'Container accesses',
+        type         => 'relation',
+        relation     => 'multi',
+        link_to      => 'container_access',
+        is_mandatory => 0,
+        is_editable  => 1,
     },
 };
 
@@ -73,73 +74,6 @@ sub methods {
     };
 }
 
-=head2 getSystemimages
-
-    Class: public
-    desc: retrieve several Entity::Systemimage instances
-    args:
-        hash : hashref : where criteria
-    return: @ : array of Entity::Systemimage instances
-    
-=cut
-
-sub getSystemimages {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['hash']);
-
-    return $class->search(%args);
-}
-
-sub getSystemimage {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['hash']);
-
-    my @systemimages = $class->search(%args);
-    return pop @systemimages;
-}
-
-#=head2 create
-#
-#=cut
-#
-#sub create {
-#    my ($class, %params) = @_;
-#
-#    $log->debug("New Operation AddSystemimage with attrs : " . Dumper(%params));
-#    Entity::Operation->enqueue(
-#        priority => 200,
-#        type     => 'AddSystemimage',
-#        params   => \%params,
-#    );
-#}
-
-=head2 installComponent
-
-=cut
-
-sub installComponent {
-    my $self = shift;
-    my %args = @_;
-    
-    General::checkParams(args=>\%args,required=>["component_type_id"]);
-    
-    $log->debug("New Operation InstallComponentOnSystemImage");
-    Entity::Operation->enqueue(
-        priority => 200,
-        type     => 'InstallComponentOnSystemImage',
-        params   => {
-            context => {
-                systemimage => $self,
-            },
-            component_type_id => $args{component_type_id},
-        }
-    );
-}
-
 sub installedComponentLinkCreation {
     my $self = shift;
     my %args = @_;
@@ -150,16 +84,16 @@ sub installedComponentLinkCreation {
     $self->{_dbix}->components_installed->create(\%args);
 }
 
-=head2 remove
-
-=cut
 
 sub remove {
     my $self = shift;
     
-    $log->debug("New Operation RemoveSystemimage with systemimage_id : <".$self->getAttr(name=>"systemimage_id").">");
-    Entity::Operation->enqueue(
-        priority => 200,
+    $log->debug("New Operation RemoveSystemimage with id : <" . $self->id . ">");
+
+    # Use the execution manager of the service on which the disk manager is installed
+    my $diskmanager = $self->getContainer->disk_manager;
+    my $executor = $diskmanager->service_provider->getManager(manager_type => 'ExecutionManager');
+    $executor->enqueue(
         type     => 'RemoveSystemimage',
         params   => {
             context => {
@@ -169,45 +103,12 @@ sub remove {
     );
 }
 
-=head2 toString
-
-    desc: return a string representation of the entity
-
-=cut
-
 sub toString {
     my $self = shift;
-    my $string = $self->{_dbix}->get_column('systemimage_name');
-    return $string;
+
+    return $self->systemimage_name;
 }
 
-=head2 getDevice
-
-get container for this systemimage
-
-=cut
-
-sub getDevice {
-    my $self = shift;
-    if(! $self->{_dbix}->in_storage) {
-        $errmsg = "Entity::Systemimage->getDevice must be called on an already save instance";
-        $log->error($errmsg);
-        throw Kanopya::Exception(error => $errmsg);
-    }
-
-    $log->debug("Retrieve container");
-    my $device = Entity::Container->get(id => $self->getAttr(name => 'container_id'));
-
-    $log->debug("Systemimage container retrieved from database");
-    return $device;
-}
-
-=head2 getInstalledComponents
-
-get components installed on this systemimage
-return array ref containing hash ref 
-
-=cut
 
 sub getInstalledComponents {
     my $self = shift;
@@ -235,11 +136,6 @@ sub getInstalledComponents {
     return $components;
 }
 
-=head2 cloneComponentsInstalledFrom
-
-# used during systemimage clone to set components installed on the new systemimage
-
-=cut
 
 sub cloneComponentsInstalledFrom {
     my $self = shift;
@@ -253,6 +149,13 @@ sub cloneComponentsInstalledFrom {
         $self->{_dbix}->components_installed->create(
             {    component_type_id => $component->get_column('component_type_id') });    
     }
+}
+
+sub getContainer {
+    my $self = shift;
+
+    my @accesses = $self->systemimage_container_accesses;
+    return $accesses[0]->container_access->container;
 }
 
 1;

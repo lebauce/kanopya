@@ -1,20 +1,25 @@
 require('detailstable.js');
 require('common/formatters.js');
-require('kanopyaformwizard.js');
+//require('kanopyaformwizard.js');
 require('modalform.js');
 
 var g_user_id = undefined;
 
-function user_addbutton_action(e, displayed) {
+function user_addbutton_action(e) {
     // When called from user details, e is the user id, event instead.
     var displayed;
     var relations;
-    if (e instanceof Object && e.data.displayed !== undefined) {
-        displayed = e.data.displayed;
-        relations = e.data.relations;
+    var grid;
+    if (e instanceof Object) {
+        if (e.data.displayed !== undefined) {
+            displayed = e.data.displayed;
+            relations = e.data.relations;
+        }
+        grid = e.data.grid;
+
     } else {
-        displayed = [ 'user_firstname', 'user_lastname', 'user_email', 
-                      'user_desc', 'user_login', 'user_password', 
+        displayed = [ 'user_firstname', 'user_lastname', 'user_email',
+                      'user_desc', 'user_login', 'user_password',
                       'user_lastaccess', 'user_creationdate', 'user_system',
                       'user_sshkey', 'user_profiles' ];
 
@@ -27,6 +32,7 @@ function user_addbutton_action(e, displayed) {
         id         : (!(e instanceof Object)) ? e : undefined,
         displayed  : displayed,
         relations  : relations,
+        callback   : function () { handleCreate(grid); }
     })).start();
 }
 
@@ -34,14 +40,14 @@ function user_addbutton_action(e, displayed) {
 function Users() {
     Users.prototype.load_content = function(container_id, elem_id) {
         g_user_id = elem_id;
-        create_grid({
+        var grid = create_grid({
             url: '/api/user',
             elem_name: 'user',
             rights: true,
             content_container_id: container_id,
             grid_id: 'users_list',
             details: { onSelectRow : user_addbutton_action },
-            colNames: [ 'user id', 'first name', 'last name', 'login', 'email' ],
+            colNames: [ 'user id', 'First name', 'Last name', 'Login', 'Email' ],
             colModel: [
                 { name: 'user_id', index: 'user_id', width: 60, sorttype: "int", hidden: true, key: true },
                 { name: 'user_firstname', index: 'user_firstname', width: 90, sorttype: "text" },
@@ -50,13 +56,14 @@ function Users() {
                 { name: 'user_email', index: 'user_email', width: 200}
             ]
         });
-        var user_addbutton  = $('<a>', { text : 'Add a user' }).appendTo('#' + container_id)
+        var action_div=$('#' + container_id).prevAll('.action_buttons');
+        var user_addbutton  = $('<a>', { text : 'Add a user' }).appendTo(action_div)
                                   .button({ icons : { primary : 'ui-icon-plusthick' } });
 
         var creation_attrs = [ 'user_firstname', 'user_lastname', 'user_email', 'user_desc',
                                'user_login', 'user_password', 'user_system', 'user_sshkey', 'user_profiles' ];
         var creation_relations = { 'quotas' : [ 'resource', 'quota' ] };
-        $(user_addbutton).bind('click', { displayed : creation_attrs, relations : creation_relations }, user_addbutton_action);
+        $(user_addbutton).bind('click', { displayed : creation_attrs, relations : creation_relations, grid : grid }, user_addbutton_action);
     };
 }
   
@@ -71,7 +78,7 @@ function loadGroups (container_id, elem_id) {
         rights: true,
         content_container_id: container_id,
         grid_id: 'groups_list',
-        colNames: [ 'group id', 'group name', 'group type' ],
+        colNames: [ 'group id', 'Group name', 'Group type' ],
         colModel: [ 
             { name: 'gp_id', index: 'gp_id', width: 60, sorttype: "int", hidden: true, key: true },
             { name: 'gp_name', index: 'gp_name', width: 90, sorttype: "date"},
@@ -110,8 +117,9 @@ function groupsList (container_id, elem_id) {
         });
         button.bind('click', function() {
             new ModalForm(group_opts).start();
-        });   
-        $('#' + cid).append(button);
+        });  
+        var action_div=$('#' + cid).prevAll('.action_buttons'); 
+        action_div.append(button);
     };
     
     var container = $('#' + container_id);
@@ -121,7 +129,7 @@ function groupsList (container_id, elem_id) {
         rights: true,
         content_container_id: container_id,
         grid_id: 'groups_list',
-        colNames: [ 'group id', 'group name', 'group type' ],
+        colNames: [ 'group id', 'Group name', 'Group type' ],
         colModel: [
             { name: 'gp_id', index: 'gp_id', width:60, sorttype: "int", hidden: true, key: true },
             { name: 'gp_name', index: 'gp_name', width: 90, sorttype: "date"},

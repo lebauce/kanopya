@@ -22,7 +22,7 @@ use strict;
 use warnings;
 
 use Entity;
-use EFactory;
+use EEntity;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -54,6 +54,13 @@ sub getTotalCpu {
     return $vm_resources->{$self->id}->{cpu};
 }
 
+sub getResources {
+    my ($self, %args) = @_;
+    my $vm_resources = $self->getHypervisor->getVmResources(vm => $self, resources => [ 'cpu', 'ram' ]);
+    return $vm_resources->{$self->id};
+}
+
+
 =head2 getHypervisor
 
     Return EEntity corresponding to the hypervisor.
@@ -66,7 +73,12 @@ sub getHypervisor {
     # Can not use $self->hypervisor to get the hypervisor as this call
     # do not return the concrete class of the hypervisor yet, and do not
     # return the corresponding EEntity.
-    return EFactory::newEEntity(data => Entity->get(id => $self->hypervisor->id));
+    return EEntity->new(data => Entity->get(id => $self->hypervisor->id));
+}
+
+sub halt {
+    my ($self, %args) = @_;
+    $self->getHostManager->halt(host => $self);
 }
 
 1;

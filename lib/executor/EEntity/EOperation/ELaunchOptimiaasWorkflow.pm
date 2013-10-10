@@ -1,6 +1,5 @@
-# ELaunchSCOWorkflow.pm - Launch a SCP Workflow
-
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,122 +14,138 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 30 may 2012
 
-=head1 NAME
-
-EOperation::ELaunchOptimiaasWorkflow - Operation class implementing
-
-=head1 SYNOPSIS
-
-This Object represent an operation.
-It allows to implement
-
-=head1 DESCRIPTION
-
-Component is an abstract class of operation objects
-
-=head1 METHODS
-
-=cut
 package EEntity::EOperation::ELaunchOptimiaasWorkflow;
-use base "EEntity::EOperation";
+use base EEntity::EOperation;
 
 use strict;
 use warnings;
 
-use Log::Log4perl "get_logger";
-use Data::Dumper;
 use Kanopya::Exceptions;
 use CapacityManagement;
 
+use Log::Log4perl "get_logger";
+use Data::Dumper;
+
 my $log = get_logger("");
 my $errmsg;
-our $VERSION = '1.00';
 
-=head2 prepare
+sub check {
+    my ($self, %args) = @_;
+    General::checkParams(args => $self->{context}, required => [ "cloudmanager_comp" ]);
 
-=cut
+    # put hypervisor clusters in context in order to lock them in the prepare
+    $self->{context}->{host_manager_sp} = $self->{context}->{cloudmanager_comp}->service_provider;
+}
+
 
 sub prepare {
     my $self = shift;
-    my %args = @_;
     $self->SUPER::prepare();
-    General::checkParams(args => $self->{context}, required => [ "cloudmanager_comp" ]);
+
+    # Check the IAAS cluster state
+    my @entity_states = $self->{context}->{host_manager_sp}->entity_states;
+
+    for my $entity_state (@entity_states) {
+        throw Kanopya::Exception::Execution::InvalidState(
+                  error => "The iaas cluster <"
+                           .$self->{context}->{host_manager_sp}->cluster_name
+                           .'> is <'.$entity_state->state
+                           .'> which is not a correct state to launch optimiaas'
+              );
+    }
+
+
+    my ($hv_state, $hv_timestamp) = $self->{context}->{host_manager_sp}->reload->getState;
+    if (not ($hv_state eq 'up')) {
+        $log->debug("State of hypervisor cluster is <$hv_state> which is an invalid state");
+        throw Kanopya::Exception::Execution::InvalidState(
+                  error => "The hypervisor cluster <" . $self->{context}->{host_manager_sp} .
+                           "> has to be <up>, not <$hv_state>"
+              );
+    }
+
+    $self->{context}->{host_manager_sp}->setState(state => 'optimizing');
+    $self->{context}->{host_manager_sp}->setConsumerState(state => 'optimizing', consumer => $self->workflow);
+}
+
+sub prerequisites {
+    my $self = shift;
+    $self->SUPER::prerequisites();
+
+    if (defined $self->{params}->{optimiaas}) {
+        return 0;
+    }
+
+    my $diff_infra_db = $self->{context}
+                        ->{cloudmanager_comp}
+                        ->checkAllInfrastructureIntegrity();
+
+    if (! $self->{context}->{cloudmanager_comp}->isInfrastructureSynchronized(hash => $diff_infra_db)) {
+
+        $self->workflow->enqueueBefore(
+            current_operation => $self,
+            operation => {
+                priority => 200,
+                type     => 'SynchronizeInfrastructure',
+                params   => {
+                    context => {
+                        cloud_manager => $self->{context}->{cloudmanager_comp}
+                    },
+                diff_infra_db => $diff_infra_db,
+                }
+            }
+        );
+        return -1;
+    }
+
+
+
+    my $cm  = CapacityManagement->new(cloud_manager => $self->{context}->{cloudmanager_comp});
+
+    my $operation_plan = $cm->optimIaas();
+
+    my $num_op = 0;
+    for my $operation (@$operation_plan){
+        if (defined $operation->{params}->{context}->{vm}->node) {
+            $log->info('Operation enqueuing');
+            $self->workflow->enqueueBefore(
+                operation         => $operation,
+                operation_state   => 'prereported',
+                current_operation => $self,
+            );
+            $num_op++;
+        }
+        else {
+            $log->info('Vm <'.$operation->{params}->{context}->{vm}->id.'> has no node, maybe not managed by Kanopya');
+        }
+    }
+    $self->{params}->{optimiaas} = 1;
+
+    return $num_op ? -1 : 0;
 }
 
 sub execute{
     my $self = shift;
     $self->SUPER::execute();
-
-    my $cm             = CapacityManagement->new(
-        cloud_manager => $self->{context}->{cloudmanager_comp},
-    );
-    my $operation_plan = $cm->optimIaas();
-
-    for my $operation (@$operation_plan){
-        $log->info('Operation enqueuing');
-        $self->getWorkflow()->enqueue(
-            %$operation
-        );
-    }
 }
 
+sub finish {
+    my $self = shift;
+    $self->SUPER::execute();
 
+    $self->{context}->{host_manager_sp}->setState(state => 'up');
+    $self->{context}->{host_manager_sp}->removeState(consumer => $self->workflow);
 
-=head1 DIAGNOSTICS
-Exceptions are thrown when mandatory arguments are missing.
-Exception : Kanopya::Exception::Internal::IncorrectParam
+    delete $self->{context}->{host_manager_sp};
+    delete $self->{context}->{cloudmanager_comp};
+}
 
-=head1 CONFIGURATION AND ENVIRONMENT
+sub cancel {
+    my $self = shift;
+    $self->SUPER::cancel();
 
-This module need to be used into Kanopya environment. (see Kanopya presentation)
-This module is a part of Executor package so refers to Executor configuration
-
-=head1 DEPENDENCIES
-
-This module depends of
-
-=over
-
-=item Kanopya::Exception module used to throw exceptions managed by handling programs
-
-=back
-
-=head1 INCOMPATIBILITIES
-
-None
-
-=head1 BUGS AND LIMITATIONS
-
-There are no known bugs in this module.
-
-Please report problems to <Maintainer name(s)> (<contact address>)
-
-Patches are welcome.
-
-=head1 AUTHOR
-
-<HederaTech Dev Team> (<dev@hederatech.com>)
-
-=head1 LICENCE AND COPYRIGHT
-
-Kanopya Copyright (C) 2009, 2010, 2011, 2012, 2013 Hedera Technology.
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 3, or (at your option)
-any later version.
-
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; see the file COPYING.  If not, write to the
-Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-Boston, MA 02110-1301 USA.
-
-=cut
+    $self->{context}->{host_manager_sp}->setState(state => 'up');
+    $self->{context}->{host_manager_sp}->removeState(consumer => $self->workflow);
+}
 1;

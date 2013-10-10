@@ -17,6 +17,8 @@
 # Created 14 july 2010
 use DBIx::Class::Schema::Loader qw/ make_schema_at /;
 
+use Term::ReadKey;
+
 #use lib '/opt/kanopya/lib/administrator';
 
 # INFO
@@ -48,7 +50,10 @@ print "db user : ";
 my $db_user = <STDIN>;
 chomp $db_user;
 print "db pwd : ";
+ReadMode "noecho";
 my $db_pwd = <STDIN>;
+ReadMode "restore";
+print "\n";
 chomp $db_pwd;
 
 # Define globals

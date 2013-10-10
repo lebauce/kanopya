@@ -28,20 +28,12 @@ my $log = get_logger("");
 my $errmsg;
 
 
-=head2 check
-
-=cut
-
 sub check {
     my $self = shift;
     my %args = @_;
 
     General::checkParams(args => $self->{context}, required => [ "rule" ]);
 }
-
-=head2 finish
-
-=cut
 
 sub finish {
     my $self = shift;

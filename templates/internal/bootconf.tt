@@ -9,7 +9,6 @@ initiatorname=[% initiatorname %]
 bootmode=iscsi
 additional_devices="[% additional_devices %]"
 
-root_fs_type=[% filesystem %]
 root_mount_opts="[% mount_opts %]"
 root_target_name=[% target %]
 root_target_ip=[% ip %]
@@ -25,7 +24,6 @@ root_in_password=
 
 [% mount.name %]_mount_point=[% mount.mount_point %]
 [% mount.name %]_mount_opts=[% mount.options %]
-[% mount.name %]_fs_type=[% mount.fs %]
 [% mount.name %]_target_name=[% mount.target %]
 [% mount.name %]_target_ip=[% mount.ip %]
 [% mount.name %]_target_port=[% mount.port %]

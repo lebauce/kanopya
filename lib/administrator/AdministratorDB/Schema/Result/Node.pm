@@ -13,7 +13,23 @@ AdministratorDB::Schema::Result::Node
 use strict;
 use warnings;
 
-use base 'DBIx::Class::Core';
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
 
 =head1 TABLE: C<node>
 
@@ -27,6 +43,13 @@ __PACKAGE__->table("node");
 
   data_type: 'integer'
   extra: {unsigned => 1}
+  is_auto_increment: 1
+  is_nullable: 0
+
+=head2 service_provider_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
   is_foreign_key: 1
   is_nullable: 0
 
@@ -35,12 +58,25 @@ __PACKAGE__->table("node");
   data_type: 'integer'
   extra: {unsigned => 1}
   is_foreign_key: 1
-  is_nullable: 0
+  is_nullable: 1
 
-=head2 master_node
+=head2 node_number
 
   data_type: 'integer'
   extra: {unsigned => 1}
+  is_nullable: 0
+
+=head2 node_hostname
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 255
+
+=head2 systemimage_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
   is_nullable: 1
 
 =head2 node_state
@@ -55,30 +91,24 @@ __PACKAGE__->table("node");
   is_nullable: 1
   size: 32
 
-=head2 node_number
+=head2 monitoring_state
 
-  data_type: 'integer'
-  extra: {unsigned => 1}
+  data_type: 'char'
+  default_value: 'enabled'
   is_nullable: 0
-
-=head2 systemimage_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 1
-
-=head2 inside_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 0
+  size: 32
 
 =cut
 
 __PACKAGE__->add_columns(
   "node_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_auto_increment => 1,
+    is_nullable => 0,
+  },
+  "service_provider_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -90,16 +120,12 @@ __PACKAGE__->add_columns(
     data_type => "integer",
     extra => { unsigned => 1 },
     is_foreign_key => 1,
-    is_nullable => 0,
+    is_nullable => 1,
   },
-  "master_node",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
-  "node_state",
-  { data_type => "char", is_nullable => 1, size => 32 },
-  "node_prev_state",
-  { data_type => "char", is_nullable => 1, size => 32 },
   "node_number",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  "node_hostname",
+  { data_type => "char", is_nullable => 0, size => 255 },
   "systemimage_id",
   {
     data_type => "integer",
@@ -107,12 +133,16 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 1,
   },
-  "inside_id",
+  "node_state",
+  { data_type => "char", is_nullable => 1, size => 32 },
+  "node_prev_state",
+  { data_type => "char", is_nullable => 1, size => 32 },
+  "monitoring_state",
   {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
+    data_type => "char",
+    default_value => "enabled",
     is_nullable => 0,
+    size => 32,
   },
 );
 
@@ -142,7 +172,51 @@ __PACKAGE__->set_primary_key("node_id");
 
 __PACKAGE__->add_unique_constraint("host_id", ["host_id"]);
 
+=head2 C<node_hostname>
+
+=over 4
+
+=item * L</node_hostname>
+
+=item * L</service_provider_id>
+
+=back
+
+=cut
+
+__PACKAGE__->add_unique_constraint("node_hostname", ["node_hostname", "service_provider_id"]);
+
 =head1 RELATIONS
+
+=head2 component_nodes
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ComponentNode>
+
+=cut
+
+__PACKAGE__->has_many(
+  "component_nodes",
+  "AdministratorDB::Schema::Result::ComponentNode",
+  { "foreign.node_id" => "self.node_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 data_models
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::DataModel>
+
+=cut
+
+__PACKAGE__->has_many(
+  "data_models",
+  "AdministratorDB::Schema::Result::DataModel",
+  { "foreign.node_id" => "self.node_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 =head2 host
 
@@ -156,36 +230,26 @@ __PACKAGE__->belongs_to(
   "host",
   "AdministratorDB::Schema::Result::Host",
   { host_id => "host_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
-=head2 inside
+=head2 service_provider
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Inside>
+Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "inside",
-  "AdministratorDB::Schema::Result::Inside",
-  { inside_id => "inside_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 node
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Externalnode>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "node",
-  "AdministratorDB::Schema::Result::Externalnode",
-  { externalnode_id => "node_id" },
+  "service_provider",
+  "AdministratorDB::Schema::Result::ServiceProvider",
+  { service_provider_id => "service_provider_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
@@ -209,19 +273,40 @@ __PACKAGE__->belongs_to(
   },
 );
 
+=head2 verified_noderules
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2012-06-20 15:42:45
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:CGc3DTiiUd11o1xwOaA3vw
+Type: has_many
 
+Related object: L<AdministratorDB::Schema::Result::VerifiedNoderule>
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
+=cut
 
-__PACKAGE__->belongs_to(
-      "parent",
-      "AdministratorDB::Schema::Result::Externalnode",
-       { "foreign.externalnode_id" => "self.node_id" },
-       { cascade_copy => 0, cascade_delete => 1 }
+__PACKAGE__->has_many(
+  "verified_noderules",
+  "AdministratorDB::Schema::Result::VerifiedNoderule",
+  { "foreign.verified_noderule_node_id" => "self.node_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 workflow_noderules
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::WorkflowNoderule>
+
+=cut
+
+__PACKAGE__->has_many(
+  "workflow_noderules",
+  "AdministratorDB::Schema::Result::WorkflowNoderule",
+  { "foreign.node_id" => "self.node_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-02-28 14:52:06
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:m497yb3OpA0l2GyZfvEXoQ
+
+__PACKAGE__->many_to_many("components", "component_nodes", "component");
 
 1;

@@ -1,5 +1,5 @@
-# Component.pm - This module is components generalization
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -14,36 +14,45 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 3 july 2010
+
+=pod
+=begin classdoc
+
+This module is components abstract class.
+
+=end classdoc
+=cut
 
 package Entity::Component;
-use base "Entity";
+use base Entity;
 
 use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use Data::Dumper;
-use Administrator;
 use General;
-use ComponentType;
-use Log::Log4perl "get_logger";
+use ClassType::ComponentType;
+use Data::Dumper;
 
+use Log::Log4perl "get_logger";
 my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
     service_provider_id => {
         pattern        => '^\d*$',
-        is_mandatory   => 0,
+        is_mandatory   => 1,
         is_extended    => 0,
         is_editable    => 0
     },
     component_type_id => {
+        label          => 'Component type',
         pattern        => '^\d*$',
+        type           => 'relation',
+        relation       => 'single',
         is_mandatory   => 1,
         is_extended    => 0,
-        is_editable    => 0
+        is_editable    => 1
     },
     component_template_id => {
         pattern        => '^\d*$',
@@ -60,18 +69,36 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        getConf   => {
-            description => 'get configuration',
+        getConf => {
+            description => 'get configuration of the component.',
         },
-        setConf   => {
-            description => 'set configuration',
+        setConf => {
+            description => 'set configuration of the component.',
         },
-        # TODO(methods): Remove this method from the api once the policy ui has been reviewed
-        getPolicyParams => {
-            description => 'get the parameters required for policies definition.',
-        },
-    }
-};
+    };
+}
+
+sub label {
+    my $self = shift;
+
+    return $self->component_type->component_name . " (on " .
+           $self->service_provider->label . ")";
+}
+
+my $merge = Hash::Merge->new('LEFT_PRECEDENT');
+
+
+=pod
+=begin classdoc
+
+@constructor
+
+Create a new component from a component type name and version. 
+
+@return the component instance.
+
+=end classdoc
+=cut
 
 sub new {
     my $class = shift;
@@ -80,57 +107,76 @@ sub new {
     # Avoid abstract Entity::Component instanciation
     if ($class !~ /Entity::Component.*::(\D+)(\d*)/) {
         $errmsg = "Entity::Component->new : Entity::Component must not " .
-                  "be instanciated without a concret component class";
-        $log->error($errmsg);
+                  "be instanciated without a concret component class.";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
     my $component_name    = $1;
     my $component_version = $2;
 
-    # Set base configuration if not passed to this constructor
-    my $config = (%args) ? \%args : $class->getBaseConfiguration();
-    my $template_id = undef;
-    if (exists $args{component_template_id} and defined $args{component_template_id}) {
-        $template_id = $args{component_template_id};
-    }
+    # Merge the base configuration with args
+    %args = %{ $merge->merge(\%args, $class->getBaseConfiguration()) };
 
     # We set the corresponding component_type
     my $hash = { component_name => $component_name };
-    if (defined ($component_version) && $component_version) {
+    if (defined $component_version && $component_version) {
         $hash->{component_version} = $component_version;
     }
+    $args{component_type_id} = ClassType::ComponentType->find(hash => $hash)->id;
 
-    my $self = $class->SUPER::new(component_type_id => ComponentType->find(hash => $hash)->id,
-                                  %$config);
-
-    bless $self, $class;
-
-    # Add the component to the Component group
-    Entity::Component->getMasterGroup->appendEntity(entity => $self);
-
-    return $self;
+    return $class->SUPER::new(%args);
 }
 
-=head2 getConf
+sub search {
+    my $class = shift;
+    my %args = @_;
 
-    Generic method for getting simple component configuration
+    General::checkParams(args => \%args, optional => { 'hash' => {} });
 
+    if (defined $args{custom}) {
+        if (defined $args{custom}->{category}) {
+            # TODO: try to use the many-to-mnay relation name 'component_type.component_categories.category_name'
+            my $filter = 'component_type.component_type_categories.component_category.category_name';
+            $args{hash}->{$filter} = delete $args{custom}->{category};
+        }
+        delete $args{custom};
+    }
+    return $class->SUPER::search(%args);
+}
+
+
+=pod
+=begin classdoc
+
+Generic method for getting simple component configuration.
+
+=end classdoc
 =cut
 
 sub getConf {
     my $self = shift;
     my $conf = {};
 
-    return $self->toJSON(raw => 1);
+    my $class = ref($self) || $self;
+    my @relations;
+    my $attrdefs = $class->getAttrDefs();
+    while (my ($name, $attr) = each %{$attrdefs}) {
+        if (defined $attr->{type} and $attr->{type} eq "relation") {
+            push @relations, $name;
+        }
+    }
+
+    return $self->toJSON(raw => 1, deep => 1, expand => \@relations);
 }
 
-=head2 setConf
 
-    Generic method for setting simple component configuration.
-    If a value differs from db contents, the attr is set, and
-    the object saved.
+=pod
+=begin classdoc
 
+Generic method for setting simple component configuration.
+If a value differs from db contents, the attr is set, and the object saved.
+
+=end classdoc
 =cut
 
 sub setConf {
@@ -139,101 +185,85 @@ sub setConf {
 
     General::checkParams(args => \%args, required => ['conf']);
 
-    my $current_conf = $self->getConf;
-
-    my $updated = 0;
-    for my $attr (keys %{$args{conf}}) {
-        if ($current_conf->{$attr} ne $args{conf}->{$attr}) {
-            $self->setAttr(name => $attr, value => $args{conf}->{$attr});
-            $updated = 1;
-        }
-    }
-    if ($updated) {
-        $self->save();
-    }
+    $self->update(%{ $args{conf} });
 }
 
-=head2 getPolicyParams
 
-=cut
+=pod
+=begin classdoc
 
-sub getPolicyParams {
-    my $self = shift;
-    my %args = @_;
+@return this component instance Template dir from database.
 
-    General::checkParams(args => \%args, required => [ 'policy_type' ]);
-
-    return [];
-}
-
-=head2 getTemplateDirectory
-
-B<Class>   : Public
-B<Desc>    : This method return this component instance Template dir from database.
-B<args>    : None
-B<Return>  : String : component instance template directory
-B<Comment>  : None
-B<throws>  : None
-
+=end classdoc
 =cut
 
 sub getTemplateDirectory {
     my $self = shift;
-    my $template_id = $self->getAttr(name => 'component_template_id'); 
 
-    if (defined $template_id) {
-        return $self->{_dbix}->parent->component_template->get_column('component_template_directory');
+    if (defined $self->component_template_id) {
+        return $self->component_template->component_template_directory;
     }
 }
 
-=head2 getServiceProvider
 
-    Desc: Returns the service provider the component is on
+=pod
+=begin classdoc
 
-=cut
+Overrided to remove associated service_provider_manager.
+Managers can't be cascade deleted because they are linked either to a a connector or a component.
 
-sub getServiceProvider {
-    my $self = shift;
-
-    return Entity->get(id => $self->getAttr(name => "service_provider_id"));
-}
-
-=head2 remove
-
-    Desc: Overrided to remove associated service_provider_manager
-          Managers can't be cascade deleted because they are linked either to a a connector or a component.
-
-    TODO : merge connector and component or make them inerit from a parent class
-
+=end classdoc
 =cut
 
 sub remove {
     my $self = shift;
 
-    my @managers = ServiceProviderManager->search( hash => {manager_id => $self->id} );
+    my @managers = ServiceProviderManager->search(hash => { manager_id => $self->id });
     for my $manager (@managers) {
-        $manager->delete();
+        $manager->remove();
     }
-
-    $self->delete();
+    $self->SUPER::remove();
 }
 
-=head2 toString
+sub registerNode {
+    my ($self, %args) = @_;
 
-B<Class>   : Public
-B<Desc>    : This method return a string describing the component
-B<args>    : None
-B<Return>  : String : Format : 'Component name' 'Component version'
-B<Comment>  : None
-B<throws>  : None
+    General::checkParams(args     => \%args,
+                         required => [ 'node' ],
+                         optional => { 'master_node' => 0 });
 
-=cut
+    ComponentNode->new(component_id => $self->id,
+                       node_id      => $args{node}->id,
+                       master_node  => $args{master_node});
+}
+
+sub getMasterNode {
+    my $self = shift;
+
+    return $self->findRelated(filters => [ 'component_nodes' ], hash => { master_node => 1 })->node;
+}
+
+sub getActiveNodes {
+    my ($self, %args)   = @_;
+
+    my @component_nodes = $self->component_nodes;
+    my @nodes           = ();
+    for my $component_node (@component_nodes) {
+        my $n = $component_node->node;
+        if ($n->host->host_state =~ /^up:\d+$/ &&
+            ($n->host->getNodeState())[0] =~ m/^(in|pregoingin|goingin)$/) {
+            push @nodes, $n;
+        }
+    }
+
+    return @nodes;
+}
 
 sub toString {
     my $self = shift;
 
-    my $component_name = $self->{_dbix}->parent->component_type->get_column('component_name');
-    my $component_version = $self->{_dbix}->parent->component_type->get_column('component_version');
+    my $component_name = $self->component_type->component_name;
+    my $component_version = $self->component_type->component_version;
 
     return $component_name . " " . $component_version;
 }
@@ -246,19 +276,252 @@ sub priority {
     return 50;
 }
 
-sub readyNodeAddition { return 1; }
 
-sub readyNodeRemoving { return 1; }
+=pod
+=begin classdoc
 
-# Method to override to insert in db component default configuration
+Method to be overrided to get component basic configuration
+
+@return %base_configuration
+
+=end classdoc
+=cut
+
 sub getBaseConfiguration { return {}; }
-sub insertDefaultConfiguration {}
-sub getClusterizationType {}
-sub getExecToTest {}
-sub getNetConf {}
-sub needBridge { return 0; }
-sub getHostsEntries { return; }
-sub getPuppetDefinition { return ""; }
 
+
+=pod
+=begin classdoc
+
+Method to be overrided to insert in db default configuration for tables linked to component.
+
+=end classdoc
+=cut
+
+sub insertDefaultExtendedConfiguration {}
+
+=pod
+=begin classdoc
+
+Check that the configuration of the component is correct, raise an exception otherwise
+
+=end classdoc
+=cut
+
+sub checkConfiguration {}
+
+sub checkAttribute {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'attribute' ]);
+
+    my $attribute = $args{attribute};
+    if (! $self->$attribute) {
+        my $error = $args{error};
+        if (!$error) {
+            my $attrs = $self->getAttrDefs();
+            $attribute .= "_id" if ! defined $attrs->{$attribute};
+            $error = "There is no " . lcfirst($attrs->{$attribute}->{label}) .
+                     " configured for component ". $self->label;
+        }
+
+        throw Kanopya::Exception::InvalidConfiguration(
+            error => $error,
+            component => $self
+        );
+    }
+
+}
+
+sub checkDependency {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'component' ]);
+
+    my $component = $args{component};
+    my ($state, $uptime) = $component->service_provider->getState();
+    if ($component->service_provider->id != $self->service_provider->id &&
+        $state ne "up" && $state ne "updating") {
+        throw Kanopya::Exception::InvalidConfiguration(
+            error => "$component on ".$component->service_provider->cluster_name." has to be up to start $self (not $state)",
+            component => $self
+        );
+    }
+}
+
+sub getClusterizationType {}
+
+sub getExecToTest {}
+
+sub getNetConf {}
+
+sub getHostsEntries { return; }
+
+=pod
+=begin classdoc
+
+getListenIp gives ip address to use as "bind address" for this component configuration.
+Today, Hard coded behaviors are:
+component is not loadbalanced : 0.0.0.0
+component is loadbalanced : host adminIp   
+
+@return ip address
+
+=end classdoc
+=cut
+
+sub getListenIp {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['host','port']);
+    if($self->getBalancerAddress(port => $args{port})) {
+        return $args{host}->adminIp;
+    } else {
+        return '0.0.0.0';
+    }
+}
+
+=pod
+=begin classdoc
+
+getAccessIp gives ip address needed to contact this component.
+Today, Hard coded behaviors are:
+component is not highly available (no keepalived component) : masternode adminIp
+component is highly available : first keepalived vip
+
+@return ip address
+
+=end classdoc
+=cut
+
+sub getAccessIp {
+    my ($self, %args) = @_;
+
+    my $keepalived = eval { $self->service_provider->getComponent(name => 'Keepalived') };
+    if ($keepalived) {
+        my @vrrpinstances = $keepalived->keepalived1_vrrpinstances;
+        return $vrrpinstances[0]->virtualip->ip_addr;
+    } else {
+        my $ip = $self->getBalancerAddress(port    => $args{port},
+                                           service => $args{service});
+        if ($ip) {
+            return $ip;
+        } else {
+            return $self->getMasterNode->adminIp;
+        }
+    }
+}
+
+=pod
+=begin classdoc
+
+@return loadbalancer ip address for this component on this port or undef if not balanced.
+
+=end classdoc
+=cut
+
+sub getBalancerAddress {
+    my ($self, %args) = @_;
+
+    if (defined ($args{service})) {
+        my $conf = $self->getNetConf;
+        SERVICE:
+        for my $service (keys %{$conf}) {
+            if ($service eq $args{service}) {
+                $args{port} = $conf->{$service}->{port};
+                last SERVICE;
+            }
+        }
+    }
+
+    General::checkParams(args => \%args, required => [ 'port' ],
+                                         optional => { service => undef });
+
+    my $comp_name = $self->component_type->component_name;
+    if($comp_name eq 'Haproxy') {
+        return undef;
+    }
+    
+    my $listen_addr = undef;
+    my @haproxy_entries = $self->haproxy1s_listen;
+    for my $listen (@haproxy_entries) {
+        if ($listen->listen_component_port eq $args{port}) {
+            if ($listen->listen_ip ne '0.0.0.0') {
+                $listen_addr = $listen->listen_ip;
+                last;
+            } else {
+                $listen_addr = $listen->haproxy1->getMasterNode->fqdn;
+                last;
+            }
+        }
+    }
+
+    if (! $listen_addr) {
+        $log->warn("No loalbalancer entry found for port $args{port} for $comp_name");
+    }
+
+    return $listen_addr;
+}
+
+sub isBalanced {
+    my ($self, %args) = @_;
+    my $comp_name = $self->component_type->component_name;
+
+    return 0 if $comp_name eq 'Haproxy';
+
+    my @haproxy_entries = $self->haproxy1s_listen;
+    return scalar(@haproxy_entries) ? 1 : 0;
+}
+
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+    my $manifest = "";
+    my $dependencies = [];
+    my @listens = $self->haproxy1s_listen;
+    LISTEN:
+    for my $listen (@listens) {
+        next LISTEN if $self->id != $listen->listen_component_id;    
+        $manifest .=  $self->instanciatePuppetResource(
+                             resource => '@@haproxy::balancermember',
+                             name => $listen->listen_name .'-'.$args{host}->node->node_hostname,
+                             params => {
+                                listening_service => $listen->listen_name,
+                                ports             => $listen->listen_component_port,
+                                server_names      => $args{host}->node->node_hostname,
+                                ipaddresses       => $args{host}->adminIp,
+                                options           => 'check',
+                                tag               => 'kanopya::haproxy'
+                             },
+                          );
+        push @$dependencies, $listen->haproxy1;
+    }
+    
+    
+    return {
+        loadbalanced => {
+            manifest     => $manifest,
+            dependencies => $dependencies
+        }
+    }
+}
+
+sub instanciatePuppetResource {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'name' ],
+                                         optional => { 'params' => {},
+                                                       'resource' => 'class',
+                                                       'require' => undef });
+
+    $Data::Dumper::Terse = 1;
+    $Data::Dumper::Quotekeys = 0;
+
+    my @dumper = split('\n', Dumper($args{params}));
+    shift @dumper;
+    pop @dumper;
+
+    return "$args{resource} { '$args{name}':\n" .
+           ($args{require} ? "  require => [ " . join(' ,', @{$args{require}}) . " ],\n" : '') .
+           join("\n", @dumper) . "\n" .
+           "}\n";
+}
 
 1;

@@ -49,8 +49,8 @@ function setGraphDatePicker(widget_elem, widget) {
 
     if (default_mode == 'mode1') {container.addClass(default_mode);}
     var time_mode_button = $('<button>').button({ icons : { primary : 'ui-icon-clock' }, text : false }).click(function() {
-        container.find('.timeset_mode2').toggle();
-        container.find('.timeset_mode1').toggle();
+        container.find('.timeset_mode2').toggleClass('selected-time-mode');
+        container.find('.timeset_mode1').toggleClass('selected-time-mode');
         container.toggleClass('mode1');
     }).removeClass('ui-button-icon-only'); // removing this class is an ugly fix to have a correct button size
     container.append(time_mode_button);
@@ -59,12 +59,12 @@ function setGraphDatePicker(widget_elem, widget) {
     var start_input = $('<input>', {type:'text', 'class':'graph_start_time'}).datetimepicker({
         dateFormat: 'mm-dd-yy'
     }).datetimepicker('setDate', start);
-    container.append($('<span>', {css:'white-space:nowrap', 'class' : 'timeset_mode1 hidden', html:' Start: '}).append(start_input) );
+    container.append($('<span>', {css:'white-space:nowrap', 'class' : 'time_mode timeset_mode1', html:' Start: '}).append(start_input) );
 
     var end_input = $('<input>', {type:'text', 'class':'graph_end_time'}).datetimepicker({
         dateFormat: 'mm-dd-yy'
     }).datetimepicker('setDate', now);
-    container.append($('<span>', {css:'white-space:nowrap', 'class' : 'timeset_mode1 hidden', html:' End: '}).append(end_input) );
+    container.append($('<span>', {css:'white-space:nowrap', 'class' : 'time_mode timeset_mode1', html:' End: '}).append(end_input) );
 
     // Time setting mode 2 (last xxx)
     var select_amount       = $('<select>', {'class' : 'timeset_amount'});
@@ -76,9 +76,9 @@ function setGraphDatePicker(widget_elem, widget) {
     var timescale_options = {'hour(s)' : 3600, 'day(s)' : 3600*24, 'week(s)' : 3600*24*7};
     $.each(timescale_options, function(label, seconds) { select_timescale.append($('<option>', { value: seconds, html: label}))});
 
-    container.append($('<span>', {css:'white-space:nowrap', 'class':'timeset_mode2 hidden' , html:' Last '}).append(select_amount).append(select_timescale) );
+    container.append($('<span>', {css:'white-space:nowrap', 'class':'time_mode timeset_mode2' , html:' Last '}).append(select_amount).append(select_timescale) );
 
-    container.find('.timeset_' + default_mode).show();
+    container.find('.timeset_' + default_mode).addClass('selected-time-mode');
 
     // Manage widget metadata (save and load)
     if (widget !== undefined) {
@@ -118,4 +118,32 @@ function getPickedDate(widget) {
         start : widget.find('.graph_start_time').val(),
         end   : widget.find('.graph_end_time').val(),
     };
+}
+
+function activateWidgetPart(elems) {
+    elems.not('.widget-part-enable').unbind().click( function() {
+        $(this).find('span').toggleClass('ui-icon-triangle-1-e ui-icon-triangle-1-s');
+        $(this).next().toggle('slide');
+    })
+    .css({'color': '#555'}).attr('title', '')
+    .addClass('clickable widget-part-enable')
+    .next().css({'border-style':'groove none'}).hide();
+}
+
+function deactivateWidgetPart(elems, title) {
+    elems.unbind().css({'color': '#999'}).attr('title', title);
+    elems.removeClass('widget-part-enable');
+    elems.find('span').removeClass('ui-icon-triangle-1-s').addClass('ui-icon-triangle-1-e');
+    elems.next().hide();
+}
+
+function widgetCommonInit(widget_elem) {
+    // All .widget_part tags can be clicked to toggle the element directly under it
+    widget_elem.find('.widget_part')
+    .prepend($('<span>', {'class' : 'ui-icon ui-icon-triangle-1-e' }))
+    .css({'font-size': '0.83em', 'font-weight': 'bold', 'display':'inline-block'});
+    activateWidgetPart(widget_elem.find('.widget_part'));
+
+    widget_elem.find('.icon-only-refresh-button').button({ icons : { primary : 'ui-icon-refresh' }, text : false })
+    .css({'margin':'0px 0px 0px 10px'});
 }

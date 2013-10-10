@@ -36,12 +36,10 @@ use strict;
 use warnings;
 
 use Entity;
-use EFactory;
 
 use String::Random;
 use Template;
 use IO::Socket;
-use Net::Ping;
 
 use Log::Log4perl "get_logger";
 
@@ -51,27 +49,30 @@ my $errmsg;
 sub getHostManager {
     my $self = shift;
 
-    return EFactory::newEEntity(data => $self->SUPER::getHostManager);
+    return EEntity->new(data => $self->SUPER::getHostManager);
 }
 
 sub start {
     my $self = shift;
     my %args = @_;
 
-    $self->getHostManager->startHost(host => $self, hypervisor => $args{hypervisor});
+    $self->getHostManager->startHost(host       => $self,
+                                     hypervisor => $args{hypervisor},
+                                     cluster    => $args{cluster},
+                                     erollback  => $args{erollback});
 
     $self->setState(state => 'starting');
 
     # Sommetimes a host can be promoted to another object type
     # So reload the object to be sure to have the good type.
-    return EFactory::newEEntity(data => Entity->get(id => $self->id));
+    return EEntity->new(data => Entity->get(id => $self->id));
 }
 
 sub halt {
     my $self = shift;
     my %args = @_;
 
-    my $result = $self->getEContext->execute(command => 'halt');
+    my $result = $self->getEContext->execute(command => 'poweroff');
     $self->setState(state => 'stopping');
 }
 
@@ -82,6 +83,13 @@ sub stop {
     $self->getHostManager->stopHost(host => $self);
 }
 
+sub release {
+    my $self = shift;
+    my %args = @_;
+
+    $self->getHostManager->releaseHost(host => $self);
+}
+
 sub postStart {
     my $self = shift;
     my %args = @_;
@@ -89,44 +97,28 @@ sub postStart {
     $self->getHostManager->postStart(host => $self);
 }
 
-sub ping {
-    my ($self) = @_;
-    my $ip = $self->adminIp;
-    my $ping = Net::Ping->new("icmp");
-    my $pingable = $ping->ping($ip, 2);
-    $ping->close();
-    return $pingable ? $pingable : 0;
-}
-
 sub checkUp {
     my ($self, %args) = @_;
 
-    my $pingable = $self->ping();
-
-    if ($pingable) {
-        eval {
-            $self->getEContext->execute(command => "uptime");
-        };
-        if ($@) {
-            $log->info("Ehost->checkUp for host <" . $self->adminIp .
-                       ">, host pingable but not sshable");
-            return 0;
-        }
-    }
-
-    return $pingable ? $pingable : 0;
-}
-
-sub getEContext {
-    my $self = shift;
-
-    return EFactory::newEContext(ip_source      => $self->{_executor}->getMasterNodeIp,
-                                 ip_destination => $self->adminIp);
+    return $self->getHostManager->checkUp(host => $self);
 }
 
 sub timeOuted {
     my $self = shift;
+
     $self->setState(state => 'broken');
+}
+
+=head2 getSystemComponent
+
+    Return the component to interrogate to get system informations
+
+=cut
+
+sub getSystemComponent {
+    my $self = shift;
+
+    return EEntity->new(entity => $self->node->service_provider->getComponent(category => "System"));
 }
 
 =head2 getAvailableMemory
@@ -136,28 +128,9 @@ sub timeOuted {
 =cut
 
 sub getAvailableMemory {
-    my ($self, %args) = @_;
+    my $self = shift;
 
-    # Get the memory infos from procfs
-    my $result = $self->getEContext->execute(command => "cat /proc/meminfo");
-
-    # Keep the lines about free memory only
-    my @lines = grep { $_ =~ '^(MemTotal:|MemFree:|Buffers:|Cached:)' } split('\n', $result->{stdout});
-
-    my $total = (split('\s+', shift @lines))[1];
-
-    # Total available memory is the sum of free, buffers and cached memory
-    my $free = 0;
-    for my $line (@lines) {
-        my ($mentype, $amount, $unit) = split('\s+', $line);
-        $free += $amount;
-    }
-
-    # Return the free memory in bytes
-    return {
-        mem_effectively_available => $free * 1024,
-        mem_total                 => $total * 1024
-    }
+    return $self->getSystemComponent->getAvailableMemory(host => $self);
 }
 
 =head2 getTotalMemory
@@ -179,24 +152,15 @@ sub getTotalMemory {
 =cut
 
 sub getTotalCpu {
-    my ($self, %args) = @_;
+    my $self = shift;
 
-    # Get the memory infos from procfs
-    my $result = $self->getEContext->execute(command => "cat /proc/cpuinfo");
+    return $self->getSystemComponent->getTotalCpu(host => $self);
+}
 
-    # Keep the lines about free memory only
-    my @lines = grep { $_ =~ '^processor(\s)+:' } split('\n', $result->{stdout});
+sub getEContext {
+    my $self = shift;
 
-    return scalar @lines;
+    return $self->SUPER::getEContext(dst_host => $self);
 }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2011-2012 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut

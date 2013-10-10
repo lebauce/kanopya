@@ -15,6 +15,16 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+
+=begin classdoc
+
+TODO
+
+=end classdoc
+
+=cut
+
 package Entity::User::Customer;
 use base "Entity::User";
 
@@ -55,9 +65,6 @@ sub new {
 
     # Automattically add the user to the Customer profile
     $self->setProfiles(profile_names => [ 'Customer' ]);
-
-    # Add the component to the Component group
-    Entity::User->getMasterGroup->appendEntity(entity => $self);
 
     return $self;
 }

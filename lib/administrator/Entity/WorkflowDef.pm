@@ -93,7 +93,7 @@ sub setParamPreset {
 
     # TODO remove current paramPreset if exists (or use updateParamPreset)
 
-    my $preset = ParamPreset->new(name => 'workflow_def_params', params => $args{params});
+    my $preset = ParamPreset->new(params => $args{params});
     $self->setAttr(name  => 'param_preset_id',
                    value => $preset->getAttr(name => 'param_preset_id'));
     $self->save();
@@ -106,7 +106,7 @@ sub updateParamPreset{
 
     my $preset;
     eval {
-        $preset = ParamPreset->get(id => $self->getAttr(name => 'param_preset_id'));
+        $preset = ParamPreset->get(id => $self->param_preset_id);
     };
     if ($@) {
         $errmsg = 'could not retrieve any param preset for workflow: '.$@;
@@ -119,7 +119,7 @@ sub updateParamPreset{
 sub paramPresets {
     my ($self,%args) = @_;
 
-    my $param_preset_id = $self->getAttr(name => 'param_preset_id');
+    my $param_preset_id = $self->param_preset_id;
     return {} if ! $param_preset_id;
 
     my $preset;
@@ -147,7 +147,7 @@ sub delete {
 
     my $preset;
     eval {
-        $preset = ParamPreset->get(id => $self->getAttr(name => 'param_preset_id'));
+        $preset = ParamPreset->get(id => $self->param_preset_id);
     };
     if (not $@) {
         $preset->delete();

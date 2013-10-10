@@ -29,8 +29,8 @@ sub addNode {
     $log->info("Configuring system for iSCSI");
  
     # generation of /etc/iscsi/initiatorname.iscsi (needed to start the iscsid daemon)
-    my $cluster = $self->_getEntity->getServiceProvider;
-    my $data = { initiatorname => $args{host}->getAttr(name => 'host_initiatorname')};
+    my $cluster = $self->service_provider;
+    my $data = { initiatorname => $args{host}->host_initiatorname };
     
     my $file = $self->generateNodeFile(
         cluster       => $cluster,
@@ -41,17 +41,17 @@ sub addNode {
         data          => $data
     );
     
-    $self->getExecutorEContext->send(
+    $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point} . '/etc/iscsi',
     );
 
-    $self->getExecutorEContext->execute(
+    $self->_host->getEContext->execute(
         command => "touch $args{mount_point}/etc/iscsi.initramfs"
     );
 
     my $initiatorname = $args{host}->host_initiatorname;
-    $self->getExecutorEContext->execute(
+    $self->_host->getEContext->execute(
         command => "echo \"InitiatorName=$initiatorname\" > " .
         "$args{mount_point}/etc/initiatorname.iscsi"
     );
@@ -67,12 +67,11 @@ sub _generateKanopyaHalt {
     my $omitted_file = "Kanopya_omitted_iscsid";
     my $vars = {
         target       => $args{targetname},
-        nas_ip       => $args{container_access}->getAttr(name => 'container_access_ip'),
-        nas_port     => $args{container_access}->getAttr(name => 'container_access_port'),
-        data_exports => $self->getExports()
+        nas_ip       => $args{container_access}->container_access_ip,
+        nas_port     => $args{container_access}->container_access_port,
+        data_exports => $self->getConf()->{openiscsi2_targets}
     };
 
-    $log->debug("Generate Kanopya Halt with :" . Dumper($vars));
     my $file = $self->generateNodeFile(
         cluster       => $args{cluster},
         host          => $args{host},
@@ -82,24 +81,24 @@ sub _generateKanopyaHalt {
         data          => $vars
     );
 
-    $self->getExecutorEContext->send(src  => $file,
-                                     dest => "$args{mount_point}/etc/init.d/Kanopya_halt");
+    $self->_host->getEContext->send(src  => $file,
+                                    dest => "$args{mount_point}/etc/init.d/Kanopya_halt");
 
-    $self->getExecutorEContext->execute(
+    $self->_host->getEContext->execute(
         command => "chmod 755 $args{mount_point}/etc/init.d/Kanopya_halt"
     );
 
     $log->debug("Generate omitted file <$omitted_file>");
-    $self->getExecutorEContext->execute(
+    $self->_host->getEContext->execute(
         command => "cp /templates/internal/$omitted_file /tmp/"
     );
-    $self->getExecutorEContext->send(
+    $self->_host->getEContext->send(
         src  => "/tmp/$omitted_file",
         dest => "$args{mount_point}/etc/init.d/Kanopya_omitted_iscsid"
     );
     unlink "/tmp/$omitted_file";
 
-    $self->getExecutorEContext->execute(
+    $self->_host->getEContext->execute(
         command => "chmod 755 $args{mount_point}/etc/init.d/Kanopya_omitted_iscsid"
     );
 }

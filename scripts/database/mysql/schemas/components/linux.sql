@@ -22,7 +22,7 @@ CREATE TABLE `linux_mount` (
   `linux_mount_dumpfreq` int(1) NOT NULL DEFAULT 0,
   `linux_mount_passnum` enum('0','1','2') NOT NULL DEFAULT '0',
   PRIMARY KEY (`linux_mount_id`),
-  UNIQUE KEY `linux_mount_unique1` (`linux_mount_id`,`linux_mount_device`,`linux_mount_point`),
+  UNIQUE KEY `linux_mount_unique1` (`linux_id`,`linux_mount_device`,`linux_mount_point`),
   CONSTRAINT FOREIGN KEY (`linux_id`) REFERENCES `linux` (`linux_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

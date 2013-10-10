@@ -18,6 +18,9 @@ use base 'EEntity::EComponent::ELinux';
 
 use strict;
 use warnings;
+
+use Kanopya::Config;
+
 use Log::Log4perl 'get_logger';
 use Data::Dumper;
 
@@ -33,7 +36,7 @@ sub addNode {
 
     $self->SUPER::addNode(%args);
 
-    my $econtext = $self->getExecutorEContext;
+    my $econtext = $self->_host->getEContext;
     my $grep_result = $econtext->execute(
                          command => "grep \"NETDOWN=no\" $args{mount_point}/etc/default/halt"
                       );
@@ -45,7 +48,7 @@ sub addNode {
     }
 
     # adjust some requirements on the image
-    my $data = $self->_getEntity()->getConf();
+    my $data = $self->_entity->getConf();
     my $automountnfs = 0;
     for my $mountdef (@{$data->{linuxes_mount}}) {
         my $mountpoint = $mountdef->{linux_mount_point};
@@ -76,7 +79,11 @@ sub _writeNetConf {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'cluster', 'host', 'mount_point', 'interfaces' ]);
+                         required => [ 'cluster', 'host', 'mount_point', 'ifaces' ]);
+
+    #we ignore the slave interfaces in the case of bonding
+    my @ifaces = @{ $args{ifaces} };
+    my $host_params = $args{cluster}->getManagerParameters(manager_type => 'HostManager');
 
     my $file = $self->generateNodeFile(
         cluster       => $args{cluster},
@@ -84,7 +91,11 @@ sub _writeNetConf {
         file          => '/etc/network/interfaces',
         template_dir  => '/templates/internal',
         template_file => 'network_interfaces.tt',
-        data          => { interfaces => $args{interfaces} }
+        data          => {
+            deploy_on_disk => $host_params->{deploy_on_disk},
+            interfaces     => \@ifaces,
+            boot_policy    => $args{cluster}->cluster_boot_policy
+        }
     );
 
     $args{econtext}->send(
@@ -104,10 +115,35 @@ sub service {
             system("chroot $args{mount_point} invoke-rc.d " . $service . " " . $args{command});
         }
         if (defined ($args{state})) {
-            system("chroot $args{mount_point} /sbin/insserv -d $service");
+            # TODO : specialize EDebian class into EUbuntu and overwrite `service` sub
+            if (not system("[ -f $args{mount_point}/sbin/insserv ]")) {
+                system("chroot $args{mount_point} /sbin/insserv -d $service");
+            }
+            else {
+                system("cp " . $args{mount_point} . "/etc/init.d/" . $service . " " . $args{mount_point} . "/etc/rc0.d/K20" . $service);
+                system("cp " . $args{mount_point} . "/etc/init.d/" . $service . " " . $args{mount_point} . "/etc/rc1.d/K20" . $service);
+                system("cp " . $args{mount_point} . "/etc/init.d/" . $service . " " . $args{mount_point} . "/etc/rc2.d/S20" . $service);
+                system("cp " . $args{mount_point} . "/etc/init.d/" . $service . " " . $args{mount_point} . "/etc/rc3.d/S20" . $service);
+                system("cp " . $args{mount_point} . "/etc/init.d/" . $service . " " . $args{mount_point} . "/etc/rc4.d/S20" . $service);
+                system("cp " . $args{mount_point} . "/etc/init.d/" . $service . " " . $args{mount_point} . "/etc/rc5.d/S20" . $service);
+                system("cp " . $args{mount_point} . "/etc/init.d/" . $service . " " . $args{mount_point} . "/etc/rc6.d/K20" . $service);
+                system("cp " . $args{mount_point} . "/etc/init.d/" . $service . " " . $args{mount_point} . "/etc/rcS.d/K20" . $service);
+            }
         }
     }
 }
 
-1;
+sub customizeInitramfs {
+    my ($self, %args) = @_;
 
+    General::checkParams(args     =>\%args,
+                         required => [ 'initrd_dir', 'cluster', 'host' ]);
+
+    $self->SUPER::customizeInitramfs(%args);
+
+    my $kanopya_dir = Kanopya::Config::getKanopyaDir();
+    my $cmd = "cp -R $kanopya_dir/tools/deployment/system/initramfs-tools/scripts/* " . $args{initrd_dir} . "/scripts";
+    $self->_host->getEContext->execute(command => $cmd);
+}
+            
+1;

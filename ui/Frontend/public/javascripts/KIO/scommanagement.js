@@ -17,49 +17,62 @@ function scomManagement(cid, eid) {
 
 
     var indicators_grid_id = 'scom_indicators_list_' + eid;
+    var action_buttons_container = $('#' + cid).prevAll('.action_buttons');
+
+    createIndicator(action_buttons_container, eid);
     create_grid( {
         url                     : '/api/indicator?indicatorset_id=' + scom_indicatorset_id,
         content_container_id    : cid,
         grid_id                 : indicators_grid_id,
         grid_class              : 'scom_indicators_list',
         rowNum                  : 25,
-        colNames                : [ 'id', 'label', 'oid', 'min', 'max', 'unit' ],
+        colNames                : [ 'Id', 'Label', 'OID', 'Min', 'Max', 'Unit' ],
         colModel                : [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
-            { name: 'indicator_label', index: 'indicator_label', width: 200,},
+            { name: 'indicator_label', index: 'indicator_label', width: 200 },
             { name: 'indicator_oid', index: 'indicator_oid', width: 200 },
             { name: 'indicator_min', index: 'indicator_min', width: 200 },
             { name: 'indicator_max', index: 'indicator_max', width: 200 },
-            { name: 'indicator_unit', index: 'indicator_unit', width: 200 },
+            { name: 'indicator_unit', index: 'indicator_unit', width: 200 }
         ],
         action_delete           : {
             callback : function (id) {
                 confirmDeleteWithDependencies('/api/indicator/', id, [indicators_grid_id]);
             }
+        },
+        multiselect             : true,
+        multiactions : {
+            multiDelete : {
+                label       : 'Delete indicator(s)',
+                action      : removeGridEntry,
+                url         : '/api/indicator',
+                extraParams : {multiselect : true},
+                icon        : 'ui-icon-trash'
+            }
         }
     } );
 
-    function createIndicator(cid, eid) {
+    function createIndicator(container, eid) {
         var service_fields  = {
             indicator_label : {
                 label   : 'Label',
-                type	: 'text',
+                type	: 'text'
             },
             indicator_oid	: {
                 label	: 'OID',
-                type	: 'text',
+                type	: 'text'
             },
             indicator_min    : {
                 label	: 'Min',
-                type	: 'text',
+                type	: 'text'
             },
             indicator_max	: {
                 label	: 'Max',
-                type	: 'text',
+                type	: 'text'
             },
             indicator_unit	: {
                 label	: 'Unit',
-                type	: 'text',
+                type	: 'text'
             },
         };
         var service_opts    = {
@@ -94,7 +107,7 @@ function scomManagement(cid, eid) {
                     success : function (new_indic) {
                         // Link the new connector to all collector_manager (BAD)
                         $.ajax({
-                            url: '/api/connector?connector_type.connector_category=collectorManager',
+                            url: '/api/component?component_type.component_type_categories.component_category.category_name=CollectorManager',
                             success: function(collector_manager_connectors) {
                                 $(collector_manager_connectors).each(function(i,connector) {
                                     $.ajax({
@@ -103,7 +116,7 @@ function scomManagement(cid, eid) {
                                       data: {
                                           indicator_id          : new_indic.pk,
                                           collector_manager_id  : connector.pk
-                                      },
+                                      }
                                   });
                                 });
                             }
@@ -123,9 +136,6 @@ function scomManagement(cid, eid) {
             mod = new ModalForm(service_opts);
             mod.start();
         }).button({ icons : { primary : 'ui-icon-plusthick' } });
-        $('#' + cid).append(button);
+        container.append(button);
     };
-
-    createIndicator(cid, eid);
-
 }

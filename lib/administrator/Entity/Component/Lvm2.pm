@@ -15,6 +15,14 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package Entity::Component::Lvm2;
 use base "Entity::Component";
 use base "Manager::DiskManager";
@@ -23,16 +31,16 @@ use strict;
 use warnings;
 
 use General;
-use Entity::Operation;
+
 use Manager::HostManager;
 use Entity::ServiceProvider;
 use Entity::Container::LvmContainer;
-
+use Entity::Component::Lvm2::Lvm2Pv;
 use Kanopya::Exceptions;
 
-use Log::Log4perl "get_logger";
-use Data::Dumper;
+use Hash::Merge qw(merge);
 
+use Log::Log4perl "get_logger";
 my $log = get_logger("");
 my $errmsg;
 
@@ -42,7 +50,7 @@ use constant ATTR_DEF => {
         type         => 'relation',
         relation     => 'single_multi',
         is_mandatory => 0,
-        is_editable  => 0,
+        is_editable  => 1,
     },
     disk_type => {
         is_virtual => 1
@@ -55,8 +63,35 @@ sub diskType {
     return "LVM logical volume";
 }
 
-=head2 checkDiskManagerParams
 
+=pod
+=begin classdoc
+
+@return the manager params definition.
+
+=end classdoc
+=cut
+
+sub getManagerParamsDef {
+    my ($self, %args) = @_;
+
+    return {
+        %{ $self->SUPER::getManagerParamsDef },
+        vg_id => {
+            label        => 'Volume group to use',
+            type         => 'enum',
+            is_mandatory => 1,
+        },
+    };
+}
+
+
+=pod
+=begin classdoc
+
+Check params required for creating disks.
+
+=end classdoc
 =cut
 
 sub checkDiskManagerParams {
@@ -66,45 +101,33 @@ sub checkDiskManagerParams {
     General::checkParams(args => \%args, required => [ "vg_id", "systemimage_size" ]);
 }
 
-=head2 getPolicyParams
 
+=pod
+=begin classdoc
+
+@return the managers parameters as an attribute definition. 
+
+=end classdoc
 =cut
 
-sub getPolicyParams {
+sub getDiskManagerParams {
     my $self = shift;
-    my %args = @_;
+    my %args  = @_;
 
-    General::checkParams(args => \%args, required => [ 'policy_type' ]);
+    my $vgparam = $self->getManagerParamsDef->{vg_id};
+    $vgparam->{options} = {};
 
-    my @vg_list = map { $_->{lvm2_vg_name} } @{ $self->getConf->{lvm2_vgs} };
-
-    my $vgs = {};
-    if ($args{policy_type} eq 'storage') {
-        for my $vg (@{ $self->getConf->{lvm2_vgs} }) {
-            $vgs->{$vg->{lvm2_vg_id}} = $vg->{lvm2_vg_name};
-        }
-        return [ { name => 'vg_id', label => 'Volume group to use', values => $vgs } ];
+    for my $vg (@{ $self->getConf->{lvm2_vgs} }) {
+       $vgparam->{options}->{$vg->{lvm2_vg_id}} = $vg->{lvm2_vg_name};
     }
-    return [];
+    return { vg_id => $vgparam };
 }
 
 sub getMainVg {
     my $self = shift;
 
-    my $vgname = $self->{_dbix}->lvm2_vgs->single->get_column('lvm2_vg_name');
-    my $vgid = $self->{_dbix}->lvm2_vgs->single->get_column('lvm2_vg_id');
-    $log->debug("Main VG founds, its id is <$vgid>");
-    #TODO getMainVg, return id or name ?
-    return {vgid => $vgid, vgname =>$vgname};
-}
-
-sub getVg {
-    my $self = shift;
-    my %args = @_;
-    
-    General::checkParams(args => \%args, required => [ "lvm2_vg_id" ]);
-
-    return  $self->{_dbix}->lvm2_vgs->find($args{lvm2_vg_id})->get_column('lvm2_vg_name');
+    my @vgs = $self->lvm2_vgs;
+    return shift @vgs;
 }
 
 sub lvCreate{
@@ -181,44 +204,12 @@ sub lvRemove{
 sub getConf {
     my $self = shift;
 
-    my $conf = {};
-    my @tab_volumegroups = ();
-    my $volumegroups = $self->{_dbix}->lvm2_vgs;
-    while(my $vg_row = $volumegroups->next){
-        my @tab_logicalvolumes = ();
-        my %vg = $vg_row->get_columns();
-        my $logicalvolumes = $vg_row->lvm2_lvs;
-        while(my $lv_row = $logicalvolumes->next) {
-            my %lv = $lv_row->get_columns();
-            push @tab_logicalvolumes, \%lv;
-        }
-        $vg{lvm2_lvs} = \@tab_logicalvolumes;
-        push @tab_volumegroups, \%vg;
-    }
-    $conf->{lvm2_vgs} = \@tab_volumegroups;
-    return $conf;
+    # Overrive the generic getConf as it handle one level of relations only.
+    return $self->toJSON(raw    => 1,
+                         deep   => 1,
+                         expand => [ 'lvm2_vgs.lvm2_pvs', 'lvm2_vgs.lvm2_lvs' ]);
 }
 
-sub setConf {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['conf']);
-
-    my $conf = $args{conf};
-    for my $vg ( @{ $conf->{vgs} }) {
-        for my $new_lv ( @{ $vg->{lvs} }) {
-            if (keys %$new_lv and not $new_lv->{lvm2_lv_id}) {
-                $self->createDisk(
-                    name       => $new_lv->{lvm2_lv_name},
-                    size       => $new_lv->{lvm2_lv_size},
-                    filesystem => $new_lv->{lvm2_lv_filesystem},
-                    vg_id      => $vg->{vg_id}
-                );
-            }
-        }
-    }
-}
 
 sub getExportManagerFromBootPolicy {
     my $self = shift;
@@ -264,19 +255,12 @@ sub getExportManagers {
     my $self = shift;
     my %args = @_;
 
-    my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
+    my $cluster = $self->service_provider;
 
     return [ $cluster->getComponent(name => "Iscsitarget", version => "1"),
              $cluster->getComponent(name => "Nfsd", version => "3") ];
 }
 
-=head2 createDisk
-
-    Desc : Implement createDisk from DiskManager interface.
-           This function enqueue a ECreateDisk operation.
-    args :
-
-=cut
 
 sub createDisk {
     my $self = shift;
@@ -286,8 +270,7 @@ sub createDisk {
                          required => [ "vg_id", "name", "size", "filesystem" ]);
 
     $log->debug("New Operation CreateDisk with attrs : " . %args);
-    Entity::Operation->enqueue(
-        priority => 200,
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
         type     => 'CreateDisk',
         params   => {
             name       => $args{name},
@@ -301,81 +284,58 @@ sub createDisk {
     );
 }
 
-=head2 getFreeSpace
-
-    Desc : Implement getFreeSpace from DiskManager interface.
-           This function return the free space on the volume group.
-    args :
-
-=cut
 
 sub getFreeSpace {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, optional => { 'vg_id' => $self->getMainVg->{vgid} });
+    General::checkParams(args => \%args, optional => { 'vg_id' => undef });
 
-    my $vg_rs = $self->{_dbix}->lvm2_vgs->single({ lvm2_vg_id => $args{vg_id} });
+    my $vg = $args{vg_id} ? Entity::Component::Lvm2::Lvm2Vg->get(id => $args{vg_id})
+                          : $self->getMainVg;
 
-    return $vg_rs->get_column('lvm2_vg_freespace');
+    return $vg->lvm2_vg_freespace;
 }
 
-=head1 DIAGNOSTICS
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+    my $manifest = "";
 
-Exceptions are thrown when mandatory arguments are missing.
-Exception : Kanopya::Exception::Internal::IncorrectParam
+    $manifest .= $self->instanciatePuppetResource(
+        name => 'kanopya::lvm',
+    );
 
-=head1 CONFIGURATION AND ENVIRONMENT
+    for my $vg ($self->lvm2_vgs) {
+        my @pvs = ();
+        for my $pv ($vg->lvm2_pvs) {
+            $manifest .= $self->instanciatePuppetResource(
+                resource => 'physical_volume',
+                name => $pv->lvm2_pv_name,
+                params => {
+                    ensure => 'present',
+                    tag => 'kanopya::lvm'
+                }
+            );
 
-This module need to be used into Kanopya environment. (see Kanopya presentation)
-This module is a part of Administrator package so refers to Administrator configuration
+            push @pvs, $pv->lvm2_pv_name;
+        }
 
-=head1 DEPENDENCIES
+        $manifest .= $self->instanciatePuppetResource(
+            resource => 'volume_group',
+            name => $vg->lvm2_vg_name,
+            params => {
+                ensure => 'present',
+                physical_volumes => \@pvs,
+                tag => 'kanopya::lvm'
+            }
+        );
+    }
 
-This module depends of 
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        lvm => {
+            manifest => $manifest
+        }
+    } );
+}
 
-=over
-
-=item KanopyaException module used to throw exceptions managed by handling programs
-
-=item Entity::Component module which is its mother class implementing global component method
-
-=back
-
-=head1 INCOMPATIBILITIES
-
-None
-
-=head1 BUGS AND LIMITATIONS
-
-There are no known bugs in this module.
-
-Please report problems to <Maintainer name(s)> (<contact address>)
-
-Patches are welcome.
-
-=head1 AUTHOR
-
-<HederaTech Dev Team> (<dev@hederatech.com>)
-
-=head1 LICENCE AND COPYRIGHT
-
-Kanopya Copyright (C) 2009, 2010, 2011, 2012, 2013 Hedera Technology.
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 3, or (at your option)
-any later version.
-
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; see the file COPYING.  If not, write to the
-Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-Boston, MA 02110-1301 USA.
-
-=cut
 1;

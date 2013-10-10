@@ -12,10 +12,11 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package Indicatorset;
+use base BaseDB;
 
 use strict;
 use warnings;
-use base 'BaseDB';
+
 
 use constant ATTR_DEF => {
     indicatorset_id => {
@@ -69,5 +70,19 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub findFromLabel {
+    my $class = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'label' ]);
+
+    my $name = $args{label};
+    if ($name =~ /(.+)\..+/ ) {
+        $name = $1;
+    }
+
+    return $class->find(hash => { indicatorset_name => $name });
+}
 
 1;

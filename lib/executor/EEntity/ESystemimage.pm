@@ -1,6 +1,5 @@
-# ESystemimage.pm - Abstract class of ESystemimages object
-
 #    Copyright © 2010-2012 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,21 +14,18 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
-=head1 NAME
+=pod
+=begin classdoc
 
-ESystemimage - execution class of systemimage entities
+Excecution class for Systemimage. Here are implemented methods related to
+system image creation involving disks creation, disks copies and exports creation.
 
-=head1 SYNOPSIS
+@since    2011-Oct-15
+@instance hash
+@self     $self
 
-
-=head1 DESCRIPTION
-
-ESystemimage is the execution class of systemimage entities
-
-=head1 METHODS
-
+=end classdoc
 =cut
 
 package EEntity::ESystemimage;
@@ -38,88 +34,31 @@ use base "EEntity";
 use strict;
 use warnings;
 
-use Entity;
-use Entity::Gp;
-use EFactory;
-use Entity::Container::LocalContainer;
 use General;
-
-use Log::Log4perl "get_logger";
+use EEntity;
+use Entity::Container::LocalContainer;
 
 use Data::Dumper;
+use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
 my $errmsg;
 
-sub createFromMasterimage {
-    my $self = shift;
-    my %args = @_;
 
-    General::checkParams(args     => \%args,
-                         required => [ "masterimage", "disk_manager",
-                                       "manager_params", "erollback" ]);
+=pod
 
-    # Create a temporary local container to access to the masterimage file.
-    my $master_container = EEntity->new(entity => Entity::Container::LocalContainer->new(
-                               container_name       => $args{masterimage}->masterimage_name,
-                               container_size       => $args{masterimage}->masterimage_size,
-                               # TODO: get this value from masterimage attrs.
-                               container_filesystem => 'ext3',
-                               container_device     => $args{masterimage}->masterimage_file,
-                           ));
+=begin classdoc
 
-    $self->create(src_container => $master_container,
-                  disk_manager  => $args{disk_manager},
-                  erollback     => $args{erollback},
-                  %{$args{manager_params}});
+Export the system image with the export manager given in paramaters.
 
-    # Remove the temporary container
-    $master_container->remove();
+@param export_manager the export manager to use for exporting the system image container
+@param manager_params the parameters to give to the export manager for disk export
 
-    foreach my $comp ($args{masterimage}->component_types) {
-        $self->_getEntity->installedComponentLinkCreation(component_type_id => $comp->id);
-    }
-}
+@optional erollback the erollback object
 
-sub create {
-    my $self = shift;
-    my %args = @_;
-    my $cmd_res;
+=end classdoc
 
-    General::checkParams(args     => \%args,
-                         required => [ "disk_manager", "src_container", "erollback" ]);
-
-    General::checkParams(args     => \%args,
-                         optional => { 'systemimage_size' => $args{src_container}->getAttr(name => 'container_size') });
-
-    $log->debug('Container creation for new systemimage');
-
-    # Creation of the device based on distribution device
-    my $container = $args{disk_manager}->createDisk(
-                        name       => $self->systemimage_name,
-                        size       => $args{systemimage_size},
-                        filesystem => $args{src_container}->getAttr(name => 'container_filesystem'),
-                        erollback  => $args{erollback},
-                        %args
-                    );
-
-    # Copy of distribution data to systemimage devices
-    $log->debug('Fill the container with source data for new systemimage');
-
-    $args{src_container}->copy(dest      => $container,
-                               econtext  => $self->getExecutorEContext,
-                               erollback => $args{erollback});
-
-    $self->setAttr(name  => "container_id",
-                   value => $container->id);
-
-    $self->setAttr(name => "active", value => 0);
-    $self->save();
-
-    $log->info('System image <' . $self->systemimage_name . '> creation complete');
-
-    return $self->id;
-}
+=cut
 
 sub activate {
     my $self = shift;
@@ -127,25 +66,34 @@ sub activate {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "export_manager", "manager_params", "erollback" ]);
+                         required => [ "container_accesses", "erollback" ]);
 
-    my $container = EFactory::newEEntity(data => $self->getDevice());
+    # TODO: Check if the container of each container accesses is the same.
 
-    # Get container export information
-    my $export_name = $self->getAttr(name => 'systemimage_name');
+    # Link the systemimage with its accesses
+    $self->populateRelations(relations => {
+        systemimage_container_accesses => $args{container_accesses}
+    });
 
-    $args{export_manager}->createExport(container   => $container,
-                                        export_name => $export_name,
-                                        erollback   => $args{erollback},
-                                        %{$args{manager_params}});
-
-    # Set system image active in db
+    # Set system image active
     $self->setAttr(name => 'active', value => 1);
     $self->save();
 
-    $log->info("System image <" . $self->getAttr(name => "systemimage_name") .
-               "> is now active");
+    $log->info("System image <" . $self->systemimage_name . "> is now active");
 }
+
+
+=pod
+
+=begin classdoc
+
+Remove all export of the system image container.
+
+@optional erollback the erollback object
+
+=end classdoc
+
+=cut
 
 sub deactivate {
     my $self = shift;
@@ -156,9 +104,9 @@ sub deactivate {
     # Get instances of container accesses from systemimages root container
     $log->info("Remove all container accesses");
     eval {
-        for my $container_access (@{ $self->_getEntity->getDevice->getAccesses }) {
-            my $export_manager = EFactory::newEEntity(data => $container_access->getExportManager);
-            $container_access  = EFactory::newEEntity(data => $container_access);
+        for my $container_access ($self->container_accesses) {
+            my $export_manager = EEntity->new(data => $container_access->getExportManager);
+            $container_access  = EEntity->new(data => $container_access);
 
             $export_manager->removeExport(container_access => $container_access,
                                           erollback        => $args{erollback});
@@ -172,26 +120,40 @@ sub deactivate {
     $self->setAttr(name => 'active', value => 0);
     $self->save();
 
-    $log->info("System image <" . $self->getAttr(name => "systemimage_name") . "> is now unactive");
+    $log->info("System image <" . $self->systemimage_name . "> is now unactive");
 }
+
+
+=pod
+
+=begin classdoc
+
+Remove the system image, also deactivate it if active.
+
+@optional erollback the erollback object
+
+=end classdoc
+
+=cut
 
 sub remove {
     my $self = shift;
     my %args = @_;
 
-    if ($self->getAttr(name => 'active')) {
+    General::checkParams(args => \%args, required => [ "erollback" ]);
+
+    my $container = EEntity->new(data => $self->getContainer);
+
+    if ($self->active) {
         $self->deactivate(erollback => $args{erollback});
     }
 
-    my $container;
     eval {
-        $container = EFactory::newEEntity(data => $self->getDevice);
-
         # Remove system image container.
         $log->info("Systemimage container deletion");
 
         # Get the disk manager of the current container
-        my $disk_manager = EFactory::newEEntity(data => $container->getDiskManager);
+        my $disk_manager = EEntity->new(data => $container->getDiskManager);
         $disk_manager->removeDisk(container => $container);
     };
     if($@) {
@@ -202,12 +164,3 @@ sub remove {
 }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010-2012 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut

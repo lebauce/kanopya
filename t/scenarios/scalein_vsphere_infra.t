@@ -9,12 +9,11 @@ use Test::Pod;
 use Data::Dumper;
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level=>'DEBUG', file=>'/vagrant/ScaleVsphereInfra.t.log', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>'ScaleVsphereInfra.t.log', layout=>'%F %L %p %m%n'});
 
-use_ok ('Administrator');
 use_ok ('Executor');
 use_ok ('EFactory');
-use_ok ('Entity::ServiceProvider::Inside::Cluster');
+use_ok ('Entity::ServiceProvider::Cluster');
 use_ok ('Entity::User');
 use_ok ('Entity::Kernel');
 use_ok ('Entity::Processormodel');
@@ -27,8 +26,8 @@ use_ok ('Entity::Operation');
 use_ok ('Entity::Container');
 use_ok ('Entity::ContainerAccess');
 use_ok ('Entity::ContainerAccess::NfsContainerAccess');
-use_ok ('Externalnode::Node');
-use_ok ('ComponentType');
+use_ok ('Node');
+use_ok ('ClassType::ComponentType');
 use_ok ('Entity::InterfaceRole');
 
 my $testing = 0;
@@ -38,11 +37,10 @@ my $scale_memory_value = 2048 * 1024 * 1024;
 my $scale_cpu_value = 2;
 
 eval {
-    Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-    my $adm = Administrator->new;
+    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if ($testing == 1) {
-        $adm->beginTransaction;
+        BaseDB->beginTransaction;
     }
 
     my @args = ();
@@ -56,7 +54,7 @@ eval {
     diag('Register, Retrieve and Configure vSphere Component');
     my $cluster;
     lives_ok {
-        $cluster = Entity::ServiceProvider::Inside::Cluster->new(
+        $cluster = Entity::ServiceProvider::Cluster->new(
             active                 => 1,
             cluster_name           => "VSphere",
             cluster_min_node       => "1",
@@ -72,17 +70,17 @@ eval {
         );
       } 'Register VSphere cluster';
 
-    isa_ok($cluster, 'Entity::ServiceProvider::Inside::Cluster');
+    isa_ok($cluster, 'Entity::ServiceProvider::Cluster');
 
     my $vsphereInstance;
     lives_ok {
-        $vsphereInstance = $cluster->addComponentFromType(
-                               component_type_id => ComponentType->find(hash => {
+        $vsphereInstance = $cluster->addComponent(
+                               component_type_id => ClassType::ComponentType->find(hash => {
                                                         component_name => 'Vsphere'})->id,
                            );
     } 'Register Vsphere component';
 
-    isa_ok($vsphereInstance, 'Entity::Component::Vsphere5');
+    isa_ok($vsphereInstance, 'Entity::Component::Virtualization::Vsphere5');
 
     my $vsphere;
     lives_ok {
@@ -90,7 +88,7 @@ eval {
                                           version => 5);
     } 'Retrieve Vsphere component';
 
-    isa_ok($vsphere, 'Entity::Component::Vsphere5');
+    isa_ok($vsphere, 'Entity::Component::Virtualization::Vsphere5');
 
     lives_ok {
         $vsphere->setConf(
@@ -186,7 +184,7 @@ eval {
                 $total_items_nbr++;
                 eval {
                     (my $clusterOrHypervisor_vsphere_renamed = $clusterOrHypervisor_vsphere->{name}) =~ s/[^\w\d]/_/g;
-                    my $clusterOrHypervisor_kanopya = Entity::ServiceProvider::Inside::Cluster->find(
+                    my $clusterOrHypervisor_kanopya = Entity::ServiceProvider::Cluster->find(
                                                           hash => {cluster_name => $clusterOrHypervisor_vsphere_renamed},
                                                       );
                 };
@@ -199,7 +197,7 @@ eval {
                         $total_items_nbr++;
                         eval {
                             (my $vm_hypervisor_vsphere_renamed = $vm_hypervisor_vsphere->{name}) =~ s/[^\w\d]/_/g;
-                            my $vm_hypervisor_vsphere_kanopya = Entity::ServiceProvider::Inside::Cluster->find(
+                            my $vm_hypervisor_vsphere_kanopya = Entity::ServiceProvider::Cluster->find(
                                                                     hash => {cluster_name => $vm_hypervisor_vsphere_renamed},
                                                                 );
                         };
@@ -214,7 +212,7 @@ eval {
                             $total_items_nbr++;
                             eval {
                                 (my $vm_vsphere_renamed = $vm_vsphere->{name}) =~ s/[^\w\d]/_/g;
-                                my $vm_kanopya = Entity::ServiceProvider::Inside::Cluster->find(
+                                my $vm_kanopya = Entity::ServiceProvider::Cluster->find(
                                                      hash => {cluster_name => $vm_vsphere_renamed},
                                                  );
                             };
@@ -238,7 +236,7 @@ eval {
     lives_ok {
         my $unwanted_items_nbr = 2;#Unwanted items (cluster Kanopya and cluster on which component is installed)
         $kanopya_items_nbr     =   scalar(Vsphere5Datacenter->search(hash => {}));
-        $kanopya_items_nbr    +=   scalar(Entity::ServiceProvider::Inside::Cluster->search(hash => {}));
+        $kanopya_items_nbr    +=   scalar(Entity::ServiceProvider::Cluster->search(hash => {}));
         $kanopya_items_nbr    -=   $unwanted_items_nbr;
     } 'Get Kanopya items number';
 
@@ -247,7 +245,7 @@ eval {
     diag('Scale in Memory');
     my $vm_host;
     lives_ok {
-        my @vm_cluster_nodes = Entity::ServiceProvider::Inside::Cluster->find(hash => {'cluster_name' => $vm_name})->nodes;
+        my @vm_cluster_nodes = Entity::ServiceProvider::Cluster->find(hash => {'cluster_name' => $vm_name})->nodes;
         $vm_host             = $vm_cluster_nodes[0]->host;#each cluster contains only 1 item
     } 'Retrieve Virtual Machine host from Kanopya';
 
@@ -281,7 +279,7 @@ eval {
     is($vm_host->host_core, $scale_cpu_value, 'Test if scale CPU went well');
 
     if ($testing == 1) {
-        $adm->rollbackTransaction;
+        BaseDB->rollbackTransaction;
     }
 };
 

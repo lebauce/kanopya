@@ -37,10 +37,11 @@ of memory dedicated to a service.
 
 =cut
 
-package KanopyaDatabaseProvider;
+package DataProvider::KanopyaDatabaseProvider;
 
 use strict;
 use warnings;
+use base 'DataProvider';
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -95,10 +96,28 @@ sub retrieveData {
     my @OID_list = values( %$var_map );
     my $time = time();
 
-    my %values = (
+    my $node_state = ($host->getNodeState())[0];
+
+    my %all_values = (
         "Cores"  => $host->host_core,
-        "Memory" => $host->host_ram
+        "Memory" => $host->host_ram,
+        "Up"     => ($node_state eq 'in') ? 1 : 0,
+        "Starting" => ($node_state =~ 'goingin') ? 1 : 0,
+        "Stopping" => ($node_state =~ 'goingout') ? 1 : 0,
+        "Broken" => ($node_state eq 'broken') ? 1 : 0,
+        "VMs"    => 0,
     );
+
+    # VMs info when host is a hypervisor
+    if ($host->isa('Entity::Host::Hypervisor')) {
+        my @vms = $host->virtual_machines;
+        $all_values{'VMs'} = scalar @vms;
+    }
+
+    my %values;
+    for my $name (keys %$var_map) {
+        $values{$name} = $all_values{$name};
+    }
 
     return ($time, \%values);
 }
@@ -111,6 +130,10 @@ sub compute {
     my $load = $args{load};
 
     die "Error: no definition to compute virtual var '$args{var}'";
+}
+
+sub isDiscrete {
+    return 1;
 }
 
 # destructor

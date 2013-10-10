@@ -25,20 +25,21 @@ Aggregation of a collector indicator value for each node of the service, accordi
 =cut
 
 package Entity::Clustermetric;
+use base 'Entity';
 
 use strict;
 use warnings;
+
 use General;
-use Data::Dumper;
-use DescriptiveStatisticsFunction;
 use TimeData::RRDTimeData;
 use Entity::Indicator;
 use Entity::CollectorIndicator;
-require 'Entity/Combination/AggregateCombination.pm';
+use Entity::Combination::AggregateCombination;
 
-use base 'Entity';
+use DescriptiveStatisticsFunction;
+use TryCatch;
 
-# logger
+use Data::Dumper;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -47,7 +48,8 @@ use constant ATTR_DEF => {
         pattern         => '^.*$',
         is_mandatory    => 1,
         is_extended     => 0,
-        is_editable     => 0
+        is_editable     => 0,
+        is_delegatee    => 1
     },
     clustermetric_label => {
         pattern         => '^.*$',
@@ -93,113 +95,13 @@ use constant ATTR_DEF => {
 sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
-  return {
-    'regenTimeDataStores'  => {
-      'description' => 'Delete and create again all data stores',
-      'perm_holder' => 'entity'
-    },
-    'resizeTimeDataStores'  => {
-      'description' => 'Resize all data stores',
-      'perm_holder' => 'entity'
-    },
-    'getDependencies' => {
-        'description' => 'return dependencies tree for this object',
-        'perm_holder' => 'entity',
-    },
-  }
-}
-
-sub indicator_label {
-    my $self = shift;
-
-    return $self->getIndicator()->indicator_label;
-}
-
-sub getIndicator {
-    my $self = shift;
-    return Entity::CollectorIndicator->get(id => $self->clustermetric_indicator_id)->indicator;
-}
-
-sub compute{
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams args => \%args, required => [
-        'values',
-    ];
-
-    my $values  = $args{values};
-    #my $stat = Statistics::Descriptive::Full->new();
-    my $stat = DescriptiveStatisticsFunction->new();
-    $stat->add_data($values);
-
-    my $funcname = $self->getAttr(name => 'clustermetric_statistics_function_name');
-    my $mean = $stat->$funcname();
-    return $mean;
-}
-
-
-sub getValuesFromDB{
-    my $self = shift;
-    my %args = @_;
-    General::checkParams args => \%args, required => ['start_time','stop_time'];
-
-    my $id = $self->getAttr(name=>'clustermetric_id');
-
-    my %rep = RRDTimeData::fetchTimeDataStore(
-                                            name         => $id,
-                                            start        => $args{start_time},
-                                            end          => $args{stop_time}
-                                          );
-    return \%rep;
-}
-sub getLastValueFromDB{
-    my $self = shift;
-	my $id = $self->getAttr(name=>'clustermetric_id');
-    my %last_value = RRDTimeData::getLastUpdatedValue(clustermetric_id => $id);
-    my @indicator = (values %last_value);
-    return $indicator[0];
-}
-
-=head2 regenTimeDataStores
-
-    Class: Public
-    Desc: delete and create again every time data store for the clustermetrics
-    Args: none
-    Return: none
-
-=cut
-
-sub regenTimeDataStores {
-
-    my @clustermetrics = Entity::Clustermetric->search(hash => { });
-
-    foreach my $clustermetric (@clustermetrics) {
-        #delete previous rrd
-        RRDTimeData::deleteTimeDataStore(name => $clustermetric->clustermetric_id);
-        #create new rrd
-        RRDTimeData::createTimeDataStore(name => $clustermetric->clustermetric_id);
+    return {
+        getDependencies => {
+            description => 'return dependencies tree for this object',
+        },
     }
 }
 
-=head2 resizeTimeDataStores
-
-    Class: Public
-    Desc: resize every time data store for the clustermetrics
-    Args: storage_duration in seconds
-    Return: none
-
-=cut
-
-sub resizeTimeDataStores {
-    my ($class, %args) = @_;
-    General::checkParams(args => \%args, required => ['storage_duration']);
-
-    my @clustermetrics = Entity::Clustermetric->search(hash => { });
-    foreach my $clustermetric (@clustermetrics) {
-        RRDTimeData::resizeTimeDataStore(storage_duration => $args{storage_duration}, clustermetric_id => $clustermetric->clustermetric_id);
-    }
-}
 
 =pod
 
@@ -222,12 +124,8 @@ sub new {
 
     my $self = $class->SUPER::new(%args);
 
-    # Create RRD DB
-    my $clustermetric_id = $self->getAttr(name=>'clustermetric_id');
-    RRDTimeData::createTimeDataStore(name => $clustermetric_id);
-
     my $service_provider = $self->clustermetric_service_provider;
-    my $collector = $service_provider->getManager(manager_type => "collector_manager");
+    my $collector = $service_provider->getManager(manager_type => "CollectorManager");
     $collector->collectIndicator(indicator_id        => $self->clustermetric_indicator_id,
                                  service_provider_id => $self->clustermetric_service_provider_id);
 
@@ -239,6 +137,135 @@ sub new {
     }
     $self->save();
     return $self;
+}
+
+
+=pod
+
+=begin classdoc
+
+Return related indicator label
+@return Return related indicator label
+
+=end classdoc
+
+=cut
+
+sub indicator_label {
+    my $self = shift;
+    return $self->getIndicator()->indicator_label;
+}
+
+
+=pod
+
+=begin classdoc
+
+Return related indicator
+@return Return related indicator
+
+=end classdoc
+
+=cut
+
+sub getIndicator {
+    my $self = shift;
+    return $self->clustermetric_indicator->indicator;
+}
+
+
+=pod
+
+=begin classdoc
+
+Aggregate values according to the related function of the clustermetric
+
+@param all the values to aggregate
+@return computed value
+
+=end classdoc
+
+=cut
+
+sub compute{
+    my ($self, %args) = @_;
+    General::checkParams args => \%args, required => ['values'];
+
+    #my $stat = Statistics::Descriptive::Full->new();
+    my $stat = DescriptiveStatisticsFunction->new();
+    $stat->add_data($args{values});
+
+    my $funcname = $self->clustermetric_statistics_function_name;
+    return $stat->$funcname();
+}
+
+
+=pod
+
+=begin classdoc
+
+Returns clustermetric values between start_time and stop_time
+
+@param start_time start time in epoch
+@param stop_time stop time in epoch
+
+@return hashref {timestamp => value}
+
+=end classdoc
+
+=cut
+
+sub fetch {
+    my ($self, %args) = @_;
+    General::checkParams args => \%args, required => ['start_time', 'stop_time'];
+
+    my %rep = TimeData::RRDTimeData::fetchTimeDataStore(
+                  name   => $self->id,
+                  start  => $args{start_time},
+                  end    => $args{stop_time}
+              );
+    return \%rep;
+}
+
+
+=pod
+
+=begin classdoc
+
+Returns clustermetric last value
+
+@return clustermetric last value
+
+=end classdoc
+
+=cut
+
+sub lastValue {
+    my ($self, %args) = @_;
+
+    if (defined $args{memoization}->{$self->id}) {
+        return $args{memoization}->{$self->id};
+    }
+
+    my $result;
+    try {
+        my %last_value = TimeData::RRDTimeData::getLastUpdatedValue(metric_uid => $self->id);
+        my @indicator = (values %last_value);
+
+        if (defined $args{memoization}) {
+            $args{memoization}->{$self->id} = $indicator[0];
+        }
+
+        $result = $indicator[0];
+    }
+    catch (Kanopya::Exception::Internal $err) {
+        $result = undef;
+    }
+    catch ($err) {
+        $err->rethrow();
+    }
+
+    return $result;
 }
 
 
@@ -393,22 +420,24 @@ sub clone {
     General::checkParams(args => \%args, required => ['dest_service_provider_id']);
 
     # Check that both services use the same collector manager
-    my $src_collector_manager = ServiceProviderManager->find( hash => {
-        manager_type        => 'collector_manager',
-        service_provider_id => $self->clustermetric_service_provider_id
-    });
-    my $dest_collector_manager = ServiceProviderManager->find( hash => {
-        manager_type        => 'collector_manager',
-        service_provider_id => $args{'dest_service_provider_id'}
-    });
+    my $src_collector_manager = ServiceProviderManager->find(
+                                    hash   => { service_provider_id => $self->clustermetric_service_provider_id },
+                                    custom => { category => 'CollectorManager' }
+                                );
+
+    my $dest_collector_manager = ServiceProviderManager->find(
+                                     hash => { service_provider_id => $args{dest_service_provider_id} },
+                                     custom => { category => 'CollectorManager' }
+                                 );
+
     if ($src_collector_manager->manager_id != $dest_collector_manager->manager_id) {
         throw Kanopya::Exception::Internal::Inconsistency(
             error => "Source and dest service provider have not the same collector manager"
         );
     }
 
-    $self->_importToRelated(
-        dest_obj_id         => $args{'dest_service_provider_id'},
+    return $self->_importToRelated(
+        dest_obj_id         => $args{dest_service_provider_id},
         relationship        => 'clustermetric_service_provider',
         label_attr_name     => 'clustermetric_label',
     );
@@ -447,7 +476,7 @@ sub delete {
             }
         }
     }
-    RRDTimeData::deleteTimeDataStore(name => $id);
+    TimeData::RRDTimeData::deleteTimeDataStore(name => $id);
     return $self->SUPER::delete();
 }
 

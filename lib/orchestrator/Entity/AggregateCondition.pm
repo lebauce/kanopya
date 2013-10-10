@@ -26,15 +26,15 @@ Condition on aggregate combination (left operand) and agreggate combination or t
 =cut
 
 package Entity::AggregateCondition;
+use base Entity;
 
 use strict;
 use warnings;
-use TimeData::RRDTimeData;
+
 use Entity::Combination::AggregateCombination;
-require 'Entity/AggregateRule.pm';
-use base 'Entity';
+use Entity::Rule::AggregateRule;
+
 use Data::Dumper;
-# logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -42,55 +42,47 @@ use constant ATTR_DEF => {
     aggregate_condition_id => {
         pattern         => '^.*$',
         is_mandatory    => 0,
-        is_extended     => 0,
         is_editable     => 0,
     },
     aggregate_condition_label => {
         pattern         => '^.*$',
         is_mandatory    => 0,
-        is_extended     => 0,
         is_editable     => 1,
     },
     aggregate_condition_formula_string => {
         pattern         => '^.*$',
         is_mandatory    => 0,
-        is_extended     => 0,
         is_editable     => 1,
     },
     aggregate_condition_service_provider_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,
-        is_extended     => 0,
+        is_delegatee    => 1,
         is_editable     => 0,
     },
     left_combination_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,
-        is_extended     => 0,
         is_editable     => 1,
     },
     right_combination_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,
-        is_extended     => 0,
         is_editable     => 1,
     },
     comparator => {
         pattern         => '^(>|<|>=|<=|==)$',
         is_mandatory    => 1,
-        is_extended     => 0,
         is_editable     => 1,
     },
     time_limit => {
         pattern         => '^.*$',
         is_mandatory    => 0,
-        is_extended     => 0,
         is_editable     => 1,
     },
     last_eval => {
         pattern         => '^.*$',
         is_mandatory    => 0,
-        is_extended     => 0,
         is_editable     => 1,
     },
 };
@@ -99,16 +91,31 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        'updateName'    => {
-            'description'   => 'updateName',
-            'perm_holder'   => 'entity'
+        updateName    => {
+            description   => 'updateName',
         },
-        'getDependencies' => {
-            'description' => 'return dependencies tree for this object',
-            'perm_holder' => 'entity',
+        getDependencies => {
+            description => 'return dependencies tree for this object',
         },
     };
 }
+
+
+=pod
+
+=begin classdoc
+
+@constructor
+
+Create a new instance of the class.
+Transforms thresholds into ConstantCombinations
+Update formula_string with toString() methods and the label if not provided in attribute.
+
+@return a class instance
+
+=end classdoc
+
+=cut
 
 sub new {
     my $class = shift;
@@ -147,9 +154,14 @@ sub label {
     return $self->aggregate_condition_label;
 }
 
-=head2 updateName
 
-    desc: set entity's name to .toString() return value
+=pod
+
+=begin classdoc
+
+set label to human readable version of the formula
+
+=end classdoc
 
 =cut
 
@@ -160,55 +172,113 @@ sub updateName {
     $self->save;
 }
 
-=head2 toString
 
-    desc: return a string representation of the entity
+=pod
+
+=begin classdoc
+
+Transform formula to human readable String
+
+@return human readable String of the formula
+
+=end classdoc
 
 =cut
 
 sub toString {
     my $self = shift;
 
+    # Not used yet due to bad Combination::computeUnit() behavior (see also NodemetricCondition::toString())
+    my $unit = '';
+    if ((ref $self->right_combination) eq 'Entity::Combination::ConstantCombination') {
+        my $left_unit = $self->left_combination->combination_unit;
+        if ($left_unit && (($left_unit ne '?') || ($left_unit ne '-'))) {
+            $unit = $left_unit;
+        }
+    }
+
     return  $self->left_combination->combination_formula_string.' '
            .$self->comparator.' '
            .$self->right_combination->combination_formula_string;
 }
 
-sub eval{
-    my $self = shift;
+
+=pod
+
+=begin classdoc
+
+Evaluate the condition. Call evaluation of both dependant combinations then evaluate the condition
+
+@return scalar 1 if condition is true
+               0 if condition is false
+
+=end classdoc
+
+=cut
+
+sub evaluate{
+    my ($self, %args) = @_;
+
+    if (defined $args{memoization}->{$self->id}) {
+        return $args{memoization}->{$self->id};
+    }
 
     my $comparator  = $self->getAttr(name => 'comparator');
-    my $left_value  = $self->left_combination->computeLastValue();
-    my $right_value = $self->right_combination->computeLastValue();
 
-    if(defined $left_value && defined $right_value){
+    # Evaluate both conditions
+    my $left_value  = $self->left_combination->evaluate(%args);
+    my $right_value = $self->right_combination->evaluate(%args);
+
+    if (defined $left_value && defined $right_value) {
         my $evalString = $left_value.$comparator.$right_value;
-        $log->info("CM Combination formula: $evalString");
 
-        if(eval $evalString){
-            $log->info($evalString."=> true");
+        $log->debug("AggregateCondition evaluated: $evalString");
+
+        if (eval $evalString) {
+            $log->debug($evalString."=> true");
+            if (defined $args{memoization}) {
+                $args{memoization}->{$self->id} = 1;
+            }
             $self->setAttr(name => 'last_eval', value => 1);
             $self->save();
             return 1;
-        }else{
-            $log->info($evalString."=> false");
+        }
+        else {
+            $log->debug($evalString."=> false");
+            if (defined $args{memoization}) {
+                $args{memoization}->{$self->id} = 0;
+            }
             $self->setAttr(name => 'last_eval', value => 0);
             $self->save();
             return 0;
         }
-    }else{
-        $log->warn('No data received from DB for '.($self->left_combination)." or ".($self->right_combination));
-        $self->setAttr(name => 'last_eval', value => undef);
-        $self->save();
-        return undef;
     }
+
+    # At lease one of both condition is undefinded
+    $log->warn('No data received from DB for '.($self->left_combination)." or ".($self->right_combination));
+    $self->setAttr(name => 'last_eval', value => undef);
+    $self->save();
+    return undef;
 }
+
+
+=pod
+
+=begin classdoc
+
+Find all the rules which depends on the AggregateCondition
+
+@return array of rules
+
+=end classdoc
+
+=cut
 
 sub getDependentRules {
     my $self = shift;
-    my @rules_from_same_service = Entity::AggregateRule->search(
+    my @rules_from_same_service = Entity::Rule::AggregateRule->search(
                                       hash => {
-                                          aggregate_rule_service_provider_id => $self->aggregate_condition_service_provider_id
+                                          service_provider_id => $self->aggregate_condition_service_provider_id
                                       }
                                   );
 
@@ -227,6 +297,19 @@ sub getDependentRules {
     return @rules;
 }
 
+
+=pod
+
+=begin classdoc
+
+Find all the rules which depends on the AggregateCondition
+
+@return hashref of rule_names
+
+=end classdoc
+
+=cut
+
 sub getDependencies {
     my $self = shift;
 
@@ -234,14 +317,25 @@ sub getDependencies {
 
     my %dependencies;
     for my $rule (@rules) {
-        $dependencies{$rule->aggregate_rule_label} = {};
+        $dependencies{$rule->rule_name} = {};
     }
     return \%dependencies;
 }
 
+
+=pod
+
+=begin classdoc
+
+Delete instance and delete dependant object on cascade.
+
+=end classdoc
+
+=cut
+
 sub delete {
     my $self = shift;
-    my @rules_from_same_service = Entity::AggregateRule->search(hash => {aggregate_rule_service_provider_id => $self->aggregate_condition_service_provider_id});
+    my @rules_from_same_service = Entity::Rule::AggregateRule->search(hash => {service_provider_id => $self->aggregate_condition_service_provider_id});
 
     my $id = $self->getId;
     LOOP:
@@ -261,6 +355,17 @@ sub delete {
     $comb_left->deleteIfConstant();
     $comb_right->deleteIfConstant();
 }
+
+
+=pod
+
+=begin classdoc
+
+Update instance attributes. Manage update of related objects and formula_string.
+
+=end classdoc
+
+=cut
 
 sub update {
     my ($self, %args) = @_;
@@ -348,13 +453,24 @@ sub clone {
         return %$attrs;
     };
 
-    $self->_importToRelated(
+    return $self->_importToRelated(
         dest_obj_id         => $args{'dest_service_provider_id'},
         relationship        => 'aggregate_condition_service_provider',
         label_attr_name     => 'aggregate_condition_label',
         attrs_clone_handler => $attrs_cloner
     );
 }
+
+
+=pod
+
+=begin classdoc
+
+Update formula string and call update formula string of dependant objects.
+
+=end classdoc
+
+=cut
 
 sub updateFormulaString {
     my $self = shift;

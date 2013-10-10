@@ -18,7 +18,7 @@ do_start () {
 	/usr/sbin/ntpdate-debian
 }
 
-case "\$1" in
+case "$1" in
   start|"")
 	do_start
 	;;

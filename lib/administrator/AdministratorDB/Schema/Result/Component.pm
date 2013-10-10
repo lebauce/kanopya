@@ -1,17 +1,37 @@
+use utf8;
 package AdministratorDB::Schema::Result::Component;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
-
-
 =head1 NAME
 
 AdministratorDB::Schema::Result::Component
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
+
+=head1 TABLE: C<component>
 
 =cut
 
@@ -79,9 +99,69 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</component_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("component_id");
 
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<service_provider_id>
+
+=over 4
+
+=item * L</service_provider_id>
+
+=item * L</component_type_id>
+
+=back
+
+=cut
+
+__PACKAGE__->add_unique_constraint(
+  "service_provider_id",
+  ["service_provider_id", "component_type_id"],
+);
+
 =head1 RELATIONS
+
+=head2 active_directory
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::ActiveDirectory>
+
+=cut
+
+__PACKAGE__->might_have(
+  "active_directory",
+  "AdministratorDB::Schema::Result::ActiveDirectory",
+  { "foreign.ad_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 amqp
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Amqp>
+
+=cut
+
+__PACKAGE__->might_have(
+  "amqp",
+  "AdministratorDB::Schema::Result::Amqp",
+  { "foreign.amqp_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
 
 =head2 apache2
 
@@ -98,18 +178,93 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 atftpd0
+=head2 tftpd
 
 Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::Atftpd0>
+Related object: L<AdministratorDB::Schema::Result::Tftpd>
 
 =cut
 
 __PACKAGE__->might_have(
-  "atftpd0",
-  "AdministratorDB::Schema::Result::Atftpd0",
-  { "foreign.atftpd0_id" => "self.component_id" },
+  "tftpd",
+  "AdministratorDB::Schema::Result::Tftpd",
+  { "foreign.tftpd_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 ceph
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Ceph>
+
+=cut
+
+__PACKAGE__->might_have(
+  "ceph",
+  "AdministratorDB::Schema::Result::Ceph",
+  { "foreign.ceph_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 ceph_mon
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::CephMon>
+
+=cut
+
+__PACKAGE__->might_have(
+  "ceph_mon",
+  "AdministratorDB::Schema::Result::CephMon",
+  { "foreign.ceph_mon_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 ceph_osd
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::CephOsd>
+
+=cut
+
+__PACKAGE__->might_have(
+  "ceph_osd",
+  "AdministratorDB::Schema::Result::CephOsd",
+  { "foreign.ceph_osd_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 cinder
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Cinder>
+
+=cut
+
+__PACKAGE__->might_have(
+  "cinder",
+  "AdministratorDB::Schema::Result::Cinder",
+  { "foreign.cinder_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 collector_indicators
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::CollectorIndicator>
+
+=cut
+
+__PACKAGE__->has_many(
+  "collector_indicators",
+  "AdministratorDB::Schema::Result::CollectorIndicator",
+  { "foreign.collector_manager_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -125,27 +280,22 @@ __PACKAGE__->belongs_to(
   "component",
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "component_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
-=head2 service_provider
+=head2 component_nodes
 
-Type: belongs_to
+Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
+Related object: L<AdministratorDB::Schema::Result::ComponentNode>
 
 =cut
 
-__PACKAGE__->belongs_to(
-  "service_provider",
-  "AdministratorDB::Schema::Result::ServiceProvider",
-  { service_provider_id => "service_provider_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
+__PACKAGE__->has_many(
+  "component_nodes",
+  "AdministratorDB::Schema::Result::ComponentNode",
+  { "foreign.component_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 =head2 component_template
@@ -163,8 +313,8 @@ __PACKAGE__->belongs_to(
   {
     is_deferrable => 1,
     join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
+    on_delete     => "NO ACTION",
+    on_update     => "NO ACTION",
   },
 );
 
@@ -180,7 +330,37 @@ __PACKAGE__->belongs_to(
   "component_type",
   "AdministratorDB::Schema::Result::ComponentType",
   { component_type_id => "component_type_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "NO ACTION", on_update => "NO ACTION" },
+);
+
+=head2 container_accesses
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ContainerAccess>
+
+=cut
+
+__PACKAGE__->has_many(
+  "container_accesses",
+  "AdministratorDB::Schema::Result::ContainerAccess",
+  { "foreign.export_manager_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 containers
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Container>
+
+=cut
+
+__PACKAGE__->has_many(
+  "containers",
+  "AdministratorDB::Schema::Result::Container",
+  { "foreign.disk_manager_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 =head2 dhcpd3
@@ -213,6 +393,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 glance
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Glance>
+
+=cut
+
+__PACKAGE__->might_have(
+  "glance",
+  "AdministratorDB::Schema::Result::Glance",
+  { "foreign.glance_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 haproxy1
 
 Type: might_have
@@ -228,18 +423,108 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 iscsitarget1
+=head2 haproxy1s_listen
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Haproxy1Listen>
+
+=cut
+
+__PACKAGE__->has_many(
+  "haproxy1s_listen",
+  "AdministratorDB::Schema::Result::Haproxy1Listen",
+  { "foreign.listen_component_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 hosts
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Host>
+
+=cut
+
+__PACKAGE__->has_many(
+  "hosts",
+  "AdministratorDB::Schema::Result::Host",
+  { "foreign.host_manager_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 iscsi
 
 Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::Iscsitarget1>
+Related object: L<AdministratorDB::Schema::Result::Iscsi>
 
 =cut
 
 __PACKAGE__->might_have(
-  "iscsitarget1",
-  "AdministratorDB::Schema::Result::Iscsitarget1",
-  { "foreign.iscsitarget1_id" => "self.component_id" },
+  "iscsi",
+  "AdministratorDB::Schema::Result::Iscsi",
+  { "foreign.iscsi_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_aggregator
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::KanopyaAggregator>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopya_aggregator",
+  "AdministratorDB::Schema::Result::KanopyaAggregator",
+  { "foreign.kanopya_aggregator_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_executor
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::KanopyaExecutor>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopya_executor",
+  "AdministratorDB::Schema::Result::KanopyaExecutor",
+  { "foreign.kanopya_executor_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_front
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::KanopyaFront>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopya_front",
+  "AdministratorDB::Schema::Result::KanopyaFront",
+  { "foreign.kanopya_front_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_rules_engine
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::KanopyaRulesEngine>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopya_rules_engine",
+  "AdministratorDB::Schema::Result::KanopyaRulesEngine",
+  { "foreign.kanopya_rules_engine_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -285,6 +570,21 @@ __PACKAGE__->might_have(
   "keepalived1",
   "AdministratorDB::Schema::Result::Keepalived1",
   { "foreign.keepalived_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 keystone
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Keystone>
+
+=cut
+
+__PACKAGE__->might_have(
+  "keystone",
+  "AdministratorDB::Schema::Result::Keystone",
+  { "foreign.keystone_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -348,6 +648,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 mock_monitor
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::MockMonitor>
+
+=cut
+
+__PACKAGE__->might_have(
+  "mock_monitor",
+  "AdministratorDB::Schema::Result::MockMonitor",
+  { "foreign.mock_monitor_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 mysql5
 
 Type: might_have
@@ -360,6 +675,36 @@ __PACKAGE__->might_have(
   "mysql5",
   "AdministratorDB::Schema::Result::Mysql5",
   { "foreign.mysql5_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 netapp_lun_manager
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::NetappLunManager>
+
+=cut
+
+__PACKAGE__->might_have(
+  "netapp_lun_manager",
+  "AdministratorDB::Schema::Result::NetappLunManager",
+  { "foreign.netapp_lun_manager_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 netapp_volume_manager
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::NetappVolumeManager>
+
+=cut
+
+__PACKAGE__->might_have(
+  "netapp_volume_manager",
+  "AdministratorDB::Schema::Result::NetappVolumeManager",
+  { "foreign.netapp_volume_manager_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -393,33 +738,18 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 openldap1
+=head2 openssh5
 
 Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::Openldap1>
+Related object: L<AdministratorDB::Schema::Result::Openssh5>
 
 =cut
 
 __PACKAGE__->might_have(
-  "openldap1",
-  "AdministratorDB::Schema::Result::Openldap1",
-  { "foreign.openldap1_id" => "self.component_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 opennebula3
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Opennebula3>
-
-=cut
-
-__PACKAGE__->might_have(
-  "opennebula3",
-  "AdministratorDB::Schema::Result::Opennebula3",
-  { "foreign.opennebula3_id" => "self.component_id" },
+  "openssh5",
+  "AdministratorDB::Schema::Result::Openssh5",
+  { "foreign.openssh5_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -483,6 +813,86 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 quantum
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Quantum>
+
+=cut
+
+__PACKAGE__->might_have(
+  "quantum",
+  "AdministratorDB::Schema::Result::Quantum",
+  { "foreign.quantum_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 sco
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Sco>
+
+=cut
+
+__PACKAGE__->might_have(
+  "sco",
+  "AdministratorDB::Schema::Result::Sco",
+  { "foreign.sco_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 scom
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Scom>
+
+=cut
+
+__PACKAGE__->might_have(
+  "scom",
+  "AdministratorDB::Schema::Result::Scom",
+  { "foreign.scom_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 service_provider
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "service_provider",
+  "AdministratorDB::Schema::Result::ServiceProvider",
+  { service_provider_id => "service_provider_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "NO ACTION",
+  },
+);
+
+=head2 service_provider_managers
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::ServiceProviderManager>
+
+=cut
+
+__PACKAGE__->has_many(
+  "service_provider_managers",
+  "AdministratorDB::Schema::Result::ServiceProviderManager",
+  { "foreign.manager_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 snmpd5
 
 Type: might_have
@@ -495,6 +905,21 @@ __PACKAGE__->might_have(
   "snmpd5",
   "AdministratorDB::Schema::Result::Snmpd5",
   { "foreign.snmpd5_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 storage
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Storage>
+
+=cut
+
+__PACKAGE__->might_have(
+  "storage",
+  "AdministratorDB::Schema::Result::Storage",
+  { "foreign.storage_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -513,24 +938,84 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 vsphere5
+=head2 ucs_manager
 
 Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::Vsphere5>
+Related object: L<AdministratorDB::Schema::Result::UcsManager>
 
 =cut
 
 __PACKAGE__->might_have(
-  "vsphere5",
-  "AdministratorDB::Schema::Result::Vsphere5",
-  { "foreign.vsphere5_id" => "self.component_id" },
+  "ucs_manager",
+  "AdministratorDB::Schema::Result::UcsManager",
+  { "foreign.ucs_manager_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 virtualization
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Virtualization>
+
+=cut
+
+__PACKAGE__->might_have(
+  "virtualization",
+  "AdministratorDB::Schema::Result::Virtualization",
+  { "foreign.virtualization_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 vmm
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Vmm>
+
+=cut
+
+__PACKAGE__->might_have(
+  "vmm",
+  "AdministratorDB::Schema::Result::Vmm",
+  { "foreign.vmm_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 hpc_manager
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::HpcManager>
+
+=cut
+
+__PACKAGE__->might_have(
+  "hpc_manager",
+  "AdministratorDB::Schema::Result::HpcManager",
+  { "foreign.hpc_manager_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 workflow_def_managers
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::WorkflowDefManager>
+
+=cut
+
+__PACKAGE__->has_many(
+  "workflow_def_managers",
+  "AdministratorDB::Schema::Result::WorkflowDefManager",
+  { "foreign.manager_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07002 @ 2012-10-22 11:12:10
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:tasSNXzxBTwoNPcRBVTWtA
+# Created by DBIx::Class::Schema::Loader v0.07035 @ 2013-06-13 02:55:37
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ryRfMmeEB8gHg4/MpXxcuw
 
 __PACKAGE__->belongs_to(
   "parent",
@@ -538,5 +1023,7 @@ __PACKAGE__->belongs_to(
   { entity_id => "component_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
+
+__PACKAGE__->many_to_many("nodes", "component_nodes", "node");
 
 1;

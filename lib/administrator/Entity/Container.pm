@@ -45,7 +45,7 @@ my $errmsg;
 use constant ATTR_DEF => {
     disk_manager_id => {
         pattern      => '^[0-9\.]*$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_extended  => 0
     },
     container_name => {
@@ -65,7 +65,7 @@ use constant ATTR_DEF => {
     },
     container_filesystem => {
         pattern      => '^.*$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_extended  => 0
     },
     container_freespace => {
@@ -128,25 +128,6 @@ sub getLocalAccess {
 
 =begin classdoc
 
-Get the service provider on wich is installed the component that provides the container.
-
-@return the service provider.
-
-=end classdoc
-
-=cut
-
-sub getServiceProvider {
-    my $self = shift;
-
-    return $self->getDiskManager->service_provider;
-}
-
-
-=pod
-
-=begin classdoc
-
 Accessor to get the component that provides the container.
 
 @return the component that provides the container.
@@ -158,26 +139,7 @@ Accessor to get the component that provides the container.
 sub getDiskManager {
     my $self = shift;
 
-    return Entity->get(id => $self->disk_manager_id);
-}
-
-
-=pod
-
-=begin classdoc
-
-Build the mountpoint path on wich can be mounted the container device. 
-
-@return a mountpoint for the container device
-
-=end classdoc
-
-=cut
-
-sub getMountPoint {
-    my $self = shift;
-
-    return "/mnt/" . $self->id;
+    return $self->disk_manager;
 }
 
 

@@ -93,7 +93,7 @@ function ucs_list(cid) {
         ] },
         afterInsertRow          : function(grid, rowid, rowdata, rowelem) {
             var cell    = $(grid).find('tr#' + rowid).find('td[aria-describedby="ucs_list_synchronize"]');
-            var button  = $('<button>', { text : 'Sync' }).button({ icons : { primary : 'ui-icon-refresh' } })
+            var button  = $('<button>', { text : 'Sync',id:'sync-ucs' }).button({ icons : { primary : 'ui-icon-refresh' } })
                                        .attr('style', 'margin-top:0;')
                                        .click(function() {
                                             $.ajax({
@@ -103,12 +103,13 @@ function ucs_list(cid) {
                                        });
             $(cell).append(button);
 
-            button      = $('<button>', { text : 'Edit' }).button({ icons : { primary : 'ui-icon-wrench' } })
+            button      = $('<button>', { text : 'Edit',id:'edit-ucs' }).button({ icons : { primary : 'ui-icon-wrench' } })
                                        .attr('style', 'margin-top:0;')
                                        .click(function() { ucsaddbutton_action(rowid);  });
             $(cell).append(button);
         }
     });
+    var action_div=$('#' + cid).prevAll('.action_buttons'); 
     $('<a>', { text : 'Add an UCS' }).button({ icons : { primary : 'ui-icon-plusthick' } })
-                                     .appendTo('#' + cid).bind('click', ucsaddbutton_action);
+                                     .appendTo(action_div).bind('click', ucsaddbutton_action);
 }

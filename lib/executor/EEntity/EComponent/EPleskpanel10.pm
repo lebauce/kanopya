@@ -25,11 +25,14 @@ my $errmsg;
 sub preStartNode {
     my $self = shift;
     my %args = @_;
-    my $pleskpanel = $self->_getEntity();
+    my $pleskpanel = $self->_entity;
     my $conf = $pleskpanel->getConf();
-    my $host = $args{host};
-    $host->setAttr(name => 'host_hostname', value => $conf->{pleskpanel10_hostname});
-    $host->save();
+
+    $args{host}->node->setAttr(
+        name  => 'node_hostname',
+        value => $conf->{pleskpanel10_hostname},
+        save  => 1
+    );
 }
 
 1;

@@ -1,4 +1,4 @@
-# Copyright © 2011-2012 Hedera Technology SAS
+# Copyright © 2011-2013 Hedera Technology SAS
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -16,35 +16,29 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 package Dashboard;
-use base 'BaseDB';
+use base BaseDB;
 
 use strict;
 use warnings;
 
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
-
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
+    dashboard_service_provider_id => {
+        pattern      => '^\d+$',
+        is_mandatory => 1,
+        is_delegatee => 1,
+    },
     dashboard_config => {
         pattern      => '^.*$',
         is_mandatory => 1,
-        is_extended  => 0
     },
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub getDelegatee {
-    my $self = shift;
-    my $class = ref $self;
-
-    if (!$class) {
-        return "Entity::ServiceProvider";
-    } else {
-        return $self->dashboard_service_provider;
-    }
-}
+sub methods { return {}; }
 
 1;

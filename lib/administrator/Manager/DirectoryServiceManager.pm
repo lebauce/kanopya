@@ -1,6 +1,5 @@
-# DirectoryServiceManager.pm - Object class of DirectoryService Manager included in Administrator
-
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,7 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 29 June 2012
+
 
 package Manager::DirectoryServiceManager;
 use base "Manager";
@@ -41,14 +40,9 @@ sub methods {
     };
 }
 
-=head2
-
-=cut
 
 sub getManagerParamsDef {
-    return [
-        'ad_nodes_base_dn'
-      ];
+    return [ 'ad_nodes_base_dn' ];
 }
 
 sub getNodes {

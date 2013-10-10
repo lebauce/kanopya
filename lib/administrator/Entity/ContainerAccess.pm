@@ -32,51 +32,50 @@ can be used for connecting and mounting the remote disk.
 =cut
 
 package Entity::ContainerAccess;
-use base "Entity";
+use base Entity;
 
-use Entity;
 use Kanopya::Exceptions;
+use Entity::Component;
+use Entity::Container;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
     container_id => {
+        label        => 'Device',
+        type         => 'relation',
+        relation     => 'single',
         pattern      => '^[0-9\.]*$',
-        is_mandatory => 1,
-        is_extended  => 0
+        is_mandatory => 0,
+        is_editable  => 1
     },
     export_manager_id => {
         pattern      => '^[0-9\.]*$',
-        is_mandatory => 1,
-        is_extended  => 0
+        is_mandatory => 0,
     },
     container_access_export => {
         label        => 'Export name',
         type         => 'string',
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_editable  => 1
+        is_editable  => 0
     },
     container_access_ip => {
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     container_access_port => {
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     device_connected => {
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     partition_connected => {
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
     },
 };
 
@@ -84,26 +83,46 @@ sub getAttrDef { return ATTR_DEF; }
 
 
 =pod
-
 =begin classdoc
 
-Get the service provider on wich is installed the component that provides the container access.
+Delegate the creation of the export to the export manager.
 
-@return the service provider.
+@return the container
 
 =end classdoc
-
 =cut
 
-sub getServiceProvider {
-    my $self = shift;
+sub create {
+    my ($class, %args) = @_;
 
-    return $self->getExportManager->service_provider;
+    General::checkParams(args     => \%args,
+                         required => [ "export_manager_id", "container_id" ]);
+
+    Entity::Component->get(id => $args{export_manager_id})->createExport(
+        container => Entity::Container->get(id => delete $args{container_id}),
+        %args
+    );
 }
 
 
 =pod
+=begin classdoc
 
+Delegate the removal of the export to the export manager.
+
+@return the container
+
+=end classdoc
+=cut
+
+sub remove {
+    my ($self, %args) = @_;
+
+    $self->export_manager->removeExport(container_access => $self);
+}
+
+
+=pod
 =begin classdoc
 
 Accessor to get the exported container.
@@ -111,7 +130,6 @@ Accessor to get the exported container.
 @return the container
 
 =end classdoc
-
 =cut
 
 sub getContainer {
@@ -122,7 +140,6 @@ sub getContainer {
 
 
 =pod
-
 =begin classdoc
 
 Accessor to get the component that provides the container access.
@@ -130,18 +147,16 @@ Accessor to get the component that provides the container access.
 @return the component instance.
 
 =end classdoc
-
 =cut
 
 sub getExportManager {
     my $self = shift;
 
-    return Entity->get(id => $self->export_manager_id);
+    return $self->export_manager;
 }
 
 
 =pod
-
 =begin classdoc
 
 Specific method to specify the attribute to use to display the container access.
@@ -149,20 +164,17 @@ Specific method to specify the attribute to use to display the container access.
 @return the label attribute.
 
 =end classdoc
-
 =cut
 
 sub getLabelAttr { return 'container_access_export'; }
 
 
 =pod
-
 =begin classdoc
 
 @return a generic string representation of the container access
 
 =end classdoc
-
 =cut
 
 sub toString {
@@ -176,6 +188,22 @@ sub toString {
                  ", export_manager_id: $manager_id";
 
     return $string;
+}
+
+=pod
+=begin classdoc
+
+Build the mountpoint path on wich can be mounted the container access.
+
+@return a mountpoint for the container device
+
+=end classdoc
+=cut
+
+sub getMountPoint {
+    my $self = shift;
+
+    return "/mnt/" . $self->id;
 }
 
 1;

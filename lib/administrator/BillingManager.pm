@@ -21,29 +21,30 @@ package BillingManager;
 use strict;
 use warnings;
 
-use Log::Log4perl "get_logger";
-use Data::Dumper;
-use Monitor::Retriever;
+use Kanopya::Exceptions;
+use General;
+use Entity::User;
+use Entity::ServiceProvider::Cluster;
+use Entity::Billinglimit;
+use Retriever;
+
+use List::Util qw[min max];
 use Set::IntervalTree;
 use Text::CSV;
 
-use Kanopya::Exceptions;
-use General;
-use List::Util qw[min max];
-use Entity::User;
-use Entity::ServiceProvider::Inside::Cluster;
-use Entity::Billinglimit;
-use Monitor::Retriever;
-
+use Log::Log4perl "get_logger";
+use Data::Dumper;
 my $log = get_logger("");
+
 
 my $EVERY_DAY = 1;
 my $EVERY_MONTH = 2;
 
+
 sub userBilling {
     my ($user, $from, $to) = @_;
 
-    my @clusters = Entity::ServiceProvider::Inside::Cluster->search(
+    my @clusters = Entity::ServiceProvider::Cluster->search(
                        hash => { user_id => $user->getId }
                    );
 
@@ -66,32 +67,37 @@ sub clusterBilling {
     my $interval = 5 * 60;
     my $duration = 60 * 60;
     my $cluster_name = $cluster->getAttr(name => "cluster_name");
-    my $adm = Administrator->new();
     my $timestamp = $from->epoch();
-    my $retriever = Monitor::Retriever->new;
 
     # Get all the limit types for this cluster
-    my @limit_types = $adm->{db}->resultset("Billinglimit")->search(
-                          { service_provider_id => $cluster->getId },
-                          { columns => [ qw/type/ ],
-                            distinct => 1, }
-                      );
+    my @cluster_limits = $cluster->searchRelated(filters => [ 'billinglimits' ]);
 
-    for my $limit_type (@limit_types) {
-        my $metric = $limit_type->get_column("type");
+    # TODO: Support distinct in BaseDB
+#    $adm->{db}->resultset("Billinglimit")->search(
+#                          { service_provider_id => $cluster->id },
+#                          { columns => [ qw/type/ ], distinct => 1 }
+#                      );
 
-        my $data = $retriever->getClusterData(
-                       cluster     => $cluster_name,
-                       set         => 'billing',
-                       start       => $from->epoch(),
-                       end         => $to->epoch(),
-                       aggregation => "total",
-                       raw         => 1,
-                       required_ds => [ $metric ],
-                   )->{$metric};
+    # TODO: Can we remove this ?
+    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
+    my $collector = $kanopya->getComponent(name => 'Kanopyacollector');
+
+    LIMIT_TYPE:
+    for my $limit_type (@cluster_limits) {
+        my $metric = $limit_type->type;
+        if (defined $metrics{$metric}) {
+            next LIMIT_TYPE;
+        }
+
+        my %data = Retriever->getData(rrd_name     => "billing_raw",
+                                      start        => $from->epoch(),
+                                      end          => $to->epoch(),
+                                      raw          => 1,
+                                      max_def      => undef,
+                                      rrd_base_dir => $collector->rrd_base_directory);
 
         $metrics{$metric} = {
-            data   => $data,
+            data   => $data{$metric},
             tree   => Set::IntervalTree->new,
             limits => {}
         };
@@ -100,10 +106,6 @@ sub clusterBilling {
     # Get all the billing limits for a service provider
     # and add them to the interval set
     my %limits;
-    my @cluster_limits = Entity::Billinglimit->search(hash => {
-                             service_provider_id => $cluster->getId
-                         });
-
     for my $limit (@cluster_limits) {
         my $start = $limit->getAttr(name => "start") / 1000;
         my $end = $limit->getAttr(name => "ending") / 1000;

@@ -38,10 +38,11 @@ For more details see http://dev.mysql.com/doc/refman/5.0/en/server-status-variab
 
 =cut
 
-package MySqlProvider;
+package DataProvider::MySqlProvider;
 
 use strict;
 use warnings;
+use base 'DataProvider';
 use DBI;
 
 use Log::Log4perl "get_logger";

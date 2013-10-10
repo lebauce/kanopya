@@ -24,6 +24,7 @@ use warnings;
 
 use Manager::HostManager;
 use Kanopya::Exceptions;
+use Entity::Tag;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -48,24 +49,6 @@ sub getBootPolicies {
 
 sub hostType {
     return "Physical host";
-}
-
-=head2 getPolicyParams
-
-=cut
-
-sub getPolicyParams {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'policy_type' ]);
-
-    if ($args{policy_type} eq 'hosting') {
-        return [ { name => 'cpu', label => 'Required CPU number', pattern => '^[0-9]+$' },
-                 { name => 'ram', label => 'Required RAM amount', pattern => '^[0-9]+$' },
-                 { name => 'ram_unit', label => 'RAM unit', values => [ 'M', 'G' ] } ];
-    }
-    return [];
 }
 
 sub getConf {

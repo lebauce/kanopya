@@ -1,5 +1,5 @@
-# linux.pm - linux component
 #    Copyright © 2011 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -14,42 +14,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 4 sept 2010
-
-=head1 NAME
-
-<Entity::Component::linux> <linux component concret class>
-
-=head1 VERSION
-
-This documentation refers to <Entity::Component::linux> version 1.0.0.
-
-=head1 SYNOPSIS
-
-use <Entity::Component::linux>;
-
-my $component_instance_id = 2; # component instance id
-
-Entity::Component::linux->get(id=>$component_instance_id);
-
-# Cluster id
-
-my $cluster_id = 3;
-
-# Component id are fixed, please refer to component id table
-
-my $component_id =2 
-
-Entity::Component::linux->new(component_id=>$component_id, cluster_id=>$cluster_id);
-
-=head1 DESCRIPTION
-
-Entity::Component::linux is class allowing to instantiate a linux component
-This Entity is empty but present methods to set configuration.
-
-=head1 METHODS
-
-=cut
 
 package Entity::Component::Linux;
 use base "Entity::Component";
@@ -59,10 +23,12 @@ use warnings;
 
 use Kanopya::Exceptions;
 use Entity::Component::Linux::LinuxMount;
+use Entity::ServiceProvider::Cluster;
+
+use Hash::Merge qw(merge);
 use Log::Log4perl 'get_logger';
 
 my $log = get_logger("");
-my $errmsg;
 
 use constant ATTR_DEF => {
     linuxes_mount => {
@@ -76,7 +42,7 @@ use constant ATTR_DEF => {
 sub getAttrDef { return ATTR_DEF; }
 
 sub priority {
-    return 10;
+    return 1;
 }
 
 sub getConf {
@@ -100,17 +66,18 @@ sub setConf {
 
     my $conf = $args{conf};
     my $mountdefs_conf = $conf->{linuxes_mount};
-    
+
     # for each mount definition , we search it in db for update or deletion
     for my $mount ($self->linuxes_mount) {
         my $found = 0;
         my $mountdef_data;
         my $id = $mount->id;
         foreach my $mountdef_conf (@$mountdefs_conf) {
-             if($mountdef_conf->{linux_mount_id} == $id) {
+             if ($mountdef_conf->{linux_mount_id} == $id or
+                 $mountdef_conf->{linux_mount_point} eq $mount->linux_mount_point) {
                  $found = 1;
+                 $mountdef_conf->{linux_mount_id} = $id;
                  $mountdef_data = $mountdef_conf;
-                 last;
              }
         }
         if ($found) {
@@ -127,145 +94,123 @@ sub setConf {
     }
 }
 
-# Insert default configuration in db for this component 
-sub insertDefaultConfiguration {
-    my $self = shift;
-    
-    my @default_conf = (
-        { linux_mount_device => 'proc',
-          linux_mount_point => '/proc',
-          linux_mount_filesystem => 'proc',
-          linux_mount_options => 'nodev,noexec,nosuid',
-          linux_mount_dumpfreq => '0',
-          linux_mount_passnum => '0'
-        },
-        { linux_mount_device => 'sysfs',
-          linux_mount_point => '/sys',
-          linux_mount_filesystem => 'sysfs',
-          linux_mount_options => 'defaults',
-          linux_mount_dumpfreq => '0',
-          linux_mount_passnum => '0'
-        },
-        { linux_mount_device => 'tmpfs',
-          linux_mount_point => '/tmp',
-          linux_mount_filesystem => 'tmpfs',
-          linux_mount_options => 'defaults',
-          linux_mount_dumpfreq => '0',
-          linux_mount_passnum => '0'
-        },
-        { linux_mount_device => 'tmpfs',
-          linux_mount_point => '/var/tmp',
-          linux_mount_filesystem => 'tmpfs',
-          linux_mount_options => 'defaults',
-          linux_mount_dumpfreq => '0',
-          linux_mount_passnum => '0'
-        },
-        { linux_mount_device => 'tmpfs',
-          linux_mount_point => '/var/run',
-          linux_mount_filesystem => 'tmpfs',
-          linux_mount_options => 'defaults',
-          linux_mount_dumpfreq => '0',
-          linux_mount_passnum => '0'
-        },
-        { linux_mount_device => 'tmpfs',
-          linux_mount_point => '/var/lock',
-          linux_mount_filesystem => 'tmpfs',
-          linux_mount_options => 'defaults',
-          linux_mount_dumpfreq => '0',
-          linux_mount_passnum => '0'
-        },
-    );
-
-    foreach my $row (@default_conf) {
-        Entity::Component::Linux::LinuxMount->new(linux_id => $self->id,
-                                                  %$row);
-    }
-}
-
 sub getPuppetDefinition {
     my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+
+    my $nfs;
+    my $ntp = $self->service_provider->getKanopyaCluster->getComponent(category => 'System');
     my $conf = $self->getConf();
-    
-    # /etc/hosts
-    my $path = $args{cluster}->getAttr(name => 'cluster_name');
-    $path .= '/'.$args{host}->getAttr(name => 'host_hostname');
-    my $str = "class {'linux': sourcepath => \"$path\",}\n";  
-    
+    my $tag = 'kanopya::' . lc($self->component_type->component_name);
+
+    my $manifest = $self->instanciatePuppetResource(
+        name => 'kanopya::linux',
+        params => {
+            sourcepath => $args{cluster}->cluster_name . '/' . $args{host}->node->node_hostname,
+            stage => "system",
+            tag => $tag
+        }
+    );
+
+    if (Entity::ServiceProvider::Cluster->getKanopyaCluster->id == $args{cluster}->id) {
+        $manifest .= $self->instanciatePuppetResource(
+            name => "kanopya::ntp::server",
+            params => {
+                tag => $tag
+            }
+        );
+    }
+    else {
+        $manifest .= $self->instanciatePuppetResource(
+            name => "kanopya::ntp::client",
+            params => {
+                server => $ntp->getMasterNode->adminIp,
+                tag => $tag
+            }
+        );
+    }
+
+    my @swap_entries = grep { $_->{linux_mount_filesystem} eq 'swap' } @{$conf->{linuxes_mount}};
+    my @mount_entries = grep { $_->{linux_mount_filesystem} ne 'swap' } @{$conf->{linuxes_mount}};
+
     # /etc/fstab et mounts
-    foreach my $mount (@{$conf->{linuxes_mount}}) {
-        $str .= "file {'$mount->{linux_mount_point}': ensure => directory }\n";
-        $str .= "mount {'$mount->{linux_mount_point}':\n";
-        $str .= "\tdevice => '$mount->{linux_mount_device}',\n";
-        $str .= "\tensure => mounted,\n";
-        $str .= "\tfstype => '$mount->{linux_mount_filesystem}',\n";
-        $str .= "\tname   => '$mount->{linux_mount_point}',\n";
-        $str .= "\toptions => '$mount->{linux_mount_options}',\n";
-        $str .= "\tdump   => '$mount->{linux_mount_dumpfreq}',\n";
-        $str .= "\tpass   => '$mount->{linux_mount_passnum}',\n";
-        $str .= "\trequire => File['$mount->{linux_mount_point}']\n";
-        $str .= "}\n";
+    foreach my $mount (@mount_entries) {
+        $manifest .= $self->instanciatePuppetResource(
+            resource => "file",
+            name => $mount->{linux_mount_point},
+            params => {
+                ensure => 'directory',
+                tag => 'mount'
+            }
+        );
+
+        $manifest .= $self->instanciatePuppetResource(
+            resource => "mount",
+            name => $mount->{linux_mount_point},
+            require => [ "File['" . $mount->{linux_mount_point} . "']" ],
+            params => {
+                device => $mount->{linux_mount_device},
+                ensure => "mounted",
+                fstype => $mount->{linux_mount_filesystem},
+                name => $mount->{linux_mount_point},
+                options => $mount->{linux_mount_options},
+                dump => $mount->{linux_mount_dumpfreq},
+                pass => $mount->{linux_mount_passnum},
+                tag => $tag
+            }
+        );
+
+        $nfs = $nfs || ($mount->{linux_mount_filesystem} eq "nfs");
+    }
+
+    # TODO find another method to manage swap devices
+    # current implementation (with mount resource) accept only one swap entry
+    # several entries invalidate the manifest due to name => 'none' repeats
+
+    foreach my $swap (@swap_entries) {
+        $manifest .= $self->instanciatePuppetResource(
+            resource => 'mount',
+            name => $swap->{linux_mount_device},
+            params => {
+                device => $swap->{linux_mount_device},
+                ensure => 'present',
+                fstype => 'swap',
+                name => 'none',
+                options => 'sw',
+                dump => 0,
+                pass => 0,
+                tag => $tag
+            }
+        );
     }
     
-    return $str;
+    if (@swap_entries) {
+        $manifest .= $self->instanciatePuppetResource(
+            resource => 'swap',
+            name => 'swap',
+            require => [ "Mount['". $swap_entries[0]->{linux_mount_device} . "']" ],
+            params => {
+                ensure => 'present',
+                tag => $tag
+            }
+        );
+    }
+
+    if ($nfs) {
+        $manifest .= $self->instanciatePuppetResource(
+            name => 'kanopya::nfs',
+            params => {
+                tag => $tag
+            }
+        );
+    }
+
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        linux => {
+            manifest => $manifest
+        }
+    } );
 }
-
-=head1 DIAGNOSTICS
-
-Exceptions are thrown when mandatory arguments are missing.
-Exception : Kanopya::Exception::Internal::IncorrectParam
-
-=head1 CONFIGURATION AND ENVIRONMENT
-
-This module need to be used into Kanopya environment. (see Kanopya presentation)
-This module is a part of Administrator package so refers to Administrator configuration
-
-=head1 DEPENDENCIES
-
-This module depends of 
-
-=over
-
-=item KanopyaException module used to throw exceptions managed by handling programs
-
-=item Entity::Component module which is its mother class implementing global component method
-
-=back
-
-=head1 INCOMPATIBILITIES
-
-None
-
-=head1 BUGS AND LIMITATIONS
-
-There are no known bugs in this module.
-
-Please report problems to <Maintainer name(s)> (<contact address>)
-
-Patches are welcome.
-
-=head1 AUTHOR
-
-<HederaTech Dev Team> (<dev@hederatech.com>)
-
-=head1 LICENCE AND COPYRIGHT
-
-Kanopya Copyright (C) 2009, 2010, 2011, 2012, 2013 Hedera Technology.
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 3, or (at your option)
-any later version.
-
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; see the file COPYING.  If not, write to the
-Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-Boston, MA 02110-1301 USA.
-
-=cut
 
 1;

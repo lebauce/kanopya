@@ -21,6 +21,8 @@ use warnings;
 use Log::Log4perl 'get_logger';
 use Data::Dumper;
 
+use Kanopya::Config;
+
 my $log = get_logger("");
 my $errmsg;
 
@@ -36,6 +38,67 @@ sub service {
         }
         if (defined $args{state}) {
             system("chroot $args{mount_point} chkconfig " . $service . " " . $args{state});
+        }
+    }
+}
+
+sub customizeInitramfs {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     =>\%args,
+                         required => [ 'initrd_dir', 'cluster', 'host' ]);
+
+    $self->SUPER::customizeInitramfs(%args);
+
+    my $kanopya_dir = Kanopya::Config::getKanopyaDir();
+    my $cmd = "cp -R $kanopya_dir/tools/deployment/system/initramfs-tools/scripts/* " . $args{initrd_dir} . "/scripts";
+    $self->_host->getEContext->execute(command => $cmd);
+}
+
+sub _writeNetConf {
+    my ($self, %args) = @_;
+
+    General::checkParams(
+        args     => \%args,
+        required => [ 'cluster', 'host', 'mount_point', 'ifaces', 'econtext' ]
+    );
+
+    for my $iface (@{ $args{ifaces} }) {
+        my $file = $self->generateNodeFile(
+            cluster       => $args{cluster},
+            host          => $args{host},
+            file          => '/etc/sysconfig/network-scripts/ifcfg-' . $iface->{name},
+            template_dir  => '/templates/components/redhat',
+            template_file => 'ifcfg.tt',
+            data          => { interface => $iface }
+        );
+
+        $args{econtext}->send(
+            src  => $file,
+            dest => $args{mount_point} . '/etc/sysconfig/network-scripts/ifcfg-' . $iface->{name}
+        );
+
+        if ($iface->{vlans}) {
+            my $template_file = 'ifcfg-vlan.tt';
+            foreach my $vlan (@{ $iface->{vlans} }) {
+                my %vlan_infos;
+                my $vlan_id = 'vlan' . $vlan->vlan_number;
+                $vlan_infos{iface_name} = $iface->{name};
+
+                my $file = $self->generateNodeFile(
+                    cluster       => $args{cluster},
+                    host          => $args{host},
+                    file          => '/etc/sysconfig/network/ifcfg-' . $vlan_id,
+                    template_dir  => '/templates/components/redhat',
+                    template_file => $template_file,
+                    data          => { interface => \%vlan_infos }
+                );
+
+                $args{econtext}->send(
+                    src  => $file,
+                    dest => $args{mount_point} . '/etc/sysconfig/network/ifcfg-' . $vlan_id
+                );
+            }
         }
     }
 }

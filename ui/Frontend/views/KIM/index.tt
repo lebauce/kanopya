@@ -2,21 +2,24 @@
 <script src="/javascripts/KIM/iaas.js"></script>
 <script src="/javascripts/KIM/customers.js"></script>
 <script src="/javascripts/KIM/policies.js"></script>
-<script src="/javascripts/KIM/policiesform.js"></script>
 <script src="/javascripts/KIM/menu.conf.js"></script>
+<link href='/javascripts/jquery/fullcalendar/fullcalendar.css' rel='stylesheet' />
 
 <div id='view-container' class="ui-layout-center">
 </div>
 <div class="ui-layout-west">
-    <img id='menu_logo' src='/images/logo_kanopya.png'/><br/><br/>
     <div id='mainmenu-container'>
     </div>
 </div>
 <div class="ui-layout-north">
     <div id='header'>
-        <span id='product-name'>Kanopya Infrastructure Manager</span>
-        <span class="logout"><span class='ui-icon ui-icon-power'></span><a href="/logout">Logout</a></span>
-        <span id="infologin">logged as <span id="username"><% username %></span></span>
+        <h1><span id='product-name'>Kanopya Infrastructure Manager</span></h1>
+        <h2 id="breadcrump"></h2>
+        <div id="header-links">
+           <span class="logout"><span class='ui-icon ui-icon-power'></span><a href="/logout">Logout</a></span>
+           <span id="infologin">logged as <span id="username"><% username %></span></span><br />
+           <a id="about">About</a>
+        </div>
     </div>
 </div>
 <div class="ui-layout-south">

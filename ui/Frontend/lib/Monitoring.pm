@@ -4,7 +4,6 @@ use Dancer ':syntax';
 use Dancer::Plugin::Ajax;
 use Data::Dumper;
 
-use Administrator;
 use Entity::Combination::NodemetricCombination;
 use Entity::Combination::AggregateCombination;
 use DateTime::Format::Strptime;
@@ -169,7 +168,7 @@ sub _computeClustermetricCombination () {
     my %rep;
 
     eval {
-        %aggregate_combination = $combination->computeValues(start_time => $start_timestamp, stop_time => $stop_timestamp);
+        %aggregate_combination = $combination->evaluateTimeSerie(start_time => $start_timestamp, stop_time => $stop_timestamp);
         #$log->info('values returned by compute values: '.Dumper \%aggregate_combination);
     };
     if ($@) {
@@ -217,42 +216,17 @@ sub _computeClustermetricCombination () {
 sub _computeNodemetricCombination {
     my %args = @_;
     my $cluster_id = $args{cluster_id};
-    my $nodemetric_combination_id = $args{combination_id};
-    my $service_provider = Entity::ServiceProvider->get(id=>$cluster_id);
-    my $nodemetric_combination = Entity::Combination::NodemetricCombination->get('id' => $nodemetric_combination_id);
-    my @indicator_ids = $nodemetric_combination->getDependentIndicatorIds();
-
-    $log->debug('[Cluster id '.$cluster_id.']: The requested combination: '.$nodemetric_combination_id.' is built on the top of the following indicators: '."@indicator_ids");
-
-    my $nodes_metrics;
-    my $error;
-    my %nodeEvals;
+    my $nodemetric_combination = Entity::Combination::NodemetricCombination->get('id' => $args{combination_id});
     my %rep;
-
-    # we retrieve the nodemetric values
+    my $error;
+    my $evaluation = {};
     eval {
-        my %indicators;
-        foreach my $indicator_id (@indicator_ids) {
-            my $indicator = Entity::Indicator->get(id => $indicator_id);
-            $indicators{$indicator->indicator_oid} = $indicator;
+        my $evaluation_fqdn = $nodemetric_combination->evaluate(format => 'host_name');
+        while (my ($nodename, $metrics) = each %$evaluation_fqdn) {
+             $nodename =~ s/\..*//;
+             $evaluation->{$nodename} = $metrics;
         }
-
-        $nodes_metrics = $service_provider->getNodesMetrics(
-            indicators => \%indicators,
-            time_span  => 1200,
-            shortname  => 1
-        );
-
-        $log->debug('[Cluster id '.$cluster_id.']: The indicators have the following values :'.Dumper $nodes_metrics);
-
-        while (my ($host_name,$monitored_values_for_one_node) = each %$nodes_metrics) {
-            my $nodeEval;
-            $nodeEval = $nodemetric_combination->computeValueFromMonitoredValues(
-                monitored_values_for_one_node => $monitored_values_for_one_node
-            );
-            $nodeEvals{$host_name} = $nodeEval;
-        }
-        $log->debug('[Cluster id '.$cluster_id.']: Requested combination value for each node: '.Dumper \%nodeEvals);
+        $log->debug('[Cluster id '.$cluster_id.']: Requested combination value for each node: '.Dumper $evaluation);
     };
     # error catching
     if ($@) {
@@ -261,16 +235,18 @@ sub _computeNodemetricCombination {
         $rep{'error'} = $error;
         return \%rep;
     # we catch the fact that there is no value available for the selected nodemetric
-    } elsif (scalar(keys %nodeEvals) == 0) {
+    }
+    elsif (scalar(keys %{$evaluation}) == 0) {
         $error='No indicator values returned by monitored nodes';
         $log->error($error);
         $rep{'error'} = $error;
         return \%rep;
-    } else {
+    }
+    else {
         #we create an array containing the values, to be sorted
         my @nodes_values_to_sort;
         my @nodes_undef;
-        while (my ($node, $metric) = each %nodeEvals) {
+        while (my ($node, $metric) = each %{$evaluation}) {
             if (defined $metric) {
             push @nodes_values_to_sort, { node => $node, value => $metric };
             } else {

@@ -21,6 +21,7 @@ use base 'BaseDB';
 use strict;
 use warnings;
 
+use JSON;
 use Hash::Merge;
 use Kanopya::Exceptions;
 
@@ -31,17 +32,7 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    name => {
-        pattern      => '^.*$',
-        is_mandatory => 0,
-        is_extended  => 0
-    },
-    value => {
-        pattern      => '^.*$',
-        is_mandatory => 0,
-        is_extended  => 0
-    },
-    relation => {
+    params => {
         pattern      => '^.*$',
         is_mandatory => 0,
         is_extended  => 0
@@ -59,6 +50,9 @@ sub new {
         $params = delete $args{params};
     }
 
+    # Delete possible 'name' argument for code compatibility
+    delete $args{name};
+
     my $self = $class->SUPER::new(%args);
 
     if (defined $params and keys %$params) {
@@ -73,32 +67,13 @@ sub load {
     my %args = @_;
 
     my $result;
-    my $childs = $self->{_dbix}->param_presets;
     eval {
-        while (my $current = $childs->next) {
-            # If current item has param_preset relation, build the related sub hash or list.
-            if ($current->param_presets->count) {
-                my $param_preset = ParamPreset->get(id => $current->get_column('param_preset_id'));
-                $result->{$current->get_column('name')} = $param_preset->load();
-            }
-            # If current item has a name defined, the runnning function will return a hash
-            elsif ($current->get_column('name')) {
-                $result->{$current->get_column('name')} = $current->get_column('value');
-            }
-            # If current item has no name defined, the runnning function will return a list
-            else {
-                push @$result, $current->get_column('value');
-            }
-        }
+        $result = from_json($self->params);
     };
     if ($@) {
-        my $preset_id = $self->getAttr(name => 'param_preset_id');
-        throw Kanopya::Exception::Internal(
-                  error => "Unable to load preset <$preset_id> from database, you have probably mixed " .
-                           "hash elements and list elements within a same relation level:\n$@"
-              );
+        return {};
     }
-    return $result ? $result : {};
+    return $result;
 }
 
 sub store {
@@ -107,35 +82,8 @@ sub store {
 
     General::checkParams(args => \%args, required => [ 'params' ]);
 
-    my @tostore;
-    for my $name (keys %{$args{params}}) {
-        my $preset;
-        $preset->{name} = $name;
-        if (ref($args{params}->{$name}) eq 'HASH') {
-            $preset->{param_presets} = $self->store(params => $args{params}->{$name}, nopopulate => 1);
-        }
-        elsif (ref($args{params}->{$name}) eq 'ARRAY') {
-            # In this mechnism for storing hashes, lists can be stored at the last level only.
-            # This is because Hash::Merge module is able to proper merge list values, but its
-            # can not merge hashes within list elements.
-            $preset->{param_presets} = [];
-            for my $item (@{ $args{params}->{$name} }) {
-                push @{ $preset->{param_presets} }, { value => $item };
-            }
-        }
-        else {
-            $preset->{value} = $args{params}->{$name};
-        }
-        push @tostore, $preset;
-    }
-
-    if ($args{nopopulate}) {
-        return \@tostore;
-    }
-
-    for my $entry (@tostore) {
-        $self->{_dbix}->param_presets->populate([$entry]);
-    }
+    $self->setAttr(name => 'params', value => to_json($args{params}));
+    $self->save();
 }
 
 sub update {
@@ -147,12 +95,6 @@ sub update {
     my $existing = {};
     if (not $args{override}) {
         $existing = $self->load();
-    }
-
-    # Remove existing childs before insert the new ones marged with args.
-    my @childs = ParamPreset->search(hash => { relation => $self->getAttr(name => 'param_preset_id') });
-    for my $child (@childs) {
-        $child->delete();
     }
 
     my $merge = Hash::Merge->new('RIGHT_PRECEDENT');

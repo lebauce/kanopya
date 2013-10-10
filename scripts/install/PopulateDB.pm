@@ -5,16 +5,22 @@
 use lib qw(/opt/kanopya/lib/common/ /opt/kanopya/lib/administrator/ /opt/kanopya/lib/executor/ /opt/kanopya/lib/monitor/ /opt/kanopya/lib/orchestrator/ /opt/kanopya/lib/external);
 
 use BaseDB;
+use Class::ISA;
 use Kanopya::Config;
-use Administrator;
-use ComponentType;
 use Entity::Component;
 use Entity::WorkflowDef;
 use Operationtype;
-use NetworkPoolip;
 use Entity::Policy;
+use Entity::Policy::HostingPolicy;
+use Entity::Policy::StoragePolicy;
+use Entity::Policy::NetworkPolicy;
+use Entity::Policy::SystemPolicy;
+use Entity::Policy::ScalabilityPolicy;
+use Entity::Policy::BillingPolicy;
+use Entity::Policy::OrchestrationPolicy;
 use Entity::ServiceTemplate;
-use Entity::InterfaceRole;
+use Entity::Netconf;
+use Entity::NetconfRole;
 use Entity::Network;
 use Entity::Kernel;
 use Entity::Host;
@@ -22,6 +28,9 @@ use Entity::Poolip;
 use Entity::Component::Physicalhoster0;
 use EEntity;
 use ClassType;
+use ClassType::ComponentType;
+use ClassType::ServiceProviderType;
+use ClassType::ServiceProviderType::ClusterType;
 use Profile;
 use Entity::Gp;
 use Entity::User;
@@ -32,27 +41,27 @@ use Entity::Hostmodel;
 use POSIX;
 use Date::Simple (':all');
 use Operationtype;
-use ComponentType;
 use ComponentTemplate;
-use ConnectorType;
 use Indicatorset;
 use Entity::Indicator;
 use Entity::Poolip;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 use Entity::Network;
 use Entity::Interface;
-use NetworkPoolip;
 use Entity::Iface;
+use Entity::Repository;
 use Ip;
-use Externalnode::Node;
+use Node;
 use ServiceProviderManager;
 use Entity::Component::Lvm2::Lvm2Vg;
+use Entity::Component::Lvm2::Lvm2Pv;
+use Entity::Component::Lvm2::Lvm2Lv;
 use Scope;
 use ScopeParameter;
 use Entity::Component::Lvm2;
-use Entity::Component::Iscsitarget1;
+use Entity::Component::Iscsi::Iscsitarget1;
 use Entity::Component::Dhcpd3;
-use Entity::Component::Atftpd0;
+use Entity::Component::Tftpd;
 use Entity::Component::Snmpd5;
 use Entity::Component::Nfsd3;
 use Entity::Component::Syslogng3;
@@ -60,12 +69,29 @@ use Entity::Component::Puppetmaster2;
 use Entity::Component::Openiscsi2;
 use Entity::Component::Physicalhoster0;
 use Entity::Component::Fileimagemanager0;
+use Entity::Component::Storage;
 use Entity::Component::Kanopyacollector1;
 use Entity::Component::Kanopyaworkflow0;
 use Entity::Component::Linux::Debian;
 use Entity::Component::Linux::Redhat;
 use Entity::Component::Linux::Suse;
 use Entity::Component::Mailnotifier0;
+use Entity::Component::Virtualization::NovaController;
+use Entity::Component::Vmm::NovaCompute;
+use Entity::Component::Openstack::Glance;
+use Entity::Component::Openstack::Keystone;
+use Entity::Component::Openstack::Quantum;
+use Entity::Component::Amqp;
+use Entity::Component::Virtualization;
+use NetconfInterface;
+use NetconfPoolip;
+use NetconfIface;
+use ComponentCategory;
+use ComponentCategory::ManagerCategory;
+use ClassType::DataModelType;
+
+use TryCatch;
+my $err;
 
 # Catch warnings to clean the setup output (this warnings are not kanopya code related)
 $SIG{__WARN__} = sub {
@@ -81,83 +107,125 @@ my @classes = (
     'Entity::Systemimage',
     'Entity::User',
     'Entity::User::Customer',
-    'Entity::ServiceProvider::Inside::Cluster',
-    'Entity::ServiceProvider::Outside::Netapp',
-    'Entity::ServiceProvider::Outside::UnifiedComputingSystem',
+    'Entity::ServiceProvider::Cluster',
+    'Entity::ServiceProvider::Cluster::Ubuntu12',
+    'Entity::ServiceProvider::Cluster::Centos6',
+    'Entity::ServiceProvider::Cluster::Debian6',
+    'Entity::ServiceProvider::Cluster::Sles6',
+    'Entity::ServiceProvider::Cluster::Kanopya',
+    'Entity::ServiceProvider::Netapp',
+    'Entity::ServiceProvider::UnifiedComputingSystem',
     'Entity::ContainerAccess::IscsiContainerAccess',
     'Entity::ContainerAccess::NfsContainerAccess',
     'Entity::ContainerAccess::LocalContainerAccess',
+    'Entity::ContainerAccess::FileContainerAccess',
     'Entity::Container::LvmContainer',
     'Entity::Container::LocalContainer',
+    'Entity::Container::NetappLun',
+    'Entity::Container::NetappVolume',
+    'Entity::Container::FileContainer',
     'Entity::Component',
+    'Entity::Component::KanopyaExecutor',
+    'Entity::Component::KanopyaFront',
+    'Entity::Component::KanopyaAggregator',
+    'Entity::Component::KanopyaRulesEngine',
+    'Entity::Component::UcsManager',
+    'Entity::Component::Fileimagemanager0',
+    'Entity::Component::NetappManager',
+    'Entity::Component::NetappLunManager',
+    'Entity::Component::NetappVolumeManager',
     'Entity::Component::Lvm2',
-    'Entity::Component::Iscsitarget1',
+    'Entity::Component::Iscsi',
+    'Entity::Component::Iscsi::Iscsitarget1',
     'Entity::Component::Apache2',
-    'Entity::Component::Atftpd0',
+    'Entity::Component::Tftpd',
     'Entity::Component::Dhcpd3',
-    'Entity::Component::HAProxy1',
-    'Entity::Component::Iptables1',
+    'Entity::Component::Dhcpd3::Dhcpd3Host',
+    'Entity::Component::Dhcpd3::Dhcpd3Subnet',
+    'Entity::Component::Haproxy1',
+    'Entity::Component::Haproxy1::Haproxy1Listen',
     'Entity::Component::Keepalived1',
+    'Entity::Component::Keepalived1::Keepalived1Vrrpinstance',
     'Entity::Component::Memcached1',
     'Entity::Component::Linux',
     'Entity::Component::Mysql5',
     'Entity::Component::Openiscsi2',
-    'Entity::Component::Openldap1',
-    'Entity::Component::Opennebula3',
+    'Entity::Component::Virtualization',
+    'Entity::Component::Virtualization::Opennebula3',
     'Entity::Component::Openssh5',
     'Entity::Component::Php5',
     'Entity::Component::Snmpd5',
     'Entity::Component::Syslogng3',
     'Entity::Component::Nfsd3',
-    'Entity::Connector::ActiveDirectory',
-    'Entity::Connector::Scom',
-    'Entity::ServiceProvider::Outside::Externalcluster',
+    'Entity::Component::Storage',
+    'Entity::Component::ActiveDirectory',
+    'Entity::Component::Scom',
+    'Entity::Component::Amqp',
+    'Entity::Component::Virtualization::NovaController',
+    'Entity::Component::Vmm::NovaCompute',
+    'Entity::Component::Openstack::Cinder',
+    'Entity::Component::Openstack::Quantum',
+    'Entity::Component::Openstack::Keystone',
+    'Entity::Component::Openstack::Glance',
+    'Entity::Repository::OpenstackRepository',
+    'Entity::Repository::Opennebula3Repository',
+    'Entity::Repository::Vsphere5Repository',
     'Entity::Component::Physicalhoster0',
-    'Entity::Poolip',
-    'Entity::Network::Vlan',
-    'Entity::Masterimage',
-    'Entity::Connector',
-    'Entity::Connector::UcsManager',
-    'Entity::Component::Fileimagemanager0',
-    'Entity::Connector::NetappManager',
-    'Entity::Connector::NetappLunManager',
-    'Entity::Connector::NetappVolumeManager',
-    'Entity::Container::NetappLun',
-    'Entity::Container::NetappVolume',
-    'Entity::Container::FileContainer',
-    'Entity::ContainerAccess::FileContainerAccess',
-    'Entity::NfsContainerAccessClient',
-    'Entity::Network',
-    'Entity::InterfaceRole',
-    'Entity::Interface',
-    'Entity::Iface',
-    'Entity::NetappAggregate',
+    'Entity::Component::Apache2::Apache2Virtualhost',
+    'Entity::Component::Linux::LinuxMount',
+    'Entity::Component::Lvm2::Lvm2Vg',
+    'Entity::Component::Lvm2::Lvm2Pv',
+    'Entity::Component::Lvm2::Lvm2Lv',
+    'Entity::Component::Vsphere5::Vsphere5Datacenter',
+    'Entity::Component::Iscsi::IscsiPortal',
+    'Entity::Component::Vmm',
+    'Entity::Component::Vmm::Kvm',
+    'Entity::Component::Vmm::Xen',
     'Entity::Component::Puppetagent2',
     'Entity::Component::Puppetmaster2',
     'Entity::Component::Kanopyacollector1',
-    'Entity::Connector::Sco',
-    'Entity::Connector::MockMonitor',
+    'Entity::Component::Sco',
+    'Entity::Component::MockMonitor',
     'Entity::Component::Kanopyaworkflow0',
+    'Entity::Component::Linux::Debian',
+    'Entity::Component::Linux::Suse',
+    'Entity::Component::Linux::Redhat',
+    'Entity::ServiceProvider::Externalcluster',
+    'Entity::Poolip',
+    'Entity::Vlan',
+    'Entity::Masterimage',
+    'Entity::NfsContainerAccessClient',
+    'Entity::Network',
+    'Entity::Netconf',
+    'Entity::NetconfRole',
+    'Entity::Interface',
+    'Entity::Iface',
+    'Entity::Repository',
+    'Entity::NetappAggregate',
     'Entity::Billinglimit',
     'Entity::ServiceProvider',
     'Entity::Host::Hypervisor',
     'Entity::Host::VirtualMachine',
     'Entity::Host::Hypervisor::Opennebula3Hypervisor',
     'Entity::Host::VirtualMachine::Opennebula3Vm',
-    'Entity::Host::Hypervisor::Opennebula3Hypervisor::Opennebula3KvmHypervisor',
-    'Entity::Host::Hypervisor::Opennebula3Hypervisor::Opennebula3XenHypervisor',
+    'Entity::Host::Hypervisor::OpenstackHypervisor',
+    'Entity::Host::VirtualMachine::OpenstackVm',
     'Entity::Component::Mailnotifier0',
     'Entity::Host::VirtualMachine::Opennebula3Vm::Opennebula3KvmVm',
     'Entity::ServiceTemplate',
     'Entity::Policy',
+    'Entity::Policy::HostingPolicy',
+    'Entity::Policy::StoragePolicy',
+    'Entity::Policy::NetworkPolicy',
+    'Entity::Policy::SystemPolicy',
+    'Entity::Policy::ScalabilityPolicy',
+    'Entity::Policy::BillingPolicy',
+    'Entity::Policy::OrchestrationPolicy',
     'Entity::Operation',
     'Entity::Workflow',
     'Entity::Host::Hypervisor::Vsphere5Hypervisor',
     'Entity::Host::VirtualMachine::Vsphere5Vm',
-    'Entity::Component::Vsphere5',
-    'Entity::Component::Linux::Debian',
-    'Entity::Component::Linux::Suse',
-    'Entity::Component::Linux::Redhat',
+    'Entity::Component::Virtualization::Vsphere5',
     'Entity::Indicator',
     'Entity::CollectorIndicator',
     'Entity::Clustermetric',
@@ -166,21 +234,46 @@ my @classes = (
     'Entity::Combination::ConstantCombination',
     'Entity::Combination::AggregateCombination',
     'Entity::AggregateCondition',
-    'Entity::AggregateRule',
+    'Entity::Rule::AggregateRule',
     'Entity::NodemetricCondition',
-    'Entity::NodemetricRule',
+    'Entity::Rule::NodemetricRule',
     'Entity::WorkflowDef',
-    'Entity::Component::Apache2::Apache2Virtualhost',
-    'Entity::Component::Linux::LinuxMount',
-    'Entity::Component::Lvm2::Lvm2Vg',
-    'Entity::Component::Opennebula3::Opennebula3Repository',
-    'Entity::Component::Vsphere5::Vsphere5Datacenter',
-    'Entity::Component::Vsphere5::Vsphere5Repository'
+    'Entity::Rule',
+    'Entity::DataModel',
+    'Entity::DataModel::AnalyticRegression',
+    'Entity::DataModel::RDataModel',
+    'Entity::DataModel::AnalyticRegression::LinearRegression',
+    'Entity::DataModel::AnalyticRegression::LogarithmicRegression',
+    'Entity::DataModel::RDataModel::AutoArima',
+    'Entity::DataModel::RDataModel::ExponentialSmoothing',
+    'Entity::DataModel::RDataModel::StlForecast',
+    'Entity::DataModel::RDataModel::ExpR',
+    'Entity::TimePeriod',
+    'Entity::Component::Ceph',
+    'Entity::Component::Ceph::CephMon',
+    'Entity::Component::Ceph::CephOsd',
+    'Entity::Tag',
+    'Entity::Component::HpcManager',
+    'Entity::ServiceProvider::Hpc7000'
 );
+
+sub registerKernels {
+    my @kernels = (
+        [ 'deployment', '3.0.51-0.7.9-default', 'Kanopya deployment' ]
+    );
+
+    for my $kernel (@kernels) {
+        Entity::Kernel->new(
+            kernel_name    => $kernel->[0],
+            kernel_version => $kernel->[1],
+            kernel_desc    => $kernel->[2]
+        );
+    }
+}
 
 sub registerClassTypes {
     for my $class_type (@classes) {
-        ClassType->new(class_type => $class_type);
+        ClassType->findOrCreate(class_type => $class_type);
     }
 }
 
@@ -227,6 +320,12 @@ sub registerUsers {
               'Sales' => [ 'create', 'update', 'remove', 'get' ],
           }
         },
+        { name    => 'Guest',
+          type    => 'User',
+          desc    => 'Guest group',
+          system  => 0,
+          profile => [ 'Guest', 'guest profile' ],
+        },
         { name    => 'User',
           type    => 'User',
           desc    => 'User master group containing all users',
@@ -260,7 +359,7 @@ sub registerUsers {
           desc    => 'Cluster master group containing all clusters',
           system  => 1,
           methods => {
-              'Sales' => [ 'subscribe' ],
+              'Sales' => [ 'get', 'create', 'subscribe', 'unsubscribe' ],
           }
         },
         { name    => 'Kernel',
@@ -288,17 +387,9 @@ sub registerUsers {
           desc    => 'Component group containing all components',
           system  => 1,
           methods => {
-              'ServiceDeveloper' => [ 'getPolicyParams', 'getExportManagers', 'get' ],
-              'Sales'            => [ 'getPolicyParams', 'getExportManagers', 'get' ]
-          }
-        },
-        { name    => 'Connector',
-          type    => 'Connector',
-          desc    => 'Connector group containing all connectors',
-          system  => 1,
-          methods => {
-              'ServiceDeveloper' => [ 'getPolicyParams', 'getExportManagers', 'get' ],
-              'Sales'            => [ 'getPolicyParams', 'getExportManagers', 'get' ]
+              'ServiceDeveloper' => [ 'get' ],
+              'Sales'            => [ 'get', 'getConf' ],
+              'Guest'            => [ 'getManagerParamsDef' ]
           }
         },
         { name    => 'Policy',
@@ -306,8 +397,8 @@ sub registerUsers {
           desc    => 'Policy group containing all policies',
           system  => 1,
           methods => {
-              'ServiceDeveloper' => [ 'getFlattenedHash', 'get' ],
-              'Sales'            => [ 'getFlattenedHash', 'get' ]
+              'ServiceDeveloper' => [ 'create', 'remove', 'update', 'get' ],
+              'Sales'            => [ 'get' ],
           }
         },
         { name    => 'ServiceTemplate',
@@ -317,6 +408,19 @@ sub registerUsers {
           methods => {
               'ServiceDeveloper' => [ 'create', 'update', 'remove', 'get' ],
               'Sales'            => [ 'get' ]
+          }
+        },
+        { name    => 'WorkflowDef',
+          type    => 'WorkflowDef',
+          desc    => 'WorkflowDef group containing all workflow definitions',
+          system  => 1,
+          # Required as service intance user need to get workflows definitions
+          # when associating workflow to rules. Better architecture should remove
+          # this requirement.
+          methods => {
+              'ServiceDeveloper' => [ 'get', 'updateParamPreset' ],
+              'Sales'            => [ 'get', 'updateParamPreset' ],
+              'Customer'         => [ 'get', 'updateParamPreset' ],
           }
         },
         { name    => 'Network',
@@ -329,6 +433,22 @@ sub registerUsers {
           desc    => 'Groups master group containing all groups',
           system  => 1
         },
+        { name    => 'Workflow',
+          type    => 'Workflow',
+          desc    => 'Workflow master group containing all workflows',
+          system  => 1,
+          methods => {
+              'Sales' => [ 'get', 'cancel' ],
+          }
+        },
+        { name    => 'Operation',
+          type    => 'Operation',
+          desc    => 'Operation master group containing all operations',
+          system  => 1,
+          methods => {
+              'Sales' => [ 'get' ],
+          }
+        },
         # Re-handle the Entity group here to set permissions on methods,
         # indeed, we need have user groups created before setting permissions,
         # but we need to have the Entity group created at first.
@@ -337,16 +457,29 @@ sub registerUsers {
           desc    => 'Entity master group containing all entities',
           system  => 1,
           methods => {
-              'Administrator' => [ 'create', 'update', 'remove', 'get', 'addPerm', 'removePerm' ]
+              'Administrator' => [ 'create', 'update', 'remove', 'get', 'addPerm', 'removePerm', 'subscribe', 'unsubscribe' ],
+              'Guest'         => [ 'get' ]
           }
         },
     ];
 
     # Browse all class types to find api methods
+    CLASSTYPE:
     for my $classtype (@classes) {
-        BaseDB::requireClass($classtype);
+        try {
+            BaseDB::requireClass($classtype);
+        }
+        catch ($err) {
+            # For instance, only some service provider has a concrete type
+            # without the coresponding class.
+            if ($classtype !~ m/^Entity::ServiceProvider.*/) {
+                $err->rethrow();
+            }
+            next CLASSTYPE;
+        }
 
-        my $parenttype = BaseDB::_parentClass($classtype);
+        my $hierarchy = $classtype;
+        my ($parenttype) = Class::ISA::super_path($classtype);
         my $methods    = $classtype->getMethods();
         for my $parentmethod (keys %{$parenttype->getMethods()}) {
             delete $methods->{$parentmethod};
@@ -356,11 +489,12 @@ sub registerUsers {
         if (scalar (@methodlist)) {
             $classtype =~ s/.*\:\://g;
             push @{$groups}, {
-                name    => $classtype,
-                type    => $classtype,
-                desc    => $classtype . " master group",
-                system  => 1,
-                methods => {
+                name      => $classtype,
+                type      => $classtype,
+                desc      => $classtype . " master group",
+                hierarchy => $hierarchy,
+                system    => 1,
+                methods   => {
                     'Administrator' => \@methodlist
                 }
             }
@@ -370,25 +504,21 @@ sub registerUsers {
     my @adminprofiles;
     my $profilegroups = {};
     for my $group (@{$groups}) {
-        my $gp;
-        eval {
-            $gp = Entity::Gp->find(hash => { gp_name => $group->{name} });
-        };
-        if ($@) {
-            $gp = Entity::Gp->new(
-                      gp_name   => $group->{name},
-                      gp_desc   => $group->{desc},
-                      gp_type   => $group->{type}
-                  );
+        my $gp = Entity::Gp->findOrCreate(gp_name => $group->{name},
+                                          gp_type => $group->{type});
+        $gp->gp_desc($group->{desc});
+
+        if ($group->{hierarchy}) {
+            $gp->appendToHierarchyGroups(hierarchy => $group->{hierarchy});
         }
 
         if (defined ($group->{methods})) {
             for my $gpname (keys %{ $group->{methods} }) {
                 for my $method (@{ $group->{methods}->{$gpname} }) {
-                    print "- Setting permissions for group " . $gpname .
+                    print "\t\t- Setting permissions for group " . $gpname .
                           ", on method " . $gp->gp_name . "->" . $method . "\n";
 
-                    Entityright->new(
+                    Entityright->findOrCreate(
                         entityright_consumed_id => $gp->id,
                         entityright_consumer_id => $profilegroups->{$gpname}->id,
                         entityright_method      => $method
@@ -398,13 +528,19 @@ sub registerUsers {
         }
 
         if (defined ($group->{profile})) {
-            my $prof = Profile->new(profile_name => $group->{profile}->[0],
-                                    profile_desc => $group->{profile}->[1]);
+            my $prof;
+            eval {
+                $prof = Profile->new(profile_name => $group->{profile}->[0],
+                                     profile_desc => $group->{profile}->[1]);
 
-            $prof->{_dbix}->profile_gps->create( {
-                profile_id => $prof->id,
-                gp_id      => $gp->id
-            } );
+                $prof->{_dbix}->profile_gps->create({
+                    profile_id => $prof->id,
+                    gp_id      => $gp->id
+                });
+            };
+            if ($@) {
+                $prof = Profile->find(profile_name => $group->{profile}->[0]);
+            }
 
             if ($group->{system} == 0) {
                 push @adminprofiles, $prof;
@@ -413,59 +549,50 @@ sub registerUsers {
         }
     }
 
-    my $admin_user = Entity::User->create(
-                         user_system       => 0,
-                         user_login        => "admin",
-                         user_password     => $args{admin_password},
-                         user_firstname    => 'Kanopya',
-                         user_lastname     => 'Administrator',
-                         user_email        => 'dev@hederatech.com',
-                         user_creationdate => today(),
-                         user_desc         => 'God user for administrative tasks.'
-                     );
+    eval {
+        Entity::User->find(hash => { user_login => "admin" });
+    };
+    if ($@) {
+        my $admin_user = Entity::User->create(
+                             user_system       => 0,
+                             user_login        => "admin",
+                             user_password     => $args{admin_password},
+                             user_firstname    => 'Kanopya',
+                             user_lastname     => 'Administrator',
+                             user_email        => 'dev@hederatech.com',
+                             user_creationdate => today(),
+                             user_desc         => 'God user for administrative tasks.'
+                         );
 
-    for my $profile (@adminprofiles) {
-        UserProfile->new(
-            user_id    => $admin_user->id,
-            profile_id => $profile->id
-        );
+        for my $profile (@adminprofiles) {
+            UserProfile->new(
+                user_id    => $admin_user->id,
+                profile_id => $profile->id
+            );
+        }
     }
 
-    my $executor_user = Entity::User->create(
-        user_system       => 1,
-        user_login        => "executor",
-        user_password     => $args{admin_password},
-        user_firstname    => 'Kanopya',
-        user_lastname     => 'Executor',
-        user_email        => 'dev@hederatech.com',
-        user_creationdate => today(),
-        user_desc         => 'User used by executor'
-    );
-
-#
-#    UserProfile->new(
-#        user_id    => $executor_user->id,
-#        profile_id => $admin_profile->id
-#    );
-#    $admin_group->appendEntity(entity => $executor_user);
-}
-
-sub registerKernels {
-    my %args = @_;
-
-    my @kernels = (
-        [ '2.6.32.33', '2.6.32.33', 'Debian generic kernel' ],
-        [ '2.6.32-5-xen-amd64' , '2.6.32-5-xen-amd64', 'Kernel for Xen hypervisors' ],
-        [ '3.2.6-xenvm', '3.2.6-xenvm', 'Kernel for xen virtual machines' ],
-        [ '2.6.32-279.5.1.el6.x86_64', '2.6.32-279.5.1.el6.x86_64', 'Kernel for KVM hypervisors' ]
-    );
-
-    for my $kernel (@kernels) {
-        Entity::Kernel->new(
-            kernel_name    => $kernel->[0],
-            kernel_version => $kernel->[1],
-            kernel_desc    => $kernel->[2]
+    eval {
+        Entity::User->find(hash => { user_login => "executor" });
+    };
+    if ($@) {
+        my $executor_user = Entity::User->create(
+            user_system       => 1,
+            user_login        => "executor",
+            user_password     => $args{admin_password},
+            user_firstname    => 'Kanopya',
+            user_lastname     => 'Executor',
+            user_email        => 'dev@hederatech.com',
+            user_creationdate => today(),
+            user_desc         => 'User used by executor'
         );
+
+    #
+    #    UserProfile->new(
+    #        user_id    => $executor_user->id,
+    #        profile_id => $admin_profile->id
+    #    );
+    #    $admin_group->appendEntity(entity => $executor_user);
     }
 }
 
@@ -584,15 +711,13 @@ sub registerOperations {
         [ 'PreStopNode', 'Configuring node removal' ],
         [ 'PostStopNode', 'Finalizing node removal' ],
         [ 'PostStartNode', 'Finalizing node addition' ],
-        [ 'InstallComponentOnSystemImage' ],
-        [ 'DeployComponent', 'Deploying component' ],
         [ 'CreateDisk', 'Creating new disk' ],
         [ 'CreateExport', 'Exporting disk' ], 
         [ 'ForceStopCluster', 'Force service stopping' ],
         [ 'KanopyaMaintenance' ],
         [ 'MigrateHost', 'Migrating node' ],
-        [ 'RemoveDisk' ],
-        [ 'RemoveExport' ],
+        [ 'RemoveDisk', 'Removing disk' ],
+        [ 'RemoveExport', 'Removing export' ],
         [ 'DeployMasterimage', 'Deploying master image' ],
         [ 'RemoveMasterimage', 'Removing master image' ], 
         [ 'AddNode', 'Preparing a new node' ],
@@ -600,14 +725,18 @@ sub registerOperations {
         [ 'ScaleMemoryHost', 'Scaling node memory' ],
         [ 'CancelWorkflow', 'Canceling wokflow' ],  
         [ 'LaunchSCOWorkflow' ],
-        [ 'UpdatePuppetCluster' ],
+        [ 'UpdateCluster', 'Reconfigure cluster' ],
         [ 'UpdateComponent' ],
         [ 'LaunchScaleInWorkflow', 'Configuring scale in node' ],
         [ 'LaunchOptimiaasWorkflow' ],
         [ 'ProcessRule', 'Processing triggered rule' ],
         [ 'ResubmitNode', 'Resubmit a virtual machine to the IAAS' ],
         [ 'RelieveHypervisor', 'Relieve the hypervisor by migrating one VM' ],
-        [ 'Synchronize', 'Synchronize a component' ]
+        [ 'Synchronize', 'Synchronize a component' ],
+        [ 'FlushHypervisor', 'Compute flush hypervisor plan' ],
+        [ 'ResubmitHypervisor', 'Resubmit hypervisor virtual machines' ],
+        [ 'SelectDataModel', 'Compute the best data model of a combination' ],
+        [ 'SynchronizeInfrastructure', 'Synchronize infrastructure' ],
     ];
 
     for my $operation (@{$operations}) {
@@ -618,38 +747,492 @@ sub registerOperations {
     }
 }
 
+sub registerManagerCategories {
+    my %args = @_;
+
+    my $managers = [
+        'HostManager',
+        'DiskManager',
+        'ExportManager',
+        'CollectorManager',
+        'NotificationManager',
+        'WorkflowManager',
+        'DirectoryServiceManager',
+        'ExecutionManager',
+    ];
+
+    for my $manager (@{$managers}) {
+        ComponentCategory::ManagerCategory->new(
+            category_name  => $manager
+        );
+    }
+}
+
+sub registerDataModelTypes {
+    my %args = @_;
+
+    my @data_model_class_names = (
+        'Entity::DataModel::AnalyticRegression::LinearRegression',
+        'Entity::DataModel::AnalyticRegression::LogarithmicRegression',
+        'Entity::DataModel::RDataModel::AutoArima',
+        'Entity::DataModel::RDataModel::ExponentialSmoothing',
+        'Entity::DataModel::RDataModel::StlForecast',
+    );
+
+    my @data_model_labels = (
+        'Linear Regression',
+        'Logarithmic Regression',
+        'Automatically fitted ARIMA model',
+        'Exponential smoothing state space model',
+        'Seasonal forecast model',
+    );
+
+    my @data_model_descriptions = (
+        'Perform a prediction using a classic linear regression. The model ' .
+        'follows a line equation form : y = a*t + b (t represents the time, a and b are computed '.
+        'parameters).',
+
+        'Perform a prediction using a logarithmic regression. The model is ' .
+        'based on a equation with the following form : a*log(t) + b (t represents the time, a and b are ' .
+        ' computed parameters).',
+
+        'Perform a prediction by fitting automaticallly an ARIMA model (Auto Regressive Integrated Moving ' .
+        'Average). ARIMA is a purely statistic model of a time series, suited for performing complex ' .
+        'forecasts. This model is adapted for time series showing complex patterns, including trends and ' .
+        'seasonality, but can be slow when applied to large data sets.',
+
+        'Perform a prediction fitting an Exponential Smoothing State Space model. It is a statistic model ' .
+        'which uses a similar approach as ARIMA models, but which handles better noisy data. Exponential ' .
+        'smoothing is generally slower than ARIMA for small time series ( < ~5000 observations), but more' .
+        'suited for big data sets.',
+
+        'Perform a forecast fitting either an ARIMA or an Exponential Smoothing model assuming that the ' .
+        'data is highly seasonal. This approach is particularly fast and adapted when the model seem to ' .
+        'show a complex seasonality.',
+    );
+
+    my @data_model;
+    for my $class_name (@data_model_class_names) {
+        push @data_model, ClassType->find(hash => {class_type => $class_name});
+    }
+
+    for my $i (0..$#data_model) {
+        ClassType::DataModelType->promote(
+            promoted                    => $data_model[$i],
+            data_model_type_label       => $data_model_labels[$i],
+            data_model_type_description => $data_model_descriptions[$i],
+        );
+    }
+}
+
+sub registerTags {
+    my %args = @_;
+
+    my @tags = (
+        'hypervisor',
+        'storage',
+        'high performance computing',
+    );
+
+    for my $tag (@tags) {
+        Entity::Tag->new(tag => $tag);
+    }
+}
+
+sub registerServiceProviders {
+    my %args = @_;
+
+    my $serviceproviders = [
+        { service_provider_name => 'Externalcluster' },
+        { service_provider_name => 'Netapp' },
+        { service_provider_name => 'UnifiedComputingSystem' },
+        { service_provider_name => 'Hpc7000' },
+    ];
+
+    my $clusters = [
+        { service_provider_name => 'Ubuntu12' },
+        { service_provider_name => 'Centos6' },
+        { service_provider_name => 'Debian6' },
+        { service_provider_name => 'Sles6' },
+        { service_provider_name => 'Kanopya' },
+    ];
+
+    for my $serviceprovider_type (@{ $serviceproviders }) {
+        my $class_type = ClassType->find(hash => {
+                             class_type => {
+                                 like => "Entity::ServiceProvider::%" . $serviceprovider_type->{service_provider_name}
+                             }
+                         });
+
+        ClassType::ServiceProviderType->promote(
+            promoted              => $class_type,
+            service_provider_name => $serviceprovider_type->{service_provider_name},
+        );
+    }
+
+    ClassType::ServiceProviderType::ClusterType->promote(
+        promoted              => ClassType->find(hash => { class_type => 'Entity::ServiceProvider::Cluster' }),
+        service_provider_name => 'Cluster',
+    );
+
+    for my $cluster_type (@{ $clusters }) {
+        my $class_type = ClassType->find(hash => {
+                             class_type => {
+                                 like => "Entity::ServiceProvider::Cluster::%" . $cluster_type->{service_provider_name}
+                             }
+                         });
+
+        ClassType::ServiceProviderType::ClusterType->promote(
+            promoted              => $class_type,
+            service_provider_name => $cluster_type->{service_provider_name},
+        );
+    }
+}
+
 sub registerComponents {
     my %args = @_;
 
     my $components = [
-        [ 'Lvm', '2', 'Storage', undef ],
-        [ 'Apache', '2', 'Webserver', '/templates/components/apache2' ],
-        [ 'Iscsitarget', '1', 'Export', '/templates/components/ietd' ],
-        [ 'Openiscsi', '2', 'Exportclient', undef ],
-        [ 'Dhcpd', '3', 'Dhcpserver', '/templates/components/dhcpd' ],
-        [ 'Atftpd', '0', 'Tftpserver', undef ],
-        [ 'Snmpd', '5', 'Monitoragent', '/templates/components/snmpd' ],
-        [ 'Nfsd', '3', 'Export', '/templates/components/nfsd3' ],
-        [ 'Linux', '0', 'System', '/templates/components/linux' ],
-        [ 'Mysql', '5', 'DBMS', undef ],
-        [ 'Syslogng', '3', 'Logger', undef ],
-        [ 'Iptables', '1', 'Firewall', undef ],
-        [ 'Openldap', '1', 'Annuary', undef ],
-        [ 'Opennebula', '3', 'Cloudmanager', undef ],
-        [ 'Physicalhoster', '0', 'Cloudmanager', undef ],
-        [ 'Fileimagemanager', '0', 'Storage', undef ],
-        [ 'Puppetagent', '2', 'Configurationagent', undef ],
-        [ 'Puppetmaster', '2', 'Configurationserver', undef ],
-        [ 'Kanopyacollector', '1', 'Collectormanager', undef ],
-        [ 'Keepalived', '1', 'LoadBalancer', undef ],
-        [ 'Kanopyaworkflow', '0', 'Workflowmanager', undef ],
-        [ 'Mailnotifier', '0', 'Notificationmanager', undef ],
-        [ 'Memcached', '1', 'Cache', undef ],
-        [ 'Php', '5', 'Lib', undef ],
-        [ 'Vsphere', '5', 'Cloudmanager', undef ],
-        [ 'Debian', '6', 'System', '/templates/components/debian' ],
-        [ 'Redhat', '6', 'System', '/templates/components/redhat' ],
-        [ 'Suse', '11', 'System', '/templates/components/suse' ],
+        {
+            component_name         => 'Openssh',
+            component_version      => 5,
+            component_categories   => [ 'Secureshell' ],
+            service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
+        },
+        {
+            component_name         => 'Storage',
+            component_version      => 0,
+            component_categories   => [ 'DiskManager' ],
+            service_provider_types => [ 'Cluster', 'Kanopya' ],
+        },
+        {
+            component_name         => 'Lvm',
+            component_version      => 2,
+            component_categories   => [ 'DiskManager' ],
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
+        },
+        {
+            component_name         => 'Apache',
+            component_version      => 2,
+            component_categories   => [ 'Webserver' ],
+            component_template     => '/templates/components/apache2',
+            service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
+        },
+        {
+            component_name         => 'Iscsi',
+            component_version      => 0,
+            component_categories   => [ 'ExportManager' ],
+            service_provider_types => [ 'Cluster', 'Kanopya' ],
+        },
+        {
+            component_name         => 'Iscsitarget',
+            component_version      => 1,
+            component_categories   => [ 'ExportManager', 'BlockExportManager' ],
+            component_template     => '/templates/components/ietd',
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Debian6' ],
+        },
+        {
+            component_name         => 'Openiscsi',
+            component_version      => 2,
+            component_categories   => [ 'Exportclient' ],
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
+        },
+        {
+            component_name         => 'Dhcpd',
+            component_version      => 3,
+            component_categories   => [ 'Dhcpserver' ],
+            component_template     => '/templates/components/dhcpd',
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
+        },
+        {
+            component_name         => 'Tftpd',
+            component_version      => 5,
+            component_categories   => [ 'Tftpserver' ],
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Debian6' ],
+        },
+        {
+            component_name         => 'Snmpd',
+            component_version      => 5,
+            component_categories   => [ 'Monitoragent' ],
+            component_template     => '/templates/components/snmpd',
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
+        },
+        {
+            component_name         => 'Nfsd',
+            component_version      => 3,
+            component_categories   => [ 'ExportManager' ],
+            component_template     => '/templates/components/nfsd3',
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
+        },
+        {
+            component_name         => 'Linux',
+            component_version      => 5,
+            component_categories   => [ 'System' ],
+            component_template     => '/templates/components/linux',
+            service_provider_types => [ 'Cluster' ],
+        },
+        {
+            component_name         => 'Mysql',
+            component_version      => 5,
+            component_categories   => [ 'DBMS' ],
+            component_template     => '/templates/components/nfsd3',
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
+        },
+        {
+            component_name         => 'Syslogng',
+            component_version      => 3,
+            component_categories   => [ 'Logger' ],
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
+        },
+        {
+            component_name         => 'Opennebula',
+            component_version      => 3,
+            component_categories   => [ 'HostManager' ],
+            service_provider_types => [ 'Cluster', 'Centos6', 'Sles6' ],
+        },
+        {
+            component_name         => 'Physicalhoster',
+            component_version      => 0,
+            component_categories   => [ 'Hostmanager' ],
+            service_provider_types => [ 'Cluster', 'Kanopya' ],
+        },
+        {
+            component_name         => 'Fileimagemanager',
+            component_version      => 0,
+            component_categories   => [ 'DiskManager', 'ExportManager' ],
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
+        },
+        {
+            component_name         => 'Puppetagent',
+            component_version      => 2,
+            component_categories   => [ 'Configurationagent' ],
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
+        },
+        {
+            component_name         => 'Puppetmaster',
+            component_version      => 2,
+            component_categories   => [ 'Configurationserver' ],
+            service_provider_types => [ 'Cluster', 'Kanopya' ],
+        },
+        {
+            component_name         => 'Kanopyacollector',
+            component_version      => 1,
+            component_categories   => [ 'CollectorManager' ],
+            service_provider_types => [ 'Cluster', 'Kanopya' ],
+        },
+        {
+            component_name         => 'Keepalived',
+            component_version      => 1,
+            component_categories   => [ 'LoadBalancer' ],
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
+        },
+        {
+            component_name         => 'Haproxy',
+            component_version      => 1,
+            component_categories   => [ 'LoadBalancer' ],
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
+        },
+        {
+            component_name         => 'Kanopyaworkflow',
+            component_version      => 0,
+            component_categories   => [ 'WorkflowManager' ],
+            service_provider_types => [ 'Cluster', 'Kanopya' ],
+        },
+        {
+            component_name         => 'Mailnotifier',
+            component_version      => 0,
+            component_categories   => [ 'NotificationManager' ],
+            service_provider_types => [ 'Cluster', 'Kanopya' ],
+        },
+        {
+            component_name         => 'Memcached',
+            component_version      => 1,
+            component_categories   => [ 'Cache' ],
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
+        },
+        {
+            component_name         => 'Php',
+            component_version      => 5,
+            component_categories   => [ 'Lib' ],
+            service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
+        },
+        {
+            component_name         => 'Vsphere',
+            component_version      => 5,
+            component_categories   => [ 'Hostmanager', 'Hypervisor' ],
+            service_provider_types => [ 'Cluster' ],
+        },
+        {
+            component_name         => 'Debian',
+            component_version      => 6,
+            component_categories   => [ 'System' ],
+            component_template     => '/templates/components/debian',
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Debian6' ],
+        },
+        {
+            component_name         => 'Redhat',
+            component_version      => 6,
+            component_categories   => [ 'System' ],
+            component_template     => '/templates/components/redhat',
+            service_provider_types => [ 'Cluster', 'Centos6' ],
+        },
+        {
+            component_name         => 'Suse',
+            component_version      => 11,
+            component_categories   => [ 'System' ],
+            component_template     => '/templates/components/suse',
+            service_provider_types => [ 'Cluster', 'Sles6' ],
+        },
+        {
+            component_name         => 'Kvm',
+            component_version      => 1,
+            component_categories   => [ 'Hypervisor' ],
+            service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
+        },
+        {
+            component_name         => 'Xen',
+            component_version      => 1,
+            component_categories   => [ 'Hypervisor' ],
+            service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
+        },
+        {
+            component_name         => 'ActiveDirectory',
+            component_version      => 1,
+            component_categories   => [ 'DirectoryServiceManager' ],
+            service_provider_types => [ 'Externalcluster' ],
+        },
+        {
+            component_name         => 'Scom',
+            component_version      => 1,
+            component_categories   => [ 'CollectorManager' ],
+            service_provider_types => [ 'Externalcluster' ],
+        },
+        {
+            component_name         => 'Sco',
+            component_version      => 1,
+            component_categories   => [ 'WorkflowManager' ],
+            service_provider_types => [ 'Externalcluster' ],
+        },
+        {
+            component_name         => 'MockMonitor',
+            component_version      => 1,
+            component_categories   => [ 'CollectorManager' ],
+            service_provider_types => [ 'Cluster', 'Externalcluster' ],
+        },
+        {
+            component_name         => 'UcsManager',
+            component_version      => 1,
+            component_categories   => [ 'HostManager' ],
+            service_provider_types => [ 'UnifiedComputingSystem' ],
+        },
+        {
+            component_name         => 'NetappLunManager',
+            component_version      => 1,
+            component_categories   => [ 'DiskManager', 'ExportManager' ],
+            service_provider_types => [ 'Netapp' ],
+        },
+        {
+            component_name         => 'NetappVolumeManager',
+            component_version      => 1,
+            component_categories   => [ 'DiskManager', 'ExportManager' ],
+            service_provider_types => [ 'Netapp' ],
+        },
+        {
+            component_name         => 'Cinder',
+            component_version      => 6,
+            component_categories   => [ 'DiskManager', 'ExportManager', 'BlockExportManager' ],
+            service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6' ],
+        },
+        {
+            component_name         => 'Glance',
+            component_version      => 6,
+            component_categories   => [ ],
+            service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6' ],
+        },
+        {
+            component_name         => 'Keystone',
+            component_version      => 6,
+            component_categories   => [ ],
+            service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6' ],
+        },
+        {
+            component_name         => 'NovaCompute',
+            component_version      => 6,
+            component_categories   => [ 'Hypervisor' ],
+            service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6' ],
+        },
+        {
+            component_name         => 'NovaController',
+            component_version      => 6,
+            component_categories   => [ 'HostManager' ],
+            service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6' ],
+        },
+        {
+            component_name         => 'Quantum',
+            component_version      => 6,
+            component_categories   => [ ],
+            service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6' ],
+        },
+        {
+            component_name         => 'Amqp',
+            component_version      => 6,
+            component_categories   => [ 'MessageQueuing' ],
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Centos6', 'Debian6' ],
+        },
+        {
+            component_name         => 'Virtualization',
+            component_version      => 0,
+            component_categories   => [ ],
+            service_provider_types => [ ],
+        },
+        {
+            component_name         => 'KanopyaFront',
+            component_version      => 0,
+            component_categories   => [ ],
+            service_provider_types => [ 'Kanopya' ],
+        },
+        {
+            component_name         => 'KanopyaExecutor',
+            component_version      => 0,
+            component_categories   => [ 'ExecutionManager' ],
+            service_provider_types => [ 'Kanopya' ],
+        },
+        {
+            component_name         => 'KanopyaAggregator',
+            component_version      => 0,
+            component_categories   => [ ],
+            service_provider_types => [ 'Kanopya' ],
+        },
+        {
+            component_name         => 'KanopyaRulesEngine',
+            component_version      => 0,
+            component_categories   => [ ],
+            service_provider_types => [ 'Kanopya' ],
+        },
+        {
+            component_name         => 'Ceph',
+            component_version      => 0,
+            component_categories   => [ ],
+            service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6' ],
+        },
+        {
+            component_name         => 'CephMon',
+            component_version      => 0,
+            component_categories   => [ ],
+            service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6' ],
+        },
+        {
+            component_name         => 'CephOsd',
+            component_version      => 0,
+            component_categories   => [ ],
+            service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6' ],
+        },
+        {
+            component_name         => 'HpcManager',
+            component_version      => 0,
+            component_categories   => [ 'HostManager' ],
+            service_provider_types => [ 'Hpc7000' ],
+        },
     ];
 
     for my $component_type (@{$components}) {
@@ -657,56 +1240,55 @@ sub registerComponents {
         eval {
             $class_type = ClassType->find(hash => {
                               class_type => {
-                                  like => "Entity::Component::%" . $component_type->[0]
+                                  like => "Entity::Component::%" . $component_type->{component_name}
                               }
                           });
         };
         if ($@) {
             $class_type = ClassType->find(hash => {
                               class_type => {
-                                  like => "Entity::Component::%" . $component_type->[0] . $component_type->[1]
+                                  like => "Entity::Component::%" .
+                                          $component_type->{component_name} .
+                                          $component_type->{component_version}
                               }
                           });
         }
 
-        my $type = ComponentType->new(
-            component_name     => $component_type->[0],
-            component_version  => $component_type->[1],
-            component_category => $component_type->[2],
-            component_class_id => $class_type->id
+        my @categories;
+        for my $category (@{ $component_type->{component_categories} }) {
+            eval {
+                push @categories, ComponentCategory->find(hash => { category_name => $category });
+            };
+            if ($@) {
+                push @categories, ComponentCategory->new(category_name => $category);
+            }
+        }
+
+        my @servicetypes;
+        for my $servicetype (@{ $component_type->{service_provider_types} }) {
+            push @servicetypes, ClassType::ServiceProviderType->find(hash => { service_provider_name => $servicetype });
+        }
+
+        my $type = ClassType::ComponentType->promote(
+            promoted                              => $class_type,
+            component_name                        => $component_type->{component_name},
+            component_version                     => $component_type->{component_version},
+            component_type_categories             => \@categories,
+            service_provider_type_component_types => \@servicetypes,
         );
-        if (defined $component_type->[3]) {
-            my $template_name = lc $component_type->[0];
+
+        if (defined $component_type->{component_template}) {
+            my $template_name = lc $component_type->{component_name};
             ComponentTemplate->new(
-                component_template_name      => lc($component_type->[0]),
-                component_template_directory => $component_type->[3],
+                component_template_name      => lc($component_type->{component_name}),
+                component_template_directory => $component_type->{component_template},
                 component_type_id            => $type->id
             );
         }
     }
-
-    my $connectors = [
-        [ 'ActiveDirectory', '1', 'DirectoryServiceManager' ],
-        [ 'Scom', '1', 'Collectormanager' ],      
-        [ 'UcsManager', '1', 'Cloudmanager' ],    
-        [ 'NetappLunManager', '1', 'Storage' ],   
-        [ 'NetappVolumeManager', '1', 'Storage' ],
-        [ 'NetappLunManager', '1', 'Export' ],   
-        [ 'NetappVolumeManager', '1', 'Export' ],
-        [ 'Sco', 1, 'WorkflowManager' ],
-        [ 'MockMonitor', '1', 'Collectormanager' ]
-    ];
-
-    for my $connector_type (@{$connectors}) {
-        ConnectorType->new(
-            connector_name     => $connector_type->[0],
-            connector_version  => $connector_type->[1],
-            connector_category => $connector_type->[2]
-        );
-    }
 }
 
-sub registerInterfaceRoles {
+sub registerNetconfRoles {
     my %args = @_;
 
     my @roles = ( [ 'admin', 'Network used for system administration' ],
@@ -715,8 +1297,8 @@ sub registerInterfaceRoles {
                   [ 'private', 'Private network' ] );
 
     for my $role (@roles) {
-        Entity::InterfaceRole->new(
-            interface_role_name => $role->[0]
+        Entity::NetconfRole->new(
+            netconf_role_name => $role->[0]
         )->setComment(comment => $role->[1]);
     }
 }
@@ -817,6 +1399,29 @@ sub registerIndicators {
         },
         {
             set => {
+                name      => 'state',
+                provider  => 'KanopyaDatabaseProvider',
+                type      => 'GAUGE',
+            },
+            indicators => [
+                [ 'state/Up', 'Up', 'Host is up', undef, undef, 'FF000099', '', undef ],
+                [ 'state/Starting', 'Starting', 'Host is starting', undef, undef, 'FF000099', '', undef ],
+                [ 'state/Stopping', 'Stopping', 'Host is stopping', undef, undef, 'FF000099', '', undef ],
+                [ 'state/Broken', 'Broken', 'Host is broken', undef, undef, 'FF000099', '', undef ],
+            ]
+        },
+        {
+            set => {
+                name      => 'virtualization',
+                provider  => 'KanopyaDatabaseProvider',
+                type      => 'GAUGE',
+            },
+            indicators => [
+                [ 'VMs count', 'VMs', 'Number of VMs', undef, undef, 'FF000099', 'VMs', undef ],
+            ]
+        },
+        {
+            set => {
                 name      => 'diskIOTable',
                 provider  => 'SnmpProvider',
                 type      => 'COUNTER',
@@ -901,11 +1506,16 @@ sub registerIndicators {
 sub registerKanopyaMaster {
     my %args = @_;
 
+    my $admin_network = Entity::Network->new(
+                            network_name    => "admin",
+                            network_addr    => $args{ipv4_internal_network_ip},
+                            network_netmask => $args{poolip_netmask},
+                            network_gateway => $args{poolip_gateway}
+                        );
+
     my $admin = Entity::User->find(hash => { user_login => "admin" });
 
-    my $master_kernel = Entity::Kernel->find(hash => { });
-
-    my $admin_cluster = Entity::ServiceProvider::Inside::Cluster->new(
+    my $admin_cluster = Entity::ServiceProvider::Cluster->new(
                             cluster_name          => 'Kanopya',
                             cluster_desc          => 'Main Cluster hosting Administrator, Executor, Boot server and NAS',
                             cluster_type          => 0,
@@ -916,37 +1526,49 @@ sub registerKanopyaMaster {
                             cluster_si_shared     => 0,
                             cluster_si_persistent => 0,
                             cluster_domainname    => $args{admin_domainname},
-                            cluster_nameserver1   => '127.0.0.1',
-                            cluster_nameserver2   => '127.0.0.1',
+                            cluster_nameserver1   => defined $args{kanopya_nameserver1} ? $args{kanopya_nameserver1} : '127.0.0.1',
+                            cluster_nameserver2   => defined $args{kanopya_nameserver2} ? $args{kanopya_nameserver2} : '127.0.0.1',
                             cluster_state         => 'up:' . time(),
-                            cluster_basehostname  => 'kanopya_',
+                            cluster_basehostname  => 'kanopya',
+                            default_gateway_id    => $admin_network->id,
                             active                => 1,
                             user_id               => $admin->id,
-                            kernel_id             => $master_kernel->id
+                            service_provider_type_id => ClassType::ServiceProviderType->find(hash => { service_provider_name => "Kanopya" })->id
                         );
 
-    my $config = Kanopya::Config::get('executor');
-    
-    my $kanopya = Entity::ServiceProvider::Inside::Cluster->find(hash => {
-                      cluster_name => "Kanopya"
-                  } );
 
-    $config->{cluster}->{bootserver} = $kanopya->id;
-    $config->{cluster}->{executor} = $kanopya->id;
-    $config->{cluster}->{monitor} = $kanopya->id;
-    $config->{cluster}->{nas} = $kanopya->id;
-
-    Kanopya::Config::set(subsystem => 'executor',
-                         config    => $config);
-
-    my $comp_group = Entity::Gp->find(hash => { gp_name => "Component" });
+    my $hostname = `hostname`;
+    chomp($hostname);
 
     my $components = [
+        {
+            name => 'KanopyaFront'
+        },
+        {
+            name    => 'KanopyaExecutor',
+            manager => 'ExecutionManager',
+            conf    => {
+                masterimages_directory => defined $args{masterimages_directory} ? $args{masterimages_directory} : "/var/lib/kanopya/masterimages/",
+                clusters_directory     => defined $args{clusters_directory} ? $args{clusters_directory} : "/var/lib/kanopya/clusters/"
+            }
+        },
+        {
+            name => 'KanopyaAggregator'
+        },
+        {
+            name => 'KanopyaRulesEngine'
+        },
         {
             name => 'Lvm'
         },
         {
+            name => 'Storage'
+        },
+        {
             name => 'Iscsitarget'
+        },
+        {
+            name => 'Iscsi'
         },
         {
             name => 'Fileimagemanager'
@@ -959,12 +1581,9 @@ sub registerKanopyaMaster {
             }
         },
         {
-            name => "Atftpd",
+            name => "Tftpd",
             conf => {
-                atftpd0_options    => '--daemon --tftpd-timeout 300 --retry-timeout 5 --no-multicast --maxthread 100 --verbose=5',
-                atftpd0_use_inetd  => 'FALSE',
-                atftpd0_logfile    => '/var/log/atftpd.log',
-                atftpd0_repository => '/tftp'
+                tftpd_repository => defined $args{tftp_directory} ? $args{tftp_directory} : "/var/lib/kanopya/tftp/"
             }
         },
         {
@@ -993,18 +1612,19 @@ sub registerKanopyaMaster {
             }
         },
         {
-            name => "Openiscsi"
+            name => "Puppetagent",
+            conf => {
+                puppetagent2_mode       => "kanopya",
+                puppetagent2_masterfqdn => $hostname . '.' . $args{admin_domainname},
+                puppetagent2_masterip   => $args{poolip_addr}
+            }
         },
         {
-            name => "Physicalhoster",
-            manager => "host_manager"
+            name => "Mysql"
         },
         {
             name => "Kanopyacollector",
-            conf => {
-                kanopyacollector1_collect_frequency => 3600,
-                kanopyacollector1_storage_time      => 86400
-            }
+            manager => 'CollectorManager'
         },
         {
             name => "Kanopyaworkflow"
@@ -1014,59 +1634,19 @@ sub registerKanopyaMaster {
         },
         {
             name => "Mailnotifier",
-            manager => "notification_manager",
+            manager => "NotificationManager",
             conf => {
                 smtp_server => "localhost"
             }
+        },
+        {
+            name => "Amqp",
         }
     ];
 
-    my $installed = { };
-    for my $component (@{$components}) {
-        my $name = $component->{name};
-        my $component_type = ComponentType->find(hash => {
-                                 component_name    => $name
-                             } );
-        my $class = $component_type->component_class->class_type;
-        my $component_template;
-        eval {
-            $component_template = ComponentTemplate->find(hash => { component_template_name => lc $name })->id;
-        };
-
-        my $comp = $class->new(
-            service_provider_id   => $admin_cluster->id,
-            component_template_id => $component_template,
-            defined ($component->{conf}) ? %{$component->{conf}} : ()
-        );
-        if (defined $component->{manager}) {
-            ServiceProviderManager->new(
-                service_provider_id => $admin_cluster->id,
-                manager_type        => $component->{manager},
-                manager_id          => $comp->id
-            );
-        }
-
-        $installed->{$component->{name}} = $comp;
-    }
-
-    my $vg = Entity::Component::Lvm2::Lvm2Vg->new(
-        lvm2_id           => $installed->{"Lvm"}->id,
-        lvm2_vg_name      => $args{kanopya_vg_name},
-        lvm2_vg_freespace => $args{kanopya_vg_free_space},
-        lvm2_vg_size      => $args{kanopya_vg_size}
-    );
-
-    $args{db}->resultset('Lvm2Pv')->create( {
-        lvm2_vg_id   => $vg->id,
-        lvm2_pv_name => $args{kanopya_pvs}->[0]
-    } );
-
-    $args{db}->resultset('Dhcpd3Subnet')->create( {
-        dhcpd3_id             => $installed->{"Dhcpd"}->id,
-        dhcpd3_subnet_net     => $args{ipv4_internal_network_ip},
-        dhcpd3_subnet_mask    => $args{poolip_netmask},
-        dhcpd3_subnet_gateway => $args{poolip_gateway}
-    } );
+    # Firtly install the PhysicalHoster on kanopya master as it is
+    # required for creation the host.
+    installComponent(cluster => $admin_cluster, name => 'Physicalhoster', manager => 'HostManager');
 
     # Create the host for the Kanopya master
     my ( $sysname, $nodename, $release, $version, $machine ) = POSIX::uname();
@@ -1080,51 +1660,30 @@ sub registerKanopyaMaster {
         $month = '0' . $month;
     }
    
-    my $hostname = `hostname`;
-    chomp($hostname);
-
     my $kanopya_initiator = "iqn.$year-$month."
         . join('.', reverse split(/\./, $domain)) . ':' . time();
 
     my $poolip = Entity::Poolip->new(
-                     poolip_name    => "kanopya_admin",
-                     poolip_addr    => $args{poolip_addr},
-                     poolip_mask    => $args{poolip_mask},
-                     poolip_netmask => $args{poolip_netmask},
-                     poolip_gateway => $args{poolip_gateway}
+                     poolip_name       => "kanopya_admin",
+                     poolip_first_addr => $args{poolip_addr},
+                     poolip_size       => $args{poolip_mask},
+                     network_id        => $admin_network->id,
                  );
 
-    my $admin_network = Entity::Network->new(
-                            network_name => "admin"
-                        );
-
-    my $admin_role = Entity::InterfaceRole->find(hash => { interface_role_name => "admin" });
-
     my $admin_interface = Entity::Interface->new(
-                              interface_role_id   => $admin_role->id,
                               service_provider_id => $admin_cluster->id,
-                              default_gateway  => 1
+                              interface_name      => 'interface1'
                           );
 
-    $admin_interface->associateNetwork(network => $admin_network);
-
-    NetworkPoolip->new(
-        network_id => $admin_network->id,
-        poolip_id  => $poolip->id
-    );
-
-    my $physical_hoster = Entity::Component::Physicalhoster0->find(hash => { });
-
+    my $physical_hoster = $admin_cluster->getComponent(name => 'Physicalhoster');
     my $admin_host = Entity::Host->new(
                          host_manager_id    => $physical_hoster->id,
-                         kernel_id          => $master_kernel->id,
                          host_serial_number => "",
                          host_desc          => "Admin host",
                          active             => 1,
                          host_initiatorname => $kanopya_initiator,
                          host_ram           => 0,
                          host_core          => 1,
-                         host_hostname      => $hostname,
                          host_state         => "up:" . time(),
                          host_prev_state    => ""
                      );
@@ -1134,7 +1693,6 @@ sub registerKanopyaMaster {
                           iface_mac_addr => $args{mb_hw_address},
                           iface_pxe      => 0,
                           host_id        => $admin_host->id,
-                          interface_id   => $admin_interface->id
                       );
 
     Ip->new(
@@ -1143,26 +1701,99 @@ sub registerKanopyaMaster {
         iface_id  => $admin_iface->id
     );
 
-    Externalnode::Node->new(
-        externalnode_hostname => $hostname,
-        service_provider_id   => $admin_cluster->id,
-        externalnode_state    => "disabled",
-        inside_id             => $admin_cluster->id,
-        host_id               => $admin_host->id,
-        master_node           => 1,
-        node_state            => "in." . time(),
-        node_number           => 1
+    my $admin_role = Entity::NetconfRole->find(hash => { netconf_role_name => "admin" });
+
+    my $netconf = Entity::Netconf->new(netconf_name => "Kanopya admin",);
+    $netconf->setAttr(name => 'netconf_role_id', value => $admin_role->id, save => 1);
+
+    NetconfInterface->new(netconf_id => $netconf->id, interface_id => $admin_interface->id);
+    NetconfPoolip->new(netconf_id => $netconf->id, poolip_id => $poolip->id);
+    NetconfIface->new(netconf_id => $netconf->id, iface_id => $admin_iface->id);
+
+    # Finally register the new node in the admin cluster
+    $admin_cluster->registerNode(hostname         => $hostname,
+                                 host             => $admin_host,
+                                 state            => "in",
+                                 number           => 1,
+                                 monitoring_state => 'disabled');
+
+    for my $component (@{$components}) {
+        installComponent(cluster => $admin_cluster,
+                         name    => $component->{name},
+                         manager => $component->{manager},
+                         conf    => $component->{conf});
+    }
+
+    # Configure components on kanopya master
+    my $kanopyacollector = $admin_cluster->getComponent(name => 'Kanopyacollector');
+    my $lvm = $admin_cluster->getComponent(name => 'Lvm');
+    my $dhcp = $admin_cluster->getComponent(name => 'Dhcpd');
+
+    # Collect some indicators for admin cluster
+    $kanopyacollector->collectSets(
+        sets_name           => ['mem', 'cpu'],
+        service_provider_id => $admin_cluster->id
     );
 
-    my $ehost = EEntity->new(entity => $admin_host);
+    my $vg = Entity::Component::Lvm2::Lvm2Vg->new(
+        lvm2_id           => $lvm->id,
+        lvm2_vg_name      => $args{kanopya_vg_name},
+        lvm2_vg_freespace => $args{kanopya_vg_free_space},
+        lvm2_vg_size      => $args{kanopya_vg_size}
+    );
 
-    $admin_host->setAttr(name  => "host_core",
-                         value => $ehost->getTotalCpu);
+    for my $pv (@{$args{kanopya_pvs}}) {
+        Entity::Component::Lvm2::Lvm2Pv->new(
+            lvm2_vg_id   => $vg->id,
+            lvm2_pv_name => $pv
+        );
+    }
 
-    $admin_host->setAttr(name  => "host_ram",
-                         value => $ehost->getTotalMemory);
+    Entity::Component::Dhcpd3::Dhcpd3Subnet->new(
+        dhcpd3_id  => $dhcp->id,
+        network_id => $admin_network->id
+    );
 
-    $admin_host->save();
+    # TODO: insert IscsiPortals...
+
+    # TODO: Implement getTotalCpu, getTotalMemory for Win32.
+    if ($^O ne 'MSWin32') {
+        my $ehost = EEntity->new(entity => $admin_host);
+
+        $admin_host->setAttr(name  => "host_core",
+                             value => $ehost->getTotalCpu);
+
+        $admin_host->setAttr(name  => "host_ram",
+                             value => $ehost->getTotalMemory);
+        $admin_host->save();
+    }
+
+    return $admin_cluster;
+}
+
+sub installComponent {
+    my %args = @_;
+
+    # Get the template if exists
+    my $component_template;
+    eval {
+        $component_template = ComponentTemplate->find(hash => { component_template_name => lc $args{name} })->id;
+    };
+
+    # Get the component type
+    my $component_type = ClassType::ComponentType->find(hash => {
+                             component_name => $args{name}
+                         });
+
+    # Add the component
+    my $comp = $args{cluster}->addComponent(component_type_id       => $component_type->id,
+                                            component_template_id   => $component_template,
+                                            component_configuration => $args{conf});
+
+    if (defined $args{manager}) {
+        # Add the manager
+        $args{cluster}->addManager(manager_id => $comp->id, manager_type => $args{manager});
+    }
 }
 
 sub registerScopes {
@@ -1196,24 +1827,26 @@ sub registerScopes {
 }
 
 sub populate_workflow_def {
-    my $wf_manager_component_type_id = ComponentType->find( hash => {
-                                           component_category => 'Workflowmanager'
-                                       } )->id;
+    my %args = @_;
 
-    my $kanopya_wf_manager           = Entity::Component->find( hash => {
-                                           component_type_id => $wf_manager_component_type_id,
-                                           service_provider_id => Kanopya::Config::get('executor')->{cluster}->{executor}
-                                       } );
+    my $wf_manager_component_type_id = ClassType::ComponentType->find(hash => { component_name => 'Kanopyaworkflow' })->id;
 
-    my $scale_op_id                  = Operationtype->find( hash => { operationtype_name => 'LaunchScaleInWorkflow' })->id;
-    my $scale_amount_desc            = "Format:\n - '+value' to increase\n - '-value' to decrease\n - 'value' to set";
+    my $kanopya_wf_manager = Entity::Component->find(hash => {
+                                 component_type_id   => $wf_manager_component_type_id,
+                                 service_provider_id => $args{kanopya_master}->id
+                             });
 
+    my $scale_op_id       = Operationtype->find( hash => { operationtype_name => 'LaunchScaleInWorkflow' })->id;
+    my $scale_amount_desc = "Format:\n - '+value' to increase\n - '-value' to decrease\n - 'value' to set";
+
+    my $delay_desc = 'Delay minimum between two workflow triggers';
     # ScaleIn cpu workflow def
     my $scale_cpu_wf = $kanopya_wf_manager->createWorkflow(
         workflow_name => 'ScaleInCPU',
         params => {
             specific => {
                 scalein_value => { label => 'Nb core', description => $scale_amount_desc},
+                delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             },
             internal => {
                 scope_id => 1,
@@ -1232,6 +1865,7 @@ sub populate_workflow_def {
         params => {
             specific => {
                 scalein_value => { label => 'Amount', unit => 'byte', description => $scale_amount_desc},
+                delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             },
             internal => {
                 scope_id => 1,
@@ -1257,7 +1891,10 @@ sub populate_workflow_def {
                     cluster => undef
                 }
             },
-            internal => { scope_id => 2 }
+            internal => { scope_id => 2 },
+            specific => {
+                delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
+            }
         }
     );
     $addnode_wf->addStep(operationtype_id => $addnode_op_id);
@@ -1277,7 +1914,10 @@ sub populate_workflow_def {
                     cluster => undef
                 }
             },
-            internal => { scope_id => 2 }
+            internal => { scope_id => 2 },
+            specific => {
+                delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
+            }
         }
     );
     $stopnode_wf->addStep(operationtype_id => $prestop_op_id);
@@ -1304,6 +1944,9 @@ sub populate_workflow_def {
             automatic => {
                 context => { host => undef },
             },
+            specific => {
+                delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
+            }
         }
     );
     my $resubmit_node_op_id  = Operationtype->find( hash => { operationtype_name => 'ResubmitNode' })->id;
@@ -1323,132 +1966,453 @@ sub populate_workflow_def {
             automatic => {
                 context => { host => undef },
             },
+            specific => {
+                delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
+            }
         }
     );
+
     my $relieve_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'RelieveHypervisor' })->id;
+    $relieve_hypervisor_wf->addStep( operationtype_id => $relieve_hypervisor_op_id );
     $relieve_hypervisor_wf->addStep( operationtype_id => $resubmit_node_op_id );
     $relieve_hypervisor_wf->addStep( operationtype_id => $migrate_op_id );
+
+    # MaintenanceHypervisor workflow def
+    my $hypervisor_maintenance_wf = $kanopya_wf_manager->createWorkflow(
+        workflow_name => 'HypervisorMaintenance',
+        params => {
+            internal => {
+                scope_id => 1,
+            },
+            automatic => {
+                context => { host => undef },
+            },
+            specific => {
+                delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
+            }
+        }
+    );
+    my $flush_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'FlushHypervisor' })->id;
+    $hypervisor_maintenance_wf->addStep( operationtype_id => $flush_hypervisor_op_id);
+    $hypervisor_maintenance_wf->addStep(
+        operationtype_id => Operationtype->find( hash => { operationtype_name => 'DeactivateHost' })->id
+    );
+
+    # Hypervisor resubmit workflow def
+    my $hypervisor_resubmit_wf = $kanopya_wf_manager->createWorkflow(
+        workflow_name => 'ResubmitHypervisor',
+        params => {
+            internal => {
+                scope_id => 1,
+            },
+            automatic => {
+                context => { host => undef },
+            },
+            specific => {
+                delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
+            }
+        }
+    );
+    my $resubmit_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'ResubmitHypervisor' })->id;
+    $hypervisor_resubmit_wf->addStep( operationtype_id => $resubmit_hypervisor_op_id);
+
+    my $notify_wf_node      = $kanopya_wf_manager->createWorkflow(
+        workflow_name   => 'NotifyWorkflow node',
+        params          => {
+            internal   => {
+                scope_id    => 1
+            },
+            automatic  => { },
+            specific   => { }
+        }
+    );
+
+    my $notify_wf_service   = $kanopya_wf_manager->createWorkflow(
+        workflow_name   => 'NotifyWorkflow service_provider',
+        params          => {
+            internal   => {
+                scope_id    => 2
+            },
+            automatic  => { },
+            specific   => { }
+        }
+    );
+
+    # Synchronize workflow def
+    my $synchronize_wf = $kanopya_wf_manager->createWorkflow(
+        workflow_name => 'Synchronize',
+        params        => {
+            internal  => { },
+            automatic => { },
+            specific  => {
+                entity => { label => 'Entity' }
+            }
+        }
+    );
+    $synchronize_wf->addStep(
+        operationtype_id => Operationtype->find(
+            hash => { operationtype_name => 'Synchronize' }
+        )->id
+    );
 }
 
 sub populate_policies {
+    my %args = @_;
+
     my %policies = ();
-    my $executor = Kanopya::Config::get("executor")->{cluster}->{executor};
 
     # hosting
-    my $type_id = ComponentType->find(hash => { component_name => 'Physicalhoster' })->id;
+    my $type_id = ClassType::ComponentType->find(hash => { component_name => 'Physicalhoster' })->id;
 
-    my $physicalhoster = Entity::Component->find( hash => {
+    my $physicalhoster = Entity::Component->find(hash => {
                              component_type_id   => $type_id,
-                             service_provider_id => $executor
-                         } );
+                             service_provider_id => $args{kanopya_master}->id
+                         });
 
-    $policies{hosting} = Entity::Policy->new(
-        policy_name => 'Default physical host',
-        policy_desc => 'Hosting policy for default physical hosts',
-        policy_type => 'hosting',
-        host_manager_id     => $physicalhoster->id,
-        ram      => 1024,
-        ram_unit => 'M',
-        cpu      => 1,
+    $policies{'Standard physical cluster'}{hosting} = Entity::Policy::HostingPolicy->new(
+        policy_name     => 'Default physical host',
+        policy_desc     => 'Hosting policy for default physical hosts',
+        policy_type     => 'hosting',
+        host_manager_id => $physicalhoster->id,
+        ram             => 1024*1024*1024,
+        cpu             => 1,
     );
+    $policies{'Standard OpenNebula KVM IAAS'}{hosting} = Entity::Policy::HostingPolicy->new(
+        policy_name     => 'Generic host',
+        policy_desc     => 'Hosting policy for generic hosts',
+        policy_type     => 'hosting',
+    );
+    $policies{'Standard OpenNebula Xen IAAS'}{hosting} = $policies{'Standard OpenNebula KVM IAAS'}{hosting};
+    $policies{'Generic service'}{hosting} = $policies{'Standard OpenNebula KVM IAAS'}{hosting};
 
     # storage
-    my $lvm_type_id = ComponentType->find(hash => { component_name => 'Lvm' })->id;
-    my $lvm = Entity::Component->find( hash => { component_type_id => $lvm_type_id, service_provider_id => $executor } );
-    my $iscsit_type_id = ComponentType->find(hash => { component_name => 'Iscsitarget' })->id;
-    my $iscsitarget = Entity::Component->find( hash => { component_type_id => $iscsit_type_id, service_provider_id => $executor } );
+    my $lvm_type_id = ClassType::ComponentType->find(hash => { component_name => 'Lvm' })->id;
+    my $lvm = Entity::Component->find(hash => { component_type_id => $lvm_type_id, service_provider_id => $args{kanopya_master}->id });
+    my $iscsit_type_id = ClassType::ComponentType->find(hash => { component_name => 'Iscsitarget' })->id;
+    my $iscsitarget = Entity::Component->find(hash => { component_type_id => $iscsit_type_id, service_provider_id => $args{kanopya_master}->id });
 
-    $policies{storage} = Entity::Policy->new(
-        policy_name => 'Kanopya LVM disk exported via ISCSI',
-        policy_desc => 'Datastore on Kanopya cluster for PXE boot via ISCSI',
-        policy_type => 'storage',
-        disk_manager_id => $lvm->id,
+    $policies{'Standard physical cluster'}{storage} = Entity::Policy::StoragePolicy->new(
+        policy_name       => 'Kanopya LVM disk exported via ISCSI',
+        policy_desc       => 'Datastore on Kanopya cluster for PXE boot via ISCSI',
+        policy_type       => 'storage',
+        disk_manager_id   => $lvm->id,
         export_manager_id => $iscsitarget->id,
+    );
+    $policies{'Standard OpenNebula KVM IAAS'}{storage} = $policies{'Standard physical cluster'}{storage};
+    $policies{'Standard OpenNebula Xen IAAS'}{storage} = $policies{'Standard physical cluster'}{storage};
+    $policies{'Generic service'}{storage} = Entity::Policy::StoragePolicy->new(
+        policy_name       => 'Generic storage',
+        policy_desc       => 'Storage policy for generic storage',
+        policy_type       => 'storage',
     );
 
     # network
-    my $interfacerole = Entity::InterfaceRole->find(hash => {interface_role_name => 'admin'});
-    my $network = Entity::Network->find(hash => {network_name => 'admin'});
-    $policies{network} = Entity::Policy->new(
-        policy_name => 'Default network configuration',
-        policy_desc => 'Default network configuration, with admin and public interfaces',
-        policy_type => 'network',
-        cluster_nameserver1 => '127.0.0.1',
-        cluster_nameserver2 => '127.0.0.1',
-        cluster_domainname  => 'hedera-technology.com',
-        interface_role_0    => $interfacerole->id,
-        interface_networks_0 => $network->id,
-        default_gateway_0    => 1
+    my $netconf = Entity::Netconf->find(hash => { netconf_name => 'Kanopya admin' });
+    my $network = Entity::Network->find(hash => { network_name => 'admin' });
+    $policies{'Standard physical cluster'}{network} = Entity::Policy::NetworkPolicy->new(
+        policy_name          => 'Default network configuration',
+        policy_desc          => 'Default network configuration, with admin interface',
+        policy_type          => 'network',
+        cluster_nameserver1  => '127.0.0.1',
+        cluster_nameserver2  => '127.0.0.1',
+        cluster_domainname   => 'hedera-technology.com',
+        default_gateway_id   => $network->id,
+        interfaces           => [
+            { netconfs => [ $netconf->id ], interface_name => 'interface1' }
+        ],
+    );
+
+    my $vmsrole = Entity::NetconfRole->find(hash => { netconf_role_name => "vms" });
+    my $vmsnetconf = Entity::Netconf->create(netconf_name    => "Virtual machines bridge",
+                                              netconf_role_id => $vmsrole->id);
+
+    $policies{'Standard OpenNebula KVM IAAS'}{network} = Entity::Policy::NetworkPolicy->new(
+        policy_name          => 'Default IAAS network configuration',
+        policy_desc          => 'Default IAAS network configuration, with admin and bridge interfaces',
+        policy_type          => 'network',
+        cluster_nameserver1  => '127.0.0.1',
+        cluster_nameserver2  => '127.0.0.1',
+        cluster_domainname   => 'hedera-technology.com',
+        default_gateway_id   => $network->id,
+        interfaces           => [
+            { netconfs => [ $netconf->id ],    interface_name => 'interface1' },
+            { netconfs => [ $vmsnetconf->id ], interface_name => 'interface2' }
+        ],
+    );
+    $policies{'Standard OpenNebula Xen IAAS'}{network} = $policies{'Standard OpenNebula KVM IAAS'}{network};
+    $policies{'Generic service'}{network} = Entity::Policy::NetworkPolicy->new(
+        policy_name          => 'Generic network configuration',
+        policy_desc          => 'Network policy for generic network configuration',
+        policy_type          => 'network',
     );
 
     # scalability
-    $policies{scalability} = Entity::Policy->new(
-        policy_name => 'Cluster manual scalability',
-        policy_desc => 'Manual scalability',
-        policy_type => 'scalability',
+    $policies{'Standard physical cluster'}{scalability} = Entity::Policy::ScalabilityPolicy->new(
+        policy_name      => 'Manual scalability cluster',
+        policy_desc      => 'Manual scalability',
+        policy_type      => 'scalability',
         cluster_min_node => 1,
         cluster_max_node => 10,
         cluster_priority => 1
     );
+    $policies{'Standard OpenNebula KVM IAAS'}{scalability} = $policies{'Standard physical cluster'}{scalability};
+    $policies{'Standard OpenNebula Xen IAAS'}{scalability} = $policies{'Standard physical cluster'}{scalability};
+    $policies{'Generic service'}{scalability} = Entity::Policy::ScalabilityPolicy->new(
+        policy_name      => 'Generic scalability',
+        policy_desc      => 'Scalability policy for generic service',
+        policy_type      => 'scalability',
+    );
 
     # system
-    my $puppettypeid = ComponentType->find(hash => { component_name => 'Puppetagent' })->id;
-    my $keepalivedtypeid = ComponentType->find(hash => { component_name => 'Keepalived' })->id;
-    my $kernel = Entity::Kernel->find(hash => {kernel_name => '2.6.32-5-xen-amd64'});
-    $policies{system} = Entity::Policy->new(
-        policy_name => 'Debian squeeze',
-        policy_desc => 'System policy for standard physical hosts',
-        policy_type => 'system',
+    my $puppettypeid = ClassType::ComponentType->find(hash => { component_name => 'Puppetagent' })->id;
+    my $keepalivedtypeid = ClassType::ComponentType->find(hash => { component_name => 'Keepalived' })->id;
+    $policies{'Standard physical cluster'}{system} = Entity::Policy::SystemPolicy->new(
+        policy_name           => 'Default non persitent cluster',
+        policy_desc           => 'System policy for default non persitent cluster',
+        policy_type           => 'system',
         cluster_si_shared     => 0,
         cluster_si_persistent => 0,
-        kernel_id => $kernel->id,
         systemimage_size      => 5 * (1024**3), # 5GB
-        component_type_0 => $puppettypeid,
-        component_type_1 => $keepalivedtypeid,
+        components            => [
+            { component_type => $puppettypeid },
+            { component_type => $keepalivedtypeid }
+        ],
+    );
+
+    my $opennebula = ClassType::ComponentType->find(hash => { component_name => 'Puppetagent' })->id;
+    my $kvm = ClassType::ComponentType->find(hash => { component_name => 'Kvm' })->id;
+    my $xen = ClassType::ComponentType->find(hash => { component_name => 'Xen' })->id;
+    $policies{'Standard OpenNebula KVM IAAS'}{system} = Entity::Policy::SystemPolicy->new(
+        policy_name           => 'Default OpenNebula KVM IAAS',
+        policy_desc           => 'System policy for default OpenNebula KVM IAAS',
+        policy_type           => 'system',
+        cluster_si_shared     => 0,
+        cluster_si_persistent => 0,
+        systemimage_size      => 5 * (1024**3), # 5GB
+        components            => [
+            { component_type => $puppettypeid },
+            { component_type => $opennebula },
+            { component_type => $kvm }
+        ],
+    );
+    $policies{'Standard OpenNebula Xen IAAS'}{system} = Entity::Policy::SystemPolicy->new(
+        policy_name           => 'Default OpenNebula Xen IAAS',
+        policy_desc           => 'System policy for default OpenNebula KVM IAAS',
+        policy_type           => 'system',
+        cluster_si_shared     => 0,
+        cluster_si_persistent => 0,
+        systemimage_size      => 5 * (1024**3), # 5GB
+        components            => [
+            { component_type => $puppettypeid },
+            { component_type => $opennebula },
+            { component_type => $xen }
+        ],
+    );
+    $policies{'Generic service'}{system} = Entity::Policy::SystemPolicy->new(
+        policy_name           => 'Generic system',
+        policy_desc           => 'System policy for generic service',
+        policy_type           => 'system',
     );
 
     # billing
-    $policies{billing} = Entity::Policy->new(
+    $policies{'Standard physical cluster'}{billing} = Entity::Policy::BillingPolicy->new(
         policy_name => 'Empty billing configuration',
         policy_desc => 'Empty billing configuration',
         policy_type => 'billing',
     );
+    $policies{'Standard OpenNebula KVM IAAS'}{billing} = $policies{'Standard physical cluster'}{billing};
+    $policies{'Standard OpenNebula Xen IAAS'}{billing} = $policies{'Standard physical cluster'}{billing};
+    $policies{'Generic service'}{billing} = $policies{'Standard physical cluster'}{billing};
 
     # orchestration
-    $policies{orchestration} = Entity::Policy->new(
-        policy_name => 'Empty orchestration configuration',
-        policy_desc => 'Empty orchestration configuration',
-        policy_type => 'orchestration',
+    my $orch_policy_sp = configureDefaultOrchestrationPolicyService( admin_cluster => $args{kanopya_master} );
+    $policies{'Standard physical cluster'}{orchestration} = Entity::Policy::OrchestrationPolicy->new(
+        policy_name     => 'Standard orchestration configuration',
+        policy_desc     => 'Standard orchestration configuration',
+        policy_type     => 'orchestration',
+        orchestration   => { service_provider_id => $orch_policy_sp->id }
     );
+    $policies{'Standard OpenNebula KVM IAAS'}{orchestration} = $policies{'Standard physical cluster'}{orchestration};
+    $policies{'Standard OpenNebula Xen IAAS'}{orchestration} = $policies{'Standard physical cluster'}{orchestration};
+    $policies{'Generic service'}{orchestration} = $policies{'Standard physical cluster'}{orchestration};
 
     return \%policies;
 }
 
+# Link to kanopya workflow and collector manager
+# Add cpu and mem metrics and rules
+sub configureDefaultOrchestrationPolicyService {
+    my %args = @_;
+
+    my $sp = Entity::ServiceProvider->new();
+
+     # Add default workflow manager
+    my $workflow_manager = $args{admin_cluster}->getComponent(name => "Kanopyaworkflow", version => "0");
+    $sp->addManager(manager_id   => $workflow_manager->id,
+                    manager_type =>"WorkflowManager");
+
+    # Add default collector manager
+    my $collector_manager = $args{admin_cluster}->getComponent(name => "Kanopyacollector", version => "1");
+    $sp->addManager(manager_id   => $collector_manager->id,
+                    manager_type =>"CollectorManager");
+
+    my $noderule_conf = {
+        'mem/Available' => {
+             comparator       => '<',
+             threshold        => 256*1024,
+             cond_label       => 'Available memory < 256M',
+             rule_label       => 'Available memory too low',
+             rule_description => 'Available memory is too low for this node',
+        },
+    };
+
+    my $clusterrule_conf = {
+        'mem/Available' => {
+             'mean' => {
+                 comparator       => '<',
+                 threshold        => 256*1024,
+                 cond_label       => 'Mean available memory < 256M',
+                 rule_label       => 'Mean available memory too low',
+                 rule_description => 'Available memory is too low for this service',
+             }
+        },
+    };
+
+    # Get indicators
+    my @indics = Entity::CollectorIndicator->search (
+        hash => {
+            collector_manager_id                        => $collector_manager->id,
+            'indicator.indicatorset.indicatorset_name'  => ['cpu', 'mem']
+        }
+    );
+
+    # Generic creation of node and service combinations and rules
+    for my $indic (@indics) {
+        my $indic_label = $indic->indicator->indicator_label;
+
+        # Node level
+        # Node metric combinations
+        my $nmcomb = Entity::Combination::NodemetricCombination->new(
+            service_provider_id             => $sp->id,
+            nodemetric_combination_formula  => 'id'.$indic->id
+        );
+        if (exists $noderule_conf->{$indic_label}) {
+            # Node condition
+            my $nmcond = Entity::NodemetricCondition->new(
+                left_combination_id                 => $nmcomb->id,
+                nodemetric_condition_label          => $noderule_conf->{$indic_label}->{cond_label},
+                nodemetric_condition_comparator     => $noderule_conf->{$indic_label}->{comparator},
+                nodemetric_condition_threshold      => $noderule_conf->{$indic_label}->{threshold},
+                nodemetric_condition_service_provider_id => $sp->id,
+            );
+            # Node rule
+            Entity::Rule::NodemetricRule->new(
+                formula             => 'id'.$nmcond->id,
+                rule_name           => $noderule_conf->{$indic_label}->{rule_label},
+                description         => $noderule_conf->{$indic_label}->{rule_description},
+                state               => 'enabled',
+                service_provider_id => $sp->id,
+            );
+        }
+
+        # Service level
+        for my $func ('sum', 'mean') {
+             # Cluster metrics and combinations
+            my $cm = Entity::Clustermetric->new(
+                clustermetric_service_provider_id       => $sp->id,
+                clustermetric_indicator_id              => $indic->id,
+                clustermetric_statistics_function_name  => $func,
+                clustermetric_window_time               => '600',
+            );
+            my $acomb = Entity::Combination::AggregateCombination->new(
+                service_provider_id             => $sp->id,
+                aggregate_combination_formula   => 'id'.$cm->id
+            );
+            if (exists $clusterrule_conf->{$indic_label}{$func}) {
+                # Service condition
+                my $acond = Entity::AggregateCondition->new(
+                    left_combination_id                 => $acomb->id,
+                    aggregate_condition_label           => $clusterrule_conf->{$indic_label}{$func}->{cond_label},
+                    comparator                          => $clusterrule_conf->{$indic_label}{$func}->{comparator},
+                    threshold                           => $clusterrule_conf->{$indic_label}{$func}->{threshold},
+                    aggregate_condition_service_provider_id => $sp->id,
+                );
+                # Service rule
+                Entity::Rule::AggregateRule->new(
+                    formula             => 'id'.$acond->id,
+                    rule_name           => $clusterrule_conf->{$indic_label}{$func}->{rule_label},
+                    description         => $clusterrule_conf->{$indic_label}{$func}->{rule_description},
+                    state               => 'enabled',
+                    service_provider_id => $sp->id,
+                );
+            }
+        }
+    }
+
+    # Nodes state monitoring (node level and count at service level)
+    my @state_indics = Entity::CollectorIndicator->search (
+        hash => {
+            collector_manager_id                        => $collector_manager->id,
+            'indicator.indicatorset.indicatorset_name'  => 'state',
+        }
+    );
+    my @total_ids;
+    for my $indic (@state_indics) {
+        Entity::Combination::NodemetricCombination->new(
+            service_provider_id             => $sp->id,
+            nodemetric_combination_formula  => 'id'.$indic->id,
+            nodemetric_combination_label    => 'is'.$indic->indicator->indicator_name,
+        );
+        my $cm = Entity::Clustermetric->new(
+            clustermetric_service_provider_id       => $sp->id,
+            clustermetric_indicator_id              => $indic->id,
+            clustermetric_statistics_function_name  => 'sum',
+            clustermetric_window_time               => '600',
+        );
+        Entity::Combination::AggregateCombination->new(
+            service_provider_id             => $sp->id,
+            aggregate_combination_formula   => 'id'.$cm->id,
+            aggregate_combination_label     => $indic->indicator->indicator_name . ' nodes',
+        );
+        push @total_ids, $cm->id;
+    }
+    my @total_formula = join ' + ', map { 'id'.$_} @total_ids;
+    my $acomb = Entity::Combination::AggregateCombination->new(
+        service_provider_id             => $sp->id,
+        aggregate_combination_formula   => @total_formula,
+        aggregate_combination_label     => 'All nodes',
+    );
+
+    return $sp;
+}
+
 sub populate_servicetemplates {
     my ($policies) = @_;
-    # Standard physical cluster
-    my $template = Entity::ServiceTemplate->new(
-        service_name => 'Standard physical cluster',
-        service_desc => 'Service template for standard physical cluster declaration',
-        hosting_policy_id => $policies->{hosting}->id,
-        storage_policy_id => $policies->{storage}->id,
-        network_policy_id => $policies->{network}->id,
-        scalability_policy_id => $policies->{scalability}->id,
-        system_policy_id => $policies->{system}->id,
-        billing_policy_id => $policies->{billing}->id,
-        orchestration_policy_id => $policies->{orchestration}->id
-    );
+
+    for my $templatename (keys %{ $policies }) {
+        Entity::ServiceTemplate->new(
+            service_name            => $templatename,
+            service_desc            => 'Service template for ' . lcfirst ($templatename) . ' declaration',
+            hosting_policy_id       => $policies->{$templatename}->{hosting}->id,
+            storage_policy_id       => $policies->{$templatename}->{storage}->id,
+            network_policy_id       => $policies->{$templatename}->{network}->id,
+            scalability_policy_id   => $policies->{$templatename}->{scalability}->id,
+            system_policy_id        => $policies->{$templatename}->{system}->id,
+            billing_policy_id       => $policies->{$templatename}->{billing}->id,
+            orchestration_policy_id => $policies->{$templatename}->{orchestration}->id
+        );
+    }
 }
 
 sub login {
-    my $config = Kanopya::Config::get("libkanopya");
+    my $config = BaseDB->_loadconfig;
     my $god_mode = $config->{dbconf}->{god_mode};
 
     # Activate god mode before the administrator loads it config
     $config->{dbconf}->{god_mode} = "1";
     Kanopya::Config::set(subsystem => "libkanopya", config => $config);
 
-    Administrator::_connectdb();
+    BaseDB->_connectdb(config => $config);
 
     # Restore the config to its original state, the administrator keeps its old one
     if (defined $god_mode) {
@@ -1466,25 +2430,59 @@ sub populateDB {
 
     login();
 
-    my $adm = Administrator->new();
-    $args{db} = $adm->{db};
+    $args{db} = BaseDB->_adm->{schema};
 
+    print "\t- Registering class types...\n";
     registerClassTypes(%args);
+
+    print "\t- Registering kernels...\n";
+    registerKernels(%args);
+
+    print "\t- Registering component/manager categories...\n";
+    registerManagerCategories(%args);
+
+    print "\t- Registering users and groups...\n";
     registerUsers(%args);
 
-    registerKernels(%args);
+    print "\t- Registering data model types...\n";
+    registerDataModelTypes(%args);
+
+    print "\t- Registering tags...\n";
+    registerTags(%args);
+
+    print "\t- Registering processors models ;)\n";
     registerProcessorModels(%args);
+
+    print "\t- Registering operation types...\n";
     registerOperations(%args);
+
+    print "\t- Registering service provider types...\n";
+    registerServiceProviders(%args);
+
+    print "\t- Registering component types...\n";
     registerComponents(%args);
-    registerInterfaceRoles(%args);
+
+    print "\t- Registering network configuration roles...\n";
+    registerNetconfRoles(%args);
+
+    print "\t- Registering monitoring indicators...\n";
     registerIndicators(%args);
-    registerKanopyaMaster(%args);
+
+    print "\t- Registering Kanopya master...\n";
+    my $kanopya_master = registerKanopyaMaster(%args);
+
     registerScopes(%args);
 
-    populate_workflow_def();
+    print "\t- Registering workflow definitions...\n";
+    populate_workflow_def(kanopya_master => $kanopya_master);
 
-    my $policies = populate_policies();
+    print "\t- Create default policies...\n";
+    my $policies = populate_policies(kanopya_master => $kanopya_master);
+
+    print "\t- Create default service templates...\n";
     populate_servicetemplates($policies);
+
+    print "\t- Populating DB done.\n"; 
 }
 
 1;

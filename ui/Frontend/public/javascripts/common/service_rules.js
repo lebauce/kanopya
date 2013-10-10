@@ -44,8 +44,8 @@ function conditionDialog(sp_id, condition_type, fields, editid) {
                 if (form.find('#create_rule_check').attr('checked')) {
                     var field_prefix = condition_type.replace('condition', '_rule');
                     var values = {};
-                    values[field_prefix + '_label']   = condition[fields.name];
-                    values[field_prefix + '_formula'] = 'id' + condition.pk;
+                    values['rule_name'] = condition[fields.name];
+                    values['formula']   = 'id' + condition.pk;
                     ruleForm(sp_id, field_prefix, null, $.noop, values);
                 }
             }
@@ -65,10 +65,9 @@ function conditionDialog(sp_id, condition_type, fields, editid) {
     }
 
     // Name input
-    if (!editid) {
         form.append($('<label>', {'for':'name_input', html:'Name : '}))
-            .append($('<input>', {type:'text', name:fields.name, id:'name_input'})).append('<br>');
-    }
+            .append($('<input>', {type:'text', name:fields.name, id:'name_input', value:editid ? elem_data[fields.name] : ''}))
+            .append('<br>');
 
     // Condition type
     var type_select = $('<select>', {id:'type_select'})
@@ -86,15 +85,19 @@ function conditionDialog(sp_id, condition_type, fields, editid) {
     form.append($('<label>', {'for':'type_select', html:'Type : '})).append(type_select);
     form.append('<br>').append('<br>');
 
-    // Left operand
-    var left_operand_select = $('<select>', {name : 'left_combination_id'}).appendTo(form);
-    left_operand_select.change(function() {
+    // Select combination handler (manage unit)
+    function onSelectCombination(e) {
+        var side = e.data;
         var combi_id = $(this).find('option:selected').val();
-        $.get('/api/combination/'+combi_id+'?expand=unit').success(function(combi) {
-           form.find('#left_unit').text(combi.unit);
+        $.get('/api/combination/'+combi_id).success(function(combi) {
+           form.find('#'+side+'_unit').text(combi.combination_unit);
            checkUnit();
         });
-    });
+    }
+
+    // Left operand
+    var left_operand_select = $('<select>', {name : 'left_combination_id'}).appendTo(form);
+    left_operand_select.change('left', onSelectCombination);
 
     // Operator
     var operator_select = $('<select>', {name:fields.operator}).appendTo(form);
@@ -113,13 +116,7 @@ function conditionDialog(sp_id, condition_type, fields, editid) {
     $('<span>', {id:'view_cond_combi', 'class':'cond_view hidden'}).append(
             right_combi_select.append(right_combi_select_group_node).append(right_combi_select_group_service)
     ).appendTo(form);
-    right_combi_select.change(function() {
-        var combi_id = $(this).find('option:selected').val();
-        $.get('/api/combination/'+combi_id+'?expand=unit').success(function(combi) {
-            form.find('#right_unit').text(combi.unit);
-            checkUnit();
-        });
-    });
+    right_combi_select.change('right', onSelectCombination);
 
     // Unit info
     form.append('<br>').append($('<label>', {'for':'unit_info', html:'Unit : '}))
@@ -195,14 +192,12 @@ function conditionDialog(sp_id, condition_type, fields, editid) {
                 width       : '700px',
                 modal       : true,
                 resizable   : false,
+                dialogClass : "no-close",
                 close       : function() { $(this).remove() },
-                buttons     : {
-                    'Cancel' : function() { $(this).dialog("close"); },
-                    'Ok'     : function() {
-                        form.submit();
-                        $(this).dialog("close");
-                    }
-                }
+                buttons     : [
+        			{id:'button-cancel',text:'Cancel',click: function() { $(this).dialog("close"); }},
+        			{id:'button-ok',text:'Ok',click: function() {form.submit();$(this).dialog("close");}}
+        		]
             });
         }
     }
@@ -238,9 +233,10 @@ function showServiceConditionModal(sp_id, editid) {
 }
 
 function createNodemetricCondition(container_id, elem_id) {
-    var button = $("<button>", {html : 'Add condition'});
+    var button = $("<button>", { html : 'Add condition' });
     button.bind('click', function() {
         showNodeConditionModal(elem_id);
+        return false;
     }).button({ icons : { primary : 'ui-icon-plusthick' } });
     $('#' + container_id).append(button);
 };
@@ -248,7 +244,7 @@ function createNodemetricCondition(container_id, elem_id) {
 /*
  * Form for creation/edition of node and service rule
  *
- * @param    sp_id      related service provider od
+ * @param    sp_id      related service provider id
  * @param    type       nodemetric_rule/aggregate_rule
  * @optional editid     id of elem if edition
  * @optional onClose    callback when form closed after request
@@ -260,26 +256,26 @@ function ruleForm(sp_id, type, editid, onClose, values) {
     $.extend(def_values, values);
 
     var rule_fields  = {};
-    rule_fields[type + '_label'] = {
+    rule_fields['rule_name'] = {
         label   : 'Name',
         type    : 'text',
-        value   : def_values[type + '_label'],
+        value   : def_values['rule_name'],
     };
-    rule_fields[type + '_description'] = {
+    rule_fields['description'] = {
         label   : 'Description',
         type    : 'textarea',
     };
-    rule_fields[type + '_formula'] = {
+    rule_fields['formula'] = {
         label   : 'Formula',
         type    : 'text',
-        value   : def_values[type + '_formula'],
+        value   : def_values['formula'],
     };
-    rule_fields[type + '_state'] = {
+    rule_fields['state'] = {
         label   : 'Enabled',
         type    : 'select',
         options : rulestates,
     };
-    rule_fields[type + '_service_provider_id'] = {
+    rule_fields['service_provider_id'] = {
         type    : 'hidden',
         value   : sp_id,
     };
@@ -320,24 +316,34 @@ function ruleForm(sp_id, type, editid, onClose, values) {
                 });
             }
         });
-        makeAutocompleteAndTranslate($( '#input_'+ type +'_formula' ), availableTags);
+        makeAutocompleteAndTranslate($( '#input_formula' ), availableTags);
     });
 }
 
-function createRuleButton(container_id, sp_id, type, editid, onClose) {
-    var button = $("<button>", {html : editid ? 'Edit' : 'Add a rule'});
-    button.bind('click', function() {
-        ruleForm(sp_id, type, editid, onClose);
-    }).button({ icons : { primary : editid ? 'ui-icon-pencil' : 'ui-icon-plusthick' } });
-    $('#' + container_id).append(button);
+function createRuleButton(sp_id, type, editid, onClose) {
+    var button = $("<a>", { text : editid ? 'Edit' : 'Add a rule' })
+        .button({ icons : { primary : editid ? 'ui-icon-pencil' : 'ui-icon-plusthick' } })
+        .click(function() {
+            ruleForm(sp_id, type, editid, onClose);
+            return false;
+        });
+    return button;
 }
 
 function createServiceCondition(container_id, elem_id) {
     var button = $("<button>", {html : 'Add a Service Condition'});
     button.bind('click', function() {
         showServiceConditionModal(elem_id);
+        return false;
     }).button({ icons : { primary : 'ui-icon-plusthick' } });
     $('#' + container_id).append(button);
+};
+
+var filterNotifyWorkflow    = function(grid, rowid) {
+    var workflowname    = ($(grid).getRowData(rowid)).workflow_def_id;
+    if (notifyworkflow_regex.exec(workflowname) != null) {
+        $(grid).setCell(rowid, "workflow_def_id", " ");
+    }
 };
 
 function loadServicesRules (container_id, elem_id, ext, mode_policy) {
@@ -345,70 +351,139 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
 
     ext = ext || '';
 
-    function ruleDetails(cid, eid, type) {
-        $.ajax({
-            url     : '/api/'+type.replace('_','')+'/' + eid,
-            success : function(data) {
-                var container   = $('#' + cid);
-                var detail_div   = $('<div>').appendTo(container);
-                if (data[type+'_description']) {
-                    $('<p>', { text : data[type+'_description'], 'class':'ui-state-highlight' }).appendTo(detail_div);
-                }
-                $('<p>', { text : 'Formula : ' + data.formula_label }).appendTo(detail_div);
+    var displayAssociationButton = function(cid, eid, type) {
+        return createWorkflowRuleAssociationButton(cid, eid, type == 'nodemetric_rule' ? 1 : 2, elem_id);
+    }
 
+    var associateTimePeriod = function (type) {
+        return {
+            label       : 'Associate time periods',
+            action      : function (grid_id, rowid, url, method, extraParams, afterAction, data) {
+                $.ajax({
+                    url : "/api/" + type + "/" + rowid,
+                    type : "PUT",
+                    contentType : 'application/json',
+                    data : JSON.stringify(data)
+                });
+            },
+            url         : '/api/' + type,
+            icon        : 'ui-icon-clock',
+            extraParams : { multiselect : true },
+            confirm     : function (grid, label, selection, callback) {
+                (new KanopyaFormWizard({
+                    title      : label,
+                    type       : type,
+                    id         : undefined,
+                    displayed  : [ "entity_time_periods" ],
+                    attrsCallback  : function (type, data, trigger) {
+                        var attrs = this.getAttributes(type, data, trigger);
+                        attrs.attributes = {
+                            "entity_time_periods" : attrs.attributes.entity_time_periods
+                        };
+                        attrs.relations = {
+                            "entity_time_periods" : attrs.relations.entity_time_periods
+                        };
+                        return attrs;
+                    },
+                    submitCallback : function (data, form, opts) {
+                        callback(data);
+                        this.closeDialog();
+                    }
+                })).start();
+            }
+        };
+    }
+
+    var ruleDetails = function(cid, eid, type) {
+        var wizard = new KanopyaFormWizard({
+            title      : 'Rule details',
+            type       : type.replace('_', ''),
+            id         : eid,
+            displayed  : [ "description", "formula_label", "entity_time_periods" ],
+            actionsCallback : function (data) {
+                var buttons = [];
                 if (data.workflow_def_id != null) {
                     $.ajax({
                         url     : '/api/workflowdef/' + data.workflow_def_id,
-                        success : function(wfdef) {
-                            var p = $('<p>', { text : 'Associated workflow : ' + wfdef.workflow_def_name }).appendTo(detail_div);
-                            appendWorkflowActionsButtons(p, cid, eid, data.workflow_def_id, elem_id);
+                        async   : false,
+                        success : function (wfdef) {
+                            if (notifyworkflow_regex.exec(wfdef.workflow_def_name) == null) {
+                                var p = $('<p>', { text : 'Associated workflow : ' + wfdef.workflow_def_name });
+                                appendWorkflowActionsButtons(p, cid, eid, data.workflow_def_id, elem_id);
+                                buttons.push(p);
+                                buttons.push($("<br>"));
+                            } else {
+                                buttons.push(displayAssociationButton(cid, eid, type));
+                            }
                         }
                     });
                 } else {
-                    createWorkflowRuleAssociationButton(cid, eid, type == 'nodemetric_rule' ? 1 : 2, elem_id);
-                    $('<br>').appendTo(container);
+                    buttons.push(displayAssociationButton(cid, eid, type));
                 }
-                createRuleButton(cid, elem_id, type, eid, function(form) {
+                buttons.push(createRuleButton(elem_id, type, eid, function(form) {
                     // Update overview content
-                    reload_content(cid, eid);
+                    if (cid) reload_content(cid, eid);
                     // Update dialog title
-                    var rule_label = form.find('#input_'+type+'_label').val();
+                    var rule_label = form.find('#input_' + type + '_label').val();
                     container.parents('.ui-dialog').find('.ui-dialog-title').html(rule_label);
-                });
-            }
+                }));
+                return buttons;
+            },
+            attrsCallback  : function (type, data, trigger) {
+                var attrs = this.getAttributes(type, data, trigger);
+                var attributes = attrs.attributes;
+                attrs.attributes = { };
+                for (var i = 0; i < this.displayed.length; i++) {
+                    attrs.attributes[this.displayed[i]] = attributes[this.displayed[i]];
+                }
+                attrs.relations = {
+                    "entity_time_periods" : attrs.relations.entity_time_periods
+                };
+                return attrs;
+            },
         });
+
+        if (cid) {
+            $('#' + cid).append(wizard.content);
+            wizard.startWizard();
+        } else {
+            wizard.start();
+        }
+
+        return wizard;
     }
 
     ////////////////////////RULES ACCORDION//////////////////////////////////
-            
+
     var divacc = $('<div id="accordionrule">').appendTo(container);
     $('<h3><a href="#">Node</a></h3>').appendTo(divacc);
-    $('<div id="node_accordion_container">').appendTo(divacc);
+
+    var  node_accordion_container = $('<div id="node_accordion_container">');
+    divacc.append(
+        node_accordion_container.append(
+            $('<div>')
+                .append( $('<div>', {id : 'service_nodemetric_conditions_action_buttons', class : 'action_buttons'}) )
+                .append( $('<div>', {id : 'service_nodemetric_conditions_container'}) )
+        )
+    );
+
     // Display nodemetric conditions
     var serviceNodemetricConditionsGridId = 'service_resources_nodemetric_conditions_' + elem_id;
     var serviceNodemetricRulesGridId = 'service_resources_nodemetric_rules_' + elem_id;
+
+    createNodemetricCondition('service_nodemetric_conditions_action_buttons', elem_id);
     create_grid( {
         caption: 'Conditions',
-        url: '/api/serviceprovider/' + elem_id + '/nodemetric_conditions',
-        content_container_id: 'node_accordion_container',
+        url: '/api/serviceprovider/' + elem_id + '/nodemetric_conditions?expand=left_combination,right_combination',
+        content_container_id: 'service_nodemetric_conditions_container',
         grid_id: serviceNodemetricConditionsGridId,
-        afterInsertRow: function(grid, rowid, rowdata) {
-            setCellWithRelatedValue(
-                    '/api/combination/' +  rowdata.left_combination_id,
-                    grid, rowid, 'left_combination_id', 'label'
-            );
-            setCellWithRelatedValue(
-                    '/api/combination/' +  rowdata.right_combination_id,
-                    grid, rowid, 'right_combination_id', 'label'
-            );
-        },
-        colNames: [ 'id', 'name', 'left operand', 'comparator', 'right operand' ],
+        colNames: [ 'id', 'Name', 'Left operand', 'Comparator', 'Right operand' ],
         colModel: [
             { name: 'pk', index: 'pk', sorttype: 'int', hidden: true, key: true },
             { name: 'nodemetric_condition_label', index: 'nodemetric_condition_label', width: 200 },
-            { name: 'left_combination_id', index: 'left_combination_id', width: 100 },
+            { name: 'left_combination.label', index: 'left_combination_id', width: 100 },
             { name: 'nodemetric_condition_comparator', index: 'nodemetric_condition_comparator', width: 50,},
-            { name: 'right_combination_id', index: 'right_combination_id', width: 100 },
+            { name: 'right_combination.label', index: 'right_combination_id', width: 100 },
         ],
         details: {
             onSelectRow : function(eid) { showNodeConditionModal(elem_id, eid); }
@@ -418,93 +493,141 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                 confirmDeleteWithDependencies('/api/nodemetriccondition/', id, [serviceNodemetricConditionsGridId, serviceNodemetricRulesGridId]);
             }
         },
+        multiselect : !mode_policy,
+        multiactions : {
+            multiDelete : {
+                label       : 'Delete node condition(s)',
+                action      : removeGridEntry,
+                url         : '/api/nodemetriccondition',
+                icon        : 'ui-icon-trash',
+                extraParams : {multiselect : true}
+            }
+        }
     } );
-    createNodemetricCondition('node_accordion_container', elem_id)
-    
+
     // Display nodemetric rules
     $("<p>").appendTo('#node_accordion_container');
-    create_grid( {
-        caption: 'Rules',
-        url: '/api/serviceprovider/' + elem_id + '/nodemetric_rules',
-        content_container_id: 'node_accordion_container',
-        grid_id: serviceNodemetricRulesGridId,
-        grid_class: 'service_resources_nodemetric_rules',
-        afterInsertRow: function(grid, rowid, rowdata) {
-            // Workflow name
-            if (rowdata.workflow_def_id) {
-                setCellWithRelatedValue(
-                        '/api/workflowdef/' + rowdata.workflow_def_id,
-                        grid, rowid, 'workflow_def_id', 'workflow_def_name');
-            }
-        },
-        colNames: [ 'id', 'name', 'enabled', 'formula', 'description', 'trigger' ],
-        colModel: [
-            { name: 'pk', index: 'pk', sorttype: 'int', hidden: true, key: true },
-            { name: 'nodemetric_rule_label', index: 'nodemetric_rule_label', width: 120 },
-            { name: 'nodemetric_rule_state', index: 'nodemetric_rule_state', width: 60,},
-            { name: 'formula_label', index: 'formula_label', width: 120 },
-            { name: 'nodemetric_rule_description', index: 'nodemetric_rule_description', width: 120 },
-            { name: 'workflow_def_id', index: 'workflow_def_id', width: 120 },
-        ],
-        details: {
-            tabs : [
-                        { label : 'Overview', id : 'overview', onLoad : function(cid, eid) {
-                            ruleDetails(cid, eid, 'nodemetric_rule');
-                        }},
-                        { label : 'Nodes', id : 'nodes', onLoad : function(cid, eid) { rule_nodes_tab(cid, eid, elem_id); }, hidden : mode_policy },
-                    ],
-            title : { from_column : 'nodemetric_rule_label' },
-            onClose : function() {$('#'+serviceNodemetricRulesGridId).trigger('reloadGrid')}
-        },
-        action_delete: {
-            url : '/api/nodemetricrule'
-        },
-    } );
-    
-    createRuleButton('node_accordion_container', elem_id, 'nodemetric_rule');
+    node_accordion_container.append(
+        $('<div>')
+            .append( $('<div>', {id : 'service_nodemetric_rules_action_buttons', class : 'action_buttons'}) )
+            .append( $('<div>', {id : 'service_nodemetric_rules_container'}) )
+    );
+
+    $('#service_nodemetric_rules_action_buttons').append(createRuleButton(elem_id, 'nodemetric_rule'));
+
     if (!mode_policy) {
         importItemButton(
-                'node_accordion_container',
+                node_accordion_container.find('#service_nodemetric_rules_action_buttons'),
                 elem_id,
                 {
                     name        : 'node rule',
-                    relation    : 'nodemetric_rules',
-                    label_attr  : 'nodemetric_rule_label',
-                    desc_attr   : 'nodemetric_rule_description',
+                    label_attr  : 'label',
+                    desc_attr   : 'description',
                     type        : 'nodemetric_rule'
                 },
                 [serviceNodemetricConditionsGridId, serviceNodemetricRulesGridId]
         );
     }
+    var _wizard = undefined;
+    create_grid( {
+        caption: 'Rules',
+        url: '/api/nodemetricrule?service_provider_id=' + elem_id,
+        content_container_id: 'service_nodemetric_rules_container',
+        grid_id: serviceNodemetricRulesGridId,
+        grid_class: 'service_resources_nodemetric_rules',
+        afterInsertRow: function(grid, rowid, rowdata, rowelem) {
+            // Workflow name
+            if (rowdata.workflow_def_id) {
+                setCellWithRelatedValue(
+                        '/api/workflowdef/' + rowdata.workflow_def_id,
+                        grid, rowid, 'workflow_def_id', 'workflow_def_name', filterNotifyWorkflow);
+            }
+            require('common/notification_subscription.js');
+            addSubscriptionButtonInGrid(grid, rowid, rowdata, rowelem, "service_resources_nodemetric_rules_" +  elem_id +"_alert", "ProcessRule", false);
+        },
+        colNames: [ 'id', 'Name', 'Enabled', 'Formula', 'Description', 'Trigger', 'Alert' ],
+        colModel: [
+            { name: 'pk', index: 'pk', sorttype: 'int', hidden: true, key: true },
+            { name: 'label', index: 'label', width: 120 },
+            { name: 'state', index: 'state', width: 60,},
+            { name: 'formula_label', index: 'formula_label', width: 120 },
+            { name: 'description', index: 'description', width: 120 },
+            { name: 'workflow_def_id', index: 'workflow_def_id', width: 120 },
+            { name: 'alert', index: 'alert', width: 40, align: 'center', nodetails: true }
+        ],
+        details: {
+            onOk : function () {
+                if (_wizard != undefined) {
+                    _wizard.validateForm();
+                }
+            },
+            tabs : [ {
+                label : 'Overview',
+                id : 'overview',
+                onLoad : function (cid, eid) {
+                    _wizard = ruleDetails(cid, eid, 'nodemetric_rule');
+                },
+            }, {
+                label : 'Nodes',
+                id : 'nodes',
+                onLoad : function(cid, eid) {
+                    rule_nodes_tab(cid, eid, elem_id);
+                    _wizard = undefined;
+                },
+                hidden : mode_policy
+            } ],
+            title : {
+                from_column : 'label'
+            },
+            onClose : function() {
+                $('#' + serviceNodemetricRulesGridId).trigger('reloadGrid')
+            }
+        },
+        action_delete: {
+            url : '/api/nodemetricrule'
+        },
+        multiselect : !mode_policy,
+        multiactions : {
+            multiDelete : {
+                label       : 'Delete node rule(s)',
+                action      : removeGridEntry,
+                url         : '/api/nodemetricrule',
+                icon        : 'ui-icon-trash',
+                extraParams : {multiselect : true}
+            },
+            'associateTimePeriod' : associateTimePeriod('nodemetricrule')
+        }
+    } );
 
     // Here's the second part of the accordion :
     $('<h3><a href="#">Service</a></h3>').appendTo(divacc);
-    $('<div id="service_accordion_container">').appendTo(divacc);
+
+    var  service_accordion_container = $('<div id="service_accordion_container">');
+    divacc.append(
+        service_accordion_container.append(
+            $('<div>')
+                .append( $('<div>', {id : 'service_resources_aggregate_conditions_action_buttons', class : 'action_buttons'}) )
+                .append( $('<div>', {id : 'service_resources_aggregate_conditions_container'}) )
+        )
+    );
+
     // Display service conditions :
     var serviceAggregateConditionsGridId = 'service_resources_aggregate_conditions_' + elem_id;
     var serviceAggregateRulesGridId = 'service_resources_aggregate_rules_' + elem_id;
+
+    createServiceCondition('service_resources_aggregate_conditions_action_buttons', elem_id);
     create_grid( {
         caption: 'Conditions',
-        url: '/api/serviceprovider/' + elem_id + '/aggregate_conditions',
-        content_container_id: 'service_accordion_container',
+        url: '/api/serviceprovider/' + elem_id + '/aggregate_conditions?expand=left_combination,right_combination',
+        content_container_id: 'service_resources_aggregate_conditions_container',
         grid_id: serviceAggregateConditionsGridId,
-        afterInsertRow: function(grid, rowid, rowdata, rowelem) {
-            setCellWithRelatedValue(
-                    '/api/combination/' +  rowdata.left_combination_id,
-                    grid, rowid, 'left_combination_id', 'label'
-            );
-            setCellWithRelatedValue(
-                    '/api/combination/' +  rowdata.right_combination_id,
-                    grid, rowid, 'right_combination_id', 'label'
-            );
-        },
-        colNames: ['id','name', 'left operand', 'comparator', 'right operand'],
+        colNames: [ 'id', 'Name', 'Left operand', 'Comparator', 'Right operand' ],
         colModel: [ 
              {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
              {name:'aggregate_condition_label',index:'aggregate_condition_label', width:200,},
-             {name:'left_combination_id',index:'left_combination_id', width:100,},
+             {name:'left_combination.label',index:'left_combination_id', width:100,},
              {name:'comparator',index:'comparator', width:50,},
-             {name:'right_combination_id',index:'right_combination_id', width:100,},
+             {name:'right_combination.label',index:'right_combination_id', width:100,},
            ],
         details: { onSelectRow : function(eid) { showServiceConditionModal(elem_id, eid); } },
         action_delete: {
@@ -512,63 +635,89 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
                 confirmDeleteWithDependencies('/api/aggregatecondition/', id, [serviceAggregateConditionsGridId, serviceAggregateRulesGridId]);
             }
         },
+        multiselect : !mode_policy,
+        multiactions : {
+            multiDelete : {
+                label       : 'Delete service condition(s)',
+                action      : removeGridEntry,
+                url         : '/api/aggregatecondition',
+                icon        : 'ui-icon-trash',
+                extraParams : {multiselect : true}
+            }
+        }
     } );
-    createServiceCondition('service_accordion_container', elem_id);
 
     // Display services rules :
     $("<p>").appendTo('#service_accordion_container');
-    create_grid( {
-        caption: 'Rules',
-        url: '/api/serviceprovider/' + elem_id + '/aggregate_rules',
-        grid_class: 'service_resources_aggregate_rules',
-        content_container_id: 'service_accordion_container',
-        grid_id: serviceAggregateRulesGridId,
-        colNames: ['id','name', 'enabled', 'last eval', 'formula', 'description', 'trigger'],
-        colModel: [ 
-             {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
-             {name:'aggregate_rule_label',index:'aggregate_rule_label', width:90,},
-             {name:'aggregate_rule_state',index:'aggregate_rule_state', width:90,},
-             {name:'aggregate_rule_last_eval',index:'aggregate_rule_last_eval', width:90, formatter : lastevalStateFormatter, hidden:mode_policy},
-             {name:'formula_label',index:'formula_label', width:90,},
-             {name:'aggregate_rule_description',index:'aggregate_rule_description', width:200,},
-             {name: 'workflow_def_id', index: 'workflow_def_id', width: 120 },
-           ],
-        afterInsertRow: function(grid, rowid, rowdata) {
-            // Workflow name
-            if (rowdata.workflow_def_id) {
-                setCellWithRelatedValue(
-                        '/api/workflowdef/' + rowdata.workflow_def_id,
-                        grid, rowid, 'workflow_def_id', 'workflow_def_name');
-            }
-        },
-        details : {
-            tabs    : [
-                { label : 'Overview', id : 'overview', onLoad : function(cid, eid) {
-                    ruleDetails(cid, eid, 'aggregate_rule');
-               }},
-            ],
-            title   : { from_column : 'aggregate_rule_label' },
-            onClose : function() {$('#'+serviceAggregateRulesGridId).trigger('reloadGrid')}
-        },
-        action_delete: {
-            url : '/api/aggregaterule',
-        },
-    } );
-    createRuleButton('service_accordion_container', elem_id, 'aggregate_rule');
+    service_accordion_container.append(
+        $('<div>')
+            .append( $('<div>', {id : 'service_resources_aggregate_rules_action_buttons', class : 'action_buttons'}) )
+            .append( $('<div>', {id : 'service_resources_aggregate_rules_container'}) )
+    );
+
+    $('#service_resources_aggregate_rules_action_buttons').append(createRuleButton(elem_id, 'aggregate_rule'));
+
     if (!mode_policy) {
         importItemButton(
-                'service_accordion_container',
+                service_accordion_container.find('#service_resources_aggregate_rules_action_buttons'),
                 elem_id,
                 {
                     name        : 'service rule',
-                    relation    : 'aggregate_rules',
-                    label_attr  : 'aggregate_rule_label',
-                    desc_attr   : 'aggregate_rule_description',
+                    label_attr  : 'label',
+                    desc_attr   : 'description',
                     type        : 'aggregate_rule'
                 },
                 [serviceAggregateConditionsGridId, serviceAggregateRulesGridId]
         );
     }
+    create_grid( {
+        caption: 'Rules',
+        url: '/api/aggregaterule?service_provider_id=' + elem_id,
+        grid_class: 'service_resources_aggregate_rules',
+        content_container_id: 'service_resources_aggregate_rules_container',
+        grid_id: serviceAggregateRulesGridId,
+        colNames: [ 'id', 'Name', 'Enabled', 'Last eval', 'Formula', 'Description', 'Trigger', 'Alert' ],
+        colModel: [
+             {name:'pk',index:'pk', width:60, sorttype:"int", hidden:true, key:true},
+             {name:'label',index:'label', width:90,},
+             {name:'state',index:'state', width:50,},
+             {name:'aggregate_rule_last_eval',index:'aggregate_rule_last_eval', width:50, formatter : lastevalStateFormatter, hidden:mode_policy},
+             {name:'formula_label',index:'formula_label', width:150,},
+             {name:'description',index:'description', width:200,},
+             {name: 'workflow_def_id', index: 'workflow_def_id', width: 100 },
+             {name: 'alert', index: 'alert', width: 40, align: 'center', nodetails: true }
+           ],
+        afterInsertRow: function(grid, rowid, rowdata, rowelem) {
+            // Workflow name
+            if (rowdata.workflow_def_id) {
+                setCellWithRelatedValue(
+                        '/api/workflowdef/' + rowdata.workflow_def_id,
+                        grid, rowid, 'workflow_def_id', 'workflow_def_name', filterNotifyWorkflow);
+            }
+            require('common/notification_subscription.js');
+            addSubscriptionButtonInGrid(grid, rowid, rowdata, rowelem, "service_resources_aggregate_rules_" +  elem_id +"_alert", "ProcessRule", false);
+        },
+        details : {
+            onSelectRow : function (elem_id, row_data, grid_id) {
+                ruleDetails(undefined, elem_id, 'aggregate_rule');
+                $('#' + serviceAggregateRulesGridId).trigger('reloadGrid');
+            }
+        },
+        action_delete: {
+            url : '/api/aggregaterule',
+        },
+        multiselect : !mode_policy,
+        multiactions : {
+            multiDelete : {
+                label       : 'Delete service rule(s)',
+                action      : removeGridEntry,
+                url         : '/api/aggregaterule',
+                icon        : 'ui-icon-trash',
+                extraParams : { multiselect : true }
+            },
+            'associateTimePeriod' : associateTimePeriod('aggregaterule')
+        }
+    } );
 
     $('#accordionrule').accordion({
         autoHeight  : false,
@@ -591,7 +740,7 @@ function rule_nodes_tab(cid, rule_id, service_provider_id) {
             // Where rowid = rule_id
             
             $.ajax({
-                 url: '/api/externalnode/' + row.pk + '/verified_noderules?verified_noderule_nodemetric_rule_id=' + rule_id,
+                 url: '/api/node/' + row.pk + '/verified_noderules?verified_noderule_nodemetric_rule_id=' + rule_id,
                  async: false,
                  success: function(answer) {
                     if (answer.length == 0) {
@@ -607,20 +756,19 @@ function rule_nodes_tab(cid, rule_id, service_provider_id) {
             });
         return VerifiedRuleFormat;
     }
-//         url: '/api/externalnode/' + eid,
     
     var loadNodeRulesTabGridId = 'rule_nodes_tabs';
     create_grid( {
-        url: '/api/externalnode?externalnode_state=<>,disabled&service_provider_id=' + service_provider_id,
+        url: '/api/node?monitoring_state=<>,disabled&service_provider_id=' + service_provider_id,
         content_container_id: cid,
         grid_id: loadNodeRulesTabGridId,
         grid_class: 'rule_nodes_grid',
-        colNames: [ 'id', 'hostname', 'state' ],
+        colNames: [ 'id', 'Hostname', 'State' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
-            { name: 'externalnode_hostname', index: 'externalnode_hostname', width: 110,},
-            { name: 'verified_noderule_state', index: 'verified_noderule_state', width: 60, formatter: verifiedRuleNodesStateFormatter,}, 
+            { name: 'node_hostname', index: 'node_hostname', width: 110 },
+            { name: 'verified_noderule_state', index: 'verified_noderule_state', width: 60, formatter: verifiedRuleNodesStateFormatter }
         ],
-        action_delete : 'no',
+        action_delete : 'no'
     } );
 }

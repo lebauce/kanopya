@@ -1,6 +1,4 @@
-# EAddCluster.pm - Operation class implementing Cluster creation operation
-
-#    Copyright © 2009-2012 Hedera Technology SAS
+#    Copyright © 2009-2013 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -17,55 +15,50 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-=head1 NAME
+=pod
+=begin classdoc
 
-EEntity::Operation::EAddHost - Operation class implementing Host creation operation
+Add a cluster to the system.
 
-=head1 SYNOPSIS
+@since    2012-Aug-20
+@instance hash
+@self     $self
 
-This Object represent an operation.
-It allows to implement Host creation operation
-
-=head1 DESCRIPTION
-
-Component is an abstract class of operation objects
-
-=head1 METHODS
-
+=end classdoc
 =cut
 
 package EEntity::EOperation::EAddCluster;
-use base "EEntity::EOperation";
+use base EEntity::EOperation;
 
 use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use EFactory;
+use EEntity;
 
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 use Entity::Systemimage;
 use Entity::Gp;
-use Entity;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
 my $log = get_logger("");
 my $errmsg;
-our $VERSION = '1.00';
 
 
-=head2 prepare
+=pod
+=begin classdoc
 
-    $op->prepare();
+@param cluster_params the params required to create the cluster.
+@param managers the manager definition to apply on the cluster.
 
+=end classdoc
 =cut
 
-sub prepare {
-    my $self = shift;
-    my %args = @_;
-    $self->SUPER::prepare();
+sub check {
+    my ($self, %args) = @_;
+    $self->SUPER::check(%args);
 
     # Check if all required params group are defined
     General::checkParams(args => $self->{params}, required => [ "cluster_params", "managers" ]);
@@ -78,6 +71,20 @@ sub prepare {
     # Check required params within managers
     General::checkParams(args     => $self->{params}->{managers},
                          required => [ "host_manager", "disk_manager" ]);
+}
+
+
+=pod
+=begin classdoc
+
+Create the cluster and apply the configuration.
+
+=end classdoc
+=cut
+
+sub execute {
+    my ($self, %args) = @_;
+    $self->SUPER::execute(%args);
 
     if (defined $self->{params}->{cluster_params}->{kernel_id} and
         not $self->{params}->{cluster_params}->{kernel_id}) {
@@ -85,27 +92,22 @@ sub prepare {
     }
 
     # Check the boot policy or the export manager
-    if (not ($self->{params}->{cluster_params}->{cluster_boot_policy} xor
+    if (not ($self->{params}->{cluster_params}->{cluster_boot_policy} or
              $self->{params}->{managers}->{export_manager}->{manager_id})) {
         throw Kanopya::Exception::Internal::WrongValue(
-                  error => "Can not specify boot_policy and export_manager_id at the same time."
+                  error => "One must specify either boot_policy or export_manager_id."
               );
     }
 
     # Cluster creation
     eval {
-        my $cluster = Entity::ServiceProvider::Inside::Cluster->new(%{$self->{params}->{cluster_params}});
-        $self->{context}->{cluster} = EFactory::newEEntity(data => $cluster);
+        my $cluster = Entity::ServiceProvider::Cluster->new(%{$self->{params}->{cluster_params}});
+        $self->{context}->{cluster} = EEntity->new(data => $cluster);
     };
     if($@) {
         $errmsg = "Cluster instanciation failed because : " . $@;
-        $log->error($errmsg);
         throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
     }
-}
-
-sub execute {
-    my $self = shift;
 
     $self->{context}->{cluster}->create(managers        => $self->{params}->{managers},
                                         components      => $self->{params}->{components},
@@ -117,69 +119,20 @@ sub execute {
     $log->info("Cluster <" . $self->{context}->{cluster}->cluster_name . "> is now added");
 }
 
-sub finish {
-    my $self = shift;
 
-    delete $self->{context}->{service_template};
-}
+=pod
+=begin classdoc
 
-=head1 DIAGNOSTICS
+Set the cluster as down.
 
-Exceptions are thrown when mandatory arguments are missing.
-Exception : Kanopya::Exception::Internal::IncorrectParam
-
-=head1 CONFIGURATION AND ENVIRONMENT
-
-This module need to be used into Kanopya environment. (see Kanopya presentation)
-This module is a part of Administrator package so refers to Administrator configuration
-
-=head1 DEPENDENCIES
-
-This module depends of 
-
-=over
-
-=item KanopyaException module used to throw exceptions managed by handling programs
-
-=item Entity::Component module which is its mother class implementing global component method
-
-=back
-
-=head1 INCOMPATIBILITIES
-
-None
-
-=head1 BUGS AND LIMITATIONS
-
-There are no known bugs in this module.
-
-Please report problems to <Maintainer name(s)> (<contact address>)
-
-Patches are welcome.
-
-=head1 AUTHOR
-
-<HederaTech Dev Team> (<dev@hederatech.com>)
-
-=head1 LICENCE AND COPYRIGHT
-
-Kanopya Copyright (C) 2009-2012 Hedera Technology.
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 3, or (at your option)
-any later version.
-
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; see the file COPYING.  If not, write to the
-Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-Boston, MA 02110-1301 USA.
-
+=end classdoc
 =cut
+
+sub finish {
+    my ($self, %args) = @_;
+    $self->SUPER::finish(%args);
+
+    $self->{context}->{cluster}->setState(state => 'down');
+}
 
 1;

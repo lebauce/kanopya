@@ -17,10 +17,29 @@ use base 'Entity::Component::Linux';
 
 use strict;
 use warnings;
+
+use Entity::Component::Linux::LinuxMount;
+
+use Hash::Merge qw(merge);
 use Log::Log4perl 'get_logger';
-use Data::Dumper;
 
 my $log = get_logger("");
-my $errmsg;
+
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        redhat => {
+            manifest => $self->instanciatePuppetResource(
+                            name => "openstack::repo",
+                            params => {
+                                stage => "system"
+                            }
+                        )
+        }
+    } );
+}
 
 1;

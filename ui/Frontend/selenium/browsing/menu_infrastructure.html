@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head profile="http://selenium-ide.openqa.org/profiles/test-case">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<link rel="selenium.base" href="http://localhost:5000/" />
+<title>menu_infrastructure</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">menu_infrastructure</td></tr>
+</thead><tbody>
+<!--Browse all submenu and tabs of "Infrastructure" part-->
+<tr>
+	<td>open</td>
+	<td>/</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Infrastructure</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>1000</td>
+	<td></td>
+</tr>
+<!--Compute-->
+<tr>
+	<td>click</td>
+	<td>//li[@id = &quot;link_view_Compute_static&quot;]/a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>1000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>id=hosts_list</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Add a host')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//a[@href = &quot;#content_ucs_static&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>id=ucs_list</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Add an UCS')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//a[@href = &quot;#content_hpc_static&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>id=blades_list</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Add HP C7000')</td>
+	<td></td>
+</tr>
+<!--Storage-->
+<tr>
+	<td>click</td>
+	<td>//li[@id = &quot;link_view_Storage_static&quot;]/a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>1000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>id=linuxnas_list</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//a[@href = &quot;#content_storage_netapp_static&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>id=netapp_list</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Create a NetApp')</td>
+	<td></td>
+</tr>
+<!--IaaS-->
+<tr>
+	<td>click</td>
+	<td>//li[@id = &quot;link_view_IaaS_static&quot;]/a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>id=iaas_list</td>
+	<td></td>
+</tr>
+<!--Network-->
+<tr>
+	<td>click</td>
+	<td>//li[@id = &quot;link_view_Network_static&quot;]/a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>1000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>id=networks_list</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Add a Network')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//a[@href = &quot;#content_network_vlans_static&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>id=vlans_list</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Add a VLAN')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//a[@href = &quot;#content_network_poolips_static&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>id=poolips_list</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Add a Pool IP')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//a[@href = &quot;#content_network_netconf_static&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>id=netconfs_list</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Add a Network Configuration')</td>
+	<td></td>
+</tr>
+<!--System-->
+<tr>
+	<td>click</td>
+	<td>//li[@id = &quot;link_view_System_static&quot;]/a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>1000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>id=masterimage_list</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>css=span:contains('Upload a master image')</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//a[@href = &quot;#content_system_images_static&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>id=systemimage_list</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//a[@href = &quot;#content_kernels_static&quot;]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyVisible</td>
+	<td>id=kernel_list</td>
+	<td></td>
+</tr>
+</tbody></table>
+</body>
+</html>

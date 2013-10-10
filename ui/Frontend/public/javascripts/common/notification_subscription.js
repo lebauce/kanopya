@@ -1,5 +1,25 @@
 require('common/formatters.js');
-require('views.js');
+
+var addSubscriptionButtonInGrid = function(grid, rowid, rowdata, rowelem, colid, operationType, validation) {
+    var cell            = $(grid).find('tr#' + rowid).find('td[aria-describedby="' + colid + '"]');
+    var subscribeButton = $('<div>').button({ text : false, icons : { primary : 'ui-icon-mail-closed' } }).appendTo(cell);
+    $(subscribeButton).attr('style', 'margin-top:5px;');
+    $(subscribeButton).click(function() {
+        var details = {
+            tabs : [
+                {
+                    label  : 'Notification subscriptions',
+                    id     : 'subscription',
+                    onLoad : function(cid, eid) {
+                        loadSubscriptionModal(cid, eid, operationType, validation);
+                    }
+                }
+            ],
+            title : 'Notification subscriptions'
+        };
+        show_detail('entity_subscription_list', 'entity_subscription_list', rowelem.pk, rowdata, details);
+    });
+}
 
 function userOrGroupFormatter(cell, options, row) {
     var entity;
@@ -13,7 +33,10 @@ function userOrGroupFormatter(cell, options, row) {
     return entity.user_firstname + ' ' + entity.user_lastname;
 }
 
-function loadSubscriptionModal (container_id, elem_id, operationtype) {
+function loadSubscriptionModal (container_id, elem_id, operationtype, mustValidate) {
+    if (mustValidate === undefined) {
+        mustValidate = true;
+    }
     var container = $('#'+container_id);
 
     var grid = create_grid( {
@@ -28,7 +51,8 @@ function loadSubscriptionModal (container_id, elem_id, operationtype) {
             { name: 'subscriber_id', index: 'subscriber_id', formatter: userOrGroupFormatter },
             { name: 'validation', index: 'validation', width: 90, formatter: booleanFormatter },
         ],
-    } );
+        action_delete: {callback: function(subscrition_id) {$.post('/api/entity/'+elem_id+'/unsubscribe', {notification_subscription_id: subscrition_id} ) }},
+  } );
 
     grid.bind('reloadGrid', function () {
         buildUserSelectInput(subscriber, elem_id);
@@ -50,9 +74,11 @@ function loadSubscriptionModal (container_id, elem_id, operationtype) {
     $("<td>", { align : 'left'}).append($("<label>", { for : 'input_subscriber', text : 'Select a user/group:'  })).appendTo(tr_users);
     $("<td>", { align : 'left' }).append(subscriber).appendTo(tr_users);
 
-    var validation = $("<input>", { type : 'checkbox', name : 'validation', id : 'input_validation' });
-    $("<td>", { align : 'left' }).append($("<label>", { for : 'input_validation', text : 'Validation:' })).appendTo(tr_validation);
-    $("<td>", { align : 'left' }).append(validation).appendTo(tr_validation);
+    if (mustValidate === true) {
+        var validation = $("<input>", { type : 'checkbox', name : 'validation', id : 'input_validation' });
+        $("<td>", { align : 'left' }).append($("<label>", { for : 'input_validation', text : 'Validation:' })).appendTo(tr_validation);
+        $("<td>", { align : 'left' }).append(validation).appendTo(tr_validation);
+    }
 
     $('<input>', { type : 'hidden', name : 'entity_id', id : 'input_entity_id', value: elem_id }).appendTo(form);
 

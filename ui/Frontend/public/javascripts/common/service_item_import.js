@@ -9,12 +9,11 @@
  * @param obj_info     hash of type info of objects to import :
  *      type        : object type (format as table name). Used also to compute object api route (by removing '_')
  *      name        : object user friendly name
- *      relation    : relationship name from service provider to object type
  *      label_attr  : name of the object label attr
  *      desc_attr   : name of the object description attr
  * @param grid_ids     list of id of grid to refresh after import
  */
-function importItemButton(container_id, sp_id, obj_info, grid_ids) {
+function importItemButton(container, sp_id, obj_info, grid_ids) {
     var collector_manager_id;
 
     function loadItemTree() {
@@ -28,11 +27,11 @@ function importItemButton(container_id, sp_id, obj_info, grid_ids) {
             // Do not list destination service provider
             if (sp.pk != sp_id) {
                 // List only service providers with the same collector manager than dest service provider
-                $.get('/api/serviceprovider/' + sp.pk + '/service_provider_managers?manager_type=collector_manager')
+                $.get('/api/serviceprovider/' + sp.pk + '/service_provider_managers?custom.category=CollectorManager')
                 .success(function(manager) {
                     if (manager.length > 0 && manager[0].manager_id === collector_manager_id) {
                         // Get related items and add them to the tree
-                        $.get('/api/serviceprovider/' + sp.pk + '/' + obj_info.relation).success( function(related) {
+                        $.get('/api/' + obj_info.type.replace(/_/g,'') + '?service_provider_id=' + sp.pk).success( function(related) {
                             var items = [];
                             $.each(related, function(i,item) {
                                 items.push({
@@ -134,14 +133,14 @@ function importItemButton(container_id, sp_id, obj_info, grid_ids) {
                     // Show dialog
                     browser.dialog({
                         title   : 'Import ' + obj_info.name + 's',
+                        dialogClass: "no-close",
                         modal   : true,
                         width   : '400px',
-                        buttons : {
-                            'Import' : importChecked,
-                            'Cancel' : function () {
-                                $(this).dialog("close");
-                            }
-                        },
+                        buttons : [
+                            {id:'button-import',text:'Import',click : importChecked},
+                            {id:'button-cancel',text:'Cancel' ,click: function () {$(this).dialog("close");}}
+                        ]    
+                        ,
                         close: function (event, ui) {
                             $(this).remove();
                         }
@@ -156,15 +155,15 @@ function importItemButton(container_id, sp_id, obj_info, grid_ids) {
 
     // Retrieve collector manager id (used to check available service providers for import)
     // Add import button only if there is a linked collector manager
-    $.get('/api/serviceprovider/' + sp_id + '/service_provider_managers?manager_type=collector_manager')
+    $.get('/api/serviceprovider/' + sp_id + '/service_provider_managers?custom.category=CollectorManager')
     .success(function(manager) {
         if (manager.length > 0) {
             collector_manager_id = manager[0].manager_id;
 
             // Create and bind import button
             $("<button>", {html : 'Import ' + obj_info.name + 's'})
-            .button({ icons : { primary : 'ui-icon-plusthick' } })
-            .appendTo('#' + container_id)
+            .button({ icons : { primary : 'ui-icon-import' } })
+            .appendTo(container)
             .click( loadItemTree );
         }
     });

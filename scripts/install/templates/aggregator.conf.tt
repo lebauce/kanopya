@@ -1,4 +1,4 @@
-<conf time_step="300">
-    <storage_duration duration="604800" />
+<conf multiprocess="0" >
     <user name="admin" password="[% admin_password %]" />
+    <amqp user="aggregator" password="[% admin_password %]" />
 </conf>

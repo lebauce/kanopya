@@ -1,6 +1,5 @@
-# EStopCluster.pm - Operation class cluster stop operation
-
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,89 +14,129 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
-=head1 NAME
+=pod
+=begin classdoc
 
-EOperation::EStopCluster - Operation class implementing cluster stopping operation
+Stop the cluster. Run as many StopNode wofkflows as number of remaning nodes.
 
-=head1 SYNOPSIS
+@since    2012-Aug-20
+@instance hash
+@self     $self
 
-This Object represent an operation.
-It allows to implement cluster stopping operation
-
-=head1 DESCRIPTION
-
-
-
-=head1 METHODS
-
+=end classdoc
 =cut
+
 package EEntity::EOperation::EStopCluster;
-use base "EEntity::EOperation";
+use base EEntity::EOperation;
 
 use strict;
 use warnings;
+
 use Log::Log4perl "get_logger";
-use Entity::ServiceProvider::Inside::Cluster;
 my $log = get_logger("");
 my $errmsg;
 
-our $VERSION = "1.00";
 
-=head2 prepare
+=pod
+=begin classdoc
 
-    $op->prepare();
+@param cluster the cluster to stop
 
+=end classdoc
 =cut
 
-sub prepare {
-    my $self = shift;
-    my %args = @_;
-    $self->SUPER::prepare();
+sub check {
+    my ($self, %args)  = @_;
+    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "cluster" ]);
 }
 
+
+=pod
+=begin classdoc
+
+Check if the cluster is stable.
+
+=end classdoc
+=cut
+
+sub prepare {
+    my ($self, %args) = @_;
+    $self->SUPER::prepare(%args);
+
+    # Check the cluster state
+    my ($state, $timestamp) = $self->{context}->{cluster}->reload->getState;
+    if ($state ne 'up') {
+        throw Kanopya::Exception::Execution::InvalidState(
+                  error => "The cluster <" . $self->{context}->{cluster} .
+                           "> has to be <up>, not <$state>"
+              );
+    }
+    $self->{context}->{cluster}->setState(state => 'updating');
+}
+
+
+=pod
+=begin classdoc
+
+Fail if the cluster has no nodes.
+
+=end classdoc
+=cut
+
 sub execute {
-    my $self = shift;
+    my ($self, %args)  = @_;
     $self->SUPER::execute();
 
-    my $hosts = $self->{context}->{cluster}->getHosts();
-
-    if(not scalar keys %$hosts) {
-        $self->{context}->{cluster}->setState(state  => 'stopping');
-        $errmsg = "EStopCluster->execute : this cluster with id " . 
-                  "$self->{context}->{cluster}->getAttr(name => 'cluster_id') seems to have no node";
-        $log->error($errmsg);
+    my @nodes = $self->{context}->{cluster}->nodes;
+    if (not scalar(@nodes)) {
+        $errmsg = "This cluster <" . $self->{context}->{cluster}->id . "> seems to have no node.";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
-    my $master_node_id =  $self->{context}->{cluster}->getMasterNodeId();
+}
 
-    foreach my $mb_id (keys %$hosts) {
-        if ((scalar keys %$hosts) > 1 and $master_node_id == $mb_id){
-            next;
-        }
 
+=pod
+=begin classdoc
+
+Run as many StopNode wofkflows as number of remaning nodes.
+
+=end classdoc
+=cut
+
+sub postrequisites {
+    my ($self, %args)  = @_;
+
+    # Remove node from the less important to the most important
+    NODE:
+    foreach my $node (reverse $self->{context}->{cluster}->nodesByWeight()) {
         # We stop nodes with state 'up' only
-        # TODO: ma,ager others nodes states
-        my ($state, $timestamp) = $hosts->{$mb_id}->getState();
-        if($state ne 'up') { next; }
+        # TODO: manage other node states
+        my ($state, $timestamp) = $node->host->getState();
+        if ($state ne 'up') { next NODE; }
 
-        $self->{context}->{cluster}->removeNode(host_id => $mb_id);
+        $self->{context}->{cluster}->removeNode(node_id => $node->id);
     }
 
+    return 0;
+}
+
+
+=pod
+=begin classdoc
+
+Set the cluster as stopping
+
+=end classdoc
+=cut
+
+sub finish {
+    my ($self, %args)  = @_;
+    $self->SUPER::finish();
+
     $self->{context}->{cluster}->setState(state => 'stopping');
-    $self->{context}->{cluster}->save();
 }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut

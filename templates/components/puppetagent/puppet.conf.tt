@@ -1,10 +1,17 @@
 [main]
 [% IF puppetagent2_masterserver %]
-server = [% puppetagent2_masterserver %]
+  server = [% puppetagent2_masterserver %]
 [% END %]
-logdir=/var/log/puppet
-vardir=/var/lib/puppet
-ssldir=/var/lib/puppet/ssl
-rundir=/var/run/puppet
-factpath=$vardir/lib/facter
-templatedir=$confdir/templates
+  logdir=/var/log/puppet
+  vardir=/var/lib/puppet
+  ssldir=/var/lib/puppet/ssl
+  rundir=/var/run/puppet
+  factpath=$vardir/lib/facter
+  templatedir=$confdir/templates
+  filetimeout=0
+
+[agent]
+  pluginsync=true
+[% IF puppetagent2_masterserver %]
+  listen=true
+[% END %]

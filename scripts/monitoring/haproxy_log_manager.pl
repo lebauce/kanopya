@@ -2,8 +2,8 @@
 use LogAnalyzer;
 use Data::Dumper;
 use XML::Simple;
-use Administrator;
-use Entity::ServiceProvider::Inside::Cluster;
+use BaseDB;
+use Entity::ServiceProvider::Cluster;
 use Monitor;
 
 my $monitor = Monitor->new();
@@ -101,10 +101,10 @@ sub update {
     my $logfile_name = _logFileName( time => $args{time} );
 
     # Browse clusters to parse corresponding log file
-    my @clusters = Entity::ServiceProvider::Inside::Cluster->getClusters( hash => { } );
+    my @clusters = Entity::ServiceProvider::Cluster->getClusters( hash => { } );
     foreach my $cluster (@clusters) {
         print "Cluster : ", $cluster->toString(), "\n";
-        my $master_ip =  $cluster->getMasterNodeIp();
+        my $master_ip =  $cluster->getComponent(category => 'System')->getMasterNode->adminIp;
         if (defined $master_ip) {
             manageLog(
                 host => $master_ip,
@@ -118,7 +118,7 @@ sub update {
 
 sub init {
     my $conf = XMLin("/opt/kanopya/conf/monitor.conf");
-    Administrator::authenticate( login => $conf->{user}{name}, password => $conf->{user}{password} );
+    BaseDB->authenticate(login => $conf->{user}{name}, password => $conf->{user}{password});
 }
 
 sub run {

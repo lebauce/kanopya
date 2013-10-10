@@ -13,7 +13,23 @@ AdministratorDB::Schema::Result::ClassType
 use strict;
 use warnings;
 
-use base 'DBIx::Class::Core';
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
 
 =head1 TABLE: C<class_type>
 
@@ -63,18 +79,33 @@ __PACKAGE__->set_primary_key("class_type_id");
 
 =head1 RELATIONS
 
-=head2 component_types
+=head2 component_type
 
-Type: has_many
+Type: might_have
 
 Related object: L<AdministratorDB::Schema::Result::ComponentType>
 
 =cut
 
-__PACKAGE__->has_many(
-  "component_types",
+__PACKAGE__->might_have(
+  "component_type",
   "AdministratorDB::Schema::Result::ComponentType",
-  { "foreign.component_class_id" => "self.class_type_id" },
+  { "foreign.component_type_id" => "self.class_type_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 data_model_type
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::DataModelType>
+
+=cut
+
+__PACKAGE__->might_have(
+  "data_model_type",
+  "AdministratorDB::Schema::Result::DataModelType",
+  { "foreign.data_model_type_id" => "self.class_type_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -94,8 +125,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-10-31 01:59:55
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3zuTM2fmvsXOLJn7xz8Kpw
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-01-30 18:11:24
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:jpnpU68TLDB4Lg4AqwepKg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

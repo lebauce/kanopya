@@ -13,7 +13,7 @@ RAW = [
 
 RAW = [
     TYPE = "kvm",
-    DATA = "<currentMemory unit='MiB'>[% memory %]</currentMemory>"
+    DATA = "<currentMemory>[% memory * 1024 %]</currentMemory>"
 ]
 
 OS = [

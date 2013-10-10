@@ -1,17 +1,37 @@
+use utf8;
 package AdministratorDB::Schema::Result::Network;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
-
-
 =head1 NAME
 
 AdministratorDB::Schema::Result::Network
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
+
+=head1 TABLE: C<network>
 
 =cut
 
@@ -33,6 +53,24 @@ __PACKAGE__->table("network");
   is_nullable: 0
   size: 32
 
+=head2 network_addr
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 15
+
+=head2 network_netmask
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 15
+
+=head2 network_gateway
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 15
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -46,23 +84,68 @@ __PACKAGE__->add_columns(
   },
   "network_name",
   { data_type => "char", is_nullable => 0, size => 32 },
+  "network_addr",
+  { data_type => "char", is_nullable => 0, size => 15 },
+  "network_netmask",
+  { data_type => "char", is_nullable => 0, size => 15 },
+  "network_gateway",
+  { data_type => "char", is_nullable => 0, size => 15 },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</network_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("network_id");
+
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<network_name>
+
+=over 4
+
+=item * L</network_name>
+
+=back
+
+=cut
+
 __PACKAGE__->add_unique_constraint("network_name", ["network_name"]);
 
 =head1 RELATIONS
 
-=head2 interface_networks
+=head2 clusters
 
 Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::InterfaceNetwork>
+Related object: L<AdministratorDB::Schema::Result::Cluster>
 
 =cut
 
 __PACKAGE__->has_many(
-  "interface_networks",
-  "AdministratorDB::Schema::Result::InterfaceNetwork",
+  "clusters",
+  "AdministratorDB::Schema::Result::Cluster",
+  { "foreign.default_gateway_id" => "self.network_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 dhcpd3_subnets
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Dhcpd3Subnet>
+
+=cut
+
+__PACKAGE__->has_many(
+  "dhcpd3_subnets",
+  "AdministratorDB::Schema::Result::Dhcpd3Subnet",
   { "foreign.network_id" => "self.network_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -82,45 +165,30 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 network_poolips
+=head2 poolips
 
 Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::NetworkPoolip>
+Related object: L<AdministratorDB::Schema::Result::Poolip>
 
 =cut
 
 __PACKAGE__->has_many(
-  "network_poolips",
-  "AdministratorDB::Schema::Result::NetworkPoolip",
+  "poolips",
+  "AdministratorDB::Schema::Result::Poolip",
   { "foreign.network_id" => "self.network_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 vlan
 
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Vlan>
-
-=cut
-
-__PACKAGE__->might_have(
-  "vlan",
-  "AdministratorDB::Schema::Result::Vlan",
-  { "foreign.vlan_id" => "self.network_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-04-17 14:30:21
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3L9zKTbkgPWfMr0Q5lWC+w
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-15 15:42:54
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:bHm2CCKfvHk9NfPNp9TqwA
 
 __PACKAGE__->belongs_to(
   "parent",
   "AdministratorDB::Schema::Result::Entity",
-  { "foreign.entity_id" => "self.network_id" },
-  { cascade_copy => 0, cascade_delete => 1 }
+  { entity_id => "network_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 1;

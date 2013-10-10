@@ -15,6 +15,16 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+
+=begin classdoc
+
+TODO
+
+=end classdoc
+
+=cut
+
 package EManager::EHostManager;
 use base "EManager";
 
@@ -43,23 +53,11 @@ sub createHost {
     my %args  = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "host_core", "kernel_id",
-                                       "host_serial_number", "host_ram" ]);
+                         required => [ "host_core", "host_serial_number", "host_ram" ]);
 
     if (defined $args{erollback}) { delete $args{erollback}; }
 
-    # Check if kernel_id exist
-    $log->debug("checking kernel existence with id <$args{kernel_id}>");
-    eval {
-        Entity::Kernel->get(id => $args{kernel_id});
-    };
-    if($@) {
-        $errmsg = "Wrong kernel_id attribute detected <$args{kernel_id}>\n" . $@;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
-
-    my $host = $self->_getEntity()->addHost(%args);
+    my $host = $self->_entity->addHost(%args);
 
     #TODO: insert erollback ?
     return $host;
@@ -75,7 +73,7 @@ sub removeHost {
 
     General::checkParams(args => \%args, required => [ "host" ]);
 
-    my $host = $self->_getEntity()->delHost(host => $args{host}->_getEntity);
+    my $host = $self->_entity->delHost(host => $args{host}->_entity);
 
     #TODO: insert erollback ?
 }
@@ -112,6 +110,16 @@ sub stopHost {
     throw Kanopya::Exception::NotImplemented();
 }
 
+
+sub releaseHost {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ "host" ]);
+
+    $args{host}->setState(state => "down");
+}
+
 =head2 postStart
 
     Desc : This function is called once a host has started
@@ -137,10 +145,18 @@ sub scaleHost {
     $log->debug("Scaling is not implemented by this host manager, doing nothing");
 }
 
-=head2 getFreeHost
+=pod
 
-    Desc : Return one free host that match the criterias
-    args : ram, cpu
+=begin classdoc
+
+Return one free host that match the criterias
+@param ram required ram amount
+@param cpu required cores number
+@optional ram_unit
+
+@return Entity::Host
+
+=end classdoc
 
 =cut
 
@@ -148,14 +164,7 @@ sub getFreeHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "ram", "cpu", "ifaces" ]);
-
-    if ($args{ram_unit}) {
-        $args{ram} .= $args{ram_unit};
-        delete $args{ram_unit};
-    }
-
-    $args{host_manager_id} = $self->_getEntity->getAttr(name => 'entity_id');
+    General::checkParams(args => \%args, required => [ "cluster" ]);
 
     return DecisionMaker::HostSelector->getHost(%args);
 }
@@ -171,4 +180,16 @@ sub applyVLAN {
     $log->debug("VLAN are not supported by this host manager, doing nothing");
 }
 
+
+sub getHypervisorVMs {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ "host" ]);
+    throw Kanopya::Exception::NotImplemented();
+}
+
+sub resubmitHost {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ "host" ]);
+    throw Kanopya::Exception::NotImplemented();
+}
 1;

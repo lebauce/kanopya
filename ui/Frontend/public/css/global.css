@@ -164,3 +164,26 @@ th {
     opacity: 1.0;
     filter: Alpha(Opacity=100);
 }
+
+/* Manage visibility of widget time configuration*/
+.time_mode:not(.selected-time-mode) {
+    display : none;
+}
+
+ul.submenu div.scrollarrow {
+    width: 18px;
+    float: left;
+    margin: 1px 0 0 0;
+    border: 1px solid #b2b2b2;
+    border-bottom: 0;
+}
+
+ul.submenu div.scrollarrowleft {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+ul.submenu div.scrollarrowright {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}

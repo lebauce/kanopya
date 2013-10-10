@@ -1,0 +1,103 @@
+/* glue: 0.3 hash: 51668158fd */
+.ui-icon-workload,
+.ui-icon-trash,
+.ui-icon-system,
+.ui-icon-storage,
+.ui-icon-stop,
+.ui-icon-start,
+.ui-icon-scale,
+.ui-icon-scalability,
+.ui-icon-rules,
+.ui-icon-refresh,
+.ui-icon-resources,
+.ui-icon-remote,
+.ui-icon-pause,
+.ui-icon-ok,
+.ui-icon-network,
+.ui-icon-monitoring,
+.ui-icon-migration,
+.ui-icon-migrate,
+.ui-icon-metering,
+.ui-icon-kernel,
+.ui-icon-import,
+.ui-icon-iaas,
+.ui-icon-hosting,
+.ui-icon-export,
+.ui-icon-search,
+.ui-icon-closethick,
+.ui-icon-dashboard,
+.ui-icon-customer,
+.ui-icon-configuration,
+.ui-icon-compute,
+.ui-icon-cancel,
+.ui-icon-analysis,
+.ui-icon-alert,
+.ui-icon-plusthick{background-image:url('/images/kanopya-sprites-purple.png') !important;background-repeat:no-repeat}
+.ui-icon-workload{background-position:0px 0px !important;width:20px;height:20px;}
+.ui-icon-trash{background-position:-20px 0px !important;width:20px;height:20px;}
+.ui-icon-system{background-position:0px -20px !important;width:20px;height:20px;}
+.ui-icon-storage{background-position:-20px -20px !important;width:20px;height:20px;}
+.ui-icon-stop{background-position:-40px 0px !important;width:20px;height:20px;}
+.ui-icon-start{background-position:-40px -20px !important;width:20px;height:20px;}
+.ui-icon-scale{background-position:0px -40px !important;width:20px;height:20px;}
+.ui-icon-scalability{background-position:-20px -40px !important;width:20px;height:20px;}
+.ui-icon-rules{background-position:-40px -40px !important;width:20px;height:20px;}
+.ui-icon-refresh{background-position:-60px 0px !important;width:20px;height:20px;}
+.ui-icon-resources{background-position:-60px -20px !important;width:20px;height:20px;}
+.ui-icon-remote{background-position:-60px -40px !important;width:20px;height:20px;}
+.ui-icon-pause{background-position:0px -60px !important;width:20px;height:20px;}
+.ui-icon-ok{background-position:-20px -60px !important;width:20px;height:20px;}
+.ui-icon-network{background-position:-40px -60px !important;width:20px;height:20px;}
+.ui-icon-monitoring{background-position:-60px -60px !important;width:20px;height:20px;}
+.ui-icon-migration{background-position:-80px 0px !important;width:20px;height:20px;}
+.ui-icon-migrate{background-position:-80px -20px !important;width:20px;height:20px;}
+.ui-icon-metering{background-position:-80px -40px !important;width:20px;height:20px;}
+.ui-icon-kernel{background-position:-80px -60px !important;width:20px;height:20px;}
+.ui-icon-import{background-position:0px -80px !important;width:20px;height:20px;}
+.ui-icon-iaas{background-position:-20px -80px !important;width:20px;height:20px;}
+.ui-icon-hosting{background-position:-40px -80px !important;width:20px;height:20px;}
+.ui-icon-export{background-position:-60px -80px !important;width:20px;height:20px;}
+.ui-icon-search{background-position:-80px -80px !important;width:20px;height:20px;}
+.ui-icon-closethick{background-position:-100px 0px !important;width:20px;height:20px;}
+.ui-icon-dashboard{background-position:-100px -20px !important;width:20px;height:20px;}
+.ui-icon-customer{background-position:-100px -40px !important;width:20px;height:20px;}
+.ui-icon-configuration{background-position:-100px -60px !important;width:20px;height:20px;}
+.ui-icon-compute{background-position:-100px -80px !important;width:20px;height:20px;}
+.ui-icon-cancel{background-position:0px -100px !important;width:20px;height:20px;}
+.ui-icon-analysis{background-position:-20px -100px !important;width:20px;height:20px;}
+.ui-icon-alert{background-position:-40px -100px !important;width:20px;height:20px;}
+.ui-icon-plusthick{background-position:-60px -100px !important;width:20px;height:20px;}
+.ui-state-active .ui-icon-workload,
+.ui-state-active .ui-icon-trash,
+.ui-state-active .ui-icon-system,
+.ui-state-active .ui-icon-storage,
+.ui-state-active .ui-icon-stop,
+.ui-state-active .ui-icon-start,
+.ui-state-active .ui-icon-scale,
+.ui-state-active .ui-icon-scalability,
+.ui-state-active .ui-icon-rules,
+.ui-state-active .ui-icon-refresh,
+.ui-state-active .ui-icon-resources,
+.ui-state-active .ui-icon-remote,
+.ui-state-active .ui-icon-pause,
+.ui-state-active .ui-icon-ok,
+.ui-state-active .ui-icon-network,
+.ui-state-active .ui-icon-monitoring,
+.ui-state-active .ui-icon-migration,
+.ui-state-active .ui-icon-migrate,
+.ui-state-active .ui-icon-metering,
+.ui-state-active .ui-icon-kernel,
+.ui-state-active .ui-icon-import,
+.ui-state-active .ui-icon-iaas,
+.ui-state-active .ui-icon-hosting,
+.ui-state-active .ui-icon-export,
+.ui-state-active .ui-icon-search,
+.ui-state-active .ui-icon-closethick,
+.ui-state-active .ui-icon-dashboard,
+.ui-state-active .ui-icon-customer,
+.ui-state-active .ui-icon-configuration,
+.ui-state-active .ui-icon-compute,
+.ui-state-active .ui-icon-cancel,
+.ui-state-active .ui-icon-analysis,
+.ui-state-active .ui-icon-alert,
+.ui-state-active .ui-icon-plusthick{background-image:url('/images/kanopya-sprites-white.png') !important;background-repeat:no-repeat}

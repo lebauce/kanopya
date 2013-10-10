@@ -30,10 +30,6 @@ my $log = get_logger("");
 my $errmsg;
 
 
-=head2 checkNotificationManagerParams
-
-=cut
-
 sub checkNotificationManagerParams {
     my $self = shift;
     my %args  = @_;

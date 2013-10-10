@@ -19,18 +19,29 @@ function vmdetails(spid) {
             { label : 'Monitoring', id : 'resource_monitoring', onLoad : function(cid, eid) { NodeIndicatorDetailsHistorical(cid, eid, spid); } },
             { label : 'Rules', id : 'rules', onLoad : function(cid, eid) { node_rules_tab(cid, eid, spid); } },
         ],
-        title : { from_column : 'externalnode_hostname' }
+        title : { from_column : 'node_hostname' }
     };
 }
 
 function load_iaas_detail_hypervisor (container_id, elem_id) {
     var container = $('#' + container_id);
-    var cloudmanagerid  = $('#iaas_list').jqGrid('getRowData', elem_id)['cloudmanager.pk'];
+
+    // Retrieve the cloud manager
+    var cloudmanagerid;
+    $.ajax({
+        url     : 'api/serviceprovider/'+elem_id+'/components?component_type.component_type_categories.component_category.category_name=HostManager',
+        async   : false,
+        success : function(host_manager) {
+           cloudmanagerid = host_manager[0].pk;
+        }
+    });
     if (cloudmanagerid == null) {
+        console.log('No cloud manager found');
         return;
     }
+
     $.ajax({
-        url     : '/api/entity/' + cloudmanagerid + '/hypervisors',
+        url     : '/api/virtualization/' + cloudmanagerid + '/hypervisors?expand=node',
         type    : 'POST',
         success : function(data) {
             var topush  = [];
@@ -42,7 +53,7 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
                 data[i].vmcount = 0;
                 $.ajax({
                     async   : false,
-                    url     : '/api/hypervisor/' + data[i].id + '/virtual_machines',
+                    url     : '/api/hypervisor/' + data[i].id + '/virtual_machines?expand=node',
                     success : function(hyp) {
                         return (function(vms) {
                             hyp.totalRamUsed    = 0;
@@ -50,11 +61,11 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
                             if (vms.length > 0) {
                                 hyp.vmcount     += vms.length
                                 hyp.isLeaf      = false;
-                                for (var j in vms) if (vms.hasOwnProperty(i)) {
+                                for (var j in vms) if (vms.hasOwnProperty(j)) {
                                     vms[j].id       = hyp.id + "_" + vms[j].pk;
                                     vms[j].isLeaf   = true;
                                     vms[j].level    = '1';
-                                    vms[j].parent   = data[i].id;
+                                    vms[j].parent   = hyp.id;
                                     vms[j].type     = 'vm';
                                     hyp.totalRamUsed    += parseInt(vms[j].host_ram);
                                     hyp.totalCoreUsed   += parseInt(vms[j].host_core);
@@ -72,14 +83,14 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
                 caption                 : 'Hypervisors for IaaS ' + elem_id,
                 treeGrid                : true,
                 treeGridModel           : 'adjacency',
-                ExpandColumn            : 'host_hostname',
+                ExpandColumn            : 'node.node_hostname',
                 data                    : data,
                 content_container_id    : container_id,
                 grid_id                 : 'iaas_hyp_list',
                 colNames                : [ 'ID', 'Base hostname', 'State', 'Vms', 'Admin Ip', '', '', '', '', '', '' ],
                 colModel                : [
                     { name : 'id', index : 'id', width : 60, sorttype : "int", hidden : true, key : true },
-                    { name : 'host_hostname', index : 'host_hostname', width : 90 },
+                    { name : 'node.node_hostname', index : 'node.node_hostname', width : 90 },
                     { name : 'host_state', index : 'host_state', width : 30, formatter : StateFormatter, align : 'center' },
                     { name : 'vmcount', index : 'vmcount', width : 30, align : 'center' },
                     { name : 'adminip', index : 'adminip', width : 100 },
@@ -99,7 +110,18 @@ function load_iaas_detail_hypervisor (container_id, elem_id) {
                             id      : 'hypervisor_detail_overview',
                             onLoad  : function(cid, eid) { load_hypervisorvm_details(cid, eid, cloudmanagerid); }
                         },
-                    ]
+                        {
+                            label  : 'General',
+                            id     : 'generalnodedetails',
+                            onLoad : function(cid, eid) { nodedetailsaction(cid, null, eid); }
+                        },
+                        {
+                            label  : 'Network Interfaces',
+                            id     : 'iface',
+                            onLoad : function(cid, eid) { node_ifaces_tab(cid, null, eid); }
+                        },
+                    ],
+                    title : { from_column : 'node.node_hostname' }
                 },
             }, 10);
         }
@@ -128,7 +150,7 @@ function load_hypervisorvm_details(cid, eid, cmgrid) {
     if (data.type === 'hypervisor') {
         var table           = $('<table>', { width : '100%' }).appendTo($('#' + cid));
         $(table).append($('<tr>').append($('<th>', { text : 'Hostname : ', width : '100px' }))
-                                     .append($('<td>', { text : data.host_hostname })));
+                                     .append($('<td>', { text : data['node.node_hostname'] })));
         data.host_ram = data.host_ram / 1024 / 1024;
         data.totalRamUsed = data.totalRamUsed / 1024 / 1024;
         var hypervisorType  = $('<td>');
@@ -143,53 +165,6 @@ function load_hypervisorvm_details(cid, eid, cmgrid) {
         $.ajax({
             url     : '/api/entity/' + cmgrid,
             success : function(elem) { $(hypervisorType).text(elem.hypervisor); }
-        });
-        $('#' + cid).append('<hr>');
-        var networktable    = $('<table>', { width : '100%' }).appendTo($('#' + cid));
-        $(networktable).append($('<tr>').append($('<th>', { text : 'Network type' }))
-                                        .append($('<th>', { text : 'Network' }))
-                                        .append($('<th>', { text : 'Pool IP' })));
-        var expands = ['ifaces', 'ifaces.interface', 'ifaces.interface.interface_networks',
-                       'ifaces.interface.interface_networks.network',
-                       'ifaces.interface.interface_networks.network.network_poolips',
-                       'ifaces.interface.interface_networks.network.network_poolips.poolip',
-                       'ifaces.interface.interface_role',];
-        $.ajax({
-            url     : '/api/host/' + data.entity_id + '?expand=' + expands.join(','),
-            success : function(hostdata) {
-                var interfaces  = {};
-                var current;
-                for (var i in hostdata.ifaces) if (hostdata.ifaces.hasOwnProperty(i)) {
-                    var iface   = hostdata.ifaces[i];
-
-                    if (interfaces[iface.interface.interface_role.interface_role_name] == null) {
-                        current = $('<tr>').appendTo(networktable).append($('<td>', { text : iface.interface.interface_role.interface_role_name }));
-                        interfaces[iface.interface.interface_role.interface_role_name]  = current;
-                    } else {
-                        var tmp = $('<tr>').append('<td>');
-                        $(current).after(tmp);
-                        current = tmp;
-                    }
-                    for (var j in iface.interface.interface_networks) if (iface.interface.interface_networks.hasOwnProperty(j)) {
-                        var network = iface.interface.interface_networks[j].network;
-                        $(current).append($('<td>', { text : network.network_name }));
-                        for (var k in network.network_poolips) if (network.network_poolips.hasOwnProperty(k)) {
-                            var pip     = network.network_poolips[k].poolip;
-                            var poolip  = $('<td>', {
-                                text : pip.poolip_name + ' : ' + pip.poolip_addr
-                            });
-                            if (parseInt(k) === 0) {
-                                $(current).append(poolip);
-                            }
-                            else {
-                                var tmp = $('<tr>').append('<td>').append('<td>').append(poolip);
-                                $(current).after(tmp);
-                                current = tmp;
-                            }
-                        }
-                    }
-                }
-            }
         });
     }
     else {
@@ -206,50 +181,57 @@ function load_hypervisorvm_details(cid, eid, cmgrid) {
 
 function load_iaas_content (container_id) {
     require('common/formatters.js');
-    var iaas   = [];
-    var iaases = getServiceProviders('Cloudmanager');
-    for (var i in iaases) {
-        for (var component in iaases[i].components) {
-            var component = iaases[i].components[component];
-            if (component.component_type.component_category === 'Cloudmanager' &&
-                component.host_type === 'Virtual Machine') {
-                iaases[i].cloudmanager = component;
-                iaas.push(iaases[i]);
-            }
-        }
-        for (var connector in iaases[i].connectors) {
-            var connector = iaases[i].connectors[connector];
-            if (connector.connector_type.connector_category === 'Cloudmanager' &&
-                connector.host_type === 'Virtual Machine') {
-                iaases[i].cloudmanager = connector;
-                iaas.push(iaases[i]);
-            }
-        }
-    }
 
     var tabs = [];
     // Add the same tabs than 'Services'
-    jQuery.extend(true, tabs, mainmenu_def.Services.jsontree.submenu);
+    jQuery.extend(true, tabs, mainmenu_def.Instances.jsontree.submenu);
+    // Remove the Billing tab
+    for (var i = tabs.length -1; i >= 0; i--) {
+        if (tabs[i].id == 'billing') {
+            tabs.splice(i,1);
+            break;
+        }
+    }
     // Add the tab 'Hypervisor'
-    tabs.push({label : 'Hypervisors', id : 'hypervisors', onLoad : load_iaas_detail_hypervisor });
+    tabs.push({label : 'Hypervisors', id : 'hypervisors', onLoad : load_iaas_detail_hypervisor, icon : 'compute'});
     // change details tab callback to inform we are in IAAS mode
     var details_tab = $.grep(tabs, function (e) {return e.id == 'service_details'});
     details_tab[0].onLoad = function(cid, eid) { require('KIM/services_details.js'); loadServicesDetails(cid, eid, 1);};
 
+    // Get cluster
+    var url = '/api/cluster';
+    // Only cluster with a component of category 'HostManager'
+    url += '?components.component_type.component_type_categories.component_category.category_name=HostManager';
+    // Need component_type info to filter during afterInsertRow() callback
+    url += '&expand=components.component_type&deep=1';
+    // Exclude kanopya cluster
+    url += '&cluster_id=<>,' + kanopya_cluster;
+
     create_grid({
-        data                    : iaas,
+        url : url,
         content_container_id    : container_id,
         grid_id                 : 'iaas_list',
-        colNames                : [ 'ID', 'Name', 'State', 'ManagerID' ],
+        colNames                : [ 'ID', 'Name', 'State', 'Active' ],
         colModel                : [
             { name : 'pk', index : 'pk', width : 60, sorttype : 'int', hidden : true, key : true },
             { name : 'cluster_name', index : 'cluster_name', width : 200 },
             { name : 'cluster_state', index : 'cluster_state', width : 200, formatter : StateFormatter },
-            { name : 'cloudmanager.pk', index : 'cloudmanager.pk', width : 60, hidden : true, sorttype : 'int' }
+            { name: 'active', index: 'active', hidden : true}
         ],
+        afterInsertRow : function(grid, rowid, rowdata, rowelem) {
+            // Keep only instance where the component implementing HostManager manage hosts of type 'Virtual Machine'
+            // 'host_type' is a virtual attribute and so can not be filtered in the request
+            for (var i in rowelem.components) {
+                if (rowelem.components[i].host_type === 'Virtual Machine') {
+                    return true;
+                }
+            }
+            $(grid).jqGrid('delRowData', rowid);
+        },
         details                 : {
             noDialog    : true,
             tabs        : tabs
-        }
+        },
+        deactivate  : true,
     });
 }

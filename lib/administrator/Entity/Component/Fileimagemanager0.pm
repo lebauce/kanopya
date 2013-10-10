@@ -1,4 +1,4 @@
-# Copyright © 2012 Hedera Technology SAS
+# Copyright © 2012-2013 Hedera Technology SAS
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -15,6 +15,14 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package Entity::Component::Fileimagemanager0;
 use base "Entity::Component";
 use base "Manager::ExportManager";
@@ -23,17 +31,17 @@ use base "Manager::DiskManager";
 use strict;
 use warnings;
 
-use Entity::Operation;
 use Entity::Container::FileContainer;
 use Entity::ContainerAccess::FileContainerAccess;
+use Entity::ContainerAccess::NfsContainerAccess;
 use Entity::ContainerAccess;
 use Entity::ServiceProvider;
 
 use Manager::HostManager;
 use Kanopya::Exceptions;
 
+use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
-use Data::Dumper;
 
 my $log = get_logger("");
 my $errmsg;
@@ -62,78 +70,67 @@ sub diskType {
     return "Virtual machine disk";
 }
 
-=head2 checkDiskManagerParams
+=pod
+=begin classdoc
 
+@return the manager params definition.
+
+=end classdoc
 =cut
+
+sub getManagerParamsDef {
+    my ($self, %args) = @_;
+
+    return {
+        # TODO: call super on all Manager supers
+        %{ $self->SUPER::getManagerParamsDef },
+        container_access_id => {
+            label        => 'NFS repository to use',
+            type         => 'enum',
+            is_mandatory => 1,
+        },
+        image_type => {
+            label        => 'Disk image format',
+            type         => 'enum',
+            is_mandatory => 1,
+            options      => [ "raw", "qcow2", "vmdk" ]
+        },
+    };
+}
+
 
 sub checkDiskManagerParams {
     my $self = shift;
     my %args = @_;
     
-    General::checkParams(args => \%args, required => [ "container_access_id", "systemimage_size" ]);
+    General::checkParams(args => \%args, required => [ "container_access_id", "systemimage_size", "image_type" ]);
 }
 
-=head2 getPolicyParams
 
+=pod
+=begin classdoc
+
+@return the managers parameters as an attribute definition. 
+
+=end classdoc
 =cut
 
-sub getPolicyParams {
+sub getDiskManagerParams {
     my $self = shift;
-    my %args = @_;
+    my %args  = @_;
 
-    General::checkParams(args => \%args, required => [ 'policy_type' ]);
+    my $definition = $self->getManagerParamsDef();
+    $definition->{container_access_id}->{options} = {};
 
-    my $accesses = {};
-    if ($args{policy_type} eq 'storage') {
-        for my $access (@{ $self->getConf->{container_accesses} }) {
-            $accesses->{$access->{container_access_id}} = $access->{container_access_name};
-        }
-        return [ { name => 'container_access_id', label => 'NFS export to use', values => $accesses },
-                 { name => 'image_type', label => 'Disk image format', values => [ "raw", "qcow2", "VMDK" ] } ];
+    my @nfs = Entity::ContainerAccess::NfsContainerAccess->search();
+    for my $access (@nfs) {
+        $definition->{container_access_id}->{options}->{$access->id} = $access->container_access_export;
     }
-    return [];
-}
 
-sub getConf {
-    my $self = shift;
-    my $conf = {};
-    my @access_hashes = ();
-
-    # Workaround to use a fileimage manager installed on a different service provider
-    # than the component opennebula.
-    my $opennebula;
-    eval {
-        my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
-        $opennebula = $cluster->getComponent(name => "Opennebula", version => "3");
+    return {
+        container_access_id => $definition->{container_access_id},
+        image_type          => $definition->{image_type}
     };
-    if ($@) {
-        # Try to find the first cluster with opennebula3 installed
-        my @services = Entity::ServiceProvider->search(hash => {});
-        for my $serviceprovider (@services) {
-            eval {
-                $opennebula = $serviceprovider->getComponent(name => "Opennebula", version => "3");
-            }
-        }
-    }
-
-    if ($opennebula) {
-        my $repo_rs = $opennebula->{_dbix}->opennebula3_repositories;
-        while (my $repo_row = $repo_rs->next) {
-            my $container_access = Entity::ContainerAccess->get(
-                                      id => $repo_row->get_column('container_access_id')
-                                   );
-            push @access_hashes, {
-                container_access_id   => $container_access->getAttr(name => 'container_access_id'),
-                container_access_name => $container_access->getAttr(name => 'container_access_export'),
-            }
-        }
-    }
-
-    $conf->{container_accesses} = \@access_hashes;
-    return $conf;
-}
-
-sub setConf {
 }
 
 sub getExportManagerFromBootPolicy {
@@ -184,14 +181,6 @@ sub getReadOnlyParameter {
     return undef;
 }
 
-=head2 createDisk
-
-    Desc : Implement createDisk from DiskManager interface.
-           This function enqueue a ECreateDisk operation.
-    args :
-
-=cut
-
 sub createDisk {
     my $self = shift;
     my %args = @_;
@@ -200,8 +189,7 @@ sub createDisk {
                          required => [ "container_access", "name", "size", "filesystem" ]);
 
     $log->debug("New Operation CreateDisk with attrs : " . %args);
-    Entity::Operation->enqueue(
-        priority => 200,
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
         type     => 'CreateDisk',
         params   => {
             name                => $args{name},
@@ -216,14 +204,6 @@ sub createDisk {
     );
 }
 
-=head2 getFreeSpace
-
-    Desc : Implement getFreeSpace from DiskManager interface.
-           This function return the free space on the volume group.
-    args :
-
-=cut
-
 sub getFreeSpace {
     my $self = shift;
     my %args = @_;
@@ -236,15 +216,6 @@ sub getFreeSpace {
     return $container_access->getContainer->getAttr(name => 'container_freespace');
 }
 
-
-=head2 createExport
-
-    Desc : Implement createExport from ExportManager interface.
-           This function enqueue a ECreateExport operation.
-    args : export_name, device, typeio, iomode
-
-=cut
-
 sub createExport {
     my $self = shift;
     my %args = @_;
@@ -253,8 +224,7 @@ sub createExport {
                          required => [ "container", "export_name" ]);
 
     $log->debug("New Operation CreateExport with attrs : " . %args);
-    Entity::Operation->enqueue(
-        priority => 200,
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
         type     => 'CreateExport',
         params   => {
             context => {
@@ -266,6 +236,18 @@ sub createExport {
             },
         },
     );
+}
+
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        fileimagemanager => {
+            manifest => $self->instanciatePuppetResource(
+                            name => "kanopya::fileimagemanager",
+                        )
+        }
+    } );
 }
 
 1;

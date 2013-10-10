@@ -46,11 +46,12 @@ __PACKAGE__->table("service_provider");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 service_provider_name
+=head2 service_provider_type_id
 
-  data_type: 'char'
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
   is_nullable: 1
-  size: 32
 
 =cut
 
@@ -62,8 +63,13 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "service_provider_name",
-  { data_type => "char", is_nullable => 1, size => 32 },
+  "service_provider_type_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
 );
 
 =head1 PRIMARY KEY
@@ -97,23 +103,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 aggregate_rules
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::AggregateRule>
-
-=cut
-
-__PACKAGE__->has_many(
-  "aggregate_rules",
-  "AdministratorDB::Schema::Result::AggregateRule",
-  {
-    "foreign.aggregate_rule_service_provider_id" => "self.service_provider_id",
-  },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 billinglimits
 
 Type: has_many
@@ -126,6 +115,21 @@ __PACKAGE__->has_many(
   "billinglimits",
   "AdministratorDB::Schema::Result::Billinglimit",
   { "foreign.service_provider_id" => "self.service_provider_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 cluster
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Cluster>
+
+=cut
+
+__PACKAGE__->might_have(
+  "cluster",
+  "AdministratorDB::Schema::Result::Cluster",
+  { "foreign.cluster_id" => "self.service_provider_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -191,21 +195,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 connectors
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::Connector>
-
-=cut
-
-__PACKAGE__->has_many(
-  "connectors",
-  "AdministratorDB::Schema::Result::Connector",
-  { "foreign.service_provider_id" => "self.service_provider_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 dashboard
 
 Type: might_have
@@ -223,18 +212,18 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 externalnodes
+=head2 externalcluster
 
-Type: has_many
+Type: might_have
 
-Related object: L<AdministratorDB::Schema::Result::Externalnode>
+Related object: L<AdministratorDB::Schema::Result::Externalcluster>
 
 =cut
 
-__PACKAGE__->has_many(
-  "externalnodes",
-  "AdministratorDB::Schema::Result::Externalnode",
-  { "foreign.service_provider_id" => "self.service_provider_id" },
+__PACKAGE__->might_have(
+  "externalcluster",
+  "AdministratorDB::Schema::Result::Externalcluster",
+  { "foreign.externalcluster_id" => "self.service_provider_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -253,21 +242,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 inside
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Inside>
-
-=cut
-
-__PACKAGE__->might_have(
-  "inside",
-  "AdministratorDB::Schema::Result::Inside",
-  { "foreign.inside_id" => "self.service_provider_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 interfaces
 
 Type: has_many
@@ -280,6 +254,21 @@ __PACKAGE__->has_many(
   "interfaces",
   "AdministratorDB::Schema::Result::Interface",
   { "foreign.service_provider_id" => "self.service_provider_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 netapp
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Netapp>
+
+=cut
+
+__PACKAGE__->might_have(
+  "netapp",
+  "AdministratorDB::Schema::Result::Netapp",
+  { "foreign.netapp_id" => "self.service_provider_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -300,20 +289,18 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 nodemetric_rules
+=head2 nodes
 
 Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::NodemetricRule>
+Related object: L<AdministratorDB::Schema::Result::Node>
 
 =cut
 
 __PACKAGE__->has_many(
-  "nodemetric_rules",
-  "AdministratorDB::Schema::Result::NodemetricRule",
-  {
-    "foreign.nodemetric_rule_service_provider_id" => "self.service_provider_id",
-  },
+  "nodes",
+  "AdministratorDB::Schema::Result::Node",
+  { "foreign.service_provider_id" => "self.service_provider_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -332,18 +319,18 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 outside
+=head2 rules
 
-Type: might_have
+Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::Outside>
+Related object: L<AdministratorDB::Schema::Result::Rule>
 
 =cut
 
-__PACKAGE__->might_have(
-  "outside",
-  "AdministratorDB::Schema::Result::Outside",
-  { "foreign.outside_id" => "self.service_provider_id" },
+__PACKAGE__->has_many(
+  "rules",
+  "AdministratorDB::Schema::Result::Rule",
+  { "foreign.service_provider_id" => "self.service_provider_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -377,6 +364,56 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 service_provider_type
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::ServiceProviderType>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "service_provider_type",
+  "AdministratorDB::Schema::Result::ServiceProviderType",
+  { service_provider_type_id => "service_provider_type_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
+);
+
+=head2 systemimages
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Systemimage>
+
+=cut
+
+__PACKAGE__->has_many(
+  "systemimages",
+  "AdministratorDB::Schema::Result::Systemimage",
+  { "foreign.service_provider_id" => "self.service_provider_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 unified_computing_system
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::UnifiedComputingSystem>
+
+=cut
+
+__PACKAGE__->might_have(
+  "unified_computing_system",
+  "AdministratorDB::Schema::Result::UnifiedComputingSystem",
+  { "foreign.ucs_id" => "self.service_provider_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 indicatorsets
 
 Type: many_to_many
@@ -388,8 +425,8 @@ Composing rels: L</collects> -> indicatorset
 __PACKAGE__->many_to_many("indicatorsets", "collects", "indicatorset");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-08 19:38:24
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:0GcBqKsCM4NV2zF5nj4u5Q
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-02-13 14:18:41
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:oTe3ucdDDVJD2ibXL7uUlg
 
 __PACKAGE__->belongs_to(
   "parent",

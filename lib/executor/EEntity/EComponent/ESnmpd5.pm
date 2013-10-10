@@ -21,65 +21,34 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 my $errmsg;
 
-# generate snmpd configuration files on node
-sub addNode {
+sub generateConfiguration {
     my ($self, %args) = @_;
-    
+
     General::checkParams(args     => \%args,
-                         required => ['cluster','host','mount_point']);
+                         required => [ 'cluster', 'host' ]);
 
-    my $conf = $self->_getEntity()->getConf();
+    my $conf = $self->getConf();
 
-    # generation of /etc/default/snmpd 
-    my $data = {};
-    $data->{node_ip_address} = $args{host}->adminIp;
-    $data->{options} = $conf->{snmpd_options};       
-    
-    my $file = $self->generateNodeFile(
+    $self->generateNodeFile(
         cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/default/snmpd',
         template_dir  => '/templates/components/snmpd',
         template_file => 'default_snmpd.tt',
-        data          => $data
+        data          => {
+                             node_ip_address => $args{host}->adminIp,
+                             options         => $conf->{snmpd_options}
+                         }
     );
-    
-    $self->getExecutorEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/default',
-    );
-    
-    # generation of /etc/snmpd/snmpd.conf 
-    $data = {};
-    $data->{monitor_server_ip} = $conf->{monitor_server_ip};
 
-    $file = $self->generateNodeFile(
+    $self->generateNodeFile(
         cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/snmp/snmpd.conf',
         template_dir  => '/templates/components/snmpd',
         template_file => 'snmpd.conf.tt',
-        data          => $data
+        data          => $conf
     );
-    
-    $self->getExecutorEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/snmp',
-    );
-
-    # add snmpd init scripts
-    $self->addInitScripts(
-        mountpoint => $args{mount_point},
-        scriptname => 'snmpd',
-    );
-}
-
-# Reload snmp process
-sub reload {
-    my ($self, %args) = @_;
-    my $command = "invoke-rc.d snmpd restart";
-    my $result = $self->getEContext->execute(command => $command);
-    return undef;
 }
 
 1;

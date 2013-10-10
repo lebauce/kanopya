@@ -16,14 +16,15 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 package EEntity::EWorkflow;
-use base 'EEntity';
+use base EEntity;
 
 use strict;
 use warnings;
 
 use Kanopya::Exceptions;
 use Entity::Operation;
-use EFactory;
+use EEntity::EOperation;
+use EntityLock;
 
 use Log::Log4perl "get_logger";
 
@@ -34,18 +35,12 @@ use vars qw ( $AUTOLOAD );
 
 sub cancel {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['state']);
 
-    # TODO: filter on states to get operation to cancel only.
-    my @operations = Entity::Operation->search(hash => {
-                         workflow_id => $self->getAttr(name => 'workflow_id'),
-                     });
-
-    for my $operation (@operations) {
-        if ($operation->getAttr(name => 'state') ne 'pending') {
+    for my $operation ($self->searchRelated(filters => ['operations'], order_by => 'execution_rank DESC')) {
+        if ($operation->state ne 'pending') {
             eval {
-                $operation->unlockContext();
-                EFactory::newEOperation(op => $operation)->cancel();
+                $log->info("Cancelling operation <" . $operation->id . ">");
+                EEntity::EOperation->new(operation => $operation, skip_not_found => 1)->cancel();
             };
             if ($@){
                 $log->error("Error during operation cancel :\n$@");
@@ -53,42 +48,7 @@ sub cancel {
         }
         $operation->remove();
     }
-
-    $self->setState(state => $args{state});
-}
-
-sub pepareNextOp {
-    my $self = shift;
-    my %args = @_;
-
-    $self->getCurrentOperation->setState(state => 'succeeded');
-
-    if(not $args{params}) {
-        $args{params} = {};
-    }
-
-    my $next;
-    eval {
-        $next = $self->getCurrentOperation();
-    };
-    if ($@) {
-        $self->finish();
-    }
-    else {
-        # Update the context with the last operation output context
-        $args{params}->{context} = $args{context};
-        $next->setParams(params => $args{params});
-
-        $next->lockContext();
-        $next->setState(state => 'ready');
-    }
-}
-
-sub getEContext {
-    my ($self) = @_;
-
-    return EFactory::newEContext(ip_source      => $self->{_executor}->getMasterNodeIp(),
-                                 ip_destination => $self->{_executor}->getMasterNodeIp());
+    $self->setState(state => 'cancelled');
 }
 
 1;

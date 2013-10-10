@@ -1,21 +1,46 @@
-package Entity;
-use base 'BaseDB';
+#    Copyright © 2011-2013 Hedera Technology SAS
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-use Data::Dumper;
-use Log::Log4perl 'get_logger';
+=pod
+=begin classdoc
+
+Entity base class
+
+=end classdoc
+=cut
+
+package Entity;
+use base BaseDB;
 
 use EntityLock;
+use EntityState;
+use Entityright;
 use EntityComment;
-use Entity::Workflow;
-use Message;
+use ClassType;
 use Entity::Gp;
-use OperationParameter;
 use Operationtype;
 use Kanopya::Exceptions;
-use Entity::Operation;
 use NotificationSubscription;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 
+use Data::Dumper;
+
+use TryCatch;
+my $err;
+
+use Log::Log4perl 'get_logger';
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
@@ -33,6 +58,22 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_extended  => 0
     },
+    entity_time_periods => {
+        label        => 'Time periods',
+        type         => 'relation',
+        relation     => 'multi',
+        link_to      => 'time_period',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
+    entity_tags => {
+        label        => 'Tags',
+        type         => 'relation',
+        relation     => 'multi',
+        link_to      => 'tag',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
     comment => {
         is_virtual   => 1,
     },
@@ -42,32 +83,33 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        create => {
-            description => 'create a new entity',
-        },
-        remove => {
-            description => 'remove an entity',
-        },
-        update => {
-            description => 'update an entity',
-        },
         subscribe => {
-            description => 'subscribe to notification about this entity.',
+            description => 'subscribe to notification about <object>',
+        },
+        unsubscribe => {
+            description => 'unsubscribe to notification about <object>',
         },
         addPerm => {
-            description => 'subscribe to notification about this entity.',
+            description => 'add a permission for <object>',
         },
         removePerm => {
-            description => 'subscribe to notification about this entity.',
+            description => 'remove a permission for <object>',
         }
     };
 }
 
-=head2 new
 
-    Override BaseDB constructor to add the newly created entity
-    to the corresponding group. 
+=pod
+=begin classdoc
 
+@constructor
+
+Override BaseDB constructor to add the newly created entity
+to the corresponding groups of the whole class hierachy. 
+
+@return the entity instance
+
+=end classdoc
 =cut
 
 sub new {
@@ -75,52 +117,81 @@ sub new {
     my %args = @_;
 
     # Get the class_type_id for class name
-    my $adm = Administrator->new();
-    my $rs = $adm->_getDbixFromHash(table => "ClassType",
-                                    hash  => { class_type => $class })->single;
-
-    $args{class_type_id} = $rs->get_column('class_type_id');
+    $args{class_type_id} = ClassType->find(hash => { class_type => $class })->id;
 
     my $self = $class->SUPER::new(%args);
 
-    # Add the entity in the master group corresponding to it concrete class
-    # and also in the master group Entity.
-    my $mastergroup = $class->getMasterGroup;
-    if ($mastergroup->gp_name ne 'Entity') {
-        Entity->getMasterGroup->appendEntity(entity => $self);
+    # Call the delegatee object to process permissions propagation
+    my $delegateeattr = $self->getDelegateeAttr();
+    if (defined $delegateeattr) {
+        $delegateeattr =~ s/_id$//g;
+        $self->$delegateeattr->propagatePermissions(related => $self);
     }
-    $mastergroup->appendEntity(entity => $self);
+
+    # Try to add the instance to master groups of the whole hierachy.
+    $self->appendToHierarchyGroups(hierarchy => $class);
 
     return $self;
 }
 
-=head2
 
-    Lock the entity while updating it.
+=pod
+=begin classdoc
 
+Lock the entity while updating it.
+
+@return the updated instance
+
+=end classdoc
 =cut
 
 sub update {
     my ($self, %args) = @_;
 
-    # Try to lock the entoty while updating it
+    # Try to lock the entity while updating it
     $self->lock(consumer => $self);
 
-    eval {
+    try {
         $self->SUPER::update(%args);
-    };
-    if ($@) {
+    }
+    catch (Kanopya::Exception $err) {
         $self->unlock(consumer => $self);
+
+        $err->rethrow();
+    }
+    catch ($err) {
+        $self->unlock(consumer => $self);
+
+        throw Kanopya::Exception::Internal(error => "$err");
     }
     $self->unlock(consumer => $self);
 
     return $self;
 }
 
-=head2
 
-    Ensure to get the lock on the entity before removing it.
+=pod
+=begin classdoc
 
+Reload entity from database
+
+@return the reloaded instance
+
+=end classdoc
+=cut
+
+sub reload {
+    my $self = shift;
+    return Entity->get(id => $self->id);
+}
+
+
+=pod
+=begin classdoc
+
+Ensure to get the lock on the entity before removing it.
+
+=end classdoc
 =cut
 
 sub remove {
@@ -129,25 +200,171 @@ sub remove {
     # Try to lock the entoty while updating it
     $self->lock(consumer => $self);
 
-    eval {
+    try {
         $self->SUPER::remove(%args);
-    };
-    if ($@) {
+    }
+    catch (Kanopya::Exception $err) {
         $self->unlock(consumer => $self);
+
+        $err->rethrow();
+    }
+    catch ($err) {
+        $self->unlock(consumer => $self);
+
+        throw Kanopya::Exception::Internal(error => "$err");
     }
 
     $self->unlock(consumer => $self);
 }
 
 
-=head2 getMasterGroup
+=pod
+=begin classdoc
 
-    Class : public
+Ensure to unlock the entity, whatever the consumer.
 
-    desc : return entity_id of entity master group
-    TO BE CALLED ONLY ON CHILD CLASS/INSTANCE
-    return : scalar : entity_id
+=end classdoc
+=cut
 
+sub delete {
+    my ($self, %args) = @_;
+
+    my $lock = $self->entity_lock_entity;
+    if (defined $lock) {
+        $self->unlock(consumer => $lock->consumer);
+    }
+    return $self->SUPER::delete(%args);
+}
+
+
+=pod
+=begin classdoc
+
+Override the method to add the promoted object to the groups
+of the new hierarchy.
+
+@return the promoted object
+
+=end classdoc
+=cut
+
+sub promote {
+    my ($class, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'promoted' ]);
+
+    # Keep the orignal class of the object
+    my $baseclass = ref($args{promoted});
+
+    # Promote it
+    my $promoted = $class->SUPER::promote(%args);
+
+    # Extract the new levels of the hierarchy
+    my $pattern = $baseclass . '::';
+    my $subclass = $class;
+    $subclass =~ s/^$pattern//g;
+
+    $promoted->appendToHierarchyGroups(hierarchy => $subclass);
+
+    return $promoted;
+}
+
+
+=pod
+=begin classdoc
+
+@return the last set state of the entity
+
+=end classdoc
+=cut
+
+sub getState {
+    my $self = shift;
+
+    return (defined $self->entity_state) ? $self->entity_state->state : undef;
+}
+
+
+=pod
+=begin classdoc
+
+Set the state of the entity, if no consumer defined, use
+the entity itself. Consumers are the entities that hace change the state.
+
+=end classdoc
+=cut
+
+sub setConsumerState {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'state' ],
+                         optional => { 'consumer' => $self });
+
+    my $state;
+    eval {
+        $state = $self->findRelated(filters => ['entity_states'],
+                                    hash    => {consumer_id => $args{consumer}->id});
+    };
+    if ($@) {
+        EntityState->new(entity_id   => $self->id, 
+                         consumer_id => $args{consumer}->id,
+                         state       => $args{state});
+    }
+    else {
+        $state->setAttr(name => 'prev_state', value => $state->state);
+        $state->setAttr(name => 'state', value => $args{state}, save => 1);
+    }
+}
+
+
+sub removeState {
+    my ($self, %args) = @_;
+    General::checkParams(args     => \%args,
+                         optional => { 'consumer' => $self });
+
+    my $estate;
+    eval {
+        $estate = $self->findRelated(filters => ['entity_states'],
+                                     hash    => {consumer_id => $args{consumer}->id});
+    };
+    if ($@) {
+        # Do not throw exception during state manipulation during cancel
+        $log->error('EntityState from entity <'.$self->id.'>, consumer_id <'.$args{consumer}->id.'> not found');
+    }
+    else {
+        $estate->delete();
+    }
+}
+
+=pod
+=begin classdoc
+
+Set the state of the entity, if no consumer defined, use
+the entity itself. Consumers are the entities that hace change the state.
+
+=end classdoc
+=cut
+
+sub restoreState {
+    my $self = shift;
+    my %args = @_;
+
+    my $state = $self->entity_state;
+    if (defined $state) {
+        my $current = $state->state;
+        $state->setAttr(name => 'state', value => $state->prev_state);
+        $state->setAttr(name => 'prev_state', value => $current, save => 1);
+    }
+}
+
+=pod
+=begin classdoc
+
+@return the entity master group
+
+=end classdoc
 =cut
 
 sub getMasterGroup {
@@ -163,12 +380,13 @@ sub getMasterGroup {
     return $group;
 }
 
-=head2 getMasterGroupName
 
-    Class : public
-    desc : retrieve the master group name associated with this entity
-    return : scalar : master group name
+=pod
+=begin classdoc
 
+@return the master group name associated with this entity
+
+=end classdoc
 =cut
 
 sub getMasterGroupName {
@@ -180,6 +398,15 @@ sub getMasterGroupName {
     return $mastergroup;
 }
 
+
+=pod
+=begin classdoc
+
+@return a string representing the entity.
+
+=end classdoc
+=cut
+
 sub asString {
     my $self = shift;
 
@@ -189,10 +416,6 @@ sub asString {
 }
 
 
-=head2 addPerm
-
-=cut
-
 sub addPerm {
     my $self = shift;
     my %args = @_;
@@ -200,33 +423,38 @@ sub addPerm {
 
     General::checkParams(args => \%args, required => [ 'method', 'consumer' ]);
 
-    my $adm = Administrator->new();
+    #$log->debug("Add permission on <$self>, for <$args{method}>, to <$args{consumer}>");
+    eval {
+        if ($class) {
+            # Consumed is an entity instance
+            Entityright->addPerm(
+                consumer_id => $args{consumer}->id,
+                consumed_id => $self->id,
+                method      => $args{method},
+            );
+        }
+        else {
+            # Consumed is an entity type
+            my @list = split(/::/, "$self");
+            my $mastergroup = pop(@list);
+            my $entity_id = Entity::Gp->find(hash => { gp_name => $mastergroup })->id;
 
-    if ($class) {
-        # Consumed is an entity instance
-        $adm->getRightChecker->addPerm(
-            consumer_id => $args{consumer}->id,
-            consumed_id => $self->id,
-            method      => $args{method},
-        );
-    }
-    else {
-        # Consumed is an entity type
-        my @list = split(/::/, "$self");
-        my $mastergroup = pop(@list);
-        my $entity_id = Entity::Gp->find(hash => { gp_name => $mastergroup })->id;
-
-        $adm->getRightChecker->addPerm(
-            consumer_id => $args{consumer}->id,
-            consumed_id => $entity_id,
-            method      => $args{method},
-        );
+            Entityright->addPerm(
+                consumer_id => $args{consumer}->id,
+                consumed_id => $entity_id,
+                method      => $args{method},
+            );
+        }
+    };
+    if ($@) {
+        my $err = $@;
+        if (! $err->isa("Kanopya::Exception::DB")) {
+            $err->rethrow();
+        }
+        #$log->debug("Permission already exists, skipping.");
     }
 }
 
-=head2 removePerm
-
-=cut
 
 sub removePerm {
     my $self = shift;
@@ -235,11 +463,9 @@ sub removePerm {
 
     General::checkParams(args => \%args, required => [ 'method' ], optional => { 'consumer' => undef });
 
-    my $adm = Administrator->new();
-
     if ($class) {
         # Consumed is an entity instance
-        $adm->getRightChecker->removePerm(
+        Entityright->removePerm(
             consumer_id => defined $args{consumer} ? $args{consumer}->id : undef,
             consumed_id => $self->id,
             method      => $args{method},
@@ -251,7 +477,7 @@ sub removePerm {
         my $mastergroup = pop(@list);
         my $entity_id = Entity::Gp->find(hash => { gp_name => $mastergroup })->id;
 
-        $adm->getRightChecker->removePerm(
+        Entityright->removePerm(
             consumer_id => defined $args{consumer} ? $args{consumer}->id : undef,
             consumed_id => $entity_id,
             method      => $args{method},
@@ -259,9 +485,28 @@ sub removePerm {
     }
 }
 
-=head2 subscribe
+sub checkPerm {
+    my $self = shift;
+    my %args = @_;
 
-=cut
+    General::checkParams(args => \%args, required => [ 'method', 'user_id' ]);
+
+    eval {
+        # Check each combination of consumer related ids and
+        # consumer ones for the method.
+        Entityright->match(consumer_id => $args{user_id},
+                           consumed_id => $self->id,
+                           method      => $args{method});
+    };
+    if ($@) {
+        my $err = $@;
+        $log->debug($err);
+        throw Kanopya::Exception::Permission::Denied(
+            error => "No permissions found for user <" . $args{user_id} .
+                     ">, on method <$args{method}> of entity <" . $self->id . ">."
+        );
+    }
+}
 
 sub subscribe {
     my $self = shift;
@@ -273,9 +518,7 @@ sub subscribe {
                                        'validation'          => 0 });
 
     if (not defined $args{service_provider_id}) {
-        $args{service_provider_id} = Entity::ServiceProvider::Inside::Cluster->find(
-                                         hash => { cluster_name => 'Kanopya' }
-                                     )->id;
+        $args{service_provider_id} = Entity::ServiceProvider::Cluster->getKanopyaCluster()->id;
     }
 
     my $operationtype = Operationtype->find(hash => { operationtype_name => $args{operationtype} });
@@ -288,14 +531,22 @@ sub subscribe {
     );
 }
 
+sub unsubscribe {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'notification_subscription_id' ]);
+
+    my $ns = NotificationSubscription->get(id => $args{notification_subscription_id});
+    $ns->delete();
+}
+
 
 sub activate {
     my $self = shift;
 
     if (defined $self->ATTR_DEF->{active}) {
-        $self->{_dbix}->update({active => "1"});
-#        $self->setAttr(name => 'active', value => 1);
-        $log->debug("Entity::Activate : Entity is activated");
+        $self->setAttr(name => 'active', value => 1, save => 1);
+
     } else {
         $errmsg = "Entity->activate Entity ". ref($self) . " unable to activate !";
         $log->error($errmsg);
@@ -323,13 +574,43 @@ sub setComment {
     my $comment_id = $self->getAttr(name => 'entity_comment_id');
     if ($comment_id) {
         $comment = EntityComment->get(id => $comment_id);
-        $comment->setAttr(name => 'entity_comment', value => $args{comment});
-        $comment->save();
+        $comment->setAttr(name => 'entity_comment', value => $args{comment}, save => 1);
     }
     else {
         $comment = EntityComment->new(entity_comment => $args{comment});
-        $self->setAttr(name => 'entity_comment_id', value => $comment->getAttr(name => 'entity_comment_id'));
-        $self->save();
+        $self->setAttr(name => 'entity_comment_id', value => $comment->id, save => 1);
+    }
+}
+
+
+=pod
+=begin classdoc
+
+Append the entity to the groups of the given hierarchy if exists.
+
+=end classdoc
+=cut
+
+sub appendToHierarchyGroups {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'hierarchy' ]);
+
+    # Try to add the instance to master groups of the whole hierachy.
+    for my $groupname (reverse(split(/::/, "$args{hierarchy}"))) {
+        my $mastergroup;
+        eval {
+            $mastergroup = Entity::Gp->find(hash => { gp_name => $groupname });
+        };
+        if ($@) {
+            my $exception = $@;
+            if (not $exception->isa('Kanopya::Exception::Internal::NotFound')) {
+                $exception->rethrow();
+            }
+        }
+        else {
+            $mastergroup->appendEntity(entity => $self);
+        }
     }
 }
 
@@ -348,17 +629,16 @@ sub lock {
         # Check if the lock is already owned by the workflow
         my $lock;
         eval {
-            $lock = EntityLock->find(hash => {
-                        entity_id   => $self->id,
-                        consumer_id => $consumer_id,
-                    });
+            $lock = EntityLock->find(hash => { entity_id   => $self->id,
+                                               consumer_id => $consumer_id });
         };
         if (not $lock) {
             throw Kanopya::Exception::Execution::Locked(
-                      error => "Entity <" . $self->id . "> already locked."
+                      error => $self->class_type->class_type . " <" . $self->id . "> already locked."
                   );
         } else {
-            $log->debug("Entity <" . $self->id . "> already locked by the consumer <$consumer_id>");
+            $log->debug($self->class_type->class_type . "<" .
+                        $self->id . "> already locked by the consumer <$consumer_id>");
         }
     }
 }
@@ -371,15 +651,14 @@ sub unlock {
 
     my $lock;
     eval {
-        $lock = EntityLock->find(hash => {
-                    entity_id   => $self->id,
-                    consumer_id => $args{consumer}->id,
-                });
+        $lock = EntityLock->find(hash => { entity_id   => $self->id,
+                                           consumer_id => $args{consumer}->id });
     };
     if ($@) {
         my $error = $@;
         if ($error->isa('Kanopya::Exception::Internal::NotFound')) {
-            $log->debug("Entity <" . $self->id . "> lock does not exists any more.");
+            $log->debug($self->class_type->class_type . "<" .
+                        $self->id . "> lock does not exists any more.");
         }
         else { throw $error; }
     }
@@ -401,7 +680,6 @@ sub setAttr {
 }
 
 =pod
-
 =begin classdoc
 
 Return the delegatee entity on which the permissions must be checked.
@@ -410,14 +688,17 @@ By default, permissions are checked on the entity itself.
 @return the delegatee entity.
 
 =end classdoc
-
 =cut
-
 
 sub getDelegatee {
     my $self = shift;
 
-    return $self;
+    if (ref($self)) {
+        return $self;
+    }
+    else {
+        return $self->getMasterGroup;
+    }
 }
 
 sub toJSON {
@@ -425,14 +706,16 @@ sub toJSON {
     my $class = ref $self || $self;
     my $hash = $self->SUPER::toJSON(%args);
 
-    if (ref $self) {
-        $hash->{pk} = $self->getAttr(name => "entity_id");
-    }
-    else {
-        $hash->{pk} = {
-            pattern      => '^\d*$',
-            is_mandatory => 1,
-            is_extended  => 0
+    if (!$args{raw}) {
+        if (ref $self) {
+            $hash->{pk} = $self->getAttr(name => "entity_id");
+        }
+        else {
+            $hash->{pk} = {
+                pattern      => '^\d*$',
+                is_mandatory => 1,
+                is_extended  => 0
+            }
         }
     }
     return $hash;

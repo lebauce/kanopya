@@ -12,11 +12,14 @@ function setCellWithCallMethod(url, grid, rowid, colName, data) {
     });
 }
 
-function setCellWithRelatedValue(url, grid, rowid, colName, fieldName) {
+function setCellWithRelatedValue(url, grid, rowid, colName, fieldName, cb) {
     $.ajax({
         url     : url,
         success : function(data) {
             $(grid).setCell(rowid, colName, data[fieldName]);
+            if (cb != null) {
+                cb(grid, rowid);
+            }
         }
     });
 }

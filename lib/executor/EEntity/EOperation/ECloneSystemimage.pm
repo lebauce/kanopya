@@ -1,6 +1,5 @@
-# ECloneSystemimage.pm - Operation class implementing System image cloning operation
-
-#    Copyright © 2010-2012 Hedera Technology SAS
+#    Copyright © 2010-2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -16,22 +15,6 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-=head1 NAME
-
-EEntity::EOperation::ECloneSystemimage - Operation class implementing System image cloning operation
-
-=head1 SYNOPSIS
-
-This Object represent an operation.
-It allows to implement System image cloning operation
-
-=head1 DESCRIPTION
-
-
-
-=head1 METHODS
-
-=cut
 package EEntity::EOperation::ECloneSystemimage;
 use base "EEntity::EOperation";
 
@@ -45,29 +28,29 @@ use Date::Simple (':all');
 
 use Kanopya::Exceptions;
 use Entity;
-use EFactory;
+use EEntity;
 use Entity::ServiceProvider;
-use Entity::ServiceProvider::Inside::Cluster;
+use Entity::ServiceProvider::Cluster;
 use Entity::Host;
 use Template;
 
 my $log = get_logger("");
 my $errmsg;
-our $VERSION = '1.00';
 
-=head2 prepare
 
-    $op->prepare();
-
-=cut
-
-sub prepare {
+sub check {
     my ($self, %args) = @_;
-    $self->SUPER::prepare();
+    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "systemimage_src", "disk_manager" ]);
     
     General::checkParams(args => $self->{params}, required => [ "systemimage_name", "systemimage_desc", "disk_manager_params" ]);
+}
+
+
+sub execute {
+    my $self = shift;
+    $self->SUPER::execute();
 
     # Check if systemimage is not active
     $log->debug('Checking source systemimage active value <' .
@@ -83,7 +66,7 @@ sub prepare {
     # Check if systemimage name does not already exist
     $log->debug('Checking unicity of systemimage_name <' . $self->{params}->{systemimage_name} . '>');
 
-    my $sysimg_exists = Entity::Systemimage->getSystemimage(
+    my $sysimg_exists = Entity::Systemimage->find(
                             hash => { systemimage_name => $self->{params}->{systemimage_name} }
                         );
 
@@ -96,9 +79,10 @@ sub prepare {
 
     # Create new systemimage instance
     eval {
-        my $entity = Entity::Systemimage->new(systemimage_name => $self->{params}->{systemimage_name},
-                                              systemimage_desc => $self->{params}->{systemimage_desc});
-        $self->{context}->{systemimage} = EFactory::newEEntity(data => $entity);
+        my $entity = Entity::Systemimage->new(systemimage_name    => $self->{params}->{systemimage_name},
+                                              systemimage_desc    => $self->{params}->{systemimage_desc}
+                                              service_provider_id => $self->{params}->{service_provider_id});
+        $self->{context}->{systemimage} = EEntity->new(data => $entity);
     };
     if($@) {
         throw Kanopya::Exception::Internal::WrongValue(error => $@);
@@ -117,10 +101,6 @@ sub prepare {
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
-}
-
-sub execute {
-    my $self = shift;
 
     $self->{context}->{systemimage}->create(src_container => $self->{context}->{systemimage_src},
                                             disk_manager  => $self->{context}->{disk_manager},
@@ -135,12 +115,3 @@ sub execute {
 }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010-2012 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut

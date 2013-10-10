@@ -16,15 +16,19 @@ use Kanopya::Config;
 use KIM::Consommation;
 use KIM::MasterImage;
 use KIM::WorkflowLogs;
+use Services;
+use REST::Documentation;
+
+use Log::Log4perl "get_logger";
+my $log = get_logger("");
+my $errmsg;
 
 our $VERSION = '0.1';
 
 prefix undef;
 
 my $dir = Kanopya::Config::getKanopyaDir();
-
-Log::Log4perl->init($dir.'/kanopya/conf/webui-log.conf');
-
+Log::Log4perl->init($dir . '/conf/webui-log.conf');
 
 hook 'before' => sub {
     $ENV{EID} = session('EID');
@@ -72,6 +76,9 @@ sub exception_to_status {
     my $status;
 
     return "error" if not defined $exception;
+
+    # Log the execption
+    $log->error("$exception");
 
     if ($exception->isa("Kanopya::Exception::Permission::Denied")) {
         $status = 'forbidden';

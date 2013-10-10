@@ -1,4 +1,4 @@
-package WorkflowLogs;
+package KIM::WorkflowLogs;
 
 use Dancer ':syntax';
 use Dancer::Plugin::Ajax;
@@ -25,8 +25,4 @@ get '/workflows/:id/log' => sub {
     } else {
         return $lines;
     }
-
-
-    #content_type 'application/json';
-    #return to_json { file => $fileName };
 };

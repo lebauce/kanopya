@@ -20,7 +20,7 @@ use warnings;
 use base 'BaseDB';
 
 use constant ATTR_DEF => {
-    verified_noderule_externalnode_id             =>  {pattern       => '^.*$',
+    verified_noderule_node_id             =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},

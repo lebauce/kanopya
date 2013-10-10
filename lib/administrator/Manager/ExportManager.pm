@@ -1,4 +1,4 @@
-# Copyright © 2012 Hedera Technology SAS
+# Copyright © 2012-2013 Hedera Technology SAS
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -15,13 +15,20 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package Manager::ExportManager;
 use base "Manager";
 
 use strict;
 use warnings;
 
-use Entity::Operation;
 use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
@@ -34,50 +41,73 @@ sub exportType {
     return '';
 }
 
-=head2 checkExportManagerParams
-
-=cut
 
 sub checkExportManagerParams {}
 
-=head2 getExportManagerFromBootPolicy
 
+=pod
+=begin classdoc
+
+@return the managers parameters as an attribute definition. 
+
+=end classdoc
 =cut
 
-sub getExportManagerFromBootPolicy {
-    throw Kanopya::Exception::NotImplemented();
+sub getExportManagerParams {
+    my $self = shift;
+    my %args  = @_;
+
+    return {};
 }
-
-=head2 getBootPolicyFromExportManager
-
-=cut
-
-sub getBootPolicyFromExportManager {
-    throw Kanopya::Exception::NotImplemented();
-}
-
-=head2 getReadOnlyParameter
-
-=cut
 
 sub getReadOnlyParameter {
     throw Kanopya::Exception::NotImplemented();
 }
 
-=head2 getReadOnlyParameter
 
+=pod
+=begin classdoc
+
+Enqueue a CreateExport operation
+
+@param container the container from which the export must be created
+
+@return the created workflow
+
+=end classdoc
 =cut
 
 sub createExport {
-    throw Kanopya::Exception::NotImplemented();
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ "container" ]);
+
+    $log->debug("New Operation CreateExport with attrs : " . %args);
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
+        type     => 'CreateExport',
+        params   => {
+            context => {
+                export_manager => $self,
+                container      => $args{container},
+            },
+            manager_params => {},
+        },
+    );
 }
 
-=head2 removeExport
 
-    Desc : Implement createExport from ExportManager interface.
-           This function enqueue a ERemoveExport operation.
-    args : export_name
+=pod
+=begin classdoc
 
+Enqueue a RemoveExport operation
+
+@param container_access the container access to remove
+
+@return the created workflow
+
+=end classdoc
 =cut
 
 sub removeExport {
@@ -87,11 +117,11 @@ sub removeExport {
     General::checkParams(args => \%args, required => [ "container_access" ]);
 
     $log->debug("New Operation RemoveExport with attrs : " . %args);
-    Entity::Operation->enqueue(
-        priority => 200,
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
         type     => 'RemoveExport',
         params   => {
             context => {
+                export_manager   => $self,
                 container_access => $args{container_access},
             }
         },

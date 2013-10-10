@@ -51,15 +51,10 @@ sub connect {
 
     General::checkParams(args => \%args, required => [ 'econtext' ]);
 
-    my $kanopya_cluster = Entity::ServiceProvider::Inside::Cluster->find(
-                                 hash => { cluster_name => 'Kanopya' }
-                          );
-    my $executor = Entity->get(id => $kanopya_cluster->getMasterNode->host->id);
-
     my $target = $self->getAttr(name => 'container_access_export');
     my $ip     = $self->getAttr(name => 'container_access_ip');
     my $port   = $self->getAttr(name => 'container_access_port');
-    my $lun    = $self->getLunId(host => $executor);
+    my $lun    = $self->getLunId();
 
     $log->debug("Creating open iscsi node <$target> from <$ip:$port>.");
 
@@ -67,13 +62,13 @@ sub connect {
     my $create_node_cmd = "iscsiadm -m node -T $target -p $ip:$port -o new";
     $result = $args{econtext}->execute(command => $create_node_cmd);
 
-    if($result->{exitcode} != 0) {
+    if ($result->{exitcode} != 0) {
         my $logger = get_logger("command");
         $logger->error($result->{stderr});
         throw Kanopya::Exception::Execution(error => $result->{stderr});
     }
 
-    $log->debug("Loging in node <$target> (<$ip:$port>).");
+    $log->debug("Logging in node <$target> (<$ip:$port>).");
 
     my $login_node_cmd = "iscsiadm -m node -T $target -p $ip:$port -l";
     $result = $args{econtext}->execute(command => $login_node_cmd);
@@ -161,14 +156,9 @@ sub getLunId {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'host' ]);
+    General::checkParams(args => \%args, required => []);
 
-    my $emanager = EFactory::newEEntity(data => $self->getExportManager);
-
-    return $emanager->getLunId(
-        lun  => $self,
-        host => $args{host}
-    );
+    return EEntity->new(data => $self->export_manager)->getLunId(lun => $self);
 }
 
 1;

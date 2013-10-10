@@ -13,6 +13,16 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+=pod
+
+=begin classdoc
+
+TODO
+
+=end classdoc
+
+=cut
+
 package EEntity::EComponent::ELinux::ESuse;
 use base 'EEntity::EComponent::ELinux';
 
@@ -24,26 +34,80 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
+sub _generateHostname {
+    my ($self, %args) = @_;
+
+    $self->SUPER::_generateHostname(%args, path => "/etc/HOSTNAME");
+}
+
 sub _writeNetConf {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'cluster', 'host', 'mount_point', 'interfaces', 'econtext' ]);
+                         required => [ 'cluster', 'host', 'mount_point', 'ifaces', 'econtext' ]);
 
-    for my $interface (@{$args{interfaces}}) {
+    for my $iface (@{ $args{ifaces} }) {
+
+        my $template_file;
+
+        if ($iface->{type} eq 'master') {
+            foreach my $slave (@{ $iface->{slaves} }) {
+                $template_file = 'ifcfg-bonded-slave.tt';
+                my $file = $self->generateNodeFile(
+                    cluster       => $args{cluster},
+                    host          => $args{host},
+                    file          => '/etc/sysconfig/network/ifcfg-' . $slave->iface_name,
+                    template_dir  => '/templates/components/suse',
+                    template_file => $template_file,
+                    data          => { interface => ''}
+                );
+                $args{econtext}->send(
+                    src  => $file,
+                    dest => $args{mount_point} . '/etc/sysconfig/network/ifcfg-' . $slave->iface_name
+                );
+            }
+            $template_file = 'ifcfg-bonded-master.tt';
+        }
+        else {
+            $template_file = 'ifcfg.tt';
+        }
+
         my $file = $self->generateNodeFile(
             cluster       => $args{cluster},
             host          => $args{host},
-            file          => '/etc/sysconfig/network/ifcfg-' . $interface->{name},
+            file          => '/etc/sysconfig/network/ifcfg-' . $iface->{name},
             template_dir  => '/templates/components/suse',
-            template_file => 'ifcfg.tt',
-            data          => { interface => $interface }
+            template_file => $template_file,
+            data          => { interface => $iface }
         );
 
         $args{econtext}->send(
             src  => $file,
-            dest => $args{mount_point} . '/etc/sysconfig/network/ifcfg-' . $interface->{name}
+            dest => $args{mount_point} . '/etc/sysconfig/network/ifcfg-' . $iface->{name}
         );
+
+        if ($iface->{vlans}) {
+            $template_file = 'ifcfg-vlan.tt';
+            foreach my $vlan (@{ $iface->{vlans} }) {
+                my %vlan_infos;
+                my $vlan_id = 'vlan' . $vlan->vlan_number;
+                $vlan_infos{iface_name} = $iface->{name};
+
+                my $file = $self->generateNodeFile(
+                    cluster       => $args{cluster},
+                    host          => $args{host},
+                    file          => '/etc/sysconfig/network/ifcfg-' . $vlan_id,
+                    template_dir  => '/templates/components/suse',
+                    template_file => $template_file,
+                    data          => { interface => \%vlan_infos }
+                );
+
+                $args{econtext}->send(
+                    src  => $file,
+                    dest => $args{mount_point} . '/etc/sysconfig/network/ifcfg-' . $vlan_id
+                );
+            }
+        }
     }
 }
 
@@ -64,4 +128,3 @@ sub service {
 }
 
 1;
-

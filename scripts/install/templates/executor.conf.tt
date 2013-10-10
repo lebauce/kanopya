@@ -1,8 +1,4 @@
-<config logdir="[% logdir %]">
-    <internalnetwork ip="[% internal_net_add %]" mask="[% internal_net_mask %]"/>
+<conf logdir="[% logdir %]">
     <user name="executor" password="[% admin_password %]" />
-    <masterimages directory="[% masterimages_dir %]" />
-    <tftp directory="[% tftp_dir %]" />
-    <clusters directory="[% clusters_dir %]" />
-    <cluster executor="1" bootserver="1" nas="1" monitor="1"/>
-</config>
+    <amqp user="executor" password="[% admin_password %]" />
+</conf>

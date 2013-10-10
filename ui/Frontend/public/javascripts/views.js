@@ -2,32 +2,38 @@
 var _content_handlers = {};
 
 var SQLops = {
-'eq' : '=',        // equal
-'ne' : '<>',       // not equal
-'lt' : '<',        // less than
-'le' : '<=',       // less than or equal
-'gt' : '>',        // greater than
-'ge' : '>=',       // greater than or equal
-'bw' : 'LIKE',     // begins with
-'bn' : 'NOT LIKE', // doesn't begin with
-'in' : 'LIKE',     // is in
-'ni' : 'NOT LIKE', // is not in
-'ew' : 'LIKE',     // ends with
-'en' : 'NOT LIKE', // doesn't end with
-'cn' : 'LIKE',     // contains
-'nc' : 'NOT LIKE'  // doesn't contain
+    'eq' : '=',        // equal
+    'ne' : '<>',       // not equal
+    'lt' : '<',        // less than
+    'le' : '<=',       // less than or equal
+    'gt' : '>',        // greater than
+    'ge' : '>=',       // greater than or equal
+    'bw' : 'LIKE',     // begins with
+    'bn' : 'NOT LIKE', // doesn't begin with
+    'in' : 'LIKE',     // is in
+    'ni' : 'NOT LIKE', // is not in
+    'ew' : 'LIKE',     // ends with
+    'en' : 'NOT LIKE', // doesn't end with
+    'cn' : 'LIKE',     // contains
+    'nc' : 'NOT LIKE'  // doesn't contain
 };
 
 var searchoptions = { sopt : $.map(SQLops, function(n) { return n; } ) };
 
-// keep_last option is a quick fix to avoid remove content when opening details dialog
-function reload_content(container_id, elem_id, keep_last) {
+/*
+ * Fill the content container using associated onLoad handler, for a particular elem
+ * Extra parameters can be
+ *      elem_data : elem attributes, forwarded to the onLoad handler
+ *      keep_last : this option is a quick fix to avoid remove background content when opening details dialog
+ */
+function reload_content(container_id, elem_id, extra) {
     if (_content_handlers.hasOwnProperty(container_id)) {
         if (_content_handlers[container_id]['onLoad']) {
             // Clean prev container content
             var current_content = $('.current_content');
             current_content.removeClass('current_content');
 
+            var keep_last = extra && extra.keep_last;
             if (keep_last === undefined || keep_last == false) {
                 current_content.children().remove();
             } else {
@@ -36,14 +42,23 @@ function reload_content(container_id, elem_id, keep_last) {
 
             // Tag this container as current
             $('#' + container_id).addClass('current_content');
+            var action_div=$('#' + container_id).prevAll('.action_buttons');
+            action_div.empty();
 
             // Fill container using related handler
             var handler = _content_handlers[container_id]['onLoad'];
-            handler(container_id, elem_id);
+            handler(container_id, elem_id, extra && extra.elem_data);
 
             // Fill info panel
-            if (_content_handlers[container_id]['info']) {
-                $('#info-container').load(_content_handlers[container_id]['info'].url);
+            var info_content = _content_handlers[container_id]['info'];
+            if (info_content) {
+                if (info_content.url) {
+                    $('#info-container').load(info_content.url);
+                } else if (info_content.img) {
+                    $('#info-container').append($('<img>', {src: info_content.img, width: '150'}));
+                } else {
+                    $('#info-container').append(info_content);
+                }
             } else {
                 $('#info-container').html('');
             }
@@ -63,13 +78,12 @@ function create_all_content() {
 function show_detail(grid_id, grid_class, elem_id, row_data, details) {
 
     var details_info = details || details_def[grid_class];
-    
     // Not defined details menu
     if (details_info === undefined) {
         //console.log('No details for grid ' +  grid_class);
         return;
     }
-    
+
     // Details accessible from menu (dynamic loaded menu)
     if (details_info.link_to_menu) {
         var view_link_id = 'link_view_' + row_data[details_info.label_key].replace(/ /g, '_') + '_' + elem_id;
@@ -87,37 +101,58 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
     var id = 'view_detail_' + elem_id;
     var view_detail_container = $('<div></div>');
 
-    //build_detailmenu(view_detail_container, id, details_info.tabs, elem_id);
     build_submenu(view_detail_container, id, details_info.tabs, elem_id);
     view_detail_container.find('#' + id).show();
 
     // Set dialog title using column defined in conf
     var title = details_info.title && details_info.title.from_column && row_data[details_info.title.from_column];
 
+    if (row_data.cluster_name) {
+        var breadcrumb = $('h2#breadcrump');
+        var breadcrumb_html = breadcrumb.html();
+        breadcrumb.html(breadcrumb_html + ' <span> &gt; ' + row_data.cluster_name + '</span>');
+    }
+
     if (!(details_info.noDialog)) {
+        var available_buttons = [ {
+            id: 'button-cancel',
+            text:'Cancel',
+            click: function () {
+                $(this).dialog('close');
+            }
+        }, {
+            id: 'button-ok',
+            text: 'Ok',
+            click: function() {
+                if (details_info.onOk) {
+                    // Fill container using related handler
+                    details_info.onOk();
+                }
+                $(this).dialog('close');
+            }
+        } ];
+        var buttons = [];
+        $.each(available_buttons, function (i,button) {
+            if (!details_info.buttons || $.inArray(button.id, details_info.buttons) >= 0) {
+                buttons.push(button);
+            }
+        });
+
         var dialog = $(view_detail_container)
         .dialog({
-            autoOpen: true,
-            modal: true,
-            title: title,
-            width: 800,
-            height: 500,
-            resizable: false,
+            autoOpen    : true,
+            modal       : true,
+            title       : title,
+            width       : 800,
+            height      : details_info.height || 500,
+            resizable   : details_info.resizable || false,
+            dialogClass : "no-close",
             close: function(event, ui) {
                 if (details_info.onClose) {details_info.onClose()}
                 $('.last_content').addClass('current_content').removeClass('last_content');
                 $(this).remove(); // detail modals are never closed, they are destroyed
             },
-            buttons: {
-                Ok: function() {
-                    if (details_info.onOk) {details_info.onOk()}
-                    $(this).dialog('close');
-                    
-                },
-                Cancel: function() {
-                    $(this).dialog('close');
-                }
-            },
+            buttons: buttons
         });
         // Remove dialog title if wanted
         if (details_info.title == 'none') {
@@ -126,40 +161,80 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
     }
     else {
         var masterview  = $('#' + grid_id).parents('div.master_view');
+
         $(masterview).hide();
         $(masterview).after($(view_detail_container).find('div.master_view').addClass('toRemove'));
     }
 
     // Load first tab content
-    reload_content('content_' + details_info.tabs[0]['id'] + '_' + elem_id, elem_id, true);
+    reload_content('content_' + details_info.tabs[0]['id'] + '_' + elem_id, elem_id, {keep_last : true, elem_data : row_data});
+}
+
+function _gridActionModalCommonParams() {
+    var dialog_height   = 120;
+    var dialog_width    = 300;
+    return {
+        modal           : true,
+        drag            : false,
+        resize          : false,
+        width           : dialog_width,
+        height          : dialog_height,
+        top             : ($(window).height() / 2) - (dialog_height / 2),
+        left            : ($(window).width() / 2) - (dialog_width / 2),
+        delicon         : [true,'left','ui-icon-ok'],
+        cancelicon      : [true,'left','ui-icon-closethick'],
+        closeOnEscape   : true, // Allow to close even if a error happened
+        beforeShowForm  : function (formid){
+            var divdelparents=formid.parents('.ui-jqdialog');
+            divdelparents.addClass('custom-delete-modal');
+        },
+        onClose         : function(diag_id) {
+            // If we don't manually remove the dialog it is just hidden
+            // and some params are not update for further dialog
+            $(diag_id).jqmHide().remove();
+        }
+    }
 }
 
 // Callback when click on remove icon for a row
-function removeGridEntry (grid_id, id, url, method) {
-    var dialog_height   = 120;
-    var dialog_width    = 300;
-    var delete_url      = url.split('?')[0] + '/' + id;
+function removeGridEntry (grid_id, rowid, url, method, extraParams) {
+    var delete_url      = url.split('?')[0] + '/' + rowid;
     var call_type       = 'DELETE';
     if (method) {
         delete_url += '/' + method;
         call_type = 'POST';
     }
-    $("#"+grid_id).jqGrid(
+
+    extraParams = (extraParams === undefined) ? {} : extraParams;
+    extraParams.multiselect = (extraParams.multiselect === undefined) ? false : extraParams.multiselect;
+    if (! extraParams.multiselect) {
+        $("#"+grid_id).jqGrid(
             'delGridRow',
-            id,
-            {
+            rowid,
+            $.extend(_gridActionModalCommonParams(), {
                 url             : delete_url,
                 ajaxDelOptions  : { type : call_type },
-                modal           : true,
-                drag            : false,
-                resize          : false,
-                width           : dialog_width,
-                height          : dialog_height,
-                top             : ($(window).height() / 2) - (dialog_height / 2),
-                left            : ($(window).width() / 2) - (dialog_width / 2),
-                afterComplete   : function () {$("#"+grid_id).trigger('gridChange')}
-            }
-    );
+                afterComplete   : function (response) {
+                    var json = $.parseJSON(response.responseText);
+                    if (json.operation_id != undefined) {
+                        handleCreateOperation(json, $("#"+grid_id), rowid);
+                    } else {
+                        $("#"+grid_id).trigger('gridChange')
+                    }
+                },
+            })
+        );
+    }
+    else { // to remove one entry without confirm dialog (already done one time in multiaction.confirm)
+       $.ajax({
+            url     : delete_url,
+            type    : call_type,
+            success : function () {
+                $("#"+grid_id).jqGrid('delRowData', rowid);
+            },
+            async   : true
+        });
+    }
 }
 
 function editEntityRights(grid, rowid, rowdata, rowelem, options) {
@@ -179,17 +254,125 @@ function editEntityRights(grid, rowid, rowdata, rowelem, options) {
     return false;
 }
 
-function create_grid(options) {
+// Callback when click on deactivate icon for a row
+function deactivateGridEntry (grid, id, url, active) {
+    var deactivate_url  = url.split('?')[0] + '/' + id + '/' + (active ? "deactivate" : "activate");
+    var call_type       = 'POST';
 
+    var mode = active ? "Deactivate" : "Activate";
+    $(grid).jqGrid(
+        'delGridRow',
+        id,
+        $.extend(_gridActionModalCommonParams(), {
+            caption         : mode,
+            msg             : mode + " selected record(s)?",
+            bSubmit         : mode,
+            url             : deactivate_url,
+            ajaxDelOptions  : { type : call_type },
+            afterComplete   : function (response) {
+                handleCreateOperation($.parseJSON(response.responseText), grid, id);
+            },
+
+        })
+    );
+}
+
+// generic function for post call on grid. after success, afterAction() is called
+function gridGenericPost(grid_id, rowid, action_url, action_method, extraParams, afterAction) {
+    $.ajax({
+        type        : 'POST',
+        url         : action_url,
+        contentType : 'application/json',
+        data        : JSON.stringify( {
+            node_id : rowid
+        }),
+        success : function () {
+            afterAction(grid_id, rowid);
+        }
+    });
+}
+
+// generic dialog box for multi action confirm
+function multiActionGenericConfirm(grid_id, msg, selection, actionHandler) {
+    var dialog_height   = 120;
+    var dialog_width    = 300;
+    var container       = $('<div>', { text : msg + ' ?' });
+    $("#"+grid_id).append(container);
+    container.dialog({
+        title       : msg,
+        modal       : true,
+        draggable   : false,
+        resizable   : false,
+        width       : dialog_width,
+        height      : dialog_height * 1.5,
+        position    : [
+            ($(window).width() / 2) - (dialog_width / 2),
+            ($(window).height() / 2) - (dialog_height / 2)
+        ],
+        buttons :   {
+            'No': function () {
+                $(this).dialog('close');
+            },
+            'Yes': function () {
+                actionHandler();
+                $(this).dialog('close');
+            }
+        },
+        close : function (event, ui) {
+            $(this).remove();
+        }
+    });
+
+}
+
+function create_grid(options) {
     var content_container = $('#' + options.content_container_id);
     var pager_id = options.grid_id + '_pager';
+
+    // multiselect buttons for multiactions
+    options.multiselect = (options.multiselect === undefined) ? false : options.multiselect;
+    options.multiactions = (options.multiactions === undefined) ? null : options.multiactions;
+
+    if (options.multiselect && options.multiactions) {
+        var action_div = content_container.prevAll('.action_buttons');
+        $.each(options.multiactions, function(i, multiaction) {
+            // default values
+            multiaction.confirm = (multiaction.confirm === undefined)
+                ? multiActionGenericConfirm
+                : multiaction.confirm;
+            multiaction.action = (multiaction.action === undefined) ? $.noop : multiaction.action;
+            multiaction.afterAction = (multiaction.afterAction === undefined) ? $.noop : multiaction.afterAction;
+            multiaction.extraParams = (multiaction.extraParams === undefined) ? null : multiaction.extraParams;
+            multiaction.icon    = (multiaction.icon === undefined) ? '' : multiaction.icon;
+            // action button
+            var actionButton    = $('<a>', { text : multiaction.label ,title:multiaction.title})
+                .appendTo(action_div).button({ icons : { primary : multiaction.icon } });
+            actionButton.bind('click', function() {
+                var action_url = multiaction.url || options.url;
+                var action_method = multiaction.method || null;
+                if ( multiaction.confirm ) {
+                    var checkedItems = $("#" + options.grid_id).jqGrid('getGridParam','selarrrow');
+                    if (checkedItems.length == 0) {
+                        alert("No item checked : check an item first !");
+                    }
+                    else {
+                        multiaction.confirm(options.grid_id, multiaction.label, checkedItems, function(data) {
+                            $.each(checkedItems, function(i, rowid) {
+                                multiaction.action(options.grid_id, rowid, action_url, action_method, multiaction.extraParams, multiaction.afterAction, data);
+                            });
+                            $("#" + options.grid_id).jqGrid('resetSelection');
+                        });
+                    }
+                }
+            });
+        });
+    }
 
     // Grid class allow to manipulate grid (show_detail of a row) even if grid is associated to an instance (same grid logic but different id)
     var grid_class = options.grid_class || options.grid_id;
 
     if (! options.before_container) {
         content_container.append($("<table>", {'id' : options.grid_id, 'class' : grid_class}));
-
     } else {
         options.before_container.before($("<table>", {'id' : options.grid_id, 'class' : grid_class}));
     }
@@ -207,7 +390,7 @@ function create_grid(options) {
     options.gridComplete    = options.gridComplete || $.noop;
 
     var deleteHandler = $.noop;
-    var actions_col_idx = options.colNames.length;
+    var actions_col_idx = (options.multiselect) ? options.colNames.length + 1 : options.colNames.length;
     if (options.action_delete === undefined || options.action_delete != 'no' || options.rights) {
         // Delete handler
         var delete_url_base    = (options.action_delete && options.action_delete.url) || options.url;
@@ -221,7 +404,7 @@ function create_grid(options) {
         }
 
         options.colNames.push('');
-        options.colModel.push({index:'actions', width : '40px', formatter:
+        options.colModel.push({ name : 'actions', index:'actions', width : '40px', formatter:
             function(cell, formatopts, row) {
                 var action = '';
                 // Add delete action column (by default)
@@ -233,6 +416,15 @@ function create_grid(options) {
                     action += 'onmouseover="jQuery(this).addClass(\'ui-state-hover\');"';
                     action += ' style="float:left;margin-left:5px;" title="Delete this ' + (options.elem_name || 'element') + '">';
                     action += '<span class="ui-icon ui-icon-trash"></span>';
+                    action += '</div>';
+                }
+
+                if (options.deactivate) {
+                    action += '<div class="ui-pg-div ui-inline-active"';
+                    action += 'onmouseout="jQuery(this).removeClass(\'ui-state-hover\');"';
+                    action += 'onmouseover="jQuery(this).addClass(\'ui-state-hover\');"';
+                    action += ' style="float:left;margin-left:5px;" title="Deactivate this ' + (options.elem_name || 'element') + '">';
+                    action += '<span class="ui-icon ui-icon-locked"></span>';
                     action += '</div>';
                 }
 
@@ -256,15 +448,17 @@ function create_grid(options) {
         options.colModel.push({hidden : true});
     }
 
-    var grid = $('#' + options.grid_id).jqGrid({ 
+    var grid = $('#' + options.grid_id).jqGrid({
         jsonReader : {
             root: "rows",
             page: "page",
             total: "pages",
-            records: "records",
-            repeatitems: false,
+            records: "total",
+            repeatitems: false
         },
 
+        multiselect     : options.multiselect,
+        multiboxonly    : options.multiselect, // to have an item checked only if there is a click on it's checkbox
         gridComplete    : options.gridComplete,
         treeGrid        : options.treeGrid      || false,
         treeGridModel   : options.treeGridModel || '',
@@ -280,15 +474,35 @@ function create_grid(options) {
         pager           : options.pager || '#' + pager_id,
         altRows         : true,
         rowNum          : options.rowNum || 10,
-        rowList         : options.rowList || undefined,
+        rowList         : options.rowList || [10,25,50,100,500],
+        viewrecords     : true,
         autoencode      : true,
 
         afterInsertRow  : function(rowid, rowdata, rowelem) {
-            // Manage delete action callback
-            $(this).find('#'+rowid+' .ui-inline-del').click( function() { deleteHandler(rowid) } );
-
             // Manage permissions
             $(this).find('#'+rowid+' .ui-inline-perms').click( function() { editEntityRights(grid, rowid, rowdata, rowelem, options) } );
+
+            if (rowdata.active != undefined) {
+                if (rowdata.active == "1") {
+                    $(this).find('#'+rowid+' .ui-inline-active').attr('title', 'Deactivate this ' + (options.elem_name || 'element'));
+                    $(this).find('#'+rowid+' .ui-inline-active').find('span').removeClass('ui-icon-check');
+                    $(this).find('#'+rowid+' .ui-inline-active').find('span').addClass('ui-icon-close');
+                    $(this).find('#'+rowid+' .ui-inline-del').find('span').attr('disabled', 'disabled').addClass("ui-state-disabled");
+
+                } else {
+                    $(this).find('#'+rowid+' .ui-inline-active').attr('title', 'Activate this ' + (options.elem_name || 'element'));
+                    $(this).find('#'+rowid+' .ui-inline-active').find('span').removeClass('ui-icon-close');
+                    $(this).find('#'+rowid+' .ui-inline-active').find('span').addClass('ui-icon-check');
+
+                    // Manage delete action callback
+                    $(this).find('#'+rowid+' .ui-inline-del').click( function() { deleteHandler(rowid) } );
+                }
+                $(this).find('#'+rowid+' .ui-inline-active').click( function() { deactivateGridEntry(grid, rowid, options.url, rowdata.active == "1") } );
+
+            } else {
+                // Manage delete action callback
+                $(this).find('#'+rowid+' .ui-inline-del').click( function() { deleteHandler(rowid) } );
+            }
 
             // Callback custom handler
             return options.afterInsertRow(this, rowid, rowdata, rowelem);
@@ -296,7 +510,9 @@ function create_grid(options) {
 
         onCellSelect    : function(rowid, index, contents, target) {
             // Test if some options disable details
-            if (index != actions_col_idx && ! options.deactivate_details && ! options.colModel[index].nodetails) {
+            var idx = (options.multiselect) ? index - 1 : index;
+            if ( ((options.multiselect && index != 0) || ! options.multiselect)
+                && index != actions_col_idx && ! options.deactivate_details && ! options.colModel[idx].nodetails ) {
                 // Callback before show details, must return true if defined
                 if ((! options.beforeShowDetails) || options.beforeShowDetails(options.grid_id, rowid)) {
                     var row_data = $('#' + options.grid_id).getRowData(rowid);
@@ -307,7 +523,7 @@ function create_grid(options) {
 
         loadError       : function (xhr, status, error) {
             var error_msg = xhr.responseText;
-            alert('ERROR ' + error_msg + ' | status : ' + status + ' | error : ' + error); 
+            alert('ERROR ' + error_msg + ' | status : ' + status + ' | error : ' + error);
         },
 
         url             : options.url, // not used by jqGrid (handled by datatype option, see below) but we want this info in grid
@@ -366,19 +582,20 @@ function create_grid(options) {
        grid.addClass('selectable_rows');
     }
 
+    // remove horizontal scrollbar
+    content_container.find('.ui-jqgrid-bdiv').css('overflow-x', 'hidden');
+
     return grid;
 }
 
 function reload_grid (grid_id,  data_route) {
     var grid = $('#' + grid_id);
     grid.jqGrid("clearGridData");
-    $.getJSON(data_route, {}, function(data) { 
+    $.getJSON(data_route, {}, function(data) {
         //alert(data);
         for(var i=0;i<=data.length;i++) grid.jqGrid('addRowData',i+1,data[i]);
         grid.trigger("reloadGrid");
-        
     });
-    
 }
 
 function createTreeGrid(params, pageSize) {
@@ -395,6 +612,3 @@ function createTreeGrid(params, pageSize) {
 $(document).ready(function () {
 
 });
-
-
-

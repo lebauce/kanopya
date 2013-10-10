@@ -1,6 +1,5 @@
-# EComponent.pm - Abstract class of EComponents object
-
 #    Copyright 2011 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,45 +14,33 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
-=head1 NAME
+=pod
+=begin classdoc
 
-EComponent - Abstract class of component object
+EComponent is the general abstract type for components.
 
-=head1 SYNOPSIS
-
-
-
-=head1 DESCRIPTION
-
-EComponent is an abstract class of component objects
-
-=head1 METHODS
-
+=end classdoc
 =cut
+
 package EEntity::EComponent;
 use base "EEntity";
 
 use strict;
 use warnings;
+
 use Data::Dumper;
 use String::Random;
 use Template;
+use File::Basename qw(fileparse);
 use Log::Log4perl "get_logger";
-use General;
-use EFactory;
 
-our $VERSION = '1.00';
+use General;
+use EEntity;
 
 my $log = get_logger("");
 my $errmsg;
 
-=head2 addInitScripts
-
-add start and stop rc init scripts
-
-=cut
 
 sub addInitScripts {
     my ($self, %args) = @_;
@@ -61,15 +48,16 @@ sub addInitScripts {
     General::checkParams(args => \%args, required => [ 'mountpoint', 'scriptname' ]);
 
     my $cmd = "chroot $args{mountpoint} /sbin/insserv -d $args{scriptname}";
-    $self->getExecutorEContext->execute(command => $cmd);
+    $self->_host->getEContext->execute(command => $cmd);
 }
 
-=head2 generateFile
 
-    Class : Public
+=pod
+=begin classdoc
 
-    Desc : Generate a file using a template file and data, and send it to the desired location using econtext
+Generate a file using a template file and data, and send it to the desired location using econtext
 
+=end classdoc
 =cut
 
 sub generateFile {
@@ -79,11 +67,11 @@ sub generateFile {
     General::checkParams( args => \%args, required => ['mount_point','input_file','data','output'] );
 
     if (not defined $args{econtext}) {
-        $args{econtext} = $self->getExecutorEContext;
+        $args{econtext} = $self->_host->getEContext;
     }
 
     my $template_dir = defined $args{template_dir} ? $args{template_dir}
-                                                   : $self->_getEntity()->getTemplateDirectory();
+                                                   : $self->_entity->getTemplateDirectory();
 
     my $config = {
         INCLUDE_PATH => $template_dir,
@@ -108,12 +96,64 @@ sub generateFile {
     unlink "/tmp/$tmpfile";
 }
 
+
+=pod
+=begin classdoc
+
+Generate a file on a remote host.
+
+@param dst_host the destination host on which execute commands.
+
+@return the econtext instance
+
+=end classdoc
+=cut
+
+sub generateNodeFile {
+    my ($self, %args) = @_;
+
+    General::checkParams(
+        args     => \%args,
+        required => [ 'cluster', 'host', 'file', 'template_dir', 'template_file', 'data' ]
+    );
+
+    my $path = $self->_executor->getConf->{clusters_directory};
+    $path .= '/' . $args{cluster}->cluster_name;
+    $path .= '/' . $args{host}->node->node_hostname;
+    $path .= '/' . $args{file};
+    my ($filename, $directories, $prefix) = fileparse($path);
+
+    $self->_host->getEContext->execute(command => "mkdir -p $directories");
+
+    my $template_conf = {
+        INCLUDE_PATH => $args{template_dir},
+        INTERPOLATE  => 0,               # expand "$var" in plain text
+        POST_CHOMP   => 0,               # cleanup whitespace
+        EVAL_PERL    => 1,               # evaluate Perl code blocks
+        RELATIVE     => 1,               # desactive par defaut
+    };
+
+    my $template = Template->new($template_conf);
+    eval {
+        $template->process($args{template_file}, $args{data}, $path);
+    };
+    if($@) {
+        $errmsg = "error during generation from '$args{template}': " . $template->error;
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+    return $path;
+}
+
+sub generateConfiguration {}
+
 sub addNode {}
 sub stopNode {}
 sub postStartNode {}
 sub preStartNode{}
 sub preStopNode{return 0;}
 sub postStopNode{}
+sub readyNodeAddition { return 1; }
+sub readyNodeRemoving { return 1; }
 
 sub cleanNode {
     my $self = shift;
@@ -129,11 +169,12 @@ sub cleanNode {
 
 sub isUp {
     my ($self, %args) = @_;
-    General::checkParams( args => \%args, required => ['cluster', 'host' ] );
+
+    General::checkParams( args => \%args, required => [ 'cluster', 'host' ] );
     
     my $availability = 1;
-    my $execution_list = $self->{_entity}->getExecToTest();
-    my $net_conf = $self->{_entity}->getNetConf();
+    my $execution_list = $self->_entity->getExecToTest(host => $args{host});
+    my $net_conf = $self->_entity->getNetConf();
 
     # Test executable
     foreach my $i (keys %$execution_list) {
@@ -146,14 +187,12 @@ sub isUp {
         }
     }
 
-    my $ip = $args{host}->adminIp;
-    my $econtext = $self->getExecutorEContext;
-
     # Test Services
-    while(my ($port, $protocols) = each %$net_conf) {
+    my $ip = $args{host}->adminIp;
+    while (my ($daemon, $conf) = each %$net_conf) {
         my $cmd = "nmap -n ";
         PROTO:
-        foreach my $proto (@$protocols) {
+        foreach my $proto (@{$conf->{protocols}}) {
             next PROTO if ($proto eq "ssl");
             if ($proto eq "udp") {
                 $cmd .= "-sU ";
@@ -161,11 +200,11 @@ sub isUp {
             else {
                 $cmd .= "-sT ";
             }
-            $cmd .= "-p $port $ip | grep $port | cut -d\" \" -f2";
-            my $result = $econtext->execute(command => $cmd);
+            $cmd .= "-p " . $conf->{port} . " $ip | grep " . $conf->{port} . " | cut -d\" \" -f2";
+            my $result = $self->_host->getEContext->execute(command => $cmd);
             my $port_state = $result->{stdout};
             chomp($port_state);
-            if ($port_state eq "closed"){
+            if ($port_state eq "closed") {
                 return 0;
             }
         }
@@ -173,26 +212,20 @@ sub isUp {
     return 1;
 }
 
-
-=head2 getEContext
-
-=cut
-
 sub getEContext {
     my ($self) = @_;
 
-    my $service_provider = $self->getServiceProvider;
-    return EFactory::newEContext(ip_source      => $self->{_executor}->getMasterNodeIp(),
-                                 ip_destination => $service_provider->getMasterNodeIp());
+    return $self->SUPER::getEContext(dst_host => $self->getMasterNode->host);
+}
+
+sub applyConfiguration {
+    my ($self, %args) = @_;
+
+    my $tags = $args{tags} || [ 'kanopya::' . lc($self->component_type->component_name) ];
+    my $cluster = $self->service_provider;
+    my $epuppet = EEntity->new(entity => $cluster->getComponent(category => "Configurationagent"));
+    return $epuppet->applyConfiguration(cluster => $cluster,
+                                        tags    => $tags);
 }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut

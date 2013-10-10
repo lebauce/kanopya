@@ -13,12 +13,24 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+=pod
+
+=begin classdoc
+
+TODO
+
+=end classdoc
+
+=cut
+
 package EEntity::EComponent::EPhysicalhoster0;
 use base "EEntity::EComponent";
 use base "EManager::EHostManager";
 
 use strict;
 use warnings;
+
+use Net::Ping;
 
 use General;
 use DecisionMaker::HostSelector;
@@ -27,48 +39,65 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 my $errmsg;
 
-
-=head2 startHost
-
-=cut
-
 sub startHost {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ "host" ]);
 
-    my $host = $args{host};
-    
-    
-    if (not -e '/usr/sbin/etherwake') {
-        $errmsg = "EOperation::EStartNode->startNode : /usr/sbin/etherwake not found";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Execution(error => $errmsg);
+    my $wol = '/usr/sbin/etherwake';
+    if (not -e $wol) {
+        $wol = '/usr/bin/wol';
+        if (not -e $wol) {
+            $errmsg = "EOperation::EStartNode->startNode : Neither 'etherwake' nor 'wol' command where found";
+            $log->error($errmsg);
+            throw Kanopya::Exception::Execution(error => $errmsg);
+        }
+        $wol .= " --host " . $args{host}->host->getPXEIface->getIPAddr;
     }
-    my $iface = $self->getServiceProvider->getMasterNode->getAdminIface->iface_name;
-    my $command = "/usr/sbin/etherwake -i " . $iface . " " .
-                  $host->getPXEIface->getAttr(name => 'iface_mac_addr');
-    my $result = $self->getExecutorEContext->execute(command => $command);
-    
-    my $current_state = $host->getState();
+    else {
+        $wol .= " -i " . $self->getMasterNode->host->getAdminIface->iface_name;
+    }
+
+    my $command = $wol . " " . $args{host}->getPXEIface->iface_mac_addr;
+    my $result = $self->_host->getEContext->execute(command => $command);
+
+    my $current_state = $args{host}->getState();
 
     if (exists $args{erollback}) {
         $args{erollback}->add(
-            function   => $host->can('save'),
-            parameters => [ $host ]
+            function   => $args{host}->_entity->can('save'),
+            parameters => [ $args{host} ]
         );
         $args{erollback}->add(
-            function   => $host->can('setAttr'),
-            parameters => [ $host, "name" ,"host_state", "value", $current_state ]
+            function   => $args{host}->_entity->can('setAttr'),
+            parameters => [ $args{host}, "name" ,"host_state", "value", $current_state ]
         );
     }
 }
 
-=head2 stopHost
+sub stopHost {
+}
+
+=pod
+
+=begin classdoc
+
+Check up if the host is pingable
+
+=end classdoc
 
 =cut
 
-sub stopHost {}
+sub checkUp {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ "host" ]);
+
+    my $ip = $args{host}->adminIp;
+    my $ping = Net::Ping->new("icmp");
+    my $pingable = $ping->ping($ip, 2);
+    $ping->close();
+    return $pingable ? $pingable : 0;
+}
 
 1;

@@ -1,4 +1,5 @@
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -13,18 +14,17 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 =pod
-
 =begin classdoc
 
 Kanopya Exceptions declaration
 
-@since    2011-Jan-13
+@since 2011-Jan-13
 
 =end classdoc
-
 =cut
 
 package Kanopya::Exceptions;
+
 
 use Exception::Class (
     Kanopya::Exception => {
@@ -35,6 +35,14 @@ use Exception::Class (
         isa         => 'Kanopya::Exception',
         description => 'Kanopya Database exception',
     },
+    Kanopya::Exception::DB::Cascade => {
+        isa         => 'Kanopya::Exception::DB',
+        description => 'Kanopya Database cascade exception',
+    },
+    Kanopya::Exception::IO => {
+        isa         => 'Kanopya::Exception',
+        description => 'Kanopya IO exception',
+    },
     Kanopya::Exception::Network => {
         isa         => 'Kanopya::Exception',
         description => 'SSH communication exception',
@@ -42,6 +50,10 @@ use Exception::Class (
     Kanopya::Exception::Quota => {
         isa         => 'Kanopya::Exception',
         description => 'Quota exceeded',
+    },
+    Kanopya::Exception::Method => {
+        isa         => 'Kanopya::Exception',
+        description => 'Can\'t call method on class',
     },
     Kanopya::Exception::Internal => {
         isa         => 'Kanopya::Exception',
@@ -81,6 +93,10 @@ use Exception::Class (
         isa         => 'Kanopya::Exception::Internal',
         description => 'Unknown resource',
     },
+    Kanopya::Exception::Internal::UnknownOperator => {
+        isa         => 'Kanopya::Exception::Internal',
+        description => 'Unknown operator',
+    },
     Kanopya::Exception::Internal::Inconsistency => {
         isa         => 'Kanopya::Exception::Internal',
         description => 'Not consistent',
@@ -96,6 +112,10 @@ use Exception::Class (
     Kanopya::Exception::Execution::OperationReported => {
         isa         => 'Kanopya::Exception::Execution',
         description => 'Operation execution reported',
+    },
+    Kanopya::Exception::Execution::InvalidState => {
+        isa         => 'Kanopya::Exception::Execution',
+        description => 'Invalid context object state',
     },
     Kanopya::Exception::Execution::Locked => {
         isa         => 'Kanopya::Exception::Execution',
@@ -121,13 +141,35 @@ use Exception::Class (
         isa         => 'Kanopya::Exception::Permission',
         description => 'Permission denied'
     },
-    Kanopya::Exception::OperationAlreadyEnqueued => {
-        isa         => 'Kanopya::Exception',
-        description => 'Operation already enqueued'
-    },
     Kanopya::Exception::NotImplemented => {
         isa         => 'Kanopya::Exception',
         description => 'Method not implemented'
+    },
+    Kanopya::Exception::InvalidConfiguration => {
+        isa         => 'Kanopya::Exception',
+        description => 'Invalid configuration',
+        fields      => [ 'component' ]
+    },
+    Kanopya::Exception::MessageQueuing => {
+        isa         => 'Kanopya::Exception',
+        description => 'Kanopya MessageQueuing Exception'
+    },
+    Kanopya::Exception::MessageQueuing::ConnectionFailed => {
+        isa         => 'Kanopya::Exception::MessageQueuing',
+        description => 'Connection failed'
+    },
+    Kanopya::Exception::MessageQueuing::ChannelError => {
+        isa         => 'Kanopya::Exception::MessageQueuing',
+        description => 'Channel error',
+    },
+    Kanopya::Exception::MessageQueuing::NoMessage => {
+        isa         => 'Kanopya::Exception::MessageQueuing',
+        description => 'No message to fetch'
+    },
+    Kanopya::Exception::MessageQueuing::PublishFailed => {
+        isa         => 'Kanopya::Exception::MessageQueuing',
+        description => 'Unable to publish on channel',
+        fields      => [ 'channel', 'body' ],
     },
 );
 
@@ -135,7 +177,15 @@ use Exception::Class (
 # For Kanopya::Exception and all its subclasses
 Kanopya::Exception->Trace(0);
 
-# Override method called when exception is stringified
+
+=pod
+=begin classdoc
+
+Override method called when exception is stringified.
+
+=end classdoc
+=cut
+
 sub Kanopya::Exception::full_message {
     my $self = shift;
     my $except_string = $self->description . ": ";

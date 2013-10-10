@@ -65,7 +65,6 @@ do_mount()
 	return
     fi
 
-    DEV_FS_TYPE=$(eval echo \$${1}_fs_type)
     DEV_MOUNT_OPTS=$(eval echo \$${1}_mount_opts)
 
     if [ "$1" = "root" ]; then
@@ -75,8 +74,8 @@ do_mount()
     fi
 
     DEVICE=`cat /tmp/${1}`
-    echo "mount -t ${DEV_FS_TYPE} -o ${DEV_MOUNT_OPTS} ${DEVICE} /root${DEV_MOUNT_POINT}"
+    DEV_FS_TYPE=`blkid -o value -s TYPE ${DEVICE}`
+    echo "mount -o ${DEV_MOUNT_OPTS} ${DEVICE} /root${DEV_MOUNT_POINT}"
     mount -t ${DEV_FS_TYPE} -o ${DEV_MOUNT_OPTS} ${DEVICE} /root${DEV_MOUNT_POINT}
-
 }
 

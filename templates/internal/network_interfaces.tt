@@ -13,6 +13,7 @@ iface lo inet loopback
 #iface eth0 inet dhcp
 
 [% FOREACH interface=interfaces %]
+[% IF not interface.iface_pxe or deploy_on_disk or boot_policy != "PXE Boot via ISCSI" %]
 auto [% interface.name %]
 iface [% interface.name %] inet [% interface.method %]
 [% IF interface.method == "static" %]
@@ -20,6 +21,9 @@ iface [% interface.name %] inet [% interface.method %]
       netmask [% interface.netmask %]
       [% IF interface.gateway %]
       gateway [% interface.gateway %]
+      [% END %]
+      [% IF interface.slaves %]
+      [% PROCESS bonding.tt %]
       [% END %]
       [% IF interface.bridge %]
       bridge_ports [% interface.bridge_ports %]
@@ -29,9 +33,13 @@ iface [% interface.name %] inet [% interface.method %]
       [% END %]
 [% ELSIF interface.method == "manual" %]
       up ifconfig $IFACE 0.0.0.0 up
+      [% IF interface.slaves %]
+      [% PROCESS bonding.tt %]
+      [% END %]
       [% IF interface.role == "vms" %]
       post-up ethtool -K $IFACE lro off
       [% END %]
+[% END %]
 [% END %]
 [% END %]
 

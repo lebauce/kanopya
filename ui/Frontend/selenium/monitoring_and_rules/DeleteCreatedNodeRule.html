@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head profile="http://selenium-ide.openqa.org/profiles/test-case">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<link rel="selenium.base" href="http://localhost:5000/" />
+<title>DeleteCreatedNodeRule</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">DeleteCreatedNodeRule</td></tr>
+</thead><tbody>
+<tr>
+	<td>click</td>
+	<td>css=#menuhead_Instances &gt; a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForTextPresent</td>
+	<td>Standard physical cluster</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Standard physical cluster</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForVisible</td>
+	<td>link=MyService</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=MyService</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//div[starts-with(@id,'view_MyService_')]//a[starts-with(@href,'#content_service_rules_')]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>link=Node</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForTextPresent</td>
+	<td>MyNodeRule</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//table[starts-with(@id,'service_resources_nodemetric_rules_')]/descendant::tr[td[.='MyNodeRule']]/td[1]</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>//table[starts-with(@id,'service_resources_nodemetric_rules_')]/descendant::tr[td[.='MyNodeRule']]/td[9]/div/span</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=span.ui-icon.ui-icon-ok</td>
+	<td></td>
+</tr>
+<tr>
+	<td>waitForTextNotPresent</td>
+	<td>MyNodeRule</td>
+	<td></td>
+</tr>
+</tbody></table>
+</body>
+</html>

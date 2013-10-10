@@ -1,8 +1,8 @@
-/*
- * jQuery wizard plug-in 3.0.5
+/**
+ * @license jQuery wizard plug-in 3.0.7 (18-SEPT-2012)
  *
  *
- * Copyright (c) 2011 Jan Sundman (jan.sundman[at]aland.net)
+ * Copyright (c) 2012 Jan Sundman (jan.sundman[at]aland.net)
  *
  * http://www.thecodemine.org
  *
@@ -63,6 +63,10 @@
 					}
 				}
 			});
+			
+			if (this.options.historyEnabled) {
+				$.bbq.removeState("_" + $(this.element).attr('id'));
+			}
 
 			this.steps = this.element.find(".step").hide();
 
@@ -142,30 +146,8 @@
 		},
 
 		_next : function(){
-//			if(this.options.validationEnabled){
-//				if(!this.element.valid()){
-//					this.element.validate().focusInvalid();
-//					return false;
-//				}
-//			}
-
-			/* Validate the current step inputs only */
-			var that = this;
-			var isValid = true;
-			if (this.options.validationEnabled) {
-				if (this.currentStep) {
-					this.steps.filter("#" + this.currentStep).find(":input").not(".wizard-ignore").each(function(index) {
-						if (! that.element.validate().element($(this))) {
-							isValid = false;
-							return false;
-						}
-					});
-				} else {
-					if (! this.element.valid()) {
-						isValid = false;
-					}
-				}
-				if (! isValid) {
+			if(this.options.validationEnabled){
+				if(!this.element.valid()){
 					this.element.validate().focusInvalid();
 					return false;
 				}
@@ -351,7 +333,10 @@
 				this.previousStep = this.currentStep;
 				this._checkIflastStep(step);
 				this.currentStep = step;
-				var stepShownCallback = function(){if(triggerStepShown)$(this.element).trigger('step_shown', $.extend({"isBackNavigation" : backwards},this._state()));};
+				var stepShownCallback = function(){if(triggerStepShown){$(this.element).trigger('step_shown', $.extend({"isBackNavigation" : backwards},this._state()));}}
+				if(triggerStepShown){
+					$(this.element).trigger('before_step_shown', $.extend({"isBackNavigation" : backwards},this._state()));
+				}
 				this._animate(this.previousStep, step, stepShownCallback);
 			};
 
@@ -362,7 +347,7 @@
 			this.element.resetForm()
 			$("label,:input,textarea",this).removeClass("error");
 			for(var i = 0; i < this.activatedSteps.length; i++){
-				this.steps.filter("#" + this.activatedSteps[i]).hide().find(":input").attr("disabled","disabled");
+				this.steps.filter("#" + this.activatedSteps[i]).hide().find(":input:not('.wizard-ignore')").attr("disabled","disabled");
 			}
 			this.activatedSteps = new Array();
 			this.previousStep = undefined;
@@ -441,7 +426,8 @@
 
 		update_steps : function(){
 			this.steps = this.element.find(".step").addClass("ui-formwizard-content");
-			this.steps.not("#" + this.currentStep).hide().find(":input").addClass("ui-wizard-content").attr("disabled","disabled");
+			this.firstStep = this.steps.eq(0).attr("id");
+			this.steps.not("#" + this.currentStep).hide().find(":input:not('.wizard-ignore')").addClass("ui-wizard-content").attr("disabled","disabled");
 			this._checkIflastStep(this.currentStep);
 			this._enableNavigation();
 			if(!this.options.disableUIStyles){

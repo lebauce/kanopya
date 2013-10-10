@@ -15,8 +15,13 @@ package EEntity::EComponent::EPuppetmaster2;
 use base 'EEntity::EComponent';
 
 use strict;
+use warnings;
+
 use Template;
+use File::Path qw/ mkpath /;
+use File::Temp qw/ tempdir /;
 use Log::Log4perl 'get_logger';
+use TryCatch;
 
 my $log = get_logger("");
 my $errmsg;
@@ -27,7 +32,7 @@ sub configureNode {
     my ($self, %args) = @_;
     my $data;
 
-    my $conf = $self->_getEntity()->getConf();
+    my $conf = $self->_entity->getConf();
 
     # Generation of /etc/default/puppetmaster
     $data = { 
@@ -48,14 +53,12 @@ sub addNode {
     my %args = @_;
 
     General::checkParams(args => \%args, required => [ 'mount_point', 'host' ]);
-
-    my $masternodeip = $args{cluster}->getMasterNodeIp();
   
     $self->configureNode(
         mount_point => $args{mount_point}.'/etc',
         host        => $args{host}
     );
-    
+
     $self->addInitScripts(    
         mountpoint => $args{mount_point}, 
         scriptname => 'puppet', 
@@ -66,7 +69,7 @@ sub addNode {
 sub updateSite {
     my ($self) = @_;
     my $command = 'touch /etc/puppet/manifests/site.pp';
-    $self->getExecutorEContext->execute(command => $command);
+    $self->getEContext->execute(command => $command);
 }
 
 sub createHostCertificate {
@@ -74,50 +77,81 @@ sub createHostCertificate {
  
     General::checkParams(args => \%args, required => [ 'mount_point', 'host_fqdn' ]);
     
-    my $certificate = $args{host_fqdn}.'.pem';
-    
+    my $certificate = $args{host_fqdn} . '.pem';
+
     # check if new certificate is required
     my $command = "find /etc/puppet/ssl/certs -name $certificate";
-    my $result = $self->getExecutorEContext->execute(command => $command);
-        
-    if(! $result->{stdout}) {
+    my $result = $self->getEContext->execute(command => $command);
+
+    if (! $result->{stdout}) {
         # generate a certificate for the host
         $command = "puppetca --generate $args{host_fqdn}";
-        my $result = $self->getExecutorEContext->execute(command => $command);
+        my $result = $self->getEContext->execute(command => $command);
         # TODO check for error in command execution
     }
-    
+
     # clean existing certificates information
-    $command = 'rm -rf '.$args{mount_point} .'/var/lib/puppet/ssl/*';
-    $command .= ' && mkdir -p '.$args{mount_point} .'/var/lib/puppet/ssl/certs ';
-    $command .= $args{mount_point} .'/var/lib/puppet/ssl/private_keys';    
-    $self->getExecutorEContext->execute(command => $command);    
-    
-    # copy master certificate to the image
-    $self->getExecutorEContext->send(
-        src  => '/var/lib/puppet/ssl/certs/ca.pem',
-        dest => $args{mount_point} .'/var/lib/puppet/ssl/certs/ca.pem'
+    $command = 'rm -rf ' . $args{mount_point} . '/var/lib/puppet/ssl/*';
+    $self->getEContext->execute(command => $command);    
+
+    my $tmpdir = tempdir(CLEANUP => 1);
+    mkpath($tmpdir . "/ssl/certs");
+    mkpath($tmpdir . "/ssl/private_keys");
+
+    # We do not use 'mkdir' because of a strange guestmount bug that forbids us
+    # to create a folder in the puppet folder if it's owner by the 'puppet' user
+    $self->getEContext->send(
+        src  => $tmpdir . "/ssl",
+        dest => $args{mount_point} . '/var/lib/puppet/'
     );
+
+    # copy master certificate to the image
+    try {
+        $self->getEContext->send(
+            src  => '/var/lib/puppet/ssl/certs/ca.pem',
+            dest => $args{mount_point} . '/var/lib/puppet/ssl/certs/ca.pem'
+        );
+    }
+    catch ($err) {
+        my $msg = "Error while copying master certificate to the images, $err\n";
+        throw Kanopya::Exception::IO(error => $msg);
+    }
     
     # copy host certificate to the image
-    $self->getExecutorEContext->send(
-        src  => '/var/lib/puppet/ssl/certs/'.$certificate,
-        dest => $args{mount_point} .'/var/lib/puppet/ssl/certs/'.$certificate
+    $self->getEContext->send(
+        src  => '/var/lib/puppet/ssl/certs/' . $certificate,
+        dest => $args{mount_point} . '/var/lib/puppet/ssl/certs/' . $certificate
     );
     
     # copy host private key to the image
-    $self->getExecutorEContext->send(
-        src  => '/var/lib/puppet/ssl/private_keys/'.$certificate,
-        dest => $args{mount_point} .'/var/lib/puppet/ssl/private_keys/'.$certificate
+    $self->getEContext->send(
+        src  => '/var/lib/puppet/ssl/private_keys/' . $certificate,
+        dest => $args{mount_point} . '/var/lib/puppet/ssl/private_keys/' . $certificate
     );
 
     $self->updateSite;
 }
 
+
+sub removeHostCertificate {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host_fqdn' ]);
+
+    # Remove the certificate
+    my $command = "puppetca clean $args{host_fqdn}";
+    my $result = $self->getEContext->execute(command => $command);
+    if (! $result->{stdout}) {
+        # TODO check for error in command execution
+    }
+}
+
+
 sub createHostManifest {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'puppet_definitions', 'host_fqdn' ]);
-    
+    General::checkParams(args => \%args,
+                         required => [ 'puppet_definitions', 'host_fqdn', 'sourcepath' ]);
+
     my $config = {
         INCLUDE_PATH => '/templates/components/puppetmaster',
         INTERPOLATE  => 0,               # expand "$var" in plain text
@@ -125,23 +159,24 @@ sub createHostManifest {
         EVAL_PERL    => 1,               # evaluate Perl code blocks
         RELATIVE => 1,                   # desactive par defaut
     };
-    
+
     my $input = 'host_manifest.pp.tt';
     my $output = '/etc/puppet/manifests/nodes/';
-    $output .= $args{host_fqdn}.'.pp';
-    
+    $output .= $args{host_fqdn} . '.pp';
+
     my $data = {
         host_fqdn          => $args{host_fqdn},
-        puppet_definitions => $args{puppet_definitions} 
+        puppet_definitions => $args{puppet_definitions},
+        sourcepath         => $args{sourcepath}
     };
-    
+
     my $template = Template->new($config);
     $template->process($input, $data, $output) || do {
-        $errmsg = "error during generation from '$input':" .  $template->error;
+        $errmsg = "error during generation from '$input':" . $template->error;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     };
-    
+
     $self->updateSite;
 }
 

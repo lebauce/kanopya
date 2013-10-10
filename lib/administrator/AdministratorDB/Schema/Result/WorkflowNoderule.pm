@@ -13,7 +13,23 @@ AdministratorDB::Schema::Result::WorkflowNoderule
 use strict;
 use warnings;
 
-use base 'DBIx::Class::Core';
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
 
 =head1 TABLE: C<workflow_noderule>
 
@@ -27,9 +43,10 @@ __PACKAGE__->table("workflow_noderule");
 
   data_type: 'integer'
   extra: {unsigned => 1}
+  is_auto_increment: 1
   is_nullable: 0
 
-=head2 externalnode_id
+=head2 node_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -50,12 +67,22 @@ __PACKAGE__->table("workflow_noderule");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 workflow_untriggerable_timestamp
+
+  data_type: 'integer'
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
   "workflow_noderule_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
-  "externalnode_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_auto_increment => 1,
+    is_nullable => 0,
+  },
+  "node_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -77,13 +104,7 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "workflow_untriggerable_timestamp",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 0,
-    is_nullable => 1,
-  },
-
+  { data_type => "integer", is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY
@@ -100,11 +121,11 @@ __PACKAGE__->set_primary_key("workflow_noderule_id");
 
 =head1 UNIQUE CONSTRAINTS
 
-=head2 C<externalnode_id>
+=head2 C<node_id>
 
 =over 4
 
-=item * L</externalnode_id>
+=item * L</node_id>
 
 =item * L</nodemetric_rule_id>
 
@@ -114,25 +135,22 @@ __PACKAGE__->set_primary_key("workflow_noderule_id");
 
 =cut
 
-__PACKAGE__->add_unique_constraint(
-  "externalnode_id",
-  ["externalnode_id", "nodemetric_rule_id", "workflow_id"],
-);
+__PACKAGE__->add_unique_constraint("node_id", ["node_id", "nodemetric_rule_id", "workflow_id"]);
 
 =head1 RELATIONS
 
-=head2 externalnode
+=head2 node
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Externalnode>
+Related object: L<AdministratorDB::Schema::Result::Node>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "externalnode",
-  "AdministratorDB::Schema::Result::Externalnode",
-  { externalnode_id => "externalnode_id" },
+  "node",
+  "AdministratorDB::Schema::Result::Node",
+  { node_id => "node_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
@@ -167,8 +185,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07015 @ 2012-07-03 15:20:39
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:h3vDXi9ibeKtCJHwiMrGtg
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-02-04 17:48:41
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:D2r69/FBFBsKSVEEkZ38Mw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

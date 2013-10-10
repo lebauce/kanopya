@@ -20,21 +20,26 @@ Condition on combination value
 
 @see <package>Entity::Combination</package>
 @see <package>Entity::Combination::ConstantCombination</package>
+@see <package>Entity::Combination::NodemetricCombination</package>
 
 =end classdoc
 
 =cut
 
 package Entity::NodemetricCondition;
+use base Entity;
 
 use strict;
 use warnings;
-use base 'Entity';
+
 use Entity::Combination;
-require 'Entity/NodemetricRule.pm';
+use Entity::Rule::NodemetricRule;
 use Entity::Combination::ConstantCombination;
+
+use TryCatch;
+my $err;
+
 use Data::Dumper;
-# logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -42,37 +47,32 @@ use constant ATTR_DEF => {
     nodemetric_condition_label => {
         pattern         => '^.*$',
         is_mandatory    => 0,
-        is_extended     => 0,
         is_editable     => 1,
     },
     nodemetric_condition_service_provider_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,
-        is_extended     => 0,
+        is_delegatee    => 1,
         is_editable     => 1,
     },
     left_combination_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,
-        is_extended     => 0,
         is_editable     => 1,
     },
     nodemetric_condition_comparator => {
         pattern         => '^(>|<|>=|<=|==)$',
         is_mandatory    => 1,
-        is_extended     => 0,
         is_editable     => 1,
     },
     right_combination_id => {
         pattern         => '^.*$',
         is_mandatory    => 1,
-        is_extended     => 0,
         is_editable     => 1,
     },
     nodemetric_condition_formula_string => {
         pattern         => '^.*$',
         is_mandatory    => 0,
-        is_extended     => 0,
         is_editable     => 1,
     },
 };
@@ -81,16 +81,31 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        'updateName'    => {
+        updateName => {
             description => 'updateName',
-            perm_holder => 'entity'
         },
-        'getDependencies' => {
-            'description' => 'return dependencies tree for this object',
-            'perm_holder' => 'entity',
+        getDependencies => {
+            description => 'return dependencies tree for this object',
         },
     };
 }
+
+
+=pod
+
+=begin classdoc
+
+@constructor
+
+Create a new instance of the class.
+Transforms thresholds into ConstantCombinations
+Update formula_string with toString() methods and the label if not provided in attribute.
+
+@return a class instance
+
+=end classdoc
+
+=cut
 
 sub new {
     my $class = shift;
@@ -132,9 +147,14 @@ sub label {
     return $self->nodemetric_condition_label;
 }
 
-=head2 updateName
 
-    desc: set entity's name to .toString() return value
+=pod
+
+=begin classdoc
+
+set label to human readable version of the formula
+
+=end classdoc
 
 =cut
 
@@ -145,60 +165,100 @@ sub updateName {
     $self->save;
 }
 
-=head2 toString
+=pod
 
-    desc: return a string representation of the entity
+=begin classdoc
+
+Transform formula to human readable String
+
+@return human readable String of the formula
+
+=end classdoc
 
 =cut
 
 sub toString {
     my $self = shift;
 
+    # Not used yet due to bad Combination::computeUnit() behavior (see also AggregateCondition::toString())
+    my $unit = '';
+    if ((ref $self->right_combination) eq 'Entity::Combination::ConstantCombination') {
+        my $left_unit = $self->left_combination->combination_unit;
+        if ($left_unit && (($left_unit ne '?') || ($left_unit ne '-'))) {
+            $unit = $left_unit;
+        }
+    }
+
     return  $self->left_combination->combination_formula_string.' '
            .$self->nodemetric_condition_comparator.' '
            .$self->right_combination->combination_formula_string;
 };
 
-sub evalOnOneNode{
-    my $self = shift;
-    my %args = @_;
+=pod
 
-    my $monitored_values_for_one_node = $args{monitored_values_for_one_node};
+=begin classdoc
 
-    my $comparator     = $self->getAttr(name => 'nodemetric_condition_comparator');
+Evaluate the condition. Call evaluation of both dependant combinations then evaluate the condition
 
+@return hashref { node_id => value} where value = 1 if condition is true, value = 0 if condition is false
+
+=end classdoc
+
+=cut
+
+sub evaluate {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['nodes']);
+
+    if (defined $args{memoization}->{$self->id}) {
+        return $args{memoization}->{$self->id};
+    }
+
+    my $comparator        = $self->nodemetric_condition_comparator;
     my $left_combination  = $self->left_combination;
     my $right_combination = $self->right_combination;
 
-    my $left_value = $left_combination->computeValueFromMonitoredValues(
-                         monitored_values_for_one_node => $monitored_values_for_one_node
-                     );
+    my $left_value  = $left_combination->evaluate(%args);
+    my $right_value = $right_combination->evaluate(%args);
 
-    my $right_value = $right_combination->computeValueFromMonitoredValues(
-                          monitored_values_for_one_node => $monitored_values_for_one_node
-                      );
 
-    if((not defined $left_value) || (not defined $right_value)){
-        return undef;
-    } else {
-        my $evalString = $left_value.$comparator.$right_value;
+    my %evaluation_for_each_node;
 
-        $log->info("NM Condition formula: $evalString");
-
-        if(eval $evalString){
-            return 1;
-        }else{
-            return 0;
+    for my $node (@{$args{nodes}}) {
+        if ((not defined $left_value->{$node->id}) || (not defined $right_value->{$node->id})) {
+             $evaluation_for_each_node{$node->id} = undef;
+        }
+        else {
+            $evaluation_for_each_node{$node->id} = (eval $left_value->{$node->id}.$comparator.$right_value->{$node->id}) ? 1 : 0;
         }
     }
+    $log->debug('nm condition <'.($self->id).'> <'.$self->nodemetric_condition_formula_string.'>'.
+               (Dumper \%evaluation_for_each_node));
+
+    if (defined $args{memoization}) {
+        $args{memoization}->{$self->id} = \%evaluation_for_each_node;
+    }
+    return \%evaluation_for_each_node;
 }
 
 
+=pod
+
+=begin classdoc
+
+Find all the rules which depends on the NodemetricCondition
+
+@return array of rules
+
+=end classdoc
+
+=cut
+
 sub getDependentRules {
     my $self = shift;
-    my @rules_from_same_service = Entity::NodemetricRule->search(
+    my @rules_from_same_service = Entity::Rule::NodemetricRule->search(
                                       hash => {
-                                          nodemetric_rule_service_provider_id => $self->nodemetric_condition_service_provider_id
+                                          service_provider_id => $self->nodemetric_condition_service_provider_id
                                       }
                                   );
 
@@ -217,6 +277,19 @@ sub getDependentRules {
     return @rules;
 }
 
+
+=pod
+
+=begin classdoc
+
+Find all the rules which depends on the NodemetricCondition
+
+@return hashref of rule_names
+
+=end classdoc
+
+=cut
+
 sub getDependencies {
     my $self = shift;
 
@@ -224,14 +297,25 @@ sub getDependencies {
 
     my %dependencies;
     for my $rule (@rules) {
-        $dependencies{$rule->nodemetric_rule_label} = {};
+        $dependencies{$rule->rule_name} = {};
     }
     return \%dependencies;
 }
 
+
+=pod
+
+=begin classdoc
+
+Delete instance and delete dependant object on cascade.
+
+=end classdoc
+
+=cut
+
 sub delete {
     my $self = shift;
-    my @rules_from_same_service = Entity::NodemetricRule->search(hash => {nodemetric_rule_service_provider_id => $self->nodemetric_condition_service_provider_id});
+    my @rules_from_same_service = Entity::Rule::NodemetricRule->search(hash => {service_provider_id => $self->nodemetric_condition_service_provider_id});
     my $id = $self->getId;
     RULE:
     while(@rules_from_same_service) {
@@ -251,10 +335,34 @@ sub delete {
     $comb_right->deleteIfConstant();
 }
 
+
+=pod
+
+=begin classdoc
+
+Search indicators used by the NodemetricCondition
+
+@return array of indicator ids
+
+=end classdoc
+
+=cut
+
 sub getDependentIndicatorIds {
     my $self = shift;
     return ($self->left_combination->getDependentIndicatorIds(), $self->right_combination->getDependentIndicatorIds());
 }
+
+
+=pod
+
+=begin classdoc
+
+Update instance attributes. Manage update of related objects and formula_string.
+
+=end classdoc
+
+=cut
 
 sub update {
     my ($self, %args) = @_;
@@ -334,20 +442,41 @@ sub clone {
         my %args = @_;
         my $attrs = $args{attrs};
         for my $operand ('left_combination', 'right_combination') {
-            $attrs->{ $operand . '_id' } = $self->$operand->clone(
-                dest_service_provider_id => $attrs->{nodemetric_condition_service_provider_id}
-            )->id;
+            try {
+                $attrs->{$operand . '_id'} = $self->$operand->clone(
+                    dest_service_provider_id => $attrs->{nodemetric_condition_service_provider_id}
+                )->id;
+            }
+            catch (Kanopya::Exception $err) {
+                $err->rethrow();
+            }
+            catch ($err) {
+                throw Kanopya::Exception::Internal(error => "$err");
+            }
         }
         return %$attrs;
     };
 
-    $self->_importToRelated(
+    return $self->_importToRelated(
         dest_obj_id         => $args{'dest_service_provider_id'},
         relationship        => 'nodemetric_condition_service_provider',
         label_attr_name     => 'nodemetric_condition_label',
         attrs_clone_handler => $attrs_cloner
     );
 }
+
+
+=pod
+
+=begin classdoc
+
+Compute and update the instance formula_string attribute and call the update of the formula_string
+attribute of the objects which depend on the instance.
+
+=end classdoc
+
+=cut
+
 
 sub updateFormulaString {
     my $self = shift;

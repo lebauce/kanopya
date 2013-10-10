@@ -21,21 +21,21 @@ my ($ncomb, $ncond, $nr);
 my ($cm, $acomb, $acond, $ar);
 
 lives_ok {
-    use Administrator;
-    use Entity::ServiceProvider::Outside::Externalcluster;
-    use Entity::Connector::MockMonitor;
+    use BaseDB;
+    use Entity::ServiceProvider::Externalcluster;
+    use Entity::Component::MockMonitor;
     use Entity::Clustermetric;
     use Entity::AggregateCondition;
     use Entity::Combination::AggregateCombination;
-    use Entity::AggregateRule;
+    use Entity::Rule::AggregateRule;
     use Entity::Combination::NodemetricCombination;
     use Entity::NodemetricCondition;
-    use Entity::NodemetricRule;
+    use Entity::Rule::NodemetricRule;
 } 'All uses';
 
-Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-my $adm = Administrator->new;
-$adm->beginTransaction;
+BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+
+BaseDB->beginTransaction;
 
 eval {
     init();
@@ -49,10 +49,10 @@ eval {
     # test all condition type cloning (different left and right cobination type)
     # test cloning of already existing object
 
-    $adm->rollbackTransaction;
+    BaseDB->rollbackTransaction;
 };
 if($@) {
-    $adm->rollbackTransaction;
+    BaseDB->rollbackTransaction;
     my $error = $@;
     print $error."\n";
     fail('Exception occurs');
@@ -64,7 +64,7 @@ sub testNodeRuleImport {
 
     lives_ok {
         # 'overloaded' new will do a clone
-        Entity::NodemetricRule->new(
+        Entity::Rule::NodemetricRule->new(
             nodemetric_rule_id   => $nr->id,
             service_provider_id  => $sp_dest->id
         );
@@ -104,13 +104,13 @@ sub testNodeRuleImport {
     } 'Constant combination cloned';
 
     lives_ok {
-        Entity::NodemetricRule->find(
+        Entity::Rule::NodemetricRule->find(
             hash => {
-                nodemetric_rule_service_provider_id => $sp_dest->id,
-                nodemetric_rule_label               => 'node rule label',
-                nodemetric_rule_formula             => 'id'.$cloned_ncond->id,
-                nodemetric_rule_state               => 'enabled',
-                nodemetric_rule_description         => 'node rule description',
+                service_provider_id => $sp_dest->id,
+                rule_name           => 'node rule label',
+                formula             => 'id'.$cloned_ncond->id,
+                state               => 'enabled',
+                description         => 'node rule description',
             }
         );
     } 'Node rule cloned';
@@ -122,7 +122,7 @@ sub testServiceRuleImport {
 
     lives_ok {
         # 'overloaded' new will do a clone
-        Entity::AggregateRule->new(
+        Entity::Rule::AggregateRule->new(
             aggregate_rule_id   => $ar->id,
             service_provider_id => $sp_dest->id
         );
@@ -173,27 +173,27 @@ sub testServiceRuleImport {
     } 'Constant combination cloned';
 
     lives_ok {
-        $cloned_ar = Entity::AggregateRule->find(
+        $cloned_ar = Entity::Rule::AggregateRule->find(
             hash => {
-                aggregate_rule_service_provider_id  => $sp_dest->id,
-                aggregate_rule_label                => 'service rule label',
-                aggregate_rule_formula              => 'id'.$cloned_acond->id,
-                aggregate_rule_state                => 'enabled',
+                service_provider_id  => $sp_dest->id,
+                rule_name            => 'service rule label',
+                formula              => 'id'.$cloned_acond->id,
+                state                => 'enabled',
                 aggregate_rule_last_eval            => undef, # this attr is not cloned
-                aggregate_rule_description          => 'service rule description',
+                description          => 'service rule description',
             }
         );
     } 'Service rule cloned';
 }
 
 sub testExceptions {
-    my $bad_sp_dest = Entity::ServiceProvider::Outside::Externalcluster->new(
+    my $bad_sp_dest = Entity::ServiceProvider::Externalcluster->new(
         externalcluster_name => 'Bad Dest Service Provider',
     );
 
     throws_ok {
         # 'overloaded' new will do a clone
-        Entity::NodemetricRule->new(
+        Entity::Rule::NodemetricRule->new(
             nodemetric_rule_id  => $nr->id,
             service_provider_id => $bad_sp_dest->id
         );
@@ -202,30 +202,30 @@ sub testExceptions {
 
     throws_ok {
         # 'overloaded' new will do a clone
-        Entity::AggregateRule->new(
+        Entity::Rule::AggregateRule->new(
             aggregate_rule_id   => $ar->id,
             service_provider_id => $bad_sp_dest->id
         );
     } 'Kanopya::Exception::Internal::NotFound',
     'Can not import service rule if no collector manager on dest';
 
-     my $tech_service = Entity::ServiceProvider::Outside::Externalcluster->new(
+     my $tech_service = Entity::ServiceProvider::Externalcluster->new(
         externalcluster_name => 'Test Monitor 2',
     );
 
-    my $mock_monitor = Entity::Connector::MockMonitor->new(
+    my $mock_monitor = Entity::Component::MockMonitor->new(
         service_provider_id => $tech_service->id,
     );
 
     $bad_sp_dest->addManager(
         manager_id      => $mock_monitor->id,
-        manager_type    => 'collector_manager',
+        manager_type    => 'CollectorManager',
         no_default_conf => 1,
     );
 
     throws_ok {
         # 'overloaded' new will do a clone
-        Entity::NodemetricRule->new(
+        Entity::Rule::NodemetricRule->new(
             nodemetric_rule_id  => $nr->id,
             service_provider_id => $bad_sp_dest->id
         );
@@ -234,7 +234,7 @@ sub testExceptions {
 
     throws_ok {
         # 'overloaded' new will do a clone
-        Entity::AggregateRule->new(
+        Entity::Rule::AggregateRule->new(
             aggregate_rule_id   => $ar->id,
             service_provider_id => $bad_sp_dest->id
         );
@@ -245,31 +245,31 @@ sub testExceptions {
 # Create and configure services
 # Add metrics and rules to source service provider
 sub init {
-    $sp_src = Entity::ServiceProvider::Outside::Externalcluster->new(
+    $sp_src = Entity::ServiceProvider::Externalcluster->new(
         externalcluster_name => 'Source Service Provider',
     );
 
-    $sp_dest = Entity::ServiceProvider::Outside::Externalcluster->new(
+    $sp_dest = Entity::ServiceProvider::Externalcluster->new(
         externalcluster_name => 'Dest Service Provider',
     );
 
-    my $tech_service = Entity::ServiceProvider::Outside::Externalcluster->new(
+    my $tech_service = Entity::ServiceProvider::Externalcluster->new(
         externalcluster_name => 'Test Monitor',
     );
 
-    my $mock_monitor = Entity::Connector::MockMonitor->new(
+    my $mock_monitor = Entity::Component::MockMonitor->new(
         service_provider_id => $tech_service->id,
     );
 
     $sp_src->addManager(
         manager_id      => $mock_monitor->id,
-        manager_type    => 'collector_manager',
+        manager_type    => 'CollectorManager',
         no_default_conf => 1,
     );
 
     $sp_dest->addManager(
         manager_id      => $mock_monitor->id,
-        manager_type    => 'collector_manager',
+        manager_type    => 'CollectorManager',
         no_default_conf => 1,
     );
 
@@ -297,12 +297,12 @@ sub init {
     );
 
     # Nodemetric rule
-   $nr = Entity::NodemetricRule->new(
-        nodemetric_rule_service_provider_id => $sp_src->id,
-        nodemetric_rule_label               => 'node rule label',
-        nodemetric_rule_formula             => 'id'.$ncond->id,
-        nodemetric_rule_state               => 'enabled',
-        nodemetric_rule_description         => 'node rule description',
+   $nr = Entity::Rule::NodemetricRule->new(
+        service_provider_id => $sp_src->id,
+        rule_name           => 'node rule label',
+        formula             => 'id'.$ncond->id,
+        state               => 'enabled',
+        description         => 'node rule description',
     );
 
     # Clustermetric
@@ -330,13 +330,13 @@ sub init {
     );
 
     # Aggregate rule
-   $ar = Entity::AggregateRule->new(
-        aggregate_rule_service_provider_id  => $sp_src->id,
-        aggregate_rule_label                => 'service rule label',
-        aggregate_rule_formula              => 'id'.$acond->id,
-        aggregate_rule_state                => 'enabled',
+   $ar = Entity::Rule::AggregateRule->new(
+        service_provider_id  => $sp_src->id,
+        rule_name            => 'service rule label',
+        formula              => 'id'.$acond->id,
+        state                => 'enabled',
         aggregate_rule_last_eval            => '1',
-        aggregate_rule_description          => 'service rule description',
+        description          => 'service rule description',
     );
 }
 

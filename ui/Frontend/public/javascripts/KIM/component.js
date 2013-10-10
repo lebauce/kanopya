@@ -8,6 +8,11 @@ var Component = (function() {
             var componentType = fromIdToComponentType(ajax('GET', '/api/component/' + this.id).component_type_id);
             this.type = componentType.component_name.toLowerCase() + componentType.component_version;
             this.name = componentType.component_name;
+
+            // Work around to handle components without version number
+            if (window[this.type.ucfirst()] == undefined) {
+                this.type = this.name.toLowerCase();
+            }
         }
 
         this.displayed = [];
@@ -25,6 +30,8 @@ var Component = (function() {
             attrsCallback  : $.proxy(this.attrsCallback, this),
             displayed      : this.displayed,
             relations      : this.relations,
+            actionsCallback: $.proxy(this.actionsCallback, this),
+            optionsCallback: $.proxy(this.optionsCallback, this)
         })).start();
     };
 

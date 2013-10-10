@@ -5,7 +5,7 @@ use lib qw(/opt/kanopya/lib/common /opt/kanopya/lib/administrator);
 use strict;
 use warnings;
 use Term::ReadKey;
-use Administrator;
+use BaseDB;
 use Entity::Systemimage;
 
 my $currentuser = `whoami`;
@@ -34,9 +34,8 @@ ReadMode('noecho');
 chomp($passwd = <STDIN>);
 ReadMode('original');
 
-Administrator::authenticate(login => $login, password => $passwd);
+BaseDB->authenticate(login => $login, password => $passwd);
 
-my $admin = Administrator->new();
 my @systemimages = Entity::Systemimage->getSystemimages(hash => {systemimage_name => $sysimg_name});
 if(not scalar @systemimages) {
 	die("System image $sysimg_name not found !\n");
@@ -53,11 +52,6 @@ if($systemimage->getAttr(name => 'active')) {
 my $devices = $systemimage->getDevices();
 my $root_device = "/dev/".$devices->{root}->{vgname}."/".$devices->{root}->{lvname};
 my $etc_device = "/dev/".$devices->{etc}->{vgname}."/".$devices->{etc}->{lvname};
-
-#my $row = $admin->{db}->resultset('Iscsitarget1Target')->search(
-#	{iscsitarget1_target_name => { like => "%root_$sysimg_name" }})->single;
-
-#my $root_target = $row->get_column('iscsitarget1_target_name');
 
 if(! -e $root_device) {
     print "Device for rootdisk $root_device no found.\n";

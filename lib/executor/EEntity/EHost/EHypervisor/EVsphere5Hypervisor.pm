@@ -27,7 +27,7 @@ EVsphere5Hypervisor
 package EEntity::EHost::EHypervisor::EVsphere5Hypervisor;
 use base "EEntity::EHost::EHypervisor";
 
-use EFactory;
+use EEntity;
 
 use strict;
 use warnings;
@@ -94,7 +94,7 @@ sub getAvailableMemory {
         }
     }
     else {
-        $errmsg  = 'Hypervisor\'s memory available undefined for hypervisor '. $self->host_hostname;
+        $errmsg  = 'Hypervisor\'s memory available undefined for hypervisor '. $self->node->node_hostname;
         $errmsg .= 'is host connected?';
         throw Kanopya::Exception::Internal(error => $errmsg);
     }

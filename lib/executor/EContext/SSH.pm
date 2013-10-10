@@ -1,5 +1,3 @@
-# EContext::SSH.pm - EContext for remote execution using ssh connection
-
 #    Copyright 2011-2012 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
@@ -15,63 +13,74 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-=head1 NAME
+=pod
 
-EComponent - Abstract class of component object
+=begin classdoc
 
-=head1 SYNOPSIS
+The ssh econtext offers execute method using ssh connection to the remote host.
 
+@since    2010-Nov-23
+@instance hash
+@self     $self
 
-
-=head1 DESCRIPTION
-
-EComponent is an abstract class of component objects
-
-=head1 METHODS
+=end classdoc
 
 =cut
+
 package EContext::SSH;
 use base "EContext";
 
 use strict;
 use warnings;
+
+use General;
+use Kanopya::Exceptions;
+
 use Net::Ping;
+
+# Handle no cross plateform Net perl module...
 if ($^O eq 'linux') {
     require Net::OpenSSH;
 } elsif ( $^O eq 'MSWin32') {
     require Net::SSH::Perl;
 }
+
 use Log::Log4perl "get_logger";
-
-use General;
-use Kanopya::Exceptions;
-
 my $log = get_logger("command");
 my $errmsg;
 
-our $VERSION = "1.00";
 
+=pod
 
-=head2 new
+=begin classdoc
 
-constructor
+@constructor
+
+Instanciate a SSH econtext using the ip of the destination host.
+
+@return a class instance
+
+=end classdoc
 
 =cut
 
 sub new {
     my ($class, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'ip' ]);
+    General::checkParams(args => \%args, required => [ 'ip', 'timeout' ],
+                         optional => { username => 'root' });
 
-    my $self = $class->SUPER::new(%args);
-    $self->{ip} = $args{ip};
+    my $self = {
+        ip       => $args{ip},
+        timeout  => $args{timeout},
+        username => $args{username}
+    };
 
     # is the host available on ssh port 22
     my $p = Net::Ping->new();
     $p->port_number(22);
-    if(not $p->ping($args{ip}, 2)) {
+    if (not $p->ping($args{ip}, 2)) {
         $p->close();
         $errmsg = "EContext::SSH->new : can't contact $args{ip} on port 22";
         $log->debug($errmsg);
@@ -79,21 +88,30 @@ sub new {
     }
     $p->close();
     $log->debug("Remote econtext ssh instanciate");
+
     bless $self, $class;
     return $self;
 }
 
-=head2 _init
 
-    _init initialise ssh connection to the host
+=cut
+
+=pod
+
+=begin classdoc
+
+Initialise ssh connection to the host
+
+=end classdoc
 
 =cut
 
 sub _init {
     my ($self) = @_;
+
     $log->debug("Initialise ssh connection to $self->{ip}");
     my %opts = (
-        user        => 'root',                   # user login
+        user        => $self->{username},        # user login
         port        => 22,                       # TCP port number where the server is running
         key_path    => '/root/.ssh/kanopya_rsa', # Use the key stored on the given file path for authentication
         ssh_cmd     => '/usr/bin/ssh',           # full path to OpenSSH ssh binary
@@ -101,7 +119,7 @@ sub _init {
         master_opts => [
          -o => "StrictHostKeyChecking=no"
         ],
-        timeout => 30,
+        timeout => $self->{timeout},
         #kill_ssh_on_timeout => 1
     );
 
@@ -128,12 +146,30 @@ execute ( command )
 
 =cut
 
+=cut
+
+=pod
+
+=begin classdoc
+
+Use the OpenSSH module to execute the command remotely.
+NOTE: don't use stderr redirection ( 2> ) in your command.
+
+@param command the command to execute
+
+@return the command result
+
+=end classdoc
+
+=cut
+
 sub execute {
     my ($self, %args) = @_;
     
-    General::checkParams(args => \%args, required => ['command']);
+    General::checkParams(args => \%args, required => [ 'command' ],
+                                         optional => { 'timeout' => $self->{timeout} });
     
-    if($args{command} =~ m/2>/) {
+    if ($args{command} =~ m/2>/) {
         $errmsg = "EContext::SSH->execute : command must not contain stderr redirection (2>)!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
@@ -146,7 +182,8 @@ sub execute {
     my $result = {};
     my $command = $args{command};
     $log->info("Running command on $self->{ip}: $command");
-    my ($stdout, $stderr) = $self->{ssh}->capture2($command);
+    my ($stdout, $stderr) = $self->{ssh}->capture2({ timeout => $args{timeout} },
+                                                   $command);
 
     $result->{stdout} = $stdout;
     $result->{stderr} = $stderr;
@@ -154,7 +191,7 @@ sub execute {
     chop($stdout);
     chop($stderr);
     my $error = $self->{ssh}->error;
-    if($error) {
+    if ($error) {
          if($error =~ /child exited with code (\d)/) {
              $result->{exitcode} = $1;
 
@@ -171,22 +208,28 @@ sub execute {
     return $result;
 }
 
-=head2 send
 
-send(src => $srcfullpath, dest => $destfullpath)
-    desc: send a file to a specific directory
-    args:
-        src : string: complete path to the file to send
-        dest : string: complete path to the destination directory/file
-    return:
-        result ref hash containing resulting stdout and stderr
+=cut
+
+=pod
+
+=begin classdoc
+
+Use the OpenSSH module to copy the local file to remote host.
+
+@param src the source file to copy
+@param dest the destionation to copy file
+
+@return the command result
+
+=end classdoc
 
 =cut
 
 sub send {
     my ($self, %args) = @_;
 
-    General::checkParams(args => %args, required => ['src', 'dest']);
+    General::checkParams(args => %args, required => [ 'src', 'dest' ]);
     #TODO check to be sure src and dest are full path to files
 
     if(not -e $args{src}) {
@@ -199,7 +242,7 @@ sub send {
         $self->_init();
     }
 
-    my $success = $self->{ssh}->scp_put({}, $args{src}, $args{dest});
+    my $success = $self->{ssh}->scp_put({ recursive => 1 }, $args{src}, $args{dest});
     # return TRUE if success
     if(not $success) {
         $errmsg = "EContext::SSH->send failed while putting $args{src} to $args{dest}!";
@@ -208,16 +251,4 @@ sub send {
     }
 }
 
-
-
-
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut

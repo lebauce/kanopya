@@ -1,4 +1,5 @@
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2011-2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -14,136 +15,92 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-=head1 NAME
+=pod
+=begin classdoc
 
-EEntity::Operation::EAddHost - Operation class implementing Host creation operation
+Add a host to the system.
 
-=head1 SYNOPSIS
+@since    2012-Aug-20
+@instance hash
+@self     $self
 
-This Object represent an operation.
-It allows to implement Host creation operation
-
-=head1 DESCRIPTION
-
-Component is an abstract class of operation objects
-
-=head1 METHODS
-
+=end classdoc
 =cut
 
 package EEntity::EOperation::EAddHost;
-use base "EEntity::EOperation";
+use base EEntity::EOperation;
 
 use strict;
 use warnings;
 
-use Kanopya::Exceptions;
-use EFactory;
-use Template;
-
-use Entity;
-use Entity::Host;
-use Entity::ServiceProvider::Inside::Cluster;
-use Entity::Kernel;
-use Entity::Hostmodel;
-use Entity::Processormodel;
-use Entity::Gp;
-use ERollback;
-
 use Log::Log4perl "get_logger";
-use Data::Dumper;
-
 my $log = get_logger("");
 my $errmsg;
 
-=head2 prepare
 
-    $op->prepare();
+=pod
+=begin classdoc
 
+Check if the host manager is defined in the context.
+
+=end classdoc
+=cut
+
+sub check {
+    my ($self, %args) = @_;
+    $self->SUPER::check(%args);
+
+    General::checkParams(args => $self->{context}, required => [ "host_manager" ]);
+}
+
+
+=pod
+=begin classdoc
+
+Check if the host manager has not reach the maximum amount of consumers
+
+=end classdoc
 =cut
 
 sub prepare {
-    my $self = shift;
-    my %args = @_;
-    $self->SUPER::prepare();
+    my ($self, %args) = @_;
+    $self->SUPER::prepare(%args);
 
-    General::checkParams(args => $self->{context}, required => [ "host_manager" ]);
-
-    # Restore the list of ifaces
-    if (defined $self->{params}->{ifaces}) {
-        my @ifaces;
-        for my $iface (keys %{$self->{params}->{ifaces}}) {
-            push @ifaces, $self->{params}->{ifaces}->{$iface};
-        }
-        $self->{params}->{ifaces} = \@ifaces;
-    }
+    $self->{context}->{host_manager}->increaseConsumers();
 }
+
+
+=pod
+=begin classdoc
+
+Call the host manager to create the new host.
+
+=end classdoc
+=cut
 
 sub execute {
-    my $self = shift;
+    my ($self, %args) = @_;
+    $self->SUPER::execute(%args);
 
-    my $host = $self->{context}->{host_manager}->createHost(%{$self->{params}}, erollback => $self->{erollback});
-    
-    $log->info("Host <" . $host->getAttr(name => "entity_id") . "> is now created");
+    my $host = $self->{context}->{host_manager}->createHost(%{ $self->{params} }, erollback => $self->{erollback});
+
+    $log->info("Host <" . $host->id . "> is now created");
 }
 
-=head1 DIAGNOSTICS
 
-Exceptions are thrown when mandatory arguments are missing.
-Exception : Kanopya::Exception::Internal::IncorrectParam
+=pod
+=begin classdoc
 
-=head1 CONFIGURATION AND ENVIRONMENT
+Decrease the number of consumers of the host manager as the host is successfully created.
 
-This module need to be used into Kanopya environment. (see Kanopya presentation)
-This module is a part of Administrator package so refers to Administrator configuration
-
-=head1 DEPENDENCIES
-
-This module depends of 
-
-=over
-
-=item KanopyaException module used to throw exceptions managed by handling programs
-
-=item Entity::Component module which is its mother class implementing global component method
-
-=back
-
-=head1 INCOMPATIBILITIES
-
-None
-
-=head1 BUGS AND LIMITATIONS
-
-There are no known bugs in this module.
-
-Please report problems to <Maintainer name(s)> (<contact address>)
-
-Patches are welcome.
-
-=head1 AUTHOR
-
-<HederaTech Dev Team> (<dev@hederatech.com>)
-
-=head1 LICENCE AND COPYRIGHT
-
-Kanopya Copyright (C) 2009, 2010, 2011, 2012, 2013 Hedera Technology.
-
-This program is free software; you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation; either version 3, or (at your option)
-any later version.
-
-This program is distributed in the hope that it will be useful, but
-WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; see the file COPYING.  If not, write to the
-Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
-Boston, MA 02110-1301 USA.
-
+=end classdoc
 =cut
+
+sub finish {
+    my ($self, %args) = @_;
+    $self->SUPER::finish(%args);
+
+    $self->{context}->{host_manager}->decreaseConsumers();
+}
 
 1;

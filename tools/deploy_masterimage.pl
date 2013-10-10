@@ -5,9 +5,10 @@ use warnings;
 use XML::Simple;
 
 use Kanopya::Exceptions;
-use Administrator;
-use Entity::Operation;
+use BaseDB;
 use General;
+
+use Entity::ServiceProvider::Cluster;
 
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init($ERROR);
@@ -28,17 +29,21 @@ my $conf = XMLin("/opt/kanopya/conf/executor.conf");
 General::checkParams(args=>$conf->{user}, required=>["name","password"]);
 
 
-my $adm = Administrator::authenticate(
-    login    => $conf->{user}->{name},
-	password => $conf->{user}->{password}
-);
+my $adm = BaseDB->authenticate(
+              login    => $conf->{user}->{name},
+	          password => $conf->{user}->{password}
+          );
 
 eval {
-    Entity::Operation->enqueue(
-        priority => 200,
+    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster;
+    $kanopya->getManager(manager_type => 'ExecutionManager')->enqueue(
         type     => 'DeployMasterimage',
         params   => { file_path => "$arg", keep_file => 1 },
     );
 };
-
-print "DeployMasterimage operation added to operations queue\n";
+if ($@) {
+    print "Failed:\n$@";
+}
+else {
+    print "DeployMasterimage operation added to operations queue\n";
+}

@@ -18,15 +18,14 @@ use base 'BaseDB';
 
 use strict;
 use warnings;
-
-use Entity::NodemetricRule;
+use Entity::Rule::NodemetricRule;
 use Entity::Workflow;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
-    externalnode_id         =>  {pattern       => '^.*$',
+    node_id         =>  {pattern       => '^.*$',
                                  is_mandatory   => 1,
                                  is_extended    => 0,
                                  is_editable    => 1},
@@ -46,21 +45,22 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub workflowState{
+sub manageWorkflowState {
     my ($class, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'externalnode_id',
+    General::checkParams(args => \%args, required => [ 'node_id',
                                                        'nodemetric_rule_id',
                                                      ]);
+
 
     my $workflow_noderule;
     eval{
         $workflow_noderule = $class->find(hash => {
-            externalnode_id    => $args{externalnode_id},
+            node_id    => $args{node_id},
             nodemetric_rule_id => $args{nodemetric_rule_id},
         });
     };
 
-    if(defined $workflow_noderule){
+    if (defined $workflow_noderule) {
         my $workflow_id = $workflow_noderule->getAttr(name => 'workflow_id');
         my $workflow    = Entity::Workflow->get(id => $workflow_id);
 
@@ -68,15 +68,15 @@ sub workflowState{
             $log->info('A workflow is already running');
             return {state => 'running'};
         }
-        elsif ($workflow->state eq 'cancelled') {
-            $log->info('Workflow done or cancelled, delete workflow noderule');
+        elsif ($workflow->state eq 'cancelled' || $workflow->state eq 'failed') {
+            $log->info('Workflow cancelled or failed. Delete workflow noderule');
             $workflow_noderule->delete();
             return {state => 'ready_to_launch'};
         }
         elsif ($workflow->state eq 'done') {
-            my $rule = Entity::NodemetricRule->get (id => $workflow_noderule->nodemetric_rule_id);
-            my $delay = $rule->workflow_def->paramPresets->{specific}->{delay};
-            if (defined $delay && $delay > 0) {
+            my $delay = $workflow_noderule->nodemetric_rule->workflow_def->paramPresets->{specific}->{delay};
+
+            if ((defined $delay) && ($delay > 0)) {
 
                 if (not defined $workflow_noderule->workflow_untriggerable_timestamp) {
                     $workflow_noderule->setAttr(name => 'workflow_untriggerable_timestamp', value => time() + $delay);
@@ -84,50 +84,49 @@ sub workflowState{
                     $log->info('Workflow <'.$workflow_id.'> done, delaying time for <'.($delay).'> sec');
                     return {state => 'delayed'};
                 }
-                else {
-                    my $delta = $workflow_noderule->workflow_untriggerable_timestamp - time();
-                    if ($delta <= 0) {
-                        $log->info('Workflow <'.$workflow_id.'> done, end of delay time, delete workflow noderule');
-                        $workflow_noderule->delete();
-                        return {state => 'ready_to_launch'};
-                    }
-                    else {
-                        $log->info('Workflow <'.$workflow_id.'> done, still delaying time for <'.($delta).'> sec');
-                        return {state => 'delayed'};
-                    }
+
+                my $delta = $workflow_noderule->workflow_untriggerable_timestamp - time();
+
+                if ($delta <= 0) {
+                    $log->info('Workflow <'.$workflow_id.'> done, end of delay time, delete workflow noderule');
+                    $workflow_noderule->delete();
+                    return {state => 'ready_to_launch'};
                 }
+
+                $log->info('Workflow <'.$workflow_id.'> done, still delaying time for <'.($delta).'> sec');
+                return {state => 'delayed'};
             }
-            else {
-                $log->info('Workflow <'.$workflow_id.'> done, <0 or undefined delay time, delete workflow noderule');
-                $workflow_noderule->delete();
-                return {state => 'ready_to_launch'};
-            }
+
+            $log->info('Workflow <'.$workflow_id.'> done, <0 or undefined delay time, delete workflow noderule');
+            $workflow_noderule->delete();
+            return {state => 'ready_to_launch'};
         }
         else {
-            throw Kanopya::Exception(error => 'unknown workflow state <'.($workflow->state).'>');
+            my $error = 'unknown workflow state <'.($workflow->state).'>';
+            $log->error($error);
+            throw Kanopya::Exception(error => $error);
         }
     }
 
-    $log->info('workflow_noderule extnode_id <'.$args{externalnode_id}.'> nodemetric_rule_id <'.$args{nodemetric_rule_id}.'> not defined');
-
+    $log->info('workflow_noderule extnode_id <'.$args{node_id}.'> nodemetric_rule_id <'.$args{nodemetric_rule_id}.'> not defined');
     return {state => 'ready_to_launch'};
 }
 
 sub isWorkflowRunning{
     my ($class, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'externalnode_id',
+    General::checkParams(args => \%args, required => [ 'node_id',
                                                        'nodemetric_rule_id',
                                                      ]);
 
     my $workflow_noderule;
     eval{
         $workflow_noderule = $class->find(hash => {
-            externalnode_id    => $args{externalnode_id},
+            node_id    => $args{node_id},
             nodemetric_rule_id => $args{nodemetric_rule_id},
         });
     };
 
-    if(defined $workflow_noderule){
+    if (defined $workflow_noderule) {
         my $workflow_id = $workflow_noderule->getAttr(name => 'workflow_id');
         my $workflow    = Entity::Workflow->get(id => $workflow_id);
 
@@ -135,14 +134,13 @@ sub isWorkflowRunning{
             $log->info('A workflow is already running');
             return 1;
         }
-        else {
-            $log->info('Workflow done or cancelled, delete workflow noderule');
-            $workflow_noderule->delete();
-            return 0;
-        }
+
+        $log->info('Workflow done or cancelled, delete workflow noderule');
+        $workflow_noderule->delete();
+        return 0;
     }
 
-    $log->info('workflow_noderule extnode_id <'.$args{externalnode_id}.'> nodemetric_rule_id <'.$args{nodemetric_rule_id}.'> not defined');
+    $log->info('workflow_noderule extnode_id <'.$args{node_id}.'> nodemetric_rule_id <'.$args{nodemetric_rule_id}.'> not defined');
     return 0;
 }
 1;

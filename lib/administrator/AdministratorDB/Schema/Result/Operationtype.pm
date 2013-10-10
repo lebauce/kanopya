@@ -1,17 +1,37 @@
+use utf8;
 package AdministratorDB::Schema::Result::Operationtype;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
-
-
 =head1 NAME
 
 AdministratorDB::Schema::Result::Operationtype
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
+
+=head1 TABLE: C<operationtype>
 
 =cut
 
@@ -53,7 +73,31 @@ __PACKAGE__->add_columns(
   "operationtype_label",
   { data_type => "char", is_nullable => 1, size => 128 },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</operationtype_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("operationtype_id");
+
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<operationtype_name>
+
+=over 4
+
+=item * L</operationtype_name>
+
+=back
+
+=cut
+
 __PACKAGE__->add_unique_constraint("operationtype_name", ["operationtype_name"]);
 
 =head1 RELATIONS
@@ -84,7 +128,7 @@ Related object: L<AdministratorDB::Schema::Result::OldOperation>
 __PACKAGE__->has_many(
   "old_operations",
   "AdministratorDB::Schema::Result::OldOperation",
-  { "foreign.type" => "self.operationtype_name" },
+  { "foreign.operationtype_id" => "self.operationtype_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -99,7 +143,7 @@ Related object: L<AdministratorDB::Schema::Result::Operation>
 __PACKAGE__->has_many(
   "operations",
   "AdministratorDB::Schema::Result::Operation",
-  { "foreign.type" => "self.operationtype_name" },
+  { "foreign.operationtype_id" => "self.operationtype_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -119,8 +163,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-08-17 16:07:12
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3m9xfs6KwWSVWt5ZHk+QEg
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-04-16 11:59:00
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:hQjLYRu5k9Vzzs8IUkTavQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

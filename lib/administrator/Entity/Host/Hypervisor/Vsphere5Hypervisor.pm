@@ -42,4 +42,10 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub getCloudManager {
+    my $self = shift;
+
+    return $self->vsphere5;
+}
+
 1;

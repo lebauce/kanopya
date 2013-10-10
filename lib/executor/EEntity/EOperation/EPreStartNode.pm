@@ -1,6 +1,5 @@
-# EPreStartNode.pm - Operation class implementing Cluster creation operation
-
 #    Copyright © 2011 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -15,33 +14,24 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 14 july 2010
 
-=head1 NAME
+=pod
+=begin classdoc
 
-EEntity::Operation::EAddHost - Operation class implementing Host creation operation
+Register the new node.
 
-=head1 SYNOPSIS
+@since    2012-Aug-20
+@instance hash
+@self     $self
 
-This Object represent an operation.
-It allows to implement Host creation operation
-
-=head1 DESCRIPTION
-
-EPreStartNode allows to prepare cluster for node addition.
-It takes as parameters :
-- host_id : Int (Scalar) : host_id identifies host
-    which will be migrated into cluster to become a node.
-- cluster_id : Int (Scalar) : cluster_id identifies cluster which will grow.
-
-=head1 METHODS
-
+=end classdoc
 =cut
+
 package EEntity::EOperation::EPreStartNode;
 use base "EEntity::EOperation";
 
 use Kanopya::Exceptions;
-use EFactory;
+use EEntity;
 use Entity::Host;
 use strict;
 use warnings;
@@ -55,77 +45,83 @@ use Template;
 my $log = get_logger("");
 my $errmsg;
 
-my $config = {
-    INCLUDE_PATH => '/templates/internal/',
-    INTERPOLATE  => 1,               # expand "$var" in plain text
-    POST_CHOMP   => 0,               # cleanup whitespace
-    EVAL_PERL    => 1,               # evaluate Perl code blocks
-    RELATIVE => 1,                   # desactive par defaut
-};
 
-=head2 prepare
+=pod
+=begin classdoc
 
+@param cluster     the cluster to add node
+@param host        the host selected to be registred as node
+@param systemimage the system image of the node
+@param node_number the number of the new node
+
+=end classdoc
 =cut
 
-sub prepare {
-    my $self = shift;
-    my %args = @_;
-    $self->SUPER::prepare();
+sub check {
+    my ($self, %args) = @_;
+    $self->SUPER::check(%args);
 
     General::checkParams(args => $self->{context}, required => [ "cluster", "host", "systemimage" ]);
 
     General::checkParams(args => $self->{params}, required => [ "node_number" ]);
-
-    my $master_node_id = $self->{context}->{cluster}->getMasterNodeId();
-    my $node_count = $self->{context}->{cluster}->getCurrentNodesCount();
-    if (! $master_node_id && $node_count){
-        $errmsg = "No master node when host <" . $self->{context}->{host}->getAttr(name => 'entity_id') .
-                  "> migrating, pls wait...";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
 }
 
+sub prepare {
+    my ($self, %args) = @_;
+    $self->SUPER::prepare(%args);
+}
+
+=pod
+=begin classdoc
+
+Register the node.
+
+=end classdoc
+=cut
+
 sub execute {
-    my $self = shift;
+    my ($self, %args) = @_;
     $self->SUPER::execute();
 
-    #TODO  component migrate (node, exec context?)
     my @components = $self->{context}->{cluster}->getComponents(category => "all",
                                                                 order_by => "priority");
-    $log->info('Inform cluster components about node addition');
+
     foreach my $component (@components) {
-        EFactory::newEEntity(data => $component)->preStartNode(
+        EEntity->new(data => $component)->preStartNode(
             host    => $self->{context}->{host},
             cluster => $self->{context}->{cluster},
         );
     }
 
-    # define a hostname
-    my $hostname = $self->{context}->{cluster}->getAttr(name => 'cluster_basehostname');
-    if ($self->{context}->{cluster}->getAttr(name => 'cluster_max_node') > 1) {
+    # Define a hostname
+    my $hostname = $self->{context}->{cluster}->cluster_basehostname;
+    if ($self->{context}->{cluster}->cluster_max_node > 1) {
         $hostname .=  $self->{params}->{node_number};
     }
-    $self->{context}->{host}->setAttr(name  => "host_hostname",
-                                      value => $hostname);
-    $self->{context}->{host}->save();
 
-    $self->{context}->{host}->becomeNode(
-        inside_id      => $self->{context}->{cluster}->getAttr(name => "cluster_id"),
-        master_node    => 0,
-        systemimage_id => $self->{context}->{systemimage}->getAttr(name => "entity_id"),
-        node_number    => $self->{params}->{node_number},
-    );
+    # Register the node in the cluster
+    my $params = { host        => $self->{context}->{host},
+                   systemimage => $self->{context}->{systemimage},
+                   number      => $self->{params}->{node_number},
+                   hostname    => $hostname };
 
-    # create the node working directory where generated files will be
+    # If components to install on the node defined,
+    if ($self->{params}->{component_types}) {
+        $params->{components} = $self->{context}->{cluster}->searchRelated(
+                                    filters => [ 'components' ],
+                                    hash    => {
+                                        'component_type.component_type_id' => $self->{params}->{component_types}
+                                    }
+                                );
+    }
+    $self->{context}->{cluster}->registerNode(%$params, econtext => );
+
+    # Create the node working directory where generated files will be
     # stored.
-    my $dir = $self->{config}->{clusters}->{directory};
-    $dir .= '/' . $self->{context}->{cluster}->getAttr(name => 'cluster_name');
+    my $dir = $self->_executor->getConf->{clusters_directory};
+    $dir .= '/' . $self->{context}->{cluster}->cluster_name;
     $dir .= '/' . $hostname;
-    my $econtext = $self->getEContext();
-    $econtext->execute(command => "mkdir -p $dir");
-
-    $log->debug('Giving access to the system image to the node');
+    $self->getEContext->execute(command => "mkdir -p $dir");
 
     # Here we compute an iscsi initiator name for the node
     my $date = today();
@@ -137,56 +133,64 @@ sub execute {
 
     my $initiatorname = 'iqn.' . $year . '-' . $month . '.';
     $initiatorname .= $self->{context}->{cluster}->cluster_name;
-    $initiatorname .= '.' . $self->{context}->{host}->host_hostname;
+    $initiatorname .= '.' . $self->{context}->{host}->node->node_hostname;
     $initiatorname .= ':' . time();
 
-    $self->{context}->{host}->setAttr(name  => "host_initiatorname",
-                                      value => $initiatorname);
-    $self->{context}->{host}->save();
+    $self->{context}->{host}->setAttr(name  => 'host_initiatorname',
+                                      value => $initiatorname,
+                                      save  => 1);
 
-    my $container_access = pop @{ $self->{context}->{systemimage}->container->getAccesses };
-    my $export_manager = EFactory::newEEntity(data => $container_access->getExportManager);
-    my $export = EFactory::newEEntity(data => $container_access);
+    # For each container accesses of the system image, add an export client
     my $options = $self->{context}->{cluster}->cluster_si_shared ? "ro" : "rw";
-    $export_manager->addExportClient(
-        export  => $export,
-        host    => $self->{context}->{host},
-        options => $options
-    );
+    for my $container_access ($self->{context}->{systemimage}->container_accesses) {
+        my $export_manager = EEntity->new(data => $container_access->getExportManager);
+        my $export         = EEntity->new(data => $container_access);
+
+        $export_manager->addExportClient(
+            export  => $export,
+            host    => $self->{context}->{host},
+            options => $options
+        );
+    }
+}
+
+
+=pod
+=begin classdoc
+
+Update the node state.
+
+=end classdoc
+=cut
+
+sub finish {
+    my ($self, %args) = @_;
+    $self->SUPER::finish(%args);
 
     $self->{context}->{host}->setNodeState(state => "pregoingin");
 }
 
-sub _cancel {
-    my $self = shift;
 
-    if ($self->{context}->{cluster}) {
-        my $hosts = $self->{context}->{cluster}->getHosts();
-        if (! scalar keys %$hosts) {
-            $self->{context}->{cluster}->setState(state => 'down');
-        }
-    }
+=pod
+=begin classdoc
 
-    if ($self->{context}->{host}) {
-        my $dir = $self->{config}->{clusters}->{directory};
-        $dir .= '/' . $self->{context}->{cluster}->getAttr(name => 'cluster_name');
-        $dir .= '/' . $self->{context}->{host}->getAttr(name => 'host_hostname');
-        my $econtext = $self->getEContext();
-        $econtext->execute(command => "rm -r $dir");
-        $self->{context}->{host}->setAttr(name  => 'host_hostname',
-                                          value => undef);
-        $self->{context}->{host}->setState(state => 'down');
-        $self->{context}->{host}->stop();
+Unregister the node.
+
+=end classdoc
+=cut
+
+sub cancel {
+    my ($self, %args) = @_;
+    $self->SUPER::cancel(%args);
+
+    if (defined $self->{context}->{host}->node) {
+        my $dir = $self->_executor->getConf->{clusters_directory};
+        $dir .= '/' . $self->{context}->{cluster}->cluster_name;
+        $dir .= '/' . $self->{context}->{host}->node->node_hostname;
+        $self->getEContext->execute(command => "rm -r $dir");
+
+        $self->{context}->{cluster}->unregisterNode(node => $self->{context}->{host}->node);
     }
 }
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut

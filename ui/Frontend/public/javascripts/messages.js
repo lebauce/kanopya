@@ -27,9 +27,13 @@ function initMessages() {
     // Set the correct state icon for each message
     function messageStateFormatter(cell, options, row) {
         if (cell == 'info') {
-            return "<img src='/images/icons/up.png' title='info' />";
-        } else {
-            return "<img src='/images/icons/broken.png' title='warning' />";
+            return '<div class="message-info message-level" ><span>Info</span></div>';
+        } else if(cell=='warning'){
+            return '<div class="message-warning message-level" ><span>Warning</span></div>';
+        } else if(cell=='error'){
+        	return '<div class="message-error message-level" ><span>Error</span></div>';
+        }else{
+        	return '<div class="message-success message-level" ><span>Success</span></div>';
         }
     }
 

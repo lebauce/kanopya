@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project basedir="." default="jar" name="Deployment Engine">
+
+    <!-- PROPERTIES -->
+    <property name="target" value="1.7"/>
+    <property name="source" value="1.7"/>
+
+    <!-- Name of the output .jar file -->
+    <property name="jar.name" value="deployment_solver.jar" />
+
+    <!-- Base directory for distribution target -->
+    <property name="deploy.home" value="." />
+
+    <!-- Base directory for compilation targets -->
+    <property name="build.home" value="." />
+
+    <!-- Main class -->
+    <property name="main.class" value="main.getHost" />
+
+    <!-- The base directory for all libraries (jar) files -->
+    <property name="lib.home" value="lib" />
+
+    <!-- CLEAN AND COMPILE THE PROJECT -->
+    <!-- Define dependencies -->
+    <path id="build.classpath">
+        <pathelement location="bin"/>
+        <pathelement location="lib/choco-solver-13.03-jar-with-dependencies.jar"/>
+        <pathelement location="lib/jackson-annotations-2.2.0.jar"/>
+        <pathelement location="lib/jackson-core-2.2.0.jar"/>
+        <pathelement location="lib/jackson-databind-2.2.0.jar"/>
+    </path>
+
+    <!-- Clean bin directory -->
+    <target name="clean">
+        <delete dir="bin"/>
+    </target>
+
+    <!-- Init bin directory -->
+    <target name="init" depends="clean">
+        <mkdir dir="bin"/>
+        <copy includeemptydirs="false" todir="bin">
+            <fileset dir="src">
+                <exclude name="**/*.java"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <!-- Compile the project -->
+    <target depends="init" name="build">
+        <javac destdir="bin" source="${source}" target="${target}" includeantruntime="false">
+            <src path="src"/>
+            <classpath refid="build.classpath"/>
+        </javac>
+    </target>
+
+    <!-- UNZIP DEPENDENCIES -->
+    <target name="unjar" depends="build">
+        <unzip dest="${build.home}/bin">
+            <fileset dir="${lib.home}">
+                <include name="**/*.jar" />
+            </fileset>
+        </unzip>
+    </target>
+
+    <!-- CREATE THE EXECUTABLE JAR -->
+    <target name="jar" depends="unjar" description="Create jar and MANIFEST.MF">
+
+      <pathconvert property="libs.project" pathsep=" ">
+        <mapper>
+          <chainedmapper>
+            <!-- remove absolute path -->
+            <flattenmapper />
+
+            <!-- add lib/ prefix -->
+            <globmapper from="*" to="lib/*" />
+          </chainedmapper>
+        </mapper>
+        <path>
+          <!-- lib.home contains all jar files, in several subdirectories -->
+          <fileset dir="${lib.home}">
+            <include name="**/*.jar" />
+          </fileset>
+        </path>
+
+      </pathconvert>
+
+      <!-- create the jar -->
+        <jar jarfile="${deploy.home}/${jar.name}" basedir="${build.home}/bin">
+
+          <manifest>
+              <attribute name="Main-Class" value="${main.class}" />
+
+              <!-- Finally, use the generated libs path -->
+              <attribute name="Class-Path" value="${libs.project}" />
+          </manifest>
+
+        </jar>
+        <delete dir="bin"/>
+    </target>
+
+</project>

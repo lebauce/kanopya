@@ -20,6 +20,20 @@ USE `kanopya`;
 SET foreign_key_checks=0;
 
 --
+-- Table structure for table `entity`
+-- Entity class
+
+CREATE TABLE `entity` (
+  `entity_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `class_type_id` int(8) unsigned NOT NULL,
+  `entity_comment_id` int(8) unsigned DEFAULT NULL,
+  PRIMARY KEY (`entity_id`),
+  KEY (`class_type_id`),
+  FOREIGN KEY (`entity_comment_id`) REFERENCES `entity_comment` (`entity_comment_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `class_type`
 
 CREATE TABLE `class_type` (
@@ -38,19 +52,6 @@ CREATE TABLE `entity_comment` (
   PRIMARY KEY (`entity_comment_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
---
--- Table structure for table `entity`
--- Entity class
-
-CREATE TABLE `entity` (
-  `entity_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `class_type_id` int(8) unsigned NOT NULL,
-  `entity_comment_id` int(8) unsigned DEFAULT NULL,
-  PRIMARY KEY (`entity_id`),
-  KEY (`class_type_id`),
-  FOREIGN KEY (`entity_comment_id`) REFERENCES `entity_comment` (`entity_comment_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Table structure for table `entity_lock`
@@ -63,9 +64,26 @@ CREATE TABLE `entity_lock` (
   PRIMARY KEY (`entity_lock_id`),
   UNIQUE KEY (`entity_id`),
   FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`consumer_id`),
   FOREIGN KEY (`consumer_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
+--
+-- Table structure for table `entity_lock`
+-- EntityComment class
+
+CREATE TABLE `entity_state` (
+  `entity_state_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `entity_id` int(8) unsigned NOT NULL,
+  `consumer_id` int(8) unsigned NOT NULL,
+  `state` char(32),
+  `prev_state` char(32),
+  PRIMARY KEY (`entity_state_id`),
+  UNIQUE KEY (`entity_id`, `consumer_id`),
+  FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`consumer_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 
 --
 -- Table structure for table `service_provider`
@@ -73,24 +91,39 @@ CREATE TABLE `entity_lock` (
 
 CREATE TABLE `service_provider` (
   `service_provider_id` int(8) unsigned NOT NULL,
-  `service_provider_name` char(32) DEFAULT NULL,
+  `service_provider_type_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`service_provider_id`),
-  FOREIGN KEY (`service_provider_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`service_provider_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`service_provider_type_id`) REFERENCES `service_provider_type` (`service_provider_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `inside`
--- Entity::ServiceProvider::Inside class
+-- Table structure for table `node`
+--
 
-CREATE TABLE `inside` (
-  `inside_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`inside_id`),
-  FOREIGN KEY (`inside_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+CREATE TABLE `node` (
+  `node_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `service_provider_id` int(8) unsigned NOT NULL,
+  `host_id` int(8) unsigned DEFAULT NULL,
+  `node_number` int(8) unsigned NOT NULL,
+  `node_hostname` char(255) NOT NULL,
+  `systemimage_id` int(8) unsigned DEFAULT NULL,
+  `node_state` char(32),
+  `node_prev_state` char(32),
+  `monitoring_state` char(32) NOT NULL DEFAULT 'enabled',
+  PRIMARY KEY (`node_id`),
+  UNIQUE KEY (`host_id`),
+  UNIQUE KEY (`node_hostname`,`service_provider_id`),
+  FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  KEY (`service_provider_id`),
+  FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`systemimage_id`),
+  FOREIGN KEY (`systemimage_id`) REFERENCES `systemimage` (`systemimage_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Table structure for table `cluster`
--- Entity::ServiceProvider::Inside::Cluster class
+-- Entity::ServiceProvider::Cluster class
 
 CREATE TABLE `cluster` (
   `cluster_id` int(8) unsigned NOT NULL,
@@ -108,7 +141,8 @@ CREATE TABLE `cluster` (
   `cluster_nameserver2` char(15) NOT NULL,
   `cluster_state` char(32) NOT NULL DEFAULT 'down:0',
   `cluster_prev_state` char(32),
-  `cluster_basehostname` char(64) NOT NULL,
+  `cluster_basehostname` char(64) NULL DEFAULT NULL,
+  `default_gateway_id` int(8) unsigned DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
   `user_id` int(8) unsigned NOT NULL,
   `kernel_id` int(8) unsigned DEFAULT NULL,
@@ -117,13 +151,15 @@ CREATE TABLE `cluster` (
   PRIMARY KEY (`cluster_id`),
   UNIQUE KEY (`cluster_name`),
   UNIQUE KEY (`cluster_basehostname`),
-  FOREIGN KEY (`cluster_id`) REFERENCES `inside` (`inside_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`cluster_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`user_id`),
   FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`kernel_id`),
   FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`masterimage_id`),
   FOREIGN KEY (`masterimage_id`) REFERENCES `masterimage` (`masterimage_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  KEY (`default_gateway_id`),
+  FOREIGN KEY (`default_gateway_id`) REFERENCES `network` (`network_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   KEY (`service_template_id`),
   FOREIGN KEY (`service_template_id`) REFERENCES `service_template` (`service_template_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -134,29 +170,19 @@ CREATE TABLE `cluster` (
 CREATE TABLE `service_provider_manager` (
   `service_provider_manager_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `service_provider_id` int(8) unsigned NOT NULL,
-  `manager_type` char(64) NOT NULL,
+  `manager_category_id` int(8) unsigned NOT NULL,
   `manager_id` int(8) unsigned NOT NULL,
   `param_preset_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`service_provider_manager_id`),
   FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`manager_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`param_preset_id`),
+  FOREIGN KEY (`manager_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`manager_category_id`) REFERENCES `manager_category` (`manager_category_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `outside`
--- Entity::ServiceProvider::Outside class
-
-CREATE TABLE `outside` (
-  `outside_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`outside_id`),
-  FOREIGN KEY (`outside_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
 -- Table structure for table `netapp`
--- Entity::ServiceProvider::Outside::Netapp class
+-- Entity::ServiceProvider::Netapp class
 
 CREATE TABLE `netapp` (
   `netapp_id` int(8) unsigned NOT NULL,
@@ -166,40 +192,40 @@ CREATE TABLE `netapp` (
   `netapp_login` char(32) NOT NULL,
   `netapp_passwd` char(32) NOT NULL,
   PRIMARY KEY (`netapp_id`),
-  FOREIGN KEY (`netapp_id`) REFERENCES `outside` (`outside_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`netapp_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- Table ucs for connector
+-- Table ucs for component
 
 CREATE TABLE `ucs_manager` (
   `ucs_manager_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`ucs_manager_id`),
-  FOREIGN KEY (`ucs_manager_id`) REFERENCES `connector` (`connector_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`ucs_manager_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for tables netapp_lun_manager (connector)
--- Entity::Connector::NetappLunManager class
+-- Table structure for tables netapp_lun_manager (component)
+-- Entity::Component::NetappLunManager class
 
 CREATE TABLE `netapp_lun_manager` (
     `netapp_lun_manager_id` int(8) unsigned NOT NULL,
     PRIMARY KEY (`netapp_lun_manager_id`),
-    FOREIGN KEY (`netapp_lun_manager_id`) REFERENCES `connector` (`connector_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+    FOREIGN KEY (`netapp_lun_manager_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table netapp_volume_manager (connector)
--- Entity::Connector::NetappVolumeManager class
+-- Table structure for table netapp_volume_manager (component)
+-- Entity::Component::NetappVolumeManager class
 
 CREATE TABLE `netapp_volume_manager` (
     `netapp_volume_manager_id` int(8) unsigned NOT NULL,
     PRIMARY KEY (`netapp_volume_manager_id`),
-    FOREIGN KEY (`netapp_volume_manager_id`) REFERENCES `connector` (`connector_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+    FOREIGN KEY (`netapp_volume_manager_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Table structure for table `ucs`
--- Entity::ServiceProvider::Outside::Ucs class
+-- Entity::ServiceProvider::Ucs class
 
 CREATE TABLE `unified_computing_system` (
   `ucs_id` int(8) unsigned NOT NULL,
@@ -211,7 +237,7 @@ CREATE TABLE `unified_computing_system` (
   `ucs_passwd` char(32) NOT NULL,
   `ucs_ou` char(32) NULL,
   PRIMARY KEY (`ucs_id`),
-  FOREIGN KEY (`ucs_id`) REFERENCES `outside` (`outside_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`ucs_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -279,9 +305,10 @@ CREATE TABLE `container` (
   `container_device` char(255) NOT NULL,
   `container_filesystem` char(32) NOT NULL,
   `container_freespace` int(8) unsigned NOT NULL,
-  `disk_manager_id` int(8) unsigned NOT NULL,
+  `disk_manager_id` int(8) unsigned NULL DEFAULT NULL,
   PRIMARY KEY (`container_id`),
-  FOREIGN KEY (`container_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`container_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`disk_manager_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -362,17 +389,17 @@ CREATE TABLE `netapp_lun` (
 
 CREATE TABLE `container_access` (
   `container_access_id` int(8) unsigned NOT NULL,
-  `container_id` int(8) unsigned NOT NULL,
+  `container_id` int(8) unsigned DEFAULT NULL,
   `container_access_export` char(255) NOT NULL,
   `container_access_ip` char(15) NOT NULL,
   `container_access_port` int(8) NOT NULL,
   `device_connected` char(255) NOT NULL DEFAULT '',
   `partition_connected` char(255) NOT NULL DEFAULT '',
-  `export_manager_id` int(8) unsigned NOT NULL,
+  `export_manager_id` int(8) unsigned NULL DEFAULT NULL,
   PRIMARY KEY (`container_access_id`),
   FOREIGN KEY (`container_access_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`container_id`),
-  FOREIGN KEY (`container_id`) REFERENCES `container` (`container_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`container_id`) REFERENCES `container` (`container_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (`export_manager_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -442,24 +469,21 @@ CREATE TABLE `host` (
   `host_manager_id` int(8) unsigned NOT NULL,
   `hostmodel_id` int(8) unsigned NULL DEFAULT NULL,
   `processormodel_id` int(8) unsigned NULL DEFAULT NULL,
-  `kernel_id` int(8) unsigned NOT NULL,
+  `kernel_id` int(8) unsigned DEFAULT NULL,
   `host_serial_number` char(64) NOT NULL,
   `host_desc` char(255) DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
   `host_initiatorname` char(64) DEFAULT NULL,
   `host_ram` bigint unsigned DEFAULT NULL,
   `host_core` int(1) unsigned DEFAULT NULL,
-  `host_hostname` char(32) DEFAULT NULL,
   `host_state` char(32) NOT NULL DEFAULT 'down:0',
   `host_prev_state` char(32),
   PRIMARY KEY (`host_id`),
   FOREIGN KEY (`host_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`hostmodel_id`),
   FOREIGN KEY (`hostmodel_id`) REFERENCES `hostmodel` (`hostmodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`processormodel_id`),
   FOREIGN KEY (`processormodel_id`) REFERENCES `processormodel` (`processormodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`kernel_id`),
-  FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (`host_manager_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -487,24 +511,34 @@ CREATE TABLE `hypervisor` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `vmm`
+-- Entity::Component::Vmm
+
+CREATE TABLE `vmm` (
+  `vmm_id` int(8) unsigned NOT NULL,
+  `iaas_id` int(8) unsigned NULL,
+  PRIMARY KEY (`vmm_id`),
+  FOREIGN KEY (`vmm_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`iaas_id`) REFERENCES `virtualization` (`virtualization_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `iface`
 --
 
 CREATE TABLE `iface` (
   `iface_id` int(8) UNSIGNED NOT NULL,
-  `iface_name` char(32) NOT NULL ,
-  `iface_mac_addr` char(18) NOT NULL ,
-  `iface_pxe` int(10) UNSIGNED NOT NULL,
+  `iface_name` char(32) NOT NULL,
+  `iface_mac_addr` char(18) DEFAULT NULL,
+  `iface_pxe` int(10) UNSIGNED DEFAULT 0,
   `host_id` int(8) UNSIGNED NOT NULL,
-  `interface_id` int(8) UNSIGNED DEFAULT NULL,
+  `master` char(32) DEFAULT '',
   PRIMARY KEY (`iface_id`),
   FOREIGN KEY (`iface_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`iface_mac_addr`),
   UNIQUE KEY (`iface_name`,`host_id`),
   KEY (`host_id`),
-  FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`interface_id`),
-  FOREIGN KEY (`interface_id`) REFERENCES `interface` (`interface_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -515,32 +549,12 @@ CREATE TABLE `harddisk` (
   `harddisk_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `host_id` int(8) unsigned NOT NULL,
   `harddisk_device` char(32) NOT NULL,
+  `harddisk_size` bigint unsigned DEFAULT 0,
+  `service_provider_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`harddisk_id`),
   KEY (`host_id`),
-  FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `node`
---
-
-CREATE TABLE `node` (
-  `node_id` int(8) unsigned NOT NULL,
-  `inside_id` int(8) unsigned NOT NULL,
-  `host_id` int(8) unsigned NOT NULL,
-  `master_node` int(1) unsigned DEFAULT NULL,
-  `node_state` char(32),
-  `node_prev_state` char(32),
-  `node_number` int(8) unsigned NOT NULL,
-  `systemimage_id` int(8) unsigned DEFAULT NULL,
-  PRIMARY KEY (`node_id`),
-  UNIQUE KEY (`host_id`),
-  FOREIGN KEY (`node_id`) REFERENCES `externalnode` (`externalnode_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`inside_id`),
-  FOREIGN KEY (`inside_id`) REFERENCES `inside` (`inside_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`systemimage_id`),
-  FOREIGN KEY (`systemimage_id`) REFERENCES `systemimage` (`systemimage_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -561,7 +575,7 @@ CREATE TABLE `operationtype` (
 
 CREATE TABLE `operation` (
   `operation_id` int(8) unsigned NOT NULL,
-  `type` char(64) NOT NULL,
+  `operationtype_id` int(8) unsigned NOT NULL,
   `workflow_id` int(8) unsigned NOT NULL,
   `state` char(32) NOT NULL DEFAULT 'pending',
   `user_id` int(8) unsigned NOT NULL,
@@ -570,15 +584,14 @@ CREATE TABLE `operation` (
   `creation_time` time NOT NULL,
   `hoped_execution_time` int(4) unsigned DEFAULT NULL,
   `execution_rank` int(8) unsigned NOT NULL,
+  `param_preset_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`operation_id`),
   FOREIGN KEY (`operation_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`execution_rank`, `workflow_id`),
-  KEY (`user_id`),
   FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`workflow_id`),
-  FOREIGN KEY (`workflow_id`) REFERENCES `workflow` (`workflow_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`type`),
-  FOREIGN KEY (`type`) REFERENCES `operationtype` (`operationtype_name`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`workflow_id`) REFERENCES `workflow` (`workflow_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`operationtype_id`) REFERENCES `operationtype` (`operationtype_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -587,7 +600,8 @@ CREATE TABLE `operation` (
 
 CREATE TABLE `old_operation` (
   `old_operation_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `type` char(64) NOT NULL,
+  `operation_id` int(8) unsigned NULL DEFAULT NULL,
+  `operationtype_id` int(8) unsigned NOT NULL,
   `workflow_id` int(8) unsigned NOT NULL,
   `user_id` int(8) unsigned NOT NULL,
   `priority` int(2) unsigned NOT NULL,
@@ -596,13 +610,12 @@ CREATE TABLE `old_operation` (
   `execution_date` date NOT NULL,
   `execution_time` time NOT NULL,
   `execution_status` char(32) NOT NULL,
+  `param_preset_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`old_operation_id`),
-  KEY (`user_id`),
   FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`workflow_id`),
   FOREIGN KEY (`workflow_id`) REFERENCES `workflow` (`workflow_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`type`),
-  FOREIGN KEY (`type`) REFERENCES `operationtype` (`operationtype_name`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`operationtype_id`) REFERENCES `operationtype` (`operationtype_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -615,40 +628,9 @@ CREATE TABLE `workflow_def_manager` (
     `workflow_def_id` int(8) unsigned,
     PRIMARY KEY (`workflow_def_manager_id`),
     UNIQUE KEY (`manager_id`, `workflow_def_id`),
-    CONSTRAINT FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+    FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+    FOREIGN KEY (`manager_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 )   ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `operation_parameter`
---
-
-CREATE TABLE `operation_parameter` (
-  `operation_parameter_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `operation_id` int(8) unsigned NOT NULL,
-  `name` char(64) NOT NULL,
-  `value` char(255) NOT NULL,
-  `tag` char(64) DEFAULT NULL,
-  PRIMARY KEY (`operation_parameter_id`),
-  UNIQUE KEY (`operation_id`, `name`, `tag`),
-  KEY (`operation_id`),
-  FOREIGN KEY (`operation_id`) REFERENCES `operation` (`operation_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `old_operation_parameter`
---
-
-CREATE TABLE `old_operation_parameter` (
-  `old_operation_parameter_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `old_operation_id` int(8) unsigned NOT NULL,
-  `name` char(64) NOT NULL,
-  `value` char(255) NOT NULL,
-  `tag` char(64) DEFAULT NULL,
-  PRIMARY KEY (`old_operation_parameter_id`),
-  UNIQUE KEY (`old_operation_id`, `name`, `tag`),
-  KEY (`old_operation_id`),
-  FOREIGN KEY (`old_operation_id`) REFERENCES `old_operation` (`old_operation_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Table structure for table `workflow`
@@ -657,7 +639,7 @@ CREATE TABLE `old_operation_parameter` (
 CREATE TABLE `workflow` (
   `workflow_id` int(8) unsigned NOT NULL,
   `workflow_name` char(64) DEFAULT NULL,
-  `state` char(32) NOT NULL DEFAULT 'running',
+  `state` char(32) NOT NULL DEFAULT 'pending',
   `related_id` int(8) unsigned NULL DEFAULT NULL,
   PRIMARY KEY (`workflow_id`),
   FOREIGN KEY (`workflow_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
@@ -707,13 +689,17 @@ CREATE TABLE `alert` (
   `alert_message` char(255) NOT NULL,
   `alert_active` int(1) unsigned NOT NULL DEFAULT 1,
   `entity_id` int(8) unsigned NOT NULL,
+  `trigger_entity_id` int(8) unsigned ,
   `alert_signature` char(255) NOT NULL,
   PRIMARY KEY (`alert_id`),
   UNIQUE KEY (`alert_signature`),
-  FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`trigger_entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
+CREATE INDEX alert_fast_find
+on alert (alert_message(255), trigger_entity_id, alert_active);
 
 --
 -- Table structure for table `systemimage`
@@ -723,15 +709,25 @@ CREATE TABLE `systemimage` (
   `systemimage_id` int(8) unsigned NOT NULL,
   `systemimage_name` char(32) NOT NULL,
   `systemimage_desc` char(255) DEFAULT NULL,
-  `container_id` int(8) unsigned DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
+  `service_provider_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`systemimage_id`),
   FOREIGN KEY (`systemimage_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`systemimage_name`),
-  KEY (`container_id`),
-  FOREIGN KEY (`container_id`) REFERENCES `container` (`container_id`) ON DELETE SET NULL ON UPDATE NO ACTION
+  FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Table structure for table `systemimage_container_access`
+-- Entity::SystemimageContainerAccess link class
+
+CREATE TABLE `systemimage_container_access` (
+  `systemimage_id` int(8) unsigned NOT NULL,
+  `container_access_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`systemimage_id`, `container_access_id`),
+  FOREIGN KEY (`systemimage_id`) REFERENCES `systemimage` (`systemimage_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`container_access_id`) REFERENCES `container_access` (`container_access_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- network tables
 
@@ -739,16 +735,16 @@ CREATE TABLE `systemimage` (
 -- Table structure for table `poolip`
 --
 CREATE TABLE `poolip` (
-  `poolip_id`      int(8) unsigned,
-  `poolip_name`    char(32) NOT NULL,
-  `poolip_addr`    char(15) NOT NULL,
-  `poolip_mask`    smallint unsigned NOT NULL,
-  `poolip_netmask` char(15) NOT NULL,
-  `poolip_gateway` char(15) NOT NULL,
+  `poolip_id`         int(8) unsigned NOT NULL,
+  `poolip_name`       char(32) NOT NULL,
+  `poolip_first_addr` char(15) NOT NULL,
+  `poolip_size`       smallint unsigned NOT NULL,
+  `network_id`        int(8) unsigned NOT NULL,
   PRIMARY KEY (`poolip_id`),
   FOREIGN KEY (`poolip_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  UNIQUE KEY (`poolip_name`),
-  UNIQUE KEY (`poolip_addr`,`poolip_mask`)
+  KEY (`network_id`),
+  FOREIGN KEY (`network_id`) REFERENCES `network` (`network_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  UNIQUE KEY (`poolip_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -773,6 +769,9 @@ CREATE TABLE `ip` (
 CREATE TABLE `network` (
   `network_id`   int(8) unsigned,
   `network_name` char(32) NOT NULL,
+  `network_addr`    char(15) NOT NULL,
+  `network_netmask` char(15) NOT NULL,
+  `network_gateway` char(15) NOT NULL,
   PRIMARY KEY (`network_id`),
   FOREIGN KEY (`network_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`network_name`)
@@ -783,20 +782,10 @@ CREATE TABLE `network` (
 --
 CREATE TABLE `vlan` (
   `vlan_id`     int(8) unsigned,
+  `vlan_name` char(32) NOT NULL,
   `vlan_number` int unsigned NOT NULL,
   PRIMARY KEY (`vlan_id`),
-  FOREIGN KEY (`vlan_id`) REFERENCES `network` (`network_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `interface_role`
---
-CREATE TABLE `interface_role` (
-  `interface_role_id`   int(8) unsigned,
-  `interface_role_name` char(32) NOT NULL,
-  PRIMARY KEY (`interface_role_id`),
-  FOREIGN KEY (`interface_role_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  UNIQUE KEY (`interface_role_name`)
+  FOREIGN KEY (`vlan_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -804,41 +793,90 @@ CREATE TABLE `interface_role` (
 --
 CREATE TABLE `interface` (
   `interface_id`        int(8) unsigned,
-  `interface_role_id`   int(8) unsigned NOT NULL,
   `service_provider_id` int(8) unsigned NOT NULL,
-  `default_gateway`     int(8) unsigned NOT NULL DEFAULT 0,
+  `bonds_number`        int(8) unsigned NOT NULL DEFAULT 0,
+  `interface_name`      char(32) NOT NULL,
   PRIMARY KEY (`interface_id`),
   FOREIGN KEY (`interface_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`interface_role_id`),
-  FOREIGN KEY (`interface_role_id`) REFERENCES `interface_role` (`interface_role_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`service_provider_id`),
   FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `interface_network`
+-- Table structure for table `netconf`
 --
-CREATE TABLE `interface_network` (
-  `interface_id` int(8) unsigned NOT NULL,
-  `network_id`   int(8) unsigned NOT NULL,
-  PRIMARY KEY (`interface_id`, `network_id`),
-  KEY (`interface_id`),
-  FOREIGN KEY (`interface_id`) REFERENCES `interface` (`interface_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`network_id`),
-  FOREIGN KEY (`network_id`) REFERENCES `network` (`network_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+CREATE TABLE `netconf` (
+  `netconf_id`   int(8) unsigned,
+  `netconf_name` char(32) NOT NULL,
+  `netconf_role_id` int(8) unsigned NULL DEFAULT NULL,
+  PRIMARY KEY (`netconf_id`),
+  FOREIGN KEY (`netconf_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`netconf_role_id`),
+  FOREIGN KEY (`netconf_role_id`) REFERENCES `netconf_role` (`netconf_role_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  UNIQUE KEY (`netconf_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `network_poolip`
+-- Table structure for table `netconf_poolip`
 --
-CREATE TABLE `network_poolip` (
-  `network_id` int(8) unsigned NOT NULL,
-  `poolip_id`  int(8) unsigned NOT NULL,
-  PRIMARY KEY (`network_id`, `poolip_id`),
-  KEY (`network_id`),
-  FOREIGN KEY (`network_id`) REFERENCES `network` (`network_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+CREATE TABLE `netconf_poolip` (
+  `netconf_id` int(8) unsigned NOT NULL,
+  `poolip_id`   int(8) unsigned NOT NULL,
+  PRIMARY KEY (`netconf_id`, `poolip_id`),
+  KEY (`netconf_id`),
+  FOREIGN KEY (`netconf_id`) REFERENCES `netconf` (`netconf_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`poolip_id`),
-  FOREIGN KEY (`poolip_id`) REFERENCES `poolip` (`poolip_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`poolip_id`) REFERENCES `poolip` (`poolip_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `netconf_vlan`
+--
+CREATE TABLE `netconf_vlan` (
+  `netconf_id` int(8) unsigned NOT NULL,
+  `vlan_id`   int(8) unsigned NOT NULL,
+  PRIMARY KEY (`netconf_id`, `vlan_id`),
+  KEY (`netconf_id`),
+  FOREIGN KEY (`netconf_id`) REFERENCES `netconf` (`netconf_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`vlan_id`),
+  FOREIGN KEY (`vlan_id`) REFERENCES `vlan` (`vlan_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `netconf_interface`
+--
+CREATE TABLE `netconf_interface` (
+  `netconf_id` int(8) unsigned NOT NULL,
+  `interface_id`   int(8) unsigned NOT NULL,
+  PRIMARY KEY (`netconf_id`, `interface_id`),
+  KEY (`netconf_id`),
+  FOREIGN KEY (`netconf_id`) REFERENCES `netconf` (`netconf_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  KEY (`interface_id`),
+  FOREIGN KEY (`interface_id`) REFERENCES `interface` (`interface_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `netconf_iface`
+--
+CREATE TABLE `netconf_iface` (
+  `netconf_id` int(8) unsigned NOT NULL,
+  `iface_id`   int(8) unsigned NOT NULL,
+  PRIMARY KEY (`netconf_id`, `iface_id`),
+  KEY (`netconf_id`),
+  FOREIGN KEY (`netconf_id`) REFERENCES `netconf` (`netconf_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  KEY (`iface_id`),
+  FOREIGN KEY (`iface_id`) REFERENCES `iface` (`iface_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `netconf_role`
+--
+CREATE TABLE `netconf_role` (
+  `netconf_role_id`   int(8) unsigned,
+  `netconf_role_name` char(32) NOT NULL,
+  PRIMARY KEY (`netconf_role_id`),
+  FOREIGN KEY (`netconf_role_id`) REFERENCES `entity` (`entity_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  UNIQUE KEY (`netconf_role_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -943,7 +981,6 @@ CREATE TABLE `quota` (
   `current` bigint(16) unsigned NOT NULL DEFAULT 0,
   `quota` bigint(16) unsigned NOT NULL,
   PRIMARY KEY (`quota_id`),
-  KEY (`user_id`),
   FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -969,21 +1006,6 @@ CREATE TABLE `message` (
 --
 
 --
--- Table structure for table `component_type`
---
-
-CREATE TABLE `component_type` (
-  `component_type_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `component_name` char(32) NOT NULL,
-  `component_version` char(32) NOT NULL,
-  `component_category` char(32) NOT NULL,
-  `component_class_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`component_type_id`),
-  KEY (`component_class_id`),
-  FOREIGN KEY (`component_class_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
 -- Table structure for table `component`
 -- Entity::Component class
 
@@ -992,14 +1014,103 @@ CREATE TABLE `component` (
   `service_provider_id` int(8) unsigned,
   `component_type_id` int(8) unsigned NOT NULL,
   `component_template_id` int(8) unsigned DEFAULT NULL,
+  UNIQUE KEY (`service_provider_id`, `component_type_id`),
   PRIMARY KEY (`component_id`),
   FOREIGN KEY (`component_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`service_provider_id`),
   FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`component_template_id`),
   FOREIGN KEY (`component_template_id`) REFERENCES `component_template` (`component_template_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`component_type_id`),
   FOREIGN KEY (`component_type_id`) REFERENCES `component_type` (`component_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `component_node`
+
+CREATE TABLE `component_node` (
+  `component_node_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `component_id` int(8) unsigned NOT NULL,
+  `node_id` int(8) unsigned NOT NULL,
+  `master_node` int(1) unsigned DEFAULT 0,
+  PRIMARY KEY (`component_node_id`),
+  UNIQUE KEY (`component_id`, `node_id`),
+  FOREIGN KEY (`component_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`node_id`) REFERENCES `node` (`node_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `component_type`
+--
+
+CREATE TABLE `component_type` (
+  `component_type_id` int(8) unsigned NOT NULL,
+  `component_name` char(32) NOT NULL,
+  `component_version` char(32) NOT NULL,
+  PRIMARY KEY (`component_type_id`),
+  FOREIGN KEY (`component_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `service_provider_type`
+--
+
+CREATE TABLE `service_provider_type` (
+  `service_provider_type_id` int(8) unsigned NOT NULL,
+  `service_provider_name` char(32) NOT NULL,
+  PRIMARY KEY (`service_provider_type_id`),
+  FOREIGN KEY (`service_provider_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `service_provider_type`
+--
+
+CREATE TABLE `cluster_type` (
+  `cluster_type_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`cluster_type_id`),
+  FOREIGN KEY (`cluster_type_id`) REFERENCES `service_provider_type` (`service_provider_type_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `service_provider_type_component_type`
+--
+
+CREATE TABLE `service_provider_type_component_type` (
+  `service_provider_type_id` int(8) unsigned NOT NULL,
+  `component_type_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`service_provider_type_id`,`component_type_id`),
+  FOREIGN KEY (`service_provider_type_id`) REFERENCES `service_provider_type` (`service_provider_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (`component_type_id`) REFERENCES `component_type` (`component_type_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `component_category`
+--
+
+CREATE TABLE `component_category` (
+  `component_category_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `category_name` char(32) NOT NULL,
+  PRIMARY KEY (`component_category_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `manager_category`
+--
+
+CREATE TABLE `manager_category` (
+  `manager_category_id`  int(8) unsigned NOT NULL,
+  PRIMARY KEY (`manager_category_id`),
+  FOREIGN KEY (`manager_category_id`) REFERENCES `component_category` (`component_category_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `component_category`
+--
+
+CREATE TABLE `component_type_category` (
+  `component_type_id` int(8) unsigned NOT NULL,
+  `component_category_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`component_type_id`,`component_category_id`),
+  FOREIGN KEY (`component_type_id`) REFERENCES `component_type` (`component_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (`component_category_id`) REFERENCES `component_category` (`component_category_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1013,7 +1124,6 @@ CREATE TABLE `component_template` (
   `component_type_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`component_template_id`),
   UNIQUE KEY (`component_template_name`),
-  KEY (`component_type_id`),
   FOREIGN KEY (`component_type_id`) REFERENCES `component_type` (`component_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1061,38 +1171,6 @@ CREATE TABLE `component_installed` (
 
 
 --
--- Connector management tables
---
-
---
--- Table structure for table `connector_type`
---
-
-CREATE TABLE `connector_type` (
-  `connector_type_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `connector_name` char(32) NOT NULL,
-  `connector_version` char(32) NOT NULL,
-  `connector_category` char(32) NOT NULL,
-  PRIMARY KEY (`connector_type_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for table `connector`
--- Entity::Connector class
-
-CREATE TABLE `connector` (
-  `connector_id` int(8) unsigned NOT NULL,
-  `service_provider_id` int(8) unsigned,
-  `connector_type_id` int(8) unsigned NOT NULL,
-  PRIMARY KEY (`connector_id`),
-  FOREIGN KEY (`connector_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`service_provider_id`),
-  FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`connector_type_id`),
-  FOREIGN KEY (`connector_type_id`) REFERENCES `connector_type` (`connector_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
 -- Orchestrator tables
 --
 
@@ -1119,12 +1197,20 @@ CREATE TABLE `rulecondition` (
 --
 
 CREATE TABLE `rule` (
-  `rule_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `rule_condition` char(128) NOT NULL,
-  `cluster_id` int(8) unsigned DEFAULT NULL,
+  `rule_id` int(8) unsigned NOT NULL,
+  `service_provider_id` int(8) unsigned NOT NULL,
+  `rule_name` char(255),
+  `formula` char(255) NOT NULL,
+  `formula_string` TEXT,
+  `timestamp` int(8) unsigned NULL DEFAULT NULL ,
+  `state` char(32) NOT NULL ,
+  `description` TEXT,
+  `workflow_def_id` int(8) unsigned NULL DEFAULT NULL,
   PRIMARY KEY (`rule_id`),
-  KEY (`cluster_id`),
-  FOREIGN KEY (`cluster_id`) REFERENCES `cluster` (`cluster_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`rule_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`service_provider_id`),
+  FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1208,11 +1294,9 @@ CREATE TABLE `collector_indicator` (
   `indicator_id` int(8) unsigned NOT NULL,
   `collector_manager_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`collector_indicator_id`),
-  KEY `indicator_id` (`indicator_id`),
-  KEY `collector_manager_id` (`collector_manager_id`),
+  FOREIGN KEY (`collector_indicator_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`indicator_id`) REFERENCES `indicator` (`indicator_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`collector_manager_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`collector_indicator_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`collector_manager_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 
 
@@ -1310,23 +1394,12 @@ CREATE TABLE `nodemetric_combination` (
 
 CREATE TABLE `aggregate_rule` (
   `aggregate_rule_id` int(8) unsigned NOT NULL PRIMARY KEY,
-  `aggregate_rule_label` char(255),
-  `aggregate_rule_service_provider_id` int(8) unsigned NOT NULL,
-  `aggregate_rule_formula` char(255) NOT NULL,
-  `aggregate_rule_formula_string` TEXT,
-  `aggregate_rule_last_eval` int(8) unsigned NULL DEFAULT NULL ,
-  `aggregate_rule_timestamp` int(8) unsigned NULL DEFAULT NULL ,
-  `aggregate_rule_state` char(32) NOT NULL ,
-  `workflow_def_id` int(8) unsigned NULL DEFAULT NULL,
-  `aggregate_rule_description` TEXT,
+  `aggregate_rule_last_eval` int(8) unsigned NULL DEFAULT NULL,
   `workflow_id` int(8) unsigned NULL DEFAULT NULL,
   `workflow_untriggerable_timestamp` int(8) NULL DEFAULT NULL,
-  FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`aggregate_rule_service_provider_id`),
-  FOREIGN KEY (`aggregate_rule_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`workflow_id`),
   FOREIGN KEY (`workflow_id`) REFERENCES `workflow` (`workflow_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  FOREIGN KEY (`aggregate_rule_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`aggregate_rule_id`) REFERENCES `rule` (`rule_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
 
 
@@ -1383,33 +1456,23 @@ CREATE TABLE `nodemetric_condition` (
 
 CREATE TABLE `nodemetric_rule` (
   `nodemetric_rule_id` int(8) unsigned NOT NULL PRIMARY KEY,
-  `nodemetric_rule_label` char(255),
-  `nodemetric_rule_service_provider_id` int(8) unsigned NOT NULL,
-  `nodemetric_rule_formula` char(255) NOT NULL,
-  `nodemetric_rule_formula_string` TEXT,
-  `nodemetric_rule_timestamp` int(8) unsigned NULL DEFAULT NULL,
-  `nodemetric_rule_state` char(32) NOT NULL,
-  `workflow_def_id` int(8) unsigned NULL DEFAULT NULL,
-  `nodemetric_rule_description` TEXT,
-  FOREIGN KEY (`workflow_def_id`) REFERENCES `workflow_def` (`workflow_def_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  KEY (`nodemetric_rule_service_provider_id`),
-  FOREIGN KEY (`nodemetric_rule_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`nodemetric_rule_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`nodemetric_rule_id`) REFERENCES `rule` (`rule_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
+
 
 --
 -- Table structure for table `verified_noderule`
 --
 
 CREATE TABLE `verified_noderule` (
-  `verified_noderule_externalnode_id` int(8) unsigned NOT NULL,
+  `verified_noderule_node_id` int(8) unsigned NOT NULL,
   `verified_noderule_nodemetric_rule_id` int(8) unsigned NOT NULL,
   `verified_noderule_state` char(8) NOT NULL,
-  PRIMARY KEY (`verified_noderule_externalnode_id`,`verified_noderule_nodemetric_rule_id`),
+  PRIMARY KEY (`verified_noderule_node_id`,`verified_noderule_nodemetric_rule_id`),
   KEY (`verified_noderule_nodemetric_rule_id`),
   FOREIGN KEY (`verified_noderule_nodemetric_rule_id`) REFERENCES `nodemetric_rule` (`nodemetric_rule_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY(`verified_noderule_externalnode_id`),
-  FOREIGN KEY (`verified_noderule_externalnode_id`) REFERENCES `externalnode` (`externalnode_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  KEY(`verified_noderule_node_id`),
+  FOREIGN KEY (`verified_noderule_node_id`) REFERENCES `node` (`node_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
 
 
@@ -1419,16 +1482,16 @@ CREATE TABLE `verified_noderule` (
 
 CREATE TABLE `workflow_noderule` (
   `workflow_noderule_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `externalnode_id` int(8) unsigned NOT NULL,
+  `node_id` int(8) unsigned NOT NULL,
   `nodemetric_rule_id` int(8) unsigned NOT NULL,
   `workflow_id` int(8) unsigned NOT NULL,
   `workflow_untriggerable_timestamp` int(8) NULL DEFAULT NULL,
   PRIMARY KEY (`workflow_noderule_id`),
-  UNIQUE KEY (`externalnode_id`, `nodemetric_rule_id`, `workflow_id`),
+  UNIQUE KEY (`node_id`, `nodemetric_rule_id`, `workflow_id`),
   KEY (`nodemetric_rule_id`),
   FOREIGN KEY (`nodemetric_rule_id`) REFERENCES `nodemetric_rule` (`nodemetric_rule_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY(`externalnode_id`),
-  FOREIGN KEY (`externalnode_id`) REFERENCES `externalnode` (`externalnode_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY(`node_id`),
+  FOREIGN KEY (`node_id`) REFERENCES `node` (`node_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY(`workflow_id`),
   FOREIGN KEY (`workflow_id`) REFERENCES `workflow` (`workflow_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE = InnoDB  DEFAULT CHARSET=utf8;
@@ -1499,28 +1562,12 @@ CREATE TABLE `externalcluster` (
   `externalcluster_state` char(32) NOT NULL DEFAULT 'down:0',
   `externalcluster_prev_state` char(32),
   PRIMARY KEY (`externalcluster_id`),
-  FOREIGN KEY (`externalcluster_id`) REFERENCES `outside` (`outside_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`externalcluster_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`externalcluster_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `externalnode`
---
-
-CREATE TABLE `externalnode` (
-  `externalnode_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `externalnode_hostname` char(255) NOT NULL,
-  `service_provider_id` int(8) unsigned NOT NULL,
-  `externalnode_state` char(32),
-  `externalnode_prev_state` char(32),
-  PRIMARY KEY (`externalnode_id`),
-  UNIQUE KEY (`externalnode_hostname`,`service_provider_id`),
-  KEY (`service_provider_id`),
-  FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
---
--- Table structure for connector `active_directory`
+-- Table structure for component `active_directory`
 --
 
 CREATE TABLE `active_directory` (
@@ -1531,11 +1578,11 @@ CREATE TABLE `active_directory` (
   `ad_nodes_base_dn` text(512),
   `ad_usessl` int(1) DEFAULT 1,
   PRIMARY KEY (`ad_id`),
-  FOREIGN KEY (`ad_id`) REFERENCES `connector` (`connector_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`ad_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for connector `scom`
+-- Table structure for component `scom`
 --
 
 CREATE TABLE `scom` (
@@ -1543,17 +1590,17 @@ CREATE TABLE `scom` (
   `scom_ms_name` char(255),
   `scom_usessl` int(1) DEFAULT NULL,
   PRIMARY KEY (`scom_id`),
-  FOREIGN KEY (`scom_id`) REFERENCES `connector` (`connector_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`scom_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for connector `mock_monitor`
+-- Table structure for component `mock_monitor`
 --
 
 CREATE TABLE `mock_monitor` (
   `mock_monitor_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`mock_monitor_id`),
-  FOREIGN KEY (`mock_monitor_id`) REFERENCES `connector` (`connector_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`mock_monitor_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 
@@ -1568,8 +1615,12 @@ CREATE TABLE `masterimage` (
   `masterimage_desc` char(255) DEFAULT NULL,
   `masterimage_os` char(64) DEFAULT NULL,
   `masterimage_size` bigint(16) unsigned NOT NULL,
+  `masterimage_cluster_type_id` int(8) unsigned NOT NULL,
+  `masterimage_defaultkernel_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`masterimage_id`),
-  FOREIGN KEY (`masterimage_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`masterimage_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`masterimage_cluster_type_id`) REFERENCES `cluster_type` (`cluster_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (`masterimage_defaultkernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1611,19 +1662,12 @@ CREATE TABLE `service_template` (
   `orchestration_policy_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`service_template_id`),
   FOREIGN KEY (`service_template_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`hosting_policy_id`),
   FOREIGN KEY (`hosting_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`storage_policy_id`),
   FOREIGN KEY (`storage_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`network_policy_id`),
   FOREIGN KEY (`network_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`scalability_policy_id`),
   FOREIGN KEY (`scalability_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`system_policy_id`),
   FOREIGN KEY (`system_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`billing_policy_id`),
   FOREIGN KEY (`billing_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  KEY (`orchestration_policy_id`),
   FOREIGN KEY (`orchestration_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1640,7 +1684,7 @@ CREATE TABLE `policy` (
   PRIMARY KEY (`policy_id`),
   FOREIGN KEY (`policy_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY (`param_preset_id`),
-  FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE SET NULL ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1649,12 +1693,8 @@ CREATE TABLE `policy` (
 
 CREATE TABLE `param_preset` (
   `param_preset_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
-  `name` char(128) DEFAULT NULL,
-  `value` text DEFAULT NULL,
-  `relation` int(8) unsigned DEFAULT NULL,
-  PRIMARY KEY (`param_preset_id`),
-  KEY (`relation`),
-  FOREIGN KEY (`relation`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  `params`text DEFAULT NULL,
+  PRIMARY KEY (`param_preset_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1693,4 +1733,94 @@ CREATE TABLE `dashboard` (
   FOREIGN KEY (`dashboard_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Table structure for table `data_model`
+--
+
+CREATE TABLE `data_model` (
+  `data_model_id` int(8) unsigned NOT NULL,
+  `combination_id` INT(8) unsigned NOT NULL,
+  `node_id` INT(8) unsigned NULL,
+  `param_preset_id` INT(8) unsigned NULL,
+  `start_time` double NULL,
+  `end_time` double NULL,
+  PRIMARY KEY (`data_model_id`),
+  FOREIGN KEY (`data_model_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`combination_id`) REFERENCES `combination` (`combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`node_id`) REFERENCES `node` (`node_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE = InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `repository`
+--
+
+CREATE TABLE `repository` (
+  `repository_id` int(8) unsigned NOT NULL,
+  `virtualization_id` int(8) unsigned NOT NULL,
+  `container_access_id` int(8) unsigned NOT NULL,
+  `repository_name` char(255) NOT NULL,
+  PRIMARY KEY (`repository_id`),
+  FOREIGN KEY (`repository_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`virtualization_id`),
+  FOREIGN KEY (`virtualization_id`) REFERENCES `virtualization` (`virtualization_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  KEY (`container_access_id`),
+  FOREIGN KEY (`container_access_id`) REFERENCES `container_access` (`container_access_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `data_model_type`
+--
+
+CREATE TABLE `data_model_type` (
+    `data_model_type_id` int(8) unsigned NOT NULL,
+    `data_model_type_label` char(64) NOT NULL,
+    `data_model_type_description` text(512) NOT NULL,
+    PRIMARY KEY (`data_model_type_id`),
+    FOREIGN KEY (`data_model_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `time_period` (
+  `time_period_id` int(8) unsigned NOT NULL,
+  `time_period_name` char(255),
+  `param_preset_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`time_period_id`),
+  FOREIGN KEY (`time_period_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `entity_time_period` (
+  `entity_time_period_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `entity_id` int(8) unsigned NOT NULL,
+  `time_period_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`entity_time_period_id`),
+  FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`time_period_id`) REFERENCES `time_period` (`time_period_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `tag`
+--
+CREATE TABLE `tag` (
+  `tag_id` int(8) unsigned NOT NULL,
+  `tag`    char(32) NOT NULL,
+  PRIMARY KEY (`tag_id`),
+  FOREIGN KEY (`tag_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  UNIQUE KEY (`tag`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
+-- Table structure for table `entity_tag`
+--
+CREATE TABLE `entity_tag` (
+  `entity_id` int(8) unsigned NOT NULL,
+  `tag_id`    int(8) unsigned NOT NULL,
+  PRIMARY KEY (`entity_id`, `tag_id`),
+  KEY (`entity_id`),
+  FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  KEY (`tag_id`),
+  FOREIGN KEY (`tag_id`) REFERENCES `tag` (`tag_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 SET foreign_key_checks=1;
+

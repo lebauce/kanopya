@@ -66,23 +66,23 @@ function lastevalStateFormatter(cell, options, row) {
     }
 }
 
-function booleantostateformatter(val) {
-    if (val) {
-        return "<img src='/images/icons/up.png' title='up' />";
+function booleantostateformatter(val, yes, no) {
+    if (val == 1) {
+        return "<img src='/images/icons/up.png' title='" + (yes ? yes : 'up') + "' />";
     }
     else {
-        return "<img src='/images/icons/down.png' title='down' />";
+        return "<img src='/images/icons/down.png' title='" + (no ? no : 'down') + "' />";
     }
 }
 
 function datetimeformatter(timestamp) {
     var d   = new Date(parseInt(timestamp));
-    return d.getDate() + '/' + (d.getMonth() + 1) + '/' + d.getFullYear() + ' '
-      + d.getHours() + ':' + d.getMinutes();
+    return $.datepicker.formatDate('dd/mm/yy', d);
 }
 
 function timeformatter(timestamp) {
-    return ((datetimeformatter(timestamp)).split(' '))[1];
+    var d   = new Date(parseInt(timestamp));
+    return d.toLocaleTimeString().replace(/:00$/, '');
 }
 
 function bytesToMegsFormatter(size) {

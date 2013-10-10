@@ -46,7 +46,7 @@ my $services        = $install_conf->{services};
 
 my $log_directory    = 'C:\var\log\kanopya\\';
 my $tmp_monitor      = 'C:\tmp\monitor\graph\\';
-my $tmp_orchestrator = 'C:\tmp\orchestrator\graph\\';
+my $tmp_orchestrator = 'C:\tmp\rulesengine\graph\\';
 my $timedata_dir     = 'C:\tmp\monitor\TimeData\\';
 
 my $crypt_salt = join '', ('.','/',0..9,'A'..'Z','a'..'z')[rand 64, rand 64];
@@ -64,7 +64,7 @@ my %conf_data = (
     kanopya_server_domain_name => 'kanopya.localdomain',
     db_name                    => 'kanopya',
     db_pwd                     => 'K4n0pY4',
-    crypt_salt		           => $crypt_salt,
+    crypt_salt                   => $crypt_salt,
 );
 
 #Welcome message - accepting Licence is mandatory
@@ -78,13 +78,27 @@ genConf();
 ###########################
 
 #init PERL5LIB
-print 'initialazing PERL5LIB'."\n";
-my $cmd = qq[setx PERL5LIB "$kanopya_dir\\kanopya\\lib\\common;$kanopya_dir\\kanopya\\lib\\administrator;$kanopya_dir\\kanopya\\lib\\executor;$kanopya_dir\\kanopya\\lib\\monitor;$kanopya_dir\\kanopya\\lib\\orchestrator;$kanopya_dir\\kanopya\\lib\\external;$kanopya_dir\\kanopya\\lib\\external\\NetApp"];
-print $cmd."\n";
+print "- Initialazing PERL5LIB\n";
+my $cmd = qq[setx PERL5LIB "$kanopya_dir\\kanopya\\lib\\common;$kanopya_dir\\kanopya\\lib\\administrator;$kanopya_dir\\kanopya\\lib\\executor;$kanopya_dir\\kanopya\\lib\\monitor;$kanopya_dir\\kanopya\\lib\\orchestrator;$kanopya_dir\\kanopya\\lib\\external;$kanopya_dir\\kanopya\\lib\\external\\NetApp;$kanopya_dir\\kanopya\\lib\\component\\kanopya_front;$kanopya_dir\\kanopya\\lib\\component\\kanopya_executor;$kanopya_dir\\kanopya\\lib\\component\\kanopya_aggregator;$kanopya_dir\\kanopya\\lib\\component\\kanopya_rulesengine"];
+
 my $exec = `$cmd 2>&1`;
+`powershell New-EventLog Application -Source KanopyaAggregator`;
+`powershell New-EventLog Application -Source KanopyaExecutor`;
+`powershell New-EventLog Application -Source KanopyaRulesEngine`;
+`powershell New-EventLog Application -Source KanopyaWebUI`;
 
 #lol.
-push @INC, ("$kanopya_dir" . 'kanopya\lib\common', "$kanopya_dir" . 'kanopya\lib\administrator', "$kanopya_dir" . 'kanopya\lib\executor', "$kanopya_dir" . 'kanopya\lib\monitor', "$kanopya_dir" . 'kanopya\lib\orchestrator', "$kanopya_dir" . 'kanopya\lib\external', "$kanopya_dir" . 'kanopya\lib\external\NetApp');
+push @INC, ("$kanopya_dir" . 'kanopya\lib\common',
+            "$kanopya_dir" . 'kanopya\lib\administrator',
+            "$kanopya_dir" . 'kanopya\lib\executor',
+            "$kanopya_dir" . 'kanopya\lib\monitor',
+            "$kanopya_dir" . 'kanopya\lib\orchestrator',
+            "$kanopya_dir" . 'kanopya\lib\external',
+            "$kanopya_dir" . 'kanopya\lib\external\NetApp',
+            "$kanopya_dir" . 'kanopya\lib\component\kanopya_front',
+            "$kanopya_dir" . 'kanopya\lib\component\kanopya_executor',
+            "$kanopya_dir" . 'kanopya\lib\component\kanopya_aggregator',
+            "$kanopya_dir" . 'kanopya\lib\component\kanopya_rulesengine');
 
 ######################
 #Directories Creation#
@@ -102,7 +116,7 @@ sub createDir {
 createDir('log', $log_directory);
 createDir('workflows log', $log_directory.'workflows\\');
 createDir('monitor temp', $tmp_monitor);
-createDir('orchestrator temp', $tmp_orchestrator);
+createDir('rulesengine temp', $tmp_orchestrator);
 createDir('time data temp', $timedata_dir);
 
 ################
@@ -119,7 +133,7 @@ my %db_data = (
     ipv4_internal_ip         => '192.168.100.100',
     ipv4_internal_netmask    => $conf_data{internal_net_mask},
     ipv4_internal_network_ip => $conf_data{internal_net_add},
-	admin_interface          => 'eth0',
+    admin_interface          => 'eth0',
     admin_domainname         => $conf_data{kanopya_server_domain_name},
     mb_hw_address            => 'FF:FF:FF:FF:FF:FF',
     admin_password           => $conf_data{admin_password},
@@ -131,7 +145,7 @@ my %db_data = (
     poolip_gateway           => '0.0.0.0',
 );
 
-print 'generating Data.sql...';
+print '- Generating Data.sql...';
 
 useTemplate(
     template => 'Data.sql.tt',
@@ -140,7 +154,7 @@ useTemplate(
     include  => $conf_vars->{data_dir}
 );
 
-print 'done'."\n";
+print "done\n";
 
 print "Please enter your root database user password :\n";
 ReadMode('noecho');
@@ -174,22 +188,22 @@ $exec = `$cmd 2>&1`;
 print "done\n";
 
 #We now generate the database schemas
-print "generating database schemas...";
+print "- Generating database schemas... \n";
 $cmd  ="mysql -h $dbip  -P $dbport -u $db_user -p$db_pwd < \"$conf_vars->{schema_sql}\"";
 $exec = `$cmd 2>&1`;
 print "done\n";
 
 #We now generate the components schemas
-print "loading component DB schemas...\n";
+print "- Loading component DB schemas...\n";
 open (my $FILE, "<","$conf_vars->{comp_conf}");
 
 my $line;
 while(defined($line = <$FILE>)) {
-    $/ = "\r\n";
+    #$/ = "\r\n";
     chomp ($line);
     # don't proceed empty lines or commented lines
     next if (( ! $line ) || ( $line =~ /^#/ ));
-    print "installing $line component in database from $conf_vars->{comp_schemas_dir}$line.sql..\n";
+    print "- Installing $line component in database from $conf_vars->{comp_schemas_dir}$line.sql..\n";
     $cmd  = "mysql -u $db_user -p$db_pwd < \"$conf_vars->{comp_schemas_dir}$line.sql\"";
     $exec = `$cmd 2>&1`;
     print "done\n";
@@ -200,55 +214,8 @@ print "components DB schemas loaded\n";
 #We set again the cariage return caracter to \n
 $/ = "\n"; 
 
-#And to conclude, we insert initial datas in the DB
-#print "inserting initial datas...";
-#$cmd  = "mysql -u $db_user -p$db_pwd < \"$conf_vars->{data_sql}\""; 
-#$exec = `$cmd 2>&1`;
-#print "done\n";
-
-#######################
-#Service configuration#
-#######################
-
-#gather login and pwd
-print 'Gathering Kanopya services informations...'."\n";
-my ($login,$pwd);
-print 'Please enter your full Kanopya service user:'."\n";
-chomp($login = <STDIN>);
-print 'Please enter your full Kanopya service password'."\n";
-ReadMode('noecho');
-chomp($pwd = <STDIN>);
-ReadMode('original');
-
-#Install windows services
-chop($kanopya_dir);
-while (my ($service,$file) = each %$services) {
-    print 'installing '."$service ... \n";
-    my $cmd = qq[perl.exe "$service_dir$file" -i "$kanopya_dir" $login $pwd];
-    eval {
-        system($cmd);
-    };
-    if ($@) {
-        print "$service".' failed to be installed. Please launch again setup
-               or install the service manually'."\n";
-        print $@."\n";
-    }
-    else {
-        my @service_name = split '.pl', $file;
-        print 'Launching '. $service_name[0]."...\n";
-        my $sc = qq{sc.exe start $service_name[0]};
-        eval {
-            system($sc);
-        };
-        if ($@) {
-            print 'Error while launching '.$service_name[0]."\n";
-            print $@."\n";
-        }
-    }
-}
-
 # Populate DB with more data (perl script instead of sql)
-print "populate database...";
+print "- Populate database...\n";
 require PopulateDB;
 populateDB(login    => $db_user,
            password => $db_pwd,
@@ -266,6 +233,68 @@ useTemplate(
     conf     => "$kanopya_dir/kanopya/ui/Frontend/config.yml",
     include  => $conf_vars->{install_template_dir}
 );
+
+
+#######################
+#Service configuration#
+#######################
+
+#gather login and pwd
+print "- Gathering Kanopya services informations...\n";
+my ($login, $pwd);
+print "Please enter your full Kanopya service user:\n";
+chomp($login = <STDIN>);
+print "Please enter your full Kanopya service password\n";
+ReadMode('noecho');
+chomp($pwd = <STDIN>);
+ReadMode('original');
+
+#Install windows services
+chop($kanopya_dir);
+my ($command, $stdout, $code);
+while (my ($service, $file) = each %$services) {
+    print "- Installing $service ...\n";
+
+    my @service_name = split '.pl', $file;
+
+    # Check if the service is already installed
+    $command = qq[sc.exe query $service_name[0]];
+    ($code, $stdout) = command(cmd => $command);
+
+    if ($code == 0) {
+        print "$service seems to be already installed, deleting it...\n";
+
+        if ($stdout =~ m/RUNNING/) {
+            print "$service seems to be running, stopping it...\n";
+            $command = qq[sc.exe stop $service_name[0]];
+            ($code, $stdout) = command(cmd => $command);
+        }
+        # The service is already installed, delete it
+        $command = qq[sc.exe delete $service_name[0]];
+        ($code, $stdout) = command(cmd => $command);
+    }
+
+    $command = qq[perl.exe "$service_dir$file" -i "$kanopya_dir" $login $pwd];
+    ($code, $stdout) = command(cmd => $command);
+
+    if ($stdout !~ m/Service installed successfully/) {
+        print "$service failed to be installed. Please launch again setup " .
+              "or install the service manually.\n";
+        print "$stdout \n";
+    }
+    else {
+        print "Starting $service_name[0] ...\n";
+        $command = qq{sc.exe start $service_name[0]};
+        ($code, $stdout) = command(cmd => $command);
+        if ($code == 0) {
+            print "$service_name[0] started successfully \n\n";
+        }
+        else {
+            print "Error while launching $service_name[0] \n";
+            print "$stdout \n";
+        }
+    }
+}
 
 print q{Congratulations, you've finished Kanopya installation!}."\n";
 print q{You can now visit the web interface at the following adress:}."\n";
@@ -304,6 +333,7 @@ sub genConf {
         foreach my $d (keys %{$conf_files->{$files}->{datas}}) {
             $datas{$d} = $conf_data{$d};
         }
+        $datas{windows} = 1;
         useTemplate(
             template => $conf_files->{$files}->{template},
             datas    => \%datas,
@@ -342,4 +372,15 @@ sub getKanopyaDirectory {
     $infos{kanopya_dir} = $kanopya[0];
 
     return \%infos;
+}
+
+sub command {
+    my %args = @_;
+
+    # Warning; do not print/log command (can contains password)
+    my $stdout = `$args{cmd} 2>&1`;
+    my $code = $?;
+
+    #print "$stdout \n";
+    return ($code, $stdout);
 }

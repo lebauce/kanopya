@@ -1,17 +1,37 @@
+use utf8;
 package AdministratorDB::Schema::Result::ParamPreset;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
-
-
 =head1 NAME
 
 AdministratorDB::Schema::Result::ParamPreset
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
+
+=head1 TABLE: C<param_preset>
 
 =cut
 
@@ -26,22 +46,9 @@ __PACKAGE__->table("param_preset");
   is_auto_increment: 1
   is_nullable: 0
 
-=head2 name
-
-  data_type: 'char'
-  is_nullable: 1
-  size: 128
-
-=head2 value
+=head2 params
 
   data_type: 'text'
-  is_nullable: 1
-
-=head2 relation
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
   is_nullable: 1
 
 =cut
@@ -54,49 +61,66 @@ __PACKAGE__->add_columns(
     is_auto_increment => 1,
     is_nullable => 0,
   },
-  "name",
-  { data_type => "char", is_nullable => 1, size => 128 },
-  "value",
+  "params",
   { data_type => "text", is_nullable => 1 },
-  "relation",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 1,
-  },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</param_preset_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("param_preset_id");
 
 =head1 RELATIONS
 
-=head2 relation
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::ParamPreset>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "relation",
-  "AdministratorDB::Schema::Result::ParamPreset",
-  { param_preset_id => "relation" },
-  { join_type => "LEFT", on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 param_presets
+=head2 data_models
 
 Type: has_many
 
-Related object: L<AdministratorDB::Schema::Result::ParamPreset>
+Related object: L<AdministratorDB::Schema::Result::DataModel>
 
 =cut
 
 __PACKAGE__->has_many(
-  "param_presets",
-  "AdministratorDB::Schema::Result::ParamPreset",
-  { "foreign.relation" => "self.param_preset_id" },
+  "data_models",
+  "AdministratorDB::Schema::Result::DataModel",
+  { "foreign.param_preset_id" => "self.param_preset_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 old_operations
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::OldOperation>
+
+=cut
+
+__PACKAGE__->has_many(
+  "old_operations",
+  "AdministratorDB::Schema::Result::OldOperation",
+  { "foreign.param_preset_id" => "self.param_preset_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 operations
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Operation>
+
+=cut
+
+__PACKAGE__->has_many(
+  "operations",
+  "AdministratorDB::Schema::Result::Operation",
+  { "foreign.param_preset_id" => "self.param_preset_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -130,6 +154,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 time_periods
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::TimePeriod>
+
+=cut
+
+__PACKAGE__->has_many(
+  "time_periods",
+  "AdministratorDB::Schema::Result::TimePeriod",
+  { "foreign.param_preset_id" => "self.param_preset_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 workflow_defs
 
 Type: has_many
@@ -146,9 +185,9 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07000 @ 2012-06-08 15:21:55
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:zXvM5BvInwVeSQbdiCBERA
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-04-16 11:59:00
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Qly39udgLrRVVIA6UKkICw
 
 
-# You can replace this text with custom content, and it will be preserved on regeneration
+# You can replace this text with custom code or comments, and it will be preserved on regeneration
 1;

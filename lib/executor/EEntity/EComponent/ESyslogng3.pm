@@ -30,7 +30,7 @@ sub configureNode {
 
     my $template_path = $args{template_path} || "/templates/components/syslogng";
     
-    my $data = $self->_getEntity()->getConf();
+    my $data = $self->_entity->getConf();
         
     my $file = $self->generateNodeFile(
         cluster      => $args{cluster},
@@ -41,7 +41,7 @@ sub configureNode {
         data         => $data
     );
     
-    $self->getExecutorEContext->send(
+    $self->_host->getEContext->send(
         src  => $file,
         dest => $args{mount_point}.'/etc/syslog-ng'
     );

@@ -26,8 +26,10 @@ Subroutines to read/write kanopya configuration files.
 =cut
 
 package Kanopya::Config;
+
 use strict;
 use warnings;
+
 use XML::Simple;
 use Storable 'dclone';
 use Path::Class;
@@ -46,22 +48,21 @@ Initialize array reference $config from kanopya xml configuration files
 =cut
 
 sub _loadconfig {
-    #get Kanopya base directory
     my $base_dir = __FILE__;
     my @kanopya  = split 'kanopya', $base_dir;
-    $kanopya_dir = $kanopya[0];
+    $kanopya_dir = $kanopya[0] . '/kanopya';
 
     $config = {
-        executor          => XMLin($kanopya_dir.'/kanopya/conf/executor.conf'),
-        executor_path     => $kanopya_dir.'/kanopya/conf/executor.conf',
-        monitor           => XMLin($kanopya_dir.'/kanopya/conf/monitor.conf'), 
-        monitor_path      => $kanopya_dir.'/kanopya/conf/monitor.conf',
-        libkanopya        => XMLin($kanopya_dir.'/kanopya/conf/libkanopya.conf'),
-        libkanopya_path   => $kanopya_dir.'/kanopya/conf/libkanopya.conf',
-        orchestrator      => XMLin($kanopya_dir.'kanopya/conf/monitor.conf'), 
-        orchestrator_path => $kanopya_dir.'/kanopya/conf/monitor.conf',
-        aggregator        => XMLin($kanopya_dir.'/kanopya/conf/aggregator.conf'),
-        aggregator_path   => $kanopya_dir.'/kanopya/conf/aggregator.conf',
+        executor          => XMLin($kanopya_dir . '/conf/executor.conf', ForceArray => [ "callbacks" ]),
+        executor_path     => $kanopya_dir . '/conf/executor.conf',
+        monitor           => XMLin($kanopya_dir . '/conf/monitor.conf'),
+        monitor_path      => $kanopya_dir . '/conf/monitor.conf',
+        libkanopya        => XMLin($kanopya_dir . '/conf/libkanopya.conf'),
+        libkanopya_path   => $kanopya_dir . '/conf/libkanopya.conf',
+        aggregator        => XMLin($kanopya_dir . '/conf/aggregator.conf'),
+        aggregator_path   => $kanopya_dir . '/conf/aggregator.conf',
+        rulesengine       => XMLin($kanopya_dir . '/conf/rulesengine.conf'),
+        rulesengine_path  => $kanopya_dir . '/conf/rulesengine.conf',
     }
 }
 
@@ -78,7 +79,7 @@ retrieve kanopya directory
 =cut
 
 sub getKanopyaDir {
-    if(not defined $kanopya_dir) {
+    if (not defined $kanopya_dir) {
         _loadconfig();
     }
     return $kanopya_dir;

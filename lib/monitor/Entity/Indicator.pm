@@ -12,15 +12,16 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package Entity::Indicator;
+use base Entity;
 
 use strict;
 use warnings;
-use base 'Entity';
-use Data::Dumper;
-require 'Entity/Clustermetric.pm';
-require 'Entity/Combination/NodemetricCombination.pm';
 
-# logger
+use Entity::Clustermetric;
+use Entity::Combination::NodemetricCombination;
+use TimeData::RRDTimeData;
+
+use Data::Dumper;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -86,13 +87,11 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        'toString'  => {
-            'description' => 'toString',
-            'perm_holder' => 'entity'
+        toString  => {
+            description => 'toString',
         },
-        'getDependencies' => {
-            'description' => 'return dependencies tree for this object',
-            'perm_holder' => 'entity',
+        getDependencies => {
+            description => 'return dependencies tree for this object',
         },
     };
 }
@@ -166,13 +165,9 @@ sub delete {
         # Node related hierarchy
         # Variables used more than once
 
-        my $collector_indicator_id  = $collector_indicator->id;
+        $log->debug("start processing ".$collector_indicator->id);
 
-        $log->info("start processing $collector_indicator_id");
-
-        my @dependent_clustermetric = Entity::Clustermetric->search(hash => {
-                                          clustermetric_indicator_id => $collector_indicator_id,
-                                      });
+        my @dependent_clustermetric = $collector_indicator->clustermetrics;
 
         while (@dependent_clustermetric){
             (pop @dependent_clustermetric)->delete();
@@ -181,20 +176,30 @@ sub delete {
         # Service related hierarchy
         $log->info("Entering nodemetric loop");
 
-        my @all_the_nodemetric_combinations = Entity::Combination::NodemetricCombination->search(hash => {});
+        my @all_the_nodemetric_combinations = Entity::Combination::NodemetricCombination->search();
         NODEMETRIC_COMBINATION:
         while (@all_the_nodemetric_combinations) {
             my $nm_combi  = pop @all_the_nodemetric_combinations;
             my @collector_indicator_ids = $nm_combi->getDependentCollectorIndicatorIds();
             for my $nm_indicator_id (@collector_indicator_ids) {
-                $log->info("$collector_indicator_id vs $nm_indicator_id");
-                if ($collector_indicator_id == $nm_indicator_id) {
-                    $log->info("------------- delete !");
+                $log->debug($collector_indicator->id.' vs '.$nm_indicator_id);
+                if ($collector_indicator->id == $nm_indicator_id) {
                     $nm_combi->delete();
                     next NODEMETRIC_COMBINATION;
                 }
             }
         }
+
+        my @service_provider_managers = $collector_indicator->collector_manager->service_provider_managers;
+        for my $spm (@service_provider_managers) {
+            my @nodes = $spm->service_provider->nodes;
+            for my $node (@nodes) {
+                my $rrd_name = $self->id.'_'.$node->node_hostname;
+                $log->info('delete '.$rrd_name);
+                TimeData::RRDTimeData::deleteTimeDataStore(name => $rrd_name);
+            }
+        }
+
         $collector_indicator->delete();
     }
     return $self->SUPER::delete();

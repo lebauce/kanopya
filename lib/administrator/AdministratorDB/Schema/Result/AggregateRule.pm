@@ -13,7 +13,23 @@ AdministratorDB::Schema::Result::AggregateRule
 use strict;
 use warnings;
 
-use base 'DBIx::Class::Core';
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
 
 =head1 TABLE: C<aggregate_rule>
 
@@ -30,58 +46,10 @@ __PACKAGE__->table("aggregate_rule");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 aggregate_rule_label
-
-  data_type: 'char'
-  is_nullable: 1
-  size: 255
-
-=head2 aggregate_rule_service_provider_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 0
-
-=head2 aggregate_rule_formula
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 255
-
-=head2 aggregate_rule_formula_string
-
-  data_type: 'text'
-  is_nullable: 0
-
 =head2 aggregate_rule_last_eval
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_nullable: 1
-
-=head2 aggregate_rule_timestamp
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_nullable: 1
-
-=head2 aggregate_rule_state
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 32
-
-=head2 workflow_def_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 1
-
-=head2 aggregate_rule_description
-
-  data_type: 'text'
   is_nullable: 1
 
 =head2 workflow_id
@@ -106,34 +74,8 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "aggregate_rule_label",
-  { data_type => "char", is_nullable => 1, size => 255 },
-  "aggregate_rule_service_provider_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 0,
-  },
-  "aggregate_rule_formula",
-  { data_type => "char", is_nullable => 0, size => 255 },
-  "aggregate_rule_formula_string",
-  { data_type => "text", is_nullable => 0 },
   "aggregate_rule_last_eval",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
-  "aggregate_rule_timestamp",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
-  "aggregate_rule_state",
-  { data_type => "char", is_nullable => 0, size => 32 },
-  "workflow_def_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 1,
-  },
-  "aggregate_rule_description",
-  { data_type => "text", is_nullable => 1 },
   "workflow_id",
   {
     data_type => "integer",
@@ -163,29 +105,14 @@ __PACKAGE__->set_primary_key("aggregate_rule_id");
 
 Type: belongs_to
 
-Related object: L<AdministratorDB::Schema::Result::Entity>
+Related object: L<AdministratorDB::Schema::Result::Rule>
 
 =cut
 
 __PACKAGE__->belongs_to(
   "aggregate_rule",
-  "AdministratorDB::Schema::Result::Entity",
-  { entity_id => "aggregate_rule_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 aggregate_rule_service_provider
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::ServiceProvider>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "aggregate_rule_service_provider",
-  "AdministratorDB::Schema::Result::ServiceProvider",
-  { service_provider_id => "aggregate_rule_service_provider_id" },
+  "AdministratorDB::Schema::Result::Rule",
+  { rule_id => "aggregate_rule_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
@@ -209,25 +136,6 @@ __PACKAGE__->belongs_to(
   },
 );
 
-=head2 workflow_def
-
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::WorkflowDef>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "workflow_def",
-  "AdministratorDB::Schema::Result::WorkflowDef",
-  { workflow_def_id => "workflow_def_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "CASCADE",
-  },
-);
 
 
 # Created by DBIx::Class::Schema::Loader v0.07015 @ 2012-10-31 16:06:37
@@ -235,8 +143,8 @@ __PACKAGE__->belongs_to(
 
  __PACKAGE__->belongs_to(
    "parent",
-     "AdministratorDB::Schema::Result::Entity",
-         { "foreign.entity_id" => "self.aggregate_rule_id" },
+     "AdministratorDB::Schema::Result::Rule",
+         { "foreign.rule_id" => "self.aggregate_rule_id" },
              { cascade_copy => 0, cascade_delete => 1 }
  );
 

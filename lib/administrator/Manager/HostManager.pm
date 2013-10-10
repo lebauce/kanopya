@@ -15,6 +15,14 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package Manager::HostManager;
 use base "Manager";
 
@@ -27,8 +35,9 @@ use Data::Dumper;
 
 use Entity::Processormodel;
 use Entity::Hostmodel;
+use Entity::Host;
 use Entity::Kernel;
-use Entity::Operation;
+use Entity::Tag;
 
 my $log = get_logger("");
 my $errmsg;
@@ -36,13 +45,34 @@ my $errmsg;
 use constant BOOT_POLICIES => {
     pxe_nfs      => 'PXE Boot via NFS',
     pxe_iscsi    => 'PXE Boot via ISCSI',
+    root_iscsi   => 'Boot on root ISCSI',
     virtual_disk => 'BootOnVirtualDisk',
     boot_on_san  => 'BootOnSan',
+    local_disk   => 'BootOnLocalDisk'
 };
 
-=head2 checkHostManagerParams
+sub getHostManagerParams {
+    my $self = shift;
+    my %args = @_;
 
-=cut
+    my $definition = $self->getManagerParamsDef();
+    $definition->{tags}->{options} = {};
+    $definition->{no_tags}->{options} = {};
+
+    my @tags = Entity::Tag->search();
+    for my $tag (@tags) {
+        $definition->{tags}->{options}->{$tag->id} = $tag->tag;
+        $definition->{no_tags}->{options}->{$tag->id} = $tag->tag;
+    }
+
+    return {
+        cpu     => $definition->{cpu},
+        ram     => $definition->{ram},
+        tags    => $definition->{tags},
+	no_tags => $definition->{no_tags},
+
+    };
+}
 
 sub checkHostManagerParams {
     my $self = shift;
@@ -51,23 +81,66 @@ sub checkHostManagerParams {
     General::checkParams(args => \%args, required => [ "cpu", "ram" ]);
 }
 
-=head2 addHost
 
+=pod
+=begin classdoc
+
+@return the manager params definition.
+
+=end classdoc
 =cut
+
+sub getManagerParamsDef {
+    my ($self, %args) = @_;
+
+    return {
+        cpu => {
+            label        => 'Required CPU number',
+            type         => 'integer',
+            unit         => 'core(s)',
+            pattern      => '^\d*$',
+            is_mandatory => 1
+        },
+        ram => {
+            label        => 'Required RAM amount',
+            type         => 'integer',
+            unit         => 'byte',
+            pattern      => '^\d*$',
+            is_mandatory => 1
+        },
+        tags => {
+            label        => 'Mandatory Tags',
+            type         => 'enum',
+            relation     => 'multi',
+            is_mandatory => 0,
+        },
+        no_tags => {
+            label        => 'Forbidden Tags',
+            type         => 'enum',
+            relation     => 'multi',
+            is_mandatory => 0,
+        },
+        deploy_on_disk => {
+            label        => 'Deploy on hard disk',
+            type         => 'boolean',
+            pattern      => '^\d*$',
+            is_mandatory => 1
+        }
+    };
+}
+
 
 sub addHost {
     my $self = shift;
     my %args  = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "host_core", "kernel_id", "host_serial_number", "host_ram" ]);
-
-    my $host_manager_id = $self->getAttr(name => 'entity_id');
+                         required => [ "host_core", "host_serial_number", "host_ram" ]);
 
     # Instanciate new Host Entity
     my $host;
     eval {
-        $host = Entity::Host->new(host_manager_id => $host_manager_id, %args);
+        $host = Entity::Host->new(host_manager_id => $self->id, %args);
     };
     if($@) {
         my $errmsg = "Wrong host attributes detected\n" . $@;
@@ -83,9 +156,6 @@ sub addHost {
     return $host;
 }
 
-=head2 delHost
-
-=cut
 
 sub delHost {
     my ($self, %args) = @_;
@@ -96,41 +166,20 @@ sub delHost {
     $args{host}->delete();
 }
 
-=head2 createHost
-
-    Desc : Implement createHost from HostManager interface.
-           This function enqueue a EAddHost operation.
-    args :
-
-=cut
 
 sub createHost {
     my $self = shift;
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "host_core", "kernel_id", "host_serial_number", "host_ram" ]);
+                         required => [ "host_core", "host_serial_number", "host_ram" ]);
 
-    my $composite_params = {};
-    if (defined $args{ifaces}) {
-        # Make a hash from the iface list, as composite params
-        # are in store as param presets, and it do not support array yet.
-        my $index = 0;
-        for my $iface (@{$args{ifaces}}) {
-            $composite_params->{ifaces}->{'iface_' . $index} = $iface;
-            $index++;
-        }
-        delete $args{ifaces};
-    }
-
-    Entity::Operation->enqueue(
-        priority => 200,
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
         type     => 'AddHost',
         params   => {
             context  => {
                 host_manager => $self,
             },
-            presets  => $composite_params,
             %args
         }
     );
@@ -142,11 +191,7 @@ sub removeHost {
 
     General::checkParams(args  => \%args, required => [ "host" ]);
 
-    $log->debug("New Operation RemoveHost with host_id : <" .
-                $args{host}->getAttr(name => "host_id") . ">");
-
-    Entity::Operation->enqueue(
-        priority => 200,
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
         type     => 'RemoveHost',
         params   => {
             context  => {
@@ -156,9 +201,54 @@ sub removeHost {
     );
 }
 
+sub activateHost {
+    my ($self, %args) = @_;
+
+    General::checkParams(args  => \%args, required => [ "host" ]);
+
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
+        type     => 'ActivateHost',
+        params   => {
+            context => {
+                host => $args{host},
+           }
+       }
+   );
+}
+
+sub deactivateHost {
+    my ($self, %args) = @_;
+
+    General::checkParams(args  => \%args, required => [ "host" ]);
+
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
+        type     => 'DeactivateHost',
+        params   => {
+            context => {
+                host_to_deactivate => $args{host},
+            }
+        }
+    );
+}
+
+sub resubmitHost {
+    my ($self, %args) = @_;
+
+    General::checkParams(args  => \%args, required => [ "host" ]);
+
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+        name   => 'ResubmitNode',
+        params => {
+            context => {
+                host => $args{host}
+            }
+        }
+    );
+}
 
 sub getOvercommitmentFactors {
     my ($self) = @_;
+
     return {
         overcommitment_cpu_factor    => 1.0,
         overcommitment_memory_factor => 1.0,
@@ -166,22 +256,16 @@ sub getOvercommitmentFactors {
 }
 
 
-=head2 getFreeHosts
-
-    Desc: return a list containing available hosts for this hosts manager
-
-=cut
-
 sub getFreeHosts {
     my ($self) = @_;
 
     my $where = {
         active          => 1,
         host_state      => {-like => 'down:%'},
-        host_manager_id => $self->getAttr(name => 'entity_id')
+        host_manager_id => $self->id
     };
 
-    my @hosts = Entity::Host->getHosts(hash => $where);
+    my @hosts = Entity::Host->search(hash => $where);
     my @free;
     foreach my $m (@hosts) {
         if(not $m->node) {
@@ -191,12 +275,6 @@ sub getFreeHosts {
     return @free;
 }
 
-=head2 getBootPolicies
-
-    Desc: return a list containing boot policies available
-        on hosts manager ; MUST BE IMPLEMENTED IN CHILD CLASSES
-
-=cut
 
 sub getBootPolicies {
     throw Kanopya::Exception::NotImplemented();
@@ -206,11 +284,6 @@ sub hostType {
     return "Host";
 }
 
-=head2 getRemoteSessionURL
-
-    Desc: return an URL to a remote session to the host
-
-=cut
 
 sub getRemoteSessionURL {
     throw Kanopya::Exception::NotImplemented();

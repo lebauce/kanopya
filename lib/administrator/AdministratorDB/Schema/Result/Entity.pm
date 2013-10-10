@@ -115,22 +115,7 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 aggregate_rule
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::AggregateRule>
-
-=cut
-
-__PACKAGE__->might_have(
-  "aggregate_rule",
-  "AdministratorDB::Schema::Result::AggregateRule",
-  { "foreign.aggregate_rule_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 alerts
+=head2 alert_entities
 
 Type: has_many
 
@@ -139,9 +124,24 @@ Related object: L<AdministratorDB::Schema::Result::Alert>
 =cut
 
 __PACKAGE__->has_many(
-  "alerts",
+  "alert_entities",
   "AdministratorDB::Schema::Result::Alert",
   { "foreign.entity_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 alert_trigger_entities
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::Alert>
+
+=cut
+
+__PACKAGE__->has_many(
+  "alert_trigger_entities",
+  "AdministratorDB::Schema::Result::Alert",
+  { "foreign.trigger_entity_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -190,7 +190,7 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 collector_indicator_collector_indicator
+=head2 collector_indicator
 
 Type: might_have
 
@@ -199,24 +199,9 @@ Related object: L<AdministratorDB::Schema::Result::CollectorIndicator>
 =cut
 
 __PACKAGE__->might_have(
-  "collector_indicator_collector_indicator",
+  "collector_indicator",
   "AdministratorDB::Schema::Result::CollectorIndicator",
   { "foreign.collector_indicator_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 collector_indicators
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::CollectorIndicator>
-
-=cut
-
-__PACKAGE__->has_many(
-  "collector_indicators",
-  "AdministratorDB::Schema::Result::CollectorIndicator",
-  { "foreign.collector_manager_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -250,21 +235,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 connector
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::Connector>
-
-=cut
-
-__PACKAGE__->might_have(
-  "connector",
-  "AdministratorDB::Schema::Result::Connector",
-  { "foreign.connector_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 container
 
 Type: might_have
@@ -292,6 +262,21 @@ __PACKAGE__->might_have(
   "container_access",
   "AdministratorDB::Schema::Result::ContainerAccess",
   { "foreign.container_access_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 data_model
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::DataModel>
+
+=cut
+
+__PACKAGE__->might_have(
+  "data_model",
+  "AdministratorDB::Schema::Result::DataModel",
+  { "foreign.data_model_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -341,6 +326,66 @@ Related object: L<AdministratorDB::Schema::Result::EntityLock>
 __PACKAGE__->might_have(
   "entity_lock_entity",
   "AdministratorDB::Schema::Result::EntityLock",
+  { "foreign.entity_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 entity_state_consumers
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::EntityState>
+
+=cut
+
+__PACKAGE__->has_many(
+  "entity_state_consumers",
+  "AdministratorDB::Schema::Result::EntityState",
+  { "foreign.consumer_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 entity_state_entities
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::EntityState>
+
+=cut
+
+__PACKAGE__->has_many(
+  "entity_state_entities",
+  "AdministratorDB::Schema::Result::EntityState",
+  { "foreign.entity_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 entity_tags
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::EntityTag>
+
+=cut
+
+__PACKAGE__->has_many(
+  "entity_tags",
+  "AdministratorDB::Schema::Result::EntityTag",
+  { "foreign.entity_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 entity_time_periods
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::EntityTimePeriod>
+
+=cut
+
+__PACKAGE__->has_many(
+  "entity_time_periods",
+  "AdministratorDB::Schema::Result::EntityTimePeriod",
   { "foreign.entity_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -480,21 +525,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 interface_role
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::InterfaceRole>
-
-=cut
-
-__PACKAGE__->might_have(
-  "interface_role",
-  "AdministratorDB::Schema::Result::InterfaceRole",
-  { "foreign.interface_role_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 kernel
 
 Type: might_have
@@ -540,6 +570,36 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 netconf
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Netconf>
+
+=cut
+
+__PACKAGE__->might_have(
+  "netconf",
+  "AdministratorDB::Schema::Result::Netconf",
+  { "foreign.netconf_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 netconf_role
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::NetconfRole>
+
+=cut
+
+__PACKAGE__->might_have(
+  "netconf_role",
+  "AdministratorDB::Schema::Result::NetconfRole",
+  { "foreign.netconf_role_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 network
 
 Type: might_have
@@ -582,21 +642,6 @@ __PACKAGE__->might_have(
   "nodemetric_condition",
   "AdministratorDB::Schema::Result::NodemetricCondition",
   { "foreign.nodemetric_condition_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 nodemetric_rule
-
-Type: might_have
-
-Related object: L<AdministratorDB::Schema::Result::NodemetricRule>
-
-=cut
-
-__PACKAGE__->might_have(
-  "nodemetric_rule",
-  "AdministratorDB::Schema::Result::NodemetricRule",
-  { "foreign.nodemetric_rule_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -690,6 +735,36 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 repository
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Repository>
+
+=cut
+
+__PACKAGE__->might_have(
+  "repository",
+  "AdministratorDB::Schema::Result::Repository",
+  { "foreign.repository_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 rule
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Rule>
+
+=cut
+
+__PACKAGE__->might_have(
+  "rule",
+  "AdministratorDB::Schema::Result::Rule",
+  { "foreign.rule_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 service_provider
 
 Type: might_have
@@ -702,21 +777,6 @@ __PACKAGE__->might_have(
   "service_provider",
   "AdministratorDB::Schema::Result::ServiceProvider",
   { "foreign.service_provider_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 service_provider_managers
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::ServiceProviderManager>
-
-=cut
-
-__PACKAGE__->has_many(
-  "service_provider_managers",
-  "AdministratorDB::Schema::Result::ServiceProviderManager",
-  { "foreign.manager_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -750,6 +810,36 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 tag
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Tag>
+
+=cut
+
+__PACKAGE__->might_have(
+  "tag",
+  "AdministratorDB::Schema::Result::Tag",
+  { "foreign.tag_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 time_period
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::TimePeriod>
+
+=cut
+
+__PACKAGE__->might_have(
+  "time_period",
+  "AdministratorDB::Schema::Result::TimePeriod",
+  { "foreign.time_period_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 user
 
 Type: might_have
@@ -762,6 +852,21 @@ __PACKAGE__->might_have(
   "user",
   "AdministratorDB::Schema::Result::User",
   { "foreign.user_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 vlan
+
+Type: might_have
+
+Related object: L<AdministratorDB::Schema::Result::Vlan>
+
+=cut
+
+__PACKAGE__->might_have(
+  "vlan",
+  "AdministratorDB::Schema::Result::Vlan",
+  { "foreign.vlan_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -820,9 +925,21 @@ Composing rels: L</ingroups> -> gp
 
 __PACKAGE__->many_to_many("gps", "ingroups", "gp");
 
+=head2 tags
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-11-08 14:54:52
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:uTu+fyc5jS4HCorythfIQg
+Type: many_to_many
+
+Composing rels: L</entity_tags> -> tag
+
+=cut
+
+__PACKAGE__->many_to_many("tags", "entity_tags", "tag");
+
+
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-06-13 10:51:12
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:EVEmvH8GeulhQJlXC7RNUA
+
+__PACKAGE__->many_to_many("time_periods", "entity_time_periods", "time_period");
 
 __PACKAGE__->might_have(
   "workflow",
@@ -831,10 +948,25 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-__PACKAGE__->might_have(
-  "collector_indicator",
+__PACKAGE__->has_many(
+  "collector_indicators",
   "AdministratorDB::Schema::Result::CollectorIndicator",
-  { "foreign.collector_indicator_id" => "self.entity_id" },
+  { "foreign.collector_manager_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+__PACKAGE__->has_many(
+  "entity_states",
+  "AdministratorDB::Schema::Result::EntityState",
+  { "foreign.entity_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+# LEGACY
+__PACKAGE__->has_many(
+  "alerts",
+  "AdministratorDB::Schema::Result::Alert",
+  { "foreign.entity_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 

@@ -1,5 +1,5 @@
-# Snmpd5.pm - Kanopya-collector component (Adminstrator side)
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -14,7 +14,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 20 april 2012
 
 package Entity::Component::Kanopyacollector1;
 use base "Entity::Component";
@@ -24,32 +23,70 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use Monitor::Retriever;
 use Entity::Indicator;
+use Entity::CollectorIndicator;
 use Indicatorset;
 use Collect;
-use Log::Log4perl "get_logger";
-use Data::Dumper;
+use Retriever;
 
+use Data::Dumper;
+use Log::Log4perl "get_logger";
 my $log = get_logger("");
 my $errmsg;
 
-#Collect every hour, stock data during 24 hours
-
 use constant ATTR_DEF => {
-    kanopyacollector1_collect_frequency => {
-        pattern      => '^\d*$',
+    time_step => {
+        label        => 'Monitoring data retrieval frequency',
+        type         => 'time',
+        pattern      => '^\d+$',
+        default      => 300,
+        is_mandatory => 1,
+        is_extended  => 0,
+        is_editable  => 1
+    },
+    storage_duration => {
+        label        => 'Data storage duration',
+        type         => 'time',
+        pattern      => '^\d+$',
+        default      => 86400,
         is_mandatory => 1,
         is_extended  => 0
     },
-    kanopyacollector1_storage_time => {
-        pattern      => '^\d*$',
+    rrd_base_directory => {
+        label        => 'RRD base directory',
+        type         => 'string',
+        pattern      => '^.*$',
+        default      => '/var/cache/kanopya/monitor/base',
         is_mandatory => 1,
         is_extended  => 0
     },
 };
 
 sub getAttrDef { return ATTR_DEF; }
+
+sub new {
+    my ($class, %args) = @_;
+
+    my $self = $class->SUPER::new(%args);
+
+    my @indicator_sets = (
+        Indicatorset->search(
+            hash => {
+                indicatorset_name => [
+                    'mem', 'cpu', 'apache_stats', 'apache_workers', 'billing',
+                    'diskIOTable', 'interfaces', 'vsphere_vm', 'vsphere_host',
+                    'state', 'virtualization',
+                ]
+            }
+        )
+    );
+
+    $self->createCollectorIndicators(
+        indicator_sets => \@indicator_sets,
+    );
+
+    return $self;
+}
 
 =head2 retrieveData
 
@@ -75,37 +112,47 @@ sub retrieveData {
     ####################################
     # WARNING time span hardcoded here!!
     ####################################
-    my $time_span = 300;
+    my $time_span = 600;
 
-    my $nodelist       = $args{'nodelist'};
-    my $indicators     = $args{'indicators'};
+    my $nodelist   = $args{'nodelist'};
+    my $indicators = $args{'indicators'};
     my %sets_to_fetch;
 
     # Arrange indicators name by set_name
     foreach my $indicator (values %$indicators) {
         # We fetch the indicator set related to the indicator
-        my $set_name = $indicator->indicatorset->indicatorset_name;
-        push @{$sets_to_fetch{$set_name}}, $indicator->indicator_name;
+        # my $set_name = $indicator->indicatorset->indicatorset_name;
+        my $set_id = $indicator->indicatorset->id;
+        push @{$sets_to_fetch{$set_id}}, $indicator->indicator_name;
     }
 
     # Now we fetch the requested data
-    my $retriever = Monitor::Retriever->new();
     my %monitored_values;
 
-    while (my ($set_name, $indic_names) = each %sets_to_fetch) {
+    while (my ($set_id, $indic_names) = each %sets_to_fetch) {
         foreach my $node (@$nodelist) {
             eval {
-                my $data = $retriever->getHostData(
-                                                set         => $set_name,
-                                                host        => $node,
-                                                required_ds => $indic_names,
-                                                time_laps   => $time_span,
-                                                start       => $args{start},
-                                                end         => $args{end},
-                                                historical  => $args{historical},
-                                                raw         => $args{raw},
-                                                );
-                $monitored_values{$node} = $monitored_values{$node} ? { %{$monitored_values{$node}}, %{$data} } :  $data;
+                #TODO avoir this useless reinstanciation with a hashtable
+                my $indicator_set = Indicatorset->get(id => $set_id);
+                #TODO Improve lastValue / average management
+                my $last_value = $indicator_set->indicatorset_provider eq 'KanopyaDatabaseProvider'
+                                     ? 1 : undef;
+
+                my $data = Retriever->getHostData(
+                               set          => $indicator_set->indicatorset_name,
+                               host         => $node,
+                               required_ds  => $indic_names,
+                               time_laps    => $time_span,
+                               start        => $args{start},
+                               end          => $args{end},
+                               historical   => $args{historical},
+                               raw          => $args{raw},
+                               last_value   => $args{last_value} || $last_value,
+                               rrd_base_dir => $self->rrd_base_directory
+                           );
+
+                $monitored_values{$node} = $monitored_values{$node}
+                                               ? { %{$monitored_values{$node}}, %{$data} } : $data;
             };
             if ($@) {
                 $log->warn("Error while retrieving data from kanopya collector : $@");
@@ -144,7 +191,7 @@ sub retrieveData {
 sub getIndicators {
     my ($self, %args) = @_;
 
-    return Indicator->search(
+    return Entity::Indicator->search(
         hash => { "indicatorset.indicatorset_provider" => 'SnmpProvider' }
     );
 }
@@ -162,7 +209,7 @@ sub getIndicator {
 
     General::checkParams(args => \%args, required => ['id']);
 
-    return Indicator->get(id => $args{id});
+    return Entity::Indicator->get(id => $args{id});
 }
 
 =head2 collectIndicator
@@ -174,15 +221,57 @@ sub getIndicator {
 sub collectIndicator {
     my ($self, %args) = @_;
 
-    my $indicator = Indicator->get(id => $args{indicator_id});
+    my $collector_indicator = Entity::CollectorIndicator->get(id => $args{indicator_id});
+    my $indicator = $collector_indicator->indicator;
 
     eval {
-        my $adm = Administrator->new();
-        $adm->{db}->resultset('Collect')->create({
-            cluster_id      => $args{service_provider_id},
-            indicatorset_id => $indicator->indicatorset_id
-        });
+        Collect->new(
+            service_provider_id => $args{service_provider_id},
+            indicatorset_id     => $indicator->indicatorset_id
+        );
     };
+    if ($@) {
+        my $err = $@;
+        if ($err->isa('Kanopya::Exception::DB')) {
+            $log->warn("Collect <$args{service_provider_id}-" . $indicator->indicatorset_id .  "> already exists.");
+        }
+        else {
+            $err->rethrow()
+        }
+    }
+}
+
+=head2 collectIndicator
+
+    Desc: Start collecting indicators of the specified sets
+    ! Do not check if wanted set to collect contains available indicators for the service provider (i.e CollectorIndicators)
+
+    Args:
+        sets_name : array ref of set name
+        service_provider_id
+
+=cut
+
+sub collectSets {
+    my ($self, %args) = @_;
+
+    my @indicator_sets = Indicatorset->search(
+        hash => {
+            indicatorset_name => $args{sets_name}
+        }
+    );
+
+    for my $indicator_set (@indicator_sets) {
+        eval {
+            Collect->new(
+                service_provider_id => $args{service_provider_id},
+                indicatorset_id     => $indicator_set->id
+            );
+        };
+        if ($@) {
+            $log->info($@);
+        }
+    }
 }
 
 =head2 getCollectorType

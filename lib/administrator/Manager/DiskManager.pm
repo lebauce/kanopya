@@ -15,13 +15,20 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package Manager::DiskManager;
 use base "Manager";
 
 use strict;
 use warnings;
 
-use Entity::Operation;
 use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
@@ -30,53 +37,81 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
-sub methods {
-    return {
-        # TODO(methods): Remove this method from the api once the policy ui has been reviewed
-        getExportManagers => {
-            description => 'get thje available export manager for this disk manager.',
-            perm_holder => 'entity',
-        },
-    }
-}
 
-=head2 checkDiskManagerParams
+=pod
+=begin classdoc
 
+Check params required for creating disks.
+
+=end classdoc
 =cut
 
 sub checkDiskManagerParams {}
 
-=head2 getFreeSpace
 
-    Desc : Implement getFreeSpace from DiskManager interface.
-           This function return the free space on the volume group.
-    args :
+=pod
+=begin classdoc
 
+@return the manager params definition.
+
+=end classdoc
 =cut
+
+sub getManagerParamsDef {
+    my ($self, %args) = @_;
+
+    return {
+        systemimage_size => {
+            label        => 'System image size',
+            type         => 'integer',
+            unit         => 'byte',
+            pattern      => '^\d*$',
+            is_mandatory => 0,
+        },
+    };
+}
+
+
+=pod
+=begin classdoc
+
+@return the managers parameters as an attribute definition. 
+
+=end classdoc
+=cut
+
+sub getDiskManagerParams {
+    my $self = shift;
+    my %args  = @_;
+
+    return {};
+}
+
 
 sub getFreeSpace {
     throw Kanopya::Exception::NotImplemented();
 }
 
-=head2 createDisk
-
-    Desc : Implement createDisk from DiskManager interface.
-           This function enqueue a ECreateDisk operation.
-    args :
-
-=cut
 
 sub createDisk {
-    throw Kanopya::Exception::NotImplemented();
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ "name" ]);
+
+    $log->debug("New Operation CreateDisk with attrs : " . %args);
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
+        type     => 'CreateDisk',
+        params   => {
+            context => {
+                disk_manager => $self,
+            },
+            %args,
+        },
+    );
 }
 
-=head2 removeDisk
-
-    Desc : Implement removeDisk from DiskManager interface.
-           This function enqueue a ERemoveDisk operation.
-    args :
-
-=cut
 
 sub removeDisk {
     my $self = shift;
@@ -85,23 +120,17 @@ sub removeDisk {
     General::checkParams(args => \%args, required => [ "container" ]);
 
     $log->debug("New Operation RemoveDisk with attrs : " . %args);
-    Entity::Operation->enqueue(
-        priority => 200,
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
         type     => 'RemoveDisk',
         params   => {
             context => {
-                container => $args{container},
-            }
+                disk_manager => $self,
+                container    => $args{container},
+            },
         },
     );
 }
 
-=head2 removeDisk
-
-    Return the components available for exporting disk
-    provided by this disk manager.
-
-=cut
 
 sub getExportManagers {
     my $self = shift;
@@ -112,6 +141,16 @@ sub getExportManagers {
 
 sub diskType {
     return '';
+}
+
+
+sub getExportManagerFromBootPolicy {
+    throw Kanopya::Exception::NotImplemented();
+}
+
+
+sub getBootPolicyFromExportManager {
+    throw Kanopya::Exception::NotImplemented();
 }
 
 1;

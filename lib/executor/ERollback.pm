@@ -39,8 +39,6 @@ my $errmsg;
 
 use Kanopya::Exceptions;
 
-my $VERSION = "1.00";
-
 =head2 new
 
  Instanciate a rollback object with a first function/arguments
@@ -212,7 +210,7 @@ sub undo {
             
             # TODO: We need to remove inserted callback when we detect that it is useless.
             #$log->error("Rollback <$func> falled:\n$@");
-            $log->error("Rollback <$func> falled.");
+            $log->error("Rollback <$func> failed.");
         }
 
         $current = $current->{prev_item};
@@ -223,12 +221,3 @@ sub undo {
 
 
 1;
-
-__END__
-
-=head1 AUTHOR
-
-Copyright (c) 2010 by Hedera Technology Dev Team (dev@hederatech.com). All rights reserved.
-This program is free software; you can redistribute it and/or modify it under the same terms as Perl itself.
-
-=cut

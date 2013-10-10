@@ -38,6 +38,20 @@ sub connect {
 
     my $file = $self->getContainer->container_device;
 
+    my $retry = 20;
+    do {
+        $result = $args{econtext}->execute(command => "[ -f $file ]");
+        if ($result->{exitcode} != 0) {
+            if ($retry <= 0) {
+                my $errmsg = "Unable to find waited file <$file>";
+                throw Kanopya::Exception::Execution($errmsg);
+            }
+            $retry -= 1;
+            $log->debug("File  not found yet (<$file>), sleeping 1s and retry.");
+            sleep 1;
+        }
+    } while (defined $result && $result->{exitcode} != 0);
+
     $log->debug("Return file loop dev (<$file>).");
     $self->setAttr(name  => 'device_connected', value => $file);
 

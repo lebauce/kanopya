@@ -182,7 +182,10 @@ function nodemetricCombinationBarGraph(series, div_id, max, title, unit, mean_va
                 xOffset: 0
               }}
             ]
-          }
+        },
+        cursor : {
+            show : false
+        }
     });
 
     // Allow to customize tooltip with the name of th x label, but not working for y value... TODO workaround

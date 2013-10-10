@@ -1,17 +1,37 @@
+use utf8;
 package AdministratorDB::Schema::Result::Operation;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
-use strict;
-use warnings;
-
-use base 'DBIx::Class::Core';
-
-
 =head1 NAME
 
 AdministratorDB::Schema::Result::Operation
+
+=cut
+
+use strict;
+use warnings;
+
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
+
+=head1 TABLE: C<operation>
 
 =cut
 
@@ -26,12 +46,12 @@ __PACKAGE__->table("operation");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 type
+=head2 operationtype_id
 
-  data_type: 'char'
+  data_type: 'integer'
+  extra: {unsigned => 1}
   is_foreign_key: 1
   is_nullable: 0
-  size: 64
 
 =head2 workflow_id
 
@@ -83,6 +103,13 @@ __PACKAGE__->table("operation");
   extra: {unsigned => 1}
   is_nullable: 0
 
+=head2 param_preset_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -93,8 +120,13 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "type",
-  { data_type => "char", is_foreign_key => 1, is_nullable => 0, size => 64 },
+  "operationtype_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
   "workflow_id",
   {
     data_type => "integer",
@@ -126,8 +158,41 @@ __PACKAGE__->add_columns(
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "execution_rank",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  "param_preset_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
 );
+
+=head1 PRIMARY KEY
+
+=over 4
+
+=item * L</operation_id>
+
+=back
+
+=cut
+
 __PACKAGE__->set_primary_key("operation_id");
+
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<execution_rank>
+
+=over 4
+
+=item * L</execution_rank>
+
+=item * L</workflow_id>
+
+=back
+
+=cut
+
 __PACKAGE__->add_unique_constraint("execution_rank", ["execution_rank", "workflow_id"]);
 
 =head1 RELATIONS
@@ -145,6 +210,41 @@ __PACKAGE__->belongs_to(
   "AdministratorDB::Schema::Result::Entity",
   { entity_id => "operation_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 operationtype
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Operationtype>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "operationtype",
+  "AdministratorDB::Schema::Result::Operationtype",
+  { operationtype_id => "operationtype_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+);
+
+=head2 param_preset
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::ParamPreset>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "param_preset",
+  "AdministratorDB::Schema::Result::ParamPreset",
+  { param_preset_id => "param_preset_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "CASCADE",
+  },
 );
 
 =head2 user
@@ -177,39 +277,9 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
-=head2 type
 
-Type: belongs_to
-
-Related object: L<AdministratorDB::Schema::Result::Operationtype>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "type",
-  "AdministratorDB::Schema::Result::Operationtype",
-  { operationtype_name => "type" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
-);
-
-=head2 operation_parameters
-
-Type: has_many
-
-Related object: L<AdministratorDB::Schema::Result::OperationParameter>
-
-=cut
-
-__PACKAGE__->has_many(
-  "operation_parameters",
-  "AdministratorDB::Schema::Result::OperationParameter",
-  { "foreign.operation_id" => "self.operation_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-
-# Created by DBIx::Class::Schema::Loader v0.07010 @ 2012-08-20 12:11:58
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:yBuosjbxROgDig3x7l/0zQ
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-04-16 11:59:00
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:PSb7ZTql8ggyARhogfZx/g
 
 __PACKAGE__->belongs_to(
   "parent",

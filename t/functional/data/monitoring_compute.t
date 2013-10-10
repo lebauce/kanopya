@@ -13,66 +13,64 @@ use Test::More 'no_plan';
 use Test::Exception;
 use Test::Pod;
 use Data::Dumper;
+use DataCache;
+DataCache::cacheActive(0);
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level=>'DEBUG', file=>'/tmp/monitor_test.log', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>'monitor_test.log', layout=>'%F %L %p %m%n'});
 my $log = get_logger("");
 
 
-lives_ok {
-    use Administrator;
+    use BaseDB;
     use Aggregator;
-
-    use Entity::ServiceProvider::Outside::Externalcluster;
-    use Entity::Connector::MockMonitor;
+    use Entity::ServiceProvider::Externalcluster;
+    use Entity::Component::MockMonitor;
     use Entity::Clustermetric;
     use Entity::Combination::AggregateCombination;
     use Entity::Combination::NodemetricCombination;
-} 'All uses';
 
-Administrator::authenticate( login =>'admin', password => 'K4n0pY4' );
-my $adm = Administrator->new;
-$adm->beginTransaction;
+BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+
+BaseDB->beginTransaction;
 
 my ($indic1, $indic2);
+my ($node_1, $node_2);
 my $service_provider;
 my $aggregator;
 eval{
     $aggregator = Aggregator->new();
 
-    $service_provider = Entity::ServiceProvider::Outside::Externalcluster->new(
+    $service_provider = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Service Provider',
     );
 
-    my $external_cluster_mockmonitor = Entity::ServiceProvider::Outside::Externalcluster->new(
+    my $external_cluster_mockmonitor = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Monitor',
     );
 
 
-    my $mock_monitor = Entity::Connector::MockMonitor->new(
+    my $mock_monitor = Entity::Component::MockMonitor->new(
             service_provider_id => $external_cluster_mockmonitor->id,
     );
 
-    lives_ok{
-        $service_provider->addManager(
-            manager_id      => $mock_monitor->id,
-            manager_type    => 'collector_manager',
-            no_default_conf => 1,
-        );
-    } 'Add mock monitor to service provider';
+    $service_provider->addManager(
+        manager_id      => $mock_monitor->id,
+        manager_type    => 'CollectorManager',
+        no_default_conf => 1,
+    );
 
     # Create node 1
-    Externalnode->new(
-        externalnode_hostname => 'node_1',
+    $node_1 = Node->new(
+        node_hostname => 'node_1',
         service_provider_id   => $service_provider->id,
-        externalnode_state    => 'up',
+        monitoring_state    => 'up',
     );
 
     # Create node 2
-    Externalnode->new(
-        externalnode_hostname => 'node_2',
+    $node_2 = Node->new(
+        node_hostname => 'node_2',
         service_provider_id   => $service_provider->id,
-        externalnode_state    => 'up',
+        monitoring_state    => 'up',
     );
 
     # Get indicators
@@ -115,178 +113,185 @@ eval{
 
     test_rrd_remove();
 
-    $adm->rollbackTransaction;
+    BaseDB->rollbackTransaction;
 };
 if($@) {
-    $adm->rollbackTransaction;
     my $error = $@;
     print $error."\n";
+    BaseDB->rollbackTransaction;
     fail('Exception occurs');
+
 }
 
 sub testClusterMetric {
     my %args = @_;
 
-    my $service_provider = $args{service_provider};
-    my $aggregator       = $args{aggregator};
+    lives_ok {
+        my $service_provider = $args{service_provider};
+        my $aggregator       = $args{aggregator};
 
-    diag('Cluster metric computing (last value)');
+        my $cm = Entity::Clustermetric->new(
+            clustermetric_service_provider_id => $service_provider->id,
+            clustermetric_indicator_id => ($indic1->id),
+            clustermetric_statistics_function_name => 'mean',
+            clustermetric_window_time => '1200',
+        );
 
-    my $cm = Entity::Clustermetric->new(
-        clustermetric_service_provider_id => $service_provider->id,
-        clustermetric_indicator_id => ($indic1->id),
-        clustermetric_statistics_function_name => 'mean',
-        clustermetric_window_time => '1200',
-    );
+        # No node responds
+        $service_provider->addManagerParameter(
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => "{'nodes' : { 'node_1' : { 'const':null }, 'node_2' : { 'const':null }}}"
+        );
 
-    # No node responds
-    $service_provider->addManagerParameter(
-        manager_type    => 'collector_manager',
-        name            => 'mockmonit_config',
-        value           => "{'nodes' : { 'node_1' : { 'const':null }, 'node_2' : { 'const':null }}}"
-    );
-    $aggregator->update();
-    ok (! defined $cm->getLastValueFromDB(), 'Do not store when all values undef');
+        $aggregator->update();
 
-    # All node responds
-    $service_provider->addManagerParameter(
-        manager_type    => 'collector_manager',
-        name            => 'mockmonit_config',
-        value           => "{'nodes' : { 'node_1' : { 'const':50 }, 'node_2' : { 'const':100 }}}"
-    );
-    sleep 1; # Avoid updating rrd at same time
-    $aggregator->update();
-    is($cm->getLastValueFromDB(), 75, 'Good value aggregated, stored and retrieved');
+        if (defined $cm->lastValue()) {die 'Store values while undef'};
 
-    # One node doesn't respond
-    $service_provider->addManagerParameter(
-        manager_type    => 'collector_manager',
-        name            => 'mockmonit_config',
-        value           => "{'nodes' : { 'node_1' : { 'const':50 }, 'node_2' : { 'const':null }}}"
-    );
-    sleep 1; # Avoid updating rrd at same time
-    $aggregator->update();
-    is($cm->getLastValueFromDB(), 50, 'Aggregate only defined values (ignore undef)');
+        # All node responds
+        $service_provider->addManagerParameter(
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => "{'nodes' : { 'node_1' : { 'const':50 }, 'node_2' : { 'const':100 }}}"
+        );
 
-    # Float values
-    $service_provider->addManagerParameter(
-        manager_type    => 'collector_manager',
-        name            => 'mockmonit_config',
-        value           => "{'nodes' : { 'node_1' : { 'const':15.123 }, 'node_2' : { 'const':35.877 }}}"
-    );
-    sleep 1; # Avoid updating rrd at same time
-    $aggregator->update();
-    is($cm->getLastValueFromDB(), 25.5, 'Correctly aggregate float');
+        sleep 1; # Avoid updating rrd at same time
+        $aggregator->update();
+
+        if ($cm->lastValue() != 75) {die 'Wrong value aggregated, stored and retrieved'};
+
+        # One node doesn't respond
+        $service_provider->addManagerParameter(
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => "{'nodes' : { 'node_1' : { 'const':50 }, 'node_2' : { 'const':null }}}"
+        );
+        sleep 1; # Avoid updating rrd at same time
+        $aggregator->update();
+
+        if ($cm->lastValue() != 50) {die 'Fail in aggregate only defined values (ignore undef)'}
+
+        # Float values
+        $service_provider->addManagerParameter(
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => "{'nodes' : { 'node_1' : { 'const':15.123 }, 'node_2' : { 'const':35.877 }}}"
+        );
+        sleep 1; # Avoid updating rrd at same time
+        $aggregator->update();
+
+        if ($cm->lastValue() - 25.5 > 10**-8) {die 'Wrongly aggregate float'}
+
+    } 'Clustermetrics computing';
 }
 
 sub testAggregateCombination {
     my %args = @_;
 
-    my $service_provider = $args{service_provider};
-    my $aggregator          = $args{aggregator};
+    lives_ok {
+        my $service_provider = $args{service_provider};
+        my $aggregator          = $args{aggregator};
 
-    diag('Aggregate combination computing (last value)');
+        # Cluster metrics
+        my $cm1 = Entity::Clustermetric->new(
+            clustermetric_service_provider_id       => $service_provider->id,
+            clustermetric_indicator_id              => ($indic1->id),
+            clustermetric_statistics_function_name  => 'sum',
+            clustermetric_window_time               => '1200',
+        );
 
-    # Cluster metrics
-    my $cm1 = Entity::Clustermetric->new(
-        clustermetric_service_provider_id       => $service_provider->id,
-        clustermetric_indicator_id              => ($indic1->id),
-        clustermetric_statistics_function_name  => 'sum',
-        clustermetric_window_time               => '1200',
-    );
+        my $cm2 = Entity::Clustermetric->new(
+            clustermetric_service_provider_id       => $service_provider->id,
+            clustermetric_indicator_id              => ($indic2->id),
+            clustermetric_statistics_function_name  => 'sum',
+            clustermetric_window_time               => '1200',
+        );
 
-    my $cm2 = Entity::Clustermetric->new(
-        clustermetric_service_provider_id       => $service_provider->id,
-        clustermetric_indicator_id              => ($indic2->id),
-        clustermetric_statistics_function_name  => 'sum',
-        clustermetric_window_time               => '1200',
-    );
+        # Combination
+        my $acomb_ident = Entity::Combination::AggregateCombination->new(
+            service_provider_id             =>  $service_provider->id,
+            aggregate_combination_formula   => 'id'.($cm1->id),
+        );
 
-    # Combination
-    my $acomb_ident = Entity::Combination::AggregateCombination->new(
-        service_provider_id             =>  $service_provider->id,
-        aggregate_combination_formula   => 'id'.($cm1->id),
-    );
+        my $acomb_warn = Entity::Combination::AggregateCombination->new(
+            service_provider_id             =>  $service_provider->id,
+            aggregate_combination_formula   => '10 / id'.($cm1->id),
+        );
 
-    my $acomb_warn = Entity::Combination::AggregateCombination->new(
-        service_provider_id             =>  $service_provider->id,
-        aggregate_combination_formula   => '10 / id'.($cm1->id),
-    );
+        my $acomb1 = Entity::Combination::AggregateCombination->new(
+            service_provider_id             =>  $service_provider->id,
+            aggregate_combination_formula   => 'id'.($cm1->id).'+'.'id'.($cm2->id).'*3',
+        );
 
-    my $acomb1 = Entity::Combination::AggregateCombination->new(
-        service_provider_id             =>  $service_provider->id,
-        aggregate_combination_formula   => 'id'.($cm1->id).'+'.'id'.($cm2->id).'*3',
-    );
+        my $mock_conf = "{'default':{ 'const':50 }, 'indics' : { 'Memory/Pool Paged Bytes' : { 'const':null }}}";
+        $service_provider->addManagerParameter(
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => $mock_conf
+        );
 
-    my $mock_conf = "{'default':{ 'const':50 }, 'indics' : { 'Memory/Pool Paged Bytes' : { 'const':null }}}";
-    $service_provider->addManagerParameter(
-        manager_type    => 'collector_manager',
-        name            => 'mockmonit_config',
-        value           => $mock_conf
-    );
+        if (defined $acomb_ident->evaluate()) {die 'Combination defined while no value for metric (U)'}
+        if (defined $acomb1->evaluate()) {die 'Combination defined while all metrics values are undef'}
+        if (defined $acomb_warn->evaluate()) {die 'Combination defined while divide by undef value in formula'};
 
-    is( $acomb_ident->computeLastValue(),
-        undef,
-        "Identity combination is undef when no value for metric ('U')"
-    );
-    is($acomb1->computeLastValue(), undef, 'Combination is undef when all metrics values are undef');
-    is($acomb_warn->computeLastValue(), undef, 'Combination is undef when divide by undef value in formula');
+        sleep 1; # Avoid updating rrd at same time
+        $aggregator->update();
 
-    sleep 1; # Avoid updating rrd at same time
-    $aggregator->update();
-    is($acomb1->computeLastValue(), undef, 'Combination is undef if one metric value is undef');
-    is( $acomb_ident->computeLastValue(),
-        $cm1->getLastValueFromDB(),
-        'Identity combination as same value than stored metric value'
-    );
+        if (defined $acomb1->evaluate()) {die 'Combination defined while one metric value is undef'};
 
-    # More complex config:
-    #        node1 node2
-    # indic1  50    10
-    # indic2  50    100
-    $mock_conf  = "{'default':{'const':10},"
-                . "'nodes':{'node_1':{'const':50}},'indics':{'Memory/Pool Paged Bytes':{'const':100}}}";
-    $service_provider->addManagerParameter(
-        manager_type    => 'collector_manager',
-        name            => 'mockmonit_config',
-        value           => $mock_conf
-    );
-    sleep 1; # Avoid updating rrd at same time
-    $aggregator->update();
-    is($acomb1->computeLastValue(), 50+10+(50+100)*3, 'Combination correctly computed');
+        if (! ($acomb_ident->evaluate() eq $cm1->lastValue())) { die 'Identity combination as same value than stored metric value'}
 
-    $service_provider->addManagerParameter(
-        manager_type    => 'collector_manager',
-        name            => 'mockmonit_config',
-        value           => "{'default':{'const':10},'nodes':{'node_1':{ 'const':null }}}"
-    );
-    sleep 1; # Avoid updating rrd at same time
-    $aggregator->update();
-    is($acomb1->computeLastValue(), 10+10*3, 'Combination correctly computed (with one node not responding)');
+        # More complex config:
+        #        node1 node2
+        # indic1  50    10
+        # indic2  50    100
+        $mock_conf  = "{'default':{'const':10},"
+                    . "'nodes':{'node_1':{'const':50}},'indics':{'Memory/Pool Paged Bytes':{'const':100}}}";
+        $service_provider->addManagerParameter(
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => $mock_conf
+        );
+        sleep 1; # Avoid updating rrd at same time
+        $aggregator->update();
 
-    my $acomb2 = Entity::Combination::AggregateCombination->new(
-        service_provider_id             =>  $service_provider->id,
-        aggregate_combination_formula   => '(3.5+id'.($cm1->id).')*(id'.($cm1->id).'/10.1-12.876)',
-    );
+        if (! ($acomb1->evaluate() == 50+10+(50+100)*3)) {die 'Combination wrongly computed'}
 
-    my $acomb3 = Entity::Combination::AggregateCombination->new(
-        service_provider_id             =>  $service_provider->id,
-        aggregate_combination_formula   => '100000000000000000000000000 * id'.($cm1->id),
-    );
+        $service_provider->addManagerParameter(
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => "{'default':{'const':10},'nodes':{'node_1':{ 'const':null }}}"
+        );
+        sleep 1; # Avoid updating rrd at same time
+        $aggregator->update();
 
-    $service_provider->addManagerParameter(
-        manager_type    => 'collector_manager',
-        name            => 'mockmonit_config',
-        value           => "{'default':{'const':10.123}}"
-    );
-    sleep 1; # Avoid updating rrd at same time
-    $aggregator->update();
-    is($acomb1->computeLastValue(), 10.123*2*4, 'Combination correctly computed with float values');
-    is( $acomb2->computeLastValue(),
-        (3.5 + 20.246)*(20.246/10.1 - 12.876),
-        'Combination with complex formula (parenthesis, all operators, float, neg res)'
-    );
-    is($acomb3->computeLastValue(), 100000000000000000000000000*20.246, 'Combination with big value');
+        if (! ($acomb1->evaluate() == 10+10*3)) { die 'Combination wrongly computed (with one node not responding)'}
+
+        my $acomb2 = Entity::Combination::AggregateCombination->new(
+            service_provider_id             =>  $service_provider->id,
+            aggregate_combination_formula   => '(3.5+id'.($cm1->id).')*(id'.($cm1->id).'/10.1-12.876)',
+        );
+
+        my $acomb3 = Entity::Combination::AggregateCombination->new(
+            service_provider_id             =>  $service_provider->id,
+            aggregate_combination_formula   => '100000000000000000000000000 * id'.($cm1->id),
+        );
+
+        $service_provider->addManagerParameter(
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => "{'default':{'const':10.123}}"
+        );
+        sleep 1; # Avoid updating rrd at same time
+        $aggregator->update();
+
+        if ($acomb1->evaluate() - 10.123*2*4 > 10**-8) {die 'Combination wrongly computed with float values'};
+
+        if (! $acomb2->evaluate() - ((3.5 + 20.246)*(20.246/10.1 - 12.876)) < 10**-8) {
+            die 'Fail in combination with complex formula (parenthesis, all operators, float, neg res)'
+        }
+        if (! ($acomb3->evaluate() - 100000000000000000000000000*20.246 < 10**-8)) {die 'Combination with big value'};
+    } 'Aggregate combination computing'
 }
 
 sub testNodemetricCombination {
@@ -294,251 +299,301 @@ sub testNodemetricCombination {
 
     my $service_provider = $args{service_provider};
 
-    diag('Nodemetric combination computing');
+    lives_ok {
 
-    # Combinations
-    my $ncomb_ident = Entity::Combination::NodemetricCombination->new(
-        service_provider_id             => $service_provider->id,
-        nodemetric_combination_formula  => 'id'.($indic1->id),
-    );
+        # Combinations
+        my $ncomb_ident = Entity::Combination::NodemetricCombination->new(
+            service_provider_id             => $service_provider->id,
+            nodemetric_combination_formula  => 'id'.($indic1->id),
+        );
 
-    my $ncomb2 = Entity::Combination::NodemetricCombination->new(
-        service_provider_id             => $service_provider->id,
-        nodemetric_combination_formula  => '(id'.($indic1->id).' + 5) * id'.($indic2->id),
-    );
+        my $ncomb2 = Entity::Combination::NodemetricCombination->new(
+            service_provider_id             => $service_provider->id,
+            nodemetric_combination_formula  => '(id'.($indic1->id).' + 5) * id'.($indic2->id),
+        );
 
-    is(
-        $ncomb_ident->computeValueFromMonitoredValues( monitored_values_for_one_node => {}),
-        undef,
-        'Identity combination is undef when no value for indicator'
-    );
-    is(
-        $ncomb_ident->computeValueFromMonitoredValues(
-            monitored_values_for_one_node => {'Memory/PercentMemoryUsed' => 42}
-        ),
-        42,
-        'Identity combination as same value than indicator'
-    );
-    is(
-        $ncomb2->computeValueFromMonitoredValues( monitored_values_for_one_node => {}),
-        undef,
-        'Combination is undef if all indicator values are undef'
-    );
-    is(
-        $ncomb2->computeValueFromMonitoredValues(
-            monitored_values_for_one_node => {'Memory/PercentMemoryUsed' => 42}
-        ),
-        undef,
-        'Combination is undef if one indicator value is undef'
-    );
-    is(
-        $ncomb2->computeValueFromMonitoredValues(
-            monitored_values_for_one_node => {
-                'Memory/PercentMemoryUsed' => 42, 'Memory/Pool Paged Bytes' => 12
-            }
-        ),
-        (42 + 5)*12,
-        'Combination correctly computed'
-    );
-    is(
-        $ncomb2->computeValueFromMonitoredValues(
-            monitored_values_for_one_node => {
-                'Memory/PercentMemoryUsed' => 1.2, 'Memory/Pool Paged Bytes' => 42.42
-            }
-        ),
-        (1.2 + 5)*42.42,
-        'Combination correctly computed with float values'
-    );
+        my $mock_conf  = "{'default':{'const':null}}";
+
+        $service_provider->addManagerParameter(
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => $mock_conf
+        );
+
+        $aggregator->update();
+
+        if (defined $ncomb_ident->evaluate(nodes => [$node_1])->{$node_1->id}) {
+            die 'Identity combination defined while no value for indicator'.($ncomb_ident->evaluate(nodes => [$node_1])->{$node_1->id});
+        }
+
+
+        if (defined $ncomb2->evaluate(nodes => [$node_1])->{$node_1->id}) {
+            die 'Combination defined while all indicator values are undef =>'.($ncomb2->evaluate(nodes => [$node_1])->{$node_1->id});
+        }
+
+        # More complex config:
+        #        node1 node2
+        # indic1  42    12
+        # indic2  42    null
+
+        $mock_conf  = "{'default':{'const':42}}";
+
+        $service_provider->addManagerParameter(
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => $mock_conf
+        );
+
+        $aggregator->update();
+
+        if (! ($ncomb_ident->evaluate(nodes => [$node_1])->{$node_1->id} == 42)) {
+            die 'Identity combination as same value than indicator';
+        }
+
+        $mock_conf = "{'default':{ 'const':42 }, 'indics' : { 'Memory/Pool Paged Bytes' : { 'const':null }}}";
+        $service_provider->addManagerParameter(
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => $mock_conf
+        );
+
+        $aggregator->update();
+
+        if (defined $ncomb2->evaluate(nodes => [$node_2])->{$node_2->id}) {
+            die 'Combination defined while one indicator value is undef'
+        }
+
+        $mock_conf  = "{'default':{'const':42},"
+                         . "'indics':{'Memory/PercentMemoryUsed':{'const':42},'Memory/Pool Paged Bytes':{'const':12}}}";
+
+        $service_provider->addManagerParameter(
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => $mock_conf
+        );
+
+        $aggregator->update();
+
+        if (! ($ncomb2->evaluate(nodes => [$node_1])->{$node_1->id} == (42 + 5)*12)) {
+            die 'Combination correctly computed';
+        }
+
+        $mock_conf = "{'default':{ 'const':1.2 }, 'indics' : { 'Memory/Pool Paged Bytes' : { 'const':42.42 }}}";
+        $service_provider->addManagerParameter(
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => $mock_conf
+        );
+
+        $aggregator->update();
+
+        if ($ncomb2->evaluate(nodes => [$node_1])->{$node_1->id} - (1.2 + 5)*42.42 > 10**-8) {
+            die 'Combination correctly computed with float values';
+        }
+    } 'Nodemetric combination computing'
 }
 
 sub testBigAggregation {
     my %args = @_;
-
     my $nodes_count = 500;
-    diag('Aggregation on big cluster (' . $nodes_count . ' nodes)');
 
-    my $service_provider    = $args{service_provider};
-    my $aggregator          = $args{aggregator};
+    lives_ok {
+        my $service_provider    = $args{service_provider};
+        my $aggregator          = $args{aggregator};
 
-    # Delete all nodes
-    map {$_->delete()} Externalnode->search(hash => {});
+        # Delete all nodes
+        map {$_->delete()} Node->search(hash => {});
 
-    # Create nodes
-    for my $i (1..$nodes_count) {
-        Externalnode->new(
-            externalnode_hostname => 'node_' . $i,
-            service_provider_id   => $service_provider->id,
-            externalnode_state    => 'up',
+        # Create nodes
+        for my $i (1..$nodes_count) {
+            Node->new(
+                node_hostname => 'node_' . $i,
+                service_provider_id   => $service_provider->id,
+                monitoring_state    => 'up',
+            );
+        }
+
+        my $cm = Entity::Clustermetric->new(
+            clustermetric_service_provider_id => $service_provider->id,
+            clustermetric_indicator_id => ($indic1->id),
+            clustermetric_statistics_function_name => 'sum',
+            clustermetric_window_time => '1200',
         );
-    }
 
-    my $cm = Entity::Clustermetric->new(
-        clustermetric_service_provider_id => $service_provider->id,
-        clustermetric_indicator_id => ($indic1->id),
-        clustermetric_statistics_function_name => 'sum',
-        clustermetric_window_time => '1200',
-    );
+        $service_provider->addManagerParameter(
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => "{'default':{'const':12}}"
+        );
+        $aggregator->update();
 
-    $service_provider->addManagerParameter(
-        manager_type    => 'collector_manager',
-        name            => 'mockmonit_config',
-        value           => "{'default':{'const':12}}"
-    );
-    $aggregator->update();
-    is($cm->getLastValueFromDB(), 12*$nodes_count, 'Correctly aggregated when values for all nodes');
+        if (! ($cm->lastValue() == 12*$nodes_count)) {die 'Wrongly aggregated when values for all nodes'}
 
-    my $mock_conf   = "{'default':{'const':12},"
-                    . "'nodes':{'node_1':{'const':null},'node_10':{'const':null},'node_100':{'const':null} }}";
-    $service_provider->addManagerParameter(
-        manager_type    => 'collector_manager',
-        name            => 'mockmonit_config',
-        value           => $mock_conf
-    );
-    sleep 1; # Avoid updating rrd at same time
-    $aggregator->update();
-    is($cm->getLastValueFromDB(), 12*$nodes_count - 3*12, 'Correctly aggregated when few undef values');
+        my $mock_conf   = "{'default':{'const':12},"
+                        . "'nodes':{'node_1':{'const':null},'node_10':{'const':null},'node_100':{'const':null} }}";
+        $service_provider->addManagerParameter(
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => $mock_conf
+        );
+        sleep 1; # Avoid updating rrd at same time
+        $aggregator->update();
 
-    $mock_conf  = "{'default':{'const':null},"
-                . "'nodes':{'node_2':{'const':23},'node_20':{'const':24},'node_90':{'const':25} }}";
-    $service_provider->addManagerParameter(
-        manager_type    => 'collector_manager',
-        name            => 'mockmonit_config',
-        value           => $mock_conf
-    );
-    sleep 1; # Avoid updating rrd at same time
-    $aggregator->update();
-    is($cm->getLastValueFromDB(), 23+24+25, 'Correctly aggregated when lot of undef values');
+        if (! ($cm->lastValue() == 12*$nodes_count - 3*12)) {die 'Wrongly aggregated when few undef values'};
+
+        $mock_conf  = "{'default':{'const':null},"
+                    . "'nodes':{'node_2':{'const':23},'node_20':{'const':24},'node_90':{'const':25} }}";
+        $service_provider->addManagerParameter(
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => $mock_conf
+        );
+        sleep 1; # Avoid updating rrd at same time
+        $aggregator->update();
+
+        if (! ($cm->lastValue() == 23+24+25)) {'Wrongly aggregated when lot of undef values'};
+    } 'Aggregation on big cluster (' . $nodes_count . ' nodes)'
 }
 
 sub testStatisticFunctions {
 
-    # Delete all nodes
-    map {$_->delete()} Externalnode->search(hash => {});
+    lives_ok {
+        # Delete all nodes
+        map {$_->delete()} Node->search(hash => {});
 
-    # Create nodes
-    for my $i (0..9) {
-        Externalnode->new(
-            externalnode_hostname => 'node_' . $i,
-            service_provider_id   => $service_provider->id,
-            externalnode_state    => 'up',
+        # Create nodes
+        for my $i (0..9) {
+            Node->new(
+                node_hostname => 'node_' . $i,
+                service_provider_id   => $service_provider->id,
+                monitoring_state    => 'up',
+            );
+        }
+
+        my $mock_conf  = "{'default':{'const':null},"
+                       . "'nodes':{'node_0':{'const':0},
+                                   'node_1':{'const':60},
+                                   'node_2':{'const':60},
+                                   'node_3':{'const':70},
+                                   'node_4':{'const':75},
+                                   'node_5':{'const':75},
+                                   'node_6':{'const':85},
+                                   'node_7':{'const':90},
+                                   'node_8':{'const':100},
+                                   'node_9':{'const':110},
+                          }}";
+
+        $service_provider->addManagerParameter(
+            manager_type    => 'CollectorManager',
+            name            => 'mockmonit_config',
+            value           => $mock_conf
         );
-    }
 
-    my $mock_conf  = "{'default':{'const':null},"
-                   . "'nodes':{'node_0':{'const':0},
-                               'node_1':{'const':60},
-                               'node_2':{'const':60},
-                               'node_3':{'const':70},
-                               'node_4':{'const':75},
-                               'node_5':{'const':75},
-                               'node_6':{'const':85},
-                               'node_7':{'const':90},
-                               'node_8':{'const':100},
-                               'node_9':{'const':110},
-                      }}";
+        my @funcs = ('sum','mean','std','variance','max','min','kurtosis','skewness');
+        my @cms = ();
+        for my $func (@funcs) {
+            push @cms,
+                Entity::Clustermetric->new(
+                    clustermetric_service_provider_id       => $service_provider->id,
+                    clustermetric_indicator_id              => ($indic1->id),
+                    clustermetric_statistics_function_name  => $func,
+                    clustermetric_window_time               => '1200',
+                );
+        }
 
-    $service_provider->addManagerParameter(
-        manager_type    => 'collector_manager',
-        name            => 'mockmonit_config',
-        value           => $mock_conf
-    );
+        my @acs = ();
+        for my $cm (@cms) {
+            push @acs,
+                Entity::Combination::AggregateCombination->new(
+                    service_provider_id             =>  $service_provider->id,
+                    aggregate_combination_formula   => 'id'.($cm->id),
+                );
+        }
 
-    my @funcs = ('sum','mean','std','variance','max','min','kurtosis','skewness');
-    my @cms = ();
-    for my $func (@funcs) {
-        push @cms,
-            Entity::Clustermetric->new(
-                clustermetric_service_provider_id       => $service_provider->id,
-                clustermetric_indicator_id              => ($indic1->id),
-                clustermetric_statistics_function_name  => $func,
-                clustermetric_window_time               => '1200',
-            );
-    }
+        $aggregator->update();
 
-    my @acs = ();
-    for my $cm (@cms) {
-        push @acs,
-            Entity::Combination::AggregateCombination->new(
-                service_provider_id             =>  $service_provider->id,
-                aggregate_combination_formula   => 'id'.($cm->id),
-            );
-    }
-
-    $aggregator->update();
-    my @values = (725,72.5,30.2076149339864,912.5,110,0,3.61461544647883,-1.53239355172722);
-    for my $ac (@acs) {
-        is($ac->computeLastValue(),shift @values,'Check function '.shift @funcs);
-    }
-
+        my @values = (725,72.5,30.2076149339864,912.5,110,0,3.61461544647883,-1.53239355172722);
+        for my $ac (@acs) {
+            if ($ac->evaluate() - shift @values > 10**-8) { die 'Fail in check function '.shift @funcs};
+        }
+    } 'Statistic functions';
 }
 
 sub testCombinationUnit {
-    # Cluster metrics
-    my $cm1 = Entity::Clustermetric->new(
-        clustermetric_service_provider_id       => $service_provider->id,
-        clustermetric_indicator_id              => ($indic1->id),
-        clustermetric_statistics_function_name  => 'sum',
-        clustermetric_window_time               => '1200',
-    );
+    lives_ok {
 
-    is ($cm1->getUnit(),'%','Check unit % (a)');
-    $cm1->update(clustermetric_statistics_function_name => 'min');
-    is ($cm1->getUnit(),'%','Check unit % (b)');
-    $cm1->update(clustermetric_indicator_id => ($indic2->id));
-    is ($cm1->getUnit(),'Bytes','Check unit bytes');
-    $cm1->update(clustermetric_statistics_function_name => 'kurtosis');
-    is ($cm1->getUnit(),'-','Check unit bytes');
+        # Cluster metrics
+        my $cm1 = Entity::Clustermetric->new(
+            clustermetric_service_provider_id       => $service_provider->id,
+            clustermetric_indicator_id              => ($indic1->id),
+            clustermetric_statistics_function_name  => 'sum',
+            clustermetric_window_time               => '1200',
+        );
 
-    my $cm2 = Entity::Clustermetric->new(
-        clustermetric_service_provider_id       => $service_provider->id,
-        clustermetric_indicator_id              => ($indic2->id),
-        clustermetric_statistics_function_name  => 'sum',
-        clustermetric_window_time               => '1200',
-    );
+        if (! ($cm1->getUnit() eq '%')) { die 'Fail in sum unit'}
 
-    my $acomb = Entity::Combination::AggregateCombination->new(
-        service_provider_id             =>  $service_provider->id,
-        aggregate_combination_formula   => 'id'.($cm2->id).' + id'.($cm1->id),
-    );
-    is ($acomb->getUnit(),'Bytes + -','Check aggregate combination unit');
+        $cm1->update(clustermetric_statistics_function_name => 'min');
+        if (! ($cm1->getUnit() eq '%')) { die 'Fail in min unit'}
 
-    $acomb->update (aggregate_combination_formula   => 'id'.($cm1->id).' + id'.($cm2->id)) ;
+        $cm1->update(clustermetric_indicator_id => ($indic2->id));
+        if (! ($cm1->getUnit() eq'Bytes')) {die 'Fail in changing unit when updating indicator'}
 
-    is ($acomb->getUnit(),'- + Bytes','Check aggregate combination unit');
+        $cm1->update(clustermetric_statistics_function_name => 'kurtosis');
+        if (! ($cm1->getUnit() eq '-')) {die 'Fail in no unit'}
 
-    # Combinations
-    my $ncomb = Entity::Combination::NodemetricCombination->new(
-        service_provider_id             => $service_provider->id,
-        nodemetric_combination_formula  => 'id'.($indic1->id).' + id'.($indic2->id),
-    );
+        my $cm2 = Entity::Clustermetric->new(
+            clustermetric_service_provider_id       => $service_provider->id,
+            clustermetric_indicator_id              => ($indic2->id),
+            clustermetric_statistics_function_name  => 'sum',
+            clustermetric_window_time               => '1200',
+        );
 
-    is ($ncomb->getUnit(),'% + Bytes','Check nodemetric combination unit');
-    $ncomb->update (nodemetric_combination_formula => 'id'.($indic2->id).' + id'.($indic1->id));
-    is ($ncomb->getUnit(),'Bytes + %','Check nodemetric combination unit update');
+        my $acomb = Entity::Combination::AggregateCombination->new(
+            service_provider_id             =>  $service_provider->id,
+            aggregate_combination_formula   => 'id'.($cm2->id).' + id'.($cm1->id),
+        );
+
+        if (! ($acomb->getUnit() eq 'Bytes + -')) {die 'Fail in aggregate combination unit'}
+
+        $acomb->update (aggregate_combination_formula   => 'id'.($cm1->id).' + id'.($cm2->id)) ;
+
+        if (! ($acomb->getUnit() eq '- + Bytes')) {die 'Fail in aggregate combination update unit'}
+
+        # Combinations
+        my $ncomb = Entity::Combination::NodemetricCombination->new(
+            service_provider_id             => $service_provider->id,
+            nodemetric_combination_formula  => 'id'.($indic1->id).' + id'.($indic2->id),
+        );
+        if (! ($ncomb->getUnit() eq '% + Bytes')) {die 'Fail in nodemetric combination unit'}
+
+        $ncomb->update (nodemetric_combination_formula => 'id'.($indic2->id).' + id'.($indic1->id));
+        if (! ($ncomb->getUnit() eq 'Bytes + %')) {die 'Fail in nodemetric combination update unit'}
+
+    } 'Unit'
 }
 
 sub test_rrd_remove {
-    my @cms = Entity::Clustermetric->search (hash => {
-        clustermetric_service_provider_id => $service_provider->id
-    });
-    
-    my @cm_ids = map {$_->id} @cms;
-    while (@cms) { (pop @cms)->delete(); };
+    lives_ok {
+        my @cms = Entity::Clustermetric->search (hash => {
+            clustermetric_service_provider_id => $service_provider->id
+        });
 
-    is (scalar Entity::Combination::AggregateCombination->search (hash => {
-        service_provider_id => $service_provider->id
-    }), 0, 'Check all aggregate combinations are deleted');
+        my @cm_ids = map {$_->id} @cms;
+        while (@cms) { (pop @cms)->delete(); };
 
-    is (scalar Entity::AggregateRule->search (hash => {
-        aggregate_rule_service_provider_id => $service_provider->id
-    }), 0, 'Check all aggregate rules are deleted');
+        my @acs = Entity::Combination::AggregateCombination->search (hash => {
+            service_provider_id => $service_provider->id
+        });
 
-    my $one_rrd_remove = 0;
-    for my $cm_id (@cm_ids) {
-        if (defined open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$cm_id.'.rrd')) {
-            $one_rrd_remove++;
+        if (! ((scalar @acs) == 0)) {die 'Fail '.(scalar @acs).' aggregate combinations have not been deleted'}
+
+        my $one_rrd_remove = 0;
+        for my $cm_id (@cm_ids) {
+            if (defined open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$cm_id.'.rrd')) {
+                $one_rrd_remove++;
+            }
+            close(FILE);
         }
-        close(FILE);
-    }
-    ok ($one_rrd_remove == 0, "Check all have been removed, still $one_rrd_remove rrd");
+        if (! ($one_rrd_remove == 0)) {"Fail $one_rrd_remove rrd have not been deleted"};
+    } 'RRD Remove'
 }

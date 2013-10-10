@@ -15,14 +15,25 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+
+=begin classdoc
+
+TODO
+
+=end classdoc
+
+=cut
+
 package Entity::Gp;
 use base "Entity";
 
 use strict;
 use warnings;
+
 use Kanopya::Exceptions;
-use Administrator;
 use General;
+
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 
@@ -37,7 +48,7 @@ use constant ATTR_DEF => {
         is_editable  => 1
     },
     gp_desc => {
-        pattern      => '^[\w\s]*$',
+        pattern      => '.*',
         is_mandatory => 0,
         is_extended  => 0,
         is_editable  => 1
@@ -51,19 +62,6 @@ use constant ATTR_DEF => {
 };
 
 sub getAttrDef { return ATTR_DEF; }
-
-=head2 getSize
-
-    Class : public
-    Desc  : return the number of entities in this group
-    return : scalar (int)
-
-=cut
-
-sub getSize {
-    my ($self) = @_;
-    return $self->{_dbix}->ingroups->count();
-}
 
 
 =pod

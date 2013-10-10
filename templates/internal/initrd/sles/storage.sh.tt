@@ -1,0 +1,3 @@
+[ "$fallback_rootdev" ] || fallback_rootdev=''
+[ "$rootdev" ] || rootdev='[% rootdev %]'
+[ "$rootfsopts" ] || rootfsopts='acl,user_xattr'

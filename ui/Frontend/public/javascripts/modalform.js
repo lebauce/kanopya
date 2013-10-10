@@ -464,10 +464,10 @@ var ModalForm = (function() {
     }
     
     ModalForm.prototype.openDialog = function() {
-        var buttons = {
-            'Cancel'    : $.proxy(this.cancel, this),
-            'Ok'        : $.proxy(this.validateForm, this)
-        };
+        var buttons = [
+        {id:'button-cancel',text:'Cancel',click: $.proxy(this.cancel, this)},
+        {id:'button-ok',text:'Ok',click: $.proxy(this.validateForm, this)}
+        ];
         if (this.skippable) {
             buttons['Skip'] = $.proxy(function() {
                 this.closeDialog();
@@ -477,12 +477,19 @@ var ModalForm = (function() {
         this.content.dialog({
             title           : this.title,
             modal           : true,
+            dialogClass     : "no-close",
             resizable       : false,
             width           : 500,
             buttons         : buttons,
             closeOnEscape   : false
+        }).on('keydown', function(e) { // bind the Enter key press
+            if(e.which == 13) {
+                if(!$("textarea").is(":focus") && !$('.ui-button').is(':focus')){
+                    $('.ui-button#button-ok:visible').first().click();
+                    return false;
+                }
+            }
         });
-        $('.ui-dialog-titlebar-close').remove();
     }
 
     ModalForm.prototype.cancel = function() {

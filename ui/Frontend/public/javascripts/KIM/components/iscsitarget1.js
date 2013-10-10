@@ -8,6 +8,7 @@ var Iscsitarget1 = (function(_super) {
 
         this.displayed = [];
         this.relations = {
+            'iscsi_portals' : [ 'iscsi_portal_ip', 'iscsi_portal_port' ],
             'iscsitarget1_luns' : [ 'iscsitarget1_lun_device', 'iscsitarget1_lun_number',
                                     'iscsitarget1_target_name', 'iscsitarget1_lun_typeio', 'iscsitarget1_lun_iomode' ]
         };
@@ -16,10 +17,14 @@ var Iscsitarget1 = (function(_super) {
     Iscsitarget1.prototype.submitCallback = function (data, $form, opts, onsuccess, onerror) {
         var conf = {};
         conf.targets = [];
+        conf.iscsi_portals = [];
         for (var lun in data.iscsitarget1_luns) {
             var target = {};
             target.luns = [ data.iscsitarget1_luns[lun] ];
             conf.targets.push(target);
+        }
+        for (var portal in data.iscsi_portals) {
+            conf.iscsi_portals.push(data.iscsi_portals[portal]);
         }
 
         return _super.prototype.submitCallback.call(this, conf, $form, opts, onsuccess, onerror);
@@ -110,9 +115,12 @@ var Iscsitarget1 = (function(_super) {
                     label        : 'Target',
                     type         : 'string',
                     is_editable  : false,
-                },
+                }
             };
             return { attributes : attributes, relations : {} };
+
+        } else {
+            return ajax('GET', '/api/attributes/' + resource);
         }
     };
 

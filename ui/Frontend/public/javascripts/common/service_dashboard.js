@@ -12,6 +12,10 @@ var dash_template;
 function initServiceDashboard() {
     // Dashboard
     dash_div = $('<div id="service_dashboard" class="dashboard"></div>');
+    if (dash_div.nextAll('.action_buttons"').length == 0){
+        dash_div.append('<div class="action_buttons"></div>');
+    }
+
     var dash_layout_div = $('<div class="layout">');
     dash_layout_div.append('<div class="column first column-first"></div>');
     dash_layout_div.append('<div class="column second column-second"></div>');
@@ -19,10 +23,10 @@ function initServiceDashboard() {
     dash_div.append(dash_layout_div);
 
     // Dashboard actions
-    dash_header = $('<div class="headerlinks"></div>');
-    dash_header.append($('<button>', { 'class' : 'openaddwidgetdialog', html : 'Add Widget'}));
+    //dash_header = $('<div class="headerlinks"></div>');
+    //dash_header.append($('<button>', { 'class' : 'openaddwidgetdialog', html : 'Add Widget'}));
 //    dash_header.append($('<button>', { 'class' : 'editlayout', html : 'Edit layout'}));
-    dash_header.append($('<button>', { 'class' : 'savedashboard', html : 'Save Dashboard'}));
+    //dash_header.append($('<button>', { 'class' : 'savedashboard', html : 'Save Dashboard'}));
 
     //$('#view-container').append(dash_header);
     $('#view-container').append(dash_div);
@@ -158,22 +162,29 @@ function loadServicesOverview (container_id, elem_id) {
     service_id = elem_id;
 
     dash_div.hide();
-    container.append(dash_header);
+    //container.append(dash_header);
     container.append(dash_div);
     //container.append(dash_template);
 
     // Needed to have the container with a good height
     container.css('overflow', 'hidden');
 
-    // Make jquery button (must be done after append to container, each time)
-    container.find(".openaddwidgetdialog").button({ icons : { primary : 'ui-icon-plusthick' } });
-    container.find(".savedashboard").button({ icons : { primary : 'ui-icon-disk' } });
+    var action_div = container.find('div.dashboard').find('div.action_buttons');
+    action_div.html('');
+    action_div.append(
+            $('<button>', { 'class' : 'openaddwidgetdialog', html : 'Add Widget'})
+            .button({ icons : { primary : 'ui-icon-plusthick' } })
+    );
+    action_div.append(
+            $('<button>', { 'class' : 'savedashboard', html : 'Save Dashboard'})
+            .button({ icons : { primary : 'ui-icon-import' } })
+    );
 
     //service_dashboard.setLayout(undefined);
     //service_dashboard.setLayout('layout2');
 
     // Set save dashboard callback
-    $('.savedashboard').click(function () {
+    container.find('.savedashboard').click(function () {
         $.getJSON('/api/dashboard?dashboard_service_provider_id=' + elem_id, function (resp) {
             // Default ajax req params (create dashboard conf)
             var req = {
@@ -220,5 +231,11 @@ function loadServicesOverview (container_id, elem_id) {
         });
         dash_div.show();
     });
+
+//    var action_div=jQuery('#' + container_id).find('div.dashboard').find('div.action_buttons');
+
+//    action_div.html('');
+//    action_div.append($('<button>', { 'class' : 'openaddwidgetdialog action_kanopya', html : '<span class="ui-button-text">Add Widget</span>'}).append('<span class="ui-button-icon-primary ui-icon ui-icon-plusthick"></span>'));
+//    action_div.append($('<button>', { 'class' : 'savedashboard action_kanopya', html : '<span class="ui-button-text">Save Dashboard</span>'}).append('<span class="ui-button-icon-primary ui-icon ui-icon-disk"></span>'));
 
 }

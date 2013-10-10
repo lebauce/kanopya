@@ -10,25 +10,18 @@ function getIndicators(sp_id) {
     var indicators = {};
     $.ajax({
         // Get collector manager
-        url     : '/api/serviceprovider/'+sp_id+'/service_provider_managers?manager_type=collector_manager',
+        url     : '/api/serviceprovider/'+sp_id+'/service_provider_managers?expand=manager.collector_indicators.indicator&custom.category=CollectorManager',
         async   :false,
-        success : function(collector_manager) {
-            if (collector_manager.length > 0) {
-                $.ajax({
-                    // Get indicators of the collector manager
-                    url     : '/api/entity/' + collector_manager[0].manager_id + '?expand=collector_indicators,collector_indicators.indicator',
-                    async   : false,
-                    success : function(collector_manager_details) {
-                        $(collector_manager_details.collector_indicators).each(function(i,collector_indic) {
-                            var indicator = collector_indic.indicator;
-                            indicators[indicator.indicator_label] = collector_indic;
-                        });
-                    }
+        success : function(service_provider) {
+            if (service_provider.length > 0) {
+                $(service_provider[0].manager.collector_indicators).each(function(i,collector_indic) {
+                    var indicator = collector_indic.indicator;
+                    indicators[indicator.indicator_label] = collector_indic;
                 });
             }
         }
     });
-   return indicators;
+    return indicators;
 };
 
 ////////////////////////MONITORING MODALS//////////////////////////////////
@@ -43,31 +36,31 @@ function createServiceMetric(container_id, elem_id, ext, options) {
         var service_fields  = {
             clustermetric_label    : {
                 label   : 'Name',
-                type    : 'text',
+                type    : 'text'
             },
             clustermetric_statistics_function_name    : {
                 label   : 'Statistic function name',
                 type    : 'select',
-                options   : statistics_function_name,
+                options   : statistics_function_name
             },
             clustermetric_indicator_id  :{
                 label   : 'Indicator',
                 type    : 'select',
-                options : indic_options,
+                options : indic_options
             },
             clustermetric_window_time   :{
                 type    : 'hidden',
-                value   : '1200',
+                value   : '1200'
             },
             clustermetric_service_provider_id   :{
                 type    : 'hidden',
-                value   : elem_id,
+                value   : elem_id
             },
             createcombination  :{
                 label   : 'Create the associate combination',
                 type    : 'checkbox',
-                skip    : true,
-            },
+                skip    : true
+            }
         };
         var service_opts    = {
             title       : 'Create a Service Metric',
@@ -85,7 +78,7 @@ function createServiceMetric(container_id, elem_id, ext, options) {
                             data    : {
                                 aggregate_combination_label     : elem.clustermetric_label,
                                 service_provider_id             : elem_id,
-                                aggregate_combination_formula   : 'id' + elem.pk,
+                                aggregate_combination_formula   : 'id' + elem.pk
                             },
                             success : function() {
                                 $("#service_resources_aggregate_combinations_" + elem_id).trigger('reloadGrid');
@@ -93,7 +86,7 @@ function createServiceMetric(container_id, elem_id, ext, options) {
                         });
                     }
             },
-            beforeSubmit: (options && options.beforeSubmit) || $.noop,
+            beforeSubmit: (options && options.beforeSubmit) || $.noop
         };
 
         mod = new ModalForm(service_opts);
@@ -107,20 +100,20 @@ function createServiceMetric(container_id, elem_id, ext, options) {
     $('#' + container_id).append(button);
 };
 
-function createServiceConbination(container_id, elem_id, options) {
+function createServiceCombination(container_id, elem_id, options) {
     var service_fields  = {
         aggregate_combination_label     : {
             label   : 'Name',
-            type    : 'text',
+            type    : 'text'
         },
         aggregate_combination_formula   : {
             label   : 'Formula',
-            type    : 'text',
+            type    : 'text'
         },
         service_provider_id             : {
             type    : 'hidden',
-            value   : elem_id,  
-        },
+            value   : elem_id
+        }
     };
     var service_opts    = {
         title       : 'Create a Combination',
@@ -132,7 +125,7 @@ function createServiceConbination(container_id, elem_id, options) {
         error       : function(data) {
             $("div#waiting_default_insert").dialog("destroy");
         },
-        beforeSubmit: (options && options.beforeSubmit) || $.noop,
+        beforeSubmit: (options && options.beforeSubmit) || $.noop
     };
 
     var button = $("<button>", {html : 'Add a combination'});
@@ -168,16 +161,16 @@ function createNodemetricCombination(container_id, elem_id, ext, options) {
     var service_fields  = {
         nodemetric_combination_label    : {
             label   : 'Name',
-            type    : 'text',
+            type    : 'text'
         },
         nodemetric_combination_formula  : {
             label   : 'Indicators Formula',
-            type    : 'text',
+            type    : 'text'
         },
         service_provider_id             : {
             type    : 'hidden',
-            value   : elem_id,
-        },
+            value   : elem_id
+        }
     };
     var service_opts    = {
         title       : 'Create a Combination',
@@ -189,7 +182,7 @@ function createNodemetricCombination(container_id, elem_id, ext, options) {
         callback    : function() {
             $('#service_resources_nodemetric_combination_' + elem_id).trigger('reloadGrid');
         },
-        beforeSubmit: (options && options.beforeSubmit) || $.noop,
+        beforeSubmit: (options && options.beforeSubmit) || $.noop
     };
 
     var button = $("<button>", {html : 'Add a combination'});
@@ -221,44 +214,51 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
 
     // Nodemetric bargraph details handler
     function nodeMetricDetailsBargraph(cid, nodeMetric_id) {
-      // Use dashboard widget outside of the dashboard
-      var cont = $('#' + cid);
-      var graph_div = $('<div>', { 'class' : 'widgetcontent' });
-      cont.addClass('widget');
-      cont.append(graph_div);
-      graph_div.load('/widgets/widget_nodes_bargraph.html', function() {
-          $('.indicator_dropdown').remove();
-          $('.nodes_order_selection').hide();
-          showNodemetricCombinationBarGraph(graph_div, nodeMetric_id, '', elem_id);
+      integrateWidget(cid, 'widget_nodes_bargraph', function(widget_div) {
+          widget_div.find('.indicator_dropdown').remove();
+          widget_div.find('.nodes_order_selection').hide();
+          showNodemetricCombinationBarGraph(widget_div, nodeMetric_id, '', elem_id);
       });
     }
 
     // Nodemetric histogram details handler
     function nodeMetricDetailsHistogram(cid, nodeMetric_id) {
-      // Use dashboard widget outside of the dashboard
-      var cont = $('#' + cid);
-      var graph_div = $('<div>', { 'class' : 'widgetcontent' });
-      cont.addClass('widget');
-      cont.append(graph_div);
-      graph_div.load('/widgets/widget_nodes_histogram.html', function() {
-          $('.indicator_dropdown').remove();
-          $('.part_number_input').remove();
-          showNodemetricCombinationHistogram(graph_div, nodeMetric_id, '', 10, elem_id);
+      integrateWidget(cid, 'widget_nodes_histogram', function(widget_div) {
+          widget_div.find('.indicator_dropdown').remove();
+          widget_div.find('.part_number_input').remove();
+          showNodemetricCombinationHistogram(widget_div, nodeMetric_id, '', 10, elem_id);
+      });
+    }
+
+    // Nodemetric historical details handler
+    function nodeMetricDetailsHistorical(cid, nodeMetric_id) {
+        integrateWidget(cid, 'widget_historical_view', function(widget_div) {
+          customInitHistoricalWidget(
+              widget_div,
+              elem_id,
+              {
+                  clustermetric_combinations : null,
+                  nodemetric_combinations    : [{id:nodeMetric_id, name:'', unit:''}],
+                  nodes                      : 'from_ajax'
+              },
+              {open_config_part : true}
+          );
       });
     }
 
     // Clustermetric historical graph details handler
-    function clusterMetricDetailsHistorical(cid, clusterMetric_id) {
-      // Use dashboard widget outside of the dashboard
-      var cont = $('#' + cid);
-      var graph_div = $('<div>', { 'class' : 'widgetcontent' });
-      cont.addClass('widget');
-      cont.append(graph_div);
-      graph_div.load('/widgets/widget_historical_service_metric.html', function() {
-          $('.dropdown_container').remove();
-          setGraphDatePicker(graph_div);
-          setRefreshButton(graph_div, clusterMetric_id, '', elem_id);
-          showCombinationGraph(graph_div, clusterMetric_id, '', '', '', elem_id);
+    function clusterMetricCombinationDetailsHistorical(cid, clusterMetric_id, row_data) {
+        integrateWidget(cid, 'widget_historical_view', function(widget_div) {
+            customInitHistoricalWidget(
+                widget_div,
+                elem_id,
+                {
+                    clustermetric_combinations : [{id:clusterMetric_id, name:row_data.aggregate_combination_label, unit:row_data.combination_unit}],
+                    nodemetric_combinations    : 'from_ajax',
+                    nodes                      : 'from_ajax'
+                },
+                {allow_forecast : true}
+            );
       });
     }
 
@@ -266,44 +266,24 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
 
     var divacc = $('<div id="accordion_monitoring_rule">').appendTo(container);
     $('<h3><a href="#">Node</a></h3>').appendTo(divacc);
-    $('<div id="node_monitoring_accordion_container">').appendTo(divacc);
-    var container = $("#" + container_id);
 
-    $("<p>", { html : "Nodemetric Combinations  : " }).appendTo('#service_monitoring_accordion_container');
+    var node_monitoring_accordion_container = $('<div>', {id : 'node_monitoring_accordion_container'});
+    divacc.append(
+        node_monitoring_accordion_container.append(
+            $('<div>')
+                .append( $('<div>', {id : 'node_metrics_action_buttons', class : 'action_buttons'}) )
+                .append( $('<div>', {id : 'node_metrics_container'}) )
+        )
+    );
+
     var nodemetriccombi_grid_id = 'service_resources_nodemetric_combination_' + elem_id;
-    create_grid( {
-        url: '/api/nodemetriccombination?service_provider_id=' + elem_id,
-        content_container_id: 'node_monitoring_accordion_container',
-        grid_id: nodemetriccombi_grid_id,
-        colNames: [ 'id', 'name', 'indicators formula', 'indicators formula brut' ],
-        colModel: [ 
-            { name: 'pk', index: 'pk', width: 90, sorttype: 'int', hidden: true, key: true },
-            { name: 'nodemetric_combination_label', index: 'nodemetric_combination_label', width: 120 },
-            { name: 'formula_label', index: 'formula_label', width: 170 },
-            { name: 'nodemetric_combination_formula', index: 'nodemetric_combination_formula', hidden: true },
-        ],
-        details: {
-            tabs : [
-                    { label : 'Nodes graph', id : 'nodesgraph', onLoad : nodeMetricDetailsBargraph },
-                    { label : 'Histogram', id : 'histogram', onLoad : nodeMetricDetailsHistogram },
-                ],
-            title : { from_column : 'nodemetric_combination_label' }
-        },
-        deactivate_details  : mode_policy,
-        action_delete: {
-            callback : function (id) {
-                confirmDeleteWithDependencies('/api/nodemetriccombination/', id, [nodemetriccombi_grid_id]);
-            }
-        }
-    } );
-    createNodemetricCombination('node_monitoring_accordion_container', elem_id, (external !== '') ? true : false);
+    createNodemetricCombination('node_metrics_action_buttons', elem_id, (external !== '') ? true : false);
     if (!mode_policy) {
         importItemButton(
-                'node_monitoring_accordion_container',
+                node_monitoring_accordion_container.find('#node_metrics_action_buttons'),
                 elem_id,
                 {
                     name        : 'combination',
-                    relation    : 'nodemetric_combinations',
                     label_attr  : 'nodemetric_combination_label',
                     desc_attr   : 'formula_label',
                     type        : 'nodemetric_combination'
@@ -311,24 +291,71 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
                 [nodemetriccombi_grid_id]
         );
     }
-
+    create_grid( {
+        caption : 'Nodemetric Combinations',
+        url: '/api/nodemetriccombination?service_provider_id=' + elem_id,
+        content_container_id: 'node_metrics_container',
+        grid_id: nodemetriccombi_grid_id,
+        colNames: [ 'id', 'Name', 'Indicators formula', 'Indicators formula brut' ],
+        colModel: [
+            { name: 'pk', index: 'pk', width: 90, sorttype: 'int', hidden: true, key: true },
+            { name: 'nodemetric_combination_label', index: 'nodemetric_combination_label', width: 120 },
+            { name: 'formula_label', index: 'formula_label', width: 170 },
+            { name: 'nodemetric_combination_formula', index: 'nodemetric_combination_formula', hidden: true }
+        ],
+        details: {
+            tabs : [
+                    { label : 'Nodes graph', id : 'nodesgraph', onLoad : nodeMetricDetailsBargraph },
+                    { label : 'Histogram'  , id : 'histogram' , onLoad : nodeMetricDetailsHistogram },
+                    { label : 'Historical' , id : 'historical', onLoad : nodeMetricDetailsHistorical }
+                ],
+            title   : { from_column : 'nodemetric_combination_label' },
+            height  : 600,
+            buttons : ['button-ok']
+        },
+        deactivate_details  : mode_policy,
+        action_delete: {
+            callback : function (id) {
+                confirmDeleteWithDependencies('/api/nodemetriccombination/', id, [nodemetriccombi_grid_id]);
+            }
+        },
+        multiselect : !mode_policy,
+        multiactions : {
+            multiDelete : {
+                label       : 'Delete node combination(s)',
+                action      : removeGridEntry,
+                url         : '/api/nodemetriccombination',
+                icon        : 'ui-icon-trash',
+                extraParams : {multiselect : true}
+            }
+        }
+    } );
 
     $('<h3><a href="#">Service</a></h3>').appendTo(divacc);
-    $('<div id="service_monitoring_accordion_container">').appendTo(divacc);
-   
+
     var clustermetric_grid_id = 'service_resources_clustermetrics_' + elem_id;
     var aggregatecombi_grid_id = 'service_resources_aggregate_combinations_' + elem_id;
+    var service_monitoring_accordion_container = $('<div>', {id : 'service_monitoring_accordion_container'});
+    divacc.append(
+        service_monitoring_accordion_container.append(
+            $('<div>')
+                .append( $('<div>', {id : 'service_metrics_action_buttons', class : 'action_buttons'}) )
+                .append( $('<div>', {id : 'service_metrics_container'}) )
+        )
+    );
+
+    createServiceMetric('service_metrics_action_buttons', elem_id, (external !== '') ? true : false);
     create_grid( {
         caption : 'Metrics',
         url: '/api/serviceprovider/' + elem_id + '/clustermetrics',
-        content_container_id: 'service_monitoring_accordion_container',
+        content_container_id: 'service_metrics_container',
         grid_id: clustermetric_grid_id,
-        colNames: [ 'id', 'name', 'function', 'indicator' ],
+        colNames: [ 'id', 'Name', 'Function', 'Indicator' ],
         colModel: [
             { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true},
             { name: 'clustermetric_label', index: 'clustermetric_label', width: 90 },
             { name: 'clustermetric_statistics_function_name', index: 'clustermetric_statistics_function_name', width: 90 },
-            { name: 'indicator_label', index: 'indicator_label', width: 200 },
+            { name: 'indicator_label', index: 'indicator_label', width: 200 }
         ],
         action_delete: {
             callback : function (id) {
@@ -336,42 +363,33 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
             }
         },
         deactivate_details  : mode_policy,
-    } );
-    createServiceMetric('service_monitoring_accordion_container', elem_id, (external !== '') ? true : false);
-    
-    $("<p>").appendTo('#service_monitoring_accordion_container');
-    create_grid( {
-        caption: 'Metric combinations',
-        url: '/api/aggregatecombination?service_provider_id=' + elem_id,
-        content_container_id: 'service_monitoring_accordion_container',
-        grid_id: aggregatecombi_grid_id,
-        colNames: [ 'id', 'name', 'formula' ],
-        colModel: [
-            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
-            { name: 'aggregate_combination_label', index: 'aggregate_combination_label', width: 90 },
-            { name: 'formula_label', index: 'formula_label', width: 200 },
-        ],
-        details: {
-            tabs : [
-                    { label : 'Historical graph', id : 'servicehistoricalgraph', onLoad : clusterMetricDetailsHistorical },
-                ],
-            title : { from_column : 'aggregate_combination_label' }
-        },
-        deactivate_details  : mode_policy,
-        action_delete: {
-            callback : function (id) {
-                confirmDeleteWithDependencies('/api/aggregatecombination/', id, [aggregatecombi_grid_id]);
+        multiselect : !mode_policy,
+        multiactions : {
+            multiDelete : {
+                label       : 'Delete service metric(s)',
+                action      : removeGridEntry,
+                url         : '/api/clustermetric',
+                icon        : 'ui-icon-trash',
+                extraParams : {multiselect : true}
             }
-        },
+        }
     } );
-    createServiceConbination('service_monitoring_accordion_container', elem_id);
+
+    $("<p>").appendTo('#service_monitoring_accordion_container');
+
+    service_monitoring_accordion_container.append(
+        $('<div>')
+            .append( $('<div>', {id : 'service_metric_comb_action_buttons', class : 'action_buttons'}) )
+            .append( $('<div>', {id : 'service_metric_comb_container'}) )
+    );
+
+    createServiceCombination('service_metric_comb_action_buttons', elem_id);
     if (!mode_policy) {
         importItemButton(
-                'service_monitoring_accordion_container',
+                service_monitoring_accordion_container.find('#service_metric_comb_action_buttons'),
                 elem_id,
                 {
                     name        : 'combination',
-                    relation    : 'aggregate_combinations',
                     label_attr  : 'aggregate_combination_label',
                     desc_attr   : 'formula_label',
                     type        : 'aggregate_combination'
@@ -379,6 +397,43 @@ function loadServicesMonitoring(container_id, elem_id, ext, mode_policy) {
                 [clustermetric_grid_id, aggregatecombi_grid_id]
         );
     }
+    create_grid( {
+        caption: 'Metric combinations',
+        url: '/api/aggregatecombination?service_provider_id=' + elem_id,
+        content_container_id: 'service_metric_comb_container',
+        grid_id: aggregatecombi_grid_id,
+        colNames: [ 'id', 'Name', 'Formula', 'Unit' ],
+        colModel: [
+            { name: 'pk', index: 'pk', width: 60, sorttype: 'int', hidden: true, key: true },
+            { name: 'aggregate_combination_label', index: 'aggregate_combination_label', width: 90 },
+            { name: 'formula_label', index: 'formula_label', width: 200 },
+            { name: 'combination_unit', index: 'combination_unit',  hidden: true }
+        ],
+        details: {
+            tabs : [
+                    { label : 'Historical graph', id : 'servicehistoricalgraph', onLoad : clusterMetricCombinationDetailsHistorical }
+                ],
+            title       : { from_column : 'aggregate_combination_label' },
+            height      : 600,
+            buttons     : ['button-ok']
+        },
+        deactivate_details  : mode_policy,
+        action_delete: {
+            callback : function (id) {
+                confirmDeleteWithDependencies('/api/aggregatecombination/', id, [aggregatecombi_grid_id]);
+            }
+        },
+        multiselect : !mode_policy,
+        multiactions : {
+            multiDelete : {
+                label       : 'Delete service combination(s)',
+                action      : removeGridEntry,
+                url         : '/api/aggregatecombination',
+                icon        : 'ui-icon-trash',
+                extraParams : {multiselect : true}
+            }
+        }
+    } );
 
     $('#accordion_monitoring_rule').accordion({
         autoHeight  : false,

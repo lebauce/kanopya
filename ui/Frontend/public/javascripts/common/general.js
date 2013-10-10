@@ -1,5 +1,7 @@
 /* This file is a collection of general and common tools for javascript/jQuery Kanopya UI */
 
+var current_user = get_current_user();
+
 Object.size = function(obj) {
     var size = 0, key;
     for (key in obj) {
@@ -44,6 +46,7 @@ function callMethodWithPassword( options ) {
         title           : options.dialog_title,
         resizable       : false,
         closeOnEscape   : false,
+        dialogClass     : "no-close",
         buttons         : {
             'Ok'    : function() {
                 $("div#meth_passworderror").removeClass("ui-state-error").empty();
@@ -164,10 +167,10 @@ function convertUnits(value, unitIn, unitOut) {
 */
 
 function getReadableSize(sizeInBytes, exactValue) {
-
     var i = 0;
     var byteUnits = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-    while ((exactValue && sizeInBytes % 1024 == 0) || (!exactValue && sizeInBytes >= 1024)) {
+    while (sizeInBytes != 0 &&
+           ((exactValue && sizeInBytes % 1024 == 0) || (!exactValue && sizeInBytes >= 1024))) {
         sizeInBytes = sizeInBytes / 1024;
         i++;
     }
@@ -187,7 +190,7 @@ function getReadableSize(sizeInBytes, exactValue) {
 function addFieldUnit(field_info, cont, id, selected_unit) {
     if (field_info && field_info.unit) {
         if (field_info.unit == 'byte') {
-            var select_unit     = $('<select>', {'id' : id});
+            var select_unit     = $('<select>', { id: id });//, width: 50 });
             //var unit_options    = {'B' : 1, 'KB' : 1024, 'MB' : 1024*1024, 'GB' : 1024*1024*1024};
             var unit_options    = {'MB' : 1024*1024, 'GB' : 1024*1024*1024};
             $.each(unit_options, function(label, byte) { select_unit.append($('<option>', { value: byte, html: label}))});
@@ -195,8 +198,9 @@ function addFieldUnit(field_info, cont, id, selected_unit) {
             if (selected_unit) {
                 select_unit.find('[value="'+ unit_options[selected_unit] +'"]').attr('selected', 'selected');
             }
+            select_unit.addClass('wizard-ignore');
         } else {
-            $(cont).append( field_info.unit );
+            $(cont).append($("<label>", { text : ' ' + field_info.unit }));
         }
     }
     return select_unit;
@@ -219,7 +223,9 @@ function toInputType(type) {
     var types = { integer  : 'text',
                   string   : 'text',
                   text     : 'textarea',
-                  boolean  : 'checkbox',
+                  // Use select with yes/no option for checkboxess
+                  //boolean  : 'checkbox',
+                  boolean  : 'select',
                   enum     : 'select',
                   relation : 'select' };
 
@@ -237,7 +243,7 @@ function getRawValue(val, unit_field_id) {
         val = val.substr(1);
         return prefix + (val * getUnitMultiplicator(unit_field_id));
     }
-    return isNaN( parseInt(val)) ? val : val * getUnitMultiplicator(unit_field_id);
+    return isNaN(parseInt(val)) ? val : val * getUnitMultiplicator(unit_field_id);
 }
 
 function ajax(method, route, data, onsuccess, onerror) {
@@ -256,12 +262,13 @@ function ajax(method, route, data, onsuccess, onerror) {
             if(onsuccess) {
                 onsuccess(d);
             }
-        },
+        }
     }
-    if (data && method === 'POST') {
+    if (data && method !== 'GET') {
         opts.data = JSON.stringify(data);
         opts.contentType = 'application/json';
     }
+
     $.ajax(opts);
     return response;
 }
@@ -355,14 +362,81 @@ function confirmDeleteWithDependencies(url, id, grid_ids) {
     );
 }
 
-// On load we bind keydown event
-// If 'enter' is pressed we trigger click on 'Ok' button
-$(document).ready(function () {
-    $(document).keydown( function(e) {
-        if(e.which == 13) { // enter pressed
-            if(!$("input,textarea").is(":focus")){
-                $('.ui-button:contains("Ok"):visible').click();
+function handleCreate (grid) {
+    if (grid !== undefined) {
+        // Reload to handle the new element
+        // TODO: If the new element is display alone on a new last page,
+        //       the reload grib will display the last page but before adding the new element.
+        $(grid).trigger("reloadGrid", [{ page :  $(grid).getGridParam("lastpage") }]);
+    }
+}
+
+function handleCreateOperation (data, grid, id, callback) {
+    if (grid !== undefined && data !== undefined && data.operation_id !== undefined) {
+        setTimeout(function() {
+            checkOperation(grid, data.operation_id, id, callback);
+        }, 3000);
+    }
+}
+
+function checkOperation (grid, operation_id, id, callback) {
+    var oldop = ajax('GET', '/api/oldoperation?operation_id=' + operation_id);
+    if (oldop != undefined && oldop.length > 0 && oldop[0].execution_status == 'succeeded') {
+        // Reload to handle the new element
+        // TODO: If the new element is display alone on a new last page,
+        //       the reload grib will display the last page but before adding the new element.
+        var page;
+        if (id) page = "page";
+        else    page = "lastpage";
+
+        if (callback) callback();
+        else $(grid).trigger("reloadGrid", [{ page : $(grid).getGridParam(page) }]);
+    }
+    else {
+        if ($(grid).is(':visible')) {
+            setTimeout(function() {
+                checkOperation(grid, operation_id, id, callback);
+            }, 5000);
+        }
+    }
+}
+
+function get_current_user () {
+    // Get username of current logged user :
+    var username = '';
+    var user;
+    $.ajax({
+        async   : false,
+        url     : '/me',
+        type    : 'GET',
+        success : function(data) {
+            username = data.username;
+        }
+    });
+    // Get profile list for the username :
+    $.ajax({
+        async   : false,
+        url     : '/api/user?expand=profiles&user_login=' + username,
+        type    : 'GET',
+        success : function(data) {
+            user = {
+                user_id  : data[0].pk,
+                profiles : data[0].profiles
             }
         }
     });
-});
+    return user;
+}
+
+function current_user_has_any_profiles (profiles) {
+    for (var index in current_user.profiles) {
+        if ($.inArray(current_user.profiles[index].profile_name, profiles) >= 0) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+function escapeHtmlEntities (str) {
+    return $('<div/>').text(str).html();
+}

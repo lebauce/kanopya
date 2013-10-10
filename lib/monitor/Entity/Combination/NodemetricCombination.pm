@@ -26,14 +26,15 @@ Mathematical formula of collector indicators
 =cut
 
 package Entity::Combination::NodemetricCombination;
+use base Entity::Combination;
 
 use strict;
 use warnings;
-require 'Entity/Indicator.pm';
+
+use Entity::Indicator;
 use Entity::CollectorIndicator;
-use base 'Entity::Combination';
 use Data::Dumper;
-# logger
+
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -80,17 +81,8 @@ sub getAttr {
 
 sub methods {
     return {
-        'toString'  => {
-            'description' => 'toString',
-            'perm_holder' => 'entity'
-        },
-        'getUnit'   => {
-            'description' => 'getUnit',
-            'perm_holder' => 'entity',
-        },
-        'getDependencies' => {
-            'description' => 'return dependencies tree for this object',
-            'perm_holder' => 'entity',
+        getUnit   => {
+            description => 'getUnit',
         },
     }
 }
@@ -165,7 +157,7 @@ sub new {
 
     # Ask the collector manager to collect the related indicator
     my $service_provider = $self->service_provider;
-    my $collector = $service_provider->getManager(manager_type => "collector_manager");
+    my $collector = $service_provider->getManager(manager_type => "CollectorManager");
 
     my %ids = map { $_ => undef } ($self->nodemetric_combination_formula =~ m/id(\d+)/g);
     for my $indicator_id (keys %ids) {
@@ -231,7 +223,7 @@ sub getDependentCollectorIndicatorIds{
 
 Return an array of the Indicator ids of the formula
 
-@return an array of the CollectorIndicator ids of the formula
+@return an array of the Indicator ids of the formula
 
 =end classdoc
 
@@ -247,15 +239,13 @@ sub getDependentIndicatorIds{
 
     #replace each rule id by its evaluation
     for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
+        if ($element =~ m/id\d+/) {
             my $collector_indicator_id = substr($element,2);
             push @indicator_ids, Entity::CollectorIndicator->get(id => $collector_indicator_id)->indicator_id;
         }
      }
      return @indicator_ids;
 }
-
 
 =pod
 
@@ -303,6 +293,208 @@ sub computeValueFromMonitoredValues {
     return $res;
 }
 
+
+=pod
+
+=begin classdoc
+
+Evaluate last value of the NodemetricCombination
+
+@optional format. If format = 'host_name', return hash with host_name key otherwise with node_id.
+
+@return hashref {node_id or node_hostname => value}
+
+=end
+
+=cut
+
+
+sub evaluate {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, optional => { 'format' => 'id', 'nodes' => undef});
+
+    if (defined $args{memoization}->{$self->id}) {
+        return $args{memoization}->{$self->id};
+    }
+
+    my @nodes = (defined $args{nodes}) ? @{$args{nodes}}
+                                       : $self->service_provider->searchRelated(
+                                            filters => ['nodes'],
+                                            hash    => {-not => {monitoring_state => 'disabled'}}
+                                         );
+    delete $args{nodes};
+
+    my @col_ind_ids = ($self->nodemetric_combination_formula =~ m/id(\d+)/g);
+
+    my %values = map {$_ => Entity::CollectorIndicator->get(id => $_)
+                            ->lastValue(nodes => \@nodes, service_provider => $self->service_provider, %args)
+                 } @col_ind_ids;
+
+    my %evaluation_for_each_node;
+
+    for my $node (@nodes) {
+        my %values_node = map { $_ => $values{$_}{$node->id} } @col_ind_ids;
+        my $formula = $self->nodemetric_combination_formula;
+        $formula =~ s/id(\d+)/$values_node{$1}/g;
+
+        my $value = eval $formula;
+        if ($args{format} eq 'host_name') {
+            $evaluation_for_each_node{$node->node_hostname} = $value;
+        }
+        else {
+            $evaluation_for_each_node{$node->id} = $value;
+        }
+    }
+    $log->debug('output = '.Dumper \%evaluation_for_each_node);
+
+    if (defined $args{memoization}) {
+        $args{memoization}->{$self->id} = \%evaluation_for_each_node;
+    }
+
+    return \%evaluation_for_each_node;
+}
+
+=pod
+
+=begin classdoc
+
+Compute the combination value between two dates for each nodes. Use fetch() method of CollectorIndicator.
+
+@param start_time the begining date
+@param stop_time the ending date
+@optional nodes Array ref of nodes to compute. Default is all enabled nodes.
+@optional node_ids Array ref of nodes id to compute. Used if 'nodes' is undef. Default is all enabled nodes.
+
+@return the computed value
+
+=end classdoc
+
+=cut
+
+sub evaluateTimeSerie {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args     => \%args,
+                         required => ['start_time','end_time'],
+                         optional => {nodes => undef, node_ids => undef});
+
+    # If @nodes not provided, get from ids if provided else get all non-disabled nodes of the service provider
+    my @nodes = (defined $args{nodes}) ? @{$args{nodes}}
+              : $self->service_provider->searchRelated(
+                    filters => ['nodes'],
+                    hash    => (defined $args{node_ids}) ? {node_id => $args{node_ids}}
+                             : {-not => {monitoring_state => 'disabled'}}
+                 );
+    $args{nodes} = \@nodes;
+
+    my @ci_ids = $self->getDependentCollectorIndicatorIds();
+    my %allTheCIValues;
+    foreach my $ci_id (@ci_ids){
+        my $ci = Entity::CollectorIndicator->get('id' => $ci_id);
+        $allTheCIValues{$ci_id} = $ci->fetch(%args);
+    }
+
+    return $self->_computeFromArrays(%allTheCIValues);
+}
+
+
+=pod
+
+=begin classdoc
+
+Compute the combination value using a hash of timestamped values for each CollectorIndicator and nodes.
+
+
+@param dynamic A value for each collectorIndicator of the formula, for each nodes.
+               (ci_id => {node_id => {timestamp=>value}})
+
+@return A reference to computed values. {node_id => {timestamp=>value}}
+
+=end classdoc
+
+=cut
+
+sub _computeFromArrays{
+    my ($self, %args) = @_;
+    my @requiredArgs = $self->getDependentCollectorIndicatorIds();
+
+    General::checkParams(args => \%args, required => \@requiredArgs);
+
+    # Merge all the timestamps keys in one arrays. Do the Same for node ids.
+    my @timestamps;
+    my @node_ids;
+    foreach my $ci_id (@requiredArgs){
+        while (my ($node_id, $data) = each %{$args{$ci_id}}){
+            @timestamps = (@timestamps, (keys %$data));
+            push @node_ids, $node_id;
+        }
+    }
+    @timestamps = $self->uniq(data => \@timestamps);
+    @node_ids   = $self->uniq(data => \@node_ids);
+
+    my %rep;
+    foreach my $timestamp (@timestamps){
+        foreach my $node_id (@node_ids) {
+            my %valuesForATimeStamp;
+            foreach my $ci_id (@requiredArgs){
+                $valuesForATimeStamp{$ci_id} = $args{$ci_id}->{$node_id} ? $args{$ci_id}->{$node_id}{$timestamp}
+                                                                         : undef;
+            }
+            $rep{$node_id}{$timestamp} = $self->compute(%valuesForATimeStamp);
+        }
+    }
+
+    return \%rep;
+}
+
+=pod
+
+=begin classdoc
+
+Compute the combination value using a hash value for each CollectorIndicator.
+
+@param dynamic A value for each CollectorIndicator of the formula.
+
+@return the computed value
+
+=end classdoc
+
+=cut
+
+sub compute {
+    my $self = shift;
+    my %args = @_;
+
+    my @requiredArgs = $self->getDependentCollectorIndicatorIds();
+    Entity::Combination::checkMissingParams(args => \%args, required => \@requiredArgs);
+    foreach my $ci_id (@requiredArgs) {
+        if (! defined $args{$ci_id}) {
+            return undef;
+        }
+    }
+
+    my $formula = $self->nodemetric_combination_formula;
+    #Split aggregate_rule id from $formula
+    my @array = split(/(id\d+)/,$formula);
+    #replace each rule id by its evaluation
+    for my $element (@array) {
+        if ($element =~ m/id\d+/) {
+            $element = $args{substr($element,2)};
+            if (!defined $element) {
+                return undef;
+            }
+        }
+     }
+
+    my $res = undef;
+    my $arrayString = '$res = '."@array";
+
+    #Evaluate the logic formula
+    eval $arrayString;
+
+    return $res;
+}
 
 =pod
 
@@ -411,21 +603,23 @@ sub clone {
     General::checkParams(args => \%args, required => ['dest_service_provider_id']);
 
     # Check that both services use the same collector manager
-    my $src_collector_manager = ServiceProviderManager->find( hash => {
-        manager_type        => 'collector_manager',
-        service_provider_id => $self->service_provider_id
-    });
-    my $dest_collector_manager = ServiceProviderManager->find( hash => {
-        manager_type        => 'collector_manager',
-        service_provider_id => $args{'dest_service_provider_id'}
-    });
+    my $src_collector_manager = ServiceProviderManager->find(
+                                    hash   => { service_provider_id => $self->service_provider_id },
+                                    custom => { category => 'CollectorManager' }
+                                );
+
+    my $dest_collector_manager = ServiceProviderManager->find(
+                                     hash   => { service_provider_id => $args{'dest_service_provider_id'} },
+                                     custom => { category => 'CollectorManager' }
+                                 );
+
     if ($src_collector_manager->manager_id != $dest_collector_manager->manager_id) {
         throw Kanopya::Exception::Internal::Inconsistency(
             error => "Source and dest service provider have not the same collector manager"
         );
     }
 
-    $self->_importToRelated(
+    return $self->_importToRelated(
         dest_obj_id         => $args{'dest_service_provider_id'},
         relationship        => 'service_provider',
         label_attr_name     => 'nodemetric_combination_label',

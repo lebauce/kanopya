@@ -122,6 +122,9 @@ function nodemetricCombinationHistogram(nbof_nodes_in_partition, partitions, div
             tooltipAxes: 'y',
             yvalues : 2,
             formatString: '%i nodes (%s\%)',
+        },
+        cursor : {
+            show : false
         }
     });
 
