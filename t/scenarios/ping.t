@@ -12,7 +12,7 @@ Log::Log4perl->easy_init({
 });
 
 
-use BaseDB;
+use Kanopya::Database;
 use Entity::ServiceProvider::Cluster;
 use Net::Ping;
 use Ip;
@@ -20,7 +20,7 @@ use Entity::Iface;
 use Kanopya::Tools::Retrieve;
 
 eval {
-    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+    Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
     $cluster = Kanopya::Tools::Retrieve->retrieveCluster(criteria => {cluster_name => 'Bondage'});
 

@@ -132,7 +132,7 @@ sub getBootPolicyFromExportManager {
 
     my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
 
-    if ($args{export_manager}->getId == $self->getId) {
+    if ($args{export_manager}->id == $self->id) {
         return Manager::HostManager->BOOT_POLICIES->{pxe_nfs};
     }
 
@@ -285,7 +285,7 @@ sub getConf {
 
         my $aggregate = {
             aggregate_name      => $netapp_aggr->name,
-            aggregate_id        => $aggr->getId,
+            aggregate_id        => $aggr->id,
             aggregate_state     => $netapp_aggr->state,
             aggregate_totalsize => General::bytesToHuman(value => $netapp_aggr->size_total, precision => 5),
             aggregate_sizeused  => General::bytesToHuman(value => $netapp_aggr->size_used, precision => 5),
@@ -299,7 +299,7 @@ sub getConf {
             my $volume =  Entity::Container->find(hash => { container_name => $vol->name });
 
             push @$volumes, {
-                container_id            => $volume->getId,
+                container_id            => $volume->id,
                 container_name          => $vol->name,
                 container_state         => $vol->state,
                 container_size          => General::bytesToHuman(value => $volume->container_size, precision => 5),

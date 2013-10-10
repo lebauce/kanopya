@@ -33,7 +33,7 @@ Log::Log4perl -> easy_init({
     layout => '%F %L %p %m%n'
 });
 
-use BaseDB;
+use Kanopya::Database;
 
 my $path = '/opt/kanopya/t/functional/data/timeserie_data/';
 my $path_predict = '/opt/kanopya/t/functional/data/timeserie_predict/';
@@ -45,8 +45,9 @@ main();
 
 sub main {
 
-    BaseDB -> authenticate( login =>'admin', password => 'K4n0pY4' );
-    BaseDB->beginTransaction;
+    Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
+    Kanopya::Database::beginTransaction;
+
     get_values_fromCSV();
     get_timeserie_data_fromCSV();
     split_data();
@@ -58,7 +59,8 @@ sub main {
     find_seasonality_ACF();
     find_seasonality();
     forecast();
-    BaseDB->rollbackTransaction;
+
+    Kanopya::Database::rollbackTransaction;
 }
 
 

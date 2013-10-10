@@ -4,7 +4,7 @@
 
 use lib qw(/opt/kanopya/lib/common/ /opt/kanopya/lib/administrator/ /opt/kanopya/lib/executor/ /opt/kanopya/lib/monitor/ /opt/kanopya/lib/orchestrator/ /opt/kanopya/lib/external);
 
-use BaseDB;
+use General;
 use Class::ISA;
 use Kanopya::Config;
 use Entity::Component;
@@ -90,6 +90,8 @@ use ComponentCategory;
 use ComponentCategory::ManagerCategory;
 use ClassType::DataModelType;
 
+use Kanopya::Database;
+
 use TryCatch;
 my $err;
 
@@ -99,6 +101,7 @@ $SIG{__WARN__} = sub {
 };
 
 my @classes = (
+    'Entity',
     'Entity::Gp',
     'Entity::Host',
     'Entity::Hostmodel',
@@ -456,7 +459,7 @@ sub registerUsers {
     CLASSTYPE:
     for my $classtype (@classes) {
         try {
-            BaseDB::requireClass($classtype);
+            General::requireClass($classtype);
         }
         catch ($err) {
             # For instance, only some service provider has a concrete type
@@ -469,8 +472,8 @@ sub registerUsers {
 
         my $hierarchy = $classtype;
         my ($parenttype) = Class::ISA::super_path($classtype);
-        my $methods    = $classtype->getMethods();
-        for my $parentmethod (keys %{$parenttype->getMethods()}) {
+        my $methods    = $classtype->_methodsDefinition;
+        for my $parentmethod (keys %{ $parenttype->_methodsDefinition }) {
             delete $methods->{$parentmethod};
         }
 
@@ -2285,6 +2288,7 @@ sub configureDefaultOrchestrationPolicyService {
             service_provider_id             => $sp->id,
             nodemetric_combination_formula  => 'id'.$indic->id
         );
+
         if (exists $noderule_conf->{$indic_label}) {
             # Node condition
             my $nmcond = Entity::NodemetricCondition->new(
@@ -2313,10 +2317,12 @@ sub configureDefaultOrchestrationPolicyService {
                 clustermetric_statistics_function_name  => $func,
                 clustermetric_window_time               => '600',
             );
+
             my $acomb = Entity::Combination::AggregateCombination->new(
                 service_provider_id             => $sp->id,
                 aggregate_combination_formula   => 'id'.$cm->id
             );
+
             if (exists $clusterrule_conf->{$indic_label}{$func}) {
                 # Service condition
                 my $acond = Entity::AggregateCondition->new(
@@ -2394,14 +2400,14 @@ sub populate_servicetemplates {
 }
 
 sub login {
-    my $config = BaseDB->_loadconfig;
+    my $config = Kanopya::Database::_loadconfig;
     my $god_mode = $config->{dbconf}->{god_mode};
 
     # Activate god mode before the administrator loads it config
     $config->{dbconf}->{god_mode} = "1";
     Kanopya::Config::set(subsystem => "libkanopya", config => $config);
 
-    BaseDB->_connectdb(config => $config);
+    Kanopya::Database::_connectdb(config => $config);
 
     # Restore the config to its original state, the administrator keeps its old one
     if (defined $god_mode) {
@@ -2419,7 +2425,7 @@ sub populateDB {
 
     login();
 
-    $args{db} = BaseDB->_adm->{schema};
+    $args{db} = Kanopya::Database::_adm->{schema};
 
     print "\t- Registering class types...\n";
     registerClassTypes(%args);

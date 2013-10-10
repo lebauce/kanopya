@@ -12,7 +12,8 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'delete_rules_on_cascade.log', layout=>'%F %L %p %m%n'});
 my $log = get_logger("");
 
-use BaseDB;
+use Kanopya::Database;
+
 use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
 use Entity::Indicator;
@@ -29,7 +30,8 @@ use Entity::Combination::AggregateCombination;
 use Kanopya::Tools::TestUtils 'expectedException';
 use TryCatch;
 use Aggregator;
-BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+
+Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
 my $indicator_deleted;
 my $indicator_other;
@@ -77,7 +79,7 @@ catch ($err) {
 sub main {
 
     if ($testing == 1) {
-        BaseDB->beginTransaction;
+        Kanopya::Database::beginTransaction;
     }
 
     diag('Creating general objects...');
@@ -162,7 +164,7 @@ sub main {
     clean_test();
 
     if ($testing == 1) {
-        BaseDB->rollbackTransaction;
+        Kanopya::Database::rollbackTransaction;
     }
 }
 

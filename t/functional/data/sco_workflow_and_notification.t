@@ -14,7 +14,7 @@ Log::Log4perl->easy_init({level=>'DEBUG', file=>'sco_workflow_and_notification.l
 my $log = get_logger("");
 
 
-use BaseDB;
+use Kanopya::Database;
 
 use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
@@ -40,8 +40,8 @@ main();
 
 sub main {
     eval{
-        BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
-        BaseDB->beginTransaction;
+        Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
+        Kanopya::Database::beginTransaction;
         lives_ok {
             _create_infra();
             _rule_objects_creation();
@@ -63,13 +63,14 @@ sub main {
         add_workflow_and_notification();
         add_notification_and_workflow();
 
+#        Kanopya::Database::commitTransaction;
+        Kanopya::Database::rollbackTransaction;
 
-        BaseDB->rollbackTransaction;
     };
     if($@) {
         my $error = $@;
         print $error."\n";
-        BaseDB->rollbackTransaction;
+        Kanopya::Database::rollbackTransaction;
         fail('Exception occurs');
     }
 }
@@ -105,7 +106,7 @@ sub add_notification_and_workflow {
         }
 
         if ((! $workflow_def->workflow_def_name eq $rule1->id.'_'.($service_wf->workflow_def_name)) ||
-            (! $workflow_def->workflow_def_origin eq $service_wf->id)) {
+            (! $workflow_def->workflow_def_origin_id eq $service_wf->id)) {
                 die 'Wrong attributes for linked workflow def';
         }
 
@@ -134,7 +135,7 @@ sub add_notification_and_workflow {
         }
 
         if ((! $workflow_def->workflow_def_name eq $rule1->id.'_'.($service_wf->workflow_def_name)) ||
-            (! $workflow_def->workflow_def_origin eq $service_wf->id)) {
+            (! $workflow_def->workflow_def_origin_id eq $service_wf->id)) {
                 die 'Wrong attributes for linked workflow def';
         }
 
@@ -179,7 +180,7 @@ sub add_workflow_and_notification {
         }
 
         if ((! $workflow_def->workflow_def_name eq $rule1->id.'_'.($service_wf->workflow_def_name)) ||
-            (! $workflow_def->workflow_def_origin eq $service_wf->id)) {
+            (! $workflow_def->workflow_def_origin_id eq $service_wf->id)) {
                 die 'Wrong attributes for linked workflow def';
         }
 
@@ -207,7 +208,7 @@ sub add_workflow_and_notification {
             die 'No linked workflow def';
         }
 
-        if (! Entity->get(id => $notif_workflow_def->workflow_def_origin)->workflow_def_name eq $rule1->notifyWorkflowName) {
+        if (! $notif_workflow_def->workflow_def_origin->workflow_def_name eq $rule1->notifyWorkflowName) {
             die ('Notification Workflow not created after subscription');
         }
 
@@ -245,7 +246,7 @@ sub add_and_remove_workflow {
         my $workflow_def = $rule1->workflow_def;
 
         if ((! $workflow_def->workflow_def_name eq $rule1->id.'_'.($service_wf->workflow_def_name)) ||
-            (! $workflow_def->workflow_def_origin eq $service_wf->id)) {
+            (! $workflow_def->workflow_def_origin_id eq $service_wf->id)) {
                 die 'Wrong attributes for linked workflow def';
         }
 
@@ -296,7 +297,7 @@ sub add_and_remove_notification {
 
         my $workflow_def = $rule1->workflow_def;
 
-        if (! Entity->get(id => $workflow_def->workflow_def_origin)->workflow_def_name eq $rule1->notifyWorkflowName) {
+        if (! $workflow_def->workflow_def_origin->workflow_def_name eq $rule1->notifyWorkflowName) {
             die ('Notification Workflow not created after subscription');
         }
 

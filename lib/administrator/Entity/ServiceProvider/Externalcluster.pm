@@ -81,7 +81,7 @@ sub methods {
     };
 }
 
-sub getLabelAttr { return 'externalcluster_name'; }
+sub _labelAttr { return 'externalcluster_name'; }
 
 sub toString() {
     my $self = shift;

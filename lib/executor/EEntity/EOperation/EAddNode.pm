@@ -192,7 +192,7 @@ sub prerequisites {
         my @hv_in_ids;
         for my $hv (@hvs) {
             my ($state,$time_stamp) = $hv->getNodeState();
-            $log->info('hv <'.($hv->getId()).'>, state <'.($state).'>');
+            $log->info('hv <'.($hv->id()).'>, state <'.($state).'>');
             if ($state eq 'in') {
                 push @hv_in_ids, $hv->id;
             }

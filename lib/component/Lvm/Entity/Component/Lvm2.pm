@@ -240,10 +240,10 @@ sub getBootPolicyFromExportManager {
 
     my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
 
-    if ($args{export_manager}->getId == $cluster->getComponent(name => "Iscsitarget", version => "1")->getId) {
+    if ($args{export_manager}->id == $cluster->getComponent(name => "Iscsitarget", version => "1")->id) {
         return Manager::HostManager->BOOT_POLICIES->{pxe_iscsi};
     }
-    elsif ($args{export_manager}->getId == $cluster->getComponent(name => "Nfsd", version => "3")->getId) {
+    elsif ($args{export_manager}->id == $cluster->getComponent(name => "Nfsd", version => "3")->id) {
         return Manager::HostManager->BOOT_POLICIES->{pxe_nfs};
     }
 

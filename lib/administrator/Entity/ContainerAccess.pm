@@ -166,7 +166,7 @@ Specific method to specify the attribute to use to display the container access.
 =end classdoc
 =cut
 
-sub getLabelAttr { return 'container_access_export'; }
+sub _labelAttr { return 'container_access_export'; }
 
 
 =pod

@@ -220,7 +220,7 @@ sub execute {
         # Check if there is enough resource in destination host
         my $vm_id      = $self->{context}->{vm}->getAttr(name => 'entity_id');
         my $cluster_id = $self->{context}->{vm}->getClusterId();
-        my $hv_id      = $self->{context}->{'host'}->getId();
+        my $hv_id      = $self->{context}->{'host'}->id();
 
         my $cm = CapacityManagement->new(
                      cloud_manager => $self->{context}->{cloudmanager_comp},

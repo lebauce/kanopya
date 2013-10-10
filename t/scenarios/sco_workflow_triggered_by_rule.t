@@ -21,7 +21,7 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use BaseDB;
+use Kanopya::Database;
 
 use RulesEngine;
 use Aggregator;
@@ -59,17 +59,17 @@ catch ($err) {
 }
 
 sub main {
-    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+    Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if ($testing == 1) {
-        BaseDB->beginTransaction;
+        Kanopya::Database::beginTransaction;
     }
 
     sco_workflow_triggered_by_rule();
     clean_infra();
 
     if ($testing == 1) {
-        BaseDB->rollbackTransaction;
+        Kanopya::Database::rollbackTransaction;
     }
 }
 

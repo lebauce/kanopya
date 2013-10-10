@@ -70,7 +70,7 @@ sub getAttrDef { return ATTR_DEF; }
 sub create {
     my ($class, %args) = @_;
 
-    $class->checkAttrs(attrs => \%args);
+    $class->checkAttributes(attrs => \%args);
 
     my $vg = Lvm2Vg->get(id => $args{lvm2_vg_id});
     $vg->lvm2->createDisk(vg_id      => $args{lvm2_vg_id},

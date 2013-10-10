@@ -207,7 +207,7 @@ sub postrequisites {
     # Node is up
     $self->{context}->{host}->setState(state => "up");
     $self->{context}->{host}->setNodeState(state => "in");
-    $self->{context}->{host}->setAttr(name => 'hypervisor_id', value => $self->{context}->{hypervisor}->getId);
+    $self->{context}->{host}->setAttr(name => 'hypervisor_id', value => $self->{context}->{hypervisor}->id);
 
     my $ram = $self->{context}->{host}->getTotalMemory;
     my $cpu = $self->{context}->{host}->getTotalCpu;

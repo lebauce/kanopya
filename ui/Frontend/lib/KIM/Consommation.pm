@@ -10,11 +10,11 @@ prefix undef;
 get '/consommation/cluster/:clusterid' => sub {
   content_type 'application/octet-stream';
 
-  my $cluster   = Entity->methodCall(method => 'get', param => { id => param('clusterid') });
+  my $cluster   = Entity->apiCall(method => 'get', param => { id => param('clusterid') });
   my $user      = $cluster->user;
 
-  header 'Content-Disposition'  => "attachment; filename='user-" . $user->getId . "-" . $cluster->getAttr(name => 'cluster_name') . ".csv'";
+  header 'Content-Disposition'  => "attachment; filename='user-" . $user->id . "-" . $cluster->getAttr(name => 'cluster_name') . ".csv'";
 
-  return $cluster->methodCall(method => 'getMonthlyConsommation');
+  return $cluster->apiCall(method => 'getMonthlyConsommation');
 };
 

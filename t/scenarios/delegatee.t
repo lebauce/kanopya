@@ -19,7 +19,7 @@ my $log = get_logger("");
 
 my $testing = 1;
 
-use BaseDB;
+use Kanopya::Database;
 use General;
 
 use Node;
@@ -38,7 +38,7 @@ main();
 
 sub main {
     if ($testing == 1) {
-        BaseDB->beginTransaction;
+        Kanopya::Database::beginTransaction;
     }
 
     my $rand = new String::Random;
@@ -67,52 +67,52 @@ sub main {
     ######## As admin on an admin cluster ##########
 
     # Firstly loggin in to Admin
-    BaseDB->authenticate(login => 'admin', password => 'K4n0pY4');
+    Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
     # Create a node
     my $adminnode;
     lives_ok {
-        $adminnode = Node->methodCall(
+        $adminnode = Node->apiCall(
                          method => 'create',
                          params => {
                              service_provider_id => $admincluster->id,
                              node_hostname       => $rand->randpattern("cccccccc")
                          }
                      );
-    } 'Create a node from methodCall as admin';
+    } 'Create a node from apiCall as admin';
 
     # Retreive, update and remove the node
     lives_ok {
-        Node->methodCall(method => 'get', params => { id => $adminnode->id });
-    } 'Get a node from methodCall as admin';
+        Node->apiCall(method => 'get', params => { id => $adminnode->id });
+    } 'Get a node from apiCall as admin';
 
     lives_ok {
-        $adminnode->methodCall(method => 'update', params => { node_hostname => $rand->randpattern("cccccccc") });
-    } 'Update the node from methodCall as admin';
+        $adminnode->apiCall(method => 'update', params => { node_hostname => $rand->randpattern("cccccccc") });
+    } 'Update the node from apiCall as admin';
 
     lives_ok {
-        $adminnode->methodCall(
+        $adminnode->apiCall(
             method => 'update',
             params => {
                 service_provider_id => $admincluster->id,
                 node_hostname       => $rand->randpattern("cccccccc")
             }
         );
-    } 'Update the node from methodCall with specifyied service_provider_id (delegatee attr) as admin';
+    } 'Update the node from apiCall with specifyied service_provider_id (delegatee attr) as admin';
 
     lives_ok {
-        $adminnode->methodCall(method => 'remove', params => { dryrun => 1 });
-    } 'Remove the node from methodCall as admin';
+        $adminnode->apiCall(method => 'remove', params => { dryrun => 1 });
+    } 'Remove the node from apiCall as admin';
 
     ######## As customer on an admin cluster ##########
 
     # Then loggin in to customer
-    BaseDB->authenticate(login => 'customer', password => 'customer');
+    Kanopya::Database::authenticate(login => 'customer', password => 'customer');
 
     # Create a node
     my $customernode;
     throws_ok {
-        $customernode = Node->methodCall(
+        $customernode = Node->apiCall(
                             method => 'create',
                             params => {
                                 service_provider_id => $admincluster->id,
@@ -120,21 +120,21 @@ sub main {
                             }
                         );
     } 'Kanopya::Exception::Permission::Denied',
-      'Create a node from methodCall as customer';
+      'Create a node from apiCall as customer';
 
     # Retreive, update and remove the node
     throws_ok {
-        Node->methodCall(method => 'get', params => { id => $adminnode->id });
+        Node->apiCall(method => 'get', params => { id => $adminnode->id });
     } 'Kanopya::Exception::Permission::Denied',
-      'Get a node from methodCall as customer';
+      'Get a node from apiCall as customer';
 
     throws_ok {
-        $adminnode->methodCall(method => 'update', params => { node_hostname => $rand->randpattern("cccccccc") });
+        $adminnode->apiCall(method => 'update', params => { node_hostname => $rand->randpattern("cccccccc") });
     } 'Kanopya::Exception::Permission::Denied',
-      'Update the node from methodCall as customer';
+      'Update the node from apiCall as customer';
 
     throws_ok {
-        $adminnode->methodCall(
+        $adminnode->apiCall(
             method => 'update',
             params => {
                 service_provider_id => $admincluster->id,
@@ -142,37 +142,37 @@ sub main {
             }
         );
     } 'Kanopya::Exception::Permission::Denied',
-      'Update the node from methodCall with specifyied service_provider_id (delegatee attr) as customer';
+      'Update the node from apiCall with specifyied service_provider_id (delegatee attr) as customer';
 
     throws_ok {
-        $adminnode->methodCall(method => 'remove', params => { dryrun => 1 });
+        $adminnode->apiCall(method => 'remove', params => { dryrun => 1 });
     } 'Kanopya::Exception::Permission::Denied',
-      'Remove the node from methodCall as customer';
+      'Remove the node from apiCall as customer';
 
     ######## As customer on a customer cluster ##########
 
     # Create a node
     lives_ok {
-        $customernode = Node->methodCall(
+        $customernode = Node->apiCall(
                             method => 'create',
                             params => {
                                 service_provider_id => $customercluster->id,
                                 node_hostname       => $rand->randpattern("cccccccc")
                             }
                         );
-    } 'Create a node from methodCall as customer';
+    } 'Create a node from apiCall as customer';
 
     # Retreive, update and remove the node
     lives_ok {
-        Node->methodCall(method => 'get', params => { id => $customernode->id });
-    } 'Get a node from methodCall as customer';
+        Node->apiCall(method => 'get', params => { id => $customernode->id });
+    } 'Get a node from apiCall as customer';
 
     lives_ok {
-        $customernode->methodCall(method => 'update', params => { node_hostname => $rand->randpattern("cccccccc") });
-    } 'Update the node from methodCall as customer';
+        $customernode->apiCall(method => 'update', params => { node_hostname => $rand->randpattern("cccccccc") });
+    } 'Update the node from apiCall as customer';
 
     throws_ok {
-        $customernode->methodCall(
+        $customernode->apiCall(
             method => 'update',
             params => {
                 service_provider_id => $admincluster->id,
@@ -180,11 +180,11 @@ sub main {
             }
         );
     } 'Kanopya::Exception::Permission::Denied',
-      'Update the node from methodCall with specifyied service_provider_id (delegatee attr) as customer';
+      'Update the node from apiCall with specifyied service_provider_id (delegatee attr) as customer';
 
     lives_ok {
-        $customernode->methodCall(method => 'remove', params => { dryrun => 1 });
-    } 'Remove the node from methodCall as customer';
+        $customernode->apiCall(method => 'remove', params => { dryrun => 1 });
+    } 'Remove the node from apiCall as customer';
 
     ############################################################
     # Check permissions on entities that delegate CRUD methods #
@@ -193,7 +193,7 @@ sub main {
     ######## As admin on an admin cluster ##########
 
     # Firstly loggin in to Admin
-    BaseDB->authenticate(login => 'admin', password => 'K4n0pY4');
+    Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
     # Find a Clustermetric
     my $cm = Entity::Clustermetric->find(clustermetric_service_provider_id => $admincluster->id);
@@ -201,59 +201,59 @@ sub main {
     # Create a AggregateCombination
     my $admincombination;
     lives_ok {
-        $admincombination = Entity::Combination::AggregateCombination->methodCall(
+        $admincombination = Entity::Combination::AggregateCombination->apiCall(
                                 method => 'create',
                                 params => {
                                     service_provider_id           => $admincluster->id,
                                     aggregate_combination_formula => 'id'.($cm->id)
                                 }
                             );
-    } 'Create a AggregateCombination from methodCall as admin';
+    } 'Create a AggregateCombination from apiCall as admin';
 
     # Retreive, update and remove the AggregateCombination
     lives_ok {
-        Entity::Combination::AggregateCombination->methodCall(method => 'get', params => { id => $admincombination->id });
-    } 'Get a AggregateCombination from methodCall as admin';
+        Entity::Combination::AggregateCombination->apiCall(method => 'get', params => { id => $admincombination->id });
+    } 'Get a AggregateCombination from apiCall as admin';
 
     lives_ok {
-        Entity::Combination->methodCall(method => 'get', params => { id => $admincombination->id });
-    } 'Get a Combination from methodCall as admin';
+        Entity::Combination->apiCall(method => 'get', params => { id => $admincombination->id });
+    } 'Get a Combination from apiCall as admin';
 
     lives_ok {
-        $admincombination->methodCall(method => 'update');
-    } 'Update the AggregateCombination from methodCall as admin';
+        $admincombination->apiCall(method => 'update');
+    } 'Update the AggregateCombination from apiCall as admin';
 
     lives_ok {
-        $admincombination->methodCall(method => 'update', params => { service_provider_id => $admincluster->id });
-    } 'Update the AggregateCombination from methodCall with specifyied service_provider_id (delegatee attr) as admin';
+        $admincombination->apiCall(method => 'update', params => { service_provider_id => $admincluster->id });
+    } 'Update the AggregateCombination from apiCall with specifyied service_provider_id (delegatee attr) as admin';
 
     lives_ok {
-        $admincombination->methodCall(method => 'remove');
-    } 'Remove the AggregateCombination from methodCall as admin';
+        $admincombination->apiCall(method => 'remove');
+    } 'Remove the AggregateCombination from apiCall as admin';
 
     lives_ok {
-        $admincombination = Entity::Combination::AggregateCombination->methodCall(
+        $admincombination = Entity::Combination::AggregateCombination->apiCall(
                                 method => 'create',
                                 params => {
                                     service_provider_id           => $admincluster->id,
                                     aggregate_combination_formula => 'id'.($cm->id)
                                 }
                             );
-    } 'Create a AggregateCombination from methodCall as admin';
+    } 'Create a AggregateCombination from apiCall as admin';
 
     lives_ok {
-        $admincombination->methodCall(method => 'getDependencies');
-    } 'Call an api method of AggregateCombination from methodCall as admin';
+        $admincombination->apiCall(method => 'getDependencies');
+    } 'Call an api method of AggregateCombination from apiCall as admin';
 
     ######## As customer on an admin cluster ##########
 
     # Then loggin in to customer
-    BaseDB->authenticate(login => 'customer', password => 'customer');
+    Kanopya::Database::authenticate(login => 'customer', password => 'customer');
 
     # Create a AggregateCombination
     my $customercombination;
     throws_ok {
-        $customercombination = Entity::Combination::AggregateCombination->methodCall(
+        $customercombination = Entity::Combination::AggregateCombination->apiCall(
                                    method => 'create',
                                    params => {
                                        service_provider_id           => $admincluster->id,
@@ -261,90 +261,90 @@ sub main {
                                    }
                                );
     } 'Kanopya::Exception::Permission::Denied',
-      'Create a AggregateCombination from methodCall as customer';
+      'Create a AggregateCombination from apiCall as customer';
 
     # Retreive, update and remove the AggregateCombination
     throws_ok {
-        Entity::Combination::AggregateCombination->methodCall(method => 'get', params => { id => $admincombination->id });
+        Entity::Combination::AggregateCombination->apiCall(method => 'get', params => { id => $admincombination->id });
     } 'Kanopya::Exception::Permission::Denied',
-      'Get a AggregateCombination from methodCall as customer';
+      'Get a AggregateCombination from apiCall as customer';
 
     throws_ok {
-        Entity::Combination->methodCall(method => 'get', params => { id => $admincombination->id });
+        Entity::Combination->apiCall(method => 'get', params => { id => $admincombination->id });
     } 'Kanopya::Exception::Permission::Denied',
-      'Get a Combination from methodCall as admin';
+      'Get a Combination from apiCall as admin';
 
     throws_ok {
-        $admincombination->methodCall(method => 'update');
+        $admincombination->apiCall(method => 'update');
     } 'Kanopya::Exception::Permission::Denied',
-      'Update the AggregateCombination from methodCall as customer';
+      'Update the AggregateCombination from apiCall as customer';
 
     throws_ok {
-        $admincombination->methodCall(method => 'update', params => { service_provider_id => $admincluster->id });
+        $admincombination->apiCall(method => 'update', params => { service_provider_id => $admincluster->id });
     } 'Kanopya::Exception::Permission::Denied',
-      'Update the AggregateCombination from methodCall with specifyied service_provider_id (delegatee attr) as customer';
+      'Update the AggregateCombination from apiCall with specifyied service_provider_id (delegatee attr) as customer';
 
     throws_ok {
-        $admincombination->methodCall(method => 'remove');
+        $admincombination->apiCall(method => 'remove');
     } 'Kanopya::Exception::Permission::Denied',
-      'Remove the AggregateCombination from methodCall as customer';
+      'Remove the AggregateCombination from apiCall as customer';
 
     throws_ok {
-        $admincombination->methodCall(method => 'getDependencies');
+        $admincombination->apiCall(method => 'getDependencies');
     } 'Kanopya::Exception::Permission::Denied',
-      'Call an api method of AggregateCombination from methodCall as customer';
+      'Call an api method of AggregateCombination from apiCall as customer';
 
     ######## As customer on a customer cluster ##########
 
     # Create a AggregateCombination
     my $customercombination;
     lives_ok {
-        $customercombination = Entity::Combination::AggregateCombination->methodCall(
+        $customercombination = Entity::Combination::AggregateCombination->apiCall(
                                 method => 'create',
                                 params => {
                                     service_provider_id           => $customercluster->id,
                                     aggregate_combination_formula => 'id'.($cm->id)
                                 }
                             );
-    } 'Create a AggregateCombination from methodCall as customer';
+    } 'Create a AggregateCombination from apiCall as customer';
 
     # Retreive, update and remove the AggregateCombination
     lives_ok {
-        Entity::Combination::AggregateCombination->methodCall(method => 'get', params => { id => $customercombination->id });
-    } 'Get a AggregateCombination from methodCall as customer';
+        Entity::Combination::AggregateCombination->apiCall(method => 'get', params => { id => $customercombination->id });
+    } 'Get a AggregateCombination from apiCall as customer';
 
     lives_ok {
-        Entity::Combination->methodCall(method => 'get', params => { id => $customercombination->id });
-    } 'Get a Combination from methodCall as customer';
+        Entity::Combination->apiCall(method => 'get', params => { id => $customercombination->id });
+    } 'Get a Combination from apiCall as customer';
 
     lives_ok {
-        $customercombination->methodCall(method => 'update');
-    } 'Update the AggregateCombination from methodCall as customer';
+        $customercombination->apiCall(method => 'update');
+    } 'Update the AggregateCombination from apiCall as customer';
 
     throws_ok {
-        $customercombination->methodCall(method => 'update', params => { service_provider_id => $admincluster->id });
+        $customercombination->apiCall(method => 'update', params => { service_provider_id => $admincluster->id });
     } 'Kanopya::Exception::Permission::Denied',
-      'Update the AggregateCombination from methodCall with specifyied service_provider_id (delegatee attr) as customer';
+      'Update the AggregateCombination from apiCall with specifyied service_provider_id (delegatee attr) as customer';
 
     lives_ok {
-        $customercombination->methodCall(method => 'remove');
-    } 'Remove the AggregateCombination from methodCall as customer';
+        $customercombination->apiCall(method => 'remove');
+    } 'Remove the AggregateCombination from apiCall as customer';
 
     lives_ok {
-        $customercombination = Entity::Combination::AggregateCombination->methodCall(
+        $customercombination = Entity::Combination::AggregateCombination->apiCall(
                                 method => 'create',
                                 params => {
                                     service_provider_id           => $customercluster->id,
                                     aggregate_combination_formula => 'id'.($cm->id)
                                 }
                             );
-    } 'Create a AggregateCombination from methodCall as customer';
+    } 'Create a AggregateCombination from apiCall as customer';
 
     lives_ok {
-        $customercombination->methodCall(method => 'getDependencies');
-    } 'Call an api method of AggregateCombination from methodCall as customer';
+        $customercombination->apiCall(method => 'getDependencies');
+    } 'Call an api method of AggregateCombination from apiCall as customer';
 
     if ($testing == 1) {
-        BaseDB->rollbackTransaction;
+        Kanopya::Database::rollbackTransaction;
     }
 }

@@ -314,10 +314,10 @@ sub jsonify {
     if (ref($var) and (ref($var) ne "HASH") and (ref($var) ne "ARRAY")) {
         if ($var->can("toJSON")) {
             if ($var->isa("Entity::Operation")) {
-                return Entity::Operation->methodCall(method => 'get', params => { id => $var->id })->toJSON(%args);
+                return Entity::Operation->apiCall(method => 'get', params => { id => $var->id })->toJSON(%args);
             }
             elsif ($var->isa("Entity::Workflow")) {
-                return Entity::Workflow->methodCall(method => 'get', params => { id => $var->id })->toJSON(%args);
+                return Entity::Workflow->apiCall(method => 'get', params => { id => $var->id })->toJSON(%args);
             } else {
                 return $var->toJSON(%args);
             }
@@ -349,7 +349,7 @@ sub setupREST {
                 require (General::getLocFromClass(entityclass => $class));
 
                 my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
-                my $obj = $class->methodCall(method => 'get', params => { id => params->{id}, prefetch => \@expand });
+                my $obj = $class->apiCall(method => 'get', params => { id => params->{id}, prefetch => \@expand });
                 return to_json($obj->toJSON(expand => \@expand,
                                             deep   => params->{deep}));
             },
@@ -365,7 +365,7 @@ sub setupREST {
                 } else {
                     %params = params;
                 }
-                $obj = jsonify($class->methodCall(method => 'create', params => \%params));
+                $obj = jsonify($class->apiCall(method => 'create', params => \%params));
 
                 return to_json($obj);
             },
@@ -374,7 +374,7 @@ sub setupREST {
                 content_type 'application/json';
                 require (General::getLocFromClass(entityclass => $class));
 
-                my $result = $class->get(id => params->{id})->methodCall(method => 'remove');
+                my $result = $class->get(id => params->{id})->apiCall(method => 'remove');
 
                 return to_json(ref($result) ? jsonify($result) : { status => "success" } );
             },
@@ -392,7 +392,7 @@ sub setupREST {
                     delete $params{splat};
                 }
 
-                $obj->methodCall(method => 'update', params => \%params);
+                $obj->apiCall(method => 'update', params => \%params);
 
                 return to_json( { status => "success" } );
             };
@@ -427,7 +427,7 @@ sub setupREST {
                 $obj = $class;
             }
 
-            my $methods = $obj->getMethods();
+            my $methods = $obj->_methodsDefinition;
             my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
 
             if (not defined $methods->{$method}) {
@@ -442,7 +442,7 @@ sub setupREST {
                 delete $params{splat};
             }
 
-            my $ret = $obj->methodCall(method => $method, params => \%params);
+            my $ret = $obj->apiCall(method => $method, params => \%params);
 
             if (ref($ret) eq "ARRAY") {
                 my @jsons;

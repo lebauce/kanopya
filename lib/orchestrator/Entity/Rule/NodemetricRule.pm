@@ -406,14 +406,13 @@ sub clone {
     # Specific attrs management
     my $attrs_cloner = sub {
         my %args = @_;
-        my $attrs = $args{attrs};
-        $attrs->{formula}  = $self->_cloneFormula(
-            dest_sp_id              => $attrs->{service_provider_id},
-            formula                 => $attrs->{formula},
-            formula_object_class    => 'Entity::NodemetricCondition'
+        $args{attrs}->{formula} = $self->_cloneFormula(
+            dest_sp_id    => $args{attrs}->{service_provider_id},
+            formula       => $args{attrs}->{formula},
+            formula_class => 'Entity::NodemetricCondition'
         );
-        $attrs->{workflow_def_id}   = undef;
-        return %$attrs;
+        $args{attrs}->{workflow_def_id} = undef;
+        return $args{attrs};
     };
 
     # Generic clone

@@ -287,15 +287,14 @@ sub clone {
     # Specific attrs management
     my $attrs_cloner = sub {
         my %args = @_;
-        my $attrs = $args{attrs};
-        $attrs->{formula}    = $self->_cloneFormula(
-            dest_sp_id              => $attrs->{service_provider_id},
-            formula                 => $attrs->{formula},
-            formula_object_class    => 'Entity::AggregateCondition'
+        $args{attrs}->{formula} = $self->_cloneFormula(
+            dest_sp_id    => $args{attrs}->{service_provider_id},
+            formula       => $args{attrs}->{formula},
+            formula_class => 'Entity::AggregateCondition'
         );
-        $attrs->{aggregate_rule_last_eval}  = undef;
-        $attrs->{workflow_def_id}           = undef;
-        return %$attrs;
+        $args{attrs}->{aggregate_rule_last_eval}  = undef;
+        $args{attrs}->{workflow_def_id}           = undef;
+        return $args{attrs};
     };
 
     # Generic clone

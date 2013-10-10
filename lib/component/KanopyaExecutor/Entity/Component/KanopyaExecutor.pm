@@ -32,6 +32,8 @@ use warnings;
 
 use Entity::Workflow;
 use Entity::Operation;
+
+use Kanopya::Database;
 use Kanopya::Exceptions;
 
 use Log::Log4perl "get_logger";
@@ -105,7 +107,7 @@ sub enqueue {
     eval {
         MessageQueuing::RabbitMQ::Sender::run($self,
                                               workflow_id => $operation->workflow->id,
-                                              %{ $self->_adm->{config}->{amqp} });
+                                              %{Kanopya::Database::_adm->{config}->{amqp} });
     };
     if ($@) {
         my $err = $@;
@@ -127,7 +129,7 @@ sub execute {
     # Publish on the 'operation' channel
     MessageQueuing::RabbitMQ::Sender::execute($self,
                                               operation_id => $args{operation_id},
-                                              %{ $self->_adm->{config}->{amqp} });
+                                              %{ Kanopya::Database::_adm->{config}->{amqp} });
 }
 
 
@@ -158,7 +160,7 @@ sub run {
     eval {
         MessageQueuing::RabbitMQ::Sender::run($self,
                                               workflow_id => $workflow->id,
-                                              %{ $self->_adm->{config}->{amqp} });
+                                              %{ Kanopya::Database::_adm->{config}->{amqp} });
     };
     if ($@) {
         my $err = $@;

@@ -22,7 +22,7 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use BaseDB;
+use Kanopya::Database;
 use RulesEngine;
 use Aggregator;
 use Entity::ServiceProvider::Externalcluster;
@@ -47,17 +47,17 @@ my $service_provider;
 main();
 
 sub main {
-    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+    Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if($testing == 1) {
-        BaseDB->beginTransaction;
+        Kanopya::Database::beginTransaction;
     }
 
     node_disabling();
     test_rrd_remove();
 
     if ($testing == 1) {
-        BaseDB->rollbackTransaction;
+        Kanopya::Database::rollbackTransaction;
     }
 }
 

@@ -125,12 +125,11 @@ sub createWorkflowDef {
         }
     }
 
-    my $workflow = Entity::WorkflowDef->new(workflow_def_name   => $args{workflow_name},
-                                            workflow_def_origin => $args{workflow_def_origin_id},
-                                            params              => $args{params});
+    my $workflow = Entity::WorkflowDef->new(workflow_def_name      => $args{workflow_name},
+                                            workflow_def_origin_id => $args{workflow_def_origin_id},
+                                            params                 => $args{params});
 
     #now associating the new workflow to the manager
-
     WorkflowDefManager->new(
         manager_id      => $self->id,
         workflow_def_id => $workflow->workflow_def_id,
@@ -162,7 +161,7 @@ sub deassociateWorkflow {
     $rule->workflow_def_id(undef);
 
     if (defined $workflow_def) {
-        my $wf_def_origin_id = $workflow_def->workflow_def_origin;
+        my $wf_def_origin_id = $workflow_def->workflow_def_origin->id;
         $workflow_def->delete();
         # Check if there's subscriptions on this rule
         my @notification_subscriptions  = NotificationSubscription->search(hash => {
@@ -259,7 +258,7 @@ sub cloneWorkflow {
 
     # Get original workflow def and params
     my $wf_def      = Entity::WorkflowDef->get(id => $args{workflow_def_id});
-    my $workflow_def_origin_id = $wf_def->workflow_def_origin;
+    my $workflow_def_origin_id = $wf_def->workflow_def_origin->id;
 
     if (! defined $workflow_def_origin_id) {
         throw Kanopya::Exception::Internal(error => 'Cannot clone WorfklowDef instance without origin');
@@ -274,10 +273,10 @@ sub cloneWorkflow {
 
     # Associate to the rule a copy of the workflow
     return $self->associateWorkflow(
-               'new_workflow_name'         => $wf_name,
-               'origin_workflow_def_id'    => $workflow_def_origin_id,
-               'specific_params'           => $wf_params->{specific} || {},
-               'rule_id'                   => $rule_id,
+               new_workflow_name      => $wf_name,
+               origin_workflow_def_id => $workflow_def_origin_id,
+               specific_params        => $wf_params->{specific} || {},
+               rule_id                => $rule_id,
            );
 }
 
@@ -468,11 +467,9 @@ Get the list of ids of workflowDef related to the workflow manager
 sub getWorkflowDefsIds {
     my $self = shift;
 
-    my @workflow_defs = WorkflowDefManager->search(
-                            hash => {manager_id => $self->id}
-                        );
+    my @workflow_defs = WorkflowDefManager->search(hash => { manager_id => $self->id });
 
-    my @wfids = map {$_->workflow_def_id} @workflow_defs;
+    my @wfids = map { $_->workflow_def_id } @workflow_defs;
     return \@wfids;
 }
 
@@ -491,7 +488,8 @@ Extract in hashref templated parameters from template
 
 sub _extractParamsFromTemplate {
     my ($self,%args) = @_;
-    General::checkParams(args => \%args, optional => {template => ''});
+
+    General::checkParams(args => \%args, optional => { template => '' });
 
     my @lines = split (/\n/, $args{template});
 

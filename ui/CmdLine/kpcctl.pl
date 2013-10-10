@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use BaseDB;
+use Kanopya::Database;
 use General;
 
 use Log::Log4perl qw(:easy);
@@ -23,7 +23,6 @@ sub handle_new {
 }
 
 sub authenticate {
-    
     while (1) {
         print "User: ";
         my $user = <STDIN>;
@@ -33,8 +32,8 @@ sub authenticate {
         chomp $pwd;
          
         eval {
-            #BaseDB->authenticate( login => $user, password => $pwd );
-            BaseDB->authenticate( login => 'admin', password => 'K4n0pY4' );
+            #Kanopya::Database::authenticate( login => $user, password => $pwd );
+            Kanopya::Database::authenticate( login => 'admin', password => 'K4n0pY4' );
         };
         if ($@) {
             print $@, "\n";

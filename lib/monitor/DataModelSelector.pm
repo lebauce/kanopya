@@ -26,12 +26,12 @@ DataModel for a given dataset (autoPredict).
 =cut
 
 package DataModelSelector;
-
-use base 'BaseDB';
+use base BaseDB;
 
 use warnings;
 use strict;
-use BaseDB;
+
+use General;
 use Entity::DataModel;
 use Utils::TimeSerieAnalysis;
 
@@ -280,7 +280,7 @@ sub selectDataModel {
     my $error;
 
     for my $data_model_class (@data_model_classes) {
-        BaseDB::requireClass($data_model_class);
+        General::requireClass($data_model_class);
 
         # If the model is a seasonal one, try each possible seasonality value and only retain the best one
         if ($data_model_class->isSeasonal()) {
@@ -519,7 +519,7 @@ sub evaluateDataModelAccuracy {
     # Load and instanciate the data model
     my $data_model_class = $args{data_model_class};
 
-    BaseDB::requireClass($data_model_class);
+    General::requireClass($data_model_class);
 
     my $model = $data_model_class;
 

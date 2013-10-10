@@ -39,9 +39,12 @@ use Collect;
 use Retriever;
 
 use Data::Dumper;
+
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
-my $errmsg;
+
+use TryCatch;
+my $err;
 
 use constant ATTR_DEF => {
     time_step => {
@@ -143,7 +146,7 @@ sub retrieveData {
 
     while (my ($set_id, $indic_names) = each %sets_to_fetch) {
         foreach my $node (@$nodelist) {
-            eval {
+            try {
                 #TODO avoir this useless reinstanciation with a hashtable
                 my $indicator_set = Indicatorset->get(id => $set_id);
                 #TODO Improve lastValue / average management
@@ -165,9 +168,9 @@ sub retrieveData {
 
                 $monitored_values{$node} = $monitored_values{$node}
                                                ? { %{$monitored_values{$node}}, %{$data} } : $data;
-            };
-            if ($@) {
-                $log->warn("Error while retrieving data from kanopya collector : $@");
+            }
+            catch ($err) {
+                $log->warn("Error while retrieving data from kanopya collector : $err");
             }
         }
     }
@@ -247,20 +250,14 @@ sub collectIndicator {
     my $collector_indicator = Entity::CollectorIndicator->get(id => $args{indicator_id});
     my $indicator = $collector_indicator->indicator;
 
-    eval {
+    try {
         Collect->new(
             service_provider_id => $args{service_provider_id},
             indicatorset_id     => $indicator->indicatorset_id
         );
-    };
-    if ($@) {
-        my $err = $@;
-        if ($err->isa('Kanopya::Exception::DB')) {
-            $log->warn("Collect <$args{service_provider_id}-" . $indicator->indicatorset_id .  "> already exists.");
-        }
-        else {
-            $err->rethrow()
-        }
+    }
+    catch (Kanopya::Exception::DB $err) {
+        $log->warn("Collect <$args{service_provider_id}-" . $indicator->indicatorset_id .  "> already exists.");
     }
 }
 
@@ -288,14 +285,14 @@ sub collectSets {
     );
 
     for my $indicator_set (@indicator_sets) {
-        eval {
+        try {
             Collect->new(
                 service_provider_id => $args{service_provider_id},
                 indicatorset_id     => $indicator_set->id
             );
-        };
-        if ($@) {
-            $log->info($@);
+        }
+        catch ($err) {
+            $log->info($err);
         }
     }
 }

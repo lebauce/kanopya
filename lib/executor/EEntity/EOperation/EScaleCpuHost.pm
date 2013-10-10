@@ -49,7 +49,7 @@ sub execute {
     $self->SUPER::execute(%args);
 
     # Verify if there is enough resource in HV
-    my $vm_id = $self->{context}->{host}->getId;
+    my $vm_id = $self->{context}->{host}->id;
     my $host_cluster = Entity::ServiceProvider::Cluster->find(hash => {
                            cluster_id => $self->{context}->{host}->getClusterId(),
                        });
@@ -66,7 +66,7 @@ sub execute {
                 );
 
     if ($check == 0) {
-        my $hv_id = $self->{context}->{host}->hypervisor->getId;
+        my $hv_id = $self->{context}->{host}->hypervisor->id;
         my $errmsg = "Not enough CPU in HV $hv_id for VM $vm_id. " .
                      "Infrastructure may have change between operation queing and its execution";
         throw Kanopya::Exception::Internal(error => $errmsg);

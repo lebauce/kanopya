@@ -20,7 +20,7 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use BaseDB;
+use Kanopya::Database;
 use NetconfVlan;
 use Entity::Vlan;
 use Lvm2Vg;
@@ -37,10 +37,10 @@ my $testing = 0;
 main();
 
 sub main {
-    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+    Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if ($testing == 1) {
-        BaseDB->beginTransaction;
+        Kanopya::Database::beginTransaction;
     }
 
     diag('Register master image');
@@ -225,6 +225,6 @@ sub main {
     } 'Start Nova Compute cluster';
 
     if ($testing == 1) {
-        BaseDB->rollbackTransaction;
+        Kanopya::Database::rollbackTransaction;
     }
 }

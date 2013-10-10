@@ -9,7 +9,7 @@ use Test::Exception;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'RegisterVsphereInfra.t.log', layout=>'%F %L %p %m%n'});
 
-use BaseDB;
+use Kanopya::Database;
 use Vsphere5Datacenter;
 use Entity::Host::Hypervisor::Vsphere5Hypervisor;
 use Entity::Host::VirtualMachine::Vsphere5Vm;
@@ -29,10 +29,10 @@ my $vsphere_conf = {
     vsphere5_url   => '192.168.2.147',
 };
 
-BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
 if ($testing == 1) {
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
 }
 
 my $vsphere_cluster;
@@ -191,5 +191,5 @@ $kanopya_items_nbr    +=   scalar(@{ Entity::Host::VirtualMachine::Vsphere5Vm->s
 is($kanopya_items_nbr, $total_items_nbr - $ko_items_nbr, 'Test if no more item is registered');
 
 if ($testing == 1) {
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 }

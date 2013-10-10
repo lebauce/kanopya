@@ -126,23 +126,16 @@ sub generatePuppetDefinitions {
     my $manifest = "";
     my $puppetmaster = EEntity->new(entity => $self->getPuppetMaster);
     my $fqdn = $args{host}->node->fqdn;
-    my @components = sort { $a->component->priority <=> $b->component->priority }
-                     $args{host}->node->component_nodes;
 
-    my $config_hash = { };
-    foreach my $component_node (@components) {
-        my $component = $component_node->component;
+    my $config_hash = {};
+    my @components = sort { $a->priority <=> $b->priority } $args{host}->node->components;
+    foreach my $component (@components) {
         my $component_name = lc($component->component_type->component_name);
         my $ecomponent = EEntity->new(entity => $component);
-        $ecomponent->generateConfiguration(
-            cluster => $args{cluster},
-            host    => $args{host}
-        );
+        $ecomponent->generateConfiguration(cluster => $args{cluster}, host => $args{host});
 
-        my $puppet_definitions = $ecomponent->getPuppetDefinition(
-            host    => $args{host},
-            cluster => $args{cluster},
-        );
+        my $puppet_definitions = $ecomponent->getPuppetDefinition(host    => $args{host},
+                                                                  cluster => $args{cluster});
 
         my $listen = {};
         my $access = {};
@@ -158,8 +151,10 @@ sub generatePuppetDefinitions {
             };
         }
 
+        my $component_node = $component->find(related => 'component_nodes',
+                                              hash    => { node_id => $args{host}->node->id });
         my $configuration = {
-            master => ($component_node->master_node == 1 ? 1 : 0),
+            master => ($component_node->master_node == 1) ? 1 : 0,
             listen => $listen,
             access => $access
         };
@@ -243,8 +238,7 @@ sub applyConfiguration {
 
     my @ehosts = ($args{host}) || (map { EEntity->new(entity => $_) } @{ $args{cluster}->getHosts() });
     for my $ehost (@ehosts) {
-        $self->generatePuppetDefinitions(%args,
-                                         host => $ehost);
+        $self->generatePuppetDefinitions(%args, host => $ehost);
     }
 
     my $ret = -1;

@@ -97,6 +97,26 @@ sub methods { return { }; }
 =pod
 =begin classdoc
 
+@constructor
+
+Ensure this class can not be instantiated.
+
+=end classdoc
+=cut
+
+sub new {
+    my ($class, %args) = @_;
+
+    if ($class eq "Entity::Rule") {
+        throw Kanopya::Exception::Internal::AbstractClass();
+    }
+    return $class->SUPER::new(%args);
+}
+
+
+=pod
+=begin classdoc
+
 Fake attr returning the associated service_provider whatever the relation name is.
 
 @return a service_provider instance
@@ -193,16 +213,12 @@ Delete a NotificationsSubscription and deassociate the Notify Workflow of the ru
 
 sub unsubscribe {
     my ($self, %args) = @_;
+
     General::checkParams(args => \%args, required => [ 'notification_subscription_id' ]);
 
     $self->SUPER::unsubscribe(%args);
 
-    # TODO workflow_def_origin should be named workflow_def_origin_id and workflow_def_origin should
-    # call directly the WorkflowDef object
-
-    my $wfdef_origin_id = $self->workflow_def->workflow_def_origin;
-
-    if (Entity->get(id => $wfdef_origin_id)->workflow_def_name eq $self->notifyWorkflowName) {
+    if ($self->workflow_def->workflow_def_origin->workflow_def_name eq $self->notifyWorkflowName) {
         if ($self->notification_subscription_entities == 0) {
             my $wf_manager  = $self->service_provider->getManager(manager_type => "WorkflowManager");
             $wf_manager->deassociateWorkflow(rule_id => $self->id);

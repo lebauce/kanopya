@@ -337,7 +337,7 @@ sub delete {
     my $self = shift;
     my @rules_from_same_service = Entity::Rule::AggregateRule->search(hash => {service_provider_id => $self->aggregate_condition_service_provider_id});
 
-    my $id = $self->getId;
+    my $id = $self->id;
     LOOP:
     while (@rules_from_same_service) {
         my $rule = pop @rules_from_same_service;
@@ -443,14 +443,13 @@ sub clone {
 
     my $attrs_cloner = sub {
         my %args = @_;
-        my $attrs = $args{attrs};
         for my $operand ('left_combination', 'right_combination') {
-            $attrs->{ $operand . '_id' } = $self->$operand->clone(
-                dest_service_provider_id => $attrs->{aggregate_condition_service_provider_id}
+            $args{attrs}->{ $operand . '_id' } = $self->$operand->clone(
+                dest_service_provider_id => $args{attrs}->{aggregate_condition_service_provider_id}
             )->id;
         }
-        $attrs->{last_eval} = undef;
-        return %$attrs;
+        $args{attrs}->{last_eval} = undef;
+        return $args{attrs};
     };
 
     return $self->_importToRelated(

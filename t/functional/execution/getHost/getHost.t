@@ -42,6 +42,7 @@
 
 use strict;
 use warnings;
+
 use Test::More 'no_plan';
 use Test::Exception;
 use Kanopya::Exceptions;
@@ -50,7 +51,7 @@ use Entity::Netconf;
 use Kanopya::Tools::Create;
 use Kanopya::Tools::Register;
 
-use BaseDB;
+use Kanopya::Database;
 
 # Allow the test to be launched from an external repository
 use File::Basename;
@@ -94,99 +95,99 @@ Log::Log4perl->easy_init({
 main();
 
 sub main {
-    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+    Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
     # 1st serie of tests : Only one matching host in each case.
 
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
     test1a();
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
     test1b();
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
     test1c();
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
     test1d();
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
     test1e();
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
     test1f();
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
     test1g();
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 
     # 2nd serie of tests : None of the hosts match the constraints.
 
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
     test2a();
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
     test2b();
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
     test2c();
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
     test2d();
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
     test2e();
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
     test2f();
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
     test2g();
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 
     # 3rd serie of tests : Choosing the host with the best cost for a given criterion.
 
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
     test3a();
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
     test3b();
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
     test3c();
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
     test3d();
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
     test3e();
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
     test3f();
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
     test4a();
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
     test4b();
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 }

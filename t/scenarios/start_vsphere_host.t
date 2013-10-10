@@ -11,6 +11,7 @@ use Data::Dumper;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'start_vsphere_host.t.log', layout=>'%F %L %p %m%n'});
 
+use Kanopya::Database;
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::Create;
 
@@ -28,10 +29,10 @@ my $vsphere_conf = {
     overcommitment_cpu_factor    => 10,
 };
 
-BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
 if ($testing == 1) {
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
 }
 
 diag('Register master image');
@@ -136,5 +137,5 @@ lives_ok{
 } 'Start NFS VM cluster';
 
 if ($testing == 1) {
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 }

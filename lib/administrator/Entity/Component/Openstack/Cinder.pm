@@ -24,8 +24,8 @@ TODO
 =cut
 
 package  Entity::Component::Openstack::Cinder;
-use base "Entity::Component";
-use base "Manager::DiskManager";
+use base Entity::Component;
+use base Manager::DiskManager;
 
 use strict;
 use warnings;

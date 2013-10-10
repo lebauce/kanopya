@@ -21,7 +21,7 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use BaseDB;
+use Kanopya::Database;
 use Entity::ServiceProvider::Cluster;
 use Entity::User;
 use Entity::Host;
@@ -48,10 +48,10 @@ my $testing = 1;
 main();
 
 sub main {
-    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+    Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if ($testing) {
-        BaseDB->beginTransaction;
+        Kanopya::Database::beginTransaction;
     }
 
     diag('Create and configure cluster');
@@ -61,7 +61,7 @@ sub main {
     start_unmanaged_multipath_host();
 
     if ($testing) {
-        BaseDB->rollbackTransaction;
+        Kanopya::Database::rollbackTransaction;
     }
 }
 

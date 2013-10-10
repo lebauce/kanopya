@@ -26,7 +26,7 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use BaseDB;
+use Kanopya::Database;
 use Entity;
 use Entity::Component::Virtualization::Opennebula3;
 use Entity::Workflow;
@@ -45,10 +45,10 @@ my $coefGb2Bytes = 1024**3;
 main();
 
 sub main {
-    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+    Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if($testing == 1) {
-        BaseDB->beginTransaction;
+        Kanopya::Database::beginTransaction;
     }
 
     #get orchestrator configuration
@@ -68,7 +68,7 @@ sub main {
     _reinit_infra_cpu();
 
     if ($testing == 1) {
-        BaseDB->rollbackTransaction;
+        Kanopya::Database::rollbackTransaction;
     }
 }
 

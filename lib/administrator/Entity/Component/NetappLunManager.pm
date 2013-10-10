@@ -136,7 +136,7 @@ sub getBootPolicyFromExportManager {
 
     my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
 
-    if ($args{export_manager}->getId == $self->getId) {
+    if ($args{export_manager}->id == $self->id) {
         return Manager::HostManager->BOOT_POLICIES->{pxe_iscsi};
     }
 

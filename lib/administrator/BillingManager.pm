@@ -45,7 +45,7 @@ sub userBilling {
     my ($user, $from, $to) = @_;
 
     my @clusters = Entity::ServiceProvider::Cluster->search(
-                       hash => { user_id => $user->getId }
+                       hash => { user_id => $user->id }
                    );
 
     for my $cluster (@clusters) {
@@ -130,7 +130,7 @@ sub clusterBilling {
                 my $start_offset = min($end, $day + ($start_hour * 3600) + ($start_minute * 60) + $start_second);
                 my $end_offset = min($end, $day + ($end_hour * 3600) + ($end_minute * 60) + $end_second);
 
-                $tree->insert($limit->getId,
+                $tree->insert($limit->id,
                               $start_offset,
                               $end_offset);
 
@@ -138,15 +138,15 @@ sub clusterBilling {
             }
         }
         else {
-            $tree->insert($limit->getId,
+            $tree->insert($limit->id,
                           $start, $end);
         }
 
-        $metrics{$type}->{limits}->{$limit->getId} = $limit->toJSON();
+        $metrics{$type}->{limits}->{$limit->id} = $limit->toJSON();
     }
 
     my $csv = Text::CSV->new ( { binary => 0, eol => "\n", sep_char => ";" } );
-    my $filename = "user-" . $user->getId .
+    my $filename = "user-" . $user->id .
                    "-" . $cluster_name . ".csv";
 
     my $fh;
