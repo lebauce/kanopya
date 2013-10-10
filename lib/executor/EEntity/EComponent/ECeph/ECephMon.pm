@@ -26,6 +26,7 @@ sub preStartNode {
     if (!$self->ceph_mon_secret) {
         my $secret = `ceph-authtool /dev/stdout --name=mon. --gen-key | grep "key =" | cut -f 2`;
         $secret =~ s/key = //;
+        $secret =~ s/^\s+|\s+$//g;
         $self->ceph_mon_secret($secret);
     }
 }
