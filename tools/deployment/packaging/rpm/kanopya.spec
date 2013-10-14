@@ -81,6 +81,7 @@ Requires: perl-Set-IntervalTree
 Requires: perl-File-Pid
 Requires: perl-YAML
 Requires: redhat-lsb-core
+Requires: uuid
 
 Provides: perl(VMware::VICommon)
 Provides: perl(VMware::VILib)

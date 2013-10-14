@@ -24,7 +24,7 @@ sub preStartNode {
                          required => [ 'cluster', 'host' ]);
 
     if (!$self->ceph_fsid) {
-        my $uuid = `uuidgen -r`;
+        my $uuid = `uuid`;
         $uuid =~ s/^\s+|\s+$//g;
         $self->ceph_fsid($uuid);
     }
