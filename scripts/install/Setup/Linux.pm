@@ -30,6 +30,7 @@ use parent 'Setup';
 
 use strict;
 use warnings;
+
 use Template;
 use NetAddr::IP;
 use File::Path qw(make_path);
@@ -834,9 +835,9 @@ sub _configure_puppetmaster {
         $err->rethrow();
     }
 
-    use Kanopya::Config;
-    use EEntity;
-    use Entity::ServiceProvider::Cluster;
+    require Kanopya::Config;
+    require EEntity;
+    require Entity::ServiceProvider::Cluster;
 
     my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
     my $linux = $kanopya->getComponent(category => "System");
