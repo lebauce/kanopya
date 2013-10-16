@@ -892,7 +892,7 @@ sub _configure_puppetmaster {
 =pod
 =begin classdoc
 
-Retrieve tftp files from 192.168.0.173
+Retrieve tftp files from download.kanopya.org
 
 =end classdoc
 =cut
@@ -900,18 +900,18 @@ Retrieve tftp files from 192.168.0.173
 sub _retrieve_tftp_content {
     my ($self) = @_;
 
-    print "\n - Retrieving TFTP directory contents from http://192.168.0.173...\n";
+    print "\n - Retrieving TFTP directory contents from http://download.kanopya.org...\n";
 
     my $rsync_sshkey = '/root/.ssh/rsync_rsa';
     # Check if rsync sshkey exist on right place :
     if ( ! -e $rsync_sshkey) {
         # Get the rsync_rsa key :
-        system('wget http://192.168.0.173:8011/rsync_rsa');
+        system('wget http://download.kanopya.org/pub/rsync_rsa');
         # Move the key and set the correct rights ;
         system('mv rsync_rsa /root/.ssh/;chmod 400 /root/.ssh/rsync_rsa');
     }
-    # Do a Rsync from 192.168.0.173 of tftp directory content :
-    system('rsync -var -e "ssh -p 2211 -i /root/.ssh/rsync_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" rsync@192.168.0.173:/pub/tftp/* '.$self->{parameters_values}->{tftp_dir});
+    # Do a Rsync from download.kanopya.org of tftp directory content :
+    system('rsync -var -e "ssh -i /root/.ssh/rsync_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" rsync@download.kanopya.org:/pub/tftp/* '.$self->{parameters_values}->{tftp_dir});
 }
 
 
