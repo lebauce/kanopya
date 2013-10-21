@@ -181,11 +181,7 @@ sub unsubscribe {
     if (Entity->get(id => $wfdef_origin_id)->workflow_def_name eq $self->notifyWorkflowName) {
         if ($self->notification_subscription_entities == 0) {
             my $wf_manager  = $self->service_provider->getManager(manager_type => "WorkflowManager");
-
-            $wf_manager->deassociateWorkflow(
-                rule_id         => $self->id,
-                workflow_def_id => $self->workflow_def->id,
-            );
+            $wf_manager->deassociateWorkflow(rule_id => $self->id);
         }
     }
 }

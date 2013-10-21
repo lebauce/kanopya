@@ -1841,7 +1841,7 @@ sub populate_workflow_def {
 
     my $delay_desc = 'Delay minimum between two workflow triggers';
     # ScaleIn cpu workflow def
-    my $scale_cpu_wf = $kanopya_wf_manager->createWorkflow(
+    my $scale_cpu_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'ScaleInCPU',
         params => {
             specific => {
@@ -1860,7 +1860,7 @@ sub populate_workflow_def {
     $scale_cpu_wf->addStep( operationtype_id => $scale_op_id );
 
     # ScaleIn memory workflow def
-    my $scale_mem_wf = $kanopya_wf_manager->createWorkflow(
+    my $scale_mem_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'ScaleInMemory',
         params => {
             specific => {
@@ -1883,7 +1883,7 @@ sub populate_workflow_def {
     my $prestart_op_id = Operationtype->find( hash => { operationtype_name => 'PreStartNode' })->id;
     my $start_op_id = Operationtype->find( hash => { operationtype_name => 'StartNode' })->id;
     my $poststart_op_id = Operationtype->find( hash => { operationtype_name => 'PostStartNode' })->id;
-    my $addnode_wf = $kanopya_wf_manager->createWorkflow(
+    my $addnode_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'AddNode',
         params => {
             automatic => {
@@ -1906,7 +1906,7 @@ sub populate_workflow_def {
     my $prestop_op_id = Operationtype->find( hash => { operationtype_name => 'PreStopNode' })->id;
     my $stop_op_id = Operationtype->find( hash => { operationtype_name => 'StopNode' })->id;
     my $poststop_op_id = Operationtype->find( hash => { operationtype_name => 'PostStopNode' })->id;
-    my $stopnode_wf = $kanopya_wf_manager->createWorkflow(
+    my $stopnode_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'StopNode',
         params => {
             automatic => {
@@ -1925,17 +1925,17 @@ sub populate_workflow_def {
     $stopnode_wf->addStep(operationtype_id => $poststop_op_id);
 
     # Optimiaas Workflow def
-    my $optimiaas_wf = $kanopya_wf_manager->createWorkflow(workflow_name => 'OptimiaasWorkflow');
+    my $optimiaas_wf = $kanopya_wf_manager->createWorkflowDef(workflow_name => 'OptimiaasWorkflow');
     my $optimiaas_op_id = Operationtype->find( hash => { operationtype_name => 'LaunchOptimiaasWorkflow' })->id;
     $optimiaas_wf->addStep(operationtype_id => $optimiaas_op_id);
 
     # Migrate Workflow def
-    my $migrate_wf = $kanopya_wf_manager->createWorkflow(workflow_name => 'MigrateWorkflow');
+    my $migrate_wf = $kanopya_wf_manager->createWorkflowDef(workflow_name => 'MigrateWorkflow');
     my $migrate_op_id = Operationtype->find( hash => { operationtype_name => 'MigrateHost' })->id;
     $migrate_wf->addStep(operationtype_id => $migrate_op_id);
 
     # ResubmitNode  workflow def
-    my $resubmit_node_wf = $kanopya_wf_manager->createWorkflow(
+    my $resubmit_node_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'ResubmitNode',
         params => {
             internal => {
@@ -1957,7 +1957,7 @@ sub populate_workflow_def {
     $resubmit_node_wf->addStep( operationtype_id => $scale_mem_op_id );
 
     # RelieveHypervisor workflow def
-    my $relieve_hypervisor_wf = $kanopya_wf_manager->createWorkflow(
+    my $relieve_hypervisor_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'RelieveHypervisor',
         params => {
             internal => {
@@ -1978,7 +1978,7 @@ sub populate_workflow_def {
     $relieve_hypervisor_wf->addStep( operationtype_id => $migrate_op_id );
 
     # MaintenanceHypervisor workflow def
-    my $hypervisor_maintenance_wf = $kanopya_wf_manager->createWorkflow(
+    my $hypervisor_maintenance_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'HypervisorMaintenance',
         params => {
             internal => {
@@ -1999,7 +1999,7 @@ sub populate_workflow_def {
     );
 
     # Hypervisor resubmit workflow def
-    my $hypervisor_resubmit_wf = $kanopya_wf_manager->createWorkflow(
+    my $hypervisor_resubmit_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'ResubmitHypervisor',
         params => {
             internal => {
@@ -2016,7 +2016,7 @@ sub populate_workflow_def {
     my $resubmit_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'ResubmitHypervisor' })->id;
     $hypervisor_resubmit_wf->addStep( operationtype_id => $resubmit_hypervisor_op_id);
 
-    my $notify_wf_node      = $kanopya_wf_manager->createWorkflow(
+    my $notify_wf_node      = $kanopya_wf_manager->createWorkflowDef(
         workflow_name   => 'NotifyWorkflow node',
         params          => {
             internal   => {
@@ -2027,7 +2027,7 @@ sub populate_workflow_def {
         }
     );
 
-    my $notify_wf_service   = $kanopya_wf_manager->createWorkflow(
+    my $notify_wf_service   = $kanopya_wf_manager->createWorkflowDef(
         workflow_name   => 'NotifyWorkflow service_provider',
         params          => {
             internal   => {
@@ -2039,7 +2039,7 @@ sub populate_workflow_def {
     );
 
     # Synchronize workflow def
-    my $synchronize_wf = $kanopya_wf_manager->createWorkflow(
+    my $synchronize_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'Synchronize',
         params        => {
             internal  => { },

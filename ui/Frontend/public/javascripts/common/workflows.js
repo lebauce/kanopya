@@ -117,7 +117,7 @@ function createSCOWorkflowDefButton(container, managerid, dial, wfid, wf) {
                         }
                     };
                     $.ajax({
-                        url         : '/api/entity/' + managerid + "/createWorkflow",
+                        url         : '/api/entity/' + managerid + "/createWorkflowDef",
                         type        : 'POST',
                         contentType : 'application/json',
                         data        : JSON.stringify(params),

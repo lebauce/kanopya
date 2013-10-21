@@ -47,6 +47,7 @@ use ParamPreset;
 use Scope;
 use ScopeParameter;
 use NotificationSubscription;
+use TryCatch;
 
 sub methods {
   return {
@@ -56,8 +57,8 @@ sub methods {
     getWorkflowDefs => {
         description => 'getWorkflowDefs',
     },
-    createWorkflow => {
-        description => 'createWorkflow',
+    createWorkflowDef => {
+        description => 'createWorkflowDef',
     },
     associateWorkflow => {
         description => 'associateWorkflow',
@@ -82,91 +83,96 @@ instanciation, but also for workflow definition (with defined specific parameter
 
 @param workflow_name workflow_params, $workflow_def_origin (id)
 
+@optional params
+@optional workflow_def_origin_id link a workflow_def created by a workflow_def origin to its origin
+                                 (currently used in rule-workflow association)
+
 @return the created workflow instance
 
 =end classdoc
 =cut
 
-sub createWorkflow {
+sub createWorkflowDef {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'workflow_name' ]);
-
-    my $workflow_def_name   = $args{workflow_name};
-    my %workflow_def_params;
-    my $workflow;
+    General::checkParams(args     => \%args,
+                         required => [ 'workflow_name' ],
+                         optional => {params                 => undef,
+                                      workflow_def_origin_id => undef});
 
     #creation of a new instance of workflow_def
+
+    #TODO refactor all the parameters management by clarifying mandatory and authorized parameters categories
+    # (automatic, specific, internal, data, data->template_content etc...)
+
     if (defined $args{params}) {
-        %workflow_def_params = %{$args{params}};
+        if ((!exists $args{params}->{automatic}) && (!exists $args{params}->{specific})) {
+            if (defined $args{params}->{data}->{template_content} && defined $args{params}->{internal}->{scope_id}) {
 
-        if ((!exists $workflow_def_params{automatic}) && (!exists $workflow_def_params{specific})) {
-            #sort the specific params from the automatic params
-            my $params = $self->_getSortedParams(
-                             params => \%workflow_def_params
-                         );
+                #sort the specific params from the automatic params
+                my $params = $self->_extractAutomaticAndSpecificParams(
+                                 template_content => $args{params}->{data}->{template_content},
+                                 scope_id         => $args{params}->{internal}->{scope_id},
+                             );
 
-            #append the automatic and specific params to workflow params
-            $workflow_def_params{automatic} = $params->{automatic};
-            $workflow_def_params{specific}  = $params->{specific};
+                #append the automatic and specific params to workflow params
+                $args{params}->{automatic} = $params->{automatic};
+                $args{params}->{specific}  = $params->{specific};
+            }
         }
-
-        $workflow = Entity::WorkflowDef->new(
-                        workflow_def_name   => $workflow_def_name,
-                        workflow_def_origin => $args{workflow_def_origin},
-                        params              => \%workflow_def_params,
-                    );
-    } else {
-        $workflow = Entity::WorkflowDef->new(
-                        workflow_def_name   => $workflow_def_name,
-                        workflow_def_origin => $args{workflow_def_origin}
-                    );
     }
 
+    my $workflow = Entity::WorkflowDef->new(workflow_def_name   => $args{workflow_name},
+                                            workflow_def_origin => $args{workflow_def_origin_id},
+                                            params              => $args{params});
+
     #now associating the new workflow to the manager
-    my $workflow_def_id = $workflow->getAttr(name => 'workflow_def_id');
-    my $manager_id      = $self->getId;
+
     WorkflowDefManager->new(
-        manager_id => $manager_id,
-        workflow_def_id => $workflow_def_id
+        manager_id      => $self->id,
+        workflow_def_id => $workflow->workflow_def_id,
     );
 
     return $workflow;
 }
 
 
+=pod
+=begin classdoc
+
+Deassociate a workflowDef from a rule
+
+@param rule_id the id of the rule
+
+Warning parameter workflow_def_id is deprecated
+
+=end classdoc
+=cut
+
 sub deassociateWorkflow {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'rule_id', 'workflow_def_id' ]);
+    General::checkParams(args => \%args, required => ['rule_id']);
 
-    my $workflow_def = Entity::WorkflowDef->get(id => $args{workflow_def_id});
+    my $rule = Entity::Rule->get(id => $args{rule_id});
+    my $workflow_def = $rule->workflow_def;
+    $rule->workflow_def_id(undef);
 
-    my $workflow_params = $workflow_def->paramPresets;
-    my $wf_def_origin_id = $workflow_def->workflow_def_origin;
-    # Unlink workflow to rule
-    $self->_linkWorkflowToRule(
-               workflow => undef,
-               rule_id  => $args{rule_id},
-               scope_id => $workflow_params->{internal}->{scope_id}
-           );
+    if (defined $workflow_def) {
+        my $wf_def_origin_id = $workflow_def->workflow_def_origin;
+        $workflow_def->delete();
+        # Check if there's subscriptions on this rule
+        my @notification_subscriptions  = NotificationSubscription->search(hash => {
+                                              entity_id => $args{rule_id}
+                                          });
 
-    # Delete workflow def
-    $workflow_def->delete();
+        if (@notification_subscriptions > 0) {
+            my $orig_name = Entity->get(id => $wf_def_origin_id)->workflow_def_name;
 
-    # Check if there's subscriptions on this rule
-    my @notification_subscriptions  = NotificationSubscription->search(hash => {
-            entity_id   => $args{rule_id}
-    });
-
-
-    if (@notification_subscriptions > 0) {
-        my $rule      = Entity::Rule->get(id => $args{rule_id});
-        my $orig_name = Entity->get(id => $wf_def_origin_id)->workflow_def_name;
-
-        if (! ($orig_name eq $rule->notifyWorkflowName)) {
-            # If any, must re-associate the rule with the empty workflow
-            Entity::Rule->find(hash => {rule_id => $args{rule_id} })->associateWithNotifyWorkflow();
+            if (! ($orig_name eq $rule->notifyWorkflowName)) {
+                # If any, must re-associate the rule with the empty workflow
+                $rule->associateWithNotifyWorkflow();
+            }
         }
     }
 }
@@ -175,10 +181,10 @@ sub deassociateWorkflow {
 =pod
 =begin classdoc
 
-Create a new instance of WorkflowDef that has defined specific 
+Create a new instance of WorkflowDef that has defined specific
 parameters. This instance will be used for future runs
 
-@return the created workflow object (get by calling createWorkflow())
+@return the created workflow object (get by calling createWorkflowDef())
 
 =end classdoc
 =cut
@@ -186,72 +192,40 @@ parameters. This instance will be used for future runs
 sub associateWorkflow {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'new_workflow_name',
-                                                       'origin_workflow_def_id',
+    General::checkParams(args => \%args, required => [ 'origin_workflow_def_id',
                                                        'rule_id', ],
-                                         optional => { 'specific_params' => {} },
+                                         optional => { 'specific_params' => {},
+                                                       'new_workflow_name' => undef},
     );
 
-    my $rule    = Entity::Rule->find(hash => { rule_id => $args{rule_id} });
+    my $rule  = Entity::Rule->get(id => $args{rule_id});
+    my $wfdef = Entity::WorkflowDef->get(id => $args{origin_workflow_def_id});
 
-    if (defined $rule->workflow_def) {
-        $self->deassociateWorkflow(
-            rule_id         => $args{rule_id},
-            workflow_def_id => $rule->workflow_def_id
-        );
+    if (! defined $args{new_workflow_name}) {
+        $args{new_workflow_name} = $rule->id . "_" . $wfdef->workflow_def_name;
     }
 
-    my $workflow_def_id      = $args{origin_workflow_def_id};
-    my $origin_workflow_name = $self->getWorkflowDef (workflow_def_id => $workflow_def_id)
-                                   ->getAttr(name => 'workflow_def_name');
-    my $specific_params      = $args{specific_params};
-
-    #check if the workflow name is an already existing workflow. If not
-    #throw an error => you can only associate an existing workflow to
-    #a rule
-
-    #get all workflow defs related to this manager
-    my $workflow_defs = $self->getWorkflowDefs();
-    #initiate a counter to recense existing workflows
-    my $existing_origin_workflows = 0;
-
-    #TODO fix algo issue: use only grep on @$workflow_defs to match good name
-    #use: check that the to-associate workflow is a managed one
-
-#    foreach my $workflow_def (@$workflow_defs) {
-#        if((grep {$_->getAttr(name => 'workflow_def_name')
-#        eq $origin_workflow_name} $workflow_def) == 1) {
-#            $existing_origin_workflows++;
-#        }
-#    }
-#    if ($existing_origin_workflows == 0) {
-#        my $errmsg = 'Unknown workflow_def name '.$origin_workflow_name;
-#        throw Kanopya::Exception(error => $errmsg);
-#    }
+    if (defined $rule->workflow_def) {
+        $self->deassociateWorkflow(rule_id => $args{rule_id});
+    }
 
     #get the original workflow's params and replace undefined specific params
     #with the now defined specific params
-    my $workflow_params = $self->_getAllParams(
-                              workflow_def_id => $workflow_def_id
-                          );
-    $workflow_params->{specific} = $specific_params;
+    my $workflow_params = $wfdef->paramPresets;
+
+    $workflow_params->{specific} = $args{specific_params};
 
     #add special parameter to indicate that the workflow is associated
     #to a rule
     $workflow_params->{internal}->{association} = 1;
 
-    my $workflow = $self->createWorkflow(
-                       workflow_name        => $args{new_workflow_name},
-                       params               => $workflow_params,
-                       workflow_def_origin  => $workflow_def_id
+    my $workflow = $self->createWorkflowDef(
+                       workflow_name          => $args{new_workflow_name},
+                       params                 => $workflow_params,
+                       workflow_def_origin_id => $args{origin_workflow_def_id}
                    );
 
-    #Then we finally link the workflow to the rule
-    $self->_linkWorkflowToRule(
-               workflow => $workflow,
-               rule_id  => $args{rule_id},
-               scope_id => $workflow_params->{internal}->{scope_id}
-           );
+    $rule->workflow_def_id($workflow->id);
 
     return $workflow;
 }
@@ -273,6 +247,12 @@ sub cloneWorkflow {
 
     # Get original workflow def and params
     my $wf_def      = Entity::WorkflowDef->get(id => $args{workflow_def_id});
+    my $workflow_def_origin_id = $wf_def->workflow_def_origin;
+
+    if (! defined $workflow_def_origin_id) {
+        throw Kanopya::Exception::Internal(error => 'Cannot clone WorfklowDef instance without origin');
+    }
+
     my $wf_params   = $wf_def->paramPresets;
     my $wf_name     = $wf_def->workflow_def_name;
 
@@ -281,43 +261,12 @@ sub cloneWorkflow {
     $wf_name =~ s/^[0-9]*/$rule_id/;
 
     # Associate to the rule a copy of the workflow
-    $self->associateWorkflow(
-        'new_workflow_name'         => $wf_name,
-        'origin_workflow_def_id'    => $wf_def->workflow_def_origin,
-        'specific_params'           => $wf_params->{specific} || {},
-        'rule_id'                   => $rule_id,
-    );
-}
-
-
-=pod
-=begin classdoc
-
-Link or unlink a workflow to a rule.
-
-=end classdoc
-=cut
-
-sub _linkWorkflowToRule {
-    my ($self,%args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'rule_id', 'scope_id' ], optional => { 'workflow' => undef });
-
-    my $workflow = $args{workflow};
-    my $rule_id  = $args{rule_id};
-    my $scope_id = $args{scope_id};
-    my $rule;
-
-    #get workflow def id
-    my $workflow_def_id = defined $workflow ? $workflow->getAttr(name => 'workflow_def_id') : undef;
-
-    #we get the scope name
-    my $scope      = Scope->find(hash => {scope_id => $scope_id});
-    my $scope_name = $scope->getAttr(name => 'scope_name');
-
-    $rule    = Entity::Rule->find(hash => { rule_id => $rule_id });
-    $rule->setAttr (name => 'workflow_def_id', value => $workflow_def_id);
-    $rule->save();
+    return $self->associateWorkflow(
+               'new_workflow_name'         => $wf_name,
+               'origin_workflow_def_id'    => $workflow_def_origin_id,
+               'specific_params'           => $wf_params->{specific} || {},
+               'rule_id'                   => $rule_id,
+           );
 }
 
 
@@ -326,57 +275,60 @@ sub _linkWorkflowToRule {
 
 Run a workflow.
 
+@param rule the rule responsible for the workflow triggering
+@optional host_name node hostname responsible for the rule triggering
+
+@return the corresponding Workflow instance
+
 =end classdoc
 =cut
 
 sub runWorkflow {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'workflow_def_id', 'rule_id', 'service_provider_id' ]);
+    General::checkParams(args => \%args, required => ['rule'], optional => {host_name => undef});
 
-    my $rule_id             = $args{rule_id};
-    my $workflow_def_id     = $args{workflow_def_id};
-    my $service_provider_id = $args{service_provider_id};
+    my $execution_manager;
 
-    my $workflow            = $self->getWorkflowDef(
-                                  workflow_def_id => $workflow_def_id
-                              );
-    my $workflow_name       = $workflow->getAttr(
-                                  name => 'workflow_def_name'
-                              );
+    try {
+        $execution_manager = $self->service_provider->getManager(manager_type => 'ExecutionManager');
+    }
+    catch ($err) {
+        my $error = 'Service provider <'. $self->service_provider->label
+                    .'> has no Execution Manager. Cannot run workflow';
+        throw Kanopya::Exception::Internal(error => $error);
+    }
+
+    my $wfdef = $args{rule}->workflow_def;
 
     #gather the workflow params
-    my $all_params = $self->_getAllParams(
-                        workflow_def_id => $workflow_def_id
-                     );
-
-    my $scope_id   = $all_params->{internal}->{scope_id};
+    my $all_params = $wfdef->paramPresets;
 
     #resolve the automatic params values
-    my $automatic_values;
-    $automatic_values = $self->_getAutomaticValues(
-            automatic_params => $all_params->{automatic},
-            scope_id         => $scope_id,
-            %args,
-        );
+    my $automatic_values = $self->_getAutomaticValues(
+                               automatic_params    => $all_params->{automatic} || {},
+                               scope_id            => $all_params->{internal}->{scope_id},
+                               service_provider_id => $args{rule}->service_provider_id,
+                               host_name           => $args{host_name},
+                           );
 
     #replace the undefined automatic params with the defined ones
     $all_params->{automatic} = $automatic_values;
 
     #prepare final workflow params hash
     my $workflow_params = $self->_defineFinalParams(
-                              all_params    => $all_params,
-                              workflow_name => $workflow_name,
-                              rule_id       => $rule_id,
-                              sp_id         => $service_provider_id,
+                              all_params        => $all_params,
+                              workflow_def_name => $wfdef->workflow_def_name,
+                              rule_id           => $args{rule}->id,
+                              sp_id             => $args{rule}->service_provider_id,
                           );
 
     #run the workflow with the fully defined params
-    return $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
-               name       => $workflow_name,
-               related_id => $service_provider_id,
+    return $execution_manager->run(
+               name       => $wfdef->workflow_def_name,
+               related_id => $args{rule}->service_provider_id,,
                params     => $workflow_params,
-               rule       => Entity->get(id => $rule_id),
+               rule       => $args{rule},
            );
 }
 
@@ -386,6 +338,8 @@ sub runWorkflow {
 
 Get a list of workflow defs related to the manager.
 
+@optional no_associate only original workflow defs (not associated to a rule)
+
 =end classdoc
 =cut
 
@@ -394,70 +348,46 @@ sub getWorkflowDefs {
 
     #first we gather all the workflow def related to the current manager
     my @manager_workflow_defs = WorkflowDefManager->search (
-                            hash => {manager_id => $self->getId}
+                            hash => {manager_id => $self->id}
                         );
 
     #then we create a list of workflow_def from the manager workflow_defs
     my @workflow_defs;
 
-    foreach my $manager_workflow_def (@manager_workflow_defs) {
-        my $workflow_def = $manager_workflow_def->workflow_def;
-        my $ok = 1;
-        if ($args{no_associate}) {
-            my $all_params = $workflow_def->paramPresets;
-            if ($all_params->{internal}{association}) {
-                $ok = 0;
-            }
+    my $validator = sub {return 1};
+
+    if ($args{no_associate}) {
+        $validator = sub {
+            my $wfdef = shift;
+            my $all_params = $wfdef->paramPresets;
+            return ! defined $all_params->{internal}{association};
         }
-        push @workflow_defs, $workflow_def if $ok;
+    }
+
+    for my $manager_workflow_def (@manager_workflow_defs) {
+        my $workflow_def = $manager_workflow_def->workflow_def;
+        if ($validator->($workflow_def)) {
+            push @workflow_defs, $workflow_def;
+        }
     }
 
     return \@workflow_defs;
 }
 
-
-sub getWorkflowDef {
-    my ($self,%args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'workflow_def_id' ]);
-
-    my $workflow_def = Entity::WorkflowDef->find (
-                            hash => {workflow_def_id => $args{workflow_def_id}}
-                       );
-
-    return $workflow_def;
-}
-
-
-=pod
-=begin classdoc
-
-Get the automatic params list for a workflow def.
-
-=end classdoc
-=cut
-
-sub _getAutomaticParams {
-    my ($self,%args) = @_;
-
-    General::checkParams(args => \%args, required => ['data_params','scope_id']);
-
-    my $data_params          = $args{data_params};
-    my $scope_id             = $args{scope_id};
-    my $scope_parameter_list = $self->getScopeParameterNameList(
-                                    scope_id => $scope_id
-                               );
-
-    my %automatic_params;
-
-    for my $param (@$scope_parameter_list) {
-        if (exists $data_params->{$param}){
-            $automatic_params{$param} = undef;
-        }
-    }
-
-    return \%automatic_params;
-}
+#
+#=pod
+#=begin classdoc
+#
+#Get the automatic params list for a workflow def.
+#
+#=end classdoc
+#=cut
+#
+#sub _getAutomaticParams {
+#    my ($self,%args) = @_;
+#
+#
+#}
 
 
 =pod
@@ -473,14 +403,9 @@ sub getParams {
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'workflow_def_id' ]);
+    my $all_params = Entity::WorkflowDef->get(id => $args{workflow_def_id})->paramPresets();
 
-    my $workflow_def_id = $args{workflow_def_id};
     my %params;
-    $params{automatic} = undef;
-    $params{specific}  = undef;
-
-    #retrieve all workflow params
-    my $all_params = $self->_getAllParams(workflow_def_id => $workflow_def_id);
 
     $params{automatic} = $all_params->{automatic};
     $params{specific}  = $all_params->{specific};
@@ -499,104 +424,86 @@ parameters.
 =end classdoc
 =cut
 
-sub _getSortedParams {
+sub _extractAutomaticAndSpecificParams {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'params' ]);
-
-    #get all workflow params
-    my $all_params         = $args{params};
-
-    my $brut_data_params   = $all_params->{data};
+    General::checkParams(args => \%args, required => [ 'template_content', 'scope_id' ]);
 
     #extract the parameter from the raw data given as parameter to the workflow
-    my $prepared_data_params = $self->_prepareParams(
-                                data_params => $brut_data_params
-                             );
-    my $scope_id           = $all_params->{internal}->{scope_id};
+    my $paramsFromTemplate = $self->_extractParamsFromTemplate(template => $args{template_content});
+
+    my $scope_parameter_list = ScopeParameter->getNames(scope_id => $args{scope_id});
+
+    # Transform parameters list into hash in order to search in 0(1)
+    my %scope_parameter_hash = map { $_ => 1 } @$scope_parameter_list;
 
     #now differenciate automatic params from specific ones
-    my %sorted_params;
-    $sorted_params{automatic}  = undef;
-    $sorted_params{specific}   = undef;
+    my $sorted_params = {automatic => {}, specific => {}};
 
-    #get automatic params
-    $sorted_params{automatic} = $self->_getAutomaticParams(
-                                    data_params => $prepared_data_params,
-                                    scope_id    => $scope_id
-                                );
-    #get specific params
-    $sorted_params{specific} = $self->getSpecificParams(
-                                data_params => $prepared_data_params,
-                                scope_id    => $scope_id
-                               );
-
-    return \%sorted_params;
-}
-
-
-sub getSpecificParams {
-    my ($self,%args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'scope_id', 'data_params' ]);
-    my $data_params           = $args{data_params};
-    my $scope_id              = $args{scope_id};
-    my $scope_parameter_list  = $self->getScopeParameterNameList(
-                                    scope_id => $scope_id
-                               );
-
-    # Remove automatic params
-    for my $scope_parameter (@$scope_parameter_list) {
-        delete $data_params->{$scope_parameter};
-    };
-
-    return $data_params;
-}
-
-sub getWorkflowDefsIds() {
-    my ($self,%args)    = @_;
-
-    my $manager_id      = $self->getId;
-    my @wfids           = ();
-    my @workflow_def    = WorkflowDefManager->search (
-                            hash => {manager_id => $manager_id}
-                        );
-    for my $wf (@workflow_def) {
-      push(@wfids, $wf->getAttr(name => 'workflow_def_id'));
+    for my $param (@$paramsFromTemplate) {
+        if (defined $scope_parameter_hash{$param}) {
+            $sorted_params->{automatic}->{$param} = undef;
+        }
+        else {
+            $sorted_params->{specific}->{$param} = undef;
+        }
     }
+
+    return $sorted_params;
+}
+
+
+=pod
+=begin classdoc
+
+Get the list of ids of workflowDef related to the workflow manager
+
+@return the list reference
+
+=end classdoc
+=cut
+
+sub getWorkflowDefsIds {
+    my $self = shift;
+
+
+    my @workflow_defs    = WorkflowDefManager->search (
+                            hash => {manager_id => $self->id}
+                        );
+
+    my @wfids = map {$_->workflow_def_id} @workflow_defs;
     return \@wfids;
 }
 
 
-sub _getAllParams {
+=pod
+=begin classdoc
+
+Extract in hashref templated parameters from template
+
+@param template template string
+
+@return hashref {param => undef}
+
+=end classdoc
+=cut
+
+sub _extractParamsFromTemplate {
     my ($self,%args) = @_;
+    General::checkParams(args => \%args, optional => {template => ''});
 
-    General::checkParams(args => \%args, required => [ 'workflow_def_id' ]);
+    my @lines = split (/\n/, $args{template});
 
-    my $workflow_def_id = $args{workflow_def_id};
+    my @paramsFromTemplate = ();
 
-    #get the param preset id from the workflow def
-    my $workflow_def = $self->getWorkflowDef(workflow_def_id=>$workflow_def_id);
-    my $all_params   = $workflow_def->paramPresets;
+    foreach my $line (@lines) {
+        my @split = split(/\[\%\s*|\s*\%\]/, $line);
+        for (my $i = 1; $i < (scalar @split); $i+=2){
+            push @paramsFromTemplate, $split[$i];
+        }
+    }
 
-    return $all_params;
+    return \@paramsFromTemplate;
 }
-
-
-sub getScopeParameterNameList {
-    my ($self,%args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'scope_id' ]);
-
-    my @scopeParameterList = ScopeParameter->search(
-                                hash=>{scope_id => $args{scope_id}}
-                             );
-    my @scope_params = map {$_->getAttr(name => 'scope_parameter_name')}
-                            @scopeParameterList;
-
-    return \@scope_params;
-}
-
-sub _prepareParams { };
 
 1;

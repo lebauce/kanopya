@@ -16,6 +16,15 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 5 june 2012
 
+=pod
+=begin classdoc
+
+Microsoft System Center Orchestrator (SCO) is a workflow management solution.
+Kanopya generate a parametrized file to trigger SCO workflows.
+
+=end classdoc
+=cut
+
 package Entity::Component::Sco;
 use base 'Entity::Component';
 use base 'Manager::WorkflowManager';
@@ -35,63 +44,34 @@ my $errmsg;
 
 use constant ATTR_DEF => {};
 sub getAttrDef { return ATTR_DEF; }
- 
-=head2 _prepareParams
-    Desc: Retrieve the list of effective parameters desired by the user in the
-          final file 
 
-    Args: \%brut_data_params
 
-    Return: \%prepared_data_params 
+=pod
+=begin classdoc
+
+Override the workflow manager createWorkflowDef() to add specific workflow step
+
+@param workflow_name
+
+@return created workflow
+
+=end classdoc
 =cut
 
-sub _prepareParams {
-    my ($self,%args) = @_;
-    
-    General::checkParams(args => \%args, required => [ 'data_params' ]);
-    
-    my $data_params      = $args{data_params};
-    my $template_content = $data_params->{template_content};
-    my %prepared_data_params;
-
-    #print Dumper $template_content;
-    my @lines            = split (/\n/, $template_content);
-
-    foreach my $line (@lines) {
-        my @split = split(/\[\%\s*|\s*\%\]/, $line);
-        for (my $i = 1; $i < (scalar @split); $i+=2){
-            $prepared_data_params{$split[$i]} = undef;
-        }
-    }
-    #print Dumper \%prepared_data_params;
-
-    return \%prepared_data_params;
-}
-
-=head2 createWorkflow
-    Desc: override the workflow manager createWorkflow() 
-          to add specific workflow step 
-
-    Args: $workflow_name
-
-    Return: created $workflow (object)
-=cut
-
-sub createWorkflow {
+sub createWorkflowDef {
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => [ 'workflow_name' ]);
 
-    my $workflow          = $self->SUPER::createWorkflow(%args);
+    my $workflow = $self->SUPER::createWorkflowDef(%args);
 
     if (! defined $args{workflow_def_origin}) {
         my $operation_type  = Operationtype->find(
                                   hash => {operationtype_name => 'LaunchSCOWorkflow'}
                               );
-        my $operation_type_id = $operation_type->getAttr(name => 'operationtype_id');
 
         #we add a new step to the workflow
-        $workflow->addStep(operationtype_id => $operation_type_id);
+        $workflow->addStep(operationtype_id => $operation_type->id);
     }
     else {
         my @steps = WorkflowStep->search(
@@ -110,51 +90,63 @@ sub createWorkflow {
     return $workflow;
 }
 
-=head2 _getAutomaticValues
-    Desc: get the values for the workflow's specific params
 
-    Args: \%automatic_params
+=pod
+=begin classdoc
 
-    Return: created $workflow (object)
+Get the values for the workflow's specific params
+
+@param automatic_params
+
+@return created workflow
+
+=end classdoc
 =cut
 
 sub _getAutomaticValues {
     my ($self,%args) = @_;
 
-    if (not defined $args{automatic_params}) {
-        return undef;
-    }
+    General::checkParams(args => \%args, required => ['automatic_params', 'scope_id'],
+                                         optional => {host_name => undef, service_provider_id => undef});
 
     my $automatic_params = $args{automatic_params};
 
     #get the scope
-    my $scope_id            = $args{scope_id};
-    my $service_provider_id = $args{service_provider_id};
-    my $scope               = Scope->find(hash => { scope_id => $scope_id });
-    my $scope_name          = $scope->getAttr(name => 'scope_name');
+
+    my $scope               = Scope->get(id => $args{scope_id});
+    my $scope_name          = $scope->scope_name;
 
     if ($scope_name eq 'node') {
-        if ((exists $automatic_params->{node_hostname}) && (defined $args{host_name})) {
-            $automatic_params->{node_hostname}  = $args{host_name}; 
-        } else {
-            $errmsg = 'Workflow Manager could not retrieve node hostname';
-            $log->error($errmsg);
+
+        if (exists $automatic_params->{node_hostname}) {
+            if (defined $args{host_name}) {
+                $automatic_params->{node_hostname}  = $args{host_name};
+            }
+            else {
+                $errmsg = 'Workflow Manager could not retrieve node hostname';
+                $log->error($errmsg);
+            }
         }
 
         if (exists $automatic_params->{ou_from}) {
             eval {
-                $automatic_params->{ou_from}  = $self->_getOuFrom(sp_id => $service_provider_id);
+                $automatic_params->{ou_from} = $self->_getOuFrom(sp_id => $args{service_provider_id});
             };
             if ($@) {
                 $errmsg = 'Error while trying to retrieve ou_from parameter :'.$@;
                 $log->error($errmsg);
             }
         }
-
-    } elsif ($scope_name eq 'service_provider') {
+    }
+    elsif ($scope_name eq 'service_provider') {
         if (exists $automatic_params->{service_provider_name}) {
             eval {
-                $automatic_params->{service_provider_name} = $self->_getServiceProviderName(sp_id => $service_provider_id);
+                # TODO
+                # Currently code used only with Externalcluster
+                # Code compatible with Entity::ServiceProvider
+
+                my $ext_cluster = Entity::ServiceProvider::Externalcluster->get(id => $args{service_provider_id});
+                $automatic_params->{service_provider_name} = $ext_cluster->externalcluster_name;
             };
             if ($@) {
                 $errmsg = 'Error while trying to retrieve service provider name :'.$@;
@@ -166,12 +158,17 @@ sub _getAutomaticValues {
     return $automatic_params;
 }
 
-=head2 _getOuFrom
-    Desc: get the origin OU for a node or a set of node 
 
-    Args: $sp_id
+=pod
+=begin classdoc
 
-    Return: $ou_from
+Get the origin OU for a node or a set of node
+
+@param sp_id
+
+@return origin OU
+
+=end classdoc
 =cut
 
 sub _getOuFrom {
@@ -190,59 +187,45 @@ sub _getOuFrom {
     return $ou_from;
 }
 
-=head2 _getServiceProviderName
-    Desc: get the name of the service provider that triggered the rule
 
-    Args: $sp_id 
+=pod
+=begin classdoc
 
-    Return: $sp_name
-=cut
+Create the final hash for workflow->run()
 
-sub _getServiceProviderName {
-    my ($self,%args) = @_;
+@param all_params
+@param workflow_name
+@param rule_id
+@param sp_id
 
-    General::checkParams(args => \%args, required => [ 'sp_id' ]);
+@return workflow_params
 
-    my $service_provider = Entity::ServiceProvider->get(id => $args{sp_id});
-    my $sp_name = $service_provider->getAttr(name => 'externalcluster_name');
-
-    return $sp_name;
-}
-
-=head2 _defineFinalParams
-    Desc: create the final hash for workflow->run() 
-
-    Args: \%all_params, $workflow_name
-
-    Return: \%workflow_params
+=end classdoc
 =cut
 
 sub _defineFinalParams {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'all_params', 'workflow_name', 'rule_id', 'sp_id' ]);
+    General::checkParams(args => \%args, required => [ 'all_params', 'workflow_def_name',
+                                                       'rule_id', 'sp_id' ]);
 
-    my $rule_id             = $args{rule_id};
-    my $all_params          = $args{all_params};
-    my $workflow_name       = $args{workflow_name};
-    my $service_provider_id = $args{sp_id};
+    my $all_params = $args{all_params};
 
     #get scope name for operation
-    my $scope_id   = $all_params->{internal}->{scope_id};
-    my $scope      = Scope->find(hash => { scope_id => $scope_id });
-    my $scope_name = $scope->getAttr(name => 'scope_name');
+    my $scope_id = $all_params->{internal}->{scope_id};
+    my $scope    = Scope->get(id => $scope_id);
 
     #merge automatic and specific params in one hash
     my $workflow_values = Hash::Merge::merge($all_params->{automatic}, $all_params->{specific});
 
-    my $workflow_params = { 
+    my $workflow_params = {
         output_directory => $all_params->{internal}->{output_dir},
-        output_file      => 'workflow_'.$workflow_name.'_'.time(),
+        output_file      => 'workflow_'.$args{workflow_def_name}.'_'.time(),
         template_content => $all_params->{data}->{template_content},
         workflow_values  => $workflow_values,
-        scope_name       => $scope_name,
-        rule_id          => $rule_id,
-        sp_id            => $service_provider_id,
+        scope_name       => $scope->scope_name,
+        rule_id          => $args{rule_id},
+        sp_id            => $args{sp_id},
     };
 
     return $workflow_params;

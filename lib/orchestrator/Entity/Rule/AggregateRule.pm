@@ -478,11 +478,7 @@ sub manageWorkflows {
             $log->info('Rule <'. $self->id. '> has launched a new workflow (' . $workflow_def_id . ') and was defined as triggered');
 
             # Rule is enable, is verified and has a WorkflowDef => trigger the workflow !
-            my $workflow = $workflow_manager->runWorkflow(
-                               workflow_def_id     => $workflow_def_id,
-                               rule_id             => $self->id,
-                               service_provider_id => $sp->id
-                           );
+            my $workflow = $workflow_manager->runWorkflow(rule => $self);
 
             $self->setAttr(name => 'state', value => 'triggered');
             $self->setAttr(name => 'workflow_id', value => $workflow->id);

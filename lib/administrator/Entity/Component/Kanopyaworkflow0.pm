@@ -26,7 +26,6 @@ use General;
 use Kanopya::Exceptions;
 use Entity::Host;
 
-use Data::Dumper;
 use Hash::Merge qw( merge);
 use Log::Log4perl 'get_logger';
 use WorkflowStep;
@@ -49,8 +48,8 @@ sub associateWorkflow {
 
     for my $step (@steps) {
         WorkflowStep->new(
-            workflow_def_id  => $new_wf_def->getId(),
-            operationtype_id => $step->getAttr(name => 'operationtype_id'),
+            workflow_def_id  => $new_wf_def->id,
+            operationtype_id => $step->operationtype_id,
         );
     }
 
@@ -60,12 +59,13 @@ sub associateWorkflow {
 sub _getAutomaticValues{
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['automatic_params']);
+    General::checkParams(args => \%args, required => ['automatic_params'],
+                                         optional => {service_provider_id => undef});
 
     my $automatic_params = $args{automatic_params};
 
     if (exists $automatic_params->{context}->{host}) {
-        my $host = Entity::Host->find(hash => {'node.node_hostname' => $args{host_name}}); 
+        my $host = Entity::Host->find(hash => {'node.node_hostname' => $args{host_name}});
         $automatic_params->{context}->{host} = $host;
     }
     if (exists $automatic_params->{context}->{cloudmanager_comp}) {
