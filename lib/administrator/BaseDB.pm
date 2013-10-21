@@ -1120,7 +1120,8 @@ sub checkAttributes {
     # Search for default values for remaining mandatory attributes
     for my $mandatory (grep { $attrdef->{$_}->{is_mandatory} } keys %{ $attrdef }) {
         if (defined $attrdef->{$mandatory}->{default}) {
-            $attrdef->{$mandatory}->{level}->{$mandatory} = $attrdef->{$mandatory}->{default};
+            $by_module->{$attrdef->{$mandatory}->{from_module}}->{$mandatory}
+                = $attrdef->{$mandatory}->{default};
         }
         elsif (! $args{ignore_missing}) {
             throw Kanopya::Exception::Internal::IncorrectParam(

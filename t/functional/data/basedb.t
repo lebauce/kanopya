@@ -29,7 +29,7 @@ use Lvm2Vg;
 use Entity::Component::Physicalhoster0;
 use ClassType;
 use ClassType::DataModelType;
-
+use Entity::Component::KanopyaAggregator;
 
 Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
@@ -50,10 +50,24 @@ sub main {
     test_new_and_update();
     test_dbix();
     test_promote_demote();
+    test_dafault_values();
 
     if ($testing == 1) {
         Kanopya::Database::rollbackTransaction;
     }
+}
+
+
+sub test_dafault_values {
+    # Search on component inner classes
+
+    my $sp = Entity::ServiceProvider->find();
+    lives_ok {
+        my $agg = Entity::Component::KanopyaAggregator->new(service_provider_id => $sp->id);
+        if ($agg->time_step != 300) {
+            die "KanopyaAggregator->time_step should have value <300>, not <" . $agg->time_step . ">";
+        }
+    } 'Default values should be used at creation.';
 }
 
 

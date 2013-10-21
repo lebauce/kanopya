@@ -36,6 +36,9 @@ use General;
 use Data::Dumper;
 use Kanopya::Config;
 
+use TryCatch;
+my $err;
+
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("timedata");
@@ -106,11 +109,14 @@ sub createTimeDataStore {
     my $opts = '';
 
     #configure the heartbeat, number of CDP and step according to the configuration
-    my $config    = _configTimeDataStore(
-                        'collect_frequency' => $args{collect_frequency},
-                        'storage_duration'  => $args{storage_duration},
-                    );
-
+    my $config;
+    try {
+        $config = _configTimeDataStore(collect_frequency => $args{collect_frequency},
+                                       storage_duration  => $args{storage_duration});
+    }
+    catch ($err) {
+        throw Kanopya::Exception(error => "$err");
+    }
 
     #definition of the options. If unset, default rrd start time is (now -10s)
     if (defined $args{'options'}) {
@@ -182,7 +188,7 @@ sub createTimeDataStore {
 
     #final command
     my $cmd = $rrd.' create '.$dir.$name.' '.$opts.' '.$DS_chain.' '.$RRA_chain;
-    # print $cmd."\n";
+
     $log->debug($cmd);
     $log->info("creating rrd $dir$name");
 
@@ -522,7 +528,6 @@ sub _configTimeDataStore {
         $config{step}      = $args{collect_frequency};
         $config{CDP}       = 604800 / $config{step};
         $config{heartbeat} = $config{step} * 2; 
-        return \%config;
     }
     #if the storage duration only is defined, we generate step, heartbeat, and CDP number
     #step by default will be 5 mn
