@@ -41,38 +41,9 @@ my $kanopya_dir;
 
 =begin classdoc
 
-Initialize array reference $config from kanopya xml configuration files
+retrieve kanopya directory
 
-=end classdoc
-
-=cut
-
-sub _loadconfig {
-    my $base_dir = __FILE__;
-    my @kanopya  = split 'kanopya', $base_dir;
-    $kanopya_dir = $kanopya[0] . '/kanopya';
-
-    $config = {
-        executor          => XMLin($kanopya_dir . '/conf/executor.conf', ForceArray => [ "callbacks" ]),
-        executor_path     => $kanopya_dir . '/conf/executor.conf',
-        monitor           => XMLin($kanopya_dir . '/conf/monitor.conf'),
-        monitor_path      => $kanopya_dir . '/conf/monitor.conf',
-        libkanopya        => XMLin($kanopya_dir . '/conf/libkanopya.conf'),
-        libkanopya_path   => $kanopya_dir . '/conf/libkanopya.conf',
-        aggregator        => XMLin($kanopya_dir . '/conf/aggregator.conf'),
-        aggregator_path   => $kanopya_dir . '/conf/aggregator.conf',
-        rulesengine       => XMLin($kanopya_dir . '/conf/rulesengine.conf'),
-        rulesengine_path  => $kanopya_dir . '/conf/rulesengine.conf',
-    }
-}
-
-=pod
-
-=begin classdoc
-
-retrieve kanopya directory 
-
-@return kanopya directory 
+@return kanopya directory
 
 =end classdoc
 
@@ -80,9 +51,33 @@ retrieve kanopya directory
 
 sub getKanopyaDir {
     if (not defined $kanopya_dir) {
-        _loadconfig();
+        my $base_dir = __FILE__;
+        my @kanopya  = split 'kanopya', $base_dir;
+        $kanopya_dir = $kanopya[0] . '/kanopya';
     }
+
     return $kanopya_dir;
+}
+
+=pod
+
+=begin classdoc
+
+Initialize array reference $config from kanopya xml configuration files
+
+=end classdoc
+
+=cut
+
+sub _loadconfig {
+    my %args = @_;
+
+    my $kanopya_dir = getKanopyaDir;
+    $config->{$args{subsystem}} = XMLin($kanopya_dir . "/conf/$args{subsystem}.conf",
+                                        ForceArray => [ "callbacks" ]);
+    $config->{$args{subsystem} . "_path"} = $kanopya_dir . "/conf/$args{subsystem}.conf";
+
+    return $config;
 }
 
 =pod
@@ -102,15 +97,17 @@ get the whole configuration or a specific subsystem configuration
 sub get {
     my ($subsystem) = @_;
 
-    if(not defined $config) {
-        _loadconfig();
+    if (not defined $config->{$subsystem}) {
+        _loadconfig(subsystem => $subsystem);
     }
 
     # use a copy of the structure to avoid accidental global modifications 
     my $copy = dclone($config);
-    if(defined $subsystem && exists $copy->{$subsystem}) {
-        # Reload config from file (allow several processes/workers to have the same data)
-        $copy->{$subsystem} = XMLin($config->{$subsystem . '_path'});
+    if (defined $subsystem) {
+        if (exists $copy->{$subsystem}) {
+            # Reload config from file (allow several processes/workers to have the same data)
+            $copy->{$subsystem} = XMLin($config->{$subsystem . '_path'});
+        }
 
         return $copy->{$subsystem};
     } else {
