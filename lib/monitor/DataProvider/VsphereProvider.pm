@@ -13,6 +13,15 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+=pod
+=begin classdoc
+
+Retrieve monitoring data through VMware vSphere software.
+
+=end classdoc
+=cut
+
 package DataProvider::VsphereProvider;
 
 use strict;
@@ -38,18 +47,22 @@ sub new {
     return $self;
 }
 
-=head2 retrieveData
+=pod
+=begin classdoc
 
-    Desc: query vsphere API to retrieve vms or hypervisors datas
-    Args:
+query vsphere API to retrieve vms or hypervisors datas
 
+@param var_map
+
+=end classdoc
 =cut
+
 
 sub retrieveData {
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, required => ['var_map']);
-    
+
     my @oid_list = values (%{ $args{var_map} });
     my $service_provider;
     my $vsphere;
@@ -83,11 +96,18 @@ sub retrieveData {
     return ($time, \%values);
 }
 
-=head2 _retrieveVmData
+=pod
+=begin classdoc
 
-    Desc: Get data from a vsphere VM 
-    Args: $host, $oid_list
+Get data from a vsphere VM
 
+@param vsphere Entity::Component::Virtualization::Vsphere5 instance
+
+@param oid_list array of String of oid to retrieve
+
+@return hash ref {oid => value}
+
+=end classdoc
 =cut
 
 sub _retrieveVmData {
@@ -142,11 +162,19 @@ sub _retrieveVmData {
     return \%values;
 }
 
-=head2 _retrieveHypervisorData
 
-    Desc: Get data from a vsphere hypervisor 
-    Args: $host, $oid_list
+=pod
+=begin classdoc
 
+Get data from a vsphere hypervisor
+
+@param vsphere Entity::Component::Virtualization::Vsphere5 instance
+
+@param oid_list array of String of oid to retrieve
+
+@return hash ref {oid => value}
+
+=end classdoc
 =cut
 
 sub _retrieveHypervisorData {

@@ -15,6 +15,16 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 17 july 2010
+
+
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package Entity::Processormodel;
 use base "Entity";
 
@@ -54,10 +64,15 @@ sub getAttrDef{
 
 sub extension { return; }
 
-=head2 toString
 
-    desc: return a string representation of the entity
+=pod
+=begin classdoc
 
+Return a string representation of the entity
+
+@return string representation of the entity
+
+=end classdoc
 =cut
 
 sub toString {

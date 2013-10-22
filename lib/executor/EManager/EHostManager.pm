@@ -44,9 +44,6 @@ use Data::Dumper;
 my $log = get_logger("");
 my $errmsg;
 
-=head2 createHost
-
-=cut
 
 sub createHost {
     my $self = shift;
@@ -63,9 +60,6 @@ sub createHost {
     return $host;
 }
 
-=head2 removeHost
-
-=cut
 
 sub removeHost {
     my $self = shift;
@@ -78,11 +72,14 @@ sub removeHost {
     #TODO: insert erollback ?
 }
 
-=head2 startHost
 
-    Desc : This function starts a host in a cluster
-    args : a cluster and a host
+=pod
+=begin classdoc
 
+This function starts a host in a cluster
+@param host host to start
+
+=end classdoc
 =cut
 
 sub startHost {
@@ -94,11 +91,15 @@ sub startHost {
     throw Kanopya::Exception::NotImplemented();
 }
 
-=head2 stopHost
 
-    Desc : This function stops a host in a cluster
-    args : a cluster and a host
+=pod
+=begin classdoc
 
+This function stops a host in a cluster
+
+@param host host to stop
+
+=end classdoc
 =cut
 
 sub stopHost {
@@ -120,11 +121,15 @@ sub releaseHost {
     $args{host}->setState(state => "down");
 }
 
-=head2 postStart
 
-    Desc : This function is called once a host has started
-    args : a cluster and a host
+=pod
+=begin classdoc
 
+This function is called once a host has started
+
+@param host host to post Start
+
+=end classdoc
 =cut
 
 sub postStart {
@@ -134,11 +139,13 @@ sub postStart {
 	General::checkParams(args => \%args, required => [ "host" ]);
 }
 
-=head2 scaleHost
 
-    Desc : This function dynamically scales a host
-    args : host, cpus, memory
+=pod
+=begin classdoc
 
+This function dynamically scales a host
+
+=end classdoc
 =cut
 
 sub scaleHost {
@@ -169,11 +176,15 @@ sub getFreeHost {
     return DecisionMaker::HostSelector->getHost(%args);
 }
 
-=head2 applyVLAN
+=pod
+=begin classdoc
 
-    Desc: Apply a VLAN on an interface of a host
-    Args: vlan, iface
+Apply a VLAN on an interface of a host
 
+@param vlan
+@param iface
+
+=end classdoc
 =cut
 
 sub applyVLAN {

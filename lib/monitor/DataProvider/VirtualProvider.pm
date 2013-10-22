@@ -12,28 +12,21 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-=head1 NAME
-
-VirtualProvider - VirtualProvider object
-
-=head1 SYNOPSIS
-
-    use VirtualProvider;
-    
-    # Creates provider
-    my $provider = VirtualProvider->new( $host );
-    
-    # Retrieve data
-    my $var_map = { 'var_name' => '<Virtual status var name>', ... };
-    $provider->retrieveData( var_map => $var_map );
-
-=head1 DESCRIPTION
+=pod
+=begin classdoc
 
 VirtualProvider is used to retrieve Virtual status values from a specific host.
-Virtual status var names correspond to strings in virtual_nodes.adm 
+Virtual status var names correspond to strings in virtual_nodes.adm
 
-=head1 METHODS
+# Creates provider
+my $provider = VirtualProvider->new( $host );
 
+# Retrieve data
+my $var_map = { 'var_name' => '<Virtual status var name>', ... };
+$provider->retrieveData( var_map => $var_map );
+
+
+=end classdoc
 =cut
 
 package DataProvider::VirtualProvider;
@@ -44,17 +37,18 @@ use base 'DataProvider';
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
-=head2 new
-    
-    Class : Public
-    
-    Desc : Instanciate VirtualProvider instance to provide Virtual stat from a specific host
-    
-    Args :
-        host: Entity::Host: host object
-    
-    Return : VirtualProvider instance
-    
+=pod
+=begin classdoc
+
+@constructor
+
+Instanciate VirtualProvider instance to provide Virtual stat from a specific host
+
+@param host Entity::Host: host object
+
+@return VirtualProvider instance
+
+=end classdoc
 =cut
 
 sub new {
@@ -66,24 +60,21 @@ sub new {
 
     $self->{_host} = $args{host};
     $self->{_ip} = $args{host}->adminIp;
-    
+
     return $self;
 }
 
 
-=head2 retrieveData
-    
-    Class : Public
-    
-    Desc : Retrieve a set of snmp var value
-    
-    Args :
-        var_map : hash ref : required  var { var_name => oid }
-    
-    Return :
-        [0] : time when data was retrived
-        [1] : resulting hash ref { var_name => value }
-    
+=pod
+=begin classdoc
+
+Retrieve a set of snmp var value
+
+@param var_map hash ref required  var { var_name => oid }
+
+@return [0] time when data was retrived [1] resulting hash ref { var_name => value }
+
+=end classdoc
 =cut
 
 sub retrieveData {

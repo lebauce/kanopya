@@ -532,7 +532,7 @@ function workflowslist(cid, eid) {
                             $(grid).setCell(rowid, 'currentOperation', rowelem.currentOperation);
                         }
                     });
-                },  
+                },
                 colModel                : [
                     { name : 'pk', index : 'pk', sorttype : 'int', hidden : true, key : true },
                     { name : 'workflow_name', index : 'workflow_name' },

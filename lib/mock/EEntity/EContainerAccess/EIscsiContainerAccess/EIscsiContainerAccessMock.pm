@@ -15,6 +15,15 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+=begin classdoc
+
+Mock of the EEntity::EContainerAccess::EIscsiContainerAccess class
+Overwrite connect and disconnect methods
+
+=end classdoc
+=cut
+
 package EEntity::EContainerAccess::EIscsiContainerAccess::EIscsiContainerAccessMock;
 use base "EEntity::EContainerAccess::EIscsiContainerAccess";
 
@@ -41,10 +50,13 @@ sub connect {
     return $fakedevice;
 }
 
-=head2 disconnect
 
-    desc: Deleting open-iscsi node.
+=pod
+=begin classdoc
 
+Deleting open-iscsi node.
+
+=end classdoc
 =cut
 
 sub disconnect {

@@ -105,18 +105,18 @@ sub getClusterHostsInfo {
 }
 
 
-=head2 aggregate
-    
-    Class : Public
-    
-    Desc :    Aggregate a list of hash into one hash by applying desired function (sum, mean).
-    
-    Args :
-        hash_list: array ref: list of hashes to aggregate. [ { p1 => v11, p2 => v12}, { p1 => v21, p2 => v22} ]
-        (optionnal) f: "mean", "sum" : aggregation function. If not defined, f() = sum().
-        
-    Return : The aggregated hash. ( p1 => f(v11,v21), p2 => f(v12,v22) )
-    
+=pod
+=begin classdoc
+
+Aggregate a list of hash into one hash by applying desired function (sum, mean).
+
+@param hash_list array ref: list of hashes to aggregate. [ { p1 => v11, p2 => v12}, { p1 => v21, p2 => v22} ]
+
+@optional f "mean", "sum" : aggregation function. If not defined, f() = sum().
+
+@return The aggregated hash. ( p1 => f(v11,v21), p2 => f(v12,v22) )
+
+=end classdoc
 =cut
 
 sub aggregate {
@@ -163,20 +163,22 @@ sub aggregate {
 }
 
 
-=head2 createRRD
-    
-    Class : Public
-    
-    Desc : Instanciate a RRDTool object and create a rrd
-    
-    Args :
-        dsname_list : the list of var name to store in the rrd
-        ds_type : the type of var ( GAUGE, COUNTER, DERIVE, ABSOLUTE )
-        file : the name of the rrd file to create
-        (optionnal) time_step: overload monitoring time_step (conf)
-    
-    Return : The RRDTool object
-    
+=pod
+=begin classdoc
+
+Instanciate a RRDTool object and create a rrd
+
+@param dsname_list : the list of var name to store in the rrd
+
+@param ds_type : the type of var ( GAUGE, COUNTER, DERIVE, ABSOLUTE )
+
+@param file : the name of the rrd file to create
+
+@optional time_step: overload monitoring time_step (conf)
+
+@return The RRDTool object
+
+=end classdoc
 =cut
 
 sub createRRD {
@@ -213,6 +215,19 @@ sub createRRD {
     return $rrd;
 }
 
+
+=pod
+=begin classdoc
+
+Delete rrd
+
+@param set_name
+
+@param host_name
+
+=end classdoc
+=cut
+
 sub deleteRRD {
     my ($self, %args) = @_;
 
@@ -225,21 +240,25 @@ sub deleteRRD {
     system ($cmd);
 }
 
-=head2 updateRRD
-    
-    Class : Public
-    
-    Desc :  Store values in rrd
-            If rrd doesn't exist, then create it
-    
-    Args :
-        time: the time associated with values retrieving
-        rrd_name: the name of the rrd
-        data: hash ref { var_name => value }
-        ds_type: the type of data sources (vars)
-        (optionnal) time_step: used if create rrd, to overload monitoring time_step (conf)
-    
-    Return : the hash of values as stored in rrd
+
+=pod
+=begin classdoc
+
+Store values in rrd. If rrd doesn't exist, then create it
+
+@param time the time associated with values retrieving
+
+@param rrd_name the name of the rrd
+
+@param data hash ref { var_name => value }
+
+@param ds_type the type of data sources (vars)
+
+@optional time_step used if create rrd, to overload monitoring time_step (conf)
+
+@return the hash of values as stored in rrd
+
+=end classdoc
 =cut
 
 sub updateRRD {
@@ -297,17 +316,20 @@ sub updateRRD {
     return %stored_values;
 }
 
-=head2 updateHostData
-    
-    Class : Public
-    
-    Desc : For a host, retrieve value of all monitored data (var defined in conf) and store them in corresponding rrd
-    
-    Args :
-        host_name : the host name
-        components : array ref of components name on this host.
-        host_state : current state of the host
 
+=pod
+=begin classdoc
+
+For a host, retrieve value of all monitored data (var defined in conf)
+and store them in corresponding rrd
+
+@param host_name the host name
+
+@param components array ref of components name on this host.
+
+@param host_state current state of the host
+
+=end classdoc
 =cut
 
 sub updateHostData {
@@ -449,16 +471,17 @@ sub updateHostData {
     return \%all_values;
 }
 
-=head2 updateClusterNodeCount
-    
-    Class : Private
-    
-    Desc : Store current node count of each state ('up', 'down',...) for a cluster
-    
-    Args : 
-        cluster_name
-        nodes_state: array ref of states
 
+=pod
+=begin classdoc
+
+Store current node count of each state ('up', 'down',...) for a cluster
+
+@param cluster_name
+
+@param nodes_state array ref of states
+
+=end classdoc
 =cut
 
 sub updateClusterNodeCount {
@@ -511,17 +534,19 @@ sub updateClusterNodeCount {
     }
 }
 
-=head2 updateClusterData
-    
-    Class : Private
-    
-    Desc : Aggregate and store indicators values for each set for a cluster
-    
-    Args :
-        cluster : Entity::ServiceProvider::Cluster
-        hosts_values : hash ref : indicators values of each set for each hosts
-        collect_time : seconds since Epoch when hosts data have been collected 
-    
+
+=pod
+=begin classdoc
+
+Aggregate and store indicators values for each set for a cluster
+
+@param cluster Entity::ServiceProvider::Cluster
+
+@param hosts_values hash ref : indicators values of each set for each hosts
+
+@param collect_time seconds since Epoch when hosts data have been collected 
+
+=end classdoc
 =cut
 
 sub updateClusterData {
@@ -604,12 +629,13 @@ sub updateClusterData {
     );
 }
 
-=head2 udpate
-    
-    Class : Public
-    
-    Desc :  Update data for every monitored host and then update clusters data
-    
+
+=pod
+=begin classdoc
+
+Update data for every monitored host and then update clusters data
+
+=end classdoc
 =cut
 
 sub update {
@@ -691,6 +717,15 @@ sub update {
         }
     }
 }
+
+
+=pod
+=begin classdoc
+
+update Consumption
+
+=end classdoc
+=cut
 
 sub updateConsumption {
     my $self = shift;

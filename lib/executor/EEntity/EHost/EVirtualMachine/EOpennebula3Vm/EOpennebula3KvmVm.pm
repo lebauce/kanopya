@@ -25,9 +25,6 @@ use Log::Log4perl "get_logger";
 
 my $log = get_logger("executor");
 
-=head2 updateCpus
-
-=cut
 
 sub updateCpus {
     my $self    = shift;
@@ -55,9 +52,6 @@ sub updateCpus {
     );
 }
 
-=head2
-
-=cut
 
 sub postStart {
     my $self = shift;

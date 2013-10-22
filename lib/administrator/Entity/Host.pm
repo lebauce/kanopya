@@ -15,6 +15,14 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package Entity::Host;
 use base "Entity";
 
@@ -194,10 +202,14 @@ sub resubmit {
 }
 
 
-=head2 getHostManager
+=pod
+=begin classdoc
 
-    desc: Return the component/conector that manage this host.
+Return the component/conector that manage this host.
 
+@return the component/conector that manage this host.
+
+=end classdoc
 =cut
 
 sub getHostManager {
@@ -524,10 +536,14 @@ sub deactivate{
     return $self->host_manager->deactivateHost(host => $self);
 }
 
-=head2 toString
+=pod
+=begin classdoc
 
-    desc: return a string representation of the entity
+Return a string representation of the entity
 
+@return string representation of the entity
+
+=end classdoc
 =cut
 
 sub toString {
@@ -557,10 +573,12 @@ sub remoteSessionUrl {
    return $self->getHostManager->getRemoteSessionURL(host => $self);
 }
 
-=head2
+=pod
+=begin classdoc
 
     Check if the host can be stopped, raise an exception otherwise
 
+=end classdoc
 =cut
 
 sub checkStoppable {

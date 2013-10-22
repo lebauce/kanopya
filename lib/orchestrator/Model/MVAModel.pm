@@ -11,6 +11,16 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package Model::MVAModel;
 
 use strict;
@@ -25,106 +35,108 @@ use base "Model";
 sub new {
     my $class = shift;
     my %args = @_;
-    
+
     my $self = {};
     bless $self, $class;
-    
+
     return $self;
 }
 
-=head2 calculate
 
-B<Class>   : Public
-B<Desc>    : Estimate qos according to infrastructure configuration and workload
-B<args>    : configuration : hash ref { 
-                M => nb tiers
-                AC => array of nb node for each tier
-                LC => array of MPL value for each tier
-             }
-             workload_class : hash ref {
-                visit_ratio
-                service_time
-                delay
-                think_time
-             }
-             workload amount : int
-B<Return>  : hash : (
-                latency => $latency,        # ms
-                abort_rate => $abort_rate,  # %
-                throughput => $throughput,  # req/sec
-            )
-B<Comment>  : Adapted from Jean Arnaud model
-B<throws>  : None
+=pod
+=begin classdoc
 
+Estimate qos according to infrastructure configuration and workload
+configuration :
+hash ref {
+    M => nb tiers
+    AC => array of nb node for each tier
+    LC => array of MPL value for each tier
+ }
+ workload_class : hash ref {
+    visit_ratio
+    service_time
+    delay
+    think_time
+ }
+workload amount : int
+hash : (
+    latency => $latency,        # ms
+    abort_rate => $abort_rate,  # %
+    throughput => $throughput,  # req/sec
+)
+Adapted from Jean Arnaud model
+
+=end classdoc
 =cut
 
 sub calculate {
-    
+
     my $self = shift;
     my %args = @_;
-    
-    
+
+
     #print Dumper $args{workload_class};
     my $M   = $args{configuration}{M};
-    
-    
+
+
     my @AC  = @{ $args{configuration}{AC} };
     my @LC  = @{ $args{configuration}{LC} };
-    
-    
+
+
     my @V   = @{ $args{workload_class}{visit_ratio} };  # Visit ratio
     my @S   = @{ $args{workload_class}{service_time} }; # Service time
     my @D   = @{ $args{workload_class}{delay} };        # Delay (communication between tiers)
-    my $Z   = $args{workload_class}{think_time};        # Think time       
-    
+    my $Z   = $args{workload_class}{think_time};        # Think time
+
     my $workload_amount = $args{workload_amount};
-    
+
 #    print "Visit ratio = @V\n";
 #    print "S = @S\n";
-#    print "S = @D\n";    
+#    print "S = @D\n";
 #    print "AC = @AC\n";
 #    print "LC = @LC\n";
-    
-  
-    
+
+
+
     # assert
     die "## ASSERT: MVAModel: no workload amount\n" if ( not defined $workload_amount );
     die "## ASSERT: MVAModel: workload_class->think_time must be > 0\n" if ( $Z <= 0 );
-    
-    
+
+
     ####
     # Calculate the entering admission control
     ####
-    
+
     my @Nt  = (); # Total requests entering a tier
     my @Na  = (); # Accepted requests per tier (Ti)
     my @Nap = (); # Accepted requests at Ti..Tm
     my @Nr  = (); # Rejected requests per tier
     my @MPL = (); # Total MPL per tier
-    
+
     for my $i (0 .. $M-1) {
         $Nt[$i] =   ($i == 0) ? $workload_amount
                     : min(     $Na[$i-1], $Na[$i-1] * $V[$i] / $V[$i - 1] );
-                        
+
         $MPL[$i] = $LC[$i] * $AC[$i]; # Considering all nodes have the same LC for a tier
-        
+
         $Na[$i] = min( $MPL[$i], $Nt[$i]);
         $Nr[$i] = $Nt[$i] - $Na[$i];
     }
-    
+
     for my $i (0 .. $M-1) {
         $Nap[$i] = $Na[$i] - (sum( @Nr[$i+1 .. $M-1] ) || 0);
     }
-        
+
     my $N_rejected = sum @Nr;
     my $N_admitted = $workload_amount - $N_rejected;
-    
+
     #print ">>> Admitted : $N_admitted / $workload_amount\n";
-    
+
     #####
     # Service latency
     #####
-    
+
     my @Ql  = (); # Total queue length per tier
     my @W   = (); # Service demand per tier
     my @R   = (); # Response time of request admitted per tier

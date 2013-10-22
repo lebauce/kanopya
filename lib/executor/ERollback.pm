@@ -17,14 +17,16 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 14 july 2010
 
-=head1 NAME
 
-ERollback
+=pod
+=begin classdoc
 
 ERollback is the object used to manage execution rollback list.
 During operation execution, rollback action will be enque. If an error coming, rollback is call
 
+=end classdoc
 =cut
+
 
 package ERollback;
 
@@ -39,15 +41,20 @@ my $errmsg;
 
 use Kanopya::Exceptions;
 
-=head2 new
 
- Instanciate a rollback object with a first function/arguments
+=pod
+=begin classdoc
 
+@constructor
+
+Instanciate a rollback object with a first function/arguments
+
+=end classdoc
 =cut
 
 sub new {
     my ($class) = @_;
-        
+
     my $self = {
         function    => undef,
         parameters  => undef,
@@ -61,15 +68,18 @@ sub new {
 
 sub print {}
 
-=head2 add
 
- Add a function/arguments to the rollback
+=pod
+=begin classdoc
 
+Add a function/arguments to the rollback
+
+=end classdoc
 =cut
 
 sub add {
     my ($self, %args) = @_;
-    
+
     General::checkParams(args => \%args,
                          required => ['function', 'parameters']);
 
@@ -162,9 +172,6 @@ sub getLastInserted{
     return $self->{last_inserted};
 }
 
-=head2 _last
-
-=cut
 
 sub _last {
     my ($self) = @_;
@@ -176,9 +183,6 @@ sub _last {
     return $tmp;
 }
 
-=head2 _recursive_del
-
-=cut
 
 sub _recursive_del {
     my ($self) = @_;
@@ -187,9 +191,6 @@ sub _recursive_del {
     }
 }
 
-=head2 undo
-
-=cut
 
 sub undo {
     my ($self) = @_;

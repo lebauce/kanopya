@@ -16,6 +16,17 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 5 june 2012
 
+
+=pod
+=begin classdoc
+
+Kanopya Workflow Manager.
+Specify methods only used when Kanopya is the workflow manager
+
+=end classdoc
+=cut
+
+
 package Entity::Component::Kanopyaworkflow0;
 use base 'Entity::Component';
 use base 'Manager::WorkflowManager';
@@ -34,6 +45,17 @@ my $errmsg;
 
 use constant ATTR_DEF => {};
 sub getAttrDef { return ATTR_DEF; }
+
+
+=pod
+=begin classdoc
+
+Overrides <method>Manager::WorkflowManager::associateWorkflow</method>.
+
+Add steps of the origin workflow def to the created workflow
+
+=end classdoc
+=cut
 
 sub associateWorkflow {
     my ($self,%args) = @_;
@@ -55,6 +77,17 @@ sub associateWorkflow {
 
     return $new_wf_def;
 }
+
+
+=pod
+=begin classdoc
+
+Overrides <method>Manager::WorkflowManager::associateWorkflow</method>.
+
+Specify automatic values of Kanopya Workflow Manager
+
+=end classdoc
+=cut
 
 sub _getAutomaticValues{
     my ($self,%args) = @_;
@@ -82,6 +115,16 @@ sub _getAutomaticValues{
     return $automatic_params;
 }
 
+
+=pod
+=begin classdoc
+
+Merges automatic and specific params
+
+@param all_params hashref of parameters containing specific and automatic params
+
+=end classdoc
+=cut
 
 sub _defineFinalParams{
     my ($self,%args) = @_;

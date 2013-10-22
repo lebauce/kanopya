@@ -20,7 +20,8 @@
 =pod
 =begin classdoc
 
-TODO
+Manage workflows launched by rules. Manage WorkflowDef creation, association to rules, parameter definition,
+and launch workflow related to rules.
 
 =end classdoc
 =cut
@@ -78,16 +79,20 @@ sub checkWorkflowManagerParams {
 =pod
 =begin classdoc
 
-Create a new instance of WorkflowDef. Can be use for initial workflow
-instanciation, but also for workflow definition (with defined specific parameters)
+Create a new instance of WorkflowDef.
 
-@param workflow_name workflow_params, $workflow_def_origin (id)
+@param workflow_name String WorkflowDef instance name
 
-@optional params
+@optional params hashref Parameters
+                         $hash->{specific} parameters whose values will be instanciate after rule association
+                         $hash->{automatic} parameters whose values will be instanciate after rule triggering
+                                            w.r.t the context (see _getAutomaticValues method)
+                         $hash->{internal} internal misc parameters (e.g. $hash->{internal}->{scope_id})
+
 @optional workflow_def_origin_id link a workflow_def created by a workflow_def origin to its origin
                                  (currently used in rule-workflow association)
 
-@return the created workflow instance
+@return the created workflowDef instance
 
 =end classdoc
 =cut
@@ -99,8 +104,6 @@ sub createWorkflowDef {
                          required => [ 'workflow_name' ],
                          optional => {params                 => undef,
                                       workflow_def_origin_id => undef});
-
-    #creation of a new instance of workflow_def
 
     #TODO refactor all the parameters management by clarifying mandatory and authorized parameters categories
     # (automatic, specific, internal, data, data->template_content etc...)
@@ -144,7 +147,7 @@ Deassociate a workflowDef from a rule
 
 @param rule_id the id of the rule
 
-Warning parameter workflow_def_id is deprecated
+Warning old parameter workflow_def_id is deprecated
 
 =end classdoc
 =cut
@@ -183,6 +186,12 @@ sub deassociateWorkflow {
 
 Create a new instance of WorkflowDef that has defined specific
 parameters. This instance will be used for future runs
+
+@param origin_workflow_def_id id of the WorkflowDef instance to be associated to a Rule instance
+@param rule_id id of Rule instance to which the WorkflowDef instance will be associated
+
+@optional specific_params hashref of specific param to add in addition to origin ones
+@optional new_workflow_name specify a workflowDef name
 
 @return the created workflow object (get by calling createWorkflowDef())
 
@@ -234,7 +243,10 @@ sub associateWorkflow {
 =pod
 =begin classdoc
 
-Create a new instance of WorkflowDef from an existing instance
+Create a new instance of WorkflowDef from an existing instance and associate it to a rule
+
+@param workflow_def_id id of the original WorkflowDef instance
+@param rule_id id of the rule
 
 =end classdoc
 =cut
@@ -273,10 +285,10 @@ sub cloneWorkflow {
 =pod
 =begin classdoc
 
-Run a workflow.
+Run a workflow the associated to a rule
 
-@param rule the rule responsible for the workflow triggering
-@optional host_name node hostname responsible for the rule triggering
+@param rule Rule instance responsible for the workflow triggering
+@optional host_name String node hostname responsible for the rule triggering
 
 @return the corresponding Workflow instance
 
@@ -338,7 +350,7 @@ sub runWorkflow {
 
 Get a list of workflow defs related to the manager.
 
-@optional no_associate only original workflow defs (not associated to a rule)
+@optional no_associate if defined only original workflow defs (not associated to a rule)
 
 =end classdoc
 =cut
@@ -374,27 +386,14 @@ sub getWorkflowDefs {
     return \@workflow_defs;
 }
 
-#
-#=pod
-#=begin classdoc
-#
-#Get the automatic params list for a workflow def.
-#
-#=end classdoc
-#=cut
-#
-#sub _getAutomaticParams {
-#    my ($self,%args) = @_;
-#
-#
-#}
-
 
 =pod
 =begin classdoc
 
 Get specific and automatic params from workflow_def_id. Usefull for
 GUI when retriving specific and automatic params is required
+
+@workflow_def_id id of the WorkflowDef instance
 
 =end classdoc
 =cut
@@ -420,6 +419,9 @@ sub getParams {
 With the given params for a workflow def, extract the "data" params,
 and then differenciate between them the automatic and specific
 parameters.
+
+@param template_content String from which will be extracted automatic and specific params
+@parma scope_id Scope id. Automatic params depends on the scope id
 
 =end classdoc
 =cut
@@ -466,8 +468,7 @@ Get the list of ids of workflowDef related to the workflow manager
 sub getWorkflowDefsIds {
     my $self = shift;
 
-
-    my @workflow_defs    = WorkflowDefManager->search (
+    my @workflow_defs = WorkflowDefManager->search(
                             hash => {manager_id => $self->id}
                         );
 

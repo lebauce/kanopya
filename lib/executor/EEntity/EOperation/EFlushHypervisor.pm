@@ -179,8 +179,6 @@ sub execute {
 sub finish {
     my $self = shift;
 
-    $DB::single = 1;
-
     my ($hv_state, $hv_timestamp) = $self->{context}->{cloud_manager_sp}->reload->getState;
 
     if ($hv_state eq 'flushing') {

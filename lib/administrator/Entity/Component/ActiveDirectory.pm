@@ -16,6 +16,15 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 24 july 2010
 
+
+=pod
+=begin classdoc
+
+Link Kanopya to Active Directory service
+
+=end classdoc
+=cut
+
 package Entity::Component::ActiveDirectory;
 use base "Entity::Component";
 use base "Manager::DirectoryServiceManager";
@@ -95,17 +104,21 @@ sub getNodes {
     );
 }
 
-=head2 getDirectoryTree
 
-    desc: return all the tree of Container,OU and Group from AD root
-    args: password
-    returns:    [ ADnode, ...]
+=pod
+=begin classdoc
+
+Return all the tree of Container,OU and Group from AD root
+
+@param password
+@return Array ref    [ ADnode, ...]
                 with    ADnode = {
                             name => <node common name>,
                             dn => <node distinguished name>,
                             children => [ ADnode, ...]
                         }
 
+=end classdoc
 =cut
 
 sub getDirectoryTree {
@@ -138,17 +151,21 @@ sub getDirectoryTree {
     }];
 }
 
-=head2 searchDirectory
 
-    desc: return all objects matching search_string
-    args: password
-    args: search_string : filter objects with attr 'name', 'cn' or 'ou' containing search_string
-    returns:    [ ADnode, ...]
+=pod
+=begin classdoc
+
+Return all objects matching search_string
+
+@param password
+@param search_string : filter objects with attr 'name', 'cn' or 'ou' containing search_string
+@return Array ref    [ ADnode, ...]
                 with    ADnode = {
                             name => <node common name>,
                             dn => <node distinguished name>,
                         }
 
+=end classdoc
 =cut
 
 sub searchDirectory {

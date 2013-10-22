@@ -15,6 +15,15 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 11 aug 2010
+
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package Entity::Hostmodel;
 use base "Entity";
 
@@ -40,9 +49,6 @@ use constant ATTR_DEF => {
     processormodel_id              => { pattern => '\d*', is_mandatory => 0, is_extended => 0 },
 };
 
-=head2 getHostmodels
-
-=cut
 
 sub getHostmodels {
     my $class = shift;
@@ -53,10 +59,14 @@ sub getHostmodels {
     return $class->search(%args);
 }
 
-=head2 toString
+=pod
+=begin classdoc
 
-    desc: return a string representation of the entity
+Return a string representation of the entity
 
+@return string representation of the entity
+
+=end classdoc
 =cut
 
 sub toString {

@@ -15,6 +15,15 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package Entity::Vlan;
 use base "Entity";
 
@@ -37,10 +46,15 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-=head2 toString
 
-    desc: return a string representation of the entity
+=pod
+=begin classdoc
 
+Return a string representation of the entity
+
+@return string representation of the entity
+
+=end classdoc
 =cut
 
 sub toString {

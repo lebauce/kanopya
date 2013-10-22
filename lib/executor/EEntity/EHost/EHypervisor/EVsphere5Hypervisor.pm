@@ -42,8 +42,6 @@ my $errmsg;
 
 =begin classdoc
 
-=head2 getAvailableMemory
-
 Query the hypervisor's available memory amount.
 
 @return memory_available

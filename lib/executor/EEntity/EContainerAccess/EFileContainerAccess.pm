@@ -14,19 +14,12 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-=head1 NAME
+=pod
+=begin classdoc
 
 ENfsContainerAccess - execution class of iscsi container access entities.
 
-=head1 SYNOPSIS
-
-
-=head1 DESCRIPTION
-
-EContainerAccess::ENfsContainerAccess is the execution class for iscsi container access entities.
-
-=head1 METHODS
-
+=end classdoc
 =cut
 
 package EEntity::EContainerAccess::EFileContainerAccess;
@@ -67,7 +60,7 @@ sub connect {
     $self->setAttr(name  => 'device_connected',
                    value => $file);
     $self->save();
-    
+
     if (exists $args{erollback} and defined $args{erollback}){
         $args{erollback}->add(
             function   => $self->can('disconnect'),

@@ -94,11 +94,9 @@ sub createWorkflowDef {
 =pod
 =begin classdoc
 
-Get the values for the workflow's specific params
+Overrides <method>Manager::WorkflowManager::associateWorkflow</method>.
 
-@param automatic_params
-
-@return created workflow
+Specify automatic values of Sco Workflow Manager
 
 =end classdoc
 =cut
@@ -191,12 +189,12 @@ sub _getOuFrom {
 =pod
 =begin classdoc
 
-Create the final hash for workflow->run()
+Create the final hash param for workflow->run() for Sco manager
 
-@param all_params
-@param workflow_name
-@param rule_id
-@param sp_id
+@param all_params hashref workflow parameters
+@param workflow_name string workflow def name
+@param rule_id id of the associated Rule instance
+@param sp_id id of the associated service provider
 
 @return workflow_params
 

@@ -15,18 +15,12 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-=head1 NAME
-
-EHost - execution class of host entities
-
-=head1 SYNOPSIS
-
-=head1 DESCRIPTION
+=pod
+=begin classdoc
 
 EHost is the execution class of host entities
 
-=head1 METHODS
-
+=end classdoc
 =cut
 
 package EEntity::EHost;
@@ -109,10 +103,13 @@ sub timeOuted {
     $self->setState(state => 'broken');
 }
 
-=head2 getSystemComponent
 
-    Return the component to interrogate to get system informations
+=pod
+=begin classdoc
 
+Return the component to interrogate to get system informations
+
+=end classdoc
 =cut
 
 sub getSystemComponent {
@@ -121,10 +118,13 @@ sub getSystemComponent {
     return EEntity->new(entity => $self->node->service_provider->getComponent(category => "System"));
 }
 
-=head2 getAvailableMemory
+
+=pod
+=begin classdoc
 
     Return the available memory amount.
 
+=end classdoc
 =cut
 
 sub getAvailableMemory {
@@ -133,10 +133,13 @@ sub getAvailableMemory {
     return $self->getSystemComponent->getAvailableMemory(host => $self);
 }
 
-=head2 getTotalMemory
+
+=pod
+=begin classdoc
 
     Return the total memory amount.
 
+=end classdoc
 =cut
 
 sub getTotalMemory {
@@ -145,10 +148,13 @@ sub getTotalMemory {
     return $self->getAvailableMemory()->{mem_total};
 }
 
-=head2 getTotalCpu
+
+=pod
+=begin classdoc
 
     Return the total cpu count.
 
+=end classdoc
 =cut
 
 sub getTotalCpu {

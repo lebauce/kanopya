@@ -1102,10 +1102,13 @@ sub generateOverLoadNodemetricRules {
     }
 }
 
-=head2 generateDefaultMonitoringConfiguration
 
-    Desc: create default nodemetric combination and clustermetric for the service provider
+=pod
+=begin classdoc
 
+Create default nodemetric combination and clustermetric for the service provider
+
+=end classdoc
 =cut
 
 sub generateDefaultMonitoringConfiguration {
@@ -1146,11 +1149,13 @@ sub generateDefaultMonitoringConfiguration {
     }
 }
 
-=head2 initCollectorManager
 
-    desc: initialize the collect for the native kanopya collector indicatorsets
-    Args: object $collector_manager
-    Return: none
+=pod
+=begin classdoc
+
+Initialize the collect for the native kanopya collector indicatorsets.
+
+@param collector_manager CollectorManager instance
 
 =cut
 

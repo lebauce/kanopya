@@ -141,10 +141,16 @@ sub isUp {
     return 1;
 }
 
-=head2 getAvailableMemory
 
-    Return the available memory amount.
+=pod
+=begin classdoc
 
+Return the available memory amount.
+@param host target Host instance
+
+@return hash ref { mem_effectively_available => $free * 1024, mem_total => $total * 1024}
+
+=end classdoc
 =cut
 
 sub getAvailableMemory {
@@ -174,10 +180,17 @@ sub getAvailableMemory {
     }
 }
 
-=head2 getTotalCpu
 
-    Return the total cpu count.
+=pod
+=begin classdoc
 
+Return the total cpu count.
+
+@param host Target Host instance
+
+@return scalar number of cpus
+
+=end classdoc
 =cut
 
 sub getTotalCpu {
@@ -284,7 +297,6 @@ sub _generateHosts {
 
     my @hosts_entries = $args{cluster}->getHostEntries(components => 1);
 
-    $DB::single = 1;
     $log->debug('Generate /etc/hosts file');
     my $file = $self->generateNodeFile(
         cluster       => $args{cluster},

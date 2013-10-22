@@ -69,7 +69,17 @@ sub methods {
     }
 }
 
-# Virtual attribute getter
+
+=pod
+=begin classdoc
+
+Virtual attribute 'formula_label'
+
+return the string of the formula
+
+=end classdoc
+=cut
+
 sub formula_label {
     my $self = shift;
     return $self->formula_string;
