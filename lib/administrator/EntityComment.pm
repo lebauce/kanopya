@@ -20,17 +20,13 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 16 july 2010
 
-=head1 NAME
 
-EntityComment
+=pod
+=begin classdoc
 
-=head1 SYNOPSIS
+Base class for EntityComment
 
-
-=head1 DESCRIPTION
-
-    Base class for EntityComment
-
+=end classdoc
 =cut
 
 package EntityComment;

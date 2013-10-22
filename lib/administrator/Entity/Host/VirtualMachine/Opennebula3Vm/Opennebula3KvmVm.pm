@@ -41,9 +41,6 @@ sub methods {
     return {};
 }
 
-=head2 updateCPU
-
-=cut
 
 sub updateCPU {
     my $self    = shift;

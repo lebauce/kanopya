@@ -15,15 +15,25 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+
+=pod
+=begin classdoc
+
+WorkflowDef class supplies a workflow definition used as a patter to instanciate new workflows.
+
+To a WorkflowDef instance are associated a sequence of operations (through the WorkflowStep class)
+and some Parameters.
+
+=end classdoc
+=cut
+
 package Entity::WorkflowDef;
 use base 'Entity';
 
 use strict;
 use warnings;
-
 use WorkflowStep;
 
-use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
 my $log = get_logger("");
@@ -56,14 +66,27 @@ sub methods {
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub new {
-    my $class = shift;
-    my %args = @_;
 
-    my $params;
-    if (defined $args{params}) {
-        $params = delete $args{params};
-    }
+=pod
+=begin classdoc
+
+@constructor
+
+Create a new WorkflowDef
+
+@optional params
+@return new WorkflowStep instance
+
+=end classdoc
+=cut
+
+sub new {
+    my ($class, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ "workflow_def_name" ],
+                                         optional => {params => undef});
+
+    my $params = delete $args{params};
 
     my $self = $class->SUPER::new(%args);
 
@@ -74,16 +97,40 @@ sub new {
     return $self;
 }
 
+
+=pod
+=begin classdoc
+
+Add a new Operation to the WorkflowDef sequence of operations.
+
+@param operationtype_id the operation type id
+
+@return Corresponding WorkflowStep instance
+
+Create a new WorkflowDef
+
+=end classdoc
+=cut
+
 sub addStep {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ "operationtype_id" ]);
-    
-    my $workflow_def_id = $self->getAttr(name => 'workflow_def_id');
-    my $operationtype_id = $args{operationtype_id};
-    
-    my $workflow_step = WorkflowStep->new(workflow_def_id => $workflow_def_id, operationtype_id => $operationtype_id); 
+
+    return  WorkflowStep->new(workflow_def_id  => $self->workflow_def_id,
+                                          operationtype_id => $args{operationtype_id});
 }
+
+
+=pod
+=begin classdoc
+
+Set parameters to WorkflowDef
+
+@param params hash ref of parameters
+
+=end classdoc
+=cut
 
 sub setParamPreset {
     my $self = shift;
@@ -94,10 +141,19 @@ sub setParamPreset {
     # TODO remove current paramPreset if exists (or use updateParamPreset)
 
     my $preset = ParamPreset->new(params => $args{params});
-    $self->setAttr(name  => 'param_preset_id',
-                   value => $preset->getAttr(name => 'param_preset_id'));
-    $self->save();
+    $self->param_preset_id($preset->param_preset_id);
 }
+
+
+=pod
+=begin classdoc
+
+Update parameters if a WorkflowDef instance.
+
+@param params hash ref of parameters
+
+=end classdoc
+=cut
 
 sub updateParamPreset{
     my ($self,%args) = @_;
@@ -106,7 +162,7 @@ sub updateParamPreset{
 
     my $preset;
     eval {
-        $preset = ParamPreset->get(id => $self->param_preset_id);
+        $preset = $self->param_preset;
     };
     if ($@) {
         $errmsg = 'could not retrieve any param preset for workflow: '.$@;
@@ -116,15 +172,24 @@ sub updateParamPreset{
     }
 }
 
+
+=pod
+=begin classdoc
+
+Retrieve parameters to WorkflowDef
+
+=end classdoc
+=cut
+
 sub paramPresets {
-    my ($self,%args) = @_;
+    my $self = shift;
 
     my $param_preset_id = $self->param_preset_id;
     return {} if ! $param_preset_id;
 
     my $preset;
     eval {
-        $preset = ParamPreset->get(id => $param_preset_id);
+        $preset = $self->param_preset;
     };
     if ($@) {
         $errmsg = 'could not retrieve any param preset for workflow: '.$@;
@@ -134,20 +199,21 @@ sub paramPresets {
     }
 }
 
-=head2 delete
 
-    Class : Public
+=pod
+=begin classdoc
 
-    Desc : This method delete WorkflowDef and its associated params preset
+This method delete WorkflowDef and its associated params preset
 
+=end classdoc
 =cut
 
 sub delete {
-    my ($self,%args) = @_;
+    my $self = shift;
 
     my $preset;
     eval {
-        $preset = ParamPreset->get(id => $self->param_preset_id);
+        $preset = $self->param_preset;
     };
     if (not $@) {
         $preset->delete();

@@ -1,15 +1,11 @@
 #!/usr/bin/perl -w
 
-=head1 SCOPE
+=pod
+=begin classdoc
 
 Triggering and return of sco workflow using node and cluster rules
 
-TODO
-
-=head1 PRE-REQUISITE
-
-None
-
+=end classdoc
 =cut
 
 use strict;
@@ -156,7 +152,7 @@ sub sco_workflow_triggered_by_rule {
     push @all_objects, $manager2;
 
     diag('Create a new node workflow');
-    my $node_wf = $sco->createWorkflow(
+    my $node_wf = $sco->createWorkflowDef(
         workflow_name => 'Test Workflow',
         params => {
             internal => {
@@ -171,7 +167,7 @@ sub sco_workflow_triggered_by_rule {
     push @all_objects, $node_wf;
 
     diag('Create a new service workflow');
-    my $service_wf = $sco->createWorkflow(
+    my $service_wf = $sco->createWorkflowDef(
         workflow_name => 'Test service Workflow',
         params => {
             internal => {
@@ -254,7 +250,7 @@ sub sco_workflow_triggered_by_rule {
 
         Kanopya::Tools::Execution->nRun(n => 8);
 
- 
+
 #        my $executor = Executor->new(duration => 'SECOND');
 #        my @processes_rules = Entity::Operation->search(hash => {'operationtype.operationtype_name' => 'ProcessRule'});
 #        my $p1 = (pop @processes_rules);

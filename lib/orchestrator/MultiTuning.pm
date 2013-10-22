@@ -11,6 +11,17 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
+
 package MultiTuning;
 
 use strict;
@@ -21,30 +32,29 @@ use Data::Dumper;
 sub new {
     my $class = shift;
     my %args = @_;
-    
+
     my $self = {};
     bless $self, $class;
-    
+
     $self->{_model} = $args{model};
-    
+
     return $self;
 }
 
-=head2 modelTuning
 
-    Desc : compute model internal parmaters (Si, Di) according to simulated output and measured output
-    
-    Args :
+=pod
+=begin classdoc
 
-    Return :
-    
+Compute model internal parmaters (Si, Di) according to simulated output and measured output
+
+=end classdoc
 =cut
 
 sub modelTuning {
-    
+
     my $self = shift;
     my %args = @_;
-    
+
     my $algo_conf           = $args{algo_conf};
     my $learning_data       = $args{learning_data};
     my $STEP_PRECISION      = $algo_conf->{precision}; #10**(-6)

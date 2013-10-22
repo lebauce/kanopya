@@ -12,29 +12,22 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-=head1 NAME
 
-KanopyaDatabaseProvider - KanopyaDatabaseProvider object
-
-=head1 SYNOPSIS
-
-    use KanopyaDatabaseProvider
-
-    # Creates provider
-    my $provider = KanopyaDatabaseProvider->new( $host );
-
-    # Retrieve data
-    my $var_map = { 'var_name' => '<Virtual status var name>', ... };
-    $provider->retrieveData( var_map => $var_map );
-
-=head1 DESCRIPTION
+=pod
+=begin classdoc
 
 KanopyaDatabaseProvider is used to retrieve and archive a value from the Kanopya database.
 This is used for billing : we keep track of the number of used cores and the amount
 of memory dedicated to a service.
 
-=head1 METHODS
+# Creates provider
+my $provider = KanopyaDatabaseProvider->new( $host );
 
+# Retrieve data
+my $var_map = { 'var_name' => '<Virtual status var name>', ... };
+$provider->retrieveData( var_map => $var_map );
+
+=end classdoc
 =cut
 
 package DataProvider::KanopyaDatabaseProvider;
@@ -45,17 +38,19 @@ use base 'DataProvider';
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
-=head2 new
 
-    Class : Public
+=pod
+=begin classdoc
 
-    Desc : Instanciate KanopyaDatabaseProvider instance to provide Virtual stat from a specific host
+@constructor
 
-    Args :
-        host: string: ip of host
+Instanciate KanopyaDatabaseProvider instance to provide Virtual stat from a specific host
 
-    Return : KanopyaDatabaseProvider instance
+@param host string: ip of host
 
+@return KanopyaDatabaseProvider instance
+
+=end classdoc
 =cut
 
 sub new {
@@ -71,19 +66,16 @@ sub new {
 }
 
 
-=head2 retrieveData
+=pod
+=begin classdoc
 
-    Class : Public
+Retrieve a set of monitor var value
 
-    Desc : Retrieve a set of monitor var value
+@param var_map hash ref : required  var { var_name => oid }
 
-    Args :
-        var_map : hash ref : required  var { var_name => oid }
+@return [0] : time when data was retrived or [1] : resulting hash ref { var_name => value }
 
-    Return :
-        [0] : time when data was retrived
-        [1] : resulting hash ref { var_name => value }
-
+=end classdoc
 =cut
 
 sub retrieveData {

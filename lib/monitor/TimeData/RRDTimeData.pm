@@ -17,6 +17,15 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 03/02/2012
 
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
+
 package TimeData::RRDTimeData;
 use base TimeData;
 
@@ -53,23 +62,31 @@ if ($^O eq 'MSWin32') {
 #########################################RRD MANIPULATION FUNCTIONS################################
 ###################################################################################################
 
-=head2 createTimeDataStore
 
-    <Class>   : Public
-    <Desc>    : This method create a RRD file.
-    <args>    : name, options, RRA, DS, skip_if_exists
-    <Comment> : Only name is mandatory. Default RRD configuration are: step = 60, 1 RRA with 
-                1 PDP per CPD, and 1440 CDP (60x1x1440 = 86400scd/ 1 day). 
-                Standard is 1 RRA and 1 DS per RRD
-    <throws>  : 'RRD creation failed' if the creation is a failure 
-                §WARNING§: the code only catch the keyword 'ERROR' in the command return...
+=pod
+=begin classdoc
 
+This method create a RRD file.
+
+Only name is mandatory. Default RRD configuration are: step = 60, 1 RRA with
+1 PDP per CPD, and 1440 CDP (60x1x1440 = 86400scd/ 1 day).
+Standard is 1 RRA and 1 DS per RRD
+throws 'RRD creation failed' if the creation is a failure
+§WARNING§: the code only catch the keyword 'ERROR' in the command return...
+
+@param name
+@param options
+@param RRA
+@param DS
+@param skip_if_exists
+
+=end classdoc
 =cut
 
 sub createTimeDataStore {
-    #rrd creation example: system ('$rrd create target.rrd --start 1328190055 
-    #                                                      --step 300 
-    #                                                      DS:mem:GAUGE:600:0:671744 
+    #rrd creation example: system ('$rrd create target.rrd --start 1328190055
+    #                                                      --step 300
+    #                                                      DS:mem:GAUGE:600:0:671744
     #                                                      RRA:AVERAGE:0.5:12:24'
     #                             );
 
@@ -179,12 +196,17 @@ sub createTimeDataStore {
     }
 }
 
-=head2 deleteTimeDataStore
 
-    <Class>   : Public
-    <Desc>    : This method delete a RRD file.
-    <args>    : $name
 
+
+=pod
+=begin classdoc
+
+This method delete a RRD file.
+
+@param name RRD name
+
+=end classdoc
 =cut
 
 sub deleteTimeDataStore{
@@ -198,12 +220,15 @@ sub deleteTimeDataStore{
     system ($cmd);
 }
 
-=head2 getTimeDataStoreInfo
 
-    <Class>   : Public
-    <Desc>    : This method get info a RRD file.
-    <args>    : $name
+=pod
+=begin classdoc
 
+This method get info a RRD file.
+
+@param name RRD name
+
+=end classdoc
 =cut
 
 sub getTimeDataStoreInfo {
@@ -217,17 +242,24 @@ sub getTimeDataStoreInfo {
     system ($cmd);
 }
 
-=head2 fetchTimeDataStore
 
-    <Class>   : Public
-    <Desc>    : This method retrieve values from a RRD file.
-    <args>    : name, start, end
-    <Return>  : %values
-    <Comment> : if start and end are not specified, rrd fetch use start = now - 1 day and stop = now
-    <throws>  : 'RRD fetch failed' if the fetch is a failure 
-    §WARNING§: the code only catch the keyword 'ERROR' in the command return...
+=pod
+=begin classdoc
 
+This method retrieve values from a RRD file.
+Ff start and end are not specified, rrd fetch use start = now - 1 day and stop = now
+Throws 'RRD fetch failed' if the fetch is a failure
+§WARNING§: the code only catch the keyword 'ERROR' in the command return...
+
+@param name
+@param start
+@param end
+
+@return values
+
+=end classdoc
 =cut
+
 
 sub fetchTimeDataStore {
     my %args = @_;
@@ -284,14 +316,21 @@ sub fetchTimeDataStore {
     return %values;
 }
 
-=head2 updateTimeDataStore
 
-    <Class>   : Public
-    <Desc>    : This method update values into a RRD file.
-    <args>    : clustermetric_id, time, value
-    <throws>  : 'RRD update failed' if the update is a failure 
-    §WARNING§: the code only catch the keyword 'ERROR' in the command return...
+=pod
+=begin classdoc
 
+This method update values into a RRD file.
+throws 'RRD update failed' if the update is a failure
+WARNING: the code only catch the keyword 'ERROR' in the command return...
+
+@param clustermetric_id
+@param time
+@param value
+
+@return values
+
+=end classdoc
 =cut
 
 sub updateTimeDataStore {
@@ -324,15 +363,21 @@ sub updateTimeDataStore {
     }
 }
 
-=head2 getLastUpdatedValue
 
-    <Class>   : Public
-    <Desc>    : This method get the last updated value into a RRD file.
-    <args>    : metric_uid, fresh_only (optional: return undef if last value date is < now - heartbeat)
-    <Return>  : %values
-    <throws>  : 'RRD fetch failed for last updated value' if the fetch is a failure 
-    §WARNING§: the code only catch the keyword 'ERROR' in the command return...
+=pod
+=begin classdoc
 
+This method get the last updated value into a RRD file.
+throw 'RRD fetch failed for last updated value' if the fetch is a failure
+Warning the code only catch the keyword 'ERROR' in the command return...
+
+@param metric_uid
+
+@optional fresh_only return undef if last value date is < now - heartbeat
+
+@return %values
+
+=end classdoc
 =cut
 
 sub getLastUpdatedValue {
@@ -392,13 +437,19 @@ sub getLastUpdatedValue {
     return %values;
 }
 
-=head2 resizeTimeDataStore
 
-    <Class>   : Public
-    <Desc>    : This method grows or shrink a rrd 
-    <args>    : New desired storing time 
+=pod
+=begin classdoc
 
-=cut 
+This method grows or shrink a rrd
+
+@param storage_duration
+@param old_storage_duration
+@param collect_frequency
+@param clustermetric_id
+
+=end classdoc
+=cut
 
 sub resizeTimeDataStore {
     my %args = @_;
@@ -425,7 +476,7 @@ sub resizeTimeDataStore {
 
         #resize the rrd
         my $exec = `cd $dir && $cmd 2>&1`;
-        #replace old rrd by newly generated resize.rrd 
+        #replace old rrd by newly generated resize.rrd
         my $mv   = qq{$move resize.rrd $dir$rrd_name};
         $exec    = `cd $dir && $mv 2>&1`;
     }
@@ -440,13 +491,19 @@ sub resizeTimeDataStore {
 #########################################INNER FUNCTIONS#################################################
 #########################################################################################################
 
-=head2 _configTimeDataStore
 
-    <Class>   : Private
-    <Desc>    : This method configure the step, heartbeat, and CDP number for a rrd
-    <args>    : Frequency or storing time desired
-    <Return>  : \%config
+=pod
+=begin classdoc
 
+This method configure the step, heartbeat, and CDP number for a rrd
+
+@param storage_duration Storing time desired
+
+@param collect_frequency (if storage_duration not defined) Frequency desired
+
+@return \%config
+
+=end classdoc
 =cut
 
 sub _configTimeDataStore {
@@ -489,13 +546,18 @@ sub _configTimeDataStore {
     return \%config;
 }
 
-=head2 _formatName
 
-    <Class>   : Private
-    <Desc>    : This method format a name argument for RRD
-    <args>    : $name
-    <Return>  : $name
+=pod
+=begin classdoc
 
+This method format a name argument for RRD.
+'name' => timeDB_name.rrd
+
+@param string name
+
+@return formated name
+
+=end classdoc
 =cut
 
 sub _formatName {

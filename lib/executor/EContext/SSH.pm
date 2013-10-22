@@ -133,7 +133,8 @@ sub _init {
 }
 
 
-=head2 execute
+=pod
+=begin classdoc
 
 execute ( command )
     desc: execute a command in a remote shell
@@ -144,14 +145,6 @@ execute ( command )
 
     WARNING: in your command, don't use stderr redirection ( 2> )
 
-=cut
-
-=cut
-
-=pod
-
-=begin classdoc
-
 Use the OpenSSH module to execute the command remotely.
 NOTE: don't use stderr redirection ( 2> ) in your command.
 
@@ -160,15 +153,14 @@ NOTE: don't use stderr redirection ( 2> ) in your command.
 @return the command result
 
 =end classdoc
-
 =cut
 
 sub execute {
     my ($self, %args) = @_;
-    
+
     General::checkParams(args => \%args, required => [ 'command' ],
                                          optional => { 'timeout' => $self->{timeout} });
-    
+
     if ($args{command} =~ m/2>/) {
         $errmsg = "EContext::SSH->execute : command must not contain stderr redirection (2>)!";
         $log->error($errmsg);
@@ -203,16 +195,13 @@ sub execute {
     } else {
         $log->debug("Command stdout is : '$stdout'");
         $log->debug("Command stderr: $stderr");
-        $log->debug("Command exitcode: $result->{exitcode}");        
+        $log->debug("Command exitcode: $result->{exitcode}");
     }
     return $result;
 }
 
 
-=cut
-
 =pod
-
 =begin classdoc
 
 Use the OpenSSH module to copy the local file to remote host.
@@ -223,7 +212,6 @@ Use the OpenSSH module to copy the local file to remote host.
 @return the command result
 
 =end classdoc
-
 =cut
 
 sub send {

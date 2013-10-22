@@ -16,13 +16,11 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 =pod
-
 =begin classdoc
 
 TODO
 
 =end classdoc
-
 =cut
 
 package Manager::HostManager::VirtualMachineManager;
@@ -91,11 +89,15 @@ sub createVirtualHost {
     return $vm;
 }
 
-=head generateMacAddress
 
-class method
+=pod
+=begin classdoc
+
 return a mac address auto generated and not used by any host
 
+@return mac address auto generated and not used by any host
+
+=end classdoc
 =cut
 
 sub generateMacAddress {
@@ -117,11 +119,16 @@ sub generateMacAddress {
     return $macaddress;
 }
 
-=head2 scaleHost
+=pod
+=begin classdoc
 
-    Desc: launch a scale workflow that can be of type 'cpu' or 'memory'
-    Args: $host_id, $scalein_value, $scalein_type
+launch a scale workflow that can be of type 'cpu' or 'memory'
 
+@param host_id Host instance id to scale
+@param scalein_value Wanted value
+@param scalein_type Selectsthe metric to scale in either 'ram' or 'cpu'
+
+=end classdoc
 =cut
 
 sub scaleHost {

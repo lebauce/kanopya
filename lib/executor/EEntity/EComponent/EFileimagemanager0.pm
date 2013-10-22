@@ -13,6 +13,15 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package EEntity::EComponent::EFileimagemanager0;
 use base "EEntity::EComponent";
 use base 'EManager::EExportManager';
@@ -34,9 +43,6 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 my $errmsg;
 
-=head2 createDisk
-
-=cut
 
 sub createDisk {
     my $self = shift;
@@ -88,9 +94,6 @@ sub createDisk {
     return $container;
 }
 
-=head2 removeDisk
-
-=cut
 
 sub removeDisk{
     my $self = shift;
@@ -173,16 +176,19 @@ sub removeExport {
     $args{container_access}->delete();
 }
 
-=head2 fileCreate
 
-    Desc: create an empty file that will be of the type managed by the component
+=pod
+=begin classdoc
 
+Create an empty file that will be of the type managed by the component
+
+=end classdoc
 =cut
 
 sub fileCreate {
     my $self = shift;
     my %args = @_;
-    
+
     General::checkParams(args     => \%args,
                          required => [ 'container_access', 'file_name',
                                        'file_size', 'file_type' ]);
@@ -228,14 +234,11 @@ sub fileCreate {
                                econtext   => $self->getEContext);
 }
 
-=head2 fileRemove
-
-=cut
 
 sub fileRemove{
     my $self = shift;
     my %args = @_;
-    
+
     General::checkParams(args => \%args, required => [ "container" ]);
 
     # Firstly mount the container access on the executor.

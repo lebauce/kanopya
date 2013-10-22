@@ -14,19 +14,13 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-=head1 NAME
 
-EIscsiContainerAccess - execution class of iscsi container access entities.
+=pod
+=begin classdoc
 
-=head1 SYNOPSIS
+Execution class for iscsi container access entities.
 
-
-=head1 DESCRIPTION
-
-EContainerAccess::EIscsiContainerAccess is the execution class for iscsi container access entities.
-
-=head1 METHODS
-
+=end classdoc
 =cut
 
 package EEntity::EContainerAccess::EIscsiContainerAccess;
@@ -39,10 +33,13 @@ use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
 
-=head2 connect
 
-    desc: Creating open-iscsi node, and wait for the device appeared.
+=pod
+=begin classdoc
 
+Creating open-iscsi node, and wait for the device appeared.
+
+=end classdoc
 =cut
 
 sub connect {
@@ -113,10 +110,12 @@ sub connect {
     return $device;
 }
 
-=head2 disconnect
+=pod
+=begin classdoc
 
-    desc: Deleting open-iscsi node.
+Deleting open-iscsi node.
 
+=end classdoc
 =cut
 
 sub disconnect {
@@ -146,10 +145,13 @@ sub disconnect {
     # TODO: insert an eroolback with mount method ?
 }
 
-=head2 getLunId
 
-    desc: Get the LUN id for a host
+=pod
+=begin classdoc
 
+Get the LUN id for a host
+
+=end classdoc
 =cut
 
 sub getLunId {

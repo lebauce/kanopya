@@ -117,7 +117,7 @@ function createSCOWorkflowDefButton(container, managerid, dial, wfid, wf) {
                         }
                     };
                     $.ajax({
-                        url         : '/api/entity/' + managerid + "/createWorkflow",
+                        url         : '/api/entity/' + managerid + "/createWorkflowDef",
                         type        : 'POST',
                         contentType : 'application/json',
                         data        : JSON.stringify(params),
@@ -532,7 +532,7 @@ function workflowslist(cid, eid) {
                             $(grid).setCell(rowid, 'currentOperation', rowelem.currentOperation);
                         }
                     });
-                },  
+                },
                 colModel                : [
                     { name : 'pk', index : 'pk', sorttype : 'int', hidden : true, key : true },
                     { name : 'workflow_name', index : 'workflow_name' },

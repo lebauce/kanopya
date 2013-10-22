@@ -381,12 +381,15 @@ sub getPuppetDefinition {
 
 ### hypervisors manipulation ###
 
-=head2 getVmResources
 
-    Promote the selected host to an hypervisor type.
-    Real declaration in opennebula must have been done
-    since `onehost_id` is required.
+=pod
+=begin classdoc
 
+Promote the selected host to an hypervisor type.
+Real declaration in opennebula must have been done
+since `onehost_id` is required.
+
+=end classdoc
 =cut
 
 sub addHypervisor {

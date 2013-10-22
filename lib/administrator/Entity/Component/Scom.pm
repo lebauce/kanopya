@@ -15,6 +15,16 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 3 july 2010
+
+
+=pod
+=begin classdoc
+
+Link Kanopya to Microsoft SCOM
+
+=end classdoc
+=cut
+
 package Entity::Component::Scom;
 use base 'Entity::Component';
 use base 'Manager::CollectorManager';
@@ -45,10 +55,6 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-
-=head2 new
-
-=cut
 
 sub new {
     my $class = shift;
@@ -202,10 +208,13 @@ sub _format_dt {
 }
 
 
+=pod
+=begin classdoc
 
-=head2 getCollectorType
-    Desc: Usefull to give information about this component
-    Return: 'SCOM monitoring'
+Usefull to give information about this component
+@return SCOM monitoring
+
+=end classdoc
 =cut
 
 sub getCollectorType {

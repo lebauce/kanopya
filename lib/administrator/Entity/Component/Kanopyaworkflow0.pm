@@ -16,6 +16,17 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 5 june 2012
 
+
+=pod
+=begin classdoc
+
+Kanopya Workflow Manager.
+Specify methods only used when Kanopya is the workflow manager
+
+=end classdoc
+=cut
+
+
 package Entity::Component::Kanopyaworkflow0;
 use base 'Entity::Component';
 use base 'Manager::WorkflowManager';
@@ -26,7 +37,6 @@ use General;
 use Kanopya::Exceptions;
 use Entity::Host;
 
-use Data::Dumper;
 use Hash::Merge qw( merge);
 use Log::Log4perl 'get_logger';
 use WorkflowStep;
@@ -35,6 +45,17 @@ my $errmsg;
 
 use constant ATTR_DEF => {};
 sub getAttrDef { return ATTR_DEF; }
+
+
+=pod
+=begin classdoc
+
+Overrides <method>Manager::WorkflowManager::associateWorkflow</method>.
+
+Add steps of the origin workflow def to the created workflow
+
+=end classdoc
+=cut
 
 sub associateWorkflow {
     my ($self,%args) = @_;
@@ -49,23 +70,35 @@ sub associateWorkflow {
 
     for my $step (@steps) {
         WorkflowStep->new(
-            workflow_def_id  => $new_wf_def->getId(),
-            operationtype_id => $step->getAttr(name => 'operationtype_id'),
+            workflow_def_id  => $new_wf_def->id,
+            operationtype_id => $step->operationtype_id,
         );
     }
 
     return $new_wf_def;
 }
 
+
+=pod
+=begin classdoc
+
+Overrides <method>Manager::WorkflowManager::associateWorkflow</method>.
+
+Specify automatic values of Kanopya Workflow Manager
+
+=end classdoc
+=cut
+
 sub _getAutomaticValues{
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['automatic_params']);
+    General::checkParams(args => \%args, required => ['automatic_params'],
+                                         optional => {service_provider_id => undef});
 
     my $automatic_params = $args{automatic_params};
 
     if (exists $automatic_params->{context}->{host}) {
-        my $host = Entity::Host->find(hash => {'node.node_hostname' => $args{host_name}}); 
+        my $host = Entity::Host->find(hash => {'node.node_hostname' => $args{host_name}});
         $automatic_params->{context}->{host} = $host;
     }
     if (exists $automatic_params->{context}->{cloudmanager_comp}) {
@@ -82,6 +115,16 @@ sub _getAutomaticValues{
     return $automatic_params;
 }
 
+
+=pod
+=begin classdoc
+
+Merges automatic and specific params
+
+@param all_params hashref of parameters containing specific and automatic params
+
+=end classdoc
+=cut
 
 sub _defineFinalParams{
     my ($self,%args) = @_;

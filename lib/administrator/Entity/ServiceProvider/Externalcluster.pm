@@ -88,11 +88,15 @@ sub toString() {
     return 'External Cluster ' . $self->getAttr( name => 'externalcluster_name');
 }
 
-=head2
 
-    BaseDB label virtual attribute getter
+=pod
+=begin classdoc
 
+BaseDB label virtual attribute getter
+
+=end classdoc
 =cut
+
 sub label {
     my $self = shift;
     return $self->externalcluster_name;
@@ -112,12 +116,16 @@ sub new {
     return $self;
 }
 
-=head2 addManager
 
-    overload ServiceProvider::addManager to insert initial monitoring configuration when adding a collector manager
+=pod
+=begin classdoc
 
-    Args: (optionnal) no_default_conf : do not insert default monitoring configuration (link only to indicators. no metrics, no rules)
+Overload ServiceProvider::addManager to insert initial monitoring configuration when adding a collector manager
 
+@optional no_default_conf do not insert default monitoring configuration
+          (link only to indicators. no metrics, no rules)
+
+=end classdoc
 =cut
 
 sub addManager {
@@ -133,9 +141,6 @@ sub addManager {
     return $manager;
 }
 
-=head2 getState
-
-=cut
 
 sub getState {
     my $self = shift;
@@ -143,9 +148,6 @@ sub getState {
     return wantarray ? split(/:/, $state) : $state;
 }
 
-=head2 setState
-
-=cut
 
 sub setState {
     my $self = shift;
@@ -159,12 +161,16 @@ sub setState {
 }
 
 
-=head2 addNode
+=pod
+=begin classdoc
 
 Not supposed to be used (or for test purpose).
 Externalcluster nodes are updated using appropriate connector
 See updateNodes()
 
+@param hostname String host name
+
+=end classdoc
 =cut
 
 sub addNode {
@@ -204,11 +210,6 @@ sub getNodeId {
     return $node->get_column('node_id');
 }
 
-
-=head2 getNodeState
-
-
-=cut
 
 sub getNodeState {
     my ($self, %args) = @_;
@@ -346,14 +347,16 @@ sub updateNodes {
     };
 }
 
-=head2 getNodesMetrics
+=pod
+=begin classdoc
 
-    Retrieve cluster nodes metrics values using the linked MonitoringService connector
+Retrieve cluster nodes metrics values using the linked MonitoringService connector
 
-    Params:
-        indicators : array ref of indicator name (eg 'ObjectName/CounterName')
-        time_span  : number of last seconds to consider when compute average on metric values
-        <optional> shortname : bool : node identified by their fqn or hostname in resulting struct
+@param indicators array ref of indicator name (eg 'ObjectName/CounterName')
+@param time_span number of last seconds to consider when compute average on metric values
+@optional shortname bool node identified by their fqn or hostname in resulting struct
+
+=end classdoc
 =cut
 
 sub getNodesMetrics {
@@ -418,16 +421,19 @@ sub generateClustermetricAndCombination{
     return $rep;
 }
 
-=head2 monitoringDefaultInit
 
-    Insert some basic clustermetrics, combinations and rules for this cluster
+=pod
+=begin classdoc
 
-    Use SCOM indicators by default
-    TODO : more generic (unhardcode SCOM, metrics depend on monitoring service)
-    TODO : default init must be done when instanciating data collector.
+Insert some basic clustermetrics, combinations and rules for this cluster
 
-    Args: (optionnal) no_default_conf : do not insert default monitoring configuration (link only to indicators. no metrics, no rules)
+Use SCOM indicators by default
+TODO : more generic (unhardcode SCOM, metrics depend on monitoring service)
+TODO : default init must be done when instanciating data collector.
 
+@optional no_default_conf do not insert default monitoring configuration (link only to indicators. no metrics, no rules)
+
+=end classdoc
 =cut
 
 sub monitoringDefaultInit {
@@ -844,14 +850,17 @@ sub removeNode {
     return;
 }
 
-=head2 remove
 
-    Desc: manually remove associated connectors (don't use cascade delete)
-          so each one can manually remove associated service_provider_manager
-          Managers can't be cascade deleted because they are linked either to a a connector or a component.
+=pod
+=begin classdoc
 
-    TODO : merge connector and component or make them inerit from a parent class
+Manually remove associated connectors (don't use cascade delete)
+so each one can manually remove associated service_provider_manager
+Managers can't be cascade deleted because they are linked either to a a connector or a component.
 
+TODO : merge connector and component or make them inerit from a parent class
+
+=end classdoc
 =cut
 
 sub remove {

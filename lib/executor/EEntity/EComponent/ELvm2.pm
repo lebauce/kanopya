@@ -12,6 +12,15 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package EEntity::EComponent::ELvm2;
 use base "EManager::EDiskManager";
 use base "EEntity::EComponent";
@@ -27,17 +36,20 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 my $errmsg;
 
-=head2 createDisk
 
-createDisk ( name, size, filesystem)
-    desc: This function create a new lv on storage server.
-    args:
-        name : string : new lv name
-        size : String : disk size finishing by unit (M : Mega, K : kilo, G : Giga)
-        filesystem : String : The filesystem is defined by mkfs filesystem option
-    return:
-        code returned by EEntity::EComponent::ELvm2->lvCreate
-    
+=pod
+=begin classdoc
+
+This function create a new lv on storage server.
+
+@param name new lv name
+@param size disk size finishing by unit (M : Mega, K : kilo, G : Giga)
+@param filesystem The filesystem is defined by mkfs filesystem option
+@optional vg_id
+
+@return code returned by EEntity::EComponent::ELvm2->lvCreate
+
+=end classdoc
 =cut
 
 sub createDisk {
@@ -83,9 +95,6 @@ sub createDisk {
     return $container;
 }
 
-=head2 removeDisk
-
-=cut
 
 sub removeDisk{
     my $self = shift;
@@ -119,25 +128,27 @@ sub removeDisk{
     #TODO: insert erollback ?
 }
 
-=head2 lvCreate
 
-createDisk ( lvm2_lv_name, lvm2_lv_size, lvm2_lv_filesystem, lvm2_vg_id, lvm2_vg_name)
-    desc: This function create a new lv on storage server and add it in db through entity part
-    args:
-        lvm2_lv_name : string : new lv name
-        lvm2_lv_size : String : disk size finishing by unit (M : Mega, K : kilo, G : Giga)
-        lvm2_lv_filesystem : String : The filesystem is defined by mkfs filesystem option
-        lvm2_vg_id : Int : VG id on which lv will be created
-        lvm2_vg_name : String : vg name
-    return:
-        code returned by Entity::Component::Lvm2->lvCreate
-    
+=pod
+=begin classdoc
+
+This function create a new lv on storage server and add it in db through entity part
+
+@param lvm2_lv_name string new lv name
+@param lvm2_lv_size String disk size finishing by unit (M : Mega, K : kilo, G : Giga)
+@param lvm2_lv_filesystem String The filesystem is defined by mkfs filesystem option
+@param lvm2_vg_id Int VG id on which lv will be created
+@param lvm2_vg_name String vg name
+
+@return code returned by Entity::Component::Lvm2->lvCreate
+
+=end classdoc
 =cut
 
 sub lvCreate {
     my $self = shift;
     my %args = @_;
-    
+
     General::checkParams(args     => \%args,
                          required => [ "lvm2_lv_name", "lvm2_lv_size",
                                        "lvm2_lv_filesystem", "vg_name" ]);
@@ -153,16 +164,18 @@ sub lvCreate {
     }
 }
 
-=head2 mkfs
 
-_mkfs ( device, fstype, fsoptions, econtext)
-    desc: This function create a filesystem on a device.
-    args:
-        device : string: device full path (like /dev/sda2 or /dev/vg/lv)
-        fstype : string: name of filesystem (ext2, ext3, ext4)
-        fsoptions : string: filesystem options to use during creation (optional)
-        econtext : Econtext : execution context on the storage server
+=pod
+=begin classdoc
 
+This function create a filesystem on a device.
+
+@param device string device full path (like /dev/sda2 or /dev/vg/lv)
+@param fstype string name of filesystem (ext2, ext3, ext4)
+@param fsoptions string filesystem options to use during creation (optional)
+@param econtext Econtext execution context on the storage server
+
+=end classdoc
 =cut
 
 sub mkfs {
@@ -186,16 +199,17 @@ sub mkfs {
     }
 }
 
-=head2 vgSizeUpdate
 
-vgSizeUpdate ( lvm2_vg_id, lvm2_vg_name)
-    desc: This function update vg free space on storage server
-    args:
-        lvm2_vg_id : Int : identifier of vg update
-        lvm2_vg_name : String : vg name
-    return:
-        code returned by Entity::Component::Lvm2->vgSpaceUpdate
-    
+=pod
+=begin classdoc
+
+This function update vg free space on storage server
+
+@param lvm2_vg_id Int identifier of vg update
+@param lvm2_vg_name String vg name
+
+@return code returned by Entity::Component::Lvm2->vgSpaceUpdate
+
 =cut
 
 sub vgSpaceUpdate {
@@ -222,13 +236,16 @@ sub vgSpaceUpdate {
                                              lvm2_vg_id        => $args{lvm2_vg_id});
 }
 
-=head2 lvRemove
+=pod
+=begin classdoc
 
-lvRemove ( lvm2_lv_name, lvm2_vg_id, lvm2_vg_name)
-    desc: This function remove a lv.
-    args:
-        name : string: lv name
+This function remove a lv.
 
+@param lvm2_lv_name string lv name
+@param lvm2_vg_name string vg name
+@param lvm2_vg_id int vg id
+
+=end classdoc
 =cut
 
 sub lvRemove{

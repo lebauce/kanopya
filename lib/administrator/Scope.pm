@@ -12,12 +12,19 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+=pod
+=begin classdoc
+
+Scope indicates whether a ScopeParameter applies to a single node or to the service.
+
+=end classdoc
+=cut
+
 package Scope;
 use base 'BaseDB';
 
 use strict;
 use warnings;
-
 
 use constant ATTR_DEF => {
     scope_name => {

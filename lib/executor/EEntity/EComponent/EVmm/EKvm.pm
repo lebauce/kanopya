@@ -12,6 +12,15 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package EEntity::EComponent::EVmm::EKvm;
 use base "EEntity::EComponent::EVmm";
 
@@ -100,10 +109,16 @@ sub _generateQemuKvmUdev {
     $self->_host->getEContext->execute(command => $command);
 }
 
-=head2 getAvailableMemory
+=pod
+=begin classdoc
 
-    Return the available memory amount by interrogating virsh
+Return the available memory amount by interrogating virsh
 
+@param host Target Host instance
+
+@return hash ref {mem_effectively_available   => value, mem_theoretically_available => value}
+
+=end classdoc
 =cut
 
 sub getAvailableMemory {
@@ -141,11 +156,20 @@ sub getAvailableMemory {
     }
 }
 
-=head2 getVmResources
 
-    Return virtual machine resources. If no resource type(s)
-    is specified in parameters, return all known resources.
+=pod
+=begin classdoc
 
+Return virtual machine resources. If no resource type(s)
+is specified in parameters, return all known resources.
+
+@param host Target Hypervisor instance
+
+@optional vm  If no vm specified, get resssources for all hypervisor vms.
+
+@optional resources array of resources name to retrieve ('ram' and/or 'cpu')
+
+=end classdoc
 =cut
 
 sub getVmResources {
@@ -205,21 +229,24 @@ sub getVmResources {
     return $vms_resources;
 };
 
-=head2 updatePinning
 
-    Update the CPU pinning for an hypervisor
+=pod
+=begin classdoc
 
+Update the CPU pinning for an hypervisor
+
+@param host Hypervisor instance
+@param vm VirtualMachine instance
+@optional cpus
+
+=end classdoc
 =cut
 
 sub updatePinning {
     my $self    = shift;
     my %args    = @_;
 
-    General::checkParams(
-        args        => \%args,
-        required    => [ 'host', 'vm' ],
-        optional    => { cpus => -1 }
-    );
+    General::checkParams(args => \%args, required => [ 'host', 'vm' ], optional => { cpus => -1 });
 
     if ($args{cpus} == -1) {
         $args{cpus} = $args{vm}->host_core;

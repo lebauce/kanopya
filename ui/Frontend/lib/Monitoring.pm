@@ -1,3 +1,11 @@
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package Monitoring;
 
 use Dancer ':syntax';
@@ -14,12 +22,16 @@ my $log = get_logger("");
 prefix '/monitoring';
 
 
-=head2 ajax '/extclusters/:extclusterid/monitoring/clustersview'
+=pod
+=begin classdoc
 
-    Desc: Get the values corresponding to the selected combination for the currently monitored cluster,
-    return to the monitor.js an 2D array containing the timestamped values for the combination, plus a start time and a stop time
+Get the values corresponding to the selected combination for the currently monitored cluster,
+return to the monitor.js an 2D array containing the timestamped values for the combination,
+plus a start time and a stop time
 
+=end classdoc
 =cut
+
 
 ajax '/serviceprovider/:spid/clustersview' => sub {
     my $cluster_id    = params->{spid} || 0;
@@ -65,11 +77,15 @@ ajax '/serviceprovider/:spid/clustersview' => sub {
     }
 };
 
-=head2 ajax '/serviceprovider/:spid/nodesview/bargraph'
 
-    Desc: Get the values corresponding to the selected nodemetric combination for the currently monitored cluster,
-    return to the monitor.js an array containing the nodes names for the combination, and another one containing the values for the nodes, plus the label of the node combination unit
+=pod
+=begin classdoc
 
+Get the values corresponding to the selected nodemetric combination for the currently monitored cluster,
+return to the monitor.js an array containing the nodes names for the combination, and another one containing
+the values for the nodes, plus the label of the node combination unit
+
+=end classdoc
 =cut
 
 get '/serviceprovider/:spid/nodesview/bargraph' => sub {
@@ -89,11 +105,14 @@ get '/serviceprovider/:spid/nodesview/bargraph' => sub {
     return to_json {values => $compute_result->{'values'}, nodelist => $nodelist, unit => $compute_result->{'unit'}};
 };
 
-=head2 ajax '/extclusters/:extclusterid/monitoring/nodesview/histogram'
+=pod
+=begin classdoc
 
-    Desc: Create a frequency distribution from the values computed to the selected nodemetric combination
-    return to the monitor.js a scalar containing the quantity of nodes, an array containing the number of nodes per partitions and another array containing the partitions (interval) of values
+Create a frequency distribution from the values computed to the selected nodemetric combination
+return to the monitor.js a scalar containing the quantity of nodes, an array containing
+the number of nodes per partitions and another array containing the partitions (interval) of values
 
+=end classdoc
 =cut
 
 ajax '/serviceprovider/:spid/nodesview/histogram' => sub {
@@ -149,11 +168,15 @@ ajax '/serviceprovider/:spid/nodesview/histogram' => sub {
     }
 };
 
-=head2 sub _computeClustermetricCombination
 
-    Desc: Compute the clustermetric combination for the cluster and return a reference to an array containing the corresponding values and related times
-    return: \@histovalues;
+=pod
+=begin classdoc
 
+Compute the clustermetric combination for the cluster and return a reference
+to an array containing the corresponding values and related times
+@return Array ref histovalues
+
+=end classdoc
 =cut
 
 sub _computeClustermetricCombination () {
@@ -206,11 +229,17 @@ sub _computeClustermetricCombination () {
     }
 }
 
-=head2 sub _computeNodemetricCombination
 
-    Desc: Compute the nodemetric combination for each node of the cluster and return a reference to a hash containing references to 2 arrays, the first containing the node list, the second containing the corresponding values
-    return: \%rep;
+=pod
+=begin classdoc
 
+Compute the nodemetric combination for each node of the cluster and return a reference
+to a hash containing references to 2 arrays, the first containing the node list,
+the second containing the corresponding values
+
+@return hashref
+
+=end classdoc
 =cut
 
 sub _computeNodemetricCombination {

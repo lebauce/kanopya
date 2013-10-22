@@ -14,19 +14,13 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-=head1 NAME
 
-ENfsContainerAccess - execution class of iscsi container access entities.
+=pod
+=begin classdoc
 
-=head1 SYNOPSIS
+Execution class for iscsi container access entities.
 
-
-=head1 DESCRIPTION
-
-EContainerAccess::ENfsContainerAccess is the execution class for iscsi container access entities.
-
-=head1 METHODS
-
+=end classdoc
 =cut
 
 package EEntity::EContainerAccess::ENfsContainerAccess;
@@ -40,10 +34,13 @@ use Data::Dumper;
 
 my $log = get_logger("");
 
-=head2 mount
 
-    desc: Mount the remote container acces with mount.nfs.
+=pod
+=begin classdoc
 
+Mount the remote container acces with mount.nfs.
+
+=end classdoc
 =cut
 
 sub mount {
@@ -83,10 +80,13 @@ sub mount {
     return $args{mountpoint};
 }
 
-=head2 connect
 
-    desc: Not supported, returning undef.
+=pod
+=begin classdoc
 
+Not supported, returning undef.
+
+=end classdoc
 =cut
 
 sub connect {
@@ -100,10 +100,13 @@ sub connect {
     return undef;
 }
 
-=head2 disconnect
 
-    desc: Not supported, doing nothing.
+=pod
+=begin classdoc
 
+Not supported, doing nothing.
+
+=end classdoc
 =cut
 
 sub disconnect {

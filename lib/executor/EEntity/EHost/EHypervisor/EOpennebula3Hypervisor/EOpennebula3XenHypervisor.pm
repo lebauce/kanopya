@@ -15,6 +15,15 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package EEntity::EHost::EHypervisor::EOpennebula3Hypervisor::EOpennebula3XenHypervisor;;
 use base "EEntity::EHost::EHypervisor::EOpennebula3Hypervisor";
 
@@ -35,10 +44,12 @@ my $resources_methods = {
     cpu => \&getCpuResources,
 };
 
-=head2 getAvailableMemory
+=pod
+=begin classdoc
 
-    Return the available memory amount.
+Return the available memory amount.
 
+=end classdoc
 =cut
 
 sub getAvailableMemory {
@@ -69,11 +80,13 @@ sub getAvailableMemory {
     }
 }
 
-=head2 getVmResources
+=pod
+=begin classdoc
 
-    Return virtual machines resources. If no resssource type(s)
-    specified in parameters, return all know ressouces.
+Return virtual machines resources. If no resssource type(s)
+specified in parameters, return all know ressouces.
 
+=end classdoc
 =cut
 
 sub getVmResources {
@@ -93,12 +106,14 @@ sub getVmResources {
     return $vms_resources;
 };
 
-=head2 getMemResources
+=pod
+=begin classdoc
 
-    Return specified virtual machine memory resources.
-    If no vm specified in parameters, return all hosted vm
-    memory resources.
+Return specified virtual machine memory resources.
+If no vm specified in parameters, return all hosted vm
+memory resources.
 
+=end classdoc
 =cut
 
 sub getMemResources {
@@ -133,12 +148,15 @@ sub getMemResources {
     return \%hash;
 }
 
-=head2 getCpuResources
 
-    Return specified virtual machine cpu resources.
-    If no vm specified in parameters, return all hosted vm
-    cpu resources.
+=pod
+=begin classdoc
 
+Return specified virtual machine cpu resources.
+If no vm specified in parameters, return all hosted vm
+cpu resources.
+
+=end classdoc
 =cut
 
 sub getCpuResources {

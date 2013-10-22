@@ -25,9 +25,6 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 use Data::Dumper;
 
-=head2 connect
-
-=cut
 
 sub connect {
     my $self = shift;
@@ -65,9 +62,6 @@ sub connect {
     return $file;
 }
 
-=head2 disconnect
-
-=cut
 
 sub disconnect {
     my $self = shift;

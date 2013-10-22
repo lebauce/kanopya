@@ -15,6 +15,15 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+
+=pod
+=begin classdoc
+
+Use Kanopya to collect monitoring data
+
+=end classdoc
+=cut
+
 package Entity::Component::Kanopyacollector1;
 use base "Entity::Component";
 use base "Manager::CollectorManager";
@@ -88,16 +97,19 @@ sub new {
     return $self;
 }
 
-=head2 retrieveData
+=pod
+=begin classdoc
 
-    Desc: Call kanopya native monitoring API to retrieve indicators data
+Call kanopya native monitoring API to retrieve indicators data
 
-    Args:   (required) \%indicators, \@nodelist
-            (required) $time_span OR $start, $end
-            (optional) historical
+@param indicators
+@param nodelist
+@param time_span OR start, end
+@optional time_span OR start and end Target time interval
 
-    return \%monitored_values
+@return hash ref { hostname => {oid => value,...}, ... }
 
+=end classdoc
 =cut
 
 sub retrieveData {
@@ -181,11 +193,14 @@ sub retrieveData {
 }
 
 
-=head2 getIndicators
+=pod
+=begin classdoc
 
-    Desc: call collector manager to retrieve indicators available for the service provider
-    return \@indicators;
+Call collector manager to retrieve indicators available for the service provider
 
+@return Array ref of Indicator instances
+
+=end classdoc
 =cut
 
 sub getIndicators {
@@ -196,12 +211,17 @@ sub getIndicators {
     );
 }
 
-=head2 getIndicator
 
-    Desc: Return the indicator with the specified id
-    Args: indicator id
-    Return an indicator instance
+=pod
+=begin classdoc
 
+Return the indicator with the specified id
+
+@param id Indicator id
+
+@return Indicator instance
+
+=end classdoc
 =cut
 
 sub getIndicator {
@@ -212,10 +232,13 @@ sub getIndicator {
     return Entity::Indicator->get(id => $args{id});
 }
 
-=head2 collectIndicator
 
-    Desc: Start collecting the specified indicator
+=pod
+=begin classdoc
 
+Start collecting the specified indicator
+
+=end classdoc
 =cut
 
 sub collectIndicator {
@@ -241,15 +264,18 @@ sub collectIndicator {
     }
 }
 
-=head2 collectIndicator
 
-    Desc: Start collecting indicators of the specified sets
-    ! Do not check if wanted set to collect contains available indicators for the service provider (i.e CollectorIndicators)
+=pod
+=begin classdoc
 
-    Args:
-        sets_name : array ref of set name
-        service_provider_id
+Start collecting indicators of the specified sets
+Do not check if wanted set to collect contains available indicators for the service provider
+(i.e CollectorIndicators)
 
+@param sets_name array ref of set name
+@param service_provider_id
+
+=end classdoc
 =cut
 
 sub collectSets {
@@ -274,11 +300,14 @@ sub collectSets {
     }
 }
 
-=head2 getCollectorType
 
-    Desc: Usefull to give information about this component
-    return 'Native Kanopya collector tool';
+=pod
+=begin classdoc
 
+Usefull to give information about this component
+@return Native Kanopya collector tool
+
+=end classdoc
 =cut
 
 sub getCollectorType {

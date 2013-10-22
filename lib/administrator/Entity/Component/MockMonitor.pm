@@ -16,13 +16,9 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 3 july 2010
 
-=head1 NAME
 
-Entity::Component::MockMonitor
-
-=head1 SYNOPSIS
-
-=head1 DESCRIPTION
+=pod
+=begin classdoc
 
 Mock collector manager giving values for requested nodes and indicators according to configuration.
 
@@ -42,6 +38,7 @@ Configuration example (JSON format):
     'response_time' : 60
 }
 
+=end classdoc
 =cut
 
 package Entity::Component::MockMonitor;
@@ -123,10 +120,17 @@ sub _computeValue {
     return $value;
 }
 
-=head2 new
 
-    new is redefined to create the collector indicators
+=pod
+=begin classdoc
 
+@constructor
+
+Overrides <method>Entity::Component::new</method>.
+
+new is redefined to create the collector indicators
+
+=end classdoc
 =cut
 
 sub new {

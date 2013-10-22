@@ -16,6 +16,9 @@
 =begin classdoc
 
 General Rule class. Implement specific behavior for entity's subscribe method.
+Rules are evaluated to be verified (true) or not (false) by the rule engine.
+A WorkflowDef can be associated to a rule. When the rule engine dectects that a rule is verified,
+it enqueues a Workflow that corresponds to the WorkflowDef.
 
 @since 2012-Dec-17
 
@@ -119,6 +122,15 @@ sub notifyWorkflowName {
     return undef;
 }
 
+
+=pod
+=begin classdoc
+
+Associate a notification workflow to a rule.
+
+=end classdoc
+=cut
+
 sub associateWithNotifyWorkflow {
     my $self        = shift;
 
@@ -139,7 +151,8 @@ sub associateWithNotifyWorkflow {
 =pod
 =begin classdoc
 
-Implement specific behavior for subscription : must associate the rule with an empty workflow when it is not associated with any.
+Implement specific behavior for subscription : must associate the rule with an empty workflow when
+it is not associated with any.
 
 @return the same value as Entity::subscribe
 
@@ -167,6 +180,17 @@ sub subscribe {
 }
 
 
+=pod
+=begin classdoc
+
+Delete a NotificationsSubscription and deassociate the Notify Workflow of the rule
+
+@param notification_subscription_id the id of
+@return the same value as Entity::subscribe
+
+=end classdoc
+=cut
+
 sub unsubscribe {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'notification_subscription_id' ]);
@@ -181,11 +205,7 @@ sub unsubscribe {
     if (Entity->get(id => $wfdef_origin_id)->workflow_def_name eq $self->notifyWorkflowName) {
         if ($self->notification_subscription_entities == 0) {
             my $wf_manager  = $self->service_provider->getManager(manager_type => "WorkflowManager");
-
-            $wf_manager->deassociateWorkflow(
-                rule_id         => $self->id,
-                workflow_def_id => $self->workflow_def->id,
-            );
+            $wf_manager->deassociateWorkflow(rule_id => $self->id);
         }
     }
 }

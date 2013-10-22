@@ -30,10 +30,6 @@ my $log = get_logger("");
 my $errmsg;
 
 
-=head2 notify
-
-=cut
-
 sub notify {
     my $self = shift;
     my %args  = @_;

@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-use Test::More 'no_plan';
+#use Test::More 'no_plan';
 use Test::Exception;
 use Test::Pod;
 use Data::Dumper;
@@ -42,8 +42,11 @@ sub main {
     eval{
         BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
         BaseDB->beginTransaction;
-        _create_infra();
-        _rule_objects_creation();
+        lives_ok {
+            _create_infra();
+            _rule_objects_creation();
+        } 'Create objects';
+
         add_and_remove_notification();
         add_and_remove_workflow();
         add_workflow_and_notification();
@@ -60,8 +63,8 @@ sub main {
         add_workflow_and_notification();
         add_notification_and_workflow();
 
-        BaseDB->commitTransaction;
-#        BaseDB->rollbackTransaction;
+
+        BaseDB->rollbackTransaction;
     };
     if($@) {
         my $error = $@;
@@ -136,7 +139,6 @@ sub add_notification_and_workflow {
         }
 
         $sco->deassociateWorkflow (
-            workflow_def_id => $workflow_def->id,
             rule_id         => $rule1->id,
         );
 
@@ -189,7 +191,6 @@ sub add_workflow_and_notification {
         );
 
         $sco->deassociateWorkflow (
-            workflow_def_id => $workflow_def->id,
             rule_id         => $rule1->id,
         );
 
@@ -249,8 +250,7 @@ sub add_and_remove_workflow {
         }
 
         $sco->deassociateWorkflow (
-            workflow_def_id => $workflow_def->id,
-            rule_id         => $rule1->id,
+            rule_id => $rule1->id,
         );
 
         $rule1 = $rule1->reload;
@@ -446,7 +446,7 @@ sub _create_infra {
         manager_type => 'WorkflowManager',
     );
 
-    my $node_wf = $sco->createWorkflow(
+    my $node_wf = $sco->createWorkflowDef(
                       workflow_name => 'Test Workflow',
                       params => {
                           internal => {
@@ -459,7 +459,7 @@ sub _create_infra {
                       }
                   );
 
-    $service_wf = $sco->createWorkflow(
+    $service_wf = $sco->createWorkflowDef(
         workflow_name => 'Test service Workflow',
         params => {
             internal => {
@@ -484,3 +484,4 @@ sub _create_infra {
         monitoring_state    => 'up',
     );
 }
+1;

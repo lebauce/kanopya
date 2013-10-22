@@ -69,7 +69,17 @@ sub methods {
     }
 }
 
-# Virtual attribute getter
+
+=pod
+=begin classdoc
+
+Virtual attribute 'formula_label'
+
+return the string of the formula
+
+=end classdoc
+=cut
+
 sub formula_label {
     my $self = shift;
     return $self->formula_string;
@@ -555,10 +565,8 @@ sub manageWorkflows {
 
             # Launch workflow
             my $workflow = $workflow_manager->runWorkflow(
-                               workflow_def_id     => $self->workflow_def_id,
-                               service_provider_id => $self->service_provider_id,
-                               rule_id             => $self->id,
-                               host_name           => Node->get(id => $node_id)->node_hostname,
+                               rule      => $self,
+                               host_name => Node->get(id => $node_id)->node_hostname,
                            );
 
             WorkflowNoderule->new(node_id            => $node_id,

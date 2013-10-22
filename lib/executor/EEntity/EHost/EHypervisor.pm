@@ -41,10 +41,15 @@ sub vmm {
     return EEntity->new(entity => $self->node->service_provider->getComponent(category => "Hypervisor"));
 }
 
-=head2 getAvailableMemory
 
-    Return the available memory amount.
+=pod
+=begin classdoc
 
+Return the available memory amount.
+
+@return available memory amount
+
+=end classdoc
 =cut
 
 sub getAvailableMemory {
@@ -54,23 +59,32 @@ sub getAvailableMemory {
                                           %args);
 }
 
-=head2 getVmResources
 
-    Return virtual machines resources. If no resssource type(s)
-    specified in parameters, return all know ressouces.
+=pod
+=begin classdoc
 
+Return virtual machines resources. If no resssource type(s)
+specified in parameters, return all know ressouces.
+
+@return resources
+
+=end classdoc
 =cut
+
 
 sub getVmResources {
     my ($self, %args) = @_;
     return $self->vmm->getVmResources(host => $self, %args);
 }
 
-=head2 getAvailableMemory
+=pod
+=begin classdoc
 
     Update the CPU pinning of the hypervisor
 
+=end classdoc
 =cut
+
 
 sub updatePinning {
     my ($self, %args) = @_;

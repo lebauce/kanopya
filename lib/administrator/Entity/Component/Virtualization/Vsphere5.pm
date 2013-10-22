@@ -321,8 +321,6 @@ sub negociateConnection {
 
 =begin classdoc
 
-=head2 retrieveDatacenters
-
 Retrieve a list of all datacenters
 
 @param id_request ID of request (used to differentiate UI requests)
@@ -373,8 +371,6 @@ sub retrieveDatacenters {
 =pod
 
 =begin classdoc
-
-=head2 retrieveClustersAndHypervisors
 
 Retrieve a list of Clusters and Hypervisors (that are not in a cluster)
 hosted in a given Datacenter
@@ -452,8 +448,6 @@ sub retrieveClustersAndHypervisors {
 
 =begin classdoc
 
-=head2 retrieveClusterHypervisors
-
 Retrieve a cluster's hypervisors
 
 @param cluster_name the name of the target cluster
@@ -514,8 +508,6 @@ sub retrieveClusterHypervisors {
 =pod
 
 =begin classdoc
-
-=head2 retrieveHypervisorVms
 
 Retrieve all the VM from a vsphere hypervisor
 
@@ -764,8 +756,6 @@ sub findEntityViews {
 
 =begin classdoc
 
-=head2 register
-
 Register vSphere items into kanopya service providers
 
 @param register_items a list of objects to the registered into Kanopya
@@ -877,8 +867,6 @@ sub registerDatacenter {
 =pod
 
 =begin classdoc
-
-=head2 registerVm
 
 Register a new virtual machine to match a vsphere vm
 One cluster is created by vm registered. If a cluster with vm's name, that means the vm is already registered
@@ -1071,7 +1059,7 @@ sub registerHypervisor {
                 manager_id   => $self->id
             );
         }
-        
+
         # connected state : the fact that host is available or not for management
         # power state will be managed by state-manager
         my $host_state = $hypervisor_view->runtime->connectionState->val eq 'connected'
@@ -1144,11 +1132,17 @@ sub registerCluster {
     return $args{parent};
 }
 
-=head2 scaleHost
 
-    Desc: launch a scale workflow that can be of type 'cpu' or 'memory'
-    Args: $host_id, $scalein_value, $scalein_type
+=pod
+=begin classdoc
 
+Launch a scale workflow that can be of type 'cpu' or 'memory'
+
+@param host_id
+@param scalein_value
+@param scalein_type
+
+=end classdoc
 =cut
 
 sub scaleHost {
@@ -1164,11 +1158,14 @@ sub scaleHost {
     $self->SUPER::scaleHost(%args);
 }
 
-=head generateMacAddress
+=pod
+=begin classdoc
 
-class method
-return a mac address auto generated and not used by any host
+Return a mac address auto generated and not used by any host
 
+@return string mac adress
+
+=end classdoc
 =cut
 
 sub generateMacAddress {

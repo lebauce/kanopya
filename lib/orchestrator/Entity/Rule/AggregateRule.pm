@@ -84,7 +84,17 @@ sub methods {
   }
 }
 
-# Virtual attribute getter
+
+=pod
+=begin classdoc
+
+Virtual attribute 'formula_label'
+
+return the string of the formula
+
+=end classdoc
+=cut
+
 sub formula_label {
     my $self = shift;
     return $self->formula_string;
@@ -116,7 +126,6 @@ sub new {
         );
     }
 
-    my $formula = (\%args)->{formula};
     _verify ($args{formula});
 
     my $self = $class->SUPER::new(%args);
@@ -306,6 +315,16 @@ sub clone {
 }
 
 
+=pod
+
+=begin classdoc
+
+return the constant string "NotifyWorkflow service_provider"
+
+=end classdoc
+
+=cut
+
 sub notifyWorkflowName {
     return "NotifyWorkflow service_provider";
 }
@@ -347,7 +366,7 @@ Update the state of the rule in DB  according to the state of the workflow the r
 =cut
 
 sub _updateWorkflowStatus {
-    my ($self, %args) = @_;
+    my $self = shift;
 
     my $workflow_def = $self->workflow_def;
 
@@ -376,8 +395,8 @@ sub _updateWorkflowStatus {
     }
     elsif ($workflow->state eq 'done') {
         $log->info('Workflow <'.$workflow->id.'> done');
-        $self->setAttr(name  => 'state', value => 'enabled' );
-        $self->setAttr(name  => 'workflow_id',  value => undef );
+        $self->setAttr(name  => 'state', value => 'enabled');
+        $self->setAttr(name  => 'workflow_id',  value => undef);
         $self->save();
     }
     elsif ($workflow->state eq 'delayed') {
@@ -478,11 +497,7 @@ sub manageWorkflows {
             $log->info('Rule <'. $self->id. '> has launched a new workflow (' . $workflow_def_id . ') and was defined as triggered');
 
             # Rule is enable, is verified and has a WorkflowDef => trigger the workflow !
-            my $workflow = $workflow_manager->runWorkflow(
-                               workflow_def_id     => $workflow_def_id,
-                               rule_id             => $self->id,
-                               service_provider_id => $sp->id
-                           );
+            my $workflow = $workflow_manager->runWorkflow(rule => $self);
 
             $self->setAttr(name => 'state', value => 'triggered');
             $self->setAttr(name => 'workflow_id', value => $workflow->id);
