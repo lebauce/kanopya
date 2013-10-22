@@ -2,7 +2,7 @@
 
 use strict;
 use warnings;
-#use Test::More 'no_plan';
+use Test::More 'no_plan';
 use Test::Exception;
 use Test::Pod;
 use Data::Dumper;
