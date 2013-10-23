@@ -1222,6 +1222,132 @@ sub checkAttr {
 =pod
 =begin classdoc
 
+Method used by the api as entry point for methods calls.
+It is convenient for centralizing permmissions checking.
+
+@param method the method name to call
+@optional params method call parameters
+
+=end classdoc
+=cut
+
+sub apiCall {
+    my $self  = shift;
+    my $class = ref($self) || $self;
+    my %args  = @_;
+
+    General::checkParams(args => \%args, required => [ 'method' ],
+                                         optional => { 'params' => {} });
+
+    my $userid   = Kanopya::Database::user->{user_id};
+    my $usertype = Kanopya::Database::user->{user_system};
+    my $godmode  = defined Kanopya::Database::config->{god_mode} &&
+                       Kanopya::Database::config->{god_mode} eq 1;
+
+    if (not ($godmode || $usertype)) {
+        $self->checkUserPerm(user_id => $userid, %args);
+    }
+
+    my $method = $args{method};
+    return $self->$method(%{$args{params}});
+}
+
+
+=pod
+=begin classdoc
+
+Check permmissions on a method for a user.
+
+=end classdoc
+=cut
+
+sub checkUserPerm {
+    my ($self, %args) = @_;
+    my $class = ref($self) || $self;
+
+    General::checkParams(args => \%args, required => [ 'method', 'user_id' ],
+                                         optional => { 'params' => {} });
+
+    # For the class method get, intanciate the specified object from the id,
+    # and delegate the permissions on get method to the object himself.
+    if (!ref($self) && $args{method} eq 'get' && defined $args{params}->{id}) {
+        return $class->get(id => $args{params}->{id})->checkUserPerm(%args);
+    }
+
+    # For delegated CRUD, check permission for 'update' on the delagated object
+    my $delegateeattr = $class->_delegateeAttr;
+    if (defined $delegateeattr && $args{method} =~ m/^(get|create|update|remove)$/) {
+        (my $delegateerel = $delegateeattr) =~ s/_id$//g;
+
+        # If the method is 'create', or 'update' with the delegatee attr sepcified,
+        # instanciate the delegatee from the delegatee attr param
+        my $delegatee;
+        if ($args{method} =~ m/^(create|update)$/ && defined $args{params}->{$delegateeattr}) {
+            # Retreive the relation class to instanciate it
+            my $delegateeclass = $self->_relationshipInfos(relation => $delegateerel)->{class};
+            $delegatee = $delegateeclass->get(id => $args{params}->{$delegateeattr});
+        }
+        # Else get the delegatee object from the instance
+        else {
+            $delegatee = $self->$delegateerel;
+        }
+
+        # Check the permission for update on the delagatee object
+        try {
+            $delegatee->checkUserPerm(user_id => $args{user_id}, method => "update");
+        }
+        catch (Kanopya::Exception::Permission::Denied $err) {
+            my $msg = $self->_permissionDeniedMessage(method => $args{method}) . " from " .
+                      $delegatee->_className . " <" . $delegatee->label . ">";
+            throw Kanopya::Exception::Permission::Denied(error => $msg);
+        }
+
+        # Also check the permisions on the object himself if the other rights than CRUD are not delegated
+        $delegatee = undef;
+        eval {
+            $delegatee = $self->_delegatee;
+        };
+        if (! (ref($self) && ref($delegatee) eq ref($self))) {
+            return;
+        }
+    }
+
+    # Firstly check permssions on parameters
+    foreach my $key (keys %{ $args{params} }) {
+        my $param = $args{params}->{$key};
+        if ((ref $param) eq "HASH" && defined ($param->{pk}) && defined ($param->{class_type_id})) {
+            my $paramclass = $self->_classType(id => $param->{class_type_id});
+            try {
+                $paramclass->_delegatee->checkPerm(user_id => $args{user_id}, method => "get");
+            }
+            catch (Kanopya::Exception::Permission::Denied $err) {
+                my $msg = "Permission denied to get parameter " . $param->{pk};
+                throw Kanopya::Exception::Permission::Denied(error => $msg);
+            }
+
+            # TODO: use DBIx::Class::ResultSet->new_result and bless it to 'class' instead of a 'get'
+            $args{params}->{$key} = $paramclass->get(id => $param->{pk});
+        }
+    }
+
+    $log->debug("Check permission for user <" . $args{user_id} . "> on <" . $self->_delegatee .
+                "> to <$args{method}>");
+
+    # Check the permissions for the logged user
+    try {
+        $self->_delegatee->checkPerm(user_id => $args{user_id}, method => $args{method});
+    }
+    catch ($err) {
+        throw Kanopya::Exception::Permission::Denied(
+                  error => $self->_permissionDeniedMessage(method => $args{method})
+              );
+    }
+}
+
+
+=pod
+=begin classdoc
+
 Propagate object specific permissions on a related object. This
 method is called at creation of related objects that have tagged
 the relation that link to this one as 'is_delegatee'.
@@ -1329,6 +1455,19 @@ sub _attributesDefinition {
             $pkname = "";
         }
 
+        # Complete the attrdef with many to many relations
+        my $multi = {};
+        if ($schema->result_class->can("_m2m_metadata")) {
+            for my $manytomany (values %{ $schema->result_class->_m2m_metadata }) {
+                $multi->{$manytomany->{relation}} = $manytomany;
+                $attributedefs->{$modulename}->{$manytomany->{accessor}} = {
+                    type         => "relation",
+                    relation     => "single_multi",
+                    is_mandatory => 0,
+                };
+            }
+        }
+
         # Complete the attrdef with regular relations, expecting inheritance and many to many
         for my $relation ($schema->relationships) {
             my $relinfo = $schema->relationship_info($relation);
@@ -1344,26 +1483,23 @@ sub _attributesDefinition {
                     $attributedefs->{$modulename}->{$relation} = {};
                 }
 
-                $attributedefs->{$modulename}->{$relation}->{type}         = "relation";
-                $attributedefs->{$modulename}->{$relation}->{relation}     = $relinfo->{attrs}->{accessor};
+                $attributedefs->{$modulename}->{$relation}->{type} = "relation";
                 $attributedefs->{$modulename}->{$relation}->{is_mandatory} = 0;
+                if ($relinfo->{attrs}->{accessor} eq "multi" && ! defined $multi->{$relation}) {
+                    $attributedefs->{$modulename}->{$relation}->{relation} = "single_multi";
+                }
+                else {
+                    $attributedefs->{$modulename}->{$relation}->{relation} = $relinfo->{attrs}->{accessor};
+                    if (defined $multi->{$relation}) {
+                        $attributedefs->{$modulename}->{$relation}->{link_to}
+                            = $multi->{$relation}->{foreign_relation};
+                    }
+                }
 
                 # Tag the corresponding id attribute as foreign key
-                # TODO: Do not put foreign key attributes in the attrdef any more.
                 if ($relinfo->{attrs}->{is_foreign_key_constraint} && $relation ne "parent") {
                     $attributedefs->{$modulename}->{$relation . "_id"}->{is_foreign_key} = 1;
                 }
-            }
-        }
-
-        # Complete the attrdef with many to many relations
-        if ($schema->result_class->can("_m2m_metadata")) {
-            for my $manytomany (keys %{ $schema->result_class->_m2m_metadata }) {
-                $attributedefs->{$modulename}->{$manytomany} = {
-                    type         => "relation",
-                    relation     => "multi",
-                    is_mandatory => 0,
-                };
             }
         }
 
@@ -2006,136 +2142,11 @@ sub _labelAttr {
     my $class = ref ($self) || $self;
 
     try {
-        return shift (grep { $_ =~ m/.*_name$/ } keys %{ $class->_attributesDefinition });
+        my @names = grep { $_ =~ m/.*_name$/ } keys %{ $class->_attributesDefinition };
+        return shift @names;
     }
     catch ($err) {
         return undef;
-    }
-}
-
-
-=pod
-=begin classdoc
-
-Method used by the api as entry point for methods calls.
-It is convenient for centralizing permmissions checking.
-
-@param method the method name to call
-@optional params method call parameters
-
-=end classdoc
-=cut
-
-sub apiCall {
-    my $self  = shift;
-    my $class = ref($self) || $self;
-    my %args  = @_;
-
-    General::checkParams(args => \%args, required => [ 'method' ],
-                                         optional => { 'params' => {} });
-
-    my $userid   = Kanopya::Database::user->{user_id};
-    my $usertype = Kanopya::Database::user->{user_system};
-    my $godmode  = defined Kanopya::Database::config->{god_mode} &&
-                       Kanopya::Database::config->{god_mode} eq 1;
-
-    if (not ($godmode || $usertype)) {
-        $self->checkUserPerm(user_id => $userid, %args);
-    }
-
-    my $method = $args{method};
-    return $self->$method(%{$args{params}});
-}
-
-
-=pod
-=begin classdoc
-
-Check permmissions on a method for a user.
-
-=end classdoc
-=cut
-
-sub checkUserPerm {
-    my ($self, %args) = @_;
-    my $class = ref($self) || $self;
-
-    General::checkParams(args => \%args, required => [ 'method', 'user_id' ],
-                                         optional => { 'params' => {} });
-
-    # For the class method get, intanciate the specified object from the id,
-    # and delegate the permissions on get method to the object himself.
-    if (!ref($self) && $args{method} eq 'get' && defined $args{params}->{id}) {
-        return $class->get(id => $args{params}->{id})->checkUserPerm(%args);
-    }
-
-    # For delegated CRUD, check permission for 'update' on the delagated object
-    my $delegateeattr = $class->_delegateeAttr;
-    if (defined $delegateeattr && $args{method} =~ m/^(get|create|update|remove)$/) {
-        (my $delegateerel = $delegateeattr) =~ s/_id$//g;
-
-        # If the method is 'create', or 'update' with the delegatee attr sepcified,
-        # instanciate the delegatee from the delegatee attr param
-        my $delegatee;
-        if ($args{method} =~ m/^(create|update)$/ && defined $args{params}->{$delegateeattr}) {
-            # Retreive the relation class to instanciate it
-            my $delegateeclass = $self->_relationshipInfos(relation => $delegateerel)->{class};
-            $delegatee = $delegateeclass->get(id => $args{params}->{$delegateeattr});
-        }
-        # Else get the delegatee object from the instance
-        else {
-            $delegatee = $self->$delegateerel;
-        }
-
-        # Check the permission for update on the delagatee object
-        try {
-            $delegatee->checkUserPerm(user_id => $args{user_id}, method => "update");
-        }
-        catch (Kanopya::Exception::Permission::Denied $err) {
-            my $msg = $self->_permissionDeniedMessage(method => $args{method}) . " from " .
-                      $delegatee->_className . " <" . $delegatee->label . ">";
-            throw Kanopya::Exception::Permission::Denied(error => $msg);
-        }
-
-        # Also check the permisions on the object himself if the other rights than CRUD are not delegated
-        $delegatee = undef;
-        eval {
-            $delegatee = $self->_delegatee;
-        };
-        if (! (ref($self) && ref($delegatee) eq ref($self))) {
-            return;
-        }
-    }
-
-    # Firstly check permssions on parameters
-    foreach my $key (keys %{ $args{params} }) {
-        my $param = $args{params}->{$key};
-        if ((ref $param) eq "HASH" && defined ($param->{pk}) && defined ($param->{class_type_id})) {
-            my $paramclass = $self->_classType(id => $param->{class_type_id});
-            try {
-                $paramclass->_delegatee->checkPerm(user_id => $args{user_id}, method => "get");
-            }
-            catch (Kanopya::Exception::Permission::Denied $err) {
-                my $msg = "Permission denied to get parameter " . $param->{pk};
-                throw Kanopya::Exception::Permission::Denied(error => $msg);
-            }
-
-            # TODO: use DBIx::Class::ResultSet->new_result and bless it to 'class' instead of a 'get'
-            $args{params}->{$key} = $paramclass->get(id => $param->{pk});
-        }
-    }
-
-    $log->debug("Check permission for user <" . $args{user_id} . "> on <" . $self->_delegatee .
-                "> to <$args{method}>");
-
-    # Check the permissions for the logged user
-    try {
-        $self->_delegatee->checkPerm(user_id => $args{user_id}, method => $args{method});
-    }
-    catch ($err) {
-        throw Kanopya::Exception::Permission::Denied(
-                  error => $self->_permissionDeniedMessage(method => $args{method})
-              );
     }
 }
 
