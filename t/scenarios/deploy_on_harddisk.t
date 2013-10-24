@@ -40,22 +40,15 @@ use Kanopya::Tools::Register;
 use Kanopya::Tools::Retrieve;
 use Kanopya::Tools::Create;
 
-my $testing = 0;
-my $NB_HYPERVISORS = 1;
-
 main();
 
 sub main {
     BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
 
-    if ($testing == 1) {
-        BaseDB->beginTransaction;
-    }
+    diag('Register master image');
+    my $masterimage = Kanopya::Tools::Register::registerMasterImage();
 
     lives_ok {
-        diag('Register master image');
-        my $masterimage = Kanopya::Tools::Register::registerMasterImage();
-
         diag('Create and configure cluster');
         my $cluster = Kanopya::Tools::Create->createCluster(
                           cluster_conf => {
@@ -69,14 +62,12 @@ sub main {
                               }
                           }
                       );
+    } 'create and configure cluster';
 
-        diag('Start physical host');
+    diag('Start physical host');
+    lives_ok {
         Kanopya::Tools::Execution->startCluster(cluster => $cluster);
-    } 'Start host and deploy to hard disk';
-
-    if ($testing == 1) {
-        BaseDB->rollbackTransaction;
-    }
+    } 'cluster started and image deployed on harddisk';
 }
 
 1;
