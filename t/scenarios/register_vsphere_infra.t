@@ -9,8 +9,8 @@ use Test::Exception;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'RegisterVsphereInfra.t.log', layout=>'%F %L %p %m%n'});
 
-use BaseDB;
-use Entity::Component::Vsphere5::Vsphere5Datacenter;
+use Kanopya::Database;
+use Vsphere5Datacenter;
 use Entity::Host::Hypervisor::Vsphere5Hypervisor;
 use Entity::Host::VirtualMachine::Vsphere5Vm;
 
@@ -29,10 +29,10 @@ my $vsphere_conf = {
     vsphere5_url   => '192.168.2.147',
 };
 
-BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
 if ($testing == 1) {
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
 }
 
 my $vsphere_cluster;
@@ -126,7 +126,7 @@ my $ko_items_nbr    = 0;
 foreach my $datacenter (@$registerItems) {
     $total_items_nbr++;
     eval {
-        Entity::Component::Vsphere5::Vsphere5Datacenter->find(
+        Vsphere5Datacenter->find(
             hash => { vsphere5_datacenter_name => $datacenter->{name} }
         );
     };
@@ -184,12 +184,12 @@ eval {
     $vsphere->register(register_items => $registerItems);
 };
 
-my $kanopya_items_nbr  =   scalar(@{ Entity::Component::Vsphere5::Vsphere5Datacenter->search(hash => {}) });
+my $kanopya_items_nbr  =   scalar(@{ Vsphere5Datacenter->search(hash => {}) });
 $kanopya_items_nbr    +=   scalar(@{ Entity::Host::Hypervisor::Vsphere5Hypervisor->search(hash => {}) });
 $kanopya_items_nbr    +=   scalar(@{ Entity::Host::VirtualMachine::Vsphere5Vm->search(hash => {}) });
 
 is($kanopya_items_nbr, $total_items_nbr - $ko_items_nbr, 'Test if no more item is registered');
 
 if ($testing == 1) {
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 }

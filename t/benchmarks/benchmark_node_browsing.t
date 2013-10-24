@@ -7,7 +7,7 @@ use Test::More 'no_plan', 'no_diag';
 use Test::Exception;
 use Test::Pod;
 use Data::Dumper;
-use BaseDB;
+use Kanopya::Database;
 
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({ level=>'DEBUG', file=>'/tmp/benchmark_node_browsing.log', layout=>'%F %L %p %m%n' });
@@ -27,10 +27,10 @@ use Kanopya::Tools::Retrieve;
 use Kanopya::Tools::Create;
 use Kanopya::Tools::Profiler;
 
-my $profiler = Kanopya::Tools::Profiler->new(schema => BaseDB->_adm->{schema});
+my $profiler = Kanopya::Tools::Profiler->new(schema => Kanopya::Database::schema);
 
 
-BaseDB->beginTransaction;
+Kanopya::Database::beginTransaction;
 
 my $serviceload = 1;
 my $nodeload = 1;
@@ -146,13 +146,13 @@ eval{
     }
     benchmarkBrowseNodes();
 
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 };
 if ($@) {
     my $error = $@;
     print $error."\n";
 
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 
     fail('Exception occurs');
 }

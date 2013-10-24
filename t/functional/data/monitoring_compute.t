@@ -21,7 +21,7 @@ Log::Log4perl->easy_init({level=>'DEBUG', file=>'monitor_test.log', layout=>'%F 
 my $log = get_logger("");
 
 
-    use BaseDB;
+    use Kanopya::Database;
     use Aggregator;
     use Entity::ServiceProvider::Externalcluster;
     use Entity::Component::MockMonitor;
@@ -29,9 +29,9 @@ my $log = get_logger("");
     use Entity::Combination::AggregateCombination;
     use Entity::Combination::NodemetricCombination;
 
-BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
-BaseDB->beginTransaction;
+Kanopya::Database::beginTransaction;
 
 my ($indic1, $indic2);
 my ($node_1, $node_2);
@@ -113,12 +113,12 @@ eval{
 
     test_rrd_remove();
 
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 };
 if($@) {
     my $error = $@;
     print $error."\n";
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
     fail('Exception occurs');
 
 }

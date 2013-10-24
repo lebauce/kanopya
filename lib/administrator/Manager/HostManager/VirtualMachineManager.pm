@@ -201,7 +201,7 @@ sub migrateHost {
 
     General::checkParams(args => \%args, required => [ 'host', 'hypervisor_dst' ]);
 
-    $log->info('Migrating host <' . $args{host}->getId . '> to hypervisor ' . $args{hypervisor_dst}->getId);
+    $log->info('Migrating host <' . $args{host}->id . '> to hypervisor ' . $args{hypervisor_dst}->id);
 
     $args{host}->hypervisor_id($args{hypervisor_dst}->id);
 

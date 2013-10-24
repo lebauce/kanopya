@@ -25,7 +25,6 @@ use constant ATTR_DEF => {
     class_type => {
         pattern      => '^.*$',
         is_mandatory => 1,
-        is_extended  => 0
     },
 };
 

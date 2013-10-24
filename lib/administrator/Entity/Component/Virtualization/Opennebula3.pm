@@ -188,7 +188,7 @@ sub checkScaleMemory {
     my $node = $args{host}->node;
 
     my $indicator_oid = 'XenTotalMemory'; # Memory Total
-    my $indicator_id  = Indicator->find(hash => { 'indicator_oid'  => $indicator_oid })->getId();
+    my $indicator_id  = Indicator->find(hash => { 'indicator_oid'  => $indicator_oid })->id();
 
     my $raw_data = $node->getMonitoringData(raw => 1, time_span => 600, indicator_ids => [$indicator_id]);
 

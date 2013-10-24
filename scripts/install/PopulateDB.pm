@@ -4,7 +4,7 @@
 
 use lib qw(/opt/kanopya/lib/common/ /opt/kanopya/lib/administrator/ /opt/kanopya/lib/executor/ /opt/kanopya/lib/monitor/ /opt/kanopya/lib/orchestrator/ /opt/kanopya/lib/external);
 
-use BaseDB;
+use General;
 use Class::ISA;
 use Kanopya::Config;
 use Entity::Component;
@@ -53,9 +53,9 @@ use Entity::Repository;
 use Ip;
 use Node;
 use ServiceProviderManager;
-use Entity::Component::Lvm2::Lvm2Vg;
-use Entity::Component::Lvm2::Lvm2Pv;
-use Entity::Component::Lvm2::Lvm2Lv;
+use Lvm2Vg;
+use Lvm2Pv;
+use Lvm2Lv;
 use Scope;
 use ScopeParameter;
 use Entity::Component::Lvm2;
@@ -90,6 +90,8 @@ use ComponentCategory;
 use ComponentCategory::ManagerCategory;
 use ClassType::DataModelType;
 
+use Kanopya::Database;
+
 use TryCatch;
 my $err;
 
@@ -99,6 +101,7 @@ $SIG{__WARN__} = sub {
 };
 
 my @classes = (
+    'Entity',
     'Entity::Gp',
     'Entity::Host',
     'Entity::Hostmodel',
@@ -140,12 +143,8 @@ my @classes = (
     'Entity::Component::Apache2',
     'Entity::Component::Tftpd',
     'Entity::Component::Dhcpd3',
-    'Entity::Component::Dhcpd3::Dhcpd3Host',
-    'Entity::Component::Dhcpd3::Dhcpd3Subnet',
     'Entity::Component::Haproxy1',
-    'Entity::Component::Haproxy1::Haproxy1Listen',
     'Entity::Component::Keepalived1',
-    'Entity::Component::Keepalived1::Keepalived1Vrrpinstance',
     'Entity::Component::Memcached1',
     'Entity::Component::Linux',
     'Entity::Component::Mysql5',
@@ -171,13 +170,6 @@ my @classes = (
     'Entity::Repository::Opennebula3Repository',
     'Entity::Repository::Vsphere5Repository',
     'Entity::Component::Physicalhoster0',
-    'Entity::Component::Apache2::Apache2Virtualhost',
-    'Entity::Component::Linux::LinuxMount',
-    'Entity::Component::Lvm2::Lvm2Vg',
-    'Entity::Component::Lvm2::Lvm2Pv',
-    'Entity::Component::Lvm2::Lvm2Lv',
-    'Entity::Component::Vsphere5::Vsphere5Datacenter',
-    'Entity::Component::Iscsi::IscsiPortal',
     'Entity::Component::Vmm',
     'Entity::Component::Vmm::Kvm',
     'Entity::Component::Vmm::Xen',
@@ -467,7 +459,7 @@ sub registerUsers {
     CLASSTYPE:
     for my $classtype (@classes) {
         try {
-            BaseDB::requireClass($classtype);
+            General::requireClass($classtype);
         }
         catch ($err) {
             # For instance, only some service provider has a concrete type
@@ -480,8 +472,8 @@ sub registerUsers {
 
         my $hierarchy = $classtype;
         my ($parenttype) = Class::ISA::super_path($classtype);
-        my $methods    = $classtype->getMethods();
-        for my $parentmethod (keys %{$parenttype->getMethods()}) {
+        my $methods    = $classtype->_methodsDefinition;
+        for my $parentmethod (keys %{ $parenttype->_methodsDefinition }) {
             delete $methods->{$parentmethod};
         }
 
@@ -1735,7 +1727,7 @@ sub registerKanopyaMaster {
         service_provider_id => $admin_cluster->id
     );
 
-    my $vg = Entity::Component::Lvm2::Lvm2Vg->new(
+    my $vg = Lvm2Vg->new(
         lvm2_id           => $lvm->id,
         lvm2_vg_name      => $args{kanopya_vg_name},
         lvm2_vg_freespace => $args{kanopya_vg_free_space},
@@ -1743,13 +1735,13 @@ sub registerKanopyaMaster {
     );
 
     for my $pv (@{$args{kanopya_pvs}}) {
-        Entity::Component::Lvm2::Lvm2Pv->new(
+        Lvm2Pv->new(
             lvm2_vg_id   => $vg->id,
             lvm2_pv_name => $pv
         );
     }
 
-    Entity::Component::Dhcpd3::Dhcpd3Subnet->new(
+    Dhcpd3Subnet->new(
         dhcpd3_id  => $dhcp->id,
         network_id => $admin_network->id
     );
@@ -2296,6 +2288,7 @@ sub configureDefaultOrchestrationPolicyService {
             service_provider_id             => $sp->id,
             nodemetric_combination_formula  => 'id'.$indic->id
         );
+
         if (exists $noderule_conf->{$indic_label}) {
             # Node condition
             my $nmcond = Entity::NodemetricCondition->new(
@@ -2324,10 +2317,12 @@ sub configureDefaultOrchestrationPolicyService {
                 clustermetric_statistics_function_name  => $func,
                 clustermetric_window_time               => '600',
             );
+
             my $acomb = Entity::Combination::AggregateCombination->new(
                 service_provider_id             => $sp->id,
                 aggregate_combination_formula   => 'id'.$cm->id
             );
+
             if (exists $clusterrule_conf->{$indic_label}{$func}) {
                 # Service condition
                 my $acond = Entity::AggregateCondition->new(
@@ -2405,14 +2400,14 @@ sub populate_servicetemplates {
 }
 
 sub login {
-    my $config = BaseDB->_loadconfig;
+    my $config = Kanopya::Database::_loadconfig;
     my $god_mode = $config->{dbconf}->{god_mode};
 
     # Activate god mode before the administrator loads it config
     $config->{dbconf}->{god_mode} = "1";
     Kanopya::Config::set(subsystem => "libkanopya", config => $config);
 
-    BaseDB->_connectdb(config => $config);
+    Kanopya::Database::_connectdb(config => $config);
 
     # Restore the config to its original state, the administrator keeps its old one
     if (defined $god_mode) {
@@ -2430,7 +2425,7 @@ sub populateDB {
 
     login();
 
-    $args{db} = BaseDB->_adm->{schema};
+    $args{db} = Kanopya::Database::_adm->{schema};
 
     print "\t- Registering class types...\n";
     registerClassTypes(%args);

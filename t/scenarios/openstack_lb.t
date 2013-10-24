@@ -20,11 +20,11 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use BaseDB;
+use Kanopya::Database;
 use NetconfVlan;
 use Entity::Vlan;
-use Entity::Component::Lvm2::Lvm2Vg;
-use Entity::Component::Lvm2::Lvm2Pv;
+use Lvm2Vg;
+use Lvm2Pv;
 
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::Register;
@@ -37,7 +37,7 @@ my $testing = 0;
 main();
 
 sub main {
-    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+    Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
     diag('Register master image');
     my $masterimage;

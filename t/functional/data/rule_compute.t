@@ -12,7 +12,7 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'rule_compute.log', layout=>'%F %L %p %m%n'});
 my $log = get_logger("");
 
-    use BaseDB;
+    use Kanopya::Database;
     use Aggregator;
     use RulesEngine;
     use Entity::ServiceProvider::Externalcluster;
@@ -26,9 +26,9 @@ my $log = get_logger("");
     use Entity::Rule::NodemetricRule;
     use VerifiedNoderule;
 
-BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
-BaseDB->beginTransaction;
+Kanopya::Database::beginTransaction;
 
 my ($indic1,$indic2);
 my ($ac_f, $ac_t);
@@ -106,13 +106,13 @@ eval{
     test_nodemetric_condition();
     test_nodemetric_rules();
     test_rrd_remove();
-    BaseDB->rollbackTransaction;
-    # BaseDB->commitTransaction();
+    Kanopya::Database::rollbackTransaction;
+    # Kanopya::Database::commitTransaction();
 };
 if($@) {
     my $error = $@;
     print $error."\n";
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 }
 
 sub test_rrd_remove {

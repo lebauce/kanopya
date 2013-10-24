@@ -37,7 +37,7 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub getIdFromName{
+sub idFromName{
     my ($class, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'scope_name' ]);

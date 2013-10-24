@@ -139,7 +139,6 @@ remove the system image if the cluster is non persistent.
 =cut
 
 sub execute {
-
     my $self = shift;
     $self->SUPER::execute();
 
@@ -190,10 +189,10 @@ sub execute {
         amount   => $self->{context}->{host}->host_core,
     );
 
-    $self->{context}->{cluster}->unregisterNode(node => $self->{context}->{host}->node);
-
     $log->info('Processing cluster components configuration for this node');
     $self->{context}->{cluster}->postStopNode(host => $self->{context}->{host});
+
+    $self->{context}->{cluster}->unregisterNode(node => $self->{context}->{host}->node);
 
     # delete the image if persistent policy not set
     if ($self->{context}->{cluster}->cluster_si_persistent eq '0') {

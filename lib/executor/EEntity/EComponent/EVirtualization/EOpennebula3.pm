@@ -249,7 +249,7 @@ sub migrateHost {
 
     # Get the source hypervisor
     my $src_hypervisor = $args{host}->hypervisor;
-    $log->debug("The VM <" . $args{host}->getId . "> is on the <" . $src_hypervisor->getId . "> host");
+    $log->debug("The VM <" . $args{host}->id . "> is on the <" . $src_hypervisor->id . "> host");
 
     # $log->debug("Apply VLAN on the destination hypervisor");
     # $self->propagateVLAN(host       => $args{host},
@@ -326,7 +326,7 @@ sub restoreHost {
         for my $vm (@{$vms}) {
             my $state = $self->getVMState(host => $vm );
 
-            $log->info('vm <'.($vm->getId).'> hv '.$state->{hypervisor}.' state '.$state->{state});
+            $log->info('vm <'.($vm->id).'> hv '.$state->{hypervisor}.' state '.$state->{state});
             if($state->{state} eq 'runn') {
                 if (defined $args{hypervisor}) {
                     if(!($args{hypervisor}->node->node_hostname eq $state->{hypervisor})){
@@ -355,25 +355,25 @@ sub restoreHost {
         $log->info(Dumper $host_vm_capacities);
 
         for my $vm (@{$vms}) {
-            $log->info('VM <'.($vm->getId()).'> <'.($vm->node->node_hostname).'>');
+            $log->info('VM <'.($vm->id()).'> <'.($vm->node->node_hostname).'>');
 
-            if(defined $host_vm_capacities->{$vm->getId()}->{ram}) {
+            if(defined $host_vm_capacities->{$vm->id()}->{ram}) {
 
                 if ( (not defined $vm->host_ram)
-                     || $host_vm_capacities->{$vm->getId()}->{ram} != $vm->host_ram) {
-                        $log->info('Memory one = '.($host_vm_capacities->{$vm->getId()}->{ram}).' VS db = '.($vm->host_ram));
-                        $vm->updateMemory(memory => $host_vm_capacities->{$vm->getId()}->{ram});
+                     || $host_vm_capacities->{$vm->id()}->{ram} != $vm->host_ram) {
+                        $log->info('Memory one = '.($host_vm_capacities->{$vm->id()}->{ram}).' VS db = '.($vm->host_ram));
+                        $vm->updateMemory(memory => $host_vm_capacities->{$vm->id()}->{ram});
                 }
             }
             else {
                 $log->info('No RAM value from opennebula for this VM, try to check hypervisor or resubmit it');
             }
 
-            if(defined $host_vm_capacities->{$vm->getId()}->{ram}) {
+            if(defined $host_vm_capacities->{$vm->id()}->{ram}) {
                 if( (not defined $vm->host_core)
-                    || $host_vm_capacities->{$vm->getId()}->{cpu} != $vm->host_core){
-                    $log->info('Cpu one = '.(($host_vm_capacities->{$vm->getId()}->{cpu})).' VS db = '.($vm->host_core));
-                    $vm->updateCPU(cpu_number => $host_vm_capacities->{$vm->getId()}->{cpu});
+                    || $host_vm_capacities->{$vm->id()}->{cpu} != $vm->host_core){
+                    $log->info('Cpu one = '.(($host_vm_capacities->{$vm->id()}->{cpu})).' VS db = '.($vm->host_core));
+                    $vm->updateCPU(cpu_number => $host_vm_capacities->{$vm->id()}->{cpu});
                 }
             }
             else {
@@ -476,7 +476,7 @@ sub startHost {
     # Pick up an hypervisor
     my $hypervisor_type = $self->getHypervisorType();
     my $hypervisor = $args{hypervisor};
-    $log->info("Picked up hypervisor " . $hypervisor->getId());
+    $log->info("Picked up hypervisor " . $hypervisor->id());
 
     # generate image template for the vm and register it
     my $cluster = Entity->get(id => $args{host}->getClusterId());

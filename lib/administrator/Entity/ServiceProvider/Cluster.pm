@@ -172,14 +172,6 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_editable  => 0
     },
-    components => {
-        label        => 'Components',
-        type         => 'relation',
-        relation     => 'single_multi',
-        link_to      => 'component',
-        is_mandatory => 0,
-        is_editable  => 0,
-    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -351,7 +343,7 @@ sub checkConfigurationPattern {
     General::checkParams(args => \%args, required => [ 'attrs' ]);
 
     # Firstly, check the cluster attrs
-    $class->checkAttrs(attrs => $args{attrs});
+    $class->checkAttributes(attrs => $args{attrs});
 
     # Then check the configuration if required
     if (defined $args{composite}) {
@@ -516,7 +508,7 @@ sub configureManagers {
 sub configureInterfaces {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, optional => { 'interfaces' => undef });
+    General::checkParams(args => \%args, optional => { 'interfaces' => {} });
 
     my @interfaces = grep { defined $_->{netconfs} } values %{ $args{interfaces} };
     for my $interface (@interfaces) {
@@ -524,8 +516,7 @@ sub configureInterfaces {
         $interface->{netconf_interfaces} = \@netconfs;
         $interface->{bonds_number} = $interface->{bonds_number} ? $interface->{bonds_number} : 0;
     }
-
-    $self->populateRelations(relations => { interfaces => \@interfaces }, override => 1);
+    $self->_populateRelations(relations => { interfaces => \@interfaces }, override => 1);
 }
 
 sub configureBillingLimits {
@@ -535,7 +526,7 @@ sub configureBillingLimits {
 
     if (defined $args{billing_limits}) {
         my @limits = values %{ $args{billing_limits} };
-        $self->populateRelations(relations => { billinglimits => \@limits }, override => 1);
+        $self->update(billinglimits => \@limits);
 
         my @indicators = qw(Memory Cores);
         foreach my $name (@indicators) {
@@ -572,8 +563,8 @@ sub configureOrchestration {
     my @toclone = ($sp->clustermetrics, $sp->combinations, $sp->nodemetric_conditions,
                    $sp->aggregate_conditions, $sp->rules);
 
-    for (@toclone) {
-        $_->clone(dest_service_provider_id => $self->id);
+    for my $origin (@toclone) {
+        $origin->clone(dest_service_provider_id => $self->id);
     }
 }
 
@@ -1054,7 +1045,7 @@ sub getNodesMetrics {
 
 sub generateOverLoadNodemetricRules {
     my ($self, %args) = @_;
-    my $service_provider_id = $self->getId();
+    my $service_provider_id = $self->id();
 
     my $creation_conf = {
         memory => {
@@ -1115,12 +1106,12 @@ sub generateDefaultMonitoringConfiguration {
     my ($self, %args) = @_;
 
     my $indicators = $self->getManager(manager_type => "CollectorManager")->getIndicators();
-    my $service_provider_id = $self->getId;
+    my $service_provider_id = $self->id;
 
     # We create a nodemetric combination for each indicator
     foreach my $indicator (@$indicators) {
         my $combination_param = {
-            nodemetric_combination_formula  => 'id' . $indicator->getId,
+            nodemetric_combination_formula  => 'id' . $indicator->id,
             service_provider_id             => $service_provider_id,
         };
         Entity::Combination::NodemetricCombination->new(%$combination_param);
@@ -1134,7 +1125,7 @@ sub generateDefaultMonitoringConfiguration {
         foreach my $func (@funcs) {
             my $cm_params = {
                 clustermetric_service_provider_id      => $service_provider_id,
-                clustermetric_indicator_id             => $indicator->getId,
+                clustermetric_indicator_id             => $indicator->id,
                 clustermetric_statistics_function_name => $func,
                 clustermetric_window_time              => '1200',
             };
@@ -1142,7 +1133,7 @@ sub generateDefaultMonitoringConfiguration {
 
             my $acf_params = {
                 service_provider_id             => $service_provider_id,
-                aggregate_combination_formula   => 'id' . $cm->getId
+                aggregate_combination_formula   => 'id' . $cm->id
             };
             my $clustermetric_combination = Entity::Combination::AggregateCombination->new(%$acf_params);
         }
@@ -1279,7 +1270,7 @@ sub propagatePermissions {
     General::checkParams(args => \%args, required => [ 'related' ]);
 
     # Add permssions on the related object methods
-    for my $method (keys %{ $args{related}->getMethods() }) {
+    for my $method (keys %{ $args{related}->_methodsDefinition() }) {
         if (! ($method eq "addPerm" || $method eq "removePerm")) {
             $args{related}->addPerm(consumer => $self->user, method => $method);
         }

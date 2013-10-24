@@ -6,7 +6,7 @@ use Dancer::Plugin::EscapeHTML;
 
 use Log::Log4perl "get_logger";
 
-use BaseDB;
+use Kanopya::Database;
 
 my $log = get_logger("");
 
@@ -54,7 +54,7 @@ post '/login' => sub {
     }
 
     eval {
-        BaseDB->authenticate(login => $user, password => $password);
+        Kanopya::Database::authenticate(login => $user, password => $password);
     };
 
     if ( $@ ) {

@@ -2,7 +2,8 @@
 use LogAnalyzer;
 use Data::Dumper;
 use XML::Simple;
-use BaseDB;
+
+use Kanopya::Database;
 use Entity::ServiceProvider::Cluster;
 use Monitor;
 
@@ -118,7 +119,7 @@ sub update {
 
 sub init {
     my $conf = XMLin("/opt/kanopya/conf/monitor.conf");
-    BaseDB->authenticate(login => $conf->{user}{name}, password => $conf->{user}{password});
+    Kanopya::Database::authenticate(login => $conf->{user}{name}, password => $conf->{user}{password});
 }
 
 sub run {

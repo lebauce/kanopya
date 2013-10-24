@@ -570,13 +570,12 @@ sub clone {
 
     my $attrs_cloner = sub {
         my %args = @_;
-        my $attrs = $args{attrs};
-        $attrs->{aggregate_combination_formula}  = $self->_cloneFormula(
-            dest_sp_id              => $attrs->{service_provider_id},
-            formula                 => $attrs->{aggregate_combination_formula},
-            formula_object_class    => 'Entity::Clustermetric'
+        $args{attrs}->{aggregate_combination_formula} = $self->_cloneFormula(
+            dest_sp_id    => $args{attrs}->{service_provider_id},
+            formula       => $args{attrs}->{aggregate_combination_formula},
+            formula_class => 'Entity::Clustermetric'
         );
-        return %$attrs;
+        return $args{attrs};
     };
 
     return $self->_importToRelated(

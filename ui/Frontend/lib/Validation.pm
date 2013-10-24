@@ -16,7 +16,7 @@ get '/operation/:spid/:action' => sub {
     my $operation = params->{spid};
     my $action    = params->{action};
 
-    Entity::Operation->get(id => $operation)->methodCall(method => $action);
+    Entity::Operation->get(id => $operation)->apiCall(method => $action);
 
     return redirect '/';
 };

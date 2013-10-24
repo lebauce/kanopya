@@ -6,7 +6,7 @@ use Test::More 'no_plan';
 use Test::Exception;
 use Test::Pod;
 use Data::Dumper;
-use BaseDB;
+use Kanopya::Database;
 use Aggregator;
 use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
@@ -19,9 +19,9 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'monitor_test.log', layout=>'%F %L %p %m%n'});
 my $log = get_logger("");
 
-BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
-BaseDB->beginTransaction;
+Kanopya::Database::beginTransaction;
 
 my ($indic1, $indic2);
 my ($node_1, $node_2);
@@ -39,12 +39,12 @@ eval{
 
     rule_predict();
 
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 };
 if($@) {
     my $error = $@;
     print $error."\n";
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
     fail('Exception occurs');
 
 }

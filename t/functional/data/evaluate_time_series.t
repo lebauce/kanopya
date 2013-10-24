@@ -14,7 +14,7 @@ Log::Log4perl->easy_init({level=>'DEBUG', file=>'evaluate_time_series.log', layo
 my $log = get_logger("");
 
 
-use BaseDB;
+use Kanopya::Database;
 use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
 use Entity::Clustermetric;
@@ -31,8 +31,9 @@ my $service_provider;
 main();
 
 sub main {
-    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
-    BaseDB->beginTransaction;
+    Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
+    Kanopya::Database::beginTransaction;
+
     _create_infra();
     _generate_time_series();
     test_nodemetric_combination();

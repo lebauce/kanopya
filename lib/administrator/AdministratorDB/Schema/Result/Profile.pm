@@ -13,7 +13,23 @@ AdministratorDB::Schema::Result::Profile
 use strict;
 use warnings;
 
-use base 'DBIx::Class::Core';
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
 
 =head1 TABLE: C<profile>
 
@@ -137,8 +153,8 @@ Composing rels: L</user_profiles> -> user
 __PACKAGE__->many_to_many("users", "user_profiles", "user");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-10-26 13:48:28
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ohFwYy9rJZkWTOCGDrkxnw
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-10-07 14:58:06
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Ea2DRlZCHPY4y5pmL4wcBQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

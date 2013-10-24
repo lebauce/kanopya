@@ -50,6 +50,14 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_extended  => 0
     },
+    components => {
+        label        => 'Components',
+        type         => 'relation',
+        relation     => 'single_multi',
+        link_to      => 'component',
+        is_mandatory => 0,
+        is_editable  => 0,
+    },
     interfaces => {
         label        => 'Interfaces',
         type         => 'relation',
@@ -285,7 +293,7 @@ sub getNodes {
     my ($self, %args) = @_;
 
     my @nodes = Node->search(hash => {
-                    service_provider_id => $self->getId(),
+                    service_provider_id => $self->id(),
                 });
 
     my @node_hashs;
@@ -439,7 +447,7 @@ sub getLimit {
         #
         # TODO: Use only one request
         @limits = Entity::Billinglimit->search(hash => {
-                      service_provider_id => $self->getId,
+                      service_provider_id => $self->id,
                       soft                => 0,
                       type                => $args{type},
                   });

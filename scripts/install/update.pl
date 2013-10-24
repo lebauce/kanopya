@@ -19,7 +19,7 @@
 
 use lib qw(/opt/kanopya/scripts/install);
 
-use BaseDB;
+use Kanopya::Database;
 use PopulateDB;
 
 # Catch warnings to clean the setup output (this warnings are not kanopya code related)
@@ -31,7 +31,7 @@ my %args = ();
 
 login();
 
-$args{db} = BaseDB->_adm->{schema};
+$args{db} = Kanopya::Database::schema;
 
 registerClassTypes(%args);
 registerUsers(%args);

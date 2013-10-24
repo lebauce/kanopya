@@ -40,6 +40,8 @@ use warnings;
 use General;
 use Message;
 use Kanopya::Exceptions;
+use Kanopya::Database;
+
 use Entity::Workflow;
 use Entity::Operation;
 use EEntity::EOperation;
@@ -231,17 +233,17 @@ sub executeOperation {
 
                 # Check/Update the state of the context objects atomically
                 $log->info("Step <prepare>");
-                $operation->beginTransaction;
+                Kanopya::Database::beginTransaction;
 
                 $operation->prepare();
 
-                $operation->commitTransaction;
+                Kanopya::Database::commitTransaction;
 
                 # Unlock the context objects
                 $operation->unlockContext();
             }
             catch ($err) {
-                $operation->rollbackTransaction;
+                Kanopya::Database::rollbackTransaction;
                 $operation->unlockContext();
 
                 if ($err->isa('Kanopya::Exception::Execution::InvalidState') or
@@ -284,15 +286,15 @@ sub executeOperation {
 
         # Process the operation
         try {
-            $operation->beginTransaction;
+            Kanopya::Database::beginTransaction;
 
             $log->info("Step <process>");
             $operation->execute();
 
-            $operation->commitTransaction;
+            Kanopya::Database::commitTransaction;
         }
         catch ($err) {
-            $operation->rollbackTransaction;
+            Kanopya::Database::rollbackTransaction;
 
             return $self->terminateOperation(operation => $operation,
                                              status    => 'cancelled',

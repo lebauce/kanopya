@@ -5,7 +5,7 @@ use lib qw(/opt/kanopya/lib/common /opt/kanopya/lib/administrator);
 use strict;
 use warnings;
 use Term::ReadKey;
-use BaseDB;
+use Kanopya::Database;
 use Entity::Systemimage;
 
 my $currentuser = `whoami`;
@@ -34,7 +34,7 @@ ReadMode('noecho');
 chomp($passwd = <STDIN>);
 ReadMode('original');
 
-BaseDB->authenticate(login => $login, password => $passwd);
+Kanopya::Database::authenticate(login => $login, password => $passwd);
 
 my @systemimages = Entity::Systemimage->getSystemimages(hash => {systemimage_name => $sysimg_name});
 if(not scalar @systemimages) {

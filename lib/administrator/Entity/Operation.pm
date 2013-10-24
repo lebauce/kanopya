@@ -31,6 +31,7 @@ use base Entity;
 use strict;
 use warnings;
 
+use Kanopya::Database;
 use General;
 use Entity::Workflow;
 use Operationtype;
@@ -146,7 +147,7 @@ sub new {
     my $hoped_execution_time = defined $args{hoped_execution_time} ? time + $args{hoped_execution_time} : undef;
 
     # Get the next execution rank within the creation transation.
-    $class->beginTransaction;
+    Kanopya::Database::beginTransaction;
 
     eval {
         $log->debug("Enqueuing new operation <$args{type}>, in workflow <$args{workflow_id}>");
@@ -160,22 +161,21 @@ sub new {
             creation_date        => \"CURRENT_DATE()",
             creation_time        => \"CURRENT_TIME()",
             hoped_execution_time => $hoped_execution_time,
-            # The user id will be automatically set by the ORM
-            user_id              => undef,
+            user_id              => Kanopya::Database::currentUser,
         };
 
         $self = $class->SUPER::new(%$params);
     };
     if ($@) {
         $log->error($@);
-        $class->rollbackTransaction;
+        Kanopya::Database::rollbackTransaction;
     }
 
     if (defined $args{params}) {
         $self->serializeParams(params => $args{params});
     }
 
-    $class->commitTransaction;
+    Kanopya::Database::commitTransaction;
 
     return $self;
 }
@@ -316,7 +316,7 @@ sub lockContext {
 
     my $params = $self->unserializeParams(skip_not_found => $args{skip_not_found});
 
-    $self->beginTransaction;
+    Kanopya::Database::beginTransaction;
     eval {
         for my $entity (values %{ $params->{context} }) {
             $log->debug("Trying to lock entity <$entity>");
@@ -325,10 +325,10 @@ sub lockContext {
     };
     if ($@) {
         my $exception = $@;
-        $self->rollbackTransaction;
+        Kanopya::Database::rollbackTransaction;
         $exception->rethrow;
     }
-    $self->commitTransaction;
+    Kanopya::Database::commitTransaction;
 }
 
 
@@ -348,7 +348,7 @@ sub unlockContext {
 
     my $params = $self->unserializeParams(skip_not_found => $args{skip_not_found});
 
-    $self->beginTransaction;
+    Kanopya::Database::beginTransaction;
     for my $key (keys %{ $params->{context} }) {
         my $entity = $params->{context}->{$key};
         $log->debug("Trying to unlock entity <$key>, id <" . $entity->id . ">");
@@ -359,7 +359,7 @@ sub unlockContext {
             $log->debug("Unable to unlock context param <$key>\n$@");
         }
     }
-    $self->commitTransaction;
+    Kanopya::Database::commitTransaction;
 }
 
 

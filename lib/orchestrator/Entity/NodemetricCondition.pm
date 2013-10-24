@@ -316,7 +316,7 @@ Delete instance and delete dependant object on cascade.
 sub delete {
     my $self = shift;
     my @rules_from_same_service = Entity::Rule::NodemetricRule->search(hash => {service_provider_id => $self->nodemetric_condition_service_provider_id});
-    my $id = $self->getId;
+    my $id = $self->id;
     RULE:
     while(@rules_from_same_service) {
         my $rule = pop @rules_from_same_service;
@@ -440,11 +440,10 @@ sub clone {
 
     my $attrs_cloner = sub {
         my %args = @_;
-        my $attrs = $args{attrs};
         for my $operand ('left_combination', 'right_combination') {
             try {
-                $attrs->{$operand . '_id'} = $self->$operand->clone(
-                    dest_service_provider_id => $attrs->{nodemetric_condition_service_provider_id}
+                $args{attrs}->{$operand . '_id'} = $self->$operand->clone(
+                    dest_service_provider_id => $args{attrs}->{nodemetric_condition_service_provider_id}
                 )->id;
             }
             catch (Kanopya::Exception $err) {
@@ -454,7 +453,7 @@ sub clone {
                 throw Kanopya::Exception::Internal(error => "$err");
             }
         }
-        return %$attrs;
+        return $args{attrs};
     };
 
     return $self->_importToRelated(

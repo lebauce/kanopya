@@ -297,12 +297,11 @@ sub _entity {
 
 sub AUTOLOAD {
     my $self = shift;
-    my %args = @_;
 
     my @autoload = split(/::/, $AUTOLOAD);
     my $method = $autoload[-1];
 
-    return $self->_entity->$method(%args);
+    return $self->_entity->$method(@_);
 }
 
 sub DESTROY {

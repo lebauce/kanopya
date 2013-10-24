@@ -16,6 +16,8 @@ Log::Log4perl->easy_init({
 });
 my $log = get_logger("");
 my $workflow;
+
+use Kanopya::Database;
 use BaseDB;
 use General;
 use Entity;
@@ -23,20 +25,20 @@ use Entity::Workflow;
 
 use Kanopya::Tools::TestUtils 'expectedException';
 
-BaseDB->authenticate(login => 'admin', password => 'K4n0pY4');
+Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
 
 main();
 
 sub main {
-#    BaseDB->beginTransaction;
+#    Kanopya::Database::beginTransaction;
     createWorkflow();
     enqueueBefore();
     createWorkflow();
     enqueueNow();
     createWorkflow();
     paramPresetTransmission();
-#    BaseDB->rollbackTransaction;
+#    Kanopya::Database::rollbackTransaction;
 }
 
 

@@ -53,7 +53,7 @@ sub scale {
     General::checkParams(args => \%args, required => [ 'scalein_value', 'scalein_type' ]);
 
     return $self->getHostManager->scaleHost(
-               host_id       => $self->getId,
+               host_id       => $self->id,
                scalein_value => $args{scalein_value},
                scalein_type  => $args{scalein_type}
            );
@@ -66,8 +66,8 @@ sub migrate {
     General::checkParams(args => \%args, required => [ 'hypervisor' ]);
 
     return $self->getHostManager->migrate(
-               host_id       => $self->getId,
-               hypervisor_id => $args{hypervisor}->getId,
+               host_id       => $self->id,
+               hypervisor_id => $args{hypervisor}->id,
            );
 }
 

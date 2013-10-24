@@ -12,7 +12,7 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use BaseDB;
+use Kanopya::Database;
 use Executor;
 use Entity::ServiceProvider::Cluster;
 use Entity::User;
@@ -37,10 +37,10 @@ use Kanopya::Tools::Create;
 my $testing = 0;
 
 eval {
-    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+    Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if ($testing == 1) {
-        BaseDB->beginTransaction;
+        Kanopya::Database::beginTransaction;
     }
 
     diag('Register master image');

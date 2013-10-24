@@ -148,7 +148,7 @@ sub getFreeHost {
 
             eval {
                 for my $iface (@{$host->getIfaces()}) {
-                    $host->removeIface(iface_id => $iface->getId);
+                    $host->removeIface(iface_id => $iface->id);
                 }
             };
             if ($@) {

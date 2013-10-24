@@ -21,7 +21,7 @@ my ($ncomb, $ncond, $nr);
 my ($cm, $acomb, $acond, $ar);
 
 lives_ok {
-    use BaseDB;
+    use Kanopya::Database;
     use Entity::ServiceProvider::Externalcluster;
     use Entity::Component::MockMonitor;
     use Entity::Clustermetric;
@@ -33,9 +33,9 @@ lives_ok {
     use Entity::Rule::NodemetricRule;
 } 'All uses';
 
-BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
-BaseDB->beginTransaction;
+Kanopya::Database::beginTransaction;
 
 eval {
     init();
@@ -49,10 +49,10 @@ eval {
     # test all condition type cloning (different left and right cobination type)
     # test cloning of already existing object
 
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 };
 if($@) {
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
     my $error = $@;
     print $error."\n";
     fail('Exception occurs');

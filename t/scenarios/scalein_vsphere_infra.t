@@ -8,6 +8,8 @@ use Test::Exception;
 use Test::Pod;     
 use Data::Dumper;
 
+use Kanopya::Database;
+
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'ScaleVsphereInfra.t.log', layout=>'%F %L %p %m%n'});
 
@@ -37,10 +39,10 @@ my $scale_memory_value = 2048 * 1024 * 1024;
 my $scale_cpu_value = 2;
 
 eval {
-    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+    Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if ($testing == 1) {
-        BaseDB->beginTransaction;
+        Kanopya::Database::beginTransaction;
     }
 
     my @args = ();
@@ -279,7 +281,7 @@ eval {
     is($vm_host->host_core, $scale_cpu_value, 'Test if scale CPU went well');
 
     if ($testing == 1) {
-        BaseDB->rollbackTransaction;
+        Kanopya::Database::rollbackTransaction;
     }
 };
 

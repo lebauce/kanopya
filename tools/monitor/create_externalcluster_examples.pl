@@ -1,10 +1,10 @@
 use Data::Dumper;
-use BaseDB;
+use Kanopya::Database;
 use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::ActiveDirectory;
 use Entity::Component::Scom;
 
-BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
     
 my $cluster = Entity::ServiceProvider::Externalcluster->new(
     externalcluster_name => "vw_cluster",

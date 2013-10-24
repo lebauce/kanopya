@@ -16,7 +16,7 @@ Log::Log4perl->easy_init({
 });
 my $log = get_logger("");
 
-
+use Kanopya::Database;
 use BaseDB;
 use General;
 use Entity;
@@ -25,12 +25,12 @@ use ParamPreset;
 use Kanopya::Tools::TestUtils 'expectedException';
 use Operationtype;
 
-BaseDB->authenticate(login => 'admin', password => 'K4n0pY4');
+Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
 main();
 
 sub main {
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
 
     my $params = { param_1 => 'value_1',
                    param_2 => 'value_2'};
@@ -121,6 +121,6 @@ sub main {
 
     } 'Deletion';
 
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 }
 1;

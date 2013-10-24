@@ -59,7 +59,7 @@ __PACKAGE__->table("workflow_def");
   is_foreign_key: 1
   is_nullable: 1
 
-=head2 workflow_def_origin
+=head2 workflow_def_origin_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -85,7 +85,7 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 1,
   },
-  "workflow_def_origin",
+  "workflow_def_origin_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -198,7 +198,7 @@ Related object: L<AdministratorDB::Schema::Result::WorkflowDef>
 __PACKAGE__->belongs_to(
   "workflow_def_origin",
   "AdministratorDB::Schema::Result::WorkflowDef",
-  { workflow_def_id => "workflow_def_origin" },
+  { workflow_def_id => "workflow_def_origin_id" },
   {
     is_deferrable => 1,
     join_type     => "LEFT",
@@ -218,7 +218,7 @@ Related object: L<AdministratorDB::Schema::Result::WorkflowDef>
 __PACKAGE__->has_many(
   "workflow_defs",
   "AdministratorDB::Schema::Result::WorkflowDef",
-  { "foreign.workflow_def_origin" => "self.workflow_def_id" },
+  { "foreign.workflow_def_origin_id" => "self.workflow_def_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -238,8 +238,9 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07024 @ 2012-10-26 13:48:28
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:5gbH/9VIPbQexrRieNVn7g
+# Created by DBIx::Class::Schema::Loader v0.07024 @ 2013-10-07 17:03:42
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:bvYeXAgBBUCRsxfv/FrJYg
+
 
 __PACKAGE__->belongs_to(
   "parent",

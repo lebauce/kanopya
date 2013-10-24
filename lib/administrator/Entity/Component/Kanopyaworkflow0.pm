@@ -90,7 +90,7 @@ Specify automatic values of Kanopya Workflow Manager
 =cut
 
 sub _getAutomaticValues{
-    my ($self,%args) = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => ['automatic_params'],
                                          optional => {service_provider_id => undef});
@@ -127,18 +127,11 @@ Merges automatic and specific params
 =cut
 
 sub _defineFinalParams{
-    my ($self,%args) = @_;
+    my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [
-                                            'all_params',
-                                         ]);
-    my $workflow_params = merge(
-        $args{all_params}->{automatic},
-        $args{all_params}->{specific},
-    );
+    General::checkParams(args => \%args, required => [ 'all_params' ]);
 
-
-    return $workflow_params;
+    return merge($args{all_params}->{automatic}, $args{all_params}->{specific});
 }
 
 1;

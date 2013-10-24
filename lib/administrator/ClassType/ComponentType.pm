@@ -100,11 +100,11 @@ For component types, delegate the permissons to the Component master group.
 =end classdoc
 =cut
 
-sub getDelegatee {
+sub _delegatee {
     my $self = shift;
     my $class = "Entity::Component";
 
-    return $class->getDelegatee;
+    return $class->_delegatee;
 }
 
 1;

@@ -95,7 +95,7 @@ sub AUTOLOAD {
     my @autoload = split(/::/, $AUTOLOAD);
     my $accessor = $autoload[-1];
 
-    my $method = $self->getMethods()->{$accessor};
+    my $method = $self->_methodsDefinition->{$accessor};
     if ((not defined $method) or not defined ($method->{message_queuing})) {
         # The called method is not a defined message queuing method.
         $method = 'SUPER::' . $accessor;

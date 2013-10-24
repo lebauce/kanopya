@@ -104,13 +104,12 @@ sub new {
     my $class = shift;
     my %args = @_;
 
-    # Avoid abstract Entity::Component instanciation
-    if ($class !~ /Entity::Component.*::(\D+)(\d*)/) {
-        $errmsg = "Entity::Component->new : Entity::Component must not " .
-                  "be instanciated without a concret component class.";
-        throw Kanopya::Exception::Internal(error => $errmsg);
+    # Avoid abstract Entity::Component instantiation
+    if ($class eq "Entity::Component") {
+        throw Kanopya::Exception::Internal::AbstractClass();
     }
 
+    $class =~ /Entity::Component.*::(\D+)(\d*)/;
     my $component_name    = $1;
     my $component_version = $2;
 
@@ -159,8 +158,8 @@ sub getConf {
 
     my $class = ref($self) || $self;
     my @relations;
-    my $attrdefs = $class->getAttrDefs();
-    while (my ($name, $attr) = each %{$attrdefs}) {
+    my $attrdefs = $class->_attributesDefinition(trunc => "Entity::Component");
+    while (my ($name, $attr) = each %{ $attrdefs }) {
         if (defined $attr->{type} and $attr->{type} eq "relation") {
             push @relations, $name;
         }
@@ -319,7 +318,7 @@ sub checkAttribute {
     if (! $self->$attribute) {
         my $error = $args{error};
         if (!$error) {
-            my $attrs = $self->getAttrDefs();
+            my $attrs = $self->toJSON();
             $attribute .= "_id" if ! defined $attrs->{$attribute};
             $error = "There is no " . lcfirst($attrs->{$attribute}->{label}) .
                      " configured for component ". $self->label;

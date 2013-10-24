@@ -49,14 +49,12 @@ use constant ATTR_DEF => {
         relation     => 'single',
         pattern      => '^\d*$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     entity_comment_id => {
         type         => 'relation',
         relation     => 'single',
         pattern      => '^\d*$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     entity_time_periods => {
         label        => 'Time periods',
@@ -76,6 +74,7 @@ use constant ATTR_DEF => {
     },
     comment => {
         is_virtual   => 1,
+        is_editable  => 1,
     },
 };
 
@@ -105,7 +104,7 @@ sub methods {
 @constructor
 
 Override BaseDB constructor to add the newly created entity
-to the corresponding groups of the whole class hierachy. 
+to the corresponding groups of the whole class hierarchy. 
 
 @return the entity instance
 
@@ -122,49 +121,14 @@ sub new {
     my $self = $class->SUPER::new(%args);
 
     # Call the delegatee object to process permissions propagation
-    my $delegateeattr = $self->getDelegateeAttr();
+    my $delegateeattr = $self->_delegateeAttr;
     if (defined $delegateeattr) {
         $delegateeattr =~ s/_id$//g;
         $self->$delegateeattr->propagatePermissions(related => $self);
     }
 
-    # Try to add the instance to master groups of the whole hierachy.
+    # Try to add the instance to master groups of the whole hierarchy.
     $self->appendToHierarchyGroups(hierarchy => $class);
-
-    return $self;
-}
-
-
-=pod
-=begin classdoc
-
-Lock the entity while updating it.
-
-@return the updated instance
-
-=end classdoc
-=cut
-
-sub update {
-    my ($self, %args) = @_;
-
-    # Try to lock the entity while updating it
-    $self->lock(consumer => $self);
-
-    try {
-        $self->SUPER::update(%args);
-    }
-    catch (Kanopya::Exception $err) {
-        $self->unlock(consumer => $self);
-
-        $err->rethrow();
-    }
-    catch ($err) {
-        $self->unlock(consumer => $self);
-
-        throw Kanopya::Exception::Internal(error => "$err");
-    }
-    $self->unlock(consumer => $self);
 
     return $self;
 }
@@ -183,38 +147,6 @@ Reload entity from database
 sub reload {
     my $self = shift;
     return Entity->get(id => $self->id);
-}
-
-
-=pod
-=begin classdoc
-
-Ensure to get the lock on the entity before removing it.
-
-=end classdoc
-=cut
-
-sub remove {
-    my ($self, %args) = @_;
-
-    # Try to lock the entoty while updating it
-    $self->lock(consumer => $self);
-
-    try {
-        $self->SUPER::remove(%args);
-    }
-    catch (Kanopya::Exception $err) {
-        $self->unlock(consumer => $self);
-
-        $err->rethrow();
-    }
-    catch ($err) {
-        $self->unlock(consumer => $self);
-
-        throw Kanopya::Exception::Internal(error => "$err");
-    }
-
-    $self->unlock(consumer => $self);
 }
 
 
@@ -399,23 +331,6 @@ sub getMasterGroupName {
 }
 
 
-=pod
-=begin classdoc
-
-@return a string representing the entity.
-
-=end classdoc
-=cut
-
-sub asString {
-    my $self = shift;
-
-    my %h = $self->getAttrs;
-    my @s = map { "$_ => $h{$_}, " } keys %h;
-    return ref $self, " ( ",  @s,  " )";
-}
-
-
 sub addPerm {
     my $self = shift;
     my %args = @_;
@@ -555,13 +470,18 @@ sub activate {
 }
 
 sub comment {
-    my $self = shift;
+    my ($self, @args) = @_;
 
-    my $comment_id = $self->getAttr(name => 'entity_comment_id');
-    if ($comment_id) {
-        return EntityComment->get(id => $comment_id)->getAttr(name => 'entity_comment');
+    if (scalar(@args)) {
+        return $self->setComment(comment => $args[0]);
     }
-    return '';
+    else {
+        my $comment_id = $self->getAttr(name => 'entity_comment_id');
+        if ($comment_id) {
+            return EntityComment->get(id => $comment_id)->getAttr(name => 'entity_comment');
+        }
+        return '';
+    }
 }
 
 sub setComment {
@@ -596,7 +516,7 @@ sub appendToHierarchyGroups {
 
     General::checkParams(args => \%args, required => [ 'hierarchy' ]);
 
-    # Try to add the instance to master groups of the whole hierachy.
+    # Try to add the instance to master groups of the whole hierarchy.
     for my $groupname (reverse(split(/::/, "$args{hierarchy}"))) {
         my $mastergroup;
         eval {
@@ -690,7 +610,7 @@ By default, permissions are checked on the entity itself.
 =end classdoc
 =cut
 
-sub getDelegatee {
+sub _delegatee {
     my $self = shift;
 
     if (ref($self)) {
@@ -699,26 +619,6 @@ sub getDelegatee {
     else {
         return $self->getMasterGroup;
     }
-}
-
-sub toJSON {
-    my ($self, %args) = @_;
-    my $class = ref $self || $self;
-    my $hash = $self->SUPER::toJSON(%args);
-
-    if (!$args{raw}) {
-        if (ref $self) {
-            $hash->{pk} = $self->getAttr(name => "entity_id");
-        }
-        else {
-            $hash->{pk} = {
-                pattern      => '^\d*$',
-                is_mandatory => 1,
-                is_extended  => 0
-            }
-        }
-    }
-    return $hash;
 }
 
 1;

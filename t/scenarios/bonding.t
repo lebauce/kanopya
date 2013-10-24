@@ -20,7 +20,7 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use BaseDB;
+use Kanopya::Database;
 use Entity::Host;
 use Entity::Iface;
 use Net::Ping;
@@ -38,10 +38,10 @@ my $NB_HYPERVISORS = 1;
 main();
 
 sub main {
-    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+    Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if ($testing == 1) {
-        BaseDB->beginTransaction;
+        Kanopya::Database::beginTransaction;
     }
 
     my $host = Entity::Host->find(hash => { 
@@ -108,7 +108,7 @@ sub main {
     _ping_ifaces();
 
     if($testing == 1) {
-        BaseDB->rollbackTransaction;
+        Kanopya::Database::rollbackTransaction;
     }
 }
 

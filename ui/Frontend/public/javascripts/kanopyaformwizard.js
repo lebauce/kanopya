@@ -296,11 +296,14 @@ var KanopyaFormWizard = (function() {
 
         var resource = undefined;
         var options  = undefined;
-
-        if (relations[name]) {
+        if (relations[name] && this.attributedefs[name].relation === 'multi') {
             // Relation is multi to multi
-            resource = this.attributedefs[name].link_to.replace(/_/g, '');
-
+            try {
+                resource = this.attributedefs[name].link_to.replace(/_/g, '');
+            }
+            catch (e) {
+                throw new Error("KanopyaFormWizard: Wrong relation definition for <" + name + ">, " + e);
+            }
         } else {
             // Relation is single to single
             for (var relation in relations) {

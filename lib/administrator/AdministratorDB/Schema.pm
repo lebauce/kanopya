@@ -14,6 +14,6 @@ __PACKAGE__->load_namespaces;
 # Created by DBIx::Class::Schema::Loader v0.07000 @ 2011-02-18 11:02:24
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:4jkAXGBT8y8B5+ZVxRDPsw
 
-
 # You can replace this text with custom content, and it will be preserved on regeneration
+
 1;

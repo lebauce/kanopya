@@ -39,6 +39,10 @@ use Exception::Class (
         isa         => 'Kanopya::Exception::DB',
         description => 'Kanopya Database cascade exception',
     },
+    Kanopya::Exception::DB::UnknownSource => {
+        isa         => 'Kanopya::Exception::DB',
+        description => 'Unknown database source',
+    },
     Kanopya::Exception::IO => {
         isa         => 'Kanopya::Exception',
         description => 'Kanopya IO exception',
@@ -54,6 +58,10 @@ use Exception::Class (
     Kanopya::Exception::Method => {
         isa         => 'Kanopya::Exception',
         description => 'Can\'t call method on class',
+    },
+    Kanopya::Exception::UnkonwnMethod => {
+        isa         => 'Kanopya::Exception',
+        description => 'Unkonwn method',
     },
     Kanopya::Exception::Internal => {
         isa         => 'Kanopya::Exception',
@@ -88,6 +96,14 @@ use Exception::Class (
     Kanopya::Exception::Internal::UnknownClass => {
         isa         => 'Kanopya::Exception::Internal',
         description => 'Unknown class',
+    },
+    Kanopya::Exception::Internal::UnknownAttribute => {
+        isa         => 'Kanopya::Exception::Internal',
+        description => 'Unknown attribute',
+    },
+    Kanopya::Exception::Internal::AbstractClass => {
+        isa         => 'Kanopya::Exception::Internal',
+        description => 'Can\'t instantiate abstract class',
     },
     Kanopya::Exception::Internal::UnknownResource => {
         isa         => 'Kanopya::Exception::Internal',
@@ -175,7 +191,7 @@ use Exception::Class (
 
 # Force print trace when exception is stringified
 # For Kanopya::Exception and all its subclasses
-Kanopya::Exception->Trace(0);
+Kanopya::Exception->Trace(1);
 
 
 =pod
@@ -195,8 +211,7 @@ sub Kanopya::Exception::full_message {
     for my $field ( $self->Fields ) {
         $except_string .= ("\n=> " . $field . ": '" . $self->$field . "'") if (defined $self->$field);
     }
-
-     return $except_string;
+    return $except_string . "\n";
 }
 
 1;

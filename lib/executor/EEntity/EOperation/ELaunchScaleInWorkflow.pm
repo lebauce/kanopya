@@ -83,13 +83,13 @@ sub execute{
     $log->info('Launch Scale type <'.($scalein_type).'>');
     if ($scalein_type eq 'memory') {
         $operation_plan = $cm->scaleMemoryHost(
-            host_id      => $self->{context}->{host}->getId(),
+            host_id      => $self->{context}->{host}->id(),
             memory       => $scalein_value,
         );
     }
     elsif ($scalein_type eq 'cpu') {
         $operation_plan = $cm->scaleCpuHost(
-            host_id      => $self->{context}->{host}->getId(),
+            host_id      => $self->{context}->{host}->id(),
             vcpu_number  => $scalein_value,
         );
     }

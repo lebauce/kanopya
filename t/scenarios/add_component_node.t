@@ -22,7 +22,7 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use BaseDB;
+use Kanopya::Database;
 use Entity::ServiceProvider::Cluster;
 use Entity::User;
 use Entity::Kernel;
@@ -45,7 +45,7 @@ main();
 sub main {
 
     if ($testing == 1) {
-        BaseDB->beginTransaction;
+        Kanopya::Database::beginTransaction;
     }
 
     diag('Register master image');
@@ -109,7 +109,7 @@ sub main {
     } 'Add components to node';
 
     if ($testing == 1) {
-        BaseDB->rollbackTransaction;
+        Kanopya::Database::rollbackTransaction;
     }
 }
 

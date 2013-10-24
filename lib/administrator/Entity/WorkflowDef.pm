@@ -43,12 +43,10 @@ use constant ATTR_DEF => {
     workflow_def_name => {
         pattern      => '^.*$',
         is_mandatory => 1,
-        is_extended  => 0
     },
-    workflow_def_origin => {
+    workflow_def_origin_id => {
         pattern      => '^\d+$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     param_presets => {
         is_virtual   => 1,

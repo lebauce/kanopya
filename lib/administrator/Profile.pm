@@ -14,7 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package Profile;
-use base 'BaseDB';
+use base BaseDB;
 
 use strict;
 use warnings;

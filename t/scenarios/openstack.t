@@ -20,11 +20,11 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use BaseDB;
+use Kanopya::Database;
 use NetconfVlan;
 use Entity::Vlan;
-use Entity::Component::Lvm2::Lvm2Vg;
-use Entity::Component::Lvm2::Lvm2Pv;
+use Lvm2Vg;
+use Lvm2Pv;
 
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::Register;
@@ -37,10 +37,10 @@ my $testing = 0;
 main();
 
 sub main {
-    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+    Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if ($testing == 1) {
-        BaseDB->beginTransaction;
+        Kanopya::Database::beginTransaction;
     }
 
     diag('Register master image');
@@ -139,14 +139,14 @@ sub main {
         nova_controller_id => $nova_controller->id
     });
 
-    my $vg = Entity::Component::Lvm2::Lvm2Vg->new(
+    my $vg = Lvm2Vg->new(
         lvm2_id           => $lvm->id,
         lvm2_vg_name      => "cinder-volumes",
         lvm2_vg_freespace => 0,
         lvm2_vg_size      => 10 * 1024 * 1024 * 1024
     );
 
-    my $pv = Entity::Component::Lvm2::Lvm2Pv->new(
+    my $pv = Lvm2Pv->new(
         lvm2_vg_id   => $vg->id,
         lvm2_pv_name => "/dev/sda"
     );
@@ -225,6 +225,6 @@ sub main {
     } 'Start Nova Compute cluster';
 
     if ($testing == 1) {
-        BaseDB->rollbackTransaction;
+        Kanopya::Database::rollbackTransaction;
     }
 }

@@ -16,13 +16,15 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 package Message;
-use base 'BaseDB';
+use base BaseDB;
 
 use strict;
 use warnings;
 
-use Kanopya::Exceptions;
 use General;
+use Kanopya::Database;
+use Kanopya::Exceptions;
+
 use DateTime;
 
 use Data::Dumper;
@@ -79,8 +81,7 @@ sub new {
                message_content      => $args{content},
                message_creationdate => \"CURRENT_DATE()",
                message_creationtime => \"CURRENT_TIME()",
-               # The user id will be automatically set by the ORM
-               user_id              => undef,
+               user_id              => Kanopya::Database::currentUser,
            );
 }
 

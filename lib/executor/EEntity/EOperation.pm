@@ -41,6 +41,7 @@ use Entity::ServiceProvider::Cluster;
 
 use Kanopya::Config;
 use Kanopya::Exceptions;
+use Kanopya::Database;
 
 my $log = get_logger("");
 my $errmsg;
@@ -110,7 +111,7 @@ sub validation {
 
     my $config = General::getTemplateConfiguration();
 
-    $self->beginTransaction;
+    Kanopya::Database::beginTransaction;
 
     # Search for all context entites if notification/validation required
     my $validation = 0;
@@ -195,7 +196,7 @@ sub validation {
         }
     }
 
-    $self->commitTransaction;
+    Kanopya::Database::commitTransaction;
 
     return not $validation;
 }

@@ -12,7 +12,7 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>'alert_on_undef_values.log', layout=>'%F %L %p %m%n'});
 my $log = get_logger("");
 
-use BaseDB;
+use Kanopya::Database;
 use Aggregator;
 use RulesEngine;
 use Entity::ServiceProvider::Externalcluster;
@@ -20,9 +20,9 @@ use Entity::Component::MockMonitor;
 use Entity::Clustermetric;
 use Entity::Combination::NodemetricCombination;
 
-BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
-BaseDB->beginTransaction;
+Kanopya::Database::beginTransaction;
 
 my ($coll_indic1, $coll_indic2);
 my $service_provider;
@@ -137,12 +137,13 @@ eval{
     test_alerts_aggregator();
     test_alerts_orchestrator();
     test_rrd_remove();
-    BaseDB->rollbackTransaction;
+
+    Kanopya::Database::rollbackTransaction;
 };
 if($@) {
     my $error = $@;
     print $error."\n";
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
     fail('Exception occurs');
 
 

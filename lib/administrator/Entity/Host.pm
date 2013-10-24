@@ -362,7 +362,7 @@ sub configureIfaces {
         my $nbbonds  = $interface->bonds_number > 0 ? $interface->bonds_number : 0;
 
         my @valid_ifaces = grep { scalar @{ $_->slaves } == $nbbonds } @ifaces;
-        $valid_ifaces[0]->populateRelations(relations => { netconf_ifaces => \@netconfs });
+        $valid_ifaces[0]->update(netconf_ifaces => \@netconfs, override_relations => 0);
 
         # Remove the iface form the list
         @ifaces = grep { $valid_ifaces[0] ne $_ } @ifaces;

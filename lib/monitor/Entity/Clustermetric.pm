@@ -355,7 +355,7 @@ sub getDependentCombinations {
                                                        }
                                                    );
 
-    my $id = $self->getId;
+    my $id = $self->id;
 
     my @combinations =();
     LOOP:
@@ -462,7 +462,7 @@ sub delete {
                                                        }
                                                    );
 
-    my $id = $self->getId;
+    my $id = $self->id;
 
     COMBI:
     while (@aggregate_combinations_from_same_service) {
