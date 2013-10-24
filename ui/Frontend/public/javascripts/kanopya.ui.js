@@ -150,3 +150,7 @@ $(document).ajaxError(function(e, jqXHR, settings, exception) {
         throw new Error(JSON.parse(jqXHR.responseText).reason);
     }
 })
+
+require('common/konami.js');
+konami = new Konami()
+konami.load('http://tinyurl.com/ndbwmul');
