@@ -62,7 +62,6 @@ start() {
     fi
 
     [ $RETVAL == 0 ] && log_success_msg || log_failure_msg
-    return $RETVAL
 }
 
 stop() {
@@ -80,7 +79,6 @@ stop() {
     fi
 
     [ $RETVAL == 0 ] && log_success_msg || log_failure_msg
-    return $RETVAL
 }
 
 status() {
@@ -92,7 +90,6 @@ status() {
         echo "$NAME is not running"
     fi
     RETVAL=$status
-    return $RETVAL
 }
 
 case "$1" in
