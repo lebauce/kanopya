@@ -33,6 +33,7 @@ use Kanopya::Exceptions;
 use General;
 use ClassType::ComponentType;
 use Data::Dumper;
+use TryCatch;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -238,8 +239,16 @@ sub registerNode {
 
 sub getMasterNode {
     my $self = shift;
+    my $masternode;
 
-    return $self->findRelated(filters => [ 'component_nodes' ], hash => { master_node => 1 })->node;
+    try {
+        $masternode = $self->findRelated(filters => [ 'component_nodes' ],
+                                         hash => { master_node => 1 })->node;
+    } catch($err) {
+        $masternode = undef;
+    }
+
+    return $masternode;
 }
 
 sub getActiveNodes {
