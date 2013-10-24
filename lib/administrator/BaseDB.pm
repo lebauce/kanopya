@@ -402,8 +402,8 @@ sub getAttr {
     my $dbix = $self->_dbixParent(classname => BaseDB->_className(class => $definition->{from_module}));
 
     # The attribute is a relation, convert the relatiosn dbix to objects
-    if ((defined $definition->{type} && $definition->{type} eq "relation") &&
-        (! $dbix->has_column($args{name}))) {
+    my $type = $definition->{type};
+    if (defined $type && $type eq "relation" && ! $dbix->has_column($args{name})) {
         my $relation = $args{name};
         try {
             my $value = $dbix->$relation;
@@ -1521,7 +1521,7 @@ sub _attributesDefinition {
         # Keep the module belonging for each attributes
         map { $_->{from_module} = $module } values %{ $attributedefs->{$module} };
         # Merge in the flat attribute definition
-        $result = $merge->merge($result, $attributedefs->{$module});
+        $result = $merge->merge($attributedefs->{$module}, $result);
     }
     $attr_defs_cache->{$cachekey} = $result;
     return clone($result);
@@ -2094,7 +2094,7 @@ sub _delegatee {
     my $self = shift;
 
     throw Kanopya::Exception::NotImplemented(
-              error => "Unbale to check permissions on non entity class <$self>, " .
+              error => "Unable to check permissions on non entity class <$self>, " .
                        "CRUD methods are supported by specifying a delegatee attr."
           );
 }

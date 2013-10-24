@@ -111,7 +111,7 @@ sub enqueue {
     };
     if ($@) {
         my $err = $@;
-        $log->error("Unbale to run workflow <" . $operation->workflow->id . ">, removing it: $err");
+        $log->error("Unable to run workflow <" . $operation->workflow->id . ">, removing it: $err");
         $operation->workflow->remove();
 
         $err->rethrow();
