@@ -16,6 +16,7 @@ Log::Log4perl->easy_init({
 });
 my $log = get_logger("");
 
+use Kanopya::Database;
 use BaseDB;
 use General;
 use Entity;
@@ -25,7 +26,7 @@ use Entity::Component::Sco;
 use Kanopya::Tools::TestUtils 'expectedException';
 use Data::Compare;
 
-BaseDB->authenticate(login => 'admin', password => 'K4n0pY4');
+Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
 my $wfmanager;
 my $sco_wfmanager;
@@ -39,12 +40,12 @@ my $external_cluster_name;
 main();
 
 sub main {
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
 
     createObjects();
     unitTests();
     paramsManagement();
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 }
 
 sub paramsManagement {
