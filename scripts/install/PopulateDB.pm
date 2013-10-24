@@ -89,6 +89,7 @@ use NetconfIface;
 use ComponentCategory;
 use ComponentCategory::ManagerCategory;
 use ClassType::DataModelType;
+use Manager::HostManager;
 
 use Kanopya::Database;
 
@@ -1512,16 +1513,16 @@ sub registerKanopyaMaster {
                             cluster_desc          => 'Main Cluster hosting Administrator, Executor, Boot server and NAS',
                             cluster_type          => 0,
                             cluster_min_node      => 1,
-                            cluster_max_node      => 1,
+                            cluster_max_node      => 10,
                             cluster_priority      => 500,
-                            cluster_boot_policy   => '',
+                            cluster_boot_policy   => Manager::HostManager->BOOT_POLICIES->{pxe_iscsi},
                             cluster_si_shared     => 0,
                             cluster_si_persistent => 0,
                             cluster_domainname    => $args{admin_domainname},
                             cluster_nameserver1   => defined $args{kanopya_nameserver1} ? $args{kanopya_nameserver1} : '127.0.0.1',
                             cluster_nameserver2   => defined $args{kanopya_nameserver2} ? $args{kanopya_nameserver2} : '127.0.0.1',
                             cluster_state         => 'up:' . time(),
-                            cluster_basehostname  => 'kanopya',
+                            cluster_basehostname  => 'kanopyamaster',
                             default_gateway_id    => $admin_network->id,
                             active                => 1,
                             user_id               => $admin->id,
@@ -1551,13 +1552,15 @@ sub registerKanopyaMaster {
             name => 'KanopyaRulesEngine'
         },
         {
-            name => 'Lvm'
+            name => 'Lvm',
+            manager => 'DiskManager'
         },
         {
             name => 'Storage'
         },
         {
-            name => 'Iscsitarget'
+            name => 'Iscsitarget',
+            manager => 'ExportManager'
         },
         {
             name => 'Iscsi'
@@ -1606,6 +1609,7 @@ sub registerKanopyaMaster {
         {
             name => "Puppetagent",
             conf => {
+                puppetagent2_options    => '--no-client',
                 puppetagent2_mode       => "kanopya",
                 puppetagent2_masterfqdn => $hostname . '.' . $args{admin_domainname},
                 puppetagent2_masterip   => $args{poolip_addr}
@@ -1633,12 +1637,19 @@ sub registerKanopyaMaster {
         },
         {
             name => "Amqp",
+        },
+        {
+            name => 'Physicalhoster',
+            manager => 'HostManager'
         }
     ];
 
-    # Firtly install the PhysicalHoster on kanopya master as it is
-    # required for creation the host.
-    installComponent(cluster => $admin_cluster, name => 'Physicalhoster', manager => 'HostManager');
+    for my $component (@{$components}) {
+        installComponent(cluster => $admin_cluster,
+                         name    => $component->{name},
+                         manager => $component->{manager},
+                         conf    => $component->{conf});
+    }
 
     # Create the host for the Kanopya master
     my ( $sysname, $nodename, $release, $version, $machine ) = POSIX::uname();
@@ -1709,16 +1720,8 @@ sub registerKanopyaMaster {
                                  number           => 1,
                                  monitoring_state => 'disabled');
 
-    for my $component (@{$components}) {
-        installComponent(cluster => $admin_cluster,
-                         name    => $component->{name},
-                         manager => $component->{manager},
-                         conf    => $component->{conf});
-    }
-
     # Configure components on kanopya master
     my $kanopyacollector = $admin_cluster->getComponent(name => 'Kanopyacollector');
-    my $lvm = $admin_cluster->getComponent(name => 'Lvm');
     my $dhcp = $admin_cluster->getComponent(name => 'Dhcpd');
 
     # Collect some indicators for admin cluster
@@ -1727,6 +1730,12 @@ sub registerKanopyaMaster {
         service_provider_id => $admin_cluster->id
     );
 
+    Dhcpd3Subnet->new(
+        dhcpd3_id  => $dhcp->id,
+        network_id => $admin_network->id
+    );
+
+    my $lvm = $admin_cluster->getComponent(name => 'Lvm');
     my $vg = Lvm2Vg->new(
         lvm2_id           => $lvm->id,
         lvm2_vg_name      => $args{kanopya_vg_name},
@@ -1741,12 +1750,32 @@ sub registerKanopyaMaster {
         );
     }
 
-    Dhcpd3Subnet->new(
-        dhcpd3_id  => $dhcp->id,
-        network_id => $admin_network->id
+    $admin_cluster->addManagerParameter(
+        manager_type => "DiskManager",
+        name => "vg_id",
+        value => $vg->id
     );
 
-    # TODO: insert IscsiPortals...
+    $admin_cluster->addManagerParameter(
+        manager_type => "DiskManager",
+        name => "systemimage_size",
+        value => 30 * 1024 * 1024 * 1024
+    );
+
+    my $iscsitarget = $admin_cluster->getComponent(name => 'Iscsitarget');
+    $iscsitarget->insertDefaultExtendedConfiguration();
+    
+    $admin_cluster->addManagerParameter(
+        manager_type => "ExportManager",
+        name => "iscsi_portals",
+        value => [ ($iscsitarget->iscsi_portals)[0]->id ]
+    );
+
+    $admin_cluster->addManagerParameter(
+        manager_type => "ExportManager",
+        name => "iomode",
+        value => "wb"
+    );
 
     # TODO: Implement getTotalCpu, getTotalMemory for Win32.
     if ($^O ne 'MSWin32') {
@@ -1784,7 +1813,9 @@ sub installComponent {
 
     if (defined $args{manager}) {
         # Add the manager
-        $args{cluster}->addManager(manager_id => $comp->id, manager_type => $args{manager});
+        $args{cluster}->addManager(manager_id => $comp->id,
+                                   manager_type => $args{manager},
+                                   manager_params => $args{params});
     }
 }
 
