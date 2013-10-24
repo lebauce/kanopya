@@ -9,13 +9,15 @@ class kanopya::rabbitmq ($disk_nodes, $cookie) {
         ensure => installed
     }
     class { "$rabbitmq_repo":
-        require => Package['erlang'] 
+        require => Package['erlang']
     }
+
     class { 'rabbitmq::server':
         wipe_db_on_cookie_change => true,
         config_cluster           => true,
         cluster_disk_nodes       => $disk_nodes,
         erlang_cookie            => $cookie,
+        node_ip_address          => $components[amqp][listen][amqp][ip],
         package_name             => $operatingsystem ? {
             /(?i)(centos|redhat|fedora)/ => 'rabbitmq-server.noarch',
             default                      => 'rabbitmq-server'
