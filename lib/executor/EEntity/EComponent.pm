@@ -33,6 +33,7 @@ use Data::Dumper;
 use String::Random;
 use Template;
 use File::Basename qw(fileparse);
+use File::Spec qw(rel2abs);
 use Log::Log4perl "get_logger";
 
 use General;
@@ -124,6 +125,9 @@ sub generateNodeFile {
     my ($filename, $directories, $prefix) = fileparse($path);
 
     $self->_host->getEContext->execute(command => "mkdir -p $directories");
+
+    $args{template_dir} = File::Spec->rel2abs($args{template_dir},
+                                              Kanopya::Config::getKanopyaDir() . '/templates/components');
 
     my $template_conf = {
         INCLUDE_PATH => $args{template_dir},
