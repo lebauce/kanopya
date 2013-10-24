@@ -78,6 +78,20 @@ sub _writeNetConf {
             dest => $args{mount_point} . '/etc/sysconfig/network-scripts/ifcfg-' . $iface->{name}
         );
 
+        $file = $self->generateNodeFile(
+            cluster       => $args{cluster},
+            host          => $args{host},
+            file          => '/etc/sysconfig/network',
+            template_dir  => 'redhat',
+            template_file => 'network.tt',
+            data          => { hostname => $args{host}->node->node_hostname }
+        );
+
+        $args{econtext}->send(
+            src  => $file,
+            dest => $args{mount_point} . '/etc/sysconfig/network'
+        );
+
         if ($iface->{vlans}) {
             my $template_file = 'ifcfg-vlan.tt';
             foreach my $vlan (@{ $iface->{vlans} }) {
