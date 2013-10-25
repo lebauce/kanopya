@@ -1067,7 +1067,7 @@ sub registerComponents {
             component_version      => 6,
             component_categories   => [ 'System' ],
             component_template     => '/templates/components/redhat',
-            service_provider_types => [ 'Cluster', 'Centos6' ],
+            service_provider_types => [ 'Cluster', 'Kanopya', 'Centos6' ],
         },
         {
             component_name         => 'Suse',
@@ -1533,6 +1533,16 @@ sub registerKanopyaMaster {
     my $hostname = `hostname`;
     chomp($hostname);
 
+    my $distro;
+    if (-e "/etc/debian_version") {
+        $distro = "Debian";
+    }
+    elsif (-e "/etc/redhat-release") {
+        $distro = "Redhat";
+    } else {
+        die "Unknown distribution";
+    }
+
     my $components = [
         {
             name => 'KanopyaFront'
@@ -1626,7 +1636,7 @@ sub registerKanopyaMaster {
             name => "Kanopyaworkflow"
         },
         {
-            name => "Debian"
+            name => $distro
         },
         {
             name => "Mailnotifier",
