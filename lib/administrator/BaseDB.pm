@@ -626,6 +626,8 @@ sub search {
                 }
             }
         }
+    } elsif ($args{page}) {
+        $args{order_by} = "me." . $class->getPrimaryKey;
     }
 
     $args{hash} = $merge->merge($args{hash}, $args{raw_hash});
