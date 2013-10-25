@@ -1383,7 +1383,7 @@ sub _attributesDefinition {
     my ($self, %args) = @_;
     my $class = ref($self) || $self;
 
-    General::checkParams(args => \%args,
+    General::checkParams(args     => \%args,
                          optional => { 'group_by' => 'none', 'trunc' => undef, 'include_reverse' => 0 });
 
     # Build th key to identify the requested output whitin the cache
@@ -1519,11 +1519,16 @@ sub _attributesDefinition {
 
     # Finally merge all module attrs into one level hash
     my $result = {};
-    for my $module (keys %$attributedefs) {
+    for my $module (sort keys %$attributedefs) {
         # Keep the module belonging for each attributes
-        map { $_->{from_module} = $module } values %{ $attributedefs->{$module} };
+        for my $attrname (keys %{ $attributedefs->{$module} }) {
+            my $definition = $attributedefs->{$module}->{$attrname};
+            if (! (defined $result->{$attrname} && defined $definition->{specialized})) {
+                $definition->{from_module} = $module;
+            }
+        }
         # Merge in the flat attribute definition
-        $result = $merge->merge($attributedefs->{$module}, $result);
+        $result = $merge->merge($result, $attributedefs->{$module});
     }
     $attr_defs_cache->{$cachekey} = $result;
     return clone($result);

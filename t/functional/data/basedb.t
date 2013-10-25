@@ -52,6 +52,8 @@ sub main {
     test_promote_demote();
     test_dafault_values();
 
+    test_specific_relations();
+
     if ($testing == 1) {
         Kanopya::Database::rollbackTransaction;
     }
@@ -509,5 +511,14 @@ sub test_search_on_virtual_attributes {
     throws_ok {
         Entity::Component->find(hash => { priority => { '>=' => $higherpriority } });
     } 'Kanopya::Exception::Internal::NotFound', 'Search return no component for virtual attribute priority >= ' . $higherpriority;
+}
+
+sub test_specific_relations {
+    # Test comparison operators for strings
+    my $sp = Entity::ServiceProvider->find();
+    my $nova_controller = $sp->addComponent(component_type_id => ClassType::ComponentType->find(hash => { component_name => 'NovaController' })->id);
+    lives_ok {
+        my @repos = $nova_controller->repositories;
+    } 'Get values for relation repositories on NovaController';
 }
 
