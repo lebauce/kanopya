@@ -882,6 +882,7 @@ sub _configure_puppetmaster {
         $puppetmaster_action = 'restart';
     }
     system('/etc/init.d/puppetmaster', $puppetmaster_action);
+    system('service', 'apache2', 'restart') && system('service', 'httpd', 'restart');
     system('/etc/init.d/puppet', $puppetagent_action);
 
     system('mkdir -m 750 /var/lib/puppet/concat && chown puppet:puppet /var/lib/puppet/concat');
@@ -930,7 +931,7 @@ sub _restart_middlewares {
     print "\n - Restarting required services...\n";
 
     for my $service ('isc-dhcp-server','iscsitarget','puppetmaster', 'xinetd',
-                     'tftpd-hpa', 'snmpd', 'rabbitmq-server') {
+                     'tftpd-hpa', 'snmpd', 'rabbitmq-server', 'apache2', 'httpd') {
         system("service $service restart");
     }
     system("service inetutils-inetd stop");
