@@ -43,6 +43,7 @@ Summary: Kanopya common files
 Group: Development/Tools
 Requires: MariaDB-client net-snmp-perl
 Requires: perl-Test-Simple
+Requires: perl-Test-Pod
 Requires: perl-Net-OpenSSH
 Requires: perl-Parse-BooleanLogic
 Requires: perl-Statistics-Descriptive
