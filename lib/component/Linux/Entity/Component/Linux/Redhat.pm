@@ -25,6 +25,8 @@ use Log::Log4perl 'get_logger';
 
 my $log = get_logger("");
 
+sub getAttrDef { return { }; }
+
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
