@@ -35,10 +35,11 @@ use Entity::Operation;
 
 use Kanopya::Database;
 use Kanopya::Exceptions;
+use Kanopya::Config;
+
+use Hash::Merge qw(merge);
 
 use Log::Log4perl "get_logger";
-use Data::Dumper;
-
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
@@ -187,6 +188,30 @@ sub send {
     my ($self, %args) = @_;
 
     MessageQueuing::RabbitMQ::Sender::send($self, %args);
+}
+
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    my $config = Kanopya::Config::get("executor");
+
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        kanopyaexecutor => {
+            manifest => $self->instanciatePuppetResource(
+                            name => "kanopya::executor",
+                            params => {
+                                logdir       => $config->{logdir},
+                                user         => $config->{user}->{name},
+                                password     => $config->{user}->{password},
+                                amqpuser     => $config->{amqp}->{user},
+                                amqppassword => $config->{amqp}->{password},
+                                lib          => Kanopya::Database::_adm->{config}
+                            }
+                        ),
+            dependencies => [ $self->service_provider->getComponent(name => "Amqp"),
+                              $self->service_provider->getComponent(name => "Mysql") ]
+        }
+    } );
 }
 
 1;

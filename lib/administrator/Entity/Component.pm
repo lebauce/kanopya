@@ -526,7 +526,11 @@ sub instanciatePuppetResource {
     shift @dumper;
     pop @dumper;
 
-    return "$args{resource} { '$args{name}':\n" .
+    my $title = ref($args{name}) eq 'ARRAY' ?
+                '[ ' . join(', ', map { "'" . $_ . "'" } @{$args{name}}) . ' ]' :
+                "'" . $args{name} . "'";
+
+    return "$args{resource} { $title:\n" .
            ($args{require} ? "  require => [ " . join(' ,', @{$args{require}}) . " ],\n" : '') .
            join("\n", @dumper) . "\n" .
            "}\n";

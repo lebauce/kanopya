@@ -21,11 +21,12 @@ use base "Entity::Component";
 use strict;
 use warnings;
 
+use Kanopya::Database;
 use Kanopya::Exceptions;
 
-use Log::Log4perl "get_logger";
-use Data::Dumper;
+use Hash::Merge qw(merge);
 
+use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {};
@@ -33,5 +34,31 @@ use constant ATTR_DEF => {};
 sub getAttrDef { return ATTR_DEF; }
 
 sub methods {}
+
+sub getNetConf {
+    return {
+        kanopyafront => {
+            port => 5000,
+            protocols => ['tcp']
+        }
+    };
+}
+
+sub getPuppetDefinition {
+    my ($self, %args) = @_;
+
+    return merge($self->SUPER::getPuppetDefinition(%args), {
+        kanopyafront => {
+            manifest => $self->instanciatePuppetResource(
+                            name => "kanopya::front",
+                            params => {
+                                lib => Kanopya::Database::_adm->{config}
+                            }
+                        ),
+            dependencies => [ $self->service_provider->getComponent(name => "Amqp"),
+                              $self->service_provider->getComponent(name => "Mysql") ]
+        }
+    } );
+}
 
 1;

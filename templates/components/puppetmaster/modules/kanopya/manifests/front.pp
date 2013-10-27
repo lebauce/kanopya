@@ -1,7 +1,10 @@
-class kanopya::executor($logdir, $user, $password, $amqpuser, $amqppassword, $lib) {
+class kanopya::front($lib) {
     require kanopya::common
 
-    if ($components[kanopyaexecutor][master]) {
+    $amqpuser = $lib[amqp][user]
+    $amqppassword = $lib[amqp][password]
+
+    if ($components[kanopyafront][master]) {
         rabbitmq_user { "${amqpuser}":
             admin    => true,
             password => "${amqppassword}",
@@ -16,32 +19,26 @@ class kanopya::executor($logdir, $user, $password, $amqpuser, $amqppassword, $li
         }
     }
 
-    file { "/opt/kanopya/conf/executor.conf":
+    file { "/opt/kanopya/conf/webui-log.conf":
         ensure => present,
-        content => template('kanopya/executor.conf.erb'),
+        content => template('kanopya/webui-log.conf.erb'),
     }
 
-    file { "/opt/kanopya/conf/executor-log.conf":
-        ensure => present,
-        content => template('kanopya/executor-log.conf.erb'),
-    }
-
-    service { 'kanopya-executor':
-        name => 'kanopya-executor',
+    service { 'kanopya-front':
+        name => 'kanopya-front',
         ensure => running,
         enable => true,
-        require => [ File['/opt/kanopya/conf/executor.conf'],
-                     File['/opt/kanopya/conf/executor-log.conf'] ]
+        require => [ File['/opt/kanopya/conf/webui-log.conf'] ]
     }
 
     # Do not install the package on the master node as it would
     # overwrite the sources in case they where fetched from git
-    if ($components[kanopyaexecutor][master] == 0) {
+    if ($components[kanopyafront][master] == 0) {
         case $operatingsystem {
             /(?i)(centos|redhat)/ : {
-                package { 'kanopya-executor':
+                package { 'kanopya-front':
                     ensure  => installed,
-                    before  => Service['kanopya-executor'],
+                    before  => Service['kanopya-front'],
                 }
             }
         }
