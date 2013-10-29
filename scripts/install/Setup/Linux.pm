@@ -881,6 +881,7 @@ sub _configure_puppetmaster {
     if(-e '/var/run/puppet/master.pid') {
         $puppetmaster_action = 'restart';
     }
+
     system('/etc/init.d/puppetmaster', $puppetmaster_action);
     system('service', 'apache2', 'restart') && system('service', 'httpd', 'restart');
     system('/etc/init.d/puppet', $puppetagent_action);
@@ -888,6 +889,8 @@ sub _configure_puppetmaster {
     system('mkdir -m 750 /var/lib/puppet/concat && chown puppet:puppet /var/lib/puppet/concat');
     EEntity->new(entity => $kanopya)->reconfigure();
 
+    system('killall -9 mysqld');
+    system('service', 'mysql', 'start');
 }
 
 
