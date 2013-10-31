@@ -10,7 +10,7 @@ hardware:
       size: 8
       type: ext4
     "/home":
-      size: 20
+      size: 30
       type: ext4
 repos:
   - name: MariaDB
@@ -24,7 +24,7 @@ repos:
   - name: PerconaDB
     baseurl: http://repo.percona.com/centos/6/os/x86_64/
   - name: EPEL
-    baseurl: http://download.fedoraproject.org/pub/epel/6/x86_64/
+    baseurl: http://dl.fedoraproject.org/pub/epel/6/x86_64/
   - name: PuppetLabs
     baseurl: http://yum.puppetlabs.com/el/6/products/x86_64/
   - name: PuppetLabs-Deps
@@ -55,10 +55,21 @@ packages:
   - mod_ssl
   - rubygem-passenger
   - mod_passenger
+  - kernel-2.6.32-358.14.1.el6
+  - kernel-devel-2.6.32-358.14.1.el6
+  - kernel-headers-2.6.32-358.14.1.el6.x86_64
+  - gcc
+  - perl
+  - make
+  - openssh-clients
 files:
   "/root":
     - setup.inputs
     - puppet-dhcp-pxefilename.patch
+    - killall.sh
+    - VBoxGuestAdditions_4.2.18.iso
+  "/etc/sudoers.d":
+    - vagrant
   "/etc/sysconfig/network-scripts":
     - ifcfg-eth1
   "/etc/httpd/conf.d":
@@ -88,6 +99,7 @@ post:
     - "mysqladmin -u root password K4n0pY4"
 #   - "git clone -b dev --recursive git://repository.intranet.hederatech.com/kanopya/kanopya.git /opt/kanopya"
 #   - "cp /opt/kanopya/scripts/init/* /etc/init.d/"
+    - "useradd -d /home/kanopya kanopya"
     - "patch -d /opt/kanopya/templates/components/puppetmaster/modules/dhcp/ -p1 < /root/puppet-dhcp-pxefilename.patch"
     - "export PERL5LIB=/opt/kanopya/lib/common:/opt/kanopya/lib/administrator:/opt/kanopya/lib/monitor:/opt/kanopya/lib/executor:/opt/kanopya/lib/external:/opt/kanopya/lib/external/NetApp:/opt/kanopya/lib/orchestrator:/opt/kanopya/lib/component/kanopya_front:/opt/kanopya/lib/component/kanopya_executor:/opt/kanopya/lib/component/kanopya_aggregator:/opt/kanopya/lib/component/kanopya_rulesengine:/opt/kanopya/lib/mock; cd /opt/kanopya/scripts/install; ./setup.pl -f /root/setup.inputs &> /root/setup.log || true"
     - "mkdir -p /etc/puppet/rack/public"
@@ -118,13 +130,43 @@ post:
     - "/sbin/service mysql stop"
     - "/sbin/service puppet stop"
     - "/sbin/service snmpd stop"
+    - "/sbin/service xinetd stop"
+    - "/sbin/service ntpd stop"
+    - "/sbin/service kanopya-front stop"
+    - "/sbin/service kanopya-collector stop"
+    - "/sbin/service kanopya-aggregator stop"
+    - "/sbin/service kanopya-rulesengine stop"
+    - "/sbin/service kanopya-state-manager stop"
     - "killall epmd || true"
     - "killall beam || true"
-    - "killall mysqld || true"
-    - "rm -rf /root/setup.inputs /root/puppet-dhcp-pxefilename.patch"
+    - "sh /root/killall.sh"
+    - "sleep 5"
+    - "rm -rf /root/setup.inputs /root/puppet-dhcp-pxefilename.patch /root/killall.sh"
     - "echo 'Kanopya release 1.8 (Kwak)' > /etc/issue"
     - "echo 'Kernel \\r on an \m' >> /etc/issue"
-    - "sed -i 's/ ro / ro rhgb quiet /g' /etc/extlinux.conf"
-  virtualbox:
-    - "/bin/true"
-
+    - "rm -f /etc/sysconfig/network-scripts/ifcfg-eth1"
+    - "sed -i 's/^\(Defaults\)\( *\)\(requiretty$\)/\1\2!\3/' /etc/sudoers"
+    - "sed -i 's/^\(Defaults\)\( *\)\(!visiblepw$\)/#\1\2\3/' /etc/sudoers"
+    - "ln -s 2.6.32-358.14.1.el6.x86_64 /lib/modules/`uname -r`"
+    - "ln -s 2.6.32-358.14.1.el6.x86_64 /usr/src/kernels/`uname -r`"
+    - "mount -o loop /root/VBoxGuestAdditions_4.2.18.iso /mnt"
+    - "sh /mnt/VBoxLinuxAdditions.run || true"
+    - "umount /mnt"
+    - "unlink /lib/modules/`uname -r`"
+    - "unlink /usr/src/kernels/`uname -r`"
+    - "chmod 400 /etc/sudoers.d/vagrant"
+    - "mkdir -p /home/kanopya/.ssh"
+    - "echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCpFaaw+PjrFW1npo50jGxhcV4ZgslRP5JHo+yp/185UkbLRvIdBIbhPgPE7DTNNNRlTqLOggYkPoj7IpryagTFFffLdxtvxbDkYib+LMh99Co2PWSYLNMpLWyn6lLwrtoy37GRTZoO2RWsM76mLiQdW6YdTPFjc1LXvCe7Tk2bbLF9OD9RBUWD3kkhCtsxsENSw0OiKQyPjlH7rUnBAzpw0q6JWuYJ/dTTq/5NCN/zfmJfEtNrvdDtc9RETo6CPe6tpirPLqwUAzxPOo4Wj7wQnPzMtaczWOGEEQPYRBVeELLm0JcFRV87Mu4VfkUhiwewQpHevJiSISUAUNzSUXhb jenkins@localhost.localdomain > /home/kanopya/.ssh/authorized_keys"
+    - "chown -R kanopya:kanopya /home/kanopya/.ssh"
+    - "chmod 700 /home/kanopya/.ssh"
+    - "chmod 600 /home/kanopya/.ssh/authorized_keys"
+    - "sed -i s/initrd-/initramfs-/ /boot/grub/grub.conf"
+    - "sed -i s/default=0/default=1/ /boot/grub/grub.conf"
+    - "echo 127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4 > /etc/hosts"
+    - "echo 127.0.1.1   centos-kanopya-appliance.hederatech.com centos-kanopya-appliance >> /etc/hosts"
+    - "echo ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6 >> /etc/hosts"
+    - "sed -i s/kanopya.localdomain/hederatech.com/g /etc/httpd/conf.d/rack.conf"
+    - "yum -y install cover"
+#   - "sed -i 's/ ro / ro rhgb quiet /g' /etc/extlinux.conf"
+# virtualbox:
+#   - "/bin/true"
