@@ -1,0 +1,78 @@
+name: centos-6.4-kanopya
+summary: Kanopya Appliance (based on CentOS 6.4 64 bits)
+os:
+  password: kanopya
+hardware:
+  partitions:
+    "/":
+      size: 8
+    "/home":
+      size: 30
+      type: ext4
+repos:
+  - name: MariaDB
+    baseurl: http://yum.mariadb.org/5.5.32/centos6-amd64/
+  - name: rpmforge
+    baseurl: http://apt.sw.be/redhat/el6/en/x86_64/rpmforge
+  - name: magnum
+    baseurl: http://rpm.mag-sol.com/Centos/6/x86_64/
+  - name: "kanopya"
+    baseurl: http://download.kanopya.org/yum/centos/6/x86_64/
+  - name: PerconaDB
+    baseurl: http://repo.percona.com/centos/6/os/x86_64/
+  - name: EPEL
+    baseurl: http://dl.fedoraproject.org/pub/epel/6/x86_64/
+packages:
+  - lvm2
+  - syslog-ng
+# Can not be installed as the 'galera' package provides the /usr/bin
+# folder that conflicts with the 'filesystem' package
+# - MariaDB-Galera-server
+  - net-snmp
+  - dhcp
+  - tftp-server
+  - ntp
+  - iscsitarget
+  - iscsitarget-kmdl-2.6.32-358.14.1.el6
+  - rubygem-activerecord
+  - ruby-mysql
+  - puppet-server-2.7.23-1.el6
+  - rabbitmq-server
+  - parted
+  - git
+  - bridge-utils
+  - mod_ssl
+  - rubygem-passenger
+  - mod_passenger
+  - kernel-2.6.32-358.14.1.el6
+files:
+  "/etc/httpd/conf.d":
+    - rack.conf
+  "/etc/init.d":
+    - motd
+post:
+  base:
+    - "/usr/sbin/ntpdate ntp.lip6.fr"
+    - "echo ntp.lip6.fr >> /etc/ntp/step-tickers"
+    - "sed -i '/home/d' /etc/fstab"
+    - "umount /home"
+    - "pvcreate /dev/vda2"
+    - "vgcreate kanopya /dev/vda2"
+    - "yum -y install MariaDB-Galera-server"
+    - "mkdir -p /etc/puppet/rack/public"
+    - "mkdir -p /etc/puppet/rack/tmp"
+    - "cp /usr/share/puppet/ext/rack/files/config.ru /etc/puppet/rack"
+    - "chown puppet /etc/puppet/rack/config.ru"
+    - "/sbin/chkconfig postfix off"
+    - "/sbin/chkconfig snmpd on"
+    - "/sbin/chkconfig puppet on"
+    - "/sbin/chkconfig rabbitmq-server on"
+    - "/sbin/chkconfig puppetmaster off"
+    - "/sbin/chkconfig httpd on"
+    - "/sbin/chkconfig mysql on"
+    - "/sbin/chkconfig rpcbind on"
+    - "/sbin/chkconfig nfs on"
+    - "/sbin/chkconfig iscsi-target on"
+    - "/sbin/chkconfig motd on"
+    - "sed -i s/initrd-/initramfs-/ /boot/grub/grub.conf"
+    - "sed -i s/default=0/default=1/ /boot/grub/grub.conf"

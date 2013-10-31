@@ -1,0 +1,20 @@
+name: centos-6.4-amd64
+summary: CentOS 6.4 amd64
+os:
+  name: centos
+  version: 6
+  password: root
+hardware:
+  partitions:
+    /:
+      size: 2
+      type: ext4
+repos:
+  - name: PuppetLabs
+    baseurl: http://yum.puppetlabs.com/el/6/products/x86_64/
+  - name: PuppetLabs-Deps
+    baseurl: http://yum.puppetlabs.com/el/6/dependencies/x86_64/
+packages:
+  - syslinux-extlinux
+  - grub
+  - puppet-2.7.23-1.el6
