@@ -1769,7 +1769,7 @@ sub registerKanopyaMaster {
     $admin_cluster->addManagerParameter(
         manager_type => "DiskManager",
         name => "systemimage_size",
-        value => 30 * 1024 * 1024 * 1024
+        value => 8 * 1024 * 1024 * 1024
     );
 
     my $iscsitarget = $admin_cluster->getComponent(name => 'Iscsitarget');
