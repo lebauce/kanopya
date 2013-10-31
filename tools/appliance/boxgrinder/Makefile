@@ -48,7 +48,7 @@ vmware:
 	LIBGUESTFS_MEMSIZE=2048 boxgrinder-build centos-6.4-amd64.appl --debug -p vmware --platform-config type:personal,thin_disk:true
 
 clean:
-	rm -rf centos-6.4-kanopya.qcow2 kanopya-centos-appliance.ova centos-6.4-kanopya.vmdk build/appliances/x86_64/centos/6/centos-6.4-kanopya/1.0/centos-plugin/centos-6.4-kanopya-sda.* centos-6.4-kanopya-sda.qcow2 centos-6.4-kanopya.appl centos-6.4-kanopya-vagrant.appl
+	rm -rf centos-6.4-kanopya.qcow2 kanopya-centos-appliance.ova centos-6.4-kanopya.vmdk centos-6.4-kanopya-vagrant.vmdk build/appliances/x86_64/centos/6/centos-6.4-kanopya/1.0/centos-plugin/centos-6.4-kanopya-sda.* centos-6.4-kanopya-sda.qcow2 centos-6.4-kanopya.appl centos-6.4-kanopya-vagrant.appl build log
 	VBoxManage unregistervm "Kanopya CentOS Vagrant" --delete || true
 	VBoxManage unregistervm "Kanopya CentOS Appliance" --delete || true
 
