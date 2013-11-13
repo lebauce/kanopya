@@ -13,7 +13,7 @@ centos-6.4-kanopya-vagrant.vmdk: centos-6.4-kanopya-vagrant.appl VBoxGuestAdditi
 	qemu-img convert -f raw -O vmdk -o compat6 build/appliances/x86_64/centos/6/centos-6.4-kanopya-vagrant/1.0/centos-plugin/centos-6.4-kanopya-vagrant-sda.raw centos-6.4-kanopya-vagrant.vmdk
 
 kanopya-centos-appliance.ova: centos-6.4-kanopya.vmdk
-	VBoxManage createvm --name "Kanopya CentOS Appliance" --register --ostype Linux
+	VBoxManage createvm --name "Kanopya CentOS Appliance" --register --ostype RedHat_64
 	VBoxManage modifyvm "Kanopya CentOS Appliance" --memory 2048
 	VBoxManage modifyvm "Kanopya CentOS Appliance" --cpus 2
 	VBoxManage modifyvm "Kanopya CentOS Appliance" --nic1 nat
@@ -25,7 +25,7 @@ kanopya-centos-appliance.ova: centos-6.4-kanopya.vmdk
 	VBoxManage export "Kanopya CentOS Appliance" --output kanopya-centos-appliance.ova --vsys 0 --product "Kanopya" --producturl "http://www.kanopya.org" --vendor "Hedera Technology" --vendorurl "http://www.hederatech.com"
 
 kanopya-centos-vagrant: centos-6.4-kanopya-vagrant.vmdk
-	VBoxManage createvm --name "Kanopya CentOS Vagrant" --register --ostype Linux
+	VBoxManage createvm --name "Kanopya CentOS Vagrant" --register --ostype RedHat_64
 	VBoxManage modifyvm "Kanopya CentOS Vagrant" --memory 2048
 	VBoxManage modifyvm "Kanopya CentOS Vagrant" --cpus 2
 	VBoxManage modifyvm "Kanopya CentOS Vagrant" --nic1 nat
