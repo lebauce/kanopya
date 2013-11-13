@@ -7,6 +7,7 @@ License:        GPLv2
 URL:            http://www.kanopya.org
 Source0:        kanopya-1.8.tar.gz
 Source1:        deployment_solver.jar
+Patch0:         puppet-dhcp-pxefilename.patch
 BuildArch:      noarch
 
 Requires:       kanopya-common kanopya-executor kanopya-front
@@ -150,6 +151,7 @@ Kanopya rules engine
 
 %prep
 %setup -q
+%patch0 -d templates/components/puppetmaster/modules/dhcp -p1
 
 
 %build
