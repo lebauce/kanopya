@@ -1,5 +1,4 @@
-# Openssh5.pm - Mysql 5 component module (Adminstrator side)
-#    Copyright © 2011 Hedera Technology SAS
+#    Copyright © 2013 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -14,19 +13,15 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 12 sept 2010
 
-package Entity::Component::Openssh5;
+package Entity::Component::Openstack::SwiftProxy;
 use base "Entity::Component";
 
 use strict;
 use warnings;
 
-use Kanopya::Exceptions;
-
 use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
-
 my $log = get_logger("");
 
 use constant ATTR_DEF => {};
@@ -35,8 +30,8 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub getNetConf {
     return {
-        sshd => {
-            port => 22,
+        swiftproxy => {
+            port => 8080,
             protocols => ['tcp']
         }
     };
@@ -46,13 +41,15 @@ sub getPuppetDefinition {
     my ($self, %args) = @_;
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
-        openssh => {
+        swiftproxy => {
             manifest => $self->instanciatePuppetResource(
-                            name => "ssh::server",
+                            name => "kanopya::openstack::swift::proxy",
                             params => {
-                                tag => "kanopya::openssh"
+                                secret => "swift",
+                                password => "swift"
                             }
-                        )
+                        ),
+            dependencies => [ $self->keystone ]
         }
     } );
 }

@@ -98,7 +98,7 @@ __PACKAGE__->belongs_to(
   "keystone",
   "AdministratorDB::Schema::Result::Component",
   { component_id => "keystone_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
 =head2 mysql5
@@ -117,7 +117,7 @@ __PACKAGE__->belongs_to(
     is_deferrable => 1,
     join_type     => "LEFT",
     on_delete     => "CASCADE",
-    on_update     => "CASCADE",
+    on_update     => "NO ACTION",
   },
 );
 
@@ -136,9 +136,39 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 swift_proxies
 
-# Created by DBIx::Class::Schema::Loader v0.07025 @ 2013-02-11 15:49:43
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:QH2CivU/im6L093lQ+ce+w
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::SwiftProxy>
+
+=cut
+
+__PACKAGE__->has_many(
+  "swift_proxies",
+  "AdministratorDB::Schema::Result::SwiftProxy",
+  { "foreign.keystone_id" => "self.keystone_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 swift_storages
+
+Type: has_many
+
+Related object: L<AdministratorDB::Schema::Result::SwiftStorage>
+
+=cut
+
+__PACKAGE__->has_many(
+  "swift_storages",
+  "AdministratorDB::Schema::Result::SwiftStorage",
+  { "foreign.keystone_id" => "self.keystone_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07036 @ 2013-09-30 15:56:29
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Yl3qU2PiiApzgMSO70Kt+A
 
 __PACKAGE__->belongs_to(
   "parent",
