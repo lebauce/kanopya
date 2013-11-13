@@ -107,12 +107,12 @@ sub getBaseConfiguration {
 
     my $master = $class->getPuppetMaster->getMasterNode;
 
-    return {
+    return $master ? {
         puppetagent2_options    => '--no-client',
         puppetagent2_mode       => 'kanopya',
         puppetagent2_masterip   => $master->adminIp,
         puppetagent2_masterfqdn => $master->fqdn
-    };
+    } : { };
 }
 
 1;

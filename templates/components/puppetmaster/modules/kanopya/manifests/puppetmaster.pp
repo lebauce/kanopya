@@ -45,9 +45,11 @@ class kanopya::puppetmaster::install {
     }
 
     class { 'puppetdb':
+        listen_address => "0.0.0.0"
     }
 
     class { 'puppetdb::master::config':
+        puppetdb_server => 'centos-kanopya-appliance',
         require => Class['puppetdb']
     }
 }

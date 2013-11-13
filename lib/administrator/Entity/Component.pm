@@ -33,6 +33,7 @@ use Kanopya::Exceptions;
 use General;
 use ClassType::ComponentType;
 use Data::Dumper;
+use TryCatch;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -238,8 +239,16 @@ sub registerNode {
 
 sub getMasterNode {
     my $self = shift;
+    my $masternode;
 
-    return $self->findRelated(filters => [ 'component_nodes' ], hash => { master_node => 1 })->node;
+    try {
+        $masternode = $self->findRelated(filters => [ 'component_nodes' ],
+                                         hash => { master_node => 1 })->node;
+    } catch($err) {
+        $masternode = undef;
+    }
+
+    return $masternode;
 }
 
 sub getActiveNodes {
@@ -517,7 +526,11 @@ sub instanciatePuppetResource {
     shift @dumper;
     pop @dumper;
 
-    return "$args{resource} { '$args{name}':\n" .
+    my $title = ref($args{name}) eq 'ARRAY' ?
+                '[ ' . join(', ', map { "'" . $_ . "'" } @{$args{name}}) . ' ]' :
+                "'" . $args{name} . "'";
+
+    return "$args{resource} { $title:\n" .
            ($args{require} ? "  require => [ " . join(' ,', @{$args{require}}) . " ],\n" : '') .
            join("\n", @dumper) . "\n" .
            "}\n";

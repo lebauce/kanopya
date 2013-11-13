@@ -82,7 +82,8 @@ sub execute {
     }
 
     # Instanciate tftp server
-    my $tftp = Entity::ServiceProvider::Cluster->getKanopyaCluster->getComponent(category => 'Tftpserver');
+    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster;
+    my $tftp = $kanopya->getComponent(category => 'Tftpserver');
     $self->{context}->{tftp_component} = EEntity->new(entity => $tftp);
 
     # Untar master image archive in a temporary folder
@@ -192,6 +193,12 @@ sub execute {
         $log->debug("Set provided component: $name, $vers");
         $masterimage->setProvidedComponent(component_name    => $name,
                                            component_version => $vers);
+    }
+
+    # If the master image is a Kanopya master image, associate it to the Kanopya cluster
+    if ($metadata->{type} eq "Kanopya") {
+        $kanopya->masterimage_id($masterimage->id);
+        $kanopya->kernel_id($defaultkernel);
     }
 }
 

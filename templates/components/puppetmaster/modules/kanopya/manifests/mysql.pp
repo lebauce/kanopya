@@ -4,7 +4,9 @@ class kanopya::mysql::params {
             $mysql_package_name        = 'mariadb-galera-server'
             $mysql_client_package_name = 'mariadb-client'
             $mysql_service_provider    = 'init'
+
             class { 'kanopya::mysql::repos::deb': }
+
             package { 'galera':
                 ensure  => installed,
                 require => Class['kanopya::mysql::repos::deb']
@@ -14,7 +16,11 @@ class kanopya::mysql::params {
             $mysql_package_name        = 'MariaDB-Galera-server'
             $mysql_client_package_name = 'MariaDB-client'
             $mysql_service_provider    = 'redhat'
-            class { 'kanopya::mysql::repos::rh': }
+
+            include kanopya::mysql::repos::rh
+
+            Yumrepo['Percona'] -> Package['percona-xtrabackup']
+            Yumrepo['MariaDB'] -> Class['::mysql::server']
         }
         default : {
             fail("Unsupported operatingsystem : ${operatingsystem}. Only Debian, Ubuntu, RedHat and CentOS are supported")
@@ -30,18 +36,22 @@ class kanopya::mysql::galera($galera) {
                      Service['mysqld'],
                      Package['mysql_client'] ]
     }
+
     database_user { 'wsrep@localhost':
         password_hash => mysql_password('wsrep'),
         require       => Exec['mysql-start'],
     }
+
     database_grant { "wsrep@localhost":
         privileges => ['all'] ,
         require    => Database_User['wsrep@localhost'],
     }
+
     $provider = $architecture ? {
         'x86_64' => '/usr/lib64/galera/libgalera_smm.so',
         default  => '/usr/lib/galera/libgalera_smm.so'
     }
+
     mysql::server::config { 'galera':
         settings => {
             mysqld => {
@@ -73,6 +83,7 @@ class kanopya::mysql::galera($galera) {
 class kanopya::mysql::repos::deb {
     $release = downcase($lsbdistcodename)
     $os = downcase($operatingsystem)
+
     @apt::source { 'Percona':
         location   => 'http://repo.percona.com/apt',
         release    => $release,
@@ -81,6 +92,7 @@ class kanopya::mysql::repos::deb {
         key_server => 'hkp://keys.gnupg.net',
         before     => Package['percona-xtrabackup'],
     }
+
     @apt::source { 'MariaDB':
         location   => "http://ftp.osuosl.org/pub/mariadb/mariadb-5.5.32/repo/${os}",
         release    => $release,
@@ -89,6 +101,7 @@ class kanopya::mysql::repos::deb {
         key_server => 'keyserver.ubuntu.com',
         before     => Class['::mysql::server']
     }
+
     file { '/etc/apt/preferences.d/mariadb-pin-900':
         content => template('kanopya/apt-pinning.erb'),
         before  => Class['::mysql::server']
@@ -100,15 +113,14 @@ class kanopya::mysql::repos::rh {
         baseurl  => 'http://repo.percona.com/centos/$releasever/os/$basearch/',
         enabled  => '1',
         gpgcheck => '1',
-        gpgkey   => 'http://www.percona.com/downloads/RPM-GPG-KEY-percona',
-        before   => Package['percona-xtrabackup']
+        gpgkey   => 'http://www.percona.com/downloads/RPM-GPG-KEY-percona'
     }
+
     yumrepo { 'MariaDB':
         baseurl  => 'http://yum.mariadb.org/5.5/centos6-amd64',
         enabled  => '1',
         gpgcheck => '1',
-        gpgkey   => 'https://yum.mariadb.org/RPM-GPG-KEY-MariaDB',
-        before   => Class['::mysql::server']
+        gpgkey   => 'https://yum.mariadb.org/RPM-GPG-KEY-MariaDB'
     }
 }
 
@@ -116,31 +128,37 @@ class kanopya::mysql($config_hash, $galera) inherits kanopya::mysql::params {
     $config_hash['service_name'] = 'mysql'
     $config_hash['pidfile']      = "${fqdn}.pid"
     $config_hash['bind_address'] = $components[mysql][listen][mysqld][ip]
+
     file { '/var/run/mysqld':
         ensure  => 'directory',
         owner   => 'mysql',
         group   => 'mysql',
         require => Class['::mysql::server']
     }
+
     package { 'percona-xtrabackup':
         ensure  => installed,
         require => Package['mysql-server']
     }
+
     class { '::mysql':
         client_package_name => $kanopya::mysql::params::mysql_client_package_name,
         require      => Package['mysql-server']
     }
+
     class { '::mysql::server':
         service_name     => 'mysql',
         service_provider => $kanopya::mysql::params::mysql_service_provider,
         config_hash      => $config_hash,
         package_name     => $kanopya::mysql::params::mysql_package_name
     }
-    Mysql::Db <<| tag == "${fqdn}" |>>
-    Database_user <<| tag == "${fqdn}" |>>
-    Database_grant <<| tag == "${fqdn}" |>>
+
     class { 'kanopya::mysql::galera':
         galera       => $galera
     }
+
+    Mysql::Db <<| tag == "${fqdn}" |>>
+    Database_user <<| tag == "${fqdn}" |>>
+    Database_grant <<| tag == "${fqdn}" |>>
 }
 

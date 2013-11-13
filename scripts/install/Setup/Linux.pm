@@ -881,12 +881,16 @@ sub _configure_puppetmaster {
     if(-e '/var/run/puppet/master.pid') {
         $puppetmaster_action = 'restart';
     }
+
     system('/etc/init.d/puppetmaster', $puppetmaster_action);
+    system('service', 'apache2', 'restart') && system('service', 'httpd', 'restart');
     system('/etc/init.d/puppet', $puppetagent_action);
 
     system('mkdir -m 750 /var/lib/puppet/concat && chown puppet:puppet /var/lib/puppet/concat');
     EEntity->new(entity => $kanopya)->reconfigure();
 
+    system('killall -9 mysqld');
+    system('service', 'mysql', 'start');
 }
 
 
@@ -930,7 +934,7 @@ sub _restart_middlewares {
     print "\n - Restarting required services...\n";
 
     for my $service ('isc-dhcp-server','iscsitarget','puppetmaster', 'xinetd',
-                     'tftpd-hpa', 'snmpd', 'rabbitmq-server') {
+                     'tftpd-hpa', 'snmpd', 'rabbitmq-server', 'apache2', 'httpd') {
         system("service $service restart");
     }
     system("service inetutils-inetd stop");
