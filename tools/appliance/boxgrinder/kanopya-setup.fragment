@@ -52,4 +52,3 @@ post:
     - "rm -rf /root/setup.inputs /root/puppet-dhcp-pxefilename.patch /root/killall.sh"
     - "echo 'Kanopya release 1.8 (Kwak)' > /etc/issue"
     - "echo 'Kernel \\r on an \m' >> /etc/issue"
-    - "rm -f /etc/sysconfig/network-scripts/ifcfg-eth1"
