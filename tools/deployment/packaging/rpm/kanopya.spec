@@ -79,6 +79,7 @@ Requires: perl-Net-SMTP-SSL
 Requires: perl-LDAP
 Requires: perl-Set-IntervalTree
 Requires: perl-File-Pid
+Requires: perl-YAML
 Requires: redhat-lsb-core
 
 Provides: perl(VMware::VICommon)
