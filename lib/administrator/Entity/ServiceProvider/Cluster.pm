@@ -526,7 +526,7 @@ sub configureBillingLimits {
 
     if (defined $args{billing_limits}) {
         my @limits = values %{ $args{billing_limits} };
-        $self->update(billinglimits => \@limits);
+        $self->_populateRelations(relations => { billinglimits => \@limits }, override => 1);
 
         my @indicators = qw(Memory Cores);
         foreach my $name (@indicators) {

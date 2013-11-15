@@ -1251,7 +1251,7 @@ sub apiCall {
     }
 
     my $method = $args{method};
-    return $self->$method(%{$args{params}});
+    return $self->$method(%{ $args{params} });
 }
 
 
