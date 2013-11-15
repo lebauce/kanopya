@@ -1,0 +1,11 @@
+---
+:backends:
+  - yaml
+:hierarchy:
+  - common
+  - "%{cluster}/globals"
+  - "%{cluster}/%{hostname}/%{clientcert}.override"
+  - "%{cluster}/%{hostname}/%{clientcert}"
+  - default
+:yaml:
+  :datadir: [% clusters_directory %]

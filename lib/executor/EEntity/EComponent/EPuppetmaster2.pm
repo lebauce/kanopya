@@ -150,7 +150,7 @@ sub removeHostCertificate {
 sub createHostManifest {
     my ($self, %args) = @_;
     General::checkParams(args => \%args,
-                         required => [ 'puppet_definitions', 'host_fqdn', 'sourcepath' ]);
+                         required => [ 'node', 'puppet_definitions' ]);
 
     my $config = {
         INCLUDE_PATH => '/templates/components/puppetmaster',
@@ -160,14 +160,17 @@ sub createHostManifest {
         RELATIVE => 1,                   # desactive par defaut
     };
 
+    my $fqdn = $args{node}->fqdn;
+    my $cluster = $args{node}->service_provider->cluster_name;
     my $input = 'host_manifest.pp.tt';
-    my $output = '/etc/puppet/manifests/nodes/';
-    $output .= $args{host_fqdn} . '.pp';
+    my $output = '/etc/puppet/manifests/nodes/' . $fqdn . '.pp';
+    my $sourcepath = $cluster . '/' . $args{node}->node_hostname;
 
     my $data = {
-        host_fqdn          => $args{host_fqdn},
+        host_fqdn          => $fqdn,
+        cluster            => $cluster,
         puppet_definitions => $args{puppet_definitions},
-        sourcepath         => $args{sourcepath}
+        sourcepath         => $sourcepath
     };
 
     my $template = Template->new($config);

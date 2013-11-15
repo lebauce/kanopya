@@ -78,10 +78,8 @@ sub execute {
         )->{manifest};
 
         $self->{context}->{puppetmaster}->createHostManifest(
-                host_fqdn          => $host->node->fqdn,
-                puppet_definitions => $puppet_definitions,
-                sourcepath         => $cluster->cluster_name
-                                      . '/' . $host->node->node_hostname
+            node               => $host->node,
+            puppet_definitions => $puppet_definitions
         );
     }
     $self->{context}->{puppetagent}->applyManifest(cluster => $cluster);

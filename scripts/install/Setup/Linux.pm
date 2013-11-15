@@ -810,6 +810,13 @@ sub _configure_puppetmaster {
     );
 
     _useTemplate(
+        include  => '/templates/components/puppetmaster',
+        template => 'hiera.yaml.tt',
+        datas    => $data,
+        conf     => '/etc/puppet/hiera.yaml',
+    );
+
+    _useTemplate(
         include  => '/templates/components/puppetagent',
         template => 'default_puppet.tt',
         conf     => '/etc/default/puppet',
@@ -868,9 +875,8 @@ sub _configure_puppetmaster {
     }
 
     $epuppetmaster->createHostManifest(
-        host_fqdn          => $fqdn,
+        node               => $kanopya_master->node,
         puppet_definitions => $fstab_puppet_definitions,
-        sourcepath         => $kanopya->cluster_name . '/' . $kanopya_master->node->node_hostname
     );
 
     my $puppetagent_action = 'start';
