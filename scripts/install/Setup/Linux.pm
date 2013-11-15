@@ -868,9 +868,8 @@ sub _configure_puppetmaster {
     }
 
     $epuppetmaster->createHostManifest(
-        host_fqdn          => $fqdn,
+        node               => $kanopya_master->node,
         puppet_definitions => $fstab_puppet_definitions,
-        sourcepath         => $kanopya->cluster_name . '/' . $kanopya_master->node->node_hostname
     );
 
     my $puppetagent_action = 'start';

@@ -21,7 +21,7 @@ use EEntity;
 use Entity::ServiceProvider::Cluster;
 use Log::Log4perl "get_logger";
 use Kanopya::Exceptions;
-use Data::Dumper;
+use YAML;
 
 my $log = get_logger("");
 my $errmsg;
@@ -184,12 +184,12 @@ sub generatePuppetDefinitions {
         $config_hash->{$component_name} = $configuration;
     }
 
-    $Data::Dumper::Terse = 1;
-    $Data::Dumper::Quotekeys = 0;
+    my $path = $self->_executor->getConf->{clusters_directory} . '/' .
+               $args{cluster}->cluster_name . '/' .
+               $args{host}->node->node_hostname . '/' .
+               $args{host}->node->fqdn . ".yaml";
 
-    my @dumper = split('\n', Dumper($config_hash));
-    shift @dumper; pop @dumper;
-    $manifest = '$components = { ' . join("\n", @dumper) . " }\n" . $manifest;
+    YAML::DumpFile($path, { components => $config_hash });
 
     if ($self->puppetagent2_mode eq 'kanopya') {
         # create, sign and push a puppet certificate on the image
@@ -197,9 +197,8 @@ sub generatePuppetDefinitions {
         my $puppetmaster = EEntity->new(entity => $self->getPuppetMaster);
 
         $puppetmaster->createHostManifest(
-            host_fqdn          => $args{host}->node->fqdn,
+            node               => $args{host}->node,
             puppet_definitions => $manifest,
-            sourcepath         => $args{cluster}->cluster_name . '/' . $args{host}->node->node_hostname
         );
     }
 }

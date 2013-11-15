@@ -1,4 +1,6 @@
 node '[% host_fqdn %]' {
 $sourcepath = '[% sourcepath %]'
+$cluster = '[% cluster %]'
+$components = hiera("components")
 [% puppet_definitions %]
 }
