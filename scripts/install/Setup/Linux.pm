@@ -810,6 +810,13 @@ sub _configure_puppetmaster {
     );
 
     _useTemplate(
+        include  => '/templates/components/puppetmaster',
+        template => 'hiera.yaml.tt',
+        datas    => $data,
+        conf     => '/etc/puppet/hiera.yaml',
+    );
+
+    _useTemplate(
         include  => '/templates/components/puppetagent',
         template => 'default_puppet.tt',
         conf     => '/etc/default/puppet',
