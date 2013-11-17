@@ -37,6 +37,8 @@ packages:
   - rubygem-activerecord
   - ruby-mysql
   - puppet-server-2.7.23-1.el6
+  - hiera
+  - hiera-puppet
   - rabbitmq-server
   - parted
   - git
