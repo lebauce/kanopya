@@ -21,9 +21,13 @@ post:
     - "/sbin/service rabbitmq-server start"
     - "/sbin/service puppetmaster start"
     - "mysqladmin -u root password K4n0pY4"
+# Uncomment the following lines to use Git instead of packages
 #   - "git clone -b dev --recursive git://repository.intranet.hederatech.com/kanopya/kanopya.git /opt/kanopya"
 #   - "cp /opt/kanopya/scripts/init/* /etc/init.d/"
 #   - "patch -d /opt/kanopya/templates/components/puppetmaster/modules/dhcp/ -p1 < /root/puppet-dhcp-pxefilename.patch"
+# Terrible hack but for some reason, setup.pl doesn't exit without this
+    - "echo >> /opt/kanopya/scripts/install/setup.pl"
+    - "echo exit 0 >> /opt/kanopya/scripts/install/setup.pl"
     - "export PERL5LIB=/opt/kanopya/lib/common:/opt/kanopya/lib/administrator:/opt/kanopya/lib/monitor:/opt/kanopya/lib/executor:/opt/kanopya/lib/external:/opt/kanopya/lib/external/NetApp:/opt/kanopya/lib/orchestrator:/opt/kanopya/lib/component/kanopya_front:/opt/kanopya/lib/component/kanopya_executor:/opt/kanopya/lib/component/kanopya_aggregator:/opt/kanopya/lib/component/kanopya_rulesengine:/opt/kanopya/lib/mock; cd /opt/kanopya/scripts/install; ./setup.pl -f /root/setup.inputs &> /root/setup.log || true"
     - "wget -P /opt/kanopya/tools/deployment_solver/ http://download.kanopya.org/constraint_engine/deployment_solver/deployment_solver.jar"
     - "sed -i 's/disable\(\t*\)= yes/disable\1= no/' /etc/xinetd.d/tftp"
