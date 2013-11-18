@@ -379,7 +379,7 @@ return hash reference to pass to Template instanciation
 
 sub getTemplateConfiguration {
     return {
-        INCLUDE_PATH => '/templates/internal/',
+        INCLUDE_PATH => Kanopya::Config::getKanopyaDir() . '/templates/internal/',
         INTERPOLATE  => 1,     # expand "$var" in plain text
         POST_CHOMP   => 0,     # cleanup whitespace
         EVAL_PERL    => 1,     # evaluate Perl code blocks

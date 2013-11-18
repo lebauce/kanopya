@@ -68,28 +68,20 @@ sub _writeNetConf {
             cluster       => $args{cluster},
             host          => $args{host},
             file          => '/etc/sysconfig/network-scripts/ifcfg-' . $iface->{name},
-            template_dir  => '/templates/components/redhat',
+            template_dir  => 'components/redhat',
             template_file => 'ifcfg.tt',
-            data          => { interface => $iface }
-        );
-
-        $args{econtext}->send(
-            src  => $file,
-            dest => $args{mount_point} . '/etc/sysconfig/network-scripts/ifcfg-' . $iface->{name}
+            data          => { interface => $iface },
+            mount_point   => $args{mount_point}
         );
 
         $file = $self->generateNodeFile(
             cluster       => $args{cluster},
             host          => $args{host},
             file          => '/etc/sysconfig/network',
-            template_dir  => 'redhat',
+            template_dir  => 'components/redhat',
             template_file => 'network.tt',
-            data          => { hostname => $args{host}->node->node_hostname }
-        );
-
-        $args{econtext}->send(
-            src  => $file,
-            dest => $args{mount_point} . '/etc/sysconfig/network'
+            data          => { hostname => $args{host}->node->node_hostname },
+            mount_point   => $args{mount_point}
         );
 
         if ($iface->{vlans}) {
@@ -103,14 +95,10 @@ sub _writeNetConf {
                     cluster       => $args{cluster},
                     host          => $args{host},
                     file          => '/etc/sysconfig/network/ifcfg-' . $vlan_id,
-                    template_dir  => '/templates/components/redhat',
+                    template_dir  => 'components/redhat',
                     template_file => $template_file,
-                    data          => { interface => \%vlan_infos }
-                );
-
-                $args{econtext}->send(
-                    src  => $file,
-                    dest => $args{mount_point} . '/etc/sysconfig/network/ifcfg-' . $vlan_id
+                    data          => { interface => \%vlan_infos },
+                    mount_point   => $args{mount_point}
                 );
             }
         }

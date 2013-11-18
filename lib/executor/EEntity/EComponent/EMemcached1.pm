@@ -36,25 +36,20 @@ sub configureNode {
         cluster       => $cluster,
         host          => $args{host},
         file          => '/etc/memcached.conf',
-        template_dir  => '/templates/components/memcached',
+        template_dir  => 'components/memcached',
         template_file => 'memcached.conf.tt',
-        data          => $data 
+        data          => $data,
+        mount_point   => $args{mount_point}
     );
-    
-     $self->_host->getEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc'
-    );
-    
 }
 
 sub addNode {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => ['cluster','mount_point', 'host']);
+    General::checkParams(args => \%args, required => [ 'cluster', 'mount_point', 'host' ]);
     
     # Memcached run only on master node
-    if (not defined $self->getMaterNode) {
+    if (not defined $self->getMasterNode) {
         # no masternode defined, this host becomes the masternode
             
         $self->configureNode(%args);
@@ -65,6 +60,5 @@ sub addNode {
         );
     }
 }
-
 
 1;

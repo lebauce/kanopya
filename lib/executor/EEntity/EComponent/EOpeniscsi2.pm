@@ -16,9 +16,11 @@ use base 'EEntity::EComponent';
 
 use strict;
 use warnings;
-use General;
-use Log::Log4perl 'get_logger';
 
+use General;
+use Kanopya::Config;
+
+use Log::Log4perl 'get_logger';
 my $log = get_logger("");
 
 sub addNode {
@@ -36,16 +38,12 @@ sub addNode {
         cluster       => $cluster,
         host          => $args{host},
         file          => '/etc/iscsi/initiatorname.iscsi',
-        template_dir  => '/templates/components/open-iscsi',
+        template_dir  => 'components/open-iscsi',
         template_file => 'initiatorname.iscsi.tt',
-        data          => $data
+        data          => $data,
+        mount_point   => $args{mount_point}
     );
     
-    $self->_host->getEContext->send(
-        src  => $file,
-        dest => $args{mount_point} . '/etc/iscsi',
-    );
-
     $self->_host->getEContext->execute(
         command => "touch $args{mount_point}/etc/iscsi.initramfs"
     );
@@ -64,7 +62,6 @@ sub _generateKanopyaHalt {
     General::checkParams(args     => \%args,
                          required => [ "cluster", "host", "mount_point", "targetname", "container_access" ]);
 
-    my $omitted_file = "Kanopya_omitted_iscsid";
     my $vars = {
         target       => $args{targetname},
         nas_ip       => $args{container_access}->container_access_ip,
@@ -76,30 +73,17 @@ sub _generateKanopyaHalt {
         cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/init.d/Kanopya_halt',
-        template_dir  => '/templates/components/open-iscsi',
+        template_dir  => 'components/open-iscsi',
         template_file => 'KanopyaHalt.tt',
-        data          => $vars
+        data          => $vars,
+        mode          => 755,
+        mount_point   => $args{mount_point}
     );
 
-    $self->_host->getEContext->send(src  => $file,
-                                    dest => "$args{mount_point}/etc/init.d/Kanopya_halt");
-
-    $self->_host->getEContext->execute(
-        command => "chmod 755 $args{mount_point}/etc/init.d/Kanopya_halt"
-    );
-
-    $log->debug("Generate omitted file <$omitted_file>");
-    $self->_host->getEContext->execute(
-        command => "cp /templates/internal/$omitted_file /tmp/"
-    );
     $self->_host->getEContext->send(
-        src  => "/tmp/$omitted_file",
-        dest => "$args{mount_point}/etc/init.d/Kanopya_omitted_iscsid"
-    );
-    unlink "/tmp/$omitted_file";
-
-    $self->_host->getEContext->execute(
-        command => "chmod 755 $args{mount_point}/etc/init.d/Kanopya_omitted_iscsid"
+        src  => Kanopya::Config::getKanopyaDir() . '/templates/internal/Kanopya_omitted_iscsid',
+        dest => "$args{mount_point}/etc/init.d/Kanopya_omitted_iscsid",
+        mode => 755
     );
 }
 

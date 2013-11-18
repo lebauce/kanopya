@@ -208,45 +208,17 @@ sub updateExports {
     #}
 }
 
-sub generateConfFile {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'template', 'dest', 'data' ]);
-
-    my $config = {
-        INCLUDE_PATH => '/templates/components/nfsd3',
-        INTERPOLATE  => 1,               # expand "$var" in plain text
-        POST_CHOMP   => 0,               # cleanup whitespace 
-        EVAL_PERL    => 1,               # evaluate Perl code blocks
-        RELATIVE     => 1,               # disabled by default
-    };
-
-    my $rand = new String::Random;
-    my $tmpfile = "/tmp/" . $rand->randpattern("cccccccc");
-
-    # create Template object
-    my $template = Template->new($config);
-
-    $template->process($args{template}, $args{data}, $tmpfile) || do {
-        $errmsg = "Error while generating NFS configuration file $template" . $template->error;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);    
-    };
-    $self->getEContext->send(src  => $tmpfile,
-                             dest => $args{dest});
-    unlink $tmpfile;
-}
-
 # generate /etc/default/nfs-common file
 sub generateNfsCommon {
     my $self = shift;
     my %args = @_;
 
-    $self->generateConfFile(
-        template => "nfs-common.tt",
-        dest     => "/etc/default/nfs-common",
-        data     => $self->getTemplateDataNfsCommon(),
+    $self->generateNodeFile(
+        file          => "/etc/default/nfs-common",
+        template_dir  => 'components/nfsd3',
+        template_file => 'nfs-common.tt',
+        data          => $self->getTemplateDataNfsCommon(),
+        send          => 1
     );
 }
 
@@ -255,10 +227,12 @@ sub generateNfsKernelServer {
     my $self = shift;
     my %args = @_;
 
-    $self->generateConfFile(
-        template => "nfs-kernel-server.tt",
-        dest     => "/etc/default/nfs-kernel-server",
-        data     => $self->getTemplateDataNfsKernelServer(),
+    $self->generateNodeFile(
+        file          => "/etc/default/nfs-kernel-server",
+        template_dir  => 'components/nfsd3',
+        template_file => 'nfs-kernel-server.tt',
+        data          => $self->getTemplateDataNfsKernelServer(),
+        send          => 1
     );
 }
 
@@ -269,10 +243,12 @@ sub generateExports {
 
     General::checkParams(args => \%args, required => [ 'data' ]);
 
-    $self->generateConfFile(
-        template => "exports.tt",
-        dest     => "/etc/exports",
-        data     => $args{data},
+    $self->generateNodeFile(
+        file          => "/etc/exports",
+        template_dir  => 'components/nfsd3',
+        template_file => 'exports.tt',
+        data          => $args{data},
+        send          => 1
     );
 }
 

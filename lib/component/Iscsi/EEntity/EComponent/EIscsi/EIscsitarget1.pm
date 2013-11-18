@@ -333,11 +333,13 @@ sub generate {
 
     my $data = $self->getTemplateData();
 
-    $self->generateFile(mount_point  => "/etc",
-                        template_dir => "/templates/components/ietd",
-                        input_file   => "ietd.conf.tt",
-                        output       => "/iet/ietd.conf",
-                        data         => $data);
+    $self->generateNodeFile(
+        template_dir  => "components/ietd",
+        template_file => "ietd.conf.tt",
+        file          => "/etc/iet/ietd.conf",
+        data          => $data,
+        send          => 1
+    );
 
     if (exists $args{erollback}) {
         $args{erollback}->add(

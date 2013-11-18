@@ -28,22 +28,16 @@ sub configureNode {
     General::checkParams(args     => \%args,
                          required => [ "host", "mount_point" ]);
 
-    my $template_path = $args{template_path} || "/templates/components/syslogng";
-    
     my $data = $self->_entity->getConf();
         
-    my $file = $self->generateNodeFile(
-        cluster      => $args{cluster},
-        host         => $args{host},
-        file         => '/etc/syslog-ng/syslog-ng.conf',
-        template_dir => $template_path,
+    $self->generateNodeFile(
+        cluster       => $args{cluster},
+        host          => $args{host},
+        file          => '/etc/syslog-ng/syslog-ng.conf',
+        template_dir  => "components/syslogng",
         template_file => 'syslog-ng.conf.tt',
-        data         => $data
-    );
-    
-    $self->_host->getEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/syslog-ng'
+        data          => $data,
+        mount_point   => $args{mount_point}
     );
 }
 

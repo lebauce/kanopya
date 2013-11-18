@@ -33,6 +33,7 @@ use base "EContext";
 use strict;
 use warnings;
 
+use File::Basename "dirname";
 use Kanopya::Exceptions;
 use General;
 
@@ -141,18 +142,26 @@ Use the cp command to copy the file.
 sub send {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'src', 'dest' ]);
+    General::checkParams(args => \%args,
+                         required => [ 'src', 'dest' ],
+                         optional => { mode => undef, user => undef,
+                                       group => undef });
     
-    if(not -e $args{src}) {
+    if (not -e $args{src}) {
         $errmsg = "EContext::Local->execute src file $args{src} no found";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
 
     my $result = {};
-    my $command = "cp -R $args{src} $args{dest}";
-    $log->debug("Running command: $command");
+    my $command = "";
 
+    $command = "mkdir -p " . dirname($args{dest});
+    $command .= "; cp --preserve=mode -R $args{src} $args{dest}";
+    $command .= "; chmod -R $args{mode} $args{dest}; " if $args{mode};
+    $command .= "; chown -R $args{user}:$args{group} $args{dest}" if ($args{user} || $args{group});
+
+    $log->debug("Running command: $command");
     my $stdout = `$command 2> /tmp/EContext.stderr`;
     $result->{exitcode} = $?;
     $result->{stdout} = $stdout;

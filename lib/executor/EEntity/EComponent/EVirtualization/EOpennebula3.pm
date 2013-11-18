@@ -682,7 +682,7 @@ sub forceDeploy {
 sub _generateOnedConf {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'host', 'mount_point']);
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point' ]);
 
     my $cluster = $self->service_provider;
     my $data = $self->_entity->getTemplateDataOned();
@@ -690,14 +690,10 @@ sub _generateOnedConf {
         cluster       => $cluster,
         host          => $args{host},
         file          => '/etc/one/oned.conf',
-        template_dir  => '/templates/components/opennebula',
+        template_dir  => 'components/opennebula',
         template_file => 'oned.conf.tt',
-        data          => $data
-    );
-
-    $self->_host->getEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/one'
+        data          => $data,
+        mount_point   => $args{mount_point}
     );
 }
 
@@ -727,14 +723,10 @@ sub _generateXenconf {
         cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/xen/xend-config.sxp',
-        template_dir  => '/templates/components/opennebula',
+        template_dir  => 'components/opennebula',
         template_file => 'xend-config.sxp.tt',
-        data          => $data
-    );
-
-    $self->_host->getEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/xen'
+        data          => $data,
+        mount_point   => $args{mount_point}
     );
 }
 
@@ -750,21 +742,18 @@ sub generateDatastoreTemplate {
         datastore_tm_mad => 'shared',
     };
 
-    my $template_file = 'datastore-' . $args{ds_name} . '.tt';
+    my $template_file = '/tmp/datastore-' . $args{ds_name} . '.tt';
     my $file = $self->generateNodeFile(
         cluster       => $self->service_provider,
         host          => $self->getMasterNode->host,
         file          => $template_file,
-        template_dir  => '/templates/components/opennebula',
+        template_dir  => 'components/opennebula',
         template_file => 'datastore.tt',
         data          => $data,
+        send          => 1,
     );
 
-    $self->getEContext->send(
-        src  => $file,
-        dest => '/tmp'
-    );
-    return '/tmp/' . $template_file;
+    return $template_file;
 }
 
 # generate image template and push it on opennebula master node
@@ -794,21 +783,18 @@ sub generateImageTemplate {
         $data->{image_driver} = $args{image_type};
     }
 
-    my $template_file = 'image-' . $args{image_name} . '.tt';
+    my $template_file = '/tmp/image-' . $args{image_name} . '.tt';
     my $file = $self->generateNodeFile(
         cluster       => $self->service_provider,
         host          => $self->getMasterNode->host,
         file          => $template_file,
-        template_dir  => '/templates/components/opennebula',
+        template_dir  => 'components/opennebula',
         template_file => 'image.tt',
-        data         => $data,
+        data          => $data,
+        send          => 1
     );
 
-    $self->getEContext->send(
-        src  => $file,
-        dest => '/tmp'
-    );
-    return '/tmp/' . $template_file;
+    return $template_file;
 }
 
 # generate vnet template and push it on opennebula master node
@@ -831,22 +817,18 @@ sub generateVnetTemplate {
         vnet_mac        => $args{vnet_mac}
     };
 
-    my $template_file = 'vnet-' . $args{vnet_name} . '.tt';
+    my $template_file = '/tmp/vnet-' . $args{vnet_name} . '.tt';
     my $file = $self->generateNodeFile(
         cluster       => $self->service_provider,
         host          => $self->getMasterNode->host,
         file          => $template_file,
-        template_dir  => '/templates/components/opennebula',
+        template_dir  => 'components/opennebula',
         template_file => 'vnet.tt',
-        data         => $data,
+        data          => $data,
+        send          => 1
     );
 
-    $self->getEContext->send(
-        src  => $file,
-        dest => '/tmp'
-    );
-
-    return '/tmp/' . $template_file;
+    return $template_file;
 }
 
 # generate xen vm template and push it on opennebula master node
@@ -916,17 +898,16 @@ sub generateXenVmTemplate {
         interfaces      => $interfaces,
     };
 
-    my $template_file = 'vm-' . $hostname . '.tt';
+    my $template_file = '/tmp/vm-' . $hostname . '.tt';
     my $file = $self->generateNodeFile(
         cluster       => $self->service_provider,
         host          => $args{hypervisor},
         file          => $template_file,
-        template_dir  => '/templates/components/opennebula',
+        template_dir  => 'components/opennebula',
         template_file => 'xen-vm.tt',
-        data         => $data,
+        data          => $data,
+        send          => 1
     );
-
-    $self->getEContext->send(src => $file, dest => '/tmp');
 
     # If the kernel and the initramfs are not present in the
     # image repository, copy them into it
@@ -1063,22 +1044,18 @@ sub generateKvmVmTemplate {
         interfaces      => $interfaces,
     };
 
-    my $template_file = 'vm-' . $hostname . '.tt';
+    my $template_file = '/tmp/vm-' . $hostname . '.tt';
     my $file = $self->generateNodeFile(
         cluster       => $self->service_provider,
         host          => $args{hypervisor},
         file          => $template_file,
-        template_dir  => '/templates/components/opennebula',
+        template_dir  => 'components/opennebula',
         template_file => 'kvm-vm.tt',
         data          => $data,
+        send          => 1
     );
 
-    $self->getEContext->send(
-        src  => $file,
-        dest => '/tmp'
-    );
-
-    return '/tmp/' . $template_file;
+    return $template_file;
 }
 
 sub one_command {

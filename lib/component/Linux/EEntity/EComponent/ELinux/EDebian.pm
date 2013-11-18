@@ -89,18 +89,14 @@ sub _writeNetConf {
         cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/network/interfaces',
-        template_dir  => '/templates/internal',
+        template_dir  => 'internal',
         template_file => 'network_interfaces.tt',
         data          => {
             deploy_on_disk => $host_params->{deploy_on_disk},
             interfaces     => \@ifaces,
             boot_policy    => $args{cluster}->cluster_boot_policy
-        }
-    );
-
-    $args{econtext}->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/network'
+        },
+        mount_point   => $args{mount_point}
     );
 }
 

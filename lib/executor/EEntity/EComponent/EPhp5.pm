@@ -48,16 +48,11 @@ sub addNode {
         cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/php5/apache2/php.ini',
-        template_dir  => '/templates/components/php5',
+        template_dir  => 'components/php5',
         template_file => 'php.ini.tt',
-        data          => $data
+        data          => $data,
+        mount_point   => $args{mount_point}
     );
-    
-    $self->_host->getEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/php5/apache2',
-    );
-
 }
 
 
