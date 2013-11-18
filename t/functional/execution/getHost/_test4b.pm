@@ -115,7 +115,7 @@ sub test4b {
             ],
         },
     );
-    $host->populateRelations(
+    $host->_populateRelations(
         relations => {
             entity_tags => [$tags[0], $tags[1], $tags[2]],
         }
@@ -136,7 +136,7 @@ sub test4b {
             ],
         },
     );
-    $host->populateRelations(
+    $host->_populateRelations(
         relations => {
             entity_tags => [$tags[0], $tags[1], $tags[3]],
         }
@@ -157,7 +157,7 @@ sub test4b {
             ],
         },
     );
-    $host->populateRelations(
+    $host->_populateRelations(
         relations => {
             entity_tags => [$tags[0], $tags[4]],
         }
@@ -178,7 +178,7 @@ sub test4b {
             ],
         },
     );
-    $host->populateRelations(
+    $host->_populateRelations(
         relations => {
             entity_tags => [$tags[0], $tags[5]],
         }
@@ -199,7 +199,7 @@ sub test4b {
             ],
         },
     );
-    $host->populateRelations(
+    $host->_populateRelations(
         relations => {
             entity_tags => [$tags[0]],
         }
@@ -231,7 +231,7 @@ sub test4b {
                 ],
             },
         );
-        $host->populateRelations(
+        $host->_populateRelations(
             relations => {
                 entity_tags => [$tags[0], $tags[1], $tags[6]],
             }
