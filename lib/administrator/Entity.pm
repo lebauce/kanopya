@@ -549,8 +549,7 @@ sub lock {
         # Check if the lock is already owned by the workflow
         my $lock;
         eval {
-            $lock = EntityLock->find(hash => { entity_id   => $self->id,
-                                               consumer_id => $consumer_id });
+            $lock = EntityLock->find(hash => { entity_id => $self->id, consumer_id => $consumer_id });
         };
         if (not $lock) {
             throw Kanopya::Exception::Execution::Locked(
@@ -571,8 +570,7 @@ sub unlock {
 
     my $lock;
     eval {
-        $lock = EntityLock->find(hash => { entity_id   => $self->id,
-                                           consumer_id => $args{consumer}->id });
+        $lock = EntityLock->find(hash => { entity_id => $self->id, consumer_id => $args{consumer}->id });
     };
     if ($@) {
         my $error = $@;
@@ -598,6 +596,7 @@ sub setAttr {
         $self->SUPER::setAttr(%args);
     }
 }
+
 
 =pod
 =begin classdoc

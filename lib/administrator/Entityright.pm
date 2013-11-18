@@ -38,7 +38,6 @@ sub _getEntityGroups {
     General::checkParams(args => \%args, required => [ 'entity_id' ]);
 
     my $ids = [];
-    # TODO verifier que l'entity_id fournis exists en base
     push @$ids, $args{entity_id};
 
     # retrieve entity_id of groups containing this entity object
