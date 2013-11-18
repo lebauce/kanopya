@@ -44,6 +44,7 @@ use Entity::Rule::AggregateRule;
 use TryCatch;
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::TestUtils 'expectedException';
+use Operationtype;
 
 my $testing = 0;
 
@@ -231,17 +232,17 @@ sub sco_workflow_triggered_by_rule {
 
         diag('Check triggered node enqueued operation');
         my $op_node = Entity::Operation->find( hash => {
-            type => 'LaunchSCOWorkflow',
-            state => 'pending',
-            workflow_id => $node_workflow->id,
-        });
+                          'operationtype.operationtype_name' => 'LaunchSCOWorkflow',
+                           state                             => 'pending',
+                           workflow_id                       => $node_workflow->id,
+                      });
 
         diag('Check triggered service enqueued operation');
         my $op_sco = Entity::Operation->find( hash => {
-            type => 'LaunchSCOWorkflow',
-            state => 'pending',
-            workflow_id => $service_workflow->id,
-        });
+                         'operationtype.operationtype_name' => 'LaunchSCOWorkflow',
+                          state                             => 'pending',
+                          workflow_id                       => $service_workflow->id,
+                     });
 
         # Execute operation 4 times (1 time per trigerred rule * 2 (op confirmation + op workflow))
         # Warning, excecutor may execute twice a postreported operation then the test may fail
@@ -260,10 +261,10 @@ sub sco_workflow_triggered_by_rule {
         #  Check node rule output
         diag('Check postreported operation');
         $sco_operation = Entity::Operation->find( hash => {
-            type => 'LaunchSCOWorkflow',
-            state => 'postreported',
-            workflow_id => $node_workflow->id,
-        });
+                             state                              => 'postreported',
+                             workflow_id                        => $node_workflow->id,
+                             'operationtype.operationtype_name' => 'LaunchSCOWorkflow',
+                         });
 
         my $output_file = '/tmp/'.($sco_operation->unserializeParams->{output_file});
         my $return_file = $sco_operation->unserializeParams->{return_file};
@@ -293,10 +294,10 @@ sub sco_workflow_triggered_by_rule {
         #  Check service rule output
         diag('Check postreported service sco operation');
         $service_sco_operation = Entity::Operation->find( hash => {
-            type => 'LaunchSCOWorkflow',
-            state => 'postreported',
-            workflow_id => $service_workflow->id,
-        });
+                                     'operationtype.operationtype_name' => 'LaunchSCOWorkflow',
+                                      state                             => 'postreported',
+                                      workflow_id                       => $service_workflow->id,
+                                 });
 
         $output_file = '/tmp/'.($service_sco_operation->unserializeParams->{output_file});
         $return_file = $service_sco_operation->unserializeParams->{return_file};
@@ -344,7 +345,7 @@ sub sco_workflow_triggered_by_rule {
 
         expectedException {
             Entity::Operation->find( hash => {
-                type => 'LaunchSCOWorkflow',
+                'operationtype.operationtype_name' => 'LaunchSCOWorkflow',
                 workflow_id => $node_workflow->id,
             });
         } 'Kanopya::Exception::Internal::NotFound',
@@ -352,7 +353,7 @@ sub sco_workflow_triggered_by_rule {
 
         expectedException {
             Entity::Operation->find( hash => {
-                type => 'LaunchSCOWorkflow',
+                'operationtype.operationtype_name' => 'LaunchSCOWorkflow',
                 workflow_id => $service_workflow->id,
             });
         } 'Kanopya::Exception::Internal::NotFound',
