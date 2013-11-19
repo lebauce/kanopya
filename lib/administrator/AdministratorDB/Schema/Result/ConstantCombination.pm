@@ -13,7 +13,23 @@ AdministratorDB::Schema::Result::ConstantCombination
 use strict;
 use warnings;
 
-use base 'DBIx::Class::Core';
+=head1 BASE CLASS: L<DBIx::Class::IntrospectableM2M>
+
+=cut
+
+use base 'DBIx::Class::IntrospectableM2M';
+
+=head1 LEFT BASE CLASSES
+
+=over 4
+
+=item * L<DBIx::Class::Core>
+
+=back
+
+=cut
+
+use base qw/DBIx::Class::Core/;
 
 =head1 TABLE: C<constant_combination>
 
@@ -27,6 +43,7 @@ __PACKAGE__->table("constant_combination");
 
   data_type: 'integer'
   extra: {unsigned => 1}
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 value
@@ -39,7 +56,12 @@ __PACKAGE__->table("constant_combination");
 
 __PACKAGE__->add_columns(
   "constant_combination_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
   "value",
   { data_type => "char", is_nullable => 0, size => 255 },
 );
@@ -56,15 +78,32 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->set_primary_key("constant_combination_id");
 
-# Created by DBIx::Class::Schema::Loader v0.07015 @ 2012-10-25 17:32:42
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:tA6bz5caQRG3gqNUQPFw3w
+=head1 RELATIONS
+
+=head2 constant_combination
+
+Type: belongs_to
+
+Related object: L<AdministratorDB::Schema::Result::Combination>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "constant_combination",
+  "AdministratorDB::Schema::Result::Combination",
+  { combination_id => "constant_combination_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
+);
 
 
-# You can replace this text with custom code or comments, and it will be preserved on regeneration
- __PACKAGE__->belongs_to(
-   "parent",
-     "AdministratorDB::Schema::Result::Combination",
-         { "foreign.combination_id" => "self.constant_combination_id" },
-             { cascade_copy => 0, cascade_delete => 1 }
- );
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-19 12:06:22
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:eNm3xC6Nn9dvakMr1QWymQ
+ 
+__PACKAGE__->belongs_to(
+  "parent",
+  "AdministratorDB::Schema::Result::Combination",
+  { combination_id => "constant_combination_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
+);
+
 1;

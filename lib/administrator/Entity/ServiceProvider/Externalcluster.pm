@@ -1,5 +1,5 @@
-# EternalCluster.pm - This object allows to manipulate external cluster configuration
-#    Copyright 2011 Hedera Technology SAS
+#    Copyright 2011-2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -14,7 +14,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
-# Created 3 july 2010
 
 =pod
 
@@ -48,8 +47,6 @@ use Node;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
-
-our $VERSION = "1.00";
 
 my $log = get_logger("");
 my $errmsg;
@@ -144,7 +141,7 @@ sub addManager {
 
 sub getState {
     my $self = shift;
-    my $state = $self->{_dbix}->get_column('externalcluster_state');
+    my $state = $self->_dbix->get_column('externalcluster_state');
     return wantarray ? split(/:/, $state) : $state;
 }
 
@@ -156,8 +153,8 @@ sub setState {
     General::checkParams(args => \%args, required => ['state']);
     my $new_state = $args{state};
     my $current_state = $self->getState();
-    $self->{_dbix}->update({'externalcluster_prev_state' => $current_state,
-                            'externalcluster_state' => $new_state.":".time})->discard_changes();
+    $self->_dbix->update({ externalcluster_prev_state => $current_state,
+                           externalcluster_state      => $new_state.":".time})->discard_changes();
 }
 
 
@@ -179,7 +176,7 @@ sub addNode {
 
     General::checkParams(args => \%args, required => ['hostname']);
 
-    $self->{_dbix}->parent->nodes->create({
+    $self->_dbix->externalcluster->nodes->create({
         node_hostname   => $args{hostname},
         monitoring_state      => 'down',
     });
@@ -191,7 +188,7 @@ sub getNode {
 
     General::checkParams(args => \%args, required => ['node_id']);
     my $repNode;
-    my $node = $self->{_dbix}->parent->nodes->find({
+    my $node = $self->_dbix->externalcluster->nodes->find({
         node_id   => $args{node_id},
     });
     $repNode->{hostname} = $node->get_column('node_hostname');
@@ -203,7 +200,7 @@ sub getNodeId {
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['hostname']);
-    my $node = $self->{_dbix}->parent->nodes->find({
+    my $node = $self->_dbix->externalcluster->nodes->find({
         node_hostname   => $args{hostname},
     });
 
@@ -244,7 +241,7 @@ sub getDisabledNodes {
 
     my $shortname = defined $args{shortname};
 
-    my $node_rs = $self->{_dbix}->parent->nodes;
+    my $node_rs = $self->_dbix->externalcluster->nodes;
 
     my $domain_name;
     my @nodes;

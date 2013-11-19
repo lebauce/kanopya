@@ -154,7 +154,7 @@ __PACKAGE__->belongs_to(
 # DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:AaIaUZj1MtbFFQn09deD5A
 
 __PACKAGE__->belongs_to(
-  "unified_computing_system",
+  "ucs",
   "AdministratorDB::Schema::Result::ServiceProvider",
   { service_provider_id => "ucs_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },

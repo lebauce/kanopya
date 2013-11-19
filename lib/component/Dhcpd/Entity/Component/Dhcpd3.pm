@@ -14,7 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 package Entity::Component::Dhcpd3;
-use parent "Entity::Component";
+use base Entity::Component;
 
 use strict;
 use warnings;

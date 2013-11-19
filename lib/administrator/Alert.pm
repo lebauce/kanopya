@@ -16,7 +16,7 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 package Alert;
-use parent 'BaseDB';
+use base BaseDB;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");

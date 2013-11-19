@@ -216,7 +216,7 @@ sub delete {
     my $old  = $self->_dbix;
     my $dbix = $self->_dbixParent(classname => BaseDB->_rootClassName(class => $level));
     if ($args{trunc}) {
-        $self->_dbix($dbix->parent);
+        $self->_dbix($self->_dbixParent(dbix => $dbix));
     }
 
     try {
@@ -559,7 +559,7 @@ sub search {
         $args{hash}->{'class_type.class_type'} = $class;
     }
 
-    my $prefetch = $class->_joinHierarchy || {};
+    my $prefetch = $class->_joinHierarchy;
     $prefetch = $merge->merge($prefetch, $args{join});
 
     for my $relation (@{ $args{prefetch} }) {
@@ -642,26 +642,20 @@ sub search {
         while (my $row = $rs->next) {
             my $obj = { _dbix => $row };
 
-            my $parent = $row;
-            while ($parent->can('parent')) {
-                $parent = $parent->parent;
-            }
-
-            my $class_type;
-            if ($parent->has_column("class_type_id") and not ($class =~ m/^ClassType.*/)) {
-                $class_type = $class->_classType(id => $parent->get_column("class_type_id"));
+            my $root = BaseDB->_dbixRoot(dbix => $row);
+            if ($root->has_column("class_type_id") and not ($class =~ m/^ClassType.*/)) {
+                my $class_type = $class->_classType(id => $root->get_column("class_type_id"));
 
                 if (length($class_type) > length($class)) {
                     General::requireClass($class_type);
-                    $obj = $class_type->get(id => $parent->get_column("entity_id"));
+                    $obj = $class_type->get(id => $root->get_column("entity_id"));
                 }
                 else {
                     bless $obj, $class_type;
                 }
             }
             else {
-                $class_type = $class;
-                bless $obj, $class_type;
+                bless $obj, $class;
             }
 
             push @objs, $obj;
@@ -678,7 +672,8 @@ sub search {
     for my $virtual (keys %{ $virtuals }) {
         my $op = '=';
         if (ref($virtuals->{$virtual}) eq "HASH") {
-            map { $op = $_; $virtuals->{$virtual} = $virtuals->{$virtual}->{$_} } keys %{ $virtuals->{$virtual} };
+            map { $op = $_; $virtuals->{$virtual} = $virtuals->{$virtual}->{$_} }
+                keys %{ $virtuals->{$virtual} };
         }
         @objs = grep { General::compareScalars(left_op  => $_->$virtual,
                                                right_op => $virtuals->{$virtual},
@@ -840,11 +835,9 @@ sub save {
     my $dbix = $self->_dbix;
 
     try {
-        $dbix->update;
-        $self->_dbix($dbix->get_from_storage);
-        while ($dbix->can('parent')) {
-            $dbix = $dbix->parent;
+        while (defined $dbix) {
             $dbix->update;
+            $dbix = $self->_dbixParent(dbix => $dbix);
         }
     }
     catch ($err) {
@@ -956,7 +949,7 @@ sub toJSON {
                         $is_relation = "multi";
                         last COMPONENT;
                     }
-                    $dbix = $dbix->result_source->has_relationship('parent') ? $dbix->parent : undef;
+                    $dbix = $self->_dbixParent(dbix => $dbix);
                 }
 
                 if ($is_relation) {
@@ -1499,12 +1492,11 @@ sub _attributesDefinition {
                 }
 
                 # Tag the corresponding id attribute as foreign key
-                if ($relinfo->{attrs}->{is_foreign_key_constraint} && $relation ne "parent") {
+                if ($relinfo->{attrs}->{is_foreign_key_constraint}) {
                     $attributedefs->{$modulename}->{$relation . "_id"}->{is_foreign_key} = 1;
                 }
             }
         }
-
         pop @hierarchy;
     }
 
@@ -1828,8 +1820,6 @@ sub _relationshipInfos {
     # Get the class from dbix
     my $relation_class = BaseDB->_dbixClass(schema => $relation_schema);
 
-    General::requireClass($relation_class);
-
     # Deduce the fk from relation definition
     my @conds = keys %{ $schema->relationship_info($args{relation})->{cond} };
     (my $fk = $conds[0]) =~ s/.*foreign\.//g;
@@ -1867,21 +1857,16 @@ Build the join query required to get all the attributes of the whole class hiera
 sub _joinHierarchy {
     my ($class) = @_;
 
+    # Get the hierachy and remove the top level class
     my @hierarchy = $class->_classHierarchy;
-    my $depth = scalar @hierarchy;
+    shift @hierarchy;
 
-    my $current = $depth;
-    my $parent_join;
-    while ($current > 0) {
-        last if $hierarchy[$current - 1] eq "BaseDB";
-        my $source = Kanopya::Database::schema->source($hierarchy[$current - 1]);
-        $parent_join = $source->has_relationship("parent")
-                           ? ($parent_join ? { parent => $parent_join } : { "parent" => undef })
-                           : $parent_join;
-        $current -= 1;
+    my $join = {};
+    for my $level (@hierarchy) {
+        my $parent = $class->_parentRelationName(schema => BaseDB->_resultSource(classname => $level));
+        $join = { $parent => $join };
     }
-
-    return $parent_join;
+    return $join;
 }
 
 
@@ -1920,16 +1905,17 @@ sub _joinQuery {
             my @segment = ();
 
             M2M:
-            while (!$source->has_relationship($comp) && !$many_to_many) {
+            while (! $source->has_relationship($comp) && ! $many_to_many) {
+                my $parent = $class->_parentRelationName(schema => $source);
                 if ($args{reverse}) {
-                    $relation = $source->reverse_relationship_info("parent");
+                    $relation = $source->reverse_relationship_info($parent);
                     @segment = ((keys %$relation)[0], @segment);
                 }
                 else {
-                    @segment = ("parent", @segment);
+                    @segment = ($parent, @segment);
                 }
-                last M2M if ! $source->has_relationship("parent");
-                $source = $source->related_source("parent");
+                last M2M if ! $source->has_relationship($parent);
+                $source = $source->related_source($parent);
                 $many_to_many = $source->result_class->can("_m2m_metadata") &&
                                 defined ($source->result_class->_m2m_metadata->{$comp});
             }
@@ -1972,9 +1958,11 @@ sub _joinQuery {
     my @indepth;
     if ($args{indepth}) {
         my $depth_source = $source;
-        while ($depth_source->has_relationship("parent")) {
-            @indepth = ("parent", @indepth);
-            $depth_source = $depth_source->related_source("parent");
+        my $parent = $class->_parentRelationName(schema => $depth_source);
+        while ($depth_source->has_relationship($parent)) {
+            @indepth = ($parent, @indepth);
+            $depth_source = $depth_source->related_source($parent);
+            $parent = $class->_parentRelationName(schema => $depth_source);
         }
     }
     @joins = (@joins, @indepth);
@@ -2229,7 +2217,11 @@ sub _classType {
     General::checkParams(args => \%args, optional => { 'id' => undef, 'classname' => undef });
 
     if (defined $args{id}) {
-        return $class->_classTypes->{$args{id}};
+        my $classtype = $class->_classTypes->{$args{id}};
+        if (! defined $classtype) {
+            throw Kanopya::Exception::Internal::NotFound(error => "No class type found with id $args{id}");
+        }
+        return $classtype;
     }
     elsif (defined ($args{classname})) {
         my @types = grep { $_ =~ "::$args{classname}\$" } values %{ $class->_classTypes };
@@ -2367,7 +2359,11 @@ sub _primaryKeyName {
     my $class = ref($self) || $self;
 
     General::checkParams(args     => \%args,
-                         optional => { 'schema' => $class->_resultSource, 'allow_multiple' => 1 });
+                         optional => { 'schema' => undef, 'allow_multiple' => 1 });
+
+    # Do not use optional checkParams mechanism, as the default value is
+    # computed even if the value is given.
+    $args{schema} = defined $args{schema} ? $args{schema} : $class->_resultSource;
 
     # If the primary key is multiple, get the first one, but should not occurs
     my @pknames = $args{schema}->primary_columns;
@@ -2388,6 +2384,32 @@ sub _primaryKeyName {
 =pod
 =begin classdoc
 
+Get the primary key column name
+
+@return the primary key column name.
+
+=end classdoc
+=cut
+
+sub _parentRelationName {
+    my ($self, %args) = @_;
+    my $class = ref($self) || $self;
+
+    General::checkParams(args => \%args, optional => { 'schema' => undef });
+
+    # Do not use optional checkParams mechanism, as the default value is
+    # computed even if the value is given.
+    $args{schema} = defined $args{schema} ? $args{schema} : $class->_resultSource;
+
+    # Deduce the parent relaton name from primary key
+    (my $parent = $class->_primaryKeyName(schema => $args{schema}, allow_multiple => 0)) =~ s/_id$//g;
+    return $parent;
+}
+
+
+=pod
+=begin classdoc
+
 @return the DBIx ResultSource for this class.
 
 =end classdoc
@@ -2397,16 +2419,19 @@ sub _resultSource {
     my ($self, %args) = @_;
     my $class = ref($self) || $self;
 
-    General::checkParams(args => \%args, optional => { 'ignore_holes' => 1 });
+    General::checkParams(args => \%args, optional => { 'classname' => undef, 'ignore_holes' => 1 });
 
-    my $realclass = $class;
-    if ($args{ignore_holes}) {
-        # Remove classes without table from the hierarchy
-        $realclass = join("::", $class->_classHierarchy);
+    if (! defined $args{classname}) {
+        my $realclass = $class;
+        if ($args{ignore_holes}) {
+            # Remove classes without table from the hierarchy
+            $realclass = join("::", $class->_classHierarchy);
+        }
+        $args{classname} = BaseDB->_className(class => $realclass);
     }
 
     try {
-        return Kanopya::Database::schema->source(BaseDB->_className(class => $realclass));
+        return Kanopya::Database::schema->source($args{classname});
     }
     catch ($err) {
         throw Kanopya::Exception::DB::UnknownSource(error => "$err");
@@ -2578,8 +2603,15 @@ sub _dbixClass {
     catch {
         # Our management of class types is really confusing yet...
         while (1) {
-            last if not $source->has_relationship("parent");
-            $source = $source->related_source("parent");
+            my $parent;
+            try {
+                $parent = $class->_parentRelationName(schema => $source);
+            }
+            catch {
+                last;
+            }
+            last if not $source->has_relationship($parent);
+            $source = $source->related_source($parent);
             $name = ucfirst($source->from) . "::" . $name;
         }
         return General::normalizeName($name);
@@ -2592,7 +2624,7 @@ sub _dbixClass {
 
 Return the primary(ies) key(s) of a row.
 
-@param row hash dbix row of the object
+@param dbix dbix row of the object
 
 @return the primary key value
 
@@ -2626,6 +2658,10 @@ sub _dbixPrimaryKey {
 
 Return the dbix at level of the hierarchy specified by class parameter.
 
+@optional classname the level of the hierachy to return the dbix
+@optional target the target dbix, allow to request parent or root dbix without specifying a class name
+@optional dbix the dbix instance to use instead o the current one 
+
 @return the dbix of the required level
 
 =end classdoc
@@ -2636,19 +2672,41 @@ sub _dbixParent {
     my $class = ref($self) || $self;
 
     General::checkParams(args     => \%args,
-                         required => [ 'classname' ],
-                         optional => { 'dbix' => $self->_dbix });
+                         optional => { 'classname' => '',
+                                       'target'    => 'parent',
+                                       'dbix'      => ref($self) ? $self->_dbix : undef });
 
     # Search for the requested class level in the hierarchy
     my $dbix = $args{dbix};
-    while ($dbix->can('parent') && $class->_className(class => ref($dbix)) ne $args{classname}) {
+    while (defined $dbix && $class->_className(class => ref($dbix)) ne $args{classname}) {
+        my $parent;
+        try {
+            $parent = $class->_parentRelationName(schema => $dbix->result_source);
+        }
+        catch ($err) {
+            # Unable to compute the parent relation name due to multiple primary keys,
+            # skip as the class seems to be a many-to-many relation table.
+            last;
+        }
+
+        # If the root level is requested, stop if the next parent is undefined
+        my $schema = $dbix->result_source;
+        if ($args{target} eq 'root' && $args{classname} eq '' && ! $schema->has_relationship($parent)) {
+            last;
+        }
+
         # Go to parent dbix
-        $dbix = $dbix->parent;
+        $dbix = $schema->has_relationship($parent) ? $dbix->$parent : undef;
+
+        # If only one level is requested, stop at the fist loop
+        if ($args{target} eq 'parent' && $args{classname} eq '') {
+            last;
+        }
     }
 
-    if ($class->_className(class => ref($dbix)) ne $args{classname}) {
+    if (! defined $dbix && $args{classname} ne '') {
         throw Kanopya::Exception::Internal(
-                  error => "The requested dbix class <$args{classname}> not found on the hierarchy"
+                  error => "The requested dbix class <$args{classname}> not found in the hierarchy"
               );
     }
     return $dbix;
@@ -2667,7 +2725,9 @@ sub _dbixRoot {
     my ($self, %args) = @_;
     my $class = ref($self) || $self;
 
-    return $self->_dbixParent(classname => $class->_rootClassName);
+    General::checkParams(args => \%args, optional => { 'dbix' => ref($self) ? $self->_dbix : undef });
+
+    return $self->_dbixParent(dbix => $args{dbix}, target => 'root');
 }
 
 
