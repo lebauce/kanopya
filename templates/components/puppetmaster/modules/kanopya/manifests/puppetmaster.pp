@@ -49,7 +49,7 @@ class kanopya::puppetmaster::install {
     }
 
     class { 'puppetdb::master::config':
-        puppetdb_server => 'centos-kanopya-appliance',
+        puppetdb_server => 'localhost',
         require => Class['puppetdb']
     }
 }
