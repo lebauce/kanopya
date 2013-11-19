@@ -2461,6 +2461,9 @@ sub _dbixNew {
         $dbix->insert;
     }
     catch ($err) {
+        if ($err =~ m/Duplicate entry/) {
+            throw Kanopya::Exception::DB::DuplicateEntry(error => "$err");
+        }
         throw Kanopya::Exception::DB(error => "$err");
     }
     return $class->get(id => $class->_dbixPrimaryKey(dbix => $dbix));
