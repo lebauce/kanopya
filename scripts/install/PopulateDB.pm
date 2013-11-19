@@ -721,7 +721,6 @@ sub registerOperations {
         [ 'CancelWorkflow', 'Canceling wokflow' ],  
         [ 'LaunchSCOWorkflow' ],
         [ 'UpdateCluster', 'Reconfigure cluster' ],
-        [ 'UpdateComponent' ],
         [ 'LaunchScaleInWorkflow', 'Configuring scale in node' ],
         [ 'LaunchOptimiaasWorkflow' ],
         [ 'ProcessRule', 'Processing triggered rule' ],
