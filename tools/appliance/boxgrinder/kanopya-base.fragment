@@ -5,9 +5,9 @@ os:
 hardware:
   partitions:
     "/":
-      size: 8
+      size: 10
     "/home":
-      size: 30
+      size: 28
       type: ext4
 repos:
   - name: MariaDB
