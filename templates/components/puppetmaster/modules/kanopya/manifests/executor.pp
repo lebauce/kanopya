@@ -1,7 +1,7 @@
 class kanopya::executor($logdir, $user, $password, $amqpuser, $amqppassword, $lib) {
     require kanopya::common
 
-    if ($components[kanopyaexecutor][master]) {
+    if ($components[kanopyaexecutor][master] == 1) {
         rabbitmq_user { "${amqpuser}":
             admin    => true,
             password => "${amqppassword}",
