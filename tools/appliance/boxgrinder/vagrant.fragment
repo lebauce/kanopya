@@ -29,6 +29,7 @@ post:
     - "unlink /lib/modules/`uname -r`"
     - "unlink /usr/src/kernels/`uname -r`"
     - "chmod 400 /etc/sudoers.d/vagrant"
+    - "chown 0:0 /etc/sudoers.d/vagrant"
     - "useradd -d /home/hedera hedera"
     - "mkdir -p /home/hedera/.ssh"
     - "echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCpFaaw+PjrFW1npo50jGxhcV4ZgslRP5JHo+yp/185UkbLRvIdBIbhPgPE7DTNNNRlTqLOggYkPoj7IpryagTFFffLdxtvxbDkYib+LMh99Co2PWSYLNMpLWyn6lLwrtoy37GRTZoO2RWsM76mLiQdW6YdTPFjc1LXvCe7Tk2bbLF9OD9RBUWD3kkhCtsxsENSw0OiKQyPjlH7rUnBAzpw0q6JWuYJ/dTTq/5NCN/zfmJfEtNrvdDtc9RETo6CPe6tpirPLqwUAzxPOo4Wj7wQnPzMtaczWOGEEQPYRBVeELLm0JcFRV87Mu4VfkUhiwewQpHevJiSISUAUNzSUXhb jenkins@localhost.localdomain > /home/hedera/.ssh/authorized_keys"
