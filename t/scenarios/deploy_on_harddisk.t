@@ -19,7 +19,7 @@ use ClassType::ComponentType;
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
     level=>'DEBUG',
-    file=>'DeployOnHarddisk.t.log',
+    file=>'deploy_on_harddisk.t.log',
     layout=>'%F %L %p %m%n'
 });
 
@@ -48,20 +48,21 @@ sub main {
     diag('Register master image');
     my $masterimage = Kanopya::Tools::Register::registerMasterImage();
 
+    my $cluster;
     lives_ok {
         diag('Create and configure cluster');
-        my $cluster = Kanopya::Tools::Create->createCluster(
-                          cluster_conf => {
-                            masterimage_id       => $masterimage->id,
-                          },
-                          managers => {
-                              host_manager => {
-                                  manager_params => {
-                                      deploy_on_disk => 1
-                                   }
-                              }
-                          }
-                      );
+        $cluster = Kanopya::Tools::Create->createCluster(
+                       cluster_conf => {
+                           masterimage_id => $masterimage->id,
+                       },
+                       managers => {
+                           host_manager => {
+                               manager_params => {
+                                   deploy_on_disk => 1
+                               }
+                           }
+                       }
+                  );
     } 'create and configure cluster';
 
     diag('Start physical host');
