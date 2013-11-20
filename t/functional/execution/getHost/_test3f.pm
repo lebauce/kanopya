@@ -110,7 +110,7 @@ sub test3f {
             ],
         },
     );
-    $host1->populateRelations(
+    $host1->_populateRelations(
         relations => {
             entity_tags => [$tag1, $tag2, $tag3, $tag4, $tag5, $tag6],
         }
@@ -130,7 +130,7 @@ sub test3f {
             ],
         },
     );
-    $host2->populateRelations(
+    $host2->_populateRelations(
         relations => {
             entity_tags => [$tag1, $tag2, $tag3],
         }
@@ -150,7 +150,7 @@ sub test3f {
             ],
         },
     );
-    $host3->populateRelations(
+    $host3->_populateRelations(
         relations => {
             entity_tags => [$tag1, $tag2, $tag3, $tag4, $tag5],
         }
@@ -170,7 +170,7 @@ sub test3f {
             ],
         },
     );
-    $host4->populateRelations(
+    $host4->_populateRelations(
         relations => {
             entity_tags => [$tag1, $tag2, $tag3, $tag4],
         }
@@ -190,7 +190,7 @@ sub test3f {
             ],
         },
     );
-    $host5->populateRelations(
+    $host5->_populateRelations(
         relations => {
             entity_tags => [$tag1, $tag2, $tag3, $tag6],
         }
@@ -210,7 +210,7 @@ sub test3f {
             ],
         },
     );
-    $host6->populateRelations(
+    $host6->_populateRelations(
         relations => {
             entity_tags => [$tag1, $tag2, $tag3, $tag5],
         }

@@ -32,6 +32,7 @@ use warnings;
 use ComponentNode;
 use Entity::Indicator;
 use Entity::Rule::NodemetricRule;
+use TryCatch;
 
 use Log::Log4perl 'get_logger';
 my $log = get_logger("");
@@ -180,11 +181,18 @@ sub _undefRules {
     my @nm_rules = Entity::Rule::NodemetricRule->search(hash => {service_provider_id => $self->service_provider_id});
 
     foreach my $nm_rule (@nm_rules) {
-        VerifiedNoderule->new(
-            verified_noderule_node_id            => $self->id,
-            verified_noderule_state              => 'undef',
-            verified_noderule_nodemetric_rule_id => $nm_rule->id,
-        );
+        try {
+            VerifiedNoderule->new(
+                verified_noderule_node_id            => $self->id,
+                verified_noderule_state              => 'undef',
+                verified_noderule_nodemetric_rule_id => $nm_rule->id,
+            );
+        }
+        catch(Kanopya::Exception::DB::DuplicateEntry $err) {
+            my $msg = 'Nodemetric rules <'.$nm_rule->id
+                      .'> is already undef for node <'.$self->id.'>';
+            $log->debug($msg);
+        }
     }
 }
 

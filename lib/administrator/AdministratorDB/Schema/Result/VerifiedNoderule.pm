@@ -39,6 +39,13 @@ __PACKAGE__->table("verified_noderule");
 
 =head1 ACCESSORS
 
+=head2 verified_noderule_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_auto_increment: 1
+  is_nullable: 0
+
 =head2 verified_noderule_node_id
 
   data_type: 'integer'
@@ -62,6 +69,13 @@ __PACKAGE__->table("verified_noderule");
 =cut
 
 __PACKAGE__->add_columns(
+  "verified_noderule_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_auto_increment => 1,
+    is_nullable => 0,
+  },
   "verified_noderule_node_id",
   {
     data_type => "integer",
@@ -84,6 +98,20 @@ __PACKAGE__->add_columns(
 
 =over 4
 
+=item * L</verified_noderule_id>
+
+=back
+
+=cut
+
+__PACKAGE__->set_primary_key("verified_noderule_id");
+
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<verified_noderule_node_id>
+
+=over 4
+
 =item * L</verified_noderule_node_id>
 
 =item * L</verified_noderule_nodemetric_rule_id>
@@ -92,9 +120,12 @@ __PACKAGE__->add_columns(
 
 =cut
 
-__PACKAGE__->set_primary_key(
+__PACKAGE__->add_unique_constraint(
   "verified_noderule_node_id",
-  "verified_noderule_nodemetric_rule_id",
+  [
+    "verified_noderule_node_id",
+    "verified_noderule_nodemetric_rule_id",
+  ],
 );
 
 =head1 RELATIONS
@@ -111,7 +142,7 @@ __PACKAGE__->belongs_to(
   "verified_noderule_node",
   "AdministratorDB::Schema::Result::Node",
   { node_id => "verified_noderule_node_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
 =head2 verified_noderule_nodemetric_rule
@@ -126,7 +157,7 @@ __PACKAGE__->belongs_to(
   "verified_noderule_nodemetric_rule",
   "AdministratorDB::Schema::Result::NodemetricRule",
   { nodemetric_rule_id => "verified_noderule_nodemetric_rule_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
 

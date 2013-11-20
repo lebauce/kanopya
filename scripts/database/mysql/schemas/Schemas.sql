@@ -1465,10 +1465,12 @@ CREATE TABLE `nodemetric_rule` (
 --
 
 CREATE TABLE `verified_noderule` (
+  `verified_noderule_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `verified_noderule_node_id` int(8) unsigned NOT NULL,
   `verified_noderule_nodemetric_rule_id` int(8) unsigned NOT NULL,
   `verified_noderule_state` char(8) NOT NULL,
-  PRIMARY KEY (`verified_noderule_node_id`,`verified_noderule_nodemetric_rule_id`),
+  PRIMARY KEY (`verified_noderule_id`),
+  UNIQUE KEY (`verified_noderule_node_id`,`verified_noderule_nodemetric_rule_id`),
   KEY (`verified_noderule_nodemetric_rule_id`),
   FOREIGN KEY (`verified_noderule_nodemetric_rule_id`) REFERENCES `nodemetric_rule` (`nodemetric_rule_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY(`verified_noderule_node_id`),
