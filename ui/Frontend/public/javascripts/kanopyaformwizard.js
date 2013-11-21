@@ -112,7 +112,7 @@ var KanopyaFormWizard = (function() {
             } else {
                 var resource = relationdef.resource;
                 if (attributes[relation_name] && attributes[relation_name].specialized !== undefined) {
-                    resource = attributes[relation_name].specialized.replace(/_/g, "");
+                    resource = attributes[relation_name].specialized.toLowerCase();
                 }
                 response = this.attrsCallback(resource, this.data, trigger);
             }
