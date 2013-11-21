@@ -31,6 +31,7 @@ use base 'EEntity::EComponent';
 
 use strict;
 use warnings;
+use File::Basename;
 use String::Random;
 use Kanopya::Config;
 use Log::Log4perl 'get_logger';
@@ -617,7 +618,9 @@ sub customizeInitramfs {
     my $hostname = $args{host}->node->node_hostname;
 
     my $file = $self->_generateUdevPersistentNetRules(host => $args{host}, cluster => $args{cluster});
-    my $cmd = 'cp '.$file->{src}.' '.$initrddir.$file->{dest};
+    my $udev_rules_dir = dirname($initrddir.$file->{dest});
+    my $cmd = 'mkdir -p '.$udev_rules_dir;
+    $cmd .= ' && cp '.$file->{src}.' '.$initrddir.$file->{dest};
     $econtext->execute(command => $cmd);
 
     # TODO check targetname is the same for each container access
