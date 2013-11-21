@@ -35,13 +35,18 @@ use General;
 use Kanopya::Exceptions;
 use Kanopya::Config;
 
-use AdministratorDB::Schema;
+use Module::Find;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("connection");
 
 use TryCatch;
 my $err;
+
+# Loading schemas, firstly load custom schema definition
+# and then load generated ones.
+useall Kanopya::Schema::Custom;
+use Kanopya::Schema;
 
 
 my $adm = {
@@ -291,10 +296,10 @@ sub _connectdb {
     General::checkParams(args => \%args, required => [ 'config' ]);
 
     try {
-        return AdministratorDB::Schema->connect($args{config}->{dbi},
-                                                $args{config}->{dbconf}->{user},
-                                                $args{config}->{dbconf}->{password},
-                                                { mysql_enable_utf8 => 1 });
+        return Kanopya::Schema->connect($args{config}->{dbi},
+                                        $args{config}->{dbconf}->{user},
+                                        $args{config}->{dbconf}->{password},
+                                        { mysql_enable_utf8 => 1 });
     }
     catch ($err) {
         throw Kanopya::Exception::Internal(error => $err);

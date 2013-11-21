@@ -121,6 +121,10 @@ use Exception::Class (
         isa         => 'Kanopya::Exception::Internal',
         description => 'Not consistent',
     },
+    Kanopya::Exception::Internal::Deprecated => {
+        isa         => 'Kanopya::Exception',
+        description => 'Deprecated',
+    },
     Kanopya::Exception::Execution => {
         isa         => 'Kanopya::Exception',
         description => 'Command execution failed',

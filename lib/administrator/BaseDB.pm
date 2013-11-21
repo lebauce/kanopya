@@ -2369,7 +2369,7 @@ sub _primaryKeyName {
     my @pknames = $args{schema}->primary_columns;
     if (scalar (@pknames) <= 0) {
         throw Kanopya::Exception::Internal(
-                  error => "No primary key found for $class"
+                  error => "No primary key name found for $class"
               );
     }
     elsif (scalar (@pknames) > 1 && ! $args{allow_multiple}) {
@@ -2384,9 +2384,9 @@ sub _primaryKeyName {
 =pod
 =begin classdoc
 
-Get the primary key column name
+Find the parent relation name from the primary key name.
 
-@return the primary key column name.
+@return the parent relation name
 
 =end classdoc
 =cut

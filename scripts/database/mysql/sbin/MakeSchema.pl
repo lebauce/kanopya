@@ -19,7 +19,7 @@ use DBIx::Class::Schema::Loader qw/ make_schema_at /;
 
 use Term::ReadKey;
 
-#use lib '/opt/kanopya/lib/administrator';
+use General;
 
 # INFO
 # We can specify the table we want load with the option 'constraint'
@@ -57,13 +57,14 @@ print "\n";
 chomp $db_pwd;
 
 # Define globals
-my $schema_class_name = 'AdministratorDB::Schema';
+my $schema_class_name = 'Kanopya::Schema';
 
 my $connect_info = [ 'dbi:mysql:kanopya:localhost:3306', $db_user, $db_pwd ];
 
-my $dump_dir = '/opt/kanopya/lib/administrator';
+my $dump_dir = '/opt/kanopya/lib/common';
 
-if ($table eq 'all') {  # Update all existing schema and create schema for new tables
+if ($table eq 'all') {
+    # Update all existing schema and create schema for new tables
     make_schema_at(
         $schema_class_name,
         { debug => 1,
@@ -71,10 +72,17 @@ if ($table eq 'all') {  # Update all existing schema and create schema for new t
           overwrite_modifications => 1,
           result_base_class => "DBIx::Class::IntrospectableM2M",
           left_base_classes => [ "DBIx::Class::Core" ],
+          schema_base_class => "Kanopya::Schema::Custom"
         },
         $connect_info,
     );
-} else { # Create schema for new table
+}
+else { 
+    # Create schema for new table
+    throw Kanopya::Exception::Internal::Deprecated(
+              error => "Generate schema for single tbale is deprecated, use 'MakeSchema.pl all' instead."
+          );
+
     my $tmp_dump_dir = '/tmp/kanopya_schema';
     print "Generate schema...\n";
     make_schema_at(
@@ -85,16 +93,17 @@ if ($table eq 'all') {  # Update all existing schema and create schema for new t
           skip_load_external => 1,
           result_base_class => "DBIx::Class::IntrospectableM2M",
           left_base_classes => [ "DBIx::Class::Core" ],
+          schema_base_class => "Kanopya::Schema::Custom"
         },
-      $connect_info,
+        $connect_info,
     );
-  
+
     my $schema_name = join ( '', map { ucfirst $_ } (split '_', $table));
     my $subdir = $schema_class_name;
     $subdir =~ s/::/\//;
     my $target_dir = "$dump_dir/$subdir/Result";
     my $tmp_dir = "$tmp_dump_dir/$subdir/Result";
-    
+
     if ( -e "$target_dir/$schema_name.pm" ) {
         print "WARNING: $schema_name.pm already exists in $target_dir\n";
         print "You may lose custom content. Please check manually.\n";
@@ -104,6 +113,6 @@ if ($table eq 'all') {  # Update all existing schema and create schema for new t
     }
     print "Move schema $schema_name.pm in $target_dir...\n";
     `mv $tmp_dir/$schema_name.pm $target_dir/`;
-    
+
     print "Done.\n"
 }

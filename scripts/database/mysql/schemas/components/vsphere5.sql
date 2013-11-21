@@ -11,7 +11,8 @@ CREATE TABLE `vsphere5` (
     `vsphere5_login` char(255),
     `vsphere5_pwd` char(255),
     `vsphere5_url` char(255),
-    CONSTRAINT FOREIGN KEY (`vsphere5_id`) REFERENCES `virtualization` (`virtualization_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+    PRIMARY KEY (`vsphere5_id`),
+    FOREIGN KEY (`vsphere5_id`) REFERENCES `virtualization` (`virtualization_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
