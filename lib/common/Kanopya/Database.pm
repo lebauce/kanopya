@@ -185,6 +185,7 @@ sub authenticate {
     else {
         $log->debug("Authentication succeed for login " . $args{login});
         $ENV{EID} = $user_data->id;
+        $user_data->update({ user_lastaccess => \'NOW()' });
     }
 }
 
