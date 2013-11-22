@@ -2402,8 +2402,13 @@ sub _parentRelationName {
     $args{schema} = defined $args{schema} ? $args{schema} : $class->_resultSource;
 
     # Deduce the parent relaton name from primary key
-    (my $parent = $class->_primaryKeyName(schema => $args{schema}, allow_multiple => 0)) =~ s/_id$//g;
-    return $parent;
+    try {
+        (my $parent = $class->_primaryKeyName(schema => $args{schema}, allow_multiple => 0)) =~ s/_id$//g;
+        return $parent;
+    }
+    catch ($err) {
+        return undef;
+    }
 }
 
 
@@ -2603,13 +2608,7 @@ sub _dbixClass {
     catch {
         # Our management of class types is really confusing yet...
         while (1) {
-            my $parent;
-            try {
-                $parent = $class->_parentRelationName(schema => $source);
-            }
-            catch {
-                last;
-            }
+            my $parent = $class->_parentRelationName(schema => $source);
             last if not $source->has_relationship($parent);
             $source = $source->related_source($parent);
             $name = ucfirst($source->from) . "::" . $name;
@@ -2679,15 +2678,7 @@ sub _dbixParent {
     # Search for the requested class level in the hierarchy
     my $dbix = $args{dbix};
     while (defined $dbix && $class->_className(class => ref($dbix)) ne $args{classname}) {
-        my $parent;
-        try {
-            $parent = $class->_parentRelationName(schema => $dbix->result_source);
-        }
-        catch ($err) {
-            # Unable to compute the parent relation name due to multiple primary keys,
-            # skip as the class seems to be a many-to-many relation table.
-            last;
-        }
+        my $parent = $class->_parentRelationName(schema => $dbix->result_source);
 
         # If the root level is requested, stop if the next parent is undefined
         my $schema = $dbix->result_source;
