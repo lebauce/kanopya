@@ -1530,7 +1530,6 @@ sub registerKanopyaMaster {
                             cluster_max_node      => 10,
                             cluster_priority      => 500,
                             cluster_boot_policy   => Manager::HostManager->BOOT_POLICIES->{pxe_iscsi},
-                            cluster_si_shared     => 0,
                             cluster_si_persistent => 0,
                             cluster_domainname    => $args{admin_domainname},
                             cluster_nameserver1   => defined $args{kanopya_nameserver1} ? $args{kanopya_nameserver1} : '127.0.0.1',
@@ -2217,7 +2216,6 @@ sub populate_policies {
         policy_name           => 'Default non persitent cluster',
         policy_desc           => 'System policy for default non persitent cluster',
         policy_type           => 'system',
-        cluster_si_shared     => 0,
         cluster_si_persistent => 0,
         systemimage_size      => 5 * (1024**3), # 5GB
         components            => [
@@ -2233,7 +2231,6 @@ sub populate_policies {
         policy_name           => 'Default OpenNebula KVM IAAS',
         policy_desc           => 'System policy for default OpenNebula KVM IAAS',
         policy_type           => 'system',
-        cluster_si_shared     => 0,
         cluster_si_persistent => 0,
         systemimage_size      => 5 * (1024**3), # 5GB
         components            => [
@@ -2246,7 +2243,6 @@ sub populate_policies {
         policy_name           => 'Default OpenNebula Xen IAAS',
         policy_desc           => 'System policy for default OpenNebula KVM IAAS',
         policy_type           => 'system',
-        cluster_si_shared     => 0,
         cluster_si_persistent => 0,
         systemimage_size      => 5 * (1024**3), # 5GB
         components            => [

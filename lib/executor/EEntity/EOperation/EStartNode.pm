@@ -125,8 +125,7 @@ sub execute {
     $self->{context}->{container_access} = EEntity->new(entity => pop @accesses);
 
     # Firstly compute the node configuration
-    my $mount_options = $self->{context}->{cluster}->cluster_si_shared
-                            ? "ro,noatime,nodiratime" : "defaults";
+    my $mount_options = "defaults";
 
     # Mount the containers on the executor.
     eval {

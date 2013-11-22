@@ -368,7 +368,7 @@ sub execute {
             $self->{context}->{systemimage} = EEntity->new(data => $existing_image);
         }
         # Else if it is the first node, or the cluster si policy is dedicated, create a new one.
-        elsif (($self->{params}->{node_number} == 1) or (not $self->{context}->{cluster}->cluster_si_shared)) {
+        else {
             $log->info("A new systemimage instance <$systemimage_name> must be created");
 
             my $systemimage_desc = 'System image for node ' . $self->{params}->{node_number}  .' in cluster ' .
@@ -384,11 +384,6 @@ sub execute {
                 throw Kanopya::Exception::Internal::WrongValue(error => $@);
             }
             $self->{params}->{create_systemimage} = 1;
-        }
-        else {
-            $self->{context}->{systemimage} = EEntity->new(
-                                                  data => $self->{context}->{cluster}->getSharedSystemimage
-                                              );
         }
     }
 

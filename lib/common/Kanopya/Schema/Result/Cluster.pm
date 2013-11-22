@@ -88,12 +88,6 @@ __PACKAGE__->table("cluster");
   is_nullable: 0
   size: 32
 
-=head2 cluster_si_shared
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_nullable: 0
-
 =head2 cluster_si_persistent
 
   data_type: 'integer'
@@ -203,8 +197,6 @@ __PACKAGE__->add_columns(
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "cluster_boot_policy",
   { data_type => "char", is_nullable => 0, size => 32 },
-  "cluster_si_shared",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "cluster_si_persistent",
   {
     data_type => "integer",
