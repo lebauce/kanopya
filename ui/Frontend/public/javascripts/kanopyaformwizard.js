@@ -482,8 +482,18 @@ var KanopyaFormWizard = (function() {
         this.insertInput(input, label, table, attr.help || attr.description, listing, value);
 
         if ($(input).attr('type') === 'date') {
+            /*
+             * Date attribute value can be
+             *  - a string representing second since epoch
+             *  - a date string ('yy-mm-dd')
+             * In the first case we need to cast the value
+             */
+            if (/^\d*$/.test(value)) {
+                value = parseFloat(value);
+            }
+
             $(input).datepicker({ dateFormat : 'yy-mm-dd', constrainInput : true})
-                    .datepicker('setDate', new Date(parseFloat(value)));
+                    .datepicker('setDate', new Date(value));
             this.attributedefs[name].formatValue = function(val) {
                 return (new Date(val)).getTime()
             }
