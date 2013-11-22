@@ -482,6 +482,10 @@ var KanopyaFormWizard = (function() {
         this.insertInput(input, label, table, attr.help || attr.description, listing, value);
 
         if ($(input).attr('type') === 'date') {
+
+            // value can be 'undefined' but Date() only understand 'null' (i.e '1970-01-01')
+            value = value || null;
+
             /*
              * Date attribute value can be
              *  - a string representing second since epoch
