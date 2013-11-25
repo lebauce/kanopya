@@ -1044,6 +1044,7 @@ CREATE TABLE `component_type` (
   `component_type_id` int(8) unsigned NOT NULL,
   `component_name` char(32) NOT NULL,
   `component_version` char(32) NOT NULL,
+  `deployable` int(1) unsigned NOT NULL DEFAULT 1,
   PRIMARY KEY (`component_type_id`),
   FOREIGN KEY (`component_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

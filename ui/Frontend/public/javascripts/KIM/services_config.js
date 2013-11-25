@@ -55,7 +55,7 @@ function loadServicesConfig(cid, eid) {
             optionsCallback  : function (name) {
                 if (name === 'component_type_id') {
                     // Get the component types supported by this service rovider only
-                    return ajax('GET', '/api/cluster/' + eid + '/service_provider_type/component_types');
+                    return ajax('GET', '/api/cluster/' + eid + '/service_provider_type/component_types?deployable=1');
                 }
                 return false;
             },
