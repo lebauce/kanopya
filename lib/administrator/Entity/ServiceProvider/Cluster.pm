@@ -79,11 +79,6 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_editable  => 0
     },
-    cluster_si_shared => {
-        pattern      => '^(0|1)$',
-        is_mandatory => 1,
-        is_editable  => 0
-    },
     cluster_si_persistent => {
         pattern      => '^(0|1)$',
         is_mandatory => 1,
@@ -491,7 +486,7 @@ sub configureManagers {
 
     # Get export manager parameter related to si shared value.
     my $readonly_param = $export_manager->getReadOnlyParameter(
-                             readonly => $self->cluster_si_shared
+                             readonly => 0 
                          );
 
     # TODO: This will be usefull for the first call to applyPolicies at the cluster creation,
@@ -791,19 +786,6 @@ sub unregisterNode {
     }
     return $self->SUPER::unregisterNode(%args);
 }
-
-sub getSharedSystemimage {
-    my $self = shift;
-
-    # Use the systemimage of the first found node
-    if (not $self->cluster_si_shared) {
-        throw Kanopya::Exception::Internal(
-                  error => "Should not get shared systemimage in a non si_shared cluster."
-              );
-    }
-    return $self->findRelated(filters => ['nodes'])->systemimage;
-}
-
 
 sub getHosts {
     my ($self) = @_;

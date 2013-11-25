@@ -134,7 +134,6 @@ CREATE TABLE `cluster` (
   `cluster_max_node` int(2) unsigned NOT NULL,
   `cluster_priority` int(1) unsigned NOT NULL,
   `cluster_boot_policy` char(32) NOT NULL,
-  `cluster_si_shared` int(1) unsigned NOT NULL,
   `cluster_si_persistent` int(1) unsigned NOT NULL DEFAULT 0,
   `cluster_domainname` char(64) NOT NULL,
   `cluster_nameserver1` char(15) NOT NULL,

@@ -141,7 +141,7 @@ sub execute {
                                       save  => 1);
 
     # For each container accesses of the system image, add an export client
-    my $options = $self->{context}->{cluster}->cluster_si_shared ? "ro" : "rw";
+    my $options = "rw";
     for my $container_access ($self->{context}->{systemimage}->container_accesses) {
         my $export_manager = EEntity->new(data => $container_access->getExportManager);
         my $export         = EEntity->new(data => $container_access);

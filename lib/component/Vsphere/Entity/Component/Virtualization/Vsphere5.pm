@@ -928,7 +928,6 @@ sub registerVm {
                 cluster_min_node       => 1,
                 cluster_max_node       => 1,
                 cluster_priority       => 500,
-                cluster_si_shared      => 0,
                 cluster_si_persistent  => 1,
                 cluster_domainname     => 'my.domain',
                 cluster_basehostname   => 'vsphere-registered-vm' . $vm_view->summary->vm->value,
