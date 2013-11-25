@@ -228,8 +228,13 @@ sub applyConfiguration {
     my $tags = $args{tags} || [ 'kanopya::' . lc($self->component_type->component_name) ];
     my $cluster = $self->service_provider;
     my $epuppet = EEntity->new(entity => $cluster->getComponent(category => "Configurationagent"));
-    return $epuppet->applyConfiguration(cluster => $cluster,
-                                        tags    => $tags);
+    my @hosts = map { EEntity->new(entity => $_->host) } $self->getActiveNodes();
+
+    return $epuppet->applyConfiguration(
+               cluster => $cluster,
+               hosts   => \@hosts,
+               tags    => $tags
+           );
 }
 
 1;

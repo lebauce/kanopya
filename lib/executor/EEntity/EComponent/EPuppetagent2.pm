@@ -232,10 +232,24 @@ sub stopNode {
 sub applyConfiguration {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster' ],
-                                         optional => { 'host' => undef, 'tags' => [] });
+    General::checkParams(args => \%args,
+                         required => [ 'cluster' ],
+                         optional => { 'host' => undef,
+                                       'hosts' => undef,
+                                       'tags' => [] });
 
-    my @ehosts = ($args{host}) || (map { EEntity->new(entity => $_) } @{ $args{cluster}->getHosts() });
+    my @ehosts;
+    if (defined $args{host}) {
+        @ehosts = ($args{host});
+    }
+    elsif (defined $args{hosts}) {
+        @ehosts = @{ $args{hosts} };
+    }
+    else {
+        @ehosts = map { EEntity->new(entity => $_->host) }
+                  $self->getActiveNodes();
+    }
+
     for my $ehost (@ehosts) {
         $self->generatePuppetDefinitions(%args, host => $ehost);
     }
