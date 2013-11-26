@@ -107,7 +107,7 @@ use constant ATTR_DEF => {
     user_lastaccess => {
         label        => 'Last access',
         type         => 'date',
-        pattern      => '^\w*$',
+        pattern      => '.*',
         is_mandatory => 0,
         is_editable  => 0
     },
