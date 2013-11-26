@@ -166,7 +166,7 @@ sub getPolicyDef {
                        });
     }
     my @componenttypes;
-    for my $componenttype ($clustertype->search(related => 'component_types')) {
+    for my $componenttype ($clustertype->search(related => 'component_types', hash => { deployable => 1 })) {
         push @componenttypes, $componenttype->toJSON();
     }
 

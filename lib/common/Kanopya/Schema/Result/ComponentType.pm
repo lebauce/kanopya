@@ -58,6 +58,13 @@ __PACKAGE__->table("component_type");
   is_nullable: 0
   size: 32
 
+=head2 deployable
+
+  data_type: 'integer'
+  default_value: 1
+  extra: {unsigned => 1}
+  is_nullable: 0
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -72,6 +79,13 @@ __PACKAGE__->add_columns(
   { data_type => "char", is_nullable => 0, size => 32 },
   "component_version",
   { data_type => "char", is_nullable => 0, size => 32 },
+  "deployable",
+  {
+    data_type => "integer",
+    default_value => 1,
+    extra => { unsigned => 1 },
+    is_nullable => 0,
+  },
 );
 
 =head1 PRIMARY KEY
@@ -242,8 +256,8 @@ Composing rels: L</components_installed> -> systemimage
 __PACKAGE__->many_to_many("systemimages", "components_installed", "systemimage");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:hSbjbJXtr1AejGF5ddrBfQ
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-25 10:39:39
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:UUTRY2xqQklWrn4AqZ6puw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

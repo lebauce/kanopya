@@ -566,7 +566,6 @@ sub search {
         my @comps = split(/\./, $relation);
         while (scalar @comps) {
             my $join_query = $class->_joinQuery(comps => \@comps, indepth => 1);
-
             $prefetch = $merge->merge($prefetch, $join_query->{join});
             $args{hash} = $merge->merge($args{hash}, $join_query->{where});
             pop @comps;
@@ -631,7 +630,6 @@ sub search {
     }
 
     $args{hash} = $merge->merge($args{hash}, $args{raw_hash});
-
     my $rs = $class->_dbixSearch(class => $table,      hash     => $args{hash},
                                  page  => $args{page}, prefetch => $prefetch,
                                  rows  => $args{rows}, order_by => $args{order_by},
@@ -710,9 +708,7 @@ sub searchRelated {
     my ($self, %args) = @_;
     my $class = ref ($self) || $self;
 
-    General::checkParams(args     => \%args,
-                         required => [ 'filters' ],
-                         optional => { 'hash' => { } });
+    General::checkParams(args => \%args, required => [ 'filters' ], optional => { 'hash' => {} });
 
     my $join;
     try {
@@ -723,8 +719,7 @@ sub searchRelated {
     }
     catch ($err) {
         throw Kanopya::Exception::Internal::NotFound(
-                  error => "Could not find a relation " .
-                           join('.', @{ $args{filters} }) . " on $self"
+                  error => "Could not find a relation " . join('.', @{ $args{filters} }) . " on $self"
               );
     }
 
@@ -735,9 +730,11 @@ sub searchRelated {
     General::requireClass($searched_class);
 
     my $method = $join->{accessor} eq "single" ? "find" : "search";
-    return $searched_class->$method(%args, raw_hash => { $join->{on} => ref ($self) ? $self->id : $args{id} },
-                                           hash     => $args{hash},
-                                           join     => $join->{join});
+    return $searched_class->$method(%args,
+               raw_hash => { $join->{on} => ref ($self) ? $self->id : $args{id} },
+               hash     => $args{hash},
+               join     => $join->{join}
+           );
 }
 
 
@@ -1912,9 +1909,9 @@ sub _joinQuery {
                     @segment = ((keys %$relation)[0], @segment);
                 }
                 else {
-                    @segment = ($parent, @segment);
+                    @segment = (@segment, $parent);
                 }
-                last M2M if ! $source->has_relationship($parent);
+                last M2M if ! (defined $parent && $source->has_relationship($parent));
                 $source = $source->related_source($parent);
                 $many_to_many = $source->result_class->can("_m2m_metadata") &&
                                 defined ($source->result_class->_m2m_metadata->{$comp});
@@ -1959,7 +1956,7 @@ sub _joinQuery {
     if ($args{indepth}) {
         my $depth_source = $source;
         my $parent = $class->_parentRelationName(schema => $depth_source);
-        while ($depth_source->has_relationship($parent)) {
+        while (defined $parent && $depth_source->has_relationship($parent)) {
             @indepth = ($parent, @indepth);
             $depth_source = $depth_source->related_source($parent);
             $parent = $class->_parentRelationName(schema => $depth_source);
@@ -2609,7 +2606,7 @@ sub _dbixClass {
         # Our management of class types is really confusing yet...
         while (1) {
             my $parent = $class->_parentRelationName(schema => $source);
-            last if not $source->has_relationship($parent);
+            last if ! (defined $parent && $source->has_relationship($parent));
             $source = $source->related_source($parent);
             $name = ucfirst($source->from) . "::" . $name;
         }
@@ -2682,12 +2679,13 @@ sub _dbixParent {
 
         # If the root level is requested, stop if the next parent is undefined
         my $schema = $dbix->result_source;
-        if ($args{target} eq 'root' && $args{classname} eq '' && ! $schema->has_relationship($parent)) {
+        if (($args{target} eq 'root' && $args{classname} eq '') &&
+            (! (defined $parent && $schema->has_relationship($parent)))) {
             last;
         }
 
         # Go to parent dbix
-        $dbix = $schema->has_relationship($parent) ? $dbix->$parent : undef;
+        $dbix = (defined $parent && $schema->has_relationship($parent)) ? $dbix->$parent : undef;
 
         # If only one level is requested, stop at the fist loop
         if ($args{target} eq 'parent' && $args{classname} eq '') {
