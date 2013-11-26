@@ -76,7 +76,7 @@ class kanopya::openstack::glance(
     }
 
     class { 'glance::registry':
-        auth_type         => '',
+        auth_type         => 'keystone',
         bind_host         => $components[glance][listen][glance_registry][ip],
         keystone_tenant   => 'services',
         keystone_user     => $keystone_user,
@@ -87,7 +87,7 @@ class kanopya::openstack::glance(
     }
 
     class { 'glance::api':
-        auth_type         => '',
+        auth_type         => 'keystone',
         auth_port         => '35357',
         auth_host         => $keystone_ip,
         bind_host         => $components[glance][listen][image_api][ip],
