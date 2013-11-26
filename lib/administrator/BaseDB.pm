@@ -179,7 +179,8 @@ sub update {
     }
 
     # Populate relations and virtuals
-    $self->_populateRelations(relations => $relations);
+    $self->_populateRelations(relations => $relations,
+                              override  => $override);
     $self->_populateVirtuals(virtuals => $virtuals);
 
     return $self;
@@ -1679,8 +1680,8 @@ sub _populateRelations {
 
             # Finally delete remaining entries
             if ($args{override}) {
-                for my $remaning (values %$existing) {
-                    $remaning->remove();
+                for my $remaining (values %$existing) {
+                    $remaining->remove();
                 }
             }
         }
