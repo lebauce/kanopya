@@ -142,35 +142,17 @@ sub execute {
     my $self = shift;
     $self->SUPER::execute();
 
-    # Instanciate bootserver Cluster
-    my $bootserver = Entity::ServiceProvider::Cluster->getKanopyaCluster;
-
-    # Instanciate dhcpd component
-    $self->{context}->{component_dhcpd}
-        = EEntity->new(data => $bootserver->getComponent(name => "Dhcpd", version => "3"));
-
+    # stop the host
     $self->{context}->{host}->stop();
+    
+    # Instanciate bootserver Cluster and dhcpd component
+    my $bootserver = Entity::ServiceProvider::Cluster->getKanopyaCluster;
+    my $dhcpd = EEntity->new(data => $bootserver->getComponent(name => "Dhcpd", 
+                                                               version => "3"));
 
     # Remove Host from the dhcp
-    eval {
-        my $host_mac = $self->{context}->{host}->getPXEIface->getAttr(name => 'iface_mac_addr');
-        if ($host_mac) {
-            my $subnet = $self->{context}->{component_dhcpd}->getInternalSubNetId();
-
-            my $hostid = $self->{context}->{component_dhcpd}->getHostId(
-                             dhcpd3_subnet_id         => $subnet,
-                             dhcpd3_hosts_mac_address => $host_mac
-                         );
-
-            $self->{context}->{component_dhcpd}->removeHost(dhcpd3_subnet_id => $subnet,
-                                                            dhcpd3_hosts_id  => $hostid);
-            $self->{context}->{component_dhcpd}->generate();
-            $self->{context}->{component_dhcpd}->reload();
-        }
-    };
-    if ($@) {
-        $log->warn("Could not remove from DHCP configuration, the cluster may not be using PXE");
-    }
+    $dhcpd->removeHost(host => $self->{context}->{host});
+    $dhcpd->applyConfiguration();
 
     my $systemimage_name = $self->{context}->{cluster}->cluster_name;
     $systemimage_name .= '_' . $self->{context}->{host}->getNodeNumber();
