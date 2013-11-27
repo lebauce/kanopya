@@ -28,7 +28,8 @@ function host_addbutton_action(e, grid) {
         displayed  : [ 'host_desc', 'host_core', 'host_ram', 'kernel_id', 'host_serial_number', 'entity_tags' ],
         relations  : { 'ifaces'         : [ 'iface_name', 'iface_mac_addr', 'iface_pxe', 'netconf_ifaces' ],
                        'bonding_ifaces' : [ 'bonding_iface_name', 'slave_ifaces' ],
-                       'harddisks'      : [ 'harddisk_device', 'harddisk_size' ] },
+                       'harddisks'      : [ 'harddisk_device', 'harddisk_size' ],
+                       'ipmi_credentials'      : [ 'ipmi_credentials_ip_addr', 'ipmi_credentials_user', 'ipmi_credentials_password' ] },
         rawattrdef : rawattrdef,
         attrsCallback  : function (resource) {
             var attributes;
@@ -109,7 +110,7 @@ function host_addbutton_action(e, grid) {
             }
         },
         valuesCallback  : function(type, id, attributes) {
-            var host = ajax('GET', '/api/' + type + '/' + id + '?expand=ifaces,ifaces.netconf_ifaces,harddisks,entity_tags');
+            var host = ajax('GET', '/api/' + type + '/' + id + '?expand=ifaces,ifaces.netconf_ifaces,harddisks,ipmi_credentials,entity_tags');
             var ifaces = host['ifaces'];
             host['ifaces'] = [];
 

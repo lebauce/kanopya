@@ -101,6 +101,7 @@ Requires: bzip2 wol
 Requires: java
 Requires: libguestfs-tools-c qemu-img qemu-kvm
 Requires: nmap
+Requires: ipmitool 
 
 %description executor
 Kanopya executor

@@ -49,6 +49,7 @@ use Entity::Tag;
 use EntityTag;
 use Harddisk;
 use NetconfVlan;
+use IpmiCredentials;
 
 =pod
 
@@ -111,6 +112,17 @@ sub registerHost {
         for my $tagname (@{$board->{tags}}) {
             my $tag = Entity::Tag->findOrCreate(tag => $tagname);
             EntityTag->new(entity_id => $host->id, tag_id => $tag->id);
+        }
+    }
+
+    if (defined ($board->{ipmicredentials})) {
+        for my $ipmicredentials (@{$board->{ipmicredentials}}) {
+            IpmiCredentials->new(
+                host_id                   => $host->id,
+                ipmi_credentials_ip_addr  => $ipmicredentials->{ip_addr},
+                ipmi_credentials_user     => $ipmicredentials->{user},
+                ipmi_credentials_password => $ipmicredentials->{password}
+            );
         }
     }
 
