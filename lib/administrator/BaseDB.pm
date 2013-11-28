@@ -1207,6 +1207,11 @@ sub checkAttr {
                   error => "Wrong value <$args{value}> for attribute <$args{name}>"
               );
     }
+    elsif (defined $args{value} && ref($args{value}) && (ref($args{value}) !~ m/HASH|ARRAY|SCALAR/)) {
+        throw Kanopya::Exception::Internal::WrongValue(
+                  error => "Unsupported object $args{name} of type <$args{value}> " . ref($args{value})
+              );
+    }
 
     return ($args{name}, $args{value});
 }
