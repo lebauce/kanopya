@@ -247,7 +247,7 @@ sub umount {
 
     my $counter = 5;
     while($counter != 0) {
-        $command = "umount $args{mountpoint}";
+        $command = "mountpoint $args{mountpoint} && umount $args{mountpoint} || true";
         $result  = $args{econtext}->execute(command => $command);
         if($result->{exitcode} == 0) {
             last;
