@@ -94,6 +94,42 @@ sub setConf {
     }
 }
 
+sub addMount {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args,
+                         required => [ 'mountpoint', 'filesystem' ],
+                         optional => {
+                             dumpfreq => 0,
+                             passnum  => 0,
+                             device   => 'none',
+                             options  => 'defaults'
+                         } );
+
+    my $oldconf = $self->getConf();
+    my @mountentries = @{$oldconf->{linuxes_mount}};
+    push @mountentries, {
+        linux_mount_dumpfreq   => $args{dumpfreq},
+        linux_mount_filesystem => $args{filesystem},
+        linux_mount_point      => $args{mountpoint},
+        linux_mount_device     => $args{device},
+        linux_mount_options    => $args{options},
+        linux_mount_passnum    => $args{passnum},
+    };
+    $self->setConf(conf => { linuxes_mount => \@mountentries });
+}
+
+sub removeMount {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'mountpoint' ]);
+
+    my $oldconf = $self->getConf();
+    my @mountentries = @{$oldconf->{linuxes_mount}};
+    @mountentries = grep { $_->{linux_mount_point} ne $args{mountpoint} } @mountentries;
+    $self->setConf(conf => { linuxes_mount => \@mountentries });
+}
+
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
@@ -134,8 +170,21 @@ sub getPuppetDefinition {
     my @swap_entries = grep { $_->{linux_mount_filesystem} eq 'swap' } @{$conf->{linuxes_mount}};
     my @mount_entries = grep { $_->{linux_mount_filesystem} ne 'swap' } @{$conf->{linuxes_mount}};
 
+    my @except;
+    eval {
+        my $nfsserver = $args{host}->node->getComponent(name => "Nfsd");
+        @except = map {
+            $_->container_access_export
+        } $nfsserver->container_accesses;
+    };
+
     # /etc/fstab et mounts
     foreach my $mount (@mount_entries) {
+        # Avoid NFS'ception when the server tries to access a folder
+        # that it is already exporting
+        next if (grep { ($_ eq $mount->{linux_mount_device}) &&
+                        ($mount->{linux_mount_filesystem} eq "nfs") } @except);
+
         $manifest .= $self->instanciatePuppetResource(
             resource => "file",
             name => $mount->{linux_mount_point},
