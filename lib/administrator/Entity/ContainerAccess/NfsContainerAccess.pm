@@ -45,14 +45,14 @@ use constant ATTR_DEF => {
     nfs_container_access_client_options => {
         label        => 'Client options',
         type         => 'string',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_editable  => 1,
         is_virtual   => 1
     },
     nfs_container_access_client_name => {
         label        => 'Client name',
         type         => 'string',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_editable  => 1,
         is_virtual   => 1
     }

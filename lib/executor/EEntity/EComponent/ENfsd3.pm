@@ -44,7 +44,8 @@ sub createExport {
 
     # Check if the given container is provided by the same
     # storage provider than the nfsd storage provider.
-    if ($args{container}->disk_manager->getMasterNode->host->id != $self->getMasterNode->host->id) {
+    if ((! $args{container}->isa("EEntity::EContainer::ELocalContainer")) &&
+        ($args{container}->disk_manager->getMasterNode->host->id != $self->getMasterNode->host->id)) {
         throw Kanopya::Exception::Execution(
                   error => "Only local containers can be exported through NFS"
               );
@@ -56,48 +57,40 @@ sub createExport {
     # Keep the old conf to be able to regenerate the conf file if the export fail.
     my $old_data = $self->getTemplateDataExports();
 
-    my $mountpoint = $self->getMountDir(
-                         device => $args{container}->container_device
-                     );
+    my $mountpoint = $self->getMountDir(container => $args{container}->_entity);
 
-    # Create a local access to the container to be able to mount localy the device
-    # and then export the mountpoint with NFS.
-    my $elocal_access = EEntity->new(entity => Entity::ContainerAccess::LocalContainerAccess->new(
-                            container_id => $args{container}->id,
-                        ));
+    if (! $args{container}->isa("EEntity::EContainer::ELocalContainer")) {
+        # Create a local access to the container to be able to mount localy the device
+        # and then export the mountpoint with NFS.
+        my $elocal_access = EEntity->new(entity => Entity::ContainerAccess::LocalContainerAccess->new(
+                                container_id => $args{container}->id,
+                            ));
 
-    # Update the configuration of the component Mounttable of the cluster,
-    # to automatically mount the images repositories.
-    my $cluster = $self->service_provider;
-    my $mounttable = $cluster->getComponent(category => "System");
+        # Update the configuration of the component Mounttable of the cluster,
+        # to automatically mount the images repositories.
+        my $system = $self->service_provider->getComponent(category => "System");
 
-    my $oldconf = $mounttable->getConf();
-    my @mountentries = @{$oldconf->{linuxes_mount}};
-    push @mountentries, {
-        linux_mount_dumpfreq   => 0,
-        linux_mount_filesystem => $args{container}->container_filesystem,
-        linux_mount_point      => $mountpoint,
-        linux_mount_device     => $args{container}->container_device,
-        linux_mount_options    => 'rw',
-        linux_mount_passnum    => 0,
-    };
+        $system->addMount(
+            dumpfreq   => 0,
+            filesystem => $args{container}->container_filesystem,
+            mountpoint => $mountpoint,
+            device     => $args{container}->container_device,
+            options    => 'rw',
+            passnum    => 0,
+        );
 
-    $mounttable->setConf(conf => { linuxes_mount => \@mountentries });
-
-    $self->applyConfiguration(tags => [ 'mount' ]);
+        $self->applyConfiguration(tags => [ 'mount' ]);
+    }
 
     my $manager_ip = $self->getMasterNode->adminIp;
-    my $mount_dir  = $self->getMountDir(device => $args{container}->getAttr(name => 'container_device'));
-
-    system('chmod -R 777 ' . $mount_dir);
 
     my $entity = Entity::ContainerAccess::NfsContainerAccess->new(
-                     container_id            => $args{container}->getAttr(name => 'container_id'),
-                     export_manager_id       => $self->_entity->getAttr(name => 'entity_id'),
-                     container_access_export => $manager_ip . ':' . $mount_dir,
+                     container               => $args{container}->_entity,
+                     export_manager          => $self->_entity,
+                     container_access_export => $manager_ip . ':' . $mountpoint,
                      container_access_ip     => $manager_ip,
                      container_access_port   => 2049,
-                     options                 =>  $args{client_options},
+                     options                 => $args{client_options},
                  );
 
     my $container_access = EEntity->new(data => $entity);
@@ -140,37 +133,41 @@ sub removeExport {
               );
     }
 
-    my $device   = $args{container_access}->getContainer->container_device;
-    my $mountdir = $self->getMountDir(device => $device);
+    if (! $args{container_access}->getContainer->isa("Entity::Container::LocalContainer")) {
+        my $mountdir = $self->getMountDir(container => $args{container_access}->getContainer);
+        my $elocal_access = EEntity->new(entity => $args{container_access}->getContainer->getLocalAccess);
 
-    # Search the local access to the container, it should be created at the NFS export creation.
-    my $elocal_access = EEntity->new(entity => $args{container_access}->getContainer->getLocalAccess);
-
-    $args{container_access}->remove();
-
-    $self->generateExports(data => $self->getTemplateDataExports());
-
-    my $retry = 5;
-    while ($retry > 0) {
-        eval {
-            $self->updateExports();
-            $elocal_access->umount(mountpoint => $mountdir, econtext => $self->getEContext);
-        };
-        if ($@) {
-            $log->info("Unable to umount <$mountdir>, retrying in 1s...");
-            $retry--;
-            if (!$retry){
-                throw Kanopya::Exception::Execution(
-                          error => "Unable to umount nfs mountpoint $mountdir: $@"
-                      );
+        my $retry = 5;
+        while ($retry > 0) {
+            eval {
+                $elocal_access->umount(mountpoint => $mountdir, econtext => $self->getEContext);
+            };
+            if ($@) {
+                $log->info("Unable to umount <$mountdir>, retrying in 1s...");
+                $retry--;
+                if (!$retry){
+                    throw Kanopya::Exception::Execution(
+                              error => "Unable to umount nfs mountpoint $mountdir: $@"
+                          );
+                }
+                sleep 1;
+                next;
             }
-            sleep 1;
-            next;
+            last;
         }
-        last;
+
+        $elocal_access->delete();
+
+        # Update the configuration of the component Mounttable of the cluster,
+        # to automatically mount the images repositories.
+        my $system = $self->service_provider->getComponent(category => "System");
+        $system->removeMount(mountpoint => $mountdir);
+        $self->applyConfiguration(tags => [ 'mount' ]);
     }
 
-    $elocal_access->delete();
+    $args{container_access}->remove();
+    $self->updateExports();
+    $self->generateExports(data => $self->getTemplateDataExports());
 }
 
 sub reload {

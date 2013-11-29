@@ -179,7 +179,8 @@ sub update {
     }
 
     # Populate relations and virtuals
-    $self->_populateRelations(relations => $relations);
+    $self->_populateRelations(relations => $relations,
+                              override  => $override);
     $self->_populateVirtuals(virtuals => $virtuals);
 
     return $self;
@@ -1206,6 +1207,11 @@ sub checkAttr {
                   error => "Wrong value <$args{value}> for attribute <$args{name}>"
               );
     }
+    elsif (defined $args{value} && ref($args{value}) && (ref($args{value}) !~ m/HASH|ARRAY|SCALAR/)) {
+        throw Kanopya::Exception::Internal::WrongValue(
+                  error => "Unsupported object $args{name} of type <$args{value}> " . ref($args{value})
+              );
+    }
 
     return ($args{name}, $args{value});
 }
@@ -1463,12 +1469,14 @@ sub _attributesDefinition {
         # Complete the attrdef with regular relations, expecting inheritance and many to many
         for my $relation ($schema->relationships) {
             my $relinfo = $schema->relationship_info($relation);
+            my $relschema = BaseDB->_resultSource(classname => BaseDB->_className(class => $relinfo->{source}));
+            my $relpkname = BaseDB->_primaryKeyName(schema => $relschema);
 
             # Deduce the key and fk of the relation from definition
             (my $key = (keys %{ $relinfo->{cond} })[0]) =~ s/.*foreign\.//g;
             (my $fk = (values %{ $relinfo->{cond} })[0]) =~ s/.*self\.//g;
 
-            if (($fk ne $pkname || (($fk eq $key || $args{include_reverse}) &&
+            if (($fk ne $pkname || (($relpkname ne $key || $args{include_reverse}) &&
                 (! $relinfo->{attrs}->{is_foreign_key_constraint}))) &&
                 (! $relinfo->{attrs}->{cascade_update} || $key eq $pkname)) {
                 if (! defined $attributedefs->{$modulename}->{$relation}) {
@@ -1512,7 +1520,9 @@ sub _attributesDefinition {
         # Keep the module belonging for each attributes
         for my $attrname (keys %{ $attributedefs->{$module} }) {
             my $definition = $attributedefs->{$module}->{$attrname};
-            if (! (defined $result->{$attrname} && defined $definition->{specialized})) {
+            if (! (defined $result->{$attrname}
+                && defined $definition->{specialized})
+                && ! defined $result->{$attrname}->{from_module}) {
                 $definition->{from_module} = $module;
             }
         }
@@ -1679,8 +1689,8 @@ sub _populateRelations {
 
             # Finally delete remaining entries
             if ($args{override}) {
-                for my $remaning (values %$existing) {
-                    $remaning->remove();
+                for my $remaining (values %$existing) {
+                    $remaining->remove();
                 }
             }
         }
@@ -1818,7 +1828,16 @@ sub _relationshipInfos {
     my $relation_class = BaseDB->_dbixClass(schema => $relation_schema);
 
     # Deduce the fk from relation definition
-    my @conds = keys %{ $schema->relationship_info($args{relation})->{cond} };
+    my @conds;
+    try {
+        @conds = keys %{ $schema->relationship_info($args{relation})->{cond} };
+    }
+    catch ($err) {
+        throw Kanopya::Exception::Internal::NotFound(
+                  error => "Could not find the relation $args{relation} on " . $schema->from()
+              );
+    }
+
     (my $fk = $conds[0]) =~ s/.*foreign\.//g;
 
     my $infos = {
