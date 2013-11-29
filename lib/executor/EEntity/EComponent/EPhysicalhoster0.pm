@@ -52,7 +52,7 @@ sub startHost {
             $log->error($errmsg);
             throw Kanopya::Exception::Execution(error => $errmsg);
         }
-        $wol .= " --host " . $args{host}->host->getPXEIface->getIPAddr;
+        $wol .= " --host " . $args{host}->getPXEIface->getIPAddr;
     }
     else {
         $wol .= " -i " . $self->getMasterNode->host->getAdminIface->iface_name;
