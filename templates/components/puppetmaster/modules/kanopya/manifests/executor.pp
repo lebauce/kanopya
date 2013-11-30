@@ -1,4 +1,4 @@
-class kanopya::executor($logdir, $user, $password, $amqpuser, $amqppassword, $lib) {
+class kanopya::executor($logdir, $user, $password, $amqpuser, $amqppassword, $sshkey, $sshpubkey, $lib) {
     require kanopya::common
 
     if ($components[kanopyaexecutor][master] == 1) {
@@ -43,6 +43,24 @@ class kanopya::executor($logdir, $user, $password, $amqpuser, $amqppassword, $li
                     ensure  => installed,
                     before  => Service['kanopya-executor'],
                 }
+            }
+        }
+
+        if ($sshkey and $sshpubkey) {
+            file { '/root/.ssh/kanopya_rsa':
+                ensure => present,
+                content => $sshkey,
+                mode => 0600,
+                owner => 'root',
+                group => 'root'
+            }
+
+            file { '/root/.ssh/kanopya_rsa.pub':
+                ensure => present,
+                content => $sshpubkey,
+                mode => 0600,
+                owner => 'root',
+                group => 'root'
             }
         }
     }

@@ -553,7 +553,9 @@ sub _generate_ssh_key {
             make_path('/root/.ssh')
         }
         print "\n - Dedicated root SSH keys generation...";
-        system("ssh-keygen -q -t rsa -N '' -f /root/.ssh/kanopya_rsa");
+        system("ssh-keygen -q -t rsa -N '' -f /root/.ssh/kanopya_rsa; " .
+               "cp /root/.ssh/kanopya_rsa.pub /root/.ssh/authorized_keys; " .
+               "chmod 600 /root/.ssh/authorized_keys");
         print "ok\n";
 
     } else {
