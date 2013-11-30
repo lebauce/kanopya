@@ -173,6 +173,9 @@ cp -R scripts/database scripts/install scripts/R $RPM_BUILD_ROOT/opt/kanopya/scr
 mkdir -p $RPM_BUILD_ROOT/opt/kanopya/tools/deployment_solver
 cp %{SOURCE1} $RPM_BUILD_ROOT/opt/kanopya/tools/deployment_solver
 
+mkdir -p $RPM_BUILD_ROOT/opt/kanopya/tools/deployment/system
+cp -R tools/deployment/system/initramfs-tools $RPM_BUILD_ROOT/opt/kanopya/tools/deployment/system
+
 # Executor
 cp -R lib/executor $RPM_BUILD_ROOT/opt/kanopya/lib
 
@@ -213,6 +216,7 @@ rm $RPM_BUILD_ROOT/opt/kanopya/lib/common/Kanopya/Tools/KioExport.pm
 /opt/kanopya/lib/external
 /opt/kanopya/scripts
 /opt/kanopya/templates
+/opt/kanopya/tools/deployment/system/initramfs-tools
 /opt/kanopya/tools/deployment_solver/deployment_solver.jar
 
 %files executor
