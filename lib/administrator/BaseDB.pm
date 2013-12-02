@@ -40,6 +40,7 @@ use Hash::Merge;
 use POSIX qw(ceil);
 use vars qw($AUTOLOAD);
 use Clone qw(clone);
+use Scalar::Util qw(blessed);
 
 use Data::Dumper;
 use Log::Log4perl "get_logger";
@@ -1207,9 +1208,9 @@ sub checkAttr {
                   error => "Wrong value <$args{value}> for attribute <$args{name}>"
               );
     }
-    elsif (defined $args{value} && ref($args{value}) && (ref($args{value}) !~ m/HASH|ARRAY|SCALAR/)) {
+    elsif (defined $args{value} && blessed($args{value}) && $args{value}->isa("BaseDB")) {
         throw Kanopya::Exception::Internal::WrongValue(
-                  error => "Unsupported object $args{name} of type <$args{value}> " . ref($args{value})
+                  error => "Unsupported object $args{name} of type " . blessed($args{value})
               );
     }
 
