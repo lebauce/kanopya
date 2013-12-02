@@ -17,12 +17,14 @@ get '/workflows/:id/log' => sub {
         open(FILE, $file) || die "unable to open log file for workflow ".param('id'); 
         $lines = <FILE>;
         close(FILE);
+        $lines =~ s/</&lt;/g;
+        $lines =~ s/>/&gt;/g;
         $lines =~ s/\n/<br>/g;
     };
     
     if($@){
         return "unable to open log file for workflow ".param('id');
     } else {
-        return $lines;
+        return "<html><body><pre>".$lines."</pre></body></html>";
     }
 };
