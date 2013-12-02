@@ -98,7 +98,7 @@ Requires: uuid curl syslog-ng
 Requires: nfs-utils ntp
 Requires: iscsi-initiator-utils
 Requires: bzip2 wol
-Requires: java7
+Requires: java
 Requires: libguestfs-tools-c qemu-img qemu-kvm
 Requires: nmap
 
