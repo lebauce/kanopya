@@ -732,7 +732,7 @@ sub getRequiredComponents {
     my ($self, %args) = @_;
 
     my @required;
-    for my $category ('Configurationagent', 'System', 'Monitoragent') {
+    for my $category ('Configurationagent', 'System', 'Monitoragent', 'RemoteShell') {
         eval {
             push @required, $self->getComponent(category => $category);
         };

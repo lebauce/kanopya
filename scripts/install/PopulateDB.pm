@@ -891,7 +891,7 @@ sub registerComponents {
             component_name         => 'Openssh',
             component_version      => 5,
             deployable             => 1,
-            component_categories   => [ 'Secureshell' ],
+            component_categories   => [ 'RemoteShell' ],
             service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
