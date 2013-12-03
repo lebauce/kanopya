@@ -198,7 +198,7 @@ sub getPuppetDefinition {
     my $sshkey = "";
     my $sshpubkey = "";
 
-    if ($args{host}->node->node_state =~ '^goingin') {
+    if ($args{host}->node->node_state =~ '^(going)?in') {
         open(INPUT, '/root/.ssh/kanopya_rsa') || die "can't read Kanopya SSH private key";
         while (<INPUT>) { $sshkey .= $_; }
         close(INPUT);
