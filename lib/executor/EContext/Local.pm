@@ -174,6 +174,29 @@ sub send {
     return $result;
 }
 
+=cut
+
+=pod
+
+=begin classdoc
+
+Use the cp command to copy the file.
+
+@param src the source file to copy
+@param dest the destionation to copy file
+
+@return the command result
+
+=end classdoc
+
+=cut
+
+sub retrieve {
+    my ($self, %args) = @_;
+
+    return $self->send(%args);
+}
+
 
 =cut
 

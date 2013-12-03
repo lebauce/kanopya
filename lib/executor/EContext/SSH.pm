@@ -251,4 +251,37 @@ sub send {
     }
 }
 
+=pod
+=begin classdoc
+
+Use the OpenSSH module to retrieve file from remote host.
+
+@param src the source file or folder to copy
+@param dest the destination file or folder
+
+@return the command result
+
+=end classdoc
+=cut
+
+sub retrieve {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => %args, required => [ 'src', 'dest' ]);
+
+    if (not exists $self->{ssh}) {
+        $self->_init();
+    }
+
+    my $success = $self->{ssh}->scp_get({ recursive => 1, copy_attrs => 1 },
+                                          $args{src}, $args{dest});
+
+    # return TRUE if success
+    if (not $success) {
+        $errmsg = "EContext::SSH->retrieve failed while getting $args{src} to $args{dest}!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
+    }
+}
+
 1;
