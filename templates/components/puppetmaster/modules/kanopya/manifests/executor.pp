@@ -52,7 +52,8 @@ class kanopya::executor($logdir, $user, $password, $amqpuser, $amqppassword, $ss
                 content => $sshkey,
                 mode => 0600,
                 owner => 'root',
-                group => 'root'
+                group => 'root',
+                before => Service['kanopya-executor'],
             }
 
             file { '/root/.ssh/kanopya_rsa.pub':
@@ -60,7 +61,8 @@ class kanopya::executor($logdir, $user, $password, $amqpuser, $amqppassword, $ss
                 content => $sshpubkey,
                 mode => 0600,
                 owner => 'root',
-                group => 'root'
+                group => 'root',
+                before => Service['kanopya-executor'],
             }
         }
     }
