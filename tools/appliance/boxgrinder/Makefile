@@ -52,8 +52,8 @@ clean:
 	VBoxManage unregistervm "Kanopya CentOS Vagrant" --delete || true
 	VBoxManage unregistervm "Kanopya CentOS Appliance" --delete || true
 
-centos-6.4-kanopya.appl: base.fragment kanopya-base.fragment kanopya-setup.fragment debug.fragment
-	FRAGMENTS="base.fragment kanopya-base.fragment kanopya-setup.fragment"; \
+centos-6.4-kanopya.appl: base.fragment kanopya-base.fragment forwarding.fragment kanopya-setup.fragment debug.fragment
+	FRAGMENTS="base.fragment kanopya-base.fragment forwarding.fragment kanopya-setup.fragment"; \
 	[ "$$DEBUG" == "1" ] && FRAGMENTS="$$FRAGMENTS debug.fragment"; \
 	./merge_dict.pl $$FRAGMENTS > centos-6.4-kanopya.appl
 	sed -i 's/^\( *\)\(\/.*\):$$/\1"\2":/' centos-6.4-kanopya.appl
