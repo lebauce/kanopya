@@ -251,7 +251,8 @@ sub applyConfiguration {
         map { $command .= " --tag " . $_; } @{$args{tags}};
         map { $command .= " --host $_" } @hosts;
 
-        $ret = $econtext->execute(command => $command);
+        $ret = $econtext->execute(command => $command,
+                                  timeout => 180);
 
         while ($ret->{stdout} =~ /([\w.\-]+) finished with exit code (\d+)/g) {
             # If the host is down or not reachable, the exit code is 2
