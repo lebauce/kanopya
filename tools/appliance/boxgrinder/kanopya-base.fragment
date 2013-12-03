@@ -11,7 +11,7 @@ hardware:
       type: ext4
 repos:
   - name: MariaDB
-    baseurl: http://yum.mariadb.org/5.5.32/centos6-amd64/
+    baseurl: http://yum.mariadb.org/5.5/centos6-amd64/
   - name: rpmforge
     baseurl: http://apt.sw.be/redhat/el6/en/x86_64/rpmforge
   - name: magnum
@@ -33,7 +33,7 @@ packages:
   - tftp-server
   - ntp
   - iscsitarget
-  - iscsitarget-kmdl-2.6.32-358.14.1.el6
+  - iscsitarget-kmdl-2.6.32-431.el6.x86_64
   - rubygem-activerecord
   - ruby-mysql
   - puppet-server-2.7.23-1.el6
@@ -46,7 +46,7 @@ packages:
   - mod_ssl
   - rubygem-passenger
   - mod_passenger
-  - kernel-2.6.32-358.14.1.el6
+  - kernel-2.6.32-431.el6.x86_64
 files:
   "/etc/httpd/conf.d":
     - rack.conf
