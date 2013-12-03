@@ -85,11 +85,11 @@ sub _init {
     $self->{dbschema_path} = $self->{installpath} . '/scripts/database/mysql';
     $self->{kanopya_services} = [
         'kanopya-executor',
-        'kanopya-state-manager',
         'kanopya-collector',
         'kanopya-aggregator',
         'kanopya-rulesengine',
         'kanopya-front',
+        'kanopya-state-manager',
     ];
 
     $self->{parameters} = [
