@@ -1,8 +1,8 @@
 name: centos-6.4-kanopya-vagrant
 summary: Kanopya Vagrant box (based on CentOS 6.4 64 bits)
 packages:
-  - kernel-devel-2.6.32-358.14.1.el6
-  - kernel-headers-2.6.32-358.14.1.el6.x86_64
+  - kernel-devel-2.6.32-431.el6
+  - kernel-headers-2.6.32-431.el6.x86_64
   - gcc
   - perl
   - make
@@ -21,8 +21,8 @@ post:
     - "vgrename kanopya kanopyavg"
     - "sed -i 's/^\(Defaults\)\( *\)\(requiretty$\)/\1\2!\3/' /etc/sudoers"
     - "sed -i 's/^\(Defaults\)\( *\)!\(visiblepw$\)/\1\2\3/' /etc/sudoers"
-    - "ln -s 2.6.32-358.14.1.el6.x86_64 /lib/modules/`uname -r`"
-    - "ln -s 2.6.32-358.14.1.el6.x86_64 /usr/src/kernels/`uname -r`"
+    - "ln -s 2.6.32-431.el6.x86_64 /lib/modules/`uname -r`"
+    - "ln -s 2.6.32-431.el6.x86_64 /usr/src/kernels/`uname -r`"
     - "mount -o loop /root/VBoxGuestAdditions_4.2.18.iso /mnt"
     - "sh /mnt/VBoxLinuxAdditions.run || true"
     - "umount /mnt"
