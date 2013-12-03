@@ -2269,16 +2269,14 @@ sub populate_policies {
 
     # system
     my $puppettypeid = ClassType::ComponentType->find(hash => { component_name => 'Puppetagent' })->id;
-    my $keepalivedtypeid = ClassType::ComponentType->find(hash => { component_name => 'Keepalived' })->id;
     $policies{'Standard physical cluster'}{system} = Entity::Policy::SystemPolicy->new(
-        policy_name           => 'Default non persitent cluster',
-        policy_desc           => 'System policy for default non persitent cluster',
+        policy_name           => 'Default non persistent cluster',
+        policy_desc           => 'System policy for default non persistent cluster',
         policy_type           => 'system',
         cluster_si_persistent => 0,
         systemimage_size      => 5 * (1024**3), # 5GB
         components            => [
-            { component_type => $puppettypeid },
-            { component_type => $keepalivedtypeid }
+            { component_type => $puppettypeid }
         ],
     );
 
