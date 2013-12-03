@@ -113,6 +113,7 @@ sub getPuppetDefinition {
                              network => $subnet->network_addr,
                              gateway => $subnet->network_gateway,
                              mask => $subnet->network_netmask,
+                             parameters => 'deny unknown-clients',
                              range => [ "$first $last" ],
                              tag => 'kanopya::dhcpd'
                          }
