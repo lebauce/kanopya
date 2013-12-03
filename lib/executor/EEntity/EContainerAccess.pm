@@ -88,15 +88,22 @@ sub copy {
 
     # If devices exists, clone and resize the source disk using virt-resize
     if (defined $source_device and defined $dest_device) {
-        my $source_size = $source_access->getContainer->getAttr(name => 'container_size');
-        my $dest_size   = $dest_access->getContainer->getAttr(name => 'container_size');
+        my $source_size = $source_access->getContainer->container_size;
+        my $dest_size   = $dest_access->getContainer->container_size;
 
+        my $dstdev;
         my $srcdev = `readlink -f $source_device`;
-        my $dstdev = `readlink -f $dest_device`;
         $srcdev =~ s/^\s+|\s+$//g;
-        $dstdev =~ s/^\s+|\s+$//g;
 
-        $command = "virt-resize --expand /dev/sda1 $srcdev $dstdev";
+        # We loop until readlink returns the correct result
+        # Is it a bug in udev ?
+        do {
+            $dstdev = `readlink -f $dest_device`;
+            $dstdev =~ s/^\s+|\s+$//g;
+            sleep(1);
+        } while($dstdev eq $dest_device);
+
+        $command = "/usr/bin/virt-resize --expand /dev/sda1 $srcdev $dstdev";
         $result  = $args{econtext}->execute(command => $command);
 
         if ($result->{stderr} and ($result->{exitcode} != 0)) {
