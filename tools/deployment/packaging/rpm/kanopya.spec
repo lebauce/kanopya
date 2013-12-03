@@ -170,8 +170,8 @@ cp -R lib/administrator lib/common lib/external lib/component $RPM_BUILD_ROOT/op
 mkdir -p $RPM_BUILD_ROOT/opt/kanopya/scripts
 cp -R scripts/database scripts/install scripts/R $RPM_BUILD_ROOT/opt/kanopya/scripts
 
-mkdir -p $RPM_BUILD_ROOT/opt/kanopya/tools/deployment_solver
-cp %{SOURCE1} $RPM_BUILD_ROOT/opt/kanopya/tools/deployment_solver
+mkdir -p $RPM_BUILD_ROOT/opt/kanopya/tools/constraint_engine/deployment_solver
+cp %{SOURCE1} $RPM_BUILD_ROOT/opt/kanopya/tools/constraint_engine/deployment_solver
 
 mkdir -p $RPM_BUILD_ROOT/opt/kanopya/tools/deployment/system
 cp -R tools/deployment/system/initramfs-tools $RPM_BUILD_ROOT/opt/kanopya/tools/deployment/system
@@ -217,7 +217,7 @@ rm $RPM_BUILD_ROOT/opt/kanopya/lib/common/Kanopya/Tools/KioExport.pm
 /opt/kanopya/scripts
 /opt/kanopya/templates
 /opt/kanopya/tools/deployment/system/initramfs-tools
-/opt/kanopya/tools/deployment_solver/deployment_solver.jar
+/opt/kanopya/tools/constraint_engine/deployment_solver/deployment_solver.jar
 
 %files executor
 /etc/init.d/kanopya-executor
