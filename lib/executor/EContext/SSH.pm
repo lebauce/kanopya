@@ -218,7 +218,9 @@ sub send {
     my ($self, %args) = @_;
 
     General::checkParams(args => %args, required => [ 'src', 'dest' ],
-                                        optional => { mode => undef });
+                                        optional => { mode => undef,
+                                                      user => undef,
+                                                      group => undef });
 
     if (not -e $args{src}) {
         $errmsg = "EContext::SSH->execute src file $args{src} no found";
@@ -230,8 +232,12 @@ sub send {
         $self->_init();
     }
 
+    if ($args{user} || $args{group}) {
+        $self->execute(command => "chown -R $args{user}:$args{group} $args{src}");
+    }
+
     if ($args{mode}) {
-        $self->execute("chmod -R $args{mode} $args{src}");
+        $self->execute(command => "chmod -R $args{mode} $args{src}");
     }
 
     my $success = $self->{ssh}->scp_put({ recursive => 1, copy_attrs => 1 },
