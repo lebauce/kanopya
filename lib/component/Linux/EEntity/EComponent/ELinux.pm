@@ -718,7 +718,7 @@ sub _initrd_iscsi {
         $self->generateFile(
             template_file => 'st_config.tt',
             template_dir  => 'internal/initrd/sles',
-            file          => '$st_dir/st_config',
+            file          => "$st_dir/st_config",
             data          => { port => $portal->{port},
                                ip   => $portal->{ip} }
         );
@@ -732,7 +732,7 @@ sub _initrd_iscsi {
         $self->generateFile(
             template_file => 'default.tt',
             template_dir  => 'internal/initrd/sles',
-            file          => '$target_dir/default',
+            file          => "$target_dir/default",
             data          => { target => $target,
                                ip     => $portal->{ip},
                                port   => $portal->{port} }
