@@ -193,7 +193,7 @@ use Exception::Class (
     Kanopya::Exception::MessageQueuing::PublishFailed => {
         isa         => 'Kanopya::Exception::MessageQueuing',
         description => 'Unable to publish on channel',
-        fields      => [ 'channel', 'body' ],
+        fields      => [ 'queue', 'body' ],
     },
 );
 

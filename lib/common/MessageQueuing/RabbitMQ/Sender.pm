@@ -44,7 +44,7 @@ my $log = get_logger("amqp");
 sub methods {
     return {
         send => {
-            description     => 'Produce a message to the specified channel',
+            description     => 'Produce a message to the specified queue',
             message_queuing => {}
         },
     };
@@ -61,7 +61,7 @@ my $incallback;
 =pod
 =begin classdoc
 
-Connect to the message queuing server, and declare the channels.
+Connect to the message queuing server, and declare the queues and exchanges.
 
 =end classdoc
 =cut
@@ -71,11 +71,12 @@ sub connect {
 
     $self->SUPER::connect(%args);
 
-    # For each method declare the predefined channel
+    # For each method declare the predefined queues and exchanges.
     for my $method (values %{ $self->methods }) {
-        if (defined $method->{message_queuing}->{channel}) {
-            $self->declareQueue(channel => $method->{message_queuing}->{channel});
-            $self->declareExchange(channel => $method->{message_queuing}->{channel});
+        if (defined $method->{message_queuing}->{queue}) {
+            $self->declareQueue(queue => $method->{message_queuing}->{queue});
+            $self->declareExchange(exchange => $method->{message_queuing}->{queue},
+                                   type     => 'fanout');
         }
     }
 }
@@ -95,7 +96,14 @@ sub AUTOLOAD {
     my @autoload = split(/::/, $AUTOLOAD);
     my $accessor = $autoload[-1];
 
-    my $method = $self->_methodsDefinition->{$accessor};
+    my $method;
+    if ($self->can("_methodsDefinition")) {
+        $method = $self->_methodsDefinition()->{$accessor};
+    }
+    else {
+        $method = $self->methods()->{$accessor};
+    }
+
     if ((not defined $method) or not defined ($method->{message_queuing})) {
         # The called method is not a defined message queuing method.
         $method = 'SUPER::' . $accessor;
@@ -105,9 +113,9 @@ sub AUTOLOAD {
     # Merge the arguments with possibly prefined for this method.
     %args = %{ $merge->merge(\%args, $method->{message_queuing}) };
 
-    General::checkParams(args => \%args, required => [ 'channel' ]);
+    General::checkParams(args => \%args, required => [ 'queue' ]);
 
-    my $channel = delete $args{channel};
+    my $queue = delete $args{queue};
 
     # Remove possibly defined connection options form args
     my $auth = {};
@@ -125,9 +133,9 @@ sub AUTOLOAD {
         $self->connect(%$auth);
     }
     # Declare the queue if not done at connect
-    $self->declareQueue(channel => $channel);
+    $self->declareQueue(queue => $queue);
     # Declare the exchange if not done at connect
-    $self->declareExchange(channel => $channel);
+    $self->declareExchange(exchange => $queue, type => 'fanout');
 
     # Serialize arguments
     my $data = JSON->new->utf8->encode(\%args);
@@ -139,13 +147,13 @@ sub AUTOLOAD {
     my $err;
     my $send  = 0;
     my $retry = 5;
-    while ($retry > 0 and not $send) {
+    while ($retry > 0 && ! $send) {
         $err = undef;
         eval {
             # Send message for the workers
-            $log->debug("Publishing on queue <$channel>, body: $data");
+            $log->debug("Publishing on queue <$queue>, body: $data");
             # TODO: Move the publish job in the parent package
-            $self->_connection->publish($self->_channel, $channel, $data, { mandatory => 1 }, {
+            $self->_connection->publish($self->_channel, $queue, $data, { mandatory => 1 }, {
                 content_type     => 'text/plain',
                 content_encoding => 'none',
                 delivery_mode    => 2,
@@ -154,37 +162,34 @@ sub AUTOLOAD {
         };
         if ($@) {
             $err = $@;
-            $log->warn("Failed to publish on queue <$channel>, $retry left: $err");
+            $log->warn("Failed to publish on queue <$queue>, $retry left: $err");
             $retry--;
             sleep 1;
         }
     }
 
-#    $send  = 0;
-#    $retry = 10;
-#    while ($retry > 0 and not $send) {
-#        $err = undef;
-#        eval {
-#            # Send message for the workers
-#            $log->debug("Publishing on queue <$channel>, body: $data");
-#            $self->_connection->publish($self->_channel, $channel, $data,
-#                { mandatory => 1, exchange => $channel }, {
-#                content_type     => 'text/plain',
-#                content_encoding => 'none',
-#                delivery_mode    => 2,
-#            });
-#            $send = 1;
-#        };
-#        if ($@) {
-#            my $err = $@;
-#            $log->warn("Failed to publish on exchange <$channel>, $retry left: $err");
-#            $retry--;
-#            sleep 1;
-#        }
-#    }
-#    if (defined $err) {
-#        throw Kanopya::Exception::MessageQueuing::PublishFailed(error => $err);
-#    }
+   $send  = 0;
+   $retry = 10;
+   while ($retry > 0 && ! $send && ! defined $err) {
+       $err = undef;
+       eval {
+           # Send message for the workers
+           $log->debug("Publishing on exchange <$queue>, body: $data");
+           $self->_connection->publish($self->_channel, $queue, $data,
+               { mandatory => 1, exchange => $queue },
+               { content_type     => 'text/plain',
+                 content_encoding => 'none',
+                 delivery_mode    => 2 }
+           );
+           $send = 1;
+       };
+       if ($@) {
+           my $err = $@;
+           $log->warn("Failed to publish on exchange <$queue>, $retry left: $err");
+           $retry--;
+           sleep 1;
+       }
+   }
 
     if (not $incallback) {
         $self->disconnect();
@@ -192,9 +197,9 @@ sub AUTOLOAD {
 
     if (defined $err) {
         throw Kanopya::Exception::MessageQueuing::PublishFailed(
-                  error   => $err,
-                  channel => $channel,
-                  body    => \%args,
+                  error => $err,
+                  queue => $queue,
+                  body  => \%args,
               );
     }
 }
