@@ -45,6 +45,8 @@ use Entity::Host;
 use Entity::ServiceProvider::Cluster;
 use Entity::Masterimage;
 use Entity::Vlan;
+use Entity::Tag;
+use EntityTag;
 use Harddisk;
 use NetconfVlan;
 
@@ -102,6 +104,13 @@ sub registerHost {
                 harddisk_device => $harddisk->{device},
                 harddisk_size   => $harddisk->{size}
             );
+        }
+    }
+
+    if (defined ($board->{tags})) {
+        for my $tagname (@{$board->{tags}}) {
+            my $tag = Entity::Tag->findOrCreate(tag => $tagname);
+            EntityTag->new(entity_id => $host->id, tag_id => $tag->id);
         }
     }
 
