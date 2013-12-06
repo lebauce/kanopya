@@ -13,9 +13,9 @@ set -e
 
 . /lib/lsb/init-functions
 
-DAEMON="/usr/bin/plackup"
+[ -x "/usr/bin/plackup" ] && DAEMON="/usr/bin/plackup" || DAEMON="/usr/local/bin/plackup"
 NAME="Kanopya Web UI"
-PIDFILE="/var/run/$EXEC.pid"
+PIDFILE="/var/run/kanopya-front.pid"
 PORT=5000
 WORKERS=10
 DANCER_DIR="/opt/kanopya/ui/Frontend"
