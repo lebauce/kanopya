@@ -89,7 +89,6 @@ sub _init {
         'kanopya-aggregator',
         'kanopya-rulesengine',
         'kanopya-front',
-        'kanopya-state-manager',
     ];
 
     $self->{parameters} = [
