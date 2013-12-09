@@ -405,6 +405,7 @@ sub _generatePXEConf {
     # create Template object
     my $template = Template->new($config);
     my $input    = "node-syslinux.cfg.tt";
+    my $pxeiface = $self->{context}->{host}->getPXEIface;
 
     my $vars = {
         nfsroot    => ($boot_policy =~ m/NFS/) ? 1 : 0,
@@ -413,6 +414,7 @@ sub _generatePXEConf {
         kernelfile => "vmlinuz-$kernel_version",
         initrdfile => "$clustername/$hostname/initrd_$kernel_version",
         nfsexport  => $nfsexport,
+        iface_name => $pxeiface->iface_name
     };
 
     $template->process($input, $vars, "/tmp/$tmpfile")
@@ -420,7 +422,7 @@ sub _generatePXEConf {
                      error => "Error when processing template $input."
                  );
 
-    my $pxeiface = $self->{context}->{host}->getPXEIface;
+    
     my $node_mac_addr = $pxeiface->iface_mac_addr;
     $node_mac_addr =~ s/:/-/g;
     my $dest = $tftpdir . '/pxelinux.cfg/01-' . lc $node_mac_addr ;
