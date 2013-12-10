@@ -121,5 +121,11 @@ class kanopya::openstack::quantum::server(
         quota_security_group_rule => -1
     }
 
+    if ! has_key($components, "novacompute") {
+        quantum_plugin_ovs {
+            'SECURITYGROUP/firewall_driver': value => "quantum.agent.linux.iptables_firewall.OVSHybridIptablesFirewallDriver";
+        }
+    }
+
     Class['kanopya::openstack::repository'] -> Class['kanopya::openstack::quantum::server']
 }
