@@ -36,17 +36,13 @@ use General;
 
 use Net::RabbitMQ;
 use JSON;
-
 use Data::Dumper;
+
+use TryCatch;
+my $err;
+
 use Log::Log4perl "get_logger";
 my $log = get_logger("amqp");
-
-
-# The connection singleton
-my $connection;
-
-# Keep the channel as singleton for each entities of a same process.
-my $channels = {};
 
 
 =pod
@@ -72,8 +68,11 @@ sub new {
 
 Connect to the message queuing server.
 
-@param ip the message queuing server ip
-@param port the message queuing server port
+@optional ip the message queuing server ip
+@optional port the message queuing server port
+@optional user the user name to use at connect
+@optional password the password to use at connect
+@optional vhost the virtual host to use at connect
 
 =end classdoc
 =cut
@@ -86,40 +85,40 @@ sub connect {
                          optional => { 'ip'       => '127.0.0.1',
                                        'port'     => 5672,
                                        'user'     => 'guest',
-                                       'password' => 'guest' });
+                                       'password' => 'guest',
+                                       'vhost'    => '/' });
 
     if (! (defined $self->_connection)) {
-        eval {
-            $log->debug("Connecting <$self> to broker <$args{ip}:$args{port}> as <$args{user}>");
-            $connection = Net::RabbitMQ->new();
+        try {
+            $log->debug("Connecting <$self> to broker <$args{ip}:$args{port}>, " .
+                        "vhost <$args{vhost}> as <$args{user}>");
+            $self->_connection(Net::RabbitMQ->new());
             $self->_connection->connect($args{ip}, {
                 user      => $args{user},
                 password  => $args{password},
                 port      => $args{port},
-                vhost     => '/',
+                vhost     => $args{vhost},
                 heartbeat => 0
             });
-        };
-        if ($@) {
-            my $err = $@;
+        }
+        catch ($err) {
             throw Kanopya::Exception::MessageQueuing::ConnectionFailed(error => $err);
         }
         $log->debug("Connected <$self> to broker.");
     }
 
     if (! (defined $self->_channel)) {
-        my $channel_number = scalar(keys %{ $channels }) + 1;
+        my $channel_number = scalar(keys %{ $self->{_channels} }) + 1;
         $log->debug("Openning channel for <$self>, number <$channel_number>");
 
-        eval {
+        try {
             $self->_connection->channel_open($channel_number);
-        };
-        if ($@) {
-            my $err = $@;
+        }
+        catch ($err) {
             $log->debug("Open channel failed, raise exception ChannelError: $err");
             throw Kanopya::Exception::MessageQueuing::ChannelError(error => $err);
         }
-        $channels->{$class} = $channel_number;
+        $self->_channel($channel_number);
 
         $log->debug("Channel open <" . $self->_channel . "> for <$self>, number <$channel_number>");
     }
@@ -139,18 +138,18 @@ Disconnect from the message queuing server.
 sub disconnect {
     my ($self, %args) = @_;
 
-    $channels = {};
+    $self->{_channels} = {};
 
     if (defined $self->_connection) {
         $log->debug("Disconnecting <$self> from broker");
-        eval {
+        try {
             my $res = $self->_connection->disconnect();
             $log->debug("Disconnected <$self> from broker");
-        };
-        if ($@) {
+        }
+        catch ($err) {
             $log->warn("Unable to disconnect <$self> from the broker: $@");
         }
-        $connection = undef;
+        $self->_connection(undef);
     }
 }
 
@@ -173,7 +172,11 @@ sub connected {
 =pod
 =begin classdoc
 
-Declare a queue identified by the channel name.
+Declare a queue identified by the queue name.
+If empty queue name specified, declare an exclusive queue.
+
+@optional queue the queue name to declare, if undefined, an exclusive queue
+                name will be generated
 
 =end classdoc
 =cut
@@ -182,25 +185,29 @@ sub declareQueue {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'channel' ],
-                         optional => { 'exclusive' => 0 });
+                         optional => { 'queue' => undef });
 
-    my $name = ($args{exclusive} == 0) ? $args{channel} : '';
+    if (defined $args{queue}) {
+        $log->debug("Declaring queue <$args{queue}>");
+    }
+    else {
+        $log->debug("Declaring exclusive queue");
+    }
 
-    $log->debug("Declaring queue <$args{channel}>");
-    my $queue;
-    eval {
-        $queue = $self->_connection->queue_declare($self->_channel, $name, {
-                     passive     => 0,
-                     durable     => 1,
-                     exclusive   => $args{exclusive},
-                     auto_delete => 0
-                 });
-    };
-    if ($@) {
-        my $err = $@;
+    my $queue = $args{queue} ? $args{queue} : '';
+    try {
+       $queue = $self->_connection->queue_declare($self->_channel, $args{queue} ? $args{queue} : '', {
+                    passive     => 0,
+                    durable     => 1,
+                    exclusive   => ! $args{queue} ? 1 : 0,
+                    auto_delete => 0
+                });
+    }
+    catch ($err) {
         throw Kanopya::Exception::MessageQueuing::ChannelError(error => $err);
     }
+
+    $log->debug("Queue <$queue> declared");
     return $queue;
 }
 
@@ -208,7 +215,10 @@ sub declareQueue {
 =pod
 =begin classdoc
 
-Declare a queue identified by the channel name.
+Declare an exchange identified by the exchange name, of specified type.
+
+@optional exchange the exchange name to declare
+@optional type the type of the exchange to declare (fanout|topic)
 
 =end classdoc
 =cut
@@ -216,21 +226,25 @@ Declare a queue identified by the channel name.
 sub declareExchange {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'channel' ]);
+    General::checkParams(args => \%args, required => [ 'exchange', 'type' ]);
 
-    $log->debug("Declaring exchange <$args{channel}> of type <fanout>");
+    $log->debug("Declaring exchange <$args{exchange}> of type <$args{type}>");
     my $exchange;
-    eval {
-        $exchange = $self->_connection->exchange_declare($self->_channel, $args{channel}, {
-                        exchange_type => "fanout",
+    try {
+        $exchange = $self->_connection->exchange_declare($self->_channel, $args{exchange}, {
+                        exchange_type => $args{type},
                         passive       => 0,
                         durable       => 1,
                         auto_delete   => 0
                     });
-    };
-    if ($@) {
-        my $err = $@;
-        throw Kanopya::Exception::MessageQueuing::ChannelError(error => $err);
+    }
+    catch ($err) {
+        if ("$err" !~ m/cannot redeclare exchange/) {
+            throw Kanopya::Exception::MessageQueuing::ChannelError(error => $err);
+        }
+        else {
+            $log->warn($err);
+        }
     }
     return $exchange;
 }
@@ -239,10 +253,35 @@ sub declareExchange {
 =pod
 =begin classdoc
 
-Register the callbck method for a specific channel and type.
+Bind the queue on the exchange.
 
-@param queue the queue on which register the callback
-@param callback the callback method
+@optional queue the queue to bind an the exchange
+@optional exchange the exchange on which bind the queue
+
+=end classdoc
+=cut
+
+sub bindQueue {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'queue', 'exchange' ]);
+
+    $log->debug("Binding queue <$args{queue}> on exchange <$args{exchange}>");
+    try {
+        $self->_connection->queue_bind($self->_channel, $args{queue}, $args{exchange}, $args{exchange});
+    }
+    catch ($err) {
+        throw Kanopya::Exception::MessageQueuing::ChannelError(error => $err);
+    }
+}
+
+
+=pod
+=begin classdoc
+
+Register the callback method for a specific channel and type.
+
+@param queue the queue on which register the consumer
 
 =end classdoc
 =cut
@@ -254,10 +293,15 @@ sub consume {
 
     # Register the method to call back at message consumption
     $log->debug("Registering (consume) callback on queue <$args{queue}>");
-    my $tag = $self->_connection->consume($self->_channel, $args{queue}, { no_ack => 0 });
+    try {
+        my $tag = $self->_connection->consume($self->_channel, $args{queue}, { no_ack => 0 });
 
-    $log->debug("Registered (consume) callback <$tag>");
-    return $tag;
+        $log->debug("Registered (consume) callback, consumer tag <$tag>");
+        return $tag;
+    }
+    catch ($err) {
+        throw Kanopya::Exception::MessageQueuing::ChannelError(error => $err);
+    }
 }
 
 
@@ -273,11 +317,10 @@ sub recv {
     my ($self, %args) = @_;
 
     my $msg;
-    eval {
+    try {
         $msg = $self->_connection->recv();
-    };
-    if ($@) {
-        my $err = $@;
+    }
+    catch ($err) {
         throw Kanopya::Exception::MessageQueuing::ChannelError(error => $err);
     }
     return $msg;
@@ -289,7 +332,7 @@ sub recv {
 
 Acknowledge a message secified by tag.
 
-@param tag the delivery tag of the essage to ack
+@param tag the delivery tag of the message to ack
 
 =end classdoc
 =cut
@@ -300,23 +343,33 @@ sub acknowledge {
     General::checkParams(args => \%args, required => [ 'tag' ]);
 
     $log->debug("Acknowledging message with tag <$args{tag}>");
-    $self->_connection->ack($self->_channel, $args{tag});
+    try {
+        $self->_connection->ack($self->_channel, $args{tag});
+    }
+    catch ($err) {
+        throw Kanopya::Exception::MessageQueuing::ChannelError(error => $err);
+    }
 }
 
 
 =pod
 =begin classdoc
 
-Return the session private attribute.
+Return the channel private attribute.
 
 =end classdoc
 =cut
 
 sub _channel {
-    my ($self, %args) = @_;
+    my ($self, @args) = @_;
     my $class = ref($self) || $self;
 
-    return $channels->{$class};
+    if (scalar(@args)) {
+        $self->{_channels}->{$class} = shift @args;
+    }
+    else {
+        return $self->{_channels}->{$class};
+    }
 }
 
 
@@ -329,9 +382,14 @@ Return the connection private attribute.
 =cut
 
 sub _connection {
-    my ($self, %args) = @_;
+    my ($self, @args) = @_;
 
-    return $connection;
+    if (scalar(@args)) {
+        $self->{_connection} = shift @args;
+    }
+    else {
+        return $self->{_connection};
+    }
 }
 
 1;

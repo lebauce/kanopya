@@ -75,19 +75,19 @@ sub methods {
         run => {
             description => 'Produce a workflow to run.',
             message_queuing => {
-                channel => 'workflow'
+                queue => 'workflow'
             }
         },
         execute => {
             description => 'Produce an operation to execute',
             message_queuing => {
-                channel => 'operation'
+                queue => 'operation'
             }
         },
         terminate => {
             description => 'Produce an operation execution result.',
             message_queuing => {
-                channel => 'operation_result'
+                queue => 'operation_result'
             }
         },
     };
@@ -104,7 +104,7 @@ sub enqueue {
 
     my $operation = Entity::Operation->enqueue(%args);
 
-    # Publish on the 'workflow' channel
+    # Publish on the 'workflow' queue
     eval {
         MessageQueuing::RabbitMQ::Sender::run($self,
                                               workflow_id => $operation->workflow->id,
@@ -127,7 +127,7 @@ sub execute {
     General::checkParams(args     => \%args,
                          required => [ 'operation_id' ]);
 
-    # Publish on the 'operation' channel
+    # Publish on the 'operation' queue
     MessageQueuing::RabbitMQ::Sender::execute($self,
                                               operation_id => $args{operation_id},
                                               %{ Kanopya::Database::_adm->{config}->{amqp} });
@@ -141,7 +141,7 @@ sub terminate {
                          required => [ 'operation_id', 'status' ],
                          optional => { 'exception' => undef });
 
-    # Publish on the 'operation_result' channel
+    # Publish on the 'operation_result' queue
     MessageQueuing::RabbitMQ::Sender::terminate($self, %args);
 }
 
@@ -157,7 +157,7 @@ sub run {
 
     my $workflow = Entity::Workflow->run(%args);
 
-    # Publish on the 'workflow' channel
+    # Publish on the 'workflow' queue
     eval {
         MessageQueuing::RabbitMQ::Sender::run($self,
                                               workflow_id => $workflow->id,

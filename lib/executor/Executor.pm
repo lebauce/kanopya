@@ -63,25 +63,25 @@ my $err;
 use constant CALLBACKS => {
     execute_operation => {
         callback  => \&executeOperation,
-        channel   => 'operation',
         type      => 'queue',
-        instances => 1,
+        queue     => 'operation',
+        instances => 2,
         duration  => 30,
     },
     handle_result => {
         callback  => \&handleResult,
-        channel   => 'operation_result',
         type      => 'queue',
+        queue     => 'operation_result',
         instances => 1,
         duration  => 30,
     },
     run_workflow => {
         callback  => \&runWorkflow,
-        channel   => 'workflow',
         type      => 'queue',
+        queue     => 'workflow',
         instances => 1,
         duration  => 30,
-    }
+    },
 };
 
 sub getCallbacks { return CALLBACKS; }

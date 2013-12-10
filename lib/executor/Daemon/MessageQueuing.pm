@@ -37,6 +37,11 @@ use warnings;
 use AnyEvent;
 use AnyEvent::Subprocess;
 use Data::Dumper;
+use String::Random;
+use Clone qw(clone);
+
+use TryCatch;
+my $err;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -53,8 +58,9 @@ sub getCallbacks { return CALLBACKS; }
 
 @constructor
 
-Base method to configure the daemon to use the message queuing middleware,
-bind callback methods to the corresponing queues.
+Instanciate a message queueing daemon.
+
+@return the daemon instance
 
 =end classdoc
 =cut
@@ -64,65 +70,9 @@ sub new {
 
     my $self = $class->SUPER::new(%args);
 
-    # Get the callback related amqp conf
-    my $cbconf = $self->{config}->{amqp}->{callbacks};
-
-    # Register the callback for used channels
-    CALLBACK:
-    for my $cbname (keys %{ $self->getCallbacks }) {
-        my $callback = $self->getCallbacks->{$cbname};
-
-        # Handle the callbacks conf if defined
-        if (defined $cbconf) {
-            # If callbacks specified in the conf, skip not defined ones
-            if (not defined $cbconf->{$cbname}) {
-                $log->info("Skiping callback <$cbname> on channel <$callback->{channel}>");
-                next CALLBACK;
-            }
-            # If the number of instance is specified in conf,
-            # override the callback definition
-            if (defined $cbconf->{$cbname}->{instances}) {
-                $callback->{instances} = $cbconf->{$cbname}->{instances};
-            }
-        }
-
-        # Define a closure that call the specified callaback within eval
-        my $cbmethod = sub {
-            my %cbargs = @_;
-            return $callback->{callback}->($self, %cbargs);
-        };
-
-        # Register worker/subscriber in function of the type
-        my $instances = defined $callback->{instances} ? $callback->{instances} : 1;
-
-        $log->info("Registering $instances callback(s) <$cbname> on channel <$callback->{channel}>");
-
-        if ($callback->{type} eq 'queue') {
-            $self->registerWorker(callback  => \&$cbmethod,
-                                  channel   => $callback->{channel},
-                                  instances => $instances,
-                                  # Force the duration if defined
-                                  duration  => $args{duration}
-                                                   ? $args{duration} : $callback->{duration});
-        }
-        else {
-            $self->registerSubscriber(callback  => \&$cbmethod,
-                                      channel   => $callback->{channel},
-                                      instances => $instances,
-                                      # Force the duration if defined
-                                      duration  => $args{duration}
-                                                       ? $args{duration} : $callback->{duration});
-        }
-    }
-    if (not defined $self->_consumers) {
-        throw Kanopya::Exception(
-            error => "Could not start daemon $self->{name}, no callback defined..."
-        );
-    }
-
     # Private member usefull to stop receving until the specified duration
     # when the deamon stop.
-    $self->{_running} = 1;
+    $self->setRunning(running => 1);
 
     return $self;
 }
@@ -144,25 +94,24 @@ sub connect {
 
     # Connect the component as the connection can not be done
     # within a message callback.
-    eval {
+    try {
         $self->_component->connect(%{ $self->{config}->{amqp} });
 
         # Set the in_eventloop mode on the sender as we want to avoid the sender to connect
         # or declare queues as it cannot be done in an event loop.
         $self->_component->setCallBackMode;
-    };
-    if ($@) {
-        my $err = $@;
-        if (ref($err) and $err->isa('Kanopya::Exception::Internal::NotFound')) {
-            $log->warn("Can not connect the sender component <Kanopya" . $self->{name} .
-                       "> as it can not be found.");
-        }
-        elsif (ref($err)) { $err->rethrow(); }
-        else {
-            throw Kanopya::Exception(
-                      error => "Unable to connect the component to the broker: $err \n"
-                  );
-        }
+    }
+    catch (Kanopya::Exception::Internal::NotFound $err) {
+        $log->warn("Can not connect the sender component <Kanopya" . $self->{name} .
+                   "> as it can not be found.");
+    }
+    catch (Kanopya::Exception $err) {
+        $err->rethrow();
+    }
+    catch ($err) {
+        throw Kanopya::Exception(
+                  error => "Unable to connect the component to the broker: $err\n"
+              );
     }
 }
 
@@ -170,13 +119,35 @@ sub connect {
 =pod
 =begin classdoc
 
-Close the channel of the component before disconnecting.
+Close the connection of the component before disconnecting.
 
 =end classdoc
 =cut
 
 sub disconnect {
     my ($self, %args) = @_;
+
+    try {
+        $self->_component->disconnect();
+    }
+    catch (Kanopya::Exception::Internal::NotFound $err) {
+        $log->warn("Can not disconnect the sender component <Kanopya" . $self->{name} .
+                   "> as it can not be found.");
+    }
+    catch (Kanopya::Exception $err) {
+        $err->rethrow();
+    }
+    catch ($err) {
+        throw Kanopya::Exception(
+                  error => "Unable to disconnect the component to the broker: $err \n"
+              );
+    }
+
+    # Remove the consumer tag ofr all callback definition as we are disconnecting,
+    # and the consumer must to be re-created at next use.
+    for my $callbackdef (values %{ $self->_callbacks }) {
+        delete $callbackdef->{consumer};
+    }
 
     $self->SUPER::disconnect(%args);
 }
@@ -185,11 +156,11 @@ sub disconnect {
 =pod
 =begin classdoc
 
-Register the daemon as a worker on a specific channel.
+Register the daemon as a worker on a specific queue.
 Produced data is distributed among workers, each data is delivered to exactly one worker.
 
-@param channel the channel on which the callback is resistred
-@param callback the classback method to call when data is produced on the channel
+@param queue the queue on which the callback is resistred
+@param callback the callback method to call when data is produced on the queue
 
 =end classdoc
 =cut
@@ -197,22 +168,24 @@ Produced data is distributed among workers, each data is delivered to exactly on
 sub registerWorker {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'channel', 'callback' ]);
+    General::checkParams(args => \%args, required => [ 'queue', 'callback' ]);
 
-    # Set up the daemon as receiver worker on the queue corresponding to the
-    # specified channel name.
-    $self->register(type => 'queue', %args);
+    # Set up the daemon as receiver worker on the queue
+    $self->registerCallback(type => 'queue', %args);
 }
 
 
 =pod
 =begin classdoc
 
-Register the daemon as a subscriber on a specific channel.
+Register the daemon as a subscriber on a specific queue binded on the given exchange.
 Produced data is delivred to each subscribers.
 
-@param channel the channel on which the callback is resistred
-@param callback the classback method to call when data is produced on the channel
+@param exchange the exchange to declare
+@param type the type of the exchange to declare (topic|fanout)
+@param callback the callback method to call when data is produced on the exchange
+
+@optional queue a named queue that skip the exclusive queue generation
 
 =end classdoc
 =cut
@@ -220,11 +193,127 @@ Produced data is delivred to each subscribers.
 sub registerSubscriber {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'channel', 'callback' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'exchange', 'type', 'callback' ],
+                         optional => { 'queue' => undef });
 
-    # Set up the daemon as receiver subscriber on the topic corresponding to the
-    # specified channel name.
-    $self->register(type => 'topic', %args);
+    # Set up the daemon as receiver subscriber on the topic/fanout corresponding to the
+    # specified exchange name.
+    $self->registerCallback(%args);
+}
+
+
+=pod
+=begin classdoc
+
+Register a callback on a specific queue or exchange.
+
+@param cbname the callback name to register, it is a unique nameused to identify the callback definition
+@param type the type of the callback registration (queue|fanout|topic)
+@param callback the classback method to call when data is produced on the queue/exchange
+
+@optional queue the queue to use, required for type <queue>, optional for type <fanout|topic>
+@optional exchange the exchange on which is binded the queue, required for type <fanout|topic>
+
+=end classdoc
+=cut
+
+sub registerCallback {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'cbname', 'type', 'callback' ],
+                         optional => { 'queue' => undef, 'exchange' => undef });
+
+    # Initialize the new callback definiton
+    my $callbackdef = {
+        type     => $args{type},
+        callback => $args{callback}
+    };
+
+    if ($args{type} !~ m/^(queue|topic|fanout)$/) {
+        throw Kanopya::Exception::Internal::IncorrectParam(
+                  error => "Wrong value <$args{type}> for argument <type>, must be <queue|topic|fanout>"
+              );
+    }
+    elsif ($args{type} eq "queue") {
+        if (! defined $args{queue}) {
+            throw Kanopya::Exception::Internal::IncorrectParam(
+                      error => "You must specify a queue for callbacks fo type <queue>"
+                  );
+        }
+
+        # Fill the callback definition with the queue name
+        $callbackdef->{queue} = $args{queue};
+    }
+    elsif (! defined $args{exchange}) {
+        throw Kanopya::Exception::Internal::IncorrectParam(
+                error => "You must specify an exchange for callbacks fo type <$args{type}>"
+              );
+    }
+    else {
+        # Fill the callback definition with the echange name and possibly fixed queue name
+        $callbackdef->{exchange} = $args{exchange};
+        if (defined $args{queue}) {
+            $callbackdef->{queue} = $args{queue};
+        }
+    }
+
+    # Add the callback defitition to the c
+    $self->_callbacks->{$args{cbname}} = $callbackdef;
+}
+
+
+=pod
+=begin classdoc
+
+Register the consumer for the specified callback definition. Override some callback definition
+possible forced configuration from configuration file.
+
+@param cbname the callback name that identity the callback definition to use
+              for create the consumer
+
+=end classdoc
+=cut
+
+sub createConsumer {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'cbname' ]);
+
+    my $callbackdef = $self->_callbacks->{$args{cbname}};
+    if (! defined $callbackdef) {
+        throw Kanopya::Exception::Internal::NotFound(
+                  error => "No callback registred with name <$args{cbname}>"
+              );
+    }
+
+    # If a consumer already created for this callback, skipping.
+    if (defined $callbackdef->{consumer}) {
+        $log->warn("Consumer already exists for callback <$args{cbname}>, skipping...");
+        return;
+    }
+
+    if (not $self->connected) {
+        $self->connect();
+    }
+
+    # Get the callback related amqp conf
+    my $cbconf = $self->{config}->{amqp}->{callbacks};
+
+    # If the number of instance is specified in conf, override the callback definition
+    if (defined $cbconf->{$args{cbname}}->{instances}) {
+        $callbackdef->{instances} = $cbconf->{$args{cbname}}->{instances};
+    }
+
+    # Define a closure that call the specified callaback within eval
+    my $cbmethod = sub {
+        my %cbargs = @_;
+        return $callbackdef->{callback}->($self, %cbargs);
+    };
+
+    $log->debug("Create consumer callback <$args{cbname}> of type <$callbackdef->{type}>.");
+    $callbackdef->{consumer} = $self->SUPER::createConsumer(%$callbackdef, callback => \&$cbmethod);
 }
 
 
@@ -232,7 +321,7 @@ sub registerSubscriber {
 =begin classdoc
 
 Base method to run the daemon.
-Override the parent method, create a child process for each registration on channels.
+Override the parent method, create a child process for each registration on callbacks.
 
 @param condvar the condition variable on which the daemon wait for termination
 
@@ -246,12 +335,12 @@ sub runLoop {
                          optional => { 'condvar' => AnyEvent->condvar });
 
     # Disconnect possibly connected session, as we must do
-    # the connection inside the childs created for each channel.
+    # the connection inside the childs created for each callback.
     if ($self->connected) {
         $self->disconnect();
     }
 
-    # Wait on all channel of all types
+    # Wait on all queues
     $self->receiveAll(stopcondvar => $args{condvar});
 
     # Never should aprear as the parent process loop on the running
@@ -265,8 +354,15 @@ sub runLoop {
 =pod
 =begin classdoc
 
-Receive messages from the channels on which the daemon is registred,
-and call the corresponding callbacks.
+Receive one messages from the queues on which the daemon is registred,
+and call the corresponding callback.
+
+@param cbname the callback name that identity the callback definition
+              to use for create the consumer
+@param duration the duration while awaiting messages
+
+@optional keep_connection flag to keep connection after receving the message,
+                          usefull for test purpose.
 
 =end classdoc
 =cut
@@ -274,28 +370,42 @@ and call the corresponding callbacks.
 sub oneRun {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'channel', 'type' ]);
+    General::checkParams(args => \%args,
+                         required => [ 'cbname', 'duration'],
+                         optional => { 'keep_connection' => 0 });
+
+    # Create the consumer for the specified callback
+    $self->createConsumer(cbname => $args{cbname});
 
     # Blocking call
-    eval {
-        $self->receive(type => $args{type}, channel => $args{channel});
-    };
-    if ($@) {
-        my $err = $@;
+    try {
+        $self->receive(duration => $args{duration}, count => 1);
+    }
+    catch (Kanopya::Exception $err) {
         $self->disconnect();
         $err->rethrow();
     }
-    $self->disconnect();
+    catch ($err) {
+        $self->disconnect();
+        throw Kanopya::Exception(
+                  error => "Unable to connect the component to the broker: $err \n"
+              );
+    }
+
+    if (! $args{keep_connection}) {
+        $self->disconnect();
+    }
 }
 
 
 =pod
 =begin classdoc
 
-Receive messages from the specific channel, and call the corresponding callbacks.
+Receive messages during the specified duration.
 
-@param channel the channel on which the callback is resistred
-@param type the type of the queue (queue or topic)
+@param duration the duration while awaiting messages
+
+@optional count the maximum number of message to receive
 
 =end classdoc
 =cut
@@ -304,24 +414,26 @@ sub receive {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'type', 'channel' ],
-                         optional => {});
+                         required => [ 'duration' ],
+                         optional => { 'count' => undef });
 
-    my $duration = $self->_consumers->{$args{type}}->{$args{channel}}->{duration};
-    $log->debug("Receiving messages on <$args{type}>, channel <$args{channel}>, for <$duration> s.");
+    $log->debug("Receiving messages for <$args{duration}> s.");
 
     if (not $self->connected) {
         $self->connect();
     }
 
-    # Register the consumer on the channel
-    $self->createConsumer(channel => $args{channel}, type => $args{type});
-
     # Continue to fetch while duration not expired
+    my $count = 0;
     my $start = time;
-    while ((time - $start) < $duration && $self->isRunning) {
+    while (($args{duration} == 0 || (time - $start) < $args{duration}) && $self->isRunning) {
         # Blocking call
-        $self->fetch(timeout => $duration - (time - $start));
+        $self->fetch(timeout => ($args{duration} == 0) ? 0 : $args{duration} - (time - $start));
+
+        $count++;
+        if (defined $args{count} && $count >= $args{count}) {
+            last;
+        }
     }
 }
 
@@ -329,9 +441,13 @@ sub receive {
 =pod
 =begin classdoc
 
-Receive messages from all channels, spawn a child for each channel,
+Receive messages from all queues, spawn a child for each queues,
 then wait on the stop condition variable to kill childs when the service is stopped.
 
+@param stopcondvar the conditional variable on which the parent process will block
+                   after spawning all childs. The conditional variable could be unlocked
+                   when all child has terminated or when the caller process (usually the
+                   service script) want to stop receiving messages.
 =end classdoc
 =cut
 
@@ -347,74 +463,88 @@ sub receiveAll {
 
     # Run through all registred receviers
     my @childs;
-    for my $type ('queue', 'topic') {
-        for my $channel (keys %{ $self->_consumers->{$type} }) {
-            my $receiver = $self->_consumers->{$type}->{$channel};
+    for my $cbname (keys %{ $self->_callbacks }) {
+        my $callbackdef = $self->_callbacks->{$cbname};
 
-            # Define a common job for instances of this receiver
-            my $job = AnyEvent::Subprocess->new(code => sub {
-                eval {
-                    $log->info("Spawn process <$$> for waiting on <$type>, channel <$channel>. ");
+        # Build the common message substring according to the callback definition
+        my $message = "on ";
+        if ($callbackdef->{type} eq "queue") {
+            $message .= "queue <$callbackdef->{queue}>";
+        }
+        else {
+            $message .= "exchange <$callbackdef->{exchange}> of type <$callbackdef->{type}>";
+            if (defined $callbackdef->{queue}) {
+                $message .= " (queue <$callbackdef->{queue}>)";
+            }
+        }
 
-                    # Infinite loop on fetch. The event loop should never stop itself,
-                    # but looping here in a while, to re-trigger the event loop if anormaly fail.
-                    my $publish_error = undef;
-                    while ($self->isRunning) {
-                        # Connect to the broker within the child
-                        $self->connect();
+        # Define a common job for instances of this consumer
+        my $job = AnyEvent::Subprocess->new(code => sub {
+            eval {
+                $log->info("Spawn process <$$> for waiting $message.");
 
-                        # Define an handler on sig TERM to stop the event loop
-                        local $SIG{TERM} = sub {
-                            $log->info("Child process <$$> received TERM: awaiting running job to exit...");
+                # Infinite loop on fetch. The event loop should never stop itself,
+                # but looping here in a while, to re-trigger the event loop if anormaly fail.
+                my $publish_error = undef;
+                while ($self->isRunning) {
+                    # Connect to the broker within the child
+                    $self->connect();
 
-                            # Stop looping on the event loop
-                            $self->setRunning(running => 0);
-                        };
+                    # Create the consumer for the current callback
+                    if ($self->connected) {
+                        $self->createConsumer(cbname => $cbname);
+                    }
 
-                        # Retrigger a message defined
-                        if (defined $publish_error) {
-                            my $channel = $publish_error->channel;
-                            $log->info("Retriggering undelivred message on <" . $channel . ">");
-                            $self->_component->send(channel => $publish_error->channel,
-                                                    %{ $publish_error->body });
-                            $publish_error = undef;
-                        }
+                    # Define an handler on sig TERM to stop the event loop
+                    local $SIG{TERM} = sub {
+                        $log->info("Child process <$$> received TERM: awaiting running job to exit...");
 
-                        # Continue to fetch while duration not expired
-                        eval {
-                            $self->receive(type => $type, channel => $channel);
-                        };
-                        if ($@) {
-                            my $err = $@;
-                            if (! $err->isa('Kanopya::Exception::MessageQueuing::NoMessage')) {
-                                # If a publish error occurs, keep the undelivred message body
-                                # to retrigger it at reconnection.
-                                if ($err->isa('Kanopya::Exception::MessageQueuing::PublishFailed')) {
-                                    $publish_error = $err;
-                                }
-                                # Log the error...
-                                if ($self->isRunning) {
-                                    $log->error("Fetch on <$type>, channel <$channel> failed: $err");
-                                }
+                        # Stop looping on the event loop
+                        $self->setRunning(running => 0);
+                    };
+
+                    # Retrigger a message defined
+                    if (defined $publish_error) {
+                        my $queue = $publish_error->queue;
+                        $log->info("Retriggering undelivred message on <" . $queue . ">");
+                        $self->_component->send(queue => $publish_error->queue, %{ $publish_error->body });
+                        $publish_error = undef;
+                    }
+
+                    # Continue to fetch while duration not expired
+                    eval {
+                        $self->receive(duration => $callbackdef->{duration});
+                    };
+                    if ($@) {
+                        my $err = $@;
+                        if (! $err->isa('Kanopya::Exception::MessageQueuing::NoMessage')) {
+                            # If a publish error occurs, keep the undelivred message body
+                            # to retrigger it at reconnection.
+                            if ($err->isa('Kanopya::Exception::MessageQueuing::PublishFailed')) {
+                                $publish_error = $err;
+                            }
+                            # Log the error...
+                            if ($self->isRunning) {
+                                $log->error("Fetch on $message failed: $err");
                             }
                         }
-                        # Disconnect the child from the broker
-                        $self->disconnect();
                     }
-                };
-                if ($@) {
-                    my $err = $@;
-                    $log->info("Child process <$$> failed: $err");
+                    # Disconnect the child from the broker
+                    $self->disconnect();
                 }
-
-                $log->info("Child process <$$> stop waiting on <$type>, channel <$channel>, exiting.");
-                exit 0;
-            });
-
-            # Create the specified number of instance of the worker/subscriber
-            for (1 .. $receiver->{instances}) {
-                push @childs, $job->run;
+            };
+            if ($@) {
+                my $err = $@;
+                $log->info("Child process <$$> failed: $err");
             }
+
+            $log->info("Child process <$$> stop waiting $message, exiting.");
+            exit 0;
+        });
+
+        # Create the specified number of instance of the worker/subscriber
+        for (1 .. $callbackdef->{instances}) {
+            push @childs, $job->run;
         }
     }
 
@@ -451,10 +581,13 @@ sub receiveAll {
     }
 }
 
+
 =pod
 =begin classdoc
 
 Set the running prviate member.
+
+@param running the running flag to set
 
 =end classdoc
 =cut
@@ -480,6 +613,24 @@ sub isRunning {
     my ($self, %args) = @_;
 
     return ($self->{_running} == 1);
+}
+
+
+=pod
+=begin classdoc
+
+Return the registred callbacks infos.
+
+=end classdoc
+=cut
+
+sub _callbacks {
+    my ($self, %args) = @_;
+
+    if (not defined $self->{_callbacks}) {
+        $self->{_callbacks} = clone($self->getCallbacks());
+    }
+    return $self->{_callbacks};
 }
 
 1;

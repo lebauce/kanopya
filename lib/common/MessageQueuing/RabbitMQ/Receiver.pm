@@ -43,47 +43,14 @@ my $log = get_logger("amqp");
 =pod
 =begin classdoc
 
-Register a callback on a specific channel.
-
-@param channel the channel on which the callback is resistred
-@param type the type of the queue (queue or topic)
-@param callback the classback method to call when data is produced on the channel
-
-@optional the maximum duration of awaiting messages
-
-=end classdoc
-=cut
-
-sub register {
-    my ($self, %args) = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ 'type', 'channel', 'callback' ],
-                         optional => { 'duration'  => undef,
-                                       'instances' => 1 });
-
-    if ($args{type} !~ m/^(queue|topic)$/) {
-        throw Kanopya::Exception::Internal::IncorrectParam(
-                  error => "Wrong value <$args{type}> for argument <type>, must be <queue|topic>"
-              );
-    }
-
-    # Register the method to call back at message recepetion
-    $self->_consumers->{$args{type}}->{$args{channel}} = {
-        callback  => $args{callback},
-        duration  => $args{duration},
-        instances => $args{instances},
-    };
-}
-
-
-=pod
-=begin classdoc
-
 Declare queues and exchanges.
 
-@param channel the channel on which the callback is resistred
-@param type the type of the queue (queue or topic)
+@param type the type of the callback definition (queue|topic|fanout)
+@param callback the callaback method to execute at message receipt
+
+@optional queue the queue name on which create the consumer
+@optional echange the exchange on which bind the queue
+@optional declare flag to skip queue and echange declaration
 
 =end classdoc
 =cut
@@ -92,27 +59,41 @@ sub createConsumer {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'type', 'channel' ],
-                         optional => { 'force' => 0 });
+                         required => [ 'type', 'callback' ],
+                         optional => { 'queue' => undef, 'exchange' => undef, 'declare' => 1 });
 
-    # Declare queues or exchanges
+    if ($args{type} ne "queue" && ! defined $args{exchange}) {
+        throw Kanopya::Exception::Internal::IncorrectParam(
+                  error => "You must provide an exchange for consumers of type <$args{type}>"
+              );
+    }
+
+    # Declare queues or exchanges if required
     my $queue;
-    if ($args{type} eq 'queue') {
-        $queue = $self->declareQueue(channel => $args{channel});
-    }
-    elsif ($args{type} eq 'topic') {
-        $log->debug("Declaring exchange <$args{channel}> of type <fanout>");
-        $self->declareExchange(channel => $args{channel});
+    if ($args{declare} || ! defined $args{queue}) {
+        # Delcare the queue , If queue undefined, generate an exclusique queue.
+        $queue = $self->declareQueue(queue => $args{queue});
 
-        $log->debug("Declaring exclusive queue in way to bind on exchange <$args{channel}>");
-        $queue = $self->declareQueue(channel => $args{channel}, exclusive => 1);
-        $log->debug("Binding queue $queue on exchange <$args{channel}>");
-        # TODO: Move the job for queue binding in the parent package.
-        $self->_connection->queue_bind($self->_channel, $queue, $args{channel}, $args{channel})
+        # Delcare the exchange
+        if ($args{type} ne "queue") {
+            if ($args{declare}) {
+                $self->declareExchange(exchange => $args{exchange}, type => $args{type});
+            }
+
+            $self->bindQueue(queue => $queue, exchange => $args{exchange});
+        }
+    }
+    else {
+        $queue = $args{queue};
     }
 
-    # Create the consumer on the channel for the queue
-    $self->consume(queue => $queue);
+    # Create the consumer on the queue
+    my $consumer_tag = $self->consume(queue => $queue);
+
+    # Associate the callback to the consumer tag for retreive the callback to call
+    # at message receipt.
+    $self->_consumers->{$consumer_tag} = $args{callback};
+    return $consumer_tag;
 }
 
 
@@ -122,7 +103,7 @@ sub createConsumer {
 Wait for message in an event loop, interupt the bloking call
 if the duration exceed.
 
-@optional timeout the maximum time to wait messages.
+@optional timeout the maximum time to wait messages, 0 is infinity
 
 =end classdoc
 =cut
@@ -130,8 +111,7 @@ if the duration exceed.
 sub fetch {
     my ($self, %args) = @_;
 
-    General::checkParams(args     => \%args,
-                         optional => { 'timeout' => 30 });
+    General::checkParams(args => \%args, optional => { 'timeout' => 30 });
 
     $log->debug("Fetch message for <$args{timeout}> second(s).");
 
@@ -154,25 +134,17 @@ sub fetch {
         #       and the following one, need semaphore stuff.
         alarm 0;
 
-        my ($type, $channel);
-        if ($rv->{exchange} ne '') {
-            # Seems to be a topic message
-            $type = 'topic';
-            $channel = $rv->{exchange};
+        if (! defined $rv) {
+            throw Kanopya::Exception::MessageQueuing::NoMessage(error => "No message received");
         }
-        elsif ($rv->{routing_key} ne '') {
-            # Seems to be a queue message
-            $type = 'queue';
-            $channel = $rv->{routing_key};
-        }
-        else {
+
+        # Retrieve the callback to call from the message consumer tag
+        my $callback = $self->_consumers->{$rv->{consumer_tag}};
+        if (! defined $callback) {
             throw Kanopya::Exception::Internal::IncorrectParam(
-                      error => "Unreconized message type:\n" . Dumper($rv)
+                      error => "No registred callback found for consumer tag <$rv->{consumer_tag}>"
                   );
         }
-        # Retreive the method to call form type and channel
-        my $callback = $self->_consumers->{$type}->{$channel}->{callback};
-
         if (! (ref($callback) eq 'CODE')) {
             throw Kanopya::Exception::Internal::IncorrectParam(
                       error => "Defined callback <$callback> is not valid."
