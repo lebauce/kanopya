@@ -293,6 +293,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 ipmi_credentials
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::IpmiCredentials>
+
+=cut
+
+__PACKAGE__->has_many(
+  "ipmi_credentials",
+  "Kanopya::Schema::Result::IpmiCredentials",
+  { "foreign.host_id" => "self.host_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 kernel
 
 Type: belongs_to

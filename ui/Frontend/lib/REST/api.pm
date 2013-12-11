@@ -71,6 +71,7 @@ our %resources = (
     "indicatorset"             => "Indicatorset",
     "interface"                => "Entity::Interface",
     "ip"                       => "Ip",
+    "ipmicredentials"          => "IpmiCredentials",
     "iscsicontaineraccess"     => "Entity::ContainerAccess::IscsiContainerAccess",
     "iscsi"                    => "Entity::Component::Iscsi",
     "iscsiportal"              => "IscsiPortal",

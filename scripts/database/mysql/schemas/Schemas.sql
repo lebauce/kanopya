@@ -293,6 +293,16 @@ CREATE TABLE `hostmodel` (
   FOREIGN KEY (`processormodel_id`) REFERENCES `processormodel` (`processormodel_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE `ipmi_credentials` (
+  `ipmi_credentials_id` int(8) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
+  `host_id` int(8) unsigned NOT NULL,
+  `ipmi_credentials_ip_addr` char(15) NOT NULL,
+  `ipmi_credentials_user` char(255) NOT NULL,
+  `ipmi_credentials_password` char(255) NOT NULL,
+  KEY (`host_id`),
+  FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 --
 -- Table structure for table `container`
 -- Entity::Container class

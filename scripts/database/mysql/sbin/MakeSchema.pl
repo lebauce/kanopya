@@ -72,7 +72,10 @@ if ($table eq 'all') {
           overwrite_modifications => 1,
           result_base_class => "DBIx::Class::IntrospectableM2M",
           left_base_classes => [ "DBIx::Class::Core" ],
-          schema_base_class => "Kanopya::Schema::Custom"
+          schema_base_class => "Kanopya::Schema::Custom",
+          moniker_map => {
+             ipmi_credentials => "IpmiCredentials"
+          },
         },
         $connect_info,
     );
