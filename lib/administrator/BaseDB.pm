@@ -413,9 +413,10 @@ sub getAttr {
     # Get the dbix row corresponding to the hierarchy level of the attribute
     my $dbix = $self->_dbixParent(classname => BaseDB->_className(class => $definition->{from_module}));
 
-    # The attribute is a relation, convert the relatiosn dbix to objects
+    # The attribute is a relation, convert the relations dbix to objects
     my $type = $definition->{type};
-    if (defined $type && $type eq "relation" && ! $dbix->has_column($args{name})) {
+    if ((defined $type && $type eq "relation" && ! $dbix->has_column($args{name})) &&
+        (! defined $definition->{is_virtual} || ! $definition->{is_virtual})) {
         my $relation = $args{name};
         try {
             my $value = $dbix->$relation;
@@ -962,14 +963,15 @@ sub toJSON {
                 }
 
                 if ($is_relation) {
-                    $output->{$expand} = [];
                     if ($is_relation eq 'single_multi' || $is_relation eq 'multi') {
+                        $output->{$expand} = [];
                         for my $item ($obj->getAttr(name => $expand, deep => $args{deep})) {
                             push @{$output->{$expand}}, $item->toJSON(expand => $expands->{$expand},
                                                                       deep   => $args{deep});
                         }
                     }
                     elsif ($is_relation eq 'single') {
+                        $output->{$expand} = undef;
                         my $obj = $self->getAttr(name => $expand, deep => 1);
                         if ($obj) {
                             $output->{$expand} = $obj->toJSON(expand => $expands->{$expand},
