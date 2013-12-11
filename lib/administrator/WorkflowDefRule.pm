@@ -1,4 +1,4 @@
-# Copyright © 2011-2013 Hedera Technology SAS
+# Copyright © 2013 Hedera Technology SAS
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -15,91 +15,37 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-
-=pod
-=begin classdoc
-
-WorkflowDef class supplies a workflow definition used as a patter to instanciate new workflows.
-
-To a WorkflowDef instance are associated a sequence of operations (through the WorkflowStep class)
-and some Parameters.
-
-=end classdoc
-=cut
-
-package Entity::WorkflowDef;
-use base 'Entity';
+package WorkflowDefRule;
+use base BaseDB;
 
 use strict;
 use warnings;
-use WorkflowStep;
+
+use Data::Dumper;
+use Log::Log4perl 'get_logger';
+
 use TryCatch;
 my $err;
 
-use Log::Log4perl 'get_logger';
-
 my $log = get_logger("");
-my $errmsg;
 
 use constant ATTR_DEF => {
-    workflow_def_name => {
-        pattern      => '^.*$',
+    workflow_def_id => {
+        pattern      => '^\d*$',
         is_mandatory => 1,
+    },
+    rule_id => {
+        pattern      => '^\d*$',
+        is_mandatory => 1,
+        is_delegatee => 1,
     },
     param_presets => {
         is_virtual   => 1,
-        is_editable  => 1,
+        is_editable  => 1
     },
 };
 
-sub methods {
-    return {};
-}
-
 sub getAttrDef { return ATTR_DEF; }
-
-
-=pod
-=begin classdoc
-
-Add a new Operation to the WorkflowDef sequence of operations.
-
-@param operationtype_id the operation type id
-
-@return Corresponding WorkflowStep instance
-
-Create a new WorkflowDef
-
-=end classdoc
-=cut
-
-sub addStep {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ "operationtype_id" ]);
-
-    return  WorkflowStep->new(workflow_def_id  => $self->workflow_def_id,
-                              operationtype_id => $args{operationtype_id});
-}
-
-
-=pod
-=begin classdoc
-
-This method delete WorkflowDef and its associated params preset
-
-=end classdoc
-=cut
-
-sub delete {
-    my $self = shift;
-
-    if (defined $self->param_preset) {
-        $self->param_preset->remove();
-    }
-
-    $self->SUPER::delete();
-}
 
 
 =pod

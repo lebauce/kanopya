@@ -413,9 +413,9 @@ sub registerUsers {
           # when associating workflow to rules. Better architecture should remove
           # this requirement.
           methods => {
-              'ServiceDeveloper' => [ 'get', 'updateParamPreset' ],
-              'Sales'            => [ 'get', 'updateParamPreset' ],
-              'Customer'         => [ 'get', 'updateParamPreset' ],
+              'ServiceDeveloper' => [ 'get' ],
+              'Sales'            => [ 'get' ],
+              'Customer'         => [ 'get' ],
           }
         },
         { name    => 'Network',
@@ -1957,9 +1957,9 @@ sub populate_workflow_def {
                 context => { cloudmanager_comp => undef, host => undef },
                 scalein_type => 'cpu',
             },
-        }
+        },
+        steps => [ $scale_op_id ]
     );
-    $scale_cpu_wf->addStep( operationtype_id => $scale_op_id );
 
     # ScaleIn memory workflow def
     my $scale_mem_wf = $kanopya_wf_manager->createWorkflowDef(
@@ -1976,9 +1976,9 @@ sub populate_workflow_def {
                 context => { cloudmanager_comp => undef, host => undef },
                 scalein_type => 'memory',
             },
-        }
+        },
+        steps => [ $scale_op_id ]
     );
-    $scale_mem_wf->addStep( operationtype_id => $scale_op_id );
 
     # AddNode workflow def
     my $addnode_op_id = Operationtype->find( hash => { operationtype_name => 'AddNode' })->id;
@@ -1997,12 +1997,9 @@ sub populate_workflow_def {
             specific => {
                 delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             }
-        }
+        },
+        steps => [ $addnode_op_id, $prestart_op_id, $start_op_id, $poststart_op_id ]
     );
-    $addnode_wf->addStep(operationtype_id => $addnode_op_id);
-    $addnode_wf->addStep(operationtype_id => $prestart_op_id);
-    $addnode_wf->addStep(operationtype_id => $start_op_id);
-    $addnode_wf->addStep(operationtype_id => $poststart_op_id);
 
     # StopNode workflow def
     my $prestop_op_id = Operationtype->find( hash => { operationtype_name => 'PreStopNode' })->id;
@@ -2020,23 +2017,28 @@ sub populate_workflow_def {
             specific => {
                 delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             }
-        }
+        },
+        steps => [ $prestop_op_id, $stop_op_id, $poststop_op_id ]
     );
-    $stopnode_wf->addStep(operationtype_id => $prestop_op_id);
-    $stopnode_wf->addStep(operationtype_id => $stop_op_id);
-    $stopnode_wf->addStep(operationtype_id => $poststop_op_id);
 
     # Optimiaas Workflow def
-    my $optimiaas_wf = $kanopya_wf_manager->createWorkflowDef(workflow_name => 'OptimiaasWorkflow');
     my $optimiaas_op_id = Operationtype->find( hash => { operationtype_name => 'LaunchOptimiaasWorkflow' })->id;
-    $optimiaas_wf->addStep(operationtype_id => $optimiaas_op_id);
+    my $optimiaas_wf = $kanopya_wf_manager->createWorkflowDef(
+                           workflow_name => 'OptimiaasWorkflow',
+                           step          => [ $optimiaas_op_id ]
+                       );
 
     # Migrate Workflow def
-    my $migrate_wf = $kanopya_wf_manager->createWorkflowDef(workflow_name => 'MigrateWorkflow');
     my $migrate_op_id = Operationtype->find( hash => { operationtype_name => 'MigrateHost' })->id;
-    $migrate_wf->addStep(operationtype_id => $migrate_op_id);
+    my $migrate_wf = $kanopya_wf_manager->createWorkflowDef(
+                         workflow_name => 'MigrateWorkflow',
+                         steps         => [ $migrate_op_id ]
+                     );
 
     # ResubmitNode  workflow def
+    my $resubmit_node_op_id  = Operationtype->find( hash => { operationtype_name => 'ResubmitNode' })->id;
+    my $scale_cpu_op_id  = Operationtype->find( hash => { operationtype_name => 'ScaleCpuHost' })->id;
+    my $scale_mem_op_id  = Operationtype->find( hash => { operationtype_name => 'ScaleMemoryHost' })->id;
     my $resubmit_node_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'ResubmitNode',
         params => {
@@ -2049,16 +2051,12 @@ sub populate_workflow_def {
             specific => {
                 delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             }
-        }
+        },
+        steps => [ $resubmit_node_op_id, $scale_cpu_op_id, $scale_mem_op_id ]
     );
-    my $resubmit_node_op_id  = Operationtype->find( hash => { operationtype_name => 'ResubmitNode' })->id;
-    my $scale_cpu_op_id  = Operationtype->find( hash => { operationtype_name => 'ScaleCpuHost' })->id;
-    my $scale_mem_op_id  = Operationtype->find( hash => { operationtype_name => 'ScaleMemoryHost' })->id;
-    $resubmit_node_wf->addStep( operationtype_id => $resubmit_node_op_id );
-    $resubmit_node_wf->addStep( operationtype_id => $scale_cpu_op_id );
-    $resubmit_node_wf->addStep( operationtype_id => $scale_mem_op_id );
 
     # RelieveHypervisor workflow def
+    my $relieve_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'RelieveHypervisor' })->id;
     my $relieve_hypervisor_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'RelieveHypervisor',
         params => {
@@ -2071,15 +2069,13 @@ sub populate_workflow_def {
             specific => {
                 delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             }
-        }
+        },
+        steps => [ $relieve_hypervisor_op_id, $resubmit_node_op_id, $migrate_op_id ]
     );
 
-    my $relieve_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'RelieveHypervisor' })->id;
-    $relieve_hypervisor_wf->addStep( operationtype_id => $relieve_hypervisor_op_id );
-    $relieve_hypervisor_wf->addStep( operationtype_id => $resubmit_node_op_id );
-    $relieve_hypervisor_wf->addStep( operationtype_id => $migrate_op_id );
-
     # MaintenanceHypervisor workflow def
+    my $flush_hypervisor_op_id = Operationtype->find( hash => { operationtype_name => 'FlushHypervisor' })->id;
+    my $deactivate_host_op_id  = Operationtype->find( hash => { operationtype_name => 'DeactivateHost' })->id;
     my $hypervisor_maintenance_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'HypervisorMaintenance',
         params => {
@@ -2092,15 +2088,12 @@ sub populate_workflow_def {
             specific => {
                 delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             }
-        }
-    );
-    my $flush_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'FlushHypervisor' })->id;
-    $hypervisor_maintenance_wf->addStep( operationtype_id => $flush_hypervisor_op_id);
-    $hypervisor_maintenance_wf->addStep(
-        operationtype_id => Operationtype->find( hash => { operationtype_name => 'DeactivateHost' })->id
+        },
+        steps => [ $flush_hypervisor_op_id, $deactivate_host_op_id ]
     );
 
     # Hypervisor resubmit workflow def
+    my $resubmit_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'ResubmitHypervisor' })->id;
     my $hypervisor_resubmit_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'ResubmitHypervisor',
         params => {
@@ -2113,10 +2106,9 @@ sub populate_workflow_def {
             specific => {
                 delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             }
-        }
+        },
+        steps => [ $resubmit_hypervisor_op_id ]
     );
-    my $resubmit_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'ResubmitHypervisor' })->id;
-    $hypervisor_resubmit_wf->addStep( operationtype_id => $resubmit_hypervisor_op_id);
 
     my $notify_wf_node      = $kanopya_wf_manager->createWorkflowDef(
         workflow_name   => 'NotifyWorkflow node',
@@ -2149,12 +2141,8 @@ sub populate_workflow_def {
             specific  => {
                 entity => { label => 'Entity' }
             }
-        }
-    );
-    $synchronize_wf->addStep(
-        operationtype_id => Operationtype->find(
-            hash => { operationtype_name => 'Synchronize' }
-        )->id
+        },
+        steps => [ Operationtype->find(hash => { operationtype_name => 'Synchronize' })->id ] 
     );
 }
 

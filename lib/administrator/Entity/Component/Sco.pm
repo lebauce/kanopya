@@ -1,5 +1,5 @@
-# Scom.pm - SCOM connector
-#    Copyright 2011 Hedera Technology SAS
+#    Copyright 2011-2013 Hedera Technology SAS
+#
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -49,6 +49,29 @@ sub getAttrDef { return ATTR_DEF; }
 =pod
 =begin classdoc
 
+@constructor
+
+Override the constructor to link the new workflow manager to the common workflow definitions.
+
+@return the workflow manager instance
+
+=end classdoc
+=cut
+
+sub new {
+    my ($class, %args) = @_;
+
+    my $self = $class->SUPER::new(%args);
+
+    $self->linkCommonWorkflowsDefs();
+
+    return $self;
+}
+
+
+=pod
+=begin classdoc
+
 Override the workflow manager createWorkflowDef() to add specific workflow step
 
 @param workflow_name
@@ -61,40 +84,19 @@ Override the workflow manager createWorkflowDef() to add specific workflow step
 sub createWorkflowDef {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'workflow_name' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'workflow_name' ],
+                         optional => { 'params' => undef, 'steps' => [] });
 
-    my $workflow = $self->SUPER::createWorkflowDef(%args);
+    # Manually add the only step for all workflow definitions of Sco workfow manager
+    push $args{steps}, Operationtype->find(hash => { operationtype_name => 'LaunchSCOWorkflow' })->id;
 
-    if (! defined $args{workflow_def_origin}) {
-        my $operation_type  = Operationtype->find(
-                                  hash => {operationtype_name => 'LaunchSCOWorkflow'}
-                              );
-
-        #we add a new step to the workflow
-        $workflow->addStep(operationtype_id => $operation_type->id);
-    }
-    else {
-        my @steps = WorkflowStep->search(
-            hash => {
-                workflow_def_id => $args{workflow_def_origin},
-            }
-        );
-        for my $step (@steps) {
-            WorkflowStep->new(
-                workflow_def_id  => $workflow->id,
-                operationtype_id => $step->operationtype_id,
-            );
-        }
-
-    }
-    return $workflow;
+    return $self->SUPER::createWorkflowDef(%args);
 }
 
 
 =pod
 =begin classdoc
-
-Overrides <method>Manager::WorkflowManager::associateWorkflow</method>.
 
 Specify automatic values of Sco Workflow Manager
 
@@ -102,7 +104,7 @@ Specify automatic values of Sco Workflow Manager
 =cut
 
 sub _getAutomaticValues {
-    my ($self,%args) = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => ['automatic_params', 'scope_id'],
                                          optional => {host_name => undef, service_provider_id => undef});
@@ -115,7 +117,6 @@ sub _getAutomaticValues {
     my $scope_name          = $scope->scope_name;
 
     if ($scope_name eq 'node') {
-
         if (exists $automatic_params->{node_hostname}) {
             if (defined $args{host_name}) {
                 $automatic_params->{node_hostname}  = $args{host_name};
@@ -202,7 +203,7 @@ Create the final hash param for workflow->run() for Sco manager
 =cut
 
 sub _defineFinalParams {
-    my ($self,%args) = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'all_params', 'workflow_def_name',
                                                        'rule_id', 'sp_id' ]);

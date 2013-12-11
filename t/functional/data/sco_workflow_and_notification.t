@@ -63,7 +63,7 @@ sub main {
         add_workflow_and_notification();
         add_notification_and_workflow();
 
-#        Kanopya::Database::commitTransaction;
+        # Kanopya::Database::commitTransaction;
         Kanopya::Database::rollbackTransaction;
 
     };
@@ -90,12 +90,7 @@ sub add_notification_and_workflow {
 
         $rule1 = $rule1->reload;
 
-        $sco->associateWorkflow (
-            new_workflow_name      => $rule1->id.'_'.($service_wf->workflow_def_name),
-            origin_workflow_def_id => $service_wf->id,
-            specific_params        => {},
-            rule_id                =>  $rule1->id,
-        );
+        $rule1->associateWorkflow(workflow_def_id => $service_wf->id);
 
         $rule1 = $rule1->reload;
 
@@ -105,8 +100,8 @@ sub add_notification_and_workflow {
             die 'No workflow def associate to rule'
         }
 
-        if ((! $workflow_def->workflow_def_name eq $rule1->id.'_'.($service_wf->workflow_def_name)) ||
-            (! $workflow_def->workflow_def_origin_id eq $service_wf->id)) {
+        if ((! $workflow_def->workflow_def_name eq $service_wf->workflow_def_name) ||
+            (! $workflow_def->id eq $service_wf->id)) {
                 die 'Wrong attributes for linked workflow def';
         }
 
@@ -134,14 +129,12 @@ sub add_notification_and_workflow {
             die 'No linked workflow def';
         }
 
-        if ((! $workflow_def->workflow_def_name eq $rule1->id.'_'.($service_wf->workflow_def_name)) ||
-            (! $workflow_def->workflow_def_origin_id eq $service_wf->id)) {
+        if ((! $workflow_def->workflow_def_name eq $service_wf->workflow_def_name) ||
+            (! $workflow_def->workflow_def_id eq $service_wf->id)) {
                 die 'Wrong attributes for linked workflow def';
         }
 
-        $sco->deassociateWorkflow (
-            rule_id         => $rule1->id,
-        );
+        $rule1->deassociateWorkflow();
 
         $rule1 = $rule1->reload;
 
@@ -158,12 +151,7 @@ sub add_workflow_and_notification {
 
         my @users = Entity::User->search();
 
-        $sco->associateWorkflow (
-            new_workflow_name      => $rule1->id.'_'.($service_wf->workflow_def_name),
-            origin_workflow_def_id => $service_wf->id,
-            specific_params        => {},
-            rule_id                =>  $rule1->id,
-        );
+        $rule1->associateWorkflow(workflow_def_id => $service_wf->id);
 
         $rule1 = $rule1->reload;
 
@@ -179,8 +167,8 @@ sub add_workflow_and_notification {
             die 'No workflow def associate to rule'
         }
 
-        if ((! $workflow_def->workflow_def_name eq $rule1->id.'_'.($service_wf->workflow_def_name)) ||
-            (! $workflow_def->workflow_def_origin_id eq $service_wf->id)) {
+        if ((! $workflow_def->workflow_def_name eq $service_wf->workflow_def_name) ||
+            (! $workflow_def->workflow_def_id eq $service_wf->id)) {
                 die 'Wrong attributes for linked workflow def';
         }
 
@@ -191,9 +179,7 @@ sub add_workflow_and_notification {
             }
         );
 
-        $sco->deassociateWorkflow (
-            rule_id         => $rule1->id,
-        );
+        $rule1->deassociateWorkflow();
 
         $rule1 = $rule1->reload;
 
@@ -208,18 +194,9 @@ sub add_workflow_and_notification {
             die 'No linked workflow def';
         }
 
-        if (! $notif_workflow_def->workflow_def_origin->workflow_def_name eq $rule1->notifyWorkflowName) {
+        if (! $notif_workflow_def->workflow_def_name eq $rule1->notifyWorkflowName) {
             die ('Notification Workflow not created after subscription');
         }
-
-        expectedException {
-            Entity::WorkflowDef->get(id => $workflow_def->id);
-        } 'Kanopya::Exception::Internal::NotFound', 'Workflow def entry still present';
-
-        expectedException {
-            Entity::WorkflowDef->find(hash => {workflow_def_name => $workflow_def->workflow_def_name});
-        } 'Kanopya::Exception::Internal::NotFound', 'Workflow def with same name still present';
-
 
         $rule1->unsubscribe(notification_subscription_id => $ns->id);
         $rule1 = $rule1->reload;
@@ -230,12 +207,7 @@ sub add_workflow_and_notification {
 
 sub add_and_remove_workflow {
     lives_ok {
-        $sco->associateWorkflow (
-            new_workflow_name      => $rule1->id.'_'.($service_wf->workflow_def_name),
-            origin_workflow_def_id => $service_wf->id,
-            specific_params        => {},
-            rule_id                =>  $rule1->id,
-        );
+        $rule1->associateWorkflow(workflow_def_id => $service_wf->id);
 
         $rule1 = $rule1->reload;
 
@@ -245,28 +217,18 @@ sub add_and_remove_workflow {
 
         my $workflow_def = $rule1->workflow_def;
 
-        if ((! $workflow_def->workflow_def_name eq $rule1->id.'_'.($service_wf->workflow_def_name)) ||
-            (! $workflow_def->workflow_def_origin_id eq $service_wf->id)) {
+        if ((! $workflow_def->workflow_def_name eq $service_wf->workflow_def_name) ||
+            (! $workflow_def->workflow_def_id eq $service_wf->id)) {
                 die 'Wrong attributes for linked workflow def';
         }
 
-        $sco->deassociateWorkflow (
-            rule_id => $rule1->id,
-        );
+        $rule1->deassociateWorkflow();
 
         $rule1 = $rule1->reload;
 
         if (defined $rule1->workflow_def) {
             die 'Still a workflow def associate to rule';
         }
-
-        expectedException {
-            Entity::WorkflowDef->get(id => $workflow_def->id);
-        } 'Kanopya::Exception::Internal::NotFound', 'Workflow def entry still present';
-
-        expectedException {
-            Entity::WorkflowDef->find(hash => {workflow_def_name => $workflow_def->workflow_def_name});
-        } 'Kanopya::Exception::Internal::NotFound', 'Workflow def with same name still present';
 
     } 'Associate and deassociate workflow';
 
@@ -277,11 +239,7 @@ sub add_and_remove_notification {
         my @users = Entity::User->search();
 
         # Add one suscriber
-
-        $rule1->subscribe(subscriber_id => $users[0]->id,
-                          entity_id     => $rule1->id,
-                          operationtype => 'ProcessRule',
-        );
+        $rule1->subscribe(subscriber_id => $users[0]->id, operationtype => 'ProcessRule');
         $rule1 = $rule1->reload;
 
         my $ns = NotificationSubscription->find(
@@ -297,15 +255,12 @@ sub add_and_remove_notification {
 
         my $workflow_def = $rule1->workflow_def;
 
-        if (! $workflow_def->workflow_def_origin->workflow_def_name eq $rule1->notifyWorkflowName) {
+        if (! $workflow_def->workflow_def_name eq $rule1->notifyWorkflowName) {
             die ('Notification Workflow not created after subscription');
         }
 
         # Add a 2nd suscriber
-        $rule1->subscribe(subscriber_id => $users[1]->id,
-                          entity_id     => $rule1->id,
-                          operationtype => 'ProcessRule',
-        );
+        $rule1->subscribe(subscriber_id => $users[1]->id, operationtype => 'ProcessRule',);
         $rule1 = $rule1->reload;
 
         # Check if first notification still present
@@ -358,14 +313,6 @@ sub add_and_remove_notification {
         if (defined $rule1->workflow_def) {
             die 'Workflow has not been unlinked';
         }
-
-        expectedException {
-            Entity::WorkflowDef->get(id => $workflow_def->id);
-        } 'Kanopya::Exception::Internal::NotFound', 'Workflow def entry still present';
-
-        expectedException {
-            Entity::WorkflowDef->find(hash => {workflow_def_name => $workflow_def->workflow_def_name});
-        } 'Kanopya::Exception::Internal::NotFound', 'Notification workflow with same name still present';
 
     } 'Add and remove subscriber'
 }

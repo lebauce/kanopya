@@ -50,39 +50,28 @@ sub getAttrDef { return ATTR_DEF; }
 =pod
 =begin classdoc
 
-Overrides <method>Manager::WorkflowManager::associateWorkflow</method>.
+@constructor
 
-Add steps of the origin workflow def to the created workflow
+Override the constructor to link the new workflow manager to the common workflow definitions.
+
+@return the workflow manager instance
 
 =end classdoc
 =cut
 
-sub associateWorkflow {
-    my ($self,%args) = @_;
+sub new {
+    my ($class, %args) = @_;
 
-    my $new_wf_def = $self->SUPER::associateWorkflow(%args);
+    my $self = $class->SUPER::new(%args);
 
-    my @steps = WorkflowStep->search(
-        hash => {
-            workflow_def_id => $args{origin_workflow_def_id},
-        }
-    );
+    $self->linkCommonWorkflowsDefs();
 
-    for my $step (@steps) {
-        WorkflowStep->new(
-            workflow_def_id  => $new_wf_def->id,
-            operationtype_id => $step->operationtype_id,
-        );
-    }
-
-    return $new_wf_def;
+    return $self;
 }
 
 
 =pod
 =begin classdoc
-
-Overrides <method>Manager::WorkflowManager::associateWorkflow</method>.
 
 Specify automatic values of Kanopya Workflow Manager
 

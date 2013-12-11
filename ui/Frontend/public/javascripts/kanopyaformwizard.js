@@ -936,7 +936,9 @@ var KanopyaFormWizard = (function() {
                     expands.push(relation);
                 }
             }
-            url += '?expand=' + expands.join(',');
+            if (expands.length) {
+                url += '?expand=' + expands.join(',');
+            }
         }
         var values = ajax('GET', url);
 

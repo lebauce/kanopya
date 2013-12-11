@@ -219,7 +219,7 @@ sub finish {
         $self->{context}->{hypervisor}->removeState(consumer => $self->workflow);
     }
 
-    # WARNING: Do NOT delete $self->{context}->{host}, required in worflow addNode + VM migration
+    # WARNING: Do NOT delete $self->{context}->{host}, required in workflow addNode + VM migration
 }
 
 1;

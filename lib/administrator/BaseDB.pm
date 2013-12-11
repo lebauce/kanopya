@@ -1197,7 +1197,7 @@ sub checkAttr {
     # If the attr is a single relation with a value as object,
     # use the id of the object to set the id attribute corresponding to the relation
     if ((defined $definition->{relation} && defined $class->_attributesDefinition->{$args{name} . '_id'}) &&
-        (defined($args{value}) && ref($args{value}) && $args{value}->isa('BaseDB'))) {
+        (defined $args{value} && blessed($args{value}) && $args{value}->isa("BaseDB"))) {
 
         # Replace the attribute by the coresponding key of the relation
         $args{name} = $args{name} . '_id';
@@ -1820,6 +1820,10 @@ sub _relationshipInfos {
     General::checkParams(args => \%args, required => [ 'relation' ]);
 
     my $attrdef = $class->_attributesDefinition->{$args{relation}};
+    if (! defined $attrdef) {
+        throw Kanopya::Exception::Internal::UnknownAttribute(error => "Unknown relation <$args{relation}>");
+    }
+
     my $module = $attrdef->{from_module};
     my $schema = $module->_resultSource;
 

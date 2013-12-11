@@ -400,23 +400,21 @@ function loadServicesRules (container_id, elem_id, ext, mode_policy) {
             type       : type.replace('_', ''),
             id         : eid,
             displayed  : [ "description", "formula_label", "entity_time_periods" ],
+            valuesCallback  : function(type, id, attributes) {
+                return ajax('GET', '/api/' + type + '/' + id + '?expand=workflow_def');
+            },
             actionsCallback : function (data) {
                 var buttons = [];
-                if (data.workflow_def_id != null) {
-                    $.ajax({
-                        url     : '/api/workflowdef/' + data.workflow_def_id,
-                        async   : false,
-                        success : function (wfdef) {
-                            if (notifyworkflow_regex.exec(wfdef.workflow_def_name) == null) {
-                                var p = $('<p>', { text : 'Associated workflow : ' + wfdef.workflow_def_name });
-                                appendWorkflowActionsButtons(p, cid, eid, data.workflow_def_id, elem_id);
-                                buttons.push(p);
-                                buttons.push($("<br>"));
-                            } else {
-                                buttons.push(displayAssociationButton(cid, eid, type));
-                            }
-                        }
-                    });
+                var wfdef = data.workflow_def;
+                if (wfdef != null) {
+                    if (notifyworkflow_regex.exec(wfdef.workflow_def_name) == null) {
+                        var p = $('<p>', { text : 'Associated workflow : ' + wfdef.workflow_def_name });
+                        appendWorkflowActionsButtons(p, cid, eid, wfdef.pk, elem_id);
+                        buttons.push(p);
+                        buttons.push($("<br>"));
+                    } else {
+                        buttons.push(displayAssociationButton(cid, eid, type));
+                    }
                 } else {
                     buttons.push(displayAssociationButton(cid, eid, type));
                 }

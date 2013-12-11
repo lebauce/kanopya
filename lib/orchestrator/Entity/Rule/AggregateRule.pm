@@ -293,7 +293,6 @@ sub clone {
             formula_class => 'Entity::AggregateCondition'
         );
         $args{attrs}->{aggregate_rule_last_eval}  = undef;
-        $args{attrs}->{workflow_def_id}           = undef;
         return $args{attrs};
     };
 
@@ -306,9 +305,9 @@ sub clone {
     );
 
     # Clone workflow
-    $self->cloneAssociatedWorkflow(
-        dest_rule => $clone
-    );
+    if (defined $self->workflow_def) {
+        $self->cloneAssociatedWorkflow(dest_rule => $clone);
+    }
 
     return $clone;
 }
@@ -474,7 +473,7 @@ sub manageWorkflows {
     # Update last workflow possibly launched status before trying to trigger a new one
     $self->_updateWorkflowStatus();
 
-    my $workflow_def_id = $self->workflow_def_id;
+    my $workflow_def_id = $self->workflow_def->id;
 
     if (! defined $workflow_def_id) {
         # Skip workflow management when service provider has no workflow_def
@@ -493,10 +492,10 @@ sub manageWorkflows {
     if ($evaluation == 1){
         $log->info('Rule <'. $self->id. '> is verified');
         if ($self->state eq 'enabled') {
-            $log->info('Rule <'. $self->id. '> has launched a new workflow (' . $workflow_def_id . ') and was defined as triggered');
+            $log->info('Rule <'. $self->id. '> has launched a new workflow (' . $workflow_def_id .
+                       ') and was defined as triggered');
 
-            # Rule is enable, is verified and has a WorkflowDef => trigger the workflow !
-            my $workflow = $workflow_manager->runWorkflow(rule => $self);
+            my $workflow = $self->triggerWorkflow();
 
             $self->setAttr(name => 'state', value => 'triggered');
             $self->setAttr(name => 'workflow_id', value => $workflow->id);
