@@ -538,14 +538,6 @@ sub receiveAll {
                 # but looping here in a while, to re-trigger the event loop if anormaly fail.
                 my $publish_error = undef;
                 while ($self->isRunning) {
-                    # Connect to the broker within the child
-                    $self->connect();
-
-                    # Create the consumer for the current callback
-                    if ($self->connected) {
-                        $self->createConsumer(cbname => $cbname);
-                    }
-
                     # Define an handler on sig TERM to stop the event loop
                     local $SIG{TERM} = sub {
                         $log->info("Child process <$$> received TERM: awaiting running job to exit...");
@@ -553,6 +545,14 @@ sub receiveAll {
                         # Stop looping on the event loop
                         $self->setRunning(running => 0);
                     };
+
+                    # Connect to the broker within the child
+                    $self->connect();
+
+                    # Create the consumer for the current callback
+                    if ($self->connected) {
+                        $self->createConsumer(cbname => $cbname);
+                    }
 
                     # Retrigger a message defined
                     if (defined $publish_error) {

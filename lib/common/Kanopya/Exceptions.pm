@@ -174,6 +174,10 @@ use Exception::Class (
         description => 'Invalid configuration',
         fields      => [ 'component' ]
     },
+    Kanopya::Exception::Daemon => {
+        isa         => 'Kanopya::Exception',
+        description => 'Kanopya Daemon Exception'
+    },
     Kanopya::Exception::MessageQueuing => {
         isa         => 'Kanopya::Exception',
         description => 'Kanopya MessageQueuing Exception'

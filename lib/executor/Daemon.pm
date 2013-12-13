@@ -132,8 +132,19 @@ sub run {
     my $pidfile;
     if ($args{pidfile}) {
         $pidfile = File::Pid->new( { file => $args{pidfile} } );
-        die("$args{name} is already running") if $pidfile->running;
-
+        # Manually do the job of running due to the bug
+        # https://rt.cpan.org/Public/Bug/Display.html?id=18960
+        # my $running = $pidfile->running;
+        my $pid = $pidfile->_get_pid_from_file;
+        if (defined $pid) {
+            if (kill(0, $pid)) {
+                my $err = "$args{name} is already running";
+                $log->error($err);
+                throw Kanopya::Exception::Daemon(error => $err);
+            }
+            # Seems to do not remove the file...
+            $pidfile->remove;
+        }
         $pidfile->write;
     }
 
