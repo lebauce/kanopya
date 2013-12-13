@@ -18,6 +18,42 @@
 =begin classdoc
 
 Base class to manage internal daemons that communicate between them.
+The MessageQueueing daemon is designed to wait on ampq queues, and trigger
+a callback method at message receipt. One daemon could awaiting message on many queues
+by defining many callback definition, a child will be spawned for each.
+
+the callbacks can be defined in the CALLBACK constant when inherit from this class,
+or dynamically by calling the registerCallback method.
+
+A callback definition has the following structure:
+
+# The callback definition name is a unique name that identity the definition.
+callback_definition_name => {
+    # The callback method to execute at message receipt.
+    callback  => \&methodName,
+    # The type of the callaback, could be 'queue', 'topic' or 'fanout'.
+    type      => 'queue',
+    # The queue name on which awaiting messages, if not defined an exclusive
+    # queue name will be generated (for type 'topic' and 'fanout' only).
+    queue     => 'queuename',
+    # The exchange name to declare, mandatory if 'queue' not specified.
+    exchange  => 'echangename',
+    # The number of child to spawn that will awaiting message on the queue.
+    instances => 2,
+    # The maximum duration while awaiting message before reconnecting, 0 is infinite.
+    duration  => 30,
+    # A flag that could be turned off to disable the queue/exchange declaration,
+    # usefull for awainting messages on existing/external amqp queues/exchanges.
+    declare  => 1,
+    # The amqp connection informations that could be overriden by callback.
+    config    => {
+        ip       => '127.0.0.1',
+        port     => 5672,
+        user     => 'guest',
+        password => 'guest',
+        vhost    => '/',
+    },
+}
 
 @since    2013-Mar-28
 @instance hash
@@ -51,6 +87,9 @@ use vars qw($AUTOLOAD);
 use constant CALLBACKS => {};
 
 sub getCallbacks { return CALLBACKS; }
+
+
+my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
 
 
 =pod
@@ -223,7 +262,7 @@ sub registerCallback {
 
     General::checkParams(args     => \%args,
                          required => [ 'cbname', 'type', 'callback' ],
-                         optional => { 'queue' => undef, 'exchange' => undef });
+                         optional => { 'queue' => undef, 'exchange' => undef, config => undef });
 
     # Initialize the new callback definiton
     my $callbackdef = {
@@ -259,7 +298,12 @@ sub registerCallback {
         }
     }
 
-    # Add the callback defitition to the c
+    # Handle the overriden connection config if defined
+    if (defined $args{config}) {
+        $callbackdef->{config} = $args{config};
+    }
+
+    # Add the callback definition
     $self->_callbacks->{$args{cbname}} = $callbackdef;
 }
 
@@ -292,6 +336,13 @@ sub createConsumer {
     if (defined $callbackdef->{consumer}) {
         $log->warn("Consumer already exists for callback <$args{cbname}>, skipping...");
         return;
+    }
+
+    # Check if the connection configuration has been overriden by the callback definition.
+    if (defined $callbackdef->{config}) {
+        $self->{config}->{amqp} = $merge->merge($self->{config}->{amqp}, $callbackdef->{config});
+        # Force the re-connection as the config should changed
+        $self->disconnect();
     }
 
     if (not $self->connected) {
