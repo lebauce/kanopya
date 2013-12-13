@@ -1,1 +1,1 @@
-{ "status" : "error", "reason" : "<% if exception.message %><% exception.message | trim %><% else %><% exception | trim %><% end %>" }
+{ "status" : "error", "reason" : "<% if exception.message %><% exception.message | trim | replace('"', '\"') %><% else %><% exception | trim %><% end %>", "usermessage" : "<% exception.user_message | trim | replace('"', '\"') %>"<% foreach field = exception.Fields %><% if exception.$field != "" %>, "<% field %>" : "<%  exception.$field  %>"<% end %><% end %> }
