@@ -137,9 +137,12 @@ sub new {
                                        'params'      => undef,
                                        'related_id'  => undef });
 
+    my $operationtype = Operationtype->find(hash => { operationtype_name => $args{type} });
+
     # If workflow not defined, initiate a new one with parameters
     if (not defined $args{workflow_id}) {
-        my $workflow = Entity::Workflow->new(workflow_name => $args{type}, related_id => $args{related_id});
+        my $workflow = Entity::Workflow->new(workflow_name => $operationtype->operationtype_label,
+                                             related_id    => $args{related_id});
         $args{workflow_id} = $workflow->id;
     }
 
@@ -153,7 +156,7 @@ sub new {
         $log->debug("Enqueuing new operation <$args{type}>, in workflow <$args{workflow_id}>");
 
         my $params = {
-            operationtype_id     => Operationtype->find(hash => { operationtype_name => $args{type} })->id,
+            operationtype_id     => $operationtype->id,
             state                => "pending",
             execution_rank       => $class->getNextRank(workflow_id => $args{workflow_id}),
             workflow_id          => $args{workflow_id},

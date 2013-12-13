@@ -634,6 +634,7 @@ CREATE TABLE `workflow` (
 CREATE TABLE `workflow_def` (
   `workflow_def_id` int(8) unsigned NOT NULL,
   `workflow_def_name` char(64) DEFAULT NULL,
+  `description` TEXT NOT NULL DEFAULT "",
   `param_preset_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`workflow_def_id`),
   FOREIGN KEY (`workflow_def_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,

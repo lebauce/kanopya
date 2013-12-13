@@ -87,7 +87,7 @@ sub createWorkflowDef {
 
     General::checkParams(args     => \%args,
                          required => [ 'workflow_name' ],
-                         optional => { 'params' => undef, 'steps' => [] });
+                         optional => { 'params' => undef, 'steps' => [], 'description' => '' });
 
     #TODO refactor all the parameters management by clarifying mandatory and authorized parameters categories
     # (automatic, specific, internal, data, data->template_content etc...)
@@ -109,6 +109,7 @@ sub createWorkflowDef {
     }
 
     my $workflowdef = Entity::WorkflowDef->new(workflow_def_name => $args{workflow_name},
+                                               description       => $args{description},
                                                param_presets     => $args{params});
 
     # Add step if defined

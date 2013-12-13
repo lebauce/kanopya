@@ -29,10 +29,17 @@ use base 'Entity';
 use strict;
 use warnings;
 
+use General;
 use Entity::WorkflowDef;
 use ParamPreset;
 use Kanopya::Exceptions;
 use Entity::Operation;
+
+use Template;
+use Hash::Merge;
+use Scalar::Util qw(blessed);
+use Clone qw(clone);
+use Data::Dumper;
 
 use Log::Log4perl 'get_logger';
 
@@ -68,6 +75,10 @@ sub methods {
     };
 }
 
+
+my $template = Template->new();
+my $merge    = Hash::Merge->new('RIGHT_PRECEDENT');
+
 =pod
 =begin classdoc
 
@@ -86,11 +97,27 @@ sub run {
     my $class = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'name' ], optional => { 'rule'       => undef,
-                                                                               'related_id' => undef });
+    General::checkParams(args     => \%args,
+                         required => [ 'name' ],
+                         optional => { 'params'     => {},
+                                       'rule'       => undef,
+                                       'related_id' => undef, });
 
     my $def = Entity::WorkflowDef->find(hash => { workflow_def_name => $args{name} });
-    my $workflow = Entity::Workflow->new(workflow_name => $args{name}, related_id => $args{related_id});
+
+    # Build the workflow description from desc template and params
+    my $allparams = clone($args{params}->{params});
+    for my $name (keys $args{params}->{context}) {
+        if (blessed($args{params}->{context}->{$name})) {
+            $allparams->{$name} = $args{params}->{context}->{$name}->label;
+        }
+    }
+    my $description = '';
+    my $desctemplate = $def->description;
+    $template->process(\$desctemplate, $allparams, \$description);
+
+    # Instanciate the workflow, and add the steps
+    my $workflow = Entity::Workflow->new(workflow_name => $description, related_id => $args{related_id});
     delete $args{name};
     delete $args{related_id};
 

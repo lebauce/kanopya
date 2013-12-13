@@ -314,3 +314,6 @@ button.ui-multiselect,.ui-multiselect-menu li label{cursor:pointer;}
         #content-about h2{font-size:12px;color:black;margin:0 0 2px;}
     #content-about p{font-weight:normal;}
 
+.gritter-title {
+  margin-left: 10px;
+}

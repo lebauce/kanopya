@@ -63,7 +63,6 @@ __PACKAGE__->table("workflow_def_rule");
 =head2 param_preset_id
 
   data_type: 'integer'
-  default_value: 0
   extra: {unsigned => 1}
   is_foreign_key: 1
   is_nullable: 1
@@ -95,7 +94,6 @@ __PACKAGE__->add_columns(
   "param_preset_id",
   {
     data_type => "integer",
-    default_value => 0,
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 1,
@@ -183,8 +181,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-12-05 15:56:04
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:5/zAvr7Fx733p9L+DFmF+w
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-12-11 18:31:10
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:PeY9fEi7NWAQnTqMU2449A
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

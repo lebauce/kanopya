@@ -1958,7 +1958,8 @@ sub populate_workflow_def {
                 scalein_type => 'cpu',
             },
         },
-        steps => [ $scale_op_id ]
+        steps => [ $scale_op_id ],
+        description => "Scale in [% scalein_type %] on node [% host %]"
     );
 
     # ScaleIn memory workflow def
@@ -1977,7 +1978,8 @@ sub populate_workflow_def {
                 scalein_type => 'memory',
             },
         },
-        steps => [ $scale_op_id ]
+        steps => [ $scale_op_id ],
+        description => "Scale in [% scalein_type %] on node \"[% host %]\""
     );
 
     # AddNode workflow def
@@ -1998,7 +2000,8 @@ sub populate_workflow_def {
                 delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             }
         },
-        steps => [ $addnode_op_id, $prestart_op_id, $start_op_id, $poststart_op_id ]
+        steps => [ $addnode_op_id, $prestart_op_id, $start_op_id, $poststart_op_id ],
+        description => "Adding node to service \"[% cluster %]\""
     );
 
     # StopNode workflow def
@@ -2018,21 +2021,24 @@ sub populate_workflow_def {
                 delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             }
         },
-        steps => [ $prestop_op_id, $stop_op_id, $poststop_op_id ]
+        steps => [ $prestop_op_id, $stop_op_id, $poststop_op_id ],
+        description => "Removing node \"[% host %]\" from service \"[% cluster %]\""
     );
 
     # Optimiaas Workflow def
     my $optimiaas_op_id = Operationtype->find( hash => { operationtype_name => 'LaunchOptimiaasWorkflow' })->id;
     my $optimiaas_wf = $kanopya_wf_manager->createWorkflowDef(
                            workflow_name => 'OptimiaasWorkflow',
-                           step          => [ $optimiaas_op_id ]
+                           step          => [ $optimiaas_op_id ],
+                           description   => "Optimizing virtual machines placement for IAAS \"[% cloudmanager_comp %]\""
                        );
 
     # Migrate Workflow def
     my $migrate_op_id = Operationtype->find( hash => { operationtype_name => 'MigrateHost' })->id;
     my $migrate_wf = $kanopya_wf_manager->createWorkflowDef(
                          workflow_name => 'MigrateWorkflow',
-                         steps         => [ $migrate_op_id ]
+                         steps         => [ $migrate_op_id ],
+                         description   => "Migrating virtual machine \"[% vm %]\" to hypervisor \"[% host %]\""
                      );
 
     # ResubmitNode  workflow def
@@ -2052,7 +2058,8 @@ sub populate_workflow_def {
                 delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             }
         },
-        steps => [ $resubmit_node_op_id, $scale_cpu_op_id, $scale_mem_op_id ]
+        steps => [ $resubmit_node_op_id, $scale_cpu_op_id, $scale_mem_op_id ],
+        description => "Resubmitting node \"[% host %]\""
     );
 
     # RelieveHypervisor workflow def
@@ -2070,7 +2077,8 @@ sub populate_workflow_def {
                 delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             }
         },
-        steps => [ $relieve_hypervisor_op_id, $resubmit_node_op_id, $migrate_op_id ]
+        steps => [ $relieve_hypervisor_op_id, $resubmit_node_op_id, $migrate_op_id ],
+        description => "Relieving hypervisor \"[% host %]\""
     );
 
     # MaintenanceHypervisor workflow def
@@ -2089,7 +2097,8 @@ sub populate_workflow_def {
                 delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             }
         },
-        steps => [ $flush_hypervisor_op_id, $deactivate_host_op_id ]
+        steps => [ $flush_hypervisor_op_id, $deactivate_host_op_id ],
+        description => "Putting hypervisor \"[% flushed_hypervisor %]\" in maintenance."
     );
 
     # Hypervisor resubmit workflow def
@@ -2107,10 +2116,11 @@ sub populate_workflow_def {
                 delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             }
         },
-        steps => [ $resubmit_hypervisor_op_id ]
+        steps => [ $resubmit_hypervisor_op_id ],
+        description => "Resubmitting hypervisor \"[% host %]\""
     );
 
-    my $notify_wf_node      = $kanopya_wf_manager->createWorkflowDef(
+    my $notify_wf_node = $kanopya_wf_manager->createWorkflowDef(
         workflow_name   => 'NotifyWorkflow node',
         params          => {
             internal   => {
@@ -2118,7 +2128,7 @@ sub populate_workflow_def {
             },
             automatic  => { },
             specific   => { }
-        }
+        },
     );
 
     my $notify_wf_service   = $kanopya_wf_manager->createWorkflowDef(
@@ -2142,7 +2152,8 @@ sub populate_workflow_def {
                 entity => { label => 'Entity' }
             }
         },
-        steps => [ Operationtype->find(hash => { operationtype_name => 'Synchronize' })->id ] 
+        steps => [ Operationtype->find(hash => { operationtype_name => 'Synchronize' })->id ],
+        description => "Synchronizing component \"[% entity %]\""
     );
 }
 

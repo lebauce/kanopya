@@ -86,10 +86,8 @@ function updateWorkflowGritter(workflow) {
 function showWorkflowGritter(workflow) {
     var id = workflow.pk;
     var operations = get("/api/operation?workflow_id=" + id + "&order_by=execution_rank");
-    var title = "Running workflow";
-    if (workflow.workflow_name != null) {
-        title   += " '" + workflow.workflow_name + "'";
-    }
+    var title =  "" . workflow.workflow_name;
+
     var content = $("<div></div>");
     var ul = formatOperations(operations);
     if (operations.length == 0) {

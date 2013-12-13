@@ -52,6 +52,11 @@ __PACKAGE__->table("workflow_def");
   is_nullable: 1
   size: 64
 
+=head2 description
+
+  data_type: 'text'
+  is_nullable: 0
+
 =head2 param_preset_id
 
   data_type: 'integer'
@@ -71,6 +76,8 @@ __PACKAGE__->add_columns(
   },
   "workflow_def_name",
   { data_type => "char", is_nullable => 1, size => 64 },
+  "description",
+  { data_type => "text", is_nullable => 0 },
   "param_preset_id",
   {
     data_type => "integer",
@@ -199,8 +206,8 @@ Composing rels: L</workflow_def_managers> -> manager
 __PACKAGE__->many_to_many("managers", "workflow_def_managers", "manager");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-12-05 15:56:04
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:mfCc1g2nSCbcVwBry5N9CQ
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-12-11 18:54:05
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:xkfuB8maxJ33cYR8jAE6lA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
