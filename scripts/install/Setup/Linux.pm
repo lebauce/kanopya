@@ -527,7 +527,7 @@ sub _generate_kanopya_conf {
     ];
 
     for my $file (@$configfiles) {
-        _useTemplate(
+        $self->_useTemplate(
             include  => $self->{template_path},
             template => $file->{template},
             datas    => $file->{data},
@@ -736,18 +736,16 @@ sub _configure_snmpd {
     my ($self) = @_;
     print "\n - Snmpd reconfiguration...";
 
-    _useTemplate(
-        include  => $self->{installpath} . '/templates/components/snmpd',
+    $self->_useTemplate(
         data     => { internal_ip_add => $self->{parameters_values}->{admin_ip} },
         conf     => '/etc/snmp/snmpd.conf',
-        template => 'snmpd.conf.tt',
+        template => 'components/snmpd/snmpd.conf.tt',
     );
 
-    _useTemplate(
-        include  => $self->{installpath} . '/templates/components/snmpd',
+    $self->_useTemplate(
         data     => { internal_ip_add => $self->{parameters_values}->{admin_ip} },
         conf     => '/etc/default/snmpd',
-        template => 'default_snmpd.tt',
+        template => 'components/snmpd/default_snmpd.tt',
     );
     print "ok\n";
 }
@@ -777,7 +775,7 @@ sub _configure_puppetmaster {
     }
 
     my $data = {
-        kanopya_puppet_modules => '/opt/kanopya/templates/components/puppetmaster/modules',
+        kanopya_puppet_modules => $self->{installpath} . '/templates/components/puppetmaster/modules',
         admin_domainname       => $self->{parameters_values}->{domainname},
         clusters_directory     => $path,
         kanopya_hostname       => $self->{parameters_values}->{hostname},
@@ -787,37 +785,32 @@ sub _configure_puppetmaster {
         puppetagent2_options   => '--no-client'
     };
 
-    _useTemplate(
-        include  => '/templates/components/puppetmaster',
-        template => 'puppet.conf.tt',
+    $self->_useTemplate(
+        template => 'components/puppetmaster/puppet.conf.tt',
         datas    => $data,
         conf     => '/etc/puppet/puppet.conf',
     );
 
-    _useTemplate(
-        include  => '/templates/components/puppetmaster',
-        template => 'fileserver.conf.tt',
+    $self->_useTemplate(
+        template => 'components/puppetmaster/fileserver.conf.tt',
         datas    => $data,
         conf     => '/etc/puppet/fileserver.conf',
     );
 
-    _useTemplate(
-        include  => '/templates/components/puppetmaster',
-        template => 'auth.conf.tt',
+    $self->_useTemplate(
+        template => 'components/puppetmaster/auth.conf.tt',
         datas    => $data,
         conf     => '/etc/puppet/auth.conf',
     );
 
-    _useTemplate(
-        include  => '/templates/components/puppetmaster',
-        template => 'hiera.yaml.tt',
+    $self->_useTemplate(
+        template => 'components/puppetmaster/hiera.yaml.tt',
         datas    => $data,
         conf     => '/etc/puppet/hiera.yaml',
     );
 
-    _useTemplate(
-        include  => '/templates/components/puppetagent',
-        template => 'default_puppet.tt',
+    $self->_useTemplate(
+        template => 'components/puppetagent/default_puppet.tt',
         conf     => '/etc/default/puppet',
         datas    => $data,
     );
@@ -986,18 +979,6 @@ sub _getNameServerInfo {
     return ( domain => $domain, nameservers => \@nameservers );
 }
 
-sub _createTemplatesSymLink {
-
-    my $templateslink = '/templates';
-    if (not -e $templateslink) {
-        eval {
-            symlink('/opt/kanopya/templates', $templateslink);
-        };
-    print "Your system does not support symbolic links", "\n" if $@; 
-    }
-}
-
-
 =pod
 =begin classdoc
 
@@ -1012,7 +993,6 @@ sub process {
     my ($self) = @_;
     print "\n = Setup processing = \n";
 
-    $self->_createTemplatesSymLink();
     $self->_create_kanopya_account();
     $self->_create_directories();
     $self->_generate_kanopya_conf();
@@ -1054,10 +1034,10 @@ Init and process Template
 =cut
 
 sub _useTemplate {
-    my %args = @_;
+    my ($self, %args) = @_;
 
     my $input   = $args{template};
-    my $include = $args{include};
+    my $include = $args{include} || ($self->{installpath} . '/templates');
     my $dat     = $args{datas};
     my $output  = $args{conf};
 

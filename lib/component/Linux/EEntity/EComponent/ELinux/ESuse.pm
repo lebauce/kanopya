@@ -57,13 +57,10 @@ sub _writeNetConf {
                     cluster       => $args{cluster},
                     host          => $args{host},
                     file          => '/etc/sysconfig/network/ifcfg-' . $slave->iface_name,
-                    template_dir  => '/templates/components/suse',
+                    template_dir  => 'components/suse',
                     template_file => $template_file,
-                    data          => { interface => ''}
-                );
-                $args{econtext}->send(
-                    src  => $file,
-                    dest => $args{mount_point} . '/etc/sysconfig/network/ifcfg-' . $slave->iface_name
+                    data          => { interface => ''},
+                    mount_point   => $args{mount_point}
                 );
             }
             $template_file = 'ifcfg-bonded-master.tt';
@@ -76,14 +73,10 @@ sub _writeNetConf {
             cluster       => $args{cluster},
             host          => $args{host},
             file          => '/etc/sysconfig/network/ifcfg-' . $iface->{name},
-            template_dir  => '/templates/components/suse',
+            template_dir  => 'components/suse',
             template_file => $template_file,
-            data          => { interface => $iface }
-        );
-
-        $args{econtext}->send(
-            src  => $file,
-            dest => $args{mount_point} . '/etc/sysconfig/network/ifcfg-' . $iface->{name}
+            data          => { interface => $iface },
+            mount_point   => $args{mount_point}
         );
 
         if ($iface->{vlans}) {
@@ -97,14 +90,10 @@ sub _writeNetConf {
                     cluster       => $args{cluster},
                     host          => $args{host},
                     file          => '/etc/sysconfig/network/ifcfg-' . $vlan_id,
-                    template_dir  => '/templates/components/suse',
+                    template_dir  => 'components/suse',
                     template_file => $template_file,
-                    data          => { interface => \%vlan_infos }
-                );
-
-                $args{econtext}->send(
-                    src  => $file,
-                    dest => $args{mount_point} . '/etc/sysconfig/network/ifcfg-' . $vlan_id
+                    data          => { interface => \%vlan_infos },
+                    mount_point   => $args{mount_point}
                 );
             }
         }

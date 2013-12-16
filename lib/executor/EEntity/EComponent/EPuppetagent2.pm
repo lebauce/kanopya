@@ -21,7 +21,6 @@ use EEntity;
 use Entity::ServiceProvider::Cluster;
 use Log::Log4perl "get_logger";
 use Kanopya::Exceptions;
-use YAML;
 
 my $log = get_logger("");
 my $errmsg;
@@ -44,16 +43,12 @@ sub configureNode {
         cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/default/puppet',
-        template_dir  => '/templates/components/puppetagent',
+        template_dir  => 'components/puppetagent',
         template_file => 'default_puppet.tt',
-        data          => $data
+        data          => $data,
+        mount_point   => $args{mount_point}
     );
-    
-    $self->_host->getEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/default'
-    );
-    
+
     # Generation of puppet.conf
     $data = { 
         puppetagent2_masterserver => $conf->{puppetagent2_masterfqdn},
@@ -63,28 +58,20 @@ sub configureNode {
         cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/puppet/puppet.conf',
-        template_dir  => '/templates/components/puppetagent',
-        template_file => 'puppet.conf.tt', 
-        data          => $data
-    );
-
-     $self->_host->getEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/puppet'
+        template_dir  => 'components/puppetagent',
+        template_file => 'puppet.conf.tt',
+        data          => $data,
+        mount_point   => $args{mount_point}
     );
 
     $file = $self->generateNodeFile(
         cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/puppet/auth.conf',
-        template_dir  => '/templates/components/puppetagent',
+        template_dir  => 'components/puppetagent',
         template_file => 'auth.conf.tt',
-        data          => $data
-    );
-
-    $self->_host->getEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/puppet'
+        data          => $data,
+        mount_point   => $args{mount_point}
     );
 }
 
@@ -184,13 +171,6 @@ sub generatePuppetDefinitions {
         $config_hash->{$component_name} = $configuration;
     }
 
-    my $path = $self->_executor->getConf->{clusters_directory} . '/' .
-               $args{cluster}->cluster_name . '/' .
-               $args{host}->node->node_hostname . '/' .
-               $args{host}->node->fqdn . ".yaml";
-
-    YAML::DumpFile($path, { components => $config_hash });
-
     if ($self->puppetagent2_mode eq 'kanopya') {
         # create, sign and push a puppet certificate on the image
         $log->info('Puppent agent component configured with kanopya puppet master');
@@ -199,6 +179,7 @@ sub generatePuppetDefinitions {
         $puppetmaster->createHostManifest(
             node               => $args{host}->node,
             puppet_definitions => $manifest,
+            configuration      => { components => $config_hash }
         );
     }
 }

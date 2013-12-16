@@ -721,7 +721,6 @@ sub registerOperations {
         [ 'CancelWorkflow', 'Canceling wokflow' ],  
         [ 'LaunchSCOWorkflow' ],
         [ 'UpdateCluster', 'Reconfigure cluster' ],
-        [ 'UpdateComponent' ],
         [ 'LaunchScaleInWorkflow', 'Configuring scale in node' ],
         [ 'LaunchOptimiaasWorkflow' ],
         [ 'ProcessRule', 'Processing triggered rule' ],
@@ -914,7 +913,7 @@ sub registerComponents {
             component_version      => 2,
             deployable             => 1,
             component_categories   => [ 'Webserver' ],
-            component_template     => '/templates/components/apache2',
+            component_template     => 'components/apache2',
             service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
@@ -929,7 +928,7 @@ sub registerComponents {
             component_version      => 1,
             deployable             => 1,
             component_categories   => [ 'ExportManager', 'BlockExportManager' ],
-            component_template     => '/templates/components/ietd',
+            component_template     => 'components/ietd',
             service_provider_types => [ 'Cluster', 'Kanopya', 'Debian6' ],
         },
         {
@@ -944,7 +943,7 @@ sub registerComponents {
             component_version      => 3,
             deployable             => 1,
             component_categories   => [ 'Dhcpserver' ],
-            component_template     => '/templates/components/dhcpd',
+            component_template     => 'components/dhcpd',
             service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
@@ -959,7 +958,7 @@ sub registerComponents {
             component_version      => 5,
             deployable             => 1,
             component_categories   => [ 'Monitoragent' ],
-            component_template     => '/templates/components/snmpd',
+            component_template     => 'components/snmpd',
             service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
@@ -967,7 +966,7 @@ sub registerComponents {
             component_version      => 3,
             deployable             => 1,
             component_categories   => [ 'ExportManager' ],
-            component_template     => '/templates/components/nfsd3',
+            component_template     => 'components/nfsd3',
             service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
@@ -975,7 +974,7 @@ sub registerComponents {
             component_version      => 5,
             deployable             => 0,
             component_categories   => [ 'System' ],
-            component_template     => '/templates/components/linux',
+            component_template     => 'components/linux',
             service_provider_types => [ 'Cluster' ],
         },
         {
@@ -983,7 +982,7 @@ sub registerComponents {
             component_version      => 5,
             deployable             => 1,
             component_categories   => [ 'DBMS' ],
-            component_template     => '/templates/components/nfsd3',
+            component_template     => 'components/nfsd3',
             service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
         },
         {
@@ -1089,7 +1088,7 @@ sub registerComponents {
             component_version      => 6,
             deployable             => 0,
             component_categories   => [ 'System' ],
-            component_template     => '/templates/components/debian',
+            component_template     => 'components/debian',
             service_provider_types => [ 'Cluster', 'Kanopya', 'Ubuntu12', 'Debian6' ],
         },
         {
@@ -1097,7 +1096,7 @@ sub registerComponents {
             component_version      => 6,
             deployable             => 0,
             component_categories   => [ 'System' ],
-            component_template     => '/templates/components/redhat',
+            component_template     => 'components/redhat',
             service_provider_types => [ 'Cluster', 'Kanopya', 'Centos6' ],
         },
         {
@@ -1105,7 +1104,7 @@ sub registerComponents {
             component_version      => 11,
             deployable             => 0,
             component_categories   => [ 'System' ],
-            component_template     => '/templates/components/suse',
+            component_template     => 'components/suse',
             service_provider_types => [ 'Cluster', 'Sles6' ],
         },
         {

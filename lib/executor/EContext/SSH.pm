@@ -217,22 +217,28 @@ Use the OpenSSH module to copy the local file to remote host.
 sub send {
     my ($self, %args) = @_;
 
-    General::checkParams(args => %args, required => [ 'src', 'dest' ]);
-    #TODO check to be sure src and dest are full path to files
+    General::checkParams(args => %args, required => [ 'src', 'dest' ],
+                                        optional => { mode => undef });
 
-    if(not -e $args{src}) {
+    if (not -e $args{src}) {
         $errmsg = "EContext::SSH->execute src file $args{src} no found";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
 
-    if(not exists $self->{ssh}) {
+    if (not exists $self->{ssh}) {
         $self->_init();
     }
 
-    my $success = $self->{ssh}->scp_put({ recursive => 1 }, $args{src}, $args{dest});
+    if ($args{mode}) {
+        $self->execute("chmod -R $args{mode} $args{src}");
+    }
+
+    my $success = $self->{ssh}->scp_put({ recursive => 1, copy_attrs => 1 },
+                                        $args{src}, $args{dest});
+
     # return TRUE if success
-    if(not $success) {
+    if (not $success) {
         $errmsg = "EContext::SSH->send failed while putting $args{src} to $args{dest}!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);

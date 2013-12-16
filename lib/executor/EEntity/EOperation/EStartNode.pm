@@ -312,12 +312,6 @@ sub _generateBootConf {
         if ($boot_policy =~ m/ISCSI/) {
             my $targetname = $self->{context}->{container_access}->container_access_export;
             my $lun_number = $self->{context}->{container_access}->getLunId(host => $self->{context}->{host});
-            my $rand = new String::Random;
-            my $tmpfile = $rand->randpattern("cccccccc");
-
-            # create Template object
-            my $template = Template->new($config);
-            my $input = "bootconf.tt";
 
             my $vars = {
                 initiatorname => $self->{context}->{host}->host_initiatorname,
@@ -330,16 +324,14 @@ sub _generateBootConf {
                 additional_devices => "",
             };
 
-            $template->process($input, $vars, "/tmp/$tmpfile")
-                or throw Kanopya::Exception::Internal(
-                             error => "Error when processing template $input."
-                         );
-
-            my $tftp_conf = $args{tftpserver}->getTftpDirectory;
-            my $dest = $tftp_conf . '/' . $self->{context}->{host}->node->node_hostname . ".conf";
-
-            $self->getEContext->send(src => "/tmp/$tmpfile", dest => "$dest");
-            unlink "/tmp/$tmpfile";
+            $args{tftpserver}->generateFile(
+                template_dir  => "internal",
+                template_file => "bootconf.tt",
+                file          => $args{tftpserver}->getTftpDirectory .
+                                 '/' . $self->{context}->{host}->node->node_hostname . ".conf",
+                data          => $vars,
+                mode          => 755
+            );
         }
     }
 }

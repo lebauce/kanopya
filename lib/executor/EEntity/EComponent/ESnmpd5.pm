@@ -33,7 +33,7 @@ sub generateConfiguration {
         cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/default/snmpd',
-        template_dir  => '/templates/components/snmpd',
+        template_dir  => 'components/snmpd',
         template_file => 'default_snmpd.tt',
         data          => {
                              node_ip_address => $args{host}->adminIp,
@@ -45,7 +45,7 @@ sub generateConfiguration {
         cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/snmp/snmpd.conf',
-        template_dir  => '/templates/components/snmpd',
+        template_dir  => 'components/snmpd',
         template_file => 'snmpd.conf.tt',
         data          => $conf
     );

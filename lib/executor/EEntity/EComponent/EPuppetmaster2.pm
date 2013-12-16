@@ -19,7 +19,8 @@ use warnings;
 
 use Template;
 use File::Path qw/ mkpath /;
-use File::Temp qw/ tempdir /;
+use File::Temp qw/ tempdir tmpnam /;
+use YAML "DumpFile";
 use Log::Log4perl 'get_logger';
 use TryCatch;
 
@@ -39,12 +40,11 @@ sub configureNode {
         puppetmaster2_options   => $conf->{puppetmaster2_options},
     };
     
-    $self->generateFile( 
-        mount_point  => $args{mount_point},
-        template_dir => "/templates/components/puppetmaster",
-        input_file   => "default_puppetmaster.tt", 
-        output       => "/default/puppetmaster", 
-        data         => $data
+    $self->generateFile(
+        file          => $args{mount_point} . '/etc/default/puppetmaster',
+        template_dir  => "components/puppetmaster",
+        template_file => "default_puppetmaster.tt",
+        data          => $data
     );
 }
 
@@ -99,7 +99,7 @@ sub createHostCertificate {
     mkpath($tmpdir . "/ssl/private_keys");
 
     # We do not use 'mkdir' because of a strange guestmount bug that forbids us
-    # to create a folder in the puppet folder if it's owner by the 'puppet' user
+    # to create a folder in the puppet folder if it's owned by the 'puppet' user
     $self->getEContext->send(
         src  => $tmpdir . "/ssl",
         dest => $args{mount_point} . '/var/lib/puppet/'
@@ -150,20 +150,11 @@ sub removeHostCertificate {
 sub createHostManifest {
     my ($self, %args) = @_;
     General::checkParams(args => \%args,
-                         required => [ 'node', 'puppet_definitions' ]);
-
-    my $config = {
-        INCLUDE_PATH => '/templates/components/puppetmaster',
-        INTERPOLATE  => 0,               # expand "$var" in plain text
-        POST_CHOMP   => 0,               # cleanup whitespace
-        EVAL_PERL    => 1,               # evaluate Perl code blocks
-        RELATIVE => 1,                   # desactive par defaut
-    };
+                         required => [ 'node', 'puppet_definitions' ],
+                         optional => { configuration => {} });
 
     my $fqdn = $args{node}->fqdn;
     my $cluster = $args{node}->service_provider->cluster_name;
-    my $input = 'host_manifest.pp.tt';
-    my $output = '/etc/puppet/manifests/nodes/' . $fqdn . '.pp';
     my $sourcepath = $cluster . '/' . $args{node}->node_hostname;
 
     my $data = {
@@ -173,12 +164,27 @@ sub createHostManifest {
         sourcepath         => $sourcepath
     };
 
-    my $template = Template->new($config);
-    $template->process($input, $data, $output) || do {
-        $errmsg = "error during generation from '$input':" . $template->error;
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    };
+    $self->generateFile(
+        template_dir  => 'components/puppetmaster',
+        template_file => 'host_manifest.pp.tt',
+        file          => '/etc/puppet/manifests/nodes/' . $fqdn . '.pp',
+        data          => $data,
+        user          => 'puppet',
+        group         => 'puppet'
+    );
+
+    my ($fh, $filename) = tmpnam();
+    DumpFile($filename, $args{configuration});
+    close $fh;
+
+    my $path = $self->_executor->getConf->{clusters_directory} . '/' .
+               $sourcepath . '/' .
+               $fqdn . ".yaml";
+
+    $self->getEContext->send(src   => $filename,
+                             dest  => $path,
+                             user  => 'puppet',
+                             group => 'puppet');
 
     $self->updateSite;
 }

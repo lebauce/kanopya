@@ -243,7 +243,7 @@ sub preconfigureSystemimage {
     for my $file (@{$args{files}}) {
         $econtext->send(
             src  => $file->{src},
-            dest => $args{mount_point}.$file->{dest}
+            dest => $args{mount_point} . $file->{dest}
         );
     }
 
@@ -283,7 +283,7 @@ sub _generateHostname {
         cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/hostname',
-        template_dir  => '/templates/components/linux',
+        template_dir  => 'components/linux',
         template_file => 'hostname.tt',
         data          => { hostname => $args{host}->node->node_hostname }
     );
@@ -303,7 +303,7 @@ sub _generateHosts {
         cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/hosts',
-        template_dir  => '/templates/components/linux',
+        template_dir  => 'components/linux',
         template_file => 'hosts.tt',
         data          => { hosts => \@hosts_entries }
     );
@@ -332,7 +332,7 @@ sub _generateResolvconf {
         cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/resolv.conf',
-        template_dir  => '/templates/components/linux',
+        template_dir  => 'components/linux',
         template_file => 'resolv.conf.tt',
         data          => $data
     );
@@ -359,7 +359,7 @@ sub _generateUdevPersistentNetRules {
         cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/udev/rules.d/70-persistent-net.rules',
-        template_dir  => '/templates/components/linux',
+        template_dir  => 'components/linux',
         template_file => 'udev_70-persistent-net.rules.tt',
         data          => { interfaces => \@interfaces }
     );
@@ -423,7 +423,7 @@ sub _generateNtpdateConf {
                    cluster       => $args{cluster},
                    host          => $args{host},
                    file          => '/etc/default/ntpdate',
-                   template_dir  => '/templates/components/linux',
+                   template_dir  => 'components/linux',
                    template_file => 'ntpdate.tt',
                    data          => { ntpservers => $ntp->getMasterNode->adminIp }
                );
@@ -438,7 +438,7 @@ sub _generateNtpdateConf {
                 cluster       => $args{cluster},
                 host          => $args{host},
                 file          => '/etc/init.d/ntpdate',
-                template_dir  => '/templates/components/linux',
+                template_dir  => 'components/linux',
                 template_file => 'ntpdate',
                 data          => { }
             );
@@ -709,29 +709,38 @@ sub _initrd_iscsi {
     my @portals = @{$args{portals}};
 
     for my $portal (@portals) {
-        my $st_dir = $args{initrd_dir}.'/etc/iscsi/send_targets/'.$portal->{ip}.",".$portal->{port};
-        $cmd = 'mkdir -p '.$st_dir;
+        my $st_dir = $args{initrd_dir} . '/etc/iscsi/send_targets/' .
+                     $portal->{ip} . "," . $portal->{port};
+
+        $cmd = 'mkdir -p ' . $st_dir;
         $econtext->execute(command => $cmd);
 
-        my $target_dir = $args{initrd_dir}."/etc/iscsi/nodes/$target/".$portal->{ip}.",".$portal->{port}.',1';
-        $cmd = 'mkdir -p '.$target_dir;
+        $self->generateFile(
+            template_file => 'st_config.tt',
+            template_dir  => 'internal/initrd/sles',
+            file          => '$st_dir/st_config',
+            data          => { port => $portal->{port},
+                               ip   => $portal->{ip} }
+        );
+
+        my $target_dir = $args{initrd_dir} . "/etc/iscsi/nodes/$target/" .
+                         $portal->{ip} . "," . $portal->{port} . ',1';
+
+        $cmd = 'mkdir -p ' . $target_dir;
         $econtext->execute(command => $cmd);
 
-        $self->generateFile(mount_point => $st_dir,
-                            input_file  => 'st_config.tt',
-                            template_dir => '/templates/internal/initrd/sles',
-                            output      => '/st_config',
-                            data        => { ip => $portal->{ip}, port => $portal->{port} }
-                            );
+        $self->generateFile(
+            template_file => 'default.tt',
+            template_dir  => 'internal/initrd/sles',
+            file          => '$target_dir/default',
+            data          => { target => $target,
+                               ip     => $portal->{ip},
+                               port   => $portal->{port} }
+        );
 
-        $self->generateFile(mount_point => $target_dir,
-                            input_file  => 'default.tt',
-                            template_dir => '/templates/internal/initrd/sles',
-                            output      => '/default',
-                            data        => { target => $target, ip => $portal->{ip}, port => $portal->{port} }
-                            );
+        $cmd = "echo InitiatorName=$args{initiatorname} > " .
+               "$args{initrd_dir}/etc/iscsi/initiatorname.iscsi";
 
-        $cmd = "echo InitiatorName=$args{initiatorname} > $args{initrd_dir}/etc/iscsi/initiatorname.iscsi";
         $econtext->execute(command => $cmd);
     }
 
@@ -769,14 +778,13 @@ sub _initrd_deployment {
                                        'root_size', 'swap_size' ]);
 
     $self->generateFile(
-        mount_point  => $args{initrd_dir} . '/config',
-        input_file   => 'deploy.sh.tt',
-        template_dir => '/templates/internal/initrd/sles',
-        output       => '/deploy.sh',
-        data         => { deploy_src_dev   => $args{src_device},
-                          deploy_dest_dev  => $args{dest_device},
-                          deploy_root_size => $args{root_size},
-                          deploy_swap_size => $args{swap_size} }
+        template_file => 'deploy.sh.tt',
+        template_dir  => 'internal/initrd/sles',
+        file          => $args{initrd_dir} . '/config/deploy.sh',
+        data          => { deploy_src_dev   => $args{src_device},
+                           deploy_dest_dev  => $args{dest_device},
+                           deploy_root_size => $args{root_size},
+                           deploy_swap_size => $args{swap_size} }
     );
 
     # TODO change hard coded root device (depend on master image partitioning)
@@ -803,12 +811,12 @@ sub _initrd_config {
     General::checkParams(args     =>\%args,
                          required => ['initrd_dir', 'ifaces', 'hostname', 'rootdev']);
 
-    $self->generateFile(mount_point => $args{initrd_dir}.'/config',
-                        input_file  => 'storage.sh.tt',
-                        template_dir => '/templates/internal/initrd/sles',
-                        output      => '/storage.sh',
-                        data        => { rootdev => $args{rootdev} }
-                        );
+    $self->generateFile(
+        template_file => 'storage.sh.tt',
+        template_dir  => 'internal/initrd/sles',
+        file          => $args{initrd_dir} . '/config/storage.sh',
+        data          => { rootdev => $args{rootdev} }
+    );
 
     my @macaddresses = ();
     my @ips = ();
@@ -831,21 +839,21 @@ sub _initrd_config {
     my $static_macaddress = join(' ', @macaddresses);
     my $static_ips = join(' ', @ips);
 
-    $self->generateFile(mount_point => $args{initrd_dir}.'/config',
-                        input_file  => 'network.sh.tt',
-                        template_dir => '/templates/internal/initrd/sles',
-                        output      => '/network.sh',
-                        data        => { static_macaddress => $static_macaddress,
-                                         static_ips =>  $static_ips }
-                       );
+    $self->generateFile(
+        template_file => 'network.sh.tt',
+        template_dir  => 'internal/initrd/sles',
+        file          => $args{initrd_dir} . '/config/network.sh',
+        data          => { static_macaddress => $static_macaddress,
+                           static_ips =>  $static_ips }
+    );
 
-    $self->generateFile(mount_point => $args{initrd_dir}.'/config',
-                        input_file  => 'mount.sh.tt',
-                        template_dir => '/templates/internal/initrd/sles',
-                        output      => '/mount.sh',
-                        data        => { rootdev => $args{rootdev},
-                                         rootfsck => '/sbin/fsck.ext3' }
-                       );
+    $self->generateFile(
+        template_file => 'mount.sh.tt',
+        template_dir  => 'internal/initrd/sles',
+        file          => $args{initrd_dir} . '/config/mount.sh',
+        data          => { rootdev => $args{rootdev},
+                           rootfsck => '/sbin/fsck.ext3' }
+    );
 }
 
 
