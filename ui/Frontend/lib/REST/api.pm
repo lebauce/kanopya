@@ -22,6 +22,7 @@ my $errmsg;
 our $API_VERSION = "0.1";
 
 prepare_serializer_for_format;
+set serializer => 'Mutable';
 
 our %resources = (
     "activedirectory"          => "Entity::Component::ActiveDirectory",
@@ -335,7 +336,7 @@ sub attributes {
     my $class = classFromResource(resource => $args{resource});
     require (General::getLocFromClass(entityclass => $class));
 
-    return to_json($class->toJSON(%{ $args{params} }));
+    return $class->toJSON(%{ $args{params} });
 }
 
 sub setupREST {
@@ -346,17 +347,16 @@ sub setupREST {
 
         resource "api/$resource" =>
             get    => sub {
-                content_type 'application/json';
                 require (General::getLocFromClass(entityclass => $class));
 
                 my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
                 my $obj = $class->apiCall(method => 'get', params => { id => params->{id}, prefetch => \@expand });
-                return to_json($obj->toJSON(expand => \@expand,
-                                            deep   => params->{deep}));
+
+                return $obj->toJSON(expand => \@expand,
+                                    deep => params->{deep});
             },
 
             create => sub {
-                content_type 'application/json';
                 require (General::getLocFromClass(entityclass => $class));
                 my $obj = {};
                 my $hash = {};
@@ -366,22 +366,19 @@ sub setupREST {
                 } else {
                     %params = params;
                 }
-                $obj = jsonify($class->apiCall(method => 'create', params => \%params));
 
-                return to_json($obj);
+                return jsonify($class->apiCall(method => 'create', params => \%params));
             },
 
             delete => sub {
-                content_type 'application/json';
                 require (General::getLocFromClass(entityclass => $class));
 
                 my $result = $class->get(id => params->{id})->apiCall(method => 'remove');
 
-                return to_json(ref($result) ? jsonify($result) : { status => "success" } );
+                return ref($result) ? jsonify($result) : { status => "success" };
             },
 
             update => sub {
-                content_type 'application/json';
                 require (General::getLocFromClass(entityclass => $class));
 
                 my %params;
@@ -395,25 +392,23 @@ sub setupREST {
 
                 $obj->apiCall(method => 'update', params => \%params);
 
-                return to_json( { status => "success" } );
+                return { status => "success" };
             };
 
         get qr{ /api/$resource/([^/]+)/?(.*) }x => sub {
-            content_type 'application/json';
             require (General::getLocFromClass(entityclass => $class));
 
             my ($id, $filters) = splat;
             my @filters = split("/", $filters);
             my %params = params;
 
-            return to_json(getResources(resource => $resource,
-                                        id       => $id,
-                                        query    => \%params,
-                                        filters  => \@filters));
+            return getResources(resource => $resource,
+                                id       => $id,
+                                query    => \%params,
+                                filters  => \@filters);
         };
 
         post qr{ /api/$resource/(.*) }x => sub {
-            content_type 'application/json';
             require (General::getLocFromClass(entityclass => $class));
 
             my ($id, $obj, $method);
@@ -457,30 +452,31 @@ sub setupREST {
                 $ret = jsonify({});
             }
 
-            return to_json($ret, { allow_nonref => 1, convert_blessed => 1, allow_blessed => 1 });
+            return $ret;
         };
 
         get '/api/' . $resource . '/?' => sub {
-            content_type 'application/json';
             require (General::getLocFromClass(entityclass => $class));
 
             my %params = params;
-            return to_json(getResources(resource => $resource,
-                                        query    => \%params));
+
+            return getResources(resource => $resource,
+                                query    => \%params);
         }
     }
 }
 
-get '/api/attributes/:resource' => sub {
-    content_type 'application/json';
+options '/api/:resource' => sub {
+    my %params = params;
+    return attributes(resource => delete $params{resource}, params => \%params);
+};
 
+get '/api/attributes/:resource' => sub {
     my %params = params;
     return attributes(resource => delete $params{resource}, params => \%params);
 };
 
 post '/api/attributes/:resource' => sub {
-    content_type 'application/json';
-
     my %params;
     my $resource = delete params->{resource};
     if (request->content_type && (split(/;/, request->content_type))[0] eq "application/json") {
@@ -492,14 +488,12 @@ post '/api/attributes/:resource' => sub {
 };
 
 get '/api' => sub {
-    content_type 'application/json';
-
     my @resources = keys %resources;
 
-    return to_json({
+    return {
         version   => $API_VERSION,
         resources => \@resources
-    });
+    };
 };
 
 setupREST;
