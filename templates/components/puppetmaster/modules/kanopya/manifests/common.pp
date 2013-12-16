@@ -36,7 +36,7 @@ class kanopya::common {
     $logdir = $lib[logdir]
     if ! defined (Exec["mkdir-${logdir}"]) {
         exec { "mkdir-${logdir}":
-            command => "mkdir -p ${logdir}"
+            command => "mkdir -p ${logdir}/workflows"
         }
     }
 

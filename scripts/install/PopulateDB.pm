@@ -891,8 +891,8 @@ sub registerComponents {
             component_name         => 'Openssh',
             component_version      => 5,
             deployable             => 1,
-            component_categories   => [ 'Secureshell' ],
-            service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6' ],
+            component_categories   => [ 'RemoteShell' ],
+            service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6', 'Sles6', 'Kanopya' ],
         },
         {
             component_name         => 'Storage',
@@ -1721,7 +1721,10 @@ sub registerKanopyaMaster {
         {
             name => 'Physicalhoster',
             manager => 'HostManager'
-        }
+        },
+        {
+            name => "Openssh",
+        },
     ];
 
     for my $component (@{$components}) {

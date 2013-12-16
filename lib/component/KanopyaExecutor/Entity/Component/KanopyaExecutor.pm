@@ -195,6 +195,19 @@ sub getPuppetDefinition {
 
     my $config = Kanopya::Config::get("executor");
 
+    my $sshkey = "";
+    my $sshpubkey = "";
+
+    if ($args{host}->node->node_state =~ '^(going)?in') {
+        open(INPUT, '/root/.ssh/kanopya_rsa') || die "can't read Kanopya SSH private key";
+        while (<INPUT>) { $sshkey .= $_; }
+        close(INPUT);
+
+        open(INPUT, '/root/.ssh/kanopya_rsa.pub') || die "can't read Kanopya SSH public key";
+        while (<INPUT>) { $sshpubkey .= $_; }
+        close(INPUT);
+    }
+
     return merge($self->SUPER::getPuppetDefinition(%args), {
         kanopyaexecutor => {
             manifest => $self->instanciatePuppetResource(
@@ -205,7 +218,9 @@ sub getPuppetDefinition {
                                 password     => $config->{user}->{password},
                                 amqpuser     => $config->{amqp}->{user},
                                 amqppassword => $config->{amqp}->{password},
-                                lib          => Kanopya::Database::_adm->{config}
+                                lib          => Kanopya::Database::_adm->{config},
+                                sshkey       => $sshkey,
+                                sshpubkey    => $sshpubkey
                             }
                         ),
             dependencies => [ $self->service_provider->getComponent(name => "Amqp"),

@@ -218,7 +218,9 @@ sub send {
     my ($self, %args) = @_;
 
     General::checkParams(args => %args, required => [ 'src', 'dest' ],
-                                        optional => { mode => undef });
+                                        optional => { mode => undef,
+                                                      user => undef,
+                                                      group => undef });
 
     if (not -e $args{src}) {
         $errmsg = "EContext::SSH->execute src file $args{src} no found";
@@ -230,8 +232,12 @@ sub send {
         $self->_init();
     }
 
+    if ($args{user} || $args{group}) {
+        $self->execute(command => "chown -R $args{user}:$args{group} $args{src}");
+    }
+
     if ($args{mode}) {
-        $self->execute("chmod -R $args{mode} $args{src}");
+        $self->execute(command => "chmod -R $args{mode} $args{src}");
     }
 
     my $success = $self->{ssh}->scp_put({ recursive => 1, copy_attrs => 1 },
@@ -242,6 +248,39 @@ sub send {
         $errmsg = "EContext::SSH->send failed while putting $args{src} to $args{dest}!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+}
+
+=pod
+=begin classdoc
+
+Use the OpenSSH module to retrieve file from remote host.
+
+@param src the source file or folder to copy
+@param dest the destination file or folder
+
+@return the command result
+
+=end classdoc
+=cut
+
+sub retrieve {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => %args, required => [ 'src', 'dest' ]);
+
+    if (not exists $self->{ssh}) {
+        $self->_init();
+    }
+
+    my $success = $self->{ssh}->scp_get({ recursive => 1, copy_attrs => 1 },
+                                          $args{src}, $args{dest});
+
+    # return TRUE if success
+    if (not $success) {
+        $errmsg = "EContext::SSH->retrieve failed while getting $args{src} to $args{dest}!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
     }
 }
 

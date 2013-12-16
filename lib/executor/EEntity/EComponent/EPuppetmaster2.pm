@@ -92,7 +92,7 @@ sub createHostCertificate {
 
     # clean existing certificates information
     $command = 'rm -rf ' . $args{mount_point} . '/var/lib/puppet/ssl/*';
-    $self->getEContext->execute(command => $command);    
+    $self->_host->getEContext->execute(command => $command);
 
     my $tmpdir = tempdir(CLEANUP => 1);
     mkpath($tmpdir . "/ssl/certs");
@@ -100,14 +100,14 @@ sub createHostCertificate {
 
     # We do not use 'mkdir' because of a strange guestmount bug that forbids us
     # to create a folder in the puppet folder if it's owned by the 'puppet' user
-    $self->getEContext->send(
+    $self->_host->getEContext->send(
         src  => $tmpdir . "/ssl",
         dest => $args{mount_point} . '/var/lib/puppet/'
     );
 
     # copy master certificate to the image
     try {
-        $self->getEContext->send(
+        $self->getEContext->retrieve(
             src  => '/var/lib/puppet/ssl/certs/ca.pem',
             dest => $args{mount_point} . '/var/lib/puppet/ssl/certs/ca.pem'
         );
@@ -118,13 +118,13 @@ sub createHostCertificate {
     }
     
     # copy host certificate to the image
-    $self->getEContext->send(
+    $self->getEContext->retrieve(
         src  => '/var/lib/puppet/ssl/certs/' . $certificate,
         dest => $args{mount_point} . '/var/lib/puppet/ssl/certs/' . $certificate
     );
     
     # copy host private key to the image
-    $self->getEContext->send(
+    $self->getEContext->retrieve(
         src  => '/var/lib/puppet/ssl/private_keys/' . $certificate,
         dest => $args{mount_point} . '/var/lib/puppet/ssl/private_keys/' . $certificate
     );
@@ -165,6 +165,7 @@ sub createHostManifest {
     };
 
     $self->generateFile(
+        host          => EEntity->new(entity => $self->getMasterNode->host),
         template_dir  => 'components/puppetmaster',
         template_file => 'host_manifest.pp.tt',
         file          => '/etc/puppet/manifests/nodes/' . $fqdn . '.pp',
