@@ -43,6 +43,7 @@ __PACKAGE__->table("ipmi_credentials");
 
   data_type: 'integer'
   extra: {unsigned => 1}
+  is_auto_increment: 1
   is_nullable: 0
 
 =head2 host_id
@@ -74,7 +75,12 @@ __PACKAGE__->table("ipmi_credentials");
 
 __PACKAGE__->add_columns(
   "ipmi_credentials_id",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_auto_increment => 1,
+    is_nullable => 0,
+  },
   "host_id",
   {
     data_type => "integer",
@@ -116,12 +122,12 @@ __PACKAGE__->belongs_to(
   "host",
   "Kanopya::Schema::Result::Host",
   { host_id => "host_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07015 @ 2013-11-28 18:28:50
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:NxbqmEH3r945KjxWpL8ijQ
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-12-17 12:00:32
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ZA1UJAA7BqyUfUGiB2h/6Q
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
