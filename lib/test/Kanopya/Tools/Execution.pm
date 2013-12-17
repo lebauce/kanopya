@@ -96,6 +96,24 @@ sub nRun {
     }
 }
 
+
+=pod
+=begin classdoc
+
+Purge the executor queues.
+
+=end classdoc
+=cut
+
+sub purgeQueues {
+    my ($self, %args) = @_;
+
+    for my $queue ('workflow', 'operation', 'operation_result') {
+        $executor->purgeQueue(queue => $queue);
+    }
+}
+
+
 =pod
 
 =begin classdoc
@@ -288,6 +306,21 @@ sub addNode {
     }
 
     return $node;
+}
+
+
+=pod
+=begin classdoc
+
+@return the executor singleton
+
+=end classdoc
+=cut
+
+sub _executor {
+    my ($class, %args) = @_;
+
+    return $executor;
 }
 
 1;

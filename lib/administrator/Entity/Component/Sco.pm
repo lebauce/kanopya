@@ -219,6 +219,7 @@ sub _defineFinalParams {
 
     my $workflow_params = {
         output_directory => $all_params->{internal}->{output_dir},
+        period           => $all_params->{internal}->{period},
         output_file      => 'workflow_'.$args{workflow_def_name}.'_'.time(),
         template_content => $all_params->{data}->{template_content},
         workflow_values  => $workflow_values,
