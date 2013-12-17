@@ -34,6 +34,7 @@ use Exception::Class (
     Kanopya::Exception::DB => {
         isa         => 'Kanopya::Exception',
         description => 'Kanopya Database exception',
+        fields      => [ 'label', 'operation' ],
     },
     Kanopya::Exception::DB::DuplicateEntry => {
         isa         => 'Kanopya::Exception::DB',
@@ -42,6 +43,7 @@ use Exception::Class (
     Kanopya::Exception::DB::Cascade => {
         isa         => 'Kanopya::Exception::DB',
         description => 'Kanopya Database cascade exception',
+        fields      => [ 'constraint', 'reference', 'dependant' ],
     },
     Kanopya::Exception::DB::UnknownSource => {
         isa         => 'Kanopya::Exception::DB',
@@ -224,6 +226,23 @@ sub Kanopya::Exception::full_message {
         $except_string .= ("\n=> " . $field . ": '" . $self->$field . "'") if (defined $self->$field);
     }
     return $except_string . "\n";
+}
+
+sub Kanopya::Exception::user_message {
+    my $self = shift;
+    return $self->message;
+}
+
+sub Kanopya::Exception::DB::Cascade::user_message {
+    my $self = shift;
+    my $action = $self->operation;
+    if ($action == 'delete') {
+        $action = 'Deletion';
+    }
+    
+    my $message = $action . ' of ' . $self->label . ' is impossible : it is used by a ' . $self->dependant .'.';
+
+    return $message;
 }
 
 1;

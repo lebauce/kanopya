@@ -89,6 +89,9 @@ sub exception_to_status {
     elsif ($exception->isa("Kanopya::Exception::NotImplemented")) {
         $status = "method_not_allowed";
     }
+    elsif ($exception->isa("Kanopya::Exception::DB::Cascade")) {
+        $status = 'conflict';
+    }
     else {
         $status = 'error';
     }
@@ -104,7 +107,7 @@ hook 'before_error_init' => sub {
     my $exception = shift;
     my $status = exception_to_status($exception->exception);
 
-    if (defined $status && request->is_ajax) {
+    if ( defined $status && ( request->is_ajax || request->accept() =~/application\/json/ ) ) {
         content_type "application/json";
         set error_template => '/json_error.tt';
     }

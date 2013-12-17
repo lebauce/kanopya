@@ -228,12 +228,22 @@ sub delete {
         # Restore the original dbix
         $self->_dbix($old);
 
+        ## Exception fields
+        my $operation = 'delete';
+
         if ("$err" =~ /a foreign key constraint fails/) {
             (my $msg = "$err") =~ s/.*a foreign key constraint fails//g;
-            throw Kanopya::Exception::DB::Cascade(error => "Foreign key constraint fails: $msg");
+            
+            (my $constraint) = ($err =~ m/CONSTRAINT `([a-zA-Z1-9_-]*)`/ );
+            (my $reference) = ($err =~ m/REFERENCES `([a-zA-Z1-9_-]*)`/ );
+            (my $dependant)  = ($err =~ m/`[a-zA-Z1-9_-]*`.`([a-zA-Z1-9_-]*)`/ );
+            
+            throw Kanopya::Exception::DB::Cascade(error => "Foreign key constraint fails: $msg", label =>
+                                                  $self->label, operation => $operation, reference => $reference,
+                                                  dependant => $dependant,  constraint => $constraint );
         }
         else {
-            throw Kanopya::Exception::DB(error => "$err");
+            throw Kanopya::Exception::DB(error => "$err", label => $self->label, operation => $operation);
         }
     }
 
