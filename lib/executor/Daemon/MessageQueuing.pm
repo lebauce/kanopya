@@ -262,12 +262,16 @@ sub registerCallback {
 
     General::checkParams(args     => \%args,
                          required => [ 'cbname', 'type', 'callback' ],
-                         optional => { 'queue' => undef, 'exchange' => undef, config => undef });
+                         optional => { 'queue' => undef, 'exchange' => undef, config => undef,
+                                       'declare' => 1, instances => 1, duration => 30 });
 
     # Initialize the new callback definiton
     my $callbackdef = {
-        type     => $args{type},
-        callback => $args{callback}
+        type      => $args{type},
+        callback  => $args{callback},
+        declare   => $args{declare},
+        instances => $args{instances},
+        duration  => $args{duration},
     };
 
     if ($args{type} !~ m/^(queue|topic|fanout)$/) {
