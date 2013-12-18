@@ -101,7 +101,7 @@ sub isUp {
         # Check if the host has already been deployed
         my $harddisk = $args{host}->findRelated(filters  => [ 'harddisks' ],
                                                 order_by => 'harddisk_device');
-        return 1 if $harddisk->service_provider;
+        return 1 if $harddisk->service_provider_id == $args{cluster}->id;;
 
         # Try connecting to the host, return 0 if it fails
         eval { $args{host}->getEContext->execute(command => "true"); };
