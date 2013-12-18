@@ -79,6 +79,9 @@ sub createExport {
             passnum    => 0,
         );
 
+        $system->generateConfiguration(cluster => $self->service_provider,
+                                       host => $self->getMasterNode->host);
+
         $self->applyConfiguration(tags => [ 'mount' ]);
     }
 
