@@ -103,19 +103,18 @@ sub getPuppetDefinition {
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         mysql => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::mysql",
-                            params => {
-                                config_hash => {
-                                    port => $self->mysql5_port,
-                                    datadir => $self->mysql5_datadir
-                                },
-                                galera => {
-                                    address => $cluster_address,
-                                    name => $self->service_provider->cluster_name
-                                }
-                            }
-                        )
+            classes => {
+                'kanopya::mysql' => {
+                    config_hash => {
+                        port => $self->mysql5_port,
+                        datadir => $self->mysql5_datadir
+                    },
+                    galera => {
+                        address => $cluster_address,
+                        name => $self->service_provider->cluster_name
+                    }
+                }
+            }
         }
     } );
 }

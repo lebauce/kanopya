@@ -210,17 +210,16 @@ sub getPuppetDefinition {
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         novacontroller => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::openstack::nova::controller",
-                            params => {
-                                admin_password => 'nova',
-                                email => $self->service_provider->user->user_email,
-                                database_user => $name,
-                                database_name => $name,
-                                rabbit_user => $name,
-                                rabbit_virtualhost => 'openstack-' . $self->id,
-                            }
-                        ),
+            classes => {
+                "kanopya::openstack::nova::controller" => {
+                    admin_password => 'nova',
+                    email => $self->service_provider->user->user_email,
+                    database_user => $name,
+                    database_name => $name,
+                    rabbit_user => $name,
+                    rabbit_virtualhost => 'openstack-' . $self->id,
+                }
+            },
             dependencies => [ $self->mysql5, $self->keystone, $self->amqp ],
             optionals => \@optionals
         }

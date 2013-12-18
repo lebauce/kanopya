@@ -194,6 +194,7 @@ sub getPuppetDefinition {
     my ($self, %args) = @_;
 
     my $config = Kanopya::Config::get("executor");
+    my $dbconfig = Kanopya::Database::_adm->{config};
 
     my $sshkey = "";
     my $sshpubkey = "";
@@ -210,19 +211,20 @@ sub getPuppetDefinition {
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         kanopyaexecutor => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::executor",
-                            params => {
-                                logdir       => $config->{logdir},
-                                user         => $config->{user}->{name},
-                                password     => $config->{user}->{password},
-                                amqpuser     => $config->{amqp}->{user},
-                                amqppassword => $config->{amqp}->{password},
-                                lib          => Kanopya::Database::_adm->{config},
-                                sshkey       => $sshkey,
-                                sshpubkey    => $sshpubkey
-                            }
-                        ),
+            classes => {
+                'kanopya::common' => {
+                    %{$dbconfig}
+                },
+                'kanopya::executor' => {
+                    logdir       => $config->{logdir},
+                    user         => $config->{user}->{name},
+                    password     => $config->{user}->{password},
+                    amqpuser     => $config->{amqp}->{user},
+                    amqppassword => $config->{amqp}->{password},
+                    sshkey       => $sshkey,
+                    sshpubkey    => $sshpubkey
+                }
+            },
             dependencies => [ $self->service_provider->getComponent(name => "Amqp"),
                               $self->service_provider->getComponent(name => "Mysql") ]
         }

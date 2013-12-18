@@ -1,4 +1,8 @@
-class kanopya::apache {
-    class { '::apache': }
-    class { 'kanopya::mod_status': }
+class kanopya::apache(
+  $vhosts = []
+) {
+  class { '::apache': }
+  class { 'kanopya::mod_status': }
+
+  create_resources("apache::vhost", $vhosts);
 }

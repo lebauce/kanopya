@@ -85,19 +85,8 @@ sub getPuppetDefinition {
     my $pxeserver = $cluster->getComponent(category => "Tftpserver");
     my $ip = $pxeserver->getAccessIp(service => 'tftp');
     my @interfaces = map { $_->iface_name } $args{host}->getIfaces();
-
-    my $manifest = $self->instanciatePuppetResource(
-                       name => "dhcp",
-                       params => {
-                           interfaces => \@interfaces,
-                           # pxeserver => $ip,
-                           # pxefilename => 'pxelinux.0',
-                           ntpservers => [ $ip ],
-                           dnsdomain => [ $cluster->cluster_domainname ],
-                           nameservers => [ $ip ],
-                           tag => 'kanopya::dhcpd'
-                       }
-                   );
+    my $hosts = {};
+    my $pools = {};
 
     for my $dhcp_subnet ($self->dhcpd3_subnets) {
         my $subnet = $dhcp_subnet->network;
@@ -106,19 +95,14 @@ sub getPuppetDefinition {
         my $first = (split('/', $addr->first))[0];
         my $last = (split('/', $addr->last))[0];
 
-        $manifest .= $self->instanciatePuppetResource(
-                         name => "pool-" . $subnet->id,
-                         resource => 'dhcp::pool',
-                         params => {
-                             network => $subnet->network_addr,
-                             gateway => $subnet->network_gateway,
-                             mask => $subnet->network_netmask,
-                             parameters => 'deny unknown-clients',
-                             range => [ "$first $last" ],
-                             tag => 'kanopya::dhcpd'
-                         }
-                     );
-
+        $pools->{"pool-" . $subnet->id} = {
+            network => $subnet->network_addr,
+            gateway => $subnet->network_gateway,
+            mask => $subnet->network_netmask,
+            parameters => 'deny unknown-clients',
+            range => [ "$first $last" ],
+            tag => 'kanopya::dhcpd'
+        };
 
         for my $dhcp_host ($dhcp_subnet->dhcpd3_hosts) {
             my $iface = $dhcp_host->iface;
@@ -132,24 +116,31 @@ sub getPuppetDefinition {
                 }
             }
 
-            $manifest .= $self->instanciatePuppetResource(
-                             resource => "dhcp::host",
-                             name => $host->node->node_hostname,
-                             params => {
-                                 mac => $iface->iface_mac_addr,
-                                 ip => $iface->getIPAddr,
-                                 tag => 'kanopya::dhcpd',
-                                 $dhcp_host->dhcpd3_hosts_pxe ?
-                                     (pxeserver   => $ip, pxefilename => "pxelinux.0")
-                                   : ()
-                             }
-                         );
+            $hosts->{$host->node->node_hostname} = {
+                mac => $iface->iface_mac_addr,
+                ip => $iface->getIPAddr,
+                tag => 'kanopya::dhcpd',
+                $dhcp_host->dhcpd3_hosts_pxe
+              ? (pxeserver   => $ip, pxefilename => "pxelinux.0")
+              : ()
+            };
         };
     }
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         dhcpd => {
-            manifest => $manifest
+            classes => {
+                "kanopya::dhcpd" => {
+                    interfaces => \@interfaces,
+                    # pxeserver => $ip,
+                    # pxefilename => 'pxelinux.0',
+                    ntpservers => [ $ip ],
+                    dnsdomain => [ $cluster->cluster_domainname ],
+                    nameservers => [ $ip ],
+                    hosts => $hosts,
+                    pools => $pools,
+                }
+            }
         }
     } );
 }

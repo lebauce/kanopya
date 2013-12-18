@@ -243,9 +243,9 @@ sub getPuppetDefinition {
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         fileimagemanager => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::fileimagemanager",
-                        )
+            classes => {
+                'kanopya::fileimagemanager' => { }
+            }
         }
     } );
 }

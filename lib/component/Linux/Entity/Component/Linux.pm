@@ -139,32 +139,21 @@ sub getPuppetDefinition {
     my $ntp = $self->service_provider->getKanopyaCluster->getComponent(category => 'System');
     my $conf = $self->getConf();
     my $tag = 'kanopya::' . lc($self->component_type->component_name);
-
-    my $manifest = $self->instanciatePuppetResource(
-        name => 'kanopya::linux',
-        params => {
-            sourcepath => $args{cluster}->cluster_name . '/' . $args{host}->node->node_hostname,
-            stage => "system",
-            tag => $tag
-        }
-    );
+    my $classes = {};
+    my $files = {};
+    my $mounts = {};
+    my $swaps = {};
 
     if (Entity::ServiceProvider::Cluster->getKanopyaCluster->id == $args{cluster}->id) {
-        $manifest .= $self->instanciatePuppetResource(
-            name => "kanopya::ntp::server",
-            params => {
-                tag => $tag
-            }
-        );
+        $classes->{"kanopya::ntp::server"} = {
+            tag => $tag
+        };
     }
     else {
-        $manifest .= $self->instanciatePuppetResource(
-            name => "kanopya::ntp::client",
-            params => {
-                server => $ntp->getMasterNode->adminIp,
-                tag => $tag
-            }
-        );
+        $classes->{"kanopya::ntp::client"} = {
+            server => $ntp->getMasterNode->adminIp,
+            tag => $tag
+        };
     }
 
     my @swap_entries = grep { $_->{linux_mount_filesystem} eq 'swap' } @{$conf->{linuxes_mount}};
@@ -185,30 +174,22 @@ sub getPuppetDefinition {
         next if (grep { ($_ eq $mount->{linux_mount_device}) &&
                         ($mount->{linux_mount_filesystem} eq "nfs") } @except);
 
-        $manifest .= $self->instanciatePuppetResource(
-            resource => "file",
-            name => $mount->{linux_mount_point},
-            params => {
-                ensure => 'directory',
-                tag => 'mount'
-            }
-        );
+        $files->{$mount->{linux_mount_point}} = {
+            ensure => 'directory',
+            tag => 'mount'
+        };
 
-        $manifest .= $self->instanciatePuppetResource(
-            resource => "mount",
-            name => $mount->{linux_mount_point},
+        $mounts->{$mount->{linux_mount_point}} = {
             require => [ "File['" . $mount->{linux_mount_point} . "']" ],
-            params => {
-                device => $mount->{linux_mount_device},
-                ensure => "mounted",
-                fstype => $mount->{linux_mount_filesystem},
-                name => $mount->{linux_mount_point},
-                options => $mount->{linux_mount_options},
-                dump => $mount->{linux_mount_dumpfreq},
-                pass => $mount->{linux_mount_passnum},
-                tag => $tag
-            }
-        );
+            device => $mount->{linux_mount_device},
+            ensure => "mounted",
+            fstype => $mount->{linux_mount_filesystem},
+            name => $mount->{linux_mount_point},
+            options => $mount->{linux_mount_options},
+            dump => $mount->{linux_mount_dumpfreq},
+            pass => $mount->{linux_mount_passnum},
+            tag => $tag,
+        };
 
         $nfs = $nfs || ($mount->{linux_mount_filesystem} eq "nfs");
     }
@@ -218,46 +199,43 @@ sub getPuppetDefinition {
     # several entries invalidate the manifest due to name => 'none' repeats
 
     foreach my $swap (@swap_entries) {
-        $manifest .= $self->instanciatePuppetResource(
-            resource => 'mount',
-            name => $swap->{linux_mount_device},
-            params => {
-                device => $swap->{linux_mount_device},
-                ensure => 'present',
-                fstype => 'swap',
-                name => 'none',
-                options => 'sw',
-                dump => 0,
-                pass => 0,
-                tag => $tag
-            }
-        );
+        $mounts->{$swap->{linux_mount_device}} = {
+            device => $swap->{linux_mount_device},
+            ensure => 'present',
+            fstype => 'swap',
+            name => 'none',
+            options => 'sw',
+            dump => 0,
+            pass => 0,
+            tag => $tag,
+        };
     }
     
     if (@swap_entries) {
-        $manifest .= $self->instanciatePuppetResource(
-            resource => 'swap',
-            name => 'swap',
+        $swaps->{swap} = {
             require => [ "Mount['". $swap_entries[0]->{linux_mount_device} . "']" ],
-            params => {
-                ensure => 'present',
-                tag => $tag
-            }
-        );
+            ensure => 'present',
+            tag => $tag,
+        };
     }
 
     if ($nfs) {
-        $manifest .= $self->instanciatePuppetResource(
-            name => 'kanopya::nfs',
-            params => {
-                tag => $tag
-            }
-        );
+        $classes->{'kanopya::nfs'} = {
+            tag => $tag
+        };
     }
+
+    $classes->{'kanopya::linux'} = {
+        swaps => $swaps,
+        mounts => $mounts,
+        files => $files,
+        stage => "system",
+        tag => $tag
+    };
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         linux => {
-            manifest => $manifest
+            classes => $classes
         }
     } );
 }

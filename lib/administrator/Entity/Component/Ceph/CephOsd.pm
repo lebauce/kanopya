@@ -39,20 +39,18 @@ sub getAttrDef { return ATTR_DEF; }
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    my $manifest = $self->instanciatePuppetResource(
-                       name => "kanopya::ceph::osd",
-                   );
-
+    my $devices = {};
     for my $harddisk ($args{host}->harddisks) {
-        $manifest .= $self->instanciatePuppetResource(
-                         resource => "ceph::osd::device",
-                         name => $harddisk->harddisk_device
-                     );
+        $devices->{$harddisk->harddisk_device} = { };
     }
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         cephosd => {
-            manifest => $manifest
+            classes => {
+                "kanopya::ceph::osd" => {
+                    devices => $devices
+                },
+            }
         }
     } );
 }

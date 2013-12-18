@@ -241,10 +241,12 @@ sub getPuppetDefinition {
     my ($self, %args) = @_;
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
-               iscsitarget => {
-                   manifest => $self->instanciatePuppetResource(name => "kanopya::iscsitarget")
-               }
-           });
+        iscsitarget => {
+            classes => {
+                'kanopya::iscsitarget' => { }
+            }
+        }
+    });
 }
 
 1;

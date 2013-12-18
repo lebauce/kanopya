@@ -47,16 +47,13 @@ sub getPuppetDefinition {
         $initiatorname    = $args{host}->host_initiatorname;
     }
 
-    my $manifest = $self->instanciatePuppetResource(
-        name   => "kanopya::openiscsi",
-        params => {
-            initiatorname => $initiatorname
-        }
-    );
-
     return merge($self->SUPER::getPuppetDefinition(%args), {
         openiscsi => {
-            manifest => $manifest
+            classes => {
+                "kanopya::openiscsi" => {
+                    initiatorname => $initiatorname
+                }
+            }
         }
     } );
 }

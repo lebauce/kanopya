@@ -48,13 +48,12 @@ sub getPuppetDefinition {
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         cephmon => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::ceph::mon",
-                            params => {
-                                mon_secret => $self->ceph_mon_secret,
-                                mon_id => $args{host}->node->node_number - 1
-                            }
-                        )
+            classes => {
+                'kanopya::ceph::mon' => {
+                    mon_secret => $self->ceph_mon_secret,
+                    mon_id => $args{host}->node->node_number - 1
+                }
+            }
         }
     } );
 }

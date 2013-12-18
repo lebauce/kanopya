@@ -34,12 +34,11 @@ sub getPuppetDefinition {
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         redhat => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "openstack::repo",
-                            params => {
-                                stage => "system"
-                            }
-                        )
+            classes => {
+                "openstack::repo" => {
+                    stage => "system"
+                }
+            }
         }
     } );
 }

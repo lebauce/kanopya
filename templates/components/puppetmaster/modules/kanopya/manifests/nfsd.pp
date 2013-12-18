@@ -1,22 +1,22 @@
 class kanopya::nfsd::service {
   service { 'nfsd':
-      name => $operatingsystem ? {
-        /(RedHat|CentOS|Fedora)/ => 'nfs',
-        default => 'nfs-kernel-server'
-      },
-      ensure => running,
-      hasstatus => true,
-      hasrestart => true,
-      enable => true,
-      require => Class['kanopya::nfsd::install'],
+    name => $::operatingsystem ? {
+      /(RedHat|CentOS|Fedora)/ => 'nfs',
+      default                  => 'nfs-kernel-server'
+    },
+    ensure     => running,
+    hasstatus  => true,
+    hasrestart => true,
+    enable     => true,
+    require    => Class['kanopya::nfsd::install'],
   }
 }
 
 class kanopya::nfsd::install {
-  if $operationsystem !~ /RedHat|CentOS|Fedora/ {
+  if $::operatingsystem !~ /(CentOS|RedHat|Scientific|SLC)/ {
     package { 'nfsd':
-        name => 'nfs-kernel-server',
-        ensure => present,
+      name   => 'nfs-kernel-server',
+      ensure => present,
     }
   }
 }

@@ -1,4 +1,8 @@
-class kanopya::ceph($fsid, $cluster_network, $public_network) {
+class kanopya::ceph(
+  $fsid            = 0,
+  $cluster_network = "10.0.0.0/24",
+  $public_network  = "10.1.0.0/24"
+) {
   include ceph::apt::ceph
 
   class { 'ceph::conf':
@@ -27,15 +31,17 @@ class kanopya::ceph::mon($mon_id, $mon_secret) {
   Class['kanopya::ceph'] -> Class['kanopya::ceph::mon']
 }
 
-class kanopya::ceph::osd {
+class kanopya::ceph::osd($devices) {
   tag("kanopya::cephosd")
 
   class { '::ceph::osd' :
-    public_address => "${ipaddress}",
+    public_address  => "${ipaddress}",
     cluster_address => "${ipaddress}",
   }
 
   Class['kanopya::ceph'] -> Class['kanopya::ceph::osd']
 
   Ceph::Key <<| title == 'admin' |>>
+
+  create_resources('ceph::osd::device', $devices)
 }

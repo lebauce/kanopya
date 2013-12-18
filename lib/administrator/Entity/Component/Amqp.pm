@@ -71,13 +71,12 @@ sub getPuppetDefinition {
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         amqp => {
-            manifest => $self->instanciatePuppetResource(
-                            name => 'kanopya::rabbitmq',
-                            params => {
-                                disk_nodes => \@nodes_hostnames,
-                                cookie => $self->cookie
-                            }
-                        )
+            classes => {
+                'kanopya::rabbitmq' => {
+                    disk_nodes => \@nodes_hostnames,
+                    cookie => $self->cookie,
+                }
+            }
         }
     } );
 }

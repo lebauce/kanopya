@@ -170,9 +170,9 @@ sub getPuppetDefinition {
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         syslogng => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::syslogng",
-                        )
+            classes => {
+                "kanopya::syslogng" => { }
+            }
         }
     } );
 }

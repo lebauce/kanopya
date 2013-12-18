@@ -33,13 +33,12 @@ sub getPuppetDefinition {
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         swiftstorage => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::openstack::swift::storage",
-                            params => {
-                                swift_zone => $self->id,
-                                secret => "swift",
-                            }
-                        ),
+            classes => {
+                "kanopya::openstack::swift::storage" => {
+                    swift_zone => $self->id,
+                    secret => "swift"
+                }
+            },
             dependencies => [ $self->keystone ]
         }
     } );

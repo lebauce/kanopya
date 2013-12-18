@@ -57,14 +57,13 @@ sub getPuppetDefinition {
  
     return merge($self->SUPER::getPuppetDefinition(%args), {
         ceph => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::ceph",
-                            params => {
-                                fsid => $self->ceph_fsid,
-                                cluster_network => $admin_network->cidr,
-                                public_network => $public_network->cidr
-                            }
-                        )
+            classes => {
+                "kanopya::ceph" => {
+                    fsid => $self->ceph_fsid,
+                    cluster_network => $admin_network->cidr,
+                    public_network => $public_network->cidr
+                }
+            }
         }
     } );
 }
