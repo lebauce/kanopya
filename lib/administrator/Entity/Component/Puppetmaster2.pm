@@ -42,46 +42,16 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub getConf {
-    my ($self) = @_;
-    my %conf = ();
-    my $confindb = $self->{_dbix};
-    if($confindb) {
-        %conf = $confindb->get_columns();
-    } else {
-        %conf = {
-            puppetmaster2_options    => '',
-        };
-    }
-    return \%conf; 
-}
-
-sub setConf {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['conf']);
-
-    my $conf = $args{conf};
-    if (not $conf->{puppetmaster2_id}) {
-        # new configuration -> create
-        $self->{_dbix}->create($conf);
-    } else {
-        # old configuration -> update
-        $self->{_dbix}->update($conf);
-    }
-}
-
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         puppetmaster => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::puppetmaster",
-                        )
+            classes => {
+                'kanopya::puppetmaster' => { }
+            }
         }
-    } ); 
+    } );
 }
 
 1;

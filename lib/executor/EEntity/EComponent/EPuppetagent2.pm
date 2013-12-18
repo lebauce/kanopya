@@ -105,85 +105,6 @@ sub addNode {
     $self->generatePuppetDefinitions(%args);
 }
 
-sub generatePuppetDefinitions {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
-
-    my $manifest = "";
-    my $puppetmaster = EEntity->new(entity => $self->getPuppetMaster);
-    my $fqdn = $args{host}->node->fqdn;
-
-    my $config_hash = {};
-    my @components = sort { $a->priority <=> $b->priority } $args{host}->node->components;
-    foreach my $component (@components) {
-        my $component_name = lc($component->component_type->component_name);
-        my $ecomponent = EEntity->new(entity => $component);
-        $ecomponent->generateConfiguration(cluster => $args{cluster}, host => $args{host});
-
-        my $puppet_definitions = $ecomponent->getPuppetDefinition(host    => $args{host},
-                                                                  cluster => $args{cluster});
-
-        my $listen = {};
-        my $access = {};
-        my $netconf = $component->getNetConf;
-        for my $service (keys %{$netconf}) {
-            $listen->{$service} = {
-                ip => $component->getListenIp(host => $args{host},
-                                              port => $netconf->{$service}->{port})
-            };
-            $access->{$service} = {
-                ip => $component->getAccessIp(host => $args{host},
-                                              port => $netconf->{$service}->{port})
-            };
-        }
-
-        my $component_node = $component->find(related => 'component_nodes',
-                                              hash    => { node_id => $args{host}->node->id });
-        my $configuration = {
-            master => ($component_node->master_node == 1) ? 1 : 0,
-            listen => $listen,
-            access => $access
-        };
-
-        for my $chunk (keys %{$puppet_definitions}) {
-            $manifest .= $puppet_definitions->{$chunk}->{manifest} . "\n";
-            for my $dependency (@{$puppet_definitions->{$chunk}->{dependencies} || []},
-                                @{$puppet_definitions->{$chunk}->{optionals} || []}) {
-                my $name = lc($dependency->component_type->component_name);
-                my @nodes = map { $_->fqdn } $dependency->nodes;
-                my $hash = { nodes => \@nodes, %{$puppet_definitions->{$chunk}->{params} || {}} };
-
-                if (($dependency->service_provider->id == $self->service_provider->id) ||
-                    (($dependency->service_provider->getState)[0] eq "up")) {
-                    $netconf = $dependency->getNetConf;
-                    for my $service (keys %{$netconf}) {
-                        $hash->{$service} = {
-                            ip    => $dependency->getAccessIp(port => $netconf->{$service}->{port}),
-                            tag   => $dependency->getMasterNode->fqdn,
-                        };
-                    }
-                    $configuration->{$name} = $hash;
-                }
-            }
-        }
-
-        $config_hash->{$component_name} = $configuration;
-    }
-
-    if ($self->puppetagent2_mode eq 'kanopya') {
-        # create, sign and push a puppet certificate on the image
-        $log->info('Puppent agent component configured with kanopya puppet master');
-        my $puppetmaster = EEntity->new(entity => $self->getPuppetMaster);
-
-        $puppetmaster->createHostManifest(
-            node               => $args{host}->node,
-            puppet_definitions => $manifest,
-            configuration      => { components => $config_hash }
-        );
-    }
-}
-
 sub postStartNode {
     my ($self, %args) = @_;
 
@@ -229,10 +150,6 @@ sub applyConfiguration {
     else {
         @ehosts = map { EEntity->new(entity => $_->host) }
                   $self->getActiveNodes();
-    }
-
-    for my $ehost (@ehosts) {
-        $self->generatePuppetDefinitions(%args, host => $ehost);
     }
 
     my $ret = -1;

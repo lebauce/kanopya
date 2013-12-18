@@ -32,6 +32,7 @@ use warnings;
 use ComponentNode;
 use Entity::Indicator;
 use Entity::Rule::NodemetricRule;
+
 use TryCatch;
 
 use Log::Log4perl 'get_logger';
@@ -74,6 +75,9 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
     },
     rulestate       => {
+        is_virtual   => 1
+    },
+    puppet_manifest => {
         is_virtual   => 1
     },
     components => {
@@ -339,7 +343,6 @@ sub fqdn {
     return $self->node_hostname . '.' . $self->service_provider->cluster_domainname;
 }
 
-
 =pod
 =begin classdoc
 
@@ -355,6 +358,30 @@ sub getMasterComponents {
 
     my @masters = $self->searchRelated(filters => ['component_nodes'], hash => { master_node => 1 });
     return @masters;
+}
+
+=pod
+=begin classdoc
+
+Return the Puppet definitions for the node
+
+@return hash with a 'classes' key and the classes arguments to be fetched by Puppet
+
+=end classdoc
+=cut
+
+sub puppetManifest {
+    my $self = shift;
+
+    my $puppetagent;
+    eval {
+        $puppetagent = $self->service_provider->getComponent(name => "Puppetagent");
+    };
+    if ($@) {
+        return { };
+    }
+
+    return $puppetagent->getPuppetDefinitions(node => $self);
 }
 
 1;

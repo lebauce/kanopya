@@ -26,9 +26,10 @@ use Entity::ServiceProvider::Cluster;
 use Kanopya::Exceptions;
 use Kanopya::Config;
 
+use Hash::Merge qw(merge);
+
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
-my $errmsg;
 
 use constant ATTR_DEF => {
     puppetagent2_options => {
@@ -113,6 +114,97 @@ sub getBaseConfiguration {
         puppetagent2_masterip   => $master->adminIp,
         puppetagent2_masterfqdn => $master->fqdn
     } : { };
+}
+
+sub getPuppetDefinitions {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'node' ]);
+
+    my $node = $args{node};
+    my $host = $node->host;
+    my $cluster = $node->service_provider;
+    my @components = sort { $a->priority <=> $b->priority } $node->components;
+    my $cluster_name = $cluster->cluster_name;
+    my $sourcepath = $cluster_name . '/' . $node->node_hostname;
+
+    my $definition = {
+        host_fqdn  => $node->fqdn,
+        cluster    => $cluster_name,
+        sourcepath => $sourcepath,
+        admin_ip   => $node->adminIp,
+    };
+ 
+    foreach my $component (@components) {
+        my $config_hash = {};
+        my $component_name = lc($component->component_type->component_name);
+        my $component_node = $component->find(related => 'component_nodes',
+                                              hash    => { node_id => $node->id });
+
+        my $puppet_definitions = $component->getPuppetDefinition(host    => $host,
+                                                                 cluster => $cluster);
+
+        my $listen = {};
+        my $access = {};
+        my $netconf = $component->getNetConf;
+
+        my $configuration = {
+            master => ($component_node->master_node == 1) ? 1 : 0,
+            listen => $listen,
+            access => $access
+        };
+
+        for my $service (keys %{$netconf}) {
+            $listen->{$service} = {
+                ip => $component->getListenIp(host => $host,
+                                              port => $netconf->{$service}->{port})
+            };
+            $access->{$service} = {
+                ip => $component->getAccessIp(host => $host,
+                                              port => $netconf->{$service}->{port})
+            };
+        }
+
+        for my $chunk (values %{$puppet_definitions}) {
+            next if ! $chunk->{classes};
+
+            for my $dependency (@{$chunk->{dependencies} || []},
+                                @{$chunk->{optionals} || []}) {
+                my $name = lc($dependency->component_type->component_name);
+                my @nodes = map { $_->fqdn } $dependency->nodes;
+                my $hash = { nodes => \@nodes, %{$chunk->{params} || {}} };
+
+                if (($dependency->service_provider->id == $cluster->id) ||
+                    (($dependency->service_provider->getState)[0] eq "up")) {
+                    $netconf = $dependency->getNetConf;
+                    for my $service (keys %{$netconf}) {
+                        $hash->{$service} = {
+                            ip    => $dependency->getAccessIp(port => $netconf->{$service}->{port}),
+                            tag   => $dependency->getMasterNode->fqdn,
+                        };
+                    }
+                    $configuration->{$name} = $hash;
+                }
+            }
+
+            my @classes = keys %{$chunk->{classes}};
+            my $data = {
+                classes => \@classes,
+                components => { $component_name => $configuration }
+            };
+
+            for my $class (@classes) {
+                my $parameters = $chunk->{classes}->{$class};
+                for my $parameter (keys %{$parameters}) {
+                    $data->{$class . '::' . $parameter} = $parameters->{$parameter};
+                }
+            }
+
+            $definition = merge($definition, $data);
+        }
+    }
+
+    return $definition;
 }
 
 1;
