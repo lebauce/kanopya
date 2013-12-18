@@ -386,8 +386,6 @@ sub _generatePXEConf {
     my $eroll_dhcp_generate = $self->{erollback}->getLastInserted();
     $self->{erollback}->insertNextErollBefore(erollback=>$eroll_dhcp_generate);
 
-    # Generate new configuration file
-    $dhcpd->reload(erollback => $self->{erollback});
     $log->info('Kanopya dhcp server reconfigured');
 
     # Here we generate pxelinux.cfg for the host

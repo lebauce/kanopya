@@ -800,7 +800,6 @@ sub _configure_puppetmaster {
            "stage { 'finished': }\n" .
            "\$components = hiera_hash('components')\n" .
            "\$sourcepath = hiera('sourcepath')\n" .
-           "\$cluster = hiera('cluster')\n" .
            "hiera_include('classes')\n"
         );
 
