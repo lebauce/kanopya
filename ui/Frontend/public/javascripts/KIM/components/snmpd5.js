@@ -6,7 +6,7 @@ var Snmpd5 = (function(_super) {
     function Snmpd5(id) {
         _super.call(this, id);
 
-        this.displayed = [ 'monitor_server_ip', 'snmpd_options' ];
+        this.displayed = [];
         this.relations = {};
     };
 
