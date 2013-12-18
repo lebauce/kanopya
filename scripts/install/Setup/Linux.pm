@@ -791,15 +791,20 @@ sub _configure_puppetmaster {
     );
 
     try {
-        _writeFile('/etc/puppet/manifests/site.pp',
-               "Exec {\n" .
-               "  path    => '/usr/bin:/usr/sbin:/bin:/sbin'\n" .
-               "}\n" .
-               "stage { 'system': before => Stage['main'], }\n" .
-               "stage { 'finished': }\n" .
-               "import \"nodes/*.pp\"\n");
+        _writeFile(
+           '/etc/puppet/manifests/site.pp',
+           "Exec {\n" .
+           "  path    => '/usr/bin:/usr/sbin:/bin:/sbin'\n" .
+           "}\n" .
+           "stage { 'system': before => Stage['main'], }\n" .
+           "stage { 'finished': }\n" .
+           "\$components = hiera_hash('components')\n" .
+           "\$sourcepath = hiera('sourcepath')\n" .
+           "\$cluster = hiera('cluster')\n" .
+           "hiera_include('classes')\n"
+        );
 
-    print 'ok';
+        print 'ok';
     }
     catch (Kanopya::Exception::IO $err) {
         print "failed ! Please check your puppet configuration, $err\n";
@@ -814,23 +819,24 @@ sub _configure_puppetmaster {
     require Entity::ServiceProvider::Cluster;
 
     my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
-    my $linux = $kanopya->getComponent(category => "System");
-
     my @hosts = $kanopya->getHosts();
     my $kanopya_master = $hosts[0];
-    my $puppetmaster = $kanopya->getComponent(name => "Puppetmaster");
-    my $fstab_puppet_definitions = $linux->getPuppetDefinition(
-                                       host    => $kanopya_master,
-                                       cluster => $kanopya,
-                                   );
 
+    my $linux = $kanopya->getComponent(category => "System");
+    my $elinux = EEntity->new(entity => $linux);
+
+    $elinux->generateConfiguration(
+        host    => $kanopya_master,
+        cluster => $kanopya,
+    );
+
+    my $puppetmaster = $kanopya->getComponent(name => "Puppetmaster");
     my $epuppetmaster = EEntity->new(entity => $puppetmaster);
-    my $fqdn = $kanopya_master->node->node_hostname . "." . $kanopya->cluster_domainname;
 
     try {
         $epuppetmaster->createHostCertificate(
             mount_point => "/tmp",
-            host_fqdn   => $fqdn
+            host_fqdn   => $kanopya_master->node->fqdn
         );
     }
     catch (Kanopya::Exception::IO $err) {
