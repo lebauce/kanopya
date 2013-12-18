@@ -729,33 +729,6 @@ sub _configure_rabbitmq {
 =pod
 =begin classdoc
 
-Configure snmpd
-
-=end classdoc
-=cut
-
-sub _configure_snmpd {
-    my ($self) = @_;
-    print "\n - Snmpd reconfiguration...";
-
-    $self->_useTemplate(
-        data     => { internal_ip_add => $self->{parameters_values}->{admin_ip} },
-        conf     => '/etc/snmp/snmpd.conf',
-        template => 'components/snmpd/snmpd.conf.tt',
-    );
-
-    $self->_useTemplate(
-        data     => { internal_ip_add => $self->{parameters_values}->{admin_ip} },
-        conf     => '/etc/default/snmpd',
-        template => 'components/snmpd/default_snmpd.tt',
-    );
-    print "ok\n";
-}
-
-
-=pod
-=begin classdoc
-
 Configure puppetmaster
 
 =end classdoc
@@ -1002,7 +975,6 @@ sub process {
     $self->_create_database();
 
     $self->_configure_dhcpd();
-    $self->_configure_snmpd();
     $self->_configure_iscsitarget();
     $self->_configure_puppetmaster();
     $self->_configure_rabbitmq();

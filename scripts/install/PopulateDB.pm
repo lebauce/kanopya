@@ -1663,10 +1663,6 @@ sub registerKanopyaMaster {
         },
         {
             name => "Snmpd",
-            conf => {
-                monitor_server_ip => $args{poolip_addr},
-                snmpd_options     => '-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid'
-            }
         },
         {
             name => "Nfsd",
