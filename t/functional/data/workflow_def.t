@@ -25,7 +25,7 @@ use ParamPreset;
 use Kanopya::Tools::TestUtils 'expectedException';
 use Operationtype;
 
-Kanopya::Database::authenticate(login => 'admin', password => 'K4nOpY4');
+Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
 main();
 

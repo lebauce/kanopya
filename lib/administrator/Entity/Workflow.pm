@@ -50,18 +50,15 @@ use constant ATTR_DEF => {
     workflow_name => {
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     state => {
         pattern      => '^.*$',
         default      => 'pending',
         is_mandatory => 0,
-        is_extended  => 0
     },
     related_id => {
         pattern      => '^\d+$',
         is_mandatory => 0,
-        is_extended  => 0
     },
 };
 
@@ -105,19 +102,9 @@ sub run {
 
     my $def = Entity::WorkflowDef->find(hash => { workflow_def_name => $args{name} });
 
-    # Build the workflow description from desc template and params
-    my $allparams = clone($args{params}->{params});
-    for my $name (keys (defined $args{params}->{context} ? $args{params}->{context} : {})) {
-        if (blessed($args{params}->{context}->{$name})) {
-            $allparams->{$name} = $args{params}->{context}->{$name}->label;
-        }
-    }
-    my $description = '';
-    my $desctemplate = $def->description;
-    $template->process(\$desctemplate, $allparams, \$description);
-
     # Instanciate the workflow, and add the steps
-    my $workflow = Entity::Workflow->new(workflow_name => $description, related_id => $args{related_id});
+    my $label = $class->formatLabel(params => $args{params}, description => $def->description);
+    my $workflow = Entity::Workflow->new(workflow_name => $label, related_id => $args{related_id});
     delete $args{name};
     delete $args{related_id};
 
@@ -516,6 +503,35 @@ sub finish {
         $operation->remove();
     }
     $self->setState(state => 'done');
+}
+
+
+=pod
+=begin classdoc
+
+Build a user firendly label from context params contents, and a template toolkit formated description.
+
+=end classdoc
+=cut
+
+sub formatLabel {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'params', 'description' ]);
+
+    # Build the workflow description from desc template and params
+    my $allparams = clone($args{params}->{params});
+    for my $name (keys (defined $args{params}->{context} ? $args{params}->{context} : {})) {
+        if (blessed($args{params}->{context}->{$name})) {
+            $allparams->{$name} = $args{params}->{context}->{$name}->label;
+        }
+    }
+    my $label = '';
+    my $desctemplate = $args{description};
+    $template->process(\$desctemplate, $allparams, \$label);
+
+    return $label;
 }
 
 

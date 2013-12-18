@@ -84,11 +84,10 @@ function updateWorkflowGritter(workflow) {
 }
 
 function showWorkflowGritter(workflow) {
-    var id = workflow.pk;
-    var operations = get("/api/operation?workflow_id=" + id + "&order_by=execution_rank");
-    var title =  "" . workflow.workflow_name;
-
+    var operations = get("/api/operation?workflow_id=" + workflow.pk + "&order_by=execution_rank");
+    var title =  "" + workflow.workflow_name;
     var content = $("<div></div>");
+
     var ul = formatOperations(operations);
     if (operations.length == 0) {
         return;
@@ -105,13 +104,13 @@ function showWorkflowGritter(workflow) {
     var gritter = $('#gritter-item-' + gritterId);
     gritter.find(".gritter-action").click(function () {
         callMethod({
-            url: "/api/workflow/" + id + "/cancel",
-            success: function (data) { $.gritter.remove(gritterId); }
+            url: "/api/workflow/" + workflow.pk + "/cancel",
+            success: function (data) { $.gritter.remove(gritterworkflow.pk); }
         });
     });
-    gritter.addClass("gritter-item-workflow-" + id);
+    gritter.addClass("gritter-item-workflow-" + workflow.pk);
     gritter.addClass("gritter-item-workflow");
-    gritter.data("workflow", id);
+    gritter.data("workflow", workflow.pk);
 }
 
 // Check if there is new messages and running workflows

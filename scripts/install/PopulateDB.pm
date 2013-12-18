@@ -5,51 +5,20 @@
 use lib qw(/opt/kanopya/lib/common/ /opt/kanopya/lib/administrator/ /opt/kanopya/lib/executor/ /opt/kanopya/lib/monitor/ /opt/kanopya/lib/orchestrator/ /opt/kanopya/lib/external);
 
 use General;
-use Class::ISA;
+use Kanopya::Database;
 use Kanopya::Config;
 use Entity::Component;
-use Entity::WorkflowDef;
 use Operationtype;
-use Entity::Policy;
-use Entity::Policy::HostingPolicy;
-use Entity::Policy::StoragePolicy;
-use Entity::Policy::NetworkPolicy;
-use Entity::Policy::SystemPolicy;
-use Entity::Policy::ScalabilityPolicy;
-use Entity::Policy::BillingPolicy;
-use Entity::Policy::OrchestrationPolicy;
-use Entity::ServiceTemplate;
-use Entity::Netconf;
-use Entity::NetconfRole;
-use Entity::Network;
-use Entity::Kernel;
-use Entity::Host;
-use Entity::Poolip;
-use Entity::Component::Physicalhoster0;
 use EEntity;
 use ClassType;
 use ClassType::ComponentType;
 use ClassType::ServiceProviderType;
 use ClassType::ServiceProviderType::ClusterType;
 use Profile;
-use Entity::Gp;
-use Entity::User;
 use Entityright;
 use UserProfile;
-use Entity::Processormodel;
-use Entity::Hostmodel;
-use POSIX;
-use Date::Simple (':all');
-use Operationtype;
 use ComponentTemplate;
 use Indicatorset;
-use Entity::Indicator;
-use Entity::Poolip;
-use Entity::ServiceProvider::Cluster;
-use Entity::Network;
-use Entity::Interface;
-use Entity::Iface;
-use Entity::Repository;
 use Ip;
 use Node;
 use ServiceProviderManager;
@@ -58,31 +27,6 @@ use Lvm2Pv;
 use Lvm2Lv;
 use Scope;
 use ScopeParameter;
-use Entity::Component::Lvm2;
-use Entity::Component::Iscsi::Iscsitarget1;
-use Entity::Component::Dhcpd3;
-use Entity::Component::Tftpd;
-use Entity::Component::Snmpd5;
-use Entity::Component::Nfsd3;
-use Entity::Component::Syslogng3;
-use Entity::Component::Puppetmaster2;
-use Entity::Component::Openiscsi2;
-use Entity::Component::Physicalhoster0;
-use Entity::Component::Fileimagemanager0;
-use Entity::Component::Storage;
-use Entity::Component::Kanopyacollector1;
-use Entity::Component::Kanopyaworkflow0;
-use Entity::Component::Linux::Debian;
-use Entity::Component::Linux::Redhat;
-use Entity::Component::Linux::Suse;
-use Entity::Component::Mailnotifier0;
-use Entity::Component::Virtualization::NovaController;
-use Entity::Component::Vmm::NovaCompute;
-use Entity::Component::Openstack::Glance;
-use Entity::Component::Openstack::Keystone;
-use Entity::Component::Openstack::Quantum;
-use Entity::Component::Amqp;
-use Entity::Component::Virtualization;
 use NetconfInterface;
 use NetconfPoolip;
 use NetconfIface;
@@ -91,7 +35,9 @@ use ComponentCategory::ManagerCategory;
 use ClassType::DataModelType;
 use Manager::HostManager;
 
-use Kanopya::Database;
+use POSIX;
+use Date::Simple (':all');
+use Class::ISA;
 
 use TryCatch;
 my $err;
@@ -689,48 +635,48 @@ sub registerOperations {
     my %args = @_;
 
     my $operations = [
-        [ 'AddHost', 'Activating a host' ],
-        [ 'RemoveHost', 'Removing host' ], 
-        [ 'ActivateHost', 'Activating a host' ],
-        [ 'DeactivateHost', 'Desactivating host' ],
-        [ 'AddCluster', 'Instanciating new service' ],
-        [ 'RemoveCluster', 'Removing service' ],
-        [ 'ActivateCluster', 'Activating a service' ],
-        [ 'DeactivateCluster', 'Deactivating service' ],
-        [ 'StopCluster', 'Stopping service' ],
+        [ 'AddHost', 'Activating host "[% host ? host : "n/a" %]"' ],
+        [ 'RemoveHost', 'Removing host [% host ? host : "n/a" %]' ],
+        [ 'ActivateHost', 'Activating host "[% host ? host : "n/a" %]"' ],
+        [ 'DeactivateHost', 'Desactivating host "[% host ? host : "n/a" %]"' ],
+        [ 'AddCluster', 'Instanciating new service "[% cluster_params.cluster_name %]"' ],
+        [ 'RemoveCluster', 'Removing service "[% cluster ? cluster : "n/a" %]"' ],
+        [ 'ActivateCluster', 'Activating service "[% cluster ? cluster : "n/a" %]"' ],
+        [ 'DeactivateCluster', 'Deactivating service "[% cluster ? cluster : "n/a" %]"' ],
+        [ 'StopCluster', 'Stopping service "[% cluster ? cluster : "n/a" %]"' ],
         [ 'CloneSystemimage' ],
-        [ 'RemoveSystemimage', 'Removing system image' ],
-        [ 'StopNode', 'Stopping node' ],
-        [ 'PreStartNode', 'Configuring node addition' ],
-        [ 'StartNode', 'Starting new node' ],
-        [ 'PreStopNode', 'Configuring node removal' ],
-        [ 'PostStopNode', 'Finalizing node removal' ],
-        [ 'PostStartNode', 'Finalizing node addition' ],
-        [ 'CreateDisk', 'Creating new disk' ],
-        [ 'CreateExport', 'Exporting disk' ], 
-        [ 'ForceStopCluster', 'Force service stopping' ],
-        [ 'KanopyaMaintenance' ],
-        [ 'MigrateHost', 'Migrating node' ],
-        [ 'RemoveDisk', 'Removing disk' ],
-        [ 'RemoveExport', 'Removing export' ],
+        [ 'RemoveSystemimage', 'Removing system image "[% systemimage %]"' ],
+        [ 'CreateDisk', 'Creating new disk "[% name %]"' ],
+        [ 'CreateExport', 'Exporting disk "[% container %]"' ],
+        [ 'ForceStopCluster', 'Force stopping instance "[% cluster %]"' ],
+        [ 'MigrateHost', 'Migrating virtual machine "[% vm ? vm : "n/a" %]" to hypervisor "[% host ? host : "n/a" %]"' ],
+        [ 'RemoveDisk', 'Removing disk "[% container ? container : "n/a" %]"' ],
+        [ 'RemoveExport', 'Removing export "[% container_access ? container_access : "n/a" %]"' ],
         [ 'DeployMasterimage', 'Deploying master image' ],
-        [ 'RemoveMasterimage', 'Removing master image' ], 
-        [ 'AddNode', 'Preparing a new node' ],
-        [ 'ScaleCpuHost', 'Scaling node cpu' ],
-        [ 'ScaleMemoryHost', 'Scaling node memory' ],
-        [ 'CancelWorkflow', 'Canceling wokflow' ],  
+        [ 'RemoveMasterimage', 'Removing master image "[% masterimage ? masterimage : "n/a" %]"' ],
+        [ 'ScaleCpuHost', 'Scaling [% cpu_number ? cpu_number : "n/a" %] cpu on host "[% host ? host : "n/a" %]"' ],
+        [ 'ScaleMemoryHost', 'Scaling [% memory ? memory : "n/a" %]o. of memory on host "[% host ? host : "n/a" %]"' ],
         [ 'LaunchSCOWorkflow' ],
-        [ 'UpdateCluster', 'Reconfigure cluster' ],
-        [ 'LaunchScaleInWorkflow', 'Configuring scale in node' ],
+        [ 'UpdateCluster', 'Reconfigure instance "[% cluster ? cluster : "n/a" %]"' ],
+        [ 'LaunchScaleInWorkflow', 'Configuring scale in for node node "[% host ? host : "n/a" %]"' ],
         [ 'LaunchOptimiaasWorkflow' ],
-        [ 'ProcessRule', 'Processing triggered rule' ],
-        [ 'ResubmitNode', 'Resubmit a virtual machine to the IAAS' ],
-        [ 'RelieveHypervisor', 'Relieve the hypervisor by migrating one VM' ],
-        [ 'Synchronize', 'Synchronize a component' ],
-        [ 'FlushHypervisor', 'Compute flush hypervisor plan' ],
-        [ 'ResubmitHypervisor', 'Resubmit hypervisor virtual machines' ],
-        [ 'SelectDataModel', 'Compute the best data model of a combination' ],
+        [ 'ProcessRule', 'Processing triggered rule "[% rule %]"' ],
+        [ 'ResubmitNode', 'Resubmit virtual machine "[% host ? host : "n/a" %]"' ],
+        [ 'RelieveHypervisor', 'Relieve hypervisor "[% host ? host : "n/a" %]"' ],
+        [ 'Synchronize', 'Synchronize component "[% entity ? entity : "n/a" %]"' ],
+        [ 'FlushHypervisor', 'Compute flush hypervisor plan for "[% flushed_hypervisor ? flushed_hypervisor : "n/a" %]"' ],
+        [ 'ResubmitHypervisor', 'Resubmit virtual machines of hypervisor "[% host ? host : "n/a" %]"' ],
+        [ 'SelectDataModel', 'Compute data model of combination "[% combination ? combination : "n/a" %]"' ],
         [ 'SynchronizeInfrastructure', 'Synchronize infrastructure' ],
+        # Workflow AddNode
+        [ 'AddNode', 'Preparing a new node for instance "[% cluster ? cluster : "n/a" %]"' ],
+        [ 'PreStartNode', 'Configuring node "[% host ? host : "n/a" %]"' ],
+        [ 'StartNode', 'Starting node "[% host ? host : "n/a" %]"' ],
+        [ 'PostStartNode', 'Validating node "[% host ? host : "n/a" %]"' ],
+        # Workflow StopNode
+        [ 'StopNode', 'Stopping node "[% host ? host : "n/a" %]"' ],
+        [ 'PreStopNode', 'Configuring node removal for instance "[% cluster ? cluster : "n/a" %]"' ],
+        [ 'PostStopNode', 'Finalizing removing node "[% host ? host : "n/a" %]"' ],
     ];
 
     for my $operation (@{$operations}) {
@@ -2001,7 +1947,7 @@ sub populate_workflow_def {
             }
         },
         steps => [ $addnode_op_id, $prestart_op_id, $start_op_id, $poststart_op_id ],
-        description => "Adding node to service \"[% cluster %]\""
+        description => "Adding node to instance \"[% cluster %]\""
     );
 
     # StopNode workflow def

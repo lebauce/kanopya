@@ -140,9 +140,12 @@ sub new {
     my $operationtype = Operationtype->find(hash => { operationtype_name => $args{type} });
 
     # If workflow not defined, initiate a new one with parameters
-    if (not defined $args{workflow_id}) {
-        my $workflow = Entity::Workflow->new(workflow_name => $operationtype->operationtype_label,
-                                             related_id    => $args{related_id});
+    my $workflow;
+    if (defined $args{workflow_id}) {
+        $workflow = Entity::Workflow->get(id => $args{workflow_id});
+    }
+    else {
+        $workflow = Entity::Workflow->new(related_id => $args{related_id});
         $args{workflow_id} = $workflow->id;
     }
 
@@ -168,6 +171,11 @@ sub new {
         };
 
         $self = $class->SUPER::new(%$params);
+
+        # Set the name of the workflow name with operation label
+        if (! $workflow->workflow_name) {
+            $workflow->workflow_name($self->label);
+        }
     };
     if ($@) {
         $log->error($@);
@@ -280,7 +288,7 @@ sub unserializeParams {
         while(my ($key, $value) = each %{ $params->{context} }) {
             # Try to instanciate value as an entity.
             eval {
-                $params->{context}->{$key} = EEntity->new(data => Entity->get(id => $value));
+                $params->{context}->{$key} = Entity->get(id => $value);
             };
             if ($@) {
                 # Can skip errors on entity instanciation. Could be usefull when
@@ -482,7 +490,17 @@ sub label {
     my %args = @_;
 
     my $type = $self->operationtype;
-    return $type->operationtype_label ? $type->operationtype_label : $type->operationtype_name;
+    if ($type->operationtype_label) {
+        my $params = $self->unserializeParams(skip_not_found => 1);
+        return $self->workflow->formatLabel(
+                   params      => {
+                       context => delete $params->{context},
+                       params  => $params,
+                   },
+                   description => $type->operationtype_label
+               );
+    }
+    return $type->operationtype_name;
 }
 
 sub type {
