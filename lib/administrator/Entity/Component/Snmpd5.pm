@@ -33,20 +33,6 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    monitor_server_ip => {
-        label        => 'SNMP Server IP',
-        type         => 'string',
-        pattern      => '^.*$',
-        is_mandatory => 1,
-        is_editable  => 1
-    },
-    snmpd_options => { 
-        label        => 'SNMP agent options',
-        type         => 'string',
-        pattern      => '^.*$',
-        is_mandatory => 1,
-        is_editable  => 1
-    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -55,39 +41,23 @@ sub getNetConf {
     return {
         snmpd => {
             port => 161,
-            protocols => ['udp']
+            protocols => [ 'udp' ]
         }
     };
-}
-
-sub getBaseConfiguration {
-    return {
-        monitor_server_ip => '127.0.0.1',
-        snmpd_options => "-Lsd -Lf /dev/null -u snmp -I -smux -p /var/run/snmpd.pid"
-    };
-}
-
-sub insertDefaultExtendedConfiguration {
-    my $self = shift;
-
-    # If the collector manager is the KanopyaCollector, set the server ip
-    # to Kanopya monitor master node.
-    my $collector;
-    eval {
-         $collector = $self->service_provider->getManager(manager_type => 'CollectorManager');
-    };
-    if (defined $collector and $collector->component_type->component_name eq 'Kanopyacollector') {
-        $self->monitor_server_ip('0.0.0.0');
-    }
 }
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
+    my $collector = $self->service_provider->getManager(manager_type => 'CollectorManager');
+
     return merge($self->SUPER::getPuppetDefinition(%args), {
         snmpd => {
             manifest => $self->instanciatePuppetResource(
                             name => "kanopya::snmpd",
+                            params => {
+                                collector => $collector->getMasterNode->adminIp
+                            }
                         )
         }
     } );

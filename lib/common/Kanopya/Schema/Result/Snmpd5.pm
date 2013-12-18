@@ -46,18 +46,6 @@ __PACKAGE__->table("snmpd5");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 monitor_server_ip
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 39
-
-=head2 snmpd_options
-
-  data_type: 'char'
-  is_nullable: 0
-  size: 128
-
 =cut
 
 __PACKAGE__->add_columns(
@@ -68,10 +56,6 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "monitor_server_ip",
-  { data_type => "char", is_nullable => 0, size => 39 },
-  "snmpd_options",
-  { data_type => "char", is_nullable => 0, size => 128 },
 );
 
 =head1 PRIMARY KEY

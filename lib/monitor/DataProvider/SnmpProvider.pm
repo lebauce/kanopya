@@ -61,7 +61,7 @@ sub new {
     my $host = $args{host};
     my ($session, $error) = Net::SNMP->session(
         -hostname  => $host->adminIp,
-        -community => 'my_comnt',
+        -community => 'kanopya',
     );
 
     if (!defined $session) {
