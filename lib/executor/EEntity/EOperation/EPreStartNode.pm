@@ -114,7 +114,7 @@ sub execute {
                                     }
                                 );
     }
-    $self->{context}->{cluster}->registerNode(%$params, econtext => );
+    $self->{context}->{cluster}->registerNode(%$params);
 
     # Create the node working directory where generated files will be
     # stored.
