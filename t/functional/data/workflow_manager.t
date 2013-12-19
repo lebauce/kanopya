@@ -132,6 +132,7 @@ sub paramsManagement {
         my $waited_params = {workflow_values => {specific_param => $all_params->{specific}->{specific_param},
                                                  node_hostname  => $all_params->{automatic}->{node_hostname}},
                             template_content => undef,
+                            period           => undef,
                             sp_id            => $service_provider->id,
                             rule_id          => $rules[0]->id,
                             scope_name       => 'node',
