@@ -1,0 +1,3 @@
+<conf logdir="[% logdir %]">
+    <user name="admin" password="[% admin_password %]" />
+</conf>
