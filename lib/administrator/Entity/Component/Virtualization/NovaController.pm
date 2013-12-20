@@ -417,4 +417,8 @@ sub setConf {
     }
 }
 
+sub getRemoteSessionURL {
+    return "";
+}
+
 1;
