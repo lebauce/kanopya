@@ -46,6 +46,13 @@ __PACKAGE__->table("nova_compute");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 libvirt_type
+
+  data_type: 'char'
+  default_value: 'kvm'
+  is_nullable: 0
+  size: 32
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -56,6 +63,8 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
+  "libvirt_type",
+  { data_type => "char", default_value => "kvm", is_nullable => 0, size => 32 },
 );
 
 =head1 PRIMARY KEY

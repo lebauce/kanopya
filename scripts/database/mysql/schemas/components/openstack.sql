@@ -37,6 +37,7 @@ CREATE TABLE `cinder` (
 
 CREATE TABLE `nova_compute` (
   `nova_compute_id` int(8) unsigned NOT NULL,
+  `libvirt_type` char(32) NOT NULL DEFAULT 'kvm',
   PRIMARY KEY (`nova_compute_id`),
   CONSTRAINT `fk_nova_compute_1` FOREIGN KEY (`nova_compute_id`) REFERENCES `vmm` (`vmm_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

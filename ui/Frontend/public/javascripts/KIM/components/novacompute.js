@@ -6,7 +6,7 @@ var Novacompute = (function(_super) {
     function Novacompute(id) {
         _super.call(this, id);
 
-        this.displayed = [ 'iaas_id' ];
+        this.displayed = [ 'iaas_id', 'libvirt_type' ];
         this.relations = {};
     };
 
