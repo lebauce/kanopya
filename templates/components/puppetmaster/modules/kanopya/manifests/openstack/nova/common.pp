@@ -10,14 +10,15 @@ class kanopya::openstack::nova::common(
   $rabbit_virtualhost = '/'
 ) {
   class { 'nova':
-    # set sql and rabbit to false so that the resources will be collected
-    sql_connection      => $sql_connection,
-    image_service       => 'nova.image.glance.GlanceImageService',
-    glance_api_servers  => "http://${glance}:9292",
-    rabbit_userid       => $rabbit_user,
-    rabbit_password     => $rabbit_password,
-    rabbit_hosts        => $rabbits,
-    rabbit_virtual_host => $rabbit_virtualhost
+      # set sql and rabbit to false so that the resources will be collected
+      sql_connection           => $sql_connection,
+      image_service            => 'nova.image.glance.GlanceImageService',
+      glance_api_servers       => "http://${glance}:9292",
+      rabbit_userid            => $rabbit_user,
+      rabbit_password          => $rabbit_password,
+      rabbit_hosts             => $rabbits,
+      rabbit_virtual_host      => $rabbit_virtualhost,
+      monitoring_notifications => true,
   }
 
   if ($quantum) {
