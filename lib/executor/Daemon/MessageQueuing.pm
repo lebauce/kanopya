@@ -598,7 +598,7 @@ sub receiveAll {
         });
 
         # Create the specified number of instance of the worker/subscriber
-        for (1 .. $callbackdef->{instances}) {
+        for (1 .. (defined $callbackdef->{instances} ? $callbackdef->{instances} : 1)) {
             push @childs, $job->run;
         }
     }
