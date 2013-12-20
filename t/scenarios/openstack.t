@@ -148,7 +148,7 @@ sub main {
 
     my $pv = Lvm2Pv->new(
         lvm2_vg_id   => $vg->id,
-        lvm2_pv_name => "/dev/sda"
+        lvm2_pv_name => "/dev/sda2"
     );
 
     diag('Create and configure Nova compute cluster');
@@ -170,10 +170,44 @@ sub main {
                        components => {
                            'novacompute'  => {
                                iaas_id            => $nova_controller->id,
+                               libvirt_type       => 'qemu',
                            },
+                           'nfsd' => {
+                           }
                        }
                    );
     } 'Create Nova Compute cluster';
+
+    my $kanopya = Kanopya::Tools::Retrieve::retrieveCluster();
+    my $lvm = EEntity->new(data => $kanopya->getComponent(name => "Lvm"));
+    my $nfs = EEntity->new(data => $kanopya->getComponent(name => "Nfsd"));
+    my $shared;
+    my $export;
+
+    lives_ok {
+        $shared = $lvm->createDisk(
+                      name       => "nova-instances",
+                      size       => 1 * 1024 * 1024 * 1024,
+                      filesystem => "ext4",
+                  );
+
+        $export = $nfs->createExport(
+                       container => $shared,
+                       client_name => "*",
+                       client_options => "rw,sync,fsid=0,no_root_squash"
+                   );
+    } "Create computes shared storage";
+
+    my $system = $compute->getComponent(category => "System");
+
+    for my $export ($nfs->container_accesses) {
+        $system->addMount(
+            mountpoint => "/var/lib/nova/instances",
+            filesystem => "nfs",
+            options => "vers=3",
+            device => $export->container_access_export
+        );
+    }
 
     lives_ok {
         my $vm_cluster = Kanopya::Tools::Create->createVmCluster(
