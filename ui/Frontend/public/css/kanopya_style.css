@@ -314,6 +314,20 @@ button.ui-multiselect,.ui-multiselect-menu li label{cursor:pointer;}
         #content-about h2{font-size:12px;color:black;margin:0 0 2px;}
     #content-about p{font-weight:normal;}
 
+.gritter-action {
+  float: right;
+  padding-right: 25px;
+}
+
 .gritter-title {
   margin-left: 10px;
+}
+
+.gritter-title .workflow-name {
+  font-size: 14px;
+}
+
+.gritter-title .workflow-owner {
+  font-size: 10px;
+  font-weight: normal;
 }

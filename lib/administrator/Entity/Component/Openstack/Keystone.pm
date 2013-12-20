@@ -71,7 +71,7 @@ sub getPuppetDefinition {
         name => 'kanopya::openstack::keystone',
         params => {
             admin_password => 'keystone',
-            email => $self->service_provider->user->user_email,
+            email => $self->service_provider->owner->user_email,
             database_user => $name,
             database_name => $name,
         }

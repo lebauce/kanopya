@@ -60,6 +60,13 @@ __PACKAGE__->table("entity");
   is_foreign_key: 1
   is_nullable: 1
 
+=head2 owner_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -78,6 +85,13 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "entity_comment_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
+  "owner_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -690,6 +704,26 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 owner
+
+Type: belongs_to
+
+Related object: L<Kanopya::Schema::Result::User>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "owner",
+  "Kanopya::Schema::Result::User",
+  { user_id => "owner_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "SET NULL",
+    on_update     => "NO ACTION",
+  },
+);
+
 =head2 policy
 
 Type: might_have
@@ -936,8 +970,8 @@ Composing rels: L</entity_tags> -> tag
 __PACKAGE__->many_to_many("tags", "entity_tags", "tag");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3rsGJk+v0zkQsSmTBmjd6A
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-12-18 16:10:30
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:EjFfy0lWBHRmKHsG8sUH7A
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

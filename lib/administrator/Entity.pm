@@ -56,6 +56,11 @@ use constant ATTR_DEF => {
         pattern      => '^\d*$',
         is_mandatory => 0,
     },
+    owner_id => {
+        type         => 'relation',
+        relation     => 'single',
+        is_mandatory => 0,
+    },
     entity_time_periods => {
         label        => 'Time periods',
         type         => 'relation',

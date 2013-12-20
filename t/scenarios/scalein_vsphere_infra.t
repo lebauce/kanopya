@@ -67,7 +67,7 @@ eval {
             cluster_basehostname   => 'one',
             cluster_nameserver1    => '208.67.222.222',
             cluster_nameserver2    => '127.0.0.1',
-            user_id                => $admin_user->id,
+            owner_id               => $admin_user->id,
         );
       } 'Register VSphere cluster';
 

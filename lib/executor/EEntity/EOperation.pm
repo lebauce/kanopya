@@ -77,7 +77,7 @@ sub prepare {
 sub execute {
     my $self = shift;
 
-    $self->{userid}    = $self->user->id;
+    $self->{userid}    = $self->owner->id;
     $self->{erollback} = ERollback->new();
 }
 

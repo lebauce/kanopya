@@ -45,7 +45,7 @@ sub userBilling {
     my ($user, $from, $to) = @_;
 
     my @clusters = Entity::ServiceProvider::Cluster->search(
-                       hash => { user_id => $user->id }
+                       hash => { owner_id => $user->id }
                    );
 
     for my $cluster (@clusters) {

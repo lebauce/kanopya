@@ -27,9 +27,11 @@ CREATE TABLE `entity` (
   `entity_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `class_type_id` int(8) unsigned NOT NULL,
   `entity_comment_id` int(8) unsigned DEFAULT NULL,
+  `owner_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`entity_id`),
   FOREIGN KEY (`entity_comment_id`) REFERENCES `entity_comment` (`entity_comment_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
+  FOREIGN KEY (`class_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (`owner_id`) REFERENCES `user` (`user_id`) ON DELETE SET NULL ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -140,7 +142,6 @@ CREATE TABLE `cluster` (
   `cluster_basehostname` char(64) NULL DEFAULT NULL,
   `default_gateway_id` int(8) unsigned DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
-  `user_id` int(8) unsigned NOT NULL,
   `kernel_id` int(8) unsigned DEFAULT NULL,
   `masterimage_id` int(8) unsigned DEFAULT NULL,
   `service_template_id` int(8) unsigned DEFAULT NULL,
@@ -148,7 +149,6 @@ CREATE TABLE `cluster` (
   UNIQUE KEY (`cluster_name`),
   UNIQUE KEY (`cluster_basehostname`),
   FOREIGN KEY (`cluster_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   FOREIGN KEY (`masterimage_id`) REFERENCES `masterimage` (`masterimage_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   FOREIGN KEY (`default_gateway_id`) REFERENCES `network` (`network_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
@@ -573,7 +573,6 @@ CREATE TABLE `operation` (
   `operationtype_id` int(8) unsigned NOT NULL,
   `workflow_id` int(8) unsigned NOT NULL,
   `state` char(32) NOT NULL DEFAULT 'pending',
-  `user_id` int(8) unsigned NOT NULL,
   `priority` int(2) unsigned NOT NULL,
   `creation_date` date NOT NULL,
   `creation_time` time NOT NULL,
@@ -583,7 +582,6 @@ CREATE TABLE `operation` (
   PRIMARY KEY (`operation_id`),
   FOREIGN KEY (`operation_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`execution_rank`, `workflow_id`),
-  FOREIGN KEY (`user_id`) REFERENCES `user` (`user_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   FOREIGN KEY (`workflow_id`) REFERENCES `workflow` (`workflow_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`operationtype_id`) REFERENCES `operationtype` (`operationtype_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE SET NULL ON UPDATE NO ACTION

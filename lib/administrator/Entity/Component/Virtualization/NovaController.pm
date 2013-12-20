@@ -214,7 +214,7 @@ sub getPuppetDefinition {
                             name => "kanopya::openstack::nova::controller",
                             params => {
                                 admin_password => 'nova',
-                                email => $self->service_provider->user->user_email,
+                                email => $self->service_provider->owner->user_email,
                                 database_user => $name,
                                 database_name => $name,
                                 rabbit_user => $name,

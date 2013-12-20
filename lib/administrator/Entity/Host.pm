@@ -294,7 +294,7 @@ sub updateCPU {
     # If the host is a node, then it is used in a cluster
     # belonging to a user, so update quota
     if ($self->node) {
-        my $user = $self->node->service_provider->user;
+        my $user = $self->node->service_provider->owner;
 
         if ($args{cpu_number} < $self->host_core) {
             $user->releaseQuota(resource => 'cpu',
@@ -317,7 +317,7 @@ sub updateMemory {
     # If the host is a node, then it is used in a cluster
     # belonging to a user, so update quota
     if ($self->node) {
-        my $user = $self->node->service_provider->user;
+        my $user = $self->node->service_provider->owner;
 
         if ($args{memory} < $self->host_ram) {
             $user->releaseQuota(resource => 'ram',

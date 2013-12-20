@@ -92,7 +92,7 @@ sub getPuppetDefinition {
                             name => "kanopya::openstack::nova::compute",
                             params => {
                                 bridge_uplinks => \@uplinks,
-                                email => $self->nova_controller->service_provider->user->user_email,
+                                email => $self->nova_controller->service_provider->owner->user_email,
                                 libvirt_type => 'kvm',
                                 rabbit_user => "nova-" . $self->nova_controller->id,
                                 rabbit_virtualhost => 'openstack-' . $self->nova_controller->id

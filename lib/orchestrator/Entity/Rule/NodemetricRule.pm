@@ -488,17 +488,11 @@ sub setEvaluation {
                 $self->deleteVerifiedRule(node_id => $node_id);
             }
             else {
-                $self->setVerifiedRule(
-                    node_id => $node_id,
-                    state   => 'verified',
-                );
+                $self->setVerifiedRule(node_id => $node_id, state => 'verified');
             }
         }
         else {
-            $self->setVerifiedRule(
-                node_id => $node_id,
-                state   => 'undef',
-            );
+            $self->setVerifiedRule(node_id => $node_id, state => 'undef');
         }
     }
 }

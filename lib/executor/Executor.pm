@@ -710,6 +710,7 @@ sub instantiateOperation {
         if (defined $args{ack_cb}) {
             $args{ack_cb}->();
         }
+        $err->rethrow();
     }
     catch ($err) {
         $err->rethrow();

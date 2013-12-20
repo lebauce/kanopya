@@ -76,7 +76,7 @@ sub getPuppetDefinition {
     my $manifest = $self->instanciatePuppetResource(
         name => 'kanopya::openstack::glance',
         params => {
-            email => $self->service_provider->user->user_email,
+            email => $self->service_provider->owner->user_email,
             database_user => $name,
             database_name => $name
         }

@@ -215,7 +215,7 @@ function loadServicesDetails(cid, eid, is_iaas) {
                     hideDisabled    : false,
                     stepsAsTags     : true,
                     noStateDisabled : true,
-                    displayed       : [ 'cluster_name', 'cluster_desc', 'user_id', 'service_template_id' ],
+                    displayed       : [ 'cluster_name', 'cluster_desc', 'owner_id', 'service_template_id' ],
                     rawattrdef      : {
                         cluster_name : {
                             label        : 'Instance name',
@@ -231,7 +231,7 @@ function loadServicesDetails(cid, eid, is_iaas) {
                             is_mandatory : false,
                             is_editable  : true
                         },
-                        user_id : {
+                        owner_id : {
                             label        : 'Customer',
                             type         : 'relation',
                             relation     : 'single',
@@ -256,9 +256,9 @@ function loadServicesDetails(cid, eid, is_iaas) {
                         // Define the cluster relation hard coded here, to avoid a call
                         // to the cluster attributes for the relations only
                         var cluster_relations = {
-                            user : {
+                            owner : {
                                 resource : "user",
-                                cond     : { "foreign.user_id" : "self.user_id" },
+                                cond     : { "foreign.user_id" : "self.owner_id" },
                                 attrs    : { accessor : "single" }
                             },
                             service_template : {
@@ -299,7 +299,7 @@ function loadServicesDetails(cid, eid, is_iaas) {
                                                });
 
                         // Set the value if defined (at reload)
-                        $.each([ 'cluster_name', 'cluster_desc', 'user_id', 'service_template_id' ], function (index, attr) {
+                        $.each([ 'cluster_name', 'cluster_desc', 'owner_id', 'service_template_id' ], function (index, attr) {
                             if (details[attr] !== undefined) {
                                 if (attributes.attributes[attr] === undefined) {
                                     attributes.attributes[attr] = {};

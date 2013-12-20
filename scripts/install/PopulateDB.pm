@@ -527,13 +527,6 @@ sub registerUsers {
             user_creationdate => today(),
             user_desc         => 'User used by executor'
         );
-
-    #
-    #    UserProfile->new(
-    #        user_id    => $executor_user->id,
-    #        profile_id => $admin_profile->id
-    #    );
-    #    $admin_group->appendEntity(entity => $executor_user);
     }
 }
 
@@ -1541,7 +1534,7 @@ sub registerKanopyaMaster {
                             cluster_basehostname  => 'kanopyamaster',
                             default_gateway_id    => $admin_network->id,
                             active                => 1,
-                            user_id               => $admin->id,
+                            owner_id              => $admin->id,
                             service_provider_type_id => ClassType::ServiceProviderType->find(hash => { service_provider_name => "Kanopya" })->id
                         );
 

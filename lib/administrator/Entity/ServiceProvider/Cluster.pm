@@ -159,7 +159,7 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_editable  => 1
     },
-    user_id => {
+    owner_id => {
         label        => 'Owner',
         pattern      => '^\d+$',
         type         => 'relation',
@@ -263,7 +263,7 @@ Example of CCP:
 sub create {
     my ($class, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster_name', 'user_id' ]);
+    General::checkParams(args => \%args, required => [ 'cluster_name', 'owner_id' ]);
 
     # Firstly build the configuration pattern from args.
     my $confpattern = $class->buildConfigurationPattern(%args);
@@ -448,7 +448,7 @@ sub configureManagers {
                     # Add permission on the manager methods to the user
                     my $managerclass = 'Manager::' . $manager->{manager_type};
                     for my $method (keys %{ $managerclass->methods }) {
-                        $spmanager->manager->addPerm(consumer => $self->user, method => $method);
+                        $spmanager->manager->addPerm(consumer => $self->owner, method => $method);
                     }
                     if ($manager->{manager_type} eq 'CollectorManager') {
                         $self->initCollectorManager(collector_manager => $spmanager->manager);
@@ -579,8 +579,8 @@ sub remove {
         }
     );
 
-    $workflow->addPerm(consumer => $self->user, method => 'get');
-    $workflow->addPerm(consumer => $self->user, method => 'cancel');
+    $workflow->addPerm(consumer => $self->owner, method => 'get');
+    $workflow->addPerm(consumer => $self->owner, method => 'cancel');
     return $workflow;
 }
 
@@ -597,8 +597,8 @@ sub forceStop {
         }
     );
 
-    $workflow->addPerm(consumer => $self->user, method => 'get');
-    $workflow->addPerm(consumer => $self->user, method => 'cancel');
+    $workflow->addPerm(consumer => $self->owner, method => 'get');
+    $workflow->addPerm(consumer => $self->owner, method => 'cancel');
     return $workflow;
 }
 
@@ -615,8 +615,8 @@ sub activate {
         }
     );
 
-    $workflow->addPerm(consumer => $self->user, method => 'get');
-    $workflow->addPerm(consumer => $self->user, method => 'cancel');
+    $workflow->addPerm(consumer => $self->owner, method => 'get');
+    $workflow->addPerm(consumer => $self->owner, method => 'cancel');
     return $workflow;
 }
 
@@ -633,8 +633,8 @@ sub deactivate {
         }
     );
 
-    $workflow->addPerm(consumer => $self->user, method => 'get');
-    $workflow->addPerm(consumer => $self->user, method => 'cancel');
+    $workflow->addPerm(consumer => $self->owner, method => 'get');
+    $workflow->addPerm(consumer => $self->owner, method => 'cancel');
     return $workflow;
 }
 
@@ -664,7 +664,7 @@ sub addComponent {
     for my $method ('get', 'getConf', 'setConf') {
         # TODO: probably should not occurs.
         eval {
-            $component->addPerm(consumer => $self->user, method => $method);
+            $component->addPerm(consumer => $self->owner, method => $method);
         };
         if ($@) {
             $log->warn("Unable to set permissions on component <$component>, " .
@@ -746,7 +746,7 @@ sub getRequiredComponents {
 =begin classdoc
 
 Call the parent method, add assign permissions on
-the host for the cluster user.
+the host for the cluster owner.
 
 @return the registered node
 
@@ -758,7 +758,7 @@ sub registerNode {
 
     my $node = $self->SUPER::registerNode(%args);
     if (defined $args{host}) {
-        $args{host}->addPerm(consumer => $self->user, method => 'get');
+        $args{host}->addPerm(consumer => $self->owner, method => 'get');
     }
 
     return $node;
@@ -769,7 +769,7 @@ sub registerNode {
 =begin classdoc
 
 Call the parent method, remove the permissions on the host
-for the cluster user.
+for the cluster owner.
 
 @return the registered node
 
@@ -782,7 +782,7 @@ sub unregisterNode {
     General::checkParams(args => \%args, required => [ 'node' ]);
 
     if (defined $args{node}->host) {
-        $args{node}->host->removePerm(consumer => $self->user, method => 'get');
+        $args{node}->host->removePerm(consumer => $self->owner, method => 'get');
     }
     return $self->SUPER::unregisterNode(%args);
 }
@@ -892,8 +892,8 @@ sub addNode {
         }
     );
 
-    $workflow->addPerm(consumer => $self->user, method => 'get');
-    $workflow->addPerm(consumer => $self->user, method => 'cancel');
+    $workflow->addPerm(consumer => $self->owner, method => 'get');
+    $workflow->addPerm(consumer => $self->owner, method => 'cancel');
     return $workflow;
 }
 
@@ -915,8 +915,8 @@ sub removeNode {
         }
     );
 
-    $workflow->addPerm(consumer => $self->user, method => 'get');
-    $workflow->addPerm(consumer => $self->user, method => 'cancel');
+    $workflow->addPerm(consumer => $self->owner, method => 'get');
+    $workflow->addPerm(consumer => $self->owner, method => 'cancel');
     return $workflow;
 }
 
@@ -940,8 +940,8 @@ sub stop {
         }
     );
 
-    $workflow->addPerm(consumer => $self->user, method => 'get');
-    $workflow->addPerm(consumer => $self->user, method => 'cancel');
+    $workflow->addPerm(consumer => $self->owner, method => 'get');
+    $workflow->addPerm(consumer => $self->owner, method => 'cancel');
     return $workflow;
 }
 
@@ -1167,7 +1167,7 @@ sub getMonthlyConsommation {
                 time_zone   => $to->time_zone
             );
 
-    BillingManager::clusterBilling($self->user, $self, $from, $to, 1);
+    BillingManager::clusterBilling($self->owner, $self, $from, $to, 1);
 }
 
 sub lock {
@@ -1177,9 +1177,9 @@ sub lock {
     # Lock the cluster himself
     $self->SUPER::lock(%args);
 
-    # Lock the customer user related to the cluster
+    # Lock the customer owner related to the cluster
     # TODO: Verify if required
-    # $self->user->lock(%args);
+    # $self->owner->lock(%args);
 }
 
 sub unlock {
@@ -1187,9 +1187,9 @@ sub unlock {
 
     General::checkParams(args => \%args, required => [ 'consumer' ]);
 
-    # Unock the customer user related to the cluster
+    # Unock the customer owner related to the cluster
     # TODO: Verify if required (cf. sub lock)
-    # $self->user->unlock(%args);
+    # $self->owner->unlock(%args);
 
     # Unlock the cluster himself
     $self->SUPER::unlock(%args);
@@ -1206,8 +1206,8 @@ sub reconfigure {
         }
     );
 
-    $workflow->addPerm(consumer => $self->user, method => 'get');
-    $workflow->addPerm(consumer => $self->user, method => 'cancel');
+    $workflow->addPerm(consumer => $self->owner, method => 'get');
+    $workflow->addPerm(consumer => $self->owner, method => 'cancel');
 
     return $workflow;
 }
@@ -1254,7 +1254,7 @@ sub propagatePermissions {
     # Add permssions on the related object methods
     for my $method (keys %{ $args{related}->_methodsDefinition() }) {
         if (! ($method eq "addPerm" || $method eq "removePerm")) {
-            $args{related}->addPerm(consumer => $self->user, method => $method);
+            $args{related}->addPerm(consumer => $self->owner, method => $method);
         }
     }
 }

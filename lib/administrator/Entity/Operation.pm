@@ -41,9 +41,10 @@ use Hash::Merge;
 
 use Data::Dumper;
 use Log::Log4perl "get_logger";
-
 my $log = get_logger("");
-my $errmsg;
+
+use TryCatch;
+my $err;
 
 use constant ATTR_DEF => {
     operationtype_id => {
@@ -57,10 +58,6 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
     },
     workflow_id => {
-        pattern      => '^\d+$',
-        is_mandatory => 0,
-    },
-    user_id => {
         pattern      => '^\d+$',
         is_mandatory => 0,
     },
@@ -155,7 +152,7 @@ sub new {
     # Get the next execution rank within the creation transation.
     Kanopya::Database::beginTransaction;
 
-    eval {
+    try {
         $log->debug("Enqueuing new operation <$args{type}>, in workflow <$args{workflow_id}>");
 
         my $params = {
@@ -167,23 +164,23 @@ sub new {
             creation_date        => \"CURRENT_DATE()",
             creation_time        => \"CURRENT_TIME()",
             hoped_execution_time => $hoped_execution_time,
-            user_id              => Kanopya::Database::currentUser,
+            owner_id             => Kanopya::Database::currentUser,
         };
 
         $self = $class->SUPER::new(%$params);
+
+        if (defined $args{params}) {
+            $self->serializeParams(params => $args{params});
+        }
 
         # Set the name of the workflow name with operation label
         if (! $workflow->workflow_name) {
             $workflow->workflow_name($self->label);
         }
-    };
-    if ($@) {
-        $log->error($@);
-        Kanopya::Database::rollbackTransaction;
     }
-
-    if (defined $args{params}) {
-        $self->serializeParams(params => $args{params});
+    catch ($err) {
+        Kanopya::Database::rollbackTransaction;
+        $err->rethrow();
     }
 
     Kanopya::Database::commitTransaction;
@@ -237,10 +234,10 @@ sub serializeParams {
                                        "that is not an entity <$subvalue>."
                           );
                 }
-                eval {
+                try {
                     $subvalue->reload();
-                };
-                if ($@) {
+                }
+                catch ($err) {
                     $log->warn("Entity $subvalue <" . $subvalue->id . "> does not exists any more, " .
                                "removing it from context.");
                     delete $value->{$subkey};
@@ -287,16 +284,16 @@ sub unserializeParams {
         CONTEXT:
         while(my ($key, $value) = each %{ $params->{context} }) {
             # Try to instanciate value as an entity.
-            eval {
+            try {
                 $params->{context}->{$key} = Entity->get(id => $value);
-            };
-            if ($@) {
+            }
+            catch ($err) {
                 # Can skip errors on entity instanciation. Could be usefull when
                 # loading context that containing deleted entities.
                 if (not $args{skip_not_found}) {
                     throw Kanopya::Exception::Internal(
                               error => "Workflow <" . $self->id .
-                                       ">, context param <$value>, seems not to be an entity id.\n$@"
+                                       ">, context param <$value>, seems not to be an entity id.\n$err"
                           );
                 }
                 else {
@@ -328,16 +325,15 @@ sub lockContext {
     my $params = $self->unserializeParams(skip_not_found => $args{skip_not_found});
 
     Kanopya::Database::beginTransaction;
-    eval {
+    try {
         for my $entity (values %{ $params->{context} }) {
             $log->debug("Trying to lock entity <$entity>");
             $entity->lock(consumer => $self->workflow);
         }
-    };
-    if ($@) {
-        my $exception = $@;
+    }
+    catch ($err) {
         Kanopya::Database::rollbackTransaction;
-        $exception->rethrow;
+        $err->rethrow;
     }
     Kanopya::Database::commitTransaction;
 }
@@ -363,11 +359,11 @@ sub unlockContext {
     for my $key (keys %{ $params->{context} }) {
         my $entity = $params->{context}->{$key};
         $log->debug("Trying to unlock entity <$key>, id <" . $entity->id . ">");
-        eval {
+        try {
             $entity->unlock(consumer => $self->workflow);
-        };
-        if ($@) {
-            $log->debug("Unable to unlock context param <$key>\n$@");
+        }
+        catch ($err) {
+            $log->debug("Unable to unlock context param <$key>\n$err");
         }
     }
     Kanopya::Database::commitTransaction;
@@ -387,12 +383,11 @@ sub validate {
     my %args = @_;
 
     my $executor;
-    eval {
+    try {
         $executor = $self->workflow->relatedServiceProvider->getManager(manager_type => 'ExecutionManager');
-    };
-    if ($@) {
-        my $err = $@;
-        if ($@->isa('Kanopya::Exception::Internal')) {
+    }
+    catch ($err) {
+        if ($err->isa('Kanopya::Exception::Internal')) {
             throw Kanopya::Exception::Internal(
                       error => "Can not validate operation <" . $self->id .
                                "> without related service provider on the workflow."
@@ -529,7 +524,7 @@ sub delete {
         operation_id     => $self->id,
         operationtype_id => $self->operationtype_id,
         workflow_id      => $self->workflow_id,
-        user_id          => $self->user_id,
+        user_id          => $self->owner_id,
         priority         => $self->priority,
         creation_date    => $self->creation_date,
         creation_time    => $self->creation_time,
@@ -558,11 +553,11 @@ sub getNextRank {
     General::checkParams(args => \%args, required => [ 'workflow_id' ]);
 
     my $operation;
-    eval {
+    try {
         $operation = Entity::Operation->find(hash     => { workflow_id => $args{workflow_id} },
                                              order_by => 'execution_rank desc');
-    };
-    if ($@) {
+    }
+    catch ($err) {
         $log->debug("No previous operation in queue for workflow $args{workflow_id}");
         return 0;
     }

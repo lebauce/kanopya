@@ -344,10 +344,10 @@ sub execute {
     $self->{context}->{cluster}->checkBillingLimits(metrics => $host_metrics);
 
     # Check the user quota on ram and cpu
-    $self->{context}->{cluster}->user->canConsumeQuota(resource => 'ram',
-                                                       amount   => $self->{context}->{host}->host_ram);
-    $self->{context}->{cluster}->user->canConsumeQuota(resource => 'cpu',
-                                                       amount   => $self->{context}->{host}->host_core);
+    $self->{context}->{cluster}->owner->canConsumeQuota(resource => 'ram',
+                                                        amount   => $self->{context}->{host}->host_ram);
+    $self->{context}->{cluster}->owner->canConsumeQuota(resource => 'cpu',
+                                                        amount   => $self->{context}->{host}->host_core);
 
     my $createdisk_params   = $self->{context}->{cluster}->getManagerParameters(manager_type => 'DiskManager');
     my $createexport_params = $self->{context}->{cluster}->getManagerParameters(manager_type => 'ExportManager');
