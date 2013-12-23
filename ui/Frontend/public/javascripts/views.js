@@ -62,6 +62,10 @@ function reload_content(container_id, elem_id, extra) {
             } else {
                 $('#info-container').html('');
             }
+
+            // Set specific doc page for the current content
+            var doc_page = _content_handlers[container_id]['doc'];
+            $('#help').attr('doc-page', doc_page || '');
         }
     }
 }

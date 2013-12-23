@@ -138,6 +138,12 @@ $(document).ready(function () {
     });
 
     jQuery('#about').click(function () {openAbout('about_templates.html');});
+
+    $("#help").click( function(){
+        var doc_page = this.getAttribute("doc-page");
+        window.open(this.getAttribute("doc-url") + (doc_page || '') );
+    });
+
     // call for the themeswitcher
     //$('#switcher').themeswitcher();
 });
