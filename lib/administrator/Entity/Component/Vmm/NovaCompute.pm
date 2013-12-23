@@ -35,6 +35,16 @@ use constant ATTR_DEF => {
         is_editable  => 1,
         specialized  => 'NovaController'
     },
+    libvirt_type => {
+        type         => 'enum',
+        label        => 'libvirt type',
+        pattern      => '^(kvm|qemu)$',
+        options      => { 'kvm' => 'KVM',
+                          'qemu' => 'QEMU' },
+        is_mandatory => 0,
+        is_editable  => 1,
+        default      => 'kvm',
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
