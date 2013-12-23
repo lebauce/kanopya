@@ -42,17 +42,17 @@ hook 'before_template' => sub {
 
 get '/' => sub {
     my $product = config->{kanopya_product};
-    template $product . '/index';
+    template $product . '/index', config();
 };
 
 get '/kim' => sub {
     my $product = 'KIM';
-    template $product . '/index';
+    template $product . '/index', config();
 };
 
 get '/kio' => sub {
     my $product = 'KIO';
-    template $product . '/index';
+    template $product . '/index', config();
 };
 
 get '/conf' => sub {
