@@ -59,7 +59,7 @@ sub new {
     my $self = $class->SUPER::new(entity => $args{operation},
                                   eclass => "EEntity::EOperation::E" . $args{operation}->type);
 
-    my $params = $args{operation}->unserializeParams(skip_not_found => $args{skip_not_found});
+    my $params = $self->unserializeParams(skip_not_found => $args{skip_not_found});
     $self->{context} = delete $params->{context};
     $self->{params}  = $params;
 
@@ -77,7 +77,7 @@ sub prepare {
 sub execute {
     my $self = shift;
 
-    $self->{userid}    = $self->user->id;
+    $self->{userid}    = $self->owner->id;
     $self->{erollback} = ERollback->new();
 }
 
@@ -210,6 +210,28 @@ sub report {
     $log->debug("Reporting operation with duration_report : $args{duration}");
     $self->setHopedExecutionTime(value => $args{duration});
 }
+
+
+=pod
+=begin classdoc
+
+Instanciate execution entities for context entities.
+
+@return the params hash
+
+=end classdoc
+=cut
+
+sub unserializeParams {
+    my ($self, %args) = @_;
+
+    my $params = $self->_entity->unserializeParams(%args);
+    map { $params->{context}->{$_} = EEntity->new(data => $params->{context}->{$_}) }
+        keys (defined $params->{context} ? $params->{context} : {});
+
+    return $params;
+}
+
 
 sub getEContext {
     my ($self, %args) = @_;

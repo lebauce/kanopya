@@ -138,6 +138,8 @@ sub runWorkflow {
     # Log in the proper file
     $self->setLogAppender(workflow => $workflow);
 
+    $log->info("---- [ Workflow " . $workflow->id . " ] ----");
+
     # Set the workflow as running
     $workflow->setState(state => 'running');
 
@@ -629,7 +631,8 @@ sub logWorkflowState {
                          required => [ 'operation' ],
                          optional => { 'state' => '' });
 
-    my $msg = $args{operation}->type . " <" . $args{operation}->id . "> " . $args{state};
+    my $msg = $args{operation}->type . " <" . $args{operation}->id . "> (workflow " .
+              $args{operation}->workflow->id . ") " . $args{state};
     $log->info("---- [ Operation " . $msg . " ] ----");
 }
 
@@ -707,6 +710,7 @@ sub instantiateOperation {
         if (defined $args{ack_cb}) {
             $args{ack_cb}->();
         }
+        $err->rethrow();
     }
     catch ($err) {
         $err->rethrow();

@@ -640,6 +640,28 @@ sub receiveAll {
 =pod
 =begin classdoc
 
+Purge the queue. Override the parent mathod to connect if not donne.
+
+@param queue the queue to purge
+
+=end classdoc
+=cut
+
+sub purgeQueue {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'queue' ]);
+
+    if (not $self->connected) {
+        $self->connect();
+    }
+    return $self->SUPER::purgeQueue(%args);
+}
+
+
+=pod
+=begin classdoc
+
 Set the running prviate member.
 
 @param running the running flag to set

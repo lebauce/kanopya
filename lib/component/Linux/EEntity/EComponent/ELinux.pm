@@ -372,7 +372,7 @@ sub _generateUserAccount {
     General::checkParams(args => \%args, required => [ 'cluster', 'host', 'mount_point', 'econtext' ]);
 
     my $econtext = $args{econtext};
-    my $user = $args{cluster}->user;
+    my $user = $args{cluster}->owner;
     my $login = $user->user_login;
     my $password = $user->user_password;
 

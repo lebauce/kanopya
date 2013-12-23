@@ -40,7 +40,7 @@ sub main {
 
     lives_ok {
         $wf  = Entity::WorkflowDef->new(workflow_def_name => 'workflowdef_test');
-        $wf2 = Entity::WorkflowDef->new(workflow_def_name => 'workflowdef_test_2', params => $params);
+        $wf2 = Entity::WorkflowDef->new(workflow_def_name => 'workflowdef_test_2', param_presets => $params);
 
         my $get_params_empty = $wf->paramPresets;
         while (my ($k,$v) = each(%$get_params_empty)) {
@@ -56,7 +56,7 @@ sub main {
     } 'WorkflowDef creation with and without params';
 
 
-    $wf->setParamPreset(params => $params);
+    $wf->paramPresets($params);
 
     my $get_params = $wf->paramPresets;
 
@@ -71,7 +71,7 @@ sub main {
     my $params_update = { param_1 => 'value_1_bis',
                           param_3 => 'value_3'};
 
-    $wf->updateParamPreset(params => $params);
+    $wf->update(param_presets => $params);
 
     $get_params = $wf->paramPresets;
 

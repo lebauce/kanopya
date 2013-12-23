@@ -162,11 +162,11 @@ sub execute {
     $self->{context}->{host}->save();
 
     # Update the user quota on ram and cpu
-    $self->{context}->{cluster}->user->releaseQuota(
+    $self->{context}->{cluster}->owner->releaseQuota(
         resource => 'ram',
         amount   => $self->{context}->{host}->host_ram,
     );
-    $self->{context}->{cluster}->user->releaseQuota(
+    $self->{context}->{cluster}->owner->releaseQuota(
         resource => 'cpu',
         amount   => $self->{context}->{host}->host_core,
     );

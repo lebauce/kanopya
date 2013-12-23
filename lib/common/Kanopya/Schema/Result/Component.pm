@@ -1043,9 +1043,19 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 workflow_defs
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:W+xPxDAm9bzuGolem2jHeA
+Type: many_to_many
+
+Composing rels: L</workflow_def_managers> -> workflow_def
+
+=cut
+
+__PACKAGE__->many_to_many("workflow_defs", "workflow_def_managers", "workflow_def");
+
+
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-26 15:43:32
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:tGDMSPf4TkgBbn8QIVMK8g
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

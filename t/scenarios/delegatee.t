@@ -55,10 +55,10 @@ sub main {
     my $admin = Entity::User->find(hash => { user_login => 'admin' });
 
     # Create a cluster for the customer
-    my $customercluster = Kanopya::Tools::Create->createCluster(user_id => $customer->id);
+    my $customercluster = Kanopya::Tools::Create->createCluster(owner_id => $customer->id);
 
     # Retrieve a cluster on which the customer do not have any permissions
-    my $admincluster = Entity::ServiceProvider::Cluster->find(hash => { user_id => $admin->id });
+    my $admincluster = Entity::ServiceProvider::Cluster->find(hash => { owner_id => $admin->id });
 
     ################################################
     # Check permissions on non entity CRUD methods #

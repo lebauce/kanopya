@@ -84,36 +84,35 @@ function updateWorkflowGritter(workflow) {
 }
 
 function showWorkflowGritter(workflow) {
-    var id = workflow.pk;
-    var operations = get("/api/operation?workflow_id=" + id + "&order_by=execution_rank");
-    var title = "Running workflow";
-    if (workflow.workflow_name != null) {
-        title   += " '" + workflow.workflow_name + "'";
-    }
+    var operations = get("/api/operation?workflow_id=" + workflow.pk + "&order_by=execution_rank");
+    var title =  "" + workflow.workflow_name;
     var content = $("<div></div>");
+    var trigger = workflow.rule ? ("rule \"" + workflow.rule.label + "\"") : workflow.user;
+
     var ul = formatOperations(operations);
     if (operations.length == 0) {
         return;
     }
     content.append(ul);
     var gritterId = $.gritter.add({
-        title : "<div>" + title + "</div>" +
+        title : "<span class='workflow-name'>" + title + "</span>" +
                 "<div class='gritter-action'>" +
                     "<div title='Cancel workflow' class='ui-icon icon-cancel'></div>" +
-                "</div>",
+                "</div><br>" +
+                "<span class='workflow-owner'>(trigerred by " + trigger + ")</span>",
         text: content.html(),
         sticky: true
     });
     var gritter = $('#gritter-item-' + gritterId);
     gritter.find(".gritter-action").click(function () {
         callMethod({
-            url: "/api/workflow/" + id + "/cancel",
-            success: function (data) { $.gritter.remove(gritterId); }
+            url: "/api/workflow/" + workflow.pk + "/cancel",
+            success: function (data) { $.gritter.remove(gritterworkflow.pk); }
         });
     });
-    gritter.addClass("gritter-item-workflow-" + id);
+    gritter.addClass("gritter-item-workflow-" + workflow.pk);
     gritter.addClass("gritter-item-workflow");
-    gritter.data("workflow", id);
+    gritter.data("workflow", workflow.pk);
 }
 
 // Check if there is new messages and running workflows
@@ -172,12 +171,12 @@ function updateMessages( show_gritters ) {
                 } else {
                     try {
                         // Try to get the workflow to check permissions
-                        get("/api/workflow/" + workflows[i].pk);
-
                         // Display the popup
-                        showWorkflowGritter(workflows[i]);
+                        showWorkflowGritter(get("/api/workflow/" + workflows[i].pk + "?expand=rule"));
                     }
-                    catch (e) {}
+                    catch (e) {
+                        console.log(e);
+                    }
                 }
             }
 

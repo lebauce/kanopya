@@ -1,12 +1,12 @@
 use utf8;
-package Kanopya::Schema::Result::ServiceProviderManager;
+package Kanopya::Schema::Result::WorkflowDefRule;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
 =head1 NAME
 
-Kanopya::Schema::Result::ServiceProviderManager
+Kanopya::Schema::Result::WorkflowDefRule
 
 =cut
 
@@ -31,36 +31,29 @@ use base 'DBIx::Class::IntrospectableM2M';
 
 use base qw/DBIx::Class::Core/;
 
-=head1 TABLE: C<service_provider_manager>
+=head1 TABLE: C<workflow_def_rule>
 
 =cut
 
-__PACKAGE__->table("service_provider_manager");
+__PACKAGE__->table("workflow_def_rule");
 
 =head1 ACCESSORS
 
-=head2 service_provider_manager_id
+=head2 workflow_def_rule_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
   is_auto_increment: 1
   is_nullable: 0
 
-=head2 service_provider_id
+=head2 workflow_def_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 manager_category_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 0
-
-=head2 manager_id
+=head2 rule_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -77,28 +70,21 @@ __PACKAGE__->table("service_provider_manager");
 =cut
 
 __PACKAGE__->add_columns(
-  "service_provider_manager_id",
+  "workflow_def_rule_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
     is_auto_increment => 1,
     is_nullable => 0,
   },
-  "service_provider_id",
+  "workflow_def_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "manager_category_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 0,
-  },
-  "manager_id",
+  "rule_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -118,45 +104,31 @@ __PACKAGE__->add_columns(
 
 =over 4
 
-=item * L</service_provider_manager_id>
+=item * L</workflow_def_rule_id>
 
 =back
 
 =cut
 
-__PACKAGE__->set_primary_key("service_provider_manager_id");
+__PACKAGE__->set_primary_key("workflow_def_rule_id");
+
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<workflow_def_id>
+
+=over 4
+
+=item * L</workflow_def_id>
+
+=item * L</rule_id>
+
+=back
+
+=cut
+
+__PACKAGE__->add_unique_constraint("workflow_def_id", ["workflow_def_id", "rule_id"]);
 
 =head1 RELATIONS
-
-=head2 manager
-
-Type: belongs_to
-
-Related object: L<Kanopya::Schema::Result::Component>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "manager",
-  "Kanopya::Schema::Result::Component",
-  { component_id => "manager_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
-);
-
-=head2 manager_category
-
-Type: belongs_to
-
-Related object: L<Kanopya::Schema::Result::ManagerCategory>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "manager_category",
-  "Kanopya::Schema::Result::ManagerCategory",
-  { manager_category_id => "manager_category_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
-);
 
 =head2 param_preset
 
@@ -178,24 +150,39 @@ __PACKAGE__->belongs_to(
   },
 );
 
-=head2 service_provider
+=head2 rule
 
 Type: belongs_to
 
-Related object: L<Kanopya::Schema::Result::ServiceProvider>
+Related object: L<Kanopya::Schema::Result::Rule>
 
 =cut
 
 __PACKAGE__->belongs_to(
-  "service_provider",
-  "Kanopya::Schema::Result::ServiceProvider",
-  { service_provider_id => "service_provider_id" },
+  "rule",
+  "Kanopya::Schema::Result::Rule",
+  { rule_id => "rule_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
+);
+
+=head2 workflow_def
+
+Type: belongs_to
+
+Related object: L<Kanopya::Schema::Result::WorkflowDef>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "workflow_def",
+  "Kanopya::Schema::Result::WorkflowDef",
+  { workflow_def_id => "workflow_def_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
 
 # Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-12-18 15:35:47
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+C9N52K556w/BXpKoDwLuA
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:TqfnOoNOo4iFPrBtNWasmA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

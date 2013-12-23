@@ -934,7 +934,7 @@ sub registerVm {
                 cluster_nameserver1    => '127.0.0.1',
                 cluster_nameserver2    => '127.0.0.1',
                 cluster_boot_policy    => '',
-                user_id                => $admin_user->id,
+                owner_id               => $admin_user->id,
             );
 
             # policy and service template
@@ -1044,7 +1044,7 @@ sub registerHypervisor {
                                   begin_entity => $datacenter_view,
                               );
 
-        my $admin_user           = Entity::User->find(hash => { user_login => 'admin' });
+        my $admin_user = Entity::User->find(hash => { user_login => 'admin' });
 
         my $service_provider = $self->service_provider;
 

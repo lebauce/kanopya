@@ -29,32 +29,42 @@ use base 'Entity';
 use strict;
 use warnings;
 
+use General;
 use Entity::WorkflowDef;
 use ParamPreset;
 use Kanopya::Exceptions;
 use Entity::Operation;
+use Kanopya::Database;
+
+use Template;
+use Hash::Merge;
+use Scalar::Util qw(blessed);
+use Clone qw(clone);
 
 use Log::Log4perl 'get_logger';
-
 my $log = get_logger("");
-my $errmsg;
 
 use constant ATTR_DEF => {
     workflow_name => {
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     state => {
         pattern      => '^.*$',
         default      => 'pending',
         is_mandatory => 0,
-        is_extended  => 0
     },
     related_id => {
         pattern      => '^\d+$',
         is_mandatory => 0,
-        is_extended  => 0
+    },
+    user => {
+        is_virtual   => 1
+    },
+    rule => {
+        is_virtual   => 1,
+        type         => 'relation',
+        relation     => 'single'
     },
 };
 
@@ -64,10 +74,34 @@ sub methods {
     return {
         cancel => {
             description => 'Cancel workflow',
-            perm_holder => 'entity',
         },
     };
 }
+
+
+my $template = Template->new();
+my $merge    = Hash::Merge->new('RIGHT_PRECEDENT');
+
+
+=pod
+=begin classdoc
+
+@constructor
+
+Override the constructor to set the owner to the current logged user.
+
+=end classdoc
+=cut
+
+sub new {
+    my ($class, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         optional => { 'owner_id' => Kanopya::Database::currentUser });
+
+    return $class->SUPER::new(%args);
+}
+
 
 =pod
 =begin classdoc
@@ -84,21 +118,25 @@ Instanciate and run a new workflow from a already defined WorfklowDef
 =cut
 
 sub run {
-    my $class = shift;
-    my %args = @_;
+    my ($class, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'name' ], optional => { 'rule'       => undef,
-                                                                               'related_id' => undef });
+    General::checkParams(args     => \%args,
+                         required => [ 'name' ],
+                         optional => { 'params'     => {},
+                                       'rule'       => undef,
+                                       'related_id' => undef, });
 
-    my $def = Entity::WorkflowDef->find(hash => { workflow_def_name => $args{name} });
-    my $workflow = Entity::Workflow->new(workflow_name => $args{name}, related_id => $args{related_id});
-    delete $args{name};
-    delete $args{related_id};
+    my $def = Entity::WorkflowDef->find(hash => { workflow_def_name => delete $args{name} });
 
-    my @steps = WorkflowStep->search(
-                    hash        => { workflow_def_id => $def->id },
-                    order_by    => 'workflow_step_id asc'
-                );
+    # Instanciate the workflow, and add the steps
+    my $label = $class->formatLabel(params => $args{params}, description => $def->description);
+
+    my $workflow = Entity::Workflow->new(workflow_name => $label,
+                                         related_id    => delete $args{related_id},
+                                         owner_id      => delete $args{owner_id});
+
+    my @steps = WorkflowStep->search(hash     => { workflow_def_id => $def->id },
+                                     order_by => 'workflow_step_id asc');
 
     my @operationtypes;
     for my $step (@steps) {
@@ -109,18 +147,16 @@ sub run {
     # So add the rule in the context, and prepend the operation EProcessRule.
     if (defined $args{rule}) {
         $args{params}->{context}->{rule} = $args{rule};
-
         unshift(@operationtypes, 'ProcessRule');
     }
 
     # TODO: Use transaction or operation states to not pop operations
     #       while the whole workflow has been enqeued.
     for my $operationtype (@operationtypes) {
-        $workflow->enqueue(
-            priority => 200,
-            type     => $operationtype,
-            %args
-        );
+        $workflow->enqueue(priority => 200, type => $operationtype, %args);
+
+        # If some params has been given to the first operation, remove from args
+        # to avoid given them to others operation of the workflow.
         if (defined $args{params}) {
             delete $args{params};
         }
@@ -496,6 +532,35 @@ sub finish {
 =pod
 =begin classdoc
 
+Build a user friendly label from context params contents, and a template toolkit formated description.
+
+=end classdoc
+=cut
+
+sub formatLabel {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'params', 'description' ]);
+
+    # Build the workflow description from desc template and params
+    my $allparams = clone($args{params}->{params});
+    for my $name (keys (defined $args{params}->{context} ? $args{params}->{context} : {})) {
+        if (blessed($args{params}->{context}->{$name})) {
+            $allparams->{$name} = $args{params}->{context}->{$name}->label;
+        }
+    }
+    my $label = '';
+    my $desctemplate = $args{description};
+    $template->process(\$desctemplate, $allparams, \$label);
+
+    return $label;
+}
+
+
+=pod
+=begin classdoc
+
 Get related service provider.?
 Throw Kanopya::Exception::Internal if related entity is not a service provider
 
@@ -512,6 +577,45 @@ sub relatedServiceProvider {
     throw Kanopya::Exception::Internal(
           error => "Related entity is not a service provider."
       );
+}
+
+
+=pod
+=begin classdoc
+
+Virtual attribute to get the owner names.
+
+=end classdoc
+=cut
+
+sub user {
+    my $self = shift;
+
+    my $owner = $self->owner;
+    return defined $owner ? $owner->user_firstname . " " . $owner->user_lastname : undef;
+}
+
+
+=pod
+=begin classdoc
+
+Virtual attribute to get the possible trigger rule
+
+=end classdoc
+=cut
+
+sub rule {
+    my $self = shift;
+
+    if ($self->aggregate_rules) {
+        my @rules = $self->aggregate_rules;
+        return (pop @rules);
+    }
+    elsif ($self->workflow_noderules) {
+        my @noderules = $self->workflow_noderules;
+        return (pop @noderules)->nodemetric_rule;
+    }
+    return undef;
 }
 
 1;

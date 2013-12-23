@@ -5,51 +5,20 @@
 use lib qw(/opt/kanopya/lib/common/ /opt/kanopya/lib/administrator/ /opt/kanopya/lib/executor/ /opt/kanopya/lib/monitor/ /opt/kanopya/lib/orchestrator/ /opt/kanopya/lib/external);
 
 use General;
-use Class::ISA;
+use Kanopya::Database;
 use Kanopya::Config;
 use Entity::Component;
-use Entity::WorkflowDef;
 use Operationtype;
-use Entity::Policy;
-use Entity::Policy::HostingPolicy;
-use Entity::Policy::StoragePolicy;
-use Entity::Policy::NetworkPolicy;
-use Entity::Policy::SystemPolicy;
-use Entity::Policy::ScalabilityPolicy;
-use Entity::Policy::BillingPolicy;
-use Entity::Policy::OrchestrationPolicy;
-use Entity::ServiceTemplate;
-use Entity::Netconf;
-use Entity::NetconfRole;
-use Entity::Network;
-use Entity::Kernel;
-use Entity::Host;
-use Entity::Poolip;
-use Entity::Component::Physicalhoster0;
 use EEntity;
 use ClassType;
 use ClassType::ComponentType;
 use ClassType::ServiceProviderType;
 use ClassType::ServiceProviderType::ClusterType;
 use Profile;
-use Entity::Gp;
-use Entity::User;
 use Entityright;
 use UserProfile;
-use Entity::Processormodel;
-use Entity::Hostmodel;
-use POSIX;
-use Date::Simple (':all');
-use Operationtype;
 use ComponentTemplate;
 use Indicatorset;
-use Entity::Indicator;
-use Entity::Poolip;
-use Entity::ServiceProvider::Cluster;
-use Entity::Network;
-use Entity::Interface;
-use Entity::Iface;
-use Entity::Repository;
 use Ip;
 use Node;
 use ServiceProviderManager;
@@ -58,31 +27,6 @@ use Lvm2Pv;
 use Lvm2Lv;
 use Scope;
 use ScopeParameter;
-use Entity::Component::Lvm2;
-use Entity::Component::Iscsi::Iscsitarget1;
-use Entity::Component::Dhcpd3;
-use Entity::Component::Tftpd;
-use Entity::Component::Snmpd5;
-use Entity::Component::Nfsd3;
-use Entity::Component::Syslogng3;
-use Entity::Component::Puppetmaster2;
-use Entity::Component::Openiscsi2;
-use Entity::Component::Physicalhoster0;
-use Entity::Component::Fileimagemanager0;
-use Entity::Component::Storage;
-use Entity::Component::Kanopyacollector1;
-use Entity::Component::Kanopyaworkflow0;
-use Entity::Component::Linux::Debian;
-use Entity::Component::Linux::Redhat;
-use Entity::Component::Linux::Suse;
-use Entity::Component::Mailnotifier0;
-use Entity::Component::Virtualization::NovaController;
-use Entity::Component::Vmm::NovaCompute;
-use Entity::Component::Openstack::Glance;
-use Entity::Component::Openstack::Keystone;
-use Entity::Component::Openstack::Quantum;
-use Entity::Component::Amqp;
-use Entity::Component::Virtualization;
 use NetconfInterface;
 use NetconfPoolip;
 use NetconfIface;
@@ -91,7 +35,9 @@ use ComponentCategory::ManagerCategory;
 use ClassType::DataModelType;
 use Manager::HostManager;
 
-use Kanopya::Database;
+use POSIX;
+use Date::Simple (':all');
+use Class::ISA;
 
 use TryCatch;
 my $err;
@@ -413,9 +359,9 @@ sub registerUsers {
           # when associating workflow to rules. Better architecture should remove
           # this requirement.
           methods => {
-              'ServiceDeveloper' => [ 'get', 'updateParamPreset' ],
-              'Sales'            => [ 'get', 'updateParamPreset' ],
-              'Customer'         => [ 'get', 'updateParamPreset' ],
+              'ServiceDeveloper' => [ 'get' ],
+              'Sales'            => [ 'get' ],
+              'Customer'         => [ 'get' ],
           }
         },
         { name    => 'Network',
@@ -581,13 +527,6 @@ sub registerUsers {
             user_creationdate => today(),
             user_desc         => 'User used by executor'
         );
-
-    #
-    #    UserProfile->new(
-    #        user_id    => $executor_user->id,
-    #        profile_id => $admin_profile->id
-    #    );
-    #    $admin_group->appendEntity(entity => $executor_user);
     }
 }
 
@@ -689,48 +628,48 @@ sub registerOperations {
     my %args = @_;
 
     my $operations = [
-        [ 'AddHost', 'Activating a host' ],
-        [ 'RemoveHost', 'Removing host' ], 
-        [ 'ActivateHost', 'Activating a host' ],
-        [ 'DeactivateHost', 'Desactivating host' ],
-        [ 'AddCluster', 'Instanciating new service' ],
-        [ 'RemoveCluster', 'Removing service' ],
-        [ 'ActivateCluster', 'Activating a service' ],
-        [ 'DeactivateCluster', 'Deactivating service' ],
-        [ 'StopCluster', 'Stopping service' ],
+        [ 'AddHost', 'Activating host "[% host ? host : "n/a" %]"' ],
+        [ 'RemoveHost', 'Removing host [% host ? host : "n/a" %]' ],
+        [ 'ActivateHost', 'Activating host "[% host ? host : "n/a" %]"' ],
+        [ 'DeactivateHost', 'Desactivating host "[% host ? host : "n/a" %]"' ],
+        [ 'AddCluster', 'Instanciating new service "[% cluster_params.cluster_name %]"' ],
+        [ 'RemoveCluster', 'Removing service "[% cluster ? cluster : "n/a" %]"' ],
+        [ 'ActivateCluster', 'Activating service "[% cluster ? cluster : "n/a" %]"' ],
+        [ 'DeactivateCluster', 'Deactivating service "[% cluster ? cluster : "n/a" %]"' ],
+        [ 'StopCluster', 'Stopping service "[% cluster ? cluster : "n/a" %]"' ],
         [ 'CloneSystemimage' ],
-        [ 'RemoveSystemimage', 'Removing system image' ],
-        [ 'StopNode', 'Stopping node' ],
-        [ 'PreStartNode', 'Configuring node addition' ],
-        [ 'StartNode', 'Starting new node' ],
-        [ 'PreStopNode', 'Configuring node removal' ],
-        [ 'PostStopNode', 'Finalizing node removal' ],
-        [ 'PostStartNode', 'Finalizing node addition' ],
-        [ 'CreateDisk', 'Creating new disk' ],
-        [ 'CreateExport', 'Exporting disk' ], 
-        [ 'ForceStopCluster', 'Force service stopping' ],
-        [ 'KanopyaMaintenance' ],
-        [ 'MigrateHost', 'Migrating node' ],
-        [ 'RemoveDisk', 'Removing disk' ],
-        [ 'RemoveExport', 'Removing export' ],
+        [ 'RemoveSystemimage', 'Removing system image "[% systemimage %]"' ],
+        [ 'CreateDisk', 'Creating new disk "[% name %]"' ],
+        [ 'CreateExport', 'Exporting disk "[% container %]"' ],
+        [ 'ForceStopCluster', 'Force stopping instance "[% cluster %]"' ],
+        [ 'MigrateHost', 'Migrating virtual machine "[% vm ? vm : "n/a" %]" to hypervisor "[% host ? host : "n/a" %]"' ],
+        [ 'RemoveDisk', 'Removing disk "[% container ? container : "n/a" %]"' ],
+        [ 'RemoveExport', 'Removing export "[% container_access ? container_access : "n/a" %]"' ],
         [ 'DeployMasterimage', 'Deploying master image' ],
-        [ 'RemoveMasterimage', 'Removing master image' ], 
-        [ 'AddNode', 'Preparing a new node' ],
-        [ 'ScaleCpuHost', 'Scaling node cpu' ],
-        [ 'ScaleMemoryHost', 'Scaling node memory' ],
-        [ 'CancelWorkflow', 'Canceling wokflow' ],  
+        [ 'RemoveMasterimage', 'Removing master image "[% masterimage ? masterimage : "n/a" %]"' ],
+        [ 'ScaleCpuHost', 'Scaling [% cpu_number ? cpu_number : "n/a" %] cpu on host "[% host ? host : "n/a" %]"' ],
+        [ 'ScaleMemoryHost', 'Scaling [% memory ? memory : "n/a" %]o. of memory on host "[% host ? host : "n/a" %]"' ],
         [ 'LaunchSCOWorkflow' ],
-        [ 'UpdateCluster', 'Reconfigure cluster' ],
-        [ 'LaunchScaleInWorkflow', 'Configuring scale in node' ],
+        [ 'UpdateCluster', 'Reconfigure instance "[% cluster ? cluster : "n/a" %]"' ],
+        [ 'LaunchScaleInWorkflow', 'Configuring scale in for node node "[% host ? host : "n/a" %]"' ],
         [ 'LaunchOptimiaasWorkflow' ],
-        [ 'ProcessRule', 'Processing triggered rule' ],
-        [ 'ResubmitNode', 'Resubmit a virtual machine to the IAAS' ],
-        [ 'RelieveHypervisor', 'Relieve the hypervisor by migrating one VM' ],
-        [ 'Synchronize', 'Synchronize a component' ],
-        [ 'FlushHypervisor', 'Compute flush hypervisor plan' ],
-        [ 'ResubmitHypervisor', 'Resubmit hypervisor virtual machines' ],
-        [ 'SelectDataModel', 'Compute the best data model of a combination' ],
+        [ 'ProcessRule', 'Processing triggered rule "[% rule %]"' ],
+        [ 'ResubmitNode', 'Resubmit virtual machine "[% host ? host : "n/a" %]"' ],
+        [ 'RelieveHypervisor', 'Relieve hypervisor "[% host ? host : "n/a" %]"' ],
+        [ 'Synchronize', 'Synchronize component "[% entity ? entity : "n/a" %]"' ],
+        [ 'FlushHypervisor', 'Compute flush hypervisor plan for "[% flushed_hypervisor ? flushed_hypervisor : "n/a" %]"' ],
+        [ 'ResubmitHypervisor', 'Resubmit virtual machines of hypervisor "[% host ? host : "n/a" %]"' ],
+        [ 'SelectDataModel', 'Compute data model of combination "[% combination ? combination : "n/a" %]"' ],
         [ 'SynchronizeInfrastructure', 'Synchronize infrastructure' ],
+        # Workflow AddNode
+        [ 'AddNode', 'Preparing a new node for instance "[% cluster ? cluster : "n/a" %]"' ],
+        [ 'PreStartNode', 'Configuring node "[% host ? host : "n/a" %]"' ],
+        [ 'StartNode', 'Starting node "[% host ? host : "n/a" %]"' ],
+        [ 'PostStartNode', 'Validating node "[% host ? host : "n/a" %]"' ],
+        # Workflow StopNode
+        [ 'StopNode', 'Stopping node "[% host ? host : "n/a" %]"' ],
+        [ 'PreStopNode', 'Configuring node removal for instance "[% cluster ? cluster : "n/a" %]"' ],
+        [ 'PostStopNode', 'Finalizing removing node "[% host ? host : "n/a" %]"' ],
     ];
 
     for my $operation (@{$operations}) {
@@ -1595,7 +1534,7 @@ sub registerKanopyaMaster {
                             cluster_basehostname  => 'kanopyamaster',
                             default_gateway_id    => $admin_network->id,
                             active                => 1,
-                            user_id               => $admin->id,
+                            owner_id              => $admin->id,
                             service_provider_type_id => ClassType::ServiceProviderType->find(hash => { service_provider_name => "Kanopya" })->id
                         );
 
@@ -1957,9 +1896,10 @@ sub populate_workflow_def {
                 context => { cloudmanager_comp => undef, host => undef },
                 scalein_type => 'cpu',
             },
-        }
+        },
+        steps => [ $scale_op_id ],
+        description => "Scale in [% scalein_type %] on node [% host %]"
     );
-    $scale_cpu_wf->addStep( operationtype_id => $scale_op_id );
 
     # ScaleIn memory workflow def
     my $scale_mem_wf = $kanopya_wf_manager->createWorkflowDef(
@@ -1976,9 +1916,10 @@ sub populate_workflow_def {
                 context => { cloudmanager_comp => undef, host => undef },
                 scalein_type => 'memory',
             },
-        }
+        },
+        steps => [ $scale_op_id ],
+        description => "Scale in [% scalein_type %] on node \"[% host %]\""
     );
-    $scale_mem_wf->addStep( operationtype_id => $scale_op_id );
 
     # AddNode workflow def
     my $addnode_op_id = Operationtype->find( hash => { operationtype_name => 'AddNode' })->id;
@@ -1997,12 +1938,10 @@ sub populate_workflow_def {
             specific => {
                 delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             }
-        }
+        },
+        steps => [ $addnode_op_id, $prestart_op_id, $start_op_id, $poststart_op_id ],
+        description => "Adding node to instance \"[% cluster %]\""
     );
-    $addnode_wf->addStep(operationtype_id => $addnode_op_id);
-    $addnode_wf->addStep(operationtype_id => $prestart_op_id);
-    $addnode_wf->addStep(operationtype_id => $start_op_id);
-    $addnode_wf->addStep(operationtype_id => $poststart_op_id);
 
     # StopNode workflow def
     my $prestop_op_id = Operationtype->find( hash => { operationtype_name => 'PreStopNode' })->id;
@@ -2020,23 +1959,31 @@ sub populate_workflow_def {
             specific => {
                 delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             }
-        }
+        },
+        steps => [ $prestop_op_id, $stop_op_id, $poststop_op_id ],
+        description => "Removing node \"[% host %]\" from service \"[% cluster %]\""
     );
-    $stopnode_wf->addStep(operationtype_id => $prestop_op_id);
-    $stopnode_wf->addStep(operationtype_id => $stop_op_id);
-    $stopnode_wf->addStep(operationtype_id => $poststop_op_id);
 
     # Optimiaas Workflow def
-    my $optimiaas_wf = $kanopya_wf_manager->createWorkflowDef(workflow_name => 'OptimiaasWorkflow');
     my $optimiaas_op_id = Operationtype->find( hash => { operationtype_name => 'LaunchOptimiaasWorkflow' })->id;
-    $optimiaas_wf->addStep(operationtype_id => $optimiaas_op_id);
+    my $optimiaas_wf = $kanopya_wf_manager->createWorkflowDef(
+                           workflow_name => 'OptimiaasWorkflow',
+                           step          => [ $optimiaas_op_id ],
+                           description   => "Optimizing virtual machines placement for IAAS \"[% cloudmanager_comp %]\""
+                       );
 
     # Migrate Workflow def
-    my $migrate_wf = $kanopya_wf_manager->createWorkflowDef(workflow_name => 'MigrateWorkflow');
     my $migrate_op_id = Operationtype->find( hash => { operationtype_name => 'MigrateHost' })->id;
-    $migrate_wf->addStep(operationtype_id => $migrate_op_id);
+    my $migrate_wf = $kanopya_wf_manager->createWorkflowDef(
+                         workflow_name => 'MigrateWorkflow',
+                         steps         => [ $migrate_op_id ],
+                         description   => "Migrating virtual machine \"[% vm %]\" to hypervisor \"[% host %]\""
+                     );
 
     # ResubmitNode  workflow def
+    my $resubmit_node_op_id  = Operationtype->find( hash => { operationtype_name => 'ResubmitNode' })->id;
+    my $scale_cpu_op_id  = Operationtype->find( hash => { operationtype_name => 'ScaleCpuHost' })->id;
+    my $scale_mem_op_id  = Operationtype->find( hash => { operationtype_name => 'ScaleMemoryHost' })->id;
     my $resubmit_node_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'ResubmitNode',
         params => {
@@ -2049,16 +1996,13 @@ sub populate_workflow_def {
             specific => {
                 delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             }
-        }
+        },
+        steps => [ $resubmit_node_op_id, $scale_cpu_op_id, $scale_mem_op_id ],
+        description => "Resubmitting node \"[% host %]\""
     );
-    my $resubmit_node_op_id  = Operationtype->find( hash => { operationtype_name => 'ResubmitNode' })->id;
-    my $scale_cpu_op_id  = Operationtype->find( hash => { operationtype_name => 'ScaleCpuHost' })->id;
-    my $scale_mem_op_id  = Operationtype->find( hash => { operationtype_name => 'ScaleMemoryHost' })->id;
-    $resubmit_node_wf->addStep( operationtype_id => $resubmit_node_op_id );
-    $resubmit_node_wf->addStep( operationtype_id => $scale_cpu_op_id );
-    $resubmit_node_wf->addStep( operationtype_id => $scale_mem_op_id );
 
     # RelieveHypervisor workflow def
+    my $relieve_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'RelieveHypervisor' })->id;
     my $relieve_hypervisor_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'RelieveHypervisor',
         params => {
@@ -2071,15 +2015,14 @@ sub populate_workflow_def {
             specific => {
                 delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             }
-        }
+        },
+        steps => [ $relieve_hypervisor_op_id, $resubmit_node_op_id, $migrate_op_id ],
+        description => "Relieving hypervisor \"[% host %]\""
     );
 
-    my $relieve_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'RelieveHypervisor' })->id;
-    $relieve_hypervisor_wf->addStep( operationtype_id => $relieve_hypervisor_op_id );
-    $relieve_hypervisor_wf->addStep( operationtype_id => $resubmit_node_op_id );
-    $relieve_hypervisor_wf->addStep( operationtype_id => $migrate_op_id );
-
     # MaintenanceHypervisor workflow def
+    my $flush_hypervisor_op_id = Operationtype->find( hash => { operationtype_name => 'FlushHypervisor' })->id;
+    my $deactivate_host_op_id  = Operationtype->find( hash => { operationtype_name => 'DeactivateHost' })->id;
     my $hypervisor_maintenance_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'HypervisorMaintenance',
         params => {
@@ -2092,15 +2035,13 @@ sub populate_workflow_def {
             specific => {
                 delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             }
-        }
-    );
-    my $flush_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'FlushHypervisor' })->id;
-    $hypervisor_maintenance_wf->addStep( operationtype_id => $flush_hypervisor_op_id);
-    $hypervisor_maintenance_wf->addStep(
-        operationtype_id => Operationtype->find( hash => { operationtype_name => 'DeactivateHost' })->id
+        },
+        steps => [ $flush_hypervisor_op_id, $deactivate_host_op_id ],
+        description => "Putting hypervisor \"[% flushed_hypervisor %]\" in maintenance."
     );
 
     # Hypervisor resubmit workflow def
+    my $resubmit_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'ResubmitHypervisor' })->id;
     my $hypervisor_resubmit_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'ResubmitHypervisor',
         params => {
@@ -2113,12 +2054,12 @@ sub populate_workflow_def {
             specific => {
                 delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             }
-        }
+        },
+        steps => [ $resubmit_hypervisor_op_id ],
+        description => "Resubmitting hypervisor \"[% host %]\""
     );
-    my $resubmit_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'ResubmitHypervisor' })->id;
-    $hypervisor_resubmit_wf->addStep( operationtype_id => $resubmit_hypervisor_op_id);
 
-    my $notify_wf_node      = $kanopya_wf_manager->createWorkflowDef(
+    my $notify_wf_node = $kanopya_wf_manager->createWorkflowDef(
         workflow_name   => 'NotifyWorkflow node',
         params          => {
             internal   => {
@@ -2126,7 +2067,7 @@ sub populate_workflow_def {
             },
             automatic  => { },
             specific   => { }
-        }
+        },
     );
 
     my $notify_wf_service   = $kanopya_wf_manager->createWorkflowDef(
@@ -2149,12 +2090,9 @@ sub populate_workflow_def {
             specific  => {
                 entity => { label => 'Entity' }
             }
-        }
-    );
-    $synchronize_wf->addStep(
-        operationtype_id => Operationtype->find(
-            hash => { operationtype_name => 'Synchronize' }
-        )->id
+        },
+        steps => [ Operationtype->find(hash => { operationtype_name => 'Synchronize' })->id ],
+        description => "Synchronizing component \"[% entity %]\""
     );
 }
 

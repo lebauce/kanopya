@@ -38,10 +38,9 @@ sub check {
     my ($self, %args) = @_;
     $self->SUPER::check();
 
-    General::checkParams(args => $self->{context}, required => [ "host","cloudmanager_comp" ]);
+    General::checkParams(args => $self->{context}, required => [ "host", "cloudmanager_comp" ]);
 
     General::checkParams(args => $self->{params}, required => [ "cpu_number" ]);
-
 }
 
 sub execute {

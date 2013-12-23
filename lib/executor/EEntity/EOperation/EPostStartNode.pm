@@ -151,11 +151,11 @@ sub execute {
     $self->{context}->{host}->postStart();
 
     # Update the user quota on ram and cpu
-    $self->{context}->{cluster}->user->consumeQuota(
+    $self->{context}->{cluster}->owner->consumeQuota(
         resource => 'ram',
         amount   => $self->{context}->{host}->host_ram,
     );
-    $self->{context}->{cluster}->user->consumeQuota(
+    $self->{context}->{cluster}->owner->consumeQuota(
         resource => 'cpu',
         amount   => $self->{context}->{host}->host_core,
     );
@@ -219,7 +219,7 @@ sub finish {
         $self->{context}->{hypervisor}->removeState(consumer => $self->workflow);
     }
 
-    # WARNING: Do NOT delete $self->{context}->{host}, required in worflow addNode + VM migration
+    # WARNING: Do NOT delete $self->{context}->{host}, required in workflow addNode + VM migration
 }
 
 1;

@@ -169,6 +169,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 workflow_def_rules
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::WorkflowDefRule>
+
+=cut
+
+__PACKAGE__->has_many(
+  "workflow_def_rules",
+  "Kanopya::Schema::Result::WorkflowDefRule",
+  { "foreign.param_preset_id" => "self.param_preset_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 workflow_defs
 
 Type: has_many
@@ -185,8 +200,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:E1JFoNDaPkqQD3QYW/Z80Q
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-26 15:43:32
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:iwS5ZI+W/U+gzEtwOCnb7g
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

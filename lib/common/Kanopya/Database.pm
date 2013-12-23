@@ -86,7 +86,7 @@ sub _adm {
     if (not $args{no_user_check}) {
         if (not exists $ENV{EID} or not defined $ENV{EID}) {
             $err = "No valid session registered:";
-            $err .= "authenticate must be call with a valid login/password pair";
+            $err .= " authenticate must be call with a valid login/password pair";
             throw Kanopya::Exception::AuthenticationRequired(error => $err);
         }
 

@@ -117,7 +117,7 @@ function createSCOWorkflowDefButton(container, managerid, dial, wfid, wf) {
                         }
                     };
                     $.ajax({
-                        url         : '/api/entity/' + managerid + "/createWorkflowDef",
+                        url         : '/api/component/' + managerid + "/createWorkflowDef",
                         type        : 'POST',
                         contentType : 'application/json',
                         data        : JSON.stringify(params),
@@ -220,20 +220,19 @@ function workflowdetails(workflowmanagerid, workflowmanager) {
                       ]
     });
     $.ajax({
-        url         : '/api/component/' + workflowmanager.id + '/getWorkflowDefs',
-        type        : 'POST',
-        contentType : 'application/json',
-        data        : JSON.stringify({ no_associate : 1 }),
+        url         : '/api/component/' + workflowmanager.id + '/workflow_defs',
+        type        : 'GET',
         success     : function(workflows) {
             create_grid({
                 grid_id                 : 'workflowdefsgrid',
                 content_container_id    : 'workflowmanagerdetailsdialog',
                 colNames                : [ 'Id', 'Name' ],
                 colModel                : [
-                    { name : 'pk', index : 'pk', width : 30, sorttype : 'int' },
+                    { name : 'pk', index : 'pk', width : 30, sorttype : 'int', hidden: true, key: true  },
                     { name : 'workflow_def_name', index : 'workflow_def_name' }
                 ],
                 data                    : workflows,
+                action_delete           : { url : '/api/workflowdef' },
             });
             $(dial).dialog("option", "position", $(dial).dialog("option", "position"));
             createSCOWorkflowDefButton(dial, workflowmanager.id, dial, workflowmanagerid, workflowmanager);
@@ -241,100 +240,94 @@ function workflowdetails(workflowmanagerid, workflowmanager) {
     });
 }
 
-function workflowRuleConfigure(wfdef_id) {
+function workflowRuleConfigure(rule_id, wfdef_id) {
     var dial    = $("<div>");
     var form    = $("<table>", { width : '100%' }).appendTo($("<form>").appendTo(dial));
-    var param_preset;
 
-    function    validateTheForm() {
-        var specparamsinputs    = $("input.input_specific_param");
-        $(specparamsinputs).each(function() {
-            param_preset.specific[$(this).attr('name')] = getRawValue($(this).val(), 'unit_' + $(this).attr('name'));
-        });
-        $.ajax({
-            url         : '/api/workflowdef/' + wfdef_id + '/updateParamPreset',
-            type        : 'POST',
-            contentType : 'application/json',
-            data        : JSON.stringify({params : param_preset}),
-            success     : function() {
-                  $(dial).dialog('close');
-            }
-        });
-    }
-
+    // Get the WorkflowDeRule entry corresponding to the workflow de association
+    // NOTE: here we filter the query with attr "me.workflow_def_id"
+    //       to workaround error: "Column 'workflow_def_id' in where clause is ambiguous"
     $.ajax({
         type    : 'GET',
-        url     : '/api/workflowdef/' + wfdef_id,
+        url     : '/api/workflowdefrule?rule_id=' + rule_id + '&me.workflow_def_id=' + wfdef_id + '&expand=workflow_def',
         success : function(data) {
-            param_preset = data.param_presets;
+            var workflow_def_rule = data[0];
+
+            function validateTheForm() {
+                var params = { specific : {} };
+                var specparamsinputs    = $("input.input_specific_param");
+                $(specparamsinputs).each(function() {
+                    params.specific[$(this).attr('name')] = getRawValue($(this).val(), 'unit_' + $(this).attr('name'));
+                });
+                $.ajax({
+                    url         : '/api/workflowdefrule/' + workflow_def_rule.pk,
+                    type        : "PUT",
+                    contentType : 'application/json',
+                    data        : JSON.stringify({ param_presets : params }),
+                    success     : function() {
+                          $(dial).dialog('close');
+                    }
+                });
+            }
+
+            var param_preset = workflow_def_rule.param_presets;
             if (param_preset.specific === null) {
                 alert('This workflow has no parameter');
                 return;
             }
-            $.get(
-                    '/api/workflowdef/' + wfdef_id + '/workflow_def_origin',
-                    function(wf_origin) {
-                        $.get(
-                                '/api/workflowdef/' + wf_origin.pk,
-                                function (data) {
-                                    var origin_params = data.param_presets;
 
-                                    $.each(param_preset.specific, function(k,v) {
-                                        var field_info  = origin_params.specific[k];
-                                        var line        = $("<tr>").appendTo(form);
-                                        $(line).append($("<td>").append($("<label>", {
-                                            for     : 'input_specific_param_' + k,
-                                            text    : (field_info ? (field_info.label ? field_info.label : k) : k) + ' : '
-                                        })));
-                                        var value = v;
-                                        var selected_unit;
-                                        if (field_info && field_info.unit && field_info.unit == 'byte') {
-                                            var prefix = value.substr(0,1);
-                                            if (prefix == '+' || prefix == '-') {
-                                                value = value.substr(1);
-                                            } else {
-                                                prefix = '';
-                                            }
-                                            var readable_value = getReadableSize(value);
-                                            value           = prefix + readable_value.value;
-                                            selected_unit   = readable_value.unit;
-                                        }
-                                        $(line).append($("<td>", { align : "right" }).append($("<input>", {
-                                            type    : 'test',
-                                            name    : k,
-                                            value   : value,
-                                            id      : 'input_specific_param_' + k,
-                                            class   : 'input_specific_param'
-                                        })));
-                                        var unit_cont = $('<td>');
-                                        $(line).append(unit_cont);
-                                        if (origin_params.specific[k]) {
-                                            addFieldUnit(origin_params.specific[k], unit_cont, 'unit_' + k, selected_unit);
-                                            if (origin_params.specific[k].description) {
-                                                $(line).append(ModalForm.prototype.createHelpElem(origin_params.specific[k].description));
-                                            }
-                                        }
-                                    });
-
-                                    $(dial).dialog({
-                                        resizable       : false,
-                                        dialogClass     : "no-close",
-                                        closeOnEscape   : false,
-                                        modal           : true,
-                                        width           : '400px',
-                                        close           : function() { $(this).remove(); },
-                                        buttons         : {
-                                            'Cancel'    : function() { $(this).dialog('close'); },
-                                            'Ok'        : validateTheForm
-                                        }
-                                    });
-                                }
-                        );
+            var origin_params = workflow_def_rule.workflow_def.param_presets;
+            $.each(param_preset.specific, function(k,v) {
+                var field_info  = origin_params.specific[k];
+                var line        = $("<tr>").appendTo(form);
+                $(line).append($("<td>").append($("<label>", {
+                    for     : 'input_specific_param_' + k,
+                    text    : (field_info ? (field_info.label ? field_info.label : k) : k) + ' : '
+                })));
+                var value = v;
+                var selected_unit;
+                if (field_info && field_info.unit && field_info.unit == 'byte') {
+                    var prefix = value.substr(0,1);
+                    if (prefix == '+' || prefix == '-') {
+                        value = value.substr(1);
+                    } else {
+                        prefix = '';
                     }
-            );
+                    var readable_value = getReadableSize(value);
+                    value           = prefix + readable_value.value;
+                    selected_unit   = readable_value.unit;
+                }
+                $(line).append($("<td>", { align : "right" }).append($("<input>", {
+                    type    : 'test',
+                    name    : k,
+                    value   : value,
+                    id      : 'input_specific_param_' + k,
+                    class   : 'input_specific_param'
+                })));
+                var unit_cont = $('<td>');
+                $(line).append(unit_cont);
+                if (origin_params.specific[k]) {
+                    addFieldUnit(origin_params.specific[k], unit_cont, 'unit_' + k, selected_unit);
+                    if (origin_params.specific[k].description) {
+                        $(line).append(ModalForm.prototype.createHelpElem(origin_params.specific[k].description));
+                    }
+                }
+            });
+
+            $(dial).dialog({
+                resizable       : false,
+                dialogClass     : "no-close",
+                closeOnEscape   : false,
+                modal           : true,
+                width           : '400px',
+                close           : function() { $(this).remove(); },
+                buttons         : {
+                    'Cancel'    : function() { $(this).dialog('close'); },
+                    'Ok'        : validateTheForm
+                }
+            });
         }
     });
-
 }
 
 function workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
@@ -390,17 +383,15 @@ function workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
 
     function validateTheForm() {
         var params              = {
-            new_workflow_name       : eid + '_' + $("input#input_origin_workflow_name").val(),
-            origin_workflow_def_id  : $("input#input_origin_workflow_id").val(),
-            specific_params         : {},
-            rule_id                 : eid
+            workflow_def_id  : $("input#input_origin_workflow_id").val(),
+            specific_params  : {}
         };
         var specparamsinputs    = $("input.input_specific_param");
         $(specparamsinputs).each(function() {
             params.specific_params[$(this).attr('name')] = getRawValue($(this).val(), 'unit_' + $(this).attr('name'));
         });
         $.ajax({
-            url         : '/api/component/' + manager.manager_id + '/associateWorkflow',
+            url         : '/api/rule/' + eid + '/associateWorkflow',
             type        : 'POST',
             contentType : 'application/json',
             data        : JSON.stringify(params),
@@ -420,32 +411,26 @@ function workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
             manager = data[0];
             if (manager) {
                 $.ajax({
-                        url         : '/api/component/' + manager.manager_id + '/getWorkflowDefs',
-                        type        : 'POST',
-                        contentType : 'application/json',
-                        data        : JSON.stringify({ 'no_associate' : 1 }),
-                        success     : function(data) {
+                        url         : '/api/component/' + manager.manager_id + '/workflow_defs',
+                        type        : 'GET',
+                        success     : function(workflowdefs) {
                             var ok  = false;
-                            if (data.length <= 0) {
+                            if (workflowdefs.length <= 0) {
                                 alert('No workflow definition found.');
+
                             } else {
                                 var select  = $('<select>').prependTo(dial);
                                 $(select).bind('change', createForm);
-                                $(data).each( function() {
+                                $(workflowdefs).each(function() {
                                     var wfd = this;
                                     if (simple_notifyworkflow_regex.exec(wfd.workflow_def_name) == null) {
-                                        $.get(
-                                                '/api/workflowdef/' + wfd.pk,
-                                                function(data) {
-                                                    var wfd_params = data.param_presets;
-                                                    if (wfd_params.internal && wfd_params.internal.scope_id == scid) {
-                                                        wfd.specificparams  = wfd_params.specific;
-                                                        wfdefs.push(wfd);
-                                                        $(select).append($("<option>", { text : wfd.workflow_def_name, value : wfd.pk }));
-                                                        $(select).change();
-                                                    }
-                                                }
-                                        );
+                                        var wfd_params = wfd.param_presets;
+                                        if (wfd_params.internal && wfd_params.internal.scope_id == scid) {
+                                            wfd.specificparams  = wfd_params.specific;
+                                            wfdefs.push(wfd);
+                                            $(select).append($("<option>", { text : wfd.workflow_def_name, value : wfd.pk }));
+                                            $(select).change();
+                                        }
                                     }
                                 });
                                 $(dial).dialog({
@@ -474,36 +459,27 @@ function workflowRuleAssociation(eid, scid, cid, serviceprovider_id) {
 }
 
 function workflowRuleDeassociation(cid, rule_id, wfdef_id, serviceprovider_id) {
+    var params = { workflow_def_id : wfdef_id };
     $.ajax({
-        url         : '/api/serviceprovider/' + serviceprovider_id + '/service_provider_managers?custom.category=WorkflowManager',
-        type        : 'GET',
-        success     : function(managers) {
-            var params = {
-                    workflow_def_id : wfdef_id,
-                    rule_id         : rule_id
-            };
-            $.ajax({
-                url         : '/api/component/' + managers[0].manager_id + '/deassociateWorkflow',
-                type        : 'POST',
-                contentType : 'application/json',
-                data        : JSON.stringify(params),
-                success    : function(a) {
-                        reload_content(cid, rule_id);
-                }
-            });
+        url         : '/api/rule/' + rule_id + '/deassociateWorkflow',
+        type        : 'POST',
+        contentType : 'application/json',
+        data        : JSON.stringify(params),
+        success    : function(a) {
+                reload_content(cid, rule_id);
         }
     });
 }
 
 function createWorkflowRuleAssociationButton(cid, eid, scid, serviceprovider_id) {
-    var button  = $("<a>", { text : 'Associate a Workflow' }).button();
+    var button  = $("<a>", { text : 'Associate a workflow' }).button();
     button.bind('click', function() { workflowRuleAssociation(eid, scid, cid, serviceprovider_id); });
     return button;
 }
 
-function appendWorkflowActionsButtons(elem, cid, rule_id, wfdef_id, serviceprovider_id) {
+function appendWorkflowActionsButtons(elem, cid, rule_id, wfdef_id, wfdef_rule_id, serviceprovider_id) {
     $(elem).append($("<a>", { text : 'Configure', style : 'margin-left: 15px;' }).button({ icons : { primary : 'ui-icon-wrench' } })
-                .bind('click', function(event) {workflowRuleConfigure(wfdef_id)}));
+                .bind('click', function(event) {workflowRuleConfigure(rule_id, wfdef_id)}));
     $(elem).append($("<a>", { text : 'Deassociate', style : 'margin-left: 15px;' }).button({ icons : { primary : 'ui-icon-trash' } })
                 .bind('click', function(event) {workflowRuleDeassociation(cid, rule_id, wfdef_id, serviceprovider_id)}));
 }

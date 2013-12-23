@@ -193,7 +193,7 @@ sub test_service_creation_from_service_template {
         };
 
         Entity::ServiceProvider::Cluster->create(cluster_name        => "test_cluster",
-                                                 user_id             => Entity::User->find()->id,
+                                                 owner_id            => Entity::User->find()->id,
                                                  service_template_id => $service_template->id,
                                                  %$additional_policy_aprams);
     } "Create an empty policies of each type.";

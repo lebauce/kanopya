@@ -181,21 +181,6 @@ __PACKAGE__->add_unique_constraint("user_login", ["user_login"]);
 
 =head1 RELATIONS
 
-=head2 clusters
-
-Type: has_many
-
-Related object: L<Kanopya::Schema::Result::Cluster>
-
-=cut
-
-__PACKAGE__->has_many(
-  "clusters",
-  "Kanopya::Schema::Result::Cluster",
-  { "foreign.user_id" => "self.user_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 customer
 
 Type: might_have
@@ -208,6 +193,21 @@ __PACKAGE__->might_have(
   "customer",
   "Kanopya::Schema::Result::Customer",
   { "foreign.customer_id" => "self.user_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 entities
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::Entity>
+
+=cut
+
+__PACKAGE__->has_many(
+  "entities",
+  "Kanopya::Schema::Result::Entity",
+  { "foreign.owner_id" => "self.user_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -237,21 +237,6 @@ Related object: L<Kanopya::Schema::Result::OldOperation>
 __PACKAGE__->has_many(
   "old_operations",
   "Kanopya::Schema::Result::OldOperation",
-  { "foreign.user_id" => "self.user_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 operations
-
-Type: has_many
-
-Related object: L<Kanopya::Schema::Result::Operation>
-
-=cut
-
-__PACKAGE__->has_many(
-  "operations",
-  "Kanopya::Schema::Result::Operation",
   { "foreign.user_id" => "self.user_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -327,8 +312,8 @@ Composing rels: L</user_profiles> -> profile
 __PACKAGE__->many_to_many("profiles", "user_profiles", "profile");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:wzC5hSll/sR8pznkULwztw
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-12-18 16:10:30
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Kh6CqrxQF/OC9BgY3+uoBA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

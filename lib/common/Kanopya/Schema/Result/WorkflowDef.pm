@@ -52,14 +52,12 @@ __PACKAGE__->table("workflow_def");
   is_nullable: 1
   size: 64
 
+=head2 description
+
+  data_type: 'text'
+  is_nullable: 0
+
 =head2 param_preset_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 1
-
-=head2 workflow_def_origin_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -78,14 +76,9 @@ __PACKAGE__->add_columns(
   },
   "workflow_def_name",
   { data_type => "char", is_nullable => 1, size => 64 },
+  "description",
+  { data_type => "text", is_nullable => 0 },
   "param_preset_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 1,
-  },
-  "workflow_def_origin_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -137,24 +130,9 @@ __PACKAGE__->belongs_to(
   {
     is_deferrable => 1,
     join_type     => "LEFT",
-    on_delete     => "CASCADE",
+    on_delete     => "SET NULL",
     on_update     => "NO ACTION",
   },
-);
-
-=head2 rules
-
-Type: has_many
-
-Related object: L<Kanopya::Schema::Result::Rule>
-
-=cut
-
-__PACKAGE__->has_many(
-  "rules",
-  "Kanopya::Schema::Result::Rule",
-  { "foreign.workflow_def_id" => "self.workflow_def_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
 );
 
 =head2 workflow_def
@@ -187,38 +165,18 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 workflow_def_origin
-
-Type: belongs_to
-
-Related object: L<Kanopya::Schema::Result::WorkflowDef>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "workflow_def_origin",
-  "Kanopya::Schema::Result::WorkflowDef",
-  { workflow_def_id => "workflow_def_origin_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "CASCADE",
-    on_update     => "NO ACTION",
-  },
-);
-
-=head2 workflow_defs
+=head2 workflow_def_rules
 
 Type: has_many
 
-Related object: L<Kanopya::Schema::Result::WorkflowDef>
+Related object: L<Kanopya::Schema::Result::WorkflowDefRule>
 
 =cut
 
 __PACKAGE__->has_many(
-  "workflow_defs",
-  "Kanopya::Schema::Result::WorkflowDef",
-  { "foreign.workflow_def_origin_id" => "self.workflow_def_id" },
+  "workflow_def_rules",
+  "Kanopya::Schema::Result::WorkflowDefRule",
+  { "foreign.workflow_def_id" => "self.workflow_def_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -237,9 +195,19 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 managers
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:8E1xiFmn8qSZGdjadG9iUg
+Type: many_to_many
+
+Composing rels: L</workflow_def_managers> -> manager
+
+=cut
+
+__PACKAGE__->many_to_many("managers", "workflow_def_managers", "manager");
+
+
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-12-18 15:35:47
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ZznvpJ+tY/SU8NnLxHM+gA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -35,6 +35,7 @@ my $service_provider;
 my @wfdefs = ();
 my @sco_wfdefs = ();
 my @rules = ();
+my @associations = ();
 my $external_cluster_name;
 
 main();
@@ -131,6 +132,7 @@ sub paramsManagement {
         my $waited_params = {workflow_values => {specific_param => $all_params->{specific}->{specific_param},
                                                  node_hostname  => $all_params->{automatic}->{node_hostname}},
                             template_content => undef,
+                            period           => undef,
                             sp_id            => $service_provider->id,
                             rule_id          => $rules[0]->id,
                             scope_name       => 'node',
@@ -165,9 +167,8 @@ sub paramsManagement {
 
 sub unitTests {
     lives_ok {
-        my $ids = $wfmanager->getWorkflowDefsIds();
-
-        my @sids = sort (@$ids);
+        my @workflow_defs = WorkflowDefManager->search(hash => { manager_id => $wfmanager->id });
+        my @sids = sort map { $_->workflow_def_id } grep { $_->workflow_def->workflow_def_name != m/NotifyWorkflow/ } @workflow_defs;
 
         for my $i (0..@sids-1) {
             if ($sids[$i] != $wfdefs[$i]->id) {
@@ -175,40 +176,30 @@ sub unitTests {
             }
         }
 
-        my $wfds = $wfmanager->getWorkflowDefs();
+        my @wfds = $wfmanager->workflow_defs;
 
-        if (scalar @$wfds != 4) {
-            die 'Got <'.(scalar @$wfds).'> wfdefs instead of <4>';
+        # Should be 3 as 3 workflow de have been created, but do not forget the both notify workflow
+        # added at workflow manager instanciation.
+        if (scalar @wfds != 5) {
+            die 'Got <'.(scalar @wfds).'> k wfdefs instead of <3>';
         }
 
-        $wfds = $wfmanager->getWorkflowDefs(no_associate => 1);
+        @wfds = $sco_wfmanager->workflow_defs;
 
-        if (scalar @$wfds != 3) {
-            die 'Got <'.(scalar @$wfds).'> k wfdefs instead of <3>';
+        # Should be 2 as 2 workflow de have been created, but do not forget the both notify workflow
+        # added at workflow manager instanciation.
+        if (scalar @wfds != 4) {
+            die 'Got <'.(scalar @wfds).'> sco wfdefs instead of <2>';
         }
 
-        $wfds = $sco_wfmanager->getWorkflowDefs();
-
-        if (scalar @$wfds != 4) {
-            die 'Got <'.(scalar @$wfds).'> sco wfdefs instead of <4>';
+        if ($sco_wfdefs[1]->workflow_def_name ne $sco_wfdefs[0]->workflow_def_name) {
+            die 'Wrong workflow name, got <' . $sco_wfdefs[1]->workflow_def_name .
+                '> expected <' . $sco_wfdefs[0]->workflow_def_name . '>';
         }
 
-        $wfds = $sco_wfmanager->getWorkflowDefs(no_associate => 1);
-
-        if (scalar @$wfds != 2) {
-            die 'Got <'.(scalar @$wfds).'> sco wfdefs not associated instead of <2>';
-        }
-
-        my $name = $rules[0]->id.'_'.$sco_wfdefs[0]->workflow_def_name;
-
-        if ($sco_wfdefs[1]->workflow_def_name ne $name) {
-            die 'Wrong workflow name, got <'.$sco_wfdefs[1]->workflow_def_name.'> expected <'.$name.'>';
-        }
-
-        $name = $rules[1]->id.'_'.$sco_wfdefs[0]->workflow_def_name;
-
-        if ($sco_wfdefs[2]->workflow_def_name ne $name) {
-            die 'Wrong workflow name, got <'.$sco_wfdefs[0]->workflow_def_name.'> expected <'.$name.'>';
+        if ($sco_wfdefs[2]->workflow_def_name ne $sco_wfdefs[0]->workflow_def_name) {
+            die 'Wrong workflow name, got <' . $sco_wfdefs[0]->workflow_def_name .
+                '> expected <' . $sco_wfdefs[0]->workflow_def_name . '>';
         }
 
         my @pps = ();
@@ -218,10 +209,16 @@ sub unitTests {
 
         if ($pps[0]->{param_0} ne 'param_0'  || keys $pps[1] ne 0 || $pps[2]->{param_2} ne 'param_2'
             || $pps[4]->{sco_param_0} ne 'sco_param_0'
-            || $pps[5]->{specific}->{specific_1} ne 'specific_1' || $pps[5]->{sco_param_0} ne 'sco_param_0'
-            || $pps[6]->{specific}->{specific_1} ne 'specific_1' || $pps[6]->{sco_param_0} ne 'sco_param_0'
+            || $pps[5]->{sco_param_0} ne 'sco_param_0'
+            || $pps[6]->{sco_param_0} ne 'sco_param_0'
             ) {
                 die 'wrong params';
+        }
+
+        for my $association (@associations) {
+            if ($association->paramPresets->{specific}->{specific_1} ne 'specific_1') {
+                die 'wrong params in workflow_def_rule additional params.';
+            }
         }
 
         my $expected_parameters;
@@ -243,29 +240,16 @@ sub unitTests {
         }
 
         $rules[0] = $rules[0]->reload();
-        if (! defined $rules[0]->workflow_def_id) {
+        if (! defined $rules[0]->workflow_def) {
             die 'Workflow not associated to rule';
         }
 
-        $wfmanager->deassociateWorkflow(rule_id         => $rules[0]->id,
-                                        workflow_def_id => $sco_wfdefs[1]->id);
+        $rules[0]->deassociateWorkflow(workflow_def_id => $sco_wfdefs[1]->id);
 
         $rules[0] = $rules[0]->reload();
-        if (defined $rules[0]->workflow_def_id) {
+        if (defined $rules[0]->workflow_def) {
             die 'Workflow not deassociated to rule';
         }
-
-        my @steps = WorkflowStep->search(hash => { workflow_def_id => $wfdefs[3]->id },
-                                                   order_by        => 'workflow_step_id asc');
-
-        if ($steps[0]->operationtype->operationtype_name ne 'AddNode'
-            || $steps[1]->operationtype->operationtype_name ne 'PreStartNode'
-            || $steps[2]->operationtype->operationtype_name ne 'StartNode'
-            || $steps[3]->operationtype->operationtype_name ne 'PostStartNode'
-            ) {
-            die 'Error in add steps during association'
-        }
-
     } 'Unit tests';
 }
 
@@ -278,66 +262,67 @@ sub createObjects {
                                 externalcluster_name => $external_cluster_name
                             );
 
-        $wfmanager     = Entity::Component::Kanopyaworkflow0->new(service_provider_id => $service_provider->id);
-        $sco_wfmanager = Entity::Component::Sco->new(service_provider_id => $service_provider->id);
-
-
+        # Create workflow defs for Entity::Component::Kanopyaworkflow0
+        $wfmanager = Entity::Component::Kanopyaworkflow0->new(service_provider_id => $service_provider->id);
         $wfdefs[0] = $wfmanager->createWorkflowDef(workflow_name => 'my_workflow_def',
                                                    params        => {param_0 => 'param_0'});
 
-        my $wdefAddNode = Entity::WorkflowDef->find(workflow_def_name => 'AddNode');
-
         $wfdefs[1] = $wfmanager->createWorkflowDef(
                          workflow_name          => 'my_workflow_def_with_origin_no_params',
-                         workflow_def_origin_id => $wdefAddNode->id,
                      );
 
         $wfdefs[2] = $wfmanager->createWorkflowDef(
                          workflow_name          => 'my_workflow_def_with_origin_and_params',
-                         workflow_def_origin_id => $wdefAddNode->id,
                          params                 => {param_2 => 'param_2'},
                      );
 
+        # Create workflow defs for Entity::Component::Sco
+        $sco_wfmanager = Entity::Component::Sco->new(service_provider_id => $service_provider->id);
         $sco_wfdefs[0] = $sco_wfmanager->createWorkflowDef(workflow_name => 'myscoworkflowdef',
                                                            params        => {sco_param_0 => 'sco_param_0'});
 
+        # Create a service provider managed by Entity::Component::Sco
+        my $sp_managed_by_sco = Entity::ServiceProvider->new();
+        $sp_managed_by_sco->addManager(manager_id => $sco_wfmanager->id, manager_type => "WorkflowManager");
+
         $rules[0] = Entity::Rule::NodemetricRule->new(
-                        service_provider_id => $service_provider->id,
+                        service_provider_id => $sp_managed_by_sco->id,
                         formula => ' ',
                         state => 'enabled'
                     );
 
         $rules[1] = Entity::Rule::NodemetricRule->new(
-                        service_provider_id => $service_provider->id,
+                        service_provider_id => $sp_managed_by_sco->id,
                         formula             => ' ',
                         state               => 'enabled'
                    );
 
-        $rules[2] = Entity::Rule::NodemetricRule->new(
-                        service_provider_id => $service_provider->id,
-                        formula             => ' ',
-                        state               => 'enabled'
-                    );
+        $associations[0] = $rules[0]->associateWorkflow(
+                              workflow_def_id => $sco_wfdefs[0]->id,
+                              specific_params => {specific_1 => 'specific_1'},
+                          );
+        $sco_wfdefs[1] = $associations[0]->workflow_def;
 
-        $sco_wfdefs[1] = $sco_wfmanager->associateWorkflow(
-                             origin_workflow_def_id => $sco_wfdefs[0]->id,
-                             specific_params        => {specific_1 => 'specific_1'},
-                             rule_id                => $rules[0]->id,
-                         );
-
-        $sco_wfdefs[2] = $sco_wfmanager->cloneWorkflow(workflow_def_id => $sco_wfdefs[1]->id,
-                                                       rule_id         =>  $rules[1]->id);
+        $associations[1] = $rules[0]->cloneAssociatedWorkflow(dest_rule => $rules[1]);
+        $sco_wfdefs[2]  = $associations[1]->workflow_def;
 
         $sco_wfdefs[3] = $sco_wfmanager->createWorkflowDef(workflow_name => 'my_sco_workflow_def_2',
                                                            params        => {automatic => 'automatic_param',
                                                                              specific  => 'specific_param',});
 
-        my $addnode_wfdef = Entity::WorkflowDef->find(hash => {workflow_def_name => 'AddNode'});
+        # Create a service provider managed by Entity::Component::Kanopyaworkflow0
+        my $sp_managed_by_kwf = Entity::ServiceProvider->new();
+        $sp_managed_by_kwf->addManager(manager_id => $wfmanager->id, manager_type => "WorkflowManager");
 
-        $wfdefs[3] = $wfmanager->associateWorkflow(
-                         origin_workflow_def_id => $addnode_wfdef->id,
-                         rule_id                => $rules[2]->id,
-                     );
+        $rules[2] = Entity::Rule::NodemetricRule->new(
+                        service_provider_id => $sp_managed_by_kwf->id,
+                        formula             => ' ',
+                        state               => 'enabled'
+                    );
+
+        $wfdefs[3] = $rules[2]->associateWorkflow(
+                         workflow_def_id => $wfdefs[0]->id,
+                     )->workflow_def;
 
     } 'Objects creation';
 }

@@ -650,7 +650,7 @@ sub update {
     
     eval {
         my %hosts_values = ();
-        my @clusters = Entity::ServiceProvider::Cluster->search(hash => {}, expand => ['nodes']);
+        my @clusters = Entity::ServiceProvider::Cluster->search(hash => {}, prefetch => [ 'nodes' ]);
 
         foreach my $cluster (@clusters) {
             $log->info("Update nodes data of cluster " . $cluster->cluster_name);

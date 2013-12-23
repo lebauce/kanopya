@@ -116,9 +116,9 @@ sub createCluster {
                                                                       version => 1)
                          );
 
-    diag('Retrieve the admin user id');
-    if (not defined $args{user_id}) {
-        $args{user_id} = Entity::User->find(hash => { user_login => 'admin' })->id;
+    diag('Retrieve the admin owner_id');
+    if (not defined $args{owner_id}) {
+        $args{owner_id} = Entity::User->find(hash => { user_login => 'admin' })->id;
     }
 
     diag('Retrieve admin NetConf');
@@ -148,7 +148,7 @@ sub createCluster {
         cluster_nameserver1   => '208.67.222.222',
         cluster_nameserver2   => '127.0.0.1',
         cluster_basehostname  => 'default',
-        user_id               => $args{user_id},
+        owner_id              => $args{owner_id},
         default_gateway_id    => ($adminnetconf->poolips)[0]->network->id,
         service_template_id   => $service_template_id,
         managers              => {

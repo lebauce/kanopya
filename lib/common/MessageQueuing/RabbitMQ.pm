@@ -279,6 +279,31 @@ sub bindQueue {
 =pod
 =begin classdoc
 
+Purge the queue.
+
+@param queue the queue to purge
+
+=end classdoc
+=cut
+
+sub purgeQueue {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'queue' ]);
+
+    $log->debug("Purging queue <$args{queue}>");
+    try {
+        $self->_connection->purge($self->_channel, $args{queue});
+    }
+    catch ($err) {
+        throw Kanopya::Exception::MessageQueuing::ChannelError(error => $err);
+    }
+}
+
+
+=pod
+=begin classdoc
+
 Register the callback method for a specific channel and type.
 
 @param queue the queue on which register the consumer
