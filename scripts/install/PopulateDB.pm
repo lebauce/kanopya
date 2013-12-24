@@ -1621,8 +1621,9 @@ sub registerKanopyaMaster {
             name    => 'KanopyaExecutor',
             manager => 'ExecutionManager',
             conf    => {
-                masterimages_directory => defined $args{masterimages_directory} ? $args{masterimages_directory} : "/var/lib/kanopya/masterimages/",
-                clusters_directory     => defined $args{clusters_directory} ? $args{clusters_directory} : "/var/lib/kanopya/clusters/"
+                masterimages_directory => $args{masterimages_directory} || "/var/lib/kanopya/masterimages/",
+                clusters_directory     => $args{clusters_directory} || "/var/lib/kanopya/clusters/",
+                private_directory      => $args{private_directory} || "/var/lib/kanopya/private/"
             }
         },
         {

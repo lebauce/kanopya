@@ -215,7 +215,9 @@ sub getEContext {
 
     General::checkParams(args => \%args, required => [ 'dst_host' ]);
 
-    return EContext->new(src_host => $self->_host, dst_host => $args{dst_host});
+    return EContext->new(src_host => $self->_host,
+                         dst_host => $args{dst_host},
+                         key      => $self->_executor->private_directory . "/kanopya_rsa");
 }
 
 

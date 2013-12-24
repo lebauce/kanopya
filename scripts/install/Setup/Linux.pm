@@ -31,6 +31,8 @@ use parent 'Setup';
 use strict;
 use warnings;
 
+use General;
+
 use Template;
 use NetAddr::IP;
 use File::Path qw(make_path);
@@ -108,6 +110,11 @@ sub _init {
           caption  => 'Tftp boot files directory',
           default  => '/var/lib/kanopya/tftp',
           validate => '_validate_dir', },  
+
+        { keyname  => 'private_dir',
+          caption  => 'Private data directory',
+          default  => '/var/lib/kanopya/private',
+          validate => '_validate_dir', },
 
         { keyname  => 'log_dir',
           caption  => 'Log files directory',
@@ -427,7 +434,10 @@ sub _create_directories {
     make_path($self->{parameters_values}->{masterimages_dir});
     
     print "\t$self->{parameters_values}->{tftp_dir}\n";
-    system('mkdir -p '.$self->{parameters_values}->{tftp_dir});
+    make_path($self->{parameters_values}->{tftp_dir});
+
+    print "\t$self->{parameters_values}->{private_dir}\n";
+    make_path($self->{parameters_values}->{private_dir});
     
     print "\t$self->{parameters_values}->{sessions_dir}\n";
     make_path($self->{parameters_values}->{sessions_dir});
@@ -548,13 +558,14 @@ SSH key creation for root
 
 sub _generate_ssh_key {
     my ($self) = @_;
-    if ( (! -e '/root/.ssh/kanopya_rsa') && (! -e '/root/.ssh/kanopya_rsa.pub') ) {
-        if (! -e '/root/.ssh') {
-            make_path('/root/.ssh')
-        }
+
+    my $private_dir = $self->{parameters_values}->{private_dir};
+    if ( (! -e $private_dir . '/kanopya_rsa') &&
+         (! -e $private_dir . '/kanopya_rsa.pub') ) {
         print "\n - Dedicated root SSH keys generation...";
-        system("ssh-keygen -q -t rsa -N '' -f /root/.ssh/kanopya_rsa; " .
-               "cp /root/.ssh/kanopya_rsa.pub /root/.ssh/authorized_keys; " .
+        system("ssh-keygen -q -t rsa -N '' -f $private_dir/kanopya_rsa; " .
+               "chown puppet:puppet $private_dir/kanopya_rsa*; " .
+               "cp $private_dir/kanopya_rsa.pub /root/.ssh/authorized_keys; " .
                "chmod 600 /root/.ssh/authorized_keys");
         print "ok\n";
 
