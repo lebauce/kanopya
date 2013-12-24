@@ -7,7 +7,6 @@
 # over deny
 [kanopyafiles]
   path [% clusters_directory %]
-
   allow *
 
 [plugins]

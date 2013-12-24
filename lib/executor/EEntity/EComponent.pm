@@ -77,13 +77,8 @@ sub generateFile {
     $args{template_dir} = File::Spec->rel2abs($args{template_dir},
                                               Kanopya::Config::getKanopyaDir() . '/templates');
 
-    my $config = {
-        INCLUDE_PATH => $args{template_dir},
-        INTERPOLATE  => 0,               # expand "$var" in plain text
-        POST_CHOMP   => 0,               # cleanup whitespace
-        EVAL_PERL    => 1,               # evaluate Perl code blocks
-        RELATIVE     => 1,               # desactive par defaut
-    };
+    my $config = General::getTemplateConfiguration();
+    $config->{INCLUDE_PATH} = $args{template_dir};
 
     my $template = Template->new($config);
     my ($fh, $path) = tmpnam();

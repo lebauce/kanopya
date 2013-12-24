@@ -819,7 +819,7 @@ sub _configure_puppetmaster {
 
     my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
     my @hosts = $kanopya->getHosts();
-    my $kanopya_master = $hosts[0];
+    my $kanopya_master = EEntity->new(entity => $hosts[0]);
 
     my $linux = $kanopya->getComponent(category => "System");
     my $elinux = EEntity->new(entity => $linux);
@@ -845,11 +845,6 @@ sub _configure_puppetmaster {
     catch ($err) {
         $err->rethrow();
     }
-
-    $epuppetmaster->createHostManifest(
-        node               => $kanopya_master->node,
-        puppet_definitions => $fstab_puppet_definitions,
-    );
 
     my $puppetagent_action = 'start';
     my $puppetmaster_action = 'start';
@@ -1019,13 +1014,9 @@ sub _useTemplate {
     my $include = $args{include} || ($self->{installpath} . '/templates');
     my $dat     = $args{datas};
     my $output  = $args{conf};
+    my $config  = General::getTemplateConfiguration();
 
-    my $config = {
-            INCLUDE_PATH => $include,
-            INTERPOLATE  => 1,
-            POST_CHOMP   => 1,
-            EVAL_PERL    => 1,
-    };
+    $config->{INCLUDE_PATH} = $include;
     my $template = Template->new($config);
 
     $template->process($input, $dat, $output) || do {
