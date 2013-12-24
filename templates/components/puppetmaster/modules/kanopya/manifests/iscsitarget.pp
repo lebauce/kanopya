@@ -16,11 +16,11 @@ class kanopya::iscsitarget::params {
 
 class kanopya::iscsitarget inherits kanopya::iscsitarget::params {
   package { 'iscsitarget':
-    name => $kanopya::mysql::params::iscsitarget_package_name,
+    name => $kanopya::iscsitarget::params::iscsitarget_package_name,
     ensure => present,
   }
 
-  service { $kanopya::mysql::params::iscsitarget_service_name:
+  service { $kanopya::iscsitarget::params::iscsitarget_service_name:
     name     => $kanopya::iscsitarget::params::iscsitarget_service_name,
     ensure   => running,
     enable   => true,
