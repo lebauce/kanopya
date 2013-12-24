@@ -202,19 +202,7 @@ sub getPuppetDefinition {
 
     my $config = Kanopya::Config::get("executor");
     my $dbconfig = Kanopya::Database::_adm->{config};
-
-    my $sshkey = "";
-    my $sshpubkey = "";
-
-    if ($args{host}->node->node_state =~ '^(going)?in') {
-        open(INPUT, '/root/.ssh/kanopya_rsa') || die "can't read Kanopya SSH private key";
-        while (<INPUT>) { $sshkey .= $_; }
-        close(INPUT);
-
-        open(INPUT, '/root/.ssh/kanopya_rsa.pub') || die "can't read Kanopya SSH public key";
-        while (<INPUT>) { $sshpubkey .= $_; }
-        close(INPUT);
-    }
+    my @executors = map { $_->fqdn } $self->nodes;
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         kanopyaexecutor => {
@@ -228,12 +216,22 @@ sub getPuppetDefinition {
                     password     => $config->{user}->{password},
                     amqpuser     => $config->{amqp}->{user},
                     amqppassword => $config->{amqp}->{password},
-                    sshkey       => $sshkey,
-                    sshpubkey    => $sshpubkey
+                },
+                'kanopya::puppetmaster' => {
+                    sections    => [ {
+                        name  => "kanopyaexecutor",
+                        path  => $self->private_directory,
+                        allow => \@executors
+                    }, {
+                        name  => "kanopyafiles",
+                        path  => $self->clusters_directory,
+                        allow => [ "*" ]
+                    } ]
                 }
             },
             dependencies => [ $self->service_provider->getComponent(name => "Amqp"),
-                              $self->service_provider->getComponent(name => "Mysql") ]
+                              $self->service_provider->getComponent(name => "Mysql"),
+                              $self->service_provider->getComponent(name => "Puppetmaster") ]
         }
     } );
 }

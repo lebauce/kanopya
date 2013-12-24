@@ -54,24 +54,22 @@ class kanopya::executor(
       }
     }
 
-    if ($sshkey and $sshpubkey) {
-      file { '/root/.ssh/kanopya_rsa':
-        ensure  => present,
-        content => $sshkey,
-        mode    => 0600,
-        owner   => 'root',
-        group   => 'root',
-        before  => Service['kanopya-executor'],
-      }
+    file { '/root/.ssh/kanopya_rsa':
+      ensure  => present,
+      mode    => 0600,
+      owner   => 'root',
+      group   => 'root',
+      source  => "puppet:///kanopyaexecutor/kanopya_rsa",
+      before  => Service['kanopya-executor'],
+    }
 
-      file { '/root/.ssh/kanopya_rsa.pub':
-        ensure  => present,
-        content => $sshpubkey,
-        mode    => 0600,
-        owner   => 'root',
-        group   => 'root',
-        before  => Service['kanopya-executor'],
-      }
+    file { '/root/.ssh/kanopya_rsa.pub':
+      ensure  => present,
+      mode    => 0600,
+      owner   => 'root',
+      group   => 'root',
+      source  => "puppet:///kanopyaexecutor/kanopya_rsa.pub",
+      before  => Service['kanopya-executor'],
     }
   }
 }

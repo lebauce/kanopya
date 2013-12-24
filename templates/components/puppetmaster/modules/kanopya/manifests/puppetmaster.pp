@@ -34,7 +34,11 @@ class kanopya::puppetmaster::repository {
   }
 }
 
-class kanopya::puppetmaster::install {
+class kanopya::puppetmaster(
+  $sections = []
+) {
+  require 'kanopya::puppetmaster::repository'
+
   package { 'puppetmaster':
     ensure  => present,
     require => Class["kanopya::puppetmaster::repository"],
@@ -54,7 +58,7 @@ class kanopya::puppetmaster::install {
     puppetdb_server   => "${fqdn}",
     strict_validation => false,
     manage_config     => false,
-    restart_puppet    => false,
+    restart_puppet    => true,
     require           => Class['puppetdb']
   }
 
@@ -62,9 +66,12 @@ class kanopya::puppetmaster::install {
     server => "${fqdn}",
     port   => 8081
   }
-}
 
-class kanopya::puppetmaster {
-  class { 'kanopya::puppetmaster::repository': } ->
-  class { 'kanopya::puppetmaster::install': }
+  file { '/etc/puppet/fileserver.conf':
+    path    => '/etc/puppet/fileserver.conf',
+    ensure  => present,
+    mode    => 0644,
+    content => template('kanopya/fileserver.conf.erb'),
+    notify  => Service[$puppetdb::params::puppet_service_name]
+  }
 }

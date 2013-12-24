@@ -866,11 +866,12 @@ sub _configure_puppetmaster {
         $puppetmaster_action = 'restart';
     }
 
-    system('/etc/init.d/puppetmaster', $puppetmaster_action);
+    system('service', 'kanopya-front', 'restart');
+    system('service', 'puppetmaster', $puppetmaster_action);
     system('service', 'apache2', 'restart') && system('service', 'httpd', 'restart');
-    system('/etc/init.d/puppet', $puppetagent_action);
+    system('service', 'puppet', $puppetagent_action);
 
-    system('mkdir -m 750 /var/lib/puppet/concat && chown puppet:puppet /var/lib/puppet/concat');
+    system('mkdir -m 750 -p /var/lib/puppet/concat && chown puppet:puppet /var/lib/puppet/concat');
     EEntity->new(entity => $kanopya)->reconfigure();
 
     system('killall -9 mysqld');
