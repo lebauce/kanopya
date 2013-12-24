@@ -48,12 +48,13 @@ sub getPuppetDefinition {
     my ($self, %args) = @_;
 
     my $config = Kanopya::Config::get('libkanopya');
+    my $dbconfig = Kanopya::Database::_adm->{config};
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         kanopyafront => {
             classes => {
                 "kanopya::common" => {
-                    %{$config}
+                    %{$dbconfig}
                 },
                 "kanopya::front" => {
                     amqpuser => $config->{amqp}->{user},
