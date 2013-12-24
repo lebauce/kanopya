@@ -64,8 +64,10 @@ function reload_content(container_id, elem_id, extra) {
             }
 
             // Set specific doc page for the current content
-            var doc_page = _content_handlers[container_id]['doc'];
-            $('#help').attr('doc-page', doc_page || '');
+            // The link is either the current dialog doc link if exists or the main doc link
+            var doc_page = _content_handlers[container_id]['doc'] || '';
+            var doc_link = $('.dialog-doc-link:visible')[0] || $('#main-doc-link')[0];
+            $(doc_link).attr('doc-page', doc_page);
         }
     }
 }

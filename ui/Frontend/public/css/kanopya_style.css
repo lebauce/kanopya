@@ -28,7 +28,7 @@
 }
 
 #header-links #about,
-#header-links #help {
+#header-links #main-doc-link {
     color: #C2C2C2;
     font-size: 11px;
     font-weight: bold;
@@ -37,13 +37,17 @@
     margin-top: 5px;
 }
 
-#header-links #help {
+#header-links #main-doc-link {
     float: left;
 }
 
 #header-links #about:hover,
-#header-links #help:hover {
+#header-links #main-doc-link:hover {
     color: #7E388A;
+}
+
+.dialog-doc-link {
+    float : right;
 }
 
 /* Allow scroll inside view (tab content) */

@@ -1,6 +1,7 @@
 require('messages.js');
 require('gritter.js');
 require('about.js');
+require('common/kanopyaDialog.js');
 
 var lastMsgId = 0;
 
@@ -139,9 +140,12 @@ $(document).ready(function () {
 
     jQuery('#about').click(function () {openAbout('about_templates.html');});
 
-    $("#help").click( function(){
-        var doc_page = this.getAttribute("doc-page");
-        window.open(this.getAttribute("doc-url") + (doc_page || '') );
+    // Attach click event to all .doc-link, existing (main doc link) or futur (dialog doc link)
+    // We use html attributes to store needed data (not the better way)
+    var doc_url = $("#main-doc-link").attr("doc-url");
+    $('.doc-link').live('click', function(){
+        var doc_page = this.getAttribute("doc-page") || '';
+         window.open(doc_url + doc_page);
     });
 
     // call for the themeswitcher

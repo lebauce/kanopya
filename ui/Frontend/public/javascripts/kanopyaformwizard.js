@@ -1047,6 +1047,7 @@ var KanopyaFormWizard = (function() {
         this.actionsCallback = args.actionsCallback || $.noop;
         this.cancelCallback  = args.cancelCallback  || $.noop;
         this.error           = args.error           || $.noop;
+        this.docPage         = args.docPage         || null;
     }
 
     KanopyaFormWizard.prototype.exportArgs = function() {
@@ -1256,7 +1257,8 @@ var KanopyaFormWizard = (function() {
             minWidth        : 800,
 //            maxHeight       : 550,
             buttons         : buttons,
-            closeOnEscape   : false
+            closeOnEscape   : false,
+            docPage         : this.docPage,
         }).on('keydown', function(e) { // bind the Enter key press
             if(e.which == 13) {
                 if(!$("textarea").is(":focus") && !$('.ui-button').is(':focus')){
