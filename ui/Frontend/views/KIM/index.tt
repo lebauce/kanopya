@@ -18,6 +18,9 @@
         <div id="header-links">
            <span class="logout"><span class='ui-icon ui-icon-power'></span><a href="/logout">Logout</a></span>
            <span id="infologin">logged as <span id="username"><% username %></span></span><br />
+           <span id="main-doc-link" class="doc-link" doc-url=<% doc_url %> >
+              <span class='ui-icon ui-icon-help'></span><a>Help</a>
+           </span>
            <a id="about">About</a>
         </div>
     </div>
