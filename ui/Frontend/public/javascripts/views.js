@@ -158,7 +158,8 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
                 $('.last_content').addClass('current_content').removeClass('last_content');
                 $(this).remove(); // detail modals are never closed, they are destroyed
             },
-            buttons: buttons
+            buttons : buttons,
+            docPage : '/',
         });
         // Remove dialog title if wanted
         if (details_info.title == 'none') {
