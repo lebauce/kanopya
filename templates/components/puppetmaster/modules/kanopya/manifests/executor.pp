@@ -1,5 +1,6 @@
 class kanopya::executor(
   $logdir       = "/var/log/kanopya",
+  $privatedir   = "/var/lib/kanopya/private",
   $user         = "executor",
   $password     = "K4n0pY4",
   $amqpuser     = "executor",
@@ -54,22 +55,29 @@ class kanopya::executor(
       }
     }
 
-    file { '/root/.ssh/kanopya_rsa':
+    exec { "mkdir-${privatedir}":
+      command => "mkdir -p ${privatedir}",
+      unless => "test -d ${privatedir}",
+    }
+
+    file { '/var/lib/kanopya/private/kanopya_rsa':
       ensure  => present,
       mode    => 0600,
       owner   => 'root',
       group   => 'root',
       source  => "puppet:///kanopyaexecutor/kanopya_rsa",
       before  => Service['kanopya-executor'],
+      require => Exec["mkdir-${privatedir}"]
     }
 
-    file { '/root/.ssh/kanopya_rsa.pub':
+    file { '/var/lib/kanopya/private/kanopya_rsa.pub':
       ensure  => present,
       mode    => 0600,
       owner   => 'root',
       group   => 'root',
       source  => "puppet:///kanopyaexecutor/kanopya_rsa.pub",
       before  => Service['kanopya-executor'],
+      require => Exec["mkdir-${privatedir}"]
     }
   }
 }

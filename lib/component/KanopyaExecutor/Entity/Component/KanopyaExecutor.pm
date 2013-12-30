@@ -212,6 +212,7 @@ sub getPuppetDefinition {
                 },
                 'kanopya::executor' => {
                     logdir       => $config->{logdir},
+                    privatedir   => $self->private_directory,
                     user         => $config->{user}->{name},
                     password     => $config->{user}->{password},
                     amqpuser     => $config->{amqp}->{user},
