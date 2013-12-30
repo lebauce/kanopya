@@ -218,17 +218,17 @@ sub getPuppetDefinition {
                     amqpuser     => $config->{amqp}->{user},
                     amqppassword => $config->{amqp}->{password},
                 },
-                'kanopya::puppetmaster' => {
-                    sections    => [ {
-                        name  => "kanopyaexecutor",
-                        path  => $self->private_directory,
-                        allow => \@executors
-                    }, {
-                        name  => "kanopyafiles",
-                        path  => $self->clusters_directory,
-                        allow => [ "*" ]
-                    } ]
-                }
+            },
+            params => {
+                'kanopya::puppetmaster::sections' => [ {
+                    name  => "kanopyaexecutor",
+                    path  => $self->private_directory,
+                    allow => \@executors
+                }, {
+                    name  => "kanopyafiles",
+                    path  => $self->clusters_directory,
+                    allow => [ "*" ]
+                } ]
             },
             dependencies => [ $self->service_provider->getComponent(name => "Amqp"),
                               $self->service_provider->getComponent(name => "Mysql"),
