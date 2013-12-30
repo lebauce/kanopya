@@ -189,8 +189,9 @@ sub getPuppetDefinitions {
 
             my @classes = keys %{$chunk->{classes}};
             my $data = {
-                classes => \@classes,
-                components => { $component_name => $configuration }
+                classes    => \@classes,
+                components => { $component_name => $configuration },
+                %{$chunk->{params} || {}}
             };
 
             for my $class (@classes) {
