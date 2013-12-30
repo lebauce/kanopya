@@ -96,13 +96,11 @@ sub addNode {
         mount_point => $args{mount_point},
         host        => $args{host}
     );
-    
-    $self->addInitScripts(    
-        mountpoint => $args{mount_point}, 
-        scriptname => 'puppet', 
-    );    
 
-    $self->generatePuppetDefinitions(%args);
+    $self->addInitScripts(
+        mountpoint => $args{mount_point},
+        scriptname => 'puppet',
+    );
 }
 
 sub postStartNode {
