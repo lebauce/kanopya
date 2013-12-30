@@ -190,7 +190,17 @@ sub execute {
                              bootserver  => $bootserver);
 
     # Update kanopya etc hosts
-    EEntity->new(data => $bootserver->getComponent(category => "System"))->applyConfiguration();
+    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster;
+    my $system = EEntity->new(entity => $kanopya->getComponent(category => "System"));
+
+    for my $executor ($system->getActiveNodes()) {
+        $system->generateConfiguration(
+            host    => EEntity->new(entity => $executor->host),
+            cluster => EEntity->new(entity => $kanopya)
+        );
+    }
+
+    $system->applyConfiguration();
 
     # Umount system image container
     if ($self->{params}->{mountpoint}) {
