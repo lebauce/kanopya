@@ -565,8 +565,7 @@ sub _generate_ssh_key {
         print "\n - Dedicated root SSH keys generation...";
         system("ssh-keygen -q -t rsa -N '' -f $private_dir/kanopya_rsa; " .
                "chown puppet:puppet $private_dir/kanopya_rsa*; " .
-               "cp $private_dir/kanopya_rsa.pub /root/.ssh/authorized_keys; " .
-               "chmod 600 /root/.ssh/authorized_keys");
+               "install -D -m 600 $private_dir/kanopya_rsa.pub /root/.ssh/authorized_keys");
         print "ok\n";
 
     } else {
