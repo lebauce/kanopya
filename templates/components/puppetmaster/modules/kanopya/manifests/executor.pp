@@ -8,7 +8,7 @@ class kanopya::executor(
   $sshkey       = undef,
   $sshpubkey    = undef,
 ) {
-  include kanopya::common
+  require kanopya::common
 
   if ($components[kanopyaexecutor][master] == 1) {
     rabbitmq_user { "${amqpuser}":

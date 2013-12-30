@@ -3,7 +3,7 @@ class kanopya::front (
   $amqppassword = "K4n0pY4",
   $logdir       = "/var/log/kanopya"
 ) {
-  include kanopya::common
+  require kanopya::common
 
   if ($components[kanopyafront][master]) {
     rabbitmq_user { "${amqpuser}":
