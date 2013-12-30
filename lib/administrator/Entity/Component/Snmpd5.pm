@@ -53,8 +53,10 @@ sub getPuppetDefinition {
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         snmpd => {
-            "kanopya::snmpd" => {
-                collector => $collector->getMasterNode->adminIp
+            classes => {
+                "kanopya::snmpd" => {
+                    collector => $collector->getMasterNode->adminIp
+                }
             }
         }
     } );
