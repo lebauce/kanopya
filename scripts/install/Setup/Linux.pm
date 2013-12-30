@@ -896,9 +896,9 @@ sub _retrieve_tftp_content {
     # Check if rsync sshkey exist on right place :
     if ( ! -e $rsync_sshkey) {
         # Get the rsync_rsa key :
-        system('wget http://download.kanopya.org/pub/rsync_rsa');
-        # Move the key and set the correct rights ;
-        system('mv rsync_rsa /root/.ssh/;chmod 400 /root/.ssh/rsync_rsa');
+        system('mkdir -p /root/.ssh; ' .
+               'wget -O /root/.ssh/rsync_rsa http://download.kanopya.org/pub/rsync_rsa; ' .
+               'chmod 400 /root/.ssh/rsync_rsa');
     }
     # Do a Rsync from download.kanopya.org of tftp directory content :
     system('rsync -var -e "ssh -i /root/.ssh/rsync_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" rsync@download.kanopya.org:/pub/tftp/* '.$self->{parameters_values}->{tftp_dir});
