@@ -25,6 +25,7 @@ use Kanopya::Exceptions;
 use LinuxMount;
 use Entity::ServiceProvider::Cluster;
 
+use File::Basename;
 use Hash::Merge qw(merge);
 use Log::Log4perl 'get_logger';
 
@@ -174,21 +175,34 @@ sub getPuppetDefinition {
         next if (grep { ($_ eq $mount->{linux_mount_device}) &&
                         ($mount->{linux_mount_filesystem} eq "nfs") } @except);
 
-        $files->{$mount->{linux_mount_point}} = {
-            ensure => 'directory',
-            tag => 'mount'
-        };
+        my $child;
+        my @dirs;
+        my $mountpoint = $mount->{linux_mount_point};
+        while (1) {
+            $child = $mountpoint;
+            $mountpoint = dirname($mountpoint);
+            last if $mountpoint eq $child;
+
+            $files->{$child} = {
+                ensure  => 'directory',
+                tag     => 'mount'
+            };
+
+            if ($mountpoint ne "/") {
+                $files->{$child}->{require} = [ "File[" . $mountpoint  . "]" ];
+            }
+        }
 
         $mounts->{$mount->{linux_mount_point}} = {
-            require => [ "File['" . $mount->{linux_mount_point} . "']" ],
-            device => $mount->{linux_mount_device},
-            ensure => "mounted",
-            fstype => $mount->{linux_mount_filesystem},
-            name => $mount->{linux_mount_point},
+            require => [ "File[" . $mount->{linux_mount_point} . "]" ],
+            device  => $mount->{linux_mount_device},
+            ensure  => "mounted",
+            fstype  => $mount->{linux_mount_filesystem},
+            name    => $mount->{linux_mount_point},
             options => $mount->{linux_mount_options},
-            dump => $mount->{linux_mount_dumpfreq},
-            pass => $mount->{linux_mount_passnum},
-            tag => $tag,
+            dump    => $mount->{linux_mount_dumpfreq},
+            pass    => $mount->{linux_mount_passnum},
+            tag     => $tag,
         };
 
         $nfs = $nfs || ($mount->{linux_mount_filesystem} eq "nfs");
@@ -200,22 +214,22 @@ sub getPuppetDefinition {
 
     foreach my $swap (@swap_entries) {
         $mounts->{$swap->{linux_mount_device}} = {
-            device => $swap->{linux_mount_device},
-            ensure => 'present',
-            fstype => 'swap',
-            name => 'none',
+            device  => $swap->{linux_mount_device},
+            ensure  => 'present',
+            fstype  => 'swap',
+            name    => 'none',
             options => 'sw',
-            dump => 0,
-            pass => 0,
-            tag => $tag,
+            dump    => 0,
+            pass    => 0,
+            tag     => $tag,
         };
     }
     
     if (@swap_entries) {
         $swaps->{swap} = {
             require => [ "Mount['". $swap_entries[0]->{linux_mount_device} . "']" ],
-            ensure => 'present',
-            tag => $tag,
+            ensure  => 'present',
+            tag     => $tag,
         };
     }
 
@@ -226,11 +240,11 @@ sub getPuppetDefinition {
     }
 
     $classes->{'kanopya::linux'} = {
-        swaps => $swaps,
+        swaps  => $swaps,
         mounts => $mounts,
-        files => $files,
-        stage => "system",
-        tag => $tag
+        files  => $files,
+        stage  => "system",
+        tag    => $tag
     };
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
