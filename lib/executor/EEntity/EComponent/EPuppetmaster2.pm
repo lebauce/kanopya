@@ -85,7 +85,7 @@ sub createHostCertificate {
 
     if (! $result->{stdout}) {
         # generate a certificate for the host
-        $command = "puppetca --generate $args{host_fqdn}";
+        $command = "puppet ca generate $args{host_fqdn}";
         my $result = $self->getEContext->execute(command => $command);
         # TODO check for error in command execution
     }
