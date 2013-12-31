@@ -1,5 +1,3 @@
-all:
-
 kanopya-1.8.tar.gz:
 	mkdir -p build/SOURCES
 	rm -rf build/SOURCES/kanopya-1.8.tar.gz
@@ -15,3 +13,5 @@ rpm: kanopya-1.8.tar.gz
 srpm: kanopya-1.8.tar.gz
 	rpmbuild -bs --define "_topdir `pwd`/build" kanopya.spec
 
+all: kanopya-1.8.tar.gz
+	rpmbuild -ba --define "_topdir `pwd`/build" kanopya.spec
