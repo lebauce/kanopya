@@ -64,7 +64,7 @@ class Hiera
               data = @@cache.fetch(fqdn)
             end
 
-            if data == nil:
+            if data == nil
               data = restquery(hostname)
               @@cache.write(fqdn, data)
             end
