@@ -84,7 +84,6 @@ sub startHost {
                 $errmsg = "EOperation::EStartNode->startNode : Neither 'etherwake' nor 'wol' command where found";
                 throw Kanopya::Exception::Execution(error => $errmsg);
             }
-            $wol .= " --host " . $args{host}->host->getPXEIface->getIPAddr;
             $wol .= " --host " . $args{host}->getPXEIface->getIPAddr;
         }
         else {
