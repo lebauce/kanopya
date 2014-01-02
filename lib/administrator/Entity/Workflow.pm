@@ -545,7 +545,7 @@ sub formatLabel {
 
     # Build the workflow description from desc template and params
     my $allparams = clone($args{params}->{params});
-    for my $name (keys (defined $args{params}->{context} ? $args{params}->{context} : {})) {
+    for my $name (keys %{(defined $args{params}->{context} ? $args{params}->{context} : {})}) {
         if (blessed($args{params}->{context}->{$name})) {
             $allparams->{$name} = $args{params}->{context}->{$name}->label;
         }

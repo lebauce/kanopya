@@ -227,7 +227,7 @@ sub unserializeParams {
 
     my $params = $self->_entity->unserializeParams(%args);
     map { $params->{context}->{$_} = EEntity->new(data => $params->{context}->{$_}) }
-        keys (defined $params->{context} ? $params->{context} : {});
+        keys %{(defined $params->{context} ? $params->{context} : {})};
 
     return $params;
 }
