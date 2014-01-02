@@ -476,6 +476,8 @@ sub adminIp {
     if (defined $iface and $iface->hasIp) {
         return $iface->getIPAddr;
     }
+
+    return undef;
 }
 
 sub getFreeHosts {
