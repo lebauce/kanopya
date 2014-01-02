@@ -151,7 +151,7 @@ sub applyConfiguration {
     }
 
     my $ret = -1;
-    my $timeout = 180;
+    my $timeout = 360;
     my @hosts = (defined $args{host}) ? ($args{host}->node->fqdn) : (map { $_->node->fqdn } @{ $args{cluster}->getHosts() });
     my $puppetmaster = (Entity::ServiceProvider::Cluster->getKanopyaCluster)->getComponent(name => 'Puppetmaster');
     my $econtext = (EEntity->new(data => $puppetmaster))->getEContext;
@@ -167,7 +167,7 @@ sub applyConfiguration {
         map { $command .= " --host $_" } @hosts;
 
         $ret = $econtext->execute(command => $command,
-                                  timeout => 180);
+                                  timeout => 360);
 
         while ($ret->{stdout} =~ /([\w.\-]+) finished with exit code (\d+)/g) {
             # If the host is down or not reachable, the exit code is 2
