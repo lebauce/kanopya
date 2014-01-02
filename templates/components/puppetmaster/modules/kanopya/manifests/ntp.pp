@@ -7,35 +7,30 @@ class kanopya::ntp::server(
   }
 }
 
-class kanopya::ntp::ntpdate($server) {
+class kanopya::ntp::client(
+  $server = "127.0.0.1"
+) {
   class { '::ntp':
     service_ensure => stopped,
     servers        => [ $server ],
   }
 
+  package { 'ntpdate':
+    name   => 'ntpdate',
+    ensure => present
+  }
+
   exec { "ntpdate -b -u ${server}":
     path    => '/bin:/sbin:/usr/bin:/usr/sbin',
-    require => Class['::ntp']
+    require => [ Class['::ntp'],
+                 Package['ntpdate'] ]
   }
 
   cron { 'ntpdate':
     command => "ntpdate -b -u ${server}",
     user    => root,
-    hour    => 2
-  }
-}
-
-class kanopya::ntp::client(
-  $server = "127.0.0.1"
-) {
-  class { 'kanopya::ntp::ntpdate':
-    server  => "$server",
-    require => Class['kanopya::ntp::install']
-  }
-
-  package { 'ntpdate':
-    name   => 'ntpdate',
-    ensure => present
+    hour    => 2,
+    require => Package['ntpdate']
   }
 }
 
