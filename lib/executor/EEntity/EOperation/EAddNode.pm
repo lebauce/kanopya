@@ -124,7 +124,7 @@ sub prepare {
     for my $entity_state (@entity_states) {
         throw Kanopya::Exception::Execution::InvalidState(
                   error => "The cluster <"
-                           .$self->{context}->{host_manager_sp}->cluster_name
+                           .$self->{context}->{host_manager}->service_provider->cluster_name
                            .'> is <'.$entity_state->state
                            .'> which is not a correct state to accept addnode'
               );
