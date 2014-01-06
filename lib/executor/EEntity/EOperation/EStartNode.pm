@@ -108,14 +108,9 @@ sub execute {
     my ($self, %args) = @_;
     $self->SUPER::execute(%args);
 
-    # Apply DHCP configuratio
-    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster;
-    my $dhcpd = EEntity->new(entity => $kanopya->getComponent(category => "Dhcpserver"));
-    $dhcpd->applyConfiguration();
-
-    # Update /etc/hosts file
-    my $system = EEntity->new(entity => $kanopya->getComponent(category => "System"));
-    $system->applyConfiguration();
+    # Apply puppet configuration
+    my $kanopya = EEntity->new(entity => Entity::ServiceProvider::Cluster->getKanopyaCluster);
+    $kanopya->reconfigure(tags => [ "kanopya::operation::startnode" ]);
 
     # Finally we start the node
     $self->{context}->{host} = $self->{context}->{host}->start(

@@ -6,6 +6,8 @@ class kanopya::dhcpd(
   $hosts       = [],
   $pools       = [])
 {
+  tag("kanopya::operation::startnode")
+
   class { 'dhcp':
     interfaces  => $interfaces,
     ntpservers  => $ntpservers,

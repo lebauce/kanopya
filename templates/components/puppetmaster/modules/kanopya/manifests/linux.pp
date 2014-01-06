@@ -56,6 +56,7 @@ class kanopya::linux (
     ensure => present,
     mode   => 0644,
     source => "puppet:///kanopyafiles/${sourcepath}/etc/hosts",
+    tag    => "kanopya::operation::startnode"
   }
 
   file { '/etc/resolv.conf':
