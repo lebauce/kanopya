@@ -162,7 +162,7 @@ sub applyConfiguration {
             $timeout -= 5;
         }
 
-        my $command = "puppet kick --foreground --parallel " . (scalar @hosts);
+        my $command = "puppet kick --configtimeout=900 --foreground --parallel " . (scalar @hosts);
         map { $command .= " --tag " . $_; } @{$args{tags}};
         map { $command .= " --host $_" } @hosts;
 

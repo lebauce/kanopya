@@ -9,6 +9,7 @@
   factpath=$vardir/lib/facter
   templatedir=$confdir/templates
   filetimeout=0
+  configtimeout=600
 
 [agent]
   pluginsync=true
