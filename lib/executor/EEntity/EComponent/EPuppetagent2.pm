@@ -162,12 +162,12 @@ sub applyConfiguration {
             $timeout -= 5;
         }
 
-        my $command = "puppet kick --configtimeout=900 --foreground --parallel " . (scalar @hosts);
+        my $command = "puppet kick --configtimeout=900 --ignoreschedules --foreground --parallel " . (scalar @hosts);
         map { $command .= " --tag " . $_; } @{$args{tags}};
         map { $command .= " --host $_" } @hosts;
 
         $ret = $econtext->execute(command => $command,
-                                  timeout => 360);
+                                  timeout => 900);
 
         while ($ret->{stdout} =~ /([\w.\-]+) finished with exit code (\d+)/g) {
             # If the host is down or not reachable, the exit code is 2
