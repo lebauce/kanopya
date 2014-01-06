@@ -17,6 +17,9 @@ files:
     - vagrant
 post:
   base:
+    - "/sbin/service mysql start || true"
+    - "mysqladmin -u root password K4n0pY4 || true"
+    - "/sbin/service mysql stop || true"
     - "yum -y remove kanopya-common kanopya-cli"
     - "vgrename kanopya kanopyavg"
     - "sed -i 's/^\(Defaults\)\( *\)\(requiretty$\)/\1\2!\3/' /etc/sudoers"
@@ -42,6 +45,3 @@ post:
     - "echo -n kanopyamaster > /etc/hostname"
     - "echo HOSTNAME=kanopyamaster >> /etc/sysconfig/network"
     - "/sbin/chkconfig puppetmaster on"
-    - "/sbin/service mysql start"
-    - "mysqladmin -u root password K4n0pY4"
-    - "/sbin/service mysql stop"
