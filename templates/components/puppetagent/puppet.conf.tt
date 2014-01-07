@@ -15,4 +15,5 @@
   pluginsync=true
 [% IF puppetagent2_masterserver %]
   listen=true
+  client=false
 [% END %]
