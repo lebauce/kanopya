@@ -46,6 +46,25 @@ sub methods {
     };
 }
 
+=pod
+=begin classdoc
+
+@constructor
+
+Dummy constructor to use the manager stand alone.
+
+=end classdoc
+=cut
+
+sub new {
+    my $class = shift;
+
+    my $self = {};
+
+    bless $self, $class;
+    return $self;
+}
+
 
 =pod
 =begin classdoc
