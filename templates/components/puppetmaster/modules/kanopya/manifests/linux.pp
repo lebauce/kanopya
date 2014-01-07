@@ -82,7 +82,9 @@ class kanopya::linux (
     source  => 'file:///usr/share/zoneinfo/CET'
   }
 
-  class { 'kanopya::linux::repositories': }
+  class { 'kanopya::linux::repositories':
+    stage => 'system'
+  }
 
   if $operatingsystem =~ /(?i)(debian|ubuntu)/ {
     exec { 'apt-get update':
