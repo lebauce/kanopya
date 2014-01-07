@@ -124,7 +124,8 @@ sub run {
                          required => [ 'name' ],
                          optional => { 'params'     => {},
                                        'rule'       => undef,
-                                       'related_id' => undef, });
+                                       'related_id' => undef,
+                                       'owner_id'   => Kanopya::Database::currentUser });
 
     my $def = Entity::WorkflowDef->find(hash => { workflow_def_name => delete $args{name} });
 
