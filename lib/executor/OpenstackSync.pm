@@ -37,12 +37,13 @@ see <https://wiki.openstack.org/wiki/NotificationSystem> for notification system
 =cut
 
 package OpenstackSync;
-
 use base Daemon::MessageQueuing;
-use Entity::Component::Virtualization::NovaController;
 
 use strict;
 use warnings;
+
+use Entity::Component::Virtualization::NovaController;
+
 use TryCatch;
 
 use Log::Log4perl "get_logger";
@@ -60,21 +61,61 @@ my $functionTable = {
     'compute.instance.resize.confirm.end' => 'computeInstanceResizeConfirmEnd',
 };
 
+
+=pod
+=begin classdoc
+
+@constructor
+
+Override the parent constructor to register existing nova controllers.
+
+@param nova_controller the nova controller instance.
+
+=end classdoc
+=cut
+
 sub new {
     my ($class, %args) = @_;
     General::checkParams(args => \%args, optional => { "duration" => undef });
 
     my $self = $class->SUPER::new(confkey => 'openstack-sync', %args);
 
-    my @ncs = Entity::Component::Virtualization::NovaController->search();
+    # Browse the nova controllers managed by this KanopyaOpenStackSync.
+    if ($self->_component->isa('Entity::Component::KanopyaOpenstackSync')) {
+        for my $nc ($self->_component->nova_controllers) {
+            $self->registerOpenstackSyncCallback(cbname          => 'novacontroller-' . $nc->id,
+                                                 nova_controller => $nc);
+        }
+        $log->info("OpenstackSync callbacks have been registered...");
+    }
 
-    for my $nc (@ncs) {
-        my $amqp     = $nc->amqp;
+    return $self;
+}
+
+
+=pod
+=begin classdoc
+
+Register a callback definition from a nova controller instance to wait
+messages on its notification queue.
+
+@param nova_controller the nova controller instance.
+
+=end classdoc
+=cut
+
+sub registerOpenstackSyncCallback {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'cbname', 'nova_controller' ]);
+
+    if (! defined $self->_callbacks->{$args{cbname}}) {
+        my $amqp     = $args{nova_controller}->amqp;
         my $ip       = $amqp->getMasterNode->adminIp;
         my $port     = $amqp->getNetConf->{amqp}->{port};
-        my $user     = 'nova-'.$nc->id;
+        my $user     = 'nova-' . $args{nova_controller}->id;
         my $password = 'nova';
-        my $vhost    = 'openstack-'.$nc->id;
+        my $vhost    = 'openstack-' . $args{nova_controller}->id;
 
         my $config = {
             ip       => $ip,
@@ -84,26 +125,70 @@ sub new {
             vhost    => $vhost,
         };
 
+        my $nova_contoller = $args{nova_controller};
         my $callback = sub {
-            my ($self, %args) = @_;
-            $self->novaNotificationAnalyser(%args, host_manager => $nc);
+            my ($self, %cbargs) = @_;
+            $self->novaNotificationAnalyser(%cbargs, host_manager => $nova_contoller);
         };
 
         $self->registerCallback(
             config    => $config,
-            cbname    => 'notification callback - ' . $nc->id,
+            cbname    => $args{cbname},
             callback  => $callback,
             exchange  => 'nova',
             queue     => 'notifications.info',
             type      => 'topic',
+            duration  => 0,
             declare   => 0,
-            instances => 1,
-            duration  => 30,
         );
     }
+    else {
+        throw Kanopya::Exception::Daemon(
+                  error => "Nova controller <" . $args{nova_controller}->id . "> already registred, skip."
+              );
+    }
+}
 
-    $log->info("OpenstackSync callbacks have been registered...");
-    return $self;
+
+=pod
+=begin classdoc
+
+Override the inherited method to handle custom messages on the control queue.
+Here we want to register callbacks at runtime to dynamically start consuming
+messages. We are detecting messages as custom if they contains a nova_controller_id
+naed param.
+
+@param cbname the name of the callback definition to control
+@param control the control type (spawn|kill)
+
+@optional instances the number of instance to control
+
+=end classdoc
+=cut
+
+sub controlDaemon {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'cbname', 'control', 'nova_controller_id', 'ack_cb' ],
+                         optional => { 'instances' => 1 });
+
+    # Handle custom control messages.
+    # Register a callback for the given nova controller for consuming messageson its notification queue.
+    if (defined $args{nova_controller_id} && $args{control} eq 'spawn') {
+        my $nc = Entity::Component::Virtualization::NovaController->get(id => $args{nova_controller_id});
+        $self->registerOpenstackSyncCallback(cbname => $args{cbname}, nova_controller => $nc);
+    }
+
+    # Finally handle the message as a regular control message
+    my $ack = $self->SUPER::controlDaemon(cbname => $args{cbname}, control => $args{control});
+
+    # Unregister the corresponding callback if control code is 'kill'
+    if (defined $args{nova_controller_id} && $args{control} eq 'kill') {
+        delete $self->_callbacks->{$args{cbname}};
+    }
+
+    return $ack;
 }
 
 
@@ -120,23 +205,23 @@ Analyse @param <event_type> and call corresponding method
 
 sub novaNotificationAnalyser {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['host_manager']);
+    General::checkParams(args     => \%args,
+                         required => [ 'host_manager' ],
+                         optional => { 'event_type' => undef });
 
-    $log->info("New message received related to host_manager <" . $args{host_manager}->id . ">");
+    $log->info("New message received related to nove controller <" . $args{host_manager}->id . ">");
 
     if (! defined $args{event_type}) {
         $log->info("Event type not defined in message. Skip.");
         return 1;
     }
 
-    my $event_type = $args{event_type};
-
-    if (defined $functionTable->{$event_type}) {
-        my $method = $functionTable->{$event_type};
+    if (defined $functionTable->{$args{event_type}}) {
+        my $method = $functionTable->{$args{event_type}};
         $self->$method(%args);
     }
     else {
-        $log->info("Unmanaged event type <$event_type>. Skip.");
+        $log->info("Unmanaged event type <$args{event_type}>. Skip.");
     }
 
     return 1;
@@ -170,7 +255,10 @@ Cluster is set to "Generic Service" template.
 
 sub computeInstanceCreateEnd {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['host_manager']);
+
+    General::checkParams(args => \%args, required => [ 'host_manager', 'payload' ]);
+
+    $log->info("Handle event <compute.instance.create.end>, instance id <$args{payload}->{instance_id}>");
 
     # If the VM has been created by Kanopya, it is up to the Executor process
     # to register the new node. So the registration is skipped.
@@ -247,9 +335,8 @@ sub computeInstanceCreateEnd {
                    host     => $host,
                );
 
-    my $message = "A new host <" .$host->id. "> and node <" . $node->id
-                  . "> has been registered in Kanopya DB";
-    $log->info($message);
+    $log->info("A new host <" . $host->id . "> and node <" . $node->id .
+               "> has been registered in Kanopya DB");
 }
 
 
@@ -266,6 +353,10 @@ Delete corresponding Node instance and Host instance in Kanopya DB.
 sub computeInstanceDeleteEnd {
     my ($self, %args) = @_;
 
+    General::checkParams(args => \%args, required => [ 'host_manager', 'payload' ]);
+
+    $log->info("Handle event <compute.instance.delete.end>, instance id <$args{payload}->{instance_id}>");
+
     my $host;
     # Check if the host has not been already deleted
     try {
@@ -275,25 +366,22 @@ sub computeInstanceDeleteEnd {
     }
     catch (Kanopya::Exception::Internal::NotFound $err) {
         # This case may appear when cancelling addnode workflow
-        my $message = "Vm <" . $args{payload}->{instance_id} . "> unknown in Kanopya DB. Skip.";
-        $log->info($message);
+        $log->info("Vm <$args{payload}->{instance_id}> unknown in Kanopya DB. Skip.");
         return 1;
     }
 
     # Detect the case where node deletion is due to Kanopya Executor
     my $node_state = ($host->getNodeState())[0];
     if ($node_state eq "goingout") {
-        my $message = "Vm <" . $args{payload}->{instance_id}
-                      . "> deleted by Kanopya Executor. Skip.";
-        $log->info($message);
+        $log->info("Vm <$args{payload}->{instance_id}> deleted by Kanopya Executor. Skip.");
         return 1;
     }
 
     my $node = $host->node;
     $node->service_provider->unregisterNode(node => $node);
     $host->delete();
-    my $message = "Vm <" . $args{payload}->{instance_id} . "> has been removed from Kanopya DB";
-    $log->info($message);
+
+    $log->info("Vm <$args{payload}->{instance_id}> has been removed from Kanopya DB");
 }
 
 
@@ -310,6 +398,10 @@ The vm has been rebuilt. Update new information in Kanopya DB.
 sub computeInstanceRebuildEnd {
     my ($self, %args) = @_;
 
+    General::checkParams(args => \%args, required => [ 'host_manager', 'payload' ]);
+
+    $log->info("Handle event <compute.instance.rebuild.end>, instance id <$args{payload}->{instance_id}>");
+
     my $host = Entity::Host::VirtualMachine::OpenstackVm->find(
                    hash => {openstack_vm_uuid => $args{payload}->{instance_id}}
                );
@@ -320,10 +412,8 @@ sub computeInstanceRebuildEnd {
     # Update information that could have been modified during rebuild
     $host->hypervisor_id($hypervisor->id);
 
-    my $message = "Host <" . $host->id . "> with uuid <" . $args{payload}->{instance_id}
-                  . "> has been rebuilt and updated in Kanopya DB";
-
-    $log->info($message);
+    $log->info("Host <" . $host->id . "> with uuid <$args{payload}->{instance_id}" . 
+               "> has been rebuilt and updated in Kanopya DB");
 }
 
 =pod
@@ -339,6 +429,11 @@ Warning: This method is untested in real infrastructure.
 sub computeInstanceResizeConfirmEnd {
     my ($self, %args) = @_;
 
+    General::checkParams(args => \%args, required => [ 'host_manager', 'payload' ]);
+
+    $log->info("Handle event <compute.instance.resize.confirm.end>, " .
+               "instance id <$args{payload}->{instance_id}>");
+
     my $host = Entity::Host::VirtualMachine::OpenstackVm->find(
                    hash => {openstack_vm_uuid => $args{payload}->{instance_id}}
                );
@@ -351,9 +446,7 @@ sub computeInstanceResizeConfirmEnd {
     $host->host_ram($args{payload}->{memory_mb} << 20); #convert mb into b
     $host->host_core($args{payload}->{vcpus});
 
-    my $message = "Host <" . $host->id . "> with uuid <" . $args{payload}->{instance_id}
-                  . "> has been resized";
-
-    $log->info($message);
+    $log->info("Host <" . $host->id . "> with uuid <$args{payload}->{instance_id}> has been resized");
 }
+
 1;

@@ -588,9 +588,11 @@ sub receiveAll {
             # Pass, the receiver has probably been woken up by a signal to stop the daemon. 
         }
         catch ($err) {
-            $log->error($err);
-            # Stop the daemon as an unexpected exception occurs
-            $self->setRunning(running => 0);
+            if ($self->isRunning) {
+                $log->error($err);
+                # Stop the daemon as an unexpected exception occurs
+                $self->setRunning(running => 0);
+            }
         }
 
         # Create the internal consumers again as the connection coud be closed

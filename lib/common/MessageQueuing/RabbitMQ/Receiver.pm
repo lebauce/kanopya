@@ -34,6 +34,7 @@ use base MessageQueuing::RabbitMQ;
 use strict;
 use warnings;
 
+use TryCatch;
 use Data::Dumper;
 
 use Log::Log4perl "get_logger";
@@ -87,7 +88,7 @@ sub fetch {
 
     # Wait for messages
     my $rv;
-    eval {
+    try {
         local $SIG{ALRM} = sub {
             throw Kanopya::Exception::MessageQueuing::NoMessage(
                       error => "No message received for $args{timeout} (s)"
@@ -123,11 +124,10 @@ sub fetch {
 
         # Decode the message content in way to use it as callback params
         my $args;
-        eval {
+        try {
             $args = JSON->new->utf8->decode($rv->{body});
-        };
-        if ($@) {
-            my $err = $@;
+        }
+        catch ($err) {
             if ($err =~ m/malformed JSON string/) {
                 $args = { data => $rv->{body} };
             }
@@ -139,15 +139,14 @@ sub fetch {
             $self->acknowledge(tag => $rv->{delivery_tag});
         };
 
-        # Call the corresponding method
+        # Call the corresponding callback method
         $args->{ack_cb} = $ack_cb;
         if ($callback->(%$args)) {
             # Acknowledge the message if specified by the callback
             $args->{ack_cb}->();
         }
-    };
-    if ($@) {
-        my $err = $@;
+    }
+    catch ($err) {
         # Acknowledge the message, and rethrow the error
         if (defined $rv) {
             $self->acknowledge(tag => $rv->{delivery_tag});

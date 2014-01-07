@@ -64,6 +64,12 @@ use constant ATTR_DEF => {
         relation    => 'single',
         is_editable => 1
     },
+    kanopya_openstack_sync_id => {
+        label       => 'OpenStack synchronization server',
+        type        => 'relation',
+        relation    => 'single',
+        is_editable => 1
+    },
     host_type => {
         is_virtual => 1
     }

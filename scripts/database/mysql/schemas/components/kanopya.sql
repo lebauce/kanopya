@@ -52,5 +52,15 @@ CREATE TABLE `kanopya_rules_engine` (
     CONSTRAINT FOREIGN KEY (`kanopya_rules_engine_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 )   ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Table structure for table `kanopya_openstack_sync`
+--
+
+CREATE TABLE `kanopya_openstack_sync` (
+    `kanopya_openstack_sync_id` int(8) unsigned NOT NULL,
+    `control_queue` char(255) DEFAULT NULL,
+    PRIMARY KEY (`kanopya_openstack_sync_id`),
+    CONSTRAINT FOREIGN KEY (`kanopya_openstack_sync_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+)   ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 SET foreign_key_checks=1;
