@@ -36,9 +36,8 @@ packages:
   - iscsitarget-kmdl-2.6.32-431.el6.x86_64
   - rubygem-activerecord
   - ruby-mysql
-  - puppet-server-2.7.23-1.el6
-  - hiera
-  - hiera-puppet
+  - puppet-server
+  - puppetdb
   - rabbitmq-server
   - parted
   - git
@@ -63,7 +62,7 @@ post:
     - "yum -y install MariaDB-Galera-server"
     - "mkdir -p /etc/puppet/rack/public"
     - "mkdir -p /etc/puppet/rack/tmp"
-    - "cp /usr/share/puppet/ext/rack/files/config.ru /etc/puppet/rack"
+    - "cp /usr/share/puppet/ext/rack/config.ru /etc/puppet/rack"
     - "chown puppet /etc/puppet/rack/config.ru"
     - "/sbin/chkconfig postfix off"
     - "/sbin/chkconfig snmpd on"
