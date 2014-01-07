@@ -1,5 +1,5 @@
-name: centos-6.4-kanopya
-summary: Kanopya Appliance (based on CentOS 6.4 64 bits)
+name: centos-6-kanopya
+summary: Kanopya Appliance (based on CentOS 6 64 bits)
 os:
   password: kanopya
 hardware:
