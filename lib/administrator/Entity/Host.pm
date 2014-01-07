@@ -545,10 +545,12 @@ Return a string representation of the entity
 =end classdoc
 =cut
 
-sub toString {
+sub label {
     my $self = shift;
 
-    return 'Entity::Host <' . $self->getAttr(name => "entity_id") .'>';
+    return $self->node
+         ? $self->node->node_hostname
+         : $self->host_serial_number;
 }
 
 sub getClusterId {
