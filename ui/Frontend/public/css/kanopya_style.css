@@ -327,6 +327,9 @@ button.ui-multiselect,.ui-multiselect-menu li label{cursor:pointer;}
 .gritter-action {
   float: right;
   padding-right: 25px;
+  line-height: 16px;
+  vertical-align: middle;
+  margin-left: 8px;
 }
 
 .gritter-title {
@@ -340,4 +343,16 @@ button.ui-multiselect,.ui-multiselect-menu li label{cursor:pointer;}
 .gritter-title .workflow-owner {
   font-size: 10px;
   font-weight: normal;
+}
+
+.gritter-title div {
+   display: inline-block;
+}
+
+.gritter-item li {
+  height: 20px;
+  clear: both;
+}
+
+.gritter-close {
 }
