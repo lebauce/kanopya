@@ -30,6 +30,12 @@ use Data::Dumper;
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
+    control_queue => {
+        type         => 'string',
+        pattern      => '^.*$',
+        is_mandatory => 0,
+        is_editable  => 1
+    },
     time_step => {
         label        => 'Rules evaluation frequency',
         #type         => 'time',
@@ -48,7 +54,7 @@ sub methods {
         ruleVerified => {
             description => 'Produce a verified rule status.',
             message_queuing => {
-                channel => 'verified_rule'
+                queue => 'verified_rule'
             }
         },
     };

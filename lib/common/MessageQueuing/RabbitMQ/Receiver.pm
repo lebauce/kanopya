@@ -45,12 +45,8 @@ my $log = get_logger("amqp");
 
 Declare queues and exchanges.
 
-@param type the type of the callback definition (queue|topic|fanout)
+@param queue the queue on which create the consumer
 @param callback the callaback method to execute at message receipt
-
-@optional queue the queue name on which create the consumer
-@optional echange the exchange on which bind the queue
-@optional declare flag to skip queue and echange declaration
 
 =end classdoc
 =cut
@@ -58,37 +54,11 @@ Declare queues and exchanges.
 sub createConsumer {
     my ($self, %args) = @_;
 
-    General::checkParams(args     => \%args,
-                         required => [ 'type', 'callback' ],
-                         optional => { 'queue' => undef, 'exchange' => undef, 'declare' => 1 });
-
-    if ($args{type} ne "queue" && ! defined $args{exchange}) {
-        throw Kanopya::Exception::Internal::IncorrectParam(
-                  error => "You must provide an exchange for consumers of type <$args{type}>"
-              );
-    }
-
-    # Declare queues or exchanges if required
-    my $queue;
-    if ($args{declare} || ! defined $args{queue}) {
-        # Delcare the queue , If queue undefined, generate an exclusique queue.
-        $queue = $self->declareQueue(queue => $args{queue});
-
-        # Delcare the exchange
-        if ($args{type} ne "queue") {
-            if ($args{declare}) {
-                $self->declareExchange(exchange => $args{exchange}, type => $args{type});
-            }
-
-            $self->bindQueue(queue => $queue, exchange => $args{exchange});
-        }
-    }
-    else {
-        $queue = $args{queue};
-    }
+    General::checkParams(args => \%args,
+                         required => [ 'queue', 'callback' ]);
 
     # Create the consumer on the queue
-    my $consumer_tag = $self->consume(queue => $queue);
+    my $consumer_tag = $self->consume(queue => $args{queue});
 
     # Associate the callback to the consumer tag for retreive the callback to call
     # at message receipt.

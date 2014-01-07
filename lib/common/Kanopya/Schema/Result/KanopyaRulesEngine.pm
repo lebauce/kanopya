@@ -46,6 +46,12 @@ __PACKAGE__->table("kanopya_rules_engine");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 control_queue
+
+  data_type: 'char'
+  is_nullable: 1
+  size: 255
+
 =head2 time_step
 
   data_type: 'integer'
@@ -62,6 +68,8 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
+  "control_queue",
+  { data_type => "char", is_nullable => 1, size => 255 },
   "time_step",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
 );
@@ -96,8 +104,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:g1cOceRkhsmsy4OwatgcZg
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-01-06 11:39:04
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3mG98YvKESmeUTC0E8SNIw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
