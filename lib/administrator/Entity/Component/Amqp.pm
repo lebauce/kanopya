@@ -66,7 +66,7 @@ sub getPuppetDefinition {
     my ($self, %args) = @_;
     my $definition = $self->SUPER::getPuppetDefinition(%args);
 
-    my @nodes = $self->service_provider->nodes;
+    my @nodes = $self->getActiveNodes;
     my @nodes_hostnames = map {$_->node_hostname} @nodes;
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
