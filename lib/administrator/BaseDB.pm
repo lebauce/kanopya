@@ -228,23 +228,8 @@ sub delete {
         # Restore the original dbix
         $self->_dbix($old);
 
-        ## Exception fields
-        my $operation = 'delete';
-
-        if ("$err" =~ /a foreign key constraint fails/) {
-            (my $msg = "$err") =~ s/.*a foreign key constraint fails//g;
-            
-            (my $constraint) = ($err =~ m/CONSTRAINT `([a-zA-Z1-9_-]*)`/ );
-            (my $reference) = ($err =~ m/REFERENCES `([a-zA-Z1-9_-]*)`/ );
-            (my $dependant)  = ($err =~ m/`[a-zA-Z1-9_-]*`.`([a-zA-Z1-9_-]*)`/ );
-            
-            throw Kanopya::Exception::DB::Cascade(error => "Foreign key constraint fails: $msg", label =>
-                                                  $self->label, operation => $operation, reference => $reference,
-                                                  dependant => $dependant,  constraint => $constraint );
-        }
-        else {
-            throw Kanopya::Exception::DB(error => "$err", label => $self->label, operation => $operation);
-        }
+        my $kanopya_err = $self->parseException(error => $err);
+        throw $kanopya_err;
     }
 
     return $self;
@@ -2525,10 +2510,8 @@ sub _dbixNew {
         $dbix->insert;
     }
     catch ($err) {
-        if ($err =~ m/Duplicate entry/) {
-            throw Kanopya::Exception::DB::DuplicateEntry(error => "$err");
-        }
-        throw Kanopya::Exception::DB(error => "$err");
+        my $kanopya_err = $class->parseException(error => $err);
+        throw $kanopya_err;
     }
     return $class->get(id => $class->_dbixPrimaryKey(dbix => $dbix));
 }
@@ -2799,6 +2782,39 @@ sub _loadcomponents {
     }
 }
 
+
+=pod
+=begin classdoc
+
+Parse SQL error and transform it in Kanopya Exception.
+
+@param error string error from sql database
+
+@return corresponding exception
+
+=end classdoc
+=cut
+
+sub parseException {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'error' ]);
+    my $class = (ref $self) || $self;
+
+    my $err   = $args{error};
+
+    if ($err =~ m/Duplicate entry '(.*)' for key '(.*)' \[for Statement/) {
+        return Kanopya::Exception::DB::DuplicateEntry->new(class => $class,
+                                                           entry => $1,
+                                                           key   => $2);
+    }
+
+    if ($err =~ m/a foreign key constraint fails \(\`kanopya\`.\`([\w-]*)\`, /) {
+        return Kanopya::Exception::DB::DeleteCascade->new(label      => $self->label,
+                                                          dependant  => $1);
+    }
+
+    return Kanopya::Exception::DB->new(error => $self->{error});
+}
 
 =pod
 =begin classdoc
