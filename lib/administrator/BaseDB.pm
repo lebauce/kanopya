@@ -228,23 +228,7 @@ sub delete {
         # Restore the original dbix
         $self->_dbix($old);
 
-        ## Exception fields
-        my $operation = 'delete';
-
-        if ("$err" =~ /a foreign key constraint fails/) {
-            (my $msg = "$err") =~ s/.*a foreign key constraint fails//g;
-            
-            (my $constraint) = ($err =~ m/CONSTRAINT `([a-zA-Z1-9_-]*)`/ );
-            (my $reference) = ($err =~ m/REFERENCES `([a-zA-Z1-9_-]*)`/ );
-            (my $dependant)  = ($err =~ m/`[a-zA-Z1-9_-]*`.`([a-zA-Z1-9_-]*)`/ );
-            
-            throw Kanopya::Exception::DB::Cascade(error => "Foreign key constraint fails: $msg", label =>
-                                                  $self->label, operation => $operation, reference => $reference,
-                                                  dependant => $dependant,  constraint => $constraint );
-        }
-        else {
-            throw Kanopya::Exception::DB(error => "$err", label => $self->label, operation => $operation);
-        }
+        $self->parseException(error => $err)->throw();
     }
 
     return $self;
@@ -2132,7 +2116,7 @@ sub _delegatee {
 =pod
 =begin classdoc
 
-Get the name of the attribute that define the relation to the delegatee object. 
+Get the name of the attribute that define the relation to the delegatee object.
 If exists, the permission to create an object of the class is delegated to
 the delegatee object on which the user need to have the 'update' permissions.
 
@@ -2525,10 +2509,7 @@ sub _dbixNew {
         $dbix->insert;
     }
     catch ($err) {
-        if ($err =~ m/Duplicate entry/) {
-            throw Kanopya::Exception::DB::DuplicateEntry(error => "$err");
-        }
-        throw Kanopya::Exception::DB(error => "$err");
+        $class->parseException(error => $err)->throw();
     }
     return $class->get(id => $class->_dbixPrimaryKey(dbix => $dbix));
 }
@@ -2693,7 +2674,7 @@ Return the dbix at level of the hierarchy specified by class parameter.
 
 @optional classname the level of the hierachy to return the dbix
 @optional target the target dbix, allow to request parent or root dbix without specifying a class name
-@optional dbix the dbix instance to use instead o the current one 
+@optional dbix the dbix instance to use instead o the current one
 
 @return the dbix of the required level
 
@@ -2799,6 +2780,39 @@ sub _loadcomponents {
     }
 }
 
+
+=pod
+=begin classdoc
+
+Parse SQL error and transform it in Kanopya Exception.
+
+@param error string error from sql database
+
+@return corresponding exception
+
+=end classdoc
+=cut
+
+sub parseException {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'error' ]);
+    my $class = (ref $self) || $self;
+
+    my $err   = $args{error};
+
+    if ($err =~ m/Duplicate entry '(.*)' for key '(.*)' \[for Statement/) {
+        return Kanopya::Exception::DB::DuplicateEntry->new(class => $class,
+                                                           entry => $1,
+                                                           key   => $2);
+    }
+
+    if ($err =~ m/a foreign key constraint fails \(\`kanopya\`.\`([\w-]*)\`, /) {
+        return Kanopya::Exception::DB::DeleteCascade->new(label      => $self->label,
+                                                          dependant  => $1);
+    }
+
+    return Kanopya::Exception::DB->new(error => $self->{error});
+}
 
 =pod
 =begin classdoc
