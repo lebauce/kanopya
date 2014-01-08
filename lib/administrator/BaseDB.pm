@@ -1510,7 +1510,8 @@ sub _attributesDefinition {
                 }
 
                 # Tag the corresponding id attribute as foreign key
-                if ($relinfo->{attrs}->{is_foreign_key_constraint}) {
+                if ($relinfo->{attrs}->{is_foreign_key_constraint} &&
+                    defined $attributedefs->{$modulename}->{$relation . "_id"}) {
                     $attributedefs->{$modulename}->{$relation . "_id"}->{is_foreign_key} = 1;
                 }
             }
