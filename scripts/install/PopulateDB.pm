@@ -528,6 +528,22 @@ sub registerUsers {
             user_desc         => 'User used by executor'
         );
     }
+
+    eval {
+        Entity::User->find(hash => { user_login => "rulesengine" });
+    };
+    if ($@) {
+        my $rulesengine_user = Entity::User->create(
+            user_system       => 1,
+            user_login        => "rulesengine",
+            user_password     => $args{admin_password},
+            user_firstname    => 'Kanopya',
+            user_lastname     => 'Rules engine',
+            user_email        => 'dev@hederatech.com',
+            user_creationdate => today(),
+            user_desc         => 'User used by the Kanopya rules engine'
+        );
+    }
 }
 
 sub registerProcessorModels {
