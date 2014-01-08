@@ -5,8 +5,13 @@
 # Adapt the allow/deny settings to your needs. Order
 # for allow/deny does not matter, allow always takes precedence
 # over deny
-[kanopyafiles]
-  path [% clusters_directory %]
-  allow *
+<% @sections.each do |section| -%>
+
+[<%= section["name"] %>]
+  path <%= section["path"] %>
+<% section["allow"].each do |allow| -%>
+  allow <%= allow %>
+<% end -%>
+<% end -%>
 
 [plugins]

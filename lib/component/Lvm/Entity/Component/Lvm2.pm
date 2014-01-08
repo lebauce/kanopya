@@ -299,41 +299,34 @@ sub getFreeSpace {
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;
-    my $manifest = "";
 
-    $manifest .= $self->instanciatePuppetResource(
-        name => 'kanopya::lvm',
-    );
+    my $pvs_hash;
+    my $vgs_hash;
 
     for my $vg ($self->lvm2_vgs) {
         my @pvs = ();
         for my $pv ($vg->lvm2_pvs) {
-            $manifest .= $self->instanciatePuppetResource(
-                resource => 'physical_volume',
-                name => $pv->lvm2_pv_name,
-                params => {
-                    ensure => 'present',
-                    tag => 'kanopya::lvm'
-                }
-            );
+            $pvs_hash->{$pv->lvm2_pv_name} = {
+                ensure => 'present',
+            };
 
             push @pvs, $pv->lvm2_pv_name;
         }
 
-        $manifest .= $self->instanciatePuppetResource(
-            resource => 'volume_group',
-            name => $vg->lvm2_vg_name,
-            params => {
-                ensure => 'present',
-                physical_volumes => \@pvs,
-                tag => 'kanopya::lvm'
-            }
-        );
+        $vgs_hash->{$vg->lvm2_vg_name} = {
+            ensure => 'present',
+            physical_volumes => \@pvs,
+        };
     }
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         lvm => {
-            manifest => $manifest
+            classes => {
+                'kanopya::lvm' => {
+                    pvs => $pvs_hash,
+                    vgs => $vgs_hash
+                }
+            }
         }
     } );
 }

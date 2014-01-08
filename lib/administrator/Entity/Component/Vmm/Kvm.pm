@@ -37,9 +37,9 @@ sub getPuppetDefinition {
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         kvm => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::kvm",
-                        )
+            classes => {
+                "kanopya::kvm" => {}
+            }
         }
     } );
 }

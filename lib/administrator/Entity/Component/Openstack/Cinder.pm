@@ -204,36 +204,25 @@ sub getPuppetDefinition {
         $_->container_access->container_access_export
     } $controller->repositories;
 
-    my $manifest = $self->instanciatePuppetResource(
-        name   => 'kanopya::openstack::cinder::server',
-        params => {
-            email => $self->service_provider->owner->user_email,
-            database_user => $name,
-            database_name => $name,
-            rabbit_user => $name,
-            rabbit_virtualhost => 'openstack-' . $controller->id
-        }
-    );
-
-    $manifest .= $self->instanciatePuppetResource(
-        name => 'kanopya::openstack::cinder::iscsi'
-    );
-
-    $manifest .= $self->instanciatePuppetResource(
-        name => 'kanopya::openstack::cinder::nfs',
-        params => {
-            nfs_servers => \@repositories
-        }
-    );
-
-    $manifest .= $self->instanciatePuppetResource(
-        name => 'kanopya::openstack::cinder::ceph',
-    );
-
     return merge($self->SUPER::getPuppetDefinition(%args), {
         cinder => {
-            manifest     => $manifest,
-            dependencies => [ $controller->amqp , $self->mysql5, $controller->keystone ]
+            classes => {
+                'kanopya::openstack::cinder::server' => {
+                    email => $self->service_provider->owner->user_email,
+                    database_user => $name,
+                    database_name => $name,
+                    rabbit_user => $name,
+                    rabbit_virtualhost => 'openstack-' . $controller->id
+                },
+                'kanopya::openstack::cinder::iscsi' => {},
+                'kanopya::openstack::cinder::nfs' => {
+                    nfs_servers => \@repositories
+                },
+                'kanopya::openstack::cinder::ceph' => {}
+            },
+            dependencies => [ $controller->amqp,
+                              $self->mysql5,
+                              $controller->keystone ]
         }
     } );
 }

@@ -1,11 +1,18 @@
 ---
 :backends:
   - yaml
+  - kanopya
 :hierarchy:
   - common
+  - "kanopya/%{clientcert}"
   - "%{cluster}/globals"
   - "%{cluster}/%{hostname}/%{clientcert}.override"
   - "%{cluster}/%{hostname}/%{clientcert}"
   - default
 :yaml:
   :datadir: [% clusters_directory %]
+:kanopya:
+  :server: 'localhost'
+  :port: 5000
+  :login: admin
+  :password: [% dbpassword %]

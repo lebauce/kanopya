@@ -21,6 +21,7 @@ CREATE TABLE `kanopya_executor` (
     `time_step` int(8) unsigned NOT NULL,
     `masterimages_directory` char(255) NOT NULL,
     `clusters_directory` char(255) NOT NULL,
+    `private_directory` char(255) NOT NULL,
     PRIMARY KEY (`kanopya_executor_id`),
     CONSTRAINT FOREIGN KEY (`kanopya_executor_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 )   ENGINE=InnoDB DEFAULT CHARSET=utf8;

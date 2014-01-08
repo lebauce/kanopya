@@ -372,9 +372,9 @@ sub getPuppetDefinition {
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         opennebula => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::opennebula",
-                        )
+            classes => {
+                "kanopya::opennebula" => {}
+            }
         }
     } );
 }

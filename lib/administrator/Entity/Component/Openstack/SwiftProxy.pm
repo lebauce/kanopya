@@ -42,13 +42,12 @@ sub getPuppetDefinition {
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         swiftproxy => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::openstack::swift::proxy",
-                            params => {
-                                secret => "swift",
-                                password => "swift"
-                            }
-                        ),
+            classes => {
+                "kanopya::openstack::swift::proxy" => {
+                    secret => "swift",
+                    password => "swift"
+                }
+            },
             dependencies => [ $self->keystone ]
         }
     } );

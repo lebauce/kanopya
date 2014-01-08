@@ -1,30 +1,20 @@
-class kanopya::dhcpd::service {
-	service {
-		'dhcpd':
-			name => $operatingsystem ? {
-				/(RedHat|CentOS|Fedora)/ => 'dhcpd',
-				default => 'isc-dhcp-server'
-			},
-			ensure => running,
-			hasstatus => true,
-			hasrestart => true,
-			enable => true,
-			require => Class['kanopya::dhcpd::install'],
-	}
-}
+class kanopya::dhcpd(
+  $interfaces  = [],
+  $ntpservers  = [],
+  $dnsdomain   = "hederatech.com",
+  $nameservers = [],
+  $hosts       = [],
+  $pools       = [])
+{
+  tag("kanopya::operation::startnode")
 
-class kanopya::dhcpd::install {
-	package {
-		'dhcpd':
-			name => $operatingsystem ? {
-				/(RedHat|CentOS|Fedora)/ => 'dhcp',
-				default => 'isc-dhcp-server'
-			},
-			ensure => present,
-	}
-}
+  class { 'dhcp':
+    interfaces  => $interfaces,
+    ntpservers  => $ntpservers,
+    dnsdomain   => $dnsdomain,
+    nameservers => $nameservers,
+  }
 
-class kanopya::dhcpd {
-	include kanopya::dhcpd::install, kanopya::dhcpd::service
+  create_resources('dhcp::pool', $pools)
+  create_resources('dhcp::host', $hosts)
 }
-

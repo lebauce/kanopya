@@ -481,31 +481,36 @@ sub isBalanced {
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
     my $manifest = "";
     my $dependencies = [];
-    my @listens = $self->haproxy1s_listen;
+    my $listens = { };
+
     LISTEN:
-    for my $listen (@listens) {
+    for my $listen ($self->haproxy1s_listen) {
         next LISTEN if $self->id != $listen->listen_component_id;    
-        $manifest .=  $self->instanciatePuppetResource(
-                             resource => '@@haproxy::balancermember',
-                             name => $listen->listen_name .'-'.$args{host}->node->node_hostname,
-                             params => {
-                                listening_service => $listen->listen_name,
-                                ports             => $listen->listen_component_port,
-                                server_names      => $args{host}->node->node_hostname,
-                                ipaddresses       => $args{host}->adminIp,
-                                options           => 'check',
-                                tag               => 'kanopya::haproxy'
-                             },
-                          );
+
+        $listens->{$listen->listen_name . '-'.$args{host}->node->node_hostname} = {
+            listening_service => $listen->listen_name,
+            ports             => $listen->listen_component_port,
+            server_names      => $args{host}->node->node_hostname,
+            ipaddresses       => $args{host}->adminIp,
+            options           => 'check',
+            tag               => 'kanopya::haproxy'
+        },
+
         push @$dependencies, $listen->haproxy1;
     }
     
-    
     return {
         loadbalanced => {
-            manifest     => $manifest,
+            classes => {
+                'kanopya::loadbalanced' => {
+                    members => $listens
+                }
+            },
             dependencies => $dependencies
         }
     }

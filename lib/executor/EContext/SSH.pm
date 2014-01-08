@@ -69,12 +69,15 @@ sub new {
     my ($class, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'ip', 'timeout' ],
-                         optional => { username => 'root' });
+                         optional => { username => 'root', key => undef,
+                                       port => 22 });
 
     my $self = {
         ip       => $args{ip},
+        port     => $args{port},
         timeout  => $args{timeout},
-        username => $args{username}
+        username => $args{username},
+        key      => $args{key}
     };
 
     # is the host available on ssh port 22
@@ -82,7 +85,7 @@ sub new {
     $p->port_number(22);
     if (not $p->ping($args{ip}, 2)) {
         $p->close();
-        $errmsg = "EContext::SSH->new : can't contact $args{ip} on port 22";
+        $errmsg = "EContext::SSH->new : can't contact $args{ip} on port $args{port}";
         $log->debug($errmsg);
         throw Kanopya::Exception::Network(error => $errmsg);
     }
@@ -111,11 +114,11 @@ sub _init {
 
     $log->debug("Initialise ssh connection to $self->{ip}");
     my %opts = (
-        user        => $self->{username},        # user login
-        port        => 22,                       # TCP port number where the server is running
-        key_path    => '/root/.ssh/kanopya_rsa', # Use the key stored on the given file path for authentication
-        ssh_cmd     => '/usr/bin/ssh',           # full path to OpenSSH ssh binary
-        scp_cmd     => '/usr/bin/scp',           # full path to OpenSSH scp binary
+        user        => $self->{username},
+        port        => $self->{port},
+        key_path    => $self->{key},
+        ssh_cmd     => '/usr/bin/ssh',
+        scp_cmd     => '/usr/bin/scp',
         master_opts => [
          -o => "StrictHostKeyChecking=no"
         ],

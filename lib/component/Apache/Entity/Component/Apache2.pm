@@ -130,26 +130,23 @@ sub getClusterizationType {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    my $manifest = $self->instanciatePuppetResource(
-        name => 'kanopya::apache'
-    );
-
+    my $vhosts = {};
     for my $vhost ($self->apache2_virtualhosts) {
-        $manifest .= $self->instanciatePuppetResource(
-            resource => "apache::vhost",
-            name => $vhost->apache2_virtualhost_servername,
-            params => {
-                vhost_name => $vhost->apache2_virtualhost_servername,
-                docroot => $vhost->apache2_virtualhost_documentroot,
-                serveradmin => $vhost->apache2_virtualhost_serveradmin,
-                logroot => $vhost->apache2_virtualhost_log,
-            }
-        );
+        $vhosts->{$vhost->apache2_virtualhost_servername} = {
+            vhost_name => $vhost->apache2_virtualhost_servername,
+            docroot => $vhost->apache2_virtualhost_documentroot,
+            serveradmin => $vhost->apache2_virtualhost_serveradmin,
+            logroot => $vhost->apache2_virtualhost_log,
+        };
     }
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         apache => {
-            manifest => $manifest
+            classes => {
+                'kanopya::apache' => {
+                    vhosts => $vhosts
+                }
+            }
         }
     } );
 }

@@ -47,37 +47,27 @@ sub getBaseConfiguration {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    my $manifest = $self->instanciatePuppetResource(
-                       name => "kanopya::haproxy",
-                   );
-
-    my @listens = $self->haproxy1s_listen;
-    for my $listen (@listens) {
-        $manifest .= $self->instanciatePuppetResource(
-                         resource => 'haproxy::listen',
-                         name => $listen->listen_name,
-                         params => {
-                            ipaddress => $listen->listen_ip,
-                            ports     => $listen->listen_port,
-                            mode      => $listen->listen_mode,
-                            options   => {
-                                option => ['tcplog'],
-                                balance => $listen->listen_balance
-                            },
-                            tag       => 'kanopya::haproxy'
-                        }
-                     );
+    my $listens = {};
+    for my $listen ( $self->haproxy1s_listen) {
+        $listens->{$listen->listen_name} = {
+            ipaddress => $listen->listen_ip,
+            ports     => $listen->listen_port,
+            mode      => $listen->listen_mode,
+            tag       => 'kanopya::haproxy',
+            options   => {
+                option => ['tcplog'],
+                balance => $listen->listen_balance
+            },
+        };
     }
     
-    $manifest .= $self->instanciatePuppetResource(
-        resource => 'sysctl::value',
-        name => 'net.ipv4.ip_nonlocal_bind',
-        params => { value => "1" }
-    );
-
     return merge($self->SUPER::getPuppetDefinition(%args), {
         haproxy => {
-            manifest => $manifest
+            classes => {
+                "kanopya::haproxy" => {
+                    listens => $listens
+                }
+            }
         }
     } );
 

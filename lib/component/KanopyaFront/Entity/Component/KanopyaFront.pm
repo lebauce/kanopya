@@ -47,14 +47,21 @@ sub getNetConf {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
+    my $config = Kanopya::Config::get('libkanopya');
+    my $dbconfig = Kanopya::Database::_adm->{config};
+
     return merge($self->SUPER::getPuppetDefinition(%args), {
         kanopyafront => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::front",
-                            params => {
-                                lib => Kanopya::Database::_adm->{config}
-                            }
-                        ),
+            classes => {
+                "kanopya::common" => {
+                    %{$dbconfig}
+                },
+                "kanopya::front" => {
+                    amqpuser => $config->{amqp}->{user},
+                    amqppassword => $config->{amqp}->{password},
+                    logdir => $config->{logdir}
+                }
+            },
             dependencies => [ $self->service_provider->getComponent(name => "Amqp"),
                               $self->service_provider->getComponent(name => "Mysql") ]
         }

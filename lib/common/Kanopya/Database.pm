@@ -76,9 +76,10 @@ sub _adm {
 
     General::checkParams(args => \%args, optional => { 'no_user_check' => 0 });
 
-    if (not defined $adm->{config}) {
+    if (! $adm->{config}) {
         $adm->{config} = _loadconfig();
     }
+
     if (not defined $adm->{schema}) {
         $adm->{schema} = _connectdb(config => $adm->{config});
     }

@@ -245,9 +245,9 @@ sub getPuppetDefinition {
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         nfsd => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::nfsd",
-                        )
+            classes => {
+                'kanopya::nfsd' => { }
+            }
         }
     } );
 }

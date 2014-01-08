@@ -64,6 +64,12 @@ __PACKAGE__->table("kanopya_executor");
   is_nullable: 0
   size: 255
 
+=head2 private_directory
+
+  data_type: 'char'
+  is_nullable: 0
+  size: 255
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -79,6 +85,8 @@ __PACKAGE__->add_columns(
   "masterimages_directory",
   { data_type => "char", is_nullable => 0, size => 255 },
   "clusters_directory",
+  { data_type => "char", is_nullable => 0, size => 255 },
+  "private_directory",
   { data_type => "char", is_nullable => 0, size => 255 },
 );
 

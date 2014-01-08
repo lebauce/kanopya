@@ -67,19 +67,16 @@ sub getPuppetDefinition {
         );
     }
 
-    my $manifest = $self->instanciatePuppetResource(
-        name => 'kanopya::openstack::keystone',
-        params => {
-            admin_password => 'keystone',
-            email => $self->service_provider->owner->user_email,
-            database_user => $name,
-            database_name => $name,
-        }
-    );
-
     return merge($definition, {
         keystone => {
-            manifest     => $manifest,
+            classes => {
+                'kanopya::openstack::keystone' => {
+                    admin_password => 'keystone',
+                    email => $self->service_provider->owner->user_email,
+                    database_user => $name,
+                    database_name => $name,
+                }
+            },
             dependencies => [ $sql ]
         }
     } );

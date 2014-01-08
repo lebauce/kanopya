@@ -31,6 +31,8 @@ use parent 'Setup';
 use strict;
 use warnings;
 
+use General;
+
 use Template;
 use NetAddr::IP;
 use File::Path qw(make_path);
@@ -108,6 +110,11 @@ sub _init {
           caption  => 'Tftp boot files directory',
           default  => '/var/lib/kanopya/tftp',
           validate => '_validate_dir', },  
+
+        { keyname  => 'private_dir',
+          caption  => 'Private data directory',
+          default  => '/var/lib/kanopya/private',
+          validate => '_validate_dir', },
 
         { keyname  => 'log_dir',
           caption  => 'Log files directory',
@@ -427,7 +434,10 @@ sub _create_directories {
     make_path($self->{parameters_values}->{masterimages_dir});
     
     print "\t$self->{parameters_values}->{tftp_dir}\n";
-    system('mkdir -p '.$self->{parameters_values}->{tftp_dir});
+    make_path($self->{parameters_values}->{tftp_dir});
+
+    print "\t$self->{parameters_values}->{private_dir}\n";
+    make_path($self->{parameters_values}->{private_dir});
     
     print "\t$self->{parameters_values}->{sessions_dir}\n";
     make_path($self->{parameters_values}->{sessions_dir});
@@ -548,14 +558,14 @@ SSH key creation for root
 
 sub _generate_ssh_key {
     my ($self) = @_;
-    if ( (! -e '/root/.ssh/kanopya_rsa') && (! -e '/root/.ssh/kanopya_rsa.pub') ) {
-        if (! -e '/root/.ssh') {
-            make_path('/root/.ssh')
-        }
+
+    my $private_dir = $self->{parameters_values}->{private_dir};
+    if ( (! -e $private_dir . '/kanopya_rsa') &&
+         (! -e $private_dir . '/kanopya_rsa.pub') ) {
         print "\n - Dedicated root SSH keys generation...";
-        system("ssh-keygen -q -t rsa -N '' -f /root/.ssh/kanopya_rsa; " .
-               "cp /root/.ssh/kanopya_rsa.pub /root/.ssh/authorized_keys; " .
-               "chmod 600 /root/.ssh/authorized_keys");
+        system("ssh-keygen -q -t rsa -N '' -f $private_dir/kanopya_rsa; " .
+               "chown puppet:puppet $private_dir/kanopya_rsa*; " .
+               "install -D -m 600 $private_dir/kanopya_rsa.pub /root/.ssh/authorized_keys");
         print "ok\n";
 
     } else {
@@ -791,15 +801,19 @@ sub _configure_puppetmaster {
     );
 
     try {
-        _writeFile('/etc/puppet/manifests/site.pp',
-               "Exec {\n" .
-               "  path    => '/usr/bin:/usr/sbin:/bin:/sbin'\n" .
-               "}\n" .
-               "stage { 'system': before => Stage['main'], }\n" .
-               "stage { 'finished': }\n" .
-               "import \"nodes/*.pp\"\n");
+        _writeFile(
+           '/etc/puppet/manifests/site.pp',
+           "Exec {\n" .
+           "  path    => '/usr/bin:/usr/sbin:/bin:/sbin'\n" .
+           "}\n" .
+           "stage { 'system': before => Stage['main'], }\n" .
+           "stage { 'finished': }\n" .
+           "\$components = hiera_hash('components')\n" .
+           "\$sourcepath = hiera('sourcepath')\n" .
+           "hiera_include('classes')\n"
+        );
 
-    print 'ok';
+        print 'ok';
     }
     catch (Kanopya::Exception::IO $err) {
         print "failed ! Please check your puppet configuration, $err\n";
@@ -814,23 +828,24 @@ sub _configure_puppetmaster {
     require Entity::ServiceProvider::Cluster;
 
     my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
-    my $linux = $kanopya->getComponent(category => "System");
-
     my @hosts = $kanopya->getHosts();
-    my $kanopya_master = $hosts[0];
-    my $puppetmaster = $kanopya->getComponent(name => "Puppetmaster");
-    my $fstab_puppet_definitions = $linux->getPuppetDefinition(
-                                       host    => $kanopya_master,
-                                       cluster => $kanopya,
-                                   );
+    my $kanopya_master = EEntity->new(entity => $hosts[0]);
 
+    my $linux = $kanopya->getComponent(category => "System");
+    my $elinux = EEntity->new(entity => $linux);
+
+    $elinux->generateConfiguration(
+        host    => $kanopya_master,
+        cluster => $kanopya,
+    );
+
+    my $puppetmaster = $kanopya->getComponent(name => "Puppetmaster");
     my $epuppetmaster = EEntity->new(entity => $puppetmaster);
-    my $fqdn = $kanopya_master->node->node_hostname . "." . $kanopya->cluster_domainname;
 
     try {
         $epuppetmaster->createHostCertificate(
             mount_point => "/tmp",
-            host_fqdn   => $fqdn
+            host_fqdn   => $kanopya_master->node->fqdn
         );
     }
     catch (Kanopya::Exception::IO $err) {
@@ -841,11 +856,6 @@ sub _configure_puppetmaster {
         $err->rethrow();
     }
 
-    $epuppetmaster->createHostManifest(
-        node               => $kanopya_master->node,
-        puppet_definitions => $fstab_puppet_definitions,
-    );
-
     my $puppetagent_action = 'start';
     my $puppetmaster_action = 'start';
     if(-e '/var/run/puppet/agent.pid') {
@@ -855,13 +865,15 @@ sub _configure_puppetmaster {
         $puppetmaster_action = 'restart';
     }
 
-    system('/etc/init.d/puppetmaster', $puppetmaster_action);
+    system('service', 'kanopya-front', 'restart');
+    system('service', 'puppetmaster', $puppetmaster_action);
     system('service', 'apache2', 'restart') && system('service', 'httpd', 'restart');
-    system('/etc/init.d/puppet', $puppetagent_action);
+    system('service', 'puppet', $puppetagent_action);
 
-    system('mkdir -m 750 /var/lib/puppet/concat && chown puppet:puppet /var/lib/puppet/concat');
+    system('mkdir -m 750 -p /var/lib/puppet/concat && chown puppet:puppet /var/lib/puppet/concat');
     EEntity->new(entity => $kanopya)->reconfigure();
 
+    system("puppetdb-ssl-setup");
     system('killall -9 mysqld');
     system('service', 'mysql', 'start');
 }
@@ -884,9 +896,9 @@ sub _retrieve_tftp_content {
     # Check if rsync sshkey exist on right place :
     if ( ! -e $rsync_sshkey) {
         # Get the rsync_rsa key :
-        system('wget http://download.kanopya.org/pub/rsync_rsa');
-        # Move the key and set the correct rights ;
-        system('mv rsync_rsa /root/.ssh/;chmod 400 /root/.ssh/rsync_rsa');
+        system('mkdir -p /root/.ssh; ' .
+               'wget -O /root/.ssh/rsync_rsa http://download.kanopya.org/pub/rsync_rsa; ' .
+               'chmod 400 /root/.ssh/rsync_rsa');
     }
     # Do a Rsync from download.kanopya.org of tftp directory content :
     system('rsync -var -e "ssh -i /root/.ssh/rsync_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" rsync@download.kanopya.org:/pub/tftp/* '.$self->{parameters_values}->{tftp_dir});
@@ -1014,13 +1026,9 @@ sub _useTemplate {
     my $include = $args{include} || ($self->{installpath} . '/templates');
     my $dat     = $args{datas};
     my $output  = $args{conf};
+    my $config  = General::getTemplateConfiguration();
 
-    my $config = {
-            INCLUDE_PATH => $include,
-            INTERPOLATE  => 1,
-            POST_CHOMP   => 1,
-            EVAL_PERL    => 1,
-    };
+    $config->{INCLUDE_PATH} = $include;
     my $template = Template->new($config);
 
     $template->process($input, $dat, $output) || do {
