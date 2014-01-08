@@ -18,6 +18,9 @@
 
 Kanopya Exceptions declaration
 
+Exception description message can be templated with fields.
+Warning a field 'error' in Exception replaces the templated message.
+
 @since 2011-Jan-13
 
 =end classdoc
@@ -25,6 +28,7 @@ Kanopya Exceptions declaration
 
 package Kanopya::Exceptions;
 
+use Template;
 
 use Exception::Class (
     Kanopya::Exception => {
@@ -33,17 +37,19 @@ use Exception::Class (
     },
     Kanopya::Exception::DB => {
         isa         => 'Kanopya::Exception',
-        description => 'Kanopya Database exception',
-        fields      => [ 'label', 'operation' ],
+        description => 'Kanopya Database exception>',
+        fields      => [ 'label' ],
     },
     Kanopya::Exception::DB::DuplicateEntry => {
         isa         => 'Kanopya::Exception::DB',
-        description => 'Kanopya Database duplicate entry exception',
+        description => 'Creation of a new instance of class <[% class %]> impossible: '
+                       . 'an instance with value <[% entry %]> for <[% key %]> already exists',
+        fields      => [ 'class', 'key', 'entry'],
     },
-    Kanopya::Exception::DB::Cascade => {
+    Kanopya::Exception::DB::DeleteCascade => {
         isa         => 'Kanopya::Exception::DB',
-        description => 'Kanopya Database cascade exception',
-        fields      => [ 'constraint', 'reference', 'dependant' ],
+        description => 'Deletion of <[% label %]> is impossible: it is used by a <[% dependant %]>.',
+        fields      => [ 'dependant' ],
     },
     Kanopya::Exception::DB::UnknownSource => {
         isa         => 'Kanopya::Exception::DB',
@@ -91,7 +97,7 @@ use Exception::Class (
     },
     Kanopya::Exception::Internal::MissingParam => {
         isa         => 'Kanopya::Exception::Internal',
-        description => 'Parameter missing or undefined',
+        description => 'Parameter <[% param_name %]> missing when calling sub <[% sub_name %]>',
         fields      => [ 'sub_name', 'param_name' ],
     },
     Kanopya::Exception::Internal::UnknownCategory => {
@@ -212,36 +218,49 @@ Kanopya::Exception->Trace(0);
 =begin classdoc
 
 Override method called when exception is stringified.
+Add Exception type in message
 
 =end classdoc
 =cut
 
 sub Kanopya::Exception::full_message {
     my $self = shift;
-    my $except_string = $self->description . ": ";
-    $except_string .= $self->message if ($self->message ne "");
-
-    # Show fields
-    for my $field ( $self->Fields ) {
-        $except_string .= ("\n=> " . $field . ": '" . $self->$field . "'") if (defined $self->$field);
-    }
-    return $except_string . "\n";
+    return (ref $self) . ' => ' . $self->user_message . "\n";
 }
+
+
+=pod
+=begin classdoc
+
+Define a user friendly message for exception.
+Process template description replacing fields by their values
+Warning a field 'error' in Exception replaces the templated message.
+
+=end classdoc
+=cut
 
 sub Kanopya::Exception::user_message {
     my $self = shift;
-    return $self->message;
-}
 
-sub Kanopya::Exception::DB::Cascade::user_message {
-    my $self = shift;
-    my $action = $self->operation;
-    if ($action == 'delete') {
-        $action = 'Deletion';
+    # Print the specific error message if defined
+    # $self->message corresponds to the field 'error' in the exception declaration
+
+    if (defined $self->message && $self->message ne "") {
+        return $self->message;
     }
-    
-    my $message = $action . ' of ' . $self->label . ' is impossible : it is used by a ' . $self->dependant .'.';
 
+    # Print the (maybe templated) description
+    my $template = Template->new();
+    my $message_template = $self->description;
+
+    my $fields = {};
+    map {$fields->{$_} = $self->$_} $self->Fields;
+
+    my $message = '';
+    $template->process(\$message_template, $fields, \$message)
+        or throw Kanopya::Exception::Internal(
+                     error => "Error when processing template : " . $template->error()
+                 );
     return $message;
 }
 

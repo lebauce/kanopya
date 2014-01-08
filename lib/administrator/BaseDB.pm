@@ -228,8 +228,7 @@ sub delete {
         # Restore the original dbix
         $self->_dbix($old);
 
-        my $kanopya_err = $self->parseException(error => $err);
-        throw $kanopya_err;
+        $self->parseException(error => $err)->throw();
     }
 
     return $self;
@@ -2117,7 +2116,7 @@ sub _delegatee {
 =pod
 =begin classdoc
 
-Get the name of the attribute that define the relation to the delegatee object. 
+Get the name of the attribute that define the relation to the delegatee object.
 If exists, the permission to create an object of the class is delegated to
 the delegatee object on which the user need to have the 'update' permissions.
 
@@ -2510,8 +2509,7 @@ sub _dbixNew {
         $dbix->insert;
     }
     catch ($err) {
-        my $kanopya_err = $class->parseException(error => $err);
-        throw $kanopya_err;
+        $class->parseException(error => $err)->throw();
     }
     return $class->get(id => $class->_dbixPrimaryKey(dbix => $dbix));
 }
@@ -2676,7 +2674,7 @@ Return the dbix at level of the hierarchy specified by class parameter.
 
 @optional classname the level of the hierachy to return the dbix
 @optional target the target dbix, allow to request parent or root dbix without specifying a class name
-@optional dbix the dbix instance to use instead o the current one 
+@optional dbix the dbix instance to use instead o the current one
 
 @return the dbix of the required level
 
