@@ -16,10 +16,6 @@ define swap($ensure = present) {
   }
 }
 
-class kanopya::linux::repositories {
-  Apt::Source <| |>
-}
-
 class kanopya::linux (
   $files  = [],
   $mounts = [],
@@ -59,13 +55,6 @@ class kanopya::linux (
     tag    => "kanopya::operation::startnode"
   }
 
-  file { '/etc/resolv.conf':
-    path   => '/etc/resolv.conf',
-    ensure => present,
-    mode   => 0644,
-    source => "puppet:///kanopyafiles/${sourcepath}/etc/resolv.conf",
-  }
-
   tidy {'bad-scripts':
     path    => "${haltpath}",
     recurse => true,
@@ -82,20 +71,22 @@ class kanopya::linux (
     source  => 'file:///usr/share/zoneinfo/CET'
   }
 
-  class { 'kanopya::linux::repositories':
-    stage => 'system'
+  file { '/etc/resolv.conf':
+    path   => '/etc/resolv.conf',
+    ensure => present,
+    mode   => 0644,
+    source => "puppet:///kanopyafiles/${sourcepath}/etc/resolv.conf",
   }
 
   if $operatingsystem =~ /(?i)(debian|ubuntu)/ {
     exec { 'apt-get update':
       path    => '/usr/bin',
       tries   => 5,
-      require => [ Class['kanopya::linux::repositories'],
-                   File['/etc/resolv.conf'] ]
+      require => File['/etc/resolv.conf']
     }
-  }
 
-  if $operatingsystem =~ /(?i)(ubuntu)/ {
+    Apt::Source <| |> -> Exec['apt-get update'] -> Package <| |>
+
     package { 'ubuntu-cloud-keyring':
       name    => 'ubuntu-cloud-keyring',
       ensure  => present,

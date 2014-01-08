@@ -14,7 +14,6 @@ class kanopya::rabbitmq (
   }
 
   class { "$rabbitmq_repo":
-    require => Package['erlang']
   }
 
   class { 'rabbitmq::server':
