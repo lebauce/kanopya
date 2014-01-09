@@ -86,7 +86,9 @@ class kanopya::linux (
     }
 
     Apt::Source <| |> -> Exec['apt-get update'] -> Package <| |>
+  }
 
+  if $operatingsystem =~ /(?i)(ubuntu)/ {
     package { 'ubuntu-cloud-keyring':
       name    => 'ubuntu-cloud-keyring',
       ensure  => present,
