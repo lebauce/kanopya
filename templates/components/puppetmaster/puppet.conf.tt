@@ -1,11 +1,11 @@
 [main]
-modulepath=\$confdir/modules:[% kanopya_puppet_modules %]
+modulepath=$confdir/modules:[% kanopya_puppet_modules %]
 logdir=/var/log/puppet
 vardir=/var/lib/puppet
 ssldir=/var/lib/puppet/ssl
 rundir=/var/run/puppet
-factpath=\$vardir/lib/facter
-templatedir=\$confdir/templates
+factpath=$vardir/lib/facter
+templatedir=$confdir/templates
 filetimeout=0
 configtimout=600
 
