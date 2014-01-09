@@ -33,10 +33,9 @@ class kanopya::iscsitarget inherits kanopya::iscsitarget::params {
         content => "ISCSITARGET_ENABLE=true\n",
       }
 
-      service { 'open-iscsi':
-        ensure   => running,
-        enable   => true,
-        require  => Service['iscsitarget'],
+      package { 'iscsitarget-dkms':
+        before => Package['iscsitarget'],
+        ensure => present,
       }
     }
   }
