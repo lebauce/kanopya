@@ -89,7 +89,7 @@ sub createWorkflowDef {
                          optional => { 'params' => undef, 'steps' => [] });
 
     # Manually add the only step for all workflow definitions of Sco workfow manager
-    push $args{steps}, Operationtype->find(hash => { operationtype_name => 'LaunchSCOWorkflow' })->id;
+    push @{$args{steps}}, Operationtype->find(hash => { operationtype_name => 'LaunchSCOWorkflow' })->id;
 
     return $self->SUPER::createWorkflowDef(%args);
 }
