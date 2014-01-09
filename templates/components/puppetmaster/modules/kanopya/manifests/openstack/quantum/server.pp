@@ -1,7 +1,7 @@
 class kanopya::openstack::quantum::server(
-  $email              = "nothing@nothing.com",
-  $bridge_flat        = "br-flat",
-  $bridge_vlan        = "br-vlan',
+  $email              = 'nothing@nothing.com',
+  $bridge_flat        = 'br-flat',
+  $bridge_vlan        = 'br-vlan',
   $database_name      = 'quantum',
   $database_user      = 'quantum',
   $database_password  = 'quantum',
