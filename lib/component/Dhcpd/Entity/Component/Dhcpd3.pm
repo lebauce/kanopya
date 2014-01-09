@@ -136,7 +136,8 @@ sub getPuppetDefinition {
                     # pxefilename => 'pxelinux.0',
                     ntpservers => [ $ip ],
                     dnsdomain => [ $cluster->cluster_domainname ],
-                    nameservers => [ $ip ],
+                    nameservers => [ $cluster->cluster_nameserver1,
+                                     $cluster->cluster_nameserver2 ],
                     hosts => $hosts,
                     pools => $pools,
                 }
