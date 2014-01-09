@@ -69,8 +69,9 @@ sub createExport {
         # Update the configuration of the component Mounttable of the cluster,
         # to automatically mount the images repositories.
         my $system = $self->service_provider->getComponent(category => "System");
+        my $esystem = EEntity->new(entity => $system);
 
-        $system->addMount(
+        $esystem->addMount(
             dumpfreq   => 0,
             filesystem => $args{container}->container_filesystem,
             mountpoint => $mountpoint,
@@ -79,8 +80,8 @@ sub createExport {
             passnum    => 0,
         );
 
-        $system->generateConfiguration(cluster => $self->service_provider,
-                                       host => $self->getMasterNode->host);
+        $esystem->generateConfiguration(cluster => $self->service_provider,
+                                        host => $self->getMasterNode->host);
 
         $self->applyConfiguration(tags => [ 'mount' ]);
     }
