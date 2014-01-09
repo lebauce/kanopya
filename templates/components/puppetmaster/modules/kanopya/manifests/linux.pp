@@ -85,6 +85,8 @@ class kanopya::linux (
       require => File['/etc/resolv.conf']
     }
 
+    File['/etc/resolv.conf'] -> Apt::Key <| |>
+
     Apt::Source <| |> -> Exec['apt-get update'] -> Package <| |>
   }
 
