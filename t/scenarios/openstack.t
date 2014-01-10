@@ -152,6 +152,10 @@ sub main {
     );
 
     diag('Create and configure Nova compute cluster');
+
+    my $vms_netconf = Entity::Netconf->find(hash => { netconf_name => 'Virtual machines bridge' } );
+    my $admin_netconf = Entity::Netconf->find(hash => { netconf_name => 'Kanopya admin' });
+
     my $compute;
     lives_ok {
         $compute = Kanopya::Tools::Create->createCluster(
@@ -166,6 +170,16 @@ sub main {
                                    deploy_on_disk => 1
                                }
                            }
+                       },
+                       interfaces => {
+                           i1 => {
+                               netconfs => { $admin_netconf->id   => $admin_netconf->id },
+                               interface_name => 'admin'
+                           },
+                           i2 => {
+                               netconfs => { $vms_netconf->id   => $vms_netconf->id },
+                               interface_name => 'vms'
+                           },
                        },
                        components => {
                            'novacompute'  => {

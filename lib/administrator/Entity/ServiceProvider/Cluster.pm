@@ -247,7 +247,8 @@ Example of CCP:
     interfaces => {
         admin => {
             bonds_number => 2,
-            interfaces_netconfs => [ 1, 5 ],
+            netconfs => [ 1, 5 ],
+	    interface_name => 'admin'
         }
     },
     components => {

@@ -478,7 +478,7 @@ sub _generateNetConf {
         my ($gateway, $netmask, $ip, $method);
 
         my $params = $args{cluster}->getManagerParameters(manager_type => 'HostManager');
-        if ($params->{deploy_on_disk}) {
+        if ($params->{deploy_on_disk} && $iface->hasIp) {
             $method = "dhcp";
         }
         elsif ($iface->hasIp) {
