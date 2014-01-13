@@ -33,6 +33,7 @@ use strict;
 use warnings;
 use File::Basename;
 use String::Random;
+use POSIX "floor";
 use Kanopya::Config;
 use Log::Log4perl 'get_logger';
 use Data::Dumper;
@@ -658,12 +659,15 @@ sub customizeInitramfs {
         my $size = $harddisk->harddisk_size;
         my $device = '/dev/disk/by-path/ip-' . $portals->[0]->{ip} . ':' .
                      $portals->[0]->{port} . '-iscsi-' . $target . '-lun-0';
+        
+        my $root_size = $size * 0.6 / 1073741824;
+        my $swap_size = ($size / 1073741824) - $root_size;
 
         $self->_initrd_deployment(initrd_dir  => $initrddir,
                                   src_device  => $device,
                                   dest_device => $harddisk->harddisk_device,
-                                  root_size   => int($size * 0.6 / 1024 / 1024 / 1024),
-                                  swap_size   => int($size * 0.4 / 1024 / 1024 / 1024));
+                                  root_size   => floor($root_size),
+                                  swap_size   => floor($swap_size));
     }
     else {
         # else remove deployement script
