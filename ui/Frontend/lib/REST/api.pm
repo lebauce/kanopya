@@ -12,14 +12,17 @@ use Entity;
 use Entity::Operation;
 use Entity::Workflow;
 use Kanopya::Exceptions;
+use Kanopya::Version;
 
+use version;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
 my $log = get_logger("");
 my $errmsg;
 
-our $API_VERSION = "0.1";
+our $API_VERSION = version->declare("0.1");
+
 
 prepare_serializer_for_format;
 set serializer => 'Mutable';
@@ -493,8 +496,9 @@ get '/api' => sub {
     my @resources = keys %resources;
 
     return {
-        version   => $API_VERSION,
-        resources => \@resources
+        vesrion     => Kanopya::Version::version,
+        api_version => version->parse($API_VERSION)->normal,
+        resources   => \@resources
     };
 };
 
