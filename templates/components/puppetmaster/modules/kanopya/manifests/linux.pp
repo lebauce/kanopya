@@ -24,6 +24,14 @@ class kanopya::linux::system {
     source => "puppet:///kanopyafiles/${sourcepath}/etc/resolv.conf",
   }
 
+  file { '/etc/hosts':
+    path   => '/etc/hosts',
+    ensure => present,
+    mode   => 0644,
+    source => "puppet:///kanopyafiles/${sourcepath}/etc/hosts",
+    tag    => "kanopya::operation::startnode"
+  }
+
   if $operatingsystem =~ /(?i)(debian|ubuntu)/ {
     class { 'apt':
       always_apt_update => true,
@@ -69,14 +77,6 @@ class kanopya::linux (
     default: {
       fail("Unrecognized operating system")
     }
-  }
-
-  file { '/etc/hosts':
-    path   => '/etc/hosts',
-    ensure => present,
-    mode   => 0644,
-    source => "puppet:///kanopyafiles/${sourcepath}/etc/hosts",
-    tag    => "kanopya::operation::startnode"
   }
 
   tidy {'bad-scripts':
