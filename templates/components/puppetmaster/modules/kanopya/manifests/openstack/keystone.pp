@@ -11,7 +11,9 @@ class kanopya::openstack::keystone(
   $dbip = $components[keystone][mysql][mysqld][ip]
 
   if ! defined(Class['kanopya::openstack::repository']) {
-    class { 'kanopya::openstack::repository': }
+    class { 'kanopya::openstack::repository':
+      stage => 'system',
+    }
   }
 
   if ($components[keystone][master] == 1) {

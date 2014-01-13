@@ -15,7 +15,9 @@ class kanopya::openstack::glance(
   $glance_access_ip = $components[glance][access][image_api][ip]
  
   if ! defined(Class['kanopya::openstack::repository']) {
-    class { 'kanopya::openstack::repository': }
+    class { 'kanopya::openstack::repository':
+      stage => 'system',
+    }
   }
 
   if ($components['glance']['master'] == 1) {

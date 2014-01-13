@@ -1,9 +1,11 @@
 class kanopya::openstack::repository {
+  tag("kanopya::linux")
+
   if $operatingsystem =~ /(?i)(ubuntu)/ {
     package { 'ubuntu-cloud-keyring':
       name    => 'ubuntu-cloud-keyring',
       ensure  => present,
-      require => Exec['apt-get update']
+      require => Class['apt::update']
     }
 
     exec { 'apt-get -q update':
@@ -14,7 +16,7 @@ class kanopya::openstack::repository {
     }
 
     file { '/etc/apt/sources.list.d/ubuntu-cloud-repository.list':
-      content => "# ubuntu-cloud-repository\ndeb http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/grizzly main\ndeb-src http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/grizzly m
+      content => "# ubuntu-cloud-repository\ndeb http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/grizzly main\ndeb-src http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/grizzly main",
       require => Package['ubuntu-cloud-keyring']
     }
   }  

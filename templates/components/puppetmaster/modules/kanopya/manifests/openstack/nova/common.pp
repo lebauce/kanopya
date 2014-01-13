@@ -9,10 +9,6 @@ class kanopya::openstack::nova::common(
   $rabbit_password    = 'nova',
   $rabbit_virtualhost = '/'
 ) {
-  if ! defined(Class['kanopya::openstack::repository']) {
-    class { 'kanopya::openstack::repository': }
-  }
-
   class { 'nova':
     # set sql and rabbit to false so that the resources will be collected
     sql_connection      => $sql_connection,

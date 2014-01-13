@@ -19,7 +19,9 @@ class kanopya::openstack::cinder::server(
   $rabbits = $components[cinder][amqp][nodes]
 
   if ! defined(Class['kanopya::openstack::repository']) {
-    class { 'kanopya::openstack::repository': }
+    class { 'kanopya::openstack::repository':
+      stage => 'system',
+    }
   }
 
   require 'mysql::python'

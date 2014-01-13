@@ -5,11 +5,12 @@ class kanopya::mysql::params {
       $mysql_client_package_name = 'mariadb-client'
       $mysql_service_provider    = 'init'
 
-      class { 'kanopya::mysql::repos::deb': }
+      class { 'kanopya::mysql::repos::deb':
+        stage => 'system'
+      }
 
       package { 'galera':
         ensure  => installed,
-        require => Class['kanopya::mysql::repos::deb']
       }
     }
     /(?i)(redhat|centos)/ : {
@@ -90,7 +91,6 @@ class kanopya::mysql::repos::deb {
     repos      => 'main',
     key        => '1C4CBDCDCD2EFD2A',
     key_server => 'hkp://keys.gnupg.net',
-    before     => Package['percona-xtrabackup'],
   }
 
   @apt::source { 'MariaDB':
@@ -99,12 +99,10 @@ class kanopya::mysql::repos::deb {
     repos      => 'main',
     key        => 'cbcb082a1bb943db',
     key_server => 'keyserver.ubuntu.com',
-    before     => Class['::mysql::server']
   }
 
   file { '/etc/apt/preferences.d/mariadb-pin-900':
     content => template('kanopya/apt-pinning.erb'),
-    before  => Class['::mysql::server']
   }
 }
 
