@@ -52,14 +52,14 @@ clean:
 	VBoxManage unregistervm "Kanopya CentOS Vagrant" --delete || true
 	VBoxManage unregistervm "Kanopya CentOS Appliance" --delete || true
 
-centos-6-kanopya.appl: base.fragment kanopya-base.fragment forwarding.fragment kanopya-setup.fragment debug.fragment
-	FRAGMENTS="base.fragment kanopya-base.fragment forwarding.fragment kanopya-setup.fragment"; \
+centos-6-kanopya.appl: base.fragment kanopya-base.fragment forwarding.fragment kanopya-setup.fragment debug.fragment cleanup.fragment
+	FRAGMENTS="base.fragment kanopya-base.fragment forwarding.fragment kanopya-setup.fragment cleanup.fragment"; \
 	[ "$$DEBUG" == "1" ] && FRAGMENTS="$$FRAGMENTS debug.fragment"; \
 	./merge_dict.pl $$FRAGMENTS > centos-6-kanopya.appl
 	sed -i 's/^\( *\)\(\/.*\):$$/\1"\2":/' centos-6-kanopya.appl
 
-centos-6-kanopya-vagrant.appl: base.fragment kanopya-base.fragment debug.fragment vagrant.fragment
-	FRAGMENTS="base.fragment kanopya-base.fragment vagrant.fragment"; \
+centos-6-kanopya-vagrant.appl: base.fragment kanopya-base.fragment debug.fragment vagrant.fragment cleanup.fragment
+	FRAGMENTS="base.fragment kanopya-base.fragment vagrant.fragment cleanup.fragment"; \
 	[ "$$DEBUG" == "1" ] && FRAGMENTS="$$FRAGMENTS debug.fragment"; \
 	./merge_dict.pl $$FRAGMENTS > centos-6-kanopya-vagrant.appl
 	sed -i 's/^\( *\)\(\/.*\):$$/\1"\2":/' centos-6-kanopya-vagrant.appl
