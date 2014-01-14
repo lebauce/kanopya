@@ -37,7 +37,10 @@ class kanopya::puppetmaster::repository {
 class kanopya::puppetmaster(
   $sections = []
 ) {
-  require 'kanopya::puppetmaster::repository'
+
+  class { 'kanopya::puppetmaster::repository':
+    stage => 'system'
+  }
 
   package { 'puppetmaster':
     ensure  => present,

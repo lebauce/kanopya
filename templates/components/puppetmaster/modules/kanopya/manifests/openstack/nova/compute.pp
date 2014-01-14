@@ -25,7 +25,9 @@ class kanopya::openstack::nova::compute(
   }
 
   if ! defined(Class['kanopya::openstack::repository']) {
-    class { 'kanopya::openstack::repository': }
+    class { 'kanopya::openstack::repository':
+      stage => 'system',
+    }
   }
 
   file { "/run/iscsid.pid":

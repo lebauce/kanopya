@@ -20,7 +20,9 @@ class kanopya::openstack::quantum::server(
   $rabbits = $components[quantum][amqp][nodes]
 
   if ! defined(Class['kanopya::openstack::repository']) {
-      class { 'kanopya::openstack::repository': }
+    class { 'kanopya::openstack::repository':
+      stage => 'system',
+    }
   }
 
   if ! defined(Class['kanopya::openstack::quantum::common']) {

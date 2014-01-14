@@ -14,6 +14,7 @@ class kanopya::rabbitmq (
   }
 
   class { "$rabbitmq_repo":
+    stage => 'system'
   }
 
   class { 'rabbitmq::server':
@@ -28,6 +29,7 @@ class kanopya::rabbitmq (
     },
     require                  => Class["$rabbitmq_repo"]
   }
+
   Rabbitmq_user <<| tag == "${fqdn}" |>>
   Rabbitmq_user_permissions <<| tag == "${fqdn}" |>>
   Rabbitmq_vhost <<| tag == "${fqdn}" |>>

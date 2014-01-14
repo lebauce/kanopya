@@ -32,11 +32,9 @@ class kanopya::openstack::nova::controller(
   }
 
   if ! defined(Class['kanopya::openstack::repository']) {
-    class { 'kanopya::openstack::repository': }
-  }
-
-  exec { "/usr/bin/nova-manage db sync":
-    path => "/usr/bin:/usr/sbin:/bin:/sbin",
+    class { 'kanopya::openstack::repository':
+      stage => 'system',
+    }
   }
 
   if ($components[novacontroller][master] == 1) {
@@ -134,8 +132,7 @@ class kanopya::openstack::nova::controller(
     auth_host        => $keystone_ip,
     api_bind_address => $components[novacontroller][listen][compute_api][ip],
     metadata_listen  => $components[novacontroller][listen][metadata_api][ip],
-    require          => [ Exec["/usr/bin/nova-manage db sync"],
-                          Class['kanopya::openstack::repository'] ]
+    require          => Class['kanopya::openstack::repository']
   }
 
   nova_paste_api_ini {
