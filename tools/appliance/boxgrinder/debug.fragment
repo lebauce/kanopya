@@ -3,4 +3,8 @@ post:
     - "ifconfig > /root/ifconfig"
     - "ip addr > /root/ip.addr"
     - "ps aux > /root/ps.aux"
+    - "cp /var/log/messages /root/messages"
+    - "lsof > /root/lsof"
+    - "mount > /root/mount"
+    - "test -d /var/log/kanopya && cp -R /var/log/kanopya/* /root"
     - "sync"
