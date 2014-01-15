@@ -435,6 +435,11 @@ var KanopyaFormWizard = (function() {
 
         // Check if the attr must be validated by a regular expression
         if ($(input).attr('type') !== 'checkbox' && attr.pattern !== undefined) {
+            // Allow floating value (only on ui side) for attr of type 'unit' (for human readable conversion)
+            if (attr.unit && attr.unit === 'byte') {
+                attr.pattern = '^\\d+\\.?\\d*$';
+            }
+            // Allow empty field if attr not mandatory
             if (attr.is_mandatory != true) {
                 attr.pattern = '(^$|' + attr.pattern + ')';
             }
@@ -548,15 +553,21 @@ var KanopyaFormWizard = (function() {
             // Set the serialize attribute to manage convertion from (selected) unit to final value
             // Warning : this will override serialize attribute if defined
             this.attributedefs[name].serialize = function(val, input) {
-                return val * getUnitMultiplicator('unit_' + $(input).attr('id'));
+                return parseInt(parseFloat(val) * getUnitMultiplicator('unit_' + $(input).attr('id')));
             }
 
             // If exist a value then convert it in human readable
             if (current_unit === 'byte' && $(input).val()) {
-                var readable_value = getReadableSize($(input).val(), 1);
+                var readable_value = getReadableSize($(input).val(), 0);
                 if (readable_value.value != 0) {
                     $(input).val(readable_value.value);
-                    $(unit_cont).find('option:contains("' + readable_value.unit + '")').attr('selected', 'selected');
+                    var unit_option = $(unit_cont).find('option:contains("' + readable_value.unit + '")');
+                    if (unit_option.length) {
+                        unit_option.attr('selected', 'selected');
+                    } else {
+                        alert("Unit conversion error." +
+                              " No unit option '" + readable_value.unit + "' found for attr '" + attr.label + "'" );
+                    }
                 }
             }
         }
