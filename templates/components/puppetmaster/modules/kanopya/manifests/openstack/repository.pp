@@ -16,7 +16,7 @@ class kanopya::openstack::repository {
     }
 
     file { '/etc/apt/sources.list.d/ubuntu-cloud-repository.list':
-      content => "# ubuntu-cloud-repository\ndeb http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/grizzly main\ndeb-src http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/grizzly main",
+      content => "# ubuntu-cloud-repository\ndeb http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/havana main\ndeb-src http://ubuntu-cloud.archive.canonical.com/ubuntu precise-updates/havana main",
       require => Package['ubuntu-cloud-keyring']
     }
   }  

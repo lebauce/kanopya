@@ -419,7 +419,7 @@ sub createIaasCluster {
                     mysql          => {},
                     novaCompute    => {},
                     keystone       => {},
-                    quantum        => {},
+                    neutron        => {},
                     glance         => {},
                     amqp           => {},
                 };
@@ -500,7 +500,7 @@ sub createIaasCluster {
             my $amqp = $iaas->getComponent(name => 'Amqp');
             my $keystone = $iaas->getComponent(name => 'Keystone');
             my $glance = $iaas->getComponent(name => 'Glance');
-            my $quantum = $iaas->getComponent(name => 'Quantum');
+            my $neutron = $iaas->getComponent(name => 'Neutron');
 
             $keystone->setConf(conf => {
                 mysql5_id   => $db->id,
@@ -511,7 +511,7 @@ sub createIaasCluster {
                 nova_controller_id => $virtualization->id,
             });
 
-            $quantum->setConf(conf => {
+            $neutron->setConf(conf => {
                 mysql5_id          => $db->id,
                 nova_controller_id => $virtualization->id,
             });

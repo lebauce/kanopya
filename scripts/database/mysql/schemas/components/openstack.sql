@@ -57,12 +57,12 @@ CREATE TABLE `nova_controller` (
   FOREIGN KEY (`keystone_id`) REFERENCES `keystone` (`keystone_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `quantum` (
-  `quantum_id` int(8) unsigned NOT NULL,
+CREATE TABLE `neutron` (
+  `neutron_id` int(8) unsigned NOT NULL,
   `mysql5_id` int(8) unsigned NULL DEFAULT NULL,
   `nova_controller_id` int(8) unsigned NULL DEFAULT NULL,
-  PRIMARY KEY (`quantum_id`),
-  CONSTRAINT `fk_quantum_1` FOREIGN KEY (`quantum_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  PRIMARY KEY (`neutron_id`),
+  CONSTRAINT `fk_neutron_1` FOREIGN KEY (`neutron_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY(`mysql5_id`),
   FOREIGN KEY (`mysql5_id`) REFERENCES `mysql5` (`mysql5_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   KEY(`nova_controller_id`),

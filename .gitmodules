@@ -1,23 +1,23 @@
 [submodule "templates/components/puppetmaster/modules/glance"]
 	path = templates/components/puppetmaster/modules/glance
 	url = git://github.com/stackforge/puppet-glance.git
-	branch = stable/grizzly
+	branch = stable/havana
 [submodule "templates/components/puppetmaster/modules/keystone"]
 	path = templates/components/puppetmaster/modules/keystone
 	url = git://github.com/stackforge/puppet-keystone.git
-	branch = stable/grizzly
+	branch = stable/havana
 [submodule "templates/components/puppetmaster/modules/nova"]
 	path = templates/components/puppetmaster/modules/nova
 	url = git://github.com/stackforge/puppet-nova.git
-	branch = stable/grizzly
+	branch = stable/havana
 [submodule "templates/components/puppetmaster/modules/openstack"]
 	path = templates/components/puppetmaster/modules/openstack
 	url = git://github.com/stackforge/puppet-openstack.git
-	branch = stable/grizzly
+	branch = stable/havana
 [submodule "templates/components/puppetmaster/modules/cinder"]
 	path = templates/components/puppetmaster/modules/cinder
 	url = git://github.com/stackforge/puppet-cinder.git
-	branch = stable/grizzly
+	branch = stable/havana
 [submodule "templates/components/puppetmaster/modules/apache"]
 	path = templates/components/puppetmaster/modules/apache
 	url = https://github.com/puppetlabs/puppetlabs-apache.git
@@ -40,7 +40,7 @@
 [submodule "templates/components/puppetmaster/modules/horizon"]
 	path = templates/components/puppetmaster/modules/horizon
 	url = git://github.com/stackforge/puppet-horizon.git
-	branch = stable/grizzly
+	branch = stable/havana
 [submodule "templates/components/puppetmaster/modules/keepalived"]
 	path = templates/components/puppetmaster/modules/keepalived
 	url = https://github.com/luxflux/puppet-keepalived.git
@@ -66,10 +66,10 @@
 [submodule "templates/components/puppetmaster/modules/sysctl"]
 	path = templates/components/puppetmaster/modules/sysctl
 	url = https://github.com/duritong/puppet-sysctl
-[submodule "templates/components/puppetmaster/modules/quantum"]
-	path = templates/components/puppetmaster/modules/quantum
+[submodule "templates/components/puppetmaster/modules/neutron"]
+	path = templates/components/puppetmaster/modules/neutron
 	url = git://github.com/stackforge/puppet-quantum.git
-	branch = stable/grizzly
+	branch = stable/havana
 [submodule "templates/components/puppetmaster/modules/vswitch"]
 	path = templates/components/puppetmaster/modules/vswitch
 	url = https://github.com/bodepd/puppet-vswitch
@@ -100,7 +100,7 @@
 [submodule "templates/components/puppetmaster/modules/swift"]
 	path = templates/components/puppetmaster/modules/swift
 	url = git://github.com/stackforge/puppet-swift.git
-	branch = stable/grizzly
+	branch = stable/havana
 [submodule "templates/components/puppetmaster/modules/snmp"]
 	path = templates/components/puppetmaster/modules/snmp
 	url = https://github.com/razorsedge/puppet-snmp.git

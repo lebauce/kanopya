@@ -19,10 +19,10 @@ class kanopya::openstack::nova::controller(
   $amqpserver = $components[novacontroller][amqp][amqp][tag]
   $rabbits = $components[novacontroller][amqp][nodes]
 
-  if has_key($components[novacontroller], 'quantum') {
-    $quantum = $components[novacontroller][quantum][quantum][ip]
+  if has_key($components[novacontroller], 'neutron') {
+    $neutron = $components[novacontroller][neutron][neutron][ip]
   } else {
-    $quantum = undef
+    $neutron = undef
   }
 
   if has_key($components[novacontroller], 'glance') {
@@ -115,7 +115,7 @@ class kanopya::openstack::nova::controller(
   if ! defined(Class['kanopya::openstack::nova::common']) {
     class { 'kanopya::openstack::nova::common':
       glance             => $glance_registry,
-      quantum            => $quantum,
+      neutron            => $neutron,
       keystone           => $keystone_ip,
       email              => $email,
       sql_connection     => "mysql://${database_user}:${database_password}@${dbip}/${database_name}",

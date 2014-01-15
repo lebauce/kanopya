@@ -111,7 +111,7 @@ my @classes = (
     'Entity::Component::Virtualization::NovaController',
     'Entity::Component::Vmm::NovaCompute',
     'Entity::Component::Openstack::Cinder',
-    'Entity::Component::Openstack::Quantum',
+    'Entity::Component::Openstack::Neutron',
     'Entity::Component::Openstack::Keystone',
     'Entity::Component::Openstack::Glance',
     'Entity::Component::Openstack::SwiftProxy',
@@ -1162,7 +1162,7 @@ sub registerComponents {
             service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6' ],
         },
         {
-            component_name         => 'Quantum',
+            component_name         => 'Neutron',
             component_version      => 6,
             deployable             => 1,
             component_categories   => [ ],

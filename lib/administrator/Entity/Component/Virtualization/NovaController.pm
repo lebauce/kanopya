@@ -203,9 +203,9 @@ sub getPuppetDefinition {
     my $name       = "nova-" . $self->id;
 
     my @optionals;
-    my @quantums = $self->quantums;
+    my @neutrons = $self->neutrons;
     my @glances = $self->glances;
-    push @optionals, $quantums[0] if @quantums;
+    push @optionals, $neutrons[0] if @neutrons;
     push @optionals, $glances[0] if @glances;
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
@@ -241,7 +241,7 @@ sub getHostsEntries {
         push @entries, $self->mysql5->service_provider->getHostEntries();
     }
         
-    for my $component (($self->vmms, $self->glances, $self->quantums)) {
+    for my $component (($self->vmms, $self->glances, $self->neutrons)) {
         @entries = (@entries, $component->service_provider->getHostEntries());
     }
 

@@ -12,10 +12,10 @@ class kanopya::openstack::nova::compute(
   $rabbits = $components[novacompute][amqp][nodes]
   $keystone_ip = $components[novacompute][keystone][keystone_admin][ip]
 
-  if has_key($components[novacompute], 'quantum') {
-    $quantum = $components[novacompute][quantum][quantum][ip]
+  if has_key($components[novacompute], 'neutron') {
+    $neutron = $components[novacompute][neutron][neutron][ip]
   } else {
-    $quantum = undef
+    $neutron = undef
   }
 
   if has_key($components[novacompute], 'glance') {
@@ -39,7 +39,7 @@ class kanopya::openstack::nova::compute(
       keystone           => $keystone_ip,
       email        => $email,
       glance       => $glance_registry,
-      quantum      => $quantum,
+      neutron      => $neutron,
       rabbits      => $rabbits,
       rabbit_user        => $rabbit_user,
       rabbit_password    => $rabbit_password,
@@ -55,7 +55,7 @@ class kanopya::openstack::nova::compute(
     require                       => Class['kanopya::openstack::repository']
   }
 
-  class { 'nova::compute::quantum':
+  class { 'nova::compute::neutron':
     libvirt_vif_driver => 'nova.virt.libvirt.vif.LibvirtHybridOVSBridgeDriver',
     require            => Class['kanopya::openstack::repository']
   }
@@ -67,18 +67,18 @@ class kanopya::openstack::nova::compute(
     require           => Class['kanopya::openstack::repository']
   }
 
-  class { 'quantum::agents::ovs':
+  class { 'neutron::agents::ovs':
     integration_bridge  => 'br-int',
     bridge_mappings     => [ 'physnetflat:br-flat', 'physnetvlan:br-vlan' ],
     bridge_uplinks      => $bridge_uplinks,
     require             => Class['kanopya::openstack::repository']
   }
 
-  class { 'quantum::client':
+  class { 'neutron::client':
   }
 
-  if ! defined(Class['kanopya::openstack::quantum::common']) {
-    class { 'kanopya::openstack::quantum::common':
+  if ! defined(Class['kanopya::openstack::neutron::common']) {
+    class { 'kanopya::openstack::neutron::common':
       rabbit_hosts       => $rabbits,
       rabbit_user        => "${rabbit_user}",
       rabbit_password    => "${rabbit_password}",

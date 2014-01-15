@@ -49,7 +49,7 @@ sub login {
     for my $service (@{$response->{access}->{serviceCatalog}}) {
         my $name = $service->{name};
         $self->{config}->{$name}->{url} = $service->{endpoints}->[0]->{publicURL} .
-                                              ($name eq "quantum" ? "/v2.0" : "");
+                                              ($name eq "neutron" ? "/v2.0" : "");
     }
 
     $self->{token} = $response->{access}->{token}->{id};

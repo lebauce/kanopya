@@ -12,7 +12,7 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package EEntity::EComponent::EOpenstack::EQuantum;
+package EEntity::EComponent::EOpenstack::ENeutron;
 use base "EEntity::EComponent";
 
 use strict;
