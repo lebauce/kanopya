@@ -3,7 +3,11 @@ class kanopya::ceph(
   $cluster_network = "10.0.0.0/24",
   $public_network  = "10.1.0.0/24"
 ) {
-  include ceph::apt::ceph
+  if $operatingsystem =~ /(?i)(ubuntu|debian)/ {
+    class { 'ceph::apt::ceph':
+      stage => 'system'
+    }
+  }
 
   class { 'ceph::conf':
     fsid            => "${fsid}",
