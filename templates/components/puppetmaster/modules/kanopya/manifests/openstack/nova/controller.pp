@@ -126,13 +126,18 @@ class kanopya::openstack::nova::controller(
     }
   }
 
+  exec { "/usr/bin/nova-manage db sync":
+    path => "/usr/bin:/usr/sbin:/bin:/sbin",
+  }
+
   class { 'nova::api':
     enabled          => true,
     admin_password   => "${admin_password}",
     auth_host        => $keystone_ip,
     api_bind_address => $components[novacontroller][listen][compute_api][ip],
     metadata_listen  => $components[novacontroller][listen][metadata_api][ip],
-    require          => Class['kanopya::openstack::repository']
+    require          => [ Exec["/usr/bin/nova-manage db sync"],
+                          Class['kanopya::openstack::repository'] ]
   }
 
   nova_paste_api_ini {
