@@ -57,7 +57,7 @@ sub main {
                        },
                        cluster_conf => {
                            cluster_name => 'Ceph',
-                           cluster_min_node => 1,
+                           cluster_min_node => 2,
                            masterimage_id => $masterimage->id
                        }
                    );
