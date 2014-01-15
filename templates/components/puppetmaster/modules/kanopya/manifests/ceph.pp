@@ -17,7 +17,10 @@ class kanopya::ceph(
   }
 }
 
-class kanopya::ceph::mon($mon_id, $mon_secret) {
+class kanopya::ceph::mon(
+  $mon_id = 0,
+  $mon_secret = 'secret'
+) {
   tag("kanopya::cephmon")
 
   ceph::mon { $mon_id:
@@ -35,7 +38,9 @@ class kanopya::ceph::mon($mon_id, $mon_secret) {
   Class['kanopya::ceph'] -> Class['kanopya::ceph::mon']
 }
 
-class kanopya::ceph::osd($devices) {
+class kanopya::ceph::osd(
+  $devices = {}
+) {
   tag("kanopya::cephosd")
 
   class { '::ceph::osd' :
