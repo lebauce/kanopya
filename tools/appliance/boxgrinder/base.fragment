@@ -1,5 +1,5 @@
-name: centos-6.4-amd64
-summary: CentOS 6.4 amd64
+name: centos-6-amd64
+summary: CentOS 6 amd64
 os:
   name: centos
   version: 6
@@ -17,4 +17,3 @@ repos:
 packages:
   - syslinux-extlinux
   - grub
-  - puppet-2.7.23-1.el6

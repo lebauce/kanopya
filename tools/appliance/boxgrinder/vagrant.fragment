@@ -1,5 +1,5 @@
-name: centos-6.4-kanopya-vagrant
-summary: Kanopya Vagrant box (based on CentOS 6.4 64 bits)
+name: centos-6-kanopya-vagrant
+summary: Kanopya Vagrant box (based on CentOS 6 64 bits)
 packages:
   - kernel-devel-2.6.32-431.el6
   - kernel-headers-2.6.32-431.el6.x86_64
