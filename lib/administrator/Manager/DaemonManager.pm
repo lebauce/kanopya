@@ -75,11 +75,9 @@ sub controlDaemon {
     }
 
     MessageQueuing::RabbitMQ::Sender::controlDaemon($self,
-        queue     => $queue,
-        cbname    => $args{cbname},
-        control   => $args{control},
-        instances => $args{instances},
-        notify    => 0,
+        queue  => $queue,
+        notify => 0,
+        %args,
         %{ Kanopya::Database::_adm->{config}->{amqp} }
     );
 }
@@ -96,7 +94,7 @@ sub setConf {
     General::checkParams(args => \%args, required => [ 'conf' ]);
 
     if (defined $args{conf}->{control_queue}) {
-        #$control_queue = $args{conf}->{control_queue};
+        $control_queue = $args{conf}->{control_queue};
     }
 }
 

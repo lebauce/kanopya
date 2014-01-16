@@ -52,6 +52,22 @@ use Log::Log4perl::Appender;
 
 my $log = get_logger("");
 
+use constant CALLBACKS => {
+    # Override the control_queue callback definition
+    # as we are overriding the controlDaemon callback method
+    control_queue => {
+        callback  => \&controlDaemon,
+        type      => 'queue',
+        # The queue name will be defined at runtime
+        queue     => undef,
+        declare   => 1,
+        internal  => 1,
+    },
+};
+
+sub getCallbacks { return CALLBACKS; }
+
+
 
 # Map function to call w.r.t event type received
 my $functionTable = {
@@ -83,8 +99,10 @@ sub new {
     # Browse the nova controllers managed by this KanopyaOpenStackSync.
     if ($self->_component->isa('Entity::Component::KanopyaOpenstackSync')) {
         for my $nc ($self->_component->nova_controllers) {
-            $self->registerOpenstackSyncCallback(cbname          => 'novacontroller-' . $nc->id,
-                                                 nova_controller => $nc);
+            if (scalar($nc->nodes)) {
+                $self->registerOpenstackSyncCallback(cbname          => 'novacontroller-' . $nc->id,
+                                                     nova_controller => $nc);
+            }
         }
         $log->info("OpenstackSync callbacks have been registered...");
     }
@@ -170,8 +188,8 @@ sub controlDaemon {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'cbname', 'control', 'nova_controller_id', 'ack_cb' ],
-                         optional => { 'instances' => 1 });
+                         required => [ 'cbname', 'control', 'ack_cb' ],
+                         optional => { 'instances' => 1, 'nova_controller_id' => undef });
 
     # Handle custom control messages.
     # Register a callback for the given nova controller for consuming messageson its notification queue.
@@ -181,7 +199,10 @@ sub controlDaemon {
     }
 
     # Finally handle the message as a regular control message
-    my $ack = $self->SUPER::controlDaemon(cbname => $args{cbname}, control => $args{control});
+    my $ack = $self->SUPER::controlDaemon(cbname    => $args{cbname},
+                                          control   => $args{control},
+                                          instances => $args{instances},
+                                          ack_cb    => $args{ack_cb});
 
     # Unregister the corresponding callback if control code is 'kill'
     if (defined $args{nova_controller_id} && $args{control} eq 'kill') {

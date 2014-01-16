@@ -82,11 +82,9 @@ sub registerNovaController {
     General::checkParams(args => \%args, required => [ 'nova_controller_id' ]);
 
     # Publish on the daemon control queue
-    MessageQueuing::RabbitMQ::Sender::controlDaemon($self,
-        cbname             => 'novacontroller-' . $args{nova_controller_id},
-        control            => 'spawn',
-        nova_controller_id => $args{nova_controller_id},
-    );
+    $self->controlDaemon(cbname             => 'novacontroller-' . $args{nova_controller_id},
+                         control            => 'spawn',
+                         nova_controller_id => $args{nova_controller_id});
 }
 
 
@@ -110,11 +108,9 @@ sub unregisterNovaController {
     General::checkParams(args => \%args, required => [ 'nova_controller_id' ]);
 
     # Publish on the daemon control queue
-    MessageQueuing::RabbitMQ::Sender::controlDaemon($self,
-        cbname             => 'novacontroller-' . $args{nova_controller_id},
-        control            => 'kill',
-        nova_controller_id => $args{nova_controller_id},
-    );
+    $self->controlDaemon(cbname             => 'novacontroller-' . $args{nova_controller_id},
+                         control            => 'kill',
+                         nova_controller_id => $args{nova_controller_id});
 }
 
 1;

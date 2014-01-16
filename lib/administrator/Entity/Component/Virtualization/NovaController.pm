@@ -35,6 +35,8 @@ use Entity::Host::Hypervisor::OpenstackHypervisor;
 use Entity::Host::VirtualMachine::OpenstackVm;
 
 use Hash::Merge qw(merge);
+use TryCatch;
+
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -423,8 +425,59 @@ sub setConf {
     }
 }
 
+
+=pod
+=begin classdoc
+
+Override the update method to handle changes on the attribute kanopya_openstack_sync_id,
+and register/unregister the nova controller to/from the OpenstackSync daemon.
+
+If repositories are specified, update the mount entries of all compute nodes
+
+=end classdoc
+=cut
+
+sub update {
+    my ($self, %args) = @_;
+
+    my $update = $self->SUPER::update(%args);
+
+    # If kanopya_openstack_sync_id has change at update and component has nodes,
+    # register/unregister the NovaController to/from the OpenstackSync daemon.
+    if (exists $args{kanopya_openstack_sync_id} && scalar($self->nodes)) {
+        if (defined $args{kanopya_openstack_sync_id}) {
+            $self->registerToOpenstackSync();
+        }
+        else {
+            $self->unregisterFromOpenstackSync();
+        }
+    }
+}
+
 sub getRemoteSessionURL {
     return "";
+}
+
+sub registerToOpenstackSync {
+    my ($self, %args) = @_;
+
+    try {
+        $self->kanopya_openstack_sync->registerNovaController(nova_controller_id => $self->id);
+    }
+    catch ($err) {
+        $log->warn("Unable to register NovaController to the OpenstackSync daemon:\n$err");
+    }
+}
+
+sub unregisterFromOpenstackSync {
+    my ($self, %args) = @_;
+
+    try {
+        $self->kanopya_openstack_sync->unregisterNovaController(nova_controller_id => $self->id);
+    }
+    catch ($err) {
+        $log->warn("Unable to unregister NovaController from the OpenstackSync daemon:\n$err");
+    }
 }
 
 1;

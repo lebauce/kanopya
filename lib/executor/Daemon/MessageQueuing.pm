@@ -815,8 +815,7 @@ sub _callbacks {
         my @supers = Class::ISA::self_and_super_path($class);
         for my $super (@supers) {
             if ($super->can('getCallbacks')) {
-                $self->{_callbacks} = $merge->merge($self->{_callbacks},
-                                                    clone($super->getCallbacks()));
+                $self->{_callbacks} = $merge->merge(clone($super->getCallbacks()), $self->{_callbacks});
             }
         }
     }
