@@ -496,7 +496,7 @@ get '/api' => sub {
     my @resources = keys %resources;
 
     return {
-        vesrion     => Kanopya::Version::version,
+        version     => Kanopya::Version::version,
         api_version => version->parse($API_VERSION)->normal,
         resources   => \@resources
     };
