@@ -85,6 +85,7 @@ our %resources = (
     "kanopyacollector"         => "Entity::Component::Kanopyacollector1",
     "kanopyaexecutor"          => "Entity::Component::KanopyaExecutor",
     "kanopyafront"             => "Entity::Component::KanopyaFront",
+    "kanopyaopenstacksync"     => "Entity::Component::KanopyaOpenstackSync",
     "kanopyarulesengine"       => "Entity::Component::KanopyaRulesEngine",
     "keepalived1"              => "Entity::Component::Keepalived1",
     "keepalived1vrrpinstance"  => "Keepalived1Vrrpinstance",
