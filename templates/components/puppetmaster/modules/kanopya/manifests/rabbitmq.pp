@@ -4,17 +4,23 @@ class kanopya::rabbitmq (
 ) {
   tag("kanopya::amqp")
 
-  $rabbitmq_repo = $operatingsystem ? {
-    /(?i)(debian|ubuntu)/ => 'rabbitmq::repo::apt',
-    default               => 'rabbitmq::repo::rhel'
+  case $operatingsystem {
+    /(?i)(debian|ubuntu)/ : {
+      $rabbitmq_repo = 'rabbitmq::repo::apt'
+      $rabbitmq_repo_stage = 'system'
+    }
+    /(?i)(redhat|centos)/ : {
+      $rabbitmq_repo = 'rabbitmq::repo::rhel'
+      $rabbitmq_repo_stage = 'main'
+    }
   }
 
   package { 'erlang':
     ensure => installed
   }
 
-  class { "$rabbitmq_repo":
-    stage => 'system'
+  class { $rabbitmq_repo:
+    stage => $rabbitmq_repo_stage
   }
 
   class { 'rabbitmq::server':
@@ -27,7 +33,7 @@ class kanopya::rabbitmq (
       /(?i)(centos|redhat|fedora)/ => 'rabbitmq-server.noarch',
       default                      => 'rabbitmq-server'
     },
-    require                  => Class["$rabbitmq_repo"]
+    require                  => Class[$rabbitmq_repo]
   }
 
   Rabbitmq_user <<| tag == "${fqdn}" |>>

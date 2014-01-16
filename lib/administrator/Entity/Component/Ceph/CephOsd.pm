@@ -36,6 +36,16 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub getNetConf {
+    return {
+        cephosd => {
+            # The first OSD runs on port 6800
+            port => 6800,
+            protocols => [ 'tcp' ]
+        }
+    };
+}
+
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 

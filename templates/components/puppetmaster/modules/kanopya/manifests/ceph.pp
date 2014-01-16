@@ -3,7 +3,11 @@ class kanopya::ceph(
   $cluster_network = "10.0.0.0/24",
   $public_network  = "10.1.0.0/24"
 ) {
-  include ceph::apt::ceph
+  if $operatingsystem =~ /(?i)(ubuntu|debian)/ {
+    class { 'ceph::apt::ceph':
+      stage => 'system'
+    }
+  }
 
   class { 'ceph::conf':
     fsid            => "${fsid}",
@@ -13,7 +17,10 @@ class kanopya::ceph(
   }
 }
 
-class kanopya::ceph::mon($mon_id, $mon_secret) {
+class kanopya::ceph::mon(
+  $mon_id = 0,
+  $mon_secret = 'secret'
+) {
   tag("kanopya::cephmon")
 
   ceph::mon { $mon_id:
@@ -31,7 +38,9 @@ class kanopya::ceph::mon($mon_id, $mon_secret) {
   Class['kanopya::ceph'] -> Class['kanopya::ceph::mon']
 }
 
-class kanopya::ceph::osd($devices) {
+class kanopya::ceph::osd(
+  $devices = {}
+) {
   tag("kanopya::cephosd")
 
   class { '::ceph::osd' :

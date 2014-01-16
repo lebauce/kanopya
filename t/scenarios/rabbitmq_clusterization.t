@@ -52,8 +52,9 @@ sub main {
     }
 
     diag('Register master image');
+    my $masterimage;
     lives_ok {
-        Kanopya::Tools::Register::registerMasterImage();
+        $masterimage = Kanopya::Tools::Register::registerMasterImage();
     } 'Register master image';
 
     diag('Create and configure cluster');
@@ -65,12 +66,13 @@ sub main {
                        },
                        cluster_conf => {
                            cluster_name => 'RabbitMQ',
-                           cluster_min_node => 2
+                           cluster_min_node => 2,
+                           masterimage_id => $masterimage->id
                        }
                    );
     } 'Create cluster';
 
-    diag('Start physical host');
+    diag('Start RabbitMQ cluster with 2 nodes');
     lives_ok {
         Kanopya::Tools::Execution->startCluster(cluster => $cluster);
     } 'Start cluster';
