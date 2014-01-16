@@ -209,7 +209,7 @@ sub novaNotificationAnalyser {
                          required => [ 'host_manager' ],
                          optional => { 'event_type' => undef });
 
-    $log->info("New message received related to nove controller <" . $args{host_manager}->id . ">");
+    $log->info("New message received related to nova controller <" . $args{host_manager}->id . ">");
 
     if (! defined $args{event_type}) {
         $log->info("Event type not defined in message. Skip.");
@@ -218,7 +218,14 @@ sub novaNotificationAnalyser {
 
     if (defined $functionTable->{$args{event_type}}) {
         my $method = $functionTable->{$args{event_type}};
-        $self->$method(%args);
+        try {
+            $self->$method(%args);
+        }
+        catch($err) {
+            $log->error("Unable to handle event of type <$args{event_type}>:\n$err");
+            # Do not ack the message
+            return 0;
+        }
     }
     else {
         $log->info("Unmanaged event type <$args{event_type}>. Skip.");
@@ -321,7 +328,7 @@ sub computeInstanceCreateEnd {
                        cluster_domainname    => 'my.domain',
                        cluster_nameserver1   => '127.0.0.1',
                        cluster_nameserver2   => '127.0.0.1',
-                       user_id               => $args{host_manager}->service_provider->user_id,
+                       owner_id              => $args{host_manager}->service_provider->owner_id,
                        service_template_id   => $generic_service->id,
                    );
     }
@@ -371,14 +378,17 @@ sub computeInstanceDeleteEnd {
     }
 
     # Detect the case where node deletion is due to Kanopya Executor
-    my $node_state = ($host->getNodeState())[0];
-    if ($node_state eq "goingout") {
-        $log->info("Vm <$args{payload}->{instance_id}> deleted by Kanopya Executor. Skip.");
-        return 1;
-    }
-
     my $node = $host->node;
-    $node->service_provider->unregisterNode(node => $node);
+    if (defined $node) {
+        # Detect the case where node deletion is due to Kanopya Executor
+        my $node_state = ($host->getNodeState())[0];
+        if ($node_state eq "goingout") {
+            $log->info("Vm <$args{payload}->{instance_id}> deleted by Kanopya Executor. Skip.");
+            return 1;
+        }
+
+        $node->service_provider->unregisterNode(node => $node);
+    }
     $host->delete();
 
     $log->info("Vm <$args{payload}->{instance_id}> has been removed from Kanopya DB");
