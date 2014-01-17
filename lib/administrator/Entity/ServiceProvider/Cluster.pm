@@ -58,7 +58,7 @@ my $errmsg;
 use constant ATTR_DEF => {
     cluster_name => {
         label        => 'Instance name',
-        pattern      => '^[\w\d\.]+$',
+        pattern      => '^[\w\d]+$',
         is_mandatory => 1,
         is_editable  => 0
     },
@@ -77,11 +77,6 @@ use constant ATTR_DEF => {
         label        => 'Boot policy',
         pattern      => '^.*$',
         is_mandatory => 0,
-        is_editable  => 0
-    },
-    cluster_si_shared => {
-        pattern      => '^(0|1)$',
-        is_mandatory => 1,
         is_editable  => 0
     },
     cluster_si_persistent => {
@@ -133,7 +128,7 @@ use constant ATTR_DEF => {
     },
     cluster_basehostname => {
         label        => 'Base host name',
-        pattern      => '^[A-Za-z0-9-]*$',
+        pattern      => '^[a-z0-9-]*$',
         is_mandatory => 0,
         is_editable  => 1
     },
@@ -164,21 +159,13 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_editable  => 1
     },
-    user_id => {
+    owner_id => {
         label        => 'Owner',
         pattern      => '^\d+$',
         type         => 'relation',
         relation     => 'single',
         is_mandatory => 1,
         is_editable  => 0
-    },
-    components => {
-        label        => 'Components',
-        type         => 'relation',
-        relation     => 'single_multi',
-        link_to      => 'component',
-        is_mandatory => 0,
-        is_editable  => 0,
     },
 };
 
@@ -260,7 +247,8 @@ Example of CCP:
     interfaces => {
         admin => {
             bonds_number => 2,
-            interfaces_netconfs => [ 1, 5 ],
+            netconfs => [ 1, 5 ],
+	    interface_name => 'admin'
         }
     },
     components => {
@@ -276,7 +264,7 @@ Example of CCP:
 sub create {
     my ($class, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster_name', 'user_id' ]);
+    General::checkParams(args => \%args, required => [ 'cluster_name', 'owner_id' ]);
 
     # Firstly build the configuration pattern from args.
     my $confpattern = $class->buildConfigurationPattern(%args);
@@ -351,7 +339,7 @@ sub checkConfigurationPattern {
     General::checkParams(args => \%args, required => [ 'attrs' ]);
 
     # Firstly, check the cluster attrs
-    $class->checkAttrs(attrs => $args{attrs});
+    $class->checkAttributes(attrs => $args{attrs});
 
     # Then check the configuration if required
     if (defined $args{composite}) {
@@ -461,7 +449,7 @@ sub configureManagers {
                     # Add permission on the manager methods to the user
                     my $managerclass = 'Manager::' . $manager->{manager_type};
                     for my $method (keys %{ $managerclass->methods }) {
-                        $spmanager->manager->addPerm(consumer => $self->user, method => $method);
+                        $spmanager->manager->addPerm(consumer => $self->owner, method => $method);
                     }
                     if ($manager->{manager_type} eq 'CollectorManager') {
                         $self->initCollectorManager(collector_manager => $spmanager->manager);
@@ -499,7 +487,7 @@ sub configureManagers {
 
     # Get export manager parameter related to si shared value.
     my $readonly_param = $export_manager->getReadOnlyParameter(
-                             readonly => $self->cluster_si_shared
+                             readonly => 0 
                          );
 
     # TODO: This will be usefull for the first call to applyPolicies at the cluster creation,
@@ -516,7 +504,7 @@ sub configureManagers {
 sub configureInterfaces {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, optional => { 'interfaces' => undef });
+    General::checkParams(args => \%args, optional => { 'interfaces' => {} });
 
     my @interfaces = grep { defined $_->{netconfs} } values %{ $args{interfaces} };
     for my $interface (@interfaces) {
@@ -524,8 +512,7 @@ sub configureInterfaces {
         $interface->{netconf_interfaces} = \@netconfs;
         $interface->{bonds_number} = $interface->{bonds_number} ? $interface->{bonds_number} : 0;
     }
-
-    $self->populateRelations(relations => { interfaces => \@interfaces }, override => 1);
+    $self->_populateRelations(relations => { interfaces => \@interfaces }, override => 1);
 }
 
 sub configureBillingLimits {
@@ -535,7 +522,7 @@ sub configureBillingLimits {
 
     if (defined $args{billing_limits}) {
         my @limits = values %{ $args{billing_limits} };
-        $self->populateRelations(relations => { billinglimits => \@limits }, override => 1);
+        $self->_populateRelations(relations => { billinglimits => \@limits }, override => 1);
 
         my @indicators = qw(Memory Cores);
         foreach my $name (@indicators) {
@@ -572,8 +559,8 @@ sub configureOrchestration {
     my @toclone = ($sp->clustermetrics, $sp->combinations, $sp->nodemetric_conditions,
                    $sp->aggregate_conditions, $sp->rules);
 
-    for (@toclone) {
-        $_->clone(dest_service_provider_id => $self->id);
+    for my $origin (@toclone) {
+        $origin->clone(dest_service_provider_id => $self->id);
     }
 }
 
@@ -593,8 +580,8 @@ sub remove {
         }
     );
 
-    $workflow->addPerm(consumer => $self->user, method => 'get');
-    $workflow->addPerm(consumer => $self->user, method => 'cancel');
+    $workflow->addPerm(consumer => $self->owner, method => 'get');
+    $workflow->addPerm(consumer => $self->owner, method => 'cancel');
     return $workflow;
 }
 
@@ -611,8 +598,8 @@ sub forceStop {
         }
     );
 
-    $workflow->addPerm(consumer => $self->user, method => 'get');
-    $workflow->addPerm(consumer => $self->user, method => 'cancel');
+    $workflow->addPerm(consumer => $self->owner, method => 'get');
+    $workflow->addPerm(consumer => $self->owner, method => 'cancel');
     return $workflow;
 }
 
@@ -629,8 +616,8 @@ sub activate {
         }
     );
 
-    $workflow->addPerm(consumer => $self->user, method => 'get');
-    $workflow->addPerm(consumer => $self->user, method => 'cancel');
+    $workflow->addPerm(consumer => $self->owner, method => 'get');
+    $workflow->addPerm(consumer => $self->owner, method => 'cancel');
     return $workflow;
 }
 
@@ -647,8 +634,8 @@ sub deactivate {
         }
     );
 
-    $workflow->addPerm(consumer => $self->user, method => 'get');
-    $workflow->addPerm(consumer => $self->user, method => 'cancel');
+    $workflow->addPerm(consumer => $self->owner, method => 'get');
+    $workflow->addPerm(consumer => $self->owner, method => 'cancel');
     return $workflow;
 }
 
@@ -678,7 +665,7 @@ sub addComponent {
     for my $method ('get', 'getConf', 'setConf') {
         # TODO: probably should not occurs.
         eval {
-            $component->addPerm(consumer => $self->user, method => $method);
+            $component->addPerm(consumer => $self->owner, method => $method);
         };
         if ($@) {
             $log->warn("Unable to set permissions on component <$component>, " .
@@ -746,7 +733,7 @@ sub getRequiredComponents {
     my ($self, %args) = @_;
 
     my @required;
-    for my $category ('Configurationagent', 'System', 'Monitoragent') {
+    for my $category ('Configurationagent', 'System', 'Monitoragent', 'RemoteShell') {
         eval {
             push @required, $self->getComponent(category => $category);
         };
@@ -760,7 +747,7 @@ sub getRequiredComponents {
 =begin classdoc
 
 Call the parent method, add assign permissions on
-the host for the cluster user.
+the host for the cluster owner.
 
 @return the registered node
 
@@ -772,7 +759,7 @@ sub registerNode {
 
     my $node = $self->SUPER::registerNode(%args);
     if (defined $args{host}) {
-        $args{host}->addPerm(consumer => $self->user, method => 'get');
+        $args{host}->addPerm(consumer => $self->owner, method => 'get');
     }
 
     return $node;
@@ -783,7 +770,7 @@ sub registerNode {
 =begin classdoc
 
 Call the parent method, remove the permissions on the host
-for the cluster user.
+for the cluster owner.
 
 @return the registered node
 
@@ -796,23 +783,10 @@ sub unregisterNode {
     General::checkParams(args => \%args, required => [ 'node' ]);
 
     if (defined $args{node}->host) {
-        $args{node}->host->removePerm(consumer => $self->user, method => 'get');
+        $args{node}->host->removePerm(consumer => $self->owner, method => 'get');
     }
     return $self->SUPER::unregisterNode(%args);
 }
-
-sub getSharedSystemimage {
-    my $self = shift;
-
-    # Use the systemimage of the first found node
-    if (not $self->cluster_si_shared) {
-        throw Kanopya::Exception::Internal(
-                  error => "Should not get shared systemimage in a non si_shared cluster."
-              );
-    }
-    return $self->findRelated(filters => ['nodes'])->systemimage;
-}
-
 
 sub getHosts {
     my ($self) = @_;
@@ -919,8 +893,8 @@ sub addNode {
         }
     );
 
-    $workflow->addPerm(consumer => $self->user, method => 'get');
-    $workflow->addPerm(consumer => $self->user, method => 'cancel');
+    $workflow->addPerm(consumer => $self->owner, method => 'get');
+    $workflow->addPerm(consumer => $self->owner, method => 'cancel');
     return $workflow;
 }
 
@@ -942,8 +916,8 @@ sub removeNode {
         }
     );
 
-    $workflow->addPerm(consumer => $self->user, method => 'get');
-    $workflow->addPerm(consumer => $self->user, method => 'cancel');
+    $workflow->addPerm(consumer => $self->owner, method => 'get');
+    $workflow->addPerm(consumer => $self->owner, method => 'cancel');
     return $workflow;
 }
 
@@ -967,8 +941,8 @@ sub stop {
         }
     );
 
-    $workflow->addPerm(consumer => $self->user, method => 'get');
-    $workflow->addPerm(consumer => $self->user, method => 'cancel');
+    $workflow->addPerm(consumer => $self->owner, method => 'get');
+    $workflow->addPerm(consumer => $self->owner, method => 'cancel');
     return $workflow;
 }
 
@@ -1054,7 +1028,7 @@ sub getNodesMetrics {
 
 sub generateOverLoadNodemetricRules {
     my ($self, %args) = @_;
-    my $service_provider_id = $self->getId();
+    my $service_provider_id = $self->id();
 
     my $creation_conf = {
         memory => {
@@ -1102,22 +1076,25 @@ sub generateOverLoadNodemetricRules {
     }
 }
 
-=head2 generateDefaultMonitoringConfiguration
 
-    Desc: create default nodemetric combination and clustermetric for the service provider
+=pod
+=begin classdoc
 
+Create default nodemetric combination and clustermetric for the service provider
+
+=end classdoc
 =cut
 
 sub generateDefaultMonitoringConfiguration {
     my ($self, %args) = @_;
 
     my $indicators = $self->getManager(manager_type => "CollectorManager")->getIndicators();
-    my $service_provider_id = $self->getId;
+    my $service_provider_id = $self->id;
 
     # We create a nodemetric combination for each indicator
     foreach my $indicator (@$indicators) {
         my $combination_param = {
-            nodemetric_combination_formula  => 'id' . $indicator->getId,
+            nodemetric_combination_formula  => 'id' . $indicator->id,
             service_provider_id             => $service_provider_id,
         };
         Entity::Combination::NodemetricCombination->new(%$combination_param);
@@ -1131,7 +1108,7 @@ sub generateDefaultMonitoringConfiguration {
         foreach my $func (@funcs) {
             my $cm_params = {
                 clustermetric_service_provider_id      => $service_provider_id,
-                clustermetric_indicator_id             => $indicator->getId,
+                clustermetric_indicator_id             => $indicator->id,
                 clustermetric_statistics_function_name => $func,
                 clustermetric_window_time              => '1200',
             };
@@ -1139,18 +1116,20 @@ sub generateDefaultMonitoringConfiguration {
 
             my $acf_params = {
                 service_provider_id             => $service_provider_id,
-                aggregate_combination_formula   => 'id' . $cm->getId
+                aggregate_combination_formula   => 'id' . $cm->id
             };
             my $clustermetric_combination = Entity::Combination::AggregateCombination->new(%$acf_params);
         }
     }
 }
 
-=head2 initCollectorManager
 
-    desc: initialize the collect for the native kanopya collector indicatorsets
-    Args: object $collector_manager
-    Return: none
+=pod
+=begin classdoc
+
+Initialize the collect for the native kanopya collector indicatorsets.
+
+@param collector_manager CollectorManager instance
 
 =cut
 
@@ -1189,7 +1168,7 @@ sub getMonthlyConsommation {
                 time_zone   => $to->time_zone
             );
 
-    BillingManager::clusterBilling($self->user, $self, $from, $to, 1);
+    BillingManager::clusterBilling($self->owner, $self, $from, $to, 1);
 }
 
 sub lock {
@@ -1199,9 +1178,9 @@ sub lock {
     # Lock the cluster himself
     $self->SUPER::lock(%args);
 
-    # Lock the customer user related to the cluster
+    # Lock the customer owner related to the cluster
     # TODO: Verify if required
-    # $self->user->lock(%args);
+    # $self->owner->lock(%args);
 }
 
 sub unlock {
@@ -1209,9 +1188,9 @@ sub unlock {
 
     General::checkParams(args => \%args, required => [ 'consumer' ]);
 
-    # Unock the customer user related to the cluster
+    # Unock the customer owner related to the cluster
     # TODO: Verify if required (cf. sub lock)
-    # $self->user->unlock(%args);
+    # $self->owner->unlock(%args);
 
     # Unlock the cluster himself
     $self->SUPER::unlock(%args);
@@ -1228,8 +1207,8 @@ sub reconfigure {
         }
     );
 
-    $workflow->addPerm(consumer => $self->user, method => 'get');
-    $workflow->addPerm(consumer => $self->user, method => 'cancel');
+    $workflow->addPerm(consumer => $self->owner, method => 'get');
+    $workflow->addPerm(consumer => $self->owner, method => 'cancel');
 
     return $workflow;
 }
@@ -1274,9 +1253,9 @@ sub propagatePermissions {
     General::checkParams(args => \%args, required => [ 'related' ]);
 
     # Add permssions on the related object methods
-    for my $method (keys %{ $args{related}->getMethods() }) {
+    for my $method (keys %{ $args{related}->_methodsDefinition() }) {
         if (! ($method eq "addPerm" || $method eq "removePerm")) {
-            $args{related}->addPerm(consumer => $self->user, method => $method);
+            $args{related}->addPerm(consumer => $self->owner, method => $method);
         }
     }
 }

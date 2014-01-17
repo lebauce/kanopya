@@ -215,7 +215,9 @@ sub getEContext {
 
     General::checkParams(args => \%args, required => [ 'dst_host' ]);
 
-    return EContext->new(src_host => $self->_host, dst_host => $args{dst_host});
+    return EContext->new(src_host => $self->_host,
+                         dst_host => $args{dst_host},
+                         key      => $self->_executor->private_directory . "/kanopya_rsa");
 }
 
 
@@ -297,12 +299,11 @@ sub _entity {
 
 sub AUTOLOAD {
     my $self = shift;
-    my %args = @_;
 
     my @autoload = split(/::/, $AUTOLOAD);
     my $method = $autoload[-1];
 
-    return $self->_entity->$method(%args);
+    return $self->_entity->$method(@_);
 }
 
 sub DESTROY {

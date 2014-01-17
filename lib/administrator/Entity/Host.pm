@@ -15,6 +15,14 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package Entity::Host;
 use base "Entity";
 
@@ -133,6 +141,13 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_editable  => 1,
     },
+    ipmi_credentials => {
+        label        => 'IPMI',
+        type         => 'relation',
+        relation     => 'single_multi',
+        is_mandatory => 0,
+        is_editable  => 1, 
+    },
     admin_ip => {
         label        => 'Administration ip',
         is_virtual   => 1,
@@ -141,14 +156,6 @@ use constant ATTR_DEF => {
         label        => 'Remote session url',
         is_virtual   => 1,
     },
-    entity_tags => {
-        label        => 'Tags',
-        type         => 'relation',
-        relation     => 'multi',
-        link_to      => 'tag',
-        is_editable  => 1,
-        is_mandatory => 0
-    }
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -194,10 +201,14 @@ sub resubmit {
 }
 
 
-=head2 getHostManager
+=pod
+=begin classdoc
 
-    desc: Return the component/conector that manage this host.
+Return the component/conector that manage this host.
 
+@return the component/conector that manage this host.
+
+=end classdoc
 =cut
 
 sub getHostManager {
@@ -283,7 +294,7 @@ sub updateCPU {
     # If the host is a node, then it is used in a cluster
     # belonging to a user, so update quota
     if ($self->node) {
-        my $user = $self->node->service_provider->user;
+        my $user = $self->node->service_provider->owner;
 
         if ($args{cpu_number} < $self->host_core) {
             $user->releaseQuota(resource => 'cpu',
@@ -306,7 +317,7 @@ sub updateMemory {
     # If the host is a node, then it is used in a cluster
     # belonging to a user, so update quota
     if ($self->node) {
-        my $user = $self->node->service_provider->user;
+        my $user = $self->node->service_provider->owner;
 
         if ($args{memory} < $self->host_ram) {
             $user->releaseQuota(resource => 'ram',
@@ -350,7 +361,7 @@ sub configureIfaces {
         my $nbbonds  = $interface->bonds_number > 0 ? $interface->bonds_number : 0;
 
         my @valid_ifaces = grep { scalar @{ $_->slaves } == $nbbonds } @ifaces;
-        $valid_ifaces[0]->populateRelations(relations => { netconf_ifaces => \@netconfs });
+        $valid_ifaces[0]->update(netconf_ifaces => \@netconfs, override_relations => 0);
 
         # Remove the iface form the list
         @ifaces = grep { $valid_ifaces[0] ne $_ } @ifaces;
@@ -465,6 +476,8 @@ sub adminIp {
     if (defined $iface and $iface->hasIp) {
         return $iface->getIPAddr;
     }
+
+    return undef;
 }
 
 sub getFreeHosts {
@@ -524,16 +537,22 @@ sub deactivate{
     return $self->host_manager->deactivateHost(host => $self);
 }
 
-=head2 toString
+=pod
+=begin classdoc
 
-    desc: return a string representation of the entity
+Return a string representation of the entity
 
+@return string representation of the entity
+
+=end classdoc
 =cut
 
-sub toString {
+sub label {
     my $self = shift;
 
-    return 'Entity::Host <' . $self->getAttr(name => "entity_id") .'>';
+    return $self->node
+         ? $self->node->node_hostname
+         : $self->host_serial_number;
 }
 
 sub getClusterId {
@@ -557,10 +576,12 @@ sub remoteSessionUrl {
    return $self->getHostManager->getRemoteSessionURL(host => $self);
 }
 
-=head2
+=pod
+=begin classdoc
 
     Check if the host can be stopped, raise an exception otherwise
 
+=end classdoc
 =cut
 
 sub checkStoppable {

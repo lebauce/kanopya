@@ -1,4 +1,4 @@
-# Copyright © 2011-2012 Hedera Technology SAS
+# Copyright © 2011-2013 Hedera Technology SAS
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -15,15 +15,27 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+
+=pod
+=begin classdoc
+
+WorkflowDef class supplies a workflow definition used as a patter to instanciate new workflows.
+
+To a WorkflowDef instance are associated a sequence of operations (through the WorkflowStep class)
+and some Parameters.
+
+=end classdoc
+=cut
+
 package Entity::WorkflowDef;
 use base 'Entity';
 
 use strict;
 use warnings;
-
 use WorkflowStep;
+use TryCatch;
+my $err;
 
-use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
 my $log = get_logger("");
@@ -33,127 +45,88 @@ use constant ATTR_DEF => {
     workflow_def_name => {
         pattern      => '^.*$',
         is_mandatory => 1,
-        is_extended  => 0
-    },
-    workflow_def_origin => {
-        pattern      => '^\d+$',
-        is_mandatory => 0,
-        is_extended  => 0
     },
     param_presets => {
         is_virtual   => 1,
+        is_editable  => 1,
     },
 };
 
 sub methods {
-  return {
-    updateParamPreset => {
-        description => 'updateParamPreset',
-        perm_holder => 'entity',
-    },
-  }
+    return {};
 }
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub new {
-    my $class = shift;
-    my %args = @_;
 
-    my $params;
-    if (defined $args{params}) {
-        $params = delete $args{params};
-    }
+=pod
+=begin classdoc
 
-    my $self = $class->SUPER::new(%args);
+Add a new Operation to the WorkflowDef sequence of operations.
 
-    if (defined $params) {
-        $self->setParamPreset(params => $params);
-    }
+@param operationtype_id the operation type id
 
-    return $self;
-}
+@return Corresponding WorkflowStep instance
+
+Create a new WorkflowDef
+
+=end classdoc
+=cut
 
 sub addStep {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ "operationtype_id" ]);
-    
-    my $workflow_def_id = $self->getAttr(name => 'workflow_def_id');
-    my $operationtype_id = $args{operationtype_id};
-    
-    my $workflow_step = WorkflowStep->new(workflow_def_id => $workflow_def_id, operationtype_id => $operationtype_id); 
+
+    return  WorkflowStep->new(workflow_def_id  => $self->workflow_def_id,
+                              operationtype_id => $args{operationtype_id});
 }
 
-sub setParamPreset {
-    my $self = shift;
-    my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "params" ]);
+=pod
+=begin classdoc
 
-    # TODO remove current paramPreset if exists (or use updateParamPreset)
+This method delete WorkflowDef and its associated params preset
 
-    my $preset = ParamPreset->new(params => $args{params});
-    $self->setAttr(name  => 'param_preset_id',
-                   value => $preset->getAttr(name => 'param_preset_id'));
-    $self->save();
-}
-
-sub updateParamPreset{
-    my ($self,%args) = @_;
-
-    General::checkParams(args => \%args, required => [ "params" ]);
-
-    my $preset;
-    eval {
-        $preset = ParamPreset->get(id => $self->param_preset_id);
-    };
-    if ($@) {
-        $errmsg = 'could not retrieve any param preset for workflow: '.$@;
-        $log->error($errmsg);
-    } else {
-        $preset->update( params => $args{params} );
-    }
-}
-
-sub paramPresets {
-    my ($self,%args) = @_;
-
-    my $param_preset_id = $self->param_preset_id;
-    return {} if ! $param_preset_id;
-
-    my $preset;
-    eval {
-        $preset = ParamPreset->get(id => $param_preset_id);
-    };
-    if ($@) {
-        $errmsg = 'could not retrieve any param preset for workflow: '.$@;
-        $log->error($errmsg);
-    } else {
-        return $preset->load();
-    }
-}
-
-=head2 delete
-
-    Class : Public
-
-    Desc : This method delete WorkflowDef and its associated params preset
-
+=end classdoc
 =cut
 
 sub delete {
-    my ($self,%args) = @_;
+    my $self = shift;
 
-    my $preset;
-    eval {
-        $preset = ParamPreset->get(id => $self->param_preset_id);
-    };
-    if (not $@) {
-        $preset->delete();
+    if (defined $self->param_preset) {
+        $self->param_preset->remove();
     }
 
     $self->SUPER::delete();
+}
+
+
+=pod
+=begin classdoc
+
+Set/get the virtual attribute param_preset.
+
+=end classdoc
+=cut
+
+sub paramPresets {
+    my ($self, @args) = @_;
+
+    if (scalar(@args)) {
+        if (defined $self->param_preset) {
+            $self->param_preset->remove();
+        }
+        $self->param_preset_id(ParamPreset->new(params => pop @args)->id);
+    }
+    else {
+        try {
+            return $self->param_preset->load();
+        }
+        catch ($err) {
+            return {};
+        }
+    }
 }
 
 1;

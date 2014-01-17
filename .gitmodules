@@ -96,3 +96,11 @@
 [submodule "templates/components/puppetmaster/modules/rsync"]
 	path = templates/components/puppetmaster/modules/rsync
 	url = https://github.com/puppetlabs/puppetlabs-rsync.git
+[submodule "templates/components/puppetmaster/modules/swift"]
+	path = templates/components/puppetmaster/modules/swift
+	url = git://github.com/stackforge/puppet-swift.git
+	branch = stable/grizzly
+[submodule "templates/components/puppetmaster/modules/snmp"]
+	path = templates/components/puppetmaster/modules/snmp
+	url = https://github.com/razorsedge/puppet-snmp.git
+	branch = master

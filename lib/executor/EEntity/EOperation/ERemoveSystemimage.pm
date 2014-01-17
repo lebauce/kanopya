@@ -36,7 +36,7 @@ sub check {
     my $self = shift;
     my %args = @_;
     $self->SUPER::check();
-    
+
     General::checkParams(args => $self->{context}, required => [ "systemimage" ]);
 }
 

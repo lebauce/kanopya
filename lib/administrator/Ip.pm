@@ -42,7 +42,7 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
-sub getLabelAttr {
+sub _labelAttr {
     return 'ip_addr';
 }
 

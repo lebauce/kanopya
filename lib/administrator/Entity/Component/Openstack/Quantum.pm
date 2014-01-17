@@ -61,22 +61,19 @@ sub getPuppetDefinition {
     my $definition = $self->SUPER::getPuppetDefinition(%args);
     my $name = "quantum-" . $self->id;
 
-    my $manifest = $self->instanciatePuppetResource(
-        name => 'kanopya::openstack::quantum::server',
-        params => {
-            bridge_flat => 'br-flat',
-            bridge_vlan => 'br-vlan',
-            email => $self->service_provider->user->user_email,
-            database_user => $name,
-            database_name => $name,
-            rabbit_user => $name,
-            rabbit_virtualhost => 'openstack-' . $self->nova_controller->id
-        }
-    );
-
     return merge($self->SUPER::getPuppetDefinition(%args), {
         quantum => {
-            manifest     => $manifest,
+            classes => {
+                'kanopya::openstack::quantum::server' => {
+                    bridge_flat => 'br-flat',
+                    bridge_vlan => 'br-vlan',
+                    email => $self->service_provider->owner->user_email,
+                    database_user => $name,
+                    database_name => $name,
+                    rabbit_user => $name,
+                    rabbit_virtualhost => 'openstack-' . $self->nova_controller->id
+                }
+            },
             dependencies => [ $self->nova_controller->keystone,
                               $self->nova_controller->amqp,
                               $self->mysql5 ]

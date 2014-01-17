@@ -15,6 +15,15 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package EEntity::EHost::EVirtualMachine;
 use base "EEntity::EHost";
 
@@ -28,11 +37,16 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 
-=head2 getTotalMemory
+=pod
+=begin classdoc
 
-    Return the total memory amount.
+Return the total memory amount.
 
+@return total memory amount
+
+=end classdoc
 =cut
+
 
 sub getTotalMemory {
     my ($self, %args) = @_;
@@ -41,10 +55,14 @@ sub getTotalMemory {
     return $vm_resources->{$self->id}->{ram};
 }
 
-=head2 getTotalCpu
+=pod
+=begin classdoc
 
-    Return the total cpu count.
+Return the total cpu count.
 
+@return total cpu count.
+
+=end classdoc
 =cut
 
 sub getTotalCpu {
@@ -61,10 +79,14 @@ sub getResources {
 }
 
 
-=head2 getHypervisor
+=pod
+=begin classdoc
 
-    Return EEntity corresponding to the hypervisor.
+Return EEntity corresponding to the hypervisor.
 
+@return EEntity corresponding to the hypervisor.
+
+=end classdoc
 =cut
 
 sub getHypervisor {

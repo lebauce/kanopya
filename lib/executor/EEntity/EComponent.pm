@@ -33,6 +33,8 @@ use Data::Dumper;
 use String::Random;
 use Template;
 use File::Basename qw(fileparse);
+use File::Spec qw(rel2abs);
+use File::Temp qw/ tmpnam /;
 use Log::Log4perl "get_logger";
 
 use General;
@@ -64,36 +66,42 @@ sub generateFile {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams( args => \%args, required => ['mount_point','input_file','data','output'] );
+    General::checkParams(
+        args => \%args,
+        required => [ 'file', 'template_dir', 'template_file', 'data' ],
+        optional => { host => undef, keep_file => 0,
+                      mode => undef, user => undef, group => undef }
+    );
 
-    if (not defined $args{econtext}) {
-        $args{econtext} = $self->_host->getEContext;
-    }
+    $args{host} = $args{host} || $self->_host;
+    $args{template_dir} = File::Spec->rel2abs($args{template_dir},
+                                              Kanopya::Config::getKanopyaDir() . '/templates');
 
-    my $template_dir = defined $args{template_dir} ? $args{template_dir}
-                                                   : $self->_entity->getTemplateDirectory();
+    my $config = General::getTemplateConfiguration();
+    $config->{INCLUDE_PATH} = $args{template_dir};
 
-    my $config = {
-        INCLUDE_PATH => $template_dir,
-        INTERPOLATE  => 0,               # expand "$var" in plain text
-        POST_CHOMP   => 0,               # cleanup whitespace
-        EVAL_PERL    => 1,               # evaluate Perl code blocks
-        RELATIVE => 1,                   # desactive par defaut
-    };
-
-    my $rand = new String::Random;
     my $template = Template->new($config);
+    my ($fh, $path) = tmpnam();
 
-    # generation
-    my $tmpfile = $rand->randpattern("cccccccc");
-
-    $template->process($args{input_file}, $args{data}, "/tmp/".$tmpfile) || do {
-        $errmsg = "error during generation from '$args{input_file}':" .  $template->error;
+    eval {
+        $template->process($args{template_file}, $args{data}, $fh) || die $template->error(), "\n";
+    };
+    if ($@) {
+        $errmsg = "error during generation from '$args{file}':" .  $template->error;
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     };
-    $args{econtext}->send(src => "/tmp/$tmpfile", dest => $args{mount_point} . $args{output});
-    unlink "/tmp/$tmpfile";
+
+    $args{host}->getEContext->send(src   => $path,
+                                   dest  => $args{file},
+                                   mode  => $args{mode},
+                                   user  => $args{user},
+                                   group => $args{group});
+
+    close($fh);
+    unlink $path;
+
+    return $args{file};
 }
 
 
@@ -114,8 +122,14 @@ sub generateNodeFile {
 
     General::checkParams(
         args     => \%args,
-        required => [ 'cluster', 'host', 'file', 'template_dir', 'template_file', 'data' ]
+        required => [ 'file', 'template_dir', 'template_file', 'data' ],
+        optional => { cluster => undef, host => undef, send => 0,
+                      mount_point => '', mode => undef, user => undef,
+                      group => undef }
     );
+
+    $args{cluster} = $args{cluster} || $self->service_provider;
+    $args{host} = $args{host} || EEntity->new(entity => $self->getMasterNode->host);
 
     my $path = $self->_executor->getConf->{clusters_directory};
     $path .= '/' . $args{cluster}->cluster_name;
@@ -125,22 +139,35 @@ sub generateNodeFile {
 
     $self->_host->getEContext->execute(command => "mkdir -p $directories");
 
-    my $template_conf = {
-        INCLUDE_PATH => $args{template_dir},
-        INTERPOLATE  => 0,               # expand "$var" in plain text
-        POST_CHOMP   => 0,               # cleanup whitespace
-        EVAL_PERL    => 1,               # evaluate Perl code blocks
-        RELATIVE     => 1,               # desactive par defaut
-    };
+    $self->generateFile(
+        template_dir  => $args{template_dir},
+        template_file => $args{template_file},
+        content       => $args{content},
+        file          => $path,
+        mode          => $args{mode},
+        user          => "puppet",
+        group         => "puppet",
+        data          => $args{data},
+    );
 
-    my $template = Template->new($template_conf);
-    eval {
-        $template->process($args{template_file}, $args{data}, $path);
-    };
-    if($@) {
-        $errmsg = "error during generation from '$args{template}': " . $template->error;
-        throw Kanopya::Exception::Internal(error => $errmsg);
+    if ($args{mount_point}) {
+        $self->_host->getEContext->send(
+            src   => $path,
+            dest  => $args{mount_point} . $args{file},
+            mode  => $args{mode},
+            user  => $args{user},
+            group => $args{group}
+        );
     }
+
+    if ($args{send}) {
+        $args{host}->getEContext->send(src   => $path,
+                                       dest  => $args{file},
+                                       mode  => $args{mode},
+                                       user  => $args{user},
+                                       group => $args{group});
+    }
+
     return $path;
 }
 
@@ -224,8 +251,13 @@ sub applyConfiguration {
     my $tags = $args{tags} || [ 'kanopya::' . lc($self->component_type->component_name) ];
     my $cluster = $self->service_provider;
     my $epuppet = EEntity->new(entity => $cluster->getComponent(category => "Configurationagent"));
-    return $epuppet->applyConfiguration(cluster => $cluster,
-                                        tags    => $tags);
+    my @hosts = map { EEntity->new(entity => $_->host) } $self->getActiveNodes();
+
+    return $epuppet->applyConfiguration(
+               cluster => $cluster,
+               hosts   => \@hosts,
+               tags    => $tags
+           );
 }
 
 1;

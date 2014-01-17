@@ -217,7 +217,8 @@ function build_submenu(container, view_id, links, elem_id) {
         if (links[smenu]['onLoad']) {
             _content_handlers[content_id] = {
                     'onLoad' : links[smenu]['onLoad'],
-                    'info' : links[smenu]['info']
+                    'info' : links[smenu]['info'],
+                    'doc' : links[smenu]['doc'],
             };
         }
     }

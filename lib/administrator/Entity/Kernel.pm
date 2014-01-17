@@ -15,6 +15,16 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 7 july 2010
+
+
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package Entity::Kernel;
 use base "Entity";
 
@@ -34,9 +44,6 @@ use constant ATTR_DEF => {
 
 };
 
-=head2 getKernels
-
-=cut
 
 sub getKernels {
     my $class = shift;
@@ -47,20 +54,20 @@ sub getKernels {
     return $class->search(%args);
 }
 
-=head2 remove
-
-=cut
-
 sub remove {}
 
 sub getAttrDef{
     return ATTR_DEF;
 }
 
-=head2 toString
+=pod
+=begin classdoc
 
-    desc: return a string representation of the entity
+Return a string representation of the entity
 
+@return string representation of the entity
+
+=end classdoc
 =cut
 
 sub toString {

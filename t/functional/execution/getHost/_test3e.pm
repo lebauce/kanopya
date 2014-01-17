@@ -139,7 +139,7 @@ sub test3e {
         iface_pxe  => 0,
     );
     # Attach corresponding ips to ifaces
-    $iface11->populateRelations(
+    $iface11->_populateRelations(
         relations => {
             netconf_ifaces => [
                 Entity::Netconf->create(
@@ -164,7 +164,7 @@ sub test3e {
         iface_pxe  => 0,
     );
     # Attach corresponding ips to ifaces
-    $iface21->populateRelations(
+    $iface21->_populateRelations(
         relations => {
             netconf_ifaces => [
                 Entity::Netconf->create(
@@ -189,7 +189,7 @@ sub test3e {
         iface_pxe  => 0,
     );
     # Attach corresponding ips to ifaces
-    $iface31->populateRelations(
+    $iface31->_populateRelations(
         relations => {
             netconf_ifaces => [
                 Entity::Netconf->create(
@@ -214,7 +214,7 @@ sub test3e {
         iface_pxe  => 0,
     );
     # Attach corresponding ips to ifaces
-    $iface41->populateRelations(
+    $iface41->_populateRelations(
         relations => {
             netconf_ifaces => [
                 Entity::Netconf->create(
@@ -239,7 +239,7 @@ sub test3e {
         iface_pxe  => 0,
     );
     # Attach corresponding ips to ifaces
-    $iface51->populateRelations(
+    $iface51->_populateRelations(
         relations => {
             netconf_ifaces => [
                 Entity::Netconf->create(
@@ -264,7 +264,7 @@ sub test3e {
         iface_pxe  => 0,
     );
     # Attach corresponding ips to ifaces
-    $iface61->populateRelations(
+    $iface61->_populateRelations(
         relations => {
             netconf_ifaces => [
                 Entity::Netconf->create(

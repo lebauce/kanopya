@@ -1,0 +1,6 @@
+post:
+  base:
+    - "ifconfig > /root/ifconfig"
+    - "ip addr > /root/ip.addr"
+    - "ps aux > /root/ps.aux"
+    - "sync"

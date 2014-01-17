@@ -16,7 +16,7 @@ my $log = get_logger("");
 
 my $testing = 0;
 
-use BaseDB;
+use Kanopya::Database;
 use Entity::Component;
 use Entity::ServiceProvider::Externalcluster;
 use CapacityManagement;
@@ -24,9 +24,9 @@ use ChocoCapacityManagement;
 use Entity::Component::Virtualization::Opennebula3;
 use ClassType::ComponentType;
 
-BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
-BaseDB->beginTransaction;
+Kanopya::Database::beginTransaction;
 
 my @vms;
 my @hvs;
@@ -43,7 +43,7 @@ main();
 sub main {
 
     if ($testing == 1) {
-        BaseDB->beginTransaction;
+        Kanopya::Database::beginTransaction;
     }
 
     $service_provider = Entity::ServiceProvider->new();
@@ -106,7 +106,7 @@ sub main {
     test_scale_in_need_csp();
 
     if ($testing == 1) {
-        BaseDB->rollbackTransaction;
+        Kanopya::Database::rollbackTransaction;
     }
 }
 

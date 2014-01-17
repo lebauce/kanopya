@@ -15,9 +15,9 @@ ajax '/services/:serviceid/nodes/update' => sub {
     my $node_count;
 
     eval {
-        my $cluster = Entity::ServiceProvider::Externalcluster->methodCall(method => 'get', params => { id => param('serviceid') });
+        my $cluster = Entity::ServiceProvider::Externalcluster->apiCall(method => 'get', params => { id => param('serviceid') });
              
-        my $rep = $cluster->methodCall(method => 'updateNodes', params => { password => param('password') });
+        my $rep = $cluster->apiCall(method => 'updateNodes', params => { password => param('password') });
 
         $node_count       = $rep->{node_count};
         my $created_nodes = $rep->{created_nodes};

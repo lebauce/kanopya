@@ -124,7 +124,7 @@ sub prepare {
     for my $entity_state (@entity_states) {
         throw Kanopya::Exception::Execution::InvalidState(
                   error => "The cluster <"
-                           .$self->{context}->{host_manager_sp}->cluster_name
+                           .$self->{context}->{host_manager}->service_provider->cluster_name
                            .'> is <'.$entity_state->state
                            .'> which is not a correct state to accept addnode'
               );
@@ -192,7 +192,7 @@ sub prerequisites {
         my @hv_in_ids;
         for my $hv (@hvs) {
             my ($state,$time_stamp) = $hv->getNodeState();
-            $log->info('hv <'.($hv->getId()).'>, state <'.($state).'>');
+            $log->info('hv <'.($hv->id()).'>, state <'.($state).'>');
             if ($state eq 'in') {
                 push @hv_in_ids, $hv->id;
             }
@@ -344,10 +344,10 @@ sub execute {
     $self->{context}->{cluster}->checkBillingLimits(metrics => $host_metrics);
 
     # Check the user quota on ram and cpu
-    $self->{context}->{cluster}->user->canConsumeQuota(resource => 'ram',
-                                                       amount   => $self->{context}->{host}->host_ram);
-    $self->{context}->{cluster}->user->canConsumeQuota(resource => 'cpu',
-                                                       amount   => $self->{context}->{host}->host_core);
+    $self->{context}->{cluster}->owner->canConsumeQuota(resource => 'ram',
+                                                        amount   => $self->{context}->{host}->host_ram);
+    $self->{context}->{cluster}->owner->canConsumeQuota(resource => 'cpu',
+                                                        amount   => $self->{context}->{host}->host_core);
 
     my $createdisk_params   = $self->{context}->{cluster}->getManagerParameters(manager_type => 'DiskManager');
     my $createexport_params = $self->{context}->{cluster}->getManagerParameters(manager_type => 'ExportManager');
@@ -368,7 +368,7 @@ sub execute {
             $self->{context}->{systemimage} = EEntity->new(data => $existing_image);
         }
         # Else if it is the first node, or the cluster si policy is dedicated, create a new one.
-        elsif (($self->{params}->{node_number} == 1) or (not $self->{context}->{cluster}->cluster_si_shared)) {
+        else {
             $log->info("A new systemimage instance <$systemimage_name> must be created");
 
             my $systemimage_desc = 'System image for node ' . $self->{params}->{node_number}  .' in cluster ' .
@@ -384,11 +384,6 @@ sub execute {
                 throw Kanopya::Exception::Internal::WrongValue(error => $@);
             }
             $self->{params}->{create_systemimage} = 1;
-        }
-        else {
-            $self->{context}->{systemimage} = EEntity->new(
-                                                  data => $self->{context}->{cluster}->getSharedSystemimage
-                                              );
         }
     }
 

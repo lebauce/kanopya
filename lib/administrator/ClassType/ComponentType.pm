@@ -30,17 +30,21 @@ use strict;
 use warnings;
 
 use constant ATTR_DEF => {
-    component_name        => {
-        pattern         => '^.*$',
-        is_mandatory    => 1,
-        is_extended     => 0,
-        is_editable     => 0
+    component_name => {
+        pattern      => '^.*$',
+        is_mandatory => 1,
+        is_editable  => 0
     },
-    component_version     => {
-        pattern         => '^\d*$',
-        is_mandatory    => 0,
-        is_extended     => 0,
-        is_editable     => 0
+    component_version => {
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_editable  => 0
+    },
+    deployable => {
+        pattern      => '^\d*$',
+        is_mandatory => 0,
+        is_editable  => 0,
+        default      => 1
     },
     component_type_categories => {
         type         => 'relation',
@@ -100,11 +104,11 @@ For component types, delegate the permissons to the Component master group.
 =end classdoc
 =cut
 
-sub getDelegatee {
+sub _delegatee {
     my $self = shift;
     my $class = "Entity::Component";
 
-    return $class->getDelegatee;
+    return $class->_delegatee;
 }
 
 1;

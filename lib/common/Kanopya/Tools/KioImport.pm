@@ -1,5 +1,4 @@
 =pod
-
 =begin classdoc
 
 Subroutines to upgrade KIO
@@ -7,7 +6,6 @@ Subroutines to upgrade KIO
 @since 2013-March-26
 
 =end classdoc
-
 =cut
 
 
@@ -17,10 +15,11 @@ use strict;
 use warnings;
 
 use Data::Dumper;
-use General;
 use JSON;
+
+use General;
 use Kanopya::Exceptions;
-use BaseDB;
+use Kanopya::Database;
 use Entity::Component;
 use Entity::Component::ActiveDirectory;
 use Entity::Component::Scom;
@@ -51,8 +50,8 @@ use ClassType::ComponentType;
 use Kanopya::Config;
 use Indicatorset;
 
-BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
-BaseDB->beginTransaction;
+Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
+Kanopya::Database::beginTransaction;
 
 eval {
     importKanopyaData();
@@ -60,10 +59,10 @@ eval {
 if ($@) {
     my $error = $@;
     print 'Error in data import : ' . $error . "\n";
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 }
 else {
-    BaseDB->commitTransaction;
+    Kanopya::Database::commitTransaction;
     print "Data imported successfully\n";
 }
 

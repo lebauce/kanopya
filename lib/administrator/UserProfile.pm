@@ -13,17 +13,15 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 =pod
-
 =begin classdoc
 
 TODO
 
 =end classdoc
-
 =cut
 
 package UserProfile;
-use base 'BaseDB';
+use base BaseDB;
 
 use strict;
 use warnings;
@@ -42,14 +40,12 @@ sub getAttrDef { return ATTR_DEF; }
 
 
 =pod
-
 =begin classdoc
 
 Override the creation to automatically add the user in the group
 corresponding to the associated profile..
 
 =end classdoc
-
 =cut
 
 sub new {
@@ -59,7 +55,7 @@ sub new {
 
     # Automatically add the user in the groups associated to this profile
     for my $group ($self->profile->gps) {
-        # TODO: Very strange behavior, $self->user->id do not return the proper suer id as given in $args{user_id}...
+        # TODO: Very strange behavior, $self->user->id do not return the proper user id as given in $args{user_id}...
         my $user = Entity::User->get(id => $args{user_id});
         $group->appendEntity(entity => $user);
     }

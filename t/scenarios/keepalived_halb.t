@@ -16,7 +16,7 @@ Log::Log4perl->easy_init({
 use Net::Ping;
 use EContext::SSH;
 
-use BaseDB;
+use Kanopya::Database;
 use Entity::ServiceProvider::Cluster;
 use Entity::User;
 use Entity::Kernel;
@@ -52,7 +52,7 @@ sub get_node_by_number {
 sub main {
 
     if ($testing == 1) {
-        BaseDB->beginTransaction;
+        Kanopya::Database::beginTransaction;
     }
 
     diag('Register master image');

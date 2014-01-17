@@ -1,6 +1,8 @@
 use lib qw(/opt/kanopya/lib/administrator /opt/kanopya/lib/monitor /opt/kanopya/lib/orchestrator /opt/kanopya/lib/common);
 
 use General;
+use Kanopya::Database;
+
 use Data::Dumper;
 use Clustermetric;
 use AggregateCombination;
@@ -11,7 +13,7 @@ use Indicatorset;
 use Log::Log4perl "get_logger";
 Log::Log4perl->init('/opt/kanopya/conf/monitor-log.conf');
 
-BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
 my $ok = 1;
 

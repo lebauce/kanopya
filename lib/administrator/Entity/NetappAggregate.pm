@@ -15,14 +15,12 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-=head1 NAME
+=pod
+=begin classdoc
 
-Entity::NetappAggregate
+TODO
 
-=head1 SYNOPSIS
-
-=head1 DESCRIPTION
-
+=end classdoc
 =cut
 
 package Entity::NetappAggregate;

@@ -37,17 +37,14 @@ use constant ATTR_DEF => {
     systemimage_name => {
         pattern      => '^[0-9a-zA-Z_]*$',
         is_mandatory => 1,
-        is_extended  => 0
     },
     systemimage_desc => {
         pattern      => '^.*$',
         is_mandatory => 1,
-        is_extended  => 0
     },
     active => {
         pattern      => '^[01]$',
         is_mandatory => 0,
-        is_extended  => 0
     },
     systemimage_container_accesses => {
         label        => 'Container accesses',

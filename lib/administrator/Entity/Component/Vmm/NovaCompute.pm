@@ -35,6 +35,16 @@ use constant ATTR_DEF => {
         is_editable  => 1,
         specialized  => 'NovaController'
     },
+    libvirt_type => {
+        type         => 'enum',
+        label        => 'libvirt type',
+        pattern      => '^(kvm|qemu)$',
+        options      => { 'kvm' => 'KVM',
+                          'qemu' => 'QEMU' },
+        is_mandatory => 0,
+        is_editable  => 1,
+        default      => 'kvm',
+    },
 };
 
 sub getAttrDef { return ATTR_DEF; }
@@ -88,16 +98,15 @@ sub getPuppetDefinition {
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         novacompute => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::openstack::nova::compute",
-                            params => {
-                                bridge_uplinks => \@uplinks,
-                                email => $self->nova_controller->service_provider->user->user_email,
-                                libvirt_type => 'kvm',
-                                rabbit_user => "nova-" . $self->nova_controller->id,
-                                rabbit_virtualhost => 'openstack-' . $self->nova_controller->id
-                            }
-                        ),
+            classes => {
+                "kanopya::openstack::nova::compute" => {
+                    bridge_uplinks => \@uplinks,
+                    email => $self->nova_controller->service_provider->owner->user_email,
+                    libvirt_type => 'kvm',
+                    rabbit_user => "nova-" . $self->nova_controller->id,
+                    rabbit_virtualhost => 'openstack-' . $self->nova_controller->id
+                }
+            },
             optionals => \@optionals
         }
     } );

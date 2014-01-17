@@ -33,6 +33,7 @@ use Kanopya::Exceptions;
 use General;
 use ClassType::ComponentType;
 use Data::Dumper;
+use TryCatch;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -104,13 +105,12 @@ sub new {
     my $class = shift;
     my %args = @_;
 
-    # Avoid abstract Entity::Component instanciation
-    if ($class !~ /Entity::Component.*::(\D+)(\d*)/) {
-        $errmsg = "Entity::Component->new : Entity::Component must not " .
-                  "be instanciated without a concret component class.";
-        throw Kanopya::Exception::Internal(error => $errmsg);
+    # Avoid abstract Entity::Component instantiation
+    if ($class eq "Entity::Component") {
+        throw Kanopya::Exception::Internal::AbstractClass();
     }
 
+    $class =~ /Entity::Component.*::(\D+)(\d*)/;
     my $component_name    = $1;
     my $component_version = $2;
 
@@ -159,8 +159,8 @@ sub getConf {
 
     my $class = ref($self) || $self;
     my @relations;
-    my $attrdefs = $class->getAttrDefs();
-    while (my ($name, $attr) = each %{$attrdefs}) {
+    my $attrdefs = $class->_attributesDefinition(trunc => "Entity::Component");
+    while (my ($name, $attr) = each %{ $attrdefs }) {
         if (defined $attr->{type} and $attr->{type} eq "relation") {
             push @relations, $name;
         }
@@ -239,8 +239,16 @@ sub registerNode {
 
 sub getMasterNode {
     my $self = shift;
+    my $masternode;
 
-    return $self->findRelated(filters => [ 'component_nodes' ], hash => { master_node => 1 })->node;
+    try {
+        $masternode = $self->findRelated(filters => [ 'component_nodes' ],
+                                         hash => { master_node => 1 })->node;
+    } catch($err) {
+        $masternode = undef;
+    }
+
+    return $masternode;
 }
 
 sub getActiveNodes {
@@ -319,7 +327,7 @@ sub checkAttribute {
     if (! $self->$attribute) {
         my $error = $args{error};
         if (!$error) {
-            my $attrs = $self->getAttrDefs();
+            my $attrs = $self->toJSON();
             $attribute .= "_id" if ! defined $attrs->{$attribute};
             $error = "There is no " . lcfirst($attrs->{$attribute}->{label}) .
                      " configured for component ". $self->label;
@@ -473,31 +481,36 @@ sub isBalanced {
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
     my $manifest = "";
     my $dependencies = [];
-    my @listens = $self->haproxy1s_listen;
+    my $listens = { };
+
     LISTEN:
-    for my $listen (@listens) {
+    for my $listen ($self->haproxy1s_listen) {
         next LISTEN if $self->id != $listen->listen_component_id;    
-        $manifest .=  $self->instanciatePuppetResource(
-                             resource => '@@haproxy::balancermember',
-                             name => $listen->listen_name .'-'.$args{host}->node->node_hostname,
-                             params => {
-                                listening_service => $listen->listen_name,
-                                ports             => $listen->listen_component_port,
-                                server_names      => $args{host}->node->node_hostname,
-                                ipaddresses       => $args{host}->adminIp,
-                                options           => 'check',
-                                tag               => 'kanopya::haproxy'
-                             },
-                          );
+
+        $listens->{$listen->listen_name . '-'.$args{host}->node->node_hostname} = {
+            listening_service => $listen->listen_name,
+            ports             => $listen->listen_component_port,
+            server_names      => $args{host}->node->node_hostname,
+            ipaddresses       => $args{host}->adminIp,
+            options           => 'check',
+            tag               => 'kanopya::haproxy'
+        },
+
         push @$dependencies, $listen->haproxy1;
     }
     
-    
     return {
         loadbalanced => {
-            manifest     => $manifest,
+            classes => {
+                'kanopya::loadbalanced' => {
+                    members => $listens
+                }
+            },
             dependencies => $dependencies
         }
     }
@@ -518,7 +531,11 @@ sub instanciatePuppetResource {
     shift @dumper;
     pop @dumper;
 
-    return "$args{resource} { '$args{name}':\n" .
+    my $title = ref($args{name}) eq 'ARRAY' ?
+                '[ ' . join(', ', map { "'" . $_ . "'" } @{$args{name}}) . ' ]' :
+                "'" . $args{name} . "'";
+
+    return "$args{resource} { $title:\n" .
            ($args{require} ? "  require => [ " . join(' ,', @{$args{require}}) . " ],\n" : '') .
            join("\n", @dumper) . "\n" .
            "}\n";

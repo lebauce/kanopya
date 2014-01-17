@@ -1,32 +1,33 @@
-#!/bin/sh
+#! /bin/bash
 ### BEGIN INIT INFO
 # Provides:           kanopya-front
 # Required-Start:     mysql rabbitmq-server
-# Required-Stop:      $network $syslog
+# Required-Stop:      $network $remote_fs $syslog
 # Default-Start:      2 3 4 5
 # Default-Stop:       0 1 6
-# Short-Description:  Kanopya web interface server
-# Description:        Kanopya web interface using Starman server and plackup
+# Short-Description:  Kanopya Web interface service
+# Description:        Kanopya Web interface service using Starman and Plackup
 ### END INIT INFO
 
 set -e
 
 . /lib/lsb/init-functions
 
-PID="/var/run/plackup.front_kanopya.pid"
+[ -x "/usr/bin/plackup" ] && DAEMON="/usr/bin/plackup" || DAEMON="/usr/local/bin/plackup"
+NAME="Kanopya Web UI"
+PIDFILE="/var/run/kanopya-front.pid"
 PORT=5000
 WORKERS=10
 DANCER_DIR="/opt/kanopya/ui/Frontend"
 DANCER_APP="$DANCER_DIR/bin/app.pl"
 SESSIONS_DIR="/tmp/kanopya-sessions"
-
-plackup="/usr/bin/plackup"
-plackup_args="-E production -p $PORT -s Starman --pid=$PID --workers $WORKERS --user=kanopya -D"
-website="Kanopya"
-
 lockfile="/var/lock/plackup.front_kanopya"
+RETVAL=0
 
-PERL5LIB=\
+test -x "$DAEMON" || exit 1
+
+# Defaults
+export PERL5LIB=\
 /opt/kanopya/lib/common:\
 /opt/kanopya/lib/administrator:\
 /opt/kanopya/lib/monitor:\
@@ -34,73 +35,83 @@ PERL5LIB=\
 /opt/kanopya/lib/external:\
 /opt/kanopya/lib/external/NetApp:\
 /opt/kanopya/lib/orchestrator:\
-/opt/kanopya/lib/component/kanopya_front:\
-/opt/kanopya/lib/component/kanopya_executor:\
-/opt/kanopya/lib/component/kanopya_aggregator:\
-/opt/kanopya/lib/component/kanopya_rulesengine:\
 /opt/kanopya/lib/mock
-export PERL5LIB
 
-#If plackup install with cpan
-if [ ! -e "$plackup" ]
-then
-    plackup="/usr/local/bin/plackup"
-fi
+KANOPYA_FRONT_RUN=yes
+KANOPYA_FRONT_OPTS="-E production -p $PORT -s Starman --pid=$PIDFILE --workers $WORKERS --user=kanopya -D -a $DANCER_APP"
+
+# Reads config file (will override defaults above)
+[ -r /etc/default/kanopya ] && . /etc/default/kanopya
+
+RUN_DAEMON=$KANOPYA_FRONT_RUN
+DAEMON_OPTS=$KANOPYA_FRONT_OPTS
 
 start() {
-    [ -x $plackup ] || exit 5
-    [ -f $DANCER_APP ] || exit 6
-    if [ ! -e $SESSIONS_DIR ]; then
-      mkdir -p $SESSIONS_DIR
-      chown kanopya.kanopya $SESSIONS_DIR
+    echo -n "Starting $NAME"
+    pidofproc -p $PIDFILE $DAEMON > /dev/null && status=0 || status=$?
+
+    if [ $status == 0 ]; then
+        RETVAL=1
+    else
+        if [ ! -e $SESSIONS_DIR ]; then
+            mkdir -p $SESSIONS_DIR
+            chown kanopya.kanopya $SESSIONS_DIR
+        fi
+
+        if [ "$RUN_DAEMON" = "yes" ]; then
+            start_daemon -p $PIDFILE $DAEMON $DAEMON_OPTS
+            RETVAL=$?
+        fi
     fi
 
-    echo -n "Starting $website: "
-    $plackup $plackup_args -a $DANCER_APP 2>&1 > /dev/null
-    retval=$?
-    if [ $retval -eq 0 ]; then
-        log_success_msg "$website started"
-        touch $lockfile
-    else
-        log_failure_msg "Unable to start"
-    fi
-    echo
-    return $retval
+    [ $RETVAL == 0 ] && log_success_msg || log_failure_msg
 }
 
 stop() {
-    echo -n "Stopping $website: "
-    rm -rf $SESSIONS_DIR &> /dev/null
-    if [ -f $PID ]; then
-        kill `cat $PID` 2>&1 > /dev/null
-        retval=$?
-        [ $retval -eq 0 ] && rm -f $lockfile $PID
-        echo
-        return $retval
+    echo -n "Stopping $NAME"
+    pidofproc -p $PIDFILE $DAEMON > /dev/null && status=0 || status=$?
+
+    if [ $status == 0 ]; then
+        killproc -p $PIDFILE $DAEMON
+        RETVAL=$?
+        if [ -f $PIDFILE ]; then
+            rm $PIDFILE
+        fi
+    else
+        RETVAL=1
     fi
-    log_failure_msg "pid $PID not found"
-    echo
-    return 0
+
+    [ $RETVAL == 0 ] && log_success_msg || log_failure_msg
 }
 
-restart() {
-    stop
-    start
+status() {
+    pidofproc -p $PIDFILE $DAEMON > /dev/null && status=0 || status=$?
+
+    if [ $status == 0 ]; then
+        echo "$NAME is running"
+    else
+        echo "$NAME is not running"
+    fi
+    RETVAL=$status
 }
 
 case "$1" in
     start)
-        $1
-        ;;
+        start
+    ;;
     stop)
-        $1
-        ;;
-    restart)
-        $1
-        ;;
-    *)
-        echo $"Usage: $0 {start|stop|restart}"
-        exit 2
+        stop
+    ;;
+  restart)
+    stop
+    start
+    ;;
+  status)
+    status
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|restart|status}"
+    exit 1
 esac
 
-exit 0
+exit $RETVAL

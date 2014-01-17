@@ -1,15 +1,11 @@
 #!/usr/bin/perl -w
 
-=head1 SCOPE
+=pod
+=begin classdoc
 
 Triggering and return of sco workflow using node and cluster rules
 
-TODO
-
-=head1 PRE-REQUISITE
-
-None
-
+=end classdoc
 =cut
 
 use strict;
@@ -20,12 +16,12 @@ use Test::Exception;
 
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
-    level=>'DEBUG',
+    level=>'INFO',
     file=>'sco_workflow_triggered_by_rule.log',
     layout=>'%F %L %p %m%n'
 });
 
-use BaseDB;
+use Kanopya::Database;
 
 use RulesEngine;
 use Aggregator;
@@ -45,9 +41,12 @@ use Entity::Clustermetric;
 use Entity::AggregateCondition;
 use Entity::Combination::AggregateCombination;
 use Entity::Rule::AggregateRule;
-use TryCatch;
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::TestUtils 'expectedException';
+use Operationtype;
+
+use TryCatch;
+my $err;
 
 my $testing = 0;
 
@@ -63,17 +62,21 @@ catch ($err) {
 }
 
 sub main {
-    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+    Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if ($testing == 1) {
-        BaseDB->beginTransaction;
+        Kanopya::Database::beginTransaction;
     }
+
+    Kanopya::Tools::Execution->purgeQueues();
 
     sco_workflow_triggered_by_rule();
     clean_infra();
 
+    Kanopya::Tools::Execution->purgeQueues();
+
     if ($testing == 1) {
-        BaseDB->rollbackTransaction;
+        Kanopya::Database::rollbackTransaction;
     }
 }
 
@@ -113,8 +116,8 @@ sub sco_workflow_triggered_by_rule {
 
     my @indicators = Entity::CollectorIndicator->search(hash => {collector_manager_id => $mock_monitor->id});
 
-    my $agg_rule_ids  = _service_rule_objects_creation(indicators => \@indicators);
-    my $node_rule_ids = _node_rule_objects_creation(indicators => \@indicators);
+    my $agg_rules  = _service_rule_objects_creation(indicators => \@indicators);
+    my $node_rules = _node_rule_objects_creation(indicators => \@indicators);
 
     sleep 2;
     $aggregator->update();
@@ -128,10 +131,10 @@ sub sco_workflow_triggered_by_rule {
 
     diag('Check rules verification');
     check_rule_verification(
-            agg_rule1_id  => $agg_rule_ids->{agg_rule1_id},
-            agg_rule2_id  => $agg_rule_ids->{agg_rule2_id},
-            node_rule1_id => $node_rule_ids->{node_rule1_id},
-            node_rule2_id => $node_rule_ids->{node_rule2_id},
+            agg_rule1_id  => $agg_rules->{agg_rule1}->id,
+            agg_rule2_id  => $agg_rules->{agg_rule2}->id,
+            node_rule1_id => $node_rules->{node_rule1}->id,
+            node_rule2_id => $node_rules->{node_rule2}->id,
             node_id       => $node->id,
     );
 
@@ -156,54 +159,47 @@ sub sco_workflow_triggered_by_rule {
     push @all_objects, $manager2;
 
     diag('Create a new node workflow');
-    my $node_wf = $sco->createWorkflow(
+    my $node_wf = $sco->createWorkflowDef(
         workflow_name => 'Test Workflow',
         params => {
             internal => {
                 scope_id   => 1,
-                output_dir => '/tmp'
+                output_dir => '/tmp',
+                period => 5,
             },
             data => {
                 template_content => '[% node_hostname %]',
-            }
+            },
         }
     );
     push @all_objects, $node_wf;
 
     diag('Create a new service workflow');
-    my $service_wf = $sco->createWorkflow(
+    my $service_wf = $sco->createWorkflowDef(
         workflow_name => 'Test service Workflow',
         params => {
             internal => {
                 scope_id   => 2,
-                output_dir => '/tmp'
+                output_dir => '/tmp',
+                period => 5,
             },
             data => {
                 template_content => '[% service_provider_name %] [% specific_attribute %]',
-            }
+            },
         }
     );
     push @all_objects, $service_wf;
 
 
     diag('Associate node workflow to node rule 2');
-    my $aw1 = $sco->associateWorkflow (
-        new_workflow_name => $node_rule_ids->{node_rule2_id}.'_'.($node_wf->workflow_def_name),
-        origin_workflow_def_id => $node_wf->id,
-        specific_params => {},
-        rule_id         =>  $node_rule_ids->{node_rule2_id},
-    );
-    push @all_objects, Entity::Rule->get(id => $node_rule_ids->{node_rule2_id});
+    my $aw1 = $node_rules->{node_rule2}->associateWorkflow(workflow_def_id => $node_wf->id);
+    push @all_objects, Entity::Rule->get(id => $node_rules->{node_rule2}->id);
 
     diag('Associate service workflow to service rule 2');
-    my $aw2 = $sco->associateWorkflow (
-        new_workflow_name => $agg_rule_ids->{agg_rule2_id}.'_'.($service_wf->workflow_def_name),
-        origin_workflow_def_id => $service_wf->id,
-        specific_params => {specific_attribute => 'hello world!'},
-        rule_id         => $agg_rule_ids->{agg_rule2_id},
-    );
+    my $aw2 = $agg_rules->{agg_rule2}->associateWorkflow(workflow_def_id => $service_wf->id,
+                                                         specific_params => { specific_attribute => 'hello world!' });
 
-    push @all_objects, Entity::Rule->get(id => $agg_rule_ids->{agg_rule2_id});
+    push @all_objects, Entity::Rule->get(id => $agg_rules->{agg_rule2}->id);
 
     #Launch orchestrator a workflow must be enqueued
     $rulesengine->oneRun();
@@ -211,50 +207,62 @@ sub sco_workflow_triggered_by_rule {
 
     my ($node_workflow, $service_workflow, $sco_operation, $service_sco_operation);
     lives_ok {
-        diag('Check triggered node workflow');
+        # diag('Check triggered node workflow');
 
-        $node_workflow = Entity::Workflow->find(hash=>{
-            workflow_name => $node_rule_ids->{node_rule2_id}.'_'.($node_wf->workflow_def_name),
-            state => 'pending',
-            related_id => $service_provider->id,
-        });
+        my @trigered_node_workflows = $node_rules->{node_rule2}->workflow_noderules;
+        if (scalar(@trigered_node_workflows) != 1) {
+            die ("The node rule node_rule2 should have trigered exactly 1 workflow, " . scalar(@trigered_node_workflows) .  "found.");
+        }
+        $node_workflow = (pop @trigered_node_workflows)->workflow;
 
         diag('Check triggered service workflow');
-        $service_workflow = Entity::Workflow->find(hash=>{
-            workflow_name => $agg_rule_ids->{agg_rule2_id}.'_'.($service_wf->workflow_def_name),
-            state => 'pending',
-            related_id => $service_provider->id,
-        });
+        $service_workflow = $agg_rules->{agg_rule2}->reload->workflow;
 
         diag('Check WorkflowNoderule creation');
         WorkflowNoderule->find(hash=>{
             node_id => $node->id,
-            nodemetric_rule_id  => $node_rule_ids->{node_rule2_id},
+            nodemetric_rule_id  => $node_rules->{node_rule2}->id,
             workflow_id => $node_workflow->id,
         });
 
-        diag('Check triggered node enqueued operation');
+        # diag('Check triggered node enqueued operation');
         my $op_node = Entity::Operation->find( hash => {
-            type => 'LaunchSCOWorkflow',
-            state => 'pending',
-            workflow_id => $node_workflow->id,
-        });
+                          'operationtype.operationtype_name' => 'LaunchSCOWorkflow',
+                           state                             => 'pending',
+                           workflow_id                       => $node_workflow->id,
+                      });
 
         diag('Check triggered service enqueued operation');
         my $op_sco = Entity::Operation->find( hash => {
-            type => 'LaunchSCOWorkflow',
-            state => 'pending',
-            workflow_id => $service_workflow->id,
-        });
+                         'operationtype.operationtype_name' => 'LaunchSCOWorkflow',
+                          state                             => 'pending',
+                          workflow_id                       => $service_workflow->id,
+                     });
 
         # Execute operation 4 times (1 time per trigerred rule * 2 (op confirmation + op workflow))
         # Warning, excecutor may execute twice a postreported operation then the test may fail
         # with 8 executions we decrease the probability a bit but the problem is not solved
         # TODO try to use executeOperation + handleResult like the followed commented part
 
-        Kanopya::Tools::Execution->nRun(n => 8);
+        # Run the both workflows
+        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'run_workflow', duration => 1);
+        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'run_workflow', duration => 1);
 
- 
+        # Execute and handle result of both first ProcessRule operations
+        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'execute_operation', duration => 1);
+        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'execute_operation', duration => 1);
+        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'handle_result', duration => 1);
+        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'handle_result', duration => 1);
+
+        # Execute and handle result of both second LaunchSCOWorkflow operations,
+        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'execute_operation', duration => 1);
+        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'execute_operation', duration => 1);
+        # Kee the connection after fetvch the first operation result as the first operation will be reported
+        # and if the connection rest for the next fetch, the operation has been re inserted in queue and
+        # will be fetched infinitly.
+        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'handle_result', duration => 1, keep_connection => 1);
+        Kanopya::Tools::Execution->_executor->oneRun(cbname => 'handle_result', duration => 1);
+
 #        my $executor = Executor->new(duration => 'SECOND');
 #        my @processes_rules = Entity::Operation->search(hash => {'operationtype.operationtype_name' => 'ProcessRule'});
 #        my $p1 = (pop @processes_rules);
@@ -264,10 +272,10 @@ sub sco_workflow_triggered_by_rule {
         #  Check node rule output
         diag('Check postreported operation');
         $sco_operation = Entity::Operation->find( hash => {
-            type => 'LaunchSCOWorkflow',
-            state => 'postreported',
-            workflow_id => $node_workflow->id,
-        });
+                             state                              => 'postreported',
+                             workflow_id                        => $node_workflow->id,
+                             'operationtype.operationtype_name' => 'LaunchSCOWorkflow',
+                         });
 
         my $output_file = '/tmp/'.($sco_operation->unserializeParams->{output_file});
         my $return_file = $sco_operation->unserializeParams->{return_file};
@@ -297,10 +305,10 @@ sub sco_workflow_triggered_by_rule {
         #  Check service rule output
         diag('Check postreported service sco operation');
         $service_sco_operation = Entity::Operation->find( hash => {
-            type => 'LaunchSCOWorkflow',
-            state => 'postreported',
-            workflow_id => $service_workflow->id,
-        });
+                                     'operationtype.operationtype_name' => 'LaunchSCOWorkflow',
+                                      state                             => 'postreported',
+                                      workflow_id                       => $service_workflow->id,
+                                 });
 
         $output_file = '/tmp/'.($service_sco_operation->unserializeParams->{output_file});
         $return_file = $service_sco_operation->unserializeParams->{return_file};
@@ -348,7 +356,7 @@ sub sco_workflow_triggered_by_rule {
 
         expectedException {
             Entity::Operation->find( hash => {
-                type => 'LaunchSCOWorkflow',
+                'operationtype.operationtype_name' => 'LaunchSCOWorkflow',
                 workflow_id => $node_workflow->id,
             });
         } 'Kanopya::Exception::Internal::NotFound',
@@ -356,7 +364,7 @@ sub sco_workflow_triggered_by_rule {
 
         expectedException {
             Entity::Operation->find( hash => {
-                type => 'LaunchSCOWorkflow',
+                'operationtype.operationtype_name' => 'LaunchSCOWorkflow',
                 workflow_id => $service_workflow->id,
             });
         } 'Kanopya::Exception::Internal::NotFound',
@@ -364,25 +372,25 @@ sub sco_workflow_triggered_by_rule {
 
         diag('Check if node workflow is done');
         $node_workflow = Entity::Workflow->find(hash=>{
-            workflow_name => $node_rule_ids->{node_rule2_id}.'_'.($node_wf->workflow_def_name),
+            workflow_id => $node_workflow->id,
             state => 'done',
             related_id => $service_provider->id,
         });
 
         diag('Check if service workflow is done');
         $service_workflow = Entity::Workflow->find(hash=>{
-            workflow_name => $agg_rule_ids->{agg_rule2_id}.'_'.($service_wf->workflow_def_name),
+            workflow_id => $service_workflow->id,
             state => 'done',
             related_id => $service_provider->id,
         });
 
         # Modify node rule2 to avoid a new triggering
-        my $node_rule2 = Entity::Rule::NodemetricRule->get(id => $node_rule_ids->{node_rule2_id});
+        my $node_rule2 = Entity::Rule::NodemetricRule->get(id => $node_rules->{node_rule2}->id);
         $node_rule2->setAttr(name => 'formula', value => '! ('.$node_rule2->formula.')');
         $node_rule2->save();
 
         # Modify service rule2 to avoid a new triggering
-        my $agg_rule2 = Entity::Rule::AggregateRule->get(id => $agg_rule_ids->{agg_rule2_id});
+        my $agg_rule2 = Entity::Rule::AggregateRule->get(id => $agg_rules->{agg_rule2}->id);
         $agg_rule2->setAttr(name => 'formula', value => 'not ('.$agg_rule2->formula.')');
         $agg_rule2->save();
 
@@ -392,7 +400,7 @@ sub sco_workflow_triggered_by_rule {
         expectedException {
             VerifiedNoderule->find(hash => {
                 verified_noderule_node_id    => $node->id,
-                verified_noderule_nodemetric_rule_id => $node_rule_ids->{node_rule2_id},
+                verified_noderule_nodemetric_rule_id => $node_rules->{node_rule2}->id,
                 verified_noderule_state              => 'verified',
             });
         } 'Kanopya::Exception::Internal::NotFound',
@@ -400,7 +408,7 @@ sub sco_workflow_triggered_by_rule {
 
         diag('Check if service rule 2 is not verified after formula has changed');
         Entity::Rule::AggregateRule->find(hash => {
-            aggregate_rule_id => $agg_rule_ids->{agg_rule2_id},
+            aggregate_rule_id => $agg_rules->{agg_rule2}->id,
             aggregate_rule_last_eval => 0,
         });
 
@@ -429,16 +437,7 @@ sub sco_workflow_triggered_by_rule {
         my $wf2 = Entity->get(id=>$agg_rule2->id)->workflow_def;
 
         $node_rule2->delete();
-        expectedException {
-            Entity::WorkflowDef->get(id => $wf1->id);
-        } 'Kanopya::Exception::Internal::NotFound',
-        'Node workflow def is deleted';
-
         $agg_rule2->delete();
-        expectedException {
-            Entity::WorkflowDef->get(id => $wf2->id);
-        } 'Kanopya::Exception::Internal::NotFound',
-        'Service workflow def is deleted';
     } 'Ending of triggered SCO workflow (node and service scope)';
 }
 
@@ -598,8 +597,8 @@ sub _service_rule_objects_creation {
     );
 
     return {
-        agg_rule1_id => $rule1->id,
-        agg_rule2_id => $rule2->id,
+        agg_rule1 => $rule1,
+        agg_rule2 => $rule2,
     };
 }
 
@@ -651,7 +650,7 @@ sub _node_rule_objects_creation {
     );
 
     return {
-        node_rule1_id => $rule1->id,
-        node_rule2_id => $rule2->id,
+        node_rule1 => $rule1,
+        node_rule2 => $rule2,
     };
 }

@@ -16,6 +16,17 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 5 june 2012
 
+
+=pod
+=begin classdoc
+
+Kanopya Workflow Manager.
+Specify methods only used when Kanopya is the workflow manager
+
+=end classdoc
+=cut
+
+
 package Entity::Component::Kanopyaworkflow0;
 use base 'Entity::Component';
 use base 'Manager::WorkflowManager';
@@ -26,7 +37,6 @@ use General;
 use Kanopya::Exceptions;
 use Entity::Host;
 
-use Data::Dumper;
 use Hash::Merge qw( merge);
 use Log::Log4perl 'get_logger';
 use WorkflowStep;
@@ -36,36 +46,48 @@ my $errmsg;
 use constant ATTR_DEF => {};
 sub getAttrDef { return ATTR_DEF; }
 
-sub associateWorkflow {
-    my ($self,%args) = @_;
 
-    my $new_wf_def = $self->SUPER::associateWorkflow(%args);
+=pod
+=begin classdoc
 
-    my @steps = WorkflowStep->search(
-        hash => {
-            workflow_def_id => $args{origin_workflow_def_id},
-        }
-    );
+@constructor
 
-    for my $step (@steps) {
-        WorkflowStep->new(
-            workflow_def_id  => $new_wf_def->getId(),
-            operationtype_id => $step->getAttr(name => 'operationtype_id'),
-        );
-    }
+Override the constructor to link the new workflow manager to the common workflow definitions.
 
-    return $new_wf_def;
+@return the workflow manager instance
+
+=end classdoc
+=cut
+
+sub new {
+    my ($class, %args) = @_;
+
+    my $self = $class->SUPER::new(%args);
+
+    $self->linkCommonWorkflowsDefs();
+
+    return $self;
 }
 
-sub _getAutomaticValues{
-    my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => ['automatic_params']);
+=pod
+=begin classdoc
+
+Specify automatic values of Kanopya Workflow Manager
+
+=end classdoc
+=cut
+
+sub _getAutomaticValues{
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['automatic_params'],
+                                         optional => {service_provider_id => undef});
 
     my $automatic_params = $args{automatic_params};
 
     if (exists $automatic_params->{context}->{host}) {
-        my $host = Entity::Host->find(hash => {'node.node_hostname' => $args{host_name}}); 
+        my $host = Entity::Host->find(hash => {'node.node_hostname' => $args{host_name}});
         $automatic_params->{context}->{host} = $host;
     }
     if (exists $automatic_params->{context}->{cloudmanager_comp}) {
@@ -83,19 +105,22 @@ sub _getAutomaticValues{
 }
 
 
+=pod
+=begin classdoc
+
+Merges automatic and specific params
+
+@param all_params hashref of parameters containing specific and automatic params
+
+=end classdoc
+=cut
+
 sub _defineFinalParams{
-    my ($self,%args) = @_;
+    my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [
-                                            'all_params',
-                                         ]);
-    my $workflow_params = merge(
-        $args{all_params}->{automatic},
-        $args{all_params}->{specific},
-    );
+    General::checkParams(args => \%args, required => [ 'all_params' ]);
 
-
-    return $workflow_params;
+    return merge($args{all_params}->{automatic}, $args{all_params}->{specific});
 }
 
 1;

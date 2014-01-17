@@ -14,6 +14,15 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+=pod
+=begin classdoc
+
+Link Kanopya to NetApp Data Storage
+
+=end classdoc
+=cut
+
 package Entity::Component::NetappManager;
 use base 'Entity::Component';
 
@@ -81,12 +90,13 @@ sub DESTROY {
     }
 }
 
-=head2 getFreeSpace
 
-    Desc : Implement getFreeSpace from DiskManager interface.
-           This function returns the free space on all disks
-    args :
+=pod
+=begin classdoc
 
+Implement getFreeSpace from DiskManager interface. This function returns the free space on all disks
+
+=end classdoc
 =cut
 
 sub getFreeSpace {

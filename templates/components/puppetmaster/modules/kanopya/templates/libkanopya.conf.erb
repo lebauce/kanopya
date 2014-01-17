@@ -1,0 +1,5 @@
+<opt dbi="dbi:<%= @dbconf['type'] %>:<%= @dbconf['name'] %>:<%= @components['kanopyaexecutor']['mysql']['mysqld']['ip'] %>:<%= @dbconf['port'] %>" logdir="<%= @logdir %>">
+  <amqp ip="<%= @components['kanopyaexecutor']['amqp']['amqp']['ip'] %>" password="<%= @amqp['password'] %>" user="<%= @amqp['user']  %>" />
+  <crypt salt="<%= @crypt['salt'] %>" />
+  <dbconf name="<%= @dbconf['name'] %>" debug="<%= @dbconf['debug'] %>" host="<%= @components['kanopyaexecutor']['mysql']['mysqld']['ip'] %>" password="<%= @dbconf['password'] %>" port="<%= @dbconf['port'] %>" txn_commit_retry="<%= @dbconf['txn_commit_retry'] %>" type="<%= @dbconf['type'] %>" user="<%= @dbconf['user'] %>" />
+</opt>

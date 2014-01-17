@@ -17,16 +17,12 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 14 february 2012
 
-=head1 NAME
+=pod
+=begin classdoc
 
-Entity::Poolip
+TODO
 
-=head1 SYNOPSIS
-
-=head1 DESCRIPTION
-
-    desc:
-
+=end classdoc
 =cut
 
 package Entity::Poolip;

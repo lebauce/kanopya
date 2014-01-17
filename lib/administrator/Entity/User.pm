@@ -15,6 +15,16 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
+
 package Entity::User;
 use base "Entity";
 
@@ -97,7 +107,7 @@ use constant ATTR_DEF => {
     user_lastaccess => {
         label        => 'Last access',
         type         => 'date',
-        pattern      => '^\w*$',
+        pattern      => '.*',
         is_mandatory => 0,
         is_editable  => 0
     },
@@ -136,9 +146,6 @@ sub methods {
     };
 }
 
-=head2 create 
-
-=cut
 
 sub new {
     my ($class, %args) = @_;
@@ -150,11 +157,15 @@ sub new {
     return $class->SUPER::new(%args);
 }
 
-=head2 setAttr
+=pod
+=begin classdoc
 
-    overide setAttr to crypt password
+Overrides <method>Entity::setAttr</method>.
 
-=cut 
+Crypt password
+
+=end classdoc
+=cut
 
 sub setAttr {
     my ($self, %args) = @_;
@@ -174,10 +185,13 @@ sub label {
     return $self->user_firstname . ' ' . $self->user_lastname . ' (' . $self->user_login . ')';
 }
 
-=head2 consumeQuota
 
-    Consume any resource type in the user quota.
+=pod
+=begin classdoc
 
+Consume any resource type in the user quota.
+
+=end classdoc
 =cut
 
 sub consumeQuota {
@@ -199,10 +213,13 @@ sub consumeQuota {
     }
 }
 
-=head2 canConsumeQuota
 
-    Check if we can consume amount on quata only. 
+=pod
+=begin classdoc
 
+Check if we can consume amount on quata only.
+
+=end classdoc
 =cut
 
 sub canConsumeQuota {
@@ -214,10 +231,13 @@ sub canConsumeQuota {
     $self->consumeQuota(dryrun => 1, %args);
 }
 
-=head2 releaseQuota
 
-    Check if we can consume amount on quata only. 
+=pod
+=begin classdoc
 
+Check if we can consume amount on quata only.
+
+=end classdoc
 =cut
 
 sub releaseQuota {
@@ -238,7 +258,7 @@ sub releaseQuota {
 }
 
 sub setProfiles {
-    my ($self, %args) = @_; 
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'profile_names' ]);
 
@@ -269,11 +289,16 @@ sub setProfiles {
     }
 }
 
-=head2 toString
+=pod
+=begin classdoc
 
-    desc: return a string representation of the entity
+Return a string representation of the entity
 
+@return string representation of the entity
+
+=end classdoc
 =cut
+
 
 sub toString {
     my $self = shift;

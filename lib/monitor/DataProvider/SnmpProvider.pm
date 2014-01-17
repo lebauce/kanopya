@@ -12,28 +12,20 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-=head1 NAME
-
-SnmpProvider - SnmpProvider object
-
-=head1 SYNOPSIS
-
-    use SnmpProvider;
-    
-    # Creates provider
-    my $provider = SnmpProvider->new( $host );
-    
-    # Retrieve data
-    my $var_map = { 'var_name' => '<snmp_OID>', ... };
-    $provider->retrieveData( var_map => $var_map );
-
-=head1 DESCRIPTION
+=pod
+=begin classdoc
 
 SnmpProvider is used to retrieve snmp var values from a specific host.
 Can retrieve value for all OIDs (see snmp MIBs).
 
-=head1 METHODS
+# Creates provider
+my $provider = SnmpProvider->new( $host );
 
+# Retrieve data
+my $var_map = { 'var_name' => '<snmp_OID>', ... };
+$provider->retrieveData( var_map => $var_map );
+
+=end classdoc
 =cut
 
 package DataProvider::SnmpProvider;
@@ -43,17 +35,19 @@ use warnings;
 use base 'DataProvider';
 use Net::SNMP;
 
-=head2 new
-    
-    Class : Public
-    
-    Desc : Instanciate SnmpProvider instance to provide snmp var values from a specific host
-    
-    Args :
-        host: string: ip of host
-    
-    Return : SnmpProvider instance
-    
+
+=pod
+=begin classdoc
+
+@constructor
+
+Instanciate SnmpProvider instance to provide snmp var values from a specific host
+
+@param host ip of host
+
+@return SnmpProvider instance
+
+=end classdoc
 =cut
 
 sub new {
@@ -67,32 +61,29 @@ sub new {
     my $host = $args{host};
     my ($session, $error) = Net::SNMP->session(
         -hostname  => $host->adminIp,
-        -community => 'my_comnt',
+        -community => 'kanopya',
     );
 
     if (!defined $session) {
       die $error;
     }
-    
+
     $self->{_session} = $session;
-    
+
     return $self;
 }
 
 
-=head2 retrieveData
-    
-    Class : Public
-    
-    Desc : Retrieve a set of snmp var value
-    
-    Args :
-        var_map : hash ref : required snmp var { var_name => oid }
-    
-    Return :
-        [0] : time when data was retrived
-        [1] : resulting hash ref { var_name => value }
-    
+=pod
+=begin classdoc
+
+Retrieve a set of snmp var value
+
+@param var_map : hash ref : required snmp var { var_name => oid }
+
+@return [0] : time when data was retrived [1] : resulting hash ref { var_name => value }
+
+=end classdoc
 =cut
 
 sub retrieveData {

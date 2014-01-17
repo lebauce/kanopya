@@ -156,7 +156,7 @@ sub getBootPolicyFromExportManager {
 
     my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
 
-    if ($args{export_manager}->getId == $self->getId) {
+    if ($args{export_manager}->id == $self->id) {
         return Manager::HostManager->BOOT_POLICIES->{virtual_disk};
     }
 
@@ -243,9 +243,9 @@ sub getPuppetDefinition {
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         fileimagemanager => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::fileimagemanager",
-                        )
+            classes => {
+                'kanopya::fileimagemanager' => { }
+            }
         }
     } );
 }

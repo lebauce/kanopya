@@ -20,6 +20,7 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
+use Kanopya::Database;
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::Register;
 use Kanopya::Tools::Retrieve;
@@ -30,7 +31,7 @@ use Kanopya::Tools::TestUtils 'expectedException';
 main();
 
 sub main {
-    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+    Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
     diag('Register master image');
     my $masterimage;

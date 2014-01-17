@@ -13,7 +13,7 @@ use warnings;
 use Test::More 'no_plan';
 use Test::Exception;
 
-use BaseDB;
+use Kanopya::Database;
 use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
 
@@ -35,10 +35,10 @@ main();
 
 sub main {
 
-    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+    Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if ($testing == 1) {
-        BaseDB->beginTransaction;
+        Kanopya::Database::beginTransaction;
     }
 
     setup();
@@ -46,7 +46,7 @@ sub main {
     testAutoPredict();
 
     if ($testing == 1) {
-        BaseDB->rollbackTransaction;
+        Kanopya::Database::rollbackTransaction;
     }
 }
 

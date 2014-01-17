@@ -35,7 +35,9 @@ use Kanopya::Config;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
-my $errmsg;
+
+use TryCatch;
+my $err;
 
 =pod
 
@@ -62,7 +64,7 @@ sub checkParams {
         
     for my $param (@$required) {
         if (! exists $caller_args->{$param} or ! defined $caller_args->{$param}) {
-            $errmsg = "$caller_sub_name needs a '$param' named argument!";
+            $err = "$caller_sub_name needs a '$param' named argument!";
 
             throw Kanopya::Exception::Internal::MissingParam(sub_name   => $caller_sub_name,
                                                              param_name => $param );
@@ -209,9 +211,9 @@ sub convertSizeFormat {
     checkParams(args => \%args, required => ['size']);
     
     if($args{size} !~ /^(\d+)([BKMGTPE])$/) {
-        $errmsg = "convertSizeFormat bad size argument $args{size} ; must be XY where X is a positive number and Y a character among B, K, M, G, T, P or E";
-        $log->warn($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
+        $err = "convertSizeFormat bad size argument $args{size} ; must be XY where X is a positive number and Y a character among B, K, M, G, T, P or E";
+        $log->warn($err);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $err); 
     }
     return ($1, $2);   
 }
@@ -237,9 +239,9 @@ sub convertToBytes {
     checkParams(args => \%args, required => ['value','units']);
 
     if($args{units} !~ /^[BKMGTPE]$/) {
-        $errmsg = "convertToBytes bad units argument : \'$args{units}\'; value must be B, K, M, G, T, P or E !";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
+        $err = "convertToBytes bad units argument : \'$args{units}\'; value must be B, K, M, G, T, P or E !";
+        $log->error($err);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $err); 
     } 
     my %convert = ('B' => 0, 'K' => 1, 'M' => 2, 'G' => 3, 'T' => 4, 'P' => 5, 'E' => 6);  
     
@@ -267,9 +269,9 @@ sub convertFromBytes {
     checkParams(args => \%args, required => ['value','units']);
     
     if($args{units} !~ /^[BKMGTPE]$/) {
-        $errmsg = "convertFromBytes bad units argument : \'$args{units}\'; value must be B, K, M, G, T, P or E !";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg); 
+        $err = "convertFromBytes bad units argument : \'$args{units}\'; value must be B, K, M, G, T, P or E !";
+        $log->error($err);
+        throw Kanopya::Exception::Internal::IncorrectParam(error => $err); 
     } 
     my %convert = ('B' => 0, 'K' => 1, 'M' => 2, 'G' => 3, 'T' => 4, 'P' => 5, 'E' => 6);  
     
@@ -377,8 +379,8 @@ return hash reference to pass to Template instanciation
 
 sub getTemplateConfiguration {
     return {
-        INCLUDE_PATH => '/templates/internal/',
-        INTERPOLATE  => 1,     # expand "$var" in plain text
+        INCLUDE_PATH => Kanopya::Config::getKanopyaDir() . '/templates/internal/',
+        INTERPOLATE  => 0,     # do not expand "$var" in plain text
         POST_CHOMP   => 0,     # cleanup whitespace
         EVAL_PERL    => 1,     # evaluate Perl code blocks
         RELATIVE     => 1,     # desactive par defaut
@@ -462,6 +464,67 @@ sub compareScalars {
     throw Kanopya::Exception::Internal::UnknownOperator(
               error => "Unsupported operator $args{op}."
           );
+}
+
+=pod
+=begin classdoc
+
+Normalize the specified name by removing underscores and upper casing
+the characters that follows.
+
+@param $name any name of database table
+
+@return the normalized name
+
+=end classdoc
+=cut
+
+sub normalizeName {
+    join('', map(ucfirst, split('_', shift)));
+}
+
+
+=pod
+=begin classdoc
+
+Normalize the specified name by removing underscores and upper casing
+the characters that follows, excepted the first character.
+
+@param $name any name
+
+@return the normalized name
+
+=end classdoc
+=cut
+
+sub normalizeMethod {
+    lcfirst(normalizeName(shift));
+}
+
+
+=pod
+=begin classdoc
+
+Dinamically load a module from the class name.
+
+@param $class Class name corresponding to the module to load.
+
+=end classdoc
+=cut
+
+sub requireClass {
+    my $class = shift;
+
+    my $location = General::getLocFromClass(entityclass => $class);
+    try {
+        require $location;
+    }
+    catch ($err) {
+        if ("$err" !~ m/Compilation failed/) {
+            throw Kanopya::Exception::Internal::UnknownClass(error => "Could not find $location :\n$err");
+        }
+        throw Kanopya::Exception::Internal(error => "$err");
+    }
 }
 
 1;

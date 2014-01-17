@@ -32,12 +32,13 @@ package Daemon;
 use strict;
 use warnings;
 
+use Kanopya::Database;
+use Kanopya::Exceptions;
+use Kanopya::Config;
+
 use POSIX qw(setsid);
 use File::Pid;
 use AnyEvent;
-
-use Kanopya::Exceptions;
-use Kanopya::Config;
 
 use Message;
 use EEntity;
@@ -48,7 +49,6 @@ my $log = get_logger("");
 
 # The host on which the daemon is running.
 my $host;
-
 
 my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
 
@@ -90,8 +90,8 @@ sub new {
     }
 
     # Authenticate the daemon to the api.
-    BaseDB->authenticate(login    => $self->{config}->{user}->{name},
-                         password => $self->{config}->{user}->{password});
+    Kanopya::Database::authenticate(login    => $self->{config}->{user}->{name},
+                                      password => $self->{config}->{user}->{password});
 
     # Get the component configuration for the daemon.
     $self->refreshConfiguration();
@@ -132,8 +132,19 @@ sub run {
     my $pidfile;
     if ($args{pidfile}) {
         $pidfile = File::Pid->new( { file => $args{pidfile} } );
-        die("$args{name} is already running") if $pidfile->running;
-
+        # Manually do the job of running due to the bug
+        # https://rt.cpan.org/Public/Bug/Display.html?id=18960
+        # my $running = $pidfile->running;
+        my $pid = $pidfile->_get_pid_from_file;
+        if (defined $pid) {
+            if (kill(0, $pid)) {
+                my $err = "$args{name} is already running";
+                $log->error($err);
+                throw Kanopya::Exception::Daemon(error => $err);
+            }
+            # Seems to do not remove the file...
+            $pidfile->remove;
+        }
         $pidfile->write;
     }
 

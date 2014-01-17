@@ -62,9 +62,9 @@ sub getPuppetDefinition {
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         php5 => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::php5",
-                        )
+            classes => {
+                'kanopya::php5' => { }
+            }
         }
     } );
 }

@@ -22,95 +22,76 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use BaseDB;
-use Entity::ServiceProvider::Cluster;
-use Entity::User;
-use Entity::Kernel;
-use Entity::Processormodel;
-use Entity::Hostmodel;
-use Entity::Masterimage;
-use Entity::Network;
-use Entity::Netconf;
-use Entity::Poolip;
-use Entity::Operation;
+use Kanopya::Database;
+use ClassType::ComponentType;
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::Register;
-use Kanopya::Tools::Retrieve;
 use Kanopya::Tools::Create;
-
-my $testing = 0;
 
 main();
 
 sub main {
-
-    if ($testing == 1) {
-        BaseDB->beginTransaction;
-    }
-
     diag('Register master image');
-    lives_ok {
-        Kanopya::Tools::Register::registerMasterImage();
-    } 'Register master image';
+    my $masterimage = Kanopya::Tools::Register::registerMasterImage();
 
-    diag('Create and configure cluster');
+    diag('Creating cluster with Mysql, AMQP and Keystone Components...');
     my $cluster;
     lives_ok {
         $cluster = Kanopya::Tools::Create->createCluster(
                         cluster_conf => {
                             cluster_name         => 'CloudController',
-                            cluster_basehostname => 'cloud'
+                            cluster_basehostname => 'cloud',
+                            masterimage_id       => $masterimage->id
                         },
                         components => {
                             'mysql' => {
                             },
                             'amqp'  => {
                             },
-                            'keystone' => {
-                            },
                         }
                    );
-    } 'Create cluster';
+    } 'Cluster created';
 
-    diag('Get and configure components');
+    diag('Get components');
     my $sql = $cluster->getComponent(name => 'Mysql');
     my $amqp = $cluster->getComponent(name => 'Amqp');
-    my $keystone = $cluster->getComponent(name => 'Keystone');
-    $keystone->setConf(conf => {
-        mysql5_id   => $sql->id,
-    });
 
-    diag('Start host');
+    diag('Starting cluster...');
     lives_ok {
         Kanopya::Tools::Execution->startCluster(cluster => $cluster);
-    } 'Start cluster';
+    } 'Cluster started';
 
-    my ($node1, $node2);
-    diag('Add 2 nodes with some components on each');
+    my ($mysql_node, $rabbitmq_node);
+    
+    diag('Adding another node with Mysql component only...');
     lives_ok {
-        $keystone->setConf(conf => {
-            mysql5_id   => $sql->id,
-        });
-        $node1 = Kanopya::Tools::Execution->addNode(cluster => $cluster, component_types => [$sql->id, $amqp->id]);
-        $node2 = Kanopya::Tools::Execution->addNode(cluster => $cluster, component_types => [$sql->id, $keystone->id]);
-    } 'Add nodes';
+        $mysql_node = Kanopya::Tools::Execution->addNode(
+                      cluster => $cluster, 
+                      component_types => [$sql->component_type_id]);
+    } 'mysql_node with started';
 
-    diag("Adding other components to nodes");
+    diag('Adding another node with rabbitmq component only...');
     lives_ok {
-        my @component_types = $cluster->getComponents(category => 'DiskManager');
-        my @component_types_ids;
-        for my $component_type (@component_types) {
-            push @component_types_ids, $component_type->id;
-        }
+        $rabbitmq_node = Kanopya::Tools::Execution->addNode(
+                         cluster => $cluster, 
+                         component_types => [$amqp->component_type_id]);
+    } 'rabbitmq_node started';
+    
+    diag("Adding mysql component to rabbitmq_node...");
+    lives_ok {
         $cluster->addComponents(
-            nodes => [$node1, $node2],
-            component_types => @component_types_ids,
+            nodes => [$rabbitmq_node->id],
+            component_types => [ $sql->component_type_id ],
         );
-    } 'Add components to node';
+    } 'Component Mysql added to rabbitmq_node';
 
-    if ($testing == 1) {
-        BaseDB->rollbackTransaction;
-    }
+    diag("Adding Rabbitmq component to mysql_node...");
+    lives_ok {
+        $cluster->addComponents(
+            nodes => [$mysql_node->id],
+            component_types => [$amqp->component_type_id ],
+        );
+    } 'Component Rabbitmq added to mysql_node';
 }
 
 1;

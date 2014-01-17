@@ -15,6 +15,16 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 # Created 16 july 2010
 
+
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
+
 package Entity::Network;
 use base "Entity";
 
@@ -52,18 +62,23 @@ use constant ATTR_DEF => {
         type         => 'relation',
         relation     => 'single_multi',
         is_mandatory => 0,
-        is_editable  => 1,      
+        is_editable  => 1,
     },
 };
 
 sub getAttrDef { return ATTR_DEF; }
 
 
-=head2 toString
+=pod
+=begin classdoc
 
-    desc: return a string representation of the entity
+Return a string representation of the entity
 
+@return string representation of the entity
+
+=end classdoc
 =cut
+
 
 sub toString {
     return shift->network_name;

@@ -1,14 +1,16 @@
-class kanopya::lvm::install {
-	package {
-		'lvm':
-			name => $operatingsystem ? {
-				default => 'lvm2'
-			},
-			ensure => present,
-	}
-}
+class kanopya::lvm(
+  $pvs = [],
+  $vgs = []
+) {
+  tag('kanopya::lvm')
 
-class kanopya::lvm {
-	include kanopya::lvm::install
-}
+  package { 'lvm':
+    name => $operatingsystem ? {
+      default => 'lvm2'
+    },
+    ensure => present,
+  }
 
+  create_resources('physical_volume', $pvs)
+  create_resources('volume_group', $vgs)
+}

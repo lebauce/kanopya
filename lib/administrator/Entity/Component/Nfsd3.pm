@@ -89,11 +89,15 @@ sub getMountDir {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "device" ]);
+    General::checkParams(args => \%args, required => [ "container" ]);
 
-    my $dev = $args{device};
-    $dev =~ s/.*\///g;
-    return "/nfsexports/" . $dev;
+    my $dev = $args{container}->container_device;
+    if (! $args{container}->isa("Entity::Container::LocalContainer")) {
+        $dev =~ s/.*\///g;
+        return "/nfsexports/" . $dev;
+    }
+
+    return $dev;
 }
 
 
@@ -140,7 +144,7 @@ sub getTemplateDataExports {
 
     for my $export (@exports) {
         my $clients = [];
-        my $mountpoint = $self->getMountDir(device => $export->getContainer->getAttr(name => 'container_device'));
+        my $mountpoint = $self->getMountDir(container => $export->getContainer);
         my @clients = Entity::NfsContainerAccessClient->search(
                           hash => { nfs_container_access_id => $export->getAttr(name => "nfs_container_access_id") }
                       );
@@ -241,9 +245,9 @@ sub getPuppetDefinition {
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         nfsd => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::nfsd",
-                        )
+            classes => {
+                'kanopya::nfsd' => { }
+            }
         }
     } );
 }

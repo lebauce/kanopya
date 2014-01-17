@@ -62,34 +62,34 @@ sub getRRD {
     return RRDTool::OO->new(file =>  $args{rrd_base_dir} . "/". $args{file});
 }
 
-=head2 getData
 
-    Class : Public
+=pod
+=begin classdoc
 
-    Desc :  Retrieve from storage (rrd) values for required var (ds).
-            For each ds can compute mean value on a time laps or percent value, using all values for the ds collected during the time laps.
-            Can also directly return raw data or timestamped data.
+Retrieve from storage (rrd) values for required var (ds).
+For each ds can compute mean value on a time laps or percent value,
+using all values for the ds collected during the time laps.
+Can also directly return raw data or timestamped data.
 
-    Args :
-        rrd_name                : string : the name of the rrd where data are stored.
+@param rrd_name string the name of the rrd where data are stored.
 
-        time_laps               : int : time laps to consider in second from now.
-        OR
-        start, stop             : epoch : start and stop time to consider.
+@param time_laps int time laps to consider in second from now.
 
-        (optionnal) required_ds : array ref : list of ds name to retrieve. If not defined, get all ds. WARNING: don't use it if 'percent'.
-        (optionnal) percent     : if defined compute percent else compute mean for each ds. See 'max_def'.
-        (optionnal) max_def     : array : list of ds name to add to obtain max value (used to compute percent). If not defined, use all ds.
-        (optionnal) raw         : if defined return raw data (no aggregation of data (percent, mean) during time step).
-        (optionnal) historical  : if defined return timestamped raw data. Win on options raw and percent.
-        (optionnal) last_value  : if defined return last_value.
-        
+@param start, stop (instead of time_laps) epoch  start and stop time to consider.
 
-    Return : A hash, according to args, either:
+@optional required_ds array ref : list of ds name to retrieve. If not defined, get all ds. WARNING: don't use it if 'percent'.
+@optional percent     if defined compute percent else compute mean for each ds. See 'max_def'.
+@optional max_def     array : list of ds name to add to obtain max value (used to compute percent). If not defined, use all ds.
+@optional raw         if defined return raw data (no aggregation of data (percent, mean) during time step).
+@optional historical  if defined return timestamped raw data. Win on options raw and percent.
+@optional last_value  if defined return last_value.
+
+@return A hash, according to args, either:
          -default   : ( ds_name => computed_value, ... )
          -raw       : ( ds_name => [v1,v2,...], ...)
          -historical: ( ds_name => { t1 => v1, t2 => v2,...}, ...)
 
+=end classdoc
 =cut
 
 sub getData {

@@ -112,7 +112,7 @@ var KanopyaFormWizard = (function() {
             } else {
                 var resource = relationdef.resource;
                 if (attributes[relation_name] && attributes[relation_name].specialized !== undefined) {
-                    resource = attributes[relation_name].specialized.replace(/_/g, "");
+                    resource = attributes[relation_name].specialized.toLowerCase();
                 }
                 response = this.attrsCallback(resource, this.data, trigger);
             }
@@ -296,11 +296,14 @@ var KanopyaFormWizard = (function() {
 
         var resource = undefined;
         var options  = undefined;
-
-        if (relations[name]) {
+        if (relations[name] && this.attributedefs[name].relation === 'multi') {
             // Relation is multi to multi
-            resource = this.attributedefs[name].link_to.replace(/_/g, '');
-
+            try {
+                resource = this.attributedefs[name].link_to.replace(/_/g, '');
+            }
+            catch (e) {
+                throw new Error("KanopyaFormWizard: Wrong relation definition for <" + name + ">, " + e);
+            }
         } else {
             // Relation is single to single
             for (var relation in relations) {
@@ -479,8 +482,22 @@ var KanopyaFormWizard = (function() {
         this.insertInput(input, label, table, attr.help || attr.description, listing, value);
 
         if ($(input).attr('type') === 'date') {
+
+            // value can be 'undefined' but Date() only understand 'null' (i.e '1970-01-01')
+            value = value || null;
+
+            /*
+             * Date attribute value can be
+             *  - a string representing second since epoch
+             *  - a date string ('yy-mm-dd')
+             * In the first case we need to cast the value
+             */
+            if (/^\d*$/.test(value)) {
+                value = parseFloat(value);
+            }
+
             $(input).datepicker({ dateFormat : 'yy-mm-dd', constrainInput : true})
-                    .datepicker('setDate', new Date(parseFloat(value)));
+                    .datepicker('setDate', new Date(value));
             this.attributedefs[name].formatValue = function(val) {
                 return (new Date(val)).getTime()
             }
@@ -919,7 +936,9 @@ var KanopyaFormWizard = (function() {
                     expands.push(relation);
                 }
             }
-            url += '?expand=' + expands.join(',');
+            if (expands.length) {
+                url += '?expand=' + expands.join(',');
+            }
         }
         var values = ajax('GET', url);
 
@@ -1030,6 +1049,7 @@ var KanopyaFormWizard = (function() {
         this.actionsCallback = args.actionsCallback || $.noop;
         this.cancelCallback  = args.cancelCallback  || $.noop;
         this.error           = args.error           || $.noop;
+        this.docPage         = args.docPage         || null;
     }
 
     KanopyaFormWizard.prototype.exportArgs = function() {
@@ -1239,7 +1259,8 @@ var KanopyaFormWizard = (function() {
             minWidth        : 800,
 //            maxHeight       : 550,
             buttons         : buttons,
-            closeOnEscape   : false
+            closeOnEscape   : false,
+            docPage         : this.docPage,
         }).on('keydown', function(e) { // bind the Enter key press
             if(e.which == 13) {
                 if(!$("textarea").is(":focus") && !$('.ui-button').is(':focus')){

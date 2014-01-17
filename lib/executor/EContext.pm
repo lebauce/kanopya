@@ -31,6 +31,7 @@ package EContext;
 
 use EContext::Local;
 use EContext::SSH;
+use EEntity;
 
 use strict;
 use warnings;
@@ -59,12 +60,13 @@ sub new {
     my ($class, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'src_host', 'dst_host' ],
-                                         optional => { timeout => 30 });
+                                         optional => { key => undef, timeout => 30 });
 
     # If the destination host is different then the source one,
     # use a SSH econtext to excecute remote commands.
     if ($args{src_host}->id != $args{dst_host}->id) {
         return EContext::SSH->new(ip      => $args{dst_host}->adminIp,
+                                  key     => $args{key},
                                   timeout => $args{timeout});
     }
     # Use a local econtext instead.

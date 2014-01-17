@@ -12,27 +12,30 @@ use Entity;
 use Entity::Operation;
 use Entity::Workflow;
 use Kanopya::Exceptions;
+use Kanopya::Version;
 
+use version;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
 my $log = get_logger("");
 my $errmsg;
 
-our $API_VERSION = "0.1";
+our $API_VERSION = version->declare("0.1");
+
 
 prepare_serializer_for_format;
+set serializer => 'Mutable';
 
 our %resources = (
     "activedirectory"          => "Entity::Component::ActiveDirectory",
     "alert"                    => "Alert",
     "amqp"                     => "Entity::Component::Amqp",
-    "tftpd"                    => "Entity::Component::Tftpd",
     "aggregatecombination"     => "Entity::Combination::AggregateCombination",
     "aggregatecondition"       => "Entity::AggregateCondition",
     "aggregaterule"            => "Entity::Rule::AggregateRule",
     "apache2"                  => "Entity::Component::Apache2",
-    "apache2virtualhost"       => "Entity::Component::Apache2::Apache2Virtualhost",
+    "apache2virtualhost"       => "Apache2Virtualhost",
     "billinglimit"             => "Entity::Billinglimit",
     "billingpolicy"            => "Entity::Policy::BillingPolicy",
     "cinder"                   => "Entity::Component::Openstack::Cinder",
@@ -60,20 +63,23 @@ our %resources = (
     "glance"                   => "Entity::Component::Openstack::Glance",
     "gp"                       => "Entity::Gp",
     "haproxy"                  => "Entity::Component::Haproxy1",
-    "haproxy1listen"           => "Entity::Component::Haproxy1::Haproxy1Listen",
+    "haproxy1listen"           => "Haproxy1Listen",
     "harddisk"                 => "Harddisk",
     "host"                     => "Entity::Host",
     "hostingpolicy"            => "Entity::Policy::HostingPolicy",
     "hostmodel"                => "Entity::Hostmodel",
+    "hpc7000"                  => "Entity::ServiceProvider::Hpc7000",
+    "hpcmanager"               => "Entity::Component::HpcManager",
     "hypervisor"               => "Entity::Host::Hypervisor",
     "iface"                    => "Entity::Iface",
     "indicator"                => "Entity::Indicator",
     "indicatorset"             => "Indicatorset",
     "interface"                => "Entity::Interface",
     "ip"                       => "Ip",
+    "ipmicredentials"          => "IpmiCredentials",
     "iscsicontaineraccess"     => "Entity::ContainerAccess::IscsiContainerAccess",
     "iscsi"                    => "Entity::Component::Iscsi",
-    "iscsiportal"              => "Entity::Component::Iscsi::IscsiPortal",
+    "iscsiportal"              => "IscsiPortal",
     "iscsitarget1"             => "Entity::Component::Iscsi::Iscsitarget1",
     "kanopyaaggregator"        => "Entity::Component::KanopyaAggregator",
     "kanopyacollector"         => "Entity::Component::Kanopyacollector1",
@@ -81,12 +87,12 @@ our %resources = (
     "kanopyafront"             => "Entity::Component::KanopyaFront",
     "kanopyarulesengine"       => "Entity::Component::KanopyaRulesEngine",
     "keepalived1"              => "Entity::Component::Keepalived1",
-    "keepalived1vrrpinstance"  => "Entity::Component::Keepalived1::Keepalived1Vrrpinstance",
+    "keepalived1vrrpinstance"  => "Keepalived1Vrrpinstance",
     "kernel"                   => "Entity::Kernel",
     "keystone"                 => "Entity::Component::Openstack::Keystone",
     "linux"                    => "Entity::Component::Linux",
-    "linuxmount"               => "Entity::Component::Linux::LinuxMount",
-    "lvm2vg"                   => "Entity::Component::Lvm2::Lvm2Vg",
+    "linuxmount"               => "LinuxMount",
+    "lvm2vg"                   => "Lvm2Vg",
     "lvm2"                     => "Entity::Component::Lvm2",
     "lvmcontainer"             => "Entity::Container::LvmContainer",
     "mailnotifier0"            => "Entity::Component::Mailnotifier0",
@@ -141,6 +147,8 @@ our %resources = (
     "quantum"                  => "Entity::Component::Openstack::Quantum",
     "quota"                    => "Quota",
     "redhat"                   => "Entity::Component::Linux::Redhat",
+    "repository"               => "Entity::Repository",
+    "rule"                     => "Entity::Rule",
     "sco"                      => "Entity::Component::Sco",
     "scom"                     => "Entity::Component::Scom",
     "scope"                    => "Scope",
@@ -158,6 +166,7 @@ our %resources = (
     "systemimage"              => "Entity::Systemimage",
     "systempolicy"             => "Entity::Policy::SystemPolicy",
     "tag"                      => "Entity::Tag",
+    "tftpd"                    => "Entity::Component::Tftpd",
     "timeperiod"               => "Entity::TimePeriod",
     "ucsmanager"               => "Entity::Component::UcsManager",
     "unifiedcomputingsystem"   => "Entity::ServiceProvider::UnifiedComputingSystem",
@@ -165,15 +174,13 @@ our %resources = (
     "userextension"            => "UserExtension",
     "userprofile"              => "UserProfile",
     "virtualmachine"           => "Entity::Host::VirtualMachine",
+    "virtualization"           => "Entity::Component::Virtualization",
     "vlan"                     => "Entity::Vlan",
     "vsphere5"                 => "Entity::Component::Virtualization::Vsphere5",
     "vsphere5repository"       => "Entity::Repository::Vsphere5Repository",
     "workflow"                 => "Entity::Workflow",
     "workflowdef"              => "Entity::WorkflowDef",
-    "repository"               => "Entity::Repository",
-    "virtualization"           => "Entity::Component::Virtualization",
-    "hpc7000"                  => "Entity::ServiceProvider::Hpc7000",
-    "hpcmanager"               => "Entity::Component::HpcManager"
+    "workflowdefrule"          => "WorkflowDefRule",
 );
 
 sub classFromResource {
@@ -314,10 +321,10 @@ sub jsonify {
     if (ref($var) and (ref($var) ne "HASH") and (ref($var) ne "ARRAY")) {
         if ($var->can("toJSON")) {
             if ($var->isa("Entity::Operation")) {
-                return Entity::Operation->methodCall(method => 'get', params => { id => $var->id })->toJSON(%args);
+                return Entity::Operation->apiCall(method => 'get', params => { id => $var->id })->toJSON(%args);
             }
             elsif ($var->isa("Entity::Workflow")) {
-                return Entity::Workflow->methodCall(method => 'get', params => { id => $var->id })->toJSON(%args);
+                return Entity::Workflow->apiCall(method => 'get', params => { id => $var->id })->toJSON(%args);
             } else {
                 return $var->toJSON(%args);
             }
@@ -334,7 +341,7 @@ sub attributes {
     my $class = classFromResource(resource => $args{resource});
     require (General::getLocFromClass(entityclass => $class));
 
-    return to_json($class->toJSON(%{ $args{params} }));
+    return $class->toJSON(%{ $args{params} });
 }
 
 sub setupREST {
@@ -345,17 +352,16 @@ sub setupREST {
 
         resource "api/$resource" =>
             get    => sub {
-                content_type 'application/json';
                 require (General::getLocFromClass(entityclass => $class));
 
                 my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
-                my $obj = $class->methodCall(method => 'get', params => { id => params->{id}, prefetch => \@expand });
-                return to_json($obj->toJSON(expand => \@expand,
-                                            deep   => params->{deep}));
+                my $obj = $class->apiCall(method => 'get', params => { id => params->{id}, prefetch => \@expand });
+
+                return $obj->toJSON(expand => \@expand,
+                                    deep => params->{deep});
             },
 
             create => sub {
-                content_type 'application/json';
                 require (General::getLocFromClass(entityclass => $class));
                 my $obj = {};
                 my $hash = {};
@@ -365,22 +371,19 @@ sub setupREST {
                 } else {
                     %params = params;
                 }
-                $obj = jsonify($class->methodCall(method => 'create', params => \%params));
 
-                return to_json($obj);
+                return jsonify($class->apiCall(method => 'create', params => \%params));
             },
 
             delete => sub {
-                content_type 'application/json';
                 require (General::getLocFromClass(entityclass => $class));
 
-                my $result = $class->get(id => params->{id})->methodCall(method => 'remove');
+                my $result = $class->get(id => params->{id})->apiCall(method => 'remove');
 
-                return to_json(ref($result) ? jsonify($result) : { status => "success" } );
+                return ref($result) ? jsonify($result) : { status => "success" };
             },
 
             update => sub {
-                content_type 'application/json';
                 require (General::getLocFromClass(entityclass => $class));
 
                 my %params;
@@ -392,27 +395,25 @@ sub setupREST {
                     delete $params{splat};
                 }
 
-                $obj->methodCall(method => 'update', params => \%params);
+                $obj->apiCall(method => 'update', params => \%params);
 
-                return to_json( { status => "success" } );
+                return { status => "success" };
             };
 
         get qr{ /api/$resource/([^/]+)/?(.*) }x => sub {
-            content_type 'application/json';
             require (General::getLocFromClass(entityclass => $class));
 
             my ($id, $filters) = splat;
             my @filters = split("/", $filters);
             my %params = params;
 
-            return to_json(getResources(resource => $resource,
-                                        id       => $id,
-                                        query    => \%params,
-                                        filters  => \@filters));
+            return getResources(resource => $resource,
+                                id       => $id,
+                                query    => \%params,
+                                filters  => \@filters);
         };
 
         post qr{ /api/$resource/(.*) }x => sub {
-            content_type 'application/json';
             require (General::getLocFromClass(entityclass => $class));
 
             my ($id, $obj, $method);
@@ -427,7 +428,7 @@ sub setupREST {
                 $obj = $class;
             }
 
-            my $methods = $obj->getMethods();
+            my $methods = $obj->_methodsDefinition;
             my @expand = defined params->{expand} ? split(',', params->{expand}) : ();
 
             if (not defined $methods->{$method}) {
@@ -442,7 +443,7 @@ sub setupREST {
                 delete $params{splat};
             }
 
-            my $ret = $obj->methodCall(method => $method, params => \%params);
+            my $ret = $obj->apiCall(method => $method, params => \%params);
 
             if (ref($ret) eq "ARRAY") {
                 my @jsons;
@@ -456,30 +457,31 @@ sub setupREST {
                 $ret = jsonify({});
             }
 
-            return to_json($ret, { allow_nonref => 1, convert_blessed => 1, allow_blessed => 1 });
+            return $ret;
         };
 
         get '/api/' . $resource . '/?' => sub {
-            content_type 'application/json';
             require (General::getLocFromClass(entityclass => $class));
 
             my %params = params;
-            return to_json(getResources(resource => $resource,
-                                        query    => \%params));
+
+            return getResources(resource => $resource,
+                                query    => \%params);
         }
     }
 }
 
-get '/api/attributes/:resource' => sub {
-    content_type 'application/json';
+options '/api/:resource' => sub {
+    my %params = params;
+    return attributes(resource => delete $params{resource}, params => \%params);
+};
 
+get '/api/attributes/:resource' => sub {
     my %params = params;
     return attributes(resource => delete $params{resource}, params => \%params);
 };
 
 post '/api/attributes/:resource' => sub {
-    content_type 'application/json';
-
     my %params;
     my $resource = delete params->{resource};
     if (request->content_type && (split(/;/, request->content_type))[0] eq "application/json") {
@@ -491,14 +493,13 @@ post '/api/attributes/:resource' => sub {
 };
 
 get '/api' => sub {
-    content_type 'application/json';
-
     my @resources = keys %resources;
 
-    return to_json({
-        version   => $API_VERSION,
-        resources => \@resources
-    });
+    return {
+        vesrion     => Kanopya::Version::version,
+        api_version => version->parse($API_VERSION)->normal,
+        resources   => \@resources
+    };
 };
 
 setupREST;

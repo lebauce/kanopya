@@ -30,6 +30,9 @@ use parent 'Setup';
 
 use strict;
 use warnings;
+
+use General;
+
 use Template;
 use NetAddr::IP;
 use File::Path qw(make_path);
@@ -84,7 +87,6 @@ sub _init {
     $self->{dbschema_path} = $self->{installpath} . '/scripts/database/mysql';
     $self->{kanopya_services} = [
         'kanopya-executor',
-        'kanopya-state-manager',
         'kanopya-collector',
         'kanopya-aggregator',
         'kanopya-rulesengine',
@@ -108,6 +110,11 @@ sub _init {
           caption  => 'Tftp boot files directory',
           default  => '/var/lib/kanopya/tftp',
           validate => '_validate_dir', },  
+
+        { keyname  => 'private_dir',
+          caption  => 'Private data directory',
+          default  => '/var/lib/kanopya/private',
+          validate => '_validate_dir', },
 
         { keyname  => 'log_dir',
           caption  => 'Log files directory',
@@ -427,7 +434,10 @@ sub _create_directories {
     make_path($self->{parameters_values}->{masterimages_dir});
     
     print "\t$self->{parameters_values}->{tftp_dir}\n";
-    system('mkdir -p '.$self->{parameters_values}->{tftp_dir});
+    make_path($self->{parameters_values}->{tftp_dir});
+
+    print "\t$self->{parameters_values}->{private_dir}\n";
+    make_path($self->{parameters_values}->{private_dir});
     
     print "\t$self->{parameters_values}->{sessions_dir}\n";
     make_path($self->{parameters_values}->{sessions_dir});
@@ -527,7 +537,7 @@ sub _generate_kanopya_conf {
     ];
 
     for my $file (@$configfiles) {
-        _useTemplate(
+        $self->_useTemplate(
             include  => $self->{template_path},
             template => $file->{template},
             datas    => $file->{data},
@@ -548,12 +558,14 @@ SSH key creation for root
 
 sub _generate_ssh_key {
     my ($self) = @_;
-    if ( (! -e '/root/.ssh/kanopya_rsa') && (! -e '/root/.ssh/kanopya_rsa.pub') ) {
-        if (! -e '/root/.ssh') {
-            make_path('/root/.ssh')
-        }
+
+    my $private_dir = $self->{parameters_values}->{private_dir};
+    if ( (! -e $private_dir . '/kanopya_rsa') &&
+         (! -e $private_dir . '/kanopya_rsa.pub') ) {
         print "\n - Dedicated root SSH keys generation...";
-        system("ssh-keygen -q -t rsa -N '' -f /root/.ssh/kanopya_rsa");
+        system("ssh-keygen -q -t rsa -N '' -f $private_dir/kanopya_rsa; " .
+               "chown puppet:puppet $private_dir/kanopya_rsa*; " .
+               "install -D -m 600 $private_dir/kanopya_rsa.pub /root/.ssh/authorized_keys");
         print "ok\n";
 
     } else {
@@ -727,35 +739,6 @@ sub _configure_rabbitmq {
 =pod
 =begin classdoc
 
-Configure snmpd
-
-=end classdoc
-=cut
-
-sub _configure_snmpd {
-    my ($self) = @_;
-    print "\n - Snmpd reconfiguration...";
-
-    _useTemplate(
-        include  => $self->{installpath} . '/templates/components/snmpd',
-        data     => { internal_ip_add => $self->{parameters_values}->{admin_ip} },
-        conf     => '/etc/snmp/snmpd.conf',
-        template => 'snmpd.conf.tt',
-    );
-
-    _useTemplate(
-        include  => $self->{installpath} . '/templates/components/snmpd',
-        data     => { internal_ip_add => $self->{parameters_values}->{admin_ip} },
-        conf     => '/etc/default/snmpd',
-        template => 'default_snmpd.tt',
-    );
-    print "ok\n";
-}
-
-
-=pod
-=begin classdoc
-
 Configure puppetmaster
 
 =end classdoc
@@ -777,7 +760,7 @@ sub _configure_puppetmaster {
     }
 
     my $data = {
-        kanopya_puppet_modules => '/opt/kanopya/templates/components/puppetmaster/modules',
+        kanopya_puppet_modules => $self->{installpath} . '/templates/components/puppetmaster/modules',
         admin_domainname       => $self->{parameters_values}->{domainname},
         clusters_directory     => $path,
         kanopya_hostname       => $self->{parameters_values}->{hostname},
@@ -787,44 +770,50 @@ sub _configure_puppetmaster {
         puppetagent2_options   => '--no-client'
     };
 
-    _useTemplate(
-        include  => '/templates/components/puppetmaster',
-        template => 'puppet.conf.tt',
+    $self->_useTemplate(
+        template => 'components/puppetmaster/puppet.conf.tt',
         datas    => $data,
         conf     => '/etc/puppet/puppet.conf',
     );
 
-    _useTemplate(
-        include  => '/templates/components/puppetmaster',
-        template => 'fileserver.conf.tt',
+    $self->_useTemplate(
+        template => 'components/puppetmaster/fileserver.conf.tt',
         datas    => $data,
         conf     => '/etc/puppet/fileserver.conf',
     );
 
-    _useTemplate(
-        include  => '/templates/components/puppetmaster',
-        template => 'auth.conf.tt',
+    $self->_useTemplate(
+        template => 'components/puppetmaster/auth.conf.tt',
         datas    => $data,
         conf     => '/etc/puppet/auth.conf',
     );
 
-    _useTemplate(
-        include  => '/templates/components/puppetagent',
-        template => 'default_puppet.tt',
+    $self->_useTemplate(
+        template => 'components/puppetmaster/hiera.yaml.tt',
+        datas    => $data,
+        conf     => '/etc/puppet/hiera.yaml',
+    );
+
+    $self->_useTemplate(
+        template => 'components/puppetagent/default_puppet.tt',
         conf     => '/etc/default/puppet',
         datas    => $data,
     );
 
     try {
-        _writeFile('/etc/puppet/manifests/site.pp',
-               "Exec {\n" .
-               "  path    => '/usr/bin:/usr/sbin:/bin:/sbin'\n" .
-               "}\n" .
-               "stage { 'system': before => Stage['main'], }\n" .
-               "stage { 'finished': }\n" .
-               "import \"nodes/*.pp\"\n");
+        _writeFile(
+           '/etc/puppet/manifests/site.pp',
+           "Exec {\n" .
+           "  path    => '/usr/bin:/usr/sbin:/bin:/sbin'\n" .
+           "}\n" .
+           "stage { 'system': before => Stage['main'], }\n" .
+           "stage { 'finished': }\n" .
+           "\$components = hiera_hash('components')\n" .
+           "\$sourcepath = hiera('sourcepath')\n" .
+           "hiera_include('classes')\n"
+        );
 
-    print 'ok';
+        print 'ok';
     }
     catch (Kanopya::Exception::IO $err) {
         print "failed ! Please check your puppet configuration, $err\n";
@@ -834,28 +823,29 @@ sub _configure_puppetmaster {
         $err->rethrow();
     }
 
-    use Kanopya::Config;
-    use EEntity;
-    use Entity::ServiceProvider::Cluster;
+    require Kanopya::Config;
+    require EEntity;
+    require Entity::ServiceProvider::Cluster;
 
     my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
-    my $linux = $kanopya->getComponent(category => "System");
-
     my @hosts = $kanopya->getHosts();
-    my $kanopya_master = $hosts[0];
-    my $puppetmaster = $kanopya->getComponent(name => "Puppetmaster");
-    my $fstab_puppet_definitions = $linux->getPuppetDefinition(
-                                       host    => $kanopya_master,
-                                       cluster => $kanopya,
-                                   );
+    my $kanopya_master = EEntity->new(entity => $hosts[0]);
 
+    my $linux = $kanopya->getComponent(category => "System");
+    my $elinux = EEntity->new(entity => $linux);
+
+    $elinux->generateConfiguration(
+        host    => $kanopya_master,
+        cluster => $kanopya,
+    );
+
+    my $puppetmaster = $kanopya->getComponent(name => "Puppetmaster");
     my $epuppetmaster = EEntity->new(entity => $puppetmaster);
-    my $fqdn = $kanopya_master->node->node_hostname . "." . $kanopya->cluster_domainname;
 
     try {
         $epuppetmaster->createHostCertificate(
             mount_point => "/tmp",
-            host_fqdn   => $fqdn
+            host_fqdn   => $kanopya_master->node->fqdn
         );
     }
     catch (Kanopya::Exception::IO $err) {
@@ -866,12 +856,6 @@ sub _configure_puppetmaster {
         $err->rethrow();
     }
 
-    $epuppetmaster->createHostManifest(
-        host_fqdn          => $fqdn,
-        puppet_definitions => $fstab_puppet_definitions,
-        sourcepath         => $kanopya->cluster_name . '/' . $kanopya_master->node->node_hostname
-    );
-
     my $puppetagent_action = 'start';
     my $puppetmaster_action = 'start';
     if(-e '/var/run/puppet/agent.pid') {
@@ -880,19 +864,25 @@ sub _configure_puppetmaster {
     if(-e '/var/run/puppet/master.pid') {
         $puppetmaster_action = 'restart';
     }
-    system('/etc/init.d/puppetmaster', $puppetmaster_action);
-    system('/etc/init.d/puppet', $puppetagent_action);
 
-    system('mkdir -m 750 /var/lib/puppet/concat && chown puppet:puppet /var/lib/puppet/concat');
+    system('service', 'kanopya-front', 'restart');
+    system('service', 'puppetmaster', $puppetmaster_action);
+    system('service', 'apache2', 'restart') && system('service', 'httpd', 'restart');
+    system('service', 'puppet', $puppetagent_action);
+
+    system('mkdir -m 750 -p /var/lib/puppet/concat && chown puppet:puppet /var/lib/puppet/concat');
     EEntity->new(entity => $kanopya)->reconfigure();
 
+    system("puppetdb-ssl-setup");
+    system('killall -9 mysqld');
+    system('service', 'mysql', 'start');
 }
 
 
 =pod
 =begin classdoc
 
-Retrieve tftp files from 192.168.0.173
+Retrieve tftp files from download.kanopya.org
 
 =end classdoc
 =cut
@@ -900,18 +890,18 @@ Retrieve tftp files from 192.168.0.173
 sub _retrieve_tftp_content {
     my ($self) = @_;
 
-    print "\n - Retrieving TFTP directory contents from http://192.168.0.173...\n";
+    print "\n - Retrieving TFTP directory contents from http://download.kanopya.org...\n";
 
     my $rsync_sshkey = '/root/.ssh/rsync_rsa';
     # Check if rsync sshkey exist on right place :
     if ( ! -e $rsync_sshkey) {
         # Get the rsync_rsa key :
-        system('wget http://192.168.0.173:8011/rsync_rsa');
-        # Move the key and set the correct rights ;
-        system('mv rsync_rsa /root/.ssh/;chmod 400 /root/.ssh/rsync_rsa');
+        system('mkdir -p /root/.ssh; ' .
+               'wget -O /root/.ssh/rsync_rsa http://download.kanopya.org/pub/rsync_rsa; ' .
+               'chmod 400 /root/.ssh/rsync_rsa');
     }
-    # Do a Rsync from 192.168.0.173 of tftp directory content :
-    system('rsync -var -e "ssh -p 2211 -i /root/.ssh/rsync_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" rsync@192.168.0.173:/pub/tftp/* '.$self->{parameters_values}->{tftp_dir});
+    # Do a Rsync from download.kanopya.org of tftp directory content :
+    system('rsync -var -e "ssh -i /root/.ssh/rsync_rsa -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no" rsync@download.kanopya.org:/pub/tftp/* '.$self->{parameters_values}->{tftp_dir});
 }
 
 
@@ -929,7 +919,7 @@ sub _restart_middlewares {
     print "\n - Restarting required services...\n";
 
     for my $service ('isc-dhcp-server','iscsitarget','puppetmaster', 'xinetd',
-                     'tftpd-hpa', 'snmpd', 'rabbitmq-server') {
+                     'tftpd-hpa', 'snmpd', 'rabbitmq-server', 'apache2', 'httpd') {
         system("service $service restart");
     }
     system("service inetutils-inetd stop");
@@ -976,18 +966,6 @@ sub _getNameServerInfo {
     return ( domain => $domain, nameservers => \@nameservers );
 }
 
-sub _createTemplatesSymLink {
-
-    my $templateslink = '/templates';
-    if (not -e $templateslink) {
-        eval {
-            symlink('/opt/kanopya/templates', $templateslink);
-        };
-    print "Your system does not support symbolic links", "\n" if $@; 
-    }
-}
-
-
 =pod
 =begin classdoc
 
@@ -1002,7 +980,6 @@ sub process {
     my ($self) = @_;
     print "\n = Setup processing = \n";
 
-    $self->_createTemplatesSymLink();
     $self->_create_kanopya_account();
     $self->_create_directories();
     $self->_generate_kanopya_conf();
@@ -1010,7 +987,6 @@ sub process {
     $self->_create_database();
 
     $self->_configure_dhcpd();
-    $self->_configure_snmpd();
     $self->_configure_iscsitarget();
     $self->_configure_puppetmaster();
     $self->_configure_rabbitmq();
@@ -1044,19 +1020,15 @@ Init and process Template
 =cut
 
 sub _useTemplate {
-    my %args = @_;
+    my ($self, %args) = @_;
 
     my $input   = $args{template};
-    my $include = $args{include};
+    my $include = $args{include} || ($self->{installpath} . '/templates');
     my $dat     = $args{datas};
     my $output  = $args{conf};
+    my $config  = General::getTemplateConfiguration();
 
-    my $config = {
-            INCLUDE_PATH => $include,
-            INTERPOLATE  => 1,
-            POST_CHOMP   => 1,
-            EVAL_PERL    => 1,
-    };
+    $config->{INCLUDE_PATH} = $include;
     my $template = Template->new($config);
 
     $template->process($input, $dat, $output) || do {

@@ -40,6 +40,8 @@ use warnings;
 use General;
 use Message;
 use Kanopya::Exceptions;
+use Kanopya::Database;
+
 use Entity::Workflow;
 use Entity::Operation;
 use EEntity::EOperation;
@@ -61,25 +63,25 @@ my $err;
 use constant CALLBACKS => {
     execute_operation => {
         callback  => \&executeOperation,
-        channel   => 'operation',
         type      => 'queue',
-        instances => 1,
+        queue     => 'operation',
+        instances => 2,
         duration  => 30,
     },
     handle_result => {
         callback  => \&handleResult,
-        channel   => 'operation_result',
         type      => 'queue',
+        queue     => 'operation_result',
         instances => 1,
         duration  => 30,
     },
     run_workflow => {
         callback  => \&runWorkflow,
-        channel   => 'workflow',
         type      => 'queue',
+        queue     => 'workflow',
         instances => 1,
         duration  => 30,
-    }
+    },
 };
 
 sub getCallbacks { return CALLBACKS; }
@@ -135,6 +137,8 @@ sub runWorkflow {
 
     # Log in the proper file
     $self->setLogAppender(workflow => $workflow);
+
+    $log->info("---- [ Workflow " . $workflow->id . " ] ----");
 
     # Set the workflow as running
     $workflow->setState(state => 'running');
@@ -231,17 +235,17 @@ sub executeOperation {
 
                 # Check/Update the state of the context objects atomically
                 $log->info("Step <prepare>");
-                $operation->beginTransaction;
+                Kanopya::Database::beginTransaction;
 
                 $operation->prepare();
 
-                $operation->commitTransaction;
+                Kanopya::Database::commitTransaction;
 
                 # Unlock the context objects
                 $operation->unlockContext();
             }
             catch ($err) {
-                $operation->rollbackTransaction;
+                Kanopya::Database::rollbackTransaction;
                 $operation->unlockContext();
 
                 if ($err->isa('Kanopya::Exception::Execution::InvalidState') or
@@ -284,15 +288,15 @@ sub executeOperation {
 
         # Process the operation
         try {
-            $operation->beginTransaction;
+            Kanopya::Database::beginTransaction;
 
             $log->info("Step <process>");
             $operation->execute();
 
-            $operation->commitTransaction;
+            Kanopya::Database::commitTransaction;
         }
         catch ($err) {
-            $operation->rollbackTransaction;
+            Kanopya::Database::rollbackTransaction;
 
             return $self->terminateOperation(operation => $operation,
                                              status    => 'cancelled',
@@ -627,7 +631,8 @@ sub logWorkflowState {
                          required => [ 'operation' ],
                          optional => { 'state' => '' });
 
-    my $msg = $args{operation}->type . " <" . $args{operation}->id . "> " . $args{state};
+    my $msg = $args{operation}->type . " <" . $args{operation}->id . "> (workflow " .
+              $args{operation}->workflow->id . ") " . $args{state};
     $log->info("---- [ Operation " . $msg . " ] ----");
 }
 
@@ -705,6 +710,7 @@ sub instantiateOperation {
         if (defined $args{ack_cb}) {
             $args{ack_cb}->();
         }
+        $err->rethrow();
     }
     catch ($err) {
         $err->rethrow();

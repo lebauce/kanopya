@@ -12,6 +12,18 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+=pod
+=begin classdoc
+
+Provide aggregation (statistic descriptive) functions.
+Extand module Statistics::Descriptive::Full.
+Implement the coeffiction of variation function (coefficientOfVariation) and the compute of data outide
+mean +- 4*sigma (dataOut)
+
+=end classdoc
+=cut
+
 package DescriptiveStatisticsFunction;
 
 use strict;
@@ -29,23 +41,38 @@ use base 'Statistics::Descriptive::Full';
 sub new {
     my $class = shift;
     my %args = @_;
-    
+
     my $self = $class->SUPER::new(%args);
-    
-    return $self;    
+
+    return $self;
 }
+
+
+=pod
+=begin classdoc
+
+Compute the coefficient of variation (en.wikipedia.org/wiki/Coefficient_of_variation).
+
+@return coefficient of variation value
+
+=end classdoc
+=cut
 
 sub coefficientOfVariation {
     my $self = shift;
     return $self->standard_deviation () / $self->mean();
 }
 
-#Method just to test how to get all the values in order to create a new function
-sub firstValue {
-    my $self = shift;
-    my $data = $self->_data();
-    return $data->[0];
-}
+
+=pod
+=begin classdoc
+
+Compute the number of data outside the interval [mean - 4 * sigma, mean + 4 * sigma]
+
+@return number of data outside the interval [mean - 4 * sigma, mean + 4 * sigma]
+
+=end classdoc
+=cut
 
 sub dataOut{
     my $self        = shift;
@@ -71,6 +98,17 @@ sub dataOut{
     }
     return $outOfRange/($self->count());
 };
+
+
+=pod
+=begin classdoc
+
+Rename original standard_deviation function
+
+@return standard deviation value
+
+=end classdoc
+=cut
 
 sub std{
     my $self = shift;

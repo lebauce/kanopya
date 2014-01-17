@@ -105,9 +105,9 @@ sub _constructInfra {
                     ram   => $vm->host_ram,
                     cpu   => $vm->host_core,
                 },
-                hv_id => $hypervisor->getId,
+                hv_id => $hypervisor->id,
             };
-            $hvs->{$hypervisor->getId}->{vm_ids}->{$vm->id} = 1;
+            $hvs->{$hypervisor->id}->{vm_ids}->{$vm->id} = 1;
         }
     }
 

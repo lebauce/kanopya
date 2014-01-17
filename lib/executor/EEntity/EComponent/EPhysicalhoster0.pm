@@ -44,21 +44,55 @@ sub startHost {
 
     General::checkParams(args => \%args, required => [ "host" ]);
 
-    my $wol = '/usr/sbin/etherwake';
-    if (not -e $wol) {
-        $wol = '/usr/bin/wol';
-        if (not -e $wol) {
-            $errmsg = "EOperation::EStartNode->startNode : Neither 'etherwake' nor 'wol' command where found";
-            $log->error($errmsg);
+    my $command;  
+
+    if (scalar($args{host}->ipmi_credentials > 0)) {
+        
+        $log->info('Start physical host with IPMI');
+
+        my $ipmicreds = ($args{host}->ipmi_credentials)[0];
+        my $ipmitool = '/usr/bin/ipmitool';
+        
+        if (not -e $ipmitool) {
+            $errmsg = 'EOperation::EStartNode->startNode : command \'ipmitool\' not found';
             throw Kanopya::Exception::Execution(error => $errmsg);
         }
-        $wol .= " --host " . $args{host}->host->getPXEIface->getIPAddr;
+
+        $command = $ipmitool . ' -H ' . $ipmicreds->ipmi_credentials_ip_addr . ' -U ' .
+                   $ipmicreds->ipmi_credentials_user . ' -P '. $ipmicreds->ipmi_credentials_password .
+                   ' chassis power status';
+        my $powerstatus = $self->_host->getEContext->execute(command => $command);
+
+        if ($powerstatus->{stdout} =~/on/ ) {
+            my $errmsg = 'Physical host is already powered on (Host MAC is ' . $args{host}->getPXEIface->iface_mac_addr .
+                         ', Host IPMI card is ' . $ipmicreds->ipmi_credentials_ip_addr . ' )';
+            throw Kanopya::Exception::Execution::InvalidState(error => $errmsg);
+        }
+
+        $command = $ipmitool . ' -H ' . $ipmicreds->ipmi_credentials_ip_addr .
+                   ' -U ' . $ipmicreds->ipmi_credentials_user . ' -P ' .
+                   $ipmicreds->ipmi_credentials_password . ' chassis power on';
     }
     else {
-        $wol .= " -i " . $self->getMasterNode->host->getAdminIface->iface_name;
-    }
+        $log->info('Start physical host with Wake On Lan');
+        
+        my $wol = '/usr/sbin/etherwake';
 
-    my $command = $wol . " " . $args{host}->getPXEIface->iface_mac_addr;
+        if (not -e $wol) {
+            $wol = '/usr/bin/wol';
+            if (not -e $wol) {
+                $errmsg = "EOperation::EStartNode->startNode : Neither 'etherwake' nor 'wol' command where found";
+                throw Kanopya::Exception::Execution(error => $errmsg);
+            }
+            $wol .= " --host " . $args{host}->getPXEIface->getIPAddr;
+        }
+        else {
+            $wol .= " -i " . $self->getMasterNode->host->getAdminIface->iface_name;
+        }
+
+        $command = $wol . " " . $args{host}->getPXEIface->iface_mac_addr; 
+    }
+    
     my $result = $self->_host->getEContext->execute(command => $command);
 
     my $current_state = $args{host}->getState();
@@ -76,6 +110,26 @@ sub startHost {
 }
 
 sub stopHost {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ "host" ]);
+
+    # Implemented only with IPMI
+    if (scalar($args{host}->ipmi_credentials > 0)) {
+        $log->info('Stop physical host with IPMI');
+
+        my $ipmicreds = ($args{host}->ipmi_credentials)[0];
+        my $ipmitool = '/usr/bin/ipmitool';
+        if (not -e $ipmitool) {
+            $errmsg = 'EOperation::EStopNode->stopNode : command \'ipmitool\' not found';
+            throw Kanopya::Exception::Execution(error => $errmsg);
+        }
+
+        my $command = $ipmitool . ' -H ' . $ipmicreds->ipmi_credentials_ip_addr . ' -U ' .
+                      $ipmicreds->ipmi_credentials_user . ' -P ' . $ipmicreds->ipmi_credentials_password .
+                      ' chassis power off';
+        my $result = $self->_host->getEContext->execute(command => $command);
+    }
 }
 
 =pod

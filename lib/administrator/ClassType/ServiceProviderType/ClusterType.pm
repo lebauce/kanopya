@@ -45,11 +45,11 @@ For component types, delegate the permissons to the ServiceProvider master group
 =end classdoc
 =cut
 
-sub getDelegatee {
+sub _delegatee {
     my $self = shift;
     my $class = "Entity::ServiceProvider::Cluter";
 
-    return $class->getDelegatee;
+    return $class->_delegatee;
 }
 
 1;

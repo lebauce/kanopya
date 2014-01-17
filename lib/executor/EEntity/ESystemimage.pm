@@ -46,7 +46,6 @@ my $errmsg;
 
 
 =pod
-
 =begin classdoc
 
 Export the system image with the export manager given in paramaters.
@@ -57,7 +56,6 @@ Export the system image with the export manager given in paramaters.
 @optional erollback the erollback object
 
 =end classdoc
-
 =cut
 
 sub activate {
@@ -71,9 +69,7 @@ sub activate {
     # TODO: Check if the container of each container accesses is the same.
 
     # Link the systemimage with its accesses
-    $self->populateRelations(relations => {
-        systemimage_container_accesses => $args{container_accesses}
-    });
+    $self->update(systemimage_container_accesses => $args{container_accesses});
 
     # Set system image active
     $self->setAttr(name => 'active', value => 1);
@@ -84,7 +80,6 @@ sub activate {
 
 
 =pod
-
 =begin classdoc
 
 Remove all export of the system image container.
@@ -92,7 +87,6 @@ Remove all export of the system image container.
 @optional erollback the erollback object
 
 =end classdoc
-
 =cut
 
 sub deactivate {
@@ -125,7 +119,6 @@ sub deactivate {
 
 
 =pod
-
 =begin classdoc
 
 Remove the system image, also deactivate it if active.
@@ -133,7 +126,6 @@ Remove the system image, also deactivate it if active.
 @optional erollback the erollback object
 
 =end classdoc
-
 =cut
 
 sub remove {

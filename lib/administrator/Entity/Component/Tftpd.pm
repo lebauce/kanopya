@@ -71,12 +71,11 @@ sub getPuppetDefinition {
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         tftpd => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::tftpd",
-                            params => {
-                                tftpdir => $self->tftpd_repository
-                            }
-                        )
+            classes => {
+                'kanopya::tftpd' => {
+                    tftpdir => $self->tftpd_repository
+                }
+            }
         }
     } );
 }

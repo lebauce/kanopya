@@ -82,9 +82,9 @@ sub getPuppetDefinition {
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         memcached => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::memcached",
-                        )
+            classes => {
+                'kanopya::memcached' => { }
+            }
         }
     } );
 }

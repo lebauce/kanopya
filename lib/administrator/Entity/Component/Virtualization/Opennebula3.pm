@@ -188,7 +188,7 @@ sub checkScaleMemory {
     my $node = $args{host}->node;
 
     my $indicator_oid = 'XenTotalMemory'; # Memory Total
-    my $indicator_id  = Indicator->find(hash => { 'indicator_oid'  => $indicator_oid })->getId();
+    my $indicator_id  = Indicator->find(hash => { 'indicator_oid'  => $indicator_oid })->id();
 
     my $raw_data = $node->getMonitoringData(raw => 1, time_span => 600, indicator_ids => [$indicator_id]);
 
@@ -372,21 +372,24 @@ sub getPuppetDefinition {
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         opennebula => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::opennebula",
-                        )
+            classes => {
+                "kanopya::opennebula" => {}
+            }
         }
     } );
 }
 
 ### hypervisors manipulation ###
 
-=head2 getVmResources
 
-    Promote the selected host to an hypervisor type.
-    Real declaration in opennebula must have been done
-    since `onehost_id` is required.
+=pod
+=begin classdoc
 
+Promote the selected host to an hypervisor type.
+Real declaration in opennebula must have been done
+since `onehost_id` is required.
+
+=end classdoc
 =cut
 
 sub addHypervisor {

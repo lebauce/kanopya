@@ -42,17 +42,17 @@ hook 'before_template' => sub {
 
 get '/' => sub {
     my $product = config->{kanopya_product};
-    template $product . '/index';
+    template $product . '/index', config();
 };
 
 get '/kim' => sub {
     my $product = 'KIM';
-    template $product . '/index';
+    template $product . '/index', config();
 };
 
 get '/kio' => sub {
     my $product = 'KIO';
-    template $product . '/index';
+    template $product . '/index', config();
 };
 
 get '/conf' => sub {
@@ -89,6 +89,9 @@ sub exception_to_status {
     elsif ($exception->isa("Kanopya::Exception::NotImplemented")) {
         $status = "method_not_allowed";
     }
+    elsif ($exception->isa("Kanopya::Exception::DB::Cascade")) {
+        $status = 'conflict';
+    }
     else {
         $status = 'error';
     }
@@ -104,7 +107,7 @@ hook 'before_error_init' => sub {
     my $exception = shift;
     my $status = exception_to_status($exception->exception);
 
-    if (defined $status && request->is_ajax) {
+    if ( defined $status && ( request->is_ajax || request->accept() =~/application\/json/ ) ) {
         content_type "application/json";
         set error_template => '/json_error.tt';
     }

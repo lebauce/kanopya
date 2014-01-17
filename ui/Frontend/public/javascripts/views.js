@@ -62,6 +62,12 @@ function reload_content(container_id, elem_id, extra) {
             } else {
                 $('#info-container').html('');
             }
+
+            // Set specific doc page for the current content
+            // The link is either the current dialog doc link if exists or the main doc link
+            var doc_page = _content_handlers[container_id]['doc'] || '';
+            var doc_link = $('.dialog-doc-link:visible')[0] || $('#main-doc-link')[0];
+            $(doc_link).attr('doc-page', doc_page);
         }
     }
 }
@@ -152,7 +158,8 @@ function show_detail(grid_id, grid_class, elem_id, row_data, details) {
                 $('.last_content').addClass('current_content').removeClass('last_content');
                 $(this).remove(); // detail modals are never closed, they are destroyed
             },
-            buttons: buttons
+            buttons : buttons,
+            docPage : '/',
         });
         // Remove dialog title if wanted
         if (details_info.title == 'none') {

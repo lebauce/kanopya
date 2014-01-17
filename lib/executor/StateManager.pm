@@ -23,9 +23,10 @@ use warnings;
 
 use Kanopya::Config;
 use Kanopya::Exceptions;
+use Kanopya::Database;
+
 use Entity::ServiceProvider::Cluster;
 
-use BaseDB;
 use Message;
 use Alert;
 use EEntity;
@@ -74,7 +75,7 @@ sub oneRun {
         foreach my $node (@nodes) {
             my $ehost = EEntity->new(data => $node);
 
-            $cluster->beginTransaction;
+            Kanopya::Database::beginTransaction;
 
             # Firstly try to ping the node
             my $pingable;
@@ -104,7 +105,7 @@ sub oneRun {
                 $ehost->setNodeState(state => 'broken');
                 $cluster->setState(state => 'warning');
 
-                $cluster->commitTransaction;
+                Kanopya::Database::commitTransaction;
                 next;
             }
             elsif ($pingable and $hoststate eq 'broken') {
@@ -158,7 +159,7 @@ sub oneRun {
                 # Set the node state to broken
                 $ehost->setNodeState(state => 'broken');
                 $cluster->setState(state => 'warning');
-                $cluster->commitTransaction;
+                Kanopya::Database::commitTransaction;
                 next;
             }
             elsif ($node_available and $nodestate eq 'broken') {
@@ -166,10 +167,10 @@ sub oneRun {
                 $ehost->setNodeState(state => 'in');
             }
 
-            $cluster->commitTransaction;
+            Kanopya::Database::commitTransaction;
         }
 
-        $cluster->beginTransaction;
+        Kanopya::Database::beginTransaction;
 
         my ($clusterstate, $clustertimestamp) = $cluster->getState;
         if ($services_available and $clusterstate eq 'warning') {
@@ -177,7 +178,7 @@ sub oneRun {
             $cluster->setState(state => 'up');
         }
 
-        $cluster->commitTransaction;
+        Kanopya::Database::commitTransaction;
     }
     sleep 20;
 }

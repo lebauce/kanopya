@@ -97,7 +97,7 @@ sub test1f {
             ],
         },
     );
-    $host1->populateRelations(
+    $host1->_populateRelations(
         relations => {
             entity_tags => [$tag1],
         }
@@ -117,7 +117,7 @@ sub test1f {
             ],
         },
     );
-    $host2->populateRelations(
+    $host2->_populateRelations(
         relations => {
             entity_tags => [$tag1, $tag2, $tag3],
         }
@@ -137,7 +137,7 @@ sub test1f {
             ],
         },
     );
-    $host3->populateRelations(
+    $host3->_populateRelations(
         relations => {
             entity_tags => [$tag2, $tag3],
         }

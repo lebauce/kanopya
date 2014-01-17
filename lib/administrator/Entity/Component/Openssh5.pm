@@ -47,9 +47,9 @@ sub getPuppetDefinition {
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         openssh => {
-            manifest => $self->instanciatePuppetResource(
-                            name => "kanopya::openssh",
-                        )
+            classes => {
+                'kanopya::openssh' => { }
+            }
         }
     } );
 }

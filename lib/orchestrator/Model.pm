@@ -13,6 +13,16 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # Interface for a model that predict quality of service of and internet service
 
+
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
+
 package Model;
 
 use strict;
@@ -20,18 +30,14 @@ use warnings;
 use Kanopya::Exceptions;
 
 
-=head2 calculate
-    
-    Class : Public virtual (must be implemented by child)
-    
-    Desc :     Interface for calculating the quality of the Internet service
-             (e.g. performance, availability, cost, etc.)
-             according to underlying system configuration, workload characteristics and workload amount
-    
-    Args :
-    
-    Return :
-    
+=pod
+=begin classdoc
+
+Interface for calculating the quality of the Internet service
+(e.g. performance, availability, cost, etc.)
+according to underlying system configuration, workload characteristics and workload amount
+
+=end classdoc
 =cut
 
 sub calculate {

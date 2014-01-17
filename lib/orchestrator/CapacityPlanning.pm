@@ -11,6 +11,16 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package CapacityPlanning;
 
 use strict;
@@ -32,87 +42,84 @@ sub new {
         _search_spaces => undef,
     };
     bless $self, $class;
-    
+
     return $self;
 }
 
-sub setModel {    
+sub setModel {
     my $self = shift;
     my %args = @_;
-    
-    if (! defined $args{model}) { 
+
+    if (! defined $args{model}) {
         my $errmsg = "needs a 'model' argument";
         $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg); 
+        throw Kanopya::Exception::Internal(error => $errmsg);
     }
-    
+
     $self->{_model} = $args{model};
 }
 
 sub setConstraints {
     my $self = shift;
     my %args = @_;
-    
-    if (! defined $args{constraints}) { 
+
+    if (! defined $args{constraints}) {
         my $errmsg = "needs a 'constraints' argument";
         $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg); 
+        throw Kanopya::Exception::Internal(error => $errmsg);
     }
-    
-    $self->{_constraints} = $args{constraints};    
+
+    $self->{_constraints} = $args{constraints};
 }
 
-sub setNbTiers {    
+sub setNbTiers {
     my $self = shift;
     my %args = @_;
-    
-    if (! defined $args{tiers}) { 
+
+    if (! defined $args{tiers}) {
         my $errmsg = "needs a 'tiers' argument";
         $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg); 
+        throw Kanopya::Exception::Internal(error => $errmsg);
     }
-    
+
     $self->{_nb_tiers} = $args{tiers};
 }
 
 sub setSearchSpaceForTiers {
     my $self = shift;
     my %args = @_;
-    
-    if (! defined $args{search_spaces}) { 
+
+    if (! defined $args{search_spaces}) {
         my $errmsg = "needs a 'search_spaces' argument";
         $log->error($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg); 
+        throw Kanopya::Exception::Internal(error => $errmsg);
     }
-    
-    $self->{_search_spaces} = $args{search_spaces};    
+
+    $self->{_search_spaces} = $args{search_spaces};
 }
 
-=head2 calculate
-    
-    Class : Public
-    
-    Desc :     Calculates an optimized configuration for 
-             an Internet service, according to given constraints
-    
-    Args :
-    
-    Return :
-    
+
+=pod
+=begin classdoc
+
+Calculates an optimized configuration for an Internet service, according to given constraints
+
+=end classdoc
 =cut
 
+
 sub calculate {
-    
+
     my $self = shift;
     my %args = @_;
-    
+
     # Check if good init
     for my $req ('model', 'constraints', 'nb_tiers', 'search_spaces' ) {
         if (not defined $self->{"_$req"} ) {
             throw Kanopya::Exception::Internal(error => "Bad capacity planning init: need to set '$req'");
         }
     }
-    
+
     # params
     for my $req_param ('workload_amount', 'workload_class' ) {
         if (not defined $args{"$req_param"} ) {

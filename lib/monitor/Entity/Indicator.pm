@@ -116,7 +116,7 @@ sub getDependencies {
         #TODO : Compaptibility with KIM service_provider_name (with function getName) !
         # Variables used more than once
 
-        my $collector_indicator_id  = $collector_indicator->getId;
+        my $collector_indicator_id  = $collector_indicator->id;
 
         my @dependent_clustermetric = Entity::Clustermetric->search(
                                           hash => {

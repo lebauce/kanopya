@@ -1,0 +1,62 @@
+files:
+  "/root":
+    - setup.inputs
+#   - puppet-dhcp-pxefilename.patch
+    - killall.sh
+  "/etc/sysconfig/network-scripts":
+    - ifcfg-eth1
+packages:
+  - kanopya
+post:
+  base:
+    - "mount --bind /opt /home"
+    - "/usr/sbin/brctl addbr eth1"
+    - "/bin/hostname centos-kanopya-appliance"
+    - "/bin/domainname kanopya.localdomain"
+    - "echo -n centos-kanopya-appliance > /etc/hostname"
+    - "echo HOSTNAME=centos-kanopya-appliance >> /etc/sysconfig/network"
+    - "echo 10.0.0.1 centos-kanopya-appliance.kanopya.localdomain centos-kanopya-appliance >> /etc/hosts"
+    - "/sbin/ifconfig eth1 10.0.0.1 netmask 255.255.255.0"
+    - "/sbin/service mysql start"
+    - "/sbin/service rabbitmq-server start"
+    - "/sbin/service puppetmaster start"
+    - "mysqladmin -u root password K4n0pY4"
+# Uncomment the following lines to use Git instead of packages
+#   - "git clone -b dev --recursive git://repository.intranet.hederatech.com/kanopya/kanopya.git /opt/kanopya"
+#   - "cp /opt/kanopya/scripts/init/* /etc/init.d/"
+#   - "patch -d /opt/kanopya/templates/components/puppetmaster/modules/dhcp/ -p1 < /root/puppet-dhcp-pxefilename.patch"
+# Terrible hack but for some reason, setup.pl doesn't exit without this
+    - "echo >> /opt/kanopya/scripts/install/setup.pl"
+    - "echo exit 0 >> /opt/kanopya/scripts/install/setup.pl"
+    - "export PERL5LIB=/opt/kanopya/lib/common:/opt/kanopya/lib/administrator:/opt/kanopya/lib/monitor:/opt/kanopya/lib/executor:/opt/kanopya/lib/external:/opt/kanopya/lib/external/NetApp:/opt/kanopya/lib/orchestrator:/opt/kanopya/lib/component/kanopya_front:/opt/kanopya/lib/component/kanopya_executor:/opt/kanopya/lib/component/kanopya_aggregator:/opt/kanopya/lib/component/kanopya_rulesengine:/opt/kanopya/lib/mock; cd /opt/kanopya/scripts/install; ./setup.pl -f /root/setup.inputs &> /root/setup.log || true"
+    - "wget -P /opt/kanopya/tools/deployment_solver/ http://download.kanopya.org/constraint_engine/deployment_solver/deployment_solver.jar"
+    - "sed -i 's/disable\(\t*\)= yes/disable\1= no/' /etc/xinetd.d/tftp"
+    - "/sbin/chkconfig kanopya-aggregator on"
+    - "/sbin/chkconfig kanopya-collector on"
+    - "/sbin/chkconfig kanopya-executor on"
+    - "/sbin/chkconfig kanopya-front on"
+    - "/sbin/chkconfig kanopya-rulesengine on"
+    - "/sbin/chkconfig kanopya-state-manager on"
+    - "/sbin/service puppetmaster stop"
+    - "/sbin/service rabbitmq-server stop"
+    - "/sbin/service mysql stop"
+    - "/sbin/service puppet stop"
+    - "/sbin/service snmpd stop"
+    - "/sbin/service xinetd stop"
+    - "/sbin/service ntpd stop"
+    - "/sbin/service kanopya-front stop"
+    - "/sbin/service kanopya-collector stop"
+    - "/sbin/service kanopya-aggregator stop"
+    - "/sbin/service kanopya-rulesengine stop"
+    - "/sbin/service kanopya-state-manager stop || true"
+    - "/sbin/service httpd stop || true"
+    - "/sbin/service dhcpd stop || true"
+    - "/sbin/service postgresql stop || true"
+    - "/sbin/service syslog-ng stop || true"
+    - "killall epmd || true"
+    - "killall beam || true"
+    - "sh /root/killall.sh"
+    - "sleep 5"
+    - "rm -rf /root/setup.inputs /root/puppet-dhcp-pxefilename.patch /root/killall.sh"
+    - "echo 'Kanopya release 1.8 (Kwak)' > /etc/issue"
+    - "echo 'Kernel \\r on an \m' >> /etc/issue"

@@ -24,15 +24,15 @@ TODO
 =cut
 
 package  Entity::Component::Openstack::Cinder;
-use base "Entity::Component";
-use base "Manager::DiskManager";
+use base Entity::Component;
+use base Manager::DiskManager;
 
 use strict;
 use warnings;
 
 use Entity::Container::LvmContainer;
-use Entity::Component::Lvm2::Lvm2Lv;
-use Entity::Component::Lvm2::Lvm2Vg;
+use Lvm2Lv;
+use Lvm2Vg;
 
 use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
@@ -169,9 +169,9 @@ sub lvcreate {
                          required => [ "lvm2_lv_name", "lvm2_lv_size", "volume_id" ],
                          optional => { container_device => undef });
 
-    my $cinder_vg = Entity::Component::Lvm2::Lvm2Vg->find(hash => { lvm2_vg_name => 'cinder-volumes' });
+    my $cinder_vg = Lvm2Vg->find(hash => { lvm2_vg_name => 'cinder-volumes' });
 
-    my $lv = Entity::Component::Lvm2::Lvm2Lv->new(
+    my $lv = Lvm2Lv->new(
         lvm2_lv_name       => $args{lvm2_lv_name},
         lvm2_vg_id         => $cinder_vg->id,
         lvm2_lv_freespace  => 0,
@@ -204,36 +204,25 @@ sub getPuppetDefinition {
         $_->container_access->container_access_export
     } $controller->repositories;
 
-    my $manifest = $self->instanciatePuppetResource(
-        name   => 'kanopya::openstack::cinder::server',
-        params => {
-            email => $self->service_provider->user->user_email,
-            database_user => $name,
-            database_name => $name,
-            rabbit_user => $name,
-            rabbit_virtualhost => 'openstack-' . $controller->id
-        }
-    );
-
-    $manifest .= $self->instanciatePuppetResource(
-        name => 'kanopya::openstack::cinder::iscsi'
-    );
-
-    $manifest .= $self->instanciatePuppetResource(
-        name => 'kanopya::openstack::cinder::nfs',
-        params => {
-            nfs_servers => \@repositories
-        }
-    );
-
-    $manifest .= $self->instanciatePuppetResource(
-        name => 'kanopya::openstack::cinder::ceph',
-    );
-
     return merge($self->SUPER::getPuppetDefinition(%args), {
         cinder => {
-            manifest     => $manifest,
-            dependencies => [ $controller->amqp , $self->mysql5, $controller->keystone ]
+            classes => {
+                'kanopya::openstack::cinder::server' => {
+                    email => $self->service_provider->owner->user_email,
+                    database_user => $name,
+                    database_name => $name,
+                    rabbit_user => $name,
+                    rabbit_virtualhost => 'openstack-' . $controller->id
+                },
+                'kanopya::openstack::cinder::iscsi' => {},
+                'kanopya::openstack::cinder::nfs' => {
+                    nfs_servers => \@repositories
+                },
+                'kanopya::openstack::cinder::ceph' => {}
+            },
+            dependencies => [ $controller->amqp,
+                              $self->mysql5,
+                              $controller->keystone ]
         }
     } );
 }

@@ -84,7 +84,17 @@ sub methods {
   }
 }
 
-# Virtual attribute getter
+
+=pod
+=begin classdoc
+
+Virtual attribute 'formula_label'
+
+return the string of the formula
+
+=end classdoc
+=cut
+
 sub formula_label {
     my $self = shift;
     return $self->formula_string;
@@ -116,7 +126,6 @@ sub new {
         );
     }
 
-    my $formula = (\%args)->{formula};
     _verify ($args{formula});
 
     my $self = $class->SUPER::new(%args);
@@ -278,15 +287,13 @@ sub clone {
     # Specific attrs management
     my $attrs_cloner = sub {
         my %args = @_;
-        my $attrs = $args{attrs};
-        $attrs->{formula}    = $self->_cloneFormula(
-            dest_sp_id              => $attrs->{service_provider_id},
-            formula                 => $attrs->{formula},
-            formula_object_class    => 'Entity::AggregateCondition'
+        $args{attrs}->{formula} = $self->_cloneFormula(
+            dest_sp_id    => $args{attrs}->{service_provider_id},
+            formula       => $args{attrs}->{formula},
+            formula_class => 'Entity::AggregateCondition'
         );
-        $attrs->{aggregate_rule_last_eval}  = undef;
-        $attrs->{workflow_def_id}           = undef;
-        return %$attrs;
+        $args{attrs}->{aggregate_rule_last_eval}  = undef;
+        return $args{attrs};
     };
 
     # Generic clone
@@ -298,13 +305,23 @@ sub clone {
     );
 
     # Clone workflow
-    $self->cloneAssociatedWorkflow(
-        dest_rule => $clone
-    );
+    if (defined $self->workflow_def) {
+        $self->cloneAssociatedWorkflow(dest_rule => $clone);
+    }
 
     return $clone;
 }
 
+
+=pod
+
+=begin classdoc
+
+return the constant string "NotifyWorkflow service_provider"
+
+=end classdoc
+
+=cut
 
 sub notifyWorkflowName {
     return "NotifyWorkflow service_provider";
@@ -347,7 +364,7 @@ Update the state of the rule in DB  according to the state of the workflow the r
 =cut
 
 sub _updateWorkflowStatus {
-    my ($self, %args) = @_;
+    my $self = shift;
 
     my $workflow_def = $self->workflow_def;
 
@@ -376,8 +393,8 @@ sub _updateWorkflowStatus {
     }
     elsif ($workflow->state eq 'done') {
         $log->info('Workflow <'.$workflow->id.'> done');
-        $self->setAttr(name  => 'state', value => 'enabled' );
-        $self->setAttr(name  => 'workflow_id',  value => undef );
+        $self->setAttr(name  => 'state', value => 'enabled');
+        $self->setAttr(name  => 'workflow_id',  value => undef);
         $self->save();
     }
     elsif ($workflow->state eq 'delayed') {
@@ -456,7 +473,7 @@ sub manageWorkflows {
     # Update last workflow possibly launched status before trying to trigger a new one
     $self->_updateWorkflowStatus();
 
-    my $workflow_def_id = $self->workflow_def_id;
+    my $workflow_def_id = $self->workflow_def->id;
 
     if (! defined $workflow_def_id) {
         # Skip workflow management when service provider has no workflow_def
@@ -475,14 +492,10 @@ sub manageWorkflows {
     if ($evaluation == 1){
         $log->info('Rule <'. $self->id. '> is verified');
         if ($self->state eq 'enabled') {
-            $log->info('Rule <'. $self->id. '> has launched a new workflow (' . $workflow_def_id . ') and was defined as triggered');
+            $log->info('Rule <'. $self->id. '> has launched a new workflow (' . $workflow_def_id .
+                       ') and was defined as triggered');
 
-            # Rule is enable, is verified and has a WorkflowDef => trigger the workflow !
-            my $workflow = $workflow_manager->runWorkflow(
-                               workflow_def_id     => $workflow_def_id,
-                               rule_id             => $self->id,
-                               service_provider_id => $sp->id
-                           );
+            my $workflow = $self->triggerWorkflow();
 
             $self->setAttr(name => 'state', value => 'triggered');
             $self->setAttr(name => 'workflow_id', value => $workflow->id);

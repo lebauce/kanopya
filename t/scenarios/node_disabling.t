@@ -22,7 +22,7 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use BaseDB;
+use Kanopya::Database;
 use RulesEngine;
 use Aggregator;
 use Entity::ServiceProvider::Externalcluster;
@@ -41,28 +41,29 @@ my $testing = 1;
 
 my $acomb1;
 my $nrule1;
-my @indicators;
 my $service_provider;
+my $aggregator;
+my $mock_monitor;
 
 main();
 
 sub main {
-    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+    Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if($testing == 1) {
-        BaseDB->beginTransaction;
+        Kanopya::Database::beginTransaction;
     }
 
     node_disabling();
     test_rrd_remove();
 
     if ($testing == 1) {
-        BaseDB->rollbackTransaction;
+        Kanopya::Database::rollbackTransaction;
     }
 }
 
 sub node_disabling {
-    my $aggregator = Aggregator->new();
+    $aggregator = Aggregator->new();
     my $rulesengine = RulesEngine->new();
 
     # Create externalcluster with a mock monitor
@@ -70,7 +71,7 @@ sub node_disabling {
         externalcluster_name => 'Test Monitor',
     );
 
-    my $mock_monitor = Entity::Component::MockMonitor->new(
+    $mock_monitor = Entity::Component::MockMonitor->new(
         service_provider_id => $external_cluster_mockmonitor->id,
     );
 
@@ -102,9 +103,8 @@ sub node_disabling {
         monitoring_state    => 'up',
     );
 
-    @indicators = Entity::CollectorIndicator->search (hash => {collector_manager_id => $mock_monitor->id});
-    my $agg_rule_ids  = _service_rule_objects_creation(indicators => \@indicators);
-    my $node_rule_ids = _node_rule_objects_creation(indicators => \@indicators);
+    my $agg_rule_ids  = _service_rule_objects_creation();
+    my $node_rule_ids = _node_rule_objects_creation();
 
     lives_ok {
         diag('Check if no values before launching aggregator');
@@ -112,7 +112,7 @@ sub node_disabling {
             diag('## checked');
         }
         else {
-            die 'Presence of values before launching aggregator';
+            die 'Presence of values before launching aggregator for combination <'.$acomb1->id.'>';
         }
 
         sleep 5;
@@ -190,7 +190,7 @@ sub node_disabling {
 
         expectedException {
             VerifiedNoderule->find(hash => {
-                verified_noderule_node_id    => $node3->id,
+                verified_noderule_node_id            => $node3->id,
                 verified_noderule_nodemetric_rule_id => $nrule1->id,
                 verified_noderule_state              => 'verified',
             });
@@ -203,7 +203,7 @@ sub node_disabling {
 
         expectedException {
             VerifiedNoderule->find(hash => {
-                verified_noderule_node_id    => $node3->id,
+                verified_noderule_node_id            => $node3->id,
                 verified_noderule_nodemetric_rule_id => $nrule1->id,
                 verified_noderule_state              => 'verified',
             });
@@ -278,6 +278,24 @@ sub test_rrd_remove {
             }
             close(FILE);
         }
+
+        my @nodes = $service_provider->nodes;
+        my @node_names = map {$_->node_hostname} @nodes;
+        while (@nodes) { (pop @nodes)->remove(); }
+
+        my $used_indicators = $aggregator->_getUsedIndicators(service_provider     => $service_provider,
+                                                              include_nodemetric   => 1);
+
+        for my $indicator (values %{$used_indicators->{indicators}}) {
+            for my $node_name (@node_names) {
+                my $db_name = '/var/cache/kanopya/monitor/timeDB_'.$indicator->id.'_'.$node_name.'.rrd';
+                if (defined open(FILE,$db_name)) {
+                    $one_rrd_remove++;
+                }
+                close(FILE);
+            }
+        }
+
         if ($one_rrd_remove == 0) {
             diag('## checked');
         }
@@ -292,9 +310,15 @@ sub _service_rule_objects_creation {
         hash => {externalcluster_name => 'Test Service Provider'}
     );
 
+    my $indicator = Entity::Indicator->find(hash => {indicator_oid => '.1.3.6.1.4.1.2021.4.5.0'});
+    my $collector_indicator = $indicator->find(
+                                  related => 'collector_indicators',
+                                  hash    => {collector_manager_id => $mock_monitor->id}
+                              );
+
     my $cm1 = Entity::Clustermetric->new(
         clustermetric_service_provider_id => $service_provider->id,
-        clustermetric_indicator_id => ((pop @indicators)->id),
+        clustermetric_indicator_id => $collector_indicator->id,
         clustermetric_statistics_function_name => 'count',
         clustermetric_window_time => '1200',
     );
@@ -310,10 +334,15 @@ sub _node_rule_objects_creation {
         hash => {externalcluster_name => 'Test Service Provider'}
     );
 
+    my $indicator = Entity::Indicator->find(hash => {indicator_oid => '.1.3.6.1.4.1.2021.4.5.0'});
+    my $collector_indicator = $indicator->find(
+                                  related => 'collector_indicators',
+                                  hash    => {collector_manager_id => $mock_monitor->id}
+                              );
     # Create nodemetric rule objects
     my $ncomb1 = Entity::Combination::NodemetricCombination->new(
         service_provider_id             => $service_provider->id,
-        nodemetric_combination_formula  => 'id'.((pop @indicators)->id).' + id'.((pop @indicators)->id),
+        nodemetric_combination_formula  => 'id'.$collector_indicator->id.' + id'.$collector_indicator->id,
     );
 
     my $nc1 = Entity::NodemetricCondition->new(

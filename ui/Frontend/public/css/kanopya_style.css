@@ -27,7 +27,8 @@
     right:10px;
 }
 
-#header-links #about {
+#header-links #about,
+#header-links #main-doc-link {
     color: #C2C2C2;
     font-size: 11px;
     font-weight: bold;
@@ -36,8 +37,17 @@
     margin-top: 5px;
 }
 
-#header-links #about:hover {
+#header-links #main-doc-link {
+    float: left;
+}
+
+#header-links #about:hover,
+#header-links #main-doc-link:hover {
     color: #7E388A;
+}
+
+.dialog-doc-link {
+    float : right;
 }
 
 /* Allow scroll inside view (tab content) */
@@ -314,3 +324,35 @@ button.ui-multiselect,.ui-multiselect-menu li label{cursor:pointer;}
         #content-about h2{font-size:12px;color:black;margin:0 0 2px;}
     #content-about p{font-weight:normal;}
 
+.gritter-action {
+  float: right;
+  padding-right: 25px;
+  line-height: 16px;
+  vertical-align: middle;
+  margin-left: 8px;
+}
+
+.gritter-title {
+  margin-left: 10px;
+}
+
+.gritter-title .workflow-name {
+  font-size: 14px;
+}
+
+.gritter-title .workflow-owner {
+  font-size: 10px;
+  font-weight: normal;
+}
+
+.gritter-title div {
+   display: inline-block;
+}
+
+.gritter-item li {
+  height: 20px;
+  clear: both;
+}
+
+.gritter-close {
+}

@@ -15,6 +15,15 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package EEntity::EComponent::EMailnotifier0;
 use base "EEntity::EComponent";
 use base "EManager::ENotificationManager";
@@ -32,10 +41,16 @@ my $log = get_logger("");
 my $errmsg;
 
 
-=head2 notify
+=pod
+=begin classdoc
 
-    Notifiy the user by mail
+Notifiy the user by mail
 
+@param user User instance
+@param message String Email message
+@optional String Email subject
+
+=end classdoc
 =cut
 
 sub notify {

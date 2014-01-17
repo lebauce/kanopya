@@ -73,19 +73,16 @@ sub getPuppetDefinition {
         );
     }
 
-    my $manifest = $self->instanciatePuppetResource(
-        name => 'kanopya::openstack::glance',
-        params => {
-            email => $self->service_provider->user->user_email,
-            database_user => $name,
-            database_name => $name
-        }
-    );
-
     return merge($self->SUPER::getPuppetDefinition(%args), {
         glance => {
-            manifest     => $manifest,
-            dependencies => [ $sql , $keystone ]
+            classes => {
+                'kanopya::openstack::glance' => {
+                    email => $self->service_provider->owner->user_email,
+                    database_user => $name,
+                    database_name => $name
+                }
+            },
+            dependencies => [ $sql, $keystone ]
         }
     } );
 }

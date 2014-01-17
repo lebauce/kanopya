@@ -15,6 +15,15 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+
+=pod
+=begin classdoc
+
+Use Kanopya to collect monitoring data
+
+=end classdoc
+=cut
+
 package Entity::Component::Kanopyacollector1;
 use base "Entity::Component";
 use base "Manager::CollectorManager";
@@ -30,9 +39,12 @@ use Collect;
 use Retriever;
 
 use Data::Dumper;
+
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
-my $errmsg;
+
+use TryCatch;
+my $err;
 
 use constant ATTR_DEF => {
     time_step => {
@@ -88,16 +100,19 @@ sub new {
     return $self;
 }
 
-=head2 retrieveData
+=pod
+=begin classdoc
 
-    Desc: Call kanopya native monitoring API to retrieve indicators data
+Call kanopya native monitoring API to retrieve indicators data
 
-    Args:   (required) \%indicators, \@nodelist
-            (required) $time_span OR $start, $end
-            (optional) historical
+@param indicators
+@param nodelist
+@param time_span OR start, end
+@optional time_span OR start and end Target time interval
 
-    return \%monitored_values
+@return hash ref { hostname => {oid => value,...}, ... }
 
+=end classdoc
 =cut
 
 sub retrieveData {
@@ -131,7 +146,7 @@ sub retrieveData {
 
     while (my ($set_id, $indic_names) = each %sets_to_fetch) {
         foreach my $node (@$nodelist) {
-            eval {
+            try {
                 #TODO avoir this useless reinstanciation with a hashtable
                 my $indicator_set = Indicatorset->get(id => $set_id);
                 #TODO Improve lastValue / average management
@@ -153,9 +168,9 @@ sub retrieveData {
 
                 $monitored_values{$node} = $monitored_values{$node}
                                                ? { %{$monitored_values{$node}}, %{$data} } : $data;
-            };
-            if ($@) {
-                $log->warn("Error while retrieving data from kanopya collector : $@");
+            }
+            catch ($err) {
+                $log->warn("Error while retrieving data from kanopya collector : $err");
             }
         }
     }
@@ -181,11 +196,14 @@ sub retrieveData {
 }
 
 
-=head2 getIndicators
+=pod
+=begin classdoc
 
-    Desc: call collector manager to retrieve indicators available for the service provider
-    return \@indicators;
+Call collector manager to retrieve indicators available for the service provider
 
+@return Array ref of Indicator instances
+
+=end classdoc
 =cut
 
 sub getIndicators {
@@ -196,12 +214,17 @@ sub getIndicators {
     );
 }
 
-=head2 getIndicator
 
-    Desc: Return the indicator with the specified id
-    Args: indicator id
-    Return an indicator instance
+=pod
+=begin classdoc
 
+Return the indicator with the specified id
+
+@param id Indicator id
+
+@return Indicator instance
+
+=end classdoc
 =cut
 
 sub getIndicator {
@@ -212,10 +235,13 @@ sub getIndicator {
     return Entity::Indicator->get(id => $args{id});
 }
 
-=head2 collectIndicator
 
-    Desc: Start collecting the specified indicator
+=pod
+=begin classdoc
 
+Start collecting the specified indicator
+
+=end classdoc
 =cut
 
 sub collectIndicator {
@@ -224,32 +250,29 @@ sub collectIndicator {
     my $collector_indicator = Entity::CollectorIndicator->get(id => $args{indicator_id});
     my $indicator = $collector_indicator->indicator;
 
-    eval {
+    try {
         Collect->new(
             service_provider_id => $args{service_provider_id},
             indicatorset_id     => $indicator->indicatorset_id
         );
-    };
-    if ($@) {
-        my $err = $@;
-        if ($err->isa('Kanopya::Exception::DB')) {
-            $log->warn("Collect <$args{service_provider_id}-" . $indicator->indicatorset_id .  "> already exists.");
-        }
-        else {
-            $err->rethrow()
-        }
+    }
+    catch (Kanopya::Exception::DB $err) {
+        $log->warn("Collect <$args{service_provider_id}-" . $indicator->indicatorset_id .  "> already exists.");
     }
 }
 
-=head2 collectIndicator
 
-    Desc: Start collecting indicators of the specified sets
-    ! Do not check if wanted set to collect contains available indicators for the service provider (i.e CollectorIndicators)
+=pod
+=begin classdoc
 
-    Args:
-        sets_name : array ref of set name
-        service_provider_id
+Start collecting indicators of the specified sets
+Do not check if wanted set to collect contains available indicators for the service provider
+(i.e CollectorIndicators)
 
+@param sets_name array ref of set name
+@param service_provider_id
+
+=end classdoc
 =cut
 
 sub collectSets {
@@ -262,23 +285,26 @@ sub collectSets {
     );
 
     for my $indicator_set (@indicator_sets) {
-        eval {
+        try {
             Collect->new(
                 service_provider_id => $args{service_provider_id},
                 indicatorset_id     => $indicator_set->id
             );
-        };
-        if ($@) {
-            $log->info($@);
+        }
+        catch ($err) {
+            $log->info($err);
         }
     }
 }
 
-=head2 getCollectorType
 
-    Desc: Usefull to give information about this component
-    return 'Native Kanopya collector tool';
+=pod
+=begin classdoc
 
+Usefull to give information about this component
+@return Native Kanopya collector tool
+
+=end classdoc
 =cut
 
 sub getCollectorType {

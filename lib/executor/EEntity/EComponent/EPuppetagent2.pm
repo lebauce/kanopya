@@ -21,7 +21,6 @@ use EEntity;
 use Entity::ServiceProvider::Cluster;
 use Log::Log4perl "get_logger";
 use Kanopya::Exceptions;
-use Data::Dumper;
 
 my $log = get_logger("");
 my $errmsg;
@@ -44,16 +43,12 @@ sub configureNode {
         cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/default/puppet',
-        template_dir  => '/templates/components/puppetagent',
+        template_dir  => 'components/puppetagent',
         template_file => 'default_puppet.tt',
-        data          => $data
+        data          => $data,
+        mount_point   => $args{mount_point}
     );
-    
-    $self->_host->getEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/default'
-    );
-    
+
     # Generation of puppet.conf
     $data = { 
         puppetagent2_masterserver => $conf->{puppetagent2_masterfqdn},
@@ -63,28 +58,20 @@ sub configureNode {
         cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/puppet/puppet.conf',
-        template_dir  => '/templates/components/puppetagent',
-        template_file => 'puppet.conf.tt', 
-        data          => $data
-    );
-
-     $self->_host->getEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/puppet'
+        template_dir  => 'components/puppetagent',
+        template_file => 'puppet.conf.tt',
+        data          => $data,
+        mount_point   => $args{mount_point}
     );
 
     $file = $self->generateNodeFile(
         cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/puppet/auth.conf',
-        template_dir  => '/templates/components/puppetagent',
+        template_dir  => 'components/puppetagent',
         template_file => 'auth.conf.tt',
-        data          => $data
-    );
-
-    $self->_host->getEContext->send(
-        src  => $file,
-        dest => $args{mount_point}.'/etc/puppet'
+        data          => $data,
+        mount_point   => $args{mount_point}
     );
 }
 
@@ -109,104 +96,11 @@ sub addNode {
         mount_point => $args{mount_point},
         host        => $args{host}
     );
-    
-    $self->addInitScripts(    
-        mountpoint => $args{mount_point}, 
-        scriptname => 'puppet', 
-    );    
 
-    $self->generatePuppetDefinitions(%args);
-}
-
-sub generatePuppetDefinitions {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
-
-    my $manifest = "";
-    my $puppetmaster = EEntity->new(entity => $self->getPuppetMaster);
-    my $fqdn = $args{host}->node->fqdn;
-    my @components = sort { $a->component->priority <=> $b->component->priority }
-                     $args{host}->node->component_nodes;
-
-    my $config_hash = { };
-    foreach my $component_node (@components) {
-        my $component = $component_node->component;
-        my $component_name = lc($component->component_type->component_name);
-        my $ecomponent = EEntity->new(entity => $component);
-        $ecomponent->generateConfiguration(
-            cluster => $args{cluster},
-            host    => $args{host}
-        );
-
-        my $puppet_definitions = $ecomponent->getPuppetDefinition(
-            host    => $args{host},
-            cluster => $args{cluster},
-        );
-
-        my $listen = {};
-        my $access = {};
-        my $netconf = $component->getNetConf;
-        for my $service (keys %{$netconf}) {
-            $listen->{$service} = {
-                ip => $component->getListenIp(host => $args{host},
-                                              port => $netconf->{$service}->{port})
-            };
-            $access->{$service} = {
-                ip => $component->getAccessIp(host => $args{host},
-                                              port => $netconf->{$service}->{port})
-            };
-        }
-
-        my $configuration = {
-            master => ($component_node->master_node == 1 ? 1 : 0),
-            listen => $listen,
-            access => $access
-        };
-
-        for my $chunk (keys %{$puppet_definitions}) {
-            $manifest .= $puppet_definitions->{$chunk}->{manifest} . "\n";
-            for my $dependency (@{$puppet_definitions->{$chunk}->{dependencies} || []},
-                                @{$puppet_definitions->{$chunk}->{optionals} || []}) {
-                my $name = lc($dependency->component_type->component_name);
-                my @nodes = map { $_->fqdn } $dependency->nodes;
-                my $hash = { nodes => \@nodes, %{$puppet_definitions->{$chunk}->{params} || {}} };
-
-                if (($dependency->service_provider->id == $self->service_provider->id) ||
-                    (($dependency->service_provider->getState)[0] eq "up")) {
-                    $netconf = $dependency->getNetConf;
-                    for my $service (keys %{$netconf}) {
-                        $hash->{$service} = {
-                            ip    => $dependency->getAccessIp(port => $netconf->{$service}->{port}),
-                            tag   => $dependency->getMasterNode->fqdn,
-                        };
-                    }
-                    $configuration->{$name} = $hash;
-                }
-            }
-        }
-
-        $config_hash->{$component_name} = $configuration;
-    }
-
-    $Data::Dumper::Terse = 1;
-    $Data::Dumper::Quotekeys = 0;
-
-    my @dumper = split('\n', Dumper($config_hash));
-    shift @dumper; pop @dumper;
-    $manifest = '$components = { ' . join("\n", @dumper) . " }\n" . $manifest;
-
-    if ($self->puppetagent2_mode eq 'kanopya') {
-        # create, sign and push a puppet certificate on the image
-        $log->info('Puppent agent component configured with kanopya puppet master');
-        my $puppetmaster = EEntity->new(entity => $self->getPuppetMaster);
-
-        $puppetmaster->createHostManifest(
-            host_fqdn          => $args{host}->node->fqdn,
-            puppet_definitions => $manifest,
-            sourcepath         => $args{cluster}->cluster_name . '/' . $args{host}->node->node_hostname
-        );
-    }
+    $self->addInitScripts(
+        mountpoint => $args{mount_point},
+        scriptname => 'puppet',
+    );
 }
 
 sub postStartNode {
@@ -238,17 +132,26 @@ sub stopNode {
 sub applyConfiguration {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster' ],
-                                         optional => { 'host' => undef, 'tags' => [] });
+    General::checkParams(args => \%args,
+                         required => [ 'cluster' ],
+                         optional => { 'host' => undef,
+                                       'hosts' => undef,
+                                       'tags' => [] });
 
-    my @ehosts = ($args{host}) || (map { EEntity->new(entity => $_) } @{ $args{cluster}->getHosts() });
-    for my $ehost (@ehosts) {
-        $self->generatePuppetDefinitions(%args,
-                                         host => $ehost);
+    my @ehosts;
+    if (defined $args{host}) {
+        @ehosts = ($args{host});
+    }
+    elsif (defined $args{hosts}) {
+        @ehosts = @{ $args{hosts} };
+    }
+    else {
+        @ehosts = map { EEntity->new(entity => $_->host) }
+                  $self->getActiveNodes();
     }
 
     my $ret = -1;
-    my $timeout = 180;
+    my $timeout = 360;
     my @hosts = (defined $args{host}) ? ($args{host}->node->fqdn) : (map { $_->node->fqdn } @{ $args{cluster}->getHosts() });
     my $puppetmaster = (Entity::ServiceProvider::Cluster->getKanopyaCluster)->getComponent(name => 'Puppetmaster');
     my $econtext = (EEntity->new(data => $puppetmaster))->getEContext;
@@ -259,11 +162,12 @@ sub applyConfiguration {
             $timeout -= 5;
         }
 
-        my $command = "puppet kick --foreground --parallel " . (scalar @hosts);
+        my $command = "puppet kick --configtimeout=900 --ignoreschedules --foreground --parallel " . (scalar @hosts);
         map { $command .= " --tag " . $_; } @{$args{tags}};
         map { $command .= " --host $_" } @hosts;
 
-        $ret = $econtext->execute(command => $command);
+        $ret = $econtext->execute(command => $command,
+                                  timeout => 900);
 
         while ($ret->{stdout} =~ /([\w.\-]+) finished with exit code (\d+)/g) {
             # If the host is down or not reachable, the exit code is 2

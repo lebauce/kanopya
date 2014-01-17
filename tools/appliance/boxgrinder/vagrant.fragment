@@ -1,0 +1,47 @@
+name: centos-6.4-kanopya-vagrant
+summary: Kanopya Vagrant box (based on CentOS 6.4 64 bits)
+packages:
+  - kernel-devel-2.6.32-431.el6
+  - kernel-headers-2.6.32-431.el6.x86_64
+  - gcc
+  - perl
+  - make
+  - perl-Devel-Cover
+  - perl-Devel-Cover-Report-Clover
+  - perl-TAP-Formatter-JUnit
+  - kanopya
+files:
+  "/root":
+    - VBoxGuestAdditions_4.2.18.iso
+  "/etc/sudoers.d":
+    - vagrant
+post:
+  base:
+    - "/sbin/service mysql start || true"
+    - "mysqladmin -u root password K4n0pY4 || true"
+    - "/sbin/service mysql stop || true"
+    - "yum -y remove kanopya-common kanopya-cli"
+    - "vgrename kanopya kanopyavg"
+    - "sed -i 's/^\(Defaults\)\( *\)\(requiretty$\)/\1\2!\3/' /etc/sudoers"
+    - "sed -i 's/^\(Defaults\)\( *\)!\(visiblepw$\)/\1\2\3/' /etc/sudoers"
+    - "ln -s 2.6.32-431.el6.x86_64 /lib/modules/`uname -r`"
+    - "ln -s 2.6.32-431.el6.x86_64 /usr/src/kernels/`uname -r`"
+    - "mount -o loop /root/VBoxGuestAdditions_4.2.18.iso /mnt"
+    - "sh /mnt/VBoxLinuxAdditions.run || true"
+    - "umount /mnt"
+    - "unlink /lib/modules/`uname -r`"
+    - "unlink /usr/src/kernels/`uname -r`"
+    - "chmod 400 /etc/sudoers.d/vagrant"
+    - "chown 0:0 /etc/sudoers.d/vagrant"
+    - "useradd -d /home/hedera hedera"
+    - "mkdir -p /home/hedera/.ssh"
+    - "echo ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCpFaaw+PjrFW1npo50jGxhcV4ZgslRP5JHo+yp/185UkbLRvIdBIbhPgPE7DTNNNRlTqLOggYkPoj7IpryagTFFffLdxtvxbDkYib+LMh99Co2PWSYLNMpLWyn6lLwrtoy37GRTZoO2RWsM76mLiQdW6YdTPFjc1LXvCe7Tk2bbLF9OD9RBUWD3kkhCtsxsENSw0OiKQyPjlH7rUnBAzpw0q6JWuYJ/dTTq/5NCN/zfmJfEtNrvdDtc9RETo6CPe6tpirPLqwUAzxPOo4Wj7wQnPzMtaczWOGEEQPYRBVeELLm0JcFRV87Mu4VfkUhiwewQpHevJiSISUAUNzSUXhb jenkins@localhost.localdomain > /home/hedera/.ssh/authorized_keys"
+    - "chown -R hedera:hedera /home/hedera/.ssh"
+    - "chmod 700 /home/hedera/.ssh"
+    - "chmod 600 /home/hedera/.ssh/authorized_keys"
+    - "echo 127.0.0.1   localhost localhost.localdomain localhost4 localhost4.localdomain4 > /etc/hosts"
+    - "echo 127.0.1.1   kanopyamaster.hederatech.com kanopyamaster >> /etc/hosts"
+    - "echo ::1         localhost localhost.localdomain localhost6 localhost6.localdomain6 >> /etc/hosts"
+    - "echo -n kanopyamaster > /etc/hostname"
+    - "echo HOSTNAME=kanopyamaster >> /etc/sysconfig/network"
+    - "/sbin/chkconfig puppetmaster on"

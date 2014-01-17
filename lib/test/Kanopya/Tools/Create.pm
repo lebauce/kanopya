@@ -116,9 +116,9 @@ sub createCluster {
                                                                       version => 1)
                          );
 
-    diag('Retrieve the admin user id');
-    if (not defined $args{user_id}) {
-        $args{user_id} = Entity::User->find(hash => { user_login => 'admin' })->id;
+    diag('Retrieve the admin owner_id');
+    if (not defined $args{owner_id}) {
+        $args{owner_id} = Entity::User->find(hash => { user_login => 'admin' })->id;
     }
 
     diag('Retrieve admin NetConf');
@@ -128,7 +128,7 @@ sub createCluster {
 
     diag('Retrieve iSCSI portals');
     my @iscsi_portal_ids;
-    for my $portal (Entity::Component::Iscsi::IscsiPortal->search(hash => { iscsi_id => $export_manager->id })) {
+    for my $portal (IscsiPortal->search(hash => { iscsi_id => $export_manager->id })) {
         push @iscsi_portal_ids, $portal->id;
     }
 
@@ -143,13 +143,12 @@ sub createCluster {
         cluster_min_node      => 1,
         cluster_max_node      => 3,
         cluster_priority      => "100",
-        cluster_si_shared     => 0,
         cluster_si_persistent => 1,
         cluster_domainname    => 'my.domain',
         cluster_nameserver1   => '208.67.222.222',
         cluster_nameserver2   => '127.0.0.1',
         cluster_basehostname  => 'default',
-        user_id               => $args{user_id},
+        owner_id              => $args{owner_id},
         default_gateway_id    => ($adminnetconf->poolips)[0]->network->id,
         service_template_id   => $service_template_id,
         managers              => {
@@ -216,7 +215,7 @@ sub createCluster {
             my %tmp = (
                 managers => { 
                     $manager => {
-                        manager_type => BaseDB::normalizeName($manager),
+                        manager_type => General::normalizeName($manager),
                         %$mgr_conf
                     }
                 }

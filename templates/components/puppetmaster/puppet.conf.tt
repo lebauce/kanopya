@@ -1,13 +1,13 @@
 [main]
-modulepath=\$confdir/modules:[% kanopya_puppet_modules %]
-
+modulepath=$confdir/modules:[% kanopya_puppet_modules %]
 logdir=/var/log/puppet
 vardir=/var/lib/puppet
 ssldir=/var/lib/puppet/ssl
 rundir=/var/run/puppet
-factpath=\$vardir/lib/facter
-templatedir=\$confdir/templates
+factpath=$vardir/lib/facter
+templatedir=$confdir/templates
 filetimeout=0
+configtimout=600
 
 [master]
 # These are needed when the puppetmaster is run by passenger
@@ -19,12 +19,9 @@ dbadapter = mysql
 dbname = puppet
 dbuser = puppet
 dbpassword = [% dbpassword %]
-
 dbserver = [% dbserver %]
-
 
 [agent]
 server = [% kanopya_hostname %].[% admin_domainname %]
-
 listen = true
-
+client = false

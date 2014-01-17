@@ -15,6 +15,14 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+=begin classdoc
+
+A Node is a started host. It might refers to a started physical computer or a started virtual machine.
+
+=end classdoc
+=cut
+
 package Node;
 use base 'BaseDB';
 
@@ -24,6 +32,8 @@ use warnings;
 use ComponentNode;
 use Entity::Indicator;
 use Entity::Rule::NodemetricRule;
+
+use TryCatch;
 
 use Log::Log4perl 'get_logger';
 my $log = get_logger("");
@@ -67,6 +77,9 @@ use constant ATTR_DEF => {
     rulestate       => {
         is_virtual   => 1
     },
+    puppet_manifest => {
+        is_virtual   => 1
+    },
     components => {
         label        => 'Components',
         type         => 'enum',
@@ -82,6 +95,16 @@ sub getAttrDef { return ATTR_DEF; }
 sub methods { return {}; }
 
 
+=pod
+=begin classdoc
+
+@constructor
+
+Create a new Node.
+
+=end classdoc
+=cut
+
 sub new {
     my $class = shift;
     my %args = @_;
@@ -92,6 +115,17 @@ sub new {
 
     return $self;
 }
+
+
+=pod
+=begin classdoc
+
+A component to the Node instance
+
+@optional component_types
+
+=end classdoc
+=cut
 
 sub update {
     my ($self, %args) = @_;
@@ -107,6 +141,17 @@ sub update {
     }
 }
 
+
+=pod
+=begin classdoc
+
+Returns components linked to the Node instance.
+
+@optional component_types
+
+=end classdoc
+=cut
+
 sub getComponent {
     my ($self, %args) = @_;
 
@@ -120,6 +165,17 @@ sub rulestate {
     return grep { $_->verified_noderule_state eq "verified" } $self->verified_noderules;
 }
 
+
+=pod
+=begin classdoc
+
+Initialize all nodemetric rules related to the Node instance to undef.
+
+@optional component_types
+
+=end classdoc
+=cut
+
 sub _undefRules {
     my $self = shift;
 
@@ -129,13 +185,29 @@ sub _undefRules {
     my @nm_rules = Entity::Rule::NodemetricRule->search(hash => {service_provider_id => $self->service_provider_id});
 
     foreach my $nm_rule (@nm_rules) {
-        VerifiedNoderule->new(
-            verified_noderule_node_id            => $self->id,
-            verified_noderule_state              => 'undef',
-            verified_noderule_nodemetric_rule_id => $nm_rule->id,
-        );
+        try {
+            VerifiedNoderule->new(
+                verified_noderule_node_id            => $self->id,
+                verified_noderule_state              => 'undef',
+                verified_noderule_nodemetric_rule_id => $nm_rule->id,
+            );
+        }
+        catch(Kanopya::Exception::DB::DuplicateEntry $err) {
+            my $msg = 'Nodemetric rules <'.$nm_rule->id
+                      .'> is already undef for node <'.$self->id.'>';
+            $log->debug($msg);
+        }
     }
 }
+
+
+=pod
+=begin classdoc
+
+Disable a Node instance by managing its state and its linked rules.
+
+=end classdoc
+=cut
 
 sub disable {
     my $self = shift;
@@ -147,12 +219,34 @@ sub disable {
     $self->monitoring_state('disabled');
 }
 
+
+=pod
+=begin classdoc
+
+Enable a Node instance by managing its state and its linked rules.
+
+=end classdoc
+=cut
+
 sub enable {
     my $self = shift;
 
     $self->_undefRules();
     $self->monitoring_state('enabled');
 }
+
+
+=pod
+=begin classdoc
+
+Retrieve monitoring data of a list of indicator given by their ids.
+
+@param indicator_ids array ref of indicator ids
+
+@return hash ref {indicator oid => indicator value}
+
+=end classdoc
+=cut
 
 sub getMonitoringData {
     my ($self, %args) = @_;
@@ -176,6 +270,17 @@ sub getMonitoringData {
 
     return $data->{$self->node_hostname} || {};
 }
+
+
+=pod
+=begin classdoc
+
+Remove node Instance by launching a 'StopNode' Workflow.
+
+@optional dryrun do not remove the node if defined
+
+=end classdoc
+=cut
 
 sub remove {
     my ($self, %args) = @_;
@@ -204,11 +309,33 @@ sub remove {
     return;
 }
 
+
+=pod
+=begin classdoc
+
+Returns Node instance admin ip.
+
+@return admin ip
+
+=end classdoc
+=cut
+
 sub adminIp {
     my $self = shift;
 
     return $self->host->adminIp;
 }
+
+
+=pod
+=begin classdoc
+
+Concat Node hostname to node domain in order to get fqdn.
+
+@return String fqdn
+
+=end classdoc
+=cut
 
 sub fqdn {
     my $self = shift;
@@ -216,11 +343,45 @@ sub fqdn {
     return $self->node_hostname . '.' . $self->service_provider->cluster_domainname;
 }
 
+=pod
+=begin classdoc
+
+Return array of linked ComponentNode instances which are master nodes.
+
+@return array of linked ComponentNode instances which are master nodes.
+
+=end classdoc
+=cut
+
 sub getMasterComponents {
     my $self = shift;
 
     my @masters = $self->searchRelated(filters => ['component_nodes'], hash => { master_node => 1 });
     return @masters;
+}
+
+=pod
+=begin classdoc
+
+Return the Puppet definitions for the node
+
+@return hash with a 'classes' key and the classes arguments to be fetched by Puppet
+
+=end classdoc
+=cut
+
+sub puppetManifest {
+    my $self = shift;
+
+    my $puppetagent;
+    eval {
+        $puppetagent = $self->service_provider->getComponent(name => "Puppetagent");
+    };
+    if ($@) {
+        return { };
+    }
+
+    return $puppetagent->getPuppetDefinitions(node => $self);
 }
 
 1;

@@ -26,7 +26,7 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use BaseDB;
+use Kanopya::Database;
 use Aggregator;
 use RulesEngine;
 use Entity;
@@ -62,10 +62,10 @@ my $one;
 main();
 
 sub main {
-    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+    Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if($testing == 1) {
-        BaseDB->beginTransaction;
+        Kanopya::Database::beginTransaction;
     }
 
     my $config = Kanopya::Config::get('monitor');
@@ -113,7 +113,7 @@ sub main {
     _remove_mock_monitor();
 
     if ($testing == 1) {
-        BaseDB->rollbackTransaction;
+        Kanopya::Database::rollbackTransaction;
     }
 }
 
@@ -280,12 +280,7 @@ sub resubmit_hv_on_state {
 
         my $workflow_def = Entity::WorkflowDef->find(hash => {workflow_def_name => 'ResubmitHypervisor'});
 
-        $wf_manager->associateWorkflow(
-            new_workflow_name       => $rule->id.'_'.($workflow_def->workflow_def_name),
-            origin_workflow_def_id  => $workflow_def->id,
-            rule_id                 => $rule->id,
-            specific_params         => { delay => 60 },
-        );
+        $rule->associateWorkflow(workflow_def_id => $workflow_def->id, specific_params => { delay => 60 });
 
         $rulesengine->oneRun();
 
@@ -464,12 +459,7 @@ sub resubmit_vm_on_state {
 
         my $workflow_def = Entity::WorkflowDef->find(hash => {workflow_def_name => 'ResubmitNode'});
 
-        $wf_manager->associateWorkflow(
-            new_workflow_name       => $rule->id.'_'.($workflow_def->workflow_def_name),
-            origin_workflow_def_id  => $workflow_def->id,
-            rule_id                 => $rule->id,
-            specific_params         => { delay => 60 },
-        );
+        $rule->associateWorkflow(workflow_def_id => $workflow_def->id, specific_params => { delay => 60 });
 
         $rulesengine->oneRun();
 

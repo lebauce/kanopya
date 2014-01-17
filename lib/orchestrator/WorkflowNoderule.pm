@@ -13,6 +13,15 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # Created 3 juillet 2012
 
+=pod
+=begin classdoc
+
+Manage workflows triggered by a NodeRule instance.
+
+=end classdoc
+=cut
+
+
 package WorkflowNoderule;
 use base 'BaseDB';
 
@@ -45,24 +54,40 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+
+=pod
+=begin classdoc
+
+Compute the ability of NodemetricRule and Node to launch a new workflow.
+The state can be :
+
+'ready_to_launch' if a new workflow can be launched
+'running' if a workflow is still running.
+'delayed' if a workflow has been launched but the launching ability is delayed
+
+@param node_id int Node id
+@param nodemetric_rule_id int NodemetricRule id
+
+@return hashref {state => state_value}
+
+=end classdoc
+=cut
+
 sub manageWorkflowState {
     my ($class, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'node_id',
-                                                       'nodemetric_rule_id',
-                                                     ]);
+    General::checkParams(args => \%args, required => [ 'node_id', 'nodemetric_rule_id']);
 
 
     my $workflow_noderule;
     eval{
         $workflow_noderule = $class->find(hash => {
-            node_id    => $args{node_id},
-            nodemetric_rule_id => $args{nodemetric_rule_id},
+                                 node_id            => $args{node_id},
+                                 nodemetric_rule_id => $args{nodemetric_rule_id},
         });
     };
 
     if (defined $workflow_noderule) {
-        my $workflow_id = $workflow_noderule->getAttr(name => 'workflow_id');
-        my $workflow    = Entity::Workflow->get(id => $workflow_id);
+        my $workflow = $workflow_noderule->workflow;
 
         if ($workflow->state eq 'running'){
             $log->info('A workflow is already running');
@@ -79,25 +104,24 @@ sub manageWorkflowState {
             if ((defined $delay) && ($delay > 0)) {
 
                 if (not defined $workflow_noderule->workflow_untriggerable_timestamp) {
-                    $workflow_noderule->setAttr(name => 'workflow_untriggerable_timestamp', value => time() + $delay);
-                    $workflow_noderule->save();
-                    $log->info('Workflow <'.$workflow_id.'> done, delaying time for <'.($delay).'> sec');
+                    $workflow_noderule->workflow_untriggerable_timestamp(time() + $delay);
+                    $log->info('Workflow <'.$workflow->id.'> done, delaying time for <'.($delay).'> sec');
                     return {state => 'delayed'};
                 }
 
                 my $delta = $workflow_noderule->workflow_untriggerable_timestamp - time();
 
                 if ($delta <= 0) {
-                    $log->info('Workflow <'.$workflow_id.'> done, end of delay time, delete workflow noderule');
+                    $log->info('Workflow <'.$workflow->id.'> done, end of delay time, delete workflow noderule');
                     $workflow_noderule->delete();
                     return {state => 'ready_to_launch'};
                 }
 
-                $log->info('Workflow <'.$workflow_id.'> done, still delaying time for <'.($delta).'> sec');
+                $log->info('Workflow <'.$workflow->id.'> done, still delaying time for <'.($delta).'> sec');
                 return {state => 'delayed'};
             }
 
-            $log->info('Workflow <'.$workflow_id.'> done, <0 or undefined delay time, delete workflow noderule');
+            $log->info('Workflow <'.$workflow->id.'> done, <0 or undefined delay time, delete workflow noderule');
             $workflow_noderule->delete();
             return {state => 'ready_to_launch'};
         }
@@ -112,7 +136,7 @@ sub manageWorkflowState {
     return {state => 'ready_to_launch'};
 }
 
-sub isWorkflowRunning{
+sub isWorkflowRunning {
     my ($class, %args) = @_;
     General::checkParams(args => \%args, required => [ 'node_id',
                                                        'nodemetric_rule_id',

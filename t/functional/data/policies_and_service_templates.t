@@ -15,17 +15,17 @@ my $log = get_logger("");
 
 my $testing = 1;
 
-use BaseDB;
+use Kanopya::Database;
 use ClassType;
 use Entity::User;
 use Entity::ServiceProvider::Cluster;
 use Entity::ServiceTemplate;
 use Entity::Policy;
-use Entity::Component::Lvm2::Lvm2Vg;
+use Lvm2Vg;
 use Entity::Policy::HostingPolicy;
 use Entity::Component::Physicalhoster0;
 
-BaseDB->authenticate(login => 'admin', password => 'K4n0pY4');
+Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
 
 main();
@@ -33,7 +33,7 @@ main();
 sub main {
 
     if ($testing == 1) {
-        BaseDB->beginTransaction;
+        Kanopya::Database::beginTransaction;
     }
 
     test_policies_json();
@@ -42,7 +42,7 @@ sub main {
     test_service_creation_from_service_template();
 
     if ($testing == 1) {
-        BaseDB->rollbackTransaction;
+        Kanopya::Database::rollbackTransaction;
     }
 }
 
@@ -58,7 +58,7 @@ sub test_policies_json {
         } "Check if the JSON of policy $policy contains all preset attributes.";
 
         my $class = ref($policy);
-        my $baseattrdef = $class->getAttrDefs();
+        my $baseattrdef = $class->_attributesDefinition();
         my $attrdef = $class->toJSON(params => $json)->{attributes};
         lives_ok {
             for my $attr (keys %{ $attrdef }) {
@@ -76,7 +76,7 @@ sub test_service_template_json {
         my @policy_classes = ClassType->search(hash => { class_type => { like => "Entity::Policy::%" } });
         for my $class (map { $_->class_type } @policy_classes) {
             my $policyattrs = $class->toJSON()->{attributes};
-            my $baseattrdef = $class->getAttrDefs();
+            my $baseattrdef = $class->_attributesDefinition();
             for my $attr (keys %$policyattrs) {
                 if (! defined $baseattrdef->{$attr} && ! exists $attributes->{$attr}) {
                     die "Service template attribute definition JSON should contain the $class attr <$attr>";
@@ -188,12 +188,12 @@ sub test_service_creation_from_service_template {
     my $service_template = Entity::ServiceTemplate->find(hash => { service_name =>  "Standard physical cluster" });
     lives_ok {
         my $additional_policy_aprams = {
-            vg_id         => Entity::Component::Lvm2::Lvm2Vg->find()->id,
-            iscsi_portals => [ Entity::Component::Iscsi::IscsiPortal->find()->id ]
+            vg_id         => Lvm2Vg->find()->id,
+            iscsi_portals => [ IscsiPortal->find()->id ]
         };
 
         Entity::ServiceProvider::Cluster->create(cluster_name        => "test_cluster",
-                                                 user_id             => Entity::User->find()->id,
+                                                 owner_id            => Entity::User->find()->id,
                                                  service_template_id => $service_template->id,
                                                  %$additional_policy_aprams);
     } "Create an empty policies of each type.";

@@ -94,15 +94,14 @@ sub appendEntity {
     }
 }
 
-=head2 removeEntity
+=pod
+=begin classdoc
 
-    Class : Public
+remove an entity object from the groups
 
-    Desc : remove an entity object from the groups
+@param entity : Entity::* object : an Entity object contained by the groups
 
-    args:
-        entity : Entity::* object : an Entity object contained by the groups
-
+=end classdoc
 =cut
 
 sub removeEntity {
@@ -113,10 +112,15 @@ sub removeEntity {
     $self->{_dbix}->ingroups->find({entity_id => $entity_id})->delete();
 }
 
-=head2 toString
 
-    desc: return a string representation of the entity
+=pod
+=begin classdoc
 
+Return a string representation of the entity
+
+@return string representation of the entity
+
+=end classdoc
 =cut
 
 sub toString {

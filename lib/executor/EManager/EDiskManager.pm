@@ -13,6 +13,15 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package EManager::EDiskManager;
 use base "EManager";
 
@@ -24,14 +33,17 @@ use Kanopya::Exceptions;
 
 my $log = get_logger("");
 
-=head2 mkfs
 
-_mkfs ( device, fstype, fsoptions)
-    desc: This function create a filesystem on a device.
-    args:
-        device : string: device full path (like /dev/sda2 or /dev/vg/lv)
-        fstype : string: name of filesystem (ext2, ext3, ext4)
-        fsoptions : string: filesystem options to use during creation (optional) 
+=pod
+=begin classdoc
+
+This function create a filesystem on a device.
+
+@param device string device full path (like /dev/sda2 or /dev/vg/lv)
+@param fstype string name of filesystem (ext2, ext3, ext4)
+@param fsoptions string filesystem options to use during creation (optional)
+
+=end classdoc
 =cut
 
 sub mkfs {
@@ -57,11 +69,14 @@ sub mkfs {
     }
 }
 
-=head2 removeDisk
 
-    Parent method to check prerequisites for remove disk.
-    Call this method in overriden method in sub classes.
+=pod
+=begin classdoc
 
+Parent method to check prerequisites for remove disk.
+Call this method in overriden method in sub classes.
+
+=end classdoc
 =cut
 
 sub removeDisk{

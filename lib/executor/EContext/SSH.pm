@@ -69,12 +69,15 @@ sub new {
     my ($class, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'ip', 'timeout' ],
-                         optional => { username => 'root' });
+                         optional => { username => 'root', key => undef,
+                                       port => 22 });
 
     my $self = {
         ip       => $args{ip},
+        port     => $args{port},
         timeout  => $args{timeout},
-        username => $args{username}
+        username => $args{username},
+        key      => $args{key}
     };
 
     # is the host available on ssh port 22
@@ -82,7 +85,7 @@ sub new {
     $p->port_number(22);
     if (not $p->ping($args{ip}, 2)) {
         $p->close();
-        $errmsg = "EContext::SSH->new : can't contact $args{ip} on port 22";
+        $errmsg = "EContext::SSH->new : can't contact $args{ip} on port $args{port}";
         $log->debug($errmsg);
         throw Kanopya::Exception::Network(error => $errmsg);
     }
@@ -111,11 +114,11 @@ sub _init {
 
     $log->debug("Initialise ssh connection to $self->{ip}");
     my %opts = (
-        user        => $self->{username},        # user login
-        port        => 22,                       # TCP port number where the server is running
-        key_path    => '/root/.ssh/kanopya_rsa', # Use the key stored on the given file path for authentication
-        ssh_cmd     => '/usr/bin/ssh',           # full path to OpenSSH ssh binary
-        scp_cmd     => '/usr/bin/scp',           # full path to OpenSSH scp binary
+        user        => $self->{username},
+        port        => $self->{port},
+        key_path    => $self->{key},
+        ssh_cmd     => '/usr/bin/ssh',
+        scp_cmd     => '/usr/bin/scp',
         master_opts => [
          -o => "StrictHostKeyChecking=no"
         ],
@@ -133,7 +136,8 @@ sub _init {
 }
 
 
-=head2 execute
+=pod
+=begin classdoc
 
 execute ( command )
     desc: execute a command in a remote shell
@@ -144,14 +148,6 @@ execute ( command )
 
     WARNING: in your command, don't use stderr redirection ( 2> )
 
-=cut
-
-=cut
-
-=pod
-
-=begin classdoc
-
 Use the OpenSSH module to execute the command remotely.
 NOTE: don't use stderr redirection ( 2> ) in your command.
 
@@ -160,15 +156,14 @@ NOTE: don't use stderr redirection ( 2> ) in your command.
 @return the command result
 
 =end classdoc
-
 =cut
 
 sub execute {
     my ($self, %args) = @_;
-    
+
     General::checkParams(args => \%args, required => [ 'command' ],
                                          optional => { 'timeout' => $self->{timeout} });
-    
+
     if ($args{command} =~ m/2>/) {
         $errmsg = "EContext::SSH->execute : command must not contain stderr redirection (2>)!";
         $log->error($errmsg);
@@ -203,16 +198,13 @@ sub execute {
     } else {
         $log->debug("Command stdout is : '$stdout'");
         $log->debug("Command stderr: $stderr");
-        $log->debug("Command exitcode: $result->{exitcode}");        
+        $log->debug("Command exitcode: $result->{exitcode}");
     }
     return $result;
 }
 
 
-=cut
-
 =pod
-
 =begin classdoc
 
 Use the OpenSSH module to copy the local file to remote host.
@@ -223,31 +215,75 @@ Use the OpenSSH module to copy the local file to remote host.
 @return the command result
 
 =end classdoc
-
 =cut
 
 sub send {
     my ($self, %args) = @_;
 
-    General::checkParams(args => %args, required => [ 'src', 'dest' ]);
-    #TODO check to be sure src and dest are full path to files
+    General::checkParams(args => %args, required => [ 'src', 'dest' ],
+                                        optional => { mode => undef,
+                                                      user => undef,
+                                                      group => undef });
 
-    if(not -e $args{src}) {
+    if (not -e $args{src}) {
         $errmsg = "EContext::SSH->execute src file $args{src} no found";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
 
-    if(not exists $self->{ssh}) {
+    if (not exists $self->{ssh}) {
         $self->_init();
     }
 
-    my $success = $self->{ssh}->scp_put({ recursive => 1 }, $args{src}, $args{dest});
+    if ($args{user} || $args{group}) {
+        $self->execute(command => "chown -R $args{user}:$args{group} $args{src}");
+    }
+
+    if ($args{mode}) {
+        $self->execute(command => "chmod -R $args{mode} $args{src}");
+    }
+
+    my $success = $self->{ssh}->scp_put({ recursive => 1, copy_attrs => 1 },
+                                        $args{src}, $args{dest});
+
     # return TRUE if success
-    if(not $success) {
+    if (not $success) {
         $errmsg = "EContext::SSH->send failed while putting $args{src} to $args{dest}!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
+    }
+}
+
+=pod
+=begin classdoc
+
+Use the OpenSSH module to retrieve file from remote host.
+
+@param src the source file or folder to copy
+@param dest the destination file or folder
+
+@return the command result
+
+=end classdoc
+=cut
+
+sub retrieve {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => %args, required => [ 'src', 'dest' ]);
+
+    if (not exists $self->{ssh}) {
+        $self->_init();
+    }
+
+    my $success = $self->{ssh}->scp_get({ recursive => 1, copy_attrs => 1 },
+                                          $args{src}, $args{dest});
+
+    # return TRUE if success
+    if (not $success) {
+        $errmsg = "EContext::SSH->retrieve failed while getting $args{src} to $args{dest}!";
+        $log->error($errmsg);
+        throw Kanopya::Exception::Internal(error => $errmsg);
     }
 }
 

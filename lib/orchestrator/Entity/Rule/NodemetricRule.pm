@@ -69,7 +69,17 @@ sub methods {
     }
 }
 
-# Virtual attribute getter
+
+=pod
+=begin classdoc
+
+Virtual attribute 'formula_label'
+
+return the string of the formula
+
+=end classdoc
+=cut
+
 sub formula_label {
     my $self = shift;
     return $self->formula_string;
@@ -396,14 +406,12 @@ sub clone {
     # Specific attrs management
     my $attrs_cloner = sub {
         my %args = @_;
-        my $attrs = $args{attrs};
-        $attrs->{formula}  = $self->_cloneFormula(
-            dest_sp_id              => $attrs->{service_provider_id},
-            formula                 => $attrs->{formula},
-            formula_object_class    => 'Entity::NodemetricCondition'
+        $args{attrs}->{formula} = $self->_cloneFormula(
+            dest_sp_id    => $args{attrs}->{service_provider_id},
+            formula       => $args{attrs}->{formula},
+            formula_class => 'Entity::NodemetricCondition'
         );
-        $attrs->{workflow_def_id}   = undef;
-        return %$attrs;
+        return $args{attrs};
     };
 
     # Generic clone
@@ -415,9 +423,9 @@ sub clone {
     );
 
     # Clone workflow
-    $self->cloneAssociatedWorkflow(
-        dest_rule => $clone
-    );
+    if (defined $self->workflow_def) {
+        $self->cloneAssociatedWorkflow(dest_rule => $clone);
+    }
 
     return $clone;
 }
@@ -480,17 +488,11 @@ sub setEvaluation {
                 $self->deleteVerifiedRule(node_id => $node_id);
             }
             else {
-                $self->setVerifiedRule(
-                    node_id => $node_id,
-                    state   => 'verified',
-                );
+                $self->setVerifiedRule(node_id => $node_id, state => 'verified');
             }
         }
         else {
-            $self->setVerifiedRule(
-                node_id => $node_id,
-                state   => 'undef',
-            );
+            $self->setVerifiedRule(node_id => $node_id, state => 'undef');
         }
     }
 }
@@ -530,7 +532,6 @@ sub manageWorkflows {
     }
 
     while (my ($node_id, $evaluation) = each %{$args{evaluation}}) {
-
         # Update last workflow possibly launched status before trying to trigger a new one
         my $workflowState = WorkflowNoderule->manageWorkflowState(
                                 node_id            => $node_id,
@@ -540,41 +541,37 @@ sub manageWorkflows {
         $log->debug('Managing workflow state of rule <'.$self->id."> for node <$node_id> <"
                     .$workflowState->{state}.'>');
 
-        if (! (defined $self->workflow_def_id && defined $evaluation && $evaluation == 1)) {
+        my $workflow_def = $self->workflow_def;
+        if (! (defined $workflow_def && defined $evaluation && $evaluation == 1)) {
             # Skip workflow management when service provider has no workflow_def or rule
             # is not verified for this node
 
             $log->debug('Managing workflow state of rule <'.$self->id."> for node <$node_id> :
-                         WorkflowDefId <".$self->workflow_def_id.">
-                         Evaluation <$evaluation> => No worflow triggered");
+                         WorkflowDefId <" . $workflow_def->id . ">
+                         Evaluation <$evaluation> => No workflow triggered");
             return;
         }
 
         if ($workflowState->{state} eq 'ready_to_launch') {
-            $log->info('Trigger Workflow <'.$self->workflow_def_id.'>');
+            $log->info('Trigger Workflow <' . $workflow_def->id . '>');
 
             # Launch workflow
-            my $workflow = $workflow_manager->runWorkflow(
-                               workflow_def_id     => $self->workflow_def_id,
-                               service_provider_id => $self->service_provider_id,
-                               rule_id             => $self->id,
-                               host_name           => Node->get(id => $node_id)->node_hostname,
-                           );
+            my $workflow = $self->triggerWorkflow(host_name => Node->get(id => $node_id)->node_hostname);
 
             WorkflowNoderule->new(node_id            => $node_id,
                                   nodemetric_rule_id => $self->id,
                                   workflow_id        => $workflow->id,);
         }
         elsif ($workflowState->{state} eq 'delayed') {
-           $log->info('Not trigger workflow <'.$self->workflow_def_id.'> : delayed');
+           $log->info('Not trigger workflow <' . $workflow_def->id . '> : delayed');
         }
         elsif ($workflowState->{state} eq 'running') {
-           $log->info('Not trigger workflow <'.$self->workflow_def_id.'> : a workflow is still running');
+           $log->info('Not trigger workflow <' . $workflow_def->id . '> : a workflow is still running');
         }
         else {
             throw Kanopya::Exception(error => 'unkown case <'.$workflowState->{state}.'>');
         }
-    } #End node loop while
+    }
 }
 
 1;

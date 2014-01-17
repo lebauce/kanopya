@@ -32,10 +32,6 @@ PERL5LIB=\
 /opt/kanopya/lib/external:\
 /opt/kanopya/lib/external/NetApp:\
 /opt/kanopya/lib/orchestrator:\
-/opt/kanopya/lib/component/kanopya_front:\
-/opt/kanopya/lib/component/kanopya_executor:\
-/opt/kanopya/lib/component/kanopya_aggregator:\
-/opt/kanopya/lib/component/kanopya_rulesengine:\
 /opt/kanopya/lib/mock
 
 export PERL5LIB
@@ -62,7 +58,6 @@ start() {
     fi
 
     [ $RETVAL == 0 ] && log_success_msg || log_failure_msg
-    return $RETVAL
 }
 
 stop() {
@@ -80,7 +75,6 @@ stop() {
     fi
 
     [ $RETVAL == 0 ] && log_success_msg || log_failure_msg
-    return $RETVAL
 }
 
 status() {
@@ -92,7 +86,6 @@ status() {
         echo "$NAME is not running"
     fi
     RETVAL=$status
-    return $RETVAL
 }
 
 case "$1" in

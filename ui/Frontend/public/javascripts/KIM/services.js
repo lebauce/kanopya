@@ -35,7 +35,7 @@ function servicesList (container_id, elem_id) {
     // If the logged user is a customer, filter the list of service
     var customer_filter = '';
     if (current_user.profiles.length == 1 && current_user.profiles[0].profile_name === "Customer") {
-        customer_filter = '&user_id=' + current_user.user_id;
+        customer_filter = '&owner_id=' + current_user.user_id;
     }
 
     var grid = create_grid( {
@@ -76,7 +76,7 @@ function servicesList (container_id, elem_id) {
                 reloadable   : true,
                 hideDisabled : true,
                 stepsAsTags  : true,
-                displayed    : [ 'cluster_name', 'cluster_desc', 'user_id', 'service_template_id' ],
+                displayed    : [ 'cluster_name', 'cluster_desc', 'owner_id', 'service_template_id' ],
                 rawattrdef   : {
                     cluster_name : {
                         label        : 'Instance name',
@@ -92,7 +92,7 @@ function servicesList (container_id, elem_id) {
                         is_mandatory : false,
                         is_editable  : true
                     },
-                    user_id : {
+                    owner_id : {
                         label        : 'Customer',
                         type         : 'relation',
                         relation     : 'single',
@@ -122,9 +122,9 @@ function servicesList (container_id, elem_id) {
                     // Define the cluster relation hard coded here, to avoid a call
                     // to the cluster attributes for the relations only
                     var cluster_relations = {
-                        user : {
+                        owner : {
                             resource : "user",
-                            cond     : { "foreign.user_id" : "self.user_id" },
+                            cond     : { "foreign.user_id" : "self.owner_id" },
                             attrs    : { accessor : "single" }
                         },
                         service_template : {
@@ -152,7 +152,7 @@ function servicesList (container_id, elem_id) {
                     set_steps(attributes);
 
                     // Set the value if defined (at reload)
-                    $.each([ 'cluster_name', 'cluster_desc', 'user_id', 'service_template_id' ], function (index, attr) {
+                    $.each([ 'cluster_name', 'cluster_desc', 'owner_id', 'service_template_id' ], function (index, attr) {
                         if (data[attr] !== undefined) {
                             if (attributes.attributes[attr] === undefined) {
                                 attributes.attributes[attr] = {};
@@ -163,7 +163,7 @@ function servicesList (container_id, elem_id) {
                     return attributes;
                 },
                 optionsCallback : function (name, value, relations) {
-                    if (name === 'user_id') {
+                    if (name === 'owner_id') {
                         return ajax('GET', '/api/user?user_profiles.profile.profile_name=Customer');
 
                     } else {
@@ -246,10 +246,10 @@ function createServiceGraphs(cid, service_template_id) {
         graphs_visible = true;
         var customer_filter = '';
         if (current_user.profiles.length == 1 && current_user.profiles[0].profile_name === "Customer") {
-            customer_filter = '&user.user_id=' + current_user.user_id;
+            customer_filter = '&owner.user_id=' + current_user.user_id;
         }
         // Get infos
-        var url = '/api/cluster?expand=nodes,nodes.host,user&cluster_name=<>,Kanopya' + customer_filter;
+        var url = '/api/cluster?expand=nodes,nodes.host,owner&cluster_name=<>,Kanopya' + customer_filter;
         if (service_template_id) {
             url += '&service_template.service_template_id=' + service_template_id;
         }
@@ -276,7 +276,7 @@ function createServiceGraphs(cid, service_template_id) {
                     clusters_nodes.push([cluster.cluster_name, cluster_nodes]);
                 }
                 // Add values to user data
-                var user_name = cluster.user.user_firstname + ' ' + cluster.user.user_lastname;
+                var user_name = cluster.owner.user_firstname + ' ' + cluster.owner.user_lastname;
                 core_by_user[user_name] = core_by_user[user_name] ? core_by_user[user_name] + cluster_core : cluster_core;
                 ram_by_user[user_name] = ram_by_user[user_name] ? ram_by_user[user_name] + cluster_ram : cluster_ram;
             });

@@ -11,12 +11,21 @@
 #
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+=pod
+=begin classdoc
+
+WorfklowSteps allow Kanopya to define a strict order between different operations that compose a
+workflow. Order is defined w.r.t the order of WorkflowSteps ids.
+
+=end classdoc
+=cut
+
 package WorkflowStep;
 use base 'BaseDB';
 
 use strict;
 use warnings;
-
 
 use constant ATTR_DEF => {
     workflow_def_id => {

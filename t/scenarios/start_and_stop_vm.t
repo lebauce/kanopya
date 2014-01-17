@@ -27,7 +27,7 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use BaseDB;
+use Kanopya::Database;
 use Entity;
 use Entity::Component::Virtualization::Opennebula3;
 use Entity::Workflow;
@@ -47,10 +47,10 @@ my $vm_cluster;
 main();
 
 sub main {
-    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+    Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if($testing == 1) {
-        BaseDB->beginTransaction;
+        Kanopya::Database::beginTransaction;
     }
 
     #get orchestrator configuration
@@ -67,7 +67,7 @@ sub main {
 #    stop_2nd_hv();
 
     if ($testing == 1) {
-        BaseDB->rollbackTransaction;
+        Kanopya::Database::rollbackTransaction;
     }
 }
 

@@ -13,6 +13,15 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+
+=pod
+=begin classdoc
+
+TODO
+
+=end classdoc
+=cut
+
 package EEntity::EComponent::EUcsManager;
 use base "EEntity::EComponent";
 use base "EManager::EHostManager";
@@ -56,11 +65,18 @@ sub stopHost {
     $sp->stop();
 }
 
-=head2 getFreeHost
 
-    Desc : Return one free host that match the criterias
-    args : ram, cpu
+=pod
+=begin classdoc
 
+Return one free host that match the criterias
+
+@param service_profile_template_id
+@param ifaces
+
+@return Host instance
+
+=end classdoc
 =cut
 
 sub getFreeHost {
@@ -132,7 +148,7 @@ sub getFreeHost {
 
             eval {
                 for my $iface (@{$host->getIfaces()}) {
-                    $host->removeIface(iface_id => $iface->getId);
+                    $host->removeIface(iface_id => $iface->id);
                 }
             };
             if ($@) {
@@ -175,10 +191,13 @@ sub getFreeHost {
     # throw Kanopya::Exception::Internal(error => "No blade without a service profile attached were found");
 }
 
-=head2 applyVLAN
 
-    Desc: apply a VLAN on an interface of a host
+=pod
+=begin classdoc
 
+Apply a VLAN on an interface of a host
+
+=end classdoc
 =cut
 
 sub applyVLAN {

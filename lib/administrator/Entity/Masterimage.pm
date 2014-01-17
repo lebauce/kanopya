@@ -135,7 +135,7 @@ sub setProvidedComponent {
         return;
     }
 
-    $self->populateRelations(relations => { components_provided => [ $component_type ] });
+    $self->update(components_provided => [ $component_type ], override_relations => 0);
 }
 
 1;

@@ -19,7 +19,7 @@ use Kanopya::Tools::Create;
 use Kanopya::Tools::Profiler;
 
 lives_ok {
-    use BaseDB;
+    use Kanopya::Database;
     use Aggregator;
     use RulesEngine;
 
@@ -35,9 +35,9 @@ lives_ok {
 
 my $aggregator   = Aggregator->new();
 my $rulesengine  = RulesEngine->new();
-my $profiler     = Kanopya::Tools::Profiler->new(schema => BaseDB->_adm->{schema});
+my $profiler     = Kanopya::Tools::Profiler->new(schema => Kanopya::Database::schema);
 
-BaseDB->beginTransaction;
+Kanopya::Database::beginTransaction;
 
 my $serviceload = 1;
 my $nodeload = 1;
@@ -169,13 +169,13 @@ eval{
     }
     benchmarkAggregatorUpdate();
 
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 };
 if ($@) {
     my $error = $@;
     print $error."\n";
 
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 
     fail('Exception occurs');
 }

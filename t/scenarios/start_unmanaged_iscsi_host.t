@@ -21,7 +21,7 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use BaseDB;
+use Kanopya::Database;
 use Entity::ServiceProvider::Cluster;
 use Entity::User;
 use Entity::Host;
@@ -32,7 +32,7 @@ use Entity::Masterimage;
 use Entity::Network;
 use Entity::Poolip;
 use Entity::Operation;
-use Entity::Component::Iscsi::IscsiPortal;
+use IscsiPortal;
 use ClassType::ComponentType;
 
 use Kanopya::Tools::Execution;
@@ -53,7 +53,7 @@ main();
 
 sub main {
     if ($testing == 1) {
-        BaseDB->beginTransaction;
+        Kanopya::Database::beginTransaction;
     }
 
     diag('Create and configure cluster');
@@ -66,7 +66,7 @@ sub main {
     stop_deactivate_and_remove_iscsi_host();
 
     if ($testing == 1) {
-        BaseDB->rollbackTransaction;
+        Kanopya::Database::rollbackTransaction;
     }
 }
 
@@ -162,7 +162,7 @@ sub _create_and_configure_cluster {
 #    my $kernel = Entity::Kernel->find(hash => { kernel_name => '2.6.32-279.5.1.el6.x86_64' });
 
     diag('Retrieve physical hosts');
-    my @hosts = Entity::Host->find(hash => { host_manager_id => $physical_hoster->getId });
+    my @hosts = Entity::Host->find(hash => { host_manager_id => $physical_hoster->id });
 
     diag('Retrieve the admin user');
     $admin_user = Entity::User->find(hash => { user_login => 'admin' });
@@ -172,7 +172,7 @@ sub _create_and_configure_cluster {
 
     diag('Retrieve admin network');
     my @iscsi_portal_ids;
-    for my $portal (Entity::Component::Iscsi::IscsiPortal->search(hash => { iscsi_id => $export_manager->id })) {
+    for my $portal (IscsiPortal->search(hash => { iscsi_id => $export_manager->id })) {
         push @iscsi_portal_ids, $portal->id;
     }
 
@@ -183,14 +183,13 @@ sub _create_and_configure_cluster {
         cluster_min_node       => "1",
         cluster_max_node       => "3",
         cluster_priority       => "100",
-        cluster_si_shared      => 0,
         cluster_si_persistent  => 1,
         cluster_domainname     => 'my.domain',
         cluster_basehostname   => 'one',
         cluster_nameserver1    => '208.67.222.222',
         cluster_nameserver2    => '127.0.0.1',
         # cluster_boot_policy    => 'PXE Boot via ISCSI',
-        user_id                => $admin_user->id,
+        owner_id               => $admin_user->id,
         managers               => {
             host_manager => {
                 manager_id     => $physical_hoster->id,

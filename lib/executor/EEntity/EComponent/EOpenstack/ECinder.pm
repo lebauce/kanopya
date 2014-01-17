@@ -39,9 +39,10 @@ my $supported_volume_types = {
     "RADOS" => "RBD"
 };
 
-=head
 
+=pod
 =begin classdoc
+
 Instruct a cinder instance to create a volume, then trigger the Cinder entity to register
 it into Kanopya
 
@@ -51,7 +52,6 @@ it into Kanopya
 @return a container object
 
 =end classdoc
-
 =cut
 
 sub createDisk {
@@ -136,13 +136,13 @@ sub createDisk {
     return EEntity->new(entity => $container);
 }
 
-=head 2
 
+=pod
 =begin classdoc
+
 Register a new iscsi container access into Kanopya
 
 =end classdoc
-
 =cut
 
 sub createExport {

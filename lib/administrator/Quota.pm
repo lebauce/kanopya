@@ -13,6 +13,14 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+=pod
+=begin classdoc
+
+Manage cpu/ram quota of a user
+
+=end classdoc
+=cut
+
 package Quota;
 use base 'BaseDB';
 
@@ -88,10 +96,13 @@ sub new {
     return $self;
 }
 
-=head2 consume
+
+=pod
+=begin classdoc
 
     Consume a given amount of the quota resource.
 
+=end classdoc
 =cut
 
 sub consume {
@@ -114,10 +125,12 @@ sub consume {
     }
 }
 
-=head2 release
+=pod
+=begin classdoc
 
     Release a given amount of the quota resource.
 
+=end classdoc
 =cut
 
 sub release {

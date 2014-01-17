@@ -20,11 +20,11 @@ Log::Log4perl->easy_init({
     layout=>'%F %L %p %m%n'
 });
 
-use BaseDB;
+use Kanopya::Database;
 use NetconfVlan;
 use Entity::Vlan;
-use Entity::Component::Lvm2::Lvm2Vg;
-use Entity::Component::Lvm2::Lvm2Pv;
+use Lvm2Vg;
+use Lvm2Pv;
 
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::Register;
@@ -37,10 +37,10 @@ my $testing = 0;
 main();
 
 sub main {
-    BaseDB->authenticate( login =>'admin', password => 'K4n0pY4' );
+    Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if ($testing == 1) {
-        BaseDB->beginTransaction;
+        Kanopya::Database::beginTransaction;
     }
 
     diag('Register master image');
@@ -139,19 +139,23 @@ sub main {
         nova_controller_id => $nova_controller->id
     });
 
-    my $vg = Entity::Component::Lvm2::Lvm2Vg->new(
+    my $vg = Lvm2Vg->new(
         lvm2_id           => $lvm->id,
         lvm2_vg_name      => "cinder-volumes",
         lvm2_vg_freespace => 0,
         lvm2_vg_size      => 10 * 1024 * 1024 * 1024
     );
 
-    my $pv = Entity::Component::Lvm2::Lvm2Pv->new(
+    my $pv = Lvm2Pv->new(
         lvm2_vg_id   => $vg->id,
-        lvm2_pv_name => "/dev/sda"
+        lvm2_pv_name => "/dev/sda2"
     );
 
     diag('Create and configure Nova compute cluster');
+
+    my $vms_netconf = Entity::Netconf->find(hash => { netconf_name => 'Virtual machines bridge' } );
+    my $admin_netconf = Entity::Netconf->find(hash => { netconf_name => 'Kanopya admin' });
+
     my $compute;
     lives_ok {
         $compute = Kanopya::Tools::Create->createCluster(
@@ -167,13 +171,57 @@ sub main {
                                }
                            }
                        },
+                       interfaces => {
+                           i1 => {
+                               netconfs => { $admin_netconf->id   => $admin_netconf->id },
+                               interface_name => 'admin'
+                           },
+                           i2 => {
+                               netconfs => { $vms_netconf->id   => $vms_netconf->id },
+                               interface_name => 'vms'
+                           },
+                       },
                        components => {
                            'novacompute'  => {
                                iaas_id            => $nova_controller->id,
+                               libvirt_type       => 'qemu',
                            },
+                           'nfsd' => {
+                           }
                        }
                    );
     } 'Create Nova Compute cluster';
+
+    my $kanopya = Kanopya::Tools::Retrieve::retrieveCluster();
+    my $lvm = EEntity->new(data => $kanopya->getComponent(name => "Lvm"));
+    my $nfs = EEntity->new(data => $kanopya->getComponent(name => "Nfsd"));
+    my $shared;
+    my $export;
+
+    lives_ok {
+        $shared = $lvm->createDisk(
+                      name       => "nova-instances",
+                      size       => 1 * 1024 * 1024 * 1024,
+                      filesystem => "ext4",
+                  );
+
+        $export = $nfs->createExport(
+                       container => $shared,
+                       client_name => "*",
+                       client_options => "rw,sync,fsid=0,no_root_squash"
+                   );
+    } "Create computes shared storage";
+
+    my $system = $compute->getComponent(category => "System");
+
+    for my $export ($nfs->container_accesses) {
+        $system->addMount(
+            mountpoint => "/var/lib/nova/instances",
+            filesystem => "nfs",
+            options => "vers=3",
+            device => $export->container_access_export
+        );
+    }
 
     lives_ok {
         my $vm_cluster = Kanopya::Tools::Create->createVmCluster(
@@ -225,6 +273,6 @@ sub main {
     } 'Start Nova Compute cluster';
 
     if ($testing == 1) {
-        BaseDB->rollbackTransaction;
+        Kanopya::Database::rollbackTransaction;
     }
 }

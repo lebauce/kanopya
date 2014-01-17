@@ -12,55 +12,48 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-=head1 NAME
+=pod
+=begin classdoc
 
-FuncProvider - FuncProvider object
+This provider generate values for a set of metrics according to a node dependent conf.
+Value is generated using a specified function and parameters.
+These settings specified for each node independently, using a configuration file named funcprovider.conf.
 
-=head1 SYNOPSIS
+Here a sample of a funcprovider.conf file:
+    <nodes>
+        <node ip='10.0.0.1'>
+            <var label='metric1' func='const' value='42'/>
+            <var label='metric2' func='random' min='10' max='100'/>
+        </node>
+        <node ip='10.0.0.2'>
+            <var label='metric1' func='const' value='100'/>
+            <var label='metric2' func='random' min='20' max='50'/>
+        </node>
+    </nodes>
 
-    use FuncProvider;
-    
-    # Creates provider
-    my $provider = FuncProvider->new( $host );
-    
-    # Retrieve data
-    my $var_map = { 'var_name' => 'var_name', ... };
-    $provider->retrieveData( var_map => $var_map );
+Here the list of allowed function and there parameters
 
-=head1 DESCRIPTION
+* const (value)
+    => return value
 
-    This provider generate values for a set of metrics according to a node dependent conf.
-    Value is generated using a specified function and parameters.
-    These settings specified for each node independently, using a configuration file named funcprovider.conf.
-    
-    Here a sample of a funcprovider.conf file:
-        <nodes>
-            <node ip='10.0.0.1'>
-                <var label='metric1' func='const' value='42'/>
-                <var label='metric2' func='random' min='10' max='100'/>
-            </node>
-            <node ip='10.0.0.2'>
-                <var label='metric1' func='const' value='100'/>
-                <var label='metric2' func='random' min='20' max='50'/>
-            </node>
-        </nodes>
+* linear (a,b)
+    => return a*x + b
+    with x the time elapsed since <time ref>
 
-    Here the list of allowed function and there parameters
-    
-    * const (value)
-        => return value
-    
-    * linear (a,b)
-        => return a*x + b
-        with x the time elapsed since <time ref>
-    
-    * random (min,max)
-        => return rand(min,max)
-        
-    * sinus (max, period)
-    
-=head1 METHODS
+* random (min,max)
+    => return rand(min,max)
 
+* sinus (max, period)
+
+
+# Creates provider
+my $provider = FuncProvider->new( $host );
+
+# Retrieve data
+my $var_map = { 'var_name' => 'var_name', ... };
+$provider->retrieveData( var_map => $var_map );
+
+=end classdoc
 =cut
 
 package DataProvider::FuncProvider;
@@ -76,7 +69,7 @@ use Log::Log4perl "get_logger";
 use Data::Dumper;
 my $log = get_logger("");
 
-my %funcs = (     
+my %funcs = (
                 "const"         => \&const,
                 "linear"        => \&linear,
                 "sinus"         => \&sinus,
@@ -86,17 +79,19 @@ my %funcs = (
 
 my $timeref;
 
-=head2 new
-    
-    Class : Public
-    
-    Desc : Instanciate FuncProvider instance to provide Func stat from a specific host
-    
-    Args :
-        host: Entity::Host: host
-    
-    Return : FuncProvider instance
-    
+
+=pod
+=begin classdoc
+
+@constructor
+
+Instanciate FuncProvider instance to provide Func stat from a specific host
+
+@param host Entity::Host instance
+
+@return FuncProvider instance
+
+=end classdoc
 =cut
 
 sub new {
@@ -185,29 +180,23 @@ sub custom_sinus {
 sub linear {
     my $self = shift;
     my %args = @_;
-    
+
     my $x = $args{dt};
     my $var = $args{var};
-    
+
     my $res = $x * $var->{a} + ( $var->{b} || 0 );
-    
+
     return $res;
 }
 
-=head2 retrieveData
-    
-    Class : Public
-    
-    Desc : 
-    
-    Args :
-        var_map : hash ref : required  var { var_name => oid }
-        
-    
-    Return :
-        [0] : time when data was retrived
-        [1] : resulting hash ref { var_name => value }
-    
+
+=pod
+=begin classdoc
+
+@param var_map hash ref : required  var { var_name => oid }
+
+@return [0] : time when data was retrived or [1] : resulting hash ref { var_name => value }
+
 =cut
 
 sub retrieveData {

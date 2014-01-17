@@ -38,7 +38,7 @@ my @disks   = ();
 my @exports = ();    
 
 lives_ok {
-    BaseDB->authenticate(login => 'admin', password => 'K4n0pY4');
+    Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 } 'Connect to database';
 
 
@@ -108,7 +108,7 @@ sub testDiskManager {
 }
 
 eval {
-    BaseDB->beginTransaction;
+    Kanopya::Database::beginTransaction;
 
     my $econtext;
     lives_ok {
@@ -295,7 +295,7 @@ eval {
         @exports = @nextexports;
     }
 
-    BaseDB->rollbackTransaction;
+    Kanopya::Database::rollbackTransaction;
 };
 if($@) {
     my $error = $@;

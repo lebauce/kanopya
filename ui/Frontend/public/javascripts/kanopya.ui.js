@@ -1,6 +1,7 @@
 require('messages.js');
 require('gritter.js');
 require('about.js');
+require('common/kanopyaDialog.js');
 
 var lastMsgId = 0;
 
@@ -138,6 +139,20 @@ $(document).ready(function () {
     });
 
     jQuery('#about').click(function () {openAbout('about_templates.html');});
+
+    // Attach click event to all .doc-link, existing (main doc link) or futur (dialog doc link)
+    // We use html attributes to store needed data (not the better way)
+    var doc_url = $("#main-doc-link").attr("doc-url");
+    $('.doc-link').live('click', function(){
+        var doc_page = this.getAttribute("doc-page") || '';
+        if (doc_url) {
+          window.open(doc_url + doc_page);
+       } else {
+          alert('No documentation server specified.\n\n' +
+                'Please set the doc_url key in your configuration file in order to access the documentation.');
+       }
+    });
+
     // call for the themeswitcher
     //$('#switcher').themeswitcher();
 });
@@ -150,3 +165,7 @@ $(document).ajaxError(function(e, jqXHR, settings, exception) {
         throw new Error(JSON.parse(jqXHR.responseText).reason);
     }
 })
+
+require('common/konami.js');
+konami = new Konami()
+konami.load('http://tinyurl.com/ndbwmul');

@@ -29,12 +29,12 @@ Message queuing server must be running (since some POST lead to an operation enq
 =head2 Expected status
 
 Expected response status is 200 by default.
-However, some POST requests status are 405 ("must implement getDelegatee").
+However, some POST requests status are 405 ("must implement _delegatee").
 The hash %POST_expected_status lists resources with a post status different than 200.
 POST test will pass if status correspond to defined status in this hash, otherwise test will fail.
 So 405 is considered as correct response, since we don't know if it's a wanted behavior or not.
 
-TODO Implement getDelegatee for resources that need it, and remove them from %POST_expected_status.
+TODO Implement _delegatee for resources that need it, and remove them from %POST_expected_status.
 
 =head2 Resource delete
 
@@ -77,7 +77,7 @@ use Log::Log4perl 'get_logger';
 my $log = get_logger("");
 
 # default : 200
-# 405 :  Non entity class <xxx> must implement getDelegatee method for permissions check.
+# 405 :  Non entity class <xxx> must implement _delegatee method for permissions check.
 my %POST_expected_status = (
     'netconfiface' => 405,
     'netconfpoolip'=> 405,

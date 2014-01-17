@@ -68,11 +68,6 @@ use constant POLICY_ATTR_DEF => {
         relation     => 'single',
         pattern      => '^\d*$',
     },
-    cluster_si_shared => {
-        label        => 'System image shared',
-        type         => 'boolean',
-        is_mandatory => 1
-    },
     cluster_si_persistent => {
         label        => 'Persistent system images',
         type         => 'boolean',
@@ -140,7 +135,6 @@ sub getPolicyDef {
     push @{ $args{attributes}->{displayed} }, 'systemimage_size';
     push @{ $args{attributes}->{displayed} }, 'cluster_basehostname';
     push @{ $args{attributes}->{displayed} }, 'cluster_si_persistent';
-    push @{ $args{attributes}->{displayed} }, 'cluster_si_shared';
     push @{ $args{attributes}->{displayed} }, 'deploy_on_disk';
     push @{ $args{attributes}->{displayed} }, { components => [ 'component_type' ] };
 
@@ -172,7 +166,7 @@ sub getPolicyDef {
                        });
     }
     my @componenttypes;
-    for my $componenttype ($clustertype->search(related => 'component_types')) {
+    for my $componenttype ($clustertype->search(related => 'component_types', hash => { deployable => 1 })) {
         push @componenttypes, $componenttype->toJSON();
     }
 

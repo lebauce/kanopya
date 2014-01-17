@@ -37,7 +37,8 @@ sub check {
     $self->SUPER::check();
 
     General::checkParams(args     => $self->{params},
-                         required => [ 'output_directory', 'output_file', 'template_content' ]);
+                         required => [ 'output_directory', 'output_file', 'template_content' ],
+                         optional => { 'period' => 600 });
 }
 
 
@@ -78,15 +79,12 @@ sub execute{
 sub postrequisites {
     my $self = shift;
 
-    #define check period in case of unexisting return file
-    my $period = 600;
-
     #get absolute return file path (on local machine)
     if (-e $self->{params}->{return_file}) {
         return 0;
     }
     else {
-        return $period;
+        return $self->{params}->{period};
     }
 }
 

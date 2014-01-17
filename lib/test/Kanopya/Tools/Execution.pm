@@ -55,7 +55,7 @@ BEGIN {
     }
 }
 
-my $executor = Executor->new(duration => 1);
+my $executor = Executor->new();
 
 =pod
 
@@ -70,12 +70,12 @@ Launch 1 executor->oneRun
 sub oneRun {
     my ($self, %args) = @_;
 
-    $log->info("Fetching on channel <workflow>");
-    eval { $executor->oneRun(channel => 'workflow', type => 'queue'); };
-    $log->info("Fetching on channel <operation>");
-    eval { $executor->oneRun(channel => 'operation', type => 'queue'); };
-    $log->info("Fetching on channel <operation_result>");
-    eval { $executor->oneRun(channel => 'operation_result', type => 'queue'); };
+    $log->info("Fetching on queue <workflow>");
+    eval { $executor->oneRun(cbname => 'run_workflow', duration => 1); };
+    $log->info("Fetching on queue <operation>");
+    eval { $executor->oneRun(cbname => 'execute_operation', duration => 1); };
+    $log->info("Fetching on queue <operation_result>");
+    eval { $executor->oneRun(cbname => 'handle_result', duration => 1); };
 }
 
 =pod
@@ -95,6 +95,24 @@ sub nRun {
         $self->oneRun;
     }
 }
+
+
+=pod
+=begin classdoc
+
+Purge the executor queues.
+
+=end classdoc
+=cut
+
+sub purgeQueues {
+    my ($self, %args) = @_;
+
+    for my $queue ('workflow', 'operation', 'operation_result') {
+        $executor->purgeQueue(queue => $queue);
+    }
+}
+
 
 =pod
 
@@ -130,9 +148,9 @@ sub executeOne {
     WORKFLOW:
     while(1) {
         eval {
-            $log->debug("Calling oneRun with channel <workflow> and type <queue>");
-            $executor->oneRun(channel => 'workflow', type => 'queue');
-            $log->debug("Called oneRun with channel <workflow> and type <queue>");
+            $log->debug("Calling oneRun with cbname <run_workflow>");
+            $executor->oneRun(cbname => 'run_workflow', duration => 1);
+            $log->debug("Called oneRun with cbname <run_workflow>");
         };
         if ($@) {
             my $err = $@;
@@ -141,9 +159,9 @@ sub executeOne {
             }
         }
         eval {
-            $log->debug("Calling oneRun with channel <operation> and type <queue>");
-            $executor->oneRun(channel => 'operation', type => 'queue');
-            $log->debug("Called oneRun with channel <operation> and type <queue>");
+            $log->debug("Calling oneRun with cbname <execute_operation>");
+            $executor->oneRun(cbname => 'execute_operation', duration => 1);
+            $log->debug("Called oneRun with cbname <execute_operation>");
         };
         if ($@) {
             my $err = $@;
@@ -152,9 +170,9 @@ sub executeOne {
             }
         }
         eval {
-            $log->debug("Calling oneRun with channel <operation_result> and type <queue>");
-            $executor->oneRun(channel => 'operation_result', type => 'queue');
-            $log->debug("Called oneRun with channel <operation_result> and type <queue>");
+            $log->debug("Calling oneRun with cbname <operation_result>");
+            $executor->oneRun(cbname => 'handle_result', duration => 1);
+            $log->debug("Called oneRun with with cbname <operation_result>");
         };
         if ($@) {
             my $err = $@;
@@ -215,12 +233,12 @@ sub executeAll {
             $log->info("sleep 5 ($timeout)");
             sleep 5;
             $timeout -= 5;
-            $log->info("Fetching on channel <workflow>");
-            eval { $executor->oneRun(channel => 'workflow', type => 'queue'); };
-            $log->info("Fetching on channel <operation>");
-            eval { $executor->oneRun(channel => 'operation', type => 'queue'); };
-            $log->info("Fetching on channel <operation_result>");
-            eval { $executor->oneRun(channel => 'operation_result', type => 'queue'); };
+            $log->info("Fetching on queue <workflow>");
+            eval { $executor->oneRun(cbname => 'run_workflow', duration => 1); };
+            $log->info("Fetching on queue <operation>");
+            eval { $executor->oneRun(cbname => 'execute_operation', duration => 1); };
+            $log->info("Fetching on queue <operation_result>");
+            eval { $executor->oneRun(cbname => 'handle_result', duration => 1); };
         }
     }
 }
@@ -288,6 +306,21 @@ sub addNode {
     }
 
     return $node;
+}
+
+
+=pod
+=begin classdoc
+
+@return the executor singleton
+
+=end classdoc
+=cut
+
+sub _executor {
+    my ($class, %args) = @_;
+
+    return $executor;
 }
 
 1;
