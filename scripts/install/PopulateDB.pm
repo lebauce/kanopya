@@ -34,6 +34,7 @@ use ComponentCategory;
 use ComponentCategory::ManagerCategory;
 use ClassType::DataModelType;
 use Manager::HostManager;
+use Dhcpd3Subnet;
 
 use POSIX;
 use Date::Simple (':all');
