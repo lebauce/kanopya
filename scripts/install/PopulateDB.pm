@@ -1717,7 +1717,7 @@ sub registerKanopyaMaster {
     my $physical_hoster = $admin_cluster->getComponent(name => 'Physicalhoster');
     my $admin_host = Entity::Host->new(
                          host_manager_id    => $physical_hoster->id,
-                         host_serial_number => "",
+                         host_serial_number => "1",
                          host_desc          => "Admin host",
                          active             => 1,
                          host_initiatorname => $kanopya_initiator,
