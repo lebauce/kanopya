@@ -1693,7 +1693,7 @@ CREATE TABLE `dashboard` (
 
 CREATE TABLE `data_model` (
   `data_model_id` int(8) unsigned NOT NULL,
-  `combination_id` INT(8) unsigned NOT NULL,
+  `combination_id` INT(8) unsigned NULL,
   `node_id` INT(8) unsigned NULL,
   `param_preset_id` INT(8) unsigned NULL,
   `start_time` double NULL,
