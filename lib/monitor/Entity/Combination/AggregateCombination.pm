@@ -485,7 +485,7 @@ sub _computeFromArrays{
         }
         $rep{$timestamp} = $self->compute(%valuesForATimeStamp);
     }
-    return %rep;
+    return wantarray ? %rep : \%rep;
 }
 
 =pod
