@@ -14,6 +14,14 @@ use warnings;
 use Test::More 'no_plan';
 use Test::Exception;
 use Data::Dumper;
+
+use Log::Log4perl qw(:easy);
+Log::Log4perl -> easy_init({
+    level => 'DEBUG',
+    file => __FILE__.'.log',
+    layout => '%F %L %p %m%n'
+});
+
 use Utils::TimeSerieAnalysis;
 use Kanopya::Tools::TimeSerie;
 use Entity::Combination::AggregateCombination;
@@ -24,15 +32,6 @@ use Entity::Clustermetric;
 use Entity::Component::MockMonitor;
 use Entity::ServiceProvider::Externalcluster;
 use Entity::DataModel;
-
-use Log::Log4perl qw(:easy);
-
-Log::Log4perl -> easy_init({
-    level => 'DEBUG',
-    file => 'seasonality_detection.log',
-    layout => '%F %L %p %m%n'
-});
-
 use Kanopya::Database;
 
 my $path = '/opt/kanopya/t/functional/data/timeserie_data/';
@@ -47,7 +46,6 @@ sub main {
 
     Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
     Kanopya::Database::beginTransaction;
-
     get_values_fromCSV();
     get_timeserie_data_fromCSV();
     split_data();
@@ -59,7 +57,6 @@ sub main {
     find_seasonality_ACF();
     find_seasonality();
     forecast();
-
     Kanopya::Database::rollbackTransaction;
 }
 
@@ -763,6 +760,12 @@ sub forecast {
                                                    'predict_start_tstamps' => $t+1,
                                                    'model_list'            => MODEL_CLASSES
                                                  );
+
+        if ($args->{data_model} ne 'Entity::DataModel::RDataModel::AutoArima') {
+            die 'Wrong data model got <' . $args->{data_model}
+                . '> expect <Entity::DataModel::RDataModel::AutoArima>';
+        }
+
         my $timestamps = $args->{'timestamps'};
         my $prediction = $args->{'values'};
 
@@ -784,8 +787,8 @@ sub forecast {
 
     } 'Prediction when Season=10';
 
-
     lives_ok {
+
         my $t = 1362151970;
         my %prec = ( 'X' => 0.1 );
         my $cm = createCombinationMetric ('service_provider' => $service_provider,
@@ -810,6 +813,11 @@ sub forecast {
                                                  );
         my $timestamps = $args->{'timestamps'};
         my $prediction = $args->{'values'};
+
+        if ($args->{data_model} ne 'Entity::DataModel::RDataModel::AutoArima') {
+            die 'Wrong data model got <' . $args->{data_model}
+                . '> expect <Entity::DataModel::RDataModel::AutoArima>';
+        }
 
         my $file = $path_predict.'predict_season=53.csv';
         my $expected_values = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
@@ -852,6 +860,11 @@ sub forecast {
                                                  );
         my $timestamps = $args->{'timestamps'};
         my $prediction = $args->{'values'};
+
+        if ($args->{data_model} ne 'Entity::DataModel::AnalyticRegression::LinearRegression') {
+            die 'Wrong data model got <' . $args->{data_model}
+                . '> expect <Entity::DataModel::AnalyticRegression::LinearRegression>';
+        }
 
         my $file = $path_predict.'predict_season_additive.csv';
         my $expected_values = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
@@ -942,13 +955,18 @@ sub forecast {
         my $timestamps = $args->{'timestamps'};
         my $prediction = $args->{'values'};
 
+        if ($args->{data_model} ne 'Entity::DataModel::RDataModel::AutoArima') {
+            die 'Wrong data model got <' . $args->{data_model}
+                . '> expect <Entity::DataModel::RDataModel::AutoArima>';
+        }
+
         my $file = $path_predict.'predict_downward_trend.csv';
         my $expected_values = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
 
         if (($#$timestamps+1) == (scalar keys(%{$expected_values}))) {
             foreach my $i (0..$#$timestamps) {
-                if (abs($prediction->[$i] - $expected_values->{$timestamps->[$i]})> 10**(-5)) {
-                    diag ($prediction->[$i]." != ". $expected_values->{$timestamps->[$i]});
+                if (abs($prediction->[$i] - $expected_values->{$timestamps->[$i]})> 10**(-3)) {
+                    diag ("index <$i>".$prediction->[$i]." != ". $expected_values->{$timestamps->[$i]});
                     die 'Wrong prediction with downward trend';
                 }
             }

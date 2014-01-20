@@ -8,10 +8,17 @@ Exponential Smoothing
 
 use strict;
 use warnings;
- 
+
 use Test::More 'no_plan';
 use Kanopya::Tools::TestUtils 'expectedException';
 use Test::Exception;
+
+use Log::Log4perl qw(:easy);
+Log::Log4perl -> easy_init({
+    level => 'DEBUG',
+    file => __FILE__.'.log',
+    layout => '%F %L %p %m%n'
+});
 
 use Entity::DataModel::RDataModel::ExponentialSmoothing;
 
