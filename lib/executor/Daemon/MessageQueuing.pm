@@ -100,6 +100,17 @@ sub getCallbacks { return CALLBACKS; }
 
 my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
 
+# Conditional variable used to waiting for all childs at termination
+my $condvar;
+
+# Conditional variable used at instance kill in controlDaemon,
+# because we need to  execute the AnyEvent event loop, to implicitly
+# execute the callback set on the child termination.
+my $killcondvar;
+
+# List to keep Anyevent->child watchers refs
+my @watchers;
+
 
 =pod
 =begin classdoc
@@ -576,12 +587,15 @@ sub receiveAll {
         );
     }
 
+    # Instanciate a conditional variable to wait childs termination
+    $condvar = AnyEvent->condvar;
+
     # Wait for message on the control queue
     while ($self->isRunning) {
         try {
             # Receive messages one by one as we are disconnecting while handling the callback
             # to fork without oponned connections.
-            # So receive a message, diconnect, fork, reconnect, receive messages again...
+            # So receive a message, disconnect, fork, reconnect, receive messages again...
             $self->receive(count => 1);
         }
         catch (Kanopya::Exception::MessageQueuing::NoMessage $err) {
@@ -590,32 +604,15 @@ sub receiveAll {
         catch ($err) {
             if ($self->isRunning) {
                 $log->error($err);
-                # Stop the daemon as an unexpected exception occurs
-                $self->setRunning(running => 0);
             }
         }
 
-        # Create the internal consumers again as the connection coud be closed
+        # Create the internal consumers again as the connection could be closed
         $self->createInternalConsumers();
     }
 
-    # Instanciate a conditional variable to wait childs termination
-    my $condvar = AnyEvent->condvar;
-
     # Send the TERM signal to ask it to stop fetching after a possible current job.
-    my @watchers;
     for my $instance (@{ $self->_instances }) {
-        # Increase the condvar for each child
-        $condvar->begin;
-
-        # Define a callback that decrease the condvar at child exit
-        my $exitcb = sub {
-            my ($pid, $status) = @_;
-            $log->info("Child process <$pid> exiting with status $status.");
-            $condvar->end;
-        };
-        push @watchers, AnyEvent->child(pid => $instance->child_pid, cb => \&$exitcb);
-
         # Sending TERM signal to the child
         $instance->kill(15);
     }
@@ -632,7 +629,7 @@ sub receiveAll {
 =pod
 =begin classdoc
 
-Swpan a child instance for a given callback definition
+Spawn a child instance for a given callback definition
 
 @param cbname the name of the callback definition to control
 
@@ -742,6 +739,8 @@ sub controlDaemon {
                          required => [ 'cbname', 'control', 'ack_cb' ],
                          optional => { 'instances' => 1 });
 
+    $log->info("Control received of type <$args{control}> for callback <$args{cbname}>");
+
     # Execute the job corresponding to the control code
     switch ($args{control}) {
         case "spawn" {
@@ -753,18 +752,65 @@ sub controlDaemon {
 
             # Create the specified number of instance of the worker/subscriber
             for (1 .. $args{instances}) {
-                my $cbinstances = $self->_instances(cbname => $args{cbname});
-                push @{ $cbinstances }, $self->spawnInstance(cbname => $args{cbname});
+                # Spwan the job
+                my $job = $self->spawnInstance(cbname => $args{cbname});
+
+                # Keep the job ref to be able to kill it further
+                push @{ $self->_instances(cbname => $args{cbname}) }, $job;
+
+                # Increase the condvar for each child
+                $condvar->begin;
+
+                # Define a callback that decrease the condvar at child exit
+                my $exitcb = sub {
+                    my ($pid, $status) = @_;
+                    $log->info("Child process <$pid> exiting with status $status.");
+
+                    # Decrease the condvar for to ensure the daemon tarmination
+                    $condvar->end;
+
+                    # If set by the controlDaemon method at instance kill,
+                    # unset the condition variable as the parent process will
+                    # send SIGTERM to the child instance to kill, then wait on
+                    # the $killcondvar condition variable to wait the complete
+                    # child termination and then execute the callback set on the child
+                    # termination within the event loop when calling $killcondvar->recv.
+                    if (defined $killcondvar && ! $killcondvar->ready) {
+                        $killcondvar->send;
+                    }
+                };
+                push @watchers, AnyEvent->child(pid => $job->child_pid, cb => \&$exitcb);
             }
 
             # Reconnect to the broker
             $self->connect();
+
+            # Do not ack the message has it has been done before disconnecting.
+            return 0;
         }
         case "kill" {
-            my $instance = pop $self->_instances(cbname => $args{cbname});
+            # Kill the specified number of instance of the worker/subscriber
+            for (1 .. $args{instances}) {
+                my $instance = pop @{ $self->_instances(cbname => $args{cbname}) };
+                if (! defined $instance) {
+                    throw Kanopya::Exception::Internal::NotFound(
+                        error => "No more running instance for callback $args{cbname}"
+                    );
+                }
+                # Set a condition variable to wait the complete child termination
+                $killcondvar = AnyEvent->condvar;
 
-            # Sending TERM signal to the child
-            $instance->kill(15);
+                # Sending TERM signal to the child
+                $instance->kill(15);
+
+                # Blonking call, allow to trigger the executon of the child termination
+                # callback in the event loop. This condition variable is unset by the
+                # child termination callback it self, that unlock the parent process.
+                $killcondvar->recv;
+            }
+
+            # Ack the message
+            return 1;
         }
         else {
             throw Kanopya::Exception::Internal::IncorrectParam(
@@ -846,10 +892,10 @@ sub _instances {
     }
 
     # Return the callback definition instances instead.
-    return $self->{_instances}->{cbname} if defined $self->{_instances}->{cbname};
+    return $self->{_instances}->{$args{cbname}} if defined $self->{_instances}->{$args{cbname}};
 
-    $self->{_instances}->{cbname} = [];
-    return $self->{_instances}->{cbname};
+    $self->{_instances}->{$args{cbname}} = [];
+    return $self->{_instances}->{$args{cbname}};
 }
 
 1;
