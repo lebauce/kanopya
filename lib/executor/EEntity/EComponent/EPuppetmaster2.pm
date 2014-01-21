@@ -23,6 +23,7 @@ use File::Temp qw/ tempdir tmpnam /;
 use YAML "DumpFile";
 use Log::Log4perl 'get_logger';
 use TryCatch;
+use Kanopya::Exceptions;
 
 my $log = get_logger("");
 my $errmsg;
@@ -139,10 +140,10 @@ sub removeHostCertificate {
     General::checkParams(args => \%args, required => [ 'host_fqdn' ]);
 
     # Remove the certificate
-    my $command = "puppetca clean $args{host_fqdn}";
+    my $command = "puppet ca destroy $args{host_fqdn}";
     my $result = $self->getEContext->execute(command => $command);
-    if (! $result->{stdout}) {
-        # TODO check for error in command execution
+    if ($result->{exitcode} ne 0) {
+        throw Kanopya::Exception::Execution(error => $result->{stderr});
     }
 }
 
