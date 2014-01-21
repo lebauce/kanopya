@@ -440,18 +440,27 @@ If repositories are specified, update the mount entries of all compute nodes
 sub update {
     my ($self, %args) = @_;
 
-    my $update = $self->SUPER::update(%args);
+    # Keept the openstack_sync ref as the update call could unset it
+    my $openstack_sync = $self->kanopya_openstack_sync;
+
+    my $updated = $self->SUPER::update(%args);
 
     # If kanopya_openstack_sync_id has change at update and component has nodes,
     # register/unregister the NovaController to/from the OpenstackSync daemon.
     if (exists $args{kanopya_openstack_sync_id} && scalar($self->nodes)) {
         if (defined $args{kanopya_openstack_sync_id}) {
-            $self->registerToOpenstackSync();
+            $self->registerToOpenstackSync(
+                openstack_sync => $openstack_sync || $self->kanopya_openstack_sync
+            );
         }
         else {
-            $self->unregisterFromOpenstackSync();
+            $self->unregisterFromOpenstackSync(
+                openstack_sync => $openstack_sync || $self->kanopya_openstack_sync
+            );
         }
     }
+
+    return $updated;
 }
 
 sub getRemoteSessionURL {
@@ -461,8 +470,10 @@ sub getRemoteSessionURL {
 sub registerToOpenstackSync {
     my ($self, %args) = @_;
 
+    General::checkParams(args => \%args, optional => { 'openstack_sync' => $self->kanopya_openstack_sync });
+
     try {
-        $self->kanopya_openstack_sync->registerNovaController(nova_controller_id => $self->id);
+        $args{openstack_sync}->registerNovaController(nova_controller_id => $self->id);
     }
     catch ($err) {
         $log->warn("Unable to register NovaController to the OpenstackSync daemon:\n$err");
@@ -472,8 +483,10 @@ sub registerToOpenstackSync {
 sub unregisterFromOpenstackSync {
     my ($self, %args) = @_;
 
+    General::checkParams(args => \%args, optional => { 'openstack_sync' => $self->kanopya_openstack_sync });
+
     try {
-        $self->kanopya_openstack_sync->unregisterNovaController(nova_controller_id => $self->id);
+        $args{openstack_sync}->unregisterNovaController(nova_controller_id => $self->id);
     }
     catch ($err) {
         $log->warn("Unable to unregister NovaController from the OpenstackSync daemon:\n$err");
