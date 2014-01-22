@@ -48,7 +48,7 @@ my $errmsg;
 use constant ATTR_DEF => {
     combination_id => {
         pattern => '^\d+$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_extended => 0
     },
     node_id => {

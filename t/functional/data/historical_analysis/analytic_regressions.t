@@ -8,9 +8,16 @@ LinearRegression
 
 use strict;
 use warnings;
- 
+
 use Test::More 'no_plan';
 use Test::Exception;
+
+use Log::Log4perl qw(:easy);
+Log::Log4perl -> easy_init({
+    level => 'DEBUG',
+    file => __FILE__.'.log',
+    layout => '%F %L %p %m%n'
+});
 
 use Kanopya::Database;
 use Entity::ServiceProvider::Externalcluster;

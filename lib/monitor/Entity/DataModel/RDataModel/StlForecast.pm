@@ -76,11 +76,11 @@ sub predict {
                                                freq          => $args{freq},
                                                horizon       => $horizon,
     );
+
     my @forecasts = @{Utils::R->convertRForecast(R_forecast_ref => $R_forecast_ref,
                                                  freq           => $args{freq}
     )};
 
-# 4- Return the results
     return \@forecasts;
 }
 

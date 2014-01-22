@@ -68,15 +68,15 @@ use constant {
 
 @optional timeserie A reference to a hash containing the timestamps and the values of the time serie
                     (timestamp => value).
-@optional combination_id The combination's id linked to the DataModel.
-@optional node_id The node's id linked to the DataModel.
+
 @optional data_start The start time if the data is directly loaded from a combination.
 @optional data_end The end time if the data it directly loaded from a combination.
 @optional model_list  : The list of the available models for the selection. By default all existing models are
                         used.
 
-@return A reference to the forecast : Hash containing a reference to an 
-        array of timestamps ('timestamps'), and a reference to an array of values ('values')..
+@return A reference to the forecast : Hash containing a reference to an
+        array of timestamps ('timestamps'), and a reference to an array of values ('values')
+        and the used data model 'data_model'.
 
 =end classdoc
 
@@ -101,118 +101,121 @@ sub autoPredict {
 
     $log->debug('autoPredict - Loading the data from the combination.');
 
-    # Get the combination from the given id
-    my $combination;
-    if (defined($args{combination_id})) {
-        $combination = Entity::Combination->get(id => $args{combination_id});
-    }
-    else {
-        $combination = undef;
-    }
-
     # Extract the data
-    my %rawdata;
+    my $rawdata;
+
     if (defined($args{timeserie})) {
-        %rawdata = %{$args{timeserie}};
+        $rawdata = $args{timeserie};
     }
-    elsif (defined($combination) && defined $args{data_start} && defined($args{data_end})) {
-        %rawdata = $combination->evaluateTimeSerie(start_time => $args{data_start},
-                                        stop_time  => $args{data_end},
-                                        node_id    => $args{node_id},
-        );
+    elsif (defined($args{combination_id}) && defined $args{data_start} && defined($args{data_end})) {
+        my $combination = Entity::Combination->get(id => $args{combination_id});
+        $rawdata = $combination->evaluateTimeSerie(start_time => $args{data_start},
+                                                   stop_time  => $args{data_end},
+                                                   node_id    => $args{node_id},);
     }
     else {
-        throw Kanopya::Exception(error => 'SelecDataModel : Cannot call autoPredict method without data ' . 
+        throw Kanopya::Exception(error => 'SelecDataModel : Cannot call autoPredict method without data ' .
                                           'or without a combination_id with a data_start and a data_end}.');
     }
 
-    $log->debug('autoPredict - Fixing the data.');
+    return $class->autoPredictData(predict_start_tstamps => $args{predict_start_tstamps},
+                                   predict_end_tstamps   => $args{predict_end_tstamps},
+                                   model_list            => $args{model_list},
+                                   timeserie             => $rawdata);
+}
+
+
+=pod
+=begin classdoc
+
+Predict datas by selecting the best data model from a model list
+
+@param predict_start_tstamps The starting point wished for the prediction (in timestamps !).
+@param predict_end_tstamps The ending point wished for the prediction (in timestamps).
+
+@optional timeserie A reference to a hash containing the timestamps and the values of the time serie
+                    (timestamp => value).
+
+@optional model_list The list of the available models for the selection.
+                     By default all existing models are used.
+
+@return A reference to the forecast : Hash containing a reference to an
+        array of timestamps ('timestamps'), and a reference to an array of values ('values')
+        and the used data model 'data_model'.
+
+=end classdoc
+=cut
+
+sub autoPredictData {
+    my ($class, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => ['predict_start_tstamps', 'predict_end_tstamps', 'timeserie'],
+                         optional => {'model_list' => MODEL_CLASSES });
+
+   $log->debug('autoPredict - Fixing the data.');
 
     # Fix the data
-    my %timeserie = %{Utils::TimeSerieAnalysis->fixTimeSerie(timeserie => \%rawdata)};
-
-    $log->debug("autoPredict - unfixed data size = " . scalar(keys(%rawdata)) . '.');
-    $log->debug("autoPredict - fixed data size = " . scalar(keys(%timeserie)) . '.');
+    my $timeserie = Utils::TimeSerieAnalysis->fixTimeSerie(timeserie => $args{timeserie});
 
     # Extract the data
-    my %extracted  = %{Utils::TimeSerieAnalysis->splitData(data => \%timeserie)};
-    my @timestamps = @{$extracted{timestamps_ref}};
-    my @values     = @{$extracted{values_ref}};
+    my $extracted  = Utils::TimeSerieAnalysis->splitData(data => $timeserie);
 
     # ARBITRARY RESTRICTION : We throw an exception when the time series length is under a fixed limit, in
     #                         order to avoid R crashes (especially in auto.arima, which does not seem to
     #                          enjoy small time series).
-    if (scalar(@values) < TIME_SERIES_MIN_LENGTH) {
+    my $length = @{$extracted->{values_ref}};
+    if ($length < TIME_SERIES_MIN_LENGTH) {
         my $min_length = TIME_SERIES_MIN_LENGTH;
-        my $length = scalar(@values);
         throw Kanopya::Exception(error => 'SelectDataModel : I will not proceed an automatic forecast for ' .
                                           "a time serie with a length < $min_length (actual length is " .
                                           "$length), it is unsafe and unreliable ! ");
     }
 
-    # Compute the granularity and predict points
-    my %bricabrac = %{Utils::TimeSerieAnalysis->computePredictPointsAndGranularity(
-        timestamps            => \@timestamps,
-        predict_start_tstamps => $args{predict_start_tstamps},
-        predict_end_tstamps   => $args{predict_end_tstamps},
-    )};
-    my $granularity   = $bricabrac{granularity};
-    my $predict_start = $bricabrac{predict_start};
-    my $predict_end   = $bricabrac{predict_end};
-
-    if (scalar(@values) <= 0 || scalar(@timestamps) <= 0) {
+    if (scalar(@{$extracted->{values_ref}}) <= 0 || scalar(@{$extracted->{timestamps_ref}}) <= 0) {
         throw Kanopya::Exception(error => 'SelectDataModel : Empty dataset.');
     }
 
     $log->debug("autoPredict - Selecting best model among @{$args{model_list}} .");
 
     # Select DataModel
-    my %best = %{$class->selectDataModel(
-        data           => \@values,
-        model_list     => $args{model_list},
-        combination_id => $args{combination_id},
-        node_id        => $args{node_id},
-    )};
+    my $best = $class->selectDataModel(
+                    data           => $extracted->{values_ref},
+                    model_list     => $args{model_list},
+                );
 
-    my $best_model = $best{best_model};
-    my $best_freq  = $best{best_freq};
+    $log->info('Automatic Prediction : ' . $best->{best_model}
+               . ' chosen, with freq : ' . $best->{best_freq});
 
-    $log->debug("autoPredict - best found model : $best_model with freq : $best_freq . Will now proceed " .
-                              'the forecast.');
-
-    $log->info("Automatic Prediction : $best_model chosen, with freq : $best_freq.");
+    # Compute the granularity and predict points
+    my $granularity = Utils::TimeSerieAnalysis->computePredictPointsAndGranularity(
+                          timestamps            => $extracted->{timestamps_ref},
+                          predict_start_tstamps => $args{predict_start_tstamps},
+                          predict_end_tstamps   => $args{predict_end_tstamps},
+                      );
 
     # Instanciate and configure the best found model
-    my $datamodel = $best_model->new(
-        node_id        => $args{node_id},
-        combination_id => $args{combination_id},
-    );
+    my $datamodel = $best->{best_model}->new();
 
-    # Configure 
+    # Configure
     $datamodel->configure(
-        data           => \@values,
-        freq           => $best_freq,
-        predict_start  => $predict_start,
-        predict_end    => $predict_end,
-        combination_id => $args{combination_id},
-        node_id        => $args{node_id},
+        data           => $extracted->{values_ref},
+        freq           => $best->{best_freq},
+        predict_start  => $granularity->{predict_start},
+        predict_end    => $granularity->{predict_end},
     );
 
     # Forecast the test part of the data
-    my $prediction = $datamodel->predict(
-        data           => \@values,
-        freq           => $best_freq,
-        predict_start  => $predict_start,
-        predict_end    => $predict_end,
-        combination_id => $args{combination_id},
-        node_id        => $args{node_id},
-    );
+    my $prediction = $datamodel->predict(data          => $extracted->{values_ref},
+                                         freq          => $best->{best_freq},
+                                         predict_start => $granularity->{predict_start},
+                                         predict_end   => $granularity->{predict_end},);
 
     # Construct new timestamps
-    my @n_timestamps;
-    for my $i ($predict_start..$predict_end) {
-        if (($predict_end - $i) <= $#{$prediction}) {
-            push @n_timestamps, $i * $granularity + $timestamps[0];
+    my @n_timestamps = ();
+    for my $i ($granularity->{predict_start}..$granularity->{predict_end}) {
+        if (($granularity->{predict_end} - $i) <= $#{$prediction}) {
+            push @n_timestamps, $i * $granularity->{granularity} + $extracted->{timestamps_ref}->[0];
         }
     }
 
@@ -221,6 +224,7 @@ sub autoPredict {
     return {
         'timestamps' => \@n_timestamps,
         'values'     => $prediction,
+        'data_model' => $best->{best_model},
     };
 }
 
@@ -234,11 +238,11 @@ the chooseBestDataModel methods.
 @param data A reference to an array containing the values of the time serie.
 
 @optional model_list  : The list of the available models for the selection. By default all existing models are
-                        used. 
+                        used.
 @optional combination_id the combination's id to model
 @optional node_id modeled node in case of NodemetricCombination
 
-@return the selected model and the selected frequency as a reference to a hash (keys : 'best_model' and 
+@return the selected model and the selected frequency as a reference to a hash (keys : 'best_model' and
         'best_freq').
 
 =end classdoc
@@ -250,10 +254,7 @@ sub selectDataModel {
 
     General::checkParams(args     => \%args,
                          required => ['data'],
-                         optional => {'model_list'     => MODEL_CLASSES,
-                                      'node_id'        => undef, 
-                                      'combination_id' => undef,
-                         });
+                         optional => {'model_list' => MODEL_CLASSES});
 
     # Manage model classes. If full class name is not provided (shortcut) we add the base name
     my $base_name = BASE_NAME;
@@ -288,13 +289,11 @@ sub selectDataModel {
             my %temp_accuracy_hash;
 
             # Compute the accuracy of the model for each freq
-            for my $freq (@freqs) {                
+            for my $freq (@freqs) {
                 eval {
                     my $accur = $class->evaluateDataModelAccuracy(
                         data_model_class => $data_model_class,
                         data             => $args{data},
-                        combination_id   => $args{combination_id},
-                        node_id          => $args{node_id},
                         freq             => $freq,
                     );
                     if (defined($accur)) {
@@ -320,8 +319,6 @@ sub selectDataModel {
                 my $accur  = $class->evaluateDataModelAccuracy(
                     data_model_class => $data_model_class,
                     data             => $args{data},
-                    combination_id   => $args{combination_id},
-                    node_id          => $args{node_if},
                 );
                 if (defined($accur)) {
                     $freq_hash{$data_model_class}     = $t_freq;
@@ -358,17 +355,17 @@ sub selectDataModel {
 
 Choose the best DataModel given a set a accuracy measure for each one.
 
-@param accuracy_measures A hash containing datamodel class and their accuracy measures 
+@param accuracy_measures A hash containing datamodel class and their accuracy measures
                          { data_model_class => {measure_name ('mae', 'mse', ...) => measure} }.
 
-@optional choice_strategy The strategy to adopt for choosing the best model (by default : DEMOCRACY) : 
+@optional choice_strategy The strategy to adopt for choosing the best model (by default : DEMOCRACY) :
 
                           'DEMOCRACY' -> For each model, count the times where it is the best one according to
-                                         available accuracy measures and finally choose the one having the 
-                                         most counts. If two models reach the same score, the one with the 
+                                         available accuracy measures and finally choose the one having the
+                                         most counts. If two models reach the same score, the one with the
                                          lowest ME is choosen (arbitrary).
 
-                          'RMSE'      -> Select the datamodel with the lowest RMSE.  
+                          'RMSE'      -> Select the datamodel with the lowest RMSE.
 
                           'MSE'       -> Select the datamodel with the lowest MSE.
 
@@ -471,15 +468,13 @@ sub chooseBestDataModel {
 
 =begin classdoc
 
-Evaluates the accuracy of a data model using the following protocol : Takes a certain amount of the available 
+Evaluates the accuracy of a data model using the following protocol : Takes a certain amount of the available
 data to train and fit the model (80% by default), then use it to forecast the remaining data and computes the
 accuracy of the forecasted data according to the measures provided by the Utils::TimeSerieAnalysis class.
 
 @param data_model_class The class name of the evaluated data model.
 @param data A reference to an array containing the data.
 
-@optional combination_id the combination's id to model.
-@optional node_id modeled node in case of NodemetricCombination.
 @optional freq The frequence (or seasonality) to use, if needed by the model.
 @optional training_percentage The amount in percentage of data to use for training the model (80% by default).
 
@@ -494,9 +489,7 @@ sub evaluateDataModelAccuracy {
 
     General::checkParams(args     => \%args,
                          required => ['data_model_class', 'data'],
-                         optional => {'combination_id'      => undef,
-                                      'node_id'             => undef,
-                                      'freq'                => undef,
+                         optional => {'freq'                => undef,
                                       'training_percentage' => 80,
                                       });
 
@@ -523,19 +516,14 @@ sub evaluateDataModelAccuracy {
 
     my $model = $data_model_class;
 
-    $model = $data_model_class->new(
-        node_id        => $args{node_id},
-        combination_id => $args{combination_id},
-    );
+    $model = $data_model_class->new();
 
-    # Configure 
+    # Configure
     $model->configure(
         data           => \@training_data,
         freq           => $args{freq},
         predict_start  => $last_training_index + 1,
         predict_end    => $#data,
-        combination_id => $args{combination_id},
-        node_id        => $args{node_id},
     );
 
     # Forecast the test part of the data
@@ -544,8 +532,6 @@ sub evaluateDataModelAccuracy {
         freq           => $args{freq},
         predict_start  => $last_training_index + 1,
         predict_end    => $#data,
-        combination_id => $args{combination_id},
-        node_id        => $args{node_id},
     );
 
     my @forecast = @{$forecasted_ref};

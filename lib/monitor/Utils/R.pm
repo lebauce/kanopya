@@ -75,44 +75,43 @@ Convert a forecast object extracted from R into a Perl-usable format (simple arr
 
 =cut
 
-sub convertRForecast{
+sub convertRForecast {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
                          required => ['R_forecast_ref', 'freq']);
 
-    my $cols_number              = FORECAST->{'COLUMNS_NUMBER'};
-    my $first_row_size           = FORECAST->{'FIRST_ROW_SIZE'};
-    my $forecast_column          = FORECAST->{'FORECAST_COLUMN'};
-    my %double_label_frequencies = %{FORECAST->{'DOUBLE_LABEL_FREQS'}};
-
     # Raw R data
     my @R_forecast_raw = @{$args{R_forecast_ref}};
 
-    # If this information row is present, we remove it (The structure of the following code is for helping
-    # debug if needed)
-    if ($R_forecast_raw[0] eq 'Point') {
-        for (0..$first_row_size-1) {
-            my $shift = shift(@R_forecast_raw);
-            if (("$shift" eq "Lo") || ("$shift" eq "Hi")) {
-                $shift = "$shift" . " " .  shift(@R_forecast_raw);
-            }
-        }
+    if ($R_forecast_raw[0] ne 'Point' && $R_forecast_raw[1] ne 'Forecast') {
+        throw Kanopya::Exception(error => 'Wrong R output data structure');
     }
 
-    my @forecasts;
+    my $current_pt  = 2;
+    my $cols_number = 2;
+
+    while ($R_forecast_raw[$current_pt] eq "Lo" || $R_forecast_raw[$current_pt] eq "Hi") {
+        $current_pt += 2;
+        $cols_number++;
+    }
 
     # True if the given freq is a special freq, ie which implies a 2-columns label
+    my %double_label_frequencies = %{FORECAST->{'DOUBLE_LABEL_FREQS'}};
     my $special_freq = exists($double_label_frequencies{$args{freq}});
 
-    my $rows_number = $special_freq ? @R_forecast_raw / ($cols_number + 1)
-                    :                 @R_forecast_raw / ($cols_number)
+    my $rows_number = $special_freq ? (@R_forecast_raw - $current_pt)/ ($cols_number + 1)
+                    :                 (@R_forecast_raw - $current_pt)/ ($cols_number)
                     ;
 
-    for my $row (0..$rows_number - 1) { 
+    my $forecast_column = FORECAST->{'FORECAST_COLUMN'};
+
+    my @forecasts = ();
+    for my $row (0..$rows_number - 1) {
         my $index = $special_freq ? (($cols_number + 1) * $row) + $forecast_column + 1
                    :                (($cols_number) * $row) + $forecast_column
                    ;
+        $index += $current_pt;
         push(@forecasts, $R_forecast_raw[$index]);
     }
 

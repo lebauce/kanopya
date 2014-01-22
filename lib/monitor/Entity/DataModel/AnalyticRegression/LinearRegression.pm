@@ -146,7 +146,7 @@ Compute the regression function
 =cut
 
 sub prediction_function {
-    my ($self, %args) = @_;
+    my ($class, %args) = @_;
     General::checkParams(args     => \%args,
                          required => ['function_args'],);
 
