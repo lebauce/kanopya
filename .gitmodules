@@ -29,7 +29,8 @@
 	url = https://github.com/puppetlabs/puppetlabs-inifile.git
 [submodule "templates/components/puppetmaster/modules/dhcp"]
 	path = templates/components/puppetmaster/modules/dhcp
-	url = https://github.com/puppetlabs/puppetlabs-dhcp.git
+	url = git://repository.intranet.hederatech.com/kanopya/puppetlabs-dhcp.git
+	branch = master
 [submodule "templates/components/puppetmaster/modules/firewall"]
 	path = templates/components/puppetmaster/modules/firewall
 	url = https://github.com/puppetlabs/puppetlabs-firewall.git
