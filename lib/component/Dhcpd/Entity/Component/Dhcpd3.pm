@@ -19,15 +19,20 @@ use base Entity::Component;
 use strict;
 use warnings;
 
+use General;
 use Kanopya::Exceptions;
 use Entity::ServiceProvider::Cluster;
 use Dhcpd3Host;
 use Dhcpd3Subnet;
 
 use Hash::Merge qw(merge);
-use Log::Log4perl "get_logger";
 use NetAddr::IP;
-use General;
+
+use TryCatch;
+
+use Log::Log4perl "get_logger";
+my $log = get_logger("");
+
 
 use constant ATTR_DEF => {};
 sub getAttrDef { return ATTR_DEF; }
@@ -90,8 +95,7 @@ sub getPuppetDefinition {
 
     for my $dhcp_subnet ($self->dhcpd3_subnets) {
         my $subnet = $dhcp_subnet->network;
-        my $addr = NetAddr::IP->new($subnet->network_addr,
-                                    $subnet->network_netmask);
+        my $addr = NetAddr::IP->new($subnet->network_addr, $subnet->network_netmask);
         my $first = (split('/', $addr->first))[0];
         my $last = (split('/', $addr->last))[0];
 
@@ -104,26 +108,31 @@ sub getPuppetDefinition {
             tag => 'kanopya::dhcpd'
         };
 
+        DHCP_HOST:
         for my $dhcp_host ($dhcp_subnet->dhcpd3_hosts) {
-            my $iface = $dhcp_host->iface;
-            my $host = $iface->host;
-            my $sp = $host->node->service_provider;
+            try {
+                my $iface = $dhcp_host->iface;
+                my $host = $iface->host;
 
-            my $gateway = undef;
-            if (defined $args{cluster}->default_gateway) {
-                if ($iface->getPoolip->network->id == $args{cluster}->default_gateway->id) {
-                    $gateway = $args{cluster}->default_gateway->network_gateway;
+                my $gateway = undef;
+                if (defined $args{cluster}->default_gateway) {
+                    if ($iface->getPoolip->network->id == $args{cluster}->default_gateway->id) {
+                        $gateway = $args{cluster}->default_gateway->network_gateway;
+                    }
                 }
-            }
 
-            $hosts->{$host->node->node_hostname} = {
-                mac => $iface->iface_mac_addr,
-                ip => $iface->getIPAddr,
-                tag => 'kanopya::dhcpd',
-                $dhcp_host->dhcpd3_hosts_pxe
-              ? (pxeserver   => $ip, pxefilename => "pxelinux.0")
-              : ()
-            };
+                $hosts->{$host->node->node_hostname} = {
+                    mac => $iface->iface_mac_addr,
+                    ip  => $iface->getIPAddr,
+                    tag => 'kanopya::dhcpd',
+                    $dhcp_host->dhcpd3_hosts_pxe ? (pxeserver => $ip, pxefilename => "pxelinux.0")
+                                                 : ()
+                };
+            }
+            catch ($err) {
+                $log->error("Unable to handle dhcp for dhcp_host:\n$err");
+                next DHCP_HOST;
+            }
         };
     }
 
