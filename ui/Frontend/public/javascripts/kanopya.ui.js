@@ -138,7 +138,7 @@ $(document).ready(function () {
         }
     });
 
-    jQuery('#about').click(function () {openAbout('about_templates.html');});
+    jQuery('#about').click(function () { openAbout(); });
 
     // Attach click event to all .doc-link, existing (main doc link) or futur (dialog doc link)
     // We use html attributes to store needed data (not the better way)
