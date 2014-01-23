@@ -45,13 +45,6 @@ Kanopya::Schema::Result::Entity->might_have(
 );
 
 Kanopya::Schema::Result::Entity->has_many(
-  "collector_indicators",
-  "Kanopya::Schema::Result::CollectorIndicator",
-  { "foreign.collector_manager_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-Kanopya::Schema::Result::Entity->has_many(
   "entity_states",
   "Kanopya::Schema::Result::EntityState",
   { "foreign.entity_id" => "self.entity_id" },
