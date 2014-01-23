@@ -7,12 +7,15 @@ use Dancer ':syntax';
 #use Dancer::Plugin::Preprocess::Sass;
 use Dancer::Plugin::Ajax;
 
+use Kanopya::Config;
+use Kanopya::Version;
+
 use Login;
 use KIO::Services;
 use Monitoring;
 use Validation;
 use REST::api;
-use Kanopya::Config;
+
 use KIM::Consommation;
 use KIM::MasterImage;
 use KIM::WorkflowLogs;
@@ -69,6 +72,10 @@ get '/sandbox' => sub {
 
 get '/dashboard' => sub {
     template 'dashboard', {}, {layout => ''};
+};
+
+get '/about' => sub {
+    template 'about', { version => Kanopya::Version::version }, { layout => '' };
 };
 
 sub exception_to_status {
