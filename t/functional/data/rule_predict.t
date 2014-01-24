@@ -16,7 +16,7 @@ use Entity::Combination::NodemetricCombination;
 use Kanopya::Tools::TimeSerie;
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level=>'DEBUG', file=>'monitor_test.log', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=> __FILE__.'.log', layout=>'%F %L %p %m%n'});
 my $log = get_logger("");
 
 Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
@@ -53,26 +53,31 @@ sub rule_predict {
 
     lives_ok {
         my $value      = $acomb->evaluate();
-        my $value_pred = $acomb->evaluate(timestamp => time() + 2400);
+        my $value_pred = $acomb->evaluate(timestamp  => time() + 2400,
+                                          model_list => ['AnalyticRegression::LinearRegression']);
 
 
         if (! ($value < 11 && $value_pred > 11)) {
             die "Wrong aggregate combination value or prediction <$value> <$value_pred>";
-        } 
+        }
 
         my $cond_value = $acond->evaluate();
-        my $cond_value_pred = $acond->evaluate(timestamp => time() + 2400);
+        my $cond_value_pred = $acond->evaluate(timestamp => time() + 2400,
+                                               model_list => ['AnalyticRegression::LinearRegression']);
+
 
         if (! ($cond_value == 0 && $cond_value_pred == 1)) {
             die "Wrong aggregate condition value or prediction <$cond_value> <$cond_value_pred>";
-        } 
+        }
 
         my $rule_value = $rule1->evaluate();
-        my $rule_value_pred = $rule1->evaluate(timestamp => time() + 2400);
+        my $rule_value_pred = $rule1->evaluate(timestamp  => time() + 2400,
+                                               model_list => ['AnalyticRegression::LinearRegression']);
+
 
         if (! ((values %{$rule_value})[0] == 0 && (values %{$rule_value_pred})[0] == 1)) {
             die 'Wrong aggregate condition value or prediction <'.((values %{$rule_value})[0]).'> <'.((values %{$rule_value_pred})[0]).'>';
-        } 
+        }
 
     } 'Prediction';
 }
