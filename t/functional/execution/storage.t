@@ -93,11 +93,11 @@ sub testDiskManager {
 
             my $mountpoint = mktemp("tmp-mountpoint-XXXXX");
             lives_ok {
-                $export->mount(mountpoint => $mountpoint, econtext => $econtext);
+                $export->mount(mountpoint => $mountpoint, partition => 0, econtext => $econtext);
             } 'Mounting';
 
             lives_ok {
-                $export->umount(mountpoint => $mountpoint, econtext => $econtext);
+                $export->umount(mountpoint => $mountpoint, partition => 0, econtext => $econtext);
             } 'Unmounting';
 
             lives_ok {
@@ -215,7 +215,7 @@ eval {
                 if ($src_disk->container_size > $dest_disk->container_size) {
                     throws_ok {
                         eval {
-                            $src_disk->copy(dest => $dest_disk, econtext => $econtext, erollback => $erollback);
+                            $src_disk->copy(dest => $dest_disk, partition => 0, econtext => $econtext, erollback => $erollback);
                         };
                         if ($@) {
                             my $error = $@;
@@ -229,7 +229,7 @@ eval {
                 elsif (scalar(@destaccesses) or scalar(@srcaccesses)) {
                     throws_ok {
                         eval {
-                            $src_disk->copy(dest => $dest_disk, econtext => $econtext, erollback => $erollback);
+                            $src_disk->copy(dest => $dest_disk, partition => 0, econtext => $econtext, erollback => $erollback);
                         };
                         if ($@) {
                             my $error = $@;
@@ -241,7 +241,7 @@ eval {
                 }
                 else {
                     lives_ok {
-                        $src_disk->copy(dest => $dest_disk, econtext => $econtext);
+                        $src_disk->copy(dest => $dest_disk, partition => 0, econtext => $econtext);
                     } "Copying $src_disk to $dest_disk";
                 }
             }

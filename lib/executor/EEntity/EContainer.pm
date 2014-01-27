@@ -67,7 +67,9 @@ then call copy on the container acesses.
 sub copy {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'dest', 'econtext' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'dest', 'econtext' ],
+                         optional => { 'partition' => 1 });
 
     my $source_size = $self->container_size;
     my $dest_size   = $args{dest}->container_size;
@@ -101,7 +103,10 @@ sub copy {
                                 container_device     => $mountpoint . '/' . $args{dest}->container_device,
                             ));
 
-            my $result = $self->copy(dest => $container, econtext => $args{econtext}, erollback => $args{erollback});
+            my $result = $self->copy(dest      => $container,
+                                     partition => $args{partition},
+                                     econtext  => $args{econtext},
+                                     erollback => $args{erollback});
 
             $container->remove();
 
@@ -120,6 +125,7 @@ sub copy {
 
     # Copy contents with container accesses specific protocols
     $source_access->copy(dest      => $dest_access,
+                         partition => $args{partition},
                          econtext  => $args{econtext},
                          erollback => $args{erollback});
 
