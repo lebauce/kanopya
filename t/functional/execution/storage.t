@@ -35,7 +35,8 @@ use_ok ('Entity::ServiceProvider::Cluster');
 my @args = ();
 
 my @disks   = ();
-my @exports = ();    
+my @exports = ();
+
 
 lives_ok {
     Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
@@ -110,6 +111,12 @@ sub testDiskManager {
 eval {
     Kanopya::Database::beginTransaction;
 
+    # Firstly initialize the execution lib with the local host on which the code is running.
+    my $hostname = `hostname`;
+    chomp($hostname);
+
+    EEntity->new(entity => Entity::Host->find(hash => { 'node.node_hostname' => $hostname }));
+
     my $econtext;
     lives_ok {
         $econtext = EContext::Local->new(local => '127.0.0.1');
@@ -121,7 +128,7 @@ eval {
         $erollback = ERollback->new();
 
     } 'Instanciate ERollback';
- 
+
     # This test loop over the diskmanagers, create a disk with on each,
     # then create an export with each export manager available for this disk manager.
 
@@ -140,7 +147,6 @@ eval {
     my @fileimagemanagers;
     my @serivceproviders = Entity::ServiceProvider->search(hash => {});
     for $provider (@serivceproviders) {
-        
         my @storagecomponents;
         lives_ok {
             @storagecomponents = $provider->getComponents(category => 'DiskManager');
@@ -216,7 +222,7 @@ eval {
                             $erollback->undo();
                             throw $error;
                         }
-    
+
                     } "Kanopya::Exception::Execution",
                       "Try copying $src_disk to $dest_disk, but source size < dest size.";
                 }
@@ -230,7 +236,6 @@ eval {
                             $erollback->undo();
                             throw $error;
                         }
-    
                     } "Kanopya::Exception::Execution::ResourceBusy",
                       "Try copying $src_disk to $dest_disk, but one of the containers is already exported.";
                 }
@@ -254,8 +259,7 @@ eval {
                 lives_ok {
                     my $eexport_manager = EEntity->new(data => $export->getExportManager);
                     $eexport_manager->removeExport(container_access => $export, econtext => $econtext);
-        
-                } "Remove export $export";   
+                } "Remove export $export";
             }
             else {
                 push @nextexports, $export;
@@ -266,7 +270,7 @@ eval {
                 lives_ok {
                     my $edisk_manager = EEntity->new(data => $disk->getDiskManager);
                     $edisk_manager->removeDisk(container => $disk, econtext => $econtext);
-    
+
                 } "Remove disk $disk";
             }
             else {
@@ -282,7 +286,7 @@ eval {
                             $erollback->undo();
                             throw $error;
                         }
-    
+
                     } "Kanopya::Exception::Execution::ResourceBusy",
                       "Try remove disk $disk, but still exported.";
                 }
