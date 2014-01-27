@@ -67,6 +67,13 @@ __PACKAGE__->table("nova_controller");
   is_foreign_key: 1
   is_nullable: 1
 
+=head2 kanopya_openstack_sync_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -92,6 +99,13 @@ __PACKAGE__->add_columns(
     is_nullable => 1,
   },
   "keystone_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
+  "kanopya_openstack_sync_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -162,6 +176,26 @@ __PACKAGE__->has_many(
   "Kanopya::Schema::Result::Glance",
   { "foreign.nova_controller_id" => "self.nova_controller_id" },
   { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 kanopya_openstack_sync
+
+Type: belongs_to
+
+Related object: L<Kanopya::Schema::Result::KanopyaOpenstackSync>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "kanopya_openstack_sync",
+  "Kanopya::Schema::Result::KanopyaOpenstackSync",
+  { kanopya_openstack_sync_id => "kanopya_openstack_sync_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "NO ACTION",
+  },
 );
 
 =head2 keystone
@@ -265,8 +299,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:NjkrnotMV46UHl2ZCUbJDA
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-01-07 12:21:50
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:LyUbkWuPcJ2jmegICt/2OA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

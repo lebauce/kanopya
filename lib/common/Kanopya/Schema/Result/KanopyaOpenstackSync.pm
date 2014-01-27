@@ -1,12 +1,12 @@
 use utf8;
-package Kanopya::Schema::Result::KanopyaAggregator;
+package Kanopya::Schema::Result::KanopyaOpenstackSync;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
 =head1 NAME
 
-Kanopya::Schema::Result::KanopyaAggregator
+Kanopya::Schema::Result::KanopyaOpenstackSync
 
 =cut
 
@@ -31,15 +31,15 @@ use base 'DBIx::Class::IntrospectableM2M';
 
 use base qw/DBIx::Class::Core/;
 
-=head1 TABLE: C<kanopya_aggregator>
+=head1 TABLE: C<kanopya_openstack_sync>
 
 =cut
 
-__PACKAGE__->table("kanopya_aggregator");
+__PACKAGE__->table("kanopya_openstack_sync");
 
 =head1 ACCESSORS
 
-=head2 kanopya_aggregator_id
+=head2 kanopya_openstack_sync_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -52,22 +52,10 @@ __PACKAGE__->table("kanopya_aggregator");
   is_nullable: 1
   size: 255
 
-=head2 time_step
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_nullable: 0
-
-=head2 storage_duration
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_nullable: 0
-
 =cut
 
 __PACKAGE__->add_columns(
-  "kanopya_aggregator_id",
+  "kanopya_openstack_sync_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -76,27 +64,23 @@ __PACKAGE__->add_columns(
   },
   "control_queue",
   { data_type => "char", is_nullable => 1, size => 255 },
-  "time_step",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
-  "storage_duration",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
 );
 
 =head1 PRIMARY KEY
 
 =over 4
 
-=item * L</kanopya_aggregator_id>
+=item * L</kanopya_openstack_sync_id>
 
 =back
 
 =cut
 
-__PACKAGE__->set_primary_key("kanopya_aggregator_id");
+__PACKAGE__->set_primary_key("kanopya_openstack_sync_id");
 
 =head1 RELATIONS
 
-=head2 kanopya_aggregator
+=head2 kanopya_openstack_sync
 
 Type: belongs_to
 
@@ -105,15 +89,32 @@ Related object: L<Kanopya::Schema::Result::Component>
 =cut
 
 __PACKAGE__->belongs_to(
-  "kanopya_aggregator",
+  "kanopya_openstack_sync",
   "Kanopya::Schema::Result::Component",
-  { component_id => "kanopya_aggregator_id" },
+  { component_id => "kanopya_openstack_sync_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
+=head2 nova_controllers
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-01-06 11:39:04
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:SGRB67Ys3KobJgaNtt5q6g
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::NovaController>
+
+=cut
+
+__PACKAGE__->has_many(
+  "nova_controllers",
+  "Kanopya::Schema::Result::NovaController",
+  {
+    "foreign.kanopya_openstack_sync_id" => "self.kanopya_openstack_sync_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-01-07 12:21:50
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:lQeElFDHFOA3g0abpfv/sw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

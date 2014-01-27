@@ -25,7 +25,7 @@ Kanopya executor runs workflows and operations
 
 package Entity::Component::KanopyaExecutor;
 use base Entity::Component;
-use base MessageQueuing::RabbitMQ::Sender;
+use base Manager::DaemonManager;
 
 use strict;
 use warnings;
@@ -43,6 +43,12 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
+    control_queue => {
+        type         => 'string',
+        pattern      => '^.*$',
+        is_mandatory => 0,
+        is_editable  => 1
+    },
     time_step => {
         label        => 'Workflow pooling frequency',
         #type         => 'time',
@@ -80,19 +86,19 @@ sub getAttrDef { return ATTR_DEF; }
 sub methods {
     return {
         run => {
-            description => 'Produce a workflow to run.',
+            description => 'produce a workflow to run.',
             message_queuing => {
                 queue => 'workflow'
             }
         },
         execute => {
-            description => 'Produce an operation to execute',
+            description => 'produce an operation to execute',
             message_queuing => {
                 queue => 'operation'
             }
         },
         terminate => {
-            description => 'Produce an operation execution result.',
+            description => 'produce an operation execution result.',
             message_queuing => {
                 queue => 'operation_result'
             }
@@ -115,7 +121,7 @@ sub enqueue {
     eval {
         MessageQueuing::RabbitMQ::Sender::run($self,
                                               workflow_id => $operation->workflow->id,
-                                              %{Kanopya::Database::_adm->{config}->{amqp} });
+                                              %{ Kanopya::Database::_adm->{config}->{amqp} });
     };
     if ($@) {
         my $err = $@;
@@ -185,8 +191,8 @@ sub run {
 =begin classdoc
 
 Generic method for sending messages.
-Should be not impemeted and the call handled by the AUTOLOAD in
-MessageQueuing::RabbitMQ::Sender, but we need to fix amultiautoload confilct.
+Should be not implemeted and the call handled by the AUTOLOAD in
+MessageQueuing::RabbitMQ::Sender, but we need to fix a multi autoload confilct.
 
 =end classdoc
 =cut
@@ -196,6 +202,7 @@ sub send {
 
     MessageQueuing::RabbitMQ::Sender::send($self, %args);
 }
+
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;

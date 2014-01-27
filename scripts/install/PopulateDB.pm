@@ -80,6 +80,7 @@ my @classes = (
     'Entity::Component::KanopyaFront',
     'Entity::Component::KanopyaAggregator',
     'Entity::Component::KanopyaRulesEngine',
+    'Entity::Component::KanopyaOpenstackSync',
     'Entity::Component::UcsManager',
     'Entity::Component::Fileimagemanager0',
     'Entity::Component::NetappManager',
@@ -1211,6 +1212,13 @@ sub registerComponents {
             service_provider_types => [ 'Kanopya', 'Centos6' ],
         },
         {
+            component_name         => 'KanopyaOpenstackSync',
+            component_version      => 0,
+            deployable             => 0,
+            component_categories   => [ ],
+            service_provider_types => [ 'Kanopya', 'Centos6' ],
+        },
+        {
             component_name         => 'Ceph',
             component_version      => 0,
             deployable             => 1,
@@ -1581,6 +1589,9 @@ sub registerKanopyaMaster {
                 clusters_directory     => $args{clusters_directory} || "/var/lib/kanopya/clusters/",
                 private_directory      => $args{private_directory} || "/var/lib/kanopya/private/"
             }
+        },
+        {
+            name => 'KanopyaOpenstackSync',
         },
         {
             name => 'KanopyaAggregator'

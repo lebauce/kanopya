@@ -30,13 +30,15 @@ use base "EManager::EHostManager::EVirtualMachineManager";
 use strict;
 use warnings;
 
-use JSON;
 use General;
+
+use JSON;
 use OpenStack::API;
 use NetAddr::IP;
 use Data::Dumper;
 use IO::Handle;
 use File::Temp qw/ tempfile /;
+use TryCatch;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -80,7 +82,7 @@ sub postStartNode {
     
     General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
 
-    eval {
+    try {
         my $api = $self->api;
         my $route = 'os-security-groups';
         my $resp = $api->compute->$route->get();
@@ -142,7 +144,26 @@ sub postStartNode {
                 }
             }
         );
-    };
+    }
+    catch ($err) {
+        $log->warn($err);
+    }
+
+    # Register the new NovaController to the OpenstackSync.
+    if (defined $self->kanopya_openstack_sync) {
+        $self->registerToOpenstackSync();
+    }
+}
+
+sub postStopNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+
+    # Unregister the NovaController from the OpenstackSync.
+    if (defined $self->kanopya_openstack_sync && scalar($self->nodes) <= 1) {
+        $self->unregisterFromOpenstackSync();
+    }
 }
 
 sub registerHypervisor {
@@ -235,14 +256,13 @@ sub getHypervisorVMs {
     my @uuids = (defined $details->[0]->{servers}) ? @{$details->[0]->{servers}} : ();
 
     for my $uuid (@uuids){
-        eval {
+        try {
             my $e = Entity::Host::VirtualMachine::OpenstackVm->find(hash => {openstack_vm_uuid => $uuid->{uuid}});
             push @vms, $e;
             push @vm_ids, $e->id;
-        };
-        if ($@) {
-            my $error = $@;
-            $log->info($uuid->{uuid}." => ".$error);
+        }
+        catch ($err) {
+            $log->info($uuid->{uuid}." => ".$err);
             push @unk_vm_uuids, $uuid->{uuid};
         }
     }
@@ -305,7 +325,7 @@ sub getVMState {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    eval {
+    try {
         my $details =  $self->getVMDetails(%args);
 
         my $state_map = {
@@ -321,6 +341,9 @@ sub getVMState {
             state      => $state_map->{$details->{state}} || 'fail',
             hypervisor => $details->{hypervisor},
         };
+    }
+    catch ($err) {
+        $log->warn($err);
     }
 }
 
@@ -446,7 +469,7 @@ sub startHost {
     $log->debug("Nova returned " . (Dumper $flavor));
 
     my $interfaces;
-    eval {
+    try {
         # register network
         $interfaces = $self->registerNetwork(host => $args{host});
         my $ports;
@@ -499,17 +522,16 @@ sub startHost {
                       );
 
         $args{host}->hypervisor_id($args{hypervisor}->id);
-    };
-    if ($@) {
-        my $error = $@;
+    }
+    catch ($err) {
         for my $interface (@$interfaces) {
             $self->deletePort(port => $interface->{port});
         }
-        if (ref($error)) {
-            $error->rethrow;
+        if (ref($err)) {
+            $err->rethrow;
         }
         else {
-            throw Kanopya::Exception::Execution(error => "$error");
+            throw Kanopya::Exception::Execution(error => "$err");
         }
     }
 }
@@ -630,10 +652,12 @@ sub registerNetwork {
     IFACE:
     for my $iface ($args{host}->getIfaces()) {
         # skip ifaces with no ip address
-        eval{
+        try {
             $iface->getIPAddr();
-        };
-        next IFACE if ($@);
+        }
+        catch ($err) {
+            next IFACE;
+        }
 
         # get iface vlan
         my $vlan = undef;

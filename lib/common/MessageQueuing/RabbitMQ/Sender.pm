@@ -113,9 +113,10 @@ sub AUTOLOAD {
     # Merge the arguments with possibly prefined for this method.
     %args = %{ $merge->merge(\%args, $method->{message_queuing}) };
 
-    General::checkParams(args => \%args, required => [ 'queue' ]);
+    General::checkParams(args => \%args, required => [ 'queue' ], optional => { 'notify' => 1 });
 
-    my $queue = delete $args{queue};
+    my $queue  = delete $args{queue};
+    my $notify = delete $args{notify};
 
     # Remove possibly defined connection options form args
     my $auth = {};
@@ -132,10 +133,13 @@ sub AUTOLOAD {
     if (not $self->connected) {
         $self->connect(%$auth);
     }
+
     # Declare the queue if not done at connect
     $self->declareQueue(queue => $queue);
-    # Declare the exchange if not done at connect
-    $self->declareExchange(exchange => $queue, type => 'fanout');
+    if ($args{notify}) {
+        # Declare the exchange if not done at connect
+        $self->declareExchange(exchange => $queue, type => 'fanout');
+    }
 
     # Serialize arguments
     my $data = JSON->new->utf8->encode(\%args);
@@ -168,28 +172,30 @@ sub AUTOLOAD {
         }
     }
 
-   $send  = 0;
-   $retry = 10;
-   while ($retry > 0 && ! $send && ! defined $err) {
-       $err = undef;
-       eval {
-           # Send message for the workers
-           $log->debug("Publishing on exchange <$queue>, body: $data");
-           $self->_connection->publish($self->_channel, $queue, $data,
-               { mandatory => 1, exchange => $queue },
-               { content_type     => 'text/plain',
-                 content_encoding => 'none',
-                 delivery_mode    => 2 }
-           );
-           $send = 1;
-       };
-       if ($@) {
-           my $err = $@;
-           $log->warn("Failed to publish on exchange <$queue>, $retry left: $err");
-           $retry--;
-           sleep 1;
-       }
-   }
+    if ($args{notify}) {
+        $send  = 0;
+        $retry = 10;
+        while ($retry > 0 && ! $send && ! defined $err) {
+            $err = undef;
+            eval {
+                # Send message for the subscribers
+                $log->debug("Publishing on exchange <$queue>, body: $data");
+                $self->_connection->publish($self->_channel, $queue, $data,
+                    { mandatory => 1, exchange => $queue },
+                    { content_type     => 'text/plain',
+                      content_encoding => 'none',
+                      delivery_mode    => 2 }
+                );
+                $send = 1;
+            };
+            if ($@) {
+                my $err = $@;
+                $log->warn("Failed to publish on exchange <$queue>, $retry left: $err");
+                $retry--;
+                sleep 1;
+            }
+        }
+    }
 
     if (not $incallback) {
         $self->disconnect();

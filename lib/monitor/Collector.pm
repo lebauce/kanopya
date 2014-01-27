@@ -705,7 +705,7 @@ sub update {
                 collect_time => $start_time,
             );
         }
-        
+
         # Update total consumption
         $self->updateConsumption();
     };

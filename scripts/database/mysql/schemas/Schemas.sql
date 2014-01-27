@@ -754,7 +754,7 @@ CREATE TABLE `poolip` (
 CREATE TABLE `ip` (
   `ip_id`     int(8) unsigned AUTO_INCREMENT,
   `ip_addr`   char(15) NOT NULL,
-  `poolip_id` int(8) unsigned NOT NULL,
+  `poolip_id` int(8) unsigned DEFAULT NULL,
   `iface_id`  int(8) unsigned NULL DEFAULT NULL,
   PRIMARY KEY (`ip_id`),
   UNIQUE KEY (`ip_addr`, `poolip_id`),

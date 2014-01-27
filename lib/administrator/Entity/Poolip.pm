@@ -93,7 +93,7 @@ sub popIp {
 
         # Check if the current ip isn't already used
         eval {
-            Ip->find(hash => { ip_addr => $ipaddr->addr, poolip_id => $self->id });
+            Ip->find(hash => { ip_addr => $ipaddr->addr, poolip_id => [$self->id, undef] });
         };
         if ($@) {
             # Create a new Ip instead.

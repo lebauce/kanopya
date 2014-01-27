@@ -1,0 +1,4 @@
+<conf logdir="[% logdir %]">
+    <user name="admin" password="[% admin_password %]" />
+    <amqp user="executor" password="[% admin_password %]" />
+</conf>
