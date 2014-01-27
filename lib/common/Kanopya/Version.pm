@@ -31,13 +31,16 @@ use warnings;
 use version;
 
 
+# The Kanopya version numbers fit the following convention:
+# (Major version).(Minor version).(Iteration number)[.(Hotfix number)]
+
 our $VERSION = version->declare("1.10.1");
 
 
 =pod
 =begin classdoc
 
-Return the Kanopya version number.
+Return the Kanopya version numbers.
 
 =end classdoc
 =cut
