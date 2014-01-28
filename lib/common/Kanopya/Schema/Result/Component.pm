@@ -828,18 +828,18 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 quantum
+=head2 neutron
 
 Type: might_have
 
-Related object: L<Kanopya::Schema::Result::Quantum>
+Related object: L<Kanopya::Schema::Result::Neutron>
 
 =cut
 
 __PACKAGE__->might_have(
-  "quantum",
-  "Kanopya::Schema::Result::Quantum",
-  { "foreign.quantum_id" => "self.component_id" },
+  "neutron",
+  "Kanopya::Schema::Result::Neutron",
+  { "foreign.neutron_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 

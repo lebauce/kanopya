@@ -116,6 +116,7 @@ sub createDisk {
                             volume_id    => $req->{volume}->{id},
                             lvm2_lv_name => $args{name},
                             lvm2_lv_size => $args{size},
+			    lvm2_lv_filesystem => $args{filesystem}
                         );
     }
     elsif ($args{disk_type} eq 'NFS') {

@@ -1,12 +1,12 @@
 use utf8;
-package Kanopya::Schema::Result::Quantum;
+package Kanopya::Schema::Result::Neutron;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
 =head1 NAME
 
-Kanopya::Schema::Result::Quantum
+Kanopya::Schema::Result::Neutron
 
 =cut
 
@@ -31,15 +31,15 @@ use base 'DBIx::Class::IntrospectableM2M';
 
 use base qw/DBIx::Class::Core/;
 
-=head1 TABLE: C<quantum>
+=head1 TABLE: C<neutron>
 
 =cut
 
-__PACKAGE__->table("quantum");
+__PACKAGE__->table("neutron");
 
 =head1 ACCESSORS
 
-=head2 quantum_id
+=head2 neutron_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -63,7 +63,7 @@ __PACKAGE__->table("quantum");
 =cut
 
 __PACKAGE__->add_columns(
-  "quantum_id",
+  "neutron_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -90,13 +90,13 @@ __PACKAGE__->add_columns(
 
 =over 4
 
-=item * L</quantum_id>
+=item * L</neutron_id>
 
 =back
 
 =cut
 
-__PACKAGE__->set_primary_key("quantum_id");
+__PACKAGE__->set_primary_key("neutron_id");
 
 =head1 RELATIONS
 
@@ -140,7 +140,7 @@ __PACKAGE__->belongs_to(
   },
 );
 
-=head2 quantum
+=head2 neutron
 
 Type: belongs_to
 
@@ -149,9 +149,9 @@ Related object: L<Kanopya::Schema::Result::Component>
 =cut
 
 __PACKAGE__->belongs_to(
-  "quantum",
+  "neutron",
   "Kanopya::Schema::Result::Component",
-  { component_id => "quantum_id" },
+  { component_id => "neutron_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 

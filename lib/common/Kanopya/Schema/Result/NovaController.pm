@@ -283,17 +283,17 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 quantums
+=head2 neutrons
 
 Type: has_many
 
-Related object: L<Kanopya::Schema::Result::Quantum>
+Related object: L<Kanopya::Schema::Result::Neutron>
 
 =cut
 
 __PACKAGE__->has_many(
-  "quantums",
-  "Kanopya::Schema::Result::Quantum",
+  "neutrons",
+  "Kanopya::Schema::Result::Neutron",
   { "foreign.nova_controller_id" => "self.nova_controller_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );

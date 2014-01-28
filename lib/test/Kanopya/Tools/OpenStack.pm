@@ -106,7 +106,7 @@ sub start1OpenStackOn3Clusters {
                             },
                             'glance' => {
                             },
-                            'quantum' => {
+                            'neutron' => {
                             },
                             'apache' => {
                             }
@@ -117,7 +117,7 @@ sub start1OpenStackOn3Clusters {
     my $keystone = $cloud->getComponent(name => 'Keystone');
     my $nova_controller = $cloud->getComponent(name => "NovaController");
     my $glance = $cloud->getComponent(name => "Glance");
-    my $quantum = $cloud->getComponent(name => "Quantum");
+    my $neutron = $cloud->getComponent(name => "Neutron");
     my $cinder = $cloud->getComponent(name => "Cinder");
     my $lvm = $cloud->getComponent(name => "Lvm");
 
@@ -136,7 +136,7 @@ sub start1OpenStackOn3Clusters {
         nova_controller_id => $nova_controller->id
     });
 
-    $quantum->setConf(conf => {
+    $neutron->setConf(conf => {
         mysql5_id          => $sql->id,
         nova_controller_id => $nova_controller->id
     });

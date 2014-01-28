@@ -91,9 +91,9 @@ sub getPuppetDefinition {
     }
 
     my @optionals = ($self->nova_controller->amqp, $self->nova_controller->keystone);
-    my @quantums = $self->nova_controller->quantums;
+    my @neutrons = $self->nova_controller->neutrons;
     my @glances = $self->nova_controller->glances;
-    push @optionals, $quantums[0] if @quantums;
+    push @optionals, $neutrons[0] if @neutrons;
     push @optionals, $glances[0] if @glances;
 
     return merge($self->SUPER::getPuppetDefinition(%args), {

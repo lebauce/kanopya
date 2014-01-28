@@ -89,7 +89,7 @@ sub postStartNode {
 
         if (! scalar(@{$resp->{security_groups}})) {
             # We can't customize the default security group unless we create a
-            # network or an other security group https://bugs.launchpad.net/quantum/+bug/1148538
+            # network or an other security group https://bugs.launchpad.net/neutron/+bug/1148538
             $resp = $api->compute->$route->post(
                 content => {
                     security_group => {
@@ -630,7 +630,7 @@ sub registerPXEImage {
 
 =begin classdoc
 
-Register a network to Quantum
+Register a network to Neutron
 
 @param $host host whose netconf to be registered
 
@@ -696,7 +696,7 @@ sub deletePort {
     General::checkParams(args => \%args, required => [ 'port' ]);
 
     my $api = $self->api;
-    my $port_id = $api->quantum->ports(id => $args{port})->delete();
+    my $port_id = $api->neutron->ports(id => $args{port})->delete();
 }
 
 sub stopHost {
@@ -897,7 +897,7 @@ sub _getOrRegisterNetwork {
 
     my $api = $self->api;
     my $network_id = undef;
-    my $networks = $api->quantum->networks->get;
+    my $networks = $api->neutron->networks->get;
     if (defined $vlan) { # check if a network has already been created for physical vlan interface
         VLAN:
         for my $network (@{ $networks->{networks} }) {
@@ -928,7 +928,7 @@ sub _getOrRegisterNetwork {
             }
         };
         $network_conf->{network}->{'provider:segmentation_id'} = $vlan->vlan_number if (defined $vlan);
-        $network_id = $api->quantum->networks->post(
+        $network_id = $api->neutron->networks->post(
             content => $network_conf
         )->{network}->{id};
     }
@@ -967,7 +967,7 @@ sub _getOrRegisterSubnet {
 
     # check if kanopya.network already registered in openstack.subnet (for openstack.network previously created)
     my $subnet_id = undef;
-    my $subnets = $api->quantum->subnets(filter => "network-id=$network_id")->get;
+    my $subnets = $api->neutron->subnets(filter => "network-id=$network_id")->get;
     SUBNET:
     for my $subnet ( @{$subnets->{subnets}} ) {
         if ( $subnet->{'cidr'} eq $network_addr->cidr() ) { # network already registered
@@ -979,7 +979,7 @@ sub _getOrRegisterSubnet {
     # create a new subnet if no subnet found
     # one allocation_pool is created with all ip usable
     if (not defined $subnet_id) {
-        $subnet_id = $api->quantum->subnets->post(
+        $subnet_id = $api->neutron->subnets->post(
             content => {
                 'subnet' => {
                     'name'              => $cluster_name . '-subnet',
@@ -1028,7 +1028,7 @@ sub _registerPort {
 
     my $api = $self->api;
 
-    my $port_id = $api->quantum->ports->post(
+    my $port_id = $api->neutron->ports->post(
         content => {
             'port' => {
                 'name'          => $hostname . '-' . $iface->iface_name,

@@ -61,7 +61,7 @@ sub main {
                             'amqp'           => {},
                             'keystone'       => {},
                             'glance'         => {},
-                            'quantum'        => {},
+                            'neutron'        => {},
                             'novacompute'    => {},
                             'novacontroller' => {
                                 overcommitment_cpu_factor    => 1,
@@ -78,7 +78,7 @@ sub main {
     my $keystone = $cluster->getComponent(name => 'Keystone');
     my $nova_controller = $cluster->getComponent(name => "NovaController");
     my $glance = $cluster->getComponent(name => "Glance");
-    my $quantum = $cluster->getComponent(name => "Quantum");
+    my $neutron = $cluster->getComponent(name => "Neutron");
     my $nova_compute = $cluster->getComponent(name => "NovaCompute");
     
     lives_ok {
@@ -169,12 +169,12 @@ sub main {
                                     listen_component_id   => $glance->id,
                                     listen_component_port => 9292 
                                   },
-                                  { listen_name    => 'quantum-api',
+                                  { listen_name    => 'neutron-api',
                                     listen_ip      => $vip->ip_addr,
                                     listen_port    => 9696,
                                     listen_mode    => 'http',
                                     listen_balance => 'roundrobin',
-                                    listen_component_id   => $quantum->id,
+                                    listen_component_id   => $neutron->id,
                                     listen_component_port => 9696 
                                   },
                                 ]
@@ -197,7 +197,7 @@ sub main {
         nova_controller_id => $nova_controller->id
     });
 
-    $quantum->setConf(conf => {
+    $neutron->setConf(conf => {
         mysql5_id          => $mysql->id,
         nova_controller_id => $nova_controller->id
     });

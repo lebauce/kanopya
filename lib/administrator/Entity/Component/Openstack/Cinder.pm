@@ -166,7 +166,8 @@ sub lvcreate {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "lvm2_lv_name", "lvm2_lv_size", "volume_id" ],
+                         required => [ "lvm2_lv_name", "lvm2_lv_size",
+			               "volume_id", "lvm2_lv_filesystem" ],
                          optional => { container_device => undef });
 
     my $cinder_vg = Lvm2Vg->find(hash => { lvm2_vg_name => 'cinder-volumes' });
@@ -176,6 +177,7 @@ sub lvcreate {
         lvm2_vg_id         => $cinder_vg->id,
         lvm2_lv_freespace  => 0,
         lvm2_lv_size       => $args{lvm2_lv_size},
+	lvm2_lv_filesystem => $args{lvm2_lv_filesystem},
     );
 
     $args{volume_id} =~ s/\-/\-\-/g;
