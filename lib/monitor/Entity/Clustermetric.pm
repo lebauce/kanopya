@@ -456,17 +456,15 @@ Delete the instance, the RRD and all the instances which depend on it.
 sub delete {
     my $self = shift;
 
-    my @aggregate_combinations_from_same_service = Entity::Combination::AggregateCombination->search(
-                                                       hash => {
-                                                           service_provider_id => $self->clustermetric_service_provider_id
-                                                       }
-                                                   );
+    my @aggregate_combinations = Entity::Combination::AggregateCombination->search(hash => {
+                                     service_provider_id => $self->clustermetric_service_provider_id
+                                 });
 
     my $id = $self->id;
 
     COMBI:
-    while (@aggregate_combinations_from_same_service) {
-        my $aggregate_combination = pop @aggregate_combinations_from_same_service;
+    while (@aggregate_combinations) {
+        my $aggregate_combination = pop @aggregate_combinations;
         my @cluster_metric_ids = $aggregate_combination->dependentClusterMetricIds();
 
         for my $cluster_metric_id (@cluster_metric_ids) {

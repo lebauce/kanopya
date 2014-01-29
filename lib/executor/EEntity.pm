@@ -290,25 +290,6 @@ sub setMock {
     $mocks_classes->{$class} = $args{mock};
 }
 
-=pod
-=begin classdoc
-
-Set mock classes to override standards class/eclass matching.
-Usefull for test and dummy infrastructures.
-
-@optional mock the mock class
-
-=end classdoc
-=cut
-
-sub setMock {
-    my ($self, %args) = @_;
-    my $class = ref($self) || $self;
-
-    General::checkParams(args => \%args, optional => { 'mock' => undef });
-
-    $mocks_classes->{$class} = $args{mock};
-}
 
 sub _host {
     my ($self, @args) = @_;

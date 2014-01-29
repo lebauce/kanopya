@@ -323,7 +323,7 @@ Returns Node instance admin ip.
 sub adminIp {
     my $self = shift;
 
-    return $self->host->adminIp;
+    return (defined $self->host_id) ? $self->host->adminIp : undef;
 }
 
 

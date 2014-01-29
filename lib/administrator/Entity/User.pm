@@ -289,6 +289,7 @@ sub setProfiles {
     }
 }
 
+
 =pod
 =begin classdoc
 
@@ -299,11 +300,35 @@ Return a string representation of the entity
 =end classdoc
 =cut
 
-
 sub toString {
     my $self = shift;
     my $string = $self->{_dbix}->get_column('user_firstname'). " ". $self->{_dbix}->get_column('user_lastname');
     return $string;
+}
+
+
+=pod
+=begin classdoc
+
+Overwrite delete in order to forbid user deletion when linked to a ServiceProvider
+
+=end classdoc
+=cut
+
+sub delete {
+    my ($self, %args) = @_;
+
+    my @clusters = $self->search(related => 'entities',
+                                 hash    => {
+                                    'class_type.class_type' => 'Entity::ServiceProvider::Cluster',
+                                 });
+
+    if (scalar @clusters > 0) {
+        throw Kanopya::Exception::DB::DeleteCascade(label     => $self->label,
+                                                    dependant => ref $clusters[0]);
+    }
+
+    return $self->SUPER::delete(%args);
 }
 
 1;

@@ -9,6 +9,7 @@ use Dancer::Test;
 use Frontend;
 use REST::api;
 use APITestLib;
+use Test::Exception;
 
 use Data::Dumper;
 $DB::deep = 500;
@@ -19,37 +20,83 @@ Log::Log4perl->easy_init({level=>'DEBUG', file=>'api.t.log', layout=>'%F %L %p %
 # Firstly login to the api
 APITestLib::login();
 
-my $get_hosts = dancer_response GET => '/api/host';
-is $get_hosts->{status}, 200, "response for GET /api/host is 200";
-my $hosts_content = Dancer::from_json($get_hosts->{content});
+lives_ok {
 
-foreach my $host (@$hosts_content) {
-    my $host_ifaces = $host->{ifaces};
-    my $host_id = $host->{host_id};
+    my $get_hosts = dancer_response GET => '/api/host';
 
-    my $expand = dancer_response GET => '/api/host/' . $host_id, {params => {expand => 'ifaces'}};
-    is $expand->{status}, 200, "response for GET /api/host/$host_id with expand ifaces is 200";
-    my $expand_content = Dancer::from_json($expand->{content});
-
-    if (scalar $host_ifaces > 0) {
-        #check le nombre d'iface
-        is scalar @{ $expand_content->{ifaces} },
-           $host_ifaces,
-           "expanded ifaces from GET /api/host match the number of iface on the host";
-        #check que chacune des iface présente dans expand_content appartient bien a l'host
-        my @matched;
-        my @grep;
-        foreach my $iface (0..$host_ifaces) {
-            @grep = grep { $_->{host_id} == $host->{host_id}} @{ $expand_content->{ifaces} };
-        }
-        push @matched, @grep;
-        is scalar @matched,
-           $host_ifaces,
-           "expanded ifaces from GET /api/host/$host_id are all correct expands";
+    if ($get_hosts->{status} ne 200) {
+        die 'Wrong status GET /api/response got <' . $get_hosts->{status} . '> expected <200>';
     }
-    else {
-        is scalar @{ $expand_content->{ifaces} },
-           '0',
-           "ifaces expand from GET /api/host/$host_id is an empty array";
+
+    my $hosts_content = Dancer::from_json($get_hosts->{content});
+    my $host = $hosts_content->[0];
+
+    my $expand = dancer_response GET => '/api/host/' . $host->{host_id},
+                 { params => { expand => 'host_manager,node' } };
+
+    if ($expand->{status} ne 200) {
+        die 'response for GET: got <' . $expand->{status} . '>, expected <200>';
     }
-}
+
+    my $content = Dancer::from_json($expand->{content});
+
+    if ($content->{node}->{host_id} ne $host->{host_id}) {
+        die 'Wrong node: got <' . $content->{node}->{host_id}
+            . '> expected <' . $host->{host_id} . '>';
+    }
+
+    if ($content->{host_manager}->{component_id} ne $host->{host_manager_id}) {
+        die 'Wrong host_manager: got <' . $content->{host_manager}->{component_id}
+            . '> expected <' . $host->{host_manager_id} . '>';
+    }
+
+} "Two simple expands on 1-1 relationships";
+
+
+lives_ok {
+    my $get_hosts = dancer_response GET => '/api/host';
+
+    if ($get_hosts->{status} ne 200) {
+        die 'Wrong status GET /api/response got <' . $get_hosts->{status} . '> expected <200>';
+    }
+
+    my $hosts_content = Dancer::from_json($get_hosts->{content});
+    my $host = $hosts_content->[0];
+
+    my $expand = dancer_response GET => '/api/host/' . $host->{host_id},
+                 { params => { expand => 'host_manager.component_type,node' } };
+
+    if ($expand->{status} ne 200) {
+        die 'response for GET: got <' . $expand->{status} . '>, expected <200>';
+    }
+
+    my $content = Dancer::from_json($expand->{content});
+
+    if ($content->{node}->{host_id} ne $host->{host_id}) {
+        die 'Wrong node: got <' . $content->{node}->{host_id}
+            . '> expected <' . $host->{host_id} . '>';
+    }
+
+    if ($content->{host_manager}->{component_id} ne $host->{host_manager_id}) {
+        die 'Wrong host_manager: got <' . $content->{host_manager}->{component_id}
+            . '> expected <' . $host->{host_manager_id} . '>';
+    }
+
+    my $component = dancer_response GET => '/api/component/' . $host->{host_manager_id};
+
+    if ($component->{status} ne 200) {
+        die 'Wrong status GET /api/component/' . $host->{host_manager_id}
+            . ' got <' . $get_hosts->{status} . '> expected <200>';
+    }
+
+    my $component_content = Dancer::from_json($component->{content});
+
+    if ($content->{host_manager}->{component_type}->{component_type_id}
+        ne $component_content->{component_type_id}) {
+
+        die 'Wrong component type (id): got <'
+            . $content->{host_manager}->{component_type}->{component_type_id}
+            . '> expected <' . $component_content->{component_type_id} . '>';
+    }
+} "Two deep expands on 1-1 relationships";
+
