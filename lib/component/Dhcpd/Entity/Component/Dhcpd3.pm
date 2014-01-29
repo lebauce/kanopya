@@ -45,6 +45,12 @@ sub addHost {
     my $cluster = $args{host}->node->service_provider;
     my $pxe_iface = $args{host}->getPXEIface;
     my $subnet = ($pxe_iface->networks)[0];
+    if (! defined $subnet) {
+        throw Kanopya::Exception::Internal(
+                  error => "PXE iface <" . $pxe_iface->id .  "> on host <" . $args{host}->id .
+                           " is not connected to any network."
+              );
+    }
 
     my $dhcp_subnet = Dhcpd3Subnet->findOrCreate(network_id => $subnet->id,
                                                  dhcpd3_id  => $self->id);

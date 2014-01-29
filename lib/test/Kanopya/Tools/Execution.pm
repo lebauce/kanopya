@@ -57,6 +57,9 @@ BEGIN {
 
 my $executor = Executor->new();
 
+Kanopya::Tools::Execution->purgeQueues();
+
+
 =pod
 
 =begin classdoc

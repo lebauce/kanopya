@@ -73,17 +73,17 @@ sub test1c {
             interface1 => {
                 netconfs       => {$netConf->netconf_name => $netConf },
                 bonds_number   => 0,
-                interface_name => interface1,
+                interface_name => "eth0",
             },
             interface2 => {
                 netconfs       => {$netConf->netconf_name => $netConf },
                 bonds_number   => 0,
-                interface_name => interface2,
+                interface_name => "eth1",
             },
             interface3 => {
                 netconfs       => {$netConf->netconf_name => $netConf },
                 bonds_number   => 0,
-                interface_name => interface3,
+                interface_name => "eth2",
             },
         }
     );
@@ -100,15 +100,15 @@ sub test1c {
             ram           => 4096*1024*1024,
             ifaces        => [
                 {
-                    name => 'I dont wanna be an iface',
+                    name => "eth0",
                     pxe  => 0,
                 },
                 {
-                    name => 'it sucks to be an iface',
+                    name => "eth1",
                     pxe  => 0,
                 },
                 {
-                    name => 'please hit me in the iface',
+                    name => "eth2",
                     pxe  => 0,
                 },
             ],
@@ -122,7 +122,7 @@ sub test1c {
             ram           => 8192*1024*1024,
             ifaces        => [
                 {
-                    name => 'Power to the ifaces !',
+                    name => "eth0",
                     pxe  => 0,
                 },
             ],
@@ -136,11 +136,11 @@ sub test1c {
             ram           => 4096*1024*1024,
             ifaces        => [
                 {
-                    name => 'Are you being sarcatIfacetic ?',
+                    name => "eth0",
                     pxe  => 0,
                 },
                 {
-                    name => 'Just when I see your ugly iface...',
+                    name => "eth1",
                     pxe  => 0,
                 },
             ],

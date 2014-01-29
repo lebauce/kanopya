@@ -179,7 +179,8 @@ sub createCluster {
         components => {},
         interfaces => {
             admin => {
-                interface_netconfs  => { $adminnetconf->id => $adminnetconf->id },
+                interface_name => 'eth0',
+                netconfs  => { $adminnetconf->id => $adminnetconf->id },
             }
         }
     );
@@ -447,7 +448,8 @@ sub createIaasCluster {
         components => $components,
         interfaces => {
             vms => {
-                interface_netconfs => {
+                interface_name => 'eth0',
+                netconfs => {
                     $vms_netconf->id => $vms_netconf->id
                 }
             }

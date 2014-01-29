@@ -796,6 +796,7 @@ CREATE TABLE `interface` (
   `bonds_number`        int(8) unsigned NOT NULL DEFAULT 0,
   `interface_name`      char(32) NOT NULL,
   PRIMARY KEY (`interface_id`),
+  UNIQUE KEY (`service_provider_id`, `interface_name`),
   FOREIGN KEY (`interface_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -71,7 +71,7 @@ sub test3b {
             interface1 => {
                 netconfs       => {$netConf->netconf_name => $netConf },
                 bonds_number   => 0,
-                interface_name => interface1
+                interface_name => "eth0"
             },
         }
     );
@@ -88,7 +88,7 @@ sub test3b {
             ram           => 2048*1024*1024,
             ifaces        => [
                 {
-                    name => 'Iface1',
+                    name => 'eth0',
                     pxe  => 0,
                 },
             ],
@@ -102,7 +102,7 @@ sub test3b {
             ram           => 2048*1024*1024,
             ifaces        => [
                 {
-                    name => 'Iface2',
+                    name => 'eth0',
                     pxe  => 0,
                 },
             ],
@@ -116,7 +116,7 @@ sub test3b {
             ram           => 2048*1024*1024,
             ifaces        => [
                 {
-                    name => 'Iface3',
+                    name => 'eth0',
                     pxe  => 0,
                 },
             ],
@@ -130,7 +130,7 @@ sub test3b {
             ram           => 2048*1024*1024,
             ifaces        => [
                 {
-                    name => 'Iface4',
+                    name => 'eth0',
                     pxe  => 0,
                 },
             ],
@@ -144,7 +144,7 @@ sub test3b {
             ram           => 2048*1024*1024,
             ifaces        => [
                 {
-                    name => 'Iface5',
+                    name => 'eth0',
                     pxe  => 0,
                 },
             ],
@@ -158,7 +158,7 @@ sub test3b {
             ram           => 2048*1024*1024,
             ifaces        => [
                 {
-                    name => 'Iface6',
+                    name => 'eth0',
                     pxe  => 0,
                 },
             ],

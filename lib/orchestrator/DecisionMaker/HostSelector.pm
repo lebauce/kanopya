@@ -34,6 +34,7 @@ use General;
 use EContext::Local;
 use Kanopya::Exceptions;
 
+use TryCatch;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 
@@ -65,49 +66,48 @@ sub getHost {
 
     General::checkParams(args => \%args, required => [ "cluster" ]);
 
-    $log->debug('HostSelector : Retrieving cluster params');
+    my @free_hosts = $args{cluster}->getManager(manager_type => "HostManager")->getFreeHosts();
 
-    my $cluster      = $args{cluster};
-    my $host_params  = $cluster->getManagerParameters(manager_type => "HostManager");
-
-    $log->debug('HostSelector : Retrieving free hosts');
-
-    my $host_manager = $cluster->getManager(manager_type => "HostManager");
-    my @free_hosts   = $host_manager->getFreeHosts();
-
-    $log->debug('HostSelector : Number of free hosts in the host manager : ' . scalar(@free_hosts));
-
-    $log->debug('HostSelector : Retrieving id of master network to exclude it from the constraints');
-
-    my $admin_id     = Entity::Network->find(hash => { network_name => "admin" })->id;
+    $log->debug('Number of free hosts in the host manager : ' . scalar(@free_hosts));
+    $log->debug('Retrieving id of master network to exclude it from the constraints');
 
     # Generate Json objects for the external module (infrastructure and constraints)
 
-    $log->debug('HostSelector : Creating JSON structure for hosts description');
+    $log->debug('Creating JSON structure for hosts description');
+
+    # Pre-filter the host list from required ifaces names on cluster
+    # TODO: hande the contraints on the iface name in the constraint solver
 
     # INFRASTRUCTURE
     my @json_infrastructure;
+
+    HOST:
     for my $host (@free_hosts) {
+        # Pre-filter the host list from required ifaces names on cluster
+        # TODO: hande the contraints on the iface name in the constraint solver
+        INTERFACE:
+        for my $interface ($args{cluster}->interfaces) {
+            try {
+                $host->find(related => 'ifaces', hash => { iface_name => $interface->interface_name });
+            }
+            catch ($err) {
+                $log->debug("Pre filter on interface names: skip host <" . $host->id .
+                            ">, no iface <" . $interface->interface_name . "> found.");
+                next HOST;
+            }
+        }
 
         # Construct json ifaces (bonds number + netIPs)
         my @json_ifaces;
         for my $iface (@{ $host->getIfaces() }) {
-            my @netconfs = $iface->netconfs;
-            my @temp_networks;
-            for my $netconf (@netconfs) {
-                # Add id of all networks in the current netconf
-                @temp_networks = (@temp_networks, map { $_->network->id } $netconf->poolips);
-            }
-            # Don't keep id of the admin network
             my @networks;
-            for my $network_id (@temp_networks) {
-                if ($network_id != $admin_id) {
-                    push @networks, $network_id;
-                }
+            for my $netconf ($iface->netconfs) {
+                # Add id of all networks in the current netconf
+                @networks = (@networks, map { $_->network->id } $netconf->poolips);
             }
             my $json_iface = {
                 bondsNumber => scalar(@{ $iface->slaves }) + 1,
-                netIPs    => \@networks,
+                netIPs      => \@networks,
             };
             push @json_ifaces, $json_iface;
         }
@@ -119,44 +119,39 @@ sub getHost {
         # Construct the current host
         my @tags = map { $_->id } $host->tags;
         my $current = {
-            cpu     => {
-                nbCores   => $host->host_core,
+            cpu => {
+                nbCores => $host->host_core,
             },
-            ram     => {
-                qty       => $host->host_ram/1024/1024,
+            ram => {
+                qty => $host->host_ram/1024/1024,
             },
             network => {
-                ifaces    => \@json_ifaces,
+                ifaces => \@json_ifaces,
             },
             storage => {
                 hardDisks => \@hard_disks,
             },
             tags => \@tags,
         };
-
         push @json_infrastructure, $current;
     }
 
-    $log->debug('HostSelector : Creating JSON structure for constraints description');
+    $log->debug('Creating JSON structure for constraints description');
 
     # CLUSTER CONSTRAINTS
 
     # Construct json interfaces (bonds number + netIPs)
     my @json_interfaces;
-    for my $interface ($cluster->interfaces) {
-        my @netconfs = $interface->netconfs;
-        my @temp_networks;
-        for my $netconf (@netconfs) {
-            # Add id of all networks in the current netconf
-            @temp_networks = (@temp_networks, map { $_->network->id } $netconf->poolips);
-        }
-        # Don't keep id of the admin network
+    for my $interface ($args{cluster}->interfaces) {
         my @networks;
-        for my $network_id (@temp_networks) {
-            if ($network_id != $admin_id) {
-                push @networks, $network_id;
-            }
-        }
+
+        # Do not handle contraints on network connectivity if the host's ifaces not configured
+        # this must implemented in the constraint solver, disable network connectivity contrains for now.
+        # for my $netconf ($interface->netconfs) {
+        #     # Add id of all networks in the current netconf
+        #     @networks = (@networks, map { $_->network->id } $netconf->poolips);
+        # }
+
         my $json_interface = {
             bondsNumberMin => $interface->bonds_number + 1,
             netIPsMin      => \@networks,
@@ -165,25 +160,25 @@ sub getHost {
     }
 
     # Construct the constraint json object
-
+    my $host_params  = $args{cluster}->getManagerParameters(manager_type => "HostManager");
     my $json_constraints = {
-        cpu      => {
-            nbCoresMin         => $host_params->{core},
+        cpu => {
+            nbCoresMin => $host_params->{core},
         },
-        ram      => {
-            qtyMin             => $host_params->{ram}/1024/1024,
+        ram => {
+            qtyMin => $host_params->{ram}/1024/1024,
         },
-        network  => {
-            interfaces         => \@json_interfaces,
+        network => {
+            interfaces => \@json_interfaces,
         },
-        storage  => {
+        storage => {
             hardDisksNumberMin => $host_params->{deploy_on_disk} ? 1 : 0,
         },
-        tagsMin  => defined( $host_params->{tags} ) ? $host_params->{tags} : [],
-        noTags   => defined( $host_params->{no_tags} ) ? $host_params->{no_tags} : [],
+        tagsMin => defined( $host_params->{tags} ) ? $host_params->{tags} : [],
+        noTags => defined( $host_params->{no_tags} ) ? $host_params->{no_tags} : [],
     };
 
-    $log->debug('HostSelector : Creating JSON temp files');
+    $log->debug('Creating JSON temp files');
 
     # Create temp files
     (my $infra_file, my $infra_filename)             = tempfile("hosts.jsonXXXXX", TMPDIR => 1);
@@ -210,7 +205,7 @@ sub getHost {
         throw Kanopya::Exception(error => $result->{stderr});
     }
     $log->debug($command);
-    $log->debug('HostSelector : Retrieving the result and unlink the files');
+    $log->debug('Retrieving the result and unlink the files');
 
     my $import;
     while (my $line  = <$result_file>) {
@@ -221,13 +216,13 @@ sub getHost {
     my $selected_host = $result->{selectedHostIndex};
 
     my $log_message = "";
-    if ( defined($result->{contradictions}) ) {
+    if (defined($result->{contradictions})) {
         $log_message = "The following contradictions had been found :\n";
         my @contradictions = @{ $result->{contradictions} };
         for my $contradiction (@contradictions) {
             $log_message = $log_message . "    $contradiction\n";
         }
-        $log->debug('HostSelector : No host could be found. ' . $log_message);
+        $log->debug('No valid host found: ' . $log_message);
     }
 
     unlink $infra_filename;
@@ -235,8 +230,9 @@ sub getHost {
     unlink $result_filename;
 
     if ($selected_host == -1) {
-        throw Kanopya::Exception(error => 'HostSelector - getHost : None of the free hosts match the ' . 
-                                          'given cluster constraints.\n' . $log_message);
+        throw Kanopya::Exception(
+                  error => "None of the free hosts match the given cluster constraints.\n" . $log_message
+              );
     }
 
     return $free_hosts[$selected_host];

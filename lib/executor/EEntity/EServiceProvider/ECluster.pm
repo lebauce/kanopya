@@ -91,27 +91,6 @@ sub create {
             orchestration   => $args{orchestration},
         }
     );
-
-    # Automatically add the admin interface if it does not exists
-    my $adminrole = Entity::NetconfRole->find(hash => { netconf_role_name => 'admin' });
-    eval {
-        Entity::Interface->find(hash => {
-            service_provider_id => $self->id,
-            'netconf_interfaces.netconf.netconf_role.netconf_role_id' => $adminrole->id
-        });
-    };
-    if ($@) {
-        $log->debug("Automatically add the admin interface as it is not defined.");
-
-        my $kanopya   = Entity::ServiceProvider::Cluster->getKanopyaCluster();
-        my $interface = Entity::Interface->find(hash => {
-                            service_provider_id => $kanopya->id,
-                            'netconf_interfaces.netconf.netconf_role.netconf_role_id' => $adminrole->id
-                        });
-
-        my @netconfs = $interface->netconfs;
-        $self->addNetworkInterface(netconfs => \@netconfs, interface_name => $interface->interface_name);
-    }
 }
 
 sub checkComponents {

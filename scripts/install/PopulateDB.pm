@@ -655,7 +655,6 @@ sub registerOperations {
         [ 'ActivateCluster', 'Activating service "[% cluster ? cluster : "n/a" %]"' ],
         [ 'DeactivateCluster', 'Deactivating service "[% cluster ? cluster : "n/a" %]"' ],
         [ 'StopCluster', 'Stopping service "[% cluster ? cluster : "n/a" %]"' ],
-        [ 'CloneSystemimage' ],
         [ 'RemoveSystemimage', 'Removing system image "[% systemimage %]"' ],
         [ 'CreateDisk', 'Creating new disk "[% name %]"' ],
         [ 'CreateExport', 'Exporting disk "[% container %]"' ],
@@ -1722,7 +1721,7 @@ sub registerKanopyaMaster {
 
     my $admin_interface = Entity::Interface->new(
                               service_provider_id => $admin_cluster->id,
-                              interface_name      => 'interface1'
+                              interface_name      => $args{admin_interface}
                           );
 
     my $physical_hoster = $admin_cluster->getComponent(name => 'Physicalhoster');
@@ -2187,7 +2186,7 @@ sub populate_policies {
         cluster_domainname   => 'hedera-technology.com',
         default_gateway_id   => $network->id,
         interfaces           => [
-            { netconfs => [ $netconf->id ], interface_name => 'interface1' }
+            { netconfs => [ $netconf->id ], interface_name => 'eth0' }
         ],
     );
 
@@ -2204,8 +2203,8 @@ sub populate_policies {
         cluster_domainname   => 'hedera-technology.com',
         default_gateway_id   => $network->id,
         interfaces           => [
-            { netconfs => [ $netconf->id ],    interface_name => 'interface1' },
-            { netconfs => [ $vmsnetconf->id ], interface_name => 'interface2' }
+            { netconfs => [ $netconf->id ],    interface_name => 'eth0' },
+            { netconfs => [ $vmsnetconf->id ], interface_name => 'eth1' }
         ],
     );
     $policies{'Standard OpenNebula Xen IAAS'}{network} = $policies{'Standard OpenNebula KVM IAAS'}{network};

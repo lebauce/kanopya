@@ -185,6 +185,23 @@ sub registerNode {
         }
         $component->registerNode(node => $node, master_node => ($node->node_number == 1) ? 1 : 0);
     }
+
+    # If the node linked to a host, configure the network connectivity
+    # TODO: Manage network connectivity on node intead of host.
+    if (defined $node->host) {
+        # Set the ifaces netconf according to the cluster interfaces
+        # We consider that the available ifaces match the cluster interfaces since getFreeHost selection
+        foreach my $interface ($self->interfaces) {
+            # Firstly find the corresponding iface from name
+            my $iface = $node->host->find(related => 'ifaces',
+                                          hash    => { iface_name => $interface->interface_name });
+
+            # Set the related netconfs
+            my @netconfs = $interface->netconfs;
+            $iface->update(netconf_ifaces => \@netconfs, override_relations => 1);
+        }
+    }
+
     return $node;
 }
 
@@ -212,6 +229,8 @@ sub unregisterNode {
             for my $ip (@ips) {
                 $ip->delete();
             }
+            # Remove the network connectivity
+            $iface->update(netconf_ifaces => [], override_relations => 1);
         }
     }
     $args{node}->delete();

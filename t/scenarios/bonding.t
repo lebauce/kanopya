@@ -86,8 +86,9 @@ sub main {
                       },
                       interfaces => {
                           public => {
-                              interface_netconfs  => { $adminnetconf->id => $adminnetconf->id },
-                              bonds_number => 2
+                              interface_name => 'eth0',
+                              netconfs       => { $adminnetconf->id => $adminnetconf->id },
+                              bonds_number   => 2
                           },
                       }
                   );

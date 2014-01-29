@@ -181,11 +181,11 @@ sub start1OpenStackOn3Clusters {
                        interfaces => {
                            i1 => {
                                netconfs => { $admin_netconf->id   => $admin_netconf->id },
-                               interface_name => 'admin'
+                               interface_name => 'eth0'
                            },
                            i2 => {
                                netconfs => { $vms_netconf->id   => $vms_netconf->id },
-                               interface_name => 'vms'
+                               interface_name => 'eth1'
                            },
                        },
                        components => {

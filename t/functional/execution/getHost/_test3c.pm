@@ -83,7 +83,7 @@ sub test3c {
             interface1 => {
                 netconfs       => {$netConf->netconf_name => $netConf },
                 bonds_number   => 0,
-                interface_name => interface1,
+                interface_name => "eth0",
             },
         }
     );
@@ -100,15 +100,15 @@ sub test3c {
             ram           => 4096*1024*1024,
             ifaces        => [
                 {
-                    name => 'iface11',
+                    name => 'eth0',
                     pxe  => 0,
                 },
                 {
-                    name => 'iface12',
+                    name => 'eth1',
                     pxe  => 0,
                 },
                 {
-                    name => 'iface13',
+                    name => 'eth2',
                     pxe  => 0,
                 },
             ],
@@ -122,7 +122,7 @@ sub test3c {
             ram           => 4096*1024*1024,
             ifaces        => [
                 {
-                    name => 'iface21',
+                    name => 'eth0',
                     pxe  => 0,
                 },
             ],
@@ -136,11 +136,11 @@ sub test3c {
             ram           => 4096*1024*1024,
             ifaces        => [
                 {
-                    name => 'iface31',
+                    name => 'eth0',
                     pxe  => 0,
                 },
                 {
-                    name => 'iface32',
+                    name => 'eth1',
                     pxe  => 0,
                 },
             ],
@@ -154,15 +154,15 @@ sub test3c {
             ram           => 4096*1024*1024,
             ifaces        => [
                 {
-                    name => 'iface41',
+                    name => 'eth0',
                     pxe  => 0,
                 },
                 {
-                    name => 'iface42',
+                    name => 'eth1',
                     pxe  => 0,
                 },
                 {
-                    name => 'iface43',
+                    name => 'eth2',
                     pxe  => 0,
                 },
             ],
@@ -176,11 +176,11 @@ sub test3c {
             ram           => 4096*1024*1024,
             ifaces        => [
                 {
-                    name => 'iface51',
+                    name => 'eth0',
                     pxe  => 0,
                 },
                 {
-                    name => 'iface52',
+                    name => 'eth1',
                     pxe  => 0,
                 },
             ],
@@ -194,11 +194,11 @@ sub test3c {
             ram           => 4096*1024*1024,
             ifaces        => [
                 {
-                    name => 'iface61',
+                    name => 'eth0',
                     pxe  => 0,
                 },
                 {
-                    name => 'iface62',
+                    name => 'eth1',
                     pxe  => 0,
                 },
             ],
