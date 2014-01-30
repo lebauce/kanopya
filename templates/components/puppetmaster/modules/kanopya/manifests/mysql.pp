@@ -94,7 +94,7 @@ class kanopya::mysql::repos::deb {
   }
 
   @apt::source { 'MariaDB':
-    location   => "http://ftp.osuosl.org/pub/mariadb/mariadb-5.5.32/repo/${os}",
+    location   => "http://mariadb.mirror.nucleus.be/repo/5.5/${os}",
     release    => $release,
     repos      => 'main',
     key        => 'cbcb082a1bb943db',
