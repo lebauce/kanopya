@@ -172,10 +172,10 @@ sub AUTOLOAD {
         }
     }
 
-    if ($args{notify}) {
+    if ($notify) {
         $send  = 0;
         $retry = 10;
-        while ($retry > 0 && ! $send && ! defined $err) {
+        while ($retry > 0 && ! $send) {
             $err = undef;
             eval {
                 # Send message for the subscribers
