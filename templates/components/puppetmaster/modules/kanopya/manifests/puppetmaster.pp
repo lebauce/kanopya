@@ -5,13 +5,14 @@ class kanopya::puppetmaster::repository {
   case $operatingsystem {
     /(?i)(debian|ubuntu)/ : {
       @apt::source { 'puppetlabs':
-        location   => "http://apt.puppetlabs.com/",
-        release    => $release,
-        repos      => 'main',
-        key        => '4BD6EC30',
-        key_server => 'keyserver.ubuntu.com',
-        before     => [ Package['puppetdb'],
-                        Package['puppetdb-terminus'] ]
+        location    => "http://apt.puppetlabs.com/",
+        release     => $release,
+        repos       => 'main',
+        key         => '4BD6EC30',
+        key_server  => 'keyserver.ubuntu.com',
+	include_src => false,
+        before      => [ Package['puppetdb'],
+                         Package['puppetdb-terminus'] ]
       }
     }
     /(?i)(centos|redhat)/ : {
