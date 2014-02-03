@@ -95,7 +95,7 @@ var KanopyaFormWizard = (function() {
         }
 
         // Build the form section corresponding to the object/class attributes
-        this.buildFromAttrDef(attributes, displayed, values, relations);
+        this.buildFromAttrDef(attributes, displayed, values, relations, undefined, this.id ? 'update' : 'create');
 
         // For each relation 1-N, list all entries, add input to create an entry
         for (var relation_name in this.relations) if (this.relations.hasOwnProperty(relation_name)) {
@@ -174,7 +174,7 @@ var KanopyaFormWizard = (function() {
                 };
                 add_button.bind('click', fixed_params, function(event) {
                     _this.buildFromAttrDef(event.data.attributes, event.data.displayed,
-                                           event.data.values, event.data.relations, event.data.listing);
+                                           event.data.values, event.data.relations, event.data.listing, 'create');
                     _this.prettifyInputs();
                     _this.resizeDialog();
                 });
@@ -188,7 +188,7 @@ var KanopyaFormWizard = (function() {
             // For each relation entries, add filled inputs in one line
             for (var entry in entries) {
                 this.buildFromAttrDef(rel_attributedefs, this.relations[relation_name], entries[entry], rel_relationdefs,
-                                      this.attributedefs[relation_name].label || relation_name);
+                                      this.attributedefs[relation_name].label || relation_name, 'update');
             }
         }
 
@@ -225,7 +225,7 @@ var KanopyaFormWizard = (function() {
         return values;
     }
 
-    KanopyaFormWizard.prototype.buildFromAttrDef = function(attrs, displayed, values, relations, listing) {
+    KanopyaFormWizard.prototype.buildFromAttrDef = function(attrs, displayed, values, relations, listing, mode) {
         var attributes = $.extend({},attrs); // Clone attributes to not modify reference object
         var ordered_attributes = {};
 
@@ -263,6 +263,10 @@ var KanopyaFormWizard = (function() {
             catch (e) {
                 throw new Error("KanopyaFormWizard: Unable to find attribute definition for <" + name + ">");
             }
+
+            // Tag attributte with mode
+            this.attributedefs[name].mode = mode;
+
             if (! ($.inArray(name, attributes_blacklist) >= 0) &&
                 ! (type === 'relation' && this.attributedefs[name].relation === "single_multi")) {
                 var value = this.attributedefs[name].value || values[name] || undefined;
@@ -757,7 +761,7 @@ var KanopyaFormWizard = (function() {
         if (this.attributedefs[name].disabled == true) {
             return true;
         }
-        if ($(this.form).attr('method').toUpperCase() === 'PUT' && this.attributedefs[name].is_editable != true &&
+        if (this.attributedefs[name].mode == 'update' && this.attributedefs[name].is_editable != true &&
             !(this.attributedefs[name].is_primary == true && this.attributedefs[name].belongs_to != undefined)) {
             return true;
         }
