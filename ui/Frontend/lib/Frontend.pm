@@ -96,7 +96,10 @@ sub exception_to_status {
     elsif ($exception->isa("Kanopya::Exception::NotImplemented")) {
         $status = "method_not_allowed";
     }
-    elsif ($exception->isa("Kanopya::Exception::DB::Cascade")) {
+    elsif ($exception->isa("Kanopya::Exception::DB::DeleteCascade")) {
+        $status = 'conflict';
+    }
+    elsif ($exception->isa("Kanopya::Exception::DB::DuplicateEntry")) {
         $status = 'conflict';
     }
     else {

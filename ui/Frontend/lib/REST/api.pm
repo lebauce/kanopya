@@ -17,6 +17,7 @@ use Kanopya::Version;
 use version;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
+use TryCatch;
 
 my $log = get_logger("");
 my $errmsg;
@@ -131,6 +132,8 @@ our %resources = (
     "opennebula3hypervisor"    => "Entity::Host::Hypervisor::Opennebula3Hypervisor",
     "opennebula3vm"            => "Entity::Host::VirtualMachine::Opennebula3Vm",
     "openstackrepository"      => "Entity::Repository::OpenstackRepository",
+    "openstackhypervisor"      => "Entity::Host::Hypervisor::OpenstackHypervisor",
+    "openstackvm"              => "Entity::Host::VirtualMachine::OpenstackVm",
     "openssh5"                 => "Entity::Component::Openssh5",
     "oldoperation"             => "OldOperation",
     "operation"                => "Entity::Operation",
@@ -321,14 +324,38 @@ sub jsonify {
     # Jsonify the non scalar only
     if (ref($var) and (ref($var) ne "HASH") and (ref($var) ne "ARRAY")) {
         if ($var->can("toJSON")) {
+            my $json;
             if ($var->isa("Entity::Operation")) {
-                return Entity::Operation->apiCall(method => 'get', params => { id => $var->id })->toJSON(%args);
+                try {
+                    my $e = Entity::Operation->apiCall(method => 'get', params => { id => $var->id });
+                    $json = $e->toJSON(%args);
+                }
+                catch (Kanopya::Exception::Internal::NotFound $err) {
+                    # Case happens when calling delete from the api
+                    $json = {};
+                }
+                catch ($err) {
+                    $err->rethrow();
+                }
             }
             elsif ($var->isa("Entity::Workflow")) {
-                return Entity::Workflow->apiCall(method => 'get', params => { id => $var->id })->toJSON(%args);
-            } else {
-                return $var->toJSON(%args);
+                try {
+                    my $e = Entity::Workflow->apiCall(method => 'get', params => { id => $var->id });
+                    $json = $e->toJSON(%args);
+                }
+                catch (Kanopya::Exception::Internal::NotFound $err) {
+                    # Case happens when calling delete from the api
+                    $json = {};
+                }
+                catch ($err) {
+                    $err->rethrow();
+                }
+                return $json;
             }
+            else {
+                $json = $var->toJSON(%args);
+            }
+            return $json;
         }
     }
     return $var;

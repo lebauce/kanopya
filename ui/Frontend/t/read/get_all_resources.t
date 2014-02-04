@@ -7,17 +7,22 @@ use Frontend;
 use Dancer::Test;
 use REST::api;
 use APITestLib;
+use Test::Exception;
 
 use Data::Dumper;
 
 use Log::Log4perl;
-Log::Log4perl->easy_init({level=>'DEBUG', file=>'api.t.log', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>__FILE__.'.log', layout=>'%F %L %p %m%n'});
 
 
 # Firstly login to the api
 APITestLib::login();
 
-my @api_resources = keys %REST::api::resources;
-for my $resource_route (keys %REST::api::resources) {
-    response_status_is ['GET' => "/api/$resource_route"], 200, "response status is 200 for GET /api/$resource_route";
-}
+lives_ok {
+    for my $resource_route (keys %REST::api::resources) {
+        my $rep = dancer_response GET => "/api/$resource_route";
+        if ($rep->{status} ne 200) {
+            die "GET /api/$resource_route wrong status => " . Dumper $rep->{status};
+        }
+    }
+} "Get all resources";

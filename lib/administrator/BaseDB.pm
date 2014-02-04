@@ -1403,15 +1403,21 @@ sub _attributesDefinition {
         try {
             # Required the current module
             General::requireClass($modulename);
-
-            next BASECLASS if ! $modulename->can('_resultSource');
-
-            # Get the corresponding result source if exists (ignore_holes => 0)
-            $schema = $modulename->_resultSource(ignore_holes => 0);
         }
         catch (Kanopya::Exception::Internal::UnknownClass $err) {
             # Ignore holes in the class hierarchy
             next BASECLASS;
+        }
+        catch ($err) {
+            # Let's throw compilation errors...
+            $err->rethrow();
+        }
+
+        next BASECLASS if ! $modulename->can('_resultSource');
+
+        try {
+            # Get the corresponding result source if exists (ignore_holes => 0)
+            $schema = $modulename->_resultSource(ignore_holes => 0);
         }
         catch (Kanopya::Exception::DB::UnknownSource $err) {
             # Ignore holes in the table hierarchy

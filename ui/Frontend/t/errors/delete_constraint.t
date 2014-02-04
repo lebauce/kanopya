@@ -10,6 +10,8 @@ use Frontend;
 use REST::api;
 use APITestLib;
 
+use Test::Exception;
+
 use Data::Dumper;
 $DB::deep = 500;
 
@@ -19,21 +21,61 @@ Log::Log4perl->easy_init({level=>'DEBUG', file=>'api.t.log', layout=>'%F %L %p %
 # Firstly login to the api
 APITestLib::login();
 
-# GET the user ID 
-my $get = dancer_response GET => '/api/user', { params => { user_login => 'admin' } };
-is $get->{status}, '200', 'response for GET /user is 200';
-my $users = Dancer::from_json($get->{content});
-# my $get_id = $get_content->{user_id};
+lives_ok {
+    my $resp = dancer_response GET => '/api/physicalhoster0';
+    my $phs  = Dancer::from_json($resp->{content});
 
-foreach my $user (@$users) {
-    my $id = $user->{user_id};
+    my $delete = dancer_response DELETE => '/api/entity/'.$phs->[0]->{pk};
 
-    my $delete = dancer_response DELETE => '/api/user/' . $id, { headers => ['Accept: application/json', 'Accept-type: application/json'] };
-    is $delete->{status}, '409', 'error message for deleting /user/' . $id  . ' is 409 (conflict) for cascade deleting not supported' ;
-    
-    # Not working : dancer::test update required for headers. See : https://github.com/PerlDancer/Dancer/pull/819
-    # (bug confirmed by "Use of uninitialized value in pattern match (m//) at /opt/kanopya/ui/Frontend/lib/Frontend.pm line 110." message)
-    # my $error =  Dancer::from_json($delete->{content});
-    # like $error->
+    if ($delete->{status} ne '409') {
+        die 'Wrong status got <' . $delete->{status} . '> expected <409>';
+    }
+} 'Delete contraint cascade <409>';
 
-}
+
+lives_ok {
+    my $resp = dancer_response GET => '/api/physicalhoster0';
+    my $phs  = Dancer::from_json($resp->{content});
+
+    my $delete = dancer_response DELETE => '/api/physicalhoster0/0';
+
+    if ($delete->{status} ne '404') {
+        die 'Wrong status got <' . $delete->{status} . '> expected <404>';
+    }
+} 'Delete file not found <404>';
+
+
+lives_ok {
+    my $resp = dancer_response GET => '/api/user', { params => { user_login => 'admin' } };
+    my $user = Dancer::from_json($resp->{content})->[0];
+    my $delete = dancer_response DELETE => '/api/user/' . $user->{pk};
+    if ($delete->{status} ne '409') {
+        die 'Wrong status got <' . $delete->{status} . '> expected <409>';
+    }
+
+    my $user_params = {
+        user_password  => 'test',
+        user_login     => 'test',
+        user_email     => 'test@test.test',
+        user_firstname => 'test',
+        user_lastname  => 'test'
+    };
+
+    $resp = dancer_response POST => '/api/user', { params => $user_params};
+    if ($resp->{status} ne '200') {
+        die 'POST wrong status got <' . $resp->{status} . '> expected <200>';
+    }
+
+    $user = Dancer::from_json($resp->{content});
+
+    $resp = dancer_response POST => '/api/user', { params => $user_params};
+    if ($resp->{status} ne '409') {
+        die 'POST wrong status got <' . $resp->{status} . '> expected <409>';
+    }
+
+    $delete = dancer_response DELETE => '/api/user/' . $user->{pk};
+    if ($delete->{status} ne '200') {
+        die 'DELETE wrong status got <' . $delete->{status} . '> expected <200>';
+    }
+
+} 'Delete and Duplicate Entry';

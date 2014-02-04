@@ -99,7 +99,7 @@ my %POST_expected_status = (
     'parampreset' => 405,
     'linuxmount' => 405,
     'keepalived1vrrpinstance' => 405,
-    'haproxy1listen' => 405
+    'haproxy1listen' => 405,
 );
 
 my @skip_resources = (
@@ -120,10 +120,7 @@ my @skip_resources = (
 
     # Pb : valid formula generation (valid IDs)
     # Need specific tests suite for monitoring and rule
-    'nodemetricrule', 
-    'nodemetriccombination',
-    'aggregatecombination',
-    'aggregaterule',
+    'rule', #cant instanciate abstract class
 
     # Repository : foreign key 'virtualization_id' failed
     # Need specific tests suite
@@ -145,14 +142,13 @@ my @skip_resources = (
     'notificationsubscription', # Why 'entity_id' is mandatory ?
     'cinder', # ??
     'ucsmanager',
-    'virtualmachine',
-    'cluster', # missing param 'managers'
+    'cluster', # owner_id mandatory set not mandatory
     'serviceprovidermanager', # hard to generate valid attributes value
     'netapplunmanager',
     'netappvolumemanager',
-    'node', # operations involved
     'systemimage', # need to be linked to a valid 'container_access'
     'netconfrole', # Can not cascade delete
+    'hpc7000',
 );
 
 # Some regexp can not be correctly parsed and bad value are generated, so we fix it
@@ -177,14 +173,56 @@ my %attribute_fixed_value = (
     },
     'clustermetric' => {
         'clustermetric_statistics_function_name' => 'mean'
-    }
+    },
 );
+
+sub fillMissingFixedAttr {
+    # host_manager_ids
+    my $resp = dancer_response(GET => "/api/physicalhoster0", {});
+    my $json = Dancer::from_json($resp->{content});
+    $attribute_fixed_value{host}{host_manager_id} = $json->[0]->{pk};
+    $attribute_fixed_value{hypervisor}{host_manager_id} = $json->[0]->{pk};
+    $attribute_fixed_value{virtualmachine}{host_manager_id} = $json->[0]->{pk};
+    $attribute_fixed_value{opennebula3hypervisor}{host_manager_id} = $json->[0]->{pk};
+    $attribute_fixed_value{openstackhypervisor}{host_manager_id} = $json->[0]->{pk};
+    $attribute_fixed_value{openstackvm}{host_manager_id} = $json->[0]->{pk};
+    $attribute_fixed_value{opennebula3vm}{host_manager_id} = $json->[0]->{pk};
+
+    # formulas
+    # nodemetricrule
+    $resp = dancer_response(GET => "/api/nodemetriccondition", {});
+    $json = Dancer::from_json($resp->{content});
+    $attribute_fixed_value{rule}{formula} = 'id'.$json->[0]->{pk};
+    $attribute_fixed_value{nodemetricrule}{formula} = 'id'.$json->[0]->{pk};
+
+    # aggregaterule
+    $resp = dancer_response(GET => "/api/aggregatecondition", {});
+    $json = Dancer::from_json($resp->{content});
+    $attribute_fixed_value{aggregaterule}{formula} = 'id'.$json->[0]->{pk};
+
+    # aggregatecombination
+    $resp = dancer_response(GET => "/api/clustermetric", {});
+    $json = Dancer::from_json($resp->{content});
+    $attribute_fixed_value{aggregatecombination}{aggregate_combination_formula} = 'id'.$json->[0]->{pk};
+
+    #nodemetriccombination
+    $resp = dancer_response(GET => "/api/collectorindicator", {});
+    $json = Dancer::from_json($resp->{content});
+    $attribute_fixed_value{nodemetriccombination}{nodemetric_combination_formula} = 'id'.$json->[0]->{pk};
+
+    # cluster for node
+    $resp = dancer_response(GET => "/api/cluster", {});
+    $json = Dancer::from_json($resp->{content});
+    $attribute_fixed_value{node}{service_provider_id} = $json->[0]->{pk};
+
+}
 
 sub run {
     my $resource = shift;
 
     # Firstly login to the api
     APITestLib::login();
+    fillMissingFixedAttr();
 
     my %_skip_resources = map {$_ => 1} @skip_resources;
     my @api_resources = $resource ? ($resource) : keys %REST::api::resources;
@@ -214,32 +252,39 @@ sub _generate_values {
     while (my ($attr_name, $attr_def) = each %{$resource_info->{attributes}}) {
         if ($attr_def->{is_mandatory}) {
             my $value = '';
-            if ($attr_def->{'relation'} || $attr_name =~ /.*_id$/) {
+            if (exists $attribute_fixed_value{$resource_name}{$attr_name}) {
+                # value can not be generated
+                $value = $attribute_fixed_value{$resource_name}{$attr_name};
+            }
+            elsif ($attr_def->{'relation'} || $attr_name =~ /.*_id$/) {
                 # Relation
                 (my $relation = $attr_name) =~ s/_id$//;
                 my $related_resource = $resource_info->{relations}{$relation}{resource};
                 if (not defined $related_resource) {($related_resource = $relation) =~ s/_//g;}
                 $value = get_resource($related_resource);
-            } elsif (exists $attribute_fixed_value{$resource_name}{$attr_name}) {
-                # value can not be generated
-                $value = $attribute_fixed_value{$resource_name}{$attr_name};
-            } else {
+            }
+            else {
                 # Generate value using pattern
-                my $pattern = $attr_def->{pattern};
-                if (!$pattern) {
-                    $pattern = '.*';
-                } else {
-                    # random_regex do not manage '^' and '$'
-                    my @pattern_split = split '', $attr_def->{pattern};
-                    $pattern_split[0]  = '' if $pattern_split[0] eq '^';
-                    $pattern_split[-1] = '' if $pattern_split[-1] eq '$';
-                    $pattern = join '', @pattern_split;
+                my $pattern = $attr_def->{pattern} || '^.*$';
+
+                my @pattern_split = split '', $attr_def->{pattern};
+                $pattern_split[0]  = '' if $pattern_split[0] eq '^';
+                $pattern_split[-1] = '' if $pattern_split[-1] eq '$';
+                $pattern = join '', @pattern_split;
+
+                if ($pattern =~ m/^\((\w+\|)+\w+\)$/) {
+                    $pattern =~ s/^.//;
+                    $pattern =~ s/.$//;
+                    my @split = split '\|', $pattern;
+                    $value = $split[0];
                 }
-                eval {
-                    $value = random_regex($pattern);
-                };
-                if ($@) {
-                    $log->error("Can not generate a string for pattern '$pattern'");
+                else {
+                    eval {
+                        $value = random_regex($pattern);
+                    };
+                    if ($@) {
+                        $log->error("Can not generate a string for pattern '$pattern'");
+                    }
                 }
             }
             $params{$attr_name} = $value;
@@ -325,7 +370,7 @@ sub get_resource {
         }
     }
 
-    if ($resource->[0]) {
+    if ((ref $resource) eq 'ARRAY' && $resource->[0]) {
         return $resource->[0]{pk};
     } else {
         $log->info("No resource of type '$resource_name', we will create it");
