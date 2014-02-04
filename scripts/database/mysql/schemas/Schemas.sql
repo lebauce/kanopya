@@ -1617,6 +1617,7 @@ CREATE TABLE `service_template` (
   `billing_policy_id` int(8) unsigned DEFAULT NULL,
   `orchestration_policy_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`service_template_id`),
+  UNIQUE KEY (`service_name`),
   FOREIGN KEY (`service_template_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`hosting_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`storage_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
@@ -1638,6 +1639,7 @@ CREATE TABLE `policy` (
   `policy_desc` char(255) DEFAULT NULL,
   `policy_type` char(64) NOT NULL,
   PRIMARY KEY (`policy_id`),
+  UNIQUE KEY (`policy_name`),
   FOREIGN KEY (`policy_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE SET NULL ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

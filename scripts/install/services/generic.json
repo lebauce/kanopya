@@ -1,0 +1,175 @@
+{
+    "policies" : {
+        "Default physical host" : {
+            "policy_name" : "Default physical host",
+            "policy_desc" : "Hosting policy for default physical hosts",
+            "policy_type" : "hosting",
+            "ram" : 1073741824,
+            "cpu" : 1,
+            "host_manager_id" : {
+                "class_type" : "Entity::Component::Physicalhoster0",
+                "service_provider.cluster.cluster_name" : "Kanopya"
+            }
+        },
+        "Generic host" : {
+            "policy_name" : "Generic host",
+            "policy_desc" : "Hosting policy for generic hosts",
+            "policy_type" : "hosting"
+        },
+        "Kanopya LVM disk exported via ISCSI" : {
+            "policy_name"       : "Kanopya LVM disk exported via ISCSI",
+            "policy_desc"       : "Kanopya image store for PXE boot via ISCSI",
+            "policy_type"       : "storage",
+            "disk_manager_id"   : {
+                "class_type" : "Entity::Component::Lvm2",
+                "service_provider.cluster.cluster_name" : "Kanopya"
+            },
+            "export_manager_id" : {
+                "class_type" : "Entity::Component::Iscsi::Iscsitarget1",
+                "service_provider.cluster.cluster_name" : "Kanopya"
+            }
+        },
+        "Generic storage" : {
+            "policy_name" : "Generic storage",
+            "policy_desc" : "Storage policy for generic storage",
+            "policy_type" : "storage"
+        },
+        "Default network configuration" : {
+            "policy_name" : "Default network configuration",
+            "policy_desc" : "Default network configuration, with admin interface",
+            "policy_type" : "network",
+            "cluster_nameserver1" : "8.8.8.8",
+            "cluster_nameserver2" : "8.8.4.4",
+            "cluster_domainname" : "hedera-technology.com",
+            "default_gateway_id" : {
+                "class_type" : "Entity::Network",
+                "network_name" : "admin"
+            },
+            "interfaces" : [
+                { "interface_name" : "eth0",
+                  "netconfs" : [ { "class_type" : "Entity::Netconf", "netconf_name" : "Kanopya admin" } ]
+                }
+            ]
+        },
+        "Generic network configuration" : {
+          "policy_name" : "Generic network configuration",
+          "policy_desc" : "Network policy for generic network configuration",
+          "policy_type" : "network"
+        },
+        "Manual scalability cluster" : {
+            "policy_name" : "Manual scalability cluster",
+            "policy_desc" : "Manual scalability",
+            "policy_type" : "scalability",
+            "cluster_min_node" : 1,
+            "cluster_max_node" : 10,
+            "cluster_priority" : 1
+        },
+        "Generic scalability" : {
+            "policy_name" : "Generic scalability",
+            "policy_desc" : "Scalability policy for generic service",
+            "policy_type" : "scalability"
+        },
+        "Default non persistent cluster" : {
+            "policy_name" : "Default non persistent cluster",
+            "policy_desc" : "System policy for default non persistent cluster",
+            "policy_type" : "system",
+            "cluster_si_persistent" : 0,
+            "systemimage_size" : 5368709120,
+            "components" : [
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Puppetagent"
+                    }
+                }
+            ]
+        },
+        "Generic system" : {
+          "policy_name" : "Generic system",
+          "policy_desc" : "System policy for generic service",
+          "policy_type" : "system"
+        },
+        "Empty billing configuration" : {
+          "policy_name" : "Empty billing configuration",
+          "policy_desc" : "Empty billing configuration",
+          "policy_type" : "billing"
+        },
+        "Standard orchestration configuration" : {
+            "policy_name": "Standard orchestration configuration",
+            "policy_desc": "Standard orchestration configuration",
+            "policy_type": "orchestration",
+            "orchestration": {
+                "service_provider_id" : {
+                    "class_type" : "Entity::ServiceProvider",
+                    "service_provider_type_id" : null
+                }
+            }
+        }
+    },
+    "services" : {
+        "Generic service" : {
+            "service_name": "Generic service",
+            "service_desc": "Service template for generic service instances",
+            "orchestration_policy_id": {
+                "class_type" : "Entity::Policy::OrchestrationPolicy",
+                "policy_name" : "Standard orchestration configuration"
+            },
+            "scalability_policy_id": {
+                "class_type" : "Entity::Policy::ScalabilityPolicy",
+                "policy_name" : "Generic scalability"
+            },
+            "network_policy_id": {
+                "class_type" : "Entity::Policy::NetworkPolicy",
+                "policy_name" : "Generic network configuration"
+            },
+            "hosting_policy_id": {
+                "class_type" : "Entity::Policy::HostingPolicy",
+                "policy_name" : "Generic host"
+            },
+            "billing_policy_id": {
+                "class_type" : "Entity::Policy::BillingPolicy",
+                "policy_name" : "Empty billing configuration"
+            },
+            "system_policy_id": {
+                "class_type" : "Entity::Policy::SystemPolicy",
+                "policy_name" : "Generic system"
+            },
+            "storage_policy_id": {
+                "class_type" : "Entity::Policy::StoragePolicy",
+                "policy_name" : "Generic storage"
+            }
+        },
+        "Standard physical cluster" : {
+            "service_name": "Standard physical cluster",
+            "service_desc": "Service template for standard physical cluster instances",
+            "orchestration_policy_id": {
+                "class_type" : "Entity::Policy::OrchestrationPolicy",
+                "policy_name" : "Standard orchestration configuration"
+            },
+            "scalability_policy_id": {
+                "class_type" : "Entity::Policy::ScalabilityPolicy",
+                "policy_name" : "Manual scalability cluster"
+            },
+            "network_policy_id": {
+                "class_type" : "Entity::Policy::NetworkPolicy",
+                "policy_name" : "Default network configuration"
+            },
+            "hosting_policy_id": {
+                "class_type" : "Entity::Policy::HostingPolicy",
+                "policy_name" : "Default physical host"
+            },
+            "billing_policy_id": {
+                "class_type" : "Entity::Policy::BillingPolicy",
+                "policy_name" : "Empty billing configuration"
+            },
+            "system_policy_id": {
+                "class_type" : "Entity::Policy::SystemPolicy",
+                "policy_name" : "Default non persistent cluster"
+            },
+            "storage_policy_id": {
+                "class_type" : "Entity::Policy::StoragePolicy",
+                "policy_name" : "Kanopya LVM disk exported via ISCSI"
+            }
+        }
+    }
+}

@@ -1424,7 +1424,6 @@ sub _attributesDefinition {
             next BASECLASS;
         }
         catch ($err) {
-            # Let's throw compilation errors...
             $err->rethrow();
         }
 
