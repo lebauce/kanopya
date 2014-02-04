@@ -174,21 +174,6 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
-=head2 nova_controllers
-
-Type: has_many
-
-Related object: L<Kanopya::Schema::Result::NovaController>
-
-=cut
-
-__PACKAGE__->has_many(
-  "nova_controllers",
-  "Kanopya::Schema::Result::NovaController",
-  { "foreign.mysql5_id" => "self.mysql5_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 neutrons
 
 Type: has_many
@@ -204,9 +189,24 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 nova_controllers
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:xRX59IkhMvKWqv/jK1abxA
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::NovaController>
+
+=cut
+
+__PACKAGE__->has_many(
+  "nova_controllers",
+  "Kanopya::Schema::Result::NovaController",
+  { "foreign.mysql5_id" => "self.mysql5_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-01-30 17:59:16
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:mzgxQEoCje4FQe2b0lkWHQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -86,7 +86,7 @@ sub registerHost {
     if (defined $board->{ifaces}) {
         foreach my $iface (@{ $board->{ifaces} }) {
             my $if = $host->addIface(
-                         iface_name     => $iface->{name},
+                         iface_name     => defined $iface->{name} ?  $iface->{name} : 'eth0',
                          iface_pxe      => $iface->{pxe},
                          iface_mac_addr => $iface->{mac},
                      );

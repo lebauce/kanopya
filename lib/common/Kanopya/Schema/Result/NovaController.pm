@@ -238,6 +238,21 @@ __PACKAGE__->belongs_to(
   },
 );
 
+=head2 neutrons
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::Neutron>
+
+=cut
+
+__PACKAGE__->has_many(
+  "neutrons",
+  "Kanopya::Schema::Result::Neutron",
+  { "foreign.nova_controller_id" => "self.nova_controller_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 nova_controller
 
 Type: belongs_to
@@ -283,24 +298,9 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 neutrons
 
-Type: has_many
-
-Related object: L<Kanopya::Schema::Result::Neutron>
-
-=cut
-
-__PACKAGE__->has_many(
-  "neutrons",
-  "Kanopya::Schema::Result::Neutron",
-  { "foreign.nova_controller_id" => "self.nova_controller_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-01-07 12:21:50
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:LyUbkWuPcJ2jmegICt/2OA
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-01-30 17:59:16
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:GM8b9g7Fop5HbBNo1MulrA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

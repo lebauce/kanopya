@@ -73,17 +73,17 @@ sub test2c {
             interface1 => {
                 netconfs       => {$netConf->netconf_name => $netConf },
                 bonds_number   => 0,
-                interface_name => interface1,
+                interface_name => "eth0",
             },
             interface2 => {
                 netconfs       => {$netConf->netconf_name => $netConf },
                 bonds_number   => 0,
-                interface_name => interface2,
+                interface_name => "eth1",
             },
             interface3 => {
                 netconfs       => {$netConf->netconf_name => $netConf },
                 bonds_number   => 0,
-                interface_name => interface3,
+                interface_name => "eth2",
             },
         }
     );
@@ -100,11 +100,11 @@ sub test2c {
             ram           => 4096*1024*1024,
             ifaces        => [
                 {
-                    name => 'Meuh',
+                    name => "eth0",
                     pxe  => 0,
                 },
                 {
-                    name => 'IiIiI',
+                    name => "eth1",
                     pxe  => 0,
                 },
             ],
@@ -118,7 +118,7 @@ sub test2c {
             ram           => 8192*1024*1024,
             ifaces        => [
                 {
-                    name => 'I m just an every day regular normal iface',
+                    name => "eth0",
                     pxe  => 0,
                 },
             ],
@@ -132,11 +132,11 @@ sub test2c {
             ram           => 4096*1024*1024,
             ifaces        => [
                 {
-                    name => 'nothing special about me',
+                    name => "eth0",
                     pxe  => 0,
                 },
                 {
-                    name => 'iface fuc***',
+                    name => "eth1",
                     pxe  => 0,
                 },
             ],

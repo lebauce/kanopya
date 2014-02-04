@@ -120,6 +120,21 @@ __PACKAGE__->belongs_to(
   },
 );
 
+=head2 neutron
+
+Type: belongs_to
+
+Related object: L<Kanopya::Schema::Result::Component>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "neutron",
+  "Kanopya::Schema::Result::Component",
+  { component_id => "neutron_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
+);
+
 =head2 nova_controller
 
 Type: belongs_to
@@ -140,24 +155,9 @@ __PACKAGE__->belongs_to(
   },
 );
 
-=head2 neutron
 
-Type: belongs_to
-
-Related object: L<Kanopya::Schema::Result::Component>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "neutron",
-  "Kanopya::Schema::Result::Component",
-  { component_id => "neutron_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
-);
-
-
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:j9j01118QqeXHSEOFzPJlA
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-01-30 17:59:16
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:SHqN7v7jNbw8ZsBymq1brQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

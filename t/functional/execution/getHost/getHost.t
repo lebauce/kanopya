@@ -92,6 +92,11 @@ Log::Log4perl->easy_init({
     layout => '%F %L %p %m%n'
 });
 
+
+# Swith this flag when contraint on network connectivity are reintegrated.
+my $handle_contraints_on_network_connectivity = 0;
+
+
 main();
 
 sub main {
@@ -115,9 +120,13 @@ sub main {
     test1d();
     Kanopya::Database::rollbackTransaction;
 
-    Kanopya::Database::beginTransaction;
-    test1e();
-    Kanopya::Database::rollbackTransaction;
+    SKIP: {
+        skip "Contraints on network connectivity is disabled", 1 unless $handle_contraints_on_network_connectivity;
+
+        Kanopya::Database::beginTransaction;
+        test1e();
+        Kanopya::Database::rollbackTransaction;
+    };
 
     Kanopya::Database::beginTransaction;
     test1f();
@@ -145,9 +154,13 @@ sub main {
     test2d();
     Kanopya::Database::rollbackTransaction;
 
-    Kanopya::Database::beginTransaction;
-    test2e();
-    Kanopya::Database::rollbackTransaction;
+    SKIP: {
+        skip "Contraints on network connectivity is disabled", 1 unless $handle_contraints_on_network_connectivity;
+
+        Kanopya::Database::beginTransaction;
+        test2e();
+        Kanopya::Database::rollbackTransaction;
+    };
 
     Kanopya::Database::beginTransaction;
     test2f();

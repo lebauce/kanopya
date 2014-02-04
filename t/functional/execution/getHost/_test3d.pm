@@ -71,7 +71,7 @@ sub test3d {
             interface1 => {
                 netconfs       => {$netConf->netconf_name => $netConf },
                 bonds_number   => 0,
-                interface_name => interface1,
+                interface_name => "eth0",
             },
         }
     );
@@ -88,14 +88,14 @@ sub test3d {
             ram           => 4096*1024*1024,
             ifaces        => [
                 {
-                    name => 'iface1',
+                    name => 'eth0',
                     pxe  => 0,
                 },
             ],
         },
     );
     # Create Host 2
-    my $master_iface_name2 = 'master_iface2';
+    my $master_iface_name2 = 'eth0';
     my $host2 = Kanopya::Tools::Register->registerHost(
         board => {
             serial_number => 2,
@@ -107,12 +107,12 @@ sub test3d {
                     pxe  => 0,
                 },
                     {
-                        name   => 'slave_iface21',
+                        name   => 'eth1',
                         pxe    => 0,
                         master => $master_iface_name2,
                     },
                     {
-                        name   => 'slave_iface22',
+                        name   => 'eth2',
                         pxe    => 0,
                         master => $master_iface_name2,
                     },
@@ -120,7 +120,7 @@ sub test3d {
         },
     );
     # Create Host 3
-    my $master_iface_name3 = 'master_iface3';
+    my $master_iface_name3 = 'eth0';
     my $host3 = Kanopya::Tools::Register->registerHost(
         board => {
             serial_number => 3,
@@ -132,7 +132,7 @@ sub test3d {
                     pxe  => 0,
                 },
                     {
-                        name   => 'slave_iface31',
+                        name   => 'eth1',
                         pxe    => 0,
                         master => $master_iface_name3,
                     },
@@ -140,7 +140,7 @@ sub test3d {
         },
     );
     # Create Host 4
-    my $master_iface_name4 = 'master_iface4';
+    my $master_iface_name4 = 'eth0';
     my $host4 = Kanopya::Tools::Register->registerHost(
         board => {
             serial_number => 4,
@@ -152,17 +152,17 @@ sub test3d {
                     pxe  => 0,
                 },
                     {
-                        name   => 'slave_iface41',
+                        name   => 'eth1',
                         pxe    => 0,
                         master => $master_iface_name4,
                     },
                     {
-                        name   => 'slave_iface42',
+                        name   => 'eth2',
                         pxe    => 0,
                         master => $master_iface_name4,
                     },
                     {
-                        name   => 'slave_iface43',
+                        name   => 'eth3',
                         pxe    => 0,
                         master => $master_iface_name4,
                     },
@@ -170,7 +170,7 @@ sub test3d {
         },
     );
     # Create Host 5
-    my $master_iface_name5 = 'master_iface5';
+    my $master_iface_name5 = 'eth0';
     my $host5 = Kanopya::Tools::Register->registerHost(
         board => {
             serial_number => 5,
@@ -182,22 +182,22 @@ sub test3d {
                     pxe  => 0,
                 },
                     {
-                        name   => 'slave_iface51',
+                        name   => 'eth1',
                         pxe    => 0,
                         master => $master_iface_name5,
                     },
                     {
-                        name   => 'slave_iface52',
+                        name   => 'eth2',
                         pxe    => 0,
                         master => $master_iface_name5,
                     },
                     {
-                        name   => 'slave_iface53',
+                        name   => 'eth3',
                         pxe    => 0,
                         master => $master_iface_name5,
                     },
                     {
-                        name   => 'slave_iface54',
+                        name   => 'eth4',
                         pxe    => 0,
                         master => $master_iface_name5,
                     },
@@ -205,7 +205,7 @@ sub test3d {
         },
     );
     # Create Host 6
-    my $master_iface_name6 = 'master_iface6';
+    my $master_iface_name6 = 'eth0';
     my $host6 = Kanopya::Tools::Register->registerHost(
         board => {
             serial_number => 6,
@@ -217,27 +217,27 @@ sub test3d {
                     pxe  => 0,
                 },
                     {
-                        name   => 'slave_iface61',
+                        name   => 'eth1',
                         pxe    => 0,
                         master => $master_iface_name6,
                     },
                     {
-                        name   => 'slave_iface62',
+                        name   => 'eth2',
                         pxe    => 0,
                         master => $master_iface_name6,
                     },
                     {
-                        name   => 'slave_iface63',
+                        name   => 'eth3',
                         pxe    => 0,
                         master => $master_iface_name6,
                     },
                     {
-                        name   => 'slave_iface64',
+                        name   => 'eth4',
                         pxe    => 0,
                         master => $master_iface_name6,
                     },
                     {
-                        name   => 'slave_iface65',
+                        name   => 'eth5',
                         pxe    => 0,
                         master => $master_iface_name6,
                     },

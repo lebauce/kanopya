@@ -108,6 +108,25 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->set_primary_key("interface_id");
 
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<service_provider_id>
+
+=over 4
+
+=item * L</service_provider_id>
+
+=item * L</interface_name>
+
+=back
+
+=cut
+
+__PACKAGE__->add_unique_constraint(
+  "service_provider_id",
+  ["service_provider_id", "interface_name"],
+);
+
 =head1 RELATIONS
 
 =head2 interface
@@ -196,8 +215,8 @@ Composing rels: L</netconf_interfaces> -> netconf
 __PACKAGE__->many_to_many("netconfs", "netconf_interfaces", "netconf");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:CFueWmPp/suYXRr66rlZsQ
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-01-30 17:59:16
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:AnCnzh0sRqij0YK+t4sFNw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

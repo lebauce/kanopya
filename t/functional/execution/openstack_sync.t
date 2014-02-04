@@ -71,7 +71,7 @@ sub register_infrastructure {
                              serial_number => 1,
                              core          => 10,
                              ram           => 10*1024**3,
-                             ifaces        => [ { name => 'iface1',pxe  => 0 } ]
+                             ifaces        => [ { name => 'eth0',pxe  => 0 } ]
                          },
                      );
 
@@ -80,7 +80,7 @@ sub register_infrastructure {
                              serial_number => 1,
                              core          => 10,
                              ram           => 10*1024**3,
-                             ifaces        => [ { name => 'iface1',pxe  => 0 } ]
+                             ifaces        => [ { name => 'eth0',pxe  => 0 } ]
                          },
                      );
 
