@@ -173,8 +173,8 @@ sub synchronize {
     my %args = @_;
 
     $self->login();
-    
-    my @blades = $self->get_blades();   
+
+    my @blades = $self->get_blades();
 
     # Get a "random" kernel for his id :
     my $kernelhash =  Entity::Kernel->find(hash => {});
@@ -312,6 +312,20 @@ sub getRemoteSessionURL {
     my $blade = $self->{api}->get(dn => $args{host}->getAttr(name => 'host_serial_number'));
 
     return $blade->KVM();
+}
+
+
+=pod
+=begin classdoc
+
+Override relation used when deletion in order to skip AUTOLOAD
+
+=end classdoc
+=cut
+
+sub entity_lock_entity {
+    my $self = shift;
+    return $self->SUPER::entity_lock_entity;
 }
 
 1;

@@ -865,7 +865,7 @@ CREATE TABLE `netconf_role` (
   `netconf_role_id`   int(8) unsigned,
   `netconf_role_name` char(32) NOT NULL,
   PRIMARY KEY (`netconf_role_id`),
-  FOREIGN KEY (`netconf_role_id`) REFERENCES `entity` (`entity_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (`netconf_role_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`netconf_role_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

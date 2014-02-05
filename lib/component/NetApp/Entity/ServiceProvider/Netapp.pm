@@ -78,9 +78,24 @@ sub new {
     return $self;
 }
 
+
+=pod
+=begin classdoc
+
+Override method to delete NetappAggregates properly
+
+=end classdoc
+=cut
+
 sub remove {
     my $self = shift;
-    $self->SUPER::delete();
+
+    my @naggregates = $self->netapp_aggregates;
+    while (@naggregates) {
+        (pop @naggregates)->remove();
+    }
+
+    return $self->SUPER::remove();
 };
 
 sub toString {
@@ -98,7 +113,7 @@ sub getState {
 sub synchronize {
     my ($self) = @_;
     my @components = $self->getComponents();
-    
+
     foreach my $component (@components) {
         if ($component->isa("Entity::Component::NetappVolumeManager") ) {
             $component->synchronize();

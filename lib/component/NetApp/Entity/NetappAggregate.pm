@@ -43,4 +43,24 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+
+=pod
+=begin classdoc
+
+Override method to delete NetappVolumes properly
+
+=end classdoc
+=cut
+
+sub remove {
+    my $self = shift;
+
+    my @navolumes = $self->netapp_volumes();
+    while (@navolumes) {
+        (pop @navolumes)->remove();
+    }
+
+    return $self->SUPER::remove();
+};
+
 1;

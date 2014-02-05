@@ -756,4 +756,26 @@ sub getServiceMetricsValues {
     };
 }
 
+
+
+=pod
+
+=begin classdoc
+
+Overrides method in order to remove properly the components
+
+=end classdoc
+
+=cut
+
+sub remove {
+    my ($self, %args) = @_;
+
+    my @components = $self->components;
+    while (@components) {
+        (pop @components)->remove();
+    }
+
+    return $self->SUPER::remove(%args);
+}
 1;

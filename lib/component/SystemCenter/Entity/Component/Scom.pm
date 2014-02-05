@@ -221,4 +221,19 @@ sub getCollectorType {
     return 'SCOM monitoring';
 }
 
+
+=pod
+=begin classdoc
+
+Override method in order to delete collector indicators properly.
+
+=end classdoc
+=cut
+
+sub remove {
+    my $self = shift;
+    $self->removeCollectorIndicators();
+    return $self->SUPER::remove();
+}
+
 1;
