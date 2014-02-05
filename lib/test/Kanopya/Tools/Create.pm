@@ -177,12 +177,7 @@ sub createCluster {
             },
         },
         components => {},
-        interfaces => {
-            admin => {
-                interface_name => 'eth0',
-                netconfs  => { $adminnetconf->id => $adminnetconf->id },
-            }
-        }
+        interfaces => {}
     );
 
     if (defined $args{cluster_conf}) {
@@ -229,6 +224,12 @@ sub createCluster {
     if (defined $interfaces) {
         my %ifcs = (interfaces => $interfaces);
         %cluster_conf = %{ $merge->merge(\%cluster_conf, \%ifcs) };
+    }
+    else {
+        $cluster_conf{interfaces}{admin} => {
+            interface_name => 'eth0',
+            netconfs  => { $adminnetconf->id => $adminnetconf->id },
+        };
     }
 
     diag('Create cluster');
