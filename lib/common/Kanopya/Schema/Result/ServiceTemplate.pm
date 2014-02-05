@@ -184,6 +184,20 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->set_primary_key("service_template_id");
 
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<service_name>
+
+=over 4
+
+=item * L</service_name>
+
+=back
+
+=cut
+
+__PACKAGE__->add_unique_constraint("service_name", ["service_name"]);
+
 =head1 RELATIONS
 
 =head2 billing_policy
@@ -352,8 +366,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7+eJzeL33mZFq/73OOEIBw
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-02-04 16:46:13
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:xP2CZwc4Pnalui6HWC4s/w
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

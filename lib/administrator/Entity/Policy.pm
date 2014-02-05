@@ -56,6 +56,7 @@ use ParamPreset;
 use Clone qw(clone);
 use Hash::Merge;
 
+use TryCatch;
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
@@ -181,6 +182,33 @@ sub delete {
 
     $self->removePresets();
     $self->SUPER::delete();
+}
+
+
+=pod
+=begin classdoc
+
+Override the parent mathod to find the policy
+from policy_name and policy_type only.
+
+=cut
+
+sub findOrCreate {
+    my ($class, %args) = @_;
+
+    my $criteria = {};
+    if (exists $args{policy_name}) {
+        $criteria->{policy_name} = $args{policy_name};
+    }
+    if (exists $args{policy_type}) {
+        $criteria->{policy_type} = $args{policy_type};
+    }
+    try {
+        return $class->find(hash => $criteria);
+    }
+    catch ($err) {
+        return $class->create(%args);
+    }
 }
 
 

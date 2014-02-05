@@ -1,0 +1,365 @@
+{
+    "require" : [ "generic" ],
+    "policies" : {
+        "PimpmystackHosting" : {
+            "policy_name" : "PimpmystackHosting",
+            "host_manager_id" : {
+                "class_type" : "Entity::Component::Physicalhoster0",
+                "service_provider.cluster.cluster_name" : "Kanopya"
+            },
+            "cpu": "1",
+            "policy_type" : "hosting",
+            "policy_desc" : "",
+            "ram": "1073741824"
+        },
+        "PimpmystackStorage" : {
+            "policy_name" : "PimpmystackStorage",
+            "disk_manager_id" : {
+                "class_type" : "Entity::Component::Lvm2",
+                "service_provider.cluster.cluster_name" : "Kanopya"
+            },
+            "vg_id": {
+                "class_type"   : "Lvm2Vg",
+                "lvm2_vg_name" : "kanopya"
+            },
+            "policy_type" : "storage",
+            "policy_desc" : "",
+            "export_manager_id": {
+                "class_type" : "Entity::Component::Iscsi::Iscsitarget1",
+                "service_provider.cluster.cluster_name" : "Kanopya"
+            }
+        },
+        "PimpmystackNetwork" : { 
+            "policy_name": "PimpmystackNetwork",
+            "cluster_nameserver2": "8.8.8.8",
+            "policy_type": "network",
+            "cluster_domainname": "infra.pimpmystack.net",
+            "interfaces": [
+                { "interface_name":"eth1",
+                  "netconfs": [],
+                  "bonds_number": ""
+                },
+                { "interface_name": "eth0",
+                  "netconfs": [],
+                  "bonds_number": ""
+                }
+            ],
+            "policy_desc": "",
+            "cluster_nameserver1": "192.168.10.254"
+        },
+        "PMS Compute" : {
+            "policy_name": "PMS Compute",
+            "deploy_on_disk": "1",
+            "components":[
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "NovaCompute"
+                    }
+                }
+            ],
+            "policy_type": "system",
+            "systemimage_size": "5368709120",
+            "policy_desc": "",
+            "cluster_si_persistent": "1"
+        },
+        "PMS DB and Messaging" : {
+            "policy_name": "PMS DB and Messaging",
+            "deploy_on_disk": "1",
+            "components": [
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Amqp"
+                    }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Mysql"
+                    }
+                }
+            ],
+            "policy_type": "system",
+            "systemimage_size": "5368709120",
+            "policy_desc": "",
+            "cluster_si_persistent": "1"
+        },
+        "PMS Distributed Controller" : {
+            "policy_name": "PMS Distributed Controller",
+            "deploy_on_disk": "1",
+            "components": [
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Lvm"
+                    }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Cinder"
+                    }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Neutron"
+                    }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Glance"
+                    }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "NovaController"
+                    }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Keystone"
+                    }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Apache"
+                    }
+                }
+            ],
+            "policy_type": "system",
+            "systemimage_size": "5368709120",
+            "policy_desc": "",
+            "cluster_si_persistent": "1"
+        },
+        "PMS Full Controller" : {
+            "policy_name": "PMS Full Controller",
+            "deploy_on_disk": "1",
+            "components": [
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Lvm"
+                    }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Cinder"
+                    }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Neutron"
+                    }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Glance"
+                    }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "NovaController"
+                    }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Keystone"
+                    }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Apache"
+                    }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Amqp"
+                    }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Mysql"
+                    }
+                }
+            ],
+            "policy_type": "system",
+            "systemimage_size": "5368709120",
+            "policy_desc": "",
+            "cluster_si_persistent": "1"
+        },
+        "PMS HA Controller" : {
+            "policy_name": "PMS HA Controller",
+            "deploy_on_disk": "1",
+            "components": [
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Lvm"
+                    }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Cinder"
+                    }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Neutron"
+                    }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Glance"
+                    }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "NovaController"
+                    }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Keystone"
+                    }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Apache"
+                    }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Amqp"
+                    }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Mysql"
+                    }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Haproxy"
+                    }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Keepalived"
+                    }
+                }
+            ],
+            "policy_type": "system",
+            "systemimage_size": "5368709120",
+            "policy_desc": "",
+            "cluster_si_persistent": "1"
+        },
+        "PMS One Node" : {
+            "cluster_min_node": "1",
+            "cluster_max_node": "1",
+            "policy_name": "PMS One Node",
+            "policy_type": "scalability",
+            "policy_desc": "",
+            "cluster_priority": "100"
+        },
+        "PMS HA Nodes" : {
+            "cluster_min_node": "2",
+            "cluster_max_node": "2",
+            "policy_name": "PMS HA Nodes",
+            "policy_type": "scalability",
+            "policy_desc": "",
+            "cluster_priority": "100"
+        }
+    },
+    "services" : {
+        "PMS AllInOne Controller" : {
+            "service_name": "PMS AllInOne Controller",
+            "service_desc": "",
+            "orchestration_policy_id": {
+                "class_type" : "Entity::Policy::OrchestrationPolicy",
+                "policy_name" : "Standard orchestration configuration"
+            },
+            "scalability_policy_id": {
+                "class_type" : "Entity::Policy::ScalabilityPolicy",
+                "policy_name" : "PMS One Node"
+            },
+            "network_policy_id": {
+                "class_type" : "Entity::Policy::NetworkPolicy",
+                "policy_name" : "PimpmystackNetwork"
+            },
+            "hosting_policy_id": {
+                "class_type" : "Entity::Policy::HostingPolicy",
+                "policy_name" : "PimpmystackHosting"
+            },
+            "billing_policy_id": {
+                "class_type" : "Entity::Policy::BillingPolicy",
+                "policy_name" : "Empty billing configuration"
+            },
+            "system_policy_id": {
+                "class_type" : "Entity::Policy::SystemPolicy",
+                "policy_name" : "PMS Full Controller"
+            },
+            "storage_policy_id": {
+                "class_type" : "Entity::Policy::StoragePolicy",
+                "policy_name" : "PimpmystackStorage"
+            }
+        },
+        "PMS Hypervisor" : {
+            "service_name": "PMS Hypervisor",
+            "service_desc": "PMS hypervisor groups all instances of nova compute",
+            "orchestration_policy_id": {
+                "class_type" : "Entity::Policy::OrchestrationPolicy",
+                "policy_name" : "Standard orchestration configuration"
+            },
+            "scalability_policy_id": {
+                "class_type" : "Entity::Policy::ScalabilityPolicy",
+                "policy_name" : "Manual scalability cluster"
+            },
+            "network_policy_id": {
+                "class_type" : "Entity::Policy::NetworkPolicy",
+                "policy_name" : "PimpmystackNetwork"
+            },
+            "hosting_policy_id": {
+                "class_type" : "Entity::Policy::HostingPolicy",
+                "policy_name" : "PimpmystackHosting"
+            },
+            "billing_policy_id": {
+                "class_type" : "Entity::Policy::BillingPolicy",
+                "policy_name" : "Empty billing configuration"
+            },
+            "system_policy_id": {
+                "class_type" : "Entity::Policy::SystemPolicy",
+                "policy_name" : "PMS Compute"
+            },
+            "storage_policy_id": {
+                "class_type" : "Entity::Policy::StoragePolicy",
+                "policy_name" : "PimpmystackStorage"
+            }
+        }
+    }
+}
+
+
