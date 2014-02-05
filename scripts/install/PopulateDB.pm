@@ -1751,9 +1751,13 @@ sub registerKanopyaMaster {
     );
 
     my $admin_role = Entity::NetconfRole->find(hash => { netconf_role_name => "admin" });
+    my $vmsrole = Entity::NetconfRole->find(hash => { netconf_role_name => "vms" });
 
-    my $netconf = Entity::Netconf->new(netconf_name => "Kanopya admin",);
-    $netconf->setAttr(name => 'netconf_role_id', value => $admin_role->id, save => 1);
+    my $netconf = Entity::Netconf->create(netconf_name    => "Kanopya admin",
+                                          netconf_role_id => $admin_role->id);
+
+    my $vmsnetconf = Entity::Netconf->create(netconf_name    => "Virtual machines bridge",
+                                             netconf_role_id => $vmsrole->id);
 
     NetconfInterface->new(netconf_id => $netconf->id, interface_id => $admin_interface->id);
     NetconfPoolip->new(netconf_id => $netconf->id, poolip_id => $poolip->id);
