@@ -30,6 +30,13 @@ lives_ok {
     if ($delete->{status} ne '409') {
         die 'Wrong status got <' . $delete->{status} . '> expected <409>';
     }
+
+    my $content = Dancer::from_json($delete->{content});
+
+    if (not $content->{reason} =~ qr/Deletion of <.+> is impossible: it is used by a <.+>./) {
+        die 'Wrong message got <' . $content->{reason} . '> expected <Deletion of <**> is impossible: it is used by a <**>.>';
+    }
+    
 } 'Delete contraint cascade <409>';
 
 
@@ -42,6 +49,13 @@ lives_ok {
     if ($delete->{status} ne '404') {
         die 'Wrong status got <' . $delete->{status} . '> expected <404>';
     }
+
+    my $content = Dancer::from_json($delete->{content});
+
+    if (not $content->{reason} =~ qr/No entry found for .+/) {
+        die 'Wrong message got <' . $content->{reason} . '> expected <No entry found for **>';
+    }
+
 } 'Delete file not found <404>';
 
 
