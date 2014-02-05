@@ -101,6 +101,8 @@ sub request {
         }
     );
 
+    $log->debug('Request : Service endpoint : '. $self->{service}->getEndpoint);
+
     my $token = $self->{service}->{api}->{token};
     my $method_type = $args{method_type};
     my $content = $parameters->{content};
