@@ -137,6 +137,15 @@ use Exception::Class (
         isa         => 'Kanopya::Exception',
         description => 'Command execution failed',
     },
+    Kanopya::Exception::Execution::API => {
+        isa         => 'Kanopya::Exception::Execution',
+        description => 'External API call failed',
+    },
+    Kanopya::Exception::Execution::Command => {
+        isa         => 'Kanopya::Exception::Execution',
+        description => 'External command execution failed',
+        fields      => [ 'command', 'return_code' ],
+    },
     Kanopya::Exception::Execution::Rollbacked => {
         isa         => 'Kanopya::Exception::Execution',
         description => 'Operation execution rollbacked',

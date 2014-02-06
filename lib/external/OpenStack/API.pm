@@ -46,6 +46,11 @@ sub login {
 
     my $response = $self->identity->tokens->post(content => $args{credentials});
 
+    if( ! exists $response->{access}->{serviceCatalog}) {
+        throw Kanopya::Exception::Execution::API(
+            error         => 'Openstack API call returns no service catalog')
+    }
+
     for my $service (@{$response->{access}->{serviceCatalog}}) {
         my $name = $service->{name};
         $self->{config}->{$name}->{url} = $service->{endpoints}->[0]->{publicURL} .

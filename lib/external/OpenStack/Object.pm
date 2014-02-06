@@ -14,6 +14,8 @@
 
 package OpenStack::Object;
 
+use Kanopya::Exceptions;
+
 use HTTP::Request::Common;
 use LWP;
 use JSON qw(from_json to_json);
@@ -130,6 +132,13 @@ sub request {
 
     $log->debug("curl -X $method_type $request $url");
     my $response = `curl -X $method_type $request $url`;
+    if($? != 0) {
+        throw Kanopya::Exception::Execution::Command(
+            error       => 'Openstack API call with curl failed',
+            command     => "curl -X $method_type $request $url",
+            return_code => $?,
+	)
+    }
 
     my $json;
     eval {
