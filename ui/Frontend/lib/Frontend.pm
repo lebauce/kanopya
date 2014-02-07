@@ -18,6 +18,7 @@ use REST::api;
 
 use KIM::Consommation;
 use KIM::MasterImage;
+use KIM::BuildStack;
 use KIM::WorkflowLogs;
 use Services;
 use REST::Documentation;

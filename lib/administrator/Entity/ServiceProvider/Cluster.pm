@@ -266,6 +266,19 @@ sub create {
 
     General::checkParams(args => \%args, required => [ 'cluster_name', 'owner_id' ]);
 
+    my $kanopya = $class->getKanopyaCluster();
+    $kanopya->getManager(manager_type => 'ExecutionManager')->enqueue(
+        type       => 'AddCluster',
+        params     => $class->buildInstantiationParams(%args),
+        related_id => $kanopya->id
+    );
+}
+
+sub buildInstantiationParams {
+    my ($class, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'cluster_name', 'owner_id' ]);
+
     # Firstly build the configuration pattern from args.
     my $confpattern = $class->buildConfigurationPattern(%args);
 
@@ -291,14 +304,8 @@ sub create {
     if (defined $args{service_template_id}) {
         $op_params->{context}->{service_template}
             = Entity::ServiceTemplate->get(id => $args{service_template_id});
-    } 
-
-    my $kanopya = $class->getKanopyaCluster;
-    $kanopya->getManager(manager_type => 'ExecutionManager')->enqueue(
-        type       => 'AddCluster',
-        params     => $op_params,
-        related_id => $kanopya->id
-    );
+    }
+    return $op_params;
 }
 
 sub buildConfigurationPattern {
