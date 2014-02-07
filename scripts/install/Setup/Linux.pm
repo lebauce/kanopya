@@ -901,7 +901,7 @@ sub _configure_puppetmaster {
     EEntity->new(entity => $kanopya)->reconfigure();
 
     system("puppetdb-ssl-setup");
-    system('killall -9 mysqld');
+    system('service', 'mysql', 'stop');
     system('service', 'mysql', 'start');
 }
 
