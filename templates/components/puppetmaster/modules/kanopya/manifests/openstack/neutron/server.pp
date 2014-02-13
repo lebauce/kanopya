@@ -1,7 +1,6 @@
 class kanopya::openstack::neutron::server(
   $email              = 'nothing@nothing.com',
   $bridge_flat        = 'br-flat',
-  $bridge_vlan        = 'br-vlan',
   $database_name      = 'neutron',
   $database_user      = 'neutron',
   $database_password  = 'neutron',
@@ -108,7 +107,7 @@ class kanopya::openstack::neutron::server(
   class { 'neutron::plugins::ovs':
     sql_connection      => "mysql://${database_user}:${database_password}@${dbip}/${database_name}",
     tenant_network_type => 'vlan',
-    network_vlan_ranges => 'physnetflat,physnetvlan:1:4094',
+    network_vlan_ranges => 'physnetflat:1:1',
     require             => Class['kanopya::openstack::repository']
   }
 
