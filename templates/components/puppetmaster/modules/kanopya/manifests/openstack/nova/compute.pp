@@ -76,6 +76,9 @@ class kanopya::openstack::nova::compute(
 
   class { 'neutron::client':
   }
+  
+  class { 'neutron::agents::dhcp':
+  }
 
   if ! defined(Class['kanopya::openstack::neutron::common']) {
     class { 'kanopya::openstack::neutron::common':
