@@ -69,7 +69,7 @@ class kanopya::openstack::nova::compute(
 
   class { 'neutron::agents::ovs':
     integration_bridge  => 'br-int',
-    bridge_mappings     => [ 'physnetflat:br-flat', 'physnetvlan:br-vlan' ],
+    bridge_mappings     => [ 'physnetflat:br-flat' ],
     bridge_uplinks      => $bridge_uplinks,
     require             => Class['kanopya::openstack::repository']
   }

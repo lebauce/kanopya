@@ -66,7 +66,6 @@ sub getPuppetDefinition {
             classes => {
                 'kanopya::openstack::neutron::server' => {
                     bridge_flat => 'br-flat',
-                    bridge_vlan => 'br-vlan',
                     email => $self->service_provider->owner->user_email,
                     database_user => $name,
                     database_name => $name,
