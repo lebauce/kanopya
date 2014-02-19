@@ -56,7 +56,7 @@ class kanopya::openstack::nova::compute(
   }
 
   class { 'nova::compute::neutron':
-    libvirt_vif_driver => 'nova.virt.libvirt.vif.LibvirtHybridOVSBridgeDriver',
+    libvirt_vif_driver => 'nova.virt.libvirt.vif.LibvirtGenericVIFDriver',
     require            => Class['kanopya::openstack::repository']
   }
 
