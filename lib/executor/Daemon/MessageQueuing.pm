@@ -80,7 +80,7 @@ use Switch;
 use TryCatch;
 
 use Log::Log4perl "get_logger";
-my $log = get_logger("");
+my $log = get_logger("amqp");
 
 use vars qw($AUTOLOAD);
 
