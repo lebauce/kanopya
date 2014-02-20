@@ -122,5 +122,10 @@ class kanopya::openstack::cinder::server(
     "DEFAULT/nfs_mount_options": value => "rw"
   }
 
+  package { 'qemu-utils':
+    ensure => installed,
+    name => 'qemu-utils',
+  }   
+
   Class['kanopya::openstack::repository'] -> Class['kanopya::openstack::cinder::server']
 }

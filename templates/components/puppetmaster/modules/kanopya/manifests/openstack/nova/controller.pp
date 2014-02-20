@@ -136,6 +136,7 @@ class kanopya::openstack::nova::controller(
     auth_host        => $keystone_ip,
     api_bind_address => $components[novacontroller][listen][compute_api][ip],
     metadata_listen  => $components[novacontroller][listen][metadata_api][ip],
+    neutron_metadata_proxy_shared_secret => 'mysecret',
     require          => [ Exec["/usr/bin/nova-manage db sync"],
                           Class['kanopya::openstack::repository'] ]
   }
