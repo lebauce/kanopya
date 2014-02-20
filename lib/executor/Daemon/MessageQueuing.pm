@@ -1,4 +1,4 @@
-#    Copyright © 2013 Hedera Technology SAS
+#    Copyright © 2014 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -601,10 +601,15 @@ sub receiveAll {
         catch (Kanopya::Exception::MessageQueuing::NoMessage $err) {
             # Pass, the receiver has probably been woken up by a signal to stop the daemon. 
         }
-        catch ($err) {
+        catch (Kanopya::Exception::MessageQueuing::ChannelError $err) {
             if ($self->isRunning) {
                 $log->error($err);
+                # Channel error, exiting...
+                $self->setRunning(running => 0);
             }
+        }
+        catch ($err) {
+            $log->error($err);
         }
 
         # Create the internal consumers again as the connection could be closed
