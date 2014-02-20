@@ -326,13 +326,6 @@ sub execute {
         if (not defined $self->{context}->{host}) {
             throw Kanopya::Exception::Internal(error => "Could not find a usable host");
         }
-
-        # If the host ifaces are not configured to netconfs at resource declaration step,
-        # associate them according to the cluster interfaces netconfs
-        my @ifaces = $self->{context}->{host}->configuredIfaces;
-        if (scalar @ifaces == 0) {
-            $self->{context}->{host}->configureIfaces(cluster => $self->{context}->{cluster});
-        }
     }
 
     # Check service billing limits

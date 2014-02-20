@@ -346,27 +346,6 @@ sub configuredIfaces {
     return wantarray ? @configured : \@configured;
 }
 
-sub configureIfaces {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'cluster' ]);
-
-    my @ifaces = $self->getIfaces;
-
-    # Set the ifaces netconf according to the cluster interfaces
-    # We consider that the available ifaces match the cluster interfaces since getFreeHost selection
-    foreach my $interface ($args{cluster}->interfaces) {
-        my @netconfs = $interface->netconfs;
-        my $nbbonds  = $interface->bonds_number > 0 ? $interface->bonds_number : 0;
-
-        my @valid_ifaces = grep { scalar @{ $_->slaves } == $nbbonds } @ifaces;
-        $valid_ifaces[0]->update(netconf_ifaces => \@netconfs, override_relations => 0);
-
-        # Remove the iface form the list
-        @ifaces = grep { $valid_ifaces[0] ne $_ } @ifaces;
-    }
-}
 
 sub addIface {
     my $self = shift;

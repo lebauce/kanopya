@@ -1389,36 +1389,41 @@ sub _attributesDefinition {
     }
 
     my $attributedefs = {};
-    my@hierarchy = split('::', $class);
-    while (@hierarchy) {
+    my @hierarchy = Class::ISA::self_and_super_path($class);
+
+    BASECLASS:
+    for my $modulename (@hierarchy) {
         my $schema;
-        my $modulename = join('::', @hierarchy);
 
         # Ignore modules not in truncated hierarchy
         if (defined $args{trunc} && $modulename !~ m/^$args{trunc}\:\:/) {
-            pop @hierarchy;
-            next;
+            next BASECLASS;
         }
 
         try {
             # Required the current module
             General::requireClass($modulename);
-
-            # Get the corresponding result source if exists (ignore_holes => 0)
-            $schema = $modulename->_resultSource(ignore_holes => 0);
         }
         catch (Kanopya::Exception::Internal::UnknownClass $err) {
             # Ignore holes in the class hierarchy
-            pop @hierarchy;
-            next;
-        }
-        catch (Kanopya::Exception::DB::UnknownSource $err) {
-            # Ignore holes in the table hierarchy
-            pop @hierarchy;
-            next;
+            next BASECLASS;
         }
         catch ($err) {
             # Let's throw compilation errors...
+            $err->rethrow();
+        }
+
+        next BASECLASS if ! $modulename->can('_resultSource');
+
+        try {
+            # Get the corresponding result source if exists (ignore_holes => 0)
+            $schema = $modulename->_resultSource(ignore_holes => 0);
+        }
+        catch (Kanopya::Exception::DB::UnknownSource $err) {
+            # Ignore holes in the table hierarchy
+            next BASECLASS;
+        }
+        catch ($err) {
             $err->rethrow();
         }
 
@@ -1500,7 +1505,6 @@ sub _attributesDefinition {
                 }
             }
         }
-        pop @hierarchy;
     }
 
     # Add the BaseDB attrs to the upper class attrs

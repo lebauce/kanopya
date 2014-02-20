@@ -175,6 +175,12 @@ function getReadableSize(sizeInBytes, exactValue) {
         i++;
     }
 
+    /* Truncate to one decimal
+     * This is needed because toFixed() will round the size and we do not want to round
+     * It is better to loose some bytes during conversion than to raise size.
+     */
+    sizeInBytes = Math.floor(sizeInBytes * 10) / 10;
+
     return {
         value   : Math.max(sizeInBytes, 0.1).toFixed(exactValue ? 0 : 1),
         unit    : byteUnits[i]

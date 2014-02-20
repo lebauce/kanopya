@@ -30,6 +30,12 @@ use Data::Dumper;
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
+    control_queue => {
+        type         => 'string',
+        pattern      => '^.*$',
+        is_mandatory => 0,
+        is_editable  => 1
+    },
     time_step => {
         label        => 'Aggregation frequency',
         #type         => 'time',
@@ -57,13 +63,13 @@ sub methods {
         addNodeMetric => {
             description => 'Produce a node metric.',
             message_queuing => {
-                channel => 'node_metric'
+                queue => 'node_metric'
             }
         },
         addClusterMetric => {
             description => 'Produce a node metric.',
             message_queuing => {
-                channel => 'cluster_metric'
+                queue => 'cluster_metric'
             }
         },
     };

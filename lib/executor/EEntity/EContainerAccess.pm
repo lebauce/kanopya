@@ -74,7 +74,9 @@ sub copy {
 
     my ($command, $result);
 
-    General::checkParams(args => \%args, required => [ 'dest', 'econtext' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'dest', 'econtext' ],
+                         optional => { 'partition' => 1 });
 
     my $source_access = $self;
     my $dest_access   = $args{dest};
@@ -103,7 +105,8 @@ sub copy {
             sleep(1);
         } while($dstdev eq $dest_device);
 
-        $command = "/usr/bin/virt-resize --expand /dev/sda1 $srcdev $dstdev";
+        my $partition = ($args{partition} <= 0) ? '' : "$args{partition}";
+        $command = "/usr/bin/virt-resize --expand /dev/sda$partition $srcdev $dstdev";
         $result  = $args{econtext}->execute(command => $command);
 
         if ($result->{stderr} and ($result->{exitcode} != 0)) {
@@ -185,7 +188,7 @@ sub mount {
 
     General::checkParams(args     => \%args,
                          required => [ 'econtext' ],
-                         optional => { 'mountpoint' => $self->getMountPoint } );
+                         optional => { 'mountpoint' => $self->getMountPoint, 'partition' => 1 });
 
     # Connecting to the container access.
     my $device = $self->tryConnect(econtext  => $args{econtext},  
@@ -196,8 +199,9 @@ sub mount {
 
     $log->debug("Mounting <$device> on <$args{mountpoint}>.");
 
+    my $partition = ($args{partition} <= 0) ? '' : "$args{partition}";
     $command = "DEV=`readlink -f $device`; " .
-               "guestmount -a \$DEV -m /dev/sda1 " . $args{mountpoint};
+               "guestmount -a \$DEV -m /dev/sda$partition " . $args{mountpoint};
     $result  = $args{econtext}->execute(command => $command);
 
     if ($result->{exitcode} != 0) {

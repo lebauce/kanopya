@@ -43,6 +43,15 @@ use constant ATTR_DEF => {
 
 sub getAttrDef { return ATTR_DEF; }
 
+sub getNetConf {
+    return {
+        cephmon => {
+            port => 6789,
+            protocols => [ 'tcp' ]
+        }
+    };
+}
+
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 

@@ -177,11 +177,7 @@ sub createCluster {
             },
         },
         components => {},
-        interfaces => {
-            admin => {
-                interface_netconfs  => { $adminnetconf->id => $adminnetconf->id },
-            }
-        }
+        interfaces => {}
     );
 
     if (defined $args{cluster_conf}) {
@@ -228,6 +224,12 @@ sub createCluster {
     if (defined $interfaces) {
         my %ifcs = (interfaces => $interfaces);
         %cluster_conf = %{ $merge->merge(\%cluster_conf, \%ifcs) };
+    }
+    else {
+        $cluster_conf{interfaces}{admin} => {
+            interface_name => 'eth0',
+            netconfs  => { $adminnetconf->id => $adminnetconf->id },
+        };
     }
 
     diag('Create cluster');
@@ -419,7 +421,7 @@ sub createIaasCluster {
                     mysql          => {},
                     novaCompute    => {},
                     keystone       => {},
-                    quantum        => {},
+                    neutron        => {},
                     glance         => {},
                     amqp           => {},
                 };
@@ -447,7 +449,8 @@ sub createIaasCluster {
         components => $components,
         interfaces => {
             vms => {
-                interface_netconfs => {
+                interface_name => 'eth0',
+                netconfs => {
                     $vms_netconf->id => $vms_netconf->id
                 }
             }
@@ -500,7 +503,7 @@ sub createIaasCluster {
             my $amqp = $iaas->getComponent(name => 'Amqp');
             my $keystone = $iaas->getComponent(name => 'Keystone');
             my $glance = $iaas->getComponent(name => 'Glance');
-            my $quantum = $iaas->getComponent(name => 'Quantum');
+            my $neutron = $iaas->getComponent(name => 'Neutron');
 
             $keystone->setConf(conf => {
                 mysql5_id   => $db->id,
@@ -511,7 +514,7 @@ sub createIaasCluster {
                 nova_controller_id => $virtualization->id,
             });
 
-            $quantum->setConf(conf => {
+            $neutron->setConf(conf => {
                 mysql5_id          => $db->id,
                 nova_controller_id => $virtualization->id,
             });

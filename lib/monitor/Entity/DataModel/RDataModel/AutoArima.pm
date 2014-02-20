@@ -82,7 +82,6 @@ sub predict {
                                                  freq           => $args{freq}
     )};
 
-# 4- Return the results
     return \@forecasts;
 }
 

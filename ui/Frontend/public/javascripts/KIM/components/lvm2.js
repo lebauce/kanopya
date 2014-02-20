@@ -201,6 +201,11 @@ var Lvm2 = (function(_super) {
                     options      : vgs
                 }
             };
+        } else if (resource === 'lvm2vg') {
+            var response = ajax('GET', '/api/attributes/' + resource);
+            response.attributes['lvm2_vg_freespace'].disabled = true;
+            return response;
+
         } else {
             return ajax('GET', '/api/attributes/' + resource);
         }

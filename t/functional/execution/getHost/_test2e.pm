@@ -142,17 +142,17 @@ sub test2e {
             interface1 => {
                 netconfs       => {$netConf1->netconf_name => $netConf1 },
                 bonds_number   => 0,
-                interface_name => interface1,
+                interface_name => "eth0",
             },
             interface2 => {
                 netconfs       => {$netConf2->netconf_name => $netConf2 },
                 bonds_number   => 0,
-                interface_name => interface2,
+                interface_name => "eth1",
             },
             interface3 => {
                 netconfs => {$netConf3->netconf_name => $netConf3 },
                 bonds_number   => 0,
-                interface_name => interface3
+                interface_name => "eth2"
             },
         }
     );
@@ -171,15 +171,15 @@ sub test2e {
     );
     # Create ifaces of host 1
     my $iface11 = $host1->addIface(
-        iface_name => "iface11",
+        iface_name => "eth0",
         iface_pxe  => 0,
     );
     my $iface12 = $host1->addIface(
-        iface_name => "iface12",
+        iface_name => "eth1",
         iface_pxe  => 0,
     );
     my $iface13 = $host1->addIface(
-        iface_name => "iface13",
+        iface_name => "eth2",
         iface_pxe  => 0,
     );
     # Attach corresponding ips to ifaces
@@ -224,7 +224,7 @@ sub test2e {
     );
     # Create ifaces of host 2
     my $iface21 = $host2->addIface(
-        iface_name => "iface21",
+        iface_name => "eth0",
         iface_pxe  => 0,
     );
     # Attach corresponding ips to ifaces
@@ -249,11 +249,11 @@ sub test2e {
     );
     # Create ifaces of host 3
     my $iface31 = $host3->addIface(
-        iface_name => "iface31",
+        iface_name => "eth0",
         iface_pxe  => 0,
     );
     my $iface32 = $host3->addIface(
-        iface_name => "iface32",
+        iface_name => "eth1",
         iface_pxe  => 0,
     );
     # Attach corresponding ips to ifaces
@@ -288,15 +288,15 @@ sub test2e {
     );
     # Create ifaces of host 4
     my $iface41 = $host4->addIface(
-        iface_name => "iface41",
+        iface_name => "eth0",
         iface_pxe  => 0,
     );
     my $iface42 = $host4->addIface(
-        iface_name => "iface42",
+        iface_name => "eth1",
         iface_pxe  => 0,
     );
     my $iface43 = $host4->addIface(
-        iface_name => "iface43",
+        iface_name => "eth2",
         iface_pxe  => 0,
     );
     # Attach corresponding ips to ifaces
@@ -341,15 +341,15 @@ sub test2e {
     );
     # Create ifaces of host 5
     my $iface51 = $host5->addIface(
-        iface_name => "iface51",
+        iface_name => "eth0",
         iface_pxe  => 0,
     );
     my $iface52 = $host5->addIface(
-        iface_name => "iface52",
+        iface_name => "eth1",
         iface_pxe  => 0,
     );
     my $iface53 = $host5->addIface(
-        iface_name => "iface53",
+        iface_name => "eth2",
         iface_pxe  => 0,
     );
     # Attach corresponding ips to ifaces
@@ -394,15 +394,15 @@ sub test2e {
     );
     # Create ifaces of host 6
     my $iface61 = $host6->addIface(
-        iface_name => "iface61",
+        iface_name => "eth0",
         iface_pxe  => 0,
     );
     my $iface62 = $host6->addIface(
-        iface_name => "iface62",
+        iface_name => "eth1",
         iface_pxe  => 0,
     );
     my $iface63 = $host6->addIface(
-        iface_name => "iface63",
+        iface_name => "eth2",
         iface_pxe  => 0,
     );
     # Attach corresponding ips to ifaces

@@ -122,7 +122,7 @@ sub new {
         # Chicken and egg situation, the first EEntity instanciated in a process
         # is the EHost to give in paramater to others EEntity.
         if ($self->isa('EEntity::EHost')) {
-            $host = $self;
+            $self->_host($self);
         }
         else {
             throw Kanopya::Exception::Internal(
@@ -130,9 +130,9 @@ sub new {
                   );
         }
     }
-    elsif (not defined $host) {
+    elsif (not defined $self->_host) {
         # Set the singleton
-        $host = $args{ehost};
+        $self->_host($args{ehost});
     }
 
     return $self;
@@ -257,6 +257,22 @@ sub notificationMessage {
 =pod
 =begin classdoc
 
+Reload entity from database
+
+@return the reloaded instance
+
+=end classdoc
+=cut
+
+sub reload {
+    my $self = shift;
+    return EEntity->new(entity => $self->_entity->reload);
+}
+
+
+=pod
+=begin classdoc
+
 Set mock classes to override standards class/eclass matching.
 Usefull for test and dummy infrastructures.
 
@@ -274,11 +290,16 @@ sub setMock {
     $mocks_classes->{$class} = $args{mock};
 }
 
-sub _host {
-    my $self = shift;
-    my %args = @_;
 
-    return $host;
+sub _host {
+    my ($self, @args) = @_;
+
+    if (scalar(@args)) {
+        $host = pop @args;
+    }
+    else {
+        return $host;
+    }
 }
 
 sub _executor {
@@ -297,6 +318,7 @@ sub _entity {
     return $self->{_entity};
 }
 
+
 sub AUTOLOAD {
     my $self = shift;
 
@@ -309,22 +331,6 @@ sub AUTOLOAD {
 sub DESTROY {
     my $self = shift;
     my %args = @_;
-}
-
-
-=pod
-=begin classdoc
-
-Reload entity from database
-
-@return the reloaded instance
-
-=end classdoc
-=cut
-
-sub reload {
-    my $self = shift;
-    return EEntity->new(entity => $self->_entity->reload);
 }
 
 1;

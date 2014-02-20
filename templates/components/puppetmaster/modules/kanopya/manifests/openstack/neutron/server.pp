@@ -1,23 +1,23 @@
-class kanopya::openstack::quantum::server(
+class kanopya::openstack::neutron::server(
   $email              = 'nothing@nothing.com',
   $bridge_flat        = 'br-flat',
   $bridge_vlan        = 'br-vlan',
-  $database_name      = 'quantum',
-  $database_user      = 'quantum',
-  $database_password  = 'quantum',
-  $keystone_user      = 'quantum',
-  $keystone_password  = 'quantum',
-  $rabbit_user        = 'quantum',
-  $rabbit_password    = 'quantum',
+  $database_name      = 'neutron',
+  $database_user      = 'neutron',
+  $database_password  = 'neutron',
+  $keystone_user      = 'neutron',
+  $keystone_password  = 'neutron',
+  $rabbit_user        = 'neutron',
+  $rabbit_password    = 'neutron',
   $rabbit_virtualhost = '/'
 ) {
-  tag("kanopya::quantum")
+  tag("kanopya::neutron")
 
-  $dbserver = $components[quantum][mysql][mysqld][tag]
-  $dbip = $components[quantum][mysql][mysqld][ip]
-  $keystone = $components[quantum][keystone][keystone_admin][tag]
-  $amqpserver = $components[quantum][amqp][amqp][tag]
-  $rabbits = $components[quantum][amqp][nodes]
+  $dbserver = $components[neutron][mysql][mysqld][tag]
+  $dbip = $components[neutron][mysql][mysqld][ip]
+  $keystone = $components[neutron][keystone][keystone_admin][tag]
+  $amqpserver = $components[neutron][amqp][amqp][tag]
+  $rabbits = $components[neutron][amqp][nodes]
 
   if ! defined(Class['kanopya::openstack::repository']) {
     class { 'kanopya::openstack::repository':
@@ -25,8 +25,8 @@ class kanopya::openstack::quantum::server(
     }
   }
 
-  if ! defined(Class['kanopya::openstack::quantum::common']) {
-    class { 'kanopya::openstack::quantum::common':
+  if ! defined(Class['kanopya::openstack::neutron::common']) {
+    class { 'kanopya::openstack::neutron::common':
       rabbit_password    => "${rabbit_password}",
       rabbit_hosts       => $rabbits,
       rabbit_user    => "${rabbit_user}",
@@ -34,13 +34,13 @@ class kanopya::openstack::quantum::server(
     }
   }
 
-  class { '::quantum::server':
+  class { '::neutron::server':
     auth_password => "${keystone_password}",
     auth_host     => "${keystone}",
     require       => Class['kanopya::openstack::repository']
   }
 
-  if ($components[quantum][master] == 1) {
+  if ($components[neutron][master] == 1) {
     @@mysql::db { "${database_name}":
       user     => "${database_user}",
       password => "${database_password}",
@@ -77,17 +77,17 @@ class kanopya::openstack::quantum::server(
       tag     => "${keystone}"
     }
 
-    @@keystone_service { 'quantum':
+    @@keystone_service { 'neutron':
       ensure      => present,
       type        => "network",
-      description => "Quantum Networking Service",
+      description => "Neutron Networking Service",
       tag         => "${keystone}"
     }
 
-    $quantum_access_ip = $components[quantum][access][quantum][ip]
-    @@keystone_endpoint { "RegionOne/quantum":
+    $neutron_access_ip = $components[neutron][access][neutron][ip]
+    @@keystone_endpoint { "RegionOne/neutron":
       ensure       => present,
-      public_url   => "http://${quantum_access_ip}:9696",
+      public_url   => "http://${neutron_access_ip}:9696",
       admin_url    => "http://${fqdn}:9696",
       internal_url => "http://${fqdn}:9696",
       tag          => "${keystone}"
@@ -105,14 +105,14 @@ class kanopya::openstack::quantum::server(
     }
   }
 
-  class { 'quantum::plugins::ovs':
+  class { 'neutron::plugins::ovs':
     sql_connection      => "mysql://${database_user}:${database_password}@${dbip}/${database_name}",
     tenant_network_type => 'vlan',
     network_vlan_ranges => 'physnetflat,physnetvlan:1:4094',
     require             => Class['kanopya::openstack::repository']
   }
 
-  class { 'quantum::quota':
+  class { 'neutron::quota':
     default_quota             => -1,
     quota_network             => -1,
     quota_subnet              => -1,
@@ -124,10 +124,10 @@ class kanopya::openstack::quantum::server(
   }
 
   if ! has_key($components, "novacompute") {
-    quantum_plugin_ovs {
-      'SECURITYGROUP/firewall_driver': value => "quantum.agent.linux.iptables_firewall.OVSHybridIptablesFirewallDriver";
+    neutron_plugin_ovs {
+      'SECURITYGROUP/firewall_driver': value => "neutron.agent.linux.iptables_firewall.OVSHybridIptablesFirewallDriver";
     }
   }
 
-  Class['kanopya::openstack::repository'] -> Class['kanopya::openstack::quantum::server']
+  Class['kanopya::openstack::repository'] -> Class['kanopya::openstack::neutron::server']
 }

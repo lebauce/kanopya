@@ -306,15 +306,21 @@ Evaluate predicted combination value.
 
 sub _predict {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['timestamp'], optional => {'nodes' => undef});
+    General::checkParams(args => \%args, required => ['timestamp'],
+                                         optional => {'nodes'      => undef,
+                                                      'model_list' => undef});
     my $time = time();
-    my $model = DataModelSelector->selectDataModel(
-                    combination => $self,
-                    start_time  => 2 * $time - $args{timestamp},
-                    end_time    => $time,
-                );
-    my $prediction = $model->predict(timestamps => [$args{timestamp}]);
-    $model->delete();
+
+    my $timeserie = $self->evaluateTimeSerie(start_time => 2 * $time - $args{timestamp},
+                                             stop_time  => $time,);
+
+
+    my $prediction = DataModelSelector->autoPredictData(
+                         predict_start_tstamps => $args{timestamp},
+                         predict_end_tstamps   => $args{timestamp},
+                         timeserie             => $timeserie,
+                         model_list            => $args{model_list},
+                     );
 
     my $res = $prediction->{values}->[0];
 
@@ -485,7 +491,7 @@ sub _computeFromArrays{
         }
         $rep{$timestamp} = $self->compute(%valuesForATimeStamp);
     }
-    return %rep;
+    return wantarray ? %rep : \%rep;
 }
 
 =pod

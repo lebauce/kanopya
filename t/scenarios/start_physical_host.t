@@ -55,7 +55,7 @@ sub main {
             ram  => 1073741824,
             core => 4,
             serial_number => 0,
-            ifaces => [ { name => 'test', pxe => 1, mac => '00:00:00:00:00:00' } ]
+            ifaces => [ { name => 'eth0', pxe => 1, mac => '00:00:00:00:00:00' } ]
         });
     }
 

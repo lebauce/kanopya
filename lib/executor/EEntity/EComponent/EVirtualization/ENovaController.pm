@@ -30,13 +30,15 @@ use base "EManager::EHostManager::EVirtualMachineManager";
 use strict;
 use warnings;
 
-use JSON;
 use General;
+
+use JSON;
 use OpenStack::API;
 use NetAddr::IP;
 use Data::Dumper;
 use IO::Handle;
 use File::Temp qw/ tempfile /;
+use TryCatch;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -80,14 +82,14 @@ sub postStartNode {
     
     General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
 
-    eval {
+    try {
         my $api = $self->api;
         my $route = 'os-security-groups';
         my $resp = $api->compute->$route->get();
 
         if (! scalar(@{$resp->{security_groups}})) {
             # We can't customize the default security group unless we create a
-            # network or an other security group https://bugs.launchpad.net/quantum/+bug/1148538
+            # network or an other security group https://bugs.launchpad.net/neutron/+bug/1148538
             $resp = $api->compute->$route->post(
                 content => {
                     security_group => {
@@ -142,7 +144,26 @@ sub postStartNode {
                 }
             }
         );
-    };
+    }
+    catch ($err) {
+        $log->warn($err);
+    }
+
+    # Register the new NovaController to the OpenstackSync.
+    if (defined $self->kanopya_openstack_sync) {
+        $self->registerToOpenstackSync();
+    }
+}
+
+sub postStopNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+
+    # Unregister the NovaController from the OpenstackSync.
+    if (defined $self->kanopya_openstack_sync && scalar($self->nodes) <= 1) {
+        $self->unregisterFromOpenstackSync();
+    }
 }
 
 sub registerHypervisor {
@@ -235,14 +256,13 @@ sub getHypervisorVMs {
     my @uuids = (defined $details->[0]->{servers}) ? @{$details->[0]->{servers}} : ();
 
     for my $uuid (@uuids){
-        eval {
+        try {
             my $e = Entity::Host::VirtualMachine::OpenstackVm->find(hash => {openstack_vm_uuid => $uuid->{uuid}});
             push @vms, $e;
             push @vm_ids, $e->id;
-        };
-        if ($@) {
-            my $error = $@;
-            $log->info($uuid->{uuid}." => ".$error);
+        }
+        catch ($err) {
+            $log->info($uuid->{uuid}." => ".$err);
             push @unk_vm_uuids, $uuid->{uuid};
         }
     }
@@ -305,7 +325,7 @@ sub getVMState {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    eval {
+    try {
         my $details =  $self->getVMDetails(%args);
 
         my $state_map = {
@@ -321,6 +341,9 @@ sub getVMState {
             state      => $state_map->{$details->{state}} || 'fail',
             hypervisor => $details->{hypervisor},
         };
+    }
+    catch ($err) {
+        $log->warn($err);
     }
 }
 
@@ -446,7 +469,7 @@ sub startHost {
     $log->debug("Nova returned " . (Dumper $flavor));
 
     my $interfaces;
-    eval {
+    try {
         # register network
         $interfaces = $self->registerNetwork(host => $args{host});
         my $ports;
@@ -499,17 +522,16 @@ sub startHost {
                       );
 
         $args{host}->hypervisor_id($args{hypervisor}->id);
-    };
-    if ($@) {
-        my $error = $@;
+    }
+    catch ($err) {
         for my $interface (@$interfaces) {
             $self->deletePort(port => $interface->{port});
         }
-        if (ref($error)) {
-            $error->rethrow;
+        if (ref($err)) {
+            $err->rethrow;
         }
         else {
-            throw Kanopya::Exception::Execution(error => "$error");
+            throw Kanopya::Exception::Execution(error => "$err");
         }
     }
 }
@@ -608,7 +630,7 @@ sub registerPXEImage {
 
 =begin classdoc
 
-Register a network to Quantum
+Register a network to Neutron
 
 @param $host host whose netconf to be registered
 
@@ -630,10 +652,12 @@ sub registerNetwork {
     IFACE:
     for my $iface ($args{host}->getIfaces()) {
         # skip ifaces with no ip address
-        eval{
+        try {
             $iface->getIPAddr();
-        };
-        next IFACE if ($@);
+        }
+        catch ($err) {
+            next IFACE;
+        }
 
         # get iface vlan
         my $vlan = undef;
@@ -672,7 +696,7 @@ sub deletePort {
     General::checkParams(args => \%args, required => [ 'port' ]);
 
     my $api = $self->api;
-    my $port_id = $api->quantum->ports(id => $args{port})->delete();
+    my $port_id = $api->neutron->ports(id => $args{port})->delete();
 }
 
 sub stopHost {
@@ -873,7 +897,7 @@ sub _getOrRegisterNetwork {
 
     my $api = $self->api;
     my $network_id = undef;
-    my $networks = $api->quantum->networks->get;
+    my $networks = $api->neutron->networks->get;
     if (defined $vlan) { # check if a network has already been created for physical vlan interface
         VLAN:
         for my $network (@{ $networks->{networks} }) {
@@ -904,7 +928,7 @@ sub _getOrRegisterNetwork {
             }
         };
         $network_conf->{network}->{'provider:segmentation_id'} = $vlan->vlan_number if (defined $vlan);
-        $network_id = $api->quantum->networks->post(
+        $network_id = $api->neutron->networks->post(
             content => $network_conf
         )->{network}->{id};
     }
@@ -943,7 +967,7 @@ sub _getOrRegisterSubnet {
 
     # check if kanopya.network already registered in openstack.subnet (for openstack.network previously created)
     my $subnet_id = undef;
-    my $subnets = $api->quantum->subnets(filter => "network-id=$network_id")->get;
+    my $subnets = $api->neutron->subnets(filter => "network-id=$network_id")->get;
     SUBNET:
     for my $subnet ( @{$subnets->{subnets}} ) {
         if ( $subnet->{'cidr'} eq $network_addr->cidr() ) { # network already registered
@@ -955,7 +979,7 @@ sub _getOrRegisterSubnet {
     # create a new subnet if no subnet found
     # one allocation_pool is created with all ip usable
     if (not defined $subnet_id) {
-        $subnet_id = $api->quantum->subnets->post(
+        $subnet_id = $api->neutron->subnets->post(
             content => {
                 'subnet' => {
                     'name'              => $cluster_name . '-subnet',
@@ -1004,7 +1028,7 @@ sub _registerPort {
 
     my $api = $self->api;
 
-    my $port_id = $api->quantum->ports->post(
+    my $port_id = $api->neutron->ports->post(
         content => {
             'port' => {
                 'name'          => $hostname . '-' . $iface->iface_name,

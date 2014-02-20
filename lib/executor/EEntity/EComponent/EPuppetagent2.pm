@@ -188,51 +188,43 @@ sub isUp {
 
     my $puppetmaster = (Entity::ServiceProvider::Cluster->getKanopyaCluster)->getComponent(name => 'Puppetmaster');
     my $econtext     = (EEntity->new(data => $puppetmaster))->getEContext;
-    # Check if /var/lib/puppet/yaml/node/FQDN.yaml exists on puppet master
-    # (means that the catalog has been applied at least one time on that node).
-    my $ret          = $econtext->execute(command => '[ -f /var/lib/puppet/yaml/node/' . $args{host}->node->fqdn . '.yaml ]');
-    if ($ret->{exitcode} == 0) {
-        my $reconfigure = { };
-        $self->applyConfiguration(cluster => $args{cluster},
-                                  host    => $args{host},
-                                  tags    => [ 'finished' ]);
-        my @components  = $args{cluster}->getComponents(category => "all");
-        # Sort the components by service provider
-        for my $component (@components) {
-            my $defs = $component->getPuppetDefinition(%args);
-            for my $chunk (keys %{$defs}) {
-                my @dependencies = @{$defs->{$chunk}->{dependencies} || []};
-                for my $dependency (@dependencies) {
-                    my $key = $dependency->service_provider->id;
-                    if (! defined ($reconfigure->{$key})) {
-                        $reconfigure->{$key} = [ $dependency ];
-                    } else {
-                        push @{$reconfigure->{$key}}, $dependency;
-                    }
+
+    my $reconfigure = { };
+    $self->applyConfiguration(cluster => $args{cluster},
+                              host    => $args{host});
+
+    my @components  = $args{cluster}->getComponents(category => "all");
+    # Sort the components by service provider
+    for my $component (@components) {
+        my $defs = $component->getPuppetDefinition(%args);
+        for my $chunk (keys %{$defs}) {
+            my @dependencies = @{$defs->{$chunk}->{dependencies} || []};
+            for my $dependency (@dependencies) {
+                my $key = $dependency->service_provider->id;
+                if (! defined ($reconfigure->{$key})) {
+                    $reconfigure->{$key} = [ $dependency ];
+                } else {
+                    push @{$reconfigure->{$key}}, $dependency;
                 }
             }
         }
-
-        # Reconfigure the required components for each cluster
-        for my $cluster_id (keys %{$reconfigure}) {
-            my $cluster = $reconfigure->{$cluster_id}->[0]->service_provider;
-            my @tags = map {
-                           'kanopya::' . lc($_->component_type->component_name)
-                       } @{$reconfigure->{$cluster_id}};
-            EEntity->new(entity => $cluster)->reconfigure(tags => \@tags);
-        }
-
-        if (scalar (keys %{$reconfigure})) {
-            $self->applyConfiguration(cluster => $args{cluster},
-                                      host    => $args{host});
-        }
-        return 1;
     }
-    else {
+
+    # Reconfigure the required components for each cluster
+    for my $cluster_id (keys %{$reconfigure}) {
+        my $cluster = $reconfigure->{$cluster_id}->[0]->service_provider;
+        my @tags = map {
+                       'kanopya::' . lc($_->component_type->component_name)
+                   } @{$reconfigure->{$cluster_id}};
+        EEntity->new(entity => $cluster)->reconfigure(tags => \@tags);
+    }
+
+    if (scalar (keys %{$reconfigure})) {
         $self->applyConfiguration(cluster => $args{cluster},
                                   host    => $args{host});
-        return 0;
     }
+
+    return 1;
 }
 
 1;

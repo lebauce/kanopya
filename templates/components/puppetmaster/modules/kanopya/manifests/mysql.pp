@@ -86,19 +86,21 @@ class kanopya::mysql::repos::deb {
   $os = downcase($operatingsystem)
 
   @apt::source { 'Percona':
-    location   => 'http://repo.percona.com/apt',
-    release    => $release,
-    repos      => 'main',
-    key        => '1C4CBDCDCD2EFD2A',
-    key_server => 'hkp://keys.gnupg.net',
+    location    => 'http://repo.percona.com/apt',
+    release     => $release,
+    repos       => 'main',
+    key         => '1C4CBDCDCD2EFD2A',
+    key_server  => 'hkp://keys.gnupg.net',
+    include_src => false,
   }
 
   @apt::source { 'MariaDB':
-    location   => "http://ftp.osuosl.org/pub/mariadb/mariadb-5.5.32/repo/${os}",
-    release    => $release,
-    repos      => 'main',
-    key        => 'cbcb082a1bb943db',
-    key_server => 'keyserver.ubuntu.com',
+    location    => "http://mariadb.mirror.nucleus.be/repo/5.5/${os}",
+    release     => $release,
+    repos       => 'main',
+    key         => 'cbcb082a1bb943db',
+    key_server  => 'keyserver.ubuntu.com',
+    include_src => false,
   }
 
   file { '/etc/apt/preferences.d/mariadb-pin-900':

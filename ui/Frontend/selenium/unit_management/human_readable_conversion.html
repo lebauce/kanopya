@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head profile="http://selenium-ide.openqa.org/profiles/test-case">
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+<link rel="selenium.base" href="http://localhost:5000/" />
+<title>human_readable_conversion</title>
+</head>
+<body>
+<table cellpadding="1" cellspacing="1" border="1">
+<thead>
+<tr><td rowspan="1" colspan="3">human_readable_conversion</td></tr>
+</thead><tbody>
+<tr>
+	<td>click</td>
+	<td>link=Infrastructure</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>1000</td>
+	<td></td>
+</tr>
+<!--Compute-->
+<tr>
+	<td>click</td>
+	<td>//li[@id = &quot;link_view_Compute_static&quot;]/a</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>10000</td>
+	<td></td>
+</tr>
+<!--Click on the first host (admin host)-->
+<tr>
+	<td>click</td>
+	<td>css=#hosts_list tbody .jqgrow td</td>
+	<td></td>
+</tr>
+<!--1023 MB -> 1023.0 MB-->
+<tr>
+	<td>type</td>
+	<td>id=input_host_ram</td>
+	<td>1023</td>
+</tr>
+<tr>
+	<td>select</td>
+	<td>id=unit_input_host_ram</td>
+	<td>MB</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=button-ok</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>1000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#hosts_list tbody .jqgrow td</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>2000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyValue</td>
+	<td>id=input_host_ram</td>
+	<td>1023.0</td>
+</tr>
+<tr>
+	<td>verifySelectedLabel</td>
+	<td>id=unit_input_host_ram</td>
+	<td>MB</td>
+</tr>
+<!--1024 MB -> 1.0 GB-->
+<tr>
+	<td>type</td>
+	<td>id=input_host_ram</td>
+	<td>1024</td>
+</tr>
+<tr>
+	<td>select</td>
+	<td>id=unit_input_host_ram</td>
+	<td>MB</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=button-ok</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>1000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#hosts_list tbody .jqgrow td</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>2000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyValue</td>
+	<td>id=input_host_ram</td>
+	<td>1.0</td>
+</tr>
+<tr>
+	<td>verifySelectedLabel</td>
+	<td>id=unit_input_host_ram</td>
+	<td>GB</td>
+</tr>
+<!--1025 MB -> 1.0 GB-->
+<tr>
+	<td>type</td>
+	<td>id=input_host_ram</td>
+	<td>1025</td>
+</tr>
+<tr>
+	<td>select</td>
+	<td>id=unit_input_host_ram</td>
+	<td>MB</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=button-ok</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>1000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#hosts_list tbody .jqgrow td</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>2000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyValue</td>
+	<td>id=input_host_ram</td>
+	<td>1.0</td>
+</tr>
+<tr>
+	<td>verifySelectedLabel</td>
+	<td>id=unit_input_host_ram</td>
+	<td>GB</td>
+</tr>
+<!--1100 MB -> 1.0 GB-->
+<tr>
+	<td>type</td>
+	<td>id=input_host_ram</td>
+	<td>1100</td>
+</tr>
+<tr>
+	<td>select</td>
+	<td>id=unit_input_host_ram</td>
+	<td>MB</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=button-ok</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>1000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#hosts_list tbody .jqgrow td</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>2000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyValue</td>
+	<td>id=input_host_ram</td>
+	<td>1.0</td>
+</tr>
+<tr>
+	<td>verifySelectedLabel</td>
+	<td>id=unit_input_host_ram</td>
+	<td>GB</td>
+</tr>
+<!--1200 MB -> 1.1 GB-->
+<tr>
+	<td>type</td>
+	<td>id=input_host_ram</td>
+	<td>1200</td>
+</tr>
+<tr>
+	<td>select</td>
+	<td>id=unit_input_host_ram</td>
+	<td>MB</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=button-ok</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>1000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#hosts_list tbody .jqgrow td</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>2000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyValue</td>
+	<td>id=input_host_ram</td>
+	<td>1.1</td>
+</tr>
+<tr>
+	<td>verifySelectedLabel</td>
+	<td>id=unit_input_host_ram</td>
+	<td>GB</td>
+</tr>
+<!--1.99 MB -> 1.9 MB-->
+<tr>
+	<td>type</td>
+	<td>id=input_host_ram</td>
+	<td>1.99</td>
+</tr>
+<tr>
+	<td>select</td>
+	<td>id=unit_input_host_ram</td>
+	<td>MB</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=button-ok</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>1000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#hosts_list tbody .jqgrow td</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>2000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyValue</td>
+	<td>id=input_host_ram</td>
+	<td>1.9</td>
+</tr>
+<tr>
+	<td>verifySelectedLabel</td>
+	<td>id=unit_input_host_ram</td>
+	<td>MB</td>
+</tr>
+<!--0.5 GB -> 512.0 MB-->
+<tr>
+	<td>type</td>
+	<td>id=input_host_ram</td>
+	<td>0.5</td>
+</tr>
+<tr>
+	<td>select</td>
+	<td>id=unit_input_host_ram</td>
+	<td>GB</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=button-ok</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>1000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#hosts_list tbody .jqgrow td</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>2000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyValue</td>
+	<td>id=input_host_ram</td>
+	<td>512.0</td>
+</tr>
+<tr>
+	<td>verifySelectedLabel</td>
+	<td>id=unit_input_host_ram</td>
+	<td>MB</td>
+</tr>
+<!--1024 GB -> alert-->
+<tr>
+	<td>type</td>
+	<td>id=input_host_ram</td>
+	<td>1024</td>
+</tr>
+<tr>
+	<td>select</td>
+	<td>id=unit_input_host_ram</td>
+	<td>GB</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=button-ok</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>1000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#hosts_list tbody .jqgrow td</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyAlert</td>
+	<td>regexp:Unit conversion error.*'TB'.*</td>
+	<td></td>
+</tr>
+<!--0.5 MB -> alert-->
+<tr>
+	<td>type</td>
+	<td>id=input_host_ram</td>
+	<td>0.5</td>
+</tr>
+<tr>
+	<td>select</td>
+	<td>id=unit_input_host_ram</td>
+	<td>MB</td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>id=button-ok</td>
+	<td></td>
+</tr>
+<tr>
+	<td>pause</td>
+	<td>1000</td>
+	<td></td>
+</tr>
+<tr>
+	<td>click</td>
+	<td>css=#hosts_list tbody .jqgrow td</td>
+	<td></td>
+</tr>
+<tr>
+	<td>verifyAlert</td>
+	<td>regexp:Unit conversion error.*'KB'.*</td>
+	<td></td>
+</tr>
+<!--End - avoid futur alert-->
+<tr>
+	<td>click</td>
+	<td>id=button-ok</td>
+	<td></td>
+</tr>
+</tbody></table>
+</body>
+</html>

@@ -7,12 +7,15 @@ use Dancer ':syntax';
 #use Dancer::Plugin::Preprocess::Sass;
 use Dancer::Plugin::Ajax;
 
+use Kanopya::Config;
+use Kanopya::Version;
+
 use Login;
 use KIO::Services;
 use Monitoring;
 use Validation;
 use REST::api;
-use Kanopya::Config;
+
 use KIM::Consommation;
 use KIM::MasterImage;
 use KIM::WorkflowLogs;
@@ -71,6 +74,10 @@ get '/dashboard' => sub {
     template 'dashboard', {}, {layout => ''};
 };
 
+get '/about' => sub {
+    template 'about', { version => Kanopya::Version::version }, { layout => '' };
+};
+
 sub exception_to_status {
     my $exception = shift;
     my $status;
@@ -89,7 +96,10 @@ sub exception_to_status {
     elsif ($exception->isa("Kanopya::Exception::NotImplemented")) {
         $status = "method_not_allowed";
     }
-    elsif ($exception->isa("Kanopya::Exception::DB::Cascade")) {
+    elsif ($exception->isa("Kanopya::Exception::DB::DeleteCascade")) {
+        $status = 'conflict';
+    }
+    elsif ($exception->isa("Kanopya::Exception::DB::DuplicateEntry")) {
         $status = 'conflict';
     }
     else {

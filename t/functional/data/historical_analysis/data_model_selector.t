@@ -9,14 +9,20 @@ DataModelSelector
 
 use strict;
 use warnings;
- 
+
 use Test::More 'no_plan';
 use Test::Exception;
+
+use Log::Log4perl qw(:easy);
+Log::Log4perl -> easy_init({
+    level => 'DEBUG',
+    file => __FILE__.'.log',
+    layout => '%F %L %p %m%n'
+});
 
 use Kanopya::Database;
 use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
-
 use DataModelSelector;
 use Utils::TimeSerieAnalysis;
 
@@ -42,13 +48,51 @@ sub main {
     }
 
     setup();
-#    testDataModelSelector();
+    testBestModel();
+    testDataModelSelector();
     testAutoPredict();
 
     if ($testing == 1) {
         Kanopya::Database::rollbackTransaction;
     }
 }
+
+sub testBestModel {
+    lives_ok {
+
+        my %lin_serie = map {$_ => $_} (0..100);
+
+        my $pred = DataModelSelector->autoPredictData(
+                       predict_start_tstamps => 101,
+                       predict_end_tstamps   => 200,
+                       timeserie             => \%lin_serie,
+                       model_list            => ['AnalyticRegression::LinearRegression',
+                                                 'AnalyticRegression::LogarithmicRegression',],
+                   );
+
+        if ($pred->{data_model} ne 'Entity::DataModel::AnalyticRegression::LinearRegression') {
+            die 'Wrong Linear Model';
+        }
+
+        my %log_serie = map {$_ => log($_)} (3..23);
+
+        $pred = DataModelSelector->autoPredictData(
+                    predict_start_tstamps => 101,
+                    predict_end_tstamps   => 200,
+                    timeserie             => \%log_serie,
+                    model_list            => ['AnalyticRegression::LinearRegression',
+                                              'AnalyticRegression::LogarithmicRegression',],
+                );
+
+        if ($pred->{data_model} ne 'Entity::DataModel::AnalyticRegression::LogarithmicRegression') {
+            die 'Wrong Logarithmic Model';
+        }
+
+
+    } 'Right Model selection';
+
+}
+
 
 sub testAutoPredict {
 
@@ -67,7 +111,6 @@ sub testAutoPredict {
             predict_start_tstamps => 45,
             predict_end_tstamps  => 61,
             timeserie             => \%timeserie,
-            combination_id        => $comb->id,
         )};
     } 'Kanopya::Exception',
       "DataModelSelector with a too small time serie (min lenght is $min_length)";
@@ -90,14 +133,16 @@ sub testAutoPredict {
         my @timestamps = @{$extracted{timestamps_ref}};
         my @values     = @{$extracted{values_ref}};
 
-        my %forecast = %{DataModelSelector->autoPredict(
-            predict_start_tstamps => 45,
-            predict_end_tstamps  => 61,
-            timeserie             => \%timeserie,
-            combination_id        => $comb->id,
-        )};
-        my @vals    = @{$forecast{values}};
-        my @tstamps = @{$forecast{timestamps}};
+        my $forecast = DataModelSelector->autoPredict(
+                           predict_start_tstamps => 45,
+                           predict_end_tstamps   => 61,
+                           timeserie             => \%timeserie,
+                       );
+
+         if ($forecast->{data_model} ne 'Entity::DataModel::RDataModel::ExpR') {
+            die 'Wrong data model got <' . $forecast->{data_model}
+                . '> expect <Entity::DataModel::RDataModel::ExpR>';
+         }
 
     } 'DataModelSelector : Testing autoPredict Method';
 }

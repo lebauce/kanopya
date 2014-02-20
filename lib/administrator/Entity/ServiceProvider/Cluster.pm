@@ -246,9 +246,9 @@ Example of CCP:
     },
     interfaces => {
         admin => {
-            bonds_number => 2,
+            bonds_number   => 2,
             netconfs => [ 1, 5 ],
-	    interface_name => 'admin'
+	        interface_name => 'eth0'
         }
     },
     components => {
@@ -506,7 +506,7 @@ sub configureInterfaces {
 
     General::checkParams(args => \%args, optional => { 'interfaces' => {} });
 
-    my @interfaces = grep { defined $_->{netconfs} } values %{ $args{interfaces} };
+    my @interfaces = values %{ $args{interfaces} };
     for my $interface (@interfaces) {
         my @netconfs = values %{ delete $interface->{netconfs} };
         $interface->{netconf_interfaces} = \@netconfs;

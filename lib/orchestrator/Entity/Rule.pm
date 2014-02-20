@@ -72,7 +72,7 @@ use constant ATTR_DEF   => {
         label           => 'Timestamp'
     },
     state => {
-        pattern         => '(enabled|disabled|disabled_temp|delayed|triggered)$',
+        pattern         => '^(enabled|disabled|disabled_temp|delayed|triggered)$',
         is_mandatory    => 1,
         is_editable     => 1,
         label           => 'State'

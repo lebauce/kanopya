@@ -91,9 +91,9 @@ sub getPuppetDefinition {
     }
 
     my @optionals = ($self->nova_controller->amqp, $self->nova_controller->keystone);
-    my @quantums = $self->nova_controller->quantums;
+    my @neutrons = $self->nova_controller->neutrons;
     my @glances = $self->nova_controller->glances;
-    push @optionals, $quantums[0] if @quantums;
+    push @optionals, $neutrons[0] if @neutrons;
     push @optionals, $glances[0] if @glances;
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
@@ -102,7 +102,7 @@ sub getPuppetDefinition {
                 "kanopya::openstack::nova::compute" => {
                     bridge_uplinks => \@uplinks,
                     email => $self->nova_controller->service_provider->owner->user_email,
-                    libvirt_type => 'kvm',
+                    libvirt_type => $self->libvirt_type,
                     rabbit_user => "nova-" . $self->nova_controller->id,
                     rabbit_virtualhost => 'openstack-' . $self->nova_controller->id
                 }

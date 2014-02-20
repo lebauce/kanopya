@@ -85,7 +85,6 @@ sub predict {
         $forecasts = Entity::DataModel::RDataModel::ExponentialSmoothing->predict(%args);
     }
 
-# 4- Return the results
     return $forecasts;
 }
 

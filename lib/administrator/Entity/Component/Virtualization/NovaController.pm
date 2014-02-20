@@ -35,6 +35,8 @@ use Entity::Host::Hypervisor::OpenstackHypervisor;
 use Entity::Host::VirtualMachine::OpenstackVm;
 
 use Hash::Merge qw(merge);
+use TryCatch;
+
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -60,6 +62,12 @@ use constant ATTR_DEF => {
     },
     keystone_id => {
         label       => 'Authentication server',
+        type        => 'relation',
+        relation    => 'single',
+        is_editable => 1
+    },
+    kanopya_openstack_sync_id => {
+        label       => 'OpenStack synchronization server',
         type        => 'relation',
         relation    => 'single',
         is_editable => 1
@@ -203,9 +211,9 @@ sub getPuppetDefinition {
     my $name       = "nova-" . $self->id;
 
     my @optionals;
-    my @quantums = $self->quantums;
+    my @neutrons = $self->neutrons;
     my @glances = $self->glances;
-    push @optionals, $quantums[0] if @quantums;
+    push @optionals, $neutrons[0] if @neutrons;
     push @optionals, $glances[0] if @glances;
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
@@ -241,7 +249,7 @@ sub getHostsEntries {
         push @entries, $self->mysql5->service_provider->getHostEntries();
     }
         
-    for my $component (($self->vmms, $self->glances, $self->quantums)) {
+    for my $component (($self->vmms, $self->glances, $self->neutrons)) {
         @entries = (@entries, $component->service_provider->getHostEntries());
     }
 
@@ -414,6 +422,74 @@ sub setConf {
         my @mounts = (@{$oldconf->{linuxes_mount}}, @mountentries);
         $linux->setConf(conf => { linuxes_mount => \@mounts });
         $vmm->service_provider->update();
+    }
+}
+
+
+=pod
+=begin classdoc
+
+Override the update method to handle changes on the attribute kanopya_openstack_sync_id,
+and register/unregister the nova controller to/from the OpenstackSync daemon.
+
+If repositories are specified, update the mount entries of all compute nodes
+
+=end classdoc
+=cut
+
+sub update {
+    my ($self, %args) = @_;
+
+    # Keept the openstack_sync ref as the update call could unset it
+    my $openstack_sync = $self->kanopya_openstack_sync;
+
+    my $updated = $self->SUPER::update(%args);
+
+    # If kanopya_openstack_sync_id has change at update and component has nodes,
+    # register/unregister the NovaController to/from the OpenstackSync daemon.
+    if (exists $args{kanopya_openstack_sync_id} && scalar($self->nodes)) {
+        if (defined $args{kanopya_openstack_sync_id}) {
+            $self->registerToOpenstackSync(
+                openstack_sync => $openstack_sync || $self->kanopya_openstack_sync
+            );
+        }
+        else {
+            $self->unregisterFromOpenstackSync(
+                openstack_sync => $openstack_sync || $self->kanopya_openstack_sync
+            );
+        }
+    }
+
+    return $updated;
+}
+
+sub getRemoteSessionURL {
+    return "";
+}
+
+sub registerToOpenstackSync {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { 'openstack_sync' => $self->kanopya_openstack_sync });
+
+    try {
+        $args{openstack_sync}->registerNovaController(nova_controller_id => $self->id);
+    }
+    catch ($err) {
+        $log->warn("Unable to register NovaController to the OpenstackSync daemon:\n$err");
+    }
+}
+
+sub unregisterFromOpenstackSync {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { 'openstack_sync' => $self->kanopya_openstack_sync });
+
+    try {
+        $args{openstack_sync}->unregisterNovaController(nova_controller_id => $self->id);
+    }
+    catch ($err) {
+        $log->warn("Unable to unregister NovaController from the OpenstackSync daemon:\n$err");
     }
 }
 

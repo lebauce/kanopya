@@ -70,12 +70,12 @@ sub test2d {
             interface1 => {
                 netconfs       => {$netConf->netconf_name => $netConf },
                 bonds_number   => 1,
-                interface_name => interface1,
+                interface_name => "eth0",
             },
             interface2 => {
                 netconfs       => {$netConf->netconf_name => $netConf },
                 bonds_number   => 2,
-                interface_name => interface2,
+                interface_name => "eth1",
             },
         }
     );
@@ -85,7 +85,7 @@ sub test2d {
     ######################
 
     # Create Host 1
-    my $master_iface_name1 = 'Nothing to say';
+    my $master_iface_name1 = "eth2";
     my $host1 = Kanopya::Tools::Register->registerHost(
         board => {
             serial_number => 1,
@@ -93,11 +93,11 @@ sub test2d {
             ram           => 4096*1024*1024,
             ifaces        => [
                 {
-                    name => '...',
+                    name => "eth0",
                     pxe  => 0,
                 },
                 {
-                    name => '777',
+                    name => "eth1",
                     pxe  => 0,
                 },
                 {
@@ -105,7 +105,7 @@ sub test2d {
                     pxe  => 0,
                 },
                     {
-                        name   => 'Slaveman',
+                        name   => "eth3",
                         pxe    => 0,
                         master => $master_iface_name1,
                     },
@@ -113,7 +113,7 @@ sub test2d {
         },
     );
     # Create Host 2
-    my $master_iface_name2 = 'Masterman';
+    my $master_iface_name2 = "eth0";
     my $host2 = Kanopya::Tools::Register->registerHost(
         board => {
             serial_number => 2,
@@ -125,12 +125,12 @@ sub test2d {
                     pxe  => 0,
                 },
                     {
-                        name   => 'Slavedude',
+                        name   => "eth1",
                         pxe    => 0,
                         master => $master_iface_name2,
                     },
                     {
-                        name   => 'Se me va la olla',
+                        name   => "eth2",
                         pxe    => 0,
                         master => $master_iface_name2,
                     },
@@ -138,7 +138,7 @@ sub test2d {
         },
     );
     # Create Host 3
-    my $master_iface_name3 = 'En el Raval';
+    my $master_iface_name3 = "eth0";
     my $host3 = Kanopya::Tools::Register->registerHost(
         board => {
             serial_number => 3,
@@ -150,17 +150,17 @@ sub test2d {
                     pxe  => 0,
                 },
                     {
-                        name   => 'myname1',
+                        name   => "eth01",
                         pxe    => 0,
                         master => $master_iface_name3,
                     },
                     {
-                        name   => 'myname2',
+                        name   => "eth2",
                         pxe    => 0,
                         master => $master_iface_name3,
                     },
                 {
-                    name => '...',
+                    name => "eth3",
                     pxe  => 0,
                 },
             ],

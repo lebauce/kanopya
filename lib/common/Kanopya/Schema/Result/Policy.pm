@@ -108,6 +108,20 @@ __PACKAGE__->add_columns(
 
 __PACKAGE__->set_primary_key("policy_id");
 
+=head1 UNIQUE CONSTRAINTS
+
+=head2 C<policy_name>
+
+=over 4
+
+=item * L</policy_name>
+
+=back
+
+=cut
+
+__PACKAGE__->add_unique_constraint("policy_name", ["policy_name"]);
+
 =head1 RELATIONS
 
 =head2 param_preset
@@ -251,8 +265,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+ft48x1Np4Slzt2h4bq/og
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-02-04 16:46:13
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:XOPu2sA4c+LPHswKscY1WQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

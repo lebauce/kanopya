@@ -32,14 +32,16 @@ use strict;
 use warnings;
 
 use General;
+use Entity::ServiceTemplate;
 
 use Template;
 use NetAddr::IP;
 use File::Path qw(make_path);
 use File::Copy;
+use File::Basename;
 
 use TryCatch;
-my $err;
+
 
 
 =pod
@@ -91,6 +93,7 @@ sub _init {
         'kanopya-aggregator',
         'kanopya-rulesengine',
         'kanopya-front',
+        'kanopya-openstack-sync',
     ];
 
     $self->{parameters} = [
@@ -480,6 +483,10 @@ sub _generate_kanopya_conf {
           template => 'rulesengine.conf.tt',
           data     => { admin_password => $self->{parameters_values}->{mysql_kanopya_passwd}, }
         },
+        { path     => $self->{installpath} . '/conf/openstack-sync.conf',
+          template => 'openstack-sync.conf.tt',
+          data     => { admin_password => $self->{parameters_values}->{mysql_kanopya_passwd}, }
+        },
         { path     => $self->{installpath} . '/conf/monitor.conf',
           template => 'monitor.conf.tt',
           data     => { internal_net_add  => $self->{parameters_values}->{admin_ip},
@@ -528,6 +535,10 @@ sub _generate_kanopya_conf {
         },
         { path     => $self->{installpath} . '/conf/rulesengine-log.conf',
           template => 'rulesengine-log.conf.tt',
+          data     => { logdir => $self->{parameters_values}->{log_dir}.'/' }
+        },
+        { path     => $self->{installpath} . '/conf/openstack-sync-log.conf',
+          template => 'openstack-sync-log.conf.tt',
           data     => { logdir => $self->{parameters_values}->{log_dir}.'/' }
         },
         { path     => $self->{installpath} . '/conf/webui-log.conf',
@@ -655,6 +666,22 @@ sub _create_database {
     populateDB(login    => 'admin',
                password => $self->{parameters_values}->{mysql_kanopya_passwd},
                %datas);
+}
+
+
+=pod
+=begin classdoc
+
+Load generic policies and services
+
+=end classdoc
+=cut
+
+sub _create_generic_policies {
+    my ($self) = @_;
+
+    $self->loadPoliciesAndServices(main_file => $self->{installpath} . "/scripts/install/services/generic.json");
+
 }
 
 
@@ -985,6 +1012,7 @@ sub process {
     $self->_generate_kanopya_conf();
     $self->_generate_ssh_key();
     $self->_create_database();
+    $self->_create_generic_policies();
 
     $self->_configure_dhcpd();
     $self->_configure_iscsitarget();
@@ -1115,6 +1143,188 @@ sub _createMySQLUser {
     print "\n - Granting all privileges on $args{database} database to $args{user}...";
     $self->_execSQL("GRANT " . $args{privileges} . " ON $args{database}.* TO '$args{user}' WITH GRANT OPTION") == 0
          or die "error while granting privileges to $args{user}: $!";
+}
+
+
+=pod
+=begin classod
+
+Load services and policies initial environment.
+
+=end classdoc
+=cut
+
+sub loadPoliciesAndServices {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ "main_file" ]);
+
+    sub _findReferencedObject {
+        my $pattern = shift;
+
+        General::checkParams(args => $pattern, required => [ "class_type" ]);
+
+        my $referenced_class = delete $pattern->{class_type};
+        print " - Found search pattern as value for referenced id of type $referenced_class\n";
+
+        General::requireClass($referenced_class);
+
+        my $referenced;
+        try {
+            $referenced = $referenced_class->find(hash => $pattern)->id;
+        }
+        catch ($err) {
+            throw Kanopya::Exception(
+                      error => "Unable to find referenced object of type $referenced_class:\n$err"
+                  );
+        }
+        print " - Referenced object of type $referenced_class found as id: " . $referenced . "\n";
+
+        return $referenced;
+    }
+
+    sub _validateTemplate {
+        my $node = shift;
+
+        if (ref($node) eq 'HASH') {
+            for my $key (keys $node) {
+                if ($key =~ m/^.*_id$/) {
+                    if (ref($node->{$key}) eq "HASH") {
+                        $node->{$key} = _findReferencedObject($node->{$key});
+                    }
+                    else {
+                        # TODO: validate the id
+                    }
+                }
+                # BEGIN EXCEPTIONS
+                elsif ($key eq "netconfs") {
+                    # Specific job for netconfs, we can not handle
+                    # its as the key does not contain "_id", and it is an array...
+                    my @referenced;
+                    for my $netconf (@{ $node->{$key} }) {
+                        push @referenced, defined ref($netconf)
+                                              ? _findReferencedObject($netconf)
+                                              : $netconf;
+                    }
+                    $node->{$key} = \@referenced;
+                }
+                elsif ($key eq "component_type") {
+                    # Argg, why component_type key has not initially be named component_type_id ?
+                    if (ref($node->{$key}) eq "HASH") {
+                        $node->{$key} = _findReferencedObject($node->{$key});
+                    }
+                    else {
+                        # TODO: validate the id
+                    }
+                }
+                # END EXCEPTIONS
+                elsif (ref($node->{$key})) {
+                    _validateTemplate($node->{$key});
+                }
+            }
+        }
+        elsif (ref($node) eq 'ARRAY') {
+            for my $item (@{ $node }) {
+                _validateTemplate($item);
+            }
+        }
+    }
+
+    my $dir = dirname($args{main_file});
+    my @files = (basename($args{main_file}));
+
+    my $templates = {};
+    while (scalar(@files)) {
+        # Handle the first file of the list
+        my $json_file = $dir . '/' . $files[0];
+
+        print "Load service file '$json_file'...\n\n";
+
+        if (! defined $templates->{$json_file}) {
+            # Open and parse services definition json file.
+            my $json = do {
+                open(my $json_fh, "<:encoding(UTF-8)", $json_file)
+                    or die("Can't open $json_file: $!\n");
+                local $/;
+                <$json_fh>
+            };
+
+            try {
+                $templates->{$json_file} = JSON->new->decode($json);
+            }
+            catch ($err) {
+                throw Kanopya::Exception::IO(
+                          error => "Malformed json file:\n$err"
+                      );
+            }
+        }
+
+        if (defined $templates->{$json_file}->{require}) {
+            if (ref($templates->{$json_file}->{require}) ne 'ARRAY') {
+                throw Kanopya::Exception(
+                          error => "Malformed json file: 'required' key must have an array as value"
+                      );
+            }
+            for my $required (@{ $templates->{$json_file}->{require} }) {
+                print " - Found required json service file '$required.json'\n";
+                unshift @files, $required . ".json";
+            }
+            delete $templates->{$json_file}->{require};
+            next;
+        }
+
+        try {
+            # Firstly create policies
+            if (defined $templates->{$json_file}->{policies}) {
+                print "Create policies...\n\n";
+                for my $policy (values $templates->{$json_file}->{policies}) {
+                    General::checkParams(args => $policy, required => [ "policy_name", "policy_type" ]);
+
+                    print "Policy: $policy->{policy_name}...\n";
+
+                    # Build the type
+                    my $policy_type = "Entity::Policy::" . ucfirst($policy->{policy_type}) . "Policy";
+                    General::requireClass($policy_type);
+
+                    # Validate the policy template
+                    _validateTemplate($policy);
+
+                    # Create
+                    my $instance = $policy_type->findOrCreate(%$policy);
+
+                    print " - ok, policy created with id " . $instance->id . "\n";
+                }
+            }
+
+            # Then create services
+            if (defined $templates->{$json_file}->{services}) {
+                print "\nCreate services...\n\n";
+                for my $service (values $templates->{$json_file}->{services}) {
+                    General::checkParams(args => $service, required => [ "service_name" ]);
+
+                    print "Service: $service->{service_name}...\n";
+
+                    # Validate the service template
+                    _validateTemplate($service);
+
+                    # Create
+                    my $instance = Entity::ServiceTemplate->findOrCreate(%$service);
+
+                    print " - ok, service created with id " . $instance->id . "\n";
+                }
+            }
+        }
+        catch ($err) {
+            print "\n";
+
+            throw Kanopya::Exception(
+                      error => "Load services from $json_file failed:\n$err"
+                  );
+        }
+
+        # remove the handled file from the file list
+        shift @files;
+    }
 }
 
 1;

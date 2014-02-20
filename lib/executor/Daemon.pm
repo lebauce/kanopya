@@ -36,9 +36,10 @@ use Kanopya::Database;
 use Kanopya::Exceptions;
 use Kanopya::Config;
 
+use Manager::DaemonManager;
+
 use POSIX qw(setsid);
 use File::Pid;
-use AnyEvent;
 
 use Message;
 use EEntity;
@@ -46,6 +47,9 @@ use Entity::Host;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
+
+use TryCatch;
+my $err;
 
 # The host on which the daemon is running.
 my $host;
@@ -74,16 +78,13 @@ sub new {
     my $self = { name => $args{name}, component => undef };
     bless $self, $class;
 
-    # Instantiate a condition variable to stop the service
-    $self->{condvar} = AnyEvent->condvar;
-
     # Get the authentication configuration
     $self->{config} = defined $args{confkey} ? Kanopya::Config::get($args{confkey}) : $args{config};
 
-    eval {
+    try {
         General::checkParams(args => $self->{config}->{user}, required => [ "name", "password" ]);
-    };
-    if ($@) {
+    }
+    catch ($err) {
         throw Kanopya::Exception::Internal(
                   error => "Could not find <name> or/and <password> in the <user> configuration"
               );
@@ -91,7 +92,7 @@ sub new {
 
     # Authenticate the daemon to the api.
     Kanopya::Database::authenticate(login    => $self->{config}->{user}->{name},
-                                      password => $self->{config}->{user}->{password});
+                                    password => $self->{config}->{user}->{password});
 
     # Get the component configuration for the daemon.
     $self->refreshConfiguration();
@@ -112,17 +113,13 @@ sub run {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         optional => { 'daemonize' => 0,
-                                       'pidfile' => undef });
+                         optional => { 'daemonize' => 0, 'pidfile' => undef });
 
     $SIG{TERM} = $SIG{HUP} = $SIG{INT} = $SIG{QUIT} = sub {
         my ($sig) = @_;
-        $log->debug($sig . " signal received : exiting main loop");
+        $log->info($sig . " signal received: stopping $self->{name} daemon");
 
-        # Interrupt the daemon event loop
-        $self->{condvar}->croak("Service stopped.");
-
-        $log->debug("Service stopped");
+        $self->stop();
     };
 
     if ($args{daemonize}) {
@@ -142,7 +139,7 @@ sub run {
                 $log->error($err);
                 throw Kanopya::Exception::Daemon(error => $err);
             }
-            # Seems to do not remove the file...
+            # Seems to do not remove the pid file...
             $pidfile->remove;
         }
         $pidfile->write;
@@ -154,16 +151,14 @@ sub run {
         content => "Kanopya $self->{name} started."
     );
 
-    eval {
+    try {
         $log->info("Entering main loop");
 
         # execute the daemon main loop
-        $self->runLoop(condvar => $self->{condvar});
-    };
-    if ($@) {
-        my $err = $@;
-        $log->error("$err");
-        die("$err");
+        $self->runLoop();
+    }
+    catch ($err) {
+        $log->error($err);
     }
 
     $pidfile->remove if $args{pidfile};
@@ -175,6 +170,7 @@ sub run {
     );
 }
 
+
 =pod
 =begin classdoc
 
@@ -184,10 +180,13 @@ sub run {
 sub runLoop {
     my $self = shift;
 
-    while (! $self->{condvar}->ready) {
+    $self->setRunning(running => 1);
+
+    while ($self->isRunning) {
         $self->execnround(run => 1);
     }
 }
+
 
 =pod
 =begin classdoc
@@ -238,16 +237,37 @@ sub refreshConfiguration {
     my ($self, %args) = @_;
 
     # Retrieve the corresponding component
-    eval {
+    try {
         # Update the daemon configuration
         $self->{config} = $merge->merge($self->{config}, $self->_component->getConf());
-    };
-    if ($@) {
-        my $err = "Could not find component corresponding to service <$self->{name}> " .
-                  "on host <" . $self->_host->node->node_hostname . ">.";
-        $log->warn($err);
+    }
+    catch (Kanopya::Exception::Internal::NotFound $err) {
+        $log->warn("Could not find component corresponding to service <$self->{name}> " .
+                   "running on host <" . $self->_host->node->node_hostname . ">.");
+    }
+    catch ($err) {
+        $err->rethrow();
     }
 }
+
+
+=pod
+=begin
+
+Stop the daemon.
+
+=end classdoc
+=cut
+
+sub stop {
+    my ($self, %args) = @_;
+
+    # Interrupt the daemon event loop
+    $self->setRunning(running => 0);
+
+    $log->debug("Service stopped");
+}
+
 
 =pod
 =begin
@@ -277,6 +297,41 @@ sub daemonize {
     POSIX::setsid() or die "Can't start a new session.";
 }
 
+
+=pod
+=begin classdoc
+
+Set the running prviate member.
+
+@param running the running flag to set
+
+=end classdoc
+=cut
+
+sub setRunning {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'running' ]);
+
+    $self->{_running} = $args{running};
+}
+
+
+=pod
+=begin classdoc
+
+@return the running private member.
+
+=end classdoc
+=cut
+
+sub isRunning {
+    my ($self, %args) = @_;
+
+    return ($self->{_running} == 1);
+}
+
+
 =pod
 =begin classdoc
 
@@ -287,7 +342,6 @@ Return/instanciate the host singleton.
 
 sub _host {
     my $self = shift;
-    my %args = @_;
 
     return $host if defined $host;
 
@@ -309,11 +363,22 @@ Return/instanciate the component singleton.
 
 sub _component {
     my $self = shift;
-    my %args = @_;
 
     return $self->{component} if defined $self->{component};
 
-    $self->{component} = $self->_host->node->getComponent(name => 'Kanopya' . $self->{name});
+    try {
+        $self->{component} = $self->_host->node->getComponent(name => 'Kanopya' . $self->{name});
+    }
+    catch (Kanopya::Exception::Internal::NotFound $err) {
+        $log->warn("Could not find component corresponding to service <$self->{name}> " .
+                   "running on host <" . $self->_host->node->node_hostname . ">, " .
+                   "using generic DaemonManager instead.");
+        $self->{component} = Manager::DaemonManager->new();
+    }
+    catch ($err) {
+        $err->rethrow();
+    }
+
     return $self->{component};
 }
 

@@ -286,11 +286,13 @@ sub _create_and_configure_cluster {
             }
         },
         interfaces => {
-            i1 => { interface_netconfs => { $admin_netconf->id    => $admin_netconf->id },
-                                          { $storage_netconf1->id => $storage_netconf1->id },
-                                          { $storage_netconf2->id => $storage_netconf2->id },
-                    },
-                    # bonds_number => 2,
+            i1 => {
+                interface_name => 'eth0',
+                netconfs       => { $admin_netconf->id    => $admin_netconf->id },
+                                  { $storage_netconf1->id => $storage_netconf1->id },
+                                  { $storage_netconf2->id => $storage_netconf2->id },
+                # bonds_number => 2,
+            },
         },
     );
     Kanopya::Tools::Execution->executeOne(entity => $cluster_create);

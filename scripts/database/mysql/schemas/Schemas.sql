@@ -754,7 +754,7 @@ CREATE TABLE `poolip` (
 CREATE TABLE `ip` (
   `ip_id`     int(8) unsigned AUTO_INCREMENT,
   `ip_addr`   char(15) NOT NULL,
-  `poolip_id` int(8) unsigned NOT NULL,
+  `poolip_id` int(8) unsigned DEFAULT NULL,
   `iface_id`  int(8) unsigned NULL DEFAULT NULL,
   PRIMARY KEY (`ip_id`),
   UNIQUE KEY (`ip_addr`, `poolip_id`),
@@ -796,6 +796,7 @@ CREATE TABLE `interface` (
   `bonds_number`        int(8) unsigned NOT NULL DEFAULT 0,
   `interface_name`      char(32) NOT NULL,
   PRIMARY KEY (`interface_id`),
+  UNIQUE KEY (`service_provider_id`, `interface_name`),
   FOREIGN KEY (`interface_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1616,6 +1617,7 @@ CREATE TABLE `service_template` (
   `billing_policy_id` int(8) unsigned DEFAULT NULL,
   `orchestration_policy_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`service_template_id`),
+  UNIQUE KEY (`service_name`),
   FOREIGN KEY (`service_template_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`hosting_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`storage_policy_id`) REFERENCES `policy` (`policy_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
@@ -1637,6 +1639,7 @@ CREATE TABLE `policy` (
   `policy_desc` char(255) DEFAULT NULL,
   `policy_type` char(64) NOT NULL,
   PRIMARY KEY (`policy_id`),
+  UNIQUE KEY (`policy_name`),
   FOREIGN KEY (`policy_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE SET NULL ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -1693,7 +1696,7 @@ CREATE TABLE `dashboard` (
 
 CREATE TABLE `data_model` (
   `data_model_id` int(8) unsigned NOT NULL,
-  `combination_id` INT(8) unsigned NOT NULL,
+  `combination_id` INT(8) unsigned NULL,
   `node_id` INT(8) unsigned NULL,
   `param_preset_id` INT(8) unsigned NULL,
   `start_time` double NULL,

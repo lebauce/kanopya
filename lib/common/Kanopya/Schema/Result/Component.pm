@@ -513,6 +513,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 kanopya_openstack_sync
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::KanopyaOpenstackSync>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopya_openstack_sync",
+  "Kanopya::Schema::Result::KanopyaOpenstackSync",
+  { "foreign.kanopya_openstack_sync_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 kanopya_rules_engine
 
 Type: might_have
@@ -708,6 +723,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 neutron
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Neutron>
+
+=cut
+
+__PACKAGE__->might_have(
+  "neutron",
+  "Kanopya::Schema::Result::Neutron",
+  { "foreign.neutron_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 nfsd3
 
 Type: might_have
@@ -810,21 +840,6 @@ __PACKAGE__->might_have(
   "puppetmaster2",
   "Kanopya::Schema::Result::Puppetmaster2",
   { "foreign.puppetmaster2_id" => "self.component_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 quantum
-
-Type: might_have
-
-Related object: L<Kanopya::Schema::Result::Quantum>
-
-=cut
-
-__PACKAGE__->might_have(
-  "quantum",
-  "Kanopya::Schema::Result::Quantum",
-  { "foreign.quantum_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -1054,8 +1069,8 @@ Composing rels: L</workflow_def_managers> -> workflow_def
 __PACKAGE__->many_to_many("workflow_defs", "workflow_def_managers", "workflow_def");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-26 15:43:32
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:tGDMSPf4TkgBbn8QIVMK8g
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-01-30 17:59:16
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9lDVGsdHPdJFr1Vt+pnFtw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

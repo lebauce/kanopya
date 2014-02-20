@@ -34,6 +34,7 @@ use ComponentCategory;
 use ComponentCategory::ManagerCategory;
 use ClassType::DataModelType;
 use Manager::HostManager;
+use Dhcpd3Subnet;
 
 use POSIX;
 use Date::Simple (':all');
@@ -79,6 +80,7 @@ my @classes = (
     'Entity::Component::KanopyaFront',
     'Entity::Component::KanopyaAggregator',
     'Entity::Component::KanopyaRulesEngine',
+    'Entity::Component::KanopyaOpenstackSync',
     'Entity::Component::UcsManager',
     'Entity::Component::Fileimagemanager0',
     'Entity::Component::NetappManager',
@@ -110,7 +112,7 @@ my @classes = (
     'Entity::Component::Virtualization::NovaController',
     'Entity::Component::Vmm::NovaCompute',
     'Entity::Component::Openstack::Cinder',
-    'Entity::Component::Openstack::Quantum',
+    'Entity::Component::Openstack::Neutron',
     'Entity::Component::Openstack::Keystone',
     'Entity::Component::Openstack::Glance',
     'Entity::Component::Openstack::SwiftProxy',
@@ -653,7 +655,6 @@ sub registerOperations {
         [ 'ActivateCluster', 'Activating service "[% cluster ? cluster : "n/a" %]"' ],
         [ 'DeactivateCluster', 'Deactivating service "[% cluster ? cluster : "n/a" %]"' ],
         [ 'StopCluster', 'Stopping service "[% cluster ? cluster : "n/a" %]"' ],
-        [ 'CloneSystemimage' ],
         [ 'RemoveSystemimage', 'Removing system image "[% systemimage %]"' ],
         [ 'CreateDisk', 'Creating new disk "[% name %]"' ],
         [ 'CreateExport', 'Exporting disk "[% container %]"' ],
@@ -1161,7 +1162,7 @@ sub registerComponents {
             service_provider_types => [ 'Cluster', 'Ubuntu12', 'Centos6', 'Debian6' ],
         },
         {
-            component_name         => 'Quantum',
+            component_name         => 'Neutron',
             component_version      => 6,
             deployable             => 1,
             component_categories   => [ ],
@@ -1204,6 +1205,13 @@ sub registerComponents {
         },
         {
             component_name         => 'KanopyaRulesEngine',
+            component_version      => 0,
+            deployable             => 0,
+            component_categories   => [ ],
+            service_provider_types => [ 'Kanopya', 'Centos6' ],
+        },
+        {
+            component_name         => 'KanopyaOpenstackSync',
             component_version      => 0,
             deployable             => 0,
             component_categories   => [ ],
@@ -1582,6 +1590,9 @@ sub registerKanopyaMaster {
             }
         },
         {
+            name => 'KanopyaOpenstackSync',
+        },
+        {
             name => 'KanopyaAggregator'
         },
         {
@@ -1710,13 +1721,13 @@ sub registerKanopyaMaster {
 
     my $admin_interface = Entity::Interface->new(
                               service_provider_id => $admin_cluster->id,
-                              interface_name      => 'interface1'
+                              interface_name      => $args{admin_interface}
                           );
 
     my $physical_hoster = $admin_cluster->getComponent(name => 'Physicalhoster');
     my $admin_host = Entity::Host->new(
                          host_manager_id    => $physical_hoster->id,
-                         host_serial_number => "",
+                         host_serial_number => "1",
                          host_desc          => "Admin host",
                          active             => 1,
                          host_initiatorname => $kanopya_initiator,
@@ -1740,9 +1751,13 @@ sub registerKanopyaMaster {
     );
 
     my $admin_role = Entity::NetconfRole->find(hash => { netconf_role_name => "admin" });
+    my $vmsrole = Entity::NetconfRole->find(hash => { netconf_role_name => "vms" });
 
-    my $netconf = Entity::Netconf->new(netconf_name => "Kanopya admin",);
-    $netconf->setAttr(name => 'netconf_role_id', value => $admin_role->id, save => 1);
+    my $netconf = Entity::Netconf->create(netconf_name    => "Kanopya admin",
+                                          netconf_role_id => $admin_role->id);
+
+    my $vmsnetconf = Entity::Netconf->create(netconf_name    => "Virtual machines bridge",
+                                             netconf_role_id => $vmsrole->id);
 
     NetconfInterface->new(netconf_id => $netconf->id, interface_id => $admin_interface->id);
     NetconfPoolip->new(netconf_id => $netconf->id, poolip_id => $poolip->id);
@@ -2116,180 +2131,10 @@ sub populate_workflow_def {
 sub populate_policies {
     my %args = @_;
 
-    my %policies = ();
-
-    # hosting
-    my $type_id = ClassType::ComponentType->find(hash => { component_name => 'Physicalhoster' })->id;
-
-    my $physicalhoster = Entity::Component->find(hash => {
-                             component_type_id   => $type_id,
-                             service_provider_id => $args{kanopya_master}->id
-                         });
-
-    $policies{'Standard physical cluster'}{hosting} = Entity::Policy::HostingPolicy->new(
-        policy_name     => 'Default physical host',
-        policy_desc     => 'Hosting policy for default physical hosts',
-        policy_type     => 'hosting',
-        host_manager_id => $physicalhoster->id,
-        ram             => 1024*1024*1024,
-        cpu             => 1,
-    );
-    $policies{'Standard OpenNebula KVM IAAS'}{hosting} = Entity::Policy::HostingPolicy->new(
-        policy_name     => 'Generic host',
-        policy_desc     => 'Hosting policy for generic hosts',
-        policy_type     => 'hosting',
-    );
-    $policies{'Standard OpenNebula Xen IAAS'}{hosting} = $policies{'Standard OpenNebula KVM IAAS'}{hosting};
-    $policies{'Generic service'}{hosting} = $policies{'Standard OpenNebula KVM IAAS'}{hosting};
-
-    # storage
-    my $lvm_type_id = ClassType::ComponentType->find(hash => { component_name => 'Lvm' })->id;
-    my $lvm = Entity::Component->find(hash => { component_type_id => $lvm_type_id, service_provider_id => $args{kanopya_master}->id });
-    my $iscsit_type_id = ClassType::ComponentType->find(hash => { component_name => 'Iscsitarget' })->id;
-    my $iscsitarget = Entity::Component->find(hash => { component_type_id => $iscsit_type_id, service_provider_id => $args{kanopya_master}->id });
-
-    $policies{'Standard physical cluster'}{storage} = Entity::Policy::StoragePolicy->new(
-        policy_name       => 'Kanopya LVM disk exported via ISCSI',
-        policy_desc       => 'Datastore on Kanopya cluster for PXE boot via ISCSI',
-        policy_type       => 'storage',
-        disk_manager_id   => $lvm->id,
-        export_manager_id => $iscsitarget->id,
-    );
-    $policies{'Standard OpenNebula KVM IAAS'}{storage} = $policies{'Standard physical cluster'}{storage};
-    $policies{'Standard OpenNebula Xen IAAS'}{storage} = $policies{'Standard physical cluster'}{storage};
-    $policies{'Generic service'}{storage} = Entity::Policy::StoragePolicy->new(
-        policy_name       => 'Generic storage',
-        policy_desc       => 'Storage policy for generic storage',
-        policy_type       => 'storage',
-    );
-
-    # network
-    my $netconf = Entity::Netconf->find(hash => { netconf_name => 'Kanopya admin' });
-    my $network = Entity::Network->find(hash => { network_name => 'admin' });
-    $policies{'Standard physical cluster'}{network} = Entity::Policy::NetworkPolicy->new(
-        policy_name          => 'Default network configuration',
-        policy_desc          => 'Default network configuration, with admin interface',
-        policy_type          => 'network',
-        cluster_nameserver1  => '8.8.8.8',
-        cluster_nameserver2  => '8.8.4.4',
-        cluster_domainname   => 'hedera-technology.com',
-        default_gateway_id   => $network->id,
-        interfaces           => [
-            { netconfs => [ $netconf->id ], interface_name => 'interface1' }
-        ],
-    );
-
-    my $vmsrole = Entity::NetconfRole->find(hash => { netconf_role_name => "vms" });
-    my $vmsnetconf = Entity::Netconf->create(netconf_name    => "Virtual machines bridge",
-                                              netconf_role_id => $vmsrole->id);
-
-    $policies{'Standard OpenNebula KVM IAAS'}{network} = Entity::Policy::NetworkPolicy->new(
-        policy_name          => 'Default IAAS network configuration',
-        policy_desc          => 'Default IAAS network configuration, with admin and bridge interfaces',
-        policy_type          => 'network',
-        cluster_nameserver1  => '8.8.8.8',
-        cluster_nameserver2  => '8.8.4.4',
-        cluster_domainname   => 'hedera-technology.com',
-        default_gateway_id   => $network->id,
-        interfaces           => [
-            { netconfs => [ $netconf->id ],    interface_name => 'interface1' },
-            { netconfs => [ $vmsnetconf->id ], interface_name => 'interface2' }
-        ],
-    );
-    $policies{'Standard OpenNebula Xen IAAS'}{network} = $policies{'Standard OpenNebula KVM IAAS'}{network};
-    $policies{'Generic service'}{network} = Entity::Policy::NetworkPolicy->new(
-        policy_name          => 'Generic network configuration',
-        policy_desc          => 'Network policy for generic network configuration',
-        policy_type          => 'network',
-    );
-
-    # scalability
-    $policies{'Standard physical cluster'}{scalability} = Entity::Policy::ScalabilityPolicy->new(
-        policy_name      => 'Manual scalability cluster',
-        policy_desc      => 'Manual scalability',
-        policy_type      => 'scalability',
-        cluster_min_node => 1,
-        cluster_max_node => 10,
-        cluster_priority => 1
-    );
-    $policies{'Standard OpenNebula KVM IAAS'}{scalability} = $policies{'Standard physical cluster'}{scalability};
-    $policies{'Standard OpenNebula Xen IAAS'}{scalability} = $policies{'Standard physical cluster'}{scalability};
-    $policies{'Generic service'}{scalability} = Entity::Policy::ScalabilityPolicy->new(
-        policy_name      => 'Generic scalability',
-        policy_desc      => 'Scalability policy for generic service',
-        policy_type      => 'scalability',
-    );
-
-    # system
-    my $puppettypeid = ClassType::ComponentType->find(hash => { component_name => 'Puppetagent' })->id;
-    $policies{'Standard physical cluster'}{system} = Entity::Policy::SystemPolicy->new(
-        policy_name           => 'Default non persistent cluster',
-        policy_desc           => 'System policy for default non persistent cluster',
-        policy_type           => 'system',
-        cluster_si_persistent => 0,
-        systemimage_size      => 5 * (1024**3), # 5GB
-        components            => [
-            { component_type => $puppettypeid }
-        ],
-    );
-
-    my $opennebula = ClassType::ComponentType->find(hash => { component_name => 'Puppetagent' })->id;
-    my $kvm = ClassType::ComponentType->find(hash => { component_name => 'Kvm' })->id;
-    my $xen = ClassType::ComponentType->find(hash => { component_name => 'Xen' })->id;
-    $policies{'Standard OpenNebula KVM IAAS'}{system} = Entity::Policy::SystemPolicy->new(
-        policy_name           => 'Default OpenNebula KVM IAAS',
-        policy_desc           => 'System policy for default OpenNebula KVM IAAS',
-        policy_type           => 'system',
-        cluster_si_persistent => 0,
-        systemimage_size      => 5 * (1024**3), # 5GB
-        components            => [
-            { component_type => $puppettypeid },
-            { component_type => $opennebula },
-            { component_type => $kvm }
-        ],
-    );
-    $policies{'Standard OpenNebula Xen IAAS'}{system} = Entity::Policy::SystemPolicy->new(
-        policy_name           => 'Default OpenNebula Xen IAAS',
-        policy_desc           => 'System policy for default OpenNebula KVM IAAS',
-        policy_type           => 'system',
-        cluster_si_persistent => 0,
-        systemimage_size      => 5 * (1024**3), # 5GB
-        components            => [
-            { component_type => $puppettypeid },
-            { component_type => $opennebula },
-            { component_type => $xen }
-        ],
-    );
-    $policies{'Generic service'}{system} = Entity::Policy::SystemPolicy->new(
-        policy_name           => 'Generic system',
-        policy_desc           => 'System policy for generic service',
-        policy_type           => 'system',
-    );
-
-    # billing
-    $policies{'Standard physical cluster'}{billing} = Entity::Policy::BillingPolicy->new(
-        policy_name => 'Empty billing configuration',
-        policy_desc => 'Empty billing configuration',
-        policy_type => 'billing',
-    );
-    $policies{'Standard OpenNebula KVM IAAS'}{billing} = $policies{'Standard physical cluster'}{billing};
-    $policies{'Standard OpenNebula Xen IAAS'}{billing} = $policies{'Standard physical cluster'}{billing};
-    $policies{'Generic service'}{billing} = $policies{'Standard physical cluster'}{billing};
-
     # orchestration
     my $orch_policy_sp = configureDefaultOrchestrationPolicyService( admin_cluster => $args{kanopya_master} );
-    $policies{'Standard physical cluster'}{orchestration} = Entity::Policy::OrchestrationPolicy->new(
-        policy_name     => 'Standard orchestration configuration',
-        policy_desc     => 'Standard orchestration configuration',
-        policy_type     => 'orchestration',
-        orchestration   => { service_provider_id => $orch_policy_sp->id }
-    );
-    $policies{'Standard OpenNebula KVM IAAS'}{orchestration} = $policies{'Standard physical cluster'}{orchestration};
-    $policies{'Standard OpenNebula Xen IAAS'}{orchestration} = $policies{'Standard physical cluster'}{orchestration};
-    $policies{'Generic service'}{orchestration} = $policies{'Standard physical cluster'}{orchestration};
-
-    return \%policies;
 }
+
 
 # Link to kanopya workflow and collector manager
 # Add cpu and mem metrics and rules
@@ -2441,23 +2286,6 @@ sub configureDefaultOrchestrationPolicyService {
     return $sp;
 }
 
-sub populate_servicetemplates {
-    my ($policies) = @_;
-
-    for my $templatename (keys %{ $policies }) {
-        Entity::ServiceTemplate->new(
-            service_name            => $templatename,
-            service_desc            => 'Service template for ' . lcfirst ($templatename) . ' declaration',
-            hosting_policy_id       => $policies->{$templatename}->{hosting}->id,
-            storage_policy_id       => $policies->{$templatename}->{storage}->id,
-            network_policy_id       => $policies->{$templatename}->{network}->id,
-            scalability_policy_id   => $policies->{$templatename}->{scalability}->id,
-            system_policy_id        => $policies->{$templatename}->{system}->id,
-            billing_policy_id       => $policies->{$templatename}->{billing}->id,
-            orchestration_policy_id => $policies->{$templatename}->{orchestration}->id
-        );
-    }
-}
 
 sub login {
     my $config = Kanopya::Database::_loadconfig;
@@ -2531,11 +2359,8 @@ sub populateDB {
     print "\t- Registering workflow definitions...\n";
     populate_workflow_def(kanopya_master => $kanopya_master);
 
-    print "\t- Create default policies...\n";
-    my $policies = populate_policies(kanopya_master => $kanopya_master);
-
-    print "\t- Create default service templates...\n";
-    populate_servicetemplates($policies);
+    print "\t- Create default orchestration policy...\n";
+    populate_policies(kanopya_master => $kanopya_master);
 
     print "\t- Populating DB done.\n"; 
 }

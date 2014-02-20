@@ -1,3 +1,7 @@
+#!/usr/bin/perl -w
+
+#    kanopya-executor - This is the main script to run Kanopya Executor server.
+#
 #    Copyright © 2013 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -12,13 +16,31 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package EEntity::EComponent::EOpenstack::EQuantum;
-use base "EEntity::EComponent";
-
 use strict;
 use warnings;
 
-use EEntity;
+use OpenstackSync;
+use Kanopya::Config;
 
-1;
+use Getopt::Std;
+use Log::Log4perl 'get_logger';
 
+my $dir = Kanopya::Config::getKanopyaDir();
+Log::Log4perl->init($dir . '/conf/openstack-sync-log.conf');
+my $log = get_logger("");
+
+sub print_usage {
+    print "Usage: kanopya-openstack-sync\n";
+    print "       kanopya-openstack-sync [-b|--background] [-p pidfile]\n";
+    exit(1);
+}
+
+my %opts = ();
+getopts("bp:", \%opts) or print_usage;
+
+my $s = OpenstackSync->new();
+$s->run(name       => "kanopya-openstack-sync",
+        daemonize  => $opts{b},
+        pidfile    => $opts{p});
+
+$log->warn("kanopya-openstack-sync stopped");

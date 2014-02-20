@@ -15,7 +15,7 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package  Entity::Component::Openstack::Quantum;
+package  Entity::Component::Openstack::Neutron;
 use base "Entity::Component";
 
 use strict;
@@ -48,7 +48,7 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub getNetConf {
     return {
-        quantum => {
+        neutron => {
             port => 9696,
             protocols => ['tcp']
         }
@@ -59,12 +59,12 @@ sub getPuppetDefinition {
     my ($self, %args) = @_;
 
     my $definition = $self->SUPER::getPuppetDefinition(%args);
-    my $name = "quantum-" . $self->id;
+    my $name = "neutron-" . $self->id;
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
-        quantum => {
+        neutron => {
             classes => {
-                'kanopya::openstack::quantum::server' => {
+                'kanopya::openstack::neutron::server' => {
                     bridge_flat => 'br-flat',
                     bridge_vlan => 'br-vlan',
                     email => $self->service_provider->owner->user_email,
