@@ -180,7 +180,8 @@ sub registerNode {
     for my $component (@{ $args{components} }) {
         if ($component->service_provider->id != $self->id) {
             throw Kanopya::Exception::Internal(
-                      error => "Component <$component> do not come from this service provider <" . $self->id . ">"
+                      error => "Component <$component> do not come from this " .
+                               "service provider <" . $self->id . ">"
                   );
         }
         $component->registerNode(node => $node, master_node => ($node->node_number == 1) ? 1 : 0);
@@ -190,7 +191,8 @@ sub registerNode {
     # TODO: Manage network connectivity on node intead of host.
     if (defined $node->host) {
         # Set the ifaces netconf according to the cluster interfaces
-        # We consider that the available ifaces match the cluster interfaces since getFreeHost selection
+        # We consider that the available ifaces match the cluster
+        # interfaces since getFreeHost selection done.
         foreach my $interface ($self->interfaces) {
             # Firstly find the corresponding iface from name
             my $iface = $node->host->find(related => 'ifaces',
@@ -198,6 +200,8 @@ sub registerNode {
 
             # Set the related netconfs
             my @netconfs = $interface->netconfs;
+
+            $log->info("Configure iface " . $iface->iface_name . " with netconfs " . join(', ', @netconfs));
             $iface->update(netconf_ifaces => \@netconfs, override_relations => 1);
         }
     }

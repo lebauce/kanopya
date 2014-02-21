@@ -409,7 +409,7 @@ sub getPXEIface {
     my $pxe_iface;
     eval {
         $pxe_iface = Entity::Iface->find(hash => {
-                         host_id   => $self->host_id,
+                         host_id   => $self->id,
                          iface_pxe => 1,
                          # Do not search bonding slave ifaces
                          master    => ''
