@@ -3,9 +3,11 @@ package Services;
 use Dancer ':syntax';
 use Dancer::Plugin::Ajax;
 
+use Log::Log4perl "get_logger";
+
 use Node;
 
-use Data::Dumper;
+my $log = get_logger("");
 
 prefix undef;
 
@@ -26,6 +28,29 @@ sub processOrderBy {
 
     return ($column, $order);
 }
+
+post '/service/:servicename/component/:componenttype/:rpc' => sub {
+    content_type 'application/json';
+
+    my %params = params;
+
+    # Extract rpc method name from params
+    my $method = delete $params{rpc};
+
+    # Find the service provider from service name
+    my $service = Entity::ServiceProvider::Cluster->find(hash => {
+                      cluster_name => delete $params{servicename}
+                  });
+
+    # Find the component on the service from component type
+    my $component = $service->getComponent(name => delete $params{componenttype});
+
+    $log->info("Calling RPC method '$method' on component $component with id <" . $component->id . ">");
+
+    # Finally forward to the RPC call on the usaual api
+    return forward '/api/component/' . $component->id . '/' . $method;
+};
+
 
 get '/nodes' => sub {
     content_type 'application/json';

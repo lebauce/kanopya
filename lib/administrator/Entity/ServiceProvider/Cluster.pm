@@ -266,6 +266,19 @@ sub create {
 
     General::checkParams(args => \%args, required => [ 'cluster_name', 'owner_id' ]);
 
+    my $kanopya = $class->getKanopyaCluster();
+    $kanopya->getManager(manager_type => 'ExecutionManager')->enqueue(
+        type       => 'AddCluster',
+        params     => $class->buildInstantiationParams(%args),
+        related_id => $kanopya->id
+    );
+}
+
+sub buildInstantiationParams {
+    my ($class, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'cluster_name', 'owner_id' ]);
+
     # Firstly build the configuration pattern from args.
     my $confpattern = $class->buildConfigurationPattern(%args);
 
@@ -291,14 +304,10 @@ sub create {
     if (defined $args{service_template_id}) {
         $op_params->{context}->{service_template}
             = Entity::ServiceTemplate->get(id => $args{service_template_id});
-    } 
+    }
 
-    my $kanopya = $class->getKanopyaCluster;
-    $kanopya->getManager(manager_type => 'ExecutionManager')->enqueue(
-        type       => 'AddCluster',
-        params     => $op_params,
-        related_id => $kanopya->id
-    );
+
+    return $op_params;
 }
 
 sub buildConfigurationPattern {
@@ -325,7 +334,8 @@ sub buildConfigurationPattern {
     # (see Policy.pm), only if the id of the policy that the params belongs to is specified.
     # Otherwise, params must be given in the cluster configuration pattern format.
     for my $policy (@policies) {
-        $confpattern = $merge->merge($confpattern, $policy->getPattern(params => \%args));
+        my $pattern = $policy->getPattern(params => \%args, noarrays => 0);
+        $confpattern = $merge->merge($confpattern, $pattern);
     }
 
     # Then merge the configuration pattern with the remaining cluster params
@@ -508,7 +518,7 @@ sub configureInterfaces {
 
     my @interfaces = values %{ $args{interfaces} };
     for my $interface (@interfaces) {
-        my @netconfs = values %{ delete $interface->{netconfs} };
+        my @netconfs = defined $interface->{netconfs} ? values %{ delete $interface->{netconfs} } : ();
         $interface->{netconf_interfaces} = \@netconfs;
         $interface->{bonds_number} = $interface->{bonds_number} ? $interface->{bonds_number} : 0;
     }

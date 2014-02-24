@@ -56,6 +56,12 @@
                         "class_type" : "ClassType::ComponentType",
                         "component_name" : "NovaCompute"
                     }
+                },
+                {
+                    "component_type" : {
+                        "class_type" : "ClassType::ComponentType",
+                        "component_name" : "Nfsd"
+                    }
                 }
             ],
             "policy_type": "system",
@@ -327,6 +333,38 @@
                 "policy_name" : "PimpmystackStorage"
             }
         },
+        "PMS DB and Messaging" : {
+            "service_name": "PMS DB and messaging",
+            "service_desc": "",
+            "orchestration_policy_id": {
+                "class_type" : "Entity::Policy::OrchestrationPolicy",
+                "policy_name" : "Standard orchestration configuration"
+            },
+            "scalability_policy_id": {
+                "class_type" : "Entity::Policy::ScalabilityPolicy",
+                "policy_name" : "PMS One Node"
+            },
+            "network_policy_id": {
+                "class_type" : "Entity::Policy::NetworkPolicy",
+                "policy_name" : "PimpmystackNetwork"
+            },
+            "hosting_policy_id": {
+                "class_type" : "Entity::Policy::HostingPolicy",
+                "policy_name" : "PimpmystackHosting"
+            },
+            "billing_policy_id": {
+                "class_type" : "Entity::Policy::BillingPolicy",
+                "policy_name" : "Empty billing configuration"
+            },
+            "system_policy_id": {
+                "class_type" : "Entity::Policy::SystemPolicy",
+                "policy_name" : "PMS DB and Messaging"
+            },
+            "storage_policy_id": {
+                "class_type" : "Entity::Policy::StoragePolicy",
+                "policy_name" : "PimpmystackStorage"
+            }
+        },
         "PMS Hypervisor" : {
             "service_name": "PMS Hypervisor",
             "service_desc": "PMS hypervisor groups all instances of nova compute",
@@ -353,6 +391,38 @@
             "system_policy_id": {
                 "class_type" : "Entity::Policy::SystemPolicy",
                 "policy_name" : "PMS Compute"
+            },
+            "storage_policy_id": {
+                "class_type" : "Entity::Policy::StoragePolicy",
+                "policy_name" : "PimpmystackStorage"
+            }
+        },
+        "PMS Distributed Controller" : {
+            "service_name": "PMS Distributed Controller",
+            "service_desc": "",
+            "orchestration_policy_id": {
+                "class_type" : "Entity::Policy::OrchestrationPolicy",
+                "policy_name" : "Standard orchestration configuration"
+            },
+            "scalability_policy_id": {
+                "class_type" : "Entity::Policy::ScalabilityPolicy",
+                "policy_name" : "Manual scalability cluster"
+            },
+            "network_policy_id": {
+                "class_type" : "Entity::Policy::NetworkPolicy",
+                "policy_name" : "PimpmystackNetwork"
+            },
+            "hosting_policy_id": {
+                "class_type" : "Entity::Policy::HostingPolicy",
+                "policy_name" : "PimpmystackHosting"
+            },
+            "billing_policy_id": {
+                "class_type" : "Entity::Policy::BillingPolicy",
+                "policy_name" : "Empty billing configuration"
+            },
+            "system_policy_id": {
+                "class_type" : "Entity::Policy::SystemPolicy",
+                "policy_name" : "PMS Distributed Controller"
             },
             "storage_policy_id": {
                 "class_type" : "Entity::Policy::StoragePolicy",

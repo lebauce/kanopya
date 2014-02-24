@@ -157,6 +157,10 @@ use Exception::Class (
         isa         => 'Kanopya::Exception::Execution',
         description => 'Resource busy',
     },
+    Kanopya::Exception::Execution::AlreadyExists => {
+        isa         => 'Kanopya::Exception::Execution',
+        description => 'Already exist',
+    },
     Kanopya::Exception::AuthenticationRequired => {
         isa         => 'Kanopya::Exception',
         description => 'Authentication required',

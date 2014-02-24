@@ -81,6 +81,7 @@ my @classes = (
     'Entity::Component::KanopyaAggregator',
     'Entity::Component::KanopyaRulesEngine',
     'Entity::Component::KanopyaOpenstackSync',
+    'Entity::Component::KanopyaStackBuilder',
     'Entity::Component::UcsManager',
     'Entity::Component::Fileimagemanager0',
     'Entity::Component::NetappManager',
@@ -687,6 +688,10 @@ sub registerOperations {
         [ 'StopNode', 'Stopping node "[% host ? host : "n/a" %]"' ],
         [ 'PreStopNode', 'Configuring node removal for instance "[% cluster ? cluster : "n/a" %]"' ],
         [ 'PostStopNode', 'Finalizing removing node "[% host ? host : "n/a" %]"' ],
+        # Workflow BuildStack
+        [ 'BuildStack', 'Building stack' ],
+        [ 'StartStack', 'Starting stack' ],
+        [ 'ValidateStack', 'Validating stack' ],
     ];
 
     for my $operation (@{$operations}) {
@@ -1218,6 +1223,13 @@ sub registerComponents {
             service_provider_types => [ 'Kanopya', 'Centos6' ],
         },
         {
+            component_name         => 'KanopyaStackBuilder',
+            component_version      => 0,
+            deployable             => 0,
+            component_categories   => [ ],
+            service_provider_types => [ 'Kanopya', 'Centos6' ],
+        },
+        {
             component_name         => 'Ceph',
             component_version      => 0,
             deployable             => 1,
@@ -1591,6 +1603,9 @@ sub registerKanopyaMaster {
         },
         {
             name => 'KanopyaOpenstackSync',
+        },
+        {
+            name => 'KanopyaStackBuilder',
         },
         {
             name => 'KanopyaAggregator'
@@ -2125,6 +2140,18 @@ sub populate_workflow_def {
         },
         steps => [ Operationtype->find(hash => { operationtype_name => 'Synchronize' })->id ],
         description => "Synchronizing component \"[% entity %]\""
+    );
+
+    # BuildStack workflow def
+    $kanopya_wf_manager->createWorkflowDef(
+        workflow_name => 'BuildStack',
+        params => {},
+        steps => [
+            Operationtype->find( hash => { operationtype_name => 'BuildStack' })->id,
+            Operationtype->find( hash => { operationtype_name => 'StartStack' })->id,
+            Operationtype->find( hash => { operationtype_name => 'ValidateStack' })->id,
+        ],
+        description => "Build stack"
     );
 }
 

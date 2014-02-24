@@ -133,6 +133,14 @@ sub finish {
     $self->SUPER::finish(%args);
 
     $self->{context}->{cluster}->setState(state => 'down');
+
+    # Do not need params in the workflow any more
+    delete $self->{params}->{managers};
+    delete $self->{params}->{components};
+    delete $self->{params}->{interfaces};
+    delete $self->{params}->{billing_limits};
+    delete $self->{params}->{orchestration};
+    delete $self->{params}->{cluster_params};
 }
 
 1;
