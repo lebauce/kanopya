@@ -157,6 +157,10 @@ use Exception::Class (
         isa         => 'Kanopya::Exception::Execution',
         description => 'Resource busy',
     },
+    Kanopya::Exception::Execution::AlreadyExists => {
+        isa         => 'Kanopya::Exception::Execution',
+        description => 'Already exist',
+    },
     Kanopya::Exception::AuthenticationRequired => {
         isa         => 'Kanopya::Exception',
         description => 'Authentication required',
@@ -211,7 +215,7 @@ use Exception::Class (
 
 # Force print trace when exception is stringified
 # For Kanopya::Exception and all its subclasses
-Kanopya::Exception->Trace(1);
+Kanopya::Exception->Trace(0);
 
 
 =pod

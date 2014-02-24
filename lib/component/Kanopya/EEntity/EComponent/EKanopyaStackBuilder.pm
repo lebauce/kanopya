@@ -29,11 +29,14 @@ use base EEntity::EComponent;
 use strict;
 use warnings;
 
+use TryCatch;
+
 use Entity::ServiceProvider::Cluster;
 use Entity::ServiceTemplate;
 
 use IscsiPortal;
 use Entity::Masterimage;
+use Entity::Container;
 use Lvm2Vg;
 use Lvm2Pv;
 
@@ -101,7 +104,9 @@ sub buildStack {
 sub startStack {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'owner_id', 'workflow' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'owner_id', 'workflow' ],
+                         optional => { 'erollback' => undef });
 
     # Retrieve the created cluster from name
     # TODO: Be sure to imprive the search pattern to not get old stacks of the user
@@ -159,44 +164,82 @@ sub startStack {
 
     $components->{novacompute}->iaas_id($components->{novacontroller}->id);
 
+    # Create a volume group on the controller fro Cinder.
     my $vg = Lvm2Vg->new(lvm2_id           => $components->{lvm}->id,
                          lvm2_vg_name      => "cinder-volumes",
                          lvm2_vg_freespace => 0,
                          lvm2_vg_size      => 10 * 1024 * 1024 * 1024);
 
-    Lvm2Pv->new(lvm2_vg_id   => $vg->id,
-                lvm2_pv_name => "/dev/sda2");
+    Lvm2Pv->new(lvm2_vg_id => $vg->id, lvm2_pv_name => "/dev/sda2");
 
-    # Code pasted from openstack.t, need to be adapted
+    # Create a logical volume on Kanopya to store nova instance meta data.
+    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster;
+    my $lvm = EEntity->new(data => $kanopya->getComponent(name => "Lvm"));
+    my $nfs = EEntity->new(data => $kanopya->getComponent(name => "Nfsd"));
 
-    # my $kanopya = Kanopya::Tools::Retrieve::retrieveCluster();
-    # my $lvm = EEntity->new(data => $kanopya->getComponent(name => "Lvm"));
-    # my $nfs = EEntity->new(data => $kanopya->getComponent(name => "Nfsd"));
-    # my $shared;
-    # my $export;
+    my $shared;
+    try {
+        $shared = $lvm->createDisk(name       => "nova-instances-" . $user->user_login,
+                                   size       => 1 * 1024 * 1024 * 1024,
+                                   filesystem => "ext4",
+                                   erollback  => $args{erollback});
+    }
+    catch (Kanopya::Exception::Execution::AlreadyExists $err) {
+        $log->warn("Logical volume nova-instances-" . $user->user_login .
+                   " already exists, skip creation...");
 
-    # $shared = $lvm->createDisk(
-    #               name       => "nova-instances",
-    #               size       => 1 * 1024 * 1024 * 1024,
-    #               filesystem => "ext4",
-    #           );
+        $shared = EEntity->new(data => Entity::Container->find(hash => {
+                      container_name => "nova-instances-" . $user->user_login
+                  }));
+    }
+    catch ($err) {
+        $err->rethrow();
+    }
 
-    # $export = $nfs->createExport(
-    #                container => $shared,
-    #                client_name => "*",
-    #                client_options => "rw,sync,fsid=0,no_root_squash"
-    #            );
+    # Export the volume and the mount entry in all compute nodes
+    my $export;
+    try {
+        $export = $nfs->createExport(container      => $shared,
+                                     client_name    => "*",
+                                     client_options => "rw,sync,fsid=0,no_root_squash",
+                                     erollback      => $args{erollback});
+    }
+    catch (Kanopya::Exception::Execution::ResourceBusy $err) {
+        $log->warn("Nfs export for volume nova-instances-" . $user->user_login .
+                   " already exists, skip creation...");
 
-    # my $system = $compute->getComponent(category => "System");
+        $export = EEntity->new(data => Entity::ContainerAccess::NfsContainerAccess->find(hash => {
+                      container_id => $shared->id
+                  }));
+    }
+    catch ($err) {
+        $err->rethrow();
+    }
 
-    # for my $export ($nfs->container_accesses) {
-    #     $system->addMount(
-    #         mountpoint => "/var/lib/nova/instances",
-    #         filesystem => "nfs",
-    #         options => "vers=3",
-    #         device => $export->container_access_export
-    #     );
-    # }
+    try {
+        $export = $nfs->createExport(container      => $shared,
+                                     client_name    => "*",
+                                     client_options => "rw,sync,fsid=0,no_root_squash",
+                                     erollback      => $args{erollback});
+    }
+    catch (Kanopya::Exception::Execution::ResourceBusy $err) {
+        $log->warn("Nfs export for volume nova-instances-" . $user->user_login .
+                   " already exists, skip creation...");
+
+        $export = EEntity->new(data => Entity::ContainerAccess::NfsContainerAccess->find(hash => {
+                      container_id => $shared->id
+                  }));
+    }
+    catch ($err) {
+        $err->rethrow();
+    }
+
+    $components->{novacompute}->service_provider->getComponent(category => "System" )->addMount(
+        mountpoint => "/var/lib/nova/instances",
+        filesystem => "nfs",
+        options    => "vers=3",
+        device     => $export->container_access_export
+    );
 
     # Finally start the instances
     for my $instance (@clusters) {
@@ -220,6 +263,54 @@ sub validateStack {
     $log->info("Validate stack");
 
     # All stuff to configure access to the stack for users
+}
+
+sub cancelStack {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'owner_id' ]);
+
+    my $user = Entity::User->get(id => $args{owner_id});
+
+    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster;
+    my $lvm = EEntity->new(data => $kanopya->getComponent(name => "Lvm"));
+
+    try {
+        my $container = Entity::Container->find(
+                            container_name => "nova-instances-" . $user->user_login
+                        );
+
+        # Remove the nova instances exports
+        try {
+            for my $export ($container->container_accesses) {
+                if (defined $export->export_manager_id) {
+                    EEntity->new(data => $export->export_manager)->removeExport(
+                        container_access => EEntity->new(data => $export)
+                    );
+                }
+            }
+        }
+        catch ($err) {
+            $log->warn("Unable to remove exports:\n$err");
+        }
+
+        # Remove the nova instances disk
+        try {
+            $lvm->removeDisk(container => EEntity->new(data => $container));
+        }
+        catch ($err) {
+            $log->warn("Unable to remove disk:\n$err");
+        }
+    }
+    catch (Kanopya::Exception::Internal::NotFound $err) {
+        # No container created, skip
+    }
+    catch (Kanopya::Exception $err) {
+        $err->rethrow()
+    }
+    catch ($err) {
+        throw Kanopya::Exception(error => "$err");
+    }
 }
 
 1;

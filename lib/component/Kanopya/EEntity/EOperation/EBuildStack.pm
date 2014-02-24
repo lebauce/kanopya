@@ -69,10 +69,11 @@ sub execute {
 
     # Call the method on the corresponding component
     $self->{context}->{stack_builder}->buildStack(
-        stack    => $self->{params}->{stack},
-        owner_id => $self->{params}->{owner_id},
+        stack     => $self->{params}->{stack},
+        owner_id  => $self->{params}->{owner_id},
         # TODO: Let all EEntity access to the workflow that they related
-        workflow => $self->workflow
+        workflow  => $self->workflow,
+        erollback => $self->{erollback}
     );
 }
 1;

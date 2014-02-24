@@ -69,9 +69,27 @@ sub execute {
 
     # Call the method on the corresponding component
     $self->{context}->{stack_builder}->startStack(
-        owner_id => $self->{params}->{owner_id},
+        owner_id  => $self->{params}->{owner_id},
         # TODO: Let all EEntity access to the workflow that they related
-        workflow => $self->workflow
+        workflow  => $self->workflow,
+        erollback => $self->{erollback}
+    );
+}
+
+
+=pod
+=begin classdoc
+
+Delete object possibly created at startStack step.
+
+=end classdoc
+=cut
+
+sub cancel {
+    my ($self, %args) = @_;
+
+    $self->{context}->{stack_builder}->cancelStack(
+        owner_id => $self->{params}->{owner_id}
     );
 }
 

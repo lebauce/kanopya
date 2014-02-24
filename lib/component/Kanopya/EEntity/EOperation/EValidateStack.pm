@@ -68,7 +68,8 @@ sub execute {
     $self->SUPER::execute(%args);
 
     # Call the method on the corresponding component
-    $self->{context}->{stack_builder}->validateStack(owner_id => $self->{params}->{owner_id});
+    $self->{context}->{stack_builder}->validateStack(owner_id  => $self->{params}->{owner_id},
+                                                     erollback => $self->{erollback});
 }
 
 1;
