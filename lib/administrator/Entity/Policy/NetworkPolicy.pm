@@ -204,11 +204,7 @@ sub getPatternFromParams {
             my %netconfs = map { $_ => $_ } @{ $interface->{netconfs} };
             $interface->{netconfs} = \%netconfs;
 
-            my $identifier = join('_', keys %{ $interface->{netconfs} }) . '_' . $interface->{bonds_number};
-            if (defined $interfaces->{'interface_' . $identifier}) {
-                $identifier .= '_' .  $index;
-            }
-            $interfaces->{'interface_' . $identifier} = $interface;
+            $interfaces->{'interface_' . $interface->{interface_name}} = $interface;
             $index++;
         }
         $pattern->{interfaces} = $interfaces;
