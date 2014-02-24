@@ -20,7 +20,7 @@
             },
             "vg_id": {
                 "class_type"   : "Lvm2Vg",
-                "lvm2_vg_name" : "kanopya"
+                "lvm2_vg_name" : { "LIKE" : "kanopya%" }
             },
             "policy_type" : "storage",
             "policy_desc" : "",
