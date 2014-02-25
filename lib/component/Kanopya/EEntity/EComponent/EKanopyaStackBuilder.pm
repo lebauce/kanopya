@@ -30,6 +30,7 @@ use strict;
 use warnings;
 
 use TryCatch;
+use Clone qw(clone);
 
 use Entity::ServiceProvider::Cluster;
 use Entity::ServiceTemplate;
@@ -37,6 +38,7 @@ use Entity::ServiceTemplate;
 use IscsiPortal;
 use Entity::Masterimage;
 use Entity::Container;
+use Entity::Netconf;
 use Lvm2Vg;
 use Lvm2Pv;
 
@@ -73,6 +75,10 @@ sub buildStack {
         # TODO: Find the proper iscsi portal from network given in params
         iscsi_portals  => [ IscsiPortal->find()->id ],
         vg_id          => Lvm2Vg->find()->id,
+        interfaces     => [ {
+            interface_name => 'eth0',
+            netconfs       => [ Entity::Netconf->find(hash => { 'netconf_role.netconf_role_name' => 'admin' })->id ]
+        } ]
     };
 
     # Create each instance in an embedded workflow
@@ -86,11 +92,8 @@ sub buildStack {
                          cluster_name        => $cluster_name,
                          service_template_id => $service->id,
                          owner_id            => $args{owner_id},
-                         %{ $stackparams }
+                         %{ clone($stackparams) }
                      );
-
-        # TODO: add netconf on interfaces, but it seems not trivial...
-        #       Do it at startStack step instead.
 
         $args{workflow}->enqueueNow(operation => {
             type       => 'AddCluster',
@@ -112,8 +115,9 @@ sub startStack {
     # TODO: Be sure to imprive the search pattern to not get old stacks of the user
     my $user = Entity::User->get(id => $args{owner_id});
     my @clusters = Entity::ServiceProvider::Cluster->search(hash => {
-                       cluster_name => { 'LIKE' => $user->user_login . '_%' } }
-                   );
+                       owner_id => $user->id,
+                       # active   => 1,
+                   });
 
     if (scalar(@clusters) <= 0) {
         throw Kanopya::Exception::Internal(
@@ -131,10 +135,13 @@ sub startStack {
                   'NovaCompute', 'Glance', 'Neutron', 'Cinder', 'Lvm') {
 
         # Search for a component of type $type and that belongs to one of the cluster list
-        $components->{lc($type)} = Entity::Component->find(hash => {
-                                       'component_type.component_name' => $type,
-                                       'service_provider_id'           => \@clusterids,
-                                   });
+        $components->{lc($type)} = Entity::Component->find(
+                                       ensure_unique => 1,
+                                       hash => {
+                                           'component_type.component_name' => $type,
+                                           'service_provider_id'           => \@clusterids,
+                                       },
+                                   );
     }
 
     $components->{keystone}->setConf(conf => {
