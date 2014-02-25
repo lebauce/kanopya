@@ -216,24 +216,6 @@ sub startStack {
         $err->rethrow();
     }
 
-    try {
-        $export = $nfs->createExport(container      => $shared,
-                                     client_name    => "*",
-                                     client_options => "rw,sync,fsid=0,no_root_squash",
-                                     erollback      => $args{erollback});
-    }
-    catch (Kanopya::Exception::Execution::ResourceBusy $err) {
-        $log->warn("Nfs export for volume nova-instances-" . $user->user_login .
-                   " already exists, skip creation...");
-
-        $export = EEntity->new(data => Entity::ContainerAccess::NfsContainerAccess->find(hash => {
-                      container_id => $shared->id
-                  }));
-    }
-    catch ($err) {
-        $err->rethrow();
-    }
-
     $components->{novacompute}->service_provider->getComponent(category => "System" )->addMount(
         mountpoint => "/var/lib/nova/instances",
         filesystem => "nfs",
