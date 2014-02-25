@@ -42,6 +42,12 @@ use constant ATTR_DEF => {
         pattern      => '^.*$',
         is_mandatory => 1,
     },
+    service_provider_id => {
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '\d+',
+        is_mandatory => 1,
+    },
     active => {
         pattern      => '^[01]$',
         is_mandatory => 0,
@@ -152,7 +158,11 @@ sub getContainer {
     my $self = shift;
 
     my @accesses = $self->systemimage_container_accesses;
-    return $accesses[0]->container_access->container;
+    if (@accesses) {
+        return $accesses[0]->container_access->container;
+    }
+
+    throw Kanopya::Exception::Internal::NotFound(error => 'No container access found');
 }
 
 1;

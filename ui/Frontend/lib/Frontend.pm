@@ -84,7 +84,7 @@ sub exception_to_status {
 
     return "error" if not defined $exception;
 
-    # Log the execption
+    # Log the exception
     $log->error("$exception");
 
     if ($exception->isa("Kanopya::Exception::Permission::Denied")) {

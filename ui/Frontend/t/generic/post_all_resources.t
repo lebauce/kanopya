@@ -38,7 +38,7 @@ TODO Implement _delegatee for resources that need it, and remove them from %POST
 
 =head2 Resource delete
 
-Resource are deleted only if the POST request was ok and do not lead to an operation enqueueing. 
+Resource are deleted only if the POST request was ok and do not lead to an operation enqueueing.
 
 TODO Handle DELETE for resource created after operation execution
 
@@ -60,6 +60,8 @@ These values are fixed in %attribute_fixed_value
 =cut
 
 use Test::More 'no_plan';
+
+use Test::Exception;
 use strict;
 use warnings;
 
@@ -100,6 +102,13 @@ my %POST_expected_status = (
     'linuxmount' => 405,
     'keepalived1vrrpinstance' => 405,
     'haproxy1listen' => 405,
+    'componenttypecategory' => 405,
+    'managercategory' => 405,
+
+);
+
+my %DELETE_expected_status = (
+    'systemimage' => 404, # No container access found
 );
 
 my @skip_resources = (
@@ -140,15 +149,11 @@ my @skip_resources = (
 
     # Misc, to study
     'notificationsubscription', # Why 'entity_id' is mandatory ?
-    'cinder', # ??
     'ucsmanager',
     'cluster', # owner_id mandatory set not mandatory
-    'serviceprovidermanager', # hard to generate valid attributes value
     'netapplunmanager',
     'netappvolumemanager',
-    'systemimage', # need to be linked to a valid 'container_access'
-    'netconfrole', # Can not cascade delete
-    'hpc7000',
+    'hpc7000', # need HpcManager
 );
 
 # Some regexp can not be correctly parsed and bad value are generated, so we fix it
@@ -187,6 +192,15 @@ sub fillMissingFixedAttr {
     $attribute_fixed_value{openstackhypervisor}{host_manager_id} = $json->[0]->{pk};
     $attribute_fixed_value{openstackvm}{host_manager_id} = $json->[0]->{pk};
     $attribute_fixed_value{opennebula3vm}{host_manager_id} = $json->[0]->{pk};
+
+    # serviceprovidermanager
+    $attribute_fixed_value{serviceprovidermanager}{manager_id} = $json->[0]->{pk};
+    my $component_type_id = $json->[0]->{component_type_id};
+    $resp = dancer_response GET => '/api/componenttypecategory',
+                                   { params => { component_type_id => $component_type_id } };
+    $json = Dancer::from_json($resp->{content});
+
+    $attribute_fixed_value{serviceprovidermanager}{manager_category_id} = $json->[0]->{component_category_id};
 
     # formulas
     # nodemetricrule
@@ -230,14 +244,24 @@ sub run {
     #@api_resources = ('operation', 'netapp');
     RESOURCE:
     for my $resource_name (@api_resources) {
-        if (exists $_skip_resources{$resource_name}) {
-            SKIP: {
-                skip "POST '$resource_name' not managed in this test", 1;
-                is 0, 0, '';
+        lives_ok {
+            if (exists $_skip_resources{$resource_name}) {
+                SKIP: {
+                    skip "POST '$resource_name' not managed in this test", 1;
+                }
+                next RESOURCE;
             }
-            next RESOURCE;
-        }
-        post_resource($resource_name);
+            post_resource($resource_name);
+
+            # Check if resource deletion has not corrupted Kanopya DB
+            # (e.g. with unmanaged delete on cascade)
+
+            my $rq  = dancer_response GET => '/api/entity';
+            if ($rq->{status} ne 200) {
+                die 'Wrong status GET /api/entity got <' . $rq->{status}
+                    . '> instead of <200> after managing resource < ' . $resource_name . '>';
+            }
+        } 'Manage '. $resource_name;
     }
 }
 
@@ -309,8 +333,10 @@ sub post_resource {
 
     my $expect_status = $POST_expected_status{$resource_name} || 200;
     if (!$persistent) {
-        is $new_resp->{status}, $expect_status,
-           "response status is $expect_status for POST $resource_name with only mandatory attributes";
+        if ($new_resp->{status} ne $expect_status) {
+           die 'POST <' . $resource_name . '> with only mandatory attributes got <'
+               . $new_resp->{status} . '> expected <' . $expect_status . '> ';
+       }
     }
 
     # If POST succeed
@@ -340,7 +366,10 @@ sub delete_resource {
     my $delete_resp = dancer_response(DELETE => "/api/$resource_name/$resource_id", {});
 
     if (!$notest) {
-        is $delete_resp->{status}, 200, "response status is 200 for DELETE $resource_name";
+        if ($delete_resp->{status} ne ($DELETE_expected_status{$resource_name} || 200)) {
+            die "DELETE $resource_name got status <" . $delete_resp->{status} . '> exepected <'
+                . ($DELETE_expected_status{$resource_name} || 200) . '>';
+        }
     }
     $log->error(Dumper $delete_resp) if ($delete_resp->{status} != 200);
 }

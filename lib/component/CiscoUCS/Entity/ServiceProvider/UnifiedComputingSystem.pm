@@ -88,7 +88,7 @@ sub new {
 
 sub remove {
     my $self = shift;
-    $self->SUPER::delete(); 
+    $self->SUPER::remove();
 };
 
 

@@ -116,4 +116,17 @@ sub getFreeSpace {
     return $total_spare_cap;
 }
 
+
+=pod
+=begin classdoc
+
+Override relation used when deletion in order to skip AUTOLOAD
+
+=end classdoc
+=cut
+
+sub entity_lock_entity {
+    my $self = shift;
+    return $self->SUPER::entity_lock_entity;
+}
 1;
