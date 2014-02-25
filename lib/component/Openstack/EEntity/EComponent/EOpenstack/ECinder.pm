@@ -34,9 +34,9 @@ use Entity::ContainerAccess::FileContainerAccess;
 use Entity::Repository;
 
 my $supported_volume_types = {
-    "NFS"   => "Generic_NFS",
+    #"NFS"   => "Generic_NFS",
     "iSCSI" => "LVM_iSCSI",
-    "RADOS" => "RBD"
+    #"RADOS" => "RBD"
 };
 
 
