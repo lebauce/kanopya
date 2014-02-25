@@ -47,6 +47,7 @@ use ClassType::ComponentType;
 use Manager::HostManager;
 use Kanopya::Config;
 
+use Data::Dumper;
 use Hash::Merge;
 use DateTime;
 
@@ -299,13 +300,14 @@ sub buildInstantiationParams {
         %$composite_params
     };
 
+    $log->debug("Instanciation params for service $args{cluster_name}:\n" . Dumper($op_params));
+
     # If the cluster created from a service template, add it in the context
     # to handle notification/validation on cluster instanciation.
     if (defined $args{service_template_id}) {
         $op_params->{context}->{service_template}
             = Entity::ServiceTemplate->get(id => $args{service_template_id});
     }
-
 
     return $op_params;
 }
@@ -521,6 +523,9 @@ sub configureInterfaces {
         my @netconfs = defined $interface->{netconfs} ? values %{ delete $interface->{netconfs} } : ();
         $interface->{netconf_interfaces} = \@netconfs;
         $interface->{bonds_number} = $interface->{bonds_number} ? $interface->{bonds_number} : 0;
+
+        $log->info("Add interface " . $interface->{interface_name} . " with " .  scalar(@netconfs) .
+                   " netconfs on service " . $self->label);
     }
     $self->_populateRelations(relations => { interfaces => \@interfaces }, override => 1);
 }

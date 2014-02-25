@@ -572,7 +572,9 @@ sub addComponent {
     my $location = General::getLocFromClass(entityclass => $comp_class);
     require $location;
 
-    # set component's configuration or use default
+    $log->info("Add component of type ". $component_type->component_name . " on service " . $self->label);
+
+    # Set component's configuration or use default
     my $component;
     if (defined $args{component_configuration}) {
         $component = $comp_class->new(service_provider_id   => $self->id,
