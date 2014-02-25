@@ -93,6 +93,14 @@ sub main {
             (my $hierarchy = $class) =~ s/^Entity:://g;
 
             for my $module (split('::', $hierarchy)) {
+                try {
+                    Kanopya::Database::schema->source($module);
+                }
+                catch {
+                    # No table for module
+                    next;
+                }
+
                 my $table = BaseDB->_tableName(classname => $module);
                 if (! defined $processed->{$table}) {
                     die "Malformed processed attrs, unable to find relation <" . $table .  "> in the hierarchy: " . Dumper($processed);
