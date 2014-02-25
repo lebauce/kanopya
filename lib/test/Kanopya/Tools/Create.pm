@@ -96,7 +96,7 @@ sub createCluster {
     my $components     = $args{components};
     my $interfaces     = $args{interfaces};
     my $managers       = $args{managers};
-    my %cluster_conf;
+    my $cluster_conf;
 
     diag('Retrieve the Kanopya cluster');
     my $kanopya_cluster = Kanopya::Tools::Retrieve->retrieveCluster();
@@ -137,7 +137,7 @@ sub createCluster {
         $service_template_id = Entity::ServiceTemplate->find(hash => { service_name => "Generic service" })->id;
     };
 
-    my %default_conf = (
+    my $default_conf = {
         active                => 1,
         cluster_name          => 'DefaultCluster',
         cluster_min_node      => 1,
@@ -178,19 +178,19 @@ sub createCluster {
         },
         components => {},
         interfaces => {}
-    );
+    };
 
     if (defined $args{cluster_conf}) {
-        %cluster_conf = %{ $merge->merge(\%default_conf, $args{cluster_conf}) };
+        $cluster_conf = $merge->merge($default_conf, $args{cluster_conf});
     }
     else {
-        %cluster_conf = %default_conf;
+        $cluster_conf = $default_conf;
     }
 
-    my %comps;
+    my $comps;
     if (defined $components) {
         while (my ($component,$comp_conf) = each %$components) {
-            my %tmp = (
+            my $tmp = (
                 components => {
                     $component => {
                         component_type => ClassType::ComponentType->find(hash => {
@@ -200,15 +200,15 @@ sub createCluster {
                     }
                 }
             );
-            %comps = %{ $merge->merge(\%comps, \%tmp) };
+            $comps = $merge->merge($comps, $tmp);
         }
-        %cluster_conf = %{ $merge->merge(\%cluster_conf, \%comps) };
+        $cluster_conf = $merge->merge($cluster_conf, $comps);
     }
 
-    my %mgrs;
+    my $mgrs;
     if (defined $managers) {
         while (my ($manager,$mgr_conf) = each %$managers) {
-            my %tmp = (
+            my $tmp = (
                 managers => { 
                     $manager => {
                         manager_type => General::normalizeName($manager),
@@ -216,28 +216,28 @@ sub createCluster {
                     }
                 }
             );
-            %mgrs = %{ $merge->merge(\%mgrs, \%tmp) };
+            $mgrs = $merge->merge($mgrs, $tmp);
         }
-        %cluster_conf = %{ $merge->merge(\%cluster_conf, \%mgrs) };
+        $cluster_conf = $merge->merge($cluster_conf, $mgrs);
     }
 
     if (defined $interfaces) {
-        my %ifcs = (interfaces => $interfaces);
-        %cluster_conf = %{ $merge->merge(\%cluster_conf, \%ifcs) };
+        my $ifcs = (interfaces => $interfaces);
+        $cluster_conf = $merge->merge($cluster_conf, $ifcs);
     }
     else {
-        $cluster_conf{interfaces}{admin} => {
+        $cluster_conf->{interfaces}->{admin} = {
             interface_name => 'eth0',
             netconfs  => { $adminnetconf->id => $adminnetconf->id },
         };
     }
 
     diag('Create cluster');
-    my $cluster_create = Entity::ServiceProvider::Cluster->create(%cluster_conf);
+    my $cluster_create = Entity::ServiceProvider::Cluster->create(%$cluster_conf);
 
     Kanopya::Tools::Execution->executeOne(entity => $cluster_create);
 
-    return Kanopya::Tools::Retrieve->retrieveCluster(criteria => { cluster_name => $cluster_conf{cluster_name} });
+    return Kanopya::Tools::Retrieve->retrieveCluster(criteria => { cluster_name => $cluster_conf->{cluster_name} });
 }
 
 =pod
