@@ -748,17 +748,23 @@ Return a single element matching the specified criterias take the same arguments
 sub find {
     my ($class, %args) = @_;
 
-    General::checkParams(args => \%args, optional => { 'hash' => {}, 'deep' => 0 });
+    General::checkParams(args => \%args, optional => { 'hash' => {}, 'deep' => 0, 'ensure_unique' => 0 });
+
+    # Extract specific params for find
+    my $ensure_unique = delete $args{ensure_unique};
 
     my @objects = $class->search(rows => 1, %args);
-
-    my $object = shift @objects;
-    if (! defined $object) {
+    if (scalar(@objects) <= 0) {
         throw Kanopya::Exception::Internal::NotFound(
                   error => "No entry found for " . $class . ", with hash " . Dumper($args{hash})
               );
     }
-    return $object;
+    if ($args{ensure_unique} && scalar(@objects) > 1) {
+        throw Kanopya::Exception::Internal::Inconsistency(
+                  error => "Multiple entries found for " . $class . ", with hash " . Dumper($args{hash})
+              );
+    }
+    return shift(@objects);
 }
 
 
