@@ -56,6 +56,9 @@ sub start1OpenStackOn3Clusters {
         $masterimage = Kanopya::Tools::Register::registerMasterImage();
     } 'Register master image';
 
+    my $vms_netconf = Entity::Netconf->find(hash => { netconf_name => 'Virtual machines bridge' } );
+    my $admin_netconf = Entity::Netconf->find(hash => { netconf_name => 'Kanopya admin' });
+
     diag('Create and configure MySQL and RabbitMQ cluster');
     my $db;
     lives_ok {
@@ -64,6 +67,12 @@ sub start1OpenStackOn3Clusters {
                             cluster_name         => 'Database',
                             cluster_basehostname => 'database',
                             masterimage_id       => $masterimage->id
+                        },
+                        interfaces => {
+                            i1 => {
+                                netconfs => { $admin_netconf->id   => $admin_netconf->id },
+                                interface_name => 'eth0'
+                            },
                         },
                         components => {
                             'mysql' => {
@@ -85,6 +94,12 @@ sub start1OpenStackOn3Clusters {
                             cluster_name         => 'CloudController',
                             cluster_basehostname => 'cloud',
                             masterimage_id       => $masterimage->id
+                        },
+                        interfaces => {
+                            i1 => {
+                                netconfs => { $admin_netconf->id   => $admin_netconf->id },
+                                interface_name => 'eth0'
+                            },
                         },
                         managers => {
                             host_manager => {
@@ -159,9 +174,6 @@ sub start1OpenStackOn3Clusters {
     );
 
     diag('Create and configure Nova compute cluster');
-
-    my $vms_netconf = Entity::Netconf->find(hash => { netconf_name => 'Virtual machines bridge' } );
-    my $admin_netconf = Entity::Netconf->find(hash => { netconf_name => 'Kanopya admin' });
 
     my $compute;
     lives_ok {

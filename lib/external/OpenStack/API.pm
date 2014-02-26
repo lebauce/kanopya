@@ -33,6 +33,7 @@ sub new {
     bless $self , $class;
 
     $self->{config} = $args{config};
+    $log->debug('Openstack::API config ' . (Dumper $self->{config}));
 
     $self->login(credentials => $args{credentials});
 
@@ -46,10 +47,20 @@ sub login {
 
     my $response = $self->identity->tokens->post(content => $args{credentials});
 
+    $log->debug('Service Catalog ' . Dumper($response->{access}->{serviceCatalog}));
+
+    if( ! exists $response->{access}->{serviceCatalog} ||
+        ! keys $response->{access}->{serviceCatalog} ) {
+        throw Kanopya::Exception::Execution::API(
+                  error         => 'Openstack API call returns no service catalog'
+	      )
+    }
+
     for my $service (@{$response->{access}->{serviceCatalog}}) {
         my $name = $service->{name};
         $self->{config}->{$name}->{url} = $service->{endpoints}->[0]->{publicURL} .
                                               ($name eq "neutron" ? "/v2.0" : "");
+        $log->debug('Openstack::API login. Service name ' . $name . ' URL returned : '. $self->{config}->{$name}->{url});
     }
 
     $self->{token} = $response->{access}->{token}->{id};

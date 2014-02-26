@@ -110,6 +110,7 @@ sub createExport {
         );
     }
 
+    $self->applyConfiguration(tags => [ 'kanopya::nfsd' ]);
     $self->updateExports();
 
     $log->info("Added NFS Export <" . $container_access->container_access_export . ">");
