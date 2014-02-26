@@ -190,7 +190,7 @@ sub createCluster {
     my $comps;
     if (defined $components) {
         while (my ($component,$comp_conf) = each %$components) {
-            my $tmp = (
+            my $tmp = {
                 components => {
                     $component => {
                         component_type => ClassType::ComponentType->find(hash => {
@@ -199,7 +199,7 @@ sub createCluster {
                         component_configuration => $comp_conf
                     }
                 }
-            );
+            };
             $comps = $merge->merge($comps, $tmp);
         }
         $cluster_conf = $merge->merge($cluster_conf, $comps);
@@ -208,21 +208,21 @@ sub createCluster {
     my $mgrs;
     if (defined $managers) {
         while (my ($manager,$mgr_conf) = each %$managers) {
-            my $tmp = (
+            my $tmp = {
                 managers => { 
                     $manager => {
                         manager_type => General::normalizeName($manager),
                         %$mgr_conf
                     }
                 }
-            );
+            };
             $mgrs = $merge->merge($mgrs, $tmp);
         }
         $cluster_conf = $merge->merge($cluster_conf, $mgrs);
     }
 
     if (defined $interfaces) {
-        my $ifcs = (interfaces => $interfaces);
+        my $ifcs = { interfaces => $interfaces };
         $cluster_conf = $merge->merge($cluster_conf, $ifcs);
     }
     else {
