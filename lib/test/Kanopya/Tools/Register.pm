@@ -81,6 +81,7 @@ sub registerHost {
                    host_serial_number => $board->{serial_number},
                    host_ram           => $board->{ram},
                    host_core          => $board->{core},
+                   host_desc          => $board->{desc},
                );
 
     if (defined $board->{ifaces}) {
