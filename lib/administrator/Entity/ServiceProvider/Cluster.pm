@@ -336,12 +336,11 @@ sub buildConfigurationPattern {
     # (see Policy.pm), only if the id of the policy that the params belongs to is specified.
     # Otherwise, params must be given in the cluster configuration pattern format.
     for my $policy (@policies) {
-        my $pattern = $policy->getPattern(params => \%args, noarrays => 0);
-        $confpattern = $merge->merge($confpattern, $pattern);
+        $confpattern = $merge->merge($confpattern, $policy->getPattern(params => \%args));
     }
 
     # Then merge the configuration pattern with the remaining cluster params
-    return $merge->merge($confpattern, \%args);
+    return $merge->merge(\%args, $confpattern);
 }
 
 sub checkConfigurationPattern {
