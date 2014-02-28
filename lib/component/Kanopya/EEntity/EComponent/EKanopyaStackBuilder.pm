@@ -348,38 +348,53 @@ sub validateStack {
                    "_network";
         $result = $args{neutron}->getEContext->execute(command => $command);
         if ($result->{exitcode}) {
-            throw Kanopya::Exception::Execution(
-                      error => "Failed to create network " . $args{user}->user_login .
-                               "_network on Neutron:\n$result->{stderr}"
-                  );
+            if ($result->{stderr} !~ m/Physical network physnetflat is in use/) {
+                throw Kanopya::Exception::Execution (
+                          error => "Failed to create network " . $args{user}->user_login .
+                                   "_network on Neutron:\n$result->{stderr}"
+                      );
+            }
+            $log->error("Failed to create network " . $args{user}->user_login .
+                        "_network on Neutron:\n$result->{stderr}");
         }
 
         $command = "source /root/openrc.sh && neutron subnet-create " . $args{user}->user_login .
                    "_network " . $neutron_net . " --name " . $args{user}->user_login . "_subnet " .
-                   "--no-gateway --allocation-pool start=" . $neutron_prefix . ".100,end=" . $neutron_prefix .
+                   "--no-gateway --allocation-pool start=$neutron_prefix.100,end=$neutron_prefix" .
                    ".200 --dns-nameserver " . $args{novacontroller}->service_provider->cluster_nameserver1 .
-                   " --host-route destination=0.0.0.0/0,nexthop=" . $neutron_prefix . ".254";
-        $result = $args{neutron}->getEContext->execute->execute(command => $command);
+                   " --host-route destination=0.0.0.0/0,nexthop=$neutron_prefix.254";
+        $result = $args{neutron}->getEContext->execute(command => $command);
         if ($result->{exitcode}) {
-            throw Kanopya::Exception::Execution (
-                      error => "Failed to create network " . $args{user}->user_login .
-                               "_network on Neutron:\n$result->{stderr}"
-                  );
+            if ($result->{stderr} !~ m/overlaps with another subnet/) {
+                throw Kanopya::Exception::Execution (
+                          error => "Failed to create network " . $args{user}->user_login .
+                                   "_network on Neutron:\n$result->{stderr}"
+                      );
+            }
+            $log->error("Failed to create network " . $args{user}->user_login .
+                        "_network on Neutron:\n$result->{stderr}");
         }
 
         # Add images to Glance
         $args{glance}->getEContext->execute(command => 'mkdir -p /tmp/glance');
         foreach my $imgname (keys %{ $images }) {
-            $command = "source /root/openrc.sh && cd /tmp/glance && " .
-                       "wget " . $mirror_url . "/" . $images->{$imgname} . " && glance image-create --name "
-                       . $imgname . " --disk-format=qcow2 --container-format=bare --is-public=True " .
-                       "--file=/tmp/glance/" . $images->{$imgname};
+            my $destpath = "/tmp/glance/" . $images->{$imgname};
 
-            $result = $args{glance}->getEContext->execute(command => $command);
-            if ($result->{exitcode}) {
-                throw Kanopya::Exception::Execution(
-                          error => "Failed to import image " . $imgname . " on Glance:\n$result->{stderr}"
-                      );
+            if ($args{glance}->getEContext->execute(command => "file $destpath")->{exitcode}) {
+                $command = "source /root/openrc.sh && cd /tmp/glance && " .
+                           "wget $mirror_url/$images->{$imgname} && glance image-create --name " .
+                           "$imgname --disk-format=qcow2 --container-format=bare --is-public=True " .
+                           "--file=$destpath";
+
+                $result = $args{glance}->getEContext->execute(command => $command);
+                if ($result->{exitcode}) {
+                    throw Kanopya::Exception::Execution(
+                              error => "Failed to import image " . $imgname . " on Glance:\n$result->{stderr}"
+                          );
+                }
+            }
+            else {
+                $log->warn("Image $destpath laready exists in glance, skipping...");
             }
         }
 
