@@ -291,14 +291,106 @@ sub startStack {
 
 sub validateStack {
     my ($self, %args) = @_;
+    my ($result, $command);
 
     General::checkParams(args     => \%args,
                          required => [ 'user', 'keystone', 'novacontroller',
                                        'neutron', 'glance', 'novacompute', 'cinder' ]);
 
-    $log->info("Validate stack");
+    try {
+        # Temp conf : sended by
+        my $neutron_net = '172.18.42.0/24';
+        my $images = {
+            'ubuntu-12.04' => 'precise-server-cloudimg-amd64-disk1.img',
+            'fedora-20'    => 'Fedora-x86_64-20-20131211.1-sda.qcow2'
+        };
 
-    # All stuff to configure access to the stack for users
+        my $mirror_url = 'http://mirror.intranet.hederatech.com/cloudimages';
+
+        # Create openrc file
+        my $openrc = "# Environement variables needed by OpenStack CLI commands.\n" .
+                     "# See http://docs.openstack.org/user-guide/content/cli_openrc.html\n".
+                     "export OS_TENANT_NAME=openstack\nexport OS_USERNAME=admin\n" .
+                     "export OS_PASSWORD=keystone\nexport OS_AUTH_URL=http://" .
+                     $args{novacontroller}->getMasterNode->host->getAdminIface->getIPAddr . ":5000/v2.0/";
+
+        $command = 'echo "'. $openrc . '" > /root/openrc.sh && chmod +x /root/openrc.sh';
+        $result = $args{novacontroller}->getEContext->execute(command => $command);
+        if ($result->{exitcode}) {
+            throw Kanopya::Exception::Execution(
+                      error => "Failed to create openrc.sh on NovaContoller:\n$result->{stderr}"
+                  );
+        }
+
+        # Check user ssh key
+        if (! $args{user}->user_sshkey) {
+            # throw Kanopya::Exception::Internal::NotFound('User has no SSH key registred !');
+            $log->warn("User <" . $args{user}->user_login . "> has no SSH key registred !");
+        }
+        else {
+            # Add SSH key
+            $command = 'source /root/openrc.sh && echo "' . $args{user}->user_sshkey .
+                       '" > /tmp/sshkey.pub && nova keypair-add --pub-key /tmp/sshkey.pub "' .
+                       $args{user}->user_login . '" && rm /tmp/sshkey.pub';
+            $result = $args{novacontroller}->getEContext->execute(command => $command);
+            if ($result->{exitcode}) {
+                throw Kanopya::Exception::Execution(
+                          error => "Failed to add SSH key on Nova:\n$result->{stderr}"
+                      );
+            }
+        }
+
+        # Add Neutron Network
+        (my $neutron_prefix = $neutron_net) =~ s/(\d{1,3}).(\d{1,3}).(\d{1,3}).(\d{1,3})\/24/$1.$2.$3/g;
+
+        $command = "source /root/openrc.sh && neutron net-create --provider:network_type=flat " .
+                   "--provider:physical_network=physnetflat --shared " . $args{user}->user_login .
+                   "_network";
+        $result = $args{neutron}->getEContext->execute(command => $command);
+        if ($result->{exitcode}) {
+            throw Kanopya::Exception::Execution(
+                      error => "Failed to create network " . $args{user}->user_login .
+                               "_network on Neutron:\n$result->{stderr}"
+                  );
+        }
+
+        $command = "source /root/openrc.sh && neutron subnet-create " . $args{user}->user_login .
+                   "_network " . $neutron_net . " --name " . $args{user}->user_login . "_subnet " .
+                   "--no-gateway --allocation-pool start=" . $neutron_prefix . ".100,end=" . $neutron_prefix .
+                   ".200 --dns-nameserver " . $args{novacontroller}->service_provider->cluster_nameserver1 .
+                   " --host-route destination=0.0.0.0/0,nexthop=" . $neutron_prefix . ".254";
+        $result = $args{neutron}->getEContext->execute->execute(command => $command);
+        if ($result->{exitcode}) {
+            throw Kanopya::Exception::Execution (
+                      error => "Failed to create network " . $args{user}->user_login .
+                               "_network on Neutron:\n$result->{stderr}"
+                  );
+        }
+
+        # Add images to Glance
+        $args{glance}->getEContext->execute(command => 'mkdir -p /tmp/glance');
+        foreach my $imgname (keys %{ $images }) {
+            $command = "source /root/openrc.sh && cd /tmp/glance && " .
+                       "wget " . $mirror_url . "/" . $images->{$imgname} . " && glance image-create --name "
+                       . $imgname . " --disk-format=qcow2 --container-format=bare --is-public=True " .
+                       "--file=/tmp/glance/" . $images->{$imgname};
+
+            $result = $args{glance}->getEContext->execute(command => $command);
+            if ($result->{exitcode}) {
+                throw Kanopya::Exception::Execution(
+                          error => "Failed to import image " . $imgname . " on Glance:\n$result->{stderr}"
+                      );
+            }
+        }
+
+        $args{glance}->getEContext->execute(command => 'rm -rf /tmp/glance');
+    }
+    catch ($err) {
+        throw Kanopya::Exception::Execution::OperationInterrupted(
+                  error => "Stack validation failed, interrupting the workflow.\n$err"
+              );
+    }
+
 }
 
 sub cancelStack {
