@@ -49,9 +49,9 @@ my $log = get_logger("");
 sub check {
     my ($self, %args) = @_;
 
-    General::checkParams(args => $self->{context}, required => [ "stack_builder" ]);
+    General::checkParams(args => $self->{context}, required => [ "stack_builder", "user" ]);
 
-    General::checkParams(args => $self->{params}, required => [ "stack", "owner_id" ]);
+    General::checkParams(args => $self->{params}, required => [ "services", "iprange" ]);
 }
 
 
@@ -69,11 +69,13 @@ sub execute {
 
     # Call the method on the corresponding component
     $self->{context}->{stack_builder}->buildStack(
-        stack     => $self->{params}->{stack},
-        owner_id  => $self->{params}->{owner_id},
+        services  => $self->{params}->{services},
+        iprange   => $self->{params}->{iprange},
+        user      => $self->{context}->{user},
         # TODO: Let all EEntity access to the workflow that they related
         workflow  => $self->workflow,
         erollback => $self->{erollback}
     );
 }
+
 1;

@@ -38,6 +38,9 @@ use Date::Simple (':all');
 my $log = get_logger("");
 
 
+my $merge = Hash::Merge->new('LEFT_PRECEDENT');
+
+
 =pod
 =begin classdoc
 
@@ -49,9 +52,7 @@ my $log = get_logger("");
 sub check {
     my ($self, %args) = @_;
 
-    General::checkParams(args => $self->{context}, required => [ "stack_builder" ]);
-
-    General::checkParams(args => $self->{params}, required => [ "owner_id" ]);
+    General::checkParams(args => $self->{context}, required => [ "stack_builder", "user" ]);
 }
 
 
@@ -68,12 +69,19 @@ sub execute {
     $self->SUPER::execute(%args);
 
     # Call the method on the corresponding component
-    $self->{context}->{stack_builder}->startStack(
-        owner_id  => $self->{params}->{owner_id},
-        # TODO: Let all EEntity access to the workflow that they related
-        workflow  => $self->workflow,
-        erollback => $self->{erollback}
-    );
+    my $components = $self->{context}->{stack_builder}->startStack(
+                         user      => $self->{context}->{user},
+                         # TODO: Let all EEntity access to the workflow that they related
+                         workflow  => $self->workflow,
+                         erollback => $self->{erollback}
+                     );
+
+    # Check if all required components have been returned
+    General::checkParams(args     => $components,
+                         required => [ 'keystone', 'novacontroller', 'neutron',
+                                       'glance', 'novacompute', 'cinder' ]);
+
+    $self->{context} = $merge->merge($self->{context}, $components);
 }
 
 
@@ -89,7 +97,7 @@ sub cancel {
     my ($self, %args) = @_;
 
     $self->{context}->{stack_builder}->cancelStack(
-        owner_id => $self->{params}->{owner_id}
+        user => $self->{context}->{user},
     );
 }
 

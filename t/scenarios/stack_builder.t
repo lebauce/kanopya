@@ -17,6 +17,7 @@ use Kanopya::Tools::Execution;
 use Kanopya::Tools::Register;
 
 use Entity::ServiceProvider::Cluster;
+use Entity::Network;
 
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
@@ -26,7 +27,7 @@ Log::Log4perl->easy_init({
 });
 
 
-my $testing = 1;
+my $testing = 0;
 
 main();
 
@@ -47,9 +48,76 @@ sub main {
                   );
     } 'Get the StackBuilder component';
 
+    my $stack = {
+        services => [
+            # Service "PMS Distributed Controller"
+            {
+                cpu        => 2,
+                ram        => 1073741824,
+                components => [
+                    {
+                        component_type => 'Keystone',
+                        conf => {}
+                    },
+                    {
+                        component_type => 'Neutron',
+                        conf => {}
+                    },
+                    {
+                        component_type => 'Glance',
+                        conf => {}
+                    },
+                    {
+                        component_type => 'Apache',
+                        conf => {}
+                    },
+                    {
+                        component_type => 'NovaController',
+                        conf => {}
+                    },
+                    {
+                        component_type => 'Cinder',
+                        conf => {}
+                    },
+                    {
+                        component_type => 'Lvm',
+                        conf => {}
+                    },
+                ],
+            },
+            # Service "PMS Compute"
+            {
+                cpu        => 2,
+                ram        => 1073741824,
+                components => [
+                    {
+                        component_type => 'NovaCompute',
+                        conf => {}
+                    },
+                ],
+            },
+            # Service "PMS DB and Messaging"
+            {
+                cpu        => 2,
+                ram        => 1073741824,
+                components => [
+                    {
+                        component_type => 'Amqp',
+                        conf => {}
+                    },
+                    {
+                        component_type => 'Mysql',
+                        conf => {}
+                    },
+                ],
+            },
+        ],
+        iprange  => Entity::Network->find()->network_addr . "/24"
+    };
+
     my $build_stack;
     lives_ok {
-       $build_stack = $builder->buildStack(stack => { hosts => { 'host1' => {}, 'host2' => {} } });
+       $build_stack = $builder->buildStack(stack => $stack);
     } 'Run workflow BuildStack';
 
     Kanopya::Tools::Execution->executeOne(entity => $build_stack);
