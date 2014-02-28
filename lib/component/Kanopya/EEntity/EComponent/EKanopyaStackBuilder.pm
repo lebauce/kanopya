@@ -40,6 +40,7 @@ use IscsiPortal;
 use Entity::Masterimage;
 use Entity::Container;
 use Entity::Netconf;
+use Entity::NetconfRole;
 use Lvm2Vg;
 use Lvm2Pv;
 
@@ -64,14 +65,19 @@ sub buildStack {
 
     # Try to use the iscsi portal corresponding to the iprange, use the kanopya one instead
     my $portal;
-    my $ip = $ip + 253;
+    my $portalip = $ip + 253;
     try {
-        $portal = IscsiPortal->find(hash => { iscsi_portal_ip => $ip });
+        $portal = IscsiPortal->find(hash => { iscsi_portal_ip => $portalip });
     }
     catch ($err) {
-        $log->warn("Unable to find iscsi portal with ip " . $ip);
+        $log->warn("Unable to find iscsi portal with ip " . $portalip);
         $portal = IscsiPortal->find();
     }
+
+    # Create a dedicated netconf without network connectivity for vm bridges
+    my $vmsrole = Entity::NetconfRole->find(hash => { netconf_role_name => "vms" });
+    my $vmsnetconf = Entity::Netconf->findOrCreate(netconf_name    => $args{user}->user_login . "-vms",
+                                                   netconf_role_id => $vmsrole->id);
 
     # Define the common params for all services
     my $common_params = {
@@ -81,10 +87,16 @@ sub buildStack {
         masterimage_id => Entity::Masterimage->find()->id,
         # TODO: Find the proper iscsi portal from network given in params
         iscsi_portals  => [ $portal->id ],
-        interfaces     => [ {
-            interface_name => 'eth0',
-            netconfs       => [ ($poolip->netconfs)[0]->id ]
-        } ],
+        interfaces     => [
+            {
+                interface_name => 'eth0',
+                netconfs       => [ ($poolip->netconfs)[0]->id ]
+            },
+            {
+                interface_name => 'eth1',
+                netconfs       => [ $vmsnetconf->id ]
+            },
+        ],
     };
 
     # Create each instance in an embedded workflow
