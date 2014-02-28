@@ -48,7 +48,6 @@ my $log = get_logger("basedb");
 
 use Switch;
 use TryCatch;
-my $err;
 
 
 # In-memory cache for class types
@@ -273,8 +272,9 @@ sub promote {
     # Check if the new type is in the same hierarchy
     my $baseclass = ref($promoted);
     if (not ($class =~ m/$baseclass/)) {
-        $err = "Unable to promote " . ref($promoted) . " to " . $class;
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $err);
+        throw Kanopya::Exception::Internal::IncorrectParam(
+                  error => "Unable to promote " . ref($promoted) . " to " . $class
+              );
     }
 
     (my $subclass = $class) =~ s/$baseclass\:\://g;
@@ -326,8 +326,9 @@ sub demote {
     # Check if the new type is in the same hierarchy
     my $baseclass = ref($args{demoted});
     if (not ($baseclass =~ m/$class/)) {
-        $err = "Unable to demote " . ref($args{demoted}) . " to " . $class;
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $err);
+        throw Kanopya::Exception::Internal::IncorrectParam(
+                  error => "Unable to demote " . ref($args{demoted}) . " to " . $class
+              );
     }
 
     # Delete row of tables bellow $class
