@@ -17,7 +17,7 @@
 =begin classdoc
 
 Data Model for performing a forecast using the "stlf" (Loess Seasonal Decomposition of Time Series) algorithm
-from the R forecast package. STLF IS A HIGHLY SEASONAL MODEL, SEASONALITY MUST BE >1 AND THERE MUST BE AT 
+from the R forecast package. STLF IS A HIGHLY SEASONAL MODEL, SEASONALITY MUST BE >1 AND THERE MUST BE AT
 LEAST TWO PERIODS IN THE DATA.
 
 =end classdoc
@@ -58,9 +58,24 @@ sub predict {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => ['data', 'freq', 'predict_end']);
+                         required => ['data', 'freq', 'predict_end'],
+                         optional => {'predict_start' => scalar @{$args{data}}});
 
     my @timeserie = @{$args{data}};
+
+    if (@timeserie - 1 > $args{predict_start}) {
+        throw Kanopya::Exception::Internal::IncorrectParam(
+                  error => 'Warning prediction must start after timeserie '
+              );
+    }
+
+    if ($args{predict_start} > $args{predict_end}) {
+        throw Kanopya::Exception::Internal::IncorrectParam(
+                  error => 'Warning start and end timestamps are not coherent'
+              );
+    }
+
+
 
 # 1- Check parameters
     $self->_checkParams(timeserie_ref => \@timeserie,
@@ -115,22 +130,26 @@ sub _checkParams {
 
     # Check that the given data has a seasonality >1
     if ($args{freq} <= 1) {
-        throw Kanopya::Exception(error => 'STLF : bad parameter : The serie is not seasonal (freq must be ' .
-                                          'at least 2)');
+        throw Kanopya::Exception::Internal::IncorrectParam(
+                  error => 'STLF : bad parameter : The serie is not seasonal (freq must be at least 2)'
+              );
     }
 
     # Check that at least two periods are present in the timeserie
     if (@{$args{timeserie_ref}}/$args{freq} < 2) {
-        throw Kanopya::Exception(error => 'STLF : bad parameters (there must be'
-                                          .' at least two periods in the given data)');
+        throw Kanopya::Exception::Internal::IncorrectParam(
+                  error => 'STLF : bad parameters (there must be at least two periods in the given data)'
+              );
     }
 
     # Check that the given end time is strictly after the last available data from the given set
     if ($args{predict_end} <= $#{$args{timeserie_ref}}) {
-        throw Kanopya::Exception(error => 'STLF : bad parameters (trying to ' .
-                                          'forecast the past...)');
+        throw Kanopya::Exception::Internal::IncorrectParam(
+                  error => 'STLF : bad parameters (trying to forecast the past...)'
+              );
     }
 }
+
 
 =pod
 

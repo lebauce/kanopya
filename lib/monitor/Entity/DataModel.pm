@@ -18,7 +18,7 @@
 
 DataModel is an abstract class which represent any model able to perform a prediction (forecast) on a given
 dataset. A DataModel can need a configuration for being able to predict something (configure method), and
-predictions can be proceeded using the predict method. The label method must give a text representation of 
+predictions can be proceeded using the predict method. The label method must give a text representation of
 the data model, and is generally used for debugging.
 
 The main target of that abstract class is to provide a standard interface for forecasting model in Kanopya,
@@ -126,7 +126,7 @@ sub new {
 
 =begin classdoc
 
-First method called when using a DataModel. All the operations required to configure a model or train it 
+First method called when using a DataModel. All the operations required to configure a model or train it
 before it is able to perform any prediction should be done in this method, especially the one that need to be
 stored in database.
 
@@ -142,7 +142,7 @@ stored in database.
 =cut
 
 sub configure {
-    throw Kanopya::Exception(error => 'DataModel : Method configure not implemented');
+    throw Kanopya::Exception::NotImplemented(error => 'DataModel : Method configure not implemented');
 }
 
 =pod
@@ -165,7 +165,7 @@ Method called to perform a prediction (forecast) using a DataModel.
 =cut
 
 sub predict {
-    throw Kanopya::Exception(error => 'DataModel : Method predict not implemented');
+    throw Kanopya::Exception::NotImplemented(error => 'DataModel : Method predict not implemented');
 }
 
 =pod
@@ -181,7 +181,7 @@ Gives a human readable string representation of a DataModel (to implement using 
 =cut
 
 sub label {
-    throw Kanopya::Exception(error => 'DataModel : Method label not implemented');
+    throw Kanopya::Exception::NotImplemented(error => 'DataModel : Method label not implemented');
 }
 
 =pod
@@ -198,7 +198,7 @@ configure itself and forecast.
 =cut
 
 sub isSeasonal {
-    throw Kanopya::Exception(error => 'DataModel : Method isSeasonal not implemented');
+    throw Kanopya::Exception::NotImplemented(error => 'DataModel : Method isSeasonal not implemented');
 }
 
 

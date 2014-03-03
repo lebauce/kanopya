@@ -114,13 +114,16 @@ sub _checkParams {
 
     # Check that at least two periods are present in the timeserie
     if (@{$args{timeserie_ref}}/$args{freq} < 2) {
-        throw Kanopya::Exception(error => 'AutoArima : bad parameters (there must be at least two periods ' .
-                                          'in the given data)');
+        throw Kanopya::Exception::Internal::IncorrectParam(
+                  error => 'AutoArima: bad parameters (there must be at least two periods in the given data)'
+              );
     }
 
     # Check that the given end time is strictly after the last available data from the given set
     if ($args{predict_end} <= $#{$args{timeserie_ref}}) {
-        throw Kanopya::Exception(error => 'AutoArima : bad parameters (trying to forecast the past...)');
+        throw Kanopya::Exception::Internal::IncorrectParam(
+                  error => 'AutoArima : bad parameters (trying to forecast the past...)'
+              );
     }
 }
 

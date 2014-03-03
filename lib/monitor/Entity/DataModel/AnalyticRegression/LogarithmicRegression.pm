@@ -125,7 +125,7 @@ sub configure {
     }
 
     if ((! defined $min_time) || ($min_time == $max_time)) {
-        throw Kanopya::Exception(error => 'Not enough data to configure model');
+        throw Kanopya::Exception::Internal::WrongValue(error => 'Not enough data to configure model');
     }
 
     $args{start_time} = $min_time;
@@ -200,7 +200,9 @@ sub predict {
     if ((! defined $pp->{a}) ||
         (! defined $pp->{b}) ) {
 
-        throw Kanopya::Exception(error => 'DataModel LogarithmicRegression seems to have been badly configured');
+        throw Kanopya::Exception::Internal(
+                  error => 'DataModel LogarithmicRegression seems to have been badly configured'
+              );
     }
 
     my $function_args = {

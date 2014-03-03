@@ -167,13 +167,17 @@ sub autoPredictData {
     my $length = @{$extracted->{values_ref}};
     if ($length < TIME_SERIES_MIN_LENGTH) {
         my $min_length = TIME_SERIES_MIN_LENGTH;
-        throw Kanopya::Exception(error => 'SelectDataModel : I will not proceed an automatic forecast for ' .
-                                          "a time serie with a length < $min_length (actual length is " .
-                                          "$length), it is unsafe and unreliable ! ");
+        throw Kanopya::Exception::Internal::WrongValue(
+                  error => 'SelectDataModel : I will not proceed an automatic forecast for ' .
+                           "a time serie with a length < $min_length (actual length is " .
+                           "$length), it is unsafe and unreliable ! "
+              );
     }
 
     if (scalar(@{$extracted->{values_ref}}) <= 0 || scalar(@{$extracted->{timestamps_ref}}) <= 0) {
-        throw Kanopya::Exception(error => 'SelectDataModel : Empty dataset.');
+        throw Kanopya::Exception::Internal::WrongValue(
+                  error => 'SelectDataModel : Empty dataset.'
+              );
     }
 
     $log->debug("autoPredict - Selecting best model among @{$args{model_list}} .");
@@ -334,9 +338,11 @@ sub selectDataModel {
 
     # If there was only exceptions, throw an exception !
     if (scalar(keys(%accuracy_hash)) == 0) {
-        throw Kanopya::Exception(error => 'All selected models were unable to proceed the forecast with ' .
-                                          'the selected data.please try to select more data or more ' .
-                                          'models. See logs for details.');
+        throw Kanopya::Exception::Internal(
+                  error => 'All selected models were unable to proceed the forecast with ' .
+                           'the selected data.please try to select more data or more ' .
+                           'models. See logs for details.'
+              );
     }
 
     # Choose the best DataModel among all
@@ -460,7 +466,9 @@ sub chooseBestDataModel {
         return $best_me_model;
     }
     else {
-        throw Kanopya::Exception(error => "DataModelSelector : Unknown DataModel choice strategy: $strategy");
+        throw Kanopya::Exception::Internal(
+                  error => "DataModelSelector : Unknown DataModel choice strategy: $strategy"
+              );
     }
 }
 
@@ -535,7 +543,6 @@ sub evaluateDataModelAccuracy {
     );
 
     my @forecast = @{$forecasted_ref};
-
     # Delete the model
     $model->delete();
 

@@ -118,7 +118,9 @@ sub predict {
 
     if ( (! defined $pp->{a}) ||
          (! defined $pp->{b})) {
-        throw Kanopya::Exception(error => 'DataModel LinearRegression seems to have been badly configured');
+        throw Kanopya::Exception::Internal(
+                  error => 'DataModel LinearRegression seems to have been badly configured'
+              );
     }
 
     my $function_args = {a => $pp->{a},
