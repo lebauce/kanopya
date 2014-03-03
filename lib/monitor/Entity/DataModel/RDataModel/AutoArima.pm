@@ -18,7 +18,7 @@
 
 Data Model for performing a forecast using the auto.arima method implemented in R.
 
-@since 2013-Feb-27 
+@since 2013-Feb-27
 @instance hash
 @self $self
 
@@ -74,15 +74,12 @@ sub predict {
     my $horizon     = $args{predict_end} - @{$args{data}} + 1;
 
 # 3- Forecast with R
-    my $R_forecast_ref = $self->_forecastFromR(timeserie_ref => \@timeserie,
-                                               freq          => $args{freq},
-                                               horizon       => $horizon,
+    my $forecasts = $self->_forecastFromR(timeserie_ref => \@timeserie,
+                                          freq          => $args{freq},
+                                          horizon       => $horizon,
     );
-    my @forecasts = @{Utils::R->convertRForecast(R_forecast_ref => $R_forecast_ref,
-                                                 freq           => $args{freq}
-    )};
 
-    return \@forecasts;
+    return $forecasts;
 }
 
 sub label {
@@ -163,8 +160,9 @@ sub _forecastFromR {
             . qq`time_serie <- ts(dataset, start=1, frequency=$freq);`       # Create the time serie
             . qq`forecast <- forecast(auto.arima(time_serie), h=$hor);`);    # fit and forecast with arima
 
+    my $forecast = $R->get('as.numeric(forecast$mean)');
     # Return the forecast computed by R
-    return $R->get('forecast');
+    return $forecast;
 }
 
 1;

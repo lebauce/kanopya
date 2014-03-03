@@ -72,16 +72,15 @@ sub predict {
     my $horizon     = $args{predict_end} - @{$args{data}} + 1;
 
 # 3- Forecast with R
-    my $R_forecast_ref = $self->_forecastFromR(timeserie_ref => \@timeserie,
+    my $forecasts = $self->_forecastFromR(timeserie_ref => \@timeserie,
                                                freq          => $args{freq},
-                                               horizon       => $horizon,
-    );
+                                               horizon       => $horizon,);
 
-    my @forecasts = @{Utils::R->convertRForecast(R_forecast_ref => $R_forecast_ref,
-                                                 freq           => $args{freq}
-    )};
+    # consider only the last ($args{predict_end} - $args{predict_start}) th values
 
-    return \@forecasts;
+    my @selection = @$forecasts[($args{predict_start} - $args{predict_end} - 1)..-1];
+
+    return \@selection;
 }
 
 sub label {
@@ -169,7 +168,9 @@ sub _forecastFromR {
             . qq`forecast <- stlf(time_serie, h=$hor);`);                    # fit and forecast with stlf
 
     # Return the forecast computed by R
-    return $R->get('forecast');
+    my $forecast = $R->get('as.numeric(forecast$mean)');
+    return $forecast;
 }
+
 
 1;

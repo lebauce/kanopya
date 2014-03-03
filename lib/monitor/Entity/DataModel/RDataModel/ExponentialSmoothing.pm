@@ -71,15 +71,11 @@ sub predict {
     my $horizon     = $args{predict_end} - @{$args{data}} + 1;
 
 # 3- Forecast with R
-    my $R_forecast_ref = $self->_forecastFromR(timeserie_ref => \@timeserie,
-                                               freq          => $args{freq},
-                                               horizon       => $horizon,
-    );
-    my @forecasts = @{Utils::R->convertRForecast(R_forecast_ref => $R_forecast_ref,
-                                                 freq           => $args{freq}
-    )};
+    my $forecasts = $self->_forecastFromR(timeserie_ref => \@timeserie,
+                                          freq          => $args{freq},
+                                          horizon       => $horizon,);
 
-    return \@forecasts;
+    return $forecasts;
 }
 
 sub label {
@@ -114,14 +110,17 @@ sub _checkParams {
 
     # Check that at least two periods are present in the timeserie
     if (@{$args{timeserie_ref}}/$args{freq} < 2) {
-        throw Kanopya::Exception(error => 'Exponential Smoothing : bad parameters (there must be'
-                                          .' at least two periods in the given data)');
+        throw Kanopya::Exception::Internal::IncorrectParam(
+                  error => 'Exponential Smoothing : bad parameters (there must be'
+                           . ' at least two periods in the given data)'
+              );
     }
 
     # Check that the given end time is strictly after the last available data from the given set
     if ($args{predict_end} <= $#{$args{timeserie_ref}}) {
-        throw Kanopya::Exception(error => 'Exponential Smoothing : bad parameters (trying to ' .
-                                          'forecast the past...)');
+        throw Kanopya::Exception::Internal::IncorrectParam(
+                  error => 'Exponential Smoothing : bad parameters (trying to forecast the past...)'
+              );
     }
 }
 
@@ -162,7 +161,7 @@ sub _forecastFromR {
             . qq`forecast <- forecast(ets(time_serie), h=$hor);`);           # fit and forecast with ets
 
     # Return the forecast computed by R
-    return $R->get('forecast');
+    return $R->get('as.numeric(forecast$mean)');
 }
 
 1;
