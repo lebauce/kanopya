@@ -46,6 +46,8 @@ use Entity::Workflow;
 use Entity::Operation;
 use EEntity::EOperation;
 
+use TryCatch;
+use Switch;
 use XML::Simple;
 use Data::Dumper;
 
@@ -55,10 +57,6 @@ use Log::Log4perl::Appender;
 
 my $log = get_logger("");
 
-# Already used in Kanopya::Exception
-# but seems to not be propagated
-use TryCatch;
-my $err;
 
 use constant CALLBACKS => {
     execute_operation => {
@@ -139,6 +137,13 @@ sub runWorkflow {
     $self->setLogAppender(workflow => $workflow);
 
     $log->info("---- [ Workflow " . $workflow->id . " ] ----");
+
+    # Check the state
+    if ($workflow->state ne 'pending' && $workflow->state ne 'interrupted') {
+        throw Kanopya::Exception::Execution(
+                  error => "Can not run workflow with state <" . $workflow->state . ">"
+              );
+    }
 
     # Set the workflow as running
     $workflow->setState(state => 'running');
@@ -295,6 +300,13 @@ sub executeOperation {
 
             Kanopya::Database::commitTransaction;
         }
+        catch (Kanopya::Exception::Execution::OperationInterrupted $err) {
+            Kanopya::Database::rollbackTransaction;
+
+            return $self->terminateOperation(operation => $operation,
+                                             status    => 'interrupted',
+                                             exception => $err);
+        }
         catch ($err) {
             Kanopya::Database::rollbackTransaction;
 
@@ -435,120 +447,155 @@ sub handleResult {
     $operation->setState(state => $args{status});
 
     # Operation succeeded
-    if ($args{status} eq 'succeeded') {
-        $self->logWorkflowState(operation => $operation, state => 'SUCCEED');
+    switch ($args{status}) {
+        case 'succeeded' {
+            # Operation succeeded, let's continue/finish the workflow
 
-        Message->send(from    => "Executor",
-                      level   => "info",
-                      content => "[$operation] Execution Success");
+            $self->logWorkflowState(operation => $operation, state => 'SUCCEED');
 
-        # Continue the workflow
-    }
-    # Operation reported
-    elsif ($args{status} eq 'prereported' or $args{status} eq 'postreported' or $args{status} eq 'statereported') {
+            Message->send(from    => "Executor",
+                          level   => "info",
+                          content => "[$operation] Execution Success");
 
-        General::checkParams(args => \%args, optional => { 'time' => undef });
-
-        # The operation execution is reported at $args{time}
-        if (defined $args{time}) {
-            # Compute the delay
-            my $delay = $args{time} - time;
-
-            $self->logWorkflowState(operation => $operation, state => "REPORTED while $delay s");
-            if (defined $args{exception}) {
-                $log->info("Report reason: " . $args{exception});
-            }
-
-            # If the hoped execution time is in the future, report the operation
-            if ($delay > 0) {
-                # Update the hoped excution time of the operation
-                $operation->report(duration => $delay);
-
-                # Re-trigger the operation at proper time
-                my $report_cb = sub {
-                    # Re-execute the operation
-                    $self->_component->execute(operation_id => $operation->id);
-
-                    # Acknowledge the message as the operation result is finally handled
-                    $args{ack_cb}->();
-                };
-                # TODO: Excecute the previous callback in $delay s.
-
-                # Do not acknowledge the message as it will be done by the timer.
-                # If the current proccess die while some timers still active,
-                # the operation result will be automatically re-enqueued.
-                return 0;
-            }
-            else {
-                # Re-trigger the operation now
-                $self->_component->execute(operation_id => $operation->id);
-
-                # Stop the workflow for now
-                return 1;
-            }
-        }
-        # The operation is indefinitely reported, execution is delegated to the workflow
-        else {
-            # $operation->setState(state => 'pending');
             # Continue the workflow
         }
-    }
-    # Operation required validation
-    elsif ($args{status} eq 'waiting_validation') {
-        $self->logWorkflowState(operation => $operation, state => 'WAITING VALIDATION');
+        case /(prereported|postreported|statereported)/ {
+            # Operation reported, do not ack the message to re-insert the opeartion in queue,
+            # the operation will be re-triggered at next re-connection.
+            # If the delay expired, execute the operation.
 
-        # TODO: Probably better to send notification for validation here,
-        #       instead of at validation time (cf. executeOperation)
+            General::checkParams(args => \%args, optional => { 'time' => undef });
 
-        # Stop the workflow
-        return 1;
-    }
-    # Operation is validated
-    elsif ($args{status} eq 'validated') {
-        $self->logWorkflowState(operation => $operation, state => 'VALIDATED');
-
-        # Re-trigger the operation now
-        $self->_component->execute(operation_id => $operation->id);
-
-        # Stop the workflow
-        return 1;
-    }
-    # Operation failed
-    elsif ($args{status} eq 'cancelled') {
-
-        General::checkParams(args => \%args, optional => { 'exception' => undef });
-
-        $self->logWorkflowState(operation => $operation, state => 'FAILED');
-        $log->error($args{exception});
-
-        Message->send(from    => "Executor",
-                      level   => "error",
-                      content => "[$operation] Execution Aborted : $args{exception}");
-
-        # Try to cancel all workflow operations, and delete them.
-        $log->info("Cancelling " . $workflow->workflow_name . " workflow <" . $workflow->id . ">");
-
-        # Restore context object states updated at 'prepare' step.
-        try {
-            # Firstly lock the context objects
-            $self->lockOperationContext(operation => $operation, skip_not_found => 1);
-
-            # Update the state of the context objects atomically
-            $workflow->cancel();
-
-            # Unlock the context objects
-            $operation->unlockContext(skip_not_found => 1);
-        }
-        catch ($err) {
-            $operation->unlockContext(skip_not_found => 1);
-
-            if ($err->isa('Kanopya::Exception::Execution::OperationReported')) {
-                # Could not get the locks, do not ack the message
-                return 0;
+            # If the workflow has been interrupted
+            if ($workflow->state eq 'interrupted') {
+                # Stop the workflow
+                return 1;
             }
-            else { $err->rethrow(); }
-        }
 
+            # The operation execution is reported at $args{time}
+            if (defined $args{time}) {
+                # Compute the delay
+                my $delay = $args{time} - time;
+
+                $self->logWorkflowState(operation => $operation, state => "REPORTED while $delay s");
+                if (defined $args{exception}) {
+                    $log->info("Report reason: " . $args{exception});
+                }
+
+                # If the hoped execution time is in the future, report the operation
+                if ($delay > 0) {
+                    # Update the hoped excution time of the operation
+                    $operation->report(duration => $delay);
+
+                    # Re-trigger the operation at proper time
+                    my $report_cb = sub {
+                        # Re-execute the operation
+                        $self->_component->execute(operation_id => $operation->id);
+
+                        # Acknowledge the message as the operation result is finally handled
+                        $args{ack_cb}->();
+                    };
+                    # TODO: Excecute the previous callback in $delay s.
+
+                    # Do not acknowledge the message as it will be done by the timer.
+                    # If the current proccess die while some timers still active,
+                    # the operation result will be automatically re-enqueued.
+                    return 0;
+                }
+                else {
+                    # Re-trigger the operation now
+                    $self->_component->execute(operation_id => $operation->id);
+
+                    # Stop the workflow for now
+                    return 1;
+                }
+            }
+            # The operation is indefinitely reported, execution is delegated to the workflow
+            else {
+                # $operation->setState(state => 'pending');
+                # Continue the workflow
+            }
+        }
+        case 'waiting_validation' {
+            # Operation require validation, simply do not continue the workflow
+
+            $self->logWorkflowState(operation => $operation, state => 'WAITING VALIDATION');
+
+            # TODO: Probably better to send notification for validation here,
+            #       instead of at validation time (cf. executeOperation)
+
+            # Stop the workflow
+            return 1;
+        }
+        case 'validated' {
+            # Operation has been validated, execute it.
+
+            $self->logWorkflowState(operation => $operation, state => 'VALIDATED');
+
+            # Re-trigger the operation now
+            $self->_component->execute(operation_id => $operation->id);
+
+            # Stop the workflow
+            return 1;
+        }
+        case 'interrupted' {
+            # Operation has been interrupted, change the state of the workflow and do not continue it.
+
+            $self->logWorkflowState(operation => $operation, state => 'INTERRUPTED');
+
+            # Change the state of the workflow
+            $workflow->interrupt();
+
+            # Stop the workflow
+            return 1;
+        }
+        case 'cancelled' {
+            # Operation cancelled, rollbacking failled operation, cancelling succeeded ones
+
+            General::checkParams(args => \%args, optional => { 'exception' => undef });
+
+            $self->logWorkflowState(operation => $operation, state => 'FAILED');
+            $log->error($args{exception});
+
+            Message->send(from    => "Executor",
+                          level   => "error",
+                          content => "[$operation] Execution Aborted : $args{exception}");
+
+            # Try to cancel all workflow operations, and delete them.
+            $log->info("Cancelling " . $workflow->workflow_name . " workflow <" . $workflow->id . ">");
+
+            # Restore context object states updated at 'prepare' step.
+            try {
+                # Firstly lock the context objects
+                $self->lockOperationContext(operation => $operation, skip_not_found => 1);
+
+                # Update the state of the context objects atomically
+                $workflow->cancel();
+
+                # Unlock the context objects
+                $operation->unlockContext(skip_not_found => 1);
+            }
+            catch ($err) {
+                $operation->unlockContext(skip_not_found => 1);
+
+                if ($err->isa('Kanopya::Exception::Execution::OperationReported')) {
+                    # Could not get the locks, do not ack the message
+                    return 0;
+                }
+                else { $err->rethrow(); }
+            }
+
+            # Stop the workflow
+            return 1;
+        }
+        else {
+            throw Kanopya::Exception::Execution(
+                      error => "Unknown operation operation result status <$args{status}>"
+                  );
+        }
+    }
+
+    if ($workflow->state eq 'interrupted') {
         # Stop the workflow
         return 1;
     }

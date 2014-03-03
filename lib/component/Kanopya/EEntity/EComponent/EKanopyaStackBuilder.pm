@@ -31,6 +31,7 @@ use warnings;
 
 use TryCatch;
 use Clone qw(clone);
+use NetAddr::IP;
 
 use Entity::ServiceProvider::Cluster;
 use Entity::ServiceTemplate;
@@ -39,6 +40,7 @@ use IscsiPortal;
 use Entity::Masterimage;
 use Entity::Container;
 use Entity::Netconf;
+use Entity::NetconfRole;
 use Lvm2Vg;
 use Lvm2Pv;
 
@@ -53,46 +55,62 @@ my $log = get_logger("");
 sub buildStack {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'stack', 'owner_id', 'workflow' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'services', 'iprange', 'user', 'workflow' ]);
 
-    # TODO: parse the stack, deduce the list of service to intanciate
-    # my ($services, $params) = $self->parseStack(stack => $args{stack});
+    # Deduce the network to use from iprange
+    my $ip = NetAddr::IP->new($args{iprange});
+    my $network = Entity::Network->find(hash => { network_addr => $ip->addr, network_netmask => $ip-> mask});
+    my $poolip = ($network->poolips)[0];
 
-    # Hardcoded stack, DistributedOpenStack:
-    #  - 1 node instance of service "PMS DB and Messaging",
-    #  - 1 node instance of service "PMS Distributed Controller"
-    #  - 1 node instance of service "PMS Hypervisor"
-    my $services = [
-        Entity::ServiceTemplate->find(hash => { service_name => "PMS DB and Messaging" }),
-        Entity::ServiceTemplate->find(hash => { service_name => "PMS Distributed Controller" }),
-        Entity::ServiceTemplate->find(hash => { service_name => "PMS Hypervisor" })
-    ];
+    # Try to use the iscsi portal corresponding to the iprange, use the kanopya one instead
+    my $portal;
+    my $portalip = $ip + 253;
+    try {
+        $portal = IscsiPortal->find(hash => { iscsi_portal_ip => $portalip });
+    }
+    catch ($err) {
+        $log->warn("Unable to find iscsi portal with ip " . $portalip);
+        $portal = IscsiPortal->find();
+    }
 
-    # Hardcoded params, inspired from lib test
-    my $stackparams = {
+    # Create a dedicated netconf without network connectivity for vm bridges
+    my $vmsrole = Entity::NetconfRole->find(hash => { netconf_role_name => "vms" });
+    my $vmsnetconf = Entity::Netconf->findOrCreate(netconf_name    => $args{user}->user_login . "-vms",
+                                                   netconf_role_id => $vmsrole->id);
+
+    # Define the common params for all services
+    my $common_params = {
+        owner_id       => $args{user}->id,
+        active         => 1,
         # TODO: Find the proper masterimage from stack definition
         masterimage_id => Entity::Masterimage->find()->id,
         # TODO: Find the proper iscsi portal from network given in params
-        iscsi_portals  => [ IscsiPortal->find()->id ],
-        vg_id          => Lvm2Vg->find()->id,
-        interfaces     => [ {
-            interface_name => 'eth0',
-            netconfs       => [ Entity::Netconf->find(hash => { 'netconf_role.netconf_role_name' => 'admin' })->id ]
-        } ]
+        iscsi_portals  => [ $portal->id ],
+        interfaces     => [
+            {
+                interface_name => 'eth0',
+                netconfs       => [ ($poolip->netconfs)[0]->id ]
+            },
+            {
+                interface_name => 'eth1',
+                netconfs       => [ $vmsnetconf->id ]
+            },
+        ],
     };
 
     # Create each instance in an embedded workflow
-    for my $service (@{ $services }) {
-        my $user = Entity::User->get(id => $args{owner_id});
+    for my $servicedef (@{ $args{services} }) {
+        General::checkParams(args => $servicedef, required => [ 'service_template_id' ]);
 
         # Build the cluster name from owner infos
-        # TODO: name the instance as you want :)
-        my $cluster_name = $user->user_login . "_" . $service->id;
+        my $cluster_name = $args{user}->user_login . "_" . $servicedef->{service_template_id};
         my $params = Entity::ServiceProvider::Cluster->buildInstantiationParams(
-                         cluster_name        => $cluster_name,
-                         service_template_id => $service->id,
-                         owner_id            => $args{owner_id},
-                         %{ clone($stackparams) }
+                         cluster_name => $cluster_name,
+                         # Add the specific params
+                         %{ $servicedef },
+                         # Add the common params
+                         %{ clone($common_params) }
                      );
 
         $args{workflow}->enqueueNow(operation => {
@@ -108,21 +126,20 @@ sub startStack {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'owner_id', 'workflow' ],
+                         required => [ 'user', 'workflow' ],
                          optional => { 'erollback' => undef });
 
     # Retrieve the created cluster from name
     # TODO: Be sure to imprive the search pattern to not get old stacks of the user
-    my $user = Entity::User->get(id => $args{owner_id});
     my @clusters = Entity::ServiceProvider::Cluster->search(hash => {
-                       owner_id => $user->id,
-                       # active   => 1,
+                       owner_id => $args{user}->id,
+                       active   => 1,
                    });
 
     if (scalar(@clusters) <= 0) {
         throw Kanopya::Exception::Internal(
-                  error => 'Unable to find clusters of the stack, ' . 
-                           'no cluster found with name starting with ' .  $user->user_login . '_'
+                  error => 'Unable to find active clusters of the stack, ' . 
+                           'no cluster found with owner ' .  $args{user}->user_login
               );
     }
 
@@ -135,44 +152,50 @@ sub startStack {
                   'NovaCompute', 'Glance', 'Neutron', 'Cinder', 'Lvm') {
 
         # Search for a component of type $type and that belongs to one of the cluster list
-        $components->{lc($type)} = Entity::Component->find(
-                                       ensure_unique => 1,
-                                       hash => {
-                                           'component_type.component_name' => $type,
-                                           'service_provider_id'           => \@clusterids,
-                                       },
-                                   );
+        $components->{lc($type)}->{component} = Entity::Component->find(
+                                                    ensure_unique => 1,
+                                                    hash => {
+                                                        'component_type.component_name' => $type,
+                                                        'service_provider_id'           => \@clusterids,
+                                                    },
+                                                );
+
+        # Keep the service provider to sort services by components priority
+        $components->{lc($type)}->{serviceprovider}
+            = $components->{lc($type)}->{component}->service_provider;
     }
 
-    $components->{keystone}->setConf(conf => {
-        mysql5_id => $components->{mysql}->id,
+    $components->{keystone}->{component}->setConf(conf => {
+        mysql5_id => $components->{mysql}->{component}->id,
     });
 
-    $components->{novacontroller}->setConf(conf => {
-        mysql5_id   => $components->{mysql}->id,
-        keystone_id => $components->{keystone}->id,
-        amqp_id     => $components->{amqp}->id
+    $components->{novacontroller}->{component}->setConf(conf => {
+        mysql5_id   => $components->{mysql}->{component}->id,
+        keystone_id => $components->{keystone}->{component}->id,
+        amqp_id     => $components->{amqp}->{component}->id
     });
 
-    $components->{glance}->setConf(conf => {
-        mysql5_id          => $components->{mysql}->id,
-        nova_controller_id => $components->{novacontroller}->id
+    $components->{glance}->{component}->setConf(conf => {
+        mysql5_id          => $components->{mysql}->{component}->id,
+        nova_controller_id => $components->{novacontroller}->{component}->id
     });
 
-    $components->{neutron}->setConf(conf => {
-        mysql5_id          => $components->{mysql}->id,
-        nova_controller_id => $components->{novacontroller}->id
+    $components->{neutron}->{component}->setConf(conf => {
+        mysql5_id          => $components->{mysql}->{component}->id,
+        nova_controller_id => $components->{novacontroller}->{component}->id
     });
 
-    $components->{cinder}->setConf(conf => {
-        mysql5_id          => $components->{mysql}->id,
-        nova_controller_id => $components->{novacontroller}->id
+    $components->{cinder}->{component}->setConf(conf => {
+        mysql5_id          => $components->{mysql}->{component}->id,
+        nova_controller_id => $components->{novacontroller}->{component}->id
     });
 
-    $components->{novacompute}->iaas_id($components->{novacontroller}->id);
+    $components->{novacompute}->{component}->iaas_id(
+        $components->{novacontroller}->{component}->id
+    );
 
     # Create a volume group on the controller fro Cinder.
-    my $vg = Lvm2Vg->new(lvm2_id           => $components->{lvm}->id,
+    my $vg = Lvm2Vg->new(lvm2_id           => $components->{lvm}->{component}->id,
                          lvm2_vg_name      => "cinder-volumes",
                          lvm2_vg_freespace => 0,
                          lvm2_vg_size      => 10 * 1024 * 1024 * 1024);
@@ -186,17 +209,17 @@ sub startStack {
 
     my $shared;
     try {
-        $shared = $lvm->createDisk(name       => "nova-instances-" . $user->user_login,
+        $shared = $lvm->createDisk(name       => "nova-instances-" . $args{user}->user_login,
                                    size       => 1 * 1024 * 1024 * 1024,
                                    filesystem => "ext4",
                                    erollback  => $args{erollback});
     }
     catch (Kanopya::Exception::Execution::AlreadyExists $err) {
-        $log->warn("Logical volume nova-instances-" . $user->user_login .
+        $log->warn("Logical volume nova-instances-" . $args{user}->user_login .
                    " already exists, skip creation...");
 
         $shared = EEntity->new(data => Entity::Container->find(hash => {
-                      container_name => "nova-instances-" . $user->user_login
+                      container_name => "nova-instances-" . $args{user}->user_login
                   }));
     }
     catch ($err) {
@@ -212,7 +235,7 @@ sub startStack {
                                      erollback      => $args{erollback});
     }
     catch (Kanopya::Exception::Execution::ResourceBusy $err) {
-        $log->warn("Nfs export for volume nova-instances-" . $user->user_login .
+        $log->warn("Nfs export for volume nova-instances-" . $args{user}->user_login .
                    " already exists, skip creation...");
 
         $export = EEntity->new(data => Entity::ContainerAccess::NfsContainerAccess->find(hash => {
@@ -223,15 +246,27 @@ sub startStack {
         $err->rethrow();
     }
 
-    $components->{novacompute}->service_provider->getComponent(category => "System" )->addMount(
+    $components->{novacompute}->{component}->service_provider->getComponent(category => "System")->addMount(
         mountpoint => "/var/lib/nova/instances",
         filesystem => "nfs",
         options    => "vers=3",
         device     => $export->container_access_export
     );
 
+    # Start the database first, then the controller, then the compute
+    my @bypriority;
+    for my $component ('mysql', 'novacontroller', 'novacompute') {
+        if (scalar(grep { $_->id == $components->{$component}->{serviceprovider}->id } @bypriority) <= 0) {
+            $log->info("Start service " . $components->{$component}->{serviceprovider}->label .
+                       " in the current workflow.");
+
+            push @bypriority, $components->{$component}->{serviceprovider};
+        }
+    }
+
     # Finally start the instances
-    for my $instance (@clusters) {
+    # Note: reverse the array as enqueueNow insert operations at the head of the list.
+    for my $instance (reverse @bypriority) {
         $args{workflow}->enqueueNow(workflow => {
             name       => 'AddNode',
             related_id => $instance->id,
@@ -242,31 +277,148 @@ sub startStack {
             },
         });
     }
+
+    # Return the component instances to the operation that will keep its in the operation context
+    return {
+        keystone       => $components->{keystone}->{component},
+        novacontroller => $components->{novacontroller}->{component},
+        neutron        => $components->{neutron}->{component},
+        glance         => $components->{glance}->{component},
+        novacompute    => $components->{novacompute}->{component},
+        cinder         => $components->{cinder}->{component},
+    }
 }
 
 sub validateStack {
     my ($self, %args) = @_;
+    my ($result, $command);
 
-    General::checkParams(args => \%args, required => [ 'owner_id' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'user', 'keystone', 'novacontroller',
+                                       'neutron', 'glance', 'novacompute', 'cinder' ]);
 
-    $log->info("Validate stack");
+    try {
+        # Temp conf : sended by
+        my $neutron_net = '172.18.42.0/24';
+        my $images = {
+            'ubuntu-12.04' => 'precise-server-cloudimg-amd64-disk1.img',
+            'fedora-20'    => 'Fedora-x86_64-20-20131211.1-sda.qcow2'
+        };
 
-    # All stuff to configure access to the stack for users
+        my $mirror_url = 'http://mirror.intranet.hederatech.com/cloudimages';
+
+        # Create openrc file
+        my $openrc = "# Environement variables needed by OpenStack CLI commands.\n" .
+                     "# See http://docs.openstack.org/user-guide/content/cli_openrc.html\n".
+                     "export OS_TENANT_NAME=openstack\nexport OS_USERNAME=admin\n" .
+                     "export OS_PASSWORD=keystone\nexport OS_AUTH_URL=http://" .
+                     $args{novacontroller}->getMasterNode->host->getAdminIface->getIPAddr . ":5000/v2.0/";
+
+        $command = 'echo "'. $openrc . '" > /root/openrc.sh && chmod +x /root/openrc.sh';
+        $result = $args{novacontroller}->getEContext->execute(command => $command);
+        if ($result->{exitcode}) {
+            throw Kanopya::Exception::Execution(
+                      error => "Failed to create openrc.sh on NovaContoller:\n$result->{stderr}"
+                  );
+        }
+
+        # Check user ssh key
+        if (! $args{user}->user_sshkey) {
+            # throw Kanopya::Exception::Internal::NotFound('User has no SSH key registred !');
+            $log->warn("User <" . $args{user}->user_login . "> has no SSH key registred !");
+        }
+        else {
+            # Add SSH key
+            $command = 'source /root/openrc.sh && echo "' . $args{user}->user_sshkey .
+                       '" > /tmp/sshkey.pub && nova keypair-add --pub-key /tmp/sshkey.pub "' .
+                       $args{user}->user_login . '" && rm /tmp/sshkey.pub';
+            $result = $args{novacontroller}->getEContext->execute(command => $command);
+            if ($result->{exitcode}) {
+                throw Kanopya::Exception::Execution(
+                          error => "Failed to add SSH key on Nova:\n$result->{stderr}"
+                      );
+            }
+        }
+
+        # Add Neutron Network
+        (my $neutron_prefix = $neutron_net) =~ s/(\d{1,3}).(\d{1,3}).(\d{1,3}).(\d{1,3})\/24/$1.$2.$3/g;
+
+        $command = "source /root/openrc.sh && neutron net-create --provider:network_type=flat " .
+                   "--provider:physical_network=physnetflat --shared " . $args{user}->user_login .
+                   "_network";
+        $result = $args{neutron}->getEContext->execute(command => $command);
+        if ($result->{exitcode}) {
+            if ($result->{stderr} !~ m/Physical network physnetflat is in use/) {
+                throw Kanopya::Exception::Execution (
+                          error => "Failed to create network " . $args{user}->user_login .
+                                   "_network on Neutron:\n$result->{stderr}"
+                      );
+            }
+            $log->error("Failed to create network " . $args{user}->user_login .
+                        "_network on Neutron:\n$result->{stderr}");
+        }
+
+        $command = "source /root/openrc.sh && neutron subnet-create " . $args{user}->user_login .
+                   "_network " . $neutron_net . " --name " . $args{user}->user_login . "_subnet " .
+                   "--no-gateway --allocation-pool start=$neutron_prefix.100,end=$neutron_prefix" .
+                   ".200 --dns-nameserver " . $args{novacontroller}->service_provider->cluster_nameserver1 .
+                   " --host-route destination=0.0.0.0/0,nexthop=$neutron_prefix.254";
+        $result = $args{neutron}->getEContext->execute(command => $command);
+        if ($result->{exitcode}) {
+            if ($result->{stderr} !~ m/overlaps with another subnet/) {
+                throw Kanopya::Exception::Execution (
+                          error => "Failed to create network " . $args{user}->user_login .
+                                   "_network on Neutron:\n$result->{stderr}"
+                      );
+            }
+            $log->error("Failed to create network " . $args{user}->user_login .
+                        "_network on Neutron:\n$result->{stderr}");
+        }
+
+        # Add images to Glance
+        $args{glance}->getEContext->execute(command => 'mkdir -p /tmp/glance');
+        foreach my $imgname (keys %{ $images }) {
+            my $destpath = "/tmp/glance/" . $images->{$imgname};
+
+            if ($args{glance}->getEContext->execute(command => "file $destpath")->{exitcode}) {
+                $command = "source /root/openrc.sh && cd /tmp/glance && " .
+                           "wget $mirror_url/$images->{$imgname} && glance image-create --name " .
+                           "$imgname --disk-format=qcow2 --container-format=bare --is-public=True " .
+                           "--file=$destpath";
+
+                $result = $args{glance}->getEContext->execute(command => $command);
+                if ($result->{exitcode}) {
+                    throw Kanopya::Exception::Execution(
+                              error => "Failed to import image " . $imgname . " on Glance:\n$result->{stderr}"
+                          );
+                }
+            }
+            else {
+                $log->warn("Image $destpath laready exists in glance, skipping...");
+            }
+        }
+
+        $args{glance}->getEContext->execute(command => 'rm -rf /tmp/glance');
+    }
+    catch ($err) {
+        throw Kanopya::Exception::Execution::OperationInterrupted(
+                  error => "Stack validation failed, interrupting the workflow.\n$err"
+              );
+    }
+
 }
 
 sub cancelStack {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'owner_id' ]);
-
-    my $user = Entity::User->get(id => $args{owner_id});
+    General::checkParams(args => \%args, required => [ 'user' ]);
 
     my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster;
     my $lvm = EEntity->new(data => $kanopya->getComponent(name => "Lvm"));
 
     try {
         my $container = Entity::Container->find(
-                            container_name => "nova-instances-" . $user->user_login
+                            container_name => "nova-instances-" . $args{user}->user_login
                         );
 
         # Remove the nova instances exports

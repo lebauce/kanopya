@@ -63,7 +63,9 @@ sub check {
     my ($self, %args) = @_;
     $self->SUPER::check(%args);
 
-    General::checkParams(args => $self->{context}, required => [ "cluster" ]);
+    General::checkParams(args     => $self->{context},
+                         required => [ "cluster" ],
+                         optional => { "forced_host" => undef });
 
     # Add the manager to the context
     # TODO: Probably not the proper place...
@@ -316,8 +318,11 @@ sub execute {
     }
 
     # Check if a host is specified.
-    if (not defined $self->{context}->{host} or
-        ($self->{context}->{host}->host_manager_id != $self->{context}->{host_manager}->id)) {
+    if (defined $self->{context}->{forced_host} &&
+        ($self->{context}->{forced_host}->host_manager_id == $self->{context}->{host_manager}->id)) {
+        $self->{context}->{host} = delete $self->{context}->{forced_host};
+    }
+    else {
         # Get a free host
         $self->{context}->{host} = $self->{context}->{host_manager}->getFreeHost(
                                        cluster => $self->{context}->{cluster}

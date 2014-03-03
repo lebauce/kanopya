@@ -187,6 +187,28 @@ sub run {
 }
 
 
+sub resume {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'workflow_id' ]);
+
+    my $workflow = Entity::Workflow->get(id => $args{workflow_id});
+
+    # Publish on the 'workflow' queue
+    eval {
+        MessageQueuing::RabbitMQ::Sender::run($self,
+                                              workflow_id => $args{workflow_id},
+                                              %{ Kanopya::Database::_adm->{config}->{amqp} });
+    };
+    if ($@) {
+        my $err = $@;
+        $log->error("Unable to resume workflow <" . $workflow->id . ">: $err");
+        $err->rethrow();
+    }
+    return $workflow;
+}
+
+
 =pod
 =begin classdoc
 

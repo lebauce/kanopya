@@ -30,8 +30,10 @@ use base Entity::Component;
 use strict;
 use warnings;
 
+use Entity::User;
 use Kanopya::Exceptions;
 
+use Data::Dumper;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -50,6 +52,59 @@ sub methods {
     };
 }
 
+my $service_templates = [
+    {
+        "service_name" => "PMS Distributed Controller",
+        "components"   => [
+            'Keystone',
+            'Neutron',
+            'Glance',
+            'Apache',
+            'NovaController',
+            'Cinder',
+            'Lvm',
+            'Amqp',
+            'Mysql',
+            'Haproxy',
+            'Keepalived'
+        ],
+    },
+    {
+        "service_name" => "PMS Full Controller",
+        "components"   => [
+            'Keystone',
+            'Neutron',
+            'Glance',
+            'Apache',
+            'NovaController',
+            'Cinder',
+            'Lvm',
+            'Amqp',
+            'Mysql'
+        ],
+    },
+    {
+        "service_name" => "PMS Distributed Controller",
+        "components"   => [
+            'Keystone',
+            'Neutron',
+            'Glance',
+            'Apache',
+            'NovaController',
+            'Cinder',
+            'Lvm'
+        ],
+    },
+    {
+        "service_name" => "PMS DB and Messaging",
+        "components"   => [ 'Amqp', 'Mysql' ],
+    },
+    {
+        "service_name" => "PMS Hypervisor",
+        "components"   => [ 'NovaCompute' ],
+    },
+];
+
 
 sub buildStack {
     my ($self, %args) = @_;
@@ -59,23 +114,132 @@ sub buildStack {
                          optional => { 'owner_id' => Kanopya::Database::currentUser });
 
     # TODO: Check existance of PimpMyStack policies
-    my @services = Entity::ServiceTemplate->search(hash => { service_name => { 'LIKE' => 'PMS%' } });
-    if (! scalar(@services)) {
+    my @templates = Entity::ServiceTemplate->search(hash => { service_name => { 'LIKE' => 'PMS%' } });
+    if (! scalar(@templates)) {
         throw Kanopya::Exception::Internal(
                   error => 'Unable to find services and policies required for building stasks, ' .
                            'perhaps you forgot to load pimpmystack.json policies and servces.')
 
     }
 
+    # The stack args must fit the following formalism:
+    # {
+    #     services => [
+    #         # Service "PMS Distributed Controller"
+    #         {
+    #             cpu        => 4,
+    #             ram        => 8282906624,
+    #             components => [
+    #                 {
+    #                     component_type => 'Keystone',
+    #                     conf => {}
+    #                 },
+    #                 {
+    #                     component_type => 'Neutron',
+    #                     conf => {}
+    #                 },
+    #                 {
+    #                     component_type => 'Glance',
+    #                     conf => {}
+    #                 },
+    #                 {
+    #                     component_type => 'Apache',
+    #                     conf => {}
+    #                 },
+    #                 {
+    #                     component_type => 'NovaController',
+    #                     conf => {}
+    #                 },
+    #                 {
+    #                     component_type => 'Cinder',
+    #                     conf => {}
+    #                 },
+    #                 {
+    #                     component_type => 'Lvm',
+    #                     conf => {}
+    #                 },
+    #             ],
+    #         },
+    #         # Service "PMS Hypervisor"
+    #         {
+    #             cpu        => 8,
+    #             ram        => 33131626496,
+    #             components => [
+    #                 {
+    #                     component_type => 'NovaCompute',
+    #                     conf => {}
+    #                 },
+    #             ],
+    #         },
+    #         # Service "PMS DB and Messaging"
+    #         {
+    #             cpu        => 4,
+    #             ram        => 8282906624,
+    #             components => [
+    #                 {
+    #                     component_type => 'Amqp',
+    #                     conf => {}
+    #                 },
+    #                 {
+    #                     component_type => 'Mysql',
+    #                     conf => {}
+    #                 },
+    #             ],
+    #         },
+    #     ],
+    #     iprange  => "10.0.0.0/24'
+    # }
+
+    General::checkParams(args => $args{stack}, required => [ 'services', 'iprange' ]);
+
+    # Browse the service defintion list to find the service templates which correspond to.
+    my @services;
+
+    SERVICE:
+    for my $service (@{ $args{stack}->{services} }) {
+        my @components = map { $_->{component_type} } @{ $service->{components} };
+
+        # Search a template that contains components of the service
+        TEMPLATE:
+        for my $template (@{ $service_templates }) {
+            for my $template_component (@{ $template->{components} }) {
+                if (scalar(grep { $_ eq $template_component } @components) <= 0) {
+                    next TEMPLATE;
+                }
+            }
+
+            # All components of the template found in the service definition
+            # So get the service template id from name
+            my $service_template = Entity::ServiceTemplate->find(hash => {
+                                       service_name => $template->{service_name}
+                                   });
+
+            # Adn push the service defintion filled with template id in the service list.
+            delete $service->{components};
+            push @services, {
+                service_template_id => $service_template->id,
+                %{ $service }
+            };
+            next SERVICE;
+        }
+
+        # No template found for this service.
+        throw Kanopya::Exception::Internal::Inconsistency(
+                 error => "Unable to find a service template corresponding to servide defintion:\n" .
+                          Dumper($service)
+              )
+    }
+
     # Run the workflow BuildStack
     $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
         name   => 'BuildStack',
         params => {
+            services => \@services,
+            iprange  => $args{stack}->{iprange},
             context => {
                 stack_builder => $self,
+                user          => Entity::User->get(id => $args{owner_id}),
             },
-            stack => $args{stack},
-            owner_id => $args{owner_id}
         }
     );
 }

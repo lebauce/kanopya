@@ -53,7 +53,7 @@ use constant ATTR_DEF => {
     },
     state => {
         pattern      => '^ready|processing|prereported|postreported|waiting_validation|' .
-                        'validated|blocked|cancelled|succeeded|pending|statereported$',
+                        'validated|blocked|cancelled|succeeded|pending|statereported|interrupted$',
         default      => 'pending',
         is_mandatory => 0,
     },
