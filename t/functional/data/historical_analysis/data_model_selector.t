@@ -107,7 +107,7 @@ sub testAutoPredict {
         my @timestamps = @{$extracted{timestamps_ref}};
         my @values     = @{$extracted{values_ref}};
 
-        my %forecast = %{DataModelSelector->autoPredict(
+        my %forecast = %{DataModelSelector->autoPredictData(
             predict_start_tstamps => 45,
             predict_end_tstamps  => 61,
             timeserie             => \%timeserie,
@@ -133,8 +133,8 @@ sub testAutoPredict {
         my @timestamps = @{$extracted{timestamps_ref}};
         my @values     = @{$extracted{values_ref}};
 
-        my $forecast = DataModelSelector->autoPredict(
-                           predict_start_tstamps => 45,
+        my $forecast = DataModelSelector->autoPredictData(
+                           predict_start_tstamps => 50,
                            predict_end_tstamps   => 61,
                            timeserie             => \%timeserie,
                        );
