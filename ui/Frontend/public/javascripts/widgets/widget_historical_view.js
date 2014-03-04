@@ -642,7 +642,7 @@ function _autoPredict(params) {
     var predict_params = {
         data_start            : current_selected_start_time,
         data_end              : current_selected_end_time,
-        predict_start_tstamps : dateTimeToEpoch(time_settings.start),
+        predict_start_tstamps : current_selected_end_time + 1,
         predict_end_tstamps   : dateTimeToEpoch(time_settings.end),
     };
 
