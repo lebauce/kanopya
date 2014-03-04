@@ -34,7 +34,6 @@ use strict;
 use warnings;
 use WorkflowStep;
 use TryCatch;
-my $err;
 
 use Log::Log4perl 'get_logger';
 

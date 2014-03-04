@@ -108,7 +108,7 @@ __PACKAGE__->belongs_to(
   "netconf_role",
   "Kanopya::Schema::Result::Entity",
   { entity_id => "netconf_role_id" },
-  { is_deferrable => 1, on_delete => "NO ACTION", on_update => "NO ACTION" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
 =head2 netconfs
@@ -127,8 +127,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:xiofdR6ITryLlwdNNxQA1w
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-03 12:34:48
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:z0oh9mPWuUpGgiu/J11QqQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

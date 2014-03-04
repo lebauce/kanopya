@@ -67,6 +67,13 @@ __PACKAGE__->table("component");
   is_foreign_key: 1
   is_nullable: 1
 
+=head2 param_preset_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -92,6 +99,13 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "component_template_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
+  "param_preset_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -783,6 +797,26 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 param_preset
+
+Type: belongs_to
+
+Related object: L<Kanopya::Schema::Result::ParamPreset>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "param_preset",
+  "Kanopya::Schema::Result::ParamPreset",
+  { param_preset_id => "param_preset_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "SET NULL",
+    on_update     => "NO ACTION",
+  },
+);
+
 =head2 php5
 
 Type: might_have
@@ -1069,8 +1103,8 @@ Composing rels: L</workflow_def_managers> -> workflow_def
 __PACKAGE__->many_to_many("workflow_defs", "workflow_def_managers", "workflow_def");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-01-30 17:59:16
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9lDVGsdHPdJFr1Vt+pnFtw
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-03 12:34:48
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9kKI3bysIEG1GamtWFNvMQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

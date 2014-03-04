@@ -31,7 +31,9 @@ use warnings;
 
 use Kanopya::Exceptions;
 use General;
+use ParamPreset;
 use ClassType::ComponentType;
+
 use Data::Dumper;
 use TryCatch;
 
@@ -60,6 +62,10 @@ use constant ATTR_DEF => {
         is_mandatory   => 0,
         is_extended    => 0,
         is_editable    => 0
+    },
+    param_presets => {
+        is_virtual   => 1,
+        is_editable  => 1,
     },
     priority => {
         is_virtual => 1
@@ -222,6 +228,11 @@ sub remove {
     for my $manager (@managers) {
         $manager->remove();
     }
+
+    if (defined $self->param_preset) {
+        $self->param_preset->remove();
+    }
+
     $self->SUPER::remove();
 }
 
@@ -539,6 +550,49 @@ sub instanciatePuppetResource {
            ($args{require} ? "  require => [ " . join(' ,', @{$args{require}}) . " ],\n" : '') .
            join("\n", @dumper) . "\n" .
            "}\n";
+}
+
+
+=pod
+=begin classdoc
+
+User friendly shortcut to get/set the extra configuration stored in param presets. 
+
+=end classdoc
+=cut
+
+sub extraConfiguration {
+    my ($self, @args) = @_;
+
+    return $self->paramPresets(@args);
+}
+
+
+=pod
+=begin classdoc
+
+Set/get the virtual attribute param_preset.
+
+=end classdoc
+=cut
+
+sub paramPresets {
+    my ($self, @args) = @_;
+
+    if (scalar(@args)) {
+        if (defined $self->param_preset) {
+            $self->param_preset->remove();
+        }
+        $self->param_preset_id(ParamPreset->new(params => pop @args)->id);
+    }
+    else {
+        try {
+            return $self->param_preset->load();
+        }
+        catch ($err) {
+            return {};
+        }
+    }
 }
 
 1;

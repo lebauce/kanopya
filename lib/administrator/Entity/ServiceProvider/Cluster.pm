@@ -392,8 +392,9 @@ sub applyPolicies {
             for my $component (values %$value) {
                 # TODO: Check if the component is already installed
                 $self->addComponent(
-                    component_type_id       => $component->{component_type},
-                    component_configuration => $component->{component_configuration}
+                    component_type_id             => $component->{component_type},
+                    component_configuration       => $component->{component_configuration},
+                    component_extra_configuration => $component->{component_extra_configuration},
                 );
             }
         }

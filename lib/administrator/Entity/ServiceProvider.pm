@@ -540,8 +540,9 @@ sub addComponent {
 
     General::checkParams(args     => \%args,
                          required => [ 'component_type_id' ],
-                         optional => { 'component_configuration' => undef,
-                                       'component_template_id'   => undef });
+                         optional => { 'component_configuration'       => undef,
+                                       'component_extra_configuration' => undef,
+                                       'component_template_id'         => undef });
 
     # Check if the type of the given component is installable on this type
     # of service provider.

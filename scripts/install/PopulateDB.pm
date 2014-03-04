@@ -1599,7 +1599,7 @@ sub registerKanopyaMaster {
                 masterimages_directory => $args{masterimages_directory} || "/var/lib/kanopya/masterimages/",
                 clusters_directory     => $args{clusters_directory} || "/var/lib/kanopya/clusters/",
                 private_directory      => $args{private_directory} || "/var/lib/kanopya/private/"
-            }
+            },
         },
         {
             name => 'KanopyaOpenstackSync',
@@ -1709,7 +1709,8 @@ sub registerKanopyaMaster {
         installComponent(cluster => $admin_cluster,
                          name    => $component->{name},
                          manager => $component->{manager},
-                         conf    => $component->{conf});
+                         conf    => $component->{conf},
+                         extra   => $component->{extra});
     }
 
     # Create the host for the Kanopya master
@@ -1872,9 +1873,10 @@ sub installComponent {
                          });
 
     # Add the component
-    my $comp = $args{cluster}->addComponent(component_type_id       => $component_type->id,
-                                            component_template_id   => $component_template,
-                                            component_configuration => $args{conf});
+    my $comp = $args{cluster}->addComponent(component_type_id             => $component_type->id,
+                                            component_template_id         => $component_template,
+                                            component_configuration       => $args{conf},
+                                            component_extra_configuration => $args{extra});
 
     if (defined $args{manager}) {
         # Add the manager
