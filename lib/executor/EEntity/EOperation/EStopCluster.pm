@@ -110,14 +110,27 @@ sub postrequisites {
     my ($self, %args)  = @_;
 
     # Remove node from the less important to the most important
+    # Note: nodesByWeight return the node list sorted from the most important to the less important
+    #       but as we use enqueueNow, workflow wil be executed in the reserve order than we
+    #       enqueued them.
     NODE:
-    foreach my $node (reverse $self->{context}->{cluster}->nodesByWeight()) {
+    foreach my $node ($self->{context}->{cluster}->nodesByWeight()) {
         # We stop nodes with state 'up' only
         # TODO: manage other node states
         my ($state, $timestamp) = $node->host->getState();
         if ($state ne 'up') { next NODE; }
 
-        $self->{context}->{cluster}->removeNode(node_id => $node->id);
+        # Stop the node in an embedded workflow
+        $self->workflow->enqueueNow(workflow => {
+            name       => 'StopNode',
+            related_id => $self->{context}->{cluster}->id,
+            params     => {
+                context => {
+                    cluster => $self->{context}->{cluster}->_entity,
+                    host    => $node->host,
+                }
+            }
+        });
     }
 
     return 0;

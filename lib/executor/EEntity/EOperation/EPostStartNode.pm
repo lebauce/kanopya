@@ -173,10 +173,18 @@ Add another node if the number of nodes not reach the min node number
 sub postrequisites {
     my ($self, %args)  = @_;
 
-    # Add another node if required
+    # Add another node in a embedded workflow if required
     my @nodes = $self->{context}->{cluster}->nodes;
     if (scalar(@nodes) < $self->{context}->{cluster}->cluster_min_node) {
-        $self->{context}->{cluster}->addNode();
+        $self->workflow->enqueueNow(workflow => {
+            name       => 'AddNode',
+            related_id => $self->{context}->{cluster}->id,
+            params     => {
+                context => {
+                    cluster => $self->{context}->{cluster}->_entity,
+                },
+            },
+        });
     }
     return 0;
 }
