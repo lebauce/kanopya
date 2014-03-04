@@ -214,10 +214,25 @@ sub buildStack {
                                        service_name => $template->{service_name}
                                    });
 
-            # Adn push the service defintion filled with template id in the service list.
+            # If some components are defined with configuration, add them to the service defintion to create
+            my @configuredComponents;
+            for my $configured (grep { defined $_->{conf} } @{ $service->{components} }) {
+                my $component_type = ClassType::ComponentType->find(hash => {
+                                         component_name => $configured->{component_type}
+                                     });
+
+                push @configuredComponents, {
+                    component_type                => $component_type->id,
+                    component_configuration       => $configured->{conf},
+                    component_extra_configuration => delete $configured->{conf}->{extra},
+                }
+            }
+
+            # And push the service defintion filled with template id in the service list.
             delete $service->{components};
             push @services, {
                 service_template_id => $service_template->id,
+                components          => \@configuredComponents,
                 %{ $service }
             };
             next SERVICE;

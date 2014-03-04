@@ -264,6 +264,8 @@ sub startStack {
         }
     }
 
+    sleep 789525;
+
     # Finally start the instances
     # Note: reverse the array as enqueueNow insert operations at the head of the list.
     for my $instance (reverse @bypriority) {
@@ -299,11 +301,8 @@ sub validateStack {
 
     try {
         # Temp conf : sended by
-        my $neutron_net = '172.18.42.0/24';
-        my $images = {
-            'ubuntu-12.04' => 'precise-server-cloudimg-amd64-disk1.img',
-            'fedora-20'    => 'Fedora-x86_64-20-20131211.1-sda.qcow2'
-        };
+        my $neutron_net = $args{neutron}->extraConfiguration->{network};
+        my $images = $args{glance}->extraConfiguration->{images};
 
         my $mirror_url = 'http://mirror.intranet.hederatech.com/cloudimages';
 

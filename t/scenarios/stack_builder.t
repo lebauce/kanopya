@@ -61,11 +61,22 @@ sub main {
                     },
                     {
                         component_type => 'Neutron',
-                        conf => {}
+                        conf => {
+                            extra => {
+                                network => '172.18.42.0/24'
+                            }
+                        }
                     },
                     {
                         component_type => 'Glance',
-                        conf => {}
+                        conf => {
+                            extra => {
+                                images => {
+                                    'ubuntu-12.04' => 'precise-server-cloudimg-amd64-disk1.img',
+                                    'fedora-20'    => 'Fedora-x86_64-20-20131211.1-sda.qcow2'
+                                }
+                            }
+                        }
                     },
                     {
                         component_type => 'Apache',
