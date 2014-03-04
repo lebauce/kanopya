@@ -253,6 +253,10 @@ sub startStack {
         device     => $export->container_access_export
     );
 
+    # Check the extra configuration
+    General::checkParams(args => $components->{neutron}->{component}->extraConfiguration, required => [ 'network' ]);
+    General::checkParams(args => $components->{glance}->{component}->extraConfiguration, required => [ 'images' ]);
+
     # Start the database first, then the controller, then the compute
     my @bypriority;
     for my $component ('mysql', 'novacontroller', 'novacompute') {
@@ -303,7 +307,7 @@ sub validateStack {
 
         my $neutron_net = $args{neutron}->extraConfiguration->{network};
 
-        # Get the iage list form glance extra conf
+        # Get the image list form glance extra conf
         General::checkParams(args => $args{glance}->extraConfiguration, required => [ 'images' ]);
 
         my $images = $args{glance}->extraConfiguration->{images};
