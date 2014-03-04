@@ -264,8 +264,6 @@ sub startStack {
         }
     }
 
-    sleep 789525;
-
     # Finally start the instances
     # Note: reverse the array as enqueueNow insert operations at the head of the list.
     for my $instance (reverse @bypriority) {
@@ -300,8 +298,14 @@ sub validateStack {
                                        'neutron', 'glance', 'novacompute', 'cinder' ]);
 
     try {
-        # Temp conf : sended by
+        # Get the network form neutron extra conf
+        General::checkParams(args => $args{neutron}->extraConfiguration, required => [ 'network' ]);
+
         my $neutron_net = $args{neutron}->extraConfiguration->{network};
+
+        # Get the iage list form glance extra conf
+        General::checkParams(args => $args{glance}->extraConfiguration, required => [ 'images' ]);
+
         my $images = $args{glance}->extraConfiguration->{images};
 
         my $mirror_url = 'http://mirror.intranet.hederatech.com/cloudimages';
