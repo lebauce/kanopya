@@ -428,6 +428,38 @@
                 "class_type" : "Entity::Policy::StoragePolicy",
                 "policy_name" : "PimpmystackStorage"
             }
+        },
+        "PMS HA Controller" : {
+            "service_name": "PMS HA Controller",
+            "service_desc": "",
+            "orchestration_policy_id": {
+                "class_type" : "Entity::Policy::OrchestrationPolicy",
+                "policy_name" : "Standard orchestration configuration"
+            },
+            "scalability_policy_id": {
+                "class_type" : "Entity::Policy::ScalabilityPolicy",
+                "policy_name" : "PMS HA Nodes"
+            },
+            "network_policy_id": {
+                "class_type" : "Entity::Policy::NetworkPolicy",
+                "policy_name" : "PimpmystackNetwork"
+            },
+            "hosting_policy_id": {
+                "class_type" : "Entity::Policy::HostingPolicy",
+                "policy_name" : "PimpmystackHosting"
+            },
+            "billing_policy_id": {
+                "class_type" : "Entity::Policy::BillingPolicy",
+                "policy_name" : "Empty billing configuration"
+            },
+            "system_policy_id": {
+                "class_type" : "Entity::Policy::SystemPolicy",
+                "policy_name" : "PMS HA Controller"
+            },
+            "storage_policy_id": {
+                "class_type" : "Entity::Policy::StoragePolicy",
+                "policy_name" : "PimpmystackStorage"
+            }
         }
     }
 }

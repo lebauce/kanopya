@@ -22,7 +22,7 @@ use Entity::Network;
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
     level  => 'DEBUG',
-    file   => 'stack_builder.t.log',
+    file   => 'stack_builder_ha.t.log',
     layout => '%F %L %p %m%n'
 });
 
@@ -50,7 +50,7 @@ sub main {
 
     my $stack = {
         services => [
-            # Service "PMS Distributed Controller"
+            # Service "PMS HA Controller"
             {
                 cpu        => 2,
                 ram        => 1073741824,
@@ -94,6 +94,22 @@ sub main {
                         component_type => 'Lvm',
                         conf => {}
                     },
+                    {
+                        component_type => 'Amqp',
+                        conf => {}
+                    },
+                    {
+                        component_type => 'Mysql',
+                        conf => {}
+                    },
+                    {
+                        component_type => 'Haproxy',
+                        conf => {}
+                    },
+                    {
+                        component_type => 'Keepalived',
+                        conf => {}
+                    },
                 ],
             },
             # Service "PMS Compute"
@@ -103,21 +119,6 @@ sub main {
                 components => [
                     {
                         component_type => 'NovaCompute',
-                        conf => {}
-                    },
-                ],
-            },
-            # Service "PMS DB and Messaging"
-            {
-                cpu        => 2,
-                ram        => 1073741824,
-                components => [
-                    {
-                        component_type => 'Amqp',
-                        conf => {}
-                    },
-                    {
-                        component_type => 'Mysql',
                         conf => {}
                     },
                 ],

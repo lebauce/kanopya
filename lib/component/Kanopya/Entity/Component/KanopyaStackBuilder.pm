@@ -54,7 +54,7 @@ sub methods {
 
 my $service_templates = [
     {
-        "service_name" => "PMS Distributed Controller",
+        "service_name" => "PMS HA Controller",
         "components"   => [
             'Keystone',
             'Neutron',
@@ -70,7 +70,7 @@ my $service_templates = [
         ],
     },
     {
-        "service_name" => "PMS Full Controller",
+        "service_name" => "PMS AllInOne Controller",
         "components"   => [
             'Keystone',
             'Neutron',
