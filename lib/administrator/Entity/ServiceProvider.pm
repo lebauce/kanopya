@@ -580,11 +580,13 @@ sub addComponent {
     if (defined $args{component_configuration}) {
         $component = $comp_class->new(service_provider_id   => $self->id,
                                       component_template_id => $args{component_template_id},
+                                      param_presets         => $args{component_extra_configuration},
                                       %{ $args{component_configuration} });
     }
     else {
         $component = $comp_class->new(service_provider_id   => $self->id,
-                                      component_template_id => $args{component_template_id});
+                                      component_template_id => $args{component_template_id},
+                                      param_presets         => $args{component_extra_configuration});
     }
 
     # For instance install the component on all node of the service provider,
