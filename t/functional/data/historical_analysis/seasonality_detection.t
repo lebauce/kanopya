@@ -747,7 +747,7 @@ sub forecast {
 
         my $comb = linkTimeSerietoAggregateCombination ('cm'               => $cm,
                                                         'func'             => "sin(X)",
-                                                        'season'           => 10,
+                                                        'season'           => { X => 10 },
                                                         'precision'        => \%prec,
                                                         'time'             => $t,
                                                         'rows'             => 8000,
@@ -800,7 +800,7 @@ sub forecast {
 
         my $comb = linkTimeSerietoAggregateCombination ('cm'               => $cm,
                                                         'func'             => "sin(X)",
-                                                        'season'           => 53,
+                                                        'season'           => {X => 53},
                                                         'precision'        => \%prec,
                                                         'rows'             => 300,
                                                         'time'             => $t,
