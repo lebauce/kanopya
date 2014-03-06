@@ -190,7 +190,7 @@ sub buildStack {
     #     iprange  => "10.0.0.0/24'
     # }
 
-    General::checkParams(args => $args{stack}, required => [ 'services', 'iprange' ]);
+    General::checkParams(args => $args{stack}, required => [ 'stack_id', 'services', 'iprange' ]);
 
     # Browse the service defintion list to find the service templates which correspond to.
     my @services;
@@ -250,6 +250,7 @@ sub buildStack {
         name   => 'BuildStack',
         params => {
             services => \@services,
+            stack_id  => $args{stack}->{stack_id},
             iprange  => $args{stack}->{iprange},
             context => {
                 stack_builder => $self,

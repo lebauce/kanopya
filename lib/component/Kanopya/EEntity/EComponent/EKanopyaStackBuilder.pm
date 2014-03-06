@@ -56,7 +56,7 @@ sub buildStack {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'services', 'iprange', 'user', 'workflow' ]);
+                         required => [ 'services', 'stack_id', 'iprange', 'user', 'workflow' ]);
 
     # Deduce the network to use from iprange
     my $ip = NetAddr::IP->new($args{iprange});
@@ -99,6 +99,9 @@ sub buildStack {
         ],
     };
 
+    my $stack_tag = Entity::Tag->new(tag => "stack_".$args{stack_id});
+    delete $args{stack_id};
+
     # Create each instance in an embedded workflow
     for my $servicedef (@{ $args{services} }) {
         General::checkParams(args => $servicedef, required => [ 'service_template_id' ]);
@@ -107,11 +110,13 @@ sub buildStack {
         my $cluster_name = $args{user}->user_login . "_" . $servicedef->{service_template_id};
         my $params = Entity::ServiceProvider::Cluster->buildInstantiationParams(
                          cluster_name => $cluster_name,
-                         # Add the specific params
+                         # Add the service_providerecific params
                          %{ $servicedef },
                          # Add the common params
                          %{ clone($common_params) }
                      );
+
+        $params->{cluster_params}->{entity_tags} = [$stack_tag] ;
 
         $args{workflow}->enqueueNow(operation => {
             type       => 'AddCluster',
