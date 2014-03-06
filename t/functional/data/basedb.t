@@ -28,7 +28,6 @@ use Entity::Policy::HostingPolicy;
 use Lvm2Vg;
 use Entity::Component::Physicalhoster0;
 use ClassType;
-use ClassType::DataModelType;
 use Entity::Component::KanopyaAggregator;
 
 Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
@@ -49,7 +48,7 @@ sub main {
     test_process_attributes();
     test_new_and_update();
     test_dbix();
-    test_promote_demote();
+    # test_promote_demote();
     test_dafault_values();
 
     test_specific_relations();
@@ -77,7 +76,7 @@ sub test_promote_demote {
     # Search on component inner classes
 
     my $classtype = ClassType::DataModelType->find(
-                        hash => { class_type => "Entity::DataModel::AnalyticRegression::LinearRegression" }
+                        hash => { class_type => "DataModel::AnalyticRegression::LinearRegression" }
                     );
 
     lives_ok {
@@ -89,7 +88,7 @@ sub test_promote_demote {
     } 'Demote ClassType::DataModelType to ClassType';
 
     $classtype = ClassType->find(
-                     hash => { class_type => "Entity::DataModel::AnalyticRegression::LinearRegression" }
+                     hash => { class_type => "DataModel::AnalyticRegression::LinearRegression" }
                  );
 
     lives_ok {

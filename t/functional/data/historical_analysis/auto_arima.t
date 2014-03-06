@@ -20,7 +20,7 @@ Log::Log4perl -> easy_init({
     layout => '%F %L %p %m%n'
 });
 
-use Entity::DataModel::RDataModel::AutoArima;
+use DataModel::RDataModel::AutoArima;
 
 main();
 
@@ -36,7 +36,7 @@ sub checkPredict {
 
         # Expected values (manually computed from R)
         my @expected_values = (5, 12, 13, 15, 13);
-        my $forecast = Entity::DataModel::RDataModel::AutoArima->predict(
+        my $forecast = DataModel::RDataModel::AutoArima->predict(
             data => \@data,
             freq     => 6,
             predict_end => 23,
@@ -44,7 +44,7 @@ sub checkPredict {
         my @forecasted_values = @{$forecast};
         for my $index (0..scalar(@expected_values) - 1) {
             unless ($expected_values[$index] == $forecasted_values[$index]) {
-                die ("AutoArima : Incorrect value returned in the forecast ($expected_values[$index] expected, 
+                die ("AutoArima : Incorrect value returned in the forecast ($expected_values[$index] expected,
                       got $forecasted_values[$index])");
             }
         }
@@ -62,7 +62,7 @@ sub checkExceptions {
             5 => 13,
             6 => 12,
         );
-        Entity::DataModel::RDataModel::AutoArima->predict(
+        DataModel::RDataModel::AutoArima->predict(
             data => \%data,
             freq     => 6,
             end_time => 8,
@@ -91,7 +91,7 @@ sub checkExceptions {
             17 => 13,
             18 => 12,
         );
-        Entity::DataModel::RDataModel::AutoArima->predict(
+        DataModel::RDataModel::AutoArima->predict(
             data => \%data,
             freq     => 6,
             end_time => 8,

@@ -168,21 +168,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 data_models
-
-Type: has_many
-
-Related object: L<Kanopya::Schema::Result::DataModel>
-
-=cut
-
-__PACKAGE__->has_many(
-  "data_models",
-  "Kanopya::Schema::Result::DataModel",
-  { "foreign.combination_id" => "self.combination_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 nodemetric_combination
 
 Type: might_have
@@ -244,8 +229,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:WtcICaduKdL58RcRQlq5pg
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-05 18:07:41
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:g3pqG1g9YI4xm0JG9n8TwA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

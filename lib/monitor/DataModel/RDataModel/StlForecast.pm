@@ -24,9 +24,9 @@ LEAST TWO PERIODS IN THE DATA.
 
 =cut
 
-package Entity::DataModel::RDataModel::StlForecast;
+package DataModel::RDataModel::StlForecast;
 
-use base 'Entity::DataModel::RDataModel';
+use base 'DataModel::RDataModel';
 
 use strict;
 use warnings;

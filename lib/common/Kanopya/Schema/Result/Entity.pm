@@ -279,21 +279,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 data_model
-
-Type: might_have
-
-Related object: L<Kanopya::Schema::Result::DataModel>
-
-=cut
-
-__PACKAGE__->might_have(
-  "data_model",
-  "Kanopya::Schema::Result::DataModel",
-  { "foreign.data_model_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 entity_comment
 
 Type: belongs_to
@@ -970,8 +955,8 @@ Composing rels: L</entity_tags> -> tag
 __PACKAGE__->many_to_many("tags", "entity_tags", "tag");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-12-18 16:10:30
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:EjFfy0lWBHRmKHsG8sUH7A
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-05 18:07:41
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:6kCEaqCcZY8xlxHBgPeYvA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

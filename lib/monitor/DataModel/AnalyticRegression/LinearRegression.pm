@@ -28,9 +28,9 @@ forecasting through the function: forcasted_data = zero + slopes * (time - start
 
 =cut
 
-package Entity::DataModel::AnalyticRegression::LinearRegression;
+package DataModel::AnalyticRegression::LinearRegression;
 
-use base 'Entity::DataModel::AnalyticRegression';
+use base 'DataModel::AnalyticRegression';
 
 use strict;
 use warnings;
@@ -82,13 +82,9 @@ sub configure {
     # line equation is $a * x + $b
     my ($b, $a) = $lineFit->coefficients();
 
-    # Store coefficients in param_presets
-    my $preset = ParamPreset->new(params => {a => $a, b => $b});
+    $self->setAttr(name => 'param_preset', value => {a => $a, b => $b});
 
-    $self->setAttr(name => 'param_preset_id', value => $preset->id);
-
-    $self->save();
-    return $preset;
+    return {a => $a, b => $b};
 }
 
 
@@ -114,7 +110,7 @@ sub predict {
     General::checkParams(args     => \%args,
                          required => ['predict_start', 'predict_end'],);
 
-    my $pp = $self->param_preset->load;
+    my $pp = $self->{param_preset};
 
     if ( (! defined $pp->{a}) ||
          (! defined $pp->{b})) {

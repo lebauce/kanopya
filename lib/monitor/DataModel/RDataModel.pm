@@ -24,9 +24,9 @@ calling R and let him do the prediction.
 
 =cut
 
-package Entity::DataModel::RDataModel;
+package DataModel::RDataModel;
 
-use base 'Entity::DataModel';
+use base 'DataModel';
 
 use strict;
 use warnings;
@@ -39,7 +39,7 @@ use Utils::R;
 
 # Not necessary here
 sub configure {
-    
+
 }
 
 1;

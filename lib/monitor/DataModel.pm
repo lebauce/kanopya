@@ -32,9 +32,7 @@ enabling a simple way to enrich the Kanopya's forecast module with new forecasti
 
 =cut
 
-package Entity::DataModel;
-
-use base 'Entity';
+package DataModel;
 
 use strict;
 use warnings;
@@ -45,44 +43,6 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 my $errmsg;
 
-use constant ATTR_DEF => {
-    combination_id => {
-        pattern => '^\d+$',
-        is_mandatory => 0,
-        is_extended => 0
-    },
-    node_id => {
-        pattern => '^\d+$',
-        is_mandatory => 0,
-        is_extended => 0
-    },
-    param_preset_id => {
-        pattern => '^\d+$',
-        is_mandatory => 0,
-        is_extended => 0
-    },
-    start_time => {
-        pattern => '^.*$',
-        is_mandatory => 0,
-        is_extended => 0
-    },
-    end_time => {
-        pattern => '^.*$',
-        is_mandatory => 0,
-        is_extended => 0
-    },
-};
-
-sub getAttrDef { return ATTR_DEF; }
-
-sub methods {
-    return {
-        predict => {
-            description => 'Predict metric values.',
-            perm_holder => 'entity',
-        }
-    };
-}
 
 =pod
 
@@ -103,23 +63,17 @@ sub new {
     my $class = shift;
     my %args = @_;
 
-    if (defined $args{combination_id}) {
-        my $combination = Entity->get(id => $args{combination_id});
-
-        # DataModel of a NodemetricCombination needs a related node
-        if ($combination->isa('Entity::Combination::NodemetricCombination')) {
-            if (! defined $args{node_id}) {
-                $errmsg = "A nodemetric combination datamodel needs a node_id argument";
-                throw Kanopya::Exception(error => $errmsg);
-            }
-        }
-        elsif ($combination->isa('Entity::Combination::ClustermetricCombination')) {
-            $log->info('Ignoring node_id in the data model of a clustermetric combination');
-            $args{node_id} = undef;
-        }
-    }
-    my $self = $class->SUPER::new(%args);
+    my $self = {};
+    bless $self, $class;
     return $self;
+}
+
+
+sub setAttr {
+    my ($self, %args) = @_;
+    General::checkParams(args     => \%args, required => ['name', 'value']);
+    $self->{$args{name}} = $args{value};
+    return;
 }
 
 =pod

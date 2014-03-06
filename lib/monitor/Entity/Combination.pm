@@ -66,8 +66,8 @@ sub methods {
         evaluateTimeSerie => {
             description => 'retrieve historical value of combination',
         },
-        computeDataModel => {
-            description => 'enqueue the select data model operation',
+        availableDataModels => {
+            description => 'return available forecasting data models',
         },
         autoPredict => {
             description => 'forecast combination values',
@@ -179,38 +179,10 @@ sub updateUnit {
 sub computeUnit {}
 
 
-=pod
-=begin classdoc
-
-Enqueue ESelectDataModel operation
-
-@param start_time define the start time of historical data taken to configure
-@param end_time define the end time of historical data taken to configure
-
-@optional node_id modeled node in case of NodemetricCombination
-
-=end classdoc
-=cut
-
-sub computeDataModel {
+sub availableDataModels {
     my ($self, %args) = @_;
 
-    General::checkParams(args     => \%args,
-                         required => ['start_time', 'end_time'],
-                         optional => { 'node_id' => undef });
-
-    my $params = { context    => { combination => $self },
-                   start_time => $args{start_time},
-                   end_time   => $args{end_time} };
-
-    if (defined $args{node_id}) {
-        $params->{node_id} = $args{node_id}
-    }
-
-    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
-        type   => 'SelectDataModel',
-        params => $params
-    );
+    return DataModelSelector->availableDataModels();
 }
 
 =pod
@@ -251,16 +223,13 @@ sub autoPredict {
            timeserie                => \%rawdata,
            predict_start_tstamps    => $args{predict_start_tstamps},
            predict_end_tstamps      => $args{predict_end_tstamps},
-           # combination id is needed by autoPredict
-           # TODO DataModelSelector must ignore combination
-           combination_id           => $self->id
-   );
+       );
 
     if (defined $args{model_list}) {
         $predict_params{model_list} = $args{model_list};
     }
 
-    return DataModelSelector->autoPredict(%predict_params);
+    return DataModelSelector->autoPredictData(%predict_params);
 }
 
 =pod

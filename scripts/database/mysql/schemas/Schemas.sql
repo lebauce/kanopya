@@ -1692,23 +1692,6 @@ CREATE TABLE `dashboard` (
   FOREIGN KEY (`dashboard_service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
---
--- Table structure for table `data_model`
---
-
-CREATE TABLE `data_model` (
-  `data_model_id` int(8) unsigned NOT NULL,
-  `combination_id` INT(8) unsigned NULL,
-  `node_id` INT(8) unsigned NULL,
-  `param_preset_id` INT(8) unsigned NULL,
-  `start_time` double NULL,
-  `end_time` double NULL,
-  PRIMARY KEY (`data_model_id`),
-  FOREIGN KEY (`data_model_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`combination_id`) REFERENCES `combination` (`combination_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`node_id`) REFERENCES `node` (`node_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE SET NULL ON UPDATE NO ACTION
-) ENGINE = InnoDB DEFAULT CHARSET=utf8;
 
 --
 -- Table structure for table `repository`
@@ -1725,17 +1708,6 @@ CREATE TABLE `repository` (
   FOREIGN KEY (`container_access_id`) REFERENCES `container_access` (`container_access_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
---
--- Table structure for table `data_model_type`
---
-
-CREATE TABLE `data_model_type` (
-    `data_model_type_id` int(8) unsigned NOT NULL,
-    `data_model_type_label` char(64) NOT NULL,
-    `data_model_type_description` text(512) NOT NULL,
-    PRIMARY KEY (`data_model_type_id`),
-    FOREIGN KEY (`data_model_type_id`) REFERENCES `class_type` (`class_type_id`) ON DELETE CASCADE ON UPDATE NO ACTION
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `time_period` (
   `time_period_id` int(8) unsigned NOT NULL,

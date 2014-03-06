@@ -20,7 +20,7 @@ Log::Log4perl -> easy_init({
     layout => '%F %L %p %m%n'
 });
 
-use Entity::DataModel::RDataModel::StlForecast;
+use DataModel::RDataModel::StlForecast;
 
 main();
 
@@ -36,7 +36,7 @@ sub checkPredict {
 
         # Expected values (manually computed from R)
         my @expected_values = (5, 12, 13, 15, 13);
-        my $forecast = Entity::DataModel::RDataModel::StlForecast->predict(
+        my $forecast = DataModel::RDataModel::StlForecast->predict(
             data => \@data,
             freq     => 6,
             predict_end => 23,
@@ -56,7 +56,7 @@ sub checkExceptions {
     throws_ok {
         my @data = (5, 12, 13, 15, 13, 12);
 
-        Entity::DataModel::RDataModel::StlForecast->predict(
+        DataModel::RDataModel::StlForecast->predict(
             data        => \@data,
             freq        => 6,
             predict_end => 8,
@@ -67,7 +67,7 @@ sub checkExceptions {
     throws_ok {
         my @data = (5, 12, 13, 15, 13, 12, 5, 12, 13, 15, 13, 12, 5, 12, 13, 15, 13, 12);
 
-        Entity::DataModel::RDataModel::StlForecast->predict(
+        DataModel::RDataModel::StlForecast->predict(
             data => \@data,
             freq     => 6,
             predict_end => 8,
@@ -79,7 +79,7 @@ sub checkExceptions {
     throws_ok {
         my @data = (5, 12, 13, 15, 13, 12, 5, 12, 13, 15, 13, 12, 5, 12, 13, 15, 13, 12);
 
-        Entity::DataModel::RDataModel::StlForecast->predict(
+        DataModel::RDataModel::StlForecast->predict(
             data => \@data,
             freq     => 1,
             predict_end => 25,
@@ -91,7 +91,7 @@ sub checkExceptions {
     throws_ok {
         my @data = (5, 12, 13, 15, 13, 12, 5, 12, 13, 15, 13, 12, 5, 12, 13, 15, 13, 12);
 
-        Entity::DataModel::RDataModel::StlForecast->predict(
+        DataModel::RDataModel::StlForecast->predict(
             data => \@data,
             freq       => 8,
             predict_start => 5,

@@ -26,9 +26,9 @@ Data Model for performing a forecast using the auto.arima method implemented in 
 
 =cut
 
-package Entity::DataModel::RDataModel::AutoArima;
+package DataModel::RDataModel::AutoArima;
 
-use base 'Entity::DataModel::RDataModel';
+use base 'DataModel::RDataModel';
 
 use strict;
 use warnings;
@@ -164,6 +164,7 @@ sub _forecastFromR {
             . qq`forecast <- forecast(auto.arima(time_serie), h=$hor);`);    # fit and forecast with arima
 
     my $forecast = $R->get('as.numeric(forecast$mean)');
+
     # Return the forecast computed by R
     return $forecast;
 }

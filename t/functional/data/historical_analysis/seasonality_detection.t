@@ -31,7 +31,7 @@ use Entity::CollectorIndicator;
 use Entity::Clustermetric;
 use Entity::Component::MockMonitor;
 use Entity::ServiceProvider::Externalcluster;
-use Entity::DataModel;
+use DataModel;
 use Kanopya::Database;
 
 my $path = '/opt/kanopya/t/functional/data/timeserie_data/';
@@ -763,9 +763,9 @@ sub forecast {
                                                       predict_start_tstamps => $t+1,
                                                       model_list            => MODEL_CLASSES);
 
-        if ($args->{data_model} ne 'Entity::DataModel::RDataModel::AutoArima') {
+        if ($args->{data_model} ne 'DataModel::RDataModel::AutoArima') {
             die 'Wrong data model got <' . $args->{data_model}
-                . '> expect <Entity::DataModel::RDataModel::AutoArima>';
+                . '> expect <DataModel::RDataModel::AutoArima>';
         }
 
         my $timestamps = $args->{'timestamps'};
@@ -816,9 +816,9 @@ sub forecast {
         my $timestamps = $args->{'timestamps'};
         my $prediction = $args->{'values'};
 
-        if ($args->{data_model} ne 'Entity::DataModel::RDataModel::AutoArima') {
+        if ($args->{data_model} ne 'DataModel::RDataModel::AutoArima') {
             die 'Wrong data model got <' . $args->{data_model}
-                . '> expect <Entity::DataModel::RDataModel::AutoArima>';
+                . '> expect <DataModel::RDataModel::AutoArima>';
         }
 
         my $file = $path_predict.'predict_season=53.csv';
@@ -864,9 +864,9 @@ sub forecast {
         my $timestamps = $args->{'timestamps'};
         my $prediction = $args->{'values'};
 
-        if ($args->{data_model} ne 'Entity::DataModel::AnalyticRegression::LinearRegression') {
+        if ($args->{data_model} ne 'DataModel::AnalyticRegression::LinearRegression') {
             die 'Wrong data model got <' . $args->{data_model}
-                . '> expect <Entity::DataModel::AnalyticRegression::LinearRegression>';
+                . '> expect <DataModel::AnalyticRegression::LinearRegression>';
         }
 
         my $file = $path_predict.'predict_season_additive.csv';
@@ -961,9 +961,9 @@ sub forecast {
         my $timestamps = $args->{'timestamps'};
         my $prediction = $args->{'values'};
 
-        if ($args->{data_model} ne 'Entity::DataModel::RDataModel::AutoArima') {
+        if ($args->{data_model} ne 'DataModel::RDataModel::AutoArima') {
             die 'Wrong data model got <' . $args->{data_model}
-                . '> expect <Entity::DataModel::RDataModel::AutoArima>';
+                . '> expect <DataModel::RDataModel::AutoArima>';
         }
 
         my $file = $path_predict.'predict_downward_trend.csv';

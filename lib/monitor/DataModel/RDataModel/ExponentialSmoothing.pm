@@ -23,9 +23,9 @@ the R forecast package.
 
 =cut
 
-package Entity::DataModel::RDataModel::ExponentialSmoothing;
+package DataModel::RDataModel::ExponentialSmoothing;
 
-use base 'Entity::DataModel::RDataModel';
+use base 'DataModel::RDataModel';
 
 use strict;
 use warnings;
