@@ -48,7 +48,7 @@ sub main {
                   );
     } 'Get the StackBuilder component';
 
-    my $stack = 
+    my $stack = {
         stack_id => 123,
         services => [
             # Service "PMS Full Controller"

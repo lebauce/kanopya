@@ -116,7 +116,7 @@ sub buildStack {
                          %{ clone($common_params) }
                      );
 
-        $params->{cluster_params}->{entity_tags} = [$stack_tag] ;
+        $params->{cluster_params}->{entity_tags} = [$stack_tag->id] ;
 
         $args{workflow}->enqueueNow(operation => {
             type       => 'AddCluster',

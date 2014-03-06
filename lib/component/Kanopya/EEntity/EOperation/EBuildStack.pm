@@ -51,7 +51,7 @@ sub check {
 
     General::checkParams(args => $self->{context}, required => [ "stack_builder", "user" ]);
 
-    General::checkParams(args => $self->{params}, required => [ "services", "iprange" ]);
+    General::checkParams(args => $self->{params}, required => [ "services", "iprange", "stack_id" ]);
 }
 
 
@@ -71,6 +71,7 @@ sub execute {
     $self->{context}->{stack_builder}->buildStack(
         services  => $self->{params}->{services},
         iprange   => $self->{params}->{iprange},
+        stack_id   => $self->{params}->{stack_id},
         user      => $self->{context}->{user},
         # TODO: Let all EEntity access to the workflow that they related
         workflow  => $self->workflow,
