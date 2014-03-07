@@ -110,13 +110,13 @@ sub buildStack {
         my $cluster_name = $args{user}->user_login . "_" . $servicedef->{service_template_id};
         my $params = Entity::ServiceProvider::Cluster->buildInstantiationParams(
                          cluster_name => $cluster_name,
-                         # Add the service_providerecific params
+                         # Add the specific params
                          %{ $servicedef },
                          # Add the common params
                          %{ clone($common_params) }
                      );
 
-        $params->{cluster_params}->{entity_tags} = [$stack_tag->id] ;
+        $params->{cluster_params}->{entity_tags} = [$stack_tag->id];
 
         $args{workflow}->enqueueNow(operation => {
             type       => 'AddCluster',

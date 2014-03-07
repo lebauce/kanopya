@@ -71,7 +71,7 @@ sub execute {
     $self->{context}->{stack_builder}->buildStack(
         services  => $self->{params}->{services},
         iprange   => $self->{params}->{iprange},
-        stack_id   => $self->{params}->{stack_id},
+        stack_id  => $self->{params}->{stack_id},
         user      => $self->{context}->{user},
         # TODO: Let all EEntity access to the workflow that they related
         workflow  => $self->workflow,
