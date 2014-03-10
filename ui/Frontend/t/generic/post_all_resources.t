@@ -238,6 +238,12 @@ sub run {
     APITestLib::login();
     fillMissingFixedAttr();
 
+    # Check Kanopya DB consistance
+    my $rq  = dancer_response GET => '/api/entity';
+    if ($rq->{status} ne 200) {
+        die 'First Kanopya DB consistance check. Wrong status GET /api/entity'
+    }
+
     my %_skip_resources = map {$_ => 1} @skip_resources;
     my @api_resources = $resource ? ($resource) : keys %REST::api::resources;
     #@api_resources = @api_resources[0 .. 20];
