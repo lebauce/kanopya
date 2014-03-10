@@ -328,4 +328,17 @@ sub entity_lock_entity {
     return $self->SUPER::entity_lock_entity;
 }
 
+
+=pod
+=begin classdoc
+
+Override relation used when deletion in order to skip AUTOLOAD
+
+=end classdoc
+=cut
+
+sub param_preset {
+    my $self = shift;
+    return $self->SUPER::param_preset;
+}
 1;
