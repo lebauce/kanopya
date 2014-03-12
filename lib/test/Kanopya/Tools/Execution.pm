@@ -202,6 +202,10 @@ sub executeOne {
             diag('Workflow ' . $workflow->id . ' cancelled');
             throw Kanopya::Exception::Internal(error => 'Execution of workflow ' . $workflow->workflow_name . ' (' .$workflow->id . ') cancelled');
         }
+        elsif ($state eq 'interrupted') {
+            diag('Workflow ' . $workflow->id . ' interrupted');
+            throw Kanopya::Exception::Internal(error => 'Execution of workflow ' . $workflow->workflow_name . ' (' .$workflow->id . ') interrupted');
+        }
     }
 
 }
