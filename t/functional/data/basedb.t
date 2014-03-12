@@ -48,7 +48,7 @@ sub main {
     test_process_attributes();
     test_new_and_update();
     test_dbix();
-    # test_promote_demote();
+    test_promote_demote();
     test_dafault_values();
 
     test_specific_relations();
@@ -75,9 +75,14 @@ sub test_dafault_values {
 sub test_promote_demote {
     # Search on component inner classes
 
-    my $classtype = ClassType::DataModelType->find(
-                        hash => { class_type => "DataModel::AnalyticRegression::LinearRegression" }
+    my $classtype = ClassType::ServiceProviderType->find(
+                        hash => { class_type => "Entity::ServiceProvider::Hpc7000" }
                     );
+
+    my @dependantInstances = $classtype->service_provider_type_component_types;
+    for my $instance (@dependantInstances) {
+        $instance->delete();
+    }
 
     lives_ok {
         my $demoted = ClassType->demote(demoted => $classtype);
@@ -85,23 +90,22 @@ sub test_promote_demote {
         if (ref($demoted) ne "ClassType") {
             die "Promoted object $demoted should be of type <ClassType>";
         }
-    } 'Demote ClassType::DataModelType to ClassType';
+    } 'Demote ClassType::ServiceProviderType to ClassType';
 
     $classtype = ClassType->find(
-                     hash => { class_type => "DataModel::AnalyticRegression::LinearRegression" }
+                     hash => { class_type => "Entity::ServiceProvider::Hpc7000" }
                  );
 
     lives_ok {
-        my $promoted = ClassType::DataModelType->promote(
+        my $promoted = ClassType::ServiceProviderType->promote(
                            promoted                    => $classtype,
-                           data_model_type_label       => "--",
-                           data_model_type_description => "___",
+                           service_provider_name       => 'Hpc7000',
                        );
 
-        if (ref($promoted) ne "ClassType::DataModelType") {
-            die "Promoted object $promoted should be of type <ClassType::DataModelType>";
+        if (ref($promoted) ne "ClassType::ServiceProviderType") {
+            die "Promoted object $promoted should be of type <ClassType::ServiceProviderType>";
         }
-    } 'Promote ClassType to ClassType::DataModelType';
+    } 'Promote ClassType to ClassType::ServiceProviderType';
 
     my $host = Node->find()->host;
     my $sp   = Entity::ServiceProvider::Cluster->find();
@@ -171,7 +175,7 @@ sub test_dbix {
             }
         }
     } 'Get parent dbix at each level of the hierarchy for Entity::ServiceProvider::Cluster';
-    
+
     my $host_to_delete = Entity::Host->new(host_manager_id    => Entity::Component::Physicalhoster0->find()->id,
                                            host_serial_number => "1",
                                            host_core          => 1,
@@ -388,7 +392,7 @@ sub test_get_many_to_many {
     } 'Get the <components> many to many relation values on node from many_to_many link';
 
     # TODO: The following code should work but not...
-    #       Can't call method "priority" on an undefined value at basedb.t line 377.       
+    #       Can't call method "priority" on an undefined value at basedb.t line 377.
 
 #    $host = Entity::Host->find();
 #    lives_ok {
