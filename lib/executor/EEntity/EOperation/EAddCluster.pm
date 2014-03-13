@@ -100,14 +100,8 @@ sub execute {
     }
 
     # Cluster creation
-    eval {
-        my $cluster = Entity::ServiceProvider::Cluster->new(%{$self->{params}->{cluster_params}});
-        $self->{context}->{cluster} = EEntity->new(data => $cluster);
-    };
-    if($@) {
-        $errmsg = "Cluster instanciation failed because : " . $@;
-        throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
-    }
+    my $cluster = Entity::ServiceProvider::Cluster->new(%{ $self->{params}->{cluster_params} });
+    $self->{context}->{cluster} = EEntity->new(data => $cluster);
 
     $self->{context}->{cluster}->create(managers        => $self->{params}->{managers},
                                         components      => $self->{params}->{components},
@@ -133,6 +127,14 @@ sub finish {
     $self->SUPER::finish(%args);
 
     $self->{context}->{cluster}->setState(state => 'down');
+
+    # Do not need params in the workflow any more
+    delete $self->{params}->{managers};
+    delete $self->{params}->{components};
+    delete $self->{params}->{interfaces};
+    delete $self->{params}->{billing_limits};
+    delete $self->{params}->{orchestration};
+    delete $self->{params}->{cluster_params};
 }
 
 1;

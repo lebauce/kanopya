@@ -81,6 +81,7 @@ my @classes = (
     'Entity::Component::KanopyaAggregator',
     'Entity::Component::KanopyaRulesEngine',
     'Entity::Component::KanopyaOpenstackSync',
+    'Entity::Component::KanopyaStackBuilder',
     'Entity::Component::UcsManager',
     'Entity::Component::Fileimagemanager0',
     'Entity::Component::NetappManager',
@@ -687,6 +688,10 @@ sub registerOperations {
         [ 'StopNode', 'Stopping node "[% host ? host : "n/a" %]"' ],
         [ 'PreStopNode', 'Configuring node removal for instance "[% cluster ? cluster : "n/a" %]"' ],
         [ 'PostStopNode', 'Finalizing removing node "[% host ? host : "n/a" %]"' ],
+        # Workflow BuildStack
+        [ 'BuildStack', 'Building stack' ],
+        [ 'StartStack', 'Starting stack' ],
+        [ 'ValidateStack', 'Validating stack' ],
     ];
 
     for my $operation (@{$operations}) {
@@ -1218,6 +1223,13 @@ sub registerComponents {
             service_provider_types => [ 'Kanopya', 'Centos6' ],
         },
         {
+            component_name         => 'KanopyaStackBuilder',
+            component_version      => 0,
+            deployable             => 0,
+            component_categories   => [ ],
+            service_provider_types => [ 'Kanopya', 'Centos6' ],
+        },
+        {
             component_name         => 'Ceph',
             component_version      => 0,
             deployable             => 1,
@@ -1587,10 +1599,13 @@ sub registerKanopyaMaster {
                 masterimages_directory => $args{masterimages_directory} || "/var/lib/kanopya/masterimages/",
                 clusters_directory     => $args{clusters_directory} || "/var/lib/kanopya/clusters/",
                 private_directory      => $args{private_directory} || "/var/lib/kanopya/private/"
-            }
+            },
         },
         {
             name => 'KanopyaOpenstackSync',
+        },
+        {
+            name => 'KanopyaStackBuilder',
         },
         {
             name => 'KanopyaAggregator'
@@ -1694,7 +1709,8 @@ sub registerKanopyaMaster {
         installComponent(cluster => $admin_cluster,
                          name    => $component->{name},
                          manager => $component->{manager},
-                         conf    => $component->{conf});
+                         conf    => $component->{conf},
+                         extra   => $component->{extra});
     }
 
     # Create the host for the Kanopya master
@@ -1857,9 +1873,10 @@ sub installComponent {
                          });
 
     # Add the component
-    my $comp = $args{cluster}->addComponent(component_type_id       => $component_type->id,
-                                            component_template_id   => $component_template,
-                                            component_configuration => $args{conf});
+    my $comp = $args{cluster}->addComponent(component_type_id             => $component_type->id,
+                                            component_template_id         => $component_template,
+                                            component_configuration       => $args{conf},
+                                            component_extra_configuration => $args{extra});
 
     if (defined $args{manager}) {
         # Add the manager
@@ -2125,6 +2142,18 @@ sub populate_workflow_def {
         },
         steps => [ Operationtype->find(hash => { operationtype_name => 'Synchronize' })->id ],
         description => "Synchronizing component \"[% entity %]\""
+    );
+
+    # BuildStack workflow def
+    $kanopya_wf_manager->createWorkflowDef(
+        workflow_name => 'BuildStack',
+        params => {},
+        steps => [
+            Operationtype->find( hash => { operationtype_name => 'BuildStack' })->id,
+            Operationtype->find( hash => { operationtype_name => 'StartStack' })->id,
+            Operationtype->find( hash => { operationtype_name => 'ValidateStack' })->id,
+        ],
+        description => "Build stack"
     );
 }
 

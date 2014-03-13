@@ -154,13 +154,17 @@ sub lvCreate {
                                        "lvm2_lv_filesystem", "vg_name" ]);
 
     my $command = "lvcreate $args{vg_name} -n $args{lvm2_lv_name} -L $args{lvm2_lv_size}B";
-    $log->debug($command);
 
     my $ret = $self->getEContext->execute(command => $command);
     if ($ret->{exitcode} != 0) {
-        my $errmsg = "Error during execution of $command ; stderr is : $ret->{stderr}";
-        $log->error($errmsg);
-        throw Kanopya::Exception::Execution(error => $errmsg);
+        if ($ret->{stderr} =~ m/already exists/) {
+            throw Kanopya::Exception::Execution::AlreadyExists(error => $ret->{stderr});
+        }
+        else {
+            throw Kanopya::Exception::Execution(
+                      error => "Error during execution of '$command', $ret->{stderr}"
+                  );
+        }
     }
 }
 

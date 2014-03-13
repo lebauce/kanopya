@@ -251,6 +251,7 @@ sub preconfigureSystemimage {
     $self->_generateUserAccount(econtext => $econtext, %args);
     $self->_generateNtpdateConf(econtext => $econtext, %args);
     $self->_generateNetConf(econtext => $econtext, %args);
+    $self->_disableRootPassword(econtext => $econtext, %args);
 
     # Set up fastboot
     $econtext->execute(
@@ -409,6 +410,31 @@ sub _generateUserAccount {
             $result = $econtext->execute(command => $cmd);
         }
     }
+}
+
+sub _disableRootPassword {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'cluster', 'host', 'mount_point', 'econtext' ]);
+   
+    # Disable root password
+    my $cmd = 'grep "^root:" ' . $args{mount_point} . '/etc/shadow';
+    my $result = $args{econtext}->execute(command => $cmd);
+    if ($result->{stdout} =~ m/root:\$/) {
+        $cmd = 'chroot ' . $args{mount_point} . ' passwd -d root';
+        $args{econtext}->execute(command => $cmd);
+        $log->info('root password deleted');
+    }
+
+    # Disable SSH login for root
+    $cmd = 'grep "^PermitRootLogin" ' . $args{mount_point} . '/etc/ssh/sshd_config';
+    $result = $args{econtext}->execute(command => $cmd);
+    if (! ($result->{stdout} =~ m/PermitRootLogin without-password/))  {
+        $cmd = 'sed -i "s/PermitRootLogin [a-zA-Z]*/PermitRootLogin without-password/" ' .
+                $args{mount_point} . '/etc/ssh/sshd_config';
+        $args{econtext}->execute(command => $cmd);
+        $log->info('SSH root login without key disabled');
+    }
+
 }
 
 sub _generateNtpdateConf {

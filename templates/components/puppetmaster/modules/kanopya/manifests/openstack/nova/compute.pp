@@ -12,6 +12,7 @@ class kanopya::openstack::nova::compute(
   $rabbits = $components[novacompute][amqp][nodes]
   $keystone_ip = $components[novacompute][keystone][keystone_admin][ip]
 
+
   if has_key($components[novacompute], 'neutron') {
     $neutron = $components[novacompute][neutron][neutron][ip]
   } else {
@@ -56,7 +57,7 @@ class kanopya::openstack::nova::compute(
   }
 
   class { 'nova::compute::neutron':
-    libvirt_vif_driver => 'nova.virt.libvirt.vif.LibvirtHybridOVSBridgeDriver',
+    libvirt_vif_driver => 'nova.virt.libvirt.vif.LibvirtGenericVIFDriver',
     require            => Class['kanopya::openstack::repository']
   }
 
@@ -69,13 +70,31 @@ class kanopya::openstack::nova::compute(
 
   class { 'neutron::agents::ovs':
     integration_bridge  => 'br-int',
-    bridge_mappings     => [ 'physnetflat:br-flat', 'physnetvlan:br-vlan' ],
+    bridge_mappings     => [ 'physnetflat:br-flat' ],
     bridge_uplinks      => $bridge_uplinks,
     require             => Class['kanopya::openstack::repository']
   }
 
   class { 'neutron::client':
   }
+  
+  if ($components[novacompute][master] == 1) {
+      class { 'neutron::agents::dhcp':
+      }
+
+      neutron_dhcp_agent_config {
+         'DEFAULT/enable_isolated_metadata': value => 'True';
+      }
+      
+      class { 'neutron::agents::metadata':
+        auth_password => 'neutron',
+        shared_secret => 'mysecret',
+        metadata_ip   => "${keystone_ip}",
+        auth_url      => "http://${keystone_ip}:35357/v2.0/",
+        
+      }
+  }
+      
 
   if ! defined(Class['kanopya::openstack::neutron::common']) {
     class { 'kanopya::openstack::neutron::common':

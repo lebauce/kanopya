@@ -188,7 +188,6 @@ sub networks {
             push @networks, $poolip->network;
         }
     }
-                    
     return @networks;
 }
 

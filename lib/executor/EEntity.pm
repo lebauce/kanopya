@@ -35,6 +35,7 @@ use Kanopya::Exceptions;
 use Kanopya::Config;
 use EContext;
 
+use TryCatch;
 use Template;
 use vars qw ( $AUTOLOAD );
 
@@ -99,16 +100,18 @@ sub new {
 
     while ($args{eclass} ne "EEntity") {
         my $location = General::getLocFromClass(entityclass => $args{eclass});
-        eval { require $location; };
-        if ($@) {
-            my $err = $@;
+        try {
+            require $location;
+        }
+        catch ($err) {
             # If file does not exists, use the parent package
             if ($err =~ m/Can't locate $location/) {
                 $args{eclass} =~ s/\:\:[a-zA-Z0-9]+$//g;
+                next;
             }
             else { die $err; }
         }
-        else { last; }
+        last;
     }
 
     my $self = {
@@ -325,7 +328,15 @@ sub AUTOLOAD {
     my @autoload = split(/::/, $AUTOLOAD);
     my $method = $autoload[-1];
 
-    return $self->_entity->$method(@_);
+    try {
+        return $self->_entity->$method(@_);
+    }
+    catch (Kanopya::Exception $err) {
+        $err->rethrow();
+    }
+    catch ($err) {
+        throw Kanopya::Exception::Internal(error => "$err");
+    }
 }
 
 sub DESTROY {

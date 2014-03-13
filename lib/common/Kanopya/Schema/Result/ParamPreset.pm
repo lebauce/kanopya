@@ -79,6 +79,21 @@ __PACKAGE__->set_primary_key("param_preset_id");
 
 =head1 RELATIONS
 
+=head2 components
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::Component>
+
+=cut
+
+__PACKAGE__->has_many(
+  "components",
+  "Kanopya::Schema::Result::Component",
+  { "foreign.param_preset_id" => "self.param_preset_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 data_models
 
 Type: has_many
@@ -200,8 +215,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-26 15:43:32
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:iwS5ZI+W/U+gzEtwOCnb7g
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-03 12:34:48
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:LccuVtCfrbD7Egbcduih6w
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -298,6 +298,9 @@ sub _generateBootConf {
                     error => "No hard disk to deploy the system on was found"
                 );
             }
+            else {
+                $harddisk->service_provider_id(undef);
+            }
             $kernel_version = Entity::Kernel->find(hash => { kernel_name => 'deployment' })->kernel_version;
         }
 

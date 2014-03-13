@@ -93,4 +93,25 @@ sub collectIndicator {}
 
 sub getCollectorType { }
 
+
+=pod
+=begin classdoc
+
+Remove linked collector indicators
+
+=end classdoc
+=cut
+
+sub removeCollectorIndicators {
+    my $self = shift;
+
+    my @collector_indicators = $self->collector_indicators;
+    while (@collector_indicators) {
+        (pop @collector_indicators)->remove();
+    }
+
+    return;
+}
+
+
 1;

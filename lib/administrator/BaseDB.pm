@@ -48,7 +48,6 @@ my $log = get_logger("basedb");
 
 use Switch;
 use TryCatch;
-my $err;
 
 
 # In-memory cache for class types
@@ -273,8 +272,9 @@ sub promote {
     # Check if the new type is in the same hierarchy
     my $baseclass = ref($promoted);
     if (not ($class =~ m/$baseclass/)) {
-        $err = "Unable to promote " . ref($promoted) . " to " . $class;
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $err);
+        throw Kanopya::Exception::Internal::IncorrectParam(
+                  error => "Unable to promote " . ref($promoted) . " to " . $class
+              );
     }
 
     (my $subclass = $class) =~ s/$baseclass\:\://g;
@@ -326,8 +326,9 @@ sub demote {
     # Check if the new type is in the same hierarchy
     my $baseclass = ref($args{demoted});
     if (not ($baseclass =~ m/$class/)) {
-        $err = "Unable to demote " . ref($args{demoted}) . " to " . $class;
-        throw Kanopya::Exception::Internal::IncorrectParam(error => $err);
+        throw Kanopya::Exception::Internal::IncorrectParam(
+                  error => "Unable to demote " . ref($args{demoted}) . " to " . $class
+              );
     }
 
     # Delete row of tables bellow $class
@@ -421,8 +422,8 @@ sub getAttr {
         }
         catch ($err) {
             throw Kanopya::Exception::Internal::UnknownAttribute(
-                error => "Unable to get value(s) for $definition->{relation} relation <$relation>, $err"
-            );
+                      error => "Unable to get value(s) for $definition->{relation} relation <$relation>, $err"
+                  );
         }
     }
     # The attribute is a virtual, call the corresponding method
@@ -435,8 +436,8 @@ sub getAttr {
         }
         catch ($err) {
             throw Kanopya::Exception::Internal::UnknownAttribute(
-                error => "Unable to get value for virtual attribute <$args{name}>, $err"
-            );
+                      error => "Unable to get value for virtual attribute <$args{name}>, $err"
+                  );
         }
     }
     # The attribute is regular, get the value from the dbix row
@@ -446,8 +447,8 @@ sub getAttr {
         }
         catch ($err) {
             throw Kanopya::Exception::Internal::UnknownAttribute(
-                error => "Unable to get value for attribute <$args{name}> on dbix <$dbix>, $err"
-            );
+                      error => "Unable to get value for attribute <$args{name}> on dbix <$dbix>, $err"
+                  );
         }
     }
 }
@@ -748,17 +749,23 @@ Return a single element matching the specified criterias take the same arguments
 sub find {
     my ($class, %args) = @_;
 
-    General::checkParams(args => \%args, optional => { 'hash' => {}, 'deep' => 0 });
+    General::checkParams(args => \%args, optional => { 'hash' => {}, 'deep' => 0, 'ensure_unique' => 0 });
+
+    # Extract specific params for find
+    my $ensure_unique = delete $args{ensure_unique};
 
     my @objects = $class->search(rows => 1, %args);
-
-    my $object = shift @objects;
-    if (! defined $object) {
+    if (scalar(@objects) <= 0) {
         throw Kanopya::Exception::Internal::NotFound(
                   error => "No entry found for " . $class . ", with hash " . Dumper($args{hash})
               );
     }
-    return $object;
+    if ($args{ensure_unique} && scalar(@objects) > 1) {
+        throw Kanopya::Exception::Internal::Inconsistency(
+                  error => "Multiple entries found for " . $class . ", with hash " . Dumper($args{hash})
+              );
+    }
+    return shift(@objects);
 }
 
 
@@ -2799,23 +2806,22 @@ Parse SQL error and transform it in Kanopya Exception.
 
 sub parseException {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'error' ]);
     my $class = (ref $self) || $self;
 
-    my $err   = $args{error};
+    General::checkParams(args => \%args, required => [ 'error' ]);
 
-    if ($err =~ m/Duplicate entry '(.*)' for key '(.*)' \[for Statement/) {
+    if ($args{error} =~ m/Duplicate entry '(.*)' for key '(.*)' \[for Statement/) {
         return Kanopya::Exception::DB::DuplicateEntry->new(class => $class,
                                                            entry => $1,
                                                            key   => $2);
     }
 
-    if ($err =~ m/a foreign key constraint fails \(\`kanopya\`.\`([\w-]*)\`, /) {
+    if ($args{error} =~ m/a foreign key constraint fails \(\`kanopya\`.\`([\w-]*)\`, /) {
         return Kanopya::Exception::DB::DeleteCascade->new(label      => $self->label,
                                                           dependant  => $1);
     }
 
-    return Kanopya::Exception::DB->new(error => $self->{error});
+    return Kanopya::Exception::DB->new(error => $args{error});
 }
 
 =pod

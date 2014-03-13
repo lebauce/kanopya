@@ -202,6 +202,7 @@ sub getOperationsParams {
     return @operations_to_enqueue;
 }
 
+
 =pod
 =begin classdoc
 
@@ -508,6 +509,22 @@ sub setState {
 
     $self->setAttr(name => 'state', value => $args{state});
     $self->save();
+}
+
+
+=pod
+=begin classdoc
+
+Interrpupt the workflow.
+
+=end classdoc
+=cut
+
+sub interrupt {
+    my $self = shift;
+    my %args = @_;
+
+    $self->setState(state => 'interrupted');
 }
 
 

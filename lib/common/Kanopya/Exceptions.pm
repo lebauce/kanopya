@@ -137,6 +137,15 @@ use Exception::Class (
         isa         => 'Kanopya::Exception',
         description => 'Command execution failed',
     },
+    Kanopya::Exception::Execution::API => {
+        isa         => 'Kanopya::Exception::Execution',
+        description => 'External API call failed',
+    },
+    Kanopya::Exception::Execution::Command => {
+        isa         => 'Kanopya::Exception::Execution',
+        description => 'External command execution failed',
+        fields      => [ 'command', 'return_code' ],
+    },
     Kanopya::Exception::Execution::Rollbacked => {
         isa         => 'Kanopya::Exception::Execution',
         description => 'Operation execution rollbacked',
@@ -144,6 +153,10 @@ use Exception::Class (
     Kanopya::Exception::Execution::OperationReported => {
         isa         => 'Kanopya::Exception::Execution',
         description => 'Operation execution reported',
+    },
+    Kanopya::Exception::Execution::OperationInterrupted => {
+        isa         => 'Kanopya::Exception::Execution',
+        description => 'Operation execution interrupted',
     },
     Kanopya::Exception::Execution::InvalidState => {
         isa         => 'Kanopya::Exception::Execution',
@@ -156,6 +169,10 @@ use Exception::Class (
     Kanopya::Exception::Execution::ResourceBusy => {
         isa         => 'Kanopya::Exception::Execution',
         description => 'Resource busy',
+    },
+    Kanopya::Exception::Execution::AlreadyExists => {
+        isa         => 'Kanopya::Exception::Execution',
+        description => 'Already exist',
     },
     Kanopya::Exception::AuthenticationRequired => {
         isa         => 'Kanopya::Exception',

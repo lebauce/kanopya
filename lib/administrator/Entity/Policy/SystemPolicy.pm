@@ -214,14 +214,17 @@ sub getPatternFromParams {
     my $pattern = $self->SUPER::getPatternFromParams(params => $args{params});
 
     if (ref($args{params}->{components}) eq 'ARRAY') {
-        my %components = map { $_->{component_type} => $_ } @{ delete $args{params}->{components} };
+        my %components = map { 'component_' . $_->{component_type} => $_ }
+                             @{ delete $args{params}->{components} };
         $pattern->{components} = \%components;
     }
     if (defined $args{params}->{systemimage_size}) {
-        $pattern->{managers}->{disk_manager}->{manager_params}->{systemimage_size} = delete $args{params}->{systemimage_size};
+        $pattern->{managers}->{disk_manager}->{manager_params}->{systemimage_size}
+            = delete $args{params}->{systemimage_size};
     }
     if (defined $args{params}->{deploy_on_disk}) {
-        $pattern->{managers}->{host_manager}->{manager_params}->{deploy_on_disk} = delete $args{params}->{deploy_on_disk};
+        $pattern->{managers}->{host_manager}->{manager_params}->{deploy_on_disk}
+            = delete $args{params}->{deploy_on_disk};
     }
     return $pattern;
 }

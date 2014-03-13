@@ -393,10 +393,11 @@ sub getPattern {
     General::checkParams(args => \%args, optional => { 'params' => {} });
 
     # Merge the policy params with those given in parameters
+
     # Set the option 'noarrays' for getting policy params because
     # the merge module is not able to merge arrays, so the resulting
     # merged params will have duplicated values in arrays.
-    my $params  = $merge->merge($self->getParams(noarrays => 1), $args{params});
+    my $params = $merge->merge($args{params}, $self->getParams(noarrays => 1));
     my $pattern = $self->getPatternFromParams(params => $params);
 
     # Manually remove deleted params from the original params hashes,
@@ -407,7 +408,9 @@ sub getPattern {
             delete $args{params}->{$param};
         }
     }
-    return $pattern
+
+    # Finally merge the pattern built from input params with the static pattern from presets
+    return $merge->merge($pattern, $self->param_preset_id ? $self->param_preset->load() : {});
 }
 
 

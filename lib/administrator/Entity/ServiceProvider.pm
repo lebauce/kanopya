@@ -180,7 +180,8 @@ sub registerNode {
     for my $component (@{ $args{components} }) {
         if ($component->service_provider->id != $self->id) {
             throw Kanopya::Exception::Internal(
-                      error => "Component <$component> do not come from this service provider <" . $self->id . ">"
+                      error => "Component <$component> do not come from this " .
+                               "service provider <" . $self->id . ">"
                   );
         }
         $component->registerNode(node => $node, master_node => ($node->node_number == 1) ? 1 : 0);
@@ -190,7 +191,8 @@ sub registerNode {
     # TODO: Manage network connectivity on node intead of host.
     if (defined $node->host) {
         # Set the ifaces netconf according to the cluster interfaces
-        # We consider that the available ifaces match the cluster interfaces since getFreeHost selection
+        # We consider that the available ifaces match the cluster
+        # interfaces since getFreeHost selection done.
         foreach my $interface ($self->interfaces) {
             # Firstly find the corresponding iface from name
             my $iface = $node->host->find(related => 'ifaces',
@@ -198,6 +200,8 @@ sub registerNode {
 
             # Set the related netconfs
             my @netconfs = $interface->netconfs;
+
+            $log->info("Configure iface " . $iface->iface_name . " with netconfs " . join(', ', @netconfs));
             $iface->update(netconf_ifaces => \@netconfs, override_relations => 1);
         }
     }
@@ -536,8 +540,9 @@ sub addComponent {
 
     General::checkParams(args     => \%args,
                          required => [ 'component_type_id' ],
-                         optional => { 'component_configuration' => undef,
-                                       'component_template_id'   => undef });
+                         optional => { 'component_configuration'       => undef,
+                                       'component_extra_configuration' => undef,
+                                       'component_template_id'         => undef });
 
     # Check if the type of the given component is installable on this type
     # of service provider.
@@ -568,16 +573,20 @@ sub addComponent {
     my $location = General::getLocFromClass(entityclass => $comp_class);
     require $location;
 
-    # set component's configuration or use default
+    $log->info("Add component of type ". $component_type->component_name . " on service " . $self->label);
+
+    # Set component's configuration or use default
     my $component;
     if (defined $args{component_configuration}) {
         $component = $comp_class->new(service_provider_id   => $self->id,
                                       component_template_id => $args{component_template_id},
+                                      param_presets         => $args{component_extra_configuration},
                                       %{ $args{component_configuration} });
     }
     else {
         $component = $comp_class->new(service_provider_id   => $self->id,
-                                      component_template_id => $args{component_template_id});
+                                      component_template_id => $args{component_template_id},
+                                      param_presets         => $args{component_extra_configuration});
     }
 
     # For instance install the component on all node of the service provider,
@@ -750,4 +759,26 @@ sub getServiceMetricsValues {
     };
 }
 
+
+
+=pod
+
+=begin classdoc
+
+Overrides method in order to remove properly the components
+
+=end classdoc
+
+=cut
+
+sub remove {
+    my ($self, %args) = @_;
+
+    my @components = $self->components;
+    while (@components) {
+        (pop @components)->remove();
+    }
+
+    return $self->SUPER::remove(%args);
+}
 1;

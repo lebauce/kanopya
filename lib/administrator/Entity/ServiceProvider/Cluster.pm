@@ -47,6 +47,7 @@ use ClassType::ComponentType;
 use Manager::HostManager;
 use Kanopya::Config;
 
+use Data::Dumper;
 use Hash::Merge;
 use DateTime;
 
@@ -266,6 +267,19 @@ sub create {
 
     General::checkParams(args => \%args, required => [ 'cluster_name', 'owner_id' ]);
 
+    my $kanopya = $class->getKanopyaCluster();
+    $kanopya->getManager(manager_type => 'ExecutionManager')->enqueue(
+        type       => 'AddCluster',
+        params     => $class->buildInstantiationParams(%args),
+        related_id => $kanopya->id
+    );
+}
+
+sub buildInstantiationParams {
+    my ($class, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'cluster_name', 'owner_id' ]);
+
     # Firstly build the configuration pattern from args.
     my $confpattern = $class->buildConfigurationPattern(%args);
 
@@ -286,19 +300,16 @@ sub create {
         %$composite_params
     };
 
+    $log->debug("Instanciation params for service $args{cluster_name}:\n" . Dumper($op_params));
+
     # If the cluster created from a service template, add it in the context
     # to handle notification/validation on cluster instanciation.
     if (defined $args{service_template_id}) {
         $op_params->{context}->{service_template}
             = Entity::ServiceTemplate->get(id => $args{service_template_id});
-    } 
+    }
 
-    my $kanopya = $class->getKanopyaCluster;
-    $kanopya->getManager(manager_type => 'ExecutionManager')->enqueue(
-        type       => 'AddCluster',
-        params     => $op_params,
-        related_id => $kanopya->id
-    );
+    return $op_params;
 }
 
 sub buildConfigurationPattern {
@@ -329,7 +340,7 @@ sub buildConfigurationPattern {
     }
 
     # Then merge the configuration pattern with the remaining cluster params
-    return $merge->merge($confpattern, \%args);
+    return $merge->merge(\%args, $confpattern);
 }
 
 sub checkConfigurationPattern {
@@ -381,8 +392,9 @@ sub applyPolicies {
             for my $component (values %$value) {
                 # TODO: Check if the component is already installed
                 $self->addComponent(
-                    component_type_id       => $component->{component_type},
-                    component_configuration => $component->{component_configuration}
+                    component_type_id             => $component->{component_type},
+                    component_configuration       => $component->{component_configuration},
+                    component_extra_configuration => $component->{component_extra_configuration},
                 );
             }
         }
@@ -508,9 +520,12 @@ sub configureInterfaces {
 
     my @interfaces = values %{ $args{interfaces} };
     for my $interface (@interfaces) {
-        my @netconfs = values %{ delete $interface->{netconfs} };
+        my @netconfs = defined $interface->{netconfs} ? values %{ delete $interface->{netconfs} } : ();
         $interface->{netconf_interfaces} = \@netconfs;
         $interface->{bonds_number} = $interface->{bonds_number} ? $interface->{bonds_number} : 0;
+
+        $log->info("Add interface " . $interface->{interface_name} . " with " .  scalar(@netconfs) .
+                   " netconfs on service " . $self->label);
     }
     $self->_populateRelations(relations => { interfaces => \@interfaces }, override => 1);
 }
