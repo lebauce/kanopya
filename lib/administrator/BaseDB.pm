@@ -1287,6 +1287,7 @@ sub checkUserPerm {
         if ($args{method} =~ m/^(create|update)$/ && defined $args{params}->{$delegateeattr}) {
             # Retreive the relation class to instanciate it
             my $delegateeclass = $self->_relationshipInfos(relation => $delegateerel)->{class};
+            General::requireClass($delegateeclass);
             $delegatee = $delegateeclass->get(id => $args{params}->{$delegateeattr});
         }
         # Else get the delegatee object from the instance
@@ -1319,6 +1320,7 @@ sub checkUserPerm {
         my $param = $args{params}->{$key};
         if ((ref $param) eq "HASH" && defined ($param->{pk}) && defined ($param->{class_type_id})) {
             my $paramclass = $self->_classType(id => $param->{class_type_id});
+            General::requireClass($paramclass);
             try {
                 $paramclass->_delegatee->checkPerm(user_id => $args{user_id}, method => "get");
             }
