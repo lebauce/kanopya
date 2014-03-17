@@ -109,7 +109,7 @@ sub main {
             {
                 cpu             => 2,
                 ram             => 1073741824,
-                # cluster_min_node => 2,
+                cluster_min_node => 2,
                 components => [
                     {
                         component_type => 'NovaCompute',
@@ -127,6 +127,13 @@ sub main {
     } 'Run workflow BuildStack';
 
     Kanopya::Tools::Execution->executeOne(entity => $build_stack);
+
+    my $end_stack;
+    lives_ok {
+       $end_stack = $builder->endStack(stack_id => 123);
+    } 'Run workflow EndStack';
+
+    Kanopya::Tools::Execution->executeOne(entity => $end_stack);
 
     if ($testing == 1) {
         Kanopya::Database::rollbackTransaction;
