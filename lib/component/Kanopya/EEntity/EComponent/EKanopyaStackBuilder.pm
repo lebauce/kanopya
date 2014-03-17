@@ -164,7 +164,7 @@ sub startStack {
                          optional => { 'erollback' => undef });
 
     # Retrieve the created cluster from name
-    # NOTE: the service of a currant stack are active
+    # NOTE: the service of a current stack are active
     my @clusters = Entity::ServiceProvider::Cluster->search(hash => {
                        'owner_id' => $args{user}->id,
                        'active'   => 1,
@@ -467,7 +467,48 @@ sub endStack {
     my ($self, %args) = @_;
     my ($result, $command);
 
-    General::checkParams(args => \%args, required => [ 'user' ]);
+    General::checkParams(args => \%args, required => [ 'user', 'stack_id' ]);
+
+    # Retrieve the clusters of the current stack
+    my @clusters = Entity::ServiceProvider::Cluster->search(hash => {
+                       'owner_id' => $args{user}->id,
+                       'active'   => 1,
+                       'entity_tags.tag.tag' => "stack_" . $args{stack_id}
+                   });
+
+    $log->info("Found " . scalar(@clusters) . " services for stack $args{stack_id}.");
+    if (scalar(@clusters) <= 0) {
+        throw Kanopya::Exception::Internal(
+                  error => "Unable to find active clusters of the stack, " .
+                           "no active cluster found with owner " .  $args{user}->user_login .
+                           ", with tag stack_" . $args{stack_id}
+              );
+    }
+
+    # Stop the instances in embedded workflows
+    for my $instance (@clusters) {
+        # Set the cluster as inactive for this stack
+        $instance->active(0);
+
+        my ($state, $timestamp) = $instance->getState;
+        if ($state ne 'down') {
+            $log->info("Stopping service " . $instance->label. " in an embedded workflow...");
+            $args{workflow}->enqueueNow(operation => {
+                type       => 'StopCluster',
+                priority   => 200,
+                related_id => $self->service_provider->id,
+                params     => {
+                    context => {
+                        cluster => $instance,
+                    },
+                },
+            });
+        }
+        else {
+            $log->info("Service " . $instance->label. " is down do not stopping it.");
+        }
+
+    }
 }
 
 
@@ -475,7 +516,7 @@ sub unconfigureStack {
     my ($self, %args) = @_;
     my ($result, $command);
 
-    General::checkParams(args => \%args, required => [ 'user' ]);
+    General::checkParams(args => \%args, required => [ 'user', 'stack_id' ]);
 }
 
 

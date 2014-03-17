@@ -49,8 +49,9 @@ my $log = get_logger("");
 sub check {
     my ($self, %args) = @_;
 
-    General::checkParams(args     => $self->{context},
-                         required => [ 'stack_builder', 'user' ]);
+    General::checkParams(args => $self->{context}, required => [ "stack_builder", "user" ]);
+
+    General::checkParams(args => $self->{params}, required => [ "stack_id" ]);
 }
 
 
@@ -69,6 +70,7 @@ sub execute {
     # Call the method on the corresponding component
     $self->{context}->{stack_builder}->unconfigureStack(
         user      => $self->{context}->{user},
+        stack_id  => $self->{params}->{stack_id},
         erollback => $self->{erollback}
     );
 }

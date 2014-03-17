@@ -58,7 +58,7 @@ sub check {
 =pod
 =begin classdoc
 
-Stop all service started for a stack
+Stop all services started for a stack
 
 =end classdoc
 =cut
