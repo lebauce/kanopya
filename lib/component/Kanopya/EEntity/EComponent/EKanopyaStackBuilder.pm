@@ -111,16 +111,34 @@ sub buildStack {
                 netconfs       => [ $vmsnetconf->id ]
             },
         ],
+        entity_tags => [ Entity::Tag->findOrCreate(tag => "stack_" . $args{stack_id})->id ]
     };
-
-    my $stack_tag = Entity::Tag->new(tag => "stack_" . $args{stack_id});
 
     # Create each instance in an embedded workflow
     for my $servicedef (@{ $args{services} }) {
         General::checkParams(args => $servicedef, required => [ 'service_template_id' ]);
 
         # Build the cluster name from owner infos
-        my $cluster_name = $args{user}->user_login . "_" . $servicedef->{service_template_id} . "_" . $args{stack_id};
+        my $cluster_name = $args{user}->user_login . "_" . $servicedef->{service_template_id} . "_" .
+                           $args{stack_id};
+
+        $log->info("Creating 1 service with service_template " . $servicedef->{service_template_id} .
+                   " for stack $args{stack_id}, with name $cluster_name.");
+
+        # If some inactive instance exists from old builds, add a version numer to the name
+        my @old = Entity::ServiceProvider::Cluster->search(hash => {
+                       'owner_id'            => $args{user}->id,
+                       'service_template_id' => $servicedef->{service_template_id},
+                       'entity_tags.tag.tag' => "stack_" . $args{stack_id}
+                   });
+
+        if (scalar(@old)) {
+            $cluster_name .= "_v" . scalar(@old);
+
+            $log->info("Found " . scalar(@old) . " old service(s) of stack " . $args{stack_id} .
+                       ", add version number to the service name: $cluster_name");
+        }
+
         my $params = Entity::ServiceProvider::Cluster->buildInstantiationParams(
                          cluster_name => $cluster_name,
                          # Add the specific params
@@ -128,8 +146,6 @@ sub buildStack {
                          # Add the common params
                          %{ clone($common_params) }
                      );
-
-        $params->{cluster_params}->{entity_tags} = [$stack_tag->id];
 
         $args{workflow}->enqueueNow(operation => {
             type       => 'AddCluster',
@@ -155,7 +171,7 @@ sub startStack {
                        'entity_tags.tag.tag' => "stack_" . $args{stack_id}
                    });
 
-    $log->info("Found " . scalar(@clusters) . " services fro stack $args{stack_id}.");
+    $log->info("Found " . scalar(@clusters) . " services for stack $args{stack_id}.");
     if (scalar(@clusters) <= 0) {
         throw Kanopya::Exception::Internal(
                   error => "Unable to find active clusters of the stack, " . 
@@ -235,7 +251,7 @@ sub startStack {
 
     Lvm2Pv->new(lvm2_vg_id => $vg->id, lvm2_pv_name => "/dev/sda2");
 
-    $log->info("Creatingand exporting logical volume nova-instances-" . $args{user}->user_login .
+    $log->info("Creating and exporting logical volume nova-instances-" . $args{user}->user_login .
                " on Kanopya");
 
     # Create a logical volume on Kanopya to store nova instance meta data.
@@ -426,7 +442,8 @@ sub configureStack {
                 $result = $args{glance}->getEContext->execute(command => $command);
                 if ($result->{exitcode}) {
                     throw Kanopya::Exception::Execution(
-                              error => "Failed to import image " . $imgname . " on Glance:\n$result->{stderr}"
+                              error => "Failed to import image " . $imgname .
+                                       " on Glance:\n$result->{stderr}"
                           );
                 }
             }
