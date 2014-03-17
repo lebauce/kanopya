@@ -58,7 +58,7 @@ sub check {
 =pod
 =begin classdoc
 
-Create all service required for a stack
+Configure the infrastructure to give access to the user.
 
 =end classdoc
 =cut

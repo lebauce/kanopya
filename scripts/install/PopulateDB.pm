@@ -692,6 +692,9 @@ sub registerOperations {
         [ 'BuildStack', 'Building stack' ],
         [ 'StartStack', 'Starting stack' ],
         [ 'ConfigureStack', 'Configuring stack' ],
+        # Workflow EndStack
+        [ 'UnconfigureStack', 'Unconfiguring stack' ],
+        [ 'EndStack', 'Ending stack' ],
     ];
 
     for my $operation (@{$operations}) {
@@ -2154,6 +2157,16 @@ sub populate_workflow_def {
             Operationtype->find( hash => { operationtype_name => 'ConfigureStack' })->id,
         ],
         description => "Build stack"
+    );
+
+    $kanopya_wf_manager->createWorkflowDef(
+        workflow_name => 'EndStack',
+        params => {},
+        steps => [
+            Operationtype->find( hash => { operationtype_name => 'EndStack' })->id,
+            Operationtype->find( hash => { operationtype_name => 'UnconfigureStack' })->id,
+        ],
+        description => "End stack"
     );
 }
 
