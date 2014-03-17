@@ -109,7 +109,7 @@ sub main {
             {
                 cpu             => 2,
                 ram             => 1073741824,
-                cluster_min_node => 2,
+                # cluster_min_node => 2,
                 components => [
                     {
                         component_type => 'NovaCompute',
