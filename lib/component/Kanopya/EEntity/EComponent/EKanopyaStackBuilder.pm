@@ -107,7 +107,7 @@ sub buildStack {
         General::checkParams(args => $servicedef, required => [ 'service_template_id' ]);
 
         # Build the cluster name from owner infos
-        my $cluster_name = $args{user}->user_login . "_" . $servicedef->{service_template_id};
+        my $cluster_name = $args{user}->user_login . "_" . $servicedef->{service_template_id} . "_" . $args{stack_id};
         my $params = Entity::ServiceProvider::Cluster->buildInstantiationParams(
                          cluster_name => $cluster_name,
                          # Add the specific params
