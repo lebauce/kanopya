@@ -691,7 +691,7 @@ sub registerOperations {
         # Workflow BuildStack
         [ 'BuildStack', 'Building stack' ],
         [ 'StartStack', 'Starting stack' ],
-        [ 'ValidateStack', 'Validating stack' ],
+        [ 'ConfigureStack', 'Configuring stack' ],
     ];
 
     for my $operation (@{$operations}) {
@@ -2151,7 +2151,7 @@ sub populate_workflow_def {
         steps => [
             Operationtype->find( hash => { operationtype_name => 'BuildStack' })->id,
             Operationtype->find( hash => { operationtype_name => 'StartStack' })->id,
-            Operationtype->find( hash => { operationtype_name => 'ValidateStack' })->id,
+            Operationtype->find( hash => { operationtype_name => 'ConfigureStack' })->id,
         ],
         description => "Build stack"
     );

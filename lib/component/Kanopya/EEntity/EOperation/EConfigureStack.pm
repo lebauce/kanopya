@@ -25,7 +25,7 @@ Create all service required for a stack
 =end classdoc
 =cut
 
-package EEntity::EOperation::EValidateStack;
+package EEntity::EOperation::EConfigureStack;
 use base "EEntity::EOperation";
 
 use strict;
@@ -68,7 +68,7 @@ sub execute {
     $self->SUPER::execute(%args);
 
     # Call the method on the corresponding component
-    $self->{context}->{stack_builder}->validateStack(
+    $self->{context}->{stack_builder}->configureStack(
         user           => $self->{context}->{user},
         keystone       => $self->{context}->{keystone},
         novacontroller => $self->{context}->{novacontroller},

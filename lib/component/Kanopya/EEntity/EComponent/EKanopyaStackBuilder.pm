@@ -298,7 +298,7 @@ sub startStack {
     }
 }
 
-sub validateStack {
+sub configureStack {
     my ($self, %args) = @_;
     my ($result, $command);
 
