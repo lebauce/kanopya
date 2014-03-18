@@ -253,8 +253,7 @@ sub serializeParams {
         $self->param_preset->update(params => $args{params}, override => 1);
     }
     else {
-        my $preset = ParamPreset->new(params => $args{params});
-        $self->setAttr(name => 'param_preset_id', value => $preset->id, save => 1);
+        $self->param_preset_id(ParamPreset->new(params => $args{params})->id);
     }
 }
 

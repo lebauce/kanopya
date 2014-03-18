@@ -93,6 +93,35 @@ sub create {
     );
 }
 
+sub remove {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         optional => { 'keep_systemimages' => 0, 'erollback' => undef });
+
+    # Check if cluster is active
+    if ($self->active) {
+        throw Kanopya::Exception::Internal(error => "Cluster <" . $self->label . "> is active");
+    }
+
+    # Delete the cluster remaning systemimages
+    my @systemimages = $self->systemimages;
+    if (scalar(@systemimages) > 0 && ! $args{keep_systemimages}) {
+        $log->info("Removing the <" . scalar(@systemimages) . "> cluster systemimage(s)");
+        for my $systemimage (map {  EEntity->new(entity => $_)  } @systemimages) {
+            $log->debug("Removing systemimage <" . $systemimage->systemimage_name . ">");
+            $systemimage->remove(erollback => $args{erollback});
+        }
+    }
+
+    # Remove cluster directory
+    my $dir = $self->_executor->getConf->{clusters_directory} . '/' . $self->cluster_name;
+    $self->_host->getEContext->execute(command => "rm -r $dir");
+
+    $self->delete();
+}
+
+
 sub checkComponents {
     my ($self, %args) = @_;
 

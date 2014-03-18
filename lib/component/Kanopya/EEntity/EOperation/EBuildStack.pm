@@ -79,4 +79,22 @@ sub execute {
     );
 }
 
+
+=pod
+=begin classdoc
+
+Set created services inactive
+
+=end classdoc
+=cut
+
+sub cancel {
+    my ($self, %args) = @_;
+
+    $self->{context}->{stack_builder}->cancelBuildStack(
+        user     => $self->{context}->{user},
+        stack_id => $self->{params}->{stack_id},
+    );
+}
+
 1;
