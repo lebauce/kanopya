@@ -131,9 +131,8 @@ sub main {
     my $build_stack;
     lives_ok {
        $build_stack = $builder->buildStack(stack => $stack);
+       Kanopya::Tools::Execution->executeOne(entity => $build_stack);
     } 'Run workflow BuildStack';
-
-    Kanopya::Tools::Execution->executeOne(entity => $build_stack);
 
     if ($testing == 1) {
         Kanopya::Database::rollbackTransaction;
