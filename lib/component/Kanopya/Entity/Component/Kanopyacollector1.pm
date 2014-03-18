@@ -250,15 +250,8 @@ sub collectIndicator {
     my $collector_indicator = Entity::CollectorIndicator->get(id => $args{indicator_id});
     my $indicator = $collector_indicator->indicator;
 
-    try {
-        Collect->new(
-            service_provider_id => $args{service_provider_id},
-            indicatorset_id     => $indicator->indicatorset_id
-        );
-    }
-    catch (Kanopya::Exception::DB $err) {
-        $log->warn("Collect <$args{service_provider_id}-" . $indicator->indicatorset_id .  "> already exists.");
-    }
+    Collect->findOrCreate(service_provider_id => $args{service_provider_id},
+                          indicatorset_id     => $indicator->indicatorset_id);
 }
 
 
