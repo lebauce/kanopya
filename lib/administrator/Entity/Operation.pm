@@ -52,8 +52,8 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
     },
     state => {
-        pattern      => '^ready|processing|prereported|postreported|waiting_validation|' .
-                        'validated|blocked|cancelled|succeeded|pending|statereported|interrupted$',
+        pattern      => '^ready|processing|prereported|postreported|waiting_validation|validated' .
+                        '|blocked|failed|cancelled|succeeded|pending|statereported|interrupted$',
         default      => 'pending',
         is_mandatory => 0,
     },
@@ -132,6 +132,7 @@ sub new {
                          required => [ 'priority', 'type' ],
                          optional => { 'workflow_id' => undef,
                                        'params'      => undef,
+                                       'harmless'    => 0,
                                        'related_id'  => undef });
 
     my $operationtype = Operationtype->find(hash => { operationtype_name => $args{type} });
@@ -161,6 +162,7 @@ sub new {
             execution_rank       => $class->getNextRank(workflow_id => $args{workflow_id}),
             workflow_id          => $args{workflow_id},
             priority             => $args{priority},
+            harmless             => $args{harmless},
             creation_date        => \"CURRENT_DATE()",
             creation_time        => \"CURRENT_TIME()",
             hoped_execution_time => $hoped_execution_time,

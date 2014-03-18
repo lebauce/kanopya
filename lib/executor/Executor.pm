@@ -391,10 +391,18 @@ sub terminateOperation {
         $log->error($args{exception});
     }
 
-    # If some rollback defined, undo them
-    if ($args{status} eq 'cancelled' and defined $operation->{erollback}) {
-        $log->debug("Undo rollbacks");
-        $operation->{erollback}->undo();
+    # Handle failed operations
+    if ($args{status} eq 'cancelled') {
+        # If the operation is harmless, swith the state to 'failed'
+        # to avoir the cancel of the workflow
+        if ($operation->harmless) {
+            $args{status} = "failed";
+        }
+        # If some rollback defined, undo them
+        if (defined $operation->{erollback}) {
+            $log->debug("Undo rollbacks");
+            $operation->{erollback}->undo();
+        }
     }
 
     # Serialize the parameters as its could be modified during
@@ -549,6 +557,24 @@ sub handleResult {
             # Stop the workflow
             return 1;
         }
+        case 'failed' {
+            # Operation failed, log the error, continue the workflow
+
+            General::checkParams(args => \%args, optional => { 'exception' => undef });
+
+            Message->send(from    => "Executor",
+                          level   => "error",
+                          content => "[$operation] Execution Aborted : $args{exception}");
+
+            $self->logWorkflowState(operation => $operation, state => 'FAILED');
+            $log->error($args{exception});
+
+            # Try to cancel all workflow operations, and delete them.
+            $log->info("Operation " . $operation->type . " <" . $operation->id . ">, but is harmless" .
+                       ", continue the workflow.");
+
+            # Continue the workflow
+        }
         case 'cancelled' {
             # Operation cancelled, rollbacking failled operation, cancelling succeeded ones
 
@@ -607,7 +633,7 @@ sub handleResult {
         $next = $workflow->prepareNextOperation(current => $operation);
 
         $log->info("Executing " . $workflow->workflow_name .
-                   " workflow next operation " . $operation->type . " <" . $next->id . ">");
+                   " workflow next operation " . $next->type . " <" . $next->id . ">");
 
         if ($operation->state eq 'pending') {
             # Set the operation as ready

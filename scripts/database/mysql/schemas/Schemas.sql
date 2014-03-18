@@ -574,6 +574,7 @@ CREATE TABLE `operation` (
   `workflow_id` int(8) unsigned NOT NULL,
   `state` char(32) NOT NULL DEFAULT 'pending',
   `priority` int(2) unsigned NOT NULL,
+  `harmless` int(1) unsigned NOT NULL DEFAULT 0,
   `creation_date` date NOT NULL,
   `creation_time` time NOT NULL,
   `hoped_execution_time` int(4) unsigned DEFAULT NULL,

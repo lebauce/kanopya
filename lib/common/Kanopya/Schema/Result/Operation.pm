@@ -73,6 +73,13 @@ __PACKAGE__->table("operation");
   extra: {unsigned => 1}
   is_nullable: 0
 
+=head2 harmless
+
+  data_type: 'integer'
+  default_value: 0
+  extra: {unsigned => 1}
+  is_nullable: 0
+
 =head2 creation_date
 
   data_type: 'date'
@@ -136,6 +143,13 @@ __PACKAGE__->add_columns(
   },
   "priority",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  "harmless",
+  {
+    data_type => "integer",
+    default_value => 0,
+    extra => { unsigned => 1 },
+    is_nullable => 0,
+  },
   "creation_date",
   { data_type => "date", datetime_undef_if_invalid => 1, is_nullable => 0 },
   "creation_time",
@@ -249,8 +263,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-12-18 15:35:47
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:04Dty/tWMrHeKtljNF25Tw
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-18 17:07:18
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7zQ4szCDCe6unltr1rALZA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

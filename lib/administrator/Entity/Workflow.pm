@@ -334,12 +334,15 @@ sub enqueueBefore {
     my ($self, %args) = @_;
     General::checkParams(args     => \%args,
                          required => [ 'current_operation' ],
-                         optional => { 'operation'               => undef,
-                                       'workflow'                => undef,
+                         optional => { 'operation' => undef,
+                                       'workflow'  => undef,
+                                       'harmless'  => 0,
                                        'operation_state'         => 'pending',
                                        'current_operation_state' => 'pending' });
 
     my $operations_to_enqueue = Entity::Workflow->_getOperationsToEnqueue(%args);
+
+    Kanopya::Database::beginTransaction;
 
     my $incr_num = $self->_updateOperationRankFromGivenRank(
                        offset => (scalar @$operations_to_enqueue),
@@ -347,12 +350,10 @@ sub enqueueBefore {
                    );
 
     my $rank_offset = 0;
-
     for my $operation_to_enqueue (@$operations_to_enqueue) {
-        my $operation = Entity::Operation->enqueue(
-            workflow_id => $self->id,
-            %$operation_to_enqueue,
-        );
+        my $operation = Entity::Operation->enqueue(workflow_id => $self->id,
+                                                   harmless    => $args{harmless},
+                                                   %$operation_to_enqueue);
 
         # Ajust execution rank
         my $current_rank = $operation->execution_rank;
@@ -361,6 +362,8 @@ sub enqueueBefore {
         $operation->state($args{operation_state});
         $rank_offset++;
     }
+
+    Kanopya::Database::commitTransaction;
 
     $args{current_operation}->state($args{current_operation_state});
 }
@@ -384,15 +387,20 @@ just after the current operation of the workflow
 sub enqueueNow {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, optional => { 'operation' => undef, 'workflow' => undef });
+    General::checkParams(args     => \%args,
+                         optional => { 'operation' => undef, 'workflow' => undef, 'harmless' => 0 });
 
     my $operations_to_enqueue = Entity::Workflow->_getOperationsToEnqueue(%args);
+
+    Kanopya::Database::beginTransaction;
 
     my $incr_num = $self->_updatePendingOperationRank( offset => (scalar @$operations_to_enqueue) );
 
     my $rank_offset = 0;
     for my $operation_to_enqueue (@$operations_to_enqueue) {
-        my $operation = Entity::Operation->enqueue(workflow_id => $self->id, %$operation_to_enqueue);
+        my $operation = Entity::Operation->enqueue(workflow_id => $self->id,
+                                                   harmless    => $args{harmless},
+                                                   %$operation_to_enqueue);
 
         if ($incr_num > 0) {
             # Ajust execution rank
@@ -401,6 +409,8 @@ sub enqueueNow {
             $rank_offset++;
         }
     }
+
+    Kanopya::Database::commitTransaction;
 }
 
 
@@ -420,7 +430,7 @@ sub getNextOperation {
     my $operation;
     eval {
         $operation = Entity::Operation->find(
-                         hash     => { workflow_id => $self->id, -not => { state => 'succeeded' } },
+                         hash     => { workflow_id => $self->id, -not => { -or => [ state => 'succeeded',  state => 'failed' ] } },
                          order_by => 'execution_rank ASC'
                      );
     };
