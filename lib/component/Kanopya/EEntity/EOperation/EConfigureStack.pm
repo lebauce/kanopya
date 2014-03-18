@@ -25,7 +25,7 @@ Create all service required for a stack
 =end classdoc
 =cut
 
-package EEntity::EOperation::EStartStack;
+package EEntity::EOperation::EConfigureStack;
 use base "EEntity::EOperation";
 
 use strict;
@@ -36,9 +36,6 @@ use Log::Log4perl "get_logger";
 use Date::Simple (':all');
 
 my $log = get_logger("");
-
-
-my $merge = Hash::Merge->new('LEFT_PRECEDENT');
 
 
 =pod
@@ -52,16 +49,16 @@ my $merge = Hash::Merge->new('LEFT_PRECEDENT');
 sub check {
     my ($self, %args) = @_;
 
-    General::checkParams(args => $self->{context}, required => [ "stack_builder", "user" ]);
-
-    General::checkParams(args => $self->{params}, required => [ "stack_id" ]);
+    General::checkParams(args     => $self->{context},
+                         required => [ 'stack_builder', 'user', 'keystone', 'novacontroller', 'neutron',
+                                       'glance', 'novacompute', 'cinder' ]);
 }
 
 
 =pod
 =begin classdoc
 
-Create all service required for a stack
+Configure the infrastructure to give access to the user.
 
 =end classdoc
 =cut
@@ -71,36 +68,15 @@ sub execute {
     $self->SUPER::execute(%args);
 
     # Call the method on the corresponding component
-    my $components = $self->{context}->{stack_builder}->startStack(
-                         user      => $self->{context}->{user},
-                         stack_id  => $self->{params}->{stack_id},
-                         # TODO: Let all EEntity access to the workflow that they related
-                         workflow  => $self->workflow,
-                         erollback => $self->{erollback}
-                     );
-
-    # Check if all required components have been returned
-    General::checkParams(args     => $components,
-                         required => [ 'keystone', 'novacontroller', 'neutron',
-                                       'glance', 'novacompute', 'cinder' ]);
-
-    $self->{context} = $merge->merge($self->{context}, $components);
-}
-
-
-=pod
-=begin classdoc
-
-Delete object possibly created at startStack step.
-
-=end classdoc
-=cut
-
-sub cancel {
-    my ($self, %args) = @_;
-
-    $self->{context}->{stack_builder}->cancelStartStack(
-        user => $self->{context}->{user},
+    $self->{context}->{stack_builder}->configureStack(
+        user           => $self->{context}->{user},
+        keystone       => $self->{context}->{keystone},
+        novacontroller => $self->{context}->{novacontroller},
+        neutron        => $self->{context}->{neutron},
+        glance         => $self->{context}->{glance},
+        novacompute    => $self->{context}->{novacompute},
+        cinder         => $self->{context}->{cinder},
+        erollback      => $self->{erollback}
     );
 }
 

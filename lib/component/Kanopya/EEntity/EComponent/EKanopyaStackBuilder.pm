@@ -58,6 +58,20 @@ sub buildStack {
     General::checkParams(args     => \%args,
                          required => [ 'services', 'stack_id', 'iprange', 'user', 'workflow' ]);
 
+    # Check no cluster are active for this stack id
+    my @clusters = Entity::ServiceProvider::Cluster->search(hash => {
+                       'owner_id' => $args{user}->id,
+                       'active'   => 1,
+                       'entity_tags.tag.tag' => "stack_" . $args{stack_id}
+                   });
+
+    if (scalar(@clusters) > 0) {
+        throw Kanopya::Exception::Internal(
+                  error => "Found " . scalar(@clusters) . " active cluster(s) with tag " .
+                           "stack_" . $args{stack_id} . ", can not build stack."
+              );
+    }
+
     # Deduce the network to use from iprange
     my $ip = NetAddr::IP->new($args{iprange});
     my $network = Entity::Network->find(hash => { network_addr => $ip->addr, network_netmask => $ip-> mask});
@@ -97,17 +111,34 @@ sub buildStack {
                 netconfs       => [ $vmsnetconf->id ]
             },
         ],
+        entity_tags => [ Entity::Tag->findOrCreate(tag => "stack_" . $args{stack_id})->id ]
     };
-
-    my $stack_tag = Entity::Tag->new(tag => "stack_".$args{stack_id});
-    delete $args{stack_id};
 
     # Create each instance in an embedded workflow
     for my $servicedef (@{ $args{services} }) {
         General::checkParams(args => $servicedef, required => [ 'service_template_id' ]);
 
         # Build the cluster name from owner infos
-        my $cluster_name = $args{user}->user_login . "_" . $servicedef->{service_template_id};
+        my $cluster_name = $args{user}->user_login . "_" . $servicedef->{service_template_id} . "_" .
+                           $args{stack_id};
+
+        $log->info("Creating 1 service with service_template " . $servicedef->{service_template_id} .
+                   " for stack $args{stack_id}, with name $cluster_name.");
+
+        # If some inactive instance exists from old builds, add a version numer to the name
+        my @old = Entity::ServiceProvider::Cluster->search(hash => {
+                       'owner_id'            => $args{user}->id,
+                       'service_template_id' => $servicedef->{service_template_id},
+                       'entity_tags.tag.tag' => "stack_" . $args{stack_id}
+                   });
+
+        if (scalar(@old)) {
+            $cluster_name .= "_v" . scalar(@old);
+
+            $log->info("Found " . scalar(@old) . " old service(s) of stack " . $args{stack_id} .
+                       ", add version number to the service name: $cluster_name");
+        }
+
         my $params = Entity::ServiceProvider::Cluster->buildInstantiationParams(
                          cluster_name => $cluster_name,
                          # Add the specific params
@@ -115,8 +146,6 @@ sub buildStack {
                          # Add the common params
                          %{ clone($common_params) }
                      );
-
-        $params->{cluster_params}->{entity_tags} = [$stack_tag->id];
 
         $args{workflow}->enqueueNow(operation => {
             type       => 'AddCluster',
@@ -131,20 +160,23 @@ sub startStack {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'user', 'workflow' ],
+                         required => [ 'user', 'workflow', 'stack_id' ],
                          optional => { 'erollback' => undef });
 
     # Retrieve the created cluster from name
-    # TODO: Be sure to imprive the search pattern to not get old stacks of the user
+    # NOTE: the service of a current stack are active
     my @clusters = Entity::ServiceProvider::Cluster->search(hash => {
-                       owner_id => $args{user}->id,
-                       active   => 1,
+                       'owner_id' => $args{user}->id,
+                       'active'   => 1,
+                       'entity_tags.tag.tag' => "stack_" . $args{stack_id}
                    });
 
+    $log->info("Found " . scalar(@clusters) . " services for stack $args{stack_id}.");
     if (scalar(@clusters) <= 0) {
         throw Kanopya::Exception::Internal(
-                  error => 'Unable to find active clusters of the stack, ' . 
-                           'no cluster found with owner ' .  $args{user}->user_login
+                  error => "Unable to find active clusters of the stack, " . 
+                           "no active cluster found with owner " .  $args{user}->user_login .
+                           ", with tag stack_" . $args{stack_id}
               );
     }
 
@@ -169,6 +201,16 @@ sub startStack {
         $components->{lc($type)}->{serviceprovider}
             = $components->{lc($type)}->{component}->service_provider;
     }
+
+    $log->info("Check components extra configuration.");
+
+    # Check the extra configuration
+    General::checkParams(args => $components->{neutron}->{component}->extraConfiguration,
+                         required => [ 'network' ]);
+    General::checkParams(args => $components->{glance}->{component}->extraConfiguration,
+                         required => [ 'images' ]);
+
+    $log->info("Configuring cross stack components references.");
 
     $components->{keystone}->{component}->setConf(conf => {
         mysql5_id => $components->{mysql}->{component}->id,
@@ -199,13 +241,18 @@ sub startStack {
         $components->{novacontroller}->{component}->id
     );
 
-    # Create a volume group on the controller fro Cinder.
+    $log->info("Creating volume group for cinder volumes.");
+
+    # Create a volume group on the controller for Cinder.
     my $vg = Lvm2Vg->new(lvm2_id           => $components->{lvm}->{component}->id,
                          lvm2_vg_name      => "cinder-volumes",
                          lvm2_vg_freespace => 0,
                          lvm2_vg_size      => 10 * 1024 * 1024 * 1024);
 
     Lvm2Pv->new(lvm2_vg_id => $vg->id, lvm2_pv_name => "/dev/sda2");
+
+    $log->info("Creating and exporting logical volume nova-instances-" . $args{user}->user_login .
+               " on Kanopya");
 
     # Create a logical volume on Kanopya to store nova instance meta data.
     my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster;
@@ -258,17 +305,10 @@ sub startStack {
         device     => $export->container_access_export
     );
 
-    # Check the extra configuration
-    General::checkParams(args => $components->{neutron}->{component}->extraConfiguration, required => [ 'network' ]);
-    General::checkParams(args => $components->{glance}->{component}->extraConfiguration, required => [ 'images' ]);
-
     # Start the database first, then the controller, then the compute
     my @bypriority;
     for my $component ('mysql', 'novacontroller', 'novacompute') {
         if (scalar(grep { $_->id == $components->{$component}->{serviceprovider}->id } @bypriority) <= 0) {
-            $log->info("Start service " . $components->{$component}->{serviceprovider}->label .
-                       " in the current workflow.");
-
             push @bypriority, $components->{$component}->{serviceprovider};
         }
     }
@@ -276,6 +316,7 @@ sub startStack {
     # Finally start the instances
     # Note: reverse the array as enqueueNow insert operations at the head of the list.
     for my $instance (reverse @bypriority) {
+        $log->info("Starting service " . $instance->label. " in an embedded workflow...");
         $args{workflow}->enqueueNow(workflow => {
             name       => 'AddNode',
             related_id => $instance->id,
@@ -298,7 +339,7 @@ sub startStack {
     }
 }
 
-sub validateStack {
+sub configureStack {
     my ($self, %args) = @_;
     my ($result, $command);
 
@@ -401,7 +442,8 @@ sub validateStack {
                 $result = $args{glance}->getEContext->execute(command => $command);
                 if ($result->{exitcode}) {
                     throw Kanopya::Exception::Execution(
-                              error => "Failed to import image " . $imgname . " on Glance:\n$result->{stderr}"
+                              error => "Failed to import image " . $imgname .
+                                       " on Glance:\n$result->{stderr}"
                           );
                 }
             }
@@ -420,7 +462,65 @@ sub validateStack {
 
 }
 
-sub cancelStack {
+
+sub endStack {
+    my ($self, %args) = @_;
+    my ($result, $command);
+
+    General::checkParams(args => \%args, required => [ 'user', 'stack_id' ]);
+
+    # Retrieve the clusters of the current stack
+    my @clusters = Entity::ServiceProvider::Cluster->search(hash => {
+                       'owner_id' => $args{user}->id,
+                       'active'   => 1,
+                       'entity_tags.tag.tag' => "stack_" . $args{stack_id}
+                   });
+
+    $log->info("Found " . scalar(@clusters) . " services for stack $args{stack_id}.");
+    if (scalar(@clusters) <= 0) {
+        throw Kanopya::Exception::Internal(
+                  error => "Unable to find active clusters of the stack, " .
+                           "no active cluster found with owner " .  $args{user}->user_login .
+                           ", with tag stack_" . $args{stack_id}
+              );
+    }
+
+    # Stop the instances in embedded workflows
+    for my $instance (@clusters) {
+        # Set the cluster as inactive for this stack
+        $instance->active(0);
+
+        my ($state, $timestamp) = $instance->getState;
+        if ($state ne 'down') {
+            $log->info("Stopping service " . $instance->label. " in an embedded workflow...");
+            $args{workflow}->enqueueNow(operation => {
+                type       => 'StopCluster',
+                priority   => 200,
+                related_id => $self->service_provider->id,
+                params     => {
+                    context => {
+                        cluster => $instance,
+                    },
+                },
+            });
+        }
+        else {
+            $log->info("Service " . $instance->label. " is down do not stopping it.");
+        }
+
+    }
+}
+
+
+sub unconfigureStack {
+    my ($self, %args) = @_;
+    my ($result, $command);
+
+    General::checkParams(args => \%args, required => [ 'user', 'stack_id' ]);
+}
+
+
+sub cancelStartStack {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'user' ]);
@@ -464,6 +564,13 @@ sub cancelStack {
     catch ($err) {
         throw Kanopya::Exception(error => "$err");
     }
+}
+
+sub cancelEndStack {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'user' ]);
+
 }
 
 1;

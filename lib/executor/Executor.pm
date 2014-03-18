@@ -759,8 +759,11 @@ sub instantiateOperation {
         }
         $err->rethrow();
     }
-    catch ($err) {
+    catch (Kanopya::Exception $err) {
         $err->rethrow();
+    }
+    catch ($err) {
+        throw Kanopya::Exception::Execution(error => $err);
     }
 
     return $operation;

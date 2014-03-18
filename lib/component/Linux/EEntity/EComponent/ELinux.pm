@@ -420,7 +420,7 @@ sub _disableRootPassword {
     my $cmd = 'grep "^root:" ' . $args{mount_point} . '/etc/shadow';
     my $result = $args{econtext}->execute(command => $cmd);
     if ($result->{stdout} =~ m/root:\$/) {
-        $cmd = 'chroot ' . $args{mount_point} . ' passwd -d root';
+        $cmd = 'chroot ' . $args{mount_point} . ' passwd -dl root';
         $args{econtext}->execute(command => $cmd);
         $log->info('root password deleted');
     }

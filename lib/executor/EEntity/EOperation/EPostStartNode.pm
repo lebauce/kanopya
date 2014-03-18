@@ -95,9 +95,9 @@ sub prerequisites {
     if (not $node_ip) {
         throw Kanopya::Exception::Internal(error => "Host <$host_id> has no admin ip.");
     }
-    
+
     if (! $self->{context}->{host}->checkUp()) {
-        $log->debug("Host <$host_id> not yet reachable at <$node_ip>");
+        $log->info("Host <$host_id> not yet reachable at <$node_ip>");
         return $delay;
     }
 

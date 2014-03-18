@@ -25,7 +25,7 @@ Create all service required for a stack
 =end classdoc
 =cut
 
-package EEntity::EOperation::EStartStack;
+package EEntity::EOperation::EEndStack;
 use base "EEntity::EOperation";
 
 use strict;
@@ -36,9 +36,6 @@ use Log::Log4perl "get_logger";
 use Date::Simple (':all');
 
 my $log = get_logger("");
-
-
-my $merge = Hash::Merge->new('LEFT_PRECEDENT');
 
 
 =pod
@@ -61,7 +58,7 @@ sub check {
 =pod
 =begin classdoc
 
-Create all service required for a stack
+Stop all services started for a stack
 
 =end classdoc
 =cut
@@ -71,27 +68,20 @@ sub execute {
     $self->SUPER::execute(%args);
 
     # Call the method on the corresponding component
-    my $components = $self->{context}->{stack_builder}->startStack(
-                         user      => $self->{context}->{user},
-                         stack_id  => $self->{params}->{stack_id},
-                         # TODO: Let all EEntity access to the workflow that they related
-                         workflow  => $self->workflow,
-                         erollback => $self->{erollback}
-                     );
-
-    # Check if all required components have been returned
-    General::checkParams(args     => $components,
-                         required => [ 'keystone', 'novacontroller', 'neutron',
-                                       'glance', 'novacompute', 'cinder' ]);
-
-    $self->{context} = $merge->merge($self->{context}, $components);
+    $self->{context}->{stack_builder}->endStack(
+        stack_id  => $self->{params}->{stack_id},
+        user      => $self->{context}->{user},
+        # TODO: Let all EEntity access to the workflow that they related
+        workflow  => $self->workflow,
+        erollback => $self->{erollback}
+    );
 }
 
 
 =pod
 =begin classdoc
 
-Delete object possibly created at startStack step.
+Handle fail of end stack, probably force stop clusters.
 
 =end classdoc
 =cut
@@ -99,7 +89,7 @@ Delete object possibly created at startStack step.
 sub cancel {
     my ($self, %args) = @_;
 
-    $self->{context}->{stack_builder}->cancelStartStack(
+    $self->{context}->{stack_builder}->cancelEndStack(
         user => $self->{context}->{user},
     );
 }

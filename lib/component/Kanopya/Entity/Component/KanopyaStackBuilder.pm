@@ -264,10 +264,21 @@ sub buildStack {
 sub endStack {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'stack' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'stack_id' ],
+                         optional => { 'owner_id' => Kanopya::Database::currentUser });
 
-    # TODO: run workflow EndStack.
+    # Run the workflow EndStack
+    $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+        name   => 'EndStack',
+        params => {
+            stack_id  => $args{stack_id},
+            context => {
+                stack_builder => $self,
+                user          => Entity::User->get(id => $args{owner_id}),
+            },
+        }
+    );
 }
-
 
 1;

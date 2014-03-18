@@ -118,7 +118,10 @@ sub postrequisites {
         # We stop nodes with state 'up' only
         # TODO: manage other node states
         my ($state, $timestamp) = $node->host->getState();
-        if ($state ne 'up') { next NODE; }
+        if ($state ne 'up') {
+            $log->warn("Node " . $node->label . " is not 'up', do not stopping it...");
+            next NODE;
+        }
 
         # Stop the node in an embedded workflow
         $self->workflow->enqueueNow(workflow => {

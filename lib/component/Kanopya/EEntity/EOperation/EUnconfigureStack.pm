@@ -25,7 +25,7 @@ Create all service required for a stack
 =end classdoc
 =cut
 
-package EEntity::EOperation::EValidateStack;
+package EEntity::EOperation::EUnconfigureStack;
 use base "EEntity::EOperation";
 
 use strict;
@@ -49,16 +49,16 @@ my $log = get_logger("");
 sub check {
     my ($self, %args) = @_;
 
-    General::checkParams(args     => $self->{context},
-                         required => [ 'stack_builder', 'user', 'keystone', 'novacontroller', 'neutron',
-                                       'glance', 'novacompute', 'cinder' ]);
+    General::checkParams(args => $self->{context}, required => [ "stack_builder", "user" ]);
+
+    General::checkParams(args => $self->{params}, required => [ "stack_id" ]);
 }
 
 
 =pod
 =begin classdoc
 
-Create all service required for a stack
+Disable accesses given to the user at configure stack step.
 
 =end classdoc
 =cut
@@ -68,15 +68,10 @@ sub execute {
     $self->SUPER::execute(%args);
 
     # Call the method on the corresponding component
-    $self->{context}->{stack_builder}->validateStack(
-        user           => $self->{context}->{user},
-        keystone       => $self->{context}->{keystone},
-        novacontroller => $self->{context}->{novacontroller},
-        neutron        => $self->{context}->{neutron},
-        glance         => $self->{context}->{glance},
-        novacompute    => $self->{context}->{novacompute},
-        cinder         => $self->{context}->{cinder},
-        erollback      => $self->{erollback}
+    $self->{context}->{stack_builder}->unconfigureStack(
+        user      => $self->{context}->{user},
+        stack_id  => $self->{params}->{stack_id},
+        erollback => $self->{erollback}
     );
 }
 
