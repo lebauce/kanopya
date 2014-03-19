@@ -635,7 +635,7 @@ sub handleResult {
         $log->info("Executing " . $workflow->workflow_name .
                    " workflow next operation " . $next->type . " <" . $next->id . ">");
 
-        if ($operation->state eq 'pending') {
+        if ($next->state eq 'pending') {
             # Set the operation as ready
             $next->setState(state => 'ready');
         }
