@@ -246,7 +246,7 @@ sub buildStack {
     }
 
     # Run the workflow BuildStack
-    $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+    my $workflow = $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
         name   => 'BuildStack',
         params => {
             services => \@services,
@@ -258,6 +258,9 @@ sub buildStack {
             },
         }
     );
+
+    $workflow->addPerm(consumer => $workflow->owner, method => 'get');
+    $workflow->addPerm(consumer => $workflow->owner, method => 'cancel');
 }
 
 
@@ -269,7 +272,7 @@ sub endStack {
                          optional => { 'owner_id' => Kanopya::Database::currentUser });
 
     # Run the workflow EndStack
-    $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+    my $workflow = $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
         name   => 'EndStack',
         params => {
             stack_id  => $args{stack_id},
@@ -279,6 +282,9 @@ sub endStack {
             },
         }
     );
+
+    $workflow->addPerm(consumer => $workflow->owner, method => 'get');
+    $workflow->addPerm(consumer => $workflow->owner, method => 'cancel');
 }
 
 1;
