@@ -684,6 +684,7 @@ sub registerOperations {
         [ 'ConfigureStack', 'Configuring stack' ],
         # Workflow EndStack
         [ 'UnconfigureStack', 'Unconfiguring stack' ],
+        [ 'StopStack', 'Stopping stack' ],
         [ 'EndStack', 'Ending stack' ],
     ];
 
@@ -2096,8 +2097,9 @@ sub populate_workflow_def {
         workflow_name => 'EndStack',
         params => {},
         steps => [
-            Operationtype->find( hash => { operationtype_name => 'EndStack' })->id,
             Operationtype->find( hash => { operationtype_name => 'UnconfigureStack' })->id,
+            Operationtype->find( hash => { operationtype_name => 'StopStack' })->id,
+            Operationtype->find( hash => { operationtype_name => 'EndStack' })->id,
         ],
         description => "End stack"
     );

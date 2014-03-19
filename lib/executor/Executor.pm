@@ -570,8 +570,8 @@ sub handleResult {
             $log->error($args{exception});
 
             # Try to cancel all workflow operations, and delete them.
-            $log->info("Operation " . $operation->type . " <" . $operation->id . ">, but is harmless" .
-                       ", continue the workflow.");
+            $log->info("Operation " . $operation->type . " <" . $operation->id .
+                       "> failed, but is harmless, continue the workflow.");
 
             # Continue the workflow
         }
