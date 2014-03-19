@@ -261,6 +261,8 @@ sub buildStack {
 
     $workflow->addPerm(consumer => $workflow->owner, method => 'get');
     $workflow->addPerm(consumer => $workflow->owner, method => 'cancel');
+
+    return $workflow;
 }
 
 
@@ -285,6 +287,8 @@ sub endStack {
 
     $workflow->addPerm(consumer => $workflow->owner, method => 'get');
     $workflow->addPerm(consumer => $workflow->owner, method => 'cancel');
+
+    return $workflow;
 }
 
 1;
