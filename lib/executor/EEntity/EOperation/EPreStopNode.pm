@@ -192,11 +192,6 @@ sub prerequisites {
         return -1;
     }
 
-    # The cluster is now required in the context, so the following block do not make sens.
-    #if (not defined $self->{context}->{cluster}) {
-    #     my $cluster = Entity->get(id => $self->{context}->{host}->node->service_provider_id);
-    #     $self->{context}->{cluster} = $cluster;
-    #}
     return 0;
 }
 

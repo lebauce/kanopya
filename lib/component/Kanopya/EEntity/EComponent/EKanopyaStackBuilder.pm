@@ -501,19 +501,21 @@ sub stopStack {
         my ($state, $timestamp) = $cluster->getState;
         if ($state ne 'down') {
             $log->info("Stopping service " . $cluster->label   . " in an embedded workflow...");
-            $args{workflow}->enqueueNow(operation => {
-                type       => 'StopCluster',
-                priority   => 200,
-                # Enqueue the workflow as harmless, to avoid errors raise the cancel of the whole workflow.
-                # The endStack step will check if clusters has been successfully stopped
-                harmless   => 1,
-                related_id => $cluster->id,
-                params     => {
-                    context => {
-                        cluster => $cluster,
+            $args{workflow}->enqueueNow(
+                operation => {
+                    type       => 'StopCluster',
+                    priority   => 200,
+                    related_id => $cluster->id,
+                    params     => {
+                        context => {
+                            cluster => $cluster,
+                        },
                     },
                 },
-            });
+                # Enqueue the workflow as harmless, to avoid errors raise the cancel of the whole workflow.
+                # The endStack step will check if clusters has been successfully stopped
+                harmless => 1,
+            );
         }
         else {
             $log->info("Service " . $cluster->label. " is down do not stopping it.");
