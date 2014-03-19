@@ -520,6 +520,24 @@ sub unconfigureStack {
 }
 
 
+sub cancelBuildStack {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'user' ]);
+
+    # Retrieve the clusters of the current stack
+    my @clusters = Entity::ServiceProvider::Cluster->search(hash => {
+                       'owner_id' => $args{user}->id,
+                       'active'   => 1,
+                       'entity_tags.tag.tag' => "stack_" . $args{stack_id}
+                   });
+
+    for my $service (@clusters) {
+        # Set the cluster as inactive for this stack
+        $service->active(0);
+    }
+}
+
 sub cancelStartStack {
     my ($self, %args) = @_;
 

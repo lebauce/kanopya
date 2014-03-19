@@ -42,6 +42,7 @@ use Entity::Gp;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
+use TryCatch;
 
 my $log = get_logger("");
 my $errmsg;
@@ -135,6 +136,28 @@ sub finish {
     delete $self->{params}->{billing_limits};
     delete $self->{params}->{orchestration};
     delete $self->{params}->{cluster_params};
+}
+
+
+=pod
+=begin classdoc
+
+Remove the cluster.
+
+=end classdoc
+=cut
+
+sub cancel {
+    my ($self, %args) = @_;
+
+    try {
+        # Deactivate and remove the cluster
+        $self->{context}->{cluster}->active(0);
+        $self->{context}->{cluster}->remove();
+    }
+    catch ($err) {
+        $log->error("Unable to remove cluster:\n$err");
+    }
 }
 
 1;

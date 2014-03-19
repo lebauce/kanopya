@@ -237,7 +237,7 @@ Set host state
 
 sub postrequisites {
     my ($self, %args) = @_;
-    $self->SUPER::cancel(%args);
+
     $self->{context}->{host}->setConsumerState(state => 'stopping', consumer => $self->workflow);
     return 0;
 }

@@ -363,8 +363,6 @@ sub enqueueBefore {
     }
 
     $args{current_operation}->state($args{current_operation_state});
-
-    map {$log->debug($_->execution_rank.' '.$_->type.' '.$_->state)} $self->operations;
 }
 
 
@@ -403,7 +401,6 @@ sub enqueueNow {
             $rank_offset++;
         }
     }
-    map {$log->debug($_->execution_rank.' '.$_->type)} $self->operations;
 }
 
 
@@ -464,12 +461,23 @@ sub prepareNextOperation {
               );
     }
 
+    # Duplicate the current operation params for the next operation.
+    # It is important to duplicat ethe param perest entry because the operation params
+    # must be unmodified to retrieve the orignal params at cancel.
     if (defined $args{current}->param_preset) {
+        my $params = $args{current}->param_preset->load();
+
+        # If the next opeartion already have params, merge with the current ones
         if (defined $next->param_preset_id) {
-            $args{current}->param_preset->update(params => $next->param_preset->load());
+            $next->param_preset->update(
+                params   => $merge->merge($params, $next->param_preset->load()),
+                override => 1,
+            );
         }
-        # Give the current operation params to the next one
-        $next->param_preset_id($args{current}->param_preset_id);
+        # Else, give the current operation params to the next one
+        else {
+            $next->param_preset_id(ParamPreset->new(params => $params)->id);
+        }
     }
 
     return $next;
