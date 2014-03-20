@@ -569,7 +569,7 @@ CREATE TABLE `operationtype` (
 -- OperationGroup class
 
 CREATE TABLE `operation_group` (
-  `operation_group_id` int(8) unsigned NOT NULL AUTO_INCREMENT,,
+  `operation_group_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   PRIMARY KEY (`operation_group_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
