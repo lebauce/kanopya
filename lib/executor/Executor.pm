@@ -131,7 +131,7 @@ sub runWorkflow {
                          required => [ 'workflow_id' ],
                          optional => { 'ack_cb' => undef });
 
-    my $workflow = EEntity->new(entity => Entity::Workflow->get(id => $args{workflow_id}));
+    my $workflow = Entity::Workflow->get(id => $args{workflow_id});
 
     # Log in the proper file
     $self->setLogAppender(workflow => $workflow);
@@ -442,12 +442,11 @@ sub handleResult {
 
     my $operation = $self->instantiateOperation(id     => $args{operation_id},
                                                 ack_cb => $args{ack_cb});
-    my $workflow  = EEntity->new(entity => $operation->workflow);
 
     # Log in the proper file
-    $self->setLogAppender(workflow => $workflow);
+    $self->setLogAppender(workflow => $operation->workflow);
 
-    if ($workflow->state eq 'cancelled') {
+    if ($operation->workflow->state eq 'cancelled') {
         $args{status} = 'cancelled';
     }
 
@@ -475,7 +474,7 @@ sub handleResult {
             General::checkParams(args => \%args, optional => { 'time' => undef });
 
             # If the workflow has been interrupted
-            if ($workflow->state eq 'interrupted') {
+            if ($operation->workflow->state eq 'interrupted') {
                 # Stop the workflow
                 return 1;
             }
@@ -552,7 +551,7 @@ sub handleResult {
             $self->logWorkflowState(operation => $operation, state => 'INTERRUPTED');
 
             # Change the state of the workflow
-            $workflow->interrupt();
+            $operation->workflow->interrupt();
 
             # Stop the workflow
             return 1;
@@ -569,15 +568,31 @@ sub handleResult {
             $self->logWorkflowState(operation => $operation, state => 'FAILED');
             $log->error($args{exception});
 
-            # Try to cancel all workflow operations, and delete them.
             $log->info("Operation " . $operation->type . " <" . $operation->id .
                        "> failed, but is harmless, continue the workflow.");
 
-            # Set all operations of the group as failed, to avoid the workflow execute them
+            my @tofail;
             if (defined $operation->operation_group) {
-                for my $failed ($operation->operation_group->operations) {
-                    $failed->setState(state => "failed");
+                @tofail = $operation->operation_group->search(related  => 'operations',
+                                                              order_by => 'execution_rank DESC');
+            }
+            else {
+                @tofail = ($operation);
+            }
+
+            # Cancel all the operations of the group of the operation that failed
+            for my $tofail (@tofail) {
+                if ($tofail->state ne 'pending') {
+                    try {
+                        $log->info("Cancelling operation " . $tofail->type . " <" . $tofail->id . ">");
+                        EEntity::EOperation->new(operation => $tofail, skip_not_found => 1)->cancel();
+                    }
+                    catch ($err){
+                        $log->error("Error during operation cancel :\n$err");
+                    }
                 }
+                # Set operations of the group as failed, to avoid the workflow execute them
+                $tofail->setState(state => "failed");
             }
 
             # Continue the workflow
@@ -595,15 +610,31 @@ sub handleResult {
                           content => "[$operation] Execution Aborted : $args{exception}");
 
             # Try to cancel all workflow operations, and delete them.
-            $log->info("Cancelling " . $workflow->workflow_name . " workflow <" . $workflow->id . ">");
+            $log->info("Cancelling " . $operation->workflow->workflow_name .
+                       " workflow <" . $operation->workflow->id . ">");
 
             # Restore context object states updated at 'prepare' step.
             try {
                 # Firstly lock the context objects
                 $self->lockOperationContext(operation => $operation, skip_not_found => 1);
 
-                # Update the state of the context objects atomically
-                $workflow->cancel();
+                my $workflow = $operation->workflow;
+                my @tocancel = $workflow->search(related  => 'operations',
+                                                 order_by => 'execution_rank DESC');
+                for my $tocancel (@tocancel) {
+                    if ($tocancel->state ne 'pending') {
+                        try {
+                            $log->info("Cancelling operation " . $tocancel->type .
+                                       " <" . $tocancel->id . ">");
+                            EEntity::EOperation->new(operation => $tocancel, skip_not_found => 1)->cancel();
+                        }
+                        catch ($err){
+                            $log->error("Error during operation cancel :\n$err");
+                        }
+                    }
+                    $tocancel->remove();
+                }
+                $workflow->setState(state => 'cancelled');
 
                 # Unlock the context objects
                 $operation->unlockContext(skip_not_found => 1);
@@ -628,7 +659,7 @@ sub handleResult {
         }
     }
 
-    if ($workflow->state eq 'interrupted') {
+    if ($operation->workflow->state eq 'interrupted') {
         # Stop the workflow
         return 1;
     }
@@ -637,9 +668,9 @@ sub handleResult {
     # finish the workflow instead.
     my $next;
     try {
-        $next = $workflow->prepareNextOperation(current => $operation);
+        $next = $operation->workflow->prepareNextOperation(current => $operation);
 
-        $log->info("Executing " . $workflow->workflow_name .
+        $log->info("Executing " . $operation->workflow->workflow_name .
                    " workflow next operation " . $next->type . " <" . $next->id . ">");
 
         if ($next->state eq 'pending') {
@@ -652,8 +683,9 @@ sub handleResult {
     }
     catch (Kanopya::Exception::Internal::NotFound $err) {
         # No remaning operation
-        $log->info("Finishing " . $workflow->workflow_name . " workflow <" . $workflow->id . ">");
-        $workflow->finish();
+        $log->info("Finishing " . $operation->workflow->workflow_name .
+                   " workflow <" . $operation->workflow->id . ">");
+        $operation->workflow->finish();
     }
     catch ($err) {
         $err->rethrow();

@@ -27,7 +27,7 @@ Log::Log4perl->easy_init({
 });
 
 
-my $testing = 0;
+my $testing = 1;
 
 main();
 
@@ -121,11 +121,11 @@ sub main {
         iprange  => Entity::Network->find()->network_addr . "/24"
     };
 
-    my $build_stack;
-    lives_ok {
-       $build_stack = $builder->buildStack(stack => $stack);
-       Kanopya::Tools::Execution->executeOne(entity => $build_stack);
-    } 'Run workflow BuildStack';
+    # my $build_stack;
+    # lives_ok {
+    #    $build_stack = $builder->buildStack(stack => $stack);
+    #    Kanopya::Tools::Execution->executeOne(entity => $build_stack);
+    # } 'Run workflow BuildStack';
 
     my $end_stack;
     lives_ok {
