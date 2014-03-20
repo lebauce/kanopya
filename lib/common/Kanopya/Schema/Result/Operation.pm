@@ -110,6 +110,13 @@ __PACKAGE__->table("operation");
   is_foreign_key: 1
   is_nullable: 1
 
+=head2 operation_group_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -165,6 +172,13 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 1,
   },
+  "operation_group_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
 );
 
 =head1 PRIMARY KEY
@@ -210,6 +224,26 @@ __PACKAGE__->belongs_to(
   "Kanopya::Schema::Result::Entity",
   { entity_id => "operation_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
+);
+
+=head2 operation_group
+
+Type: belongs_to
+
+Related object: L<Kanopya::Schema::Result::OperationGroup>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "operation_group",
+  "Kanopya::Schema::Result::OperationGroup",
+  { operation_group_id => "operation_group_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "SET NULL",
+    on_update     => "NO ACTION",
+  },
 );
 
 =head2 operationtype
@@ -263,8 +297,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-18 17:07:18
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7zQ4szCDCe6unltr1rALZA
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-20 15:56:27
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:NFKNIY/tb7oy65Vrs7yv5g
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

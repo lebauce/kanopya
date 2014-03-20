@@ -32,6 +32,7 @@ use warnings;
 use General;
 use Entity::WorkflowDef;
 use ParamPreset;
+use OperationGroup;
 use Kanopya::Exceptions;
 use Entity::Operation;
 use Kanopya::Database;
@@ -151,10 +152,9 @@ sub run {
         unshift(@operationtypes, 'ProcessRule');
     }
 
-    # TODO: Use transaction or operation states to not pop operations
-    #       while the whole workflow has been enqeued.
+    my $group = OperationGroup->create();
     for my $operationtype (@operationtypes) {
-        $workflow->enqueue(priority => 200, type => $operationtype, %args);
+        $workflow->enqueue(priority => 200, type => $operationtype, group => $group, %args);
 
         # If some params has been given to the first operation, remove from args
         # to avoid given them to others operation of the workflow.
@@ -228,15 +228,17 @@ sub _getOperationsToEnqueue {
     my @operations_to_enqueue = ();
 
     if (defined $args{workflow}) {
+        my $group = OperationGroup->create();
         my $def = Entity::WorkflowDef->find(hash => { workflow_def_name => $args{workflow}->{name} });
-        my @steps = WorkflowStep->search(
-                        hash        => { workflow_def_id => $def->id },
-                        order_by    => 'workflow_step_id asc'
-        );
+        my @steps = WorkflowStep->search(hash     => { workflow_def_id => $def->id },
+                                         order_by => 'workflow_step_id asc' );
+
         @operations_to_enqueue = map { {
             priority => 200,
+            group    => $group,
             type     => $_->operationtype->operationtype_name,
         } } @steps;
+
         # Put params (and context) on the first operation only
         $operations_to_enqueue[0]->{params} = $args{workflow}->{params};
     }

@@ -133,6 +133,7 @@ sub new {
                          optional => { 'workflow_id' => undef,
                                        'params'      => undef,
                                        'harmless'    => 0,
+                                       'group'       => undef,
                                        'related_id'  => undef });
 
     my $operationtype = Operationtype->find(hash => { operationtype_name => $args{type} });
@@ -168,6 +169,9 @@ sub new {
             hoped_execution_time => $hoped_execution_time,
             owner_id             => Kanopya::Database::currentUser,
         };
+        if (defined $args{group}) {
+            $params->{operation_group_id} = $args{group}->id;
+        }
 
         $self = $class->SUPER::new(%$params);
 
@@ -180,9 +184,13 @@ sub new {
             $workflow->workflow_name($self->label);
         }
     }
-    catch ($err) {
+    catch (Kanopya::Exception $err) {
         Kanopya::Database::rollbackTransaction;
         $err->rethrow();
+    }
+    catch ($err) {
+        Kanopya::Database::rollbackTransaction;
+        throw Kanopya::Exception(error => $err);
     }
 
     Kanopya::Database::commitTransaction;
@@ -534,6 +542,12 @@ sub delete {
         execution_status => $self->state,
         param_preset_id  => $self->param_preset_id,
     );
+
+    # Delete the corresponding operation group if
+    # it is the last remaining operation in the group
+    if (defined $self->operation_group && scalar($self->operation_group->operations) <= 1) {
+        $self->operation_group->delete();
+    }
     $self->SUPER::delete();
 }
 

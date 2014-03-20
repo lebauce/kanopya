@@ -565,12 +565,22 @@ CREATE TABLE `operationtype` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `operation_group`
+-- OperationGroup class
+
+CREATE TABLE `operation_group` (
+  `operation_group_id` int(8) unsigned NOT NULL AUTO_INCREMENT,,
+  PRIMARY KEY (`operation_group_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `operation`
 -- Operation class
 
 CREATE TABLE `operation` (
   `operation_id` int(8) unsigned NOT NULL,
   `operationtype_id` int(8) unsigned NOT NULL,
+  `operation_group_id` int(8) unsigned DEFAULT NULL,
   `workflow_id` int(8) unsigned NOT NULL,
   `state` char(32) NOT NULL DEFAULT 'pending',
   `priority` int(2) unsigned NOT NULL,
@@ -585,6 +595,7 @@ CREATE TABLE `operation` (
   UNIQUE KEY (`execution_rank`, `workflow_id`),
   FOREIGN KEY (`workflow_id`) REFERENCES `workflow` (`workflow_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`operationtype_id`) REFERENCES `operationtype` (`operationtype_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
+  FOREIGN KEY (`operation_group_id`) REFERENCES `operation_group` (`operation_group_id`) ON DELETE SET NULL ON UPDATE NO ACTION,
   FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE SET NULL ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
