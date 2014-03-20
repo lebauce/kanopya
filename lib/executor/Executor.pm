@@ -573,6 +573,13 @@ sub handleResult {
             $log->info("Operation " . $operation->type . " <" . $operation->id .
                        "> failed, but is harmless, continue the workflow.");
 
+            # Set all operations of the group as failed, to avoid the workflow execute them
+            if (defined $operation->operation_group) {
+                for my $failed ($operation->operation_group->operations) {
+                    $failed->setState(state => "failed");
+                }
+            }
+
             # Continue the workflow
         }
         case 'cancelled' {
