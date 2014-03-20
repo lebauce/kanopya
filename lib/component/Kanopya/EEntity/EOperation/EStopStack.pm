@@ -31,7 +31,6 @@ use base "EEntity::EOperation";
 use strict;
 use warnings;
 
-use Data::Dumper;
 use Log::Log4perl "get_logger";
 use Date::Simple (':all');
 

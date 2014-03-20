@@ -430,7 +430,12 @@ sub getNextOperation {
     my $operation;
     eval {
         $operation = Entity::Operation->find(
-                         hash     => { workflow_id => $self->id, -not => { -or => [ state => 'succeeded',  state => 'failed' ] } },
+                         hash     => {
+                            workflow_id => $self->id,
+                            -not => {
+                                -or => [ state => 'succeeded',  state => 'failed' ]
+                            }
+                        },
                          order_by => 'execution_rank ASC'
                      );
     };
