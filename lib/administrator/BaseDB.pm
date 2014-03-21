@@ -1604,7 +1604,7 @@ sub _extractRelations {
 
     # Extrating relation from attrs
     my $relations = {};
-    for my $attr (keys %{$args{hash}}) {
+    for my $attr (keys %{ $args{hash} }) {
         if (ref($args{hash}->{$attr}) =~ m/ARRAY|HASH/) {
             $relations->{$attr} = delete $args{hash}->{$attr};
         }
@@ -1646,6 +1646,8 @@ sub _populateRelations {
         my $relation_class = $rel_infos->{class};
         my $relation_schema = $rel_infos->{schema};
         my $key = $rel_infos->{linkfk} || "id";
+
+        General::requireClass($relation_class);
 
         # For single relations, create or update the related instance
         if (defined $rel_infos->{relation} && $rel_infos->{relation} eq "single") {

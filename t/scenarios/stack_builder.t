@@ -27,7 +27,7 @@ Log::Log4perl->easy_init({
 });
 
 
-my $testing = 1;
+my $testing = 0;
 
 main();
 
@@ -121,17 +121,11 @@ sub main {
         iprange  => Entity::Network->find()->network_addr . "/24"
     };
 
-    # my $build_stack;
-    # lives_ok {
-    #    $build_stack = $builder->buildStack(stack => $stack);
-    #    Kanopya::Tools::Execution->executeOne(entity => $build_stack);
-    # } 'Run workflow BuildStack';
-
-    my $end_stack;
+    my $build_stack;
     lives_ok {
-       $end_stack = $builder->endStack(stack_id => 123);
-       Kanopya::Tools::Execution->executeOne(entity => $end_stack);
-    } 'Run workflow EndStack';
+       $build_stack = $builder->buildStack(stack => $stack);
+       Kanopya::Tools::Execution->executeOne(entity => $build_stack);
+    } 'Run workflow BuildStack';
 
     if ($testing == 1) {
         Kanopya::Database::rollbackTransaction;

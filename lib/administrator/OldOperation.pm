@@ -64,8 +64,8 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
     },
     execution_status => {
-        pattern      => '^ready|processing|prereported|postreported|waiting_validation|' .
-                        'validated|blocked|cancelled|succeeded|pending|statereported$',
+        pattern      => '^ready|processing|prereported|postreported|waiting_validation|validated' .
+                        '|blocked|failed|cancelled|succeeded|pending|statereported|interrupted$',
         is_mandatory => 0,
     },
     type => {

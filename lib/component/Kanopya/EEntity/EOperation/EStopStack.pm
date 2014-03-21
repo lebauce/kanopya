@@ -25,13 +25,12 @@ Create all service required for a stack
 =end classdoc
 =cut
 
-package EEntity::EOperation::EEndStack;
+package EEntity::EOperation::EStopStack;
 use base "EEntity::EOperation";
 
 use strict;
 use warnings;
 
-use Data::Dumper;
 use Log::Log4perl "get_logger";
 use Date::Simple (':all');
 
@@ -68,7 +67,7 @@ sub execute {
     $self->SUPER::execute(%args);
 
     # Call the method on the corresponding component
-    $self->{context}->{stack_builder}->endStack(
+    $self->{context}->{stack_builder}->stopStack(
         stack_id  => $self->{params}->{stack_id},
         user      => $self->{context}->{user},
         # TODO: Let all EEntity access to the workflow that they related
@@ -76,5 +75,6 @@ sub execute {
         erollback => $self->{erollback}
     );
 }
+
 
 1;

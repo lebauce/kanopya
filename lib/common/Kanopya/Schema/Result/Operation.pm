@@ -73,6 +73,13 @@ __PACKAGE__->table("operation");
   extra: {unsigned => 1}
   is_nullable: 0
 
+=head2 harmless
+
+  data_type: 'integer'
+  default_value: 0
+  extra: {unsigned => 1}
+  is_nullable: 0
+
 =head2 creation_date
 
   data_type: 'date'
@@ -97,6 +104,13 @@ __PACKAGE__->table("operation");
   is_nullable: 0
 
 =head2 param_preset_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
+=head2 operation_group_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
@@ -136,6 +150,13 @@ __PACKAGE__->add_columns(
   },
   "priority",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
+  "harmless",
+  {
+    data_type => "integer",
+    default_value => 0,
+    extra => { unsigned => 1 },
+    is_nullable => 0,
+  },
   "creation_date",
   { data_type => "date", datetime_undef_if_invalid => 1, is_nullable => 0 },
   "creation_time",
@@ -145,6 +166,13 @@ __PACKAGE__->add_columns(
   "execution_rank",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "param_preset_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
+  "operation_group_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -198,6 +226,26 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
+=head2 operation_group
+
+Type: belongs_to
+
+Related object: L<Kanopya::Schema::Result::OperationGroup>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "operation_group",
+  "Kanopya::Schema::Result::OperationGroup",
+  { operation_group_id => "operation_group_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "SET NULL",
+    on_update     => "NO ACTION",
+  },
+);
+
 =head2 operationtype
 
 Type: belongs_to
@@ -249,8 +297,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-12-18 15:35:47
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:04Dty/tWMrHeKtljNF25Tw
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-20 15:56:27
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:NFKNIY/tb7oy65Vrs7yv5g
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

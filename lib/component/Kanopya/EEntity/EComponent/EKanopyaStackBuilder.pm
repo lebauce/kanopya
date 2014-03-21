@@ -73,7 +73,7 @@ sub buildStack {
     }
 
     # Deduce the network to use from iprange
-    my $ip = NetAddr::IP->new($args{iprange});
+    my $ip = NetAddr::IP->new(delete $args{iprange});
     my $network = Entity::Network->find(hash => { network_addr => $ip->addr, network_netmask => $ip-> mask});
     my $poolip = ($network->poolips)[0];
 
@@ -115,7 +115,7 @@ sub buildStack {
     };
 
     # Create each instance in an embedded workflow
-    for my $servicedef (@{ $args{services} }) {
+    for my $servicedef (@{ delete $args{services} }) {
         General::checkParams(args => $servicedef, required => [ 'service_template_id' ]);
 
         # Build the cluster name from owner infos
@@ -315,14 +315,14 @@ sub startStack {
 
     # Finally start the instances
     # Note: reverse the array as enqueueNow insert operations at the head of the list.
-    for my $instance (reverse @bypriority) {
-        $log->info("Starting service " . $instance->label. " in an embedded workflow...");
+    for my $cluster (reverse @bypriority) {
+        $log->info("Starting service " . $cluster->label. " in an embedded workflow...");
         $args{workflow}->enqueueNow(workflow => {
             name       => 'AddNode',
-            related_id => $instance->id,
+            related_id => $cluster->id,
             params     => {
                 context => {
-                    cluster => $instance,
+                    cluster => $cluster,
                 },
             },
         });
@@ -463,11 +463,19 @@ sub configureStack {
 }
 
 
-sub endStack {
+sub unconfigureStack {
     my ($self, %args) = @_;
     my ($result, $command);
 
     General::checkParams(args => \%args, required => [ 'user', 'stack_id' ]);
+}
+
+
+sub stopStack {
+    my ($self, %args) = @_;
+    my ($result, $command);
+
+    General::checkParams(args => \%args, required => [ 'user', 'stack_id', 'workflow' ]);
 
     # Retrieve the clusters of the current stack
     my @clusters = Entity::ServiceProvider::Cluster->search(hash => {
@@ -486,37 +494,81 @@ sub endStack {
     }
 
     # Stop the instances in embedded workflows
-    for my $instance (@clusters) {
+    for my $cluster (@clusters) {
         # Set the cluster as inactive for this stack
-        $instance->active(0);
+        $cluster->active(0);
 
-        my ($state, $timestamp) = $instance->getState;
+        my ($state, $timestamp) = $cluster->getState;
         if ($state ne 'down') {
-            $log->info("Stopping service " . $instance->label. " in an embedded workflow...");
-            $args{workflow}->enqueueNow(operation => {
-                type       => 'StopCluster',
-                priority   => 200,
-                related_id => $self->service_provider->id,
-                params     => {
-                    context => {
-                        cluster => $instance,
+            $log->info("Stopping service " . $cluster->label   . " in an embedded workflow...");
+            $args{workflow}->enqueueNow(
+                operation => {
+                    type       => 'StopCluster',
+                    priority   => 200,
+                    related_id => $cluster->id,
+                    params     => {
+                        context => {
+                            cluster => $cluster,
+                        },
                     },
                 },
-            });
+                # Enqueue the workflow as harmless, to avoid errors raise the cancel of the whole workflow.
+                # The endStack step will check if clusters has been successfully stopped
+                harmless => 1,
+            );
         }
         else {
-            $log->info("Service " . $instance->label. " is down do not stopping it.");
+            $log->info("Service " . $cluster->label. " is down do not stopping it.");
         }
-
     }
 }
 
 
-sub unconfigureStack {
+sub endStack {
     my ($self, %args) = @_;
     my ($result, $command);
 
-    General::checkParams(args => \%args, required => [ 'user', 'stack_id' ]);
+    General::checkParams(args => \%args, required => [ 'user', 'stack_id', 'workflow' ]);
+
+    # Retrieve services from the failed operation(s) of the StopCluster embedded workflow(s)
+    my @clusters;
+    for my $failed ($args{workflow}->search(related => 'operations', hash => { "me.state" => "failed" })) {
+         my $context = $failed->unserializeParams(skip_not_found => $args{skip_not_found})->{context};
+         if ((defined $context->{cluster}) &&
+             (scalar(grep { $_->id == $context->{cluster}->id } @clusters) <= 0)) {
+             push @clusters, $context->{cluster};
+         }
+    }
+
+    if (scalar(@clusters)) {
+        $log->info("Found " . scalar(@clusters) .
+                   " services not properly stopped for stack $args{stack_id}.");
+
+        # If service not stopped properly, force stop it
+        for my $cluster (@clusters) {
+            # Force stop if required
+            my ($state, $timestamp) = $cluster->getState;
+            if ($state ne 'down' || scalar($cluster->nodes)) {
+                $log->info("Service " . $cluster->label . " not has not stopped properly, force stop...");
+
+                # NOTE: Do not set the operation as harmless because the ForceStopCluster
+                #       should never fail
+                $args{workflow}->enqueueNow(operation => {
+                    type       => 'ForceStopCluster',
+                    priority   => 200,
+                    related_id => $cluster->id,
+                    params     => {
+                        context => {
+                            cluster => $cluster,
+                        },
+                    },
+                });
+            }
+        }
+    }
+    else {
+        $log->info("All services of the stack $args{stack_id} has been stopped properly.");
+    }
 }
 
 
@@ -532,9 +584,9 @@ sub cancelBuildStack {
                        'entity_tags.tag.tag' => "stack_" . $args{stack_id}
                    });
 
-    for my $service (@clusters) {
+    for my $cluster (@clusters) {
         # Set the cluster as inactive for this stack
-        $service->active(0);
+        $cluster->active(0);
     }
 }
 
@@ -584,11 +636,5 @@ sub cancelStartStack {
     }
 }
 
-sub cancelEndStack {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'user' ]);
-
-}
 
 1;
