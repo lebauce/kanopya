@@ -28,15 +28,15 @@ forecasting through the function: forcasted_data = zero + slopes * log (time)
 
 =cut
 
-package Entity::DataModel::AnalyticRegression::LogarithmicRegression;
+package DataModel::AnalyticRegression::LogarithmicRegression;
 
-use base 'Entity::DataModel::AnalyticRegression';
+use base 'DataModel::AnalyticRegression';
 
 use strict;
 use warnings;
 use Data::Dumper;
 
-use Entity::DataModel::AnalyticRegression::LinearRegression;
+use DataModel::AnalyticRegression::LinearRegression;
 
 
 # logger
@@ -125,7 +125,7 @@ sub configure {
     }
 
     if ((! defined $min_time) || ($min_time == $max_time)) {
-        throw Kanopya::Exception(error => 'Not enough data to configure model');
+        throw Kanopya::Exception::Internal::WrongValue(error => 'Not enough data to configure model');
     }
 
     $args{start_time} = $min_time;
@@ -143,30 +143,20 @@ sub configure {
         $log_data{ log($time - $args{start_time} + 1) } = $datash{$time} - $min_value;
     }
 
-    my $linreg = Entity::DataModel::AnalyticRegression::LinearRegression->new(
-                    combination_id => $self->combination_id,
-                    node_id        => $self->node_id,
+    my $linreg = DataModel::AnalyticRegression::LinearRegression->new();
+
+    my $pp_lin = $linreg->configure(
+                     data      => \@log_values,
+                     time_keys => \@log_tstamps,
                  );
 
-    my $linreg_preset = $linreg->configure(
-                            data      => \@log_values,
-                            time_keys => \@log_tstamps,
-                        );
-
-    my $pp_lin = $linreg_preset->load;
     $pp_lin->{b} += $min_value;
 
-    my $preset = ParamPreset->new(params => $pp_lin);
-
-    $self->setAttr(name => 'param_preset_id', value => $preset->id);
+    $self->setAttr(name => 'param_preset', value => $pp_lin);
 
     $log->info('Learnt parameters = '.(Dumper $pp_lin));
 
-    $self->save();
-    $linreg_preset->delete();
-    $linreg->delete();
-
-    return $preset;
+    return $pp_lin;
 }
 
 =pod
@@ -195,12 +185,14 @@ sub predict {
     General::checkParams(args     => \%args,
                          required => ['predict_start', 'predict_end'],);
 
-    my $pp     = $self->param_preset->load;
+    my $pp = $self->{param_preset};
 
     if ((! defined $pp->{a}) ||
         (! defined $pp->{b}) ) {
 
-        throw Kanopya::Exception(error => 'DataModel LogarithmicRegression seems to have been badly configured');
+        throw Kanopya::Exception::Internal(
+                  error => 'DataModel LogarithmicRegression seems to have been badly configured'
+              );
     }
 
     my $function_args = {

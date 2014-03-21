@@ -31,7 +31,7 @@ use Entity::CollectorIndicator;
 use Entity::Clustermetric;
 use Entity::Component::MockMonitor;
 use Entity::ServiceProvider::Externalcluster;
-use Entity::DataModel;
+use DataModel;
 use Kanopya::Database;
 
 my $path = '/opt/kanopya/t/functional/data/timeserie_data/';
@@ -747,23 +747,25 @@ sub forecast {
 
         my $comb = linkTimeSerietoAggregateCombination ('cm'               => $cm,
                                                         'func'             => "sin(X)",
-                                                        'season'           => 10,
+                                                        'season'           => { X => 10 },
                                                         'precision'        => \%prec,
                                                         'time'             => $t,
                                                         'rows'             => 8000,
                                                         'service_provider' => $service_provider);
 
-        my $args = DataModelSelector->autoPredict( 'combination_id'        => $comb->id,
-                                                   'data_start'            => $t-8000,
-                                                   'data_end'              => $t,
-                                                   'predict_end_tstamps'   => $t+8500,
-                                                   'predict_start_tstamps' => $t+1,
-                                                   'model_list'            => MODEL_CLASSES
-                                                 );
 
-        if ($args->{data_model} ne 'Entity::DataModel::RDataModel::AutoArima') {
+        my $timeserie = $comb->evaluateTimeSerie(start_time => $t-8000+1,
+                                                 stop_time  => $t);
+
+
+        my $args = DataModelSelector->autoPredictData(timeserie             => $timeserie,
+                                                      predict_end_tstamps   => $t+8500,
+                                                      predict_start_tstamps => $t+1,
+                                                      model_list            => MODEL_CLASSES);
+
+        if ($args->{data_model} ne 'DataModel::RDataModel::AutoArima') {
             die 'Wrong data model got <' . $args->{data_model}
-                . '> expect <Entity::DataModel::RDataModel::AutoArima>';
+                . '> expect <DataModel::RDataModel::AutoArima>';
         }
 
         my $timestamps = $args->{'timestamps'};
@@ -772,16 +774,16 @@ sub forecast {
         my $file = $path_predict.'predict_season=10.csv';
         my $expected_values = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
 
-        if (($#$timestamps+1) == (scalar keys(%{$expected_values}))) {
+        if (($#$timestamps) == (scalar keys(%{$expected_values}))) {
             foreach my $i (0..$#$timestamps) {
                 if (abs($prediction->[$i] - $expected_values->{$timestamps->[$i]})> 10**(-5)) {
                     diag ($prediction->[$i]." != ". $expected_values->{$timestamps->[$i]});
-                    die 'Wrong prediction when season=10';
+                    die 'Wrong prediction when season=10 and i='.$i;
                 }
             }
         }
         else {
-            diag (($#$timestamps+1) .' != '. (scalar keys(%{$expected_values})));
+            diag (($#$timestamps) .' != '. (scalar keys(%{$expected_values})));
             die 'Wrong prediction when season=10';
         }
 
@@ -798,25 +800,25 @@ sub forecast {
 
         my $comb = linkTimeSerietoAggregateCombination ('cm'               => $cm,
                                                         'func'             => "sin(X)",
-                                                        'season'           => 53,
+                                                        'season'           => {X => 53},
                                                         'precision'        => \%prec,
                                                         'rows'             => 300,
                                                         'time'             => $t,
                                                         'service_provider' => $service_provider);
 
-        my $args = DataModelSelector->autoPredict( 'combination_id'             => $comb->id,
-                                                   'predict_start_tstamps'      => $t+1,
-                                                   'predict_end_tstamps'        => $t+320,
-                                                   'data_start'                 => $t-250,
-                                                   'data_end'                   => $t,
-                                                   'model_list'                 => MODEL_CLASSES
-                                                 );
+        my $timeserie = $comb->evaluateTimeSerie(start_time => $t-250,
+                                                 stop_time  => $t);
+
+        my $args = DataModelSelector->autoPredictData(timeserie => $timeserie,
+                                                      predict_start_tstamps => $t+1,
+                                                      predict_end_tstamps   => $t+320,
+                                                      model_list            => MODEL_CLASSES);
         my $timestamps = $args->{'timestamps'};
         my $prediction = $args->{'values'};
 
-        if ($args->{data_model} ne 'Entity::DataModel::RDataModel::AutoArima') {
+        if ($args->{data_model} ne 'DataModel::RDataModel::AutoArima') {
             die 'Wrong data model got <' . $args->{data_model}
-                . '> expect <Entity::DataModel::RDataModel::AutoArima>';
+                . '> expect <DataModel::RDataModel::AutoArima>';
         }
 
         my $file = $path_predict.'predict_season=53.csv';
@@ -851,23 +853,27 @@ sub forecast {
                                                         'rows'             => 5000,
                                                         'service_provider' => $service_provider);
 
-        my $args = DataModelSelector->autoPredict( 'combination_id'             => $comb->id,
-                                                   'predict_start_tstamps'      => $t+1,
-                                                   'predict_end_tstamps'        => $t+5500,
-                                                   'data_start'                 => $t-5000,
-                                                   'data_end'                   => $t,
-                                                   'model_list'                 => MODEL_CLASSES
-                                                 );
+        my $timeserie = $comb->evaluateTimeSerie(start_time => $t-5000,
+                                                 stop_time  => $t);
+
+        my $args = DataModelSelector->autoPredictData(timeserie => $timeserie,
+                                                      predict_start_tstamps => $t+1,
+                                                      predict_end_tstamps   => $t+5500,
+                                                      model_list            => MODEL_CLASSES);
+
         my $timestamps = $args->{'timestamps'};
         my $prediction = $args->{'values'};
 
-        if ($args->{data_model} ne 'Entity::DataModel::AnalyticRegression::LinearRegression') {
+        if ($args->{data_model} ne 'DataModel::AnalyticRegression::LinearRegression') {
             die 'Wrong data model got <' . $args->{data_model}
-                . '> expect <Entity::DataModel::AnalyticRegression::LinearRegression>';
+                . '> expect <DataModel::AnalyticRegression::LinearRegression>';
         }
 
         my $file = $path_predict.'predict_season_additive.csv';
-        my $expected_values = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV('file' => $file, 'sep' => ';');
+        my $expected_values = Kanopya::Tools::TimeSerie->getTimeserieDatafromCSV(
+                                  'file' => $file,
+                                  'sep' => ';'
+                              );
 
         if (($#$timestamps+1) == (scalar keys(%{$expected_values}))) {
             foreach my $i (0..$#$timestamps) {
@@ -900,13 +906,13 @@ sub forecast {
                                                         'time'             => $t,
                                                         'service_provider' => $service_provider);
 
-        my $args = DataModelSelector->autoPredict( 'combination_id'             => $comb->id,
-                                                   'predict_start_tstamps'      => $t+1,
-                                                   'predict_end_tstamps'        => $t+350,
-                                                   'data_start'                 => $t-300,
-                                                   'data_end'                   => $t,
-                                                   'model_list'                 => MODEL_CLASSES
-                                                 );
+        my $timeserie = $comb->evaluateTimeSerie(start_time => $t-300+1,
+                                                 stop_time  => $t);
+
+        my $args = DataModelSelector->autoPredictData(timeserie => $timeserie,
+                                                      predict_start_tstamps => $t,
+                                                      predict_end_tstamps   => $t+350,
+                                                      model_list            => MODEL_CLASSES);
 
         my $timestamps = $args->{'timestamps'};
         my $prediction = $args->{'values'};
@@ -944,20 +950,20 @@ sub forecast {
                                                         'time'             => $t,
                                                         'service_provider' => $service_provider);
 
-        my $args = DataModelSelector->autoPredict( 'combination_id'             => $comb->id,
-                                                   'predict_start_tstamps'      => $t+1,
-                                                   'predict_end_tstamps'        => $t+300,
-                                                   'data_start'                 => $t-250,
-                                                   'data_end'                   => $t,
-                                                   'model_list'                 => MODEL_CLASSES
-                                                 );
+        my $timeserie = $comb->evaluateTimeSerie(start_time => $t-250+1,
+                                                 stop_time  => $t);
+
+        my $args = DataModelSelector->autoPredictData(timeserie             => $timeserie,
+                                                      predict_start_tstamps => $t+1,
+                                                      predict_end_tstamps   => $t+300,
+                                                      model_list            => MODEL_CLASSES);
 
         my $timestamps = $args->{'timestamps'};
         my $prediction = $args->{'values'};
 
-        if ($args->{data_model} ne 'Entity::DataModel::RDataModel::AutoArima') {
+        if ($args->{data_model} ne 'DataModel::RDataModel::AutoArima') {
             die 'Wrong data model got <' . $args->{data_model}
-                . '> expect <Entity::DataModel::RDataModel::AutoArima>';
+                . '> expect <DataModel::RDataModel::AutoArima>';
         }
 
         my $file = $path_predict.'predict_downward_trend.csv';

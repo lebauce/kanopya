@@ -19,7 +19,7 @@ Log::Log4perl -> easy_init({
     layout => '%F %L %p %m%n'
 });
 
-use Entity::DataModel::RDataModel::ExpR;
+use DataModel::RDataModel::ExpR;
 
 main();
 
@@ -34,7 +34,7 @@ sub checkPredict {
 
         # Expected values (manually computed from R)
         my @expected_values = (5, 12, 13, 15, 13);
-        my $forecast = Entity::DataModel::RDataModel::ExpR->predict(
+        my $forecast = DataModel::RDataModel::ExpR->predict(
             data => \@data,
             freq     => 6,
             predict_end => 23,

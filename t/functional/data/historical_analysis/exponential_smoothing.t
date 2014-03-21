@@ -20,7 +20,7 @@ Log::Log4perl -> easy_init({
     layout => '%F %L %p %m%n'
 });
 
-use Entity::DataModel::RDataModel::ExponentialSmoothing;
+use DataModel::RDataModel::ExponentialSmoothing;
 
 main();
 
@@ -36,7 +36,7 @@ sub checkPredict {
 
         # Expected values (manually computed from R)
         my @expected_values = (5, 12, 13, 15, 13);
-        my $forecast = Entity::DataModel::RDataModel::ExponentialSmoothing->predict(
+        my $forecast = DataModel::RDataModel::ExponentialSmoothing->predict(
             data => \@data,
             freq     => 6,
             predict_end => 23,
@@ -62,7 +62,7 @@ sub checkExceptions {
             5 => 13,
             6 => 12,
         );
-        Entity::DataModel::RDataModel::ExponentialSmoothing->predict(
+        DataModel::RDataModel::ExponentialSmoothing->predict(
             data => \%data,
             freq     => 6,
             end_time => 8,
@@ -91,7 +91,7 @@ sub checkExceptions {
             17 => 13,
             18 => 12,
         );
-        Entity::DataModel::RDataModel::ExponentialSmoothing->predict(
+        DataModel::RDataModel::ExponentialSmoothing->predict(
             data => \%data,
             freq     => 6,
             end_time => 8,

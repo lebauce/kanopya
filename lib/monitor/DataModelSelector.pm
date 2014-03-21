@@ -26,13 +26,12 @@ DataModel for a given dataset (autoPredict).
 =cut
 
 package DataModelSelector;
-use base BaseDB;
 
 use warnings;
 use strict;
 
 use General;
-use Entity::DataModel;
+use DataModel;
 use Utils::TimeSerieAnalysis;
 
 use Log::Log4perl "get_logger";
@@ -41,7 +40,7 @@ my $log = get_logger("");
 use constant {
     DEFAULT_TRAINING_PERCENTAGE => 80,
     TIME_SERIES_MIN_LENGTH      => 20,
-    BASE_NAME                   => 'Entity::DataModel::',
+    BASE_NAME                   => 'DataModel::',
     MODEL_CLASSES               => [
        'AnalyticRegression::LinearRegression',
        'AnalyticRegression::LogarithmicRegression',
@@ -50,80 +49,72 @@ use constant {
 #       'RDataModel::StlForecast',
        'RDataModel::ExpR',
     ],
-    CHOICE_STRATEGY             => {
+    CHOICE_STRATEGY => {
         DEMOCRACY => 'DEMOCRACY',
         ME        => 'ME',
         MAE       => 'MAE',
         MSE       => 'MSE',
         RMSE      => 'RMSE',
     },
+    DATA_MODELS => {
+        LINEAR_REGRESSION => {
+            class_type => 'DataModel::AnalyticRegression::LinearRegression',
+            data_model_type_label => 'Linear Regression',
+            data_model_type_description =>
+                'Perform a prediction using a classic linear regression. ' .
+                'The model follows a line equation form: y = a*t + b ' .
+                '(t represents the time, a and b are computed parameters).',
+        },
+        LOGARITHMIC_REGRESSION => {
+            class_type => 'DataModel::AnalyticRegression::LogarithmicRegression',
+            data_model_type_label => 'Logarithmic Regression',
+            data_model_type_description =>
+                'Perform a prediction using a logarithmic regression. ' .
+                'The model is based on a equation with the following form: ' .
+                'a*log(t) + b (t represents the time, a and b are computed parameters).',
+        },
+        AUTO_ARIMA => {
+            class_type => 'DataModel::RDataModel::AutoArima',
+            data_model_type_label => 'Automatically fitted ARIMA model',
+            data_model_type_description =>
+                'Perform a prediction by fitting automaticallly an ARIMA model' .
+                '(Auto Regressive Integrated Moving Average). ' .
+                'ARIMA is a purely statistic model of a time series, ' .
+                'suited for performing complex forecasts. ' .
+                'This model is adapted for time series showing complex patterns, ' .
+                'including trends and seasonality, ' .
+                'but can be slow when applied to large data sets.',
+
+
+        },
+        EXPONENTIAL_SMOOTHING => {
+            class_type => 'DataModel::RDataModel::ExponentialSmoothing',
+            data_model_type_label => 'Exponential smoothing state space model',
+            data_model_type_description =>
+                'Perform a prediction fitting an Exponential Smoothing State Space model. ' .
+                'It is a statistic model which uses a similar approach as ARIMA models, ' .
+                'but which handles better noisy data. ' .
+                'Exponential smoothing is generally slower than ARIMA for small time series ' .
+                '( < ~5000 observations), but more suited for big data sets.',
+        },
+        STL_FORECAST => {
+            class_type => 'DataModel::RDataModel::StlForecast',
+            data_model_type_label => 'Seasonal forecast model',
+            data_model_type_description =>
+                'Perform a forecast fitting either an ARIMA or an Exponential Smoothing model ' .
+                'assuming that the data is highly seasonal. ' .
+                'This approach is particularly fast and adapted ' .
+                'when the model seem to show a complex seasonality.',
+        },
+    },
 };
 
-=pod
 
-=begin classdoc
-
-@param predict_start_tstamps The starting point wished for the prediction (in timestamps !).
-@param predict_end_tstamps The ending point wished for the prediction (in timestamps).
-
-@optional timeserie A reference to a hash containing the timestamps and the values of the time serie
-                    (timestamp => value).
-
-@optional data_start The start time if the data is directly loaded from a combination.
-@optional data_end The end time if the data it directly loaded from a combination.
-@optional model_list  : The list of the available models for the selection. By default all existing models are
-                        used.
-
-@return A reference to the forecast : Hash containing a reference to an
-        array of timestamps ('timestamps'), and a reference to an array of values ('values')
-        and the used data model 'data_model'.
-
-=end classdoc
-
-=cut
-
-sub autoPredict {
-    my ($class, %args) = @_;
-
-    General::checkParams(args     => \%args,
-                         required => ['predict_start_tstamps', 'predict_end_tstamps'],
-                         optional => {'timeserie'      => undef,
-                                      'combination_id' => undef,
-                                      'node_id'        => undef,
-                                      'data_start'     => undef,
-                                      'data_end'       => undef,
-                                      'model_list'     => MODEL_CLASSES,
-                         });
-
-    if (!defined($args{timeserie}) && !defined($args{combination_id})) {
-        throw Kanopya::Exception(error => 'SelectDataModel : A timeserie or a combination must be defined.');
-    }
-
-    $log->debug('autoPredict - Loading the data from the combination.');
-
-    # Extract the data
-    my $rawdata;
-
-    if (defined($args{timeserie})) {
-        $rawdata = $args{timeserie};
-    }
-    elsif (defined($args{combination_id}) && defined $args{data_start} && defined($args{data_end})) {
-        my $combination = Entity::Combination->get(id => $args{combination_id});
-        $rawdata = $combination->evaluateTimeSerie(start_time => $args{data_start},
-                                                   stop_time  => $args{data_end},
-                                                   node_id    => $args{node_id},);
-    }
-    else {
-        throw Kanopya::Exception(error => 'SelecDataModel : Cannot call autoPredict method without data ' .
-                                          'or without a combination_id with a data_start and a data_end}.');
-    }
-
-    return $class->autoPredictData(predict_start_tstamps => $args{predict_start_tstamps},
-                                   predict_end_tstamps   => $args{predict_end_tstamps},
-                                   model_list            => $args{model_list},
-                                   timeserie             => $rawdata);
+sub availableDataModels {
+    my $data_models = DATA_MODELS;
+    my @values = values %$data_models;
+    return \@values;
 }
-
 
 =pod
 =begin classdoc
@@ -167,13 +158,17 @@ sub autoPredictData {
     my $length = @{$extracted->{values_ref}};
     if ($length < TIME_SERIES_MIN_LENGTH) {
         my $min_length = TIME_SERIES_MIN_LENGTH;
-        throw Kanopya::Exception(error => 'SelectDataModel : I will not proceed an automatic forecast for ' .
-                                          "a time serie with a length < $min_length (actual length is " .
-                                          "$length), it is unsafe and unreliable ! ");
+        throw Kanopya::Exception::Internal::WrongValue(
+                  error => 'SelectDataModel : I will not proceed an automatic forecast for ' .
+                           "a time serie with a length < $min_length (actual length is " .
+                           "$length), it is unsafe and unreliable ! "
+              );
     }
 
     if (scalar(@{$extracted->{values_ref}}) <= 0 || scalar(@{$extracted->{timestamps_ref}}) <= 0) {
-        throw Kanopya::Exception(error => 'SelectDataModel : Empty dataset.');
+        throw Kanopya::Exception::Internal::WrongValue(
+                  error => 'SelectDataModel : Empty dataset.'
+              );
     }
 
     $log->debug("autoPredict - Selecting best model among @{$args{model_list}} .");
@@ -218,8 +213,6 @@ sub autoPredictData {
             push @n_timestamps, $i * $granularity->{granularity} + $extracted->{timestamps_ref}->[0];
         }
     }
-
-    $datamodel->delete();
 
     return {
         'timestamps' => \@n_timestamps,
@@ -334,9 +327,11 @@ sub selectDataModel {
 
     # If there was only exceptions, throw an exception !
     if (scalar(keys(%accuracy_hash)) == 0) {
-        throw Kanopya::Exception(error => 'All selected models were unable to proceed the forecast with ' .
-                                          'the selected data.please try to select more data or more ' .
-                                          'models. See logs for details.');
+        throw Kanopya::Exception::Internal(
+                  error => 'All selected models were unable to proceed the forecast with ' .
+                           'the selected data.please try to select more data or more ' .
+                           'models. See logs for details.'
+              );
     }
 
     # Choose the best DataModel among all
@@ -460,7 +455,9 @@ sub chooseBestDataModel {
         return $best_me_model;
     }
     else {
-        throw Kanopya::Exception(error => "DataModelSelector : Unknown DataModel choice strategy: $strategy");
+        throw Kanopya::Exception::Internal(
+                  error => "DataModelSelector : Unknown DataModel choice strategy: $strategy"
+              );
     }
 }
 
@@ -535,9 +532,6 @@ sub evaluateDataModelAccuracy {
     );
 
     my @forecast = @{$forecasted_ref};
-
-    # Delete the model
-    $model->delete();
 
     return Utils::TimeSerieAnalysis->accuracy(
         theorical_data_ref => \@forecast,

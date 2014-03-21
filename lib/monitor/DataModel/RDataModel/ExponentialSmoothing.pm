@@ -16,23 +16,20 @@
 
 =begin classdoc
 
-Data Model for performing a forecast using the auto.arima method implemented in R.
-
-@since 2013-Feb-27 
-@instance hash
-@self $self
+Data Model for performing a forecast using the "ets" (Exponential Smoothing State Space Model) algorithm from
+the R forecast package.
 
 =end classdoc
 
 =cut
 
-package Entity::DataModel::RDataModel::AutoArima;
+package DataModel::RDataModel::ExponentialSmoothing;
 
-use base 'Entity::DataModel::RDataModel';
+use base 'DataModel::RDataModel';
 
 use strict;
 use warnings;
-use Data::Dumper;
+
 use Kanopya::Exceptions;
 
 # logger
@@ -43,7 +40,7 @@ my $log = get_logger("");
 
 =begin classdoc
 
-Make a prediction calling the auto.arima method from the R forecast package.
+Make a prediction calling the ets method from the R forecast package.
 
 @param data A reference to an array containing the values of the time serie.
 @param freq The frequency (or seasonality) of the time serie.
@@ -74,20 +71,16 @@ sub predict {
     my $horizon     = $args{predict_end} - @{$args{data}} + 1;
 
 # 3- Forecast with R
-    my $R_forecast_ref = $self->_forecastFromR(timeserie_ref => \@timeserie,
-                                               freq          => $args{freq},
-                                               horizon       => $horizon,
-    );
-    my @forecasts = @{Utils::R->convertRForecast(R_forecast_ref => $R_forecast_ref,
-                                                 freq           => $args{freq}
-    )};
+    my $forecasts = $self->_forecastFromR(timeserie_ref => \@timeserie,
+                                          freq          => $args{freq},
+                                          horizon       => $horizon,);
 
-    return \@forecasts;
+    return $forecasts;
 }
 
 sub label {
     my $self = shift;
-    return 'Auto Arima ' . $self->time_label();
+    return 'Exponential Smoothing ' . $self->time_label();
 }
 
 sub isSeasonal {
@@ -98,7 +91,7 @@ sub isSeasonal {
 
 =begin classdoc
 
-Checks that the given parameters for computing the auto arima method are valid.
+Checks that the given parameters for computing the ets method are valid.
 
 @param timestamps_ref A reference to the timestamps of the time serie (array).
 @param timeserie_ref A reference to the values of the time serie (array).
@@ -117,13 +110,17 @@ sub _checkParams {
 
     # Check that at least two periods are present in the timeserie
     if (@{$args{timeserie_ref}}/$args{freq} < 2) {
-        throw Kanopya::Exception(error => 'AutoArima : bad parameters (there must be at least two periods ' .
-                                          'in the given data)');
+        throw Kanopya::Exception::Internal::IncorrectParam(
+                  error => 'Exponential Smoothing : bad parameters (there must be'
+                           . ' at least two periods in the given data)'
+              );
     }
 
     # Check that the given end time is strictly after the last available data from the given set
     if ($args{predict_end} <= $#{$args{timeserie_ref}}) {
-        throw Kanopya::Exception(error => 'AutoArima : bad parameters (trying to forecast the past...)');
+        throw Kanopya::Exception::Internal::IncorrectParam(
+                  error => 'Exponential Smoothing : bad parameters (trying to forecast the past...)'
+              );
     }
 }
 
@@ -131,7 +128,7 @@ sub _checkParams {
 
 =begin classdoc
 
-Initializes the R binding and the R objects, fits the Arima model with the automated algorithm from the
+Initializes the R binding and the R objects, fits the ets model with the automated algorithm from the
 forecast package.
 
 @param timeserie_ref A reference to the values of the time serie (array).
@@ -161,10 +158,10 @@ sub _forecastFromR {
     # Run R commands
     $R->run(q`library(forecast);`                                            # Load the forecast package
             . qq`time_serie <- ts(dataset, start=1, frequency=$freq);`       # Create the time serie
-            . qq`forecast <- forecast(auto.arima(time_serie), h=$hor);`);    # fit and forecast with arima
+            . qq`forecast <- forecast(ets(time_serie), h=$hor);`);           # fit and forecast with ets
 
     # Return the forecast computed by R
-    return $R->get('forecast');
+    return $R->get('as.numeric(forecast$mean)');
 }
 
 1;
