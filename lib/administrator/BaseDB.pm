@@ -1,4 +1,4 @@
-#    Copyright © 2012-2013 Hedera Technology SAS
+#    Copyright © 2012-2014 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -889,7 +889,10 @@ sub toJSON {
                 my $type = defined $definition->{type} ? $definition->{type} : '';
 
                 # Filter in function of options, keep the single relation ids only
-                my $on_demand = (! $definition->{on_demand} || grep { $_ eq $attr } @{ $args{expand} });
+                my $on_demand;
+                if (ref($args{expand}) eq "ARRAY") {
+                    $on_demand = (! $definition->{on_demand} || grep { $_ eq $attr } @{ $args{expand} });
+                }
                 if ((($args{virtuals} && $on_demand) || ! $definition->{is_virtual}) &&
                     ($args{primaries} || ! $definition->{is_primary}) &&
                     ($type ne 'relation' || $definition->{is_foreign_key})) {
