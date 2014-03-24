@@ -4,6 +4,7 @@
   - kanopya
 :hierarchy:
   - common
+  - "override/%{clientcert}"
   - "kanopya/%{clientcert}"
   - "%{cluster}/globals"
   - "%{cluster}/%{hostname}/%{clientcert}.override"
