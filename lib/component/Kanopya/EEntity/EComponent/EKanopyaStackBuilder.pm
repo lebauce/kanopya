@@ -81,10 +81,10 @@ sub buildStack {
     my $portal;
     my $portalip = $ip + 253;
     try {
-        $portal = IscsiPortal->find(hash => { iscsi_portal_ip => $portalip });
+        $portal = IscsiPortal->find(hash => { iscsi_portal_ip => $portalip->addr() });
     }
     catch ($err) {
-        $log->warn("Unable to find iscsi portal with ip " . $portalip);
+        $log->warn("Unable to find iscsi portal with ip " . $portalip->addr());
         $portal = IscsiPortal->find();
     }
 
