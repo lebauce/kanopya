@@ -78,7 +78,8 @@ use constant ATTR_DEF => {
         is_virtual   => 1
     },
     puppet_manifest => {
-        is_virtual   => 1
+        is_virtual   => 1,
+        on_demand    => 1
     },
     components => {
         label        => 'Components',

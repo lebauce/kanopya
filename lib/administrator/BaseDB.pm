@@ -1,4 +1,4 @@
-#    Copyright © 2012-2013 Hedera Technology SAS
+#    Copyright © 2012-2014 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -557,10 +557,16 @@ sub search {
         $args{hash}->{'class_type.class_type'} = $class;
     }
 
-    my $prefetch = $class->_joinHierarchy;
-    $prefetch = $merge->merge($prefetch, $args{join});
+    my $virtuals = {};
+    my $attrdefs = $class->_attributesDefinition;
+    my $prefetch = $merge->merge($class->_joinHierarchy, $args{join});
 
+    PREFETCH:
     for my $relation (@{ $args{prefetch} }) {
+        # If relation is virtual, no not try to prefetch
+        if ($attrdefs->{$relation}->{is_virtual}) {
+            next PREFETCH;
+        }
         my @comps = split(/\./, $relation);
         while (scalar @comps) {
             my $join_query = $class->_joinQuery(comps => \@comps, indepth => 1);
@@ -569,9 +575,6 @@ sub search {
             pop @comps;
         }
     }
-
-    my $virtuals = {};
-    my $attrdefs = $class->_attributesDefinition;
 
     FILTER:
     for my $filter (keys %{ $args{hash} }) {
@@ -886,7 +889,11 @@ sub toJSON {
                 my $type = defined $definition->{type} ? $definition->{type} : '';
 
                 # Filter in function of options, keep the single relation ids only
-                if (($args{virtuals} || ! $definition->{is_virtual}) &&
+                my $on_demand;
+                if (ref($args{expand}) eq "ARRAY") {
+                    $on_demand = (! $definition->{on_demand} || grep { $_ eq $attr } @{ $args{expand} });
+                }
+                if ((($args{virtuals} && $on_demand) || ! $definition->{is_virtual}) &&
                     ($args{primaries} || ! $definition->{is_primary}) &&
                     ($type ne 'relation' || $definition->{is_foreign_key})) {
                     # Set the value of the attribute

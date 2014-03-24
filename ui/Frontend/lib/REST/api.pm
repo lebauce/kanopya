@@ -260,6 +260,9 @@ sub getResources {
         $params{prefetch} = \@prefetch;
         delete $query{expand};
     }
+    elsif (not defined $params{prefetch}) {
+        $params{prefetch} = [];
+    }
 
     # Handle custom search options
     my @customs = grep { $_ =~ '^custom\.' } keys %query;
@@ -295,8 +298,7 @@ sub getResources {
         $result = $class->search(hash => \%query, %params);
     }
 
-    $rows = (defined ($params{dataType}) && $params{dataType} eq "hash") ?
-                $result->{rows} : $result;
+    $rows = (defined ($params{dataType}) && $params{dataType} eq "hash") ? $result->{rows} : $result;
     if (ref $rows eq "ARRAY") {
         for my $obj (@$rows) {
             push @$objs, $obj->toJSON(virtuals => 1,
@@ -313,7 +315,8 @@ sub getResources {
     if (defined ($params{dataType}) && $params{dataType} eq "hash") {
         $result->{rows} = $objs;
         return $result;
-    } else {
+    }
+    else {
         return $objs;
     }
 }
