@@ -38,6 +38,7 @@ use General;
 use EEntity;
 use Entity::Container::LocalContainer;
 
+use TryCatch;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 
@@ -97,22 +98,20 @@ sub deactivate {
 
     # Get instances of container accesses from systemimages root container
     $log->info("Remove all container accesses");
-    eval {
-        for my $container_access ($self->container_accesses) {
+    try {
+        for my $container_access (map { EEntity->new(data => $_) } $self->container_accesses) {
             my $export_manager = EEntity->new(data => $container_access->getExportManager);
-            $container_access  = EEntity->new(data => $container_access);
 
             $export_manager->removeExport(container_access => $container_access,
                                           erollback        => $args{erollback});
         }
-    };
-    if($@) {
-        throw Kanopya::Exception::Internal::WrongValue(error => $@);
+    }
+    catch ($err) {
+        throw Kanopya::Exception::Internal::WrongValue(error => $err);
     }
 
     # Set system image active in db
-    $self->setAttr(name => 'active', value => 0);
-    $self->save();
+    $self->active(0);
 
     $log->info("System image <" . $self->systemimage_name . "> is now unactive");
 }
@@ -134,22 +133,35 @@ sub remove {
 
     General::checkParams(args => \%args, required => [ "erollback" ]);
 
-    my $container = EEntity->new(data => $self->getContainer);
+    # Get the container before removing the container_access
+    my $container;
+    try {
+       $container = EEntity->new(data => $self->getContainer);
+    }
+    catch (Kanopya::Exception::Internal::NotFound $err) {
+        # No export found for this system image
+        # TODO: is a container for this system image still exists ?
+    }
+    catch ($err) {
+        $err->rethrow();
+    }
 
     if ($self->active) {
         $self->deactivate(erollback => $args{erollback});
     }
 
-    eval {
-        # Remove system image container.
-        $log->info("Systemimage container deletion");
+    if (defined $container) {
+        try {
+            # Remove system image container.
+            $log->info("Systemimage container deletion");
 
-        # Get the disk manager of the current container
-        my $disk_manager = EEntity->new(data => $container->getDiskManager);
-        $disk_manager->removeDisk(container => $container);
-    };
-    if($@) {
-        $log->info("Unable to remove container while removing cluster:\n" . $@);
+            # Get the disk manager of the current container
+            my $disk_manager = EEntity->new(data => $container->getDiskManager);
+            $disk_manager->removeDisk(container => $container);
+        }
+        catch ($err) {
+            $log->warn("Unable to remove container while removing system image:\n$err");
+        }
     }
 
     $self->delete();
