@@ -50,8 +50,8 @@ sub check {
     my ($self, %args) = @_;
 
     General::checkParams(args     => $self->{context},
-                         required => [ 'stack_builder', 'user', 'keystone', 'novacontroller', 'neutron',
-                                       'glance', 'novacompute', 'cinder' ]);
+                         required => [ 'stack_builder', 'user', 'iprange', 'keystone', 'novacontroller',
+                                       'neutron', 'glance', 'novacompute', 'cinder' ]);
 }
 
 
@@ -70,6 +70,7 @@ sub execute {
     # Call the method on the corresponding component
     $self->{context}->{stack_builder}->configureStack(
         user           => $self->{context}->{user},
+        iprange        => $self->{context}->{iprange},
         keystone       => $self->{context}->{keystone},
         novacontroller => $self->{context}->{novacontroller},
         neutron        => $self->{context}->{neutron},
