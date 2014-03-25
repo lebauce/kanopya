@@ -344,7 +344,7 @@ sub configureStack {
     my ($result, $command);
 
     General::checkParams(args     => \%args,
-                         required => [ 'user', 'keystone', 'novacontroller',
+                         required => [ 'user', 'iprange', 'keystone', 'novacontroller',
                                        'neutron', 'glance', 'novacompute', 'cinder' ]);
 
     try {
@@ -453,6 +453,42 @@ sub configureStack {
         }
 
         $args{glance}->getEContext->execute(command => 'rm -rf /tmp/glance');
+
+        # Firewall post-configuration
+        my $fw_login = 'api';
+        my $fw_password = 'mdp';
+        my $fw_url = 'https://10.100.1.254';
+        my $tmp = `tempfile`;
+
+        # Firewall login
+        my $curl = "curl -kb $tmp $fw_url/index.php";
+        my $html =  `$curl`;
+        $html =~ m/csrfMagicToken ?= ?"([a-zA-Z0-9,:;]*)".*/;
+        my $csrf = $1;
+        # Send login details... No simple way for success verification.
+        $curl = 'curl -kb ' . $tmp . ' --data "usernamefld=' . $fw_login . 
+                '&passwordfld=' . $fw_password . '&login=Login&__csrf_magic=' . 
+                $csrf.'" ' . $fw_url . '/index.php';
+        $html = `$curl`;
+
+        if ($? != 0) {
+            throw Kanopya::Exception::Execution::Command(
+                      error => 'Failed to login on firewall with curl'
+                  );
+        }
+
+        # And configure firewall via "API"
+        $curl = 'curl -kb ' . $tmp . ' --data "user=' . $args{user}->user_login .
+                '&subnet_adm=' . $neutron_net . '&subnet_vm=' . $args{iprange} . '" ' . 
+                $fw_url . '/pms_create_route.php';
+        $html = `$curl`;
+        
+        if ($? != 0) {
+            throw Kanopya::Exception::Execution::Command(
+                      error => 'Failed to call firewall API with curl'
+                  );
+        }
+
     }
     catch ($err) {
         throw Kanopya::Exception::Execution::OperationInterrupted(
