@@ -152,10 +152,15 @@ sub terminate {
 
     General::checkParams(args     => \%args,
                          required => [ 'operation_id', 'status' ],
-                         optional => { 'exception' => undef });
+                         optional => { 'exception' => undef, 'time' => undef });
 
     # Publish on the 'operation_result' queue
-    MessageQueuing::RabbitMQ::Sender::terminate($self, %args);
+    MessageQueuing::RabbitMQ::Sender::terminate($self,
+                                                operation_id => $args{operation_id},
+                                                status       => $args{status},
+                                                exception    => $args{exception},
+                                                time         => $args{time},
+                                                %{ Kanopya::Database::_adm->{config}->{amqp} });
 }
 
 

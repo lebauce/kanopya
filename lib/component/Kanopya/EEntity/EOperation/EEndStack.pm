@@ -65,7 +65,6 @@ Stop all services started for a stack
 
 sub execute {
     my ($self, %args) = @_;
-    $self->SUPER::execute(%args);
 
     # Call the method on the corresponding component
     $self->{context}->{stack_builder}->endStack(

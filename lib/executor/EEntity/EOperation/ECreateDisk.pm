@@ -33,7 +33,6 @@ my $errmsg;
 
 sub check {
     my ($self, %args) = @_;
-    $self->SUPER::check(%args);
 
     General::checkParams(args => $self->{context}, required => [ "disk_manager" ]);
 
@@ -42,7 +41,6 @@ sub check {
 
 sub execute {
     my ($self, %args) = @_;
-    $self->SUPER::execute(%args);
 
     # Check service provider state
     my $storage_provider = $self->{context}->{disk_manager}->service_provider;

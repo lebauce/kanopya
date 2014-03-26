@@ -35,7 +35,6 @@ my $errmsg;
 
 sub check {
     my ($self, %args) = @_;
-    $self->SUPER::check(%args);
 
     General::checkParams(args => $self->{context}, required => [ "host", "cloudmanager_comp"]);
 
@@ -44,7 +43,6 @@ sub check {
 
 sub execute {
     my ($self, %args) = @_;
-    $self->SUPER::execute(%args);
 
     # Verify if there is enough resource in HV
     my $vm_id = $self->{context}->{host}->id;
@@ -94,7 +92,6 @@ sub execute {
 
 sub finish {
     my ($self, %args) = @_;
-    $self->SUPER::finish(%args);
 
     # Delete all but cloudmanager
     delete $self->{context}->{host};
@@ -146,7 +143,6 @@ sub postrequisites {
 
 sub cancel {
     my ($self, %args) = @_;
-    $self->SUPER::cancel(%args);
 
     $self->{context}->{host}->updateMemory(memory => $self->{context}->{host}->getTotalMemory);
 

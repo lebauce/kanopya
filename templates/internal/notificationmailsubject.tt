@@ -1,1 +1,1 @@
-[Kanopya] An operation has been executed: [% operation %]
+[Kanopya] Operation "[% operation %]" [% operation_state %].

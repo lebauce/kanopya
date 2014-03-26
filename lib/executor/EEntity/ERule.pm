@@ -1,4 +1,4 @@
-#    Copyright © 2012 Hedera Technology SAS
+#    Copyright © 2014 Hedera Technology SAS
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
 #    published by the Free Software Foundation, either version 3 of the
@@ -23,7 +23,8 @@ ERule - Abstract class of Rule object
 =cut
 
 package EEntity::ERule;
-use base "EEntity";
+use base EEntity;
+
 use strict;
 use warnings;
 
@@ -44,24 +45,28 @@ sub notificationMessage {
     my $self    = shift;
     my %args    = @_;
 
-    General::checkParams(
-        args        => \%args,
-        required    => [ 'operation' ]
-    );
+    General::checkParams(args => \%args, required => [ 'operation', 'state', 'subscriber' ]);
+
+    my $template = Template->new(General::getTemplateConfiguration());
+    my $templatedata = {
+        rule      => $self->formula_label,
+        service   => $self->service_provider->label
+        operation => $args{operation}->label
+    };
 
     my $message = '';
-
-    my $template        = Template->new(General::getTemplateConfiguration());
-    my $templatedata    = {
-        rule    => $self->formula_label,
-        service => $self->service_provider->label
-    };
     $template->process('rulenotificationmail.tt', $templatedata, \$message)
         or throw Kanopya::Exception::Internal(
              error => "Error when processing template rulenotificationmail.tt"
          );
 
-    return $message;
+    my $subject = "";
+    $template->process('notificationmailsubject.tt', $templatedata, \$subject)
+        or throw Kanopya::Exception::Internal(
+             error => "Error when processing template notificationmailsubject.tt"
+         );
+
+    return ($subject, $message);
 }
 
 1;

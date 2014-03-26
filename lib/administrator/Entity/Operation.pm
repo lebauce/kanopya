@@ -37,14 +37,30 @@ use Entity::Workflow;
 use Operationtype;
 use ParamPreset;
 use OldOperation;
-use Hash::Merge;
 
+use Hash::Merge;
+use TryCatch;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
-use TryCatch;
-my $err;
+
+use constant OPERATION_STATES => (
+    'ready',
+    'processing',
+    'prereported',
+    'postreported',
+    'waiting_validation',
+    'validated',
+    'blocked',
+    'failed',
+    'cancelled',
+    'succeeded',
+    'pending',
+    'statereported',
+    'interrupted'
+);
+
 
 use constant ATTR_DEF => {
     operationtype_id => {
@@ -52,8 +68,7 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
     },
     state => {
-        pattern      => '^ready|processing|prereported|postreported|waiting_validation|validated' .
-                        '|blocked|failed|cancelled|succeeded|pending|statereported|interrupted$',
+        pattern      => '^' . join('|', Entity::Operation::OPERATION_STATES) . '$',
         default      => 'pending',
         is_mandatory => 0,
     },
@@ -579,15 +594,6 @@ sub getNextRank {
     my $last_in_db = $operation->execution_rank;
     $log->debug("Previous operation in queue is $last_in_db");
     return $last_in_db + 1;
-}
-
-sub setState {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'state' ]);
-
-    $self->setAttr(name => 'state', value => $args{state}, save => 1);
 }
 
 1;

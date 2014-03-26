@@ -58,4 +58,11 @@ Kanopya::Schema::Result::Entity->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+Kanopya::Schema::Result::Entity->has_many(
+  "notification_subscriptions",
+  "Kanopya::Schema::Result::NotificationSubscription",
+  { "foreign.entity_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 1;

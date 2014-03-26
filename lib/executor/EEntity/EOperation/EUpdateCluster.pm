@@ -30,7 +30,6 @@ my $errmsg;
 
 sub execute {
     my ($self, %args) = @_;
-    $self->SUPER::execute();
 
     # check if this cluster has a puppet agent component
     my $puppetagent;
@@ -56,8 +55,6 @@ sub execute {
 sub postrequisites {
     my ($self, %args) = @_;
     my $delay = 10;
-
-    $self->SUPER::postrequisites();
 
     my @hosts;
     if ($self->{context}->{host}) {

@@ -61,17 +61,12 @@ my $errmsg;
 
 sub check {
     my ($self, %args) = @_;
-    $self->SUPER::check(%args);
 
     General::checkParams(args => $self->{context}, required => [ "cluster", "host", "systemimage" ]);
 
     General::checkParams(args => $self->{params}, required => [ "node_number" ]);
 }
 
-sub prepare {
-    my ($self, %args) = @_;
-    $self->SUPER::prepare(%args);
-}
 
 =pod
 =begin classdoc
@@ -83,7 +78,6 @@ Register the node.
 
 sub execute {
     my ($self, %args) = @_;
-    $self->SUPER::execute();
 
     my @components = $self->{context}->{cluster}->getComponents(category => "all",
                                                                 order_by => "priority");
@@ -453,7 +447,6 @@ Update the node state.
 
 sub finish {
     my ($self, %args) = @_;
-    $self->SUPER::finish(%args);
 
     $self->{context}->{host}->setNodeState(state => "pregoingin");
 }
@@ -469,7 +462,6 @@ Unregister the node.
 
 sub cancel {
     my ($self, %args) = @_;
-    $self->SUPER::cancel(%args);
 
     if (defined $self->{context}->{host}->node) {
         my $dir = $self->_executor->getConf->{clusters_directory};

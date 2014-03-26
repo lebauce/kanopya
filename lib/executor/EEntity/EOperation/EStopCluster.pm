@@ -48,7 +48,6 @@ my $errmsg;
 
 sub check {
     my ($self, %args)  = @_;
-    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "cluster" ]);
 }
@@ -64,7 +63,6 @@ Check if the cluster is stable.
 
 sub prepare {
     my ($self, %args) = @_;
-    $self->SUPER::prepare(%args);
 
     # Check the cluster state
     my ($state, $timestamp) = $self->{context}->{cluster}->reload->getState;
@@ -88,7 +86,6 @@ Fail if the cluster has no nodes.
 
 sub execute {
     my ($self, %args)  = @_;
-    $self->SUPER::execute();
 
     my @nodes = $self->{context}->{cluster}->nodes;
     if (not scalar(@nodes)) {
@@ -153,7 +150,6 @@ Set the cluster as stopping
 
 sub finish {
     my ($self, %args)  = @_;
-    $self->SUPER::finish();
 
     $self->{context}->{cluster}->setState(state => 'stopping');
 }

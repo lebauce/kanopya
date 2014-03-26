@@ -35,7 +35,6 @@ my $errmsg;
 sub check {
     my $self = shift;
     my %args = @_;
-    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "export_manager", "container" ]);
 
@@ -45,7 +44,6 @@ sub check {
 
 sub execute {
     my $self = shift;
-    $self->SUPER::execute();
 
     # Check state of the storage_provider
     my $storage_provider = $self->{context}->{export_manager}->service_provider;

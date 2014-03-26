@@ -34,7 +34,6 @@ my $errmsg;
 sub check {
     my $self = shift;
     my %args = @_;
-    $self->SUPER::check();
 
     General::checkParams(args => $self->{params}, required => [ 'scalein_value', 'scalein_type' ]);
     General::checkParams(args => $self->{context}, required => [ 'host', 'cloudmanager_comp' ]);
@@ -44,7 +43,6 @@ sub check {
 
 sub prepare {
     my ($self, %args) = @_;
-    $self->SUPER::prepare();
 
     # Check host manager sp states
     my @entity_states =  $self->{context}->{host_manager_sp}->entity_states;
@@ -61,7 +59,6 @@ sub prepare {
 
 sub execute{
     my $self = shift;
-    $self->SUPER::execute();
 
     my $scalein_value = $self->{params}->{scalein_value};
     my $scalein_type  = $self->{params}->{scalein_type};

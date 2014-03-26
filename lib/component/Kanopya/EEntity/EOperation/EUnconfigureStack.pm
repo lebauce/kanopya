@@ -65,7 +65,6 @@ Disable accesses given to the user at configure stack step.
 
 sub execute {
     my ($self, %args) = @_;
-    $self->SUPER::execute(%args);
 
     # Call the method on the corresponding component
     $self->{context}->{stack_builder}->unconfigureStack(

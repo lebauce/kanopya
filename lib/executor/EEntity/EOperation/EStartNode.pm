@@ -106,7 +106,6 @@ the boot configuration, and start the node.
 
 sub execute {
     my ($self, %args) = @_;
-    $self->SUPER::execute(%args);
 
     # Apply puppet configuration
     my $kanopya = EEntity->new(entity => Entity::ServiceProvider::Cluster->getKanopyaCluster);
@@ -133,7 +132,6 @@ Update the node state.
 
 sub finish {
     my ($self, %args) = @_;
-    $self->SUPER::finish(%args);
 
     $self->{context}->{host}->setNodeState(state => "goingin");
 

@@ -67,6 +67,13 @@ __PACKAGE__->table("notification_subscription");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 operation_state
+
+  data_type: 'char'
+  default_value: 'processing'
+  is_nullable: 0
+  size: 32
+
 =head2 service_provider_id
 
   data_type: 'integer'
@@ -112,6 +119,13 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 0,
   },
+  "operation_state",
+  {
+    data_type => "char",
+    default_value => "processing",
+    is_nullable => 0,
+    size => 32,
+  },
   "service_provider_id",
   {
     data_type => "integer",
@@ -152,13 +166,20 @@ __PACKAGE__->set_primary_key("notification_subscription_id");
 
 =item * L</operationtype_id>
 
+=item * L</operation_state>
+
 =back
 
 =cut
 
 __PACKAGE__->add_unique_constraint(
   "subscriber_id",
-  ["subscriber_id", "entity_id", "operationtype_id"],
+  [
+    "subscriber_id",
+    "entity_id",
+    "operationtype_id",
+    "operation_state",
+  ],
 );
 
 =head1 RELATIONS
@@ -224,8 +245,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:bO7Mv1HeRmNeQ/v37A5AQg
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-24 16:31:04
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:8jGnr9LwF10RcL4CVTpGPg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

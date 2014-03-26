@@ -1,4 +1,4 @@
-# Copyright © 2012-2013 Hedera Technology SAS
+# Copyright © 2012-2014 Hedera Technology SAS
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -16,16 +16,17 @@
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
 package NotificationSubscription;
-use base 'BaseDB';
+use base BaseDB;
 
 use strict;
 use warnings;
  
+use Entity::Operation;
+
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
 my $log = get_logger("");
-my $errmsg;
 
 use constant ATTR_DEF => {
     subscriber_id => {
@@ -39,6 +40,10 @@ use constant ATTR_DEF => {
     },
     operationtype_id => {
         pattern      => '^\d*$',
+        is_mandatory => 1,
+    },
+    operation_state => {
+        pattern      => '^' . join('|', Entity::Operation::OPERATION_STATES) . '$',
         is_mandatory => 1,
     },
     service_provider_id => {

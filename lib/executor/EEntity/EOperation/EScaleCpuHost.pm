@@ -36,7 +36,6 @@ my $errmsg;
 
 sub check {
     my ($self, %args) = @_;
-    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "host", "cloudmanager_comp" ]);
 
@@ -45,7 +44,6 @@ sub check {
 
 sub execute {
     my ($self, %args) = @_;
-    $self->SUPER::execute(%args);
 
     # Verify if there is enough resource in HV
     my $vm_id = $self->{context}->{host}->id;
@@ -87,7 +85,6 @@ sub execute {
 
 sub finish {
     my ($self, %args) = @_;
-    $self->SUPER::finish(%args);
 
     # Delete all but cloudmanager
     # Do not delete host (need in Resubmit workflow)
@@ -138,7 +135,6 @@ sub postrequisites {
 
 sub cancel {
     my ($self, %args) = @_;
-    $self->SUPER::cancel(%args);
 
     $self->{context}->{host}->updateCPU(cpu_number => $self->{context}->{host}->getTotalCpu);
 

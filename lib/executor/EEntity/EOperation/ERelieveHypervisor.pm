@@ -36,7 +36,6 @@ sub check {
 
 sub execute {
     my $self = shift;
-    $self->SUPER::execute();
 
     if (not $self->{context}->{host}->isa('EEntity::EHost::EHypervisor')) {
         my $error = 'Operation can only be applied to an hypervisor';

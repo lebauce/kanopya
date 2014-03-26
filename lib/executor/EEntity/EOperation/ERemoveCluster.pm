@@ -34,7 +34,6 @@ my $errmsg;
 sub check {
     my $self = shift;
     my %args = @_;
-    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "cluster" ]);
 
@@ -43,7 +42,6 @@ sub check {
 
 sub execute {
     my $self = shift;
-    $self->SUPER::execute();
 
     $self->{context}->{cluster}->remove(keep_systemimages => $self->{params}->{keep_systemimages},
                                         erollback         => $self->{erollback});
