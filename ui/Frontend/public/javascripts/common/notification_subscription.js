@@ -51,7 +51,11 @@ function loadSubscriptionModal (container_id, elem_id, operationtype, mustValida
             { name: 'subscriber_id', index: 'subscriber_id', formatter: userOrGroupFormatter },
             { name: 'validation', index: 'validation', width: 90, formatter: booleanFormatter },
         ],
-        action_delete: {callback: function(subscrition_id) {$.post('/api/entity/'+elem_id+'/unsubscribe', {notification_subscription_id: subscrition_id} ) }},
+        action_delete: {
+            callback: function(subscrition_id) {
+                $.post('/api/entity/' + elem_id + '/unsubscribe', { notification_subscription_id: subscrition_id } )
+            }
+        }
   } );
 
     grid.bind('reloadGrid', function () {
