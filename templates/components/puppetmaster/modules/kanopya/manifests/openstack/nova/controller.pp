@@ -1,5 +1,4 @@
 class kanopya::openstack::nova::controller(
-  $admin_password     = 'nova',
   $email              = 'nothing@nothing.com',
   $keystone_user      = 'nova',
   $keystone_password  = 'nova',
@@ -132,7 +131,8 @@ class kanopya::openstack::nova::controller(
 
   class { 'nova::api':
     enabled          => true,
-    admin_password   => "${admin_password}",
+    admin_user       => "${keystone_user}",
+    admin_password   => "${keystone_password}",
     auth_host        => $keystone_ip,
     api_bind_address => $components[novacontroller][listen][compute_api][ip],
     metadata_listen  => $components[novacontroller][listen][metadata_api][ip],
