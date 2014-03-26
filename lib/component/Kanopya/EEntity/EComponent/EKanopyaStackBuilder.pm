@@ -30,6 +30,7 @@ use strict;
 use warnings;
 
 use TryCatch;
+use Switch;
 use Clone qw(clone);
 use NetAddr::IP;
 
@@ -605,6 +606,9 @@ sub endStack {
     else {
         $log->info("All services of the stack $args{stack_id} has been stopped properly.");
     }
+
+    # Remove prevuoisly subscribed owner notifications
+    $self->unsubscribeOwnerNotifications(owner_id => $args{user}->id);
 }
 
 
@@ -612,6 +616,9 @@ sub cancelBuildStack {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'user' ]);
+
+    # Remove prevuoisly subscribed owner notifications
+    $self->unsubscribeOwnerNotifications(owner_id => $args{user}->id);
 
     # Retrieve the clusters of the current stack
     my @clusters = Entity::ServiceProvider::Cluster->search(hash => {
@@ -670,6 +677,86 @@ sub cancelStartStack {
     catch ($err) {
         throw Kanopya::Exception(error => "$err");
     }
+}
+
+
+=pod
+=begin classdoc
+
+Build a notification message with a given Operation
+
+@param operation the operation that is executing
+@state the state of the operation
+
+@return notification message
+
+=end classdoc
+=cut
+
+sub notificationMessage {
+    my $self    = shift;
+    my %args    = @_;
+
+    General::checkParams(args => \%args, required => [ 'operation', 'state', 'subscriber' ]);
+
+    my $templatefile;
+    my $template = Template->new($self->getTemplateConfiguration());
+    my $templatedata = { operation => $args{operation},
+                         user      => $args{operation}->{context}->{user} };
+
+    # Customer notfication
+    if ($args{subscriber}->isa('Entity::User::Customer')) {
+        if (! ($args{operation}->isa('EEntity::EOperation::EConfigureStack') && $args{state} eq "succeeded")) {
+            return $self->SUPER::notificationMessage(%args);
+        }
+
+        $templatefile = "stack-builder-owner-notification-mail";
+    }
+    # Support notfication
+    else {
+        if (($args{operation}->isa('EEntity::EOperation::EBuildStack')) &&
+            ($args{state} =~ m/processing|cancelled/ )) {
+            $templatedata->{state} = $args{state} eq "processing" ? "starting" : "failed";
+        }
+        elsif ($args{operation}->isa('EEntity::EOperation::EConfigureStack') &&
+               ($args{state} =~ m/succeeded|interrupted/ )) {
+            $templatedata->{state} = $args{state} eq "succeeded" ? "started" : "interrupted";
+        }
+        elsif ($args{operation}->isa('EEntity::EOperation::EStopStack') &&
+               $args{state} eq "processing") {
+            $templatedata->{state} = "stopping";
+        }
+        elsif ($args{operation}->isa('EEntity::EOperation::EEndStack') &&
+               $args{state} eq "succeeded") {
+            $templatedata->{state} = "stopped";
+        }
+        elsif ($args{operation}->isa('EEntity::EOperation::EUnconfigureStack') &&
+               $args{state} eq "cancelled") {
+            $templatedata->{state} = "failed";
+        }
+        else {
+            return $self->SUPER::notificationMessage(%args);
+        }
+
+        $templatedata->{stack_id} = $args{operation}->{params}->{stack_id};
+        $templatefile = "stack-builder-support-notification-mail";
+    }
+
+    $templatefile = $self->getTemplateDirectory . "/" . $templatefile;
+
+    my $message = "";
+    $template->process($templatefile . '.tt', $templatedata, \$message)
+        or throw Kanopya::Exception::Internal(
+             error => "Error when processing template " . $templatefile . ".tt"
+         );
+
+    my $subject = "";
+    $template->process($templatefile . '-subject.tt', $templatedata, \$subject)
+        or throw Kanopya::Exception::Internal(
+             error => "Error when processing template " . $templatefile . "subject.tt"
+         );
+
+    return ($subject, $message);
 }
 
 

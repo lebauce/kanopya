@@ -1,0 +1,3 @@
+The stack [% stack_id %] of customer [% user.user_login %] ([% user.user_email %]) is [% state %].
+
+Kanopya execution system.
