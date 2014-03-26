@@ -73,7 +73,7 @@ sub buildStack {
     }
 
     # Deduce the network to use from iprange
-    my $ip = NetAddr::IP->new(delete $args{iprange});
+    my $ip = NetAddr::IP->new($args{iprange});
     my $network = Entity::Network->find(hash => { network_addr => $ip->addr, network_netmask => $ip-> mask});
     my $poolip = ($network->poolips)[0];
 
