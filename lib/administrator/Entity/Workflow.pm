@@ -79,9 +79,7 @@ sub methods {
     };
 }
 
-
-my $template = Template->new();
-my $merge    = Hash::Merge->new('RIGHT_PRECEDENT');
+my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
 
 
 =pod
@@ -585,6 +583,8 @@ sub formatLabel {
     my %args = @_;
 
     General::checkParams(args => \%args, required => [ 'params', 'description' ]);
+
+    my $template = Template->new(General::getTemplateConfiguration());
 
     # Build the workflow description from desc template and params
     my $allparams = clone($args{params}->{params});
