@@ -4,7 +4,9 @@ class kanopya::openstack::nova::compute(
   $bridge_uplinks     = 'eth1',
   $rabbit_user        = 'nova',
   $rabbit_password    = 'nova',
-  $rabbit_virtualhost = '/'
+  $rabbit_virtualhost = '/',
+  $neutron_admin_password = 'neutron',
+  $neutron_shared_secret = 'mysecret'
 ) {
   tag("kanopya::novacompute")
 
@@ -87,8 +89,8 @@ class kanopya::openstack::nova::compute(
       }
       
       class { 'neutron::agents::metadata':
-        auth_password => 'neutron',
-        shared_secret => 'mysecret',
+        auth_password => $neutron_admin_password,
+        shared_secret => $neutron_shared_secret,
         metadata_ip   => "${keystone_ip}",
         auth_url      => "http://${keystone_ip}:35357/v2.0/",
         

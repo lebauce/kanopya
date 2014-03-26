@@ -3,6 +3,7 @@ class kanopya::openstack::nova::common(
   $email              = 'nothing@nothing.com',
   $glance             = '127.0.0.1',
   $neutron            = undef,
+  $neutron_admin_password = 'neutron',	
   $sql_connection     = false,
   $rabbits            = [ '127.0.0.1' ],
   $rabbit_user        = 'nova',
@@ -23,7 +24,7 @@ class kanopya::openstack::nova::common(
 
   if ($neutron) {
     class { 'nova::network::neutron':
-      neutron_admin_password    => "neutron",
+      neutron_admin_password    => $neutron_admin_password,
       neutron_auth_strategy     => 'keystone',
       neutron_url               => "http://${neutron}:9696",
       neutron_admin_tenant_name => 'services',
