@@ -39,41 +39,56 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 my $errmsg;
 
+
+
 sub startHost {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ "host" ]);
 
-    my $command;  
+    my $command = '';
+    my $additional_command = '';
 
-    if (scalar($args{host}->ipmi_credentials > 0)) {
+    if (scalar($args{host}->ipmi_credentials) > 0) {
         
         $log->info('Start physical host with IPMI');
 
-        my $ipmicreds = ($args{host}->ipmi_credentials)[0];
-        my $ipmitool = '/usr/bin/ipmitool';
-        
-        if (not -e $ipmitool) {
-            $errmsg = 'EOperation::EStartNode->startNode : command \'ipmitool\' not found';
-            throw Kanopya::Exception::Execution(error => $errmsg);
+        my $ip = ($args{host}->ipmi_credentials)[0]->ipmi_credentials_ip_addr;
+        my $login = ($args{host}->ipmi_credentials)[0]->ipmi_credentials_user;
+        my $pass = ($args{host}->ipmi_credentials)[0]->ipmi_credentials_password;
+
+        TOOLS:
+        foreach ($self->_getIPMITools(ip => $ip, login => $login, pass => $pass)) {
+            my $ipmitool = $_;
+            my $ipmiclient = $self->_host->getEContext->which(command => $ipmitool->{bin});
+            $log->info('Start physical host using ' . $ipmiclient);
+            if ($ipmiclient ne "") {
+
+                my $test_command = $ipmiclient . $ipmitool->{test_command};
+
+                my $powerstatus = $self->_host->getEContext->execute(command => $test_command)->{stdout};
+
+                if ($powerstatus =~/on/ ) {
+                    my $errmsg = 'Physical host is already powered on (Host MAC is ' . 
+                                 $args{host}->getPXEIface->iface_mac_addr . ', Host IPMI card is ' . $ip . ' )';
+                    throw Kanopya::Exception::Execution::InvalidState(error => $errmsg);
+                }
+
+                $command = $ipmiclient . $ipmitool->{power_on_command};
+
+                if (exists $ipmitool->{additional_bin}) {
+                    my $additional_bin =  $self->_host->getEContext->which(command => $ipmitool->{additional_bin});
+                    $additional_command = $additional_bin . $ipmitool->{args_additional};
+                }
+
+                last TOOLS;
+            }
         }
 
-        $command = $ipmitool . ' -H ' . $ipmicreds->ipmi_credentials_ip_addr . ' -U ' .
-                   $ipmicreds->ipmi_credentials_user . ' -P '. $ipmicreds->ipmi_credentials_password .
-                   ' chassis power status';
-        my $powerstatus = $self->_host->getEContext->execute(command => $command);
-
-        if ($powerstatus->{stdout} =~/on/ ) {
-            my $errmsg = 'Physical host is already powered on (Host MAC is ' . $args{host}->getPXEIface->iface_mac_addr .
-                         ', Host IPMI card is ' . $ipmicreds->ipmi_credentials_ip_addr . ' )';
-            throw Kanopya::Exception::Execution::InvalidState(error => $errmsg);
+        if ($command eq "") {
+            throw Kanopya::Exception::Execution(error => 'no IPMI client found');
         }
-
-        $command = $ipmitool . ' -H ' . $ipmicreds->ipmi_credentials_ip_addr .
-                   ' -U ' . $ipmicreds->ipmi_credentials_user . ' -P ' .
-                   $ipmicreds->ipmi_credentials_password . ' chassis power on';
-    }
-    else {
+    } else {
         $log->info('Start physical host with Wake On Lan');
         
         my $wol = '/usr/sbin/etherwake';
@@ -92,8 +107,12 @@ sub startHost {
 
         $command = $wol . " " . $args{host}->getPXEIface->iface_mac_addr; 
     }
-    
-    my $result = $self->_host->getEContext->execute(command => $command);
+
+    $self->_host->getEContext->execute(command => $command);
+
+    if ($additional_command ne '') {
+        $self->_host->getEContext->execute(command => $additional_command);
+    } 
 
     my $current_state = $args{host}->getState();
 
@@ -114,21 +133,39 @@ sub stopHost {
 
     General::checkParams(args => \%args, required => [ "host" ]);
 
+    my $command = '';
+    my $additional_command = '';
+
     # Implemented only with IPMI
-    if (scalar($args{host}->ipmi_credentials > 0)) {
+    if (scalar($args{host}->ipmi_credentials) > 0) {
         $log->info('Stop physical host with IPMI');
 
-        my $ipmicreds = ($args{host}->ipmi_credentials)[0];
-        my $ipmitool = '/usr/bin/ipmitool';
-        if (not -e $ipmitool) {
-            $errmsg = 'EOperation::EStopNode->stopNode : command \'ipmitool\' not found';
-            throw Kanopya::Exception::Execution(error => $errmsg);
+        my $ip = ($args{host}->ipmi_credentials)[0]->ipmi_credentials_ip_addr;
+        my $login = ($args{host}->ipmi_credentials)[0]->ipmi_credentials_user;
+        my $pass = ($args{host}->ipmi_credentials)[0]->ipmi_credentials_password;
+
+        TOOLS:
+        foreach ($self->_getIPMITools(ip => $ip, login => $login, pass => $pass)) {
+            my $ipmitool = $_;
+            my $ipmiclient = $self->_host->getEContext->which(command => $ipmitool->{bin});
+            $log->info('Stopping physical host using ' . $ipmiclient);
+            if ($ipmiclient ne "") {
+                $command = $ipmiclient . $ipmitool->{power_off_command};
+                if (exists $ipmitool->{additional_bin}) {
+                    my $additional_bin =  $self->_host->getEContext->which(
+                                              command => $ipmitool->{additional_bin}
+                                          );
+                    $additional_command = $additional_bin . $ipmitool->{args_additional};
+                }   
+                last TOOLS;
+            }
         }
 
-        my $command = $ipmitool . ' -H ' . $ipmicreds->ipmi_credentials_ip_addr . ' -U ' .
-                      $ipmicreds->ipmi_credentials_user . ' -P ' . $ipmicreds->ipmi_credentials_password .
-                      ' chassis power off';
         my $result = $self->_host->getEContext->execute(command => $command);
+
+        if ($additional_command ne '') {
+            $self->_host->getEContext->execute(command => $additional_command);
+        }    
     }
 }
 
@@ -152,6 +189,30 @@ sub checkUp {
     my $pingable = $ping->ping($ip, 2);
     $ping->close();
     return $pingable ? $pingable : 0;
+}
+
+sub _getIPMITools {
+    my ($self, %args) = @_;
+    
+    General::checkParams(args => \%args, required => [ 'ip', 'login', 'pass' ]);
+
+    my @ipmitools = (
+        {  'bin'                => 'ipmi-chassis',
+           'test_command'       => " -h $args{ip} -u $args{login} -p $args{pass} --get-status" .
+                                        " -D LAN_2_0 | grep 'System Power'",
+           'power_on_command'   => " -h $args{ip} -u $args{login} -p $args{pass} --chassis-control=POWER-UP" .
+                                        " -D LAN_2_0",
+           'power_off_command'  => " -h $args{ip} -u $args{login} -p $args{pass} --chassis-control=POWER-DOWN" .
+                                        " -D LAN_2_0",
+           'additional_bin'     => 'bmc-device',
+           'args_additional'    => " -h $args{ip} -u $args{login} -p $args{pass} --cold-reset",
+        },
+        {  'bin'                => 'ipmitool',
+           'test_command'       => " -H $args{ip} -U $args{login} -P $args{pass} chassis power status",
+           'power_on_command'   => " -H $args{ip} -U $args{login} -P $args{pass} chassis power on",
+           'power_off_command'  => " -H $args{ip} -U $args{login} -P $args{pass} chassis power off", 
+        });
+    return @ipmitools;
 }
 
 1;
