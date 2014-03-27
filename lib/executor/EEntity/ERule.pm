@@ -50,7 +50,7 @@ sub notificationMessage {
     my $template = Template->new(General::getTemplateConfiguration());
     my $templatedata = {
         rule      => $self->formula_label,
-        service   => $self->service_provider->label
+        service   => $self->service_provider->label,
         operation => $args{operation}->label
     };
 
