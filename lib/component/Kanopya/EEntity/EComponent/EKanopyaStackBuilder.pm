@@ -458,37 +458,29 @@ sub configureStack {
         my $fw_login = 'api';
         my $fw_password = 'mdp';
         my $fw_url = 'https://10.100.1.254';
-        my $tmp = `tempfile`;
+        my $tmp = $self->getEContext()->execute(command => 'tempfile')->{stdout};
+        chomp $tmp;
 
         # Firewall login
-        my $curl = "curl -kb $tmp $fw_url/index.php";
-        my $html =  `$curl`;
-        $html =~ m/csrfMagicToken ?= ?"([a-zA-Z0-9,:;]*)".*/;
+        my $curl_base = "curl -kc $tmp ";
+        my $cmd = "$curl_base $fw_url/index.php";
+        my $html =  $self->getEContext()->execute(command => $cmd)->{stdout};
+        $html =~ m/.*value="(sid:[a-zA-Z0-9,]*)".*/;
         my $csrf = $1;
+
         # Send login details... No simple way for success verification.
-        $curl = 'curl -kb ' . $tmp . ' --data "usernamefld=' . $fw_login . 
-                '&passwordfld=' . $fw_password . '&login=Login&__csrf_magic=' . 
-                $csrf.'" ' . $fw_url . '/index.php';
-        $html = `$curl`;
+        $cmd = "$curl_base --data \"usernamefld=$fw_login" .
+               "&passwordfld=$fw_password&login=Login&__csrf_magic=" .
+               "$csrf\" $fw_url/index.php";
+        $self->getEContext()->execute(command => $cmd);
 
-        if ($? != 0) {
-            throw Kanopya::Exception::Execution::Command(
-                      error => 'Failed to login on firewall with curl'
-                  );
-        }
+        #And configure firewall via "API"
+        $cmd = "$curl_base --data \"user=" . $args{user}->user_login . "&subnet_adm=$neutron_net" .
+               "&subnet_vm=" . $args{iprange} . "\" $fw_url./pms_create_route.php";
+        $self->getEContext()->execute(command => $cmd);
 
-        # And configure firewall via "API"
-        $curl = 'curl -kb ' . $tmp . ' --data "user=' . $args{user}->user_login .
-                '&subnet_adm=' . $neutron_net . '&subnet_vm=' . $args{iprange} . '" ' . 
-                $fw_url . '/pms_create_route.php';
-        $html = `$curl`;
-        
-        if ($? != 0) {
-            throw Kanopya::Exception::Execution::Command(
-                      error => 'Failed to call firewall API with curl'
-                  );
-        }
-
+        $cmd = "rm $tmp";
+        $self->getEContext()->execute(command => $cmd);
     }
     catch ($err) {
         throw Kanopya::Exception::Execution::OperationInterrupted(
