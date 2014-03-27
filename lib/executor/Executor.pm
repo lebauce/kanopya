@@ -1,4 +1,4 @@
-#    Copyright © 2011-2013 Hedera Technology SAS
+#    Copyright © 2011-2014 Hedera Technology SAS
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
@@ -151,7 +151,7 @@ sub runWorkflow {
     # Pop the first operation
     my $first;
     try {
-        $first = $workflow->getNextOperation();
+        $first = EEntity::EOperation->new(operation => $workflow->getNextOperation());
 
         $log->info("Running " . $workflow->workflow_name . " workflow <" . $workflow->id . "> ");
         $log->info("Executing " . $workflow->workflow_name . " first operation <" . $first->id . ">");
@@ -212,27 +212,28 @@ sub executeOperation {
                                          exception => $err);
     }
 
-    # Validate the operation
-    my $valid;
-    try {
-        $log->info("Step <validation>");
-        $valid = ($operation->state eq 'validated') ? 1 : $operation->validation();
-    }
-    catch ($err) {
-        return $self->terminateOperation(operation => $operation,
-                                         status    => 'cancelled',
-                                         exception => $err);
-    }
-    # Terminate if the operation require validation
-    if (not $valid) {
-        return $self->terminateOperation(operation => $operation,
-                                         status    => 'waiting_validation');
-    }
-
     # Skip the proccessing steps if postreported
     my $delay;
     if ($operation->state ne 'postreported') {
         if ($operation->state ne 'prereported') {
+            # Set the operation as proccessing
+            # NOTE: when operation go to processing, the update of the state could require validation,
+            #       in this case the operation is reported and will be executed at validation.
+            try {
+                $operation->setState(state => 'processing')
+            }
+            catch (Kanopya::Exception::Execution::OperationRequireValidation $err) {
+                # Terminate if the operation require validation
+                return $self->terminateOperation(operation => $operation,
+                                                 status    => 'waiting_validation');
+            }
+            catch (Kanopya::Exception $err) {
+                $err->rethrow();
+            }
+            catch ($err) {
+                throw Kanopya::Exception::Execution(error => $err);
+            }
+
             # Check the required state of the context objects, and update its
             try {
                 # Firstly lock the context objects
@@ -267,11 +268,6 @@ sub executeOperation {
                                                  status    => 'cancelled',
                                                  exception => $err);
             }
-        }
-
-        # Set the operation as proccessing
-        if ($operation->state eq 'ready') {
-            $operation->setState(state => 'processing');
         }
 
         # Check preconditions for processing
@@ -438,7 +434,7 @@ sub handleResult {
 
     General::checkParams(args     => \%args,
                          required => [ 'operation_id', 'status' ],
-                         optional => { 'ack_cb' => undef });
+                         optional => { 'exception' => undef, 'time' => undef, 'ack_cb' => undef });
 
     my $operation = $self->instantiateOperation(id     => $args{operation_id},
                                                 ack_cb => $args{ack_cb});
@@ -449,6 +445,8 @@ sub handleResult {
     if ($operation->workflow->state eq 'cancelled') {
         $args{status} = 'cancelled';
     }
+
+    # TODO: Check the current state / new state consitency
 
     # Set the operation state
     $operation->setState(state => $args{status});
@@ -581,7 +579,7 @@ sub handleResult {
             }
 
             # Cancel all the operations of the group of the operation that failed
-            for my $tofail (@tofail) {
+            for my $tofail (map { EEntity::EOperation->new(operation => $_) } @tofail) {
                 if ($tofail->state ne 'pending') {
                     try {
                         $log->info("Cancelling operation " . $tofail->type . " <" . $tofail->id . ">");
@@ -619,19 +617,23 @@ sub handleResult {
                 $self->lockOperationContext(operation => $operation, skip_not_found => 1);
 
                 my $workflow = $operation->workflow;
-                my @tocancel = $workflow->search(related  => 'operations',
-                                                 order_by => 'execution_rank DESC');
+                my @tocancel = map { EEntity::EOperation->new(operation => $_, skip_not_found => 1) }
+                                   $workflow->search(related  => 'operations',
+                                                     order_by => 'execution_rank DESC');
+
+                # Call cancel on all operation executed operations
                 for my $tocancel (@tocancel) {
                     if ($tocancel->state ne 'pending') {
                         try {
                             $log->info("Cancelling operation " . $tocancel->type .
                                        " <" . $tocancel->id . ">");
-                            EEntity::EOperation->new(operation => $tocancel, skip_not_found => 1)->cancel();
+                            $tocancel->cancel();
                         }
                         catch ($err){
                             $log->error("Error during operation cancel :\n$err");
                         }
                     }
+                    $tocancel->setState(state => 'cancelled');
                     $tocancel->remove();
                 }
                 $workflow->setState(state => 'cancelled');
@@ -668,7 +670,9 @@ sub handleResult {
     # finish the workflow instead.
     my $next;
     try {
-        $next = $operation->workflow->prepareNextOperation(current => $operation);
+        $next = EEntity::EOperation->new(
+                    operation => $operation->workflow->prepareNextOperation(current => $operation)
+                );
 
         $log->info("Executing " . $operation->workflow->workflow_name .
                    " workflow next operation " . $next->type . " <" . $next->id . ">");

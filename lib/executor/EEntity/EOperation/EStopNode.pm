@@ -96,7 +96,6 @@ Stop the host, Set the node a as 'goingout'.
 
 sub execute {
     my $self = shift;
-    $self->SUPER::execute();
 
     $self->{context}->{cluster}->stopNode(host => $self->{context}->{host});
 
@@ -117,7 +116,6 @@ Restore the clutser and host states.
 
 sub cancel {
     my ($self, %args) = @_;
-    $self->SUPER::finish(%args);
 
 #    $self->{context}->{cluster}->setState(state => 'up');
 }

@@ -140,7 +140,6 @@ remove the system image if the cluster is non persistent.
 
 sub execute {
     my $self = shift;
-    $self->SUPER::execute();
 
     # stop the host
     $self->{context}->{host}->stop();
@@ -204,8 +203,6 @@ Release the host here, because some host manager enqueue a RemoveHost operation.
 sub postrequisites {
     my ($self, %args) = @_;
 
-    $self->SUPER::postrequisites(%args);
-
     # Release the host
     $self->{context}->{host}->release();
     return 0;
@@ -222,7 +219,6 @@ Set the cluster as up.
 
 sub finish {
     my ($self, %args) = @_;
-    $self->SUPER::finish(%args);
 
     # If the cluster has no node any more, it has been properly stopped
     my @nodes = $self->{context}->{cluster}->nodes;

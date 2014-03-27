@@ -229,7 +229,9 @@ sub getEContext {
 
 Build a notification message with a given Operation
 
-@param operation
+@param operation hte operation that is executing
+@state the state of the operation
+
 @return notification message
 
 =end classdoc
@@ -239,21 +241,28 @@ sub notificationMessage {
     my $self    = shift;
     my %args    = @_;
 
-    General::checkParams(
-        args        => \%args,
-        required    => [ 'operation' ]
-    );
+    General::checkParams(args => \%args, required => [ 'operation', 'state', 'subscriber' ]);
+
+    my $template = Template->new(General::getTemplateConfiguration());
+    my $templatedata = { operation       => $args{operation}->label,
+                         operation_id    => $args{operation}->id,
+                         workflow        => $args{operation}->workflow->label,
+                         workflow_id     => $args{operation}->workflow->id,
+                         operation_state => $args{state} };
 
     my $message = "";
-
-    my $template        = Template->new(General::getTemplateConfiguration());
-    my $templatedata    = { operation => $args{operation}->label };
     $template->process('notificationmail.tt', $templatedata, \$message)
         or throw Kanopya::Exception::Internal(
              error => "Error when processing template notificationmail.tt"
          );
 
-    return $message;
+    my $subject = "";
+    $template->process('notificationmailsubject.tt', $templatedata, \$subject)
+        or throw Kanopya::Exception::Internal(
+             error => "Error when processing template notificationmailsubject.tt"
+         );
+
+    return ($subject, $message);
 }
 
 

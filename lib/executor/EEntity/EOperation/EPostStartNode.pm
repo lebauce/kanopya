@@ -126,7 +126,6 @@ Configure the component as the new node is up.
 
 sub execute {
     my ($self, %args) = @_;
-    $self->SUPER::execute();
 
     $self->{context}->{cluster}->postStartNode(
         host      => $self->{context}->{host},
@@ -200,7 +199,6 @@ Set the cluster as up.
 
 sub finish {
     my ($self, %args) = @_;
-    $self->SUPER::finish(%args);
 
     if (defined $self->{params}->{needhypervisor}) {
         $log->debug('Do not finish addNode workflow in case of automatic hypervisor scaleout');

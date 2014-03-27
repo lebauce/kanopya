@@ -181,7 +181,6 @@ sub prerequisites {
 
 sub execute {
     my ($self, %args) = @_;
-    $self->SUPER::execute(%args);
 
     # check if host is deactivated
     if ($self->{context}->{host}->active == 0) {
@@ -249,7 +248,6 @@ sub execute {
 
 sub finish {
     my ($self, %args) = @_;
-    $self->SUPER::execute(%args);
 
     my ($hv_cluster_state, $timestamp) = $self->{context}->{hv_cluster}->reload->getState;
     my ($host_manager_sp_state, $timestamp2) = $self->{context}->{host_manager_sp}->reload->getState;
@@ -352,7 +350,6 @@ Restore
 
 sub cancel {
     my ($self, %args) = @_;
-    $self->SUPER::cancel(%args);
 
     my ($hv_cluster_state, $timestamp) = $self->{context}->{hv_cluster}->reload->getState;
     my ($host_manager_sp_state, $timestamp2) = $self->{context}->{host_manager_sp}->reload->getState;

@@ -1163,6 +1163,7 @@ sub registerComponents {
             component_name         => 'KanopyaStackBuilder',
             component_version      => 0,
             deployable             => 0,
+            component_template     => 'components/stackbuilder',
             component_categories   => [ ],
             service_provider_types => [ 'Kanopya', 'Centos6' ],
         },
@@ -1254,7 +1255,6 @@ sub registerComponents {
         );
 
         if (defined $component_type->{component_template}) {
-            my $template_name = lc $component_type->{component_name};
             ComponentTemplate->new(
                 component_template_name      => lc($component_type->{component_name}),
                 component_template_directory => $component_type->{component_template},

@@ -44,14 +44,12 @@ my $log = get_logger("");
 sub check {
     my $self = shift;
     my %args = @_;
-    $self->SUPER::check();
 
     General::checkParams(args => $self->{params}, required => [ "file_path" ]);
 }
 
 sub execute {
     my $self = shift;
-    $self->SUPER::execute();
     my ($cmd, $cmd_res);
 
     # check file_path set

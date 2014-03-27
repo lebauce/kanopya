@@ -434,7 +434,8 @@ sub subscribe {
 
     General::checkParams(args     => \%args,
                          required => [ 'subscriber_id', 'operationtype' ],
-                         optional => { 'service_provider_id' => undef,
+                         optional => { 'operation_state'     => "processing",
+                                       'service_provider_id' => undef,
                                        'validation'          => 0 });
 
     if (not defined $args{service_provider_id}) {
@@ -442,10 +443,11 @@ sub subscribe {
     }
 
     my $operationtype = Operationtype->find(hash => { operationtype_name => $args{operationtype} });
-    NotificationSubscription->new(
+    NotificationSubscription->findOrCreate(
         entity_id           => $self->id,
         subscriber_id       => $args{subscriber_id},
         operationtype_id    => $operationtype->id,
+        operation_state     => $args{operation_state},
         service_provider_id => $args{service_provider_id},
         validation          => $args{validation},
     );
@@ -456,8 +458,7 @@ sub unsubscribe {
 
     General::checkParams(args => \%args, required => [ 'notification_subscription_id' ]);
 
-    my $ns = NotificationSubscription->get(id => $args{notification_subscription_id});
-    $ns->delete();
+    NotificationSubscription->get(id => $args{notification_subscription_id})->delete();
 }
 
 

@@ -557,6 +557,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 kanopya_stack_builder
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::KanopyaStackBuilder>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopya_stack_builder",
+  "Kanopya::Schema::Result::KanopyaStackBuilder",
+  { "foreign.kanopya_stack_builder_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 kanopyacollector1
 
 Type: might_have
@@ -1103,8 +1118,8 @@ Composing rels: L</workflow_def_managers> -> workflow_def
 __PACKAGE__->many_to_many("workflow_defs", "workflow_def_managers", "workflow_def");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-03 12:34:48
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9kKI3bysIEG1GamtWFNvMQ
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-26 15:02:09
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:5U1rlvZt0bbOOKZh3LrACw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

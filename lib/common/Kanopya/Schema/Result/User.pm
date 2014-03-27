@@ -211,6 +211,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 kanopya_stack_builders
+
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::KanopyaStackBuilder>
+
+=cut
+
+__PACKAGE__->has_many(
+  "kanopya_stack_builders",
+  "Kanopya::Schema::Result::KanopyaStackBuilder",
+  { "foreign.support_user_id" => "self.user_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 messages
 
 Type: has_many
@@ -312,8 +327,8 @@ Composing rels: L</user_profiles> -> profile
 __PACKAGE__->many_to_many("profiles", "user_profiles", "profile");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-12-18 16:10:30
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Kh6CqrxQF/OC9BgY3+uoBA
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-26 15:17:12
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:QU7EBxJZHCCL5CELCmEuGQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -25,30 +25,24 @@ and launch workflow related to rules.
 =cut
 
 package Manager::WorkflowManager;
-use base "Manager";
+use base Manager;
 
 use strict;
 use warnings;
-use Kanopya::Exceptions;
+
 use General;
+use Kanopya::Exceptions;
+use Entity::WorkflowDef;
+use WorkflowDefManager;
+use Scope;
+use ScopeParameter;
+
 use Hash::Merge;
+use TryCatch;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
-use Data::Dumper;
 
-use Entity::Rule;
-use Entity::Rule::AggregateRule;
-use Entity::Rule::NodemetricRule;
-use Entity::WorkflowDef;
-use WorkflowDefManager;
-use ParamPreset;
-use Scope;
-use ScopeParameter;
-use NotificationSubscription;
-
-use TryCatch;
-my $err;
 
 sub methods {
     return {

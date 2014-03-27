@@ -32,14 +32,12 @@ my $errmsg;
 
 sub check {
     my ($self,%args) = @_;
-    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "entity" ]);
 }
 
 sub execute {
     my ($self, %args) = @_;
-    $self->SUPER::execute(%args);
 
     $self->{context}->{entity}->synchronize(
         erollback => $self->{erollback},

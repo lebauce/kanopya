@@ -158,6 +158,10 @@ use Exception::Class (
         isa         => 'Kanopya::Exception::Execution',
         description => 'Operation execution interrupted',
     },
+    Kanopya::Exception::Execution::OperationRequireValidation => {
+        isa         => 'Kanopya::Exception::Execution',
+        description => 'Operation execution require validation',
+    },
     Kanopya::Exception::Execution::InvalidState => {
         isa         => 'Kanopya::Exception::Execution',
         description => 'Invalid context object state',

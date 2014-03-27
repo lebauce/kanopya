@@ -32,6 +32,7 @@ use warnings;
 
 use Entity::User;
 use Kanopya::Exceptions;
+use NotificationSubscription;
 
 use Data::Dumper;
 use Log::Log4perl "get_logger";
@@ -245,18 +246,23 @@ sub buildStack {
               )
     }
 
+    # Set the notification subscription for the owner of the stack
+    $self->subscribeSupportNotifications();
+    $self->subscribeOwnerNotifications(owner_id => $args{owner_id});
+
     # Run the workflow BuildStack
     my $workflow = $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
-        name   => 'BuildStack',
-        params => {
-            services => \@services,
-            stack_id  => $args{stack}->{stack_id},
-            iprange  => $args{stack}->{iprange},
-            context => {
+        name       => 'BuildStack',
+        related_id => $self->service_provider->id,
+        params     => {
+            services   => \@services,
+            stack_id   => $args{stack}->{stack_id},
+            iprange    => $args{stack}->{iprange},
+            context    => {
                 stack_builder => $self,
                 user          => Entity::User->get(id => $args{owner_id}),
             },
-        }
+        },
     );
 
     $workflow->addPerm(consumer => $workflow->owner, method => 'get');
@@ -275,10 +281,11 @@ sub endStack {
 
     # Run the workflow EndStack
     my $workflow = $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
-        name   => 'EndStack',
-        params => {
-            stack_id  => $args{stack_id},
-            context => {
+        name       => 'EndStack',
+        related_id => $self->service_provider->id,
+        params     => {
+            stack_id => $args{stack_id},
+            context  => {
                 stack_builder => $self,
                 user          => Entity::User->get(id => $args{owner_id}),
             },
@@ -289,6 +296,80 @@ sub endStack {
     $workflow->addPerm(consumer => $workflow->owner, method => 'cancel');
 
     return $workflow;
+}
+
+
+sub subscribeSupportNotifications {
+    my ($self, %args) = @_;
+
+    # Try to get the support user from configuration
+    my $support = defined $self->support_user
+                      ? $self->support_user
+                      : Entity::User->find(hash => { user_login => 'admin' } );
+
+    # TODO: If some notifcations exists, and the subcripber is defferent from
+    #       support, remove them.
+
+    # The support will be notified when the buildStack workflow start
+    $self->subscribe(subscriber_id   => $support->id,
+                     operationtype   => "buildStack",
+                     operation_state => "processing");
+
+    # The support will be notified when the buildStack workflow succeed
+    $self->subscribe(subscriber_id   => $support->id,
+                     operationtype   => "configureStack",
+                     operation_state => "succeeded");
+
+    # The support will be notified when the configureStack operation is interrupted
+    $self->subscribe(subscriber_id   => $support->id,
+                     operationtype   => "configureStack",
+                     operation_state => "interrupted");
+
+    # The support will be notified when the buildStack workflow fail
+    $self->subscribe(subscriber_id   => $support->id,
+                     operationtype   => "buildStack",
+                     operation_state => "cancelled");
+
+    # The support will be notified when the endStack workflow start
+    $self->subscribe(subscriber_id   => $support->id,
+                     operationtype   => "stopStack",
+                     operation_state => "processing");
+
+    # The support will be notified when the endStack workflow succeed
+    $self->subscribe(subscriber_id   => $support->id,
+                     operationtype   => "endStack",
+                     operation_state => "succeeded");
+
+    # The support will be notified when a StopNode workflow fail
+    $self->subscribe(subscriber_id   => $support->id,
+                     operationtype   => "PreStopNode",
+                     operation_state => "failed");
+
+    # The support will be notified when the endStack workflow fail
+    $self->subscribe(subscriber_id   => $support->id,
+                     operationtype   => "unconfigureStack",
+                     operation_state => "cancelled");
+}
+
+sub subscribeOwnerNotifications {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'owner_id' ]);
+
+    # The owner will be notified when the buildStack workflow succeed
+    $self->subscribe(subscriber_id   => $args{owner_id},
+                     operationtype   => "configureStack",
+                     operation_state => "succeeded");
+}
+
+sub unsubscribeOwnerNotifications {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'owner_id' ]);
+
+    for my $subscription (NotificationSubscription->search(hash => { subscriber_id => $args{owner_id} })) {
+        $self->unsubscribe(notification_subscription_id => $subscription->id);
+    }
 }
 
 1;

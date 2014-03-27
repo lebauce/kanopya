@@ -59,7 +59,6 @@ my $errmsg;
 
 sub check {
     my ($self, %args) = @_;
-    $self->SUPER::check(%args);
 
     # Check if all required params group are defined
     General::checkParams(args => $self->{params}, required => [ "cluster_params", "managers" ]);
@@ -85,7 +84,6 @@ Create the cluster and apply the configuration.
 
 sub execute {
     my ($self, %args) = @_;
-    $self->SUPER::execute(%args);
 
     if (defined $self->{params}->{cluster_params}->{kernel_id} and
         not $self->{params}->{cluster_params}->{kernel_id}) {
@@ -125,7 +123,6 @@ Set the cluster as down.
 
 sub finish {
     my ($self, %args) = @_;
-    $self->SUPER::finish(%args);
 
     $self->{context}->{cluster}->setState(state => 'down');
 

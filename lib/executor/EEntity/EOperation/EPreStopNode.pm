@@ -84,8 +84,6 @@ Check if the cluster is stable.
 
 sub prepare {
     my ($self, %args) = @_;
-    $self->SUPER::prepare(%args);
-
 
     # Check cluster states
     my @entity_states = $self->{context}->{cluster}->entity_states;
@@ -206,7 +204,6 @@ Configure the components for the node removal.
 
 sub execute {
     my $self = shift;
-    $self->SUPER::execute();
 
     my @components = $self->{context}->{cluster}->getComponents(category => "all");
     $log->info('Inform cluster components about node removal');
@@ -247,7 +244,6 @@ Restore the clutser and host states.
 
 sub cancel {
     my ($self, %args) = @_;
-    $self->SUPER::cancel(%args);
 
     $self->{context}->{cluster}->restoreState();
     if (defined $self->{context}->{host_manager_sp}) {

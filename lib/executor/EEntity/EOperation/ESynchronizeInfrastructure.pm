@@ -47,7 +47,6 @@ sub check {
 
 sub execute {
     my $self = shift;
-    $self->SUPER::execute();
 
     if ((! defined $self->{context}->{cloud_manager}) && defined $self->{context}->{vm}) {
         $self->{context}->{cloud_manager} = EEntity->new(
@@ -96,7 +95,6 @@ sub execute {
 
 sub finish {
     my ($self) = @_;
-    $self->SUPER::finish();
 
     delete $self->{context}->{hypervisor};
     delete $self->{context}->{cloud_manager};

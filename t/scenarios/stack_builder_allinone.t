@@ -18,16 +18,17 @@ use Kanopya::Tools::Register;
 
 use Entity::ServiceProvider::Cluster;
 use Entity::Network;
+use Entity::User::Customer;
 
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
-    level  => 'DEBUG',
+    level  => 'INFO',
     file   => 'stack_builder_allinone.t.log',
     layout => '%F %L %p %m%n'
 });
 
 
-my $testing = 1;
+my $testing = 0;
 
 main();
 
@@ -47,6 +48,17 @@ sub main {
                       name => "KanopyaStackBuilder"
                   );
     } 'Get the StackBuilder component';
+
+    my $customer;
+    lives_ok {
+        $customer = Entity::User::Customer->findOrCreate(
+            user_login     => 'stack_builder_test',
+            user_password  => 'stack_builder_test',
+            user_firstname => 'Stack Buil',
+            user_lastname  => 'Er test',
+            user_email     => 'kpouget@hederatech.com',
+        );
+    } 'Create a customer stack_builder_test for the owner of the stack';
 
     my $stack = {
         stack_id => 123,
@@ -121,16 +133,16 @@ sub main {
         iprange  => Entity::Network->find()->network_addr . "/24"
     };
 
-    # my $build_stack;
-    # lives_ok {
-    #    $build_stack = $builder->buildStack(stack => $stack);
-    #    Kanopya::Tools::Execution->executeOne(entity => $build_stack);
-    # } 'Run workflow BuildStack';
+    my $build_stack;
+    lives_ok {
+       $build_stack = $builder->buildStack(stack => $stack, owner_id => $customer->id);
+       Kanopya::Tools::Execution->executeOne(entity => $build_stack);
+    } 'Run workflow BuildStack';
 
     my $end_stack;
     lives_ok {
        $end_stack = $builder->endStack(stack_id => 123);
-       Kanopya::Tools::Execution->executeOne(entity => $end_stack);
+       Kanopya::Tools::Execution->executeOne(entity => $end_stack, owner_id => $customer->id);
     } 'Run workflow EndStack';
 
     if ($testing == 1) {

@@ -48,7 +48,6 @@ Check if the host manager is defined in the context.
 
 sub check {
     my ($self, %args) = @_;
-    $self->SUPER::check(%args);
 
     General::checkParams(args => $self->{context}, required => [ "host_manager" ]);
 }
@@ -64,7 +63,6 @@ Check if the host manager has not reach the maximum amount of consumers
 
 sub prepare {
     my ($self, %args) = @_;
-    $self->SUPER::prepare(%args);
 
     $self->{context}->{host_manager}->increaseConsumers();
 }
@@ -80,7 +78,6 @@ Call the host manager to create the new host.
 
 sub execute {
     my ($self, %args) = @_;
-    $self->SUPER::execute(%args);
 
     my $host = $self->{context}->{host_manager}->createHost(%{ $self->{params} }, erollback => $self->{erollback});
 
@@ -98,7 +95,6 @@ Decrease the number of consumers of the host manager as the host is successfully
 
 sub finish {
     my ($self, %args) = @_;
-    $self->SUPER::finish(%args);
 
     $self->{context}->{host_manager}->decreaseConsumers();
 }

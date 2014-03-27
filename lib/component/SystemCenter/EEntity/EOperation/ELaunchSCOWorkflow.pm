@@ -34,7 +34,6 @@ my $errmsg;
 sub check {
     my $self = shift;
     my %args = @_;
-    $self->SUPER::check();
 
     General::checkParams(args     => $self->{params},
                          required => [ 'output_directory', 'output_file', 'template_content' ],
@@ -44,7 +43,6 @@ sub check {
 
 sub execute{
     my $self = shift;
-    $self->SUPER::execute();
 
     my $output_directory = $self->{params}->{output_directory};
     my $output_file      = $self->{params}->{output_file};

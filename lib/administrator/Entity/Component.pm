@@ -30,6 +30,7 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
+use Kanopya::Config;
 use General;
 use ParamPreset;
 use ClassType::ComponentType;
@@ -88,8 +89,8 @@ sub methods {
 sub label {
     my $self = shift;
 
-    return $self->component_type->component_name . " (on " .
-           $self->service_provider->label . ")";
+    return $self->component_type->component_name .
+               (defined $self->service_provider ? " (on " . $self->service_provider->label . ")" : "");
 }
 
 my $merge = Hash::Merge->new('LEFT_PRECEDENT');
@@ -209,6 +210,25 @@ sub getTemplateDirectory {
     if (defined $self->component_template_id) {
         return $self->component_template->component_template_directory;
     }
+}
+
+
+=pod
+=begin classdoc
+
+Call the General method, but change the included path to
+the component template directory.
+
+=end classdoc
+=cut
+
+sub getTemplateConfiguration {
+    my $self = shift;
+
+    my $conf = General::getTemplateConfiguration();
+    $conf->{INCLUDE_PATH} = Kanopya::Config::getKanopyaDir() . '/templates/';
+
+    return $conf;
 }
 
 

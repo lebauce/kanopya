@@ -41,7 +41,6 @@ sub check {
 
 sub prepare {
     my $self = shift;
-    $self->SUPER::prepare();
 
     # Check the IAAS cluster state
     my @entity_states = $self->{context}->{host_manager_sp}->entity_states;
@@ -71,7 +70,6 @@ sub prepare {
 
 sub prerequisites {
     my $self = shift;
-    $self->SUPER::prerequisites();
 
     if (defined $self->{params}->{optimiaas}) {
         return 0;
@@ -125,14 +123,9 @@ sub prerequisites {
     return $num_op ? -1 : 0;
 }
 
-sub execute{
-    my $self = shift;
-    $self->SUPER::execute();
-}
 
 sub finish {
     my $self = shift;
-    $self->SUPER::execute();
 
     $self->{context}->{host_manager_sp}->setState(state => 'up');
     $self->{context}->{host_manager_sp}->removeState(consumer => $self->workflow);
@@ -143,7 +136,6 @@ sub finish {
 
 sub cancel {
     my $self = shift;
-    $self->SUPER::cancel();
 
     $self->{context}->{host_manager_sp}->setState(state => 'up');
     $self->{context}->{host_manager_sp}->removeState(consumer => $self->workflow);

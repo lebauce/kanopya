@@ -290,20 +290,20 @@ sub setProfiles {
 }
 
 
+
 =pod
 =begin classdoc
 
-Return a string representation of the entity
+Override the parent mathod to remove the password from the search criteria.
 
-@return string representation of the entity
-
-=end classdoc
 =cut
 
-sub toString {
-    my $self = shift;
-    my $string = $self->{_dbix}->get_column('user_firstname'). " ". $self->{_dbix}->get_column('user_lastname');
-    return $string;
+sub findOrCreate {
+    my ($class, %args) = @_;
+
+    delete $args{user_password};
+
+    return $class->SUPER::findOrCreate(%args);
 }
 
 

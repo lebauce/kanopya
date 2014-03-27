@@ -34,14 +34,12 @@ my $errmsg;
 
 sub check {
     my ($self, %args) = @_;
-    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "host" ]);
 }
 
 sub execute{
     my ($self, %args) = @_;
-    $self->SUPER::execute();
 
     # check if host is not active
     if ($self->{context}->{host}->getAttr(name => 'active')) {

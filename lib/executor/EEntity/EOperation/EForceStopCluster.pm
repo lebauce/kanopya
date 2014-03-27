@@ -36,7 +36,6 @@ my $errmsg;
 sub check {
     my $self = shift;
     my %args = @_;
-    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "cluster" ]);
 }
@@ -44,7 +43,6 @@ sub check {
 
 sub execute {
     my $self = shift;
-    $self->SUPER::execute();
 
     # Instanciate bootserver Cluster
     my $bootserver = Entity::ServiceProvider::Cluster->getKanopyaCluster;

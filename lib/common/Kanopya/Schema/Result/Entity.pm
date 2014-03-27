@@ -955,8 +955,8 @@ Composing rels: L</entity_tags> -> tag
 __PACKAGE__->many_to_many("tags", "entity_tags", "tag");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-05 18:07:41
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:6kCEaqCcZY8xlxHBgPeYvA
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-24 16:34:10
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:afEc9I5Qq7Q2Baa7aS3Y+g
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

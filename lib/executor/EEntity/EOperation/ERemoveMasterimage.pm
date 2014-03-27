@@ -37,14 +37,12 @@ my $errmsg;
 sub check {
     my $self = shift;
     my %args = @_;
-    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "masterimage" ]);
 }
 
 sub execute {
     my $self = shift;
-    $self->SUPER::execute();
 
     # Check if the masterimage is used by any clusters
     my $masterimage_id = $self->{context}->{masterimage}->getAttr(name => 'entity_id');
