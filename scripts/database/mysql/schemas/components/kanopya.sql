@@ -64,7 +64,7 @@ CREATE TABLE `kanopya_openstack_sync` (
 )   ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
--- Table structure for table `kanopya_openstack_sync`
+-- Table structure for table `kanopya_stack_builder`
 --
 
 CREATE TABLE `kanopya_stack_builder` (
