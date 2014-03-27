@@ -130,7 +130,7 @@ sub new {
 
     # Build the control queue name from the hostname
     $self->_callbacks->{control_queue}->{queue}
-        = lc($self->{name}) . '-' . $self->_host->node->node_hostname;
+        = "kanopya." . lc($self->{name}) . '.control.' . lc($self->_host->node->node_hostname);
 
     # Set the control queue name to the corresponding component configuration
     $self->_component->setConf(conf => { control_queue => $self->_callbacks->{control_queue}->{queue} });

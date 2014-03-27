@@ -1,0 +1,46 @@
+#!/usr/bin/perl -w
+
+#    kanopya-executor - This is the main script to run Kanopya Executor server.
+#
+#    Copyright © 2013 Hedera Technology SAS
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Affero General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Affero General Public License for more details.
+#
+#    You should have received a copy of the GNU Affero General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+use strict;
+use warnings;
+
+use MailNotifier;
+use Kanopya::Config;
+
+use Getopt::Std;
+use Log::Log4perl 'get_logger';
+
+my $dir = Kanopya::Config::getKanopyaDir();
+Log::Log4perl->init($dir . '/conf/mail-notifier-log.conf');
+my $log = get_logger("");
+
+sub print_usage {
+    print "Usage: kanopya-mail-notifier\n";
+    print "       kanopya-mail-notifier [-b|--background] [-p pidfile]\n";
+    exit(1);
+}
+
+my %opts = ();
+getopts("bp:", \%opts) or print_usage;
+
+my $s = MailNotifier->new();
+$s->run(name       => "kanopya-mail-notifier",
+        daemonize  => $opts{b},
+        pidfile    => $opts{p});
+
+$log->warn("kanopya-mail-notifier stopped");

@@ -94,6 +94,7 @@ sub _init {
         'kanopya-rulesengine',
         'kanopya-front',
         'kanopya-openstack-sync',
+        'kanopya-mail-notifier',
     ];
 
     $self->{parameters} = [
@@ -487,6 +488,10 @@ sub _generate_kanopya_conf {
           template => 'openstack-sync.conf.tt',
           data     => { admin_password => $self->{parameters_values}->{mysql_kanopya_passwd}, }
         },
+        { path     => $self->{installpath} . '/conf/mail-notifier.conf',
+          template => 'mail-notifier.conf.tt',
+          data     => { admin_password => $self->{parameters_values}->{mysql_kanopya_passwd}, }
+        },
         { path     => $self->{installpath} . '/conf/monitor.conf',
           template => 'monitor.conf.tt',
           data     => { internal_net_add  => $self->{parameters_values}->{admin_ip},
@@ -539,6 +544,10 @@ sub _generate_kanopya_conf {
         },
         { path     => $self->{installpath} . '/conf/openstack-sync-log.conf',
           template => 'openstack-sync-log.conf.tt',
+          data     => { logdir => $self->{parameters_values}->{log_dir}.'/' }
+        },
+        { path     => $self->{installpath} . '/conf/mail-notifier-log.conf',
+          template => 'mail-notifier-log.conf.tt',
           data     => { logdir => $self->{parameters_values}->{log_dir}.'/' }
         },
         { path     => $self->{installpath} . '/conf/webui-log.conf',

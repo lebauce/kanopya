@@ -1,12 +1,12 @@
 #! /bin/bash
 ### BEGIN INIT INFO
-# Provides:           kanopya-openstack-sync
+# Provides:           kanopya-mail-notifier
 # Required-Start:     mysql rabbitmq-server
 # Required-Stop:      $network $remote_fs $syslog
 # Default-Start:      2 3 4 5
 # Default-Stop:       0 1 6
-# Short-Description:  Kanopya openstack-sync
-# Description:        Kanopya openstack-sync
+# Short-Description:  Kanopya mail-notifier
+# Description:        Kanopya mail-notifier
 ### END INIT INFO
 
 set -e
@@ -14,10 +14,10 @@ set -e
 . /lib/lsb/init-functions
 
 PATH="/opt/kanopya/sbin:$PATH"
-DAEMON="/opt/kanopya/sbin/kanopya-openstack-sync"
-EXEC="kanopya-openstack-sync"
-NAME="Kanopya openstack-sync"
-CONF_FILE="/opt/kanopya/conf/openstack-sync.conf"
+DAEMON="/opt/kanopya/sbin/kanopya-mail-notifier"
+EXEC="kanopya-mail-notifier"
+NAME="Kanopya mail-notifier"
+CONF_FILE="/opt/kanopya/conf/mail-notifier.conf"
 PIDFILE="/var/run/$EXEC.pid"
 RETVAL=0
 
@@ -36,14 +36,14 @@ PERL5LIB=\
 /opt/kanopya/lib/mock
 
 export PERL5LIB
-KANOPYA_OPENSTACK_SYNC_RUN=yes
-KANOPYA_OPENSTACK_SYNC_OPTS="-b -p $PIDFILE"
+KANOPYA_MAIL_NOTIFIER_RUN=yes
+KANOPYA_MAIL_NOTIFIER_OPTS="-b -p $PIDFILE"
 
 # Reads config file (will override defaults above)
 [ -r /etc/default/kanopya ] && . /etc/default/kanopya
 
-RUN_DAEMON=$KANOPYA_OPENSTACK_SYNC_RUN
-DAEMON_OPTS=$KANOPYA_OPENSTACK_SYNC_OPTS
+RUN_DAEMON=$KANOPYA_MAIL_NOTIFIER_RUN
+DAEMON_OPTS=$KANOPYA_MAIL_NOTIFIER_OPTS
 
 start() {
     echo -n "Starting $NAME"

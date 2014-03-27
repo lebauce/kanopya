@@ -88,19 +88,19 @@ sub methods {
         run => {
             description => 'produce a workflow to run.',
             message_queuing => {
-                queue => 'workflow'
+                queue => 'kanopya.executor.workflow'
             }
         },
         execute => {
             description => 'produce an operation to execute',
             message_queuing => {
-                queue => 'operation'
+                queue => 'kanopya.executor.operation'
             }
         },
         terminate => {
             description => 'produce an operation execution result.',
             message_queuing => {
-                queue => 'operation_result'
+                queue => 'kanopya.executor.operation_result'
             }
         },
     };
