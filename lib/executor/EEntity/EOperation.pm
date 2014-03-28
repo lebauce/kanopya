@@ -305,9 +305,9 @@ sub processNotificationSubscriptions {
             # Try to get the notification manager to use
             my $notifier;
             try {
-                $notifier = EEntity->new(data => $subscription->service_provider->getManager(
+                $notifier = $subscription->service_provider->getManager(
                                 manager_type => 'NotificationManager'
-                            ));
+                            );
             }
             catch ($err) {
                 $log->warn("Unable to get the notification manager for service provider <" .

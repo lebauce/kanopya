@@ -28,7 +28,7 @@ post:
 # Terrible hack but for some reason, setup.pl doesn't exit without this
     - "echo >> /opt/kanopya/scripts/install/setup.pl"
     - "echo exit 0 >> /opt/kanopya/scripts/install/setup.pl"
-    - "export PERL5LIB=/opt/kanopya/lib/common:/opt/kanopya/lib/administrator:/opt/kanopya/lib/monitor:/opt/kanopya/lib/executor:/opt/kanopya/lib/external:/opt/kanopya/lib/external/NetApp:/opt/kanopya/lib/orchestrator:/opt/kanopya/lib/component/kanopya_front:/opt/kanopya/lib/component/kanopya_executor:/opt/kanopya/lib/component/kanopya_aggregator:/opt/kanopya/lib/component/kanopya_rulesengine:/opt/kanopya/lib/mock; cd /opt/kanopya/scripts/install; ./setup.pl -f /root/setup.inputs &> /root/setup.log || true"
+    - "export PERL5LIB=/opt/kanopya/lib/common:/opt/kanopya/lib/administrator:/opt/kanopya/lib/monitor:/opt/kanopya/lib/executor:/opt/kanopya/lib/external:/opt/kanopya/lib/external/NetApp:/opt/kanopya/lib/orchestrator:/opt/kanopya/lib/component/Kanopya:/opt/kanopya/lib/mock; cd /opt/kanopya/scripts/install; ./setup.pl -f /root/setup.inputs &> /root/setup.log || true"
     - "wget -P /opt/kanopya/tools/deployment_solver/ http://download.kanopya.org/constraint_engine/deployment_solver/deployment_solver.jar"
     - "sed -i 's/disable\(\t*\)= yes/disable\1= no/' /etc/xinetd.d/tftp"
     - "/sbin/chkconfig kanopya-aggregator on"

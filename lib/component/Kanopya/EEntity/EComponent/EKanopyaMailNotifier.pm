@@ -24,7 +24,7 @@ TODO
 =end classdoc
 =cut
 
-package EEntity::EComponent::EMailnotifier0;
+package EEntity::EComponent::EKanopyaMailNotifier;
 use base "EEntity::EComponent";
 use base "EManager::ENotificationManager";
 
@@ -36,6 +36,7 @@ use Net::SMTP::SSL;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
+use TryCatch;
 
 my $log = get_logger("");
 my $errmsg;
@@ -80,32 +81,39 @@ sub notify {
 
     # Connect to the smtp server
     my $smtp = $smtpclass->new($self->smtp_server, %$params);
-
     if (defined $smtp) {
-        # If credentials defined, use authentication
-        if ($self->smtp_login) {
-            $smtp->auth($self->smtp_login, $self->smtp_passwd);
+        try {
+            # If credentials defined, use authentication
+            if ($self->smtp_login) {
+                $smtp->auth($self->smtp_login, $self->smtp_passwd);
+            }
+
+            # Set the sender and receiver
+            $smtp->mail($self->smtp_login);
+            $smtp->to($args{user}->user_email);
+
+            $log->info("Sending mail, To: " . $args{user}->user_email . ", From: " . $self->smtp_login,
+                       ", Subject: " . $args{subject});
+            $log->debug("Message:\n" . $args{message});
+
+            # Set the mail contents
+            $smtp->data();
+            $smtp->datasend("To: " . $args{user}->user_email . "\n");
+            $smtp->datasend("From: " . $self->smtp_login . "\n");
+            $smtp->datasend("Subject: " . $args{subject} . "\n");
+            $smtp->datasend("\n");
+
+            $smtp->datasend($args{message});
+            $smtp->dataend();
+
+            # Close the smtp connection
+            $smtp->quit;
         }
-
-        # Set the sender and receiver
-        $smtp->mail($self->smtp_login);
-        $smtp->to($args{user}->user_email);
-
-        $log->debug("Sending mail, To: " . $args{user}->user_email . ", From: " . $self->smtp_login,
-                    ", Subject: " . $args{subject} . ", Message:\n" . $args{message});
-
-        # Set the mail contents
-        $smtp->data();
-        $smtp->datasend("To: " . $args{user}->user_email . "\n");
-        $smtp->datasend("From: " . $self->smtp_login . "\n");
-        $smtp->datasend("Subject: " . $args{subject} . "\n");
-        $smtp->datasend("\n");
-
-        $smtp->datasend($args{message});
-        $smtp->dataend();
-
-        # Close the smtp connection
-        $smtp->quit;   
+        catch ($err) {
+            throw Kanopya::Exception::Execution(
+                      error => "Unable to send mail to " . $args{user}->user_email . ":$err"
+                  );
+        }
     }
     else {
         $log->warn("Can not connect to smtp server <" . $self->smtp_server . ">");

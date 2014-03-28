@@ -54,7 +54,7 @@ sub methods {
         ruleVerified => {
             description => 'Produce a verified rule status.',
             message_queuing => {
-                queue => 'verified_rule'
+                queue => 'kanopya.rulesengine.verified_rule'
             }
         },
     };

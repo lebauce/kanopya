@@ -527,6 +527,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 kanopya_mail_notifier
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::KanopyaMailNotifier>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopya_mail_notifier",
+  "Kanopya::Schema::Result::KanopyaMailNotifier",
+  { "foreign.kanopya_mail_notifier_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 kanopya_openstack_sync
 
 Type: might_have
@@ -659,21 +674,6 @@ __PACKAGE__->might_have(
   "lvm2",
   "Kanopya::Schema::Result::Lvm2",
   { "foreign.lvm2_id" => "self.component_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 mailnotifier0
-
-Type: might_have
-
-Related object: L<Kanopya::Schema::Result::Mailnotifier0>
-
-=cut
-
-__PACKAGE__->might_have(
-  "mailnotifier0",
-  "Kanopya::Schema::Result::Mailnotifier0",
-  { "foreign.mailnotifier0_id" => "self.component_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -1118,8 +1118,8 @@ Composing rels: L</workflow_def_managers> -> workflow_def
 __PACKAGE__->many_to_many("workflow_defs", "workflow_def_managers", "workflow_def");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-26 15:02:09
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:5U1rlvZt0bbOOKZh3LrACw
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-27 16:40:07
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:z0RiHyhZ3u89iuNgudCkmw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

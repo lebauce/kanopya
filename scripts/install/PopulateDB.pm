@@ -79,6 +79,7 @@ my @classes = (
     'Entity::Component::KanopyaFront',
     'Entity::Component::KanopyaAggregator',
     'Entity::Component::KanopyaRulesEngine',
+    'Entity::Component::KanopyaMailNotifier',
     'Entity::Component::KanopyaOpenstackSync',
     'Entity::Component::KanopyaStackBuilder',
     'Entity::Component::UcsManager',
@@ -153,7 +154,6 @@ my @classes = (
     'Entity::Host::VirtualMachine::Opennebula3Vm',
     'Entity::Host::Hypervisor::OpenstackHypervisor',
     'Entity::Host::VirtualMachine::OpenstackVm',
-    'Entity::Component::Mailnotifier0',
     'Entity::Host::VirtualMachine::Opennebula3Vm::Opennebula3KvmVm',
     'Entity::ServiceTemplate',
     'Entity::Policy',
@@ -954,7 +954,7 @@ sub registerComponents {
             service_provider_types => [ 'Cluster', 'Kanopya' ],
         },
         {
-            component_name         => 'Mailnotifier',
+            component_name         => 'KanopyaMailNotifier',
             component_version      => 0,
             deployable             => 0,
             component_categories   => [ 'NotificationManager' ],
@@ -1624,7 +1624,7 @@ sub registerKanopyaMaster {
             name => $distro
         },
         {
-            name => "Mailnotifier",
+            name => "KanopyaMailNotifier",
             manager => "NotificationManager",
             conf => {
                 smtp_server => "localhost"

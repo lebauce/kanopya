@@ -173,7 +173,7 @@ my %attribute_fixed_value = (
     'poolip' => {
         'poolip_first_addr' => '10.0.0.1'
     },
-    'mailnotifier0' => {
+    'kanopyamailnotifier' => {
         'smtp_server' => '0.0.0.0'
     },
     'clustermetric' => {

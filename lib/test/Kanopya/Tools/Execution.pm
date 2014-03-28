@@ -111,7 +111,9 @@ Purge the executor queues.
 sub purgeQueues {
     my ($self, %args) = @_;
 
-    for my $queue ('workflow', 'operation', 'operation_result') {
+    for my $queue ('kanopya.executor.workflow',
+                   'kanopya.executor.operation',
+                   'kanopya.executor.operation_result') {
         $executor->purgeQueue(queue => $queue);
     }
 }

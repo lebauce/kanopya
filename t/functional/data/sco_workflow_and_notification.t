@@ -22,7 +22,7 @@ use Entity::Clustermetric;
 use Entity::Combination::AggregateCombination;
 use Entity::Combination::NodemetricCombination;
 use Entity::Component::Sco;
-use Entity::Component::Mailnotifier0;
+use Entity::Component::KanopyaMailNotifier;
 use Entity::User;
 use Entity::WorkflowDef;
 
@@ -420,7 +420,7 @@ sub _create_infra {
         }
     );
 
-    my $mailNotifier = Entity::Component::Mailnotifier0->find();
+    my $mailNotifier = Entity::Component::KanopyaMailNotifier->find();
 
     $service_provider->addManager(manager_type => 'NotificationManager',
                                   manager_id   => $mailNotifier->id);

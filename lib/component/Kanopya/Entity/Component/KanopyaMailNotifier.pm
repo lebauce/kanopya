@@ -15,9 +15,10 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package Entity::Component::Mailnotifier0;
-use base "Entity::Component";
-use base "Manager::NotificationManager";
+package Entity::Component::KanopyaMailNotifier;
+use base Entity::Component;
+use base Manager::NotificationManager;
+use base Manager::DaemonManager;
 
 use strict;
 use warnings;
@@ -61,6 +62,34 @@ use constant ATTR_DEF => {
     },
 };
 
+sub getAttrDef { return ATTR_DEF; }
+
+sub methods {
+    return {
+        notify => {
+            description => 'produce on th email notification queue.',
+            message_queuing => {
+                queue => 'kanopya.mailnotifier.notification'
+            }
+        },
+    };
+}
+
+sub notify {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'user', 'message' ],
+                         optional => { 'subject' => "" });
+
+    # Publish on the 'operation_result' queue
+    MessageQueuing::RabbitMQ::Sender::notify($self,
+                                             user_id => $args{user}->id,
+                                             message => $args{message},
+                                             subject => $args{subject},
+                                             %{ Kanopya::Database::_adm->{config}->{amqp} });
+}
+
 sub getBaseConfiguration {
     return {
         smtp_server => '',
@@ -69,7 +98,5 @@ sub getBaseConfiguration {
         use_ssl     => 0
     };
 }
-
-sub getAttrDef { return ATTR_DEF; }
 
 1;
