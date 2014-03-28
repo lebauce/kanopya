@@ -1,12 +1,13 @@
 class kanopya::openstack::nova::compute(
-  $email              = 'nothing@nothing.com',
-  $libvirt_type       = 'kvm',
-  $bridge_uplinks     = 'eth1',
-  $rabbit_user        = 'nova',
-  $rabbit_password    = 'nova',
-  $rabbit_virtualhost = '/',
+  $email                  = 'nothing@nothing.com',
+  $libvirt_type           = 'kvm',
+  $bridge_uplinks         = 'eth1',
+  $rabbit_user            = 'nova',
+  $rabbit_password        = 'nova',
+  $rabbit_virtualhost     = '/',
+  $neutron_admin_user     = 'neutron',
   $neutron_admin_password = 'neutron',
-  $neutron_shared_secret = 'mysecret'
+  $neutron_shared_secret  = 'mysecret'
 ) {
   tag("kanopya::novacompute")
 
@@ -89,6 +90,7 @@ class kanopya::openstack::nova::compute(
       }
       
       class { 'neutron::agents::metadata':
+        auth_user     => $neutron_admin_user,
         auth_password => $neutron_admin_password,
         shared_secret => $neutron_shared_secret,
         metadata_ip   => "${keystone_ip}",

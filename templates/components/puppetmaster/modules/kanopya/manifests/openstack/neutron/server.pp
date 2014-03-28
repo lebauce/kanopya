@@ -35,6 +35,7 @@ class kanopya::openstack::neutron::server(
 
   class { '::neutron::server':
     auth_password => "${keystone_password}",
+    auth_user     => "${keystone_user}",
     auth_host     => "${keystone}",
     require       => Class['kanopya::openstack::repository']
   }
