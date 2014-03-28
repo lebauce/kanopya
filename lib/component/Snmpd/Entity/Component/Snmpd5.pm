@@ -55,7 +55,9 @@ sub getPuppetDefinition {
         snmpd => {
             classes => {
                 "kanopya::snmpd" => {
-                    collector => $collector->getMasterNode->adminIp
+                    collectors => [ 
+                        'rocommunity kanopya ' . $collector->getMasterNode->adminIp 
+                    ]
                 }
             }
         }
