@@ -438,7 +438,7 @@ sub handleResult {
     $self->setLogAppender(workflow => $operation->workflow);
 
     # Force the execution status if the workflow has been manually cancelled or interupted.
-    if ($operation->workflow->state =~ m/^(cancelled|cancelled)$/) {
+    if ($operation->workflow->state =~ m/^(cancelled|interrupted)$/) {
         $args{status} = $operation->workflow->state;
     }
     # If the timeout exceeded, swith the workflow state to "timeouted"
@@ -642,7 +642,7 @@ sub handleResult {
                     $tocancel->setState(state => 'cancelled');
                     $tocancel->remove();
                 }
-                $workflow->cancelled();
+                $workflow->cancel();
 
                 # Unlock the context objects
                 $operation->unlockContext(skip_not_found => 1);
