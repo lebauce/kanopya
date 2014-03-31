@@ -631,6 +631,7 @@ CREATE TABLE `workflow` (
   `workflow_id` int(8) unsigned NOT NULL,
   `workflow_name` char(64) DEFAULT NULL,
   `state` char(32) NOT NULL DEFAULT 'pending',
+  `timeout` int(4) unsigned DEFAULT NULL,
   `related_id` int(8) unsigned NULL DEFAULT NULL,
   PRIMARY KEY (`workflow_id`),
   FOREIGN KEY (`workflow_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,

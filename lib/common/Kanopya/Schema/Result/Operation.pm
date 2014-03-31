@@ -53,6 +53,13 @@ __PACKAGE__->table("operation");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 operation_group_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =head2 workflow_id
 
   data_type: 'integer'
@@ -110,13 +117,6 @@ __PACKAGE__->table("operation");
   is_foreign_key: 1
   is_nullable: 1
 
-=head2 operation_group_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 1
-
 =cut
 
 __PACKAGE__->add_columns(
@@ -133,6 +133,13 @@ __PACKAGE__->add_columns(
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
+  },
+  "operation_group_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
   },
   "workflow_id",
   {
@@ -166,13 +173,6 @@ __PACKAGE__->add_columns(
   "execution_rank",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "param_preset_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 1,
-  },
-  "operation_group_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -297,8 +297,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-20 15:56:27
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:NFKNIY/tb7oy65Vrs7yv5g
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-31 10:46:02
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:WdPd1RWF5lob/Vea3ANLBw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

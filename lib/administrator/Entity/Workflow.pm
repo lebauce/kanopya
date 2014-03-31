@@ -1,4 +1,4 @@
-# Copyright © 2011-2012 Hedera Technology SAS
+# Copyright © 2011-2014 Hedera Technology SAS
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
@@ -109,7 +109,11 @@ Instanciate and run a new workflow from a already defined WorfklowDef
 
 @param name WorfkDef name
 
-@optional rule rule which have triggered the workflow if the workflow is triggered by a rule
+@optional params the workflow parameters
+@optional timeout the number of second to consider the workflow timeouted
+@optional rule the rule which have triggered the workflow if the workflow is triggered by a rule
+@optional related_id the entity related to the workflow
+@optional owner_id the user owner of the workflow
 
 @optional related_id Entity related to the workflow
 
@@ -122,6 +126,7 @@ sub run {
     General::checkParams(args     => \%args,
                          required => [ 'name' ],
                          optional => { 'params'     => {},
+                                       'timeout'    => undef,
                                        'rule'       => undef,
                                        'related_id' => undef,
                                        'owner_id'   => Kanopya::Database::currentUser });
@@ -131,9 +136,11 @@ sub run {
     # Instanciate the workflow, and add the steps
     my $label = $class->formatLabel(params => $args{params}, description => $def->description);
 
+    my $timeout = defined ($args{timeout}) ? (time + $args{timeout}) : undef;
     my $workflow = Entity::Workflow->new(workflow_name => $label,
                                          related_id    => delete $args{related_id},
-                                         owner_id      => delete $args{owner_id});
+                                         owner_id      => delete $args{owner_id},
+                                         timeout       => $timeout);
 
     my @steps = WorkflowStep->search(hash     => { workflow_def_id => $def->id },
                                      order_by => 'workflow_step_id asc');
@@ -156,9 +163,7 @@ sub run {
 
         # If some params has been given to the first operation, remove from args
         # to avoid given them to others operation of the workflow.
-        if (defined $args{params}) {
-            delete $args{params};
-        }
+        delete $args{params};
     }
 
     return $workflow;
@@ -183,132 +188,8 @@ Enqueue an operation in the workflow
 
 sub enqueue {
     my ($self, %args) = @_;
+
     return Entity::Operation->enqueue(workflow_id => $self->id, %args);
-}
-
-
-sub getOperationsParams {
-    my $self = shift;
-
-    my @steps = $self->search(related => 'workflow_steps', order_by => 'workflow_step_id asc');
-    my @operations_to_enqueue = map { {
-        priority => 200,
-        type     => $_->operationtype->operationtype_name,
-    } } @steps;
-    # Put params (and context) on the first operation only
-    $operations_to_enqueue[0]->{params} = $self->{params};
-    return @operations_to_enqueue;
-}
-
-
-=pod
-=begin classdoc
-
-Get list of operation params from a workflow or from an operation
-
-@static
-
-@optional workflow hashref definition : {name   => workflow_def_name,
-                                         params => {optional params}};
-@optional operation hashref definition : {priority => priority_num,
-                                          type     => pperation_name,
-                                          params   => {optional params}}
-
-@return arrayref of operations parameters
-
-=end classdoc
-=cut
-
-sub _getOperationsToEnqueue {
-    my ($class, %args) = @_;
-    General::checkParams(args => \%args, optional => { 'operation' => undef, 'workflow' => undef});
-
-    my @operations_to_enqueue = ();
-
-    if (defined $args{workflow}) {
-        my $group = OperationGroup->create();
-        my $def = Entity::WorkflowDef->find(hash => { workflow_def_name => $args{workflow}->{name} });
-        my @steps = WorkflowStep->search(hash     => { workflow_def_id => $def->id },
-                                         order_by => 'workflow_step_id asc' );
-
-        @operations_to_enqueue = map { {
-            priority => 200,
-            group    => $group,
-            type     => $_->operationtype->operationtype_name,
-        } } @steps;
-
-        # Put params (and context) on the first operation only
-        $operations_to_enqueue[0]->{params} = $args{workflow}->{params};
-    }
-    elsif (defined $args{operation}) {
-        push @operations_to_enqueue, $args{operation};
-    }
-
-    return \@operations_to_enqueue;
-}
-
-
-=pod
-=begin classdoc
-
-Shift operations of a workflow of a given offset and from a given rank.
-
-@param offset value of the offset
-@param rank rank from which the offset is
-
-@return number of shifted operations
-
-=end classdoc
-=cut
-
-sub _updateOperationRankFromGivenRank {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'offset', 'rank' ]);
-
-    my @operations = $self->searchRelated(filters => ['operations'],
-                                          order_by => 'execution_rank DESC');
-
-    my $incr_num = 0;
-    for my $operation (@operations) {
-        # offset all pending operation to insert new ones
-        my $execution_rank = $operation->execution_rank;
-        if ($execution_rank >= $args{rank}) {
-            $operation->execution_rank($execution_rank + $args{offset});
-            $incr_num++;
-        }
-    }
-
-    return $incr_num;
-}
-
-
-=pod
-=begin classdoc
-
-Shift pending operations of the workflow of a given offset.
-
-@param offset value of the offset
-
-@return number of shifted operations
-
-=end classdoc
-=cut
-
-sub _updatePendingOperationRank {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'offset' ]);
-
-    my @operations = $self->searchRelated(filters => ['operations'],
-                                          hash    => { 'me.state' => ['pending'] },
-                                          order_by => 'execution_rank DESC');
-
-    for my $operation (@operations) {
-        # offset all pending operation to insert new ones
-        my $execution_rank = $operation->execution_rank;
-        $operation->execution_rank($execution_rank + $args{offset});
-    }
-
-    return (scalar @operations);
 }
 
 
@@ -332,6 +213,7 @@ Enqueue a single operation or all the operations of a workflow before the curren
 
 sub enqueueBefore {
     my ($self, %args) = @_;
+
     General::checkParams(args     => \%args,
                          required => [ 'current_operation' ],
                          optional => { 'operation' => undef,
@@ -525,13 +407,11 @@ Set workflow state
 =cut
 
 sub setState {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'state' ]);
 
-    $self->setAttr(name => 'state', value => $args{state});
-    $self->save();
+    $self->state($args{state});
 }
 
 
@@ -544,10 +424,25 @@ Interrpupt the workflow.
 =cut
 
 sub interrupt {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     $self->setState(state => 'interrupted');
+}
+
+
+=pod
+=begin classdoc
+
+Interrpupt the workflow.
+
+=end classdoc
+=cut
+
+sub timeouted {
+    my ($self, %args) = @_;
+
+    $log->warn("Worklfow \"" . $self->label . "\" (" . $self->id . ") timeout exceeded..");
+    $self->setState(state => 'timeouted');
 }
 
 
@@ -560,8 +455,7 @@ Finish workflow by removing operations and setting state as 'done'
 =cut
 
 sub finish {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     for my $operation ($self->operations) {
         $operation->remove();
@@ -579,8 +473,7 @@ Build a user friendly label from context params contents, and a template toolkit
 =cut
 
 sub formatLabel {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'params', 'description' ]);
 
@@ -659,6 +552,130 @@ sub rule {
         return (pop @noderules)->nodemetric_rule;
     }
     return undef;
+}
+
+sub getOperationsParams {
+    my $self = shift;
+
+    my @steps = $self->search(related => 'workflow_steps', order_by => 'workflow_step_id asc');
+    my @operations_to_enqueue = map { {
+        priority => 200,
+        type     => $_->operationtype->operationtype_name,
+    } } @steps;
+    # Put params (and context) on the first operation only
+    $operations_to_enqueue[0]->{params} = $self->{params};
+    return @operations_to_enqueue;
+}
+
+
+=pod
+=begin classdoc
+
+Get list of operation params from a workflow or from an operation
+
+@static
+
+@optional workflow hashref definition : {name   => workflow_def_name,
+                                         params => {optional params}};
+@optional operation hashref definition : {priority => priority_num,
+                                          type     => pperation_name,
+                                          params   => {optional params}}
+
+@return arrayref of operations parameters
+
+=end classdoc
+=cut
+
+sub _getOperationsToEnqueue {
+    my ($class, %args) = @_;
+    General::checkParams(args => \%args, optional => { 'operation' => undef, 'workflow' => undef});
+
+    my @operations_to_enqueue = ();
+
+    if (defined $args{workflow}) {
+        my $group = OperationGroup->create();
+        my $def = Entity::WorkflowDef->find(hash => { workflow_def_name => $args{workflow}->{name} });
+        my @steps = WorkflowStep->search(hash     => { workflow_def_id => $def->id },
+                                         order_by => 'workflow_step_id asc' );
+
+        @operations_to_enqueue = map { {
+            priority => 200,
+            group    => $group,
+            type     => $_->operationtype->operationtype_name,
+        } } @steps;
+
+        # Put params (and context) on the first operation only
+        $operations_to_enqueue[0]->{params} = $args{workflow}->{params};
+    }
+    elsif (defined $args{operation}) {
+        push @operations_to_enqueue, $args{operation};
+    }
+
+    return \@operations_to_enqueue;
+}
+
+
+=pod
+=begin classdoc
+
+Shift operations of a workflow of a given offset and from a given rank.
+
+@param offset value of the offset
+@param rank rank from which the offset is
+
+@return number of shifted operations
+
+=end classdoc
+=cut
+
+sub _updateOperationRankFromGivenRank {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'offset', 'rank' ]);
+
+    my @operations = $self->searchRelated(filters => ['operations'],
+                                          order_by => 'execution_rank DESC');
+
+    my $incr_num = 0;
+    for my $operation (@operations) {
+        # offset all pending operation to insert new ones
+        my $execution_rank = $operation->execution_rank;
+        if ($execution_rank >= $args{rank}) {
+            $operation->execution_rank($execution_rank + $args{offset});
+            $incr_num++;
+        }
+    }
+
+    return $incr_num;
+}
+
+
+=pod
+=begin classdoc
+
+Shift pending operations of the workflow of a given offset.
+
+@param offset value of the offset
+
+@return number of shifted operations
+
+=end classdoc
+=cut
+
+sub _updatePendingOperationRank {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => [ 'offset' ]);
+
+    my @operations = $self->searchRelated(filters => ['operations'],
+                                          hash    => { 'me.state' => ['pending'] },
+                                          order_by => 'execution_rank DESC');
+
+    for my $operation (@operations) {
+        # offset all pending operation to insert new ones
+        my $execution_rank = $operation->execution_rank;
+        $operation->execution_rank($execution_rank + $args{offset});
+    }
+
+    return (scalar @operations);
 }
 
 1;

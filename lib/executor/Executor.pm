@@ -104,12 +104,7 @@ sub new {
 
     General::checkParams(args => \%args, optional => { "duration" => undef });
 
-    my $self = $class->SUPER::new(confkey => 'executor', %args);
-
-    # Keep the ref of the timers triggered for reported operations
-    $self->{timerrefs} = {};
-
-    return $self;
+    return $class->SUPER::new(confkey => 'executor', %args);
 }
 
 
@@ -442,8 +437,19 @@ sub handleResult {
     # Log in the proper file
     $self->setLogAppender(workflow => $operation->workflow);
 
-    if ($operation->workflow->state eq 'cancelled') {
-        $args{status} = 'cancelled';
+    # Force the execution status if the workflow has been manually cancelled or interupted.
+    if ($operation->workflow->state =~ m/^(cancelled|cancelled)$/) {
+        $args{status} = $operation->workflow->state;
+    }
+    # If the timeout exceeded, swith the workflow state to "timeouted"
+    elsif ($operation->workflow->state ne 'timeouted' &&
+        defined $operation->workflow->timeout &&
+        $operation->workflow->timeout < time) {
+        $operation->workflow->timeouted();
+
+        # Set the state on the operation for notification purpose only,
+        # The real state of the operation wil be set at the following statement.
+        $operation->setState(state => "timeouted");
     }
 
     # TODO: Check the current state / new state consitency
@@ -636,7 +642,7 @@ sub handleResult {
                     $tocancel->setState(state => 'cancelled');
                     $tocancel->remove();
                 }
-                $workflow->setState(state => 'cancelled');
+                $workflow->cancelled();
 
                 # Unlock the context objects
                 $operation->unlockContext(skip_not_found => 1);
@@ -659,11 +665,6 @@ sub handleResult {
                       error => "Unknown operation operation result status <$args{status}>"
                   );
         }
-    }
-
-    if ($operation->workflow->state eq 'interrupted') {
-        # Stop the workflow
-        return 1;
     }
 
     # Compute the workflow status, push the next op if there is remaining one(s),
