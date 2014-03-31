@@ -75,7 +75,8 @@ use constant ATTR_DEF   => {
         pattern         => '^(enabled|disabled|disabled_temp|delayed|triggered)$',
         is_mandatory    => 1,
         is_editable     => 1,
-        label           => 'State'
+        label           => 'State',
+        default         => 'enabled',
     },
     description => {
         pattern         => '^.*$',
@@ -529,7 +530,7 @@ sub updateFormulaString {
 =begin classdoc
 
 Find the AggregateConditions ids contained in the rule formula without doublon.
- 
+
 @return array of AggregateConditions ids
 
 =end classdoc
@@ -546,7 +547,7 @@ sub getDependentConditionIds {
 =begin classdoc
 
 Return true if there is an active time period for the rule
- 
+
 @return a boolean
 
 =end classdoc

@@ -85,7 +85,8 @@ use constant ATTR_DEF => {
         pattern         => '^.*$',
         is_mandatory    => 1,
         is_extended     => 0,
-        is_editable     => 0
+        is_editable     => 0,
+        default         => 1200,
     },
     indicator_label => {
         is_virtual      => 1,
