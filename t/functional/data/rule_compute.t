@@ -7,9 +7,10 @@ use Test::Exception;
 use Test::Pod;
 use Data::Dumper;
 use Kanopya::Tools::TestUtils 'expectedException';
+use Data::Compare;
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level=>'DEBUG', file=>'rule_compute.log', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>__FILE__.'.log', layout=>'%F %L %p %m%n'});
 my $log = get_logger("");
 
     use Kanopya::Database;
@@ -47,11 +48,11 @@ eval{
     $rulesengine  = RulesEngine->new();
 
     $service_provider = Entity::ServiceProvider::Externalcluster->new(
-            externalcluster_name => 'Test Service Provider',
+            externalcluster_name => 'Test Service Provider'.time(),
     );
 
     my $external_cluster_mockmonitor = Entity::ServiceProvider::Externalcluster->new(
-            externalcluster_name => 'Test Monitor',
+            externalcluster_name => 'Test Monitor'.time(),
     );
 
     my $mock_monitor = Entity::Component::MockMonitor->new(
@@ -96,6 +97,7 @@ eval{
 
 
 
+    simple_unitary_tests();
     test_aggregate_condition_update();
     test_nodemetric_condition_update();
     test_aggregate_combination();
@@ -113,6 +115,291 @@ if($@) {
     my $error = $@;
     print $error."\n";
     Kanopya::Database::rollbackTransaction;
+}
+
+sub simple_unitary_tests {
+
+    my $cm = Entity::Clustermetric->new(
+                 clustermetric_service_provider_id      => $service_provider->id,
+                 clustermetric_indicator_id             => ($indic1->id),
+                 clustermetric_statistics_function_name => 'mean',
+             );
+
+    #  Nodemetric combination
+    my $ncomb = Entity::Combination::NodemetricCombination->new(
+                    service_provider_id             => $service_provider->id,
+                    nodemetric_combination_formula  => '2*id'.($indic1->id),
+                );
+
+    my $ncond = Entity::NodemetricCondition->new(
+                    nodemetric_condition_service_provider_id => $service_provider->id,
+                    left_combination_id             => $ncomb->id,
+                    nodemetric_condition_comparator => '>',
+                    nodemetric_condition_threshold  => '3',
+                );
+
+    my $r = Entity::Rule::NodemetricRule->new(
+                service_provider_id => $service_provider->id,
+                formula => "!id".$ncond->id,
+            );
+
+    lives_ok {
+        $service_provider->addManagerParameter(
+            manager_type  => 'CollectorManager',
+            name          => 'mockmonit_config',
+            value         =>  "{'default':{'const':50},'nodes':{'node_1':{'const':1.234}, 'node_2':{'const':2.345}}}",
+        );
+
+        $aggregator->update();
+        sleep(2);
+        $aggregator->update();
+        sleep(2);
+
+        if (! ($ncomb->evaluate(node => $node) == 2*1.234)) {
+            die "Wrong NodemetricCombination evaluation on node 1";
+        }
+
+        if (! ($ncomb->evaluate(node => $node2) == 2*2.345)) {
+            die "Wrong NodemetricCombination evaluation on node 2";
+        }
+
+        if (! $ncond->evaluate(node => $node) == 0) {
+            die "Wrong NodemetricCondition evaluation on node 1";
+        }
+
+        if (! $ncond->evaluate(node => $node2) == 1) {
+            die "Wrong NodemetricCondition evaluation on node 2";
+        }
+
+        if (! $r->evaluate(node => $node) == 1) {
+            die "Wrong NodemetricCondition evaluation on node 1";
+        }
+
+        if (! $r->evaluate(node => $node2) == 0) {
+            die "Wrong NodemetricCondition evaluation on node 2";
+        }
+
+    } 'simple unitary tests';
+
+    lives_ok {
+        $service_provider->addManagerParameter(
+            manager_type  => 'CollectorManager',
+            name          => 'mockmonit_config',
+            value         =>  "{'default':{'const':50},'nodes':{'node_1':{'const':5}, 'node_2':{'const':1}}}",
+        );
+
+        my $memoization = {};
+        my $waited_memoization = {};
+        $aggregator->update();
+        sleep(2);
+        $aggregator->update();
+        sleep(2);
+
+        if (! ($ncomb->evaluate(node => $node, memoization => $memoization) == 2*5)) {
+            die "Wrong NodemetricCombination evaluation on node 1";
+        }
+
+        $waited_memoization = {$indic1->id => {$node->id => 5},
+                               $ncomb->id  => {$node->id => 10},};
+
+        if (! Compare($memoization, $waited_memoization)) {
+            die 'Error in memoization hash';
+        }
+
+
+        if (! ($ncomb->evaluate(node => $node2, memoization => $memoization) == 2*1)) {
+            die "Wrong NodemetricCombination evaluation on node 2";
+        }
+
+        $waited_memoization = {$indic1->id => {$node->id => 5, $node2->id => 1},
+                               $ncomb->id  => {$node->id => 10, $node2->id => 2}};
+
+        if (! Compare($memoization, $waited_memoization)) {
+            die 'Error in memoization hash 2';
+        }
+
+        if (! $ncond->evaluate(node => $node, memoization => $memoization) == 1) {
+            die "Wrong NodemetricCondition evaluation on node 1";
+        }
+
+        $waited_memoization = {$indic1->id => {$node->id => 5, $node2->id => 1},
+                               $ncomb->id  => {$node->id => 10, $node2->id => 2},
+                               $ncond->id  => {$node->id => 1}};
+
+        if (! Compare($memoization, $waited_memoization)) {
+            die 'Error in memoization hash';
+        }
+
+
+        if (! $ncond->evaluate(node => $node2, memoization => $memoization) == 0) {
+            die "Wrong NodemetricCondition evaluation on node 2";
+        }
+
+        $waited_memoization = {$indic1->id => {$node->id => 5, $node2->id => 1},
+                               $ncomb->id  => {$node->id => 10, $node2->id => 2},
+                               $ncond->id  => {$node->id => 1, $node2->id => 0}};
+
+        if (! Compare($memoization, $waited_memoization)) {
+            die 'Error in memoization hash';
+        }
+
+        if (! $r->evaluate(node => $node, memoization => $memoization) == 0) {
+            die "Wrong NodemetricCondition evaluation on node 1";
+        }
+
+        $waited_memoization = {$indic1->id => {$node->id => 5, $node2->id => 1},
+                               $ncomb->id  => {$node->id => 10, $node2->id => 2},
+                               $ncond->id  => {$node->id => 1, $node2->id => 0},
+                               $r->id      => {$node->id => 0}};
+
+        if (! Compare($memoization, $waited_memoization)) {
+            die 'Error in memoization hash';
+        }
+
+        if (! $r->evaluate(node => $node2, memoization => $memoization) == 1) {
+            die "Wrong NodemetricCondition evaluation on node 2";
+        }
+
+        $waited_memoization = {$indic1->id => {$node->id => 5, $node2->id => 1},
+                               $ncomb->id  => {$node->id => 10, $node2->id => 2},
+                               $ncond->id  => {$node->id => 1, $node2->id => 0},
+                               $r->id      => {$node->id => 0, $node2->id => 1}};
+
+        if (! Compare($memoization, $waited_memoization)) {
+            die 'Error in memoization hash';
+        }
+    } 'simple unitary test and memoize';
+
+    lives_ok {
+        $service_provider->addManagerParameter(
+            manager_type  => 'CollectorManager',
+            name          => 'mockmonit_config',
+            value         =>  "{'default':{'const':50},'nodes':{'node_1':{'const':1}, 'node_2':{'const':5}}}",
+        );
+
+        my $memoization = {$indic1->id => {$node->id => 5, $node2->id => 1},
+                           $ncomb->id  => {$node->id => 10, $node2->id => 2},
+                           $ncond->id  => {$node->id => 1, $node2->id => 0},
+                           $r->id      => {$node->id => 0, $node2->id => 1}};
+
+        $aggregator->update();
+        sleep(2);
+        $aggregator->update();
+        sleep(2);
+
+        if (! ($ncomb->evaluate(node => $node, memoization => $memoization) == 2*5)) {
+            die "Wrong NodemetricCombination evaluation on node 1";
+        }
+
+        if (! ($ncomb->evaluate(node => $node) == 2*1)) {
+            die "Wrong NodemetricCombination evaluation on node 1";
+        }
+
+        if (! ($ncomb->evaluate(node => $node2, memoization => $memoization) == 2*1)) {
+            die "Wrong NodemetricCombination evaluation on node 2";
+        }
+
+        if (! ($ncomb->evaluate(node => $node2) == 2*5)) {
+            die "Wrong NodemetricCombination evaluation on node 2";
+        }
+
+        if (! $ncond->evaluate(node => $node, memoization => $memoization) == 1) {
+            die "Wrong NodemetricCondition evaluation on node 1";
+        }
+
+        if (! $ncond->evaluate(node => $node) == 0) {
+            die "Wrong NodemetricCondition evaluation on node 1";
+        }
+
+        if (! $ncond->evaluate(node => $node2, memoization => $memoization) == 0) {
+            die "Wrong NodemetricCondition evaluation on node 2";
+        }
+
+        if (! $ncond->evaluate(node => $node2) == 1) {
+            die "Wrong NodemetricCondition evaluation on node 2";
+        }
+
+        if (! $r->evaluate(node => $node, memoization => $memoization) == 0) {
+            die "Wrong NodemetricCondition evaluation on node 1";
+        }
+
+        if (! $r->evaluate(node => $node) == 1) {
+            die "Wrong NodemetricCondition evaluation on node 1";
+        }
+
+        if (! $r->evaluate(node => $node2, memoization => $memoization) == 1) {
+            die "Wrong NodemetricCondition evaluation on node 2";
+        }
+
+        if (! $r->evaluate(node => $node2) == 0) {
+            die "Wrong NodemetricCondition evaluation on node 2";
+        }
+
+    } 'simple unitary test with already memoization';
+
+    lives_ok {
+        $service_provider->addManagerParameter(
+            manager_type  => 'CollectorManager',
+            name          => 'mockmonit_config',
+            value         =>  "{'default':{'const':50},'nodes':{'node_1':{'const':null}, 'node_2':{'const':5}}}",
+        );
+
+        my $memoization = {};
+        my $waited_memoization = {};
+        $aggregator->update();
+        sleep(2);
+        $aggregator->update();
+        sleep(2);
+
+        $r->evaluate(node => $node, memoization => $memoization);
+
+        $waited_memoization = {$indic1->id => {$node->id => undef},
+                               $ncomb->id  => {$node->id => undef},
+                               $ncond->id  => {$node->id => undef},
+                               $r->id      => {$node->id => undef}};
+
+        if (! Compare($memoization, $waited_memoization)) {
+            die 'Error in memoization hash';
+        }
+
+        $memoization = {};
+        if (defined $ncomb->evaluate(node => $node, memoization => $memoization)) {
+            die "Wrong NodemetricCombination undef evaluation";
+        }
+
+        $waited_memoization = {$indic1->id => {$node->id => undef},
+                               $ncomb->id  => {$node->id => undef}};
+
+        if (! Compare($memoization, $waited_memoization)) {
+            die 'Error in memoization hash';
+        }
+
+        if (defined $ncond->evaluate(node => $node, memoization => $memoization)) {
+            die "Wrong NodemetricCondition undef evaluation";
+        }
+
+        $waited_memoization = {$indic1->id => {$node->id => undef},
+                               $ncomb->id  => {$node->id => undef},
+                               $ncond->id  => {$node->id => undef},};
+
+        if (! Compare($memoization, $waited_memoization)) {
+            die 'Error in memoization hash';
+        }
+
+        if (defined $r->evaluate(node => $node, memoization => $memoization)) {
+            die "Wrong NodemetricRule undef evaluation";
+        }
+
+        $waited_memoization = {$indic1->id => {$node->id => undef},
+                               $ncomb->id  => {$node->id => undef},
+                               $ncond->id  => {$node->id => undef},
+                               $r->id      => {$node->id => undef}};
+
+        if (! Compare($memoization, $waited_memoization)) {
+            die 'Error in memoization hash';
+        }
+
+    } 'simple unitary test with undef values';
 }
 
 sub test_rrd_remove {
@@ -225,28 +512,24 @@ sub test_nodemetric_condition {
         if (! $comb->evaluate() == 0.5*(1.234+2.345)) { die 'Wrong aggregate combination of nodemetric condition';}
 
         my $r1 = Entity::Rule::NodemetricRule->new(
-            service_provider_id => $service_provider->id,
-            formula => 'id'.$nc_agg_th_left->id,
-            state => 'enabled'
-        );
+                     service_provider_id => $service_provider->id,
+                     formula => 'id'.$nc_agg_th_left->id,
+                 );
 
         my $r2 = Entity::Rule::NodemetricRule->new(
-            service_provider_id => $service_provider->id,
-            formula => 'id'.$nc_agg_th_left->id,
-            state => 'enabled'
-        );
+                     service_provider_id => $service_provider->id,
+                     formula => 'id'.$nc_agg_th_left->id,
+                 );
 
         my $r3 = Entity::Rule::NodemetricRule->new(
-            service_provider_id => $service_provider->id,
-            formula => 'id'.$nc_mix_1->id,
-            state => 'enabled',
-        );
+                     service_provider_id => $service_provider->id,
+                     formula => 'id'.$nc_mix_1->id,
+                 );
 
         my $r4 = Entity::Rule::NodemetricRule->new(
-            service_provider_id => $service_provider->id,
-            formula => 'id'.$nc_mix_2->id,
-            state => 'enabled'
-        );
+                    service_provider_id => $service_provider->id,
+                    formula => 'id'.$nc_mix_2->id,
+                 );
 
         sleep(2);
         $aggregator->update();
@@ -254,7 +537,7 @@ sub test_nodemetric_condition {
         $rulesengine->oneRun();
 
         VerifiedNoderule->find(hash => {
-            verified_noderule_node_id    => $node->id,
+            verified_noderule_node_id            => $node->id,
             verified_noderule_nodemetric_rule_id => $r1->id,
             verified_noderule_state              => 'verified',
         });
@@ -1263,7 +1546,7 @@ sub test_nodemetric_condition_update {
 
         my $old_constant_combination_id = $nc_agg_th_right->right_combination_id;
 
-        $nc_agg_th_right->update (
+        $nc_agg_th_right->update(
             nodemetric_condition_service_provider_id => $service_provider->id,
             left_combination_id             => $ncomb->id,
             nodemetric_condition_comparator => '>',

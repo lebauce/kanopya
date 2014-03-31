@@ -32,7 +32,6 @@ use warnings;
 
 use General;
 use TimeData::RRDTimeData;
-use Entity::Indicator;
 use Entity::CollectorIndicator;
 use Entity::Combination::AggregateCombination;
 

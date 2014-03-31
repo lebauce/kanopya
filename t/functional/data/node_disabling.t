@@ -18,9 +18,10 @@ use Test::Exception;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
     level=>'DEBUG',
-    file=>'node_disabling.log',
+    file=>__FILE__.'.log',
     layout=>'%F %L %p %m%n'
 });
+my $log = get_logger("");
 
 use Kanopya::Database;
 use RulesEngine;
@@ -33,18 +34,16 @@ use Entity::Rule::NodemetricRule;
 use VerifiedNoderule;
 use Entity::Clustermetric;
 use Entity::Combination::AggregateCombination;
-use Entity::CollectorIndicator;
 
 use Kanopya::Tools::TestUtils 'expectedException';
 
 my $testing = 1;
-
 my $acomb1;
 my $nrule1;
 my $service_provider;
 my $aggregator;
 my $mock_monitor;
-
+my $ind_oid = '.1.3.6.1.4.1.2021.4.5.0';
 main();
 
 sub main {
@@ -53,6 +52,11 @@ sub main {
     if($testing == 1) {
         Kanopya::Database::beginTransaction;
     }
+
+    # Delete unused Indicators from DB in order to speed up the test
+    map {$_->delete()} Entity::Indicator->search(
+                           hash => { -not => {indicator_oid => $ind_oid}}
+                       );
 
     node_disabling();
     test_rrd_remove();
@@ -65,6 +69,7 @@ sub main {
 sub node_disabling {
     $aggregator = Aggregator->new();
     my $rulesengine = RulesEngine->new();
+    $rulesengine->{config}->{time_step} = 0;
 
     # Create externalcluster with a mock monitor
     my $external_cluster_mockmonitor = Entity::ServiceProvider::Externalcluster->new(
@@ -310,7 +315,7 @@ sub _service_rule_objects_creation {
         hash => {externalcluster_name => 'Test Service Provider'}
     );
 
-    my $indicator = Entity::Indicator->find(hash => {indicator_oid => '.1.3.6.1.4.1.2021.4.5.0'});
+    my $indicator = Entity::Indicator->find(hash => {indicator_oid => $ind_oid});
     my $collector_indicator = $indicator->find(
                                   related => 'collector_indicators',
                                   hash    => {collector_manager_id => $mock_monitor->id}
@@ -334,7 +339,7 @@ sub _node_rule_objects_creation {
         hash => {externalcluster_name => 'Test Service Provider'}
     );
 
-    my $indicator = Entity::Indicator->find(hash => {indicator_oid => '.1.3.6.1.4.1.2021.4.5.0'});
+    my $indicator = Entity::Indicator->find(hash => {indicator_oid => $ind_oid});
     my $collector_indicator = $indicator->find(
                                   related => 'collector_indicators',
                                   hash    => {collector_manager_id => $mock_monitor->id}

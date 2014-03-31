@@ -33,7 +33,6 @@ use General;
 use Node;
 use Harddisk;
 use Entity::Iface;
-use Entity::Workflow;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
