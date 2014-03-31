@@ -432,7 +432,7 @@ sub createInternalConsumers {
 
     General::checkParams(args => \%args, optional => { 'purge' => 0 });
 
-    for my $cbname (grep { $self->_callbacks->{$_}->{internal} } keys $self->_callbacks) {
+    for my $cbname (grep { $self->_callbacks->{$_}->{internal} } keys %{$self->_callbacks}) {
         $self->createConsumer(cbname => $cbname);
 
         # Purge the queue
@@ -579,7 +579,7 @@ sub receiveAll {
     $self->createInternalConsumers(purge => 1);
 
     # Send messages on the control queue to spawn childs for callback definitions
-    for my $cbname (grep { ! $self->_callbacks->{$_}->{internal} } keys $self->_callbacks) {
+    for my $cbname (grep { ! $self->_callbacks->{$_}->{internal} } keys %{$self->_callbacks}) {
         $self->_component->controlDaemon(
             cbname    => $cbname,
             control   => 'spawn',
@@ -890,7 +890,7 @@ sub _instances {
     # If no callback definition name specified, return all instances. 
     if (! defined $args{cbname}) {
         my @allinstances;
-        for my $instances (values ($self->{_instances} || {})) {
+        for my $instances (values %{($self->{_instances} || {})}) {
             @allinstances = (@allinstances, @{ $instances });
         }
         return \@allinstances;
