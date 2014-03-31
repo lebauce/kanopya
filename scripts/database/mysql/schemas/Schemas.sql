@@ -1510,7 +1510,7 @@ CREATE TABLE `notification_subscription` (
   `notification_subscription_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
   `subscriber_id` int(8) unsigned NOT NULL,
   `entity_id` int(8) unsigned NOT NULL,
-  `operationtype_id` int(8) unsigned NOT NULL,
+  `operationtype_id` int(8) unsigned DEFAULT NULL,
   `operation_state`  char(32) NOT NULL DEFAULT "processing",
   `service_provider_id` int(8) unsigned NOT NULL,
   `validation` int(1) unsigned NOT NULL DEFAULT 0,

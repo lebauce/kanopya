@@ -40,7 +40,7 @@ use constant ATTR_DEF => {
     },
     operationtype_id => {
         pattern      => '^\d*$',
-        is_mandatory => 1,
+        is_mandatory => 0,
     },
     operation_state => {
         pattern      => '^' . join('|', Entity::Operation::OPERATION_STATES) . '$',
