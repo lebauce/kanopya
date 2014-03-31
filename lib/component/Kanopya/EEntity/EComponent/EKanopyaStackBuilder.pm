@@ -701,8 +701,12 @@ sub notificationMessage {
 
     my $templatefile;
     my $template = Template->new($self->getTemplateConfiguration());
-    my $templatedata = { operation => $args{operation},
-                         user      => $args{operation}->{context}->{user} };
+    my $templatedata = { operation       => $args{operation}->label,
+                         operation_id    => $args{operation}->id,
+                         workflow        => $args{operation}->workflow->label,
+                         workflow_id     => $args{operation}->workflow->id,
+                         operation_state => $args{state},
+                         user            => $args{operation}->{context}->{user} };
 
     # Customer notfication
     if ($args{subscriber}->isa('Entity::User::Customer')) {
@@ -733,6 +737,9 @@ sub notificationMessage {
         elsif ($args{operation}->isa('EEntity::EOperation::EUnconfigureStack') &&
                $args{state} eq "cancelled") {
             $templatedata->{state} = "failed";
+        }
+        elsif ($args{state} eq "timeouted") {
+            $templatedata->{state} = "timeouted";
         }
         else {
             return $self->SUPER::notificationMessage(%args);
