@@ -41,11 +41,11 @@ eval{
     $aggregator = Aggregator->new();
 
     $service_provider = Entity::ServiceProvider::Externalcluster->new(
-            externalcluster_name => 'Test Service Provider',
+            externalcluster_name => 'Test Service Provider'.time(),
     );
 
     my $external_cluster_mockmonitor = Entity::ServiceProvider::Externalcluster->new(
-            externalcluster_name => 'Test Monitor',
+            externalcluster_name => 'Test Monitor'.time(),
     );
 
 
@@ -322,13 +322,13 @@ sub testNodemetricCombination {
 
         $aggregator->update();
 
-        if (defined $ncomb_ident->evaluate(nodes => [$node_1])->{$node_1->id}) {
-            die 'Identity combination defined while no value for indicator'.($ncomb_ident->evaluate(nodes => [$node_1])->{$node_1->id});
+        if (defined $ncomb_ident->evaluate(node => $node_1)) {
+            die 'Identity combination defined while no value for indicator'.($ncomb_ident->evaluate(node => $node_1));
         }
 
 
-        if (defined $ncomb2->evaluate(nodes => [$node_1])->{$node_1->id}) {
-            die 'Combination defined while all indicator values are undef =>'.($ncomb2->evaluate(nodes => [$node_1])->{$node_1->id});
+        if (defined $ncomb2->evaluate(node => $node_1)) {
+            die 'Combination defined while all indicator values are undef =>'.($ncomb2->evaluate(node => $node_1));
         }
 
         # More complex config:
@@ -346,7 +346,7 @@ sub testNodemetricCombination {
 
         $aggregator->update();
 
-        if (! ($ncomb_ident->evaluate(nodes => [$node_1])->{$node_1->id} == 42)) {
+        if (! ($ncomb_ident->evaluate(node => $node_1) == 42)) {
             die 'Identity combination as same value than indicator';
         }
 
@@ -359,7 +359,7 @@ sub testNodemetricCombination {
 
         $aggregator->update();
 
-        if (defined $ncomb2->evaluate(nodes => [$node_2])->{$node_2->id}) {
+        if (defined $ncomb2->evaluate(node => $node_2)) {
             die 'Combination defined while one indicator value is undef'
         }
 
@@ -374,7 +374,7 @@ sub testNodemetricCombination {
 
         $aggregator->update();
 
-        if (! ($ncomb2->evaluate(nodes => [$node_1])->{$node_1->id} == (42 + 5)*12)) {
+        if (! ($ncomb2->evaluate(node => $node_1) == (42 + 5)*12)) {
             die 'Combination correctly computed';
         }
 
@@ -387,7 +387,7 @@ sub testNodemetricCombination {
 
         $aggregator->update();
 
-        if ($ncomb2->evaluate(nodes => [$node_1])->{$node_1->id} - (1.2 + 5)*42.42 > 10**-8) {
+        if ($ncomb2->evaluate(node => $node_1) - (1.2 + 5)*42.42 > 10**-8) {
             die 'Combination correctly computed with float values';
         }
     } 'Nodemetric combination computing'

@@ -194,13 +194,16 @@ sub toString {
            .$self->right_combination->combination_formula_string;
 };
 
+
 =pod
 
 =begin classdoc
 
 Evaluate the condition. Call evaluation of both dependant combinations then evaluate the condition
 
-@return hashref { node_id => value} where value = 1 if condition is true, value = 0 if condition is false
+@param node Node instance on which the condition will be analyzed
+
+@return 1 if condition is true, 0 if condition is false
 
 =end classdoc
 
@@ -208,10 +211,11 @@ Evaluate the condition. Call evaluation of both dependant combinations then eval
 
 sub evaluate {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['nodes']);
 
-    if (defined $args{memoization}->{$self->id}) {
-        return $args{memoization}->{$self->id};
+    General::checkParams(args => \%args, required => ['node']);
+
+    if (exists $args{memoization}->{$self->id}->{$args{node}->id}) {
+        return $args{memoization}->{$self->id}->{$args{node}->id};
     }
 
     my $comparator        = $self->nodemetric_condition_comparator;
@@ -221,24 +225,19 @@ sub evaluate {
     my $left_value  = $left_combination->evaluate(%args);
     my $right_value = $right_combination->evaluate(%args);
 
-
-    my %evaluation_for_each_node;
-
-    for my $node (@{$args{nodes}}) {
-        if ((not defined $left_value->{$node->id}) || (not defined $right_value->{$node->id})) {
-             $evaluation_for_each_node{$node->id} = undef;
-        }
-        else {
-            $evaluation_for_each_node{$node->id} = (eval $left_value->{$node->id}.$comparator.$right_value->{$node->id}) ? 1 : 0;
-        }
+    my $val;
+    if ((not defined $left_value) || (not defined $right_value)) {
+        $val = undef;
     }
-    $log->debug('nm condition <'.($self->id).'> <'.$self->nodemetric_condition_formula_string.'>'.
-               (Dumper \%evaluation_for_each_node));
+    else {
+        $val = (eval $left_value.$comparator.$right_value) ? 1 : 0;
+    }
 
     if (defined $args{memoization}) {
-        $args{memoization}->{$self->id} = \%evaluation_for_each_node;
+        $args{memoization}->{$self->id}->{$args{node}->id} = $val;
     }
-    return \%evaluation_for_each_node;
+
+    return $val;
 }
 
 

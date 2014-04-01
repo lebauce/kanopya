@@ -31,7 +31,6 @@ use base Entity::Combination;
 use strict;
 use warnings;
 
-use Entity::Indicator;
 use Entity::CollectorIndicator;
 use Data::Dumper;
 
@@ -300,59 +299,48 @@ sub computeValueFromMonitoredValues {
 
 Evaluate last value of the NodemetricCombination
 
-@optional format. If format = 'host_name', return hash with host_name key otherwise with node_id.
-
-@return hashref {node_id or node_hostname => value}
+@return value combination value
 
 =end
 
 =cut
 
-
 sub evaluate {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, optional => { 'format' => 'id', 'nodes' => undef});
 
-    if (defined $args{memoization}->{$self->id}) {
-        return $args{memoization}->{$self->id};
+    General::checkParams(args => \%args, required => ['node']);
+
+    if (exists $args{memoization}->{$self->id}->{$args{node}->id}) {
+        return $args{memoization}->{$self->id}->{$args{node}->id};
     }
-
-    my @nodes = (defined $args{nodes}) ? @{$args{nodes}}
-                                       : $self->service_provider->searchRelated(
-                                            filters => ['nodes'],
-                                            hash    => {-not => {monitoring_state => 'disabled'}}
-                                         );
-    delete $args{nodes};
 
     my @col_ind_ids = ($self->nodemetric_combination_formula =~ m/id(\d+)/g);
 
-    my %values = map {$_ => Entity::CollectorIndicator->get(id => $_)
-                            ->lastValue(nodes => \@nodes, service_provider => $self->service_provider, %args)
-                 } @col_ind_ids;
-
-    my %evaluation_for_each_node;
-
-    for my $node (@nodes) {
-        my %values_node = map { $_ => $values{$_}{$node->id} } @col_ind_ids;
-        my $formula = $self->nodemetric_combination_formula;
-        $formula =~ s/id(\d+)/$values_node{$1}/g;
-
-        my $value = eval $formula;
-        if ($args{format} eq 'host_name') {
-            $evaluation_for_each_node{$node->node_hostname} = $value;
+    my %values;
+    for my $ci_id (@col_ind_ids) {
+        my $collector_indicator = Entity::CollectorIndicator->get(id => $ci_id);
+        $values{$ci_id} = $collector_indicator->lastValue(nodes => [$args{node}], %args)->{$args{node}->id};
+        if (! defined $values{$ci_id}) {
+            if (defined $args{memoization}) {
+                $args{memoization}->{$self->id}->{$args{node}->id} = undef;
+            }
+            return undef;
         }
-        else {
-            $evaluation_for_each_node{$node->id} = $value;
-        }
+
     }
-    $log->debug('output = '.Dumper \%evaluation_for_each_node);
+
+    my $formula = $self->nodemetric_combination_formula;
+    $formula =~ s/id(\d+)/$values{$1}/g;
+
+    my $value = eval $formula;
 
     if (defined $args{memoization}) {
-        $args{memoization}->{$self->id} = \%evaluation_for_each_node;
+        $args{memoization}->{$self->id}->{$args{node}->id} = $value;
     }
 
-    return \%evaluation_for_each_node;
+    return $value;
 }
+
 
 =pod
 

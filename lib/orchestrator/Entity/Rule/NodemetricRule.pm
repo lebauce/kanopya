@@ -191,8 +191,9 @@ sub toString {
 Evaluate the rule. Call evaluation of all depending conditions then evaluate the logical formula
 of the rule according to conditions evaluation.
 
-@return hash reference {node_id => 1} is rule is verified for node node_id
-                       {node_id => 0} otherwise
+@param node Node instance on which the condition will be analyzed
+
+@return 1 if rule is verified for node node_id, 0 otherwise
 
 =end classdoc
 
@@ -200,47 +201,37 @@ of the rule according to conditions evaluation.
 
 sub evaluate {
     my ($self, %args) = @_;
+    General::checkParams(args => \%args, required => ['node']);
 
-    General::checkParams(args => \%args, optional => { 'nodes' => undef });
-
-    # If @nodes not provided, get all non-disabled nodes of the service provider
-    my @nodes = (defined $args{nodes}) ? @{$args{nodes}}
-                                       : $self->service_provider->searchRelated(
-                                            filters => ['nodes'],
-                                            hash    => {-not => {monitoring_state => 'disabled'}}
-                                         );
-
-    $args{nodes} = \@nodes;
-    if (@nodes == 0) {
-        return {};
+    if (exists $args{memoization}->{$self->id}->{$args{node}->id}) {
+        return $args{memoization}->{$self->id}->{$args{node}->id};
     }
-
-    # Get values of each NodemetricConditions
-    my @nm_cond_ids = ($self->formula =~ m/id(\d+)/g);
-
-    my %values = map { $_ => Entity::NodemetricCondition->get('id'=>$_)->evaluate(%args)
-                 } @nm_cond_ids;
-
 
     # Evaluate conditionfor each node
-    my %evaluation_for_each_node;
-    NODE:
-    for my $node (@nodes) {
-        my %values_node = map { $_ => $values{$_}{$node->id}} @nm_cond_ids;
 
-        for my $value (values %values_node) {
-            if (!defined $value) {
-                $evaluation_for_each_node{$node->id} = undef; next NODE;
+    my %values;
+
+    for my $id ($self->formula =~ m/id(\d+)/g) {
+        my $nm_val = Entity::NodemetricCondition->get(id => $id)->evaluate(%args);
+        if (! defined $nm_val) {
+            if (defined $args{memoization}) {
+                $args{memoization}->{$self->id}->{$args{node}->id} = undef;
             }
+            return undef;
         }
-
-        my $formula = $self->formula;
-        $formula =~ s/id(\d+)/$values_node{$1}/g;
-        $evaluation_for_each_node{$node->id} = (eval $formula) ? 1 : 0;
-        $log->debug('NM rule evaluation for node <'.$node->id.">: $formula => ".$evaluation_for_each_node{$node->id});
+        $values{$id} = $nm_val;
     }
 
-    return \%evaluation_for_each_node;
+    my $formula = $self->formula;
+    $formula =~ s/id(\d+)/$values{$1}/g;
+
+    my $val = (eval $formula) ? 1 : 0;
+
+    if (defined $args{memoization}) {
+        $args{memoization}->{$self->id}->{$args{node}->id} = $val;
+    }
+
+    return $val;
 }
 
 
@@ -527,7 +518,6 @@ sub manageWorkflows {
     };
     if($@){
         # Skip workflow management when service provider has no workflow manager
-        $log->info('No workflow manager in service provider <'.$sp->id.'>');
         return;
     }
 

@@ -38,6 +38,9 @@ use Alert;
 use DataCache;
 use Data::Dumper;
 
+use Log::Log4perl "get_logger";
+my $log = get_logger("");
+
 use constant ATTR_DEF => {
     collector_indicator_id => {
         pattern      => '^.*$',
@@ -63,33 +66,45 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub lastValue {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => ['nodes', 'service_provider']);
+    General::checkParams(args => \%args, required => ['nodes']);
 
-    if (defined $args{memoization}->{$self->id}) {
-        return $args{memoization}->{$self->id};
+    my %id_values;
+    my @missing_nodes = ();
+
+    for my $node (@{$args{nodes}}) {
+        if (exists $args{memoization}->{$self->id}->{$node->id}) {
+            $id_values{$node->id} = $args{memoization}->{$self->id}->{$node->id};
+        }
+        else {
+            push @missing_nodes, $node;
+        }
     }
 
-    my @node_hostnames = map {$_->node_hostname} @{$args{nodes}};
+    if (scalar @missing_nodes == 0) {
+        return \%id_values;
+    }
+
+    my @node_hostnames = map {$_->node_hostname} @missing_nodes;
+    my $service_provider = $missing_nodes[0]->service_provider;
 
     my $data = DataCache::nodeMetricLastValue(
                    collector_indicator => $self,
                    node_names          => \@node_hostnames,
-                   service_provider    => $args{service_provider}
+                   service_provider    => $service_provider
                );
 
-    my %id_values;
+
     my %hostname_values;
 
-    for my $node (@{$args{nodes}}) {
+    for my $node (@missing_nodes) {
        $id_values{$node->id} = $data->{$node->node_hostname};
        $hostname_values{$node->node_hostname} = $data->{$node->node_hostname};
+       if (defined $args{memoization}) {
+           $args{memoization}->{$self->id}->{$node->id} = $id_values{$node->id};
+       }
     }
 
-    $self->throwUndefAlert(hostname_values => \%hostname_values, service_provider => $args{service_provider});
-
-    if (defined $args{memoization}) {
-        $args{memoization}->{$self->id} = \%id_values;
-    }
+    $self->throwUndefAlert(hostname_values => \%hostname_values, service_provider => $service_provider);
 
     return \%id_values;
 }

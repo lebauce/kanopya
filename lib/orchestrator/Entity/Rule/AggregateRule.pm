@@ -466,7 +466,6 @@ sub manageWorkflows {
     };
     if($@){
         # Skip workflow management when service provider has no workflow manager
-        $log->info('No workflow manager in service provider <' . $sp->id . '>');
         return;
     }
 
