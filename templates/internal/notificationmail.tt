@@ -2,6 +2,7 @@ The operation "[% operation %]" ([% operation_id %]), from workflow "[% workflow
 [% CASE 'processing' %]is processing.
 [% CASE 'succeeded' %]has been successfully executed.
 [% CASE ['failed', 'cancelled'] %]has failed. 
+[% CASE ['timeouted', 'cancelled'] %]timeout exceeded. 
 [% CASE %]state changed to: "[% operation_state %]".
 [% END %]
 Kanopya execution system.

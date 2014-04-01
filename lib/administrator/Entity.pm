@@ -433,8 +433,9 @@ sub subscribe {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'subscriber_id', 'operationtype' ],
-                         optional => { 'operation_state'     => "processing",
+                         required => [ 'subscriber_id' ],
+                         optional => { 'operationtype'       => undef,
+                                       'operation_state'     => "processing",
                                        'service_provider_id' => undef,
                                        'validation'          => 0 });
 
@@ -442,11 +443,16 @@ sub subscribe {
         $args{service_provider_id} = Entity::ServiceProvider::Cluster->getKanopyaCluster()->id;
     }
 
-    my $operationtype = Operationtype->find(hash => { operationtype_name => $args{operationtype} });
+    # If operationtype not defined, subscribe for all operation types
+    my $operationtype_id;
+    if (defined $args{operationtype}) {
+        $operationtype_id = Operationtype->find(hash => { operationtype_name => $args{operationtype} })->id;
+    }
+
     NotificationSubscription->findOrCreate(
         entity_id           => $self->id,
         subscriber_id       => $args{subscriber_id},
-        operationtype_id    => $operationtype->id,
+        operationtype_id    => $operationtype_id,
         operation_state     => $args{operation_state},
         service_provider_id => $args{service_provider_id},
         validation          => $args{validation},

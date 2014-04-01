@@ -65,7 +65,7 @@ __PACKAGE__->table("notification_subscription");
   data_type: 'integer'
   extra: {unsigned => 1}
   is_foreign_key: 1
-  is_nullable: 0
+  is_nullable: 1
 
 =head2 operation_state
 
@@ -117,7 +117,7 @@ __PACKAGE__->add_columns(
     data_type => "integer",
     extra => { unsigned => 1 },
     is_foreign_key => 1,
-    is_nullable => 0,
+    is_nullable => 1,
   },
   "operation_state",
   {
@@ -211,7 +211,12 @@ __PACKAGE__->belongs_to(
   "operationtype",
   "Kanopya::Schema::Result::Operationtype",
   { operationtype_id => "operationtype_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "CASCADE",
+    on_update     => "NO ACTION",
+  },
 );
 
 =head2 service_provider
@@ -245,8 +250,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-24 16:31:04
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:8jGnr9LwF10RcL4CVTpGPg
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-31 15:15:51
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:xQlcEzX29O0nzIi0BXja9A
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

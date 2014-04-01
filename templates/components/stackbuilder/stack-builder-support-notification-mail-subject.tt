@@ -1,1 +1,1 @@
-[Kanopya] Stack [% stack_id %] ([% user.user_login %]) is [% state %].
+[Kanopya] Stack [% stack_id %] ([% user.user_login %]) [% IF state == 'timeouted' %]has reach the execution timeout[% ELSE %]is [% state %][% END %].

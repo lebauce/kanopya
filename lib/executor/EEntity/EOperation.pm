@@ -237,7 +237,7 @@ sub report {
 
     General::checkParams(args => \%args, required => [ 'duration' ]);
 
-    $log->debug("Reporting operation with duration_report : $args{duration}");
+    $log->info("Reporting operation with duration_report : $args{duration}");
     $self->setHopedExecutionTime(value => $args{duration});
 }
 
@@ -295,7 +295,7 @@ sub processNotificationSubscriptions {
         my @subscriptions = $entity->search(
                                 related => 'notification_subscriptions',
                                 hash    => {
-                                    operationtype_id => $self->operationtype_id,
+                                    operationtype_id => [ $self->operationtype_id, undef ],
                                     operation_state  => $args{state}
                                 }
                             );

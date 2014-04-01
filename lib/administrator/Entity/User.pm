@@ -39,12 +39,11 @@ use UserProfile;
 use Entity::Gp;
 use Quota;
 
+use TryCatch;
 use Log::Log4perl "get_logger";
 
-our $VERSION = "1.00";
-
 my $log = get_logger("");
-my $errmsg;
+
 
 use constant ATTR_DEF => {
     user_login => {
@@ -301,9 +300,13 @@ Override the parent mathod to remove the password from the search criteria.
 sub findOrCreate {
     my ($class, %args) = @_;
 
-    delete $args{user_password};
-
-    return $class->SUPER::findOrCreate(%args);
+    my $password = delete $args{user_password};
+    try {
+        return $class->find(hash => \%args);
+    }
+    catch ($err) {
+        return $class->create(user_password => $password, %args);
+    }
 }
 
 

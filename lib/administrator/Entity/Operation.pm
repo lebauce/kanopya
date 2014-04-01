@@ -58,7 +58,8 @@ use constant OPERATION_STATES => (
     'succeeded',
     'pending',
     'statereported',
-    'interrupted'
+    'interrupted',
+    'timeouted'
 );
 
 
@@ -131,7 +132,9 @@ If params are given in parameters, serialize its in database.
 
 @optional params      the operation parameters hash
 @optional workflow_id the workflow that the operation belongs to
+@optional harmless    flag to set the operatio as harmless
 @optional related_id  the related entity of the workflow
+@optional group       the operation group
 
 @return the operation instance.
 
@@ -139,8 +142,7 @@ If params are given in parameters, serialize its in database.
 =cut
 
 sub new {
-    my $class = shift;
-    my %args = @_;
+    my ($class, %args) = @_;
     my $self;
 
     General::checkParams(args     => \%args,
@@ -164,7 +166,9 @@ sub new {
     }
 
     # Compute the execution time if required
-    my $hoped_execution_time = defined $args{hoped_execution_time} ? time + $args{hoped_execution_time} : undef;
+    my $hoped_execution_time = defined $args{hoped_execution_time}
+                                   ? time + $args{hoped_execution_time}
+                                   : undef;
 
     # Get the next execution rank within the creation transation.
     Kanopya::Database::beginTransaction;
@@ -226,8 +230,7 @@ the entities objects of the context are serialized by there ids.
 =cut
 
 sub serializeParams {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'params' ]);
 
@@ -297,8 +300,7 @@ form there ids.
 =cut
 
 sub unserializeParams {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, optional => { 'skip_not_found' => 0 });
 
@@ -341,8 +343,7 @@ fail, then a lock is already in db for the entity.
 =cut
 
 sub lockContext {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, optional => { 'skip_not_found' => 0 });
 
@@ -372,8 +373,7 @@ Remove the possible lock objects related to the entities of the context.
 =cut
 
 sub unlockContext {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, optional => { 'skip_not_found' => 0 });
 
@@ -403,8 +403,7 @@ Validate the operation that the execution has been stopped because it require va
 =cut
 
 sub validate {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     my $executor;
     try {
@@ -436,8 +435,7 @@ Deny the operation that the execution has been stopped because it require valida
 =cut
 
 sub deny {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     $self->workflow->cancel();
 
@@ -454,8 +452,7 @@ Add permissions required by the consumer user to validate/deny the operation.
 =cut
 
 sub addValidationPerm {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'consumer' ]);
 
@@ -473,8 +470,7 @@ Remove permissions required by the consumer user to validate/deny the operation.
 =cut
 
 sub removeValidationPerm {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     $self->removePerm(method => 'validate');
     $self->removePerm(method => 'deny');
@@ -490,8 +486,7 @@ Remove the related param preset from db.
 =cut
 
 sub removePresets {
-    my $self  = shift;
-    my %args  = @_;
+    my ($self, %args) = @_;
 
     # Firstly empty the old pattern
     my $presets = $self->param_preset;
@@ -504,9 +499,19 @@ sub removePresets {
     }
 }
 
+
+=pod
+=begin classdoc
+
+Build the operation label from parameters content
+
+@return the operation label
+
+=end classdoc
+=cut
+
 sub label {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     my $type = $self->operationtype;
     if ($type->operationtype_label) {
@@ -522,23 +527,53 @@ sub label {
     return $type->operationtype_name;
 }
 
+
+=pod
+=begin classdoc
+
+Shortcut vitual attribute to get the operation type name.
+
+@return the operation type name
+
+=end classdoc
+=cut
+
 sub type {
-    my $self = shift;
+    my ($self, %args) = @_;
 
     return $self->operationtype->operationtype_name;
 }
 
+
+=pod
+=begin classdoc
+
+Alias for the operation constructor.
+
+@return the operation instance
+
+=end classdoc
+=cut
+
 sub enqueue {
-    my $class = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'priority', 'type' ]);
 
     return Entity::Operation->new(%args);
 }
 
+
+=pod
+=begin classdoc
+
+Override the parent method to fill to old operations with the deleted one.
+
+=end classdoc
+=cut
+
 sub delete {
-    my $self = shift;
+    my ($self, %args) = @_;
 
     # Uncomment this line if we do not want to keep old parameters
     # $self->removePresets();
@@ -566,9 +601,18 @@ sub delete {
     $self->SUPER::delete();
 }
 
+
+=pod
+=begin classdoc
+
+Update the hoped execution time of the operation. Usefull while reporting
+the operation execution in the future.
+
+=end classdoc
+=cut
+
 sub setHopedExecutionTime {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => ['value']);
 
@@ -576,9 +620,17 @@ sub setHopedExecutionTime {
     $self->hoped_execution_time($t);
 }
 
+
+=pod
+=begin classdoc
+
+Compute the next operation rank within the workflow.
+
+=end classdoc
+=cut
+
 sub getNextRank {
-    my $class = shift;
-    my %args = @_;
+    my ($class, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'workflow_id' ]);
 
@@ -588,12 +640,11 @@ sub getNextRank {
                                              order_by => 'execution_rank desc');
     }
     catch ($err) {
-        $log->debug("No previous operation in queue for workflow $args{workflow_id}");
         return 0;
     }
-    my $last_in_db = $operation->execution_rank;
-    $log->debug("Previous operation in queue is $last_in_db");
-    return $last_in_db + 1;
+
+    return $operation->execution_rank + 1;
 }
+
 
 1;

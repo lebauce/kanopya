@@ -112,7 +112,9 @@ sub buildStack {
 
     General::checkParams(args     => \%args,
                          required => [ 'stack' ],
-                         optional => { 'owner_id' => Kanopya::Database::currentUser });
+                         optional => { 'owner_id' => Kanopya::Database::currentUser,
+                                       # Set default timeout to 4 hours
+                                       'timeout'  => 4 * 60 * 60 });
 
     # TODO: Check existance of PimpMyStack policies
     my @templates = Entity::ServiceTemplate->search(hash => { service_name => { 'LIKE' => 'PMS%' } });
@@ -254,6 +256,7 @@ sub buildStack {
     my $workflow = $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
         name       => 'BuildStack',
         related_id => $self->service_provider->id,
+        timeout    => $args{timeout},
         params     => {
             services   => \@services,
             stack_id   => $args{stack}->{stack_id},
@@ -277,12 +280,15 @@ sub endStack {
 
     General::checkParams(args     => \%args,
                          required => [ 'stack_id' ],
-                         optional => { 'owner_id' => Kanopya::Database::currentUser });
+                         optional => { 'owner_id' => Kanopya::Database::currentUser
+                                       # Set default timeout to 1 hour
+                                       'timeout'  => 1 * 60 * 60 });
 
     # Run the workflow EndStack
     my $workflow = $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
         name       => 'EndStack',
         related_id => $self->service_provider->id,
+        timeout    => $args{timeout},
         params     => {
             stack_id => $args{stack_id},
             context  => {
@@ -349,6 +355,10 @@ sub subscribeSupportNotifications {
     $self->subscribe(subscriber_id   => $support->id,
                      operationtype   => "unconfigureStack",
                      operation_state => "cancelled");
+
+    # The support will be notified on every timeouted operation
+    $self->subscribe(subscriber_id   => $support->id,
+                     operation_state => "timeouted");
 }
 
 sub subscribeOwnerNotifications {
