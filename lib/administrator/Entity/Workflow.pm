@@ -37,6 +37,7 @@ use Kanopya::Exceptions;
 use Entity::Operation;
 use Kanopya::Database;
 
+use TryCatch;
 use Template;
 use Hash::Merge;
 use Scalar::Util qw(blessed);
@@ -310,23 +311,50 @@ sub getNextOperation {
     my $self = shift;
 
     my $operation;
-    eval {
+    try {
         $operation = Entity::Operation->find(
                          hash     => {
-                            workflow_id => $self->id,
-                            -not => {
-                                -or => [ state => 'succeeded',  state => 'failed' ]
-                            }
-                        },
+                             workflow_id => $self->id,
+                             -not => {
+                                 -or => [ state => 'succeeded',  state => 'failed' ]
+                             }
+                         },
                          order_by => 'execution_rank ASC'
                      );
-    };
-    if ($@) {
+    }
+    catch (Kanopya::Exception::Internal::NotFound $err) {
         throw Kanopya::Exception::Internal::NotFound(
                   error => "No more operations within workflow <" . $self->id .  ">"
               );
     }
+    catch ($err) {
+        $err->rethrow();
+    }
+
     return $operation;
+}
+
+
+=pod
+=begin classdoc
+
+Compute the next operation rank within the workflow.
+
+=end classdoc
+=cut
+
+sub getNextRank {
+    my $self = shift;
+
+    my $operation;
+    try {
+        $operation = $self->find(related => 'operations', order_by => 'execution_rank desc');
+    }
+    catch ($err) {
+        return 0;
+    }
+
+    return $operation->execution_rank + 1;
 }
 
 
