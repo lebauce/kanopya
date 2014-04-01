@@ -1196,7 +1196,7 @@ sub loadPoliciesAndServices {
         my $node = shift;
 
         if (ref($node) eq 'HASH') {
-            for my $key (keys $node) {
+            for my $key (keys %$node) {
                 if ($key =~ m/^.*_id$/) {
                     if (ref($node->{$key}) eq "HASH") {
                         $node->{$key} = _findReferencedObject($node->{$key});
@@ -1286,7 +1286,7 @@ sub loadPoliciesAndServices {
             # Firstly create policies
             if (defined $templates->{$json_file}->{policies}) {
                 print "Create policies...\n\n";
-                for my $policy (values $templates->{$json_file}->{policies}) {
+                for my $policy (values %{$templates->{$json_file}->{policies}}) {
                     General::checkParams(args => $policy, required => [ "policy_name", "policy_type" ]);
 
                     print "Policy: $policy->{policy_name}...\n";
@@ -1308,7 +1308,7 @@ sub loadPoliciesAndServices {
             # Then create services
             if (defined $templates->{$json_file}->{services}) {
                 print "\nCreate services...\n\n";
-                for my $service (values $templates->{$json_file}->{services}) {
+                for my $service (values %{$templates->{$json_file}->{services}}) {
                     General::checkParams(args => $service, required => [ "service_name" ]);
 
                     print "Service: $service->{service_name}...\n";
