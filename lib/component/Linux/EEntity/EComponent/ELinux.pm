@@ -400,7 +400,7 @@ sub _generateUserAccount {
             # create ssh directory and authorized_keys file
             my $dir = $args{mount_point} . "/home/$login/.ssh";
 
-            $cmd = "mkdir $dir";
+            $cmd = "umask 077 && mkdir $dir";
             $result = $econtext->execute(command => $cmd);
 
             $cmd = "umask 177 && echo '$sshkey' > $dir/authorized_keys";
