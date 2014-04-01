@@ -437,7 +437,24 @@ Deny the operation that the execution has been stopped because it require valida
 sub deny {
     my ($self, %args) = @_;
 
+    my $executor;
+    try {
+        $executor = $self->workflow->relatedServiceProvider->getManager(manager_type => 'ExecutionManager');
+    }
+    catch (Kanopya::Exception::Internal $err) {
+        throw Kanopya::Exception::Internal(
+                  error => "Can not validate operation <" . $self->id .
+                           "> without related service provider on the workflow."
+              );
+    }
+    catch ($err) {
+        $err->rethrow();
+    }
+
     $self->workflow->cancel();
+
+    # Push a message on the channel 'operation_result' to continue the workflow
+    $executor->terminate(operation_id => $self->id, status => 'waiting_validation');
 
     $self->removeValidationPerm();
 }
