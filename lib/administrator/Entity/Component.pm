@@ -434,20 +434,25 @@ component is highly available : first keepalived vip
 sub getAccessIp {
     my ($self, %args) = @_;
 
+    General::checkParams(args => \%args, optional => { 'port' => undef, 'service' => undef });
+
     my $keepalived = eval { $self->service_provider->getComponent(name => 'Keepalived') };
     if ($keepalived) {
         my @vrrpinstances = $keepalived->keepalived1_vrrpinstances;
         return $vrrpinstances[0]->virtualip->ip_addr;
-    } else {
-        my $ip = $self->getBalancerAddress(port    => $args{port},
-                                           service => $args{service});
-        if ($ip) {
-            return $ip;
-        } else {
-            return $self->getMasterNode->adminIp;
+    }
+    else {
+        try {
+            my $ip = $self->getBalancerAddress(port    => $args{port},
+                                               service => $args{service});
+            if ($ip) {
+                return $ip;
+            }
         }
+        return $self->getMasterNode->adminIp;
     }
 }
+
 
 =pod
 =begin classdoc
