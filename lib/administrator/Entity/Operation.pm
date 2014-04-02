@@ -186,7 +186,7 @@ sub new {
                                    owner_id             => Kanopya::Database::currentUser);
 
         if (defined $args{group}) {
-            $self->operation_group($args{group}->id);
+            $self->operation_group_id($args{group}->id);
         }
         if (defined $args{params}) {
             $self->serializeParams(params => $args{params});
