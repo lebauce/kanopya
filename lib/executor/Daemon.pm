@@ -39,7 +39,7 @@ use Kanopya::Config;
 use Manager::DaemonManager;
 
 use POSIX qw(setsid);
-use File::Pid;
+use Unix::PID::Tiny;
 
 use Message;
 use EEntity;
@@ -126,23 +126,14 @@ sub run {
         $self->daemonize(%args);
     }
 
-    my $pidfile;
     if ($args{pidfile}) {
-        $pidfile = File::Pid->new( { file => $args{pidfile} } );
-        # Manually do the job of running due to the bug
-        # https://rt.cpan.org/Public/Bug/Display.html?id=18960
-        # my $running = $pidfile->running;
-        my $pid = $pidfile->_get_pid_from_file;
-        if (defined $pid) {
-            if (kill(0, $pid)) {
-                my $err = "$args{name} is already running";
-                $log->error($err);
-                throw Kanopya::Exception::Daemon(error => $err);
-            }
-            # Seems to do not remove the pid file...
-            $pidfile->remove;
+        my $pid = Unix::PID::Tiny->new();
+        my $pid_result = $pid->pid_file($args{pidfile});
+        if (!$pid_result) {
+            my $err = "$args{name} is already running";
+            $log->error($err);
+            throw Kanopya::Exception::Daemon(error => $err);    	
         }
-        $pidfile->write;
     }
 
     Message->send(
@@ -160,8 +151,6 @@ sub run {
     catch ($err) {
         $log->error($err);
     }
-
-    $pidfile->remove if $args{pidfile};
 
     Message->send(
         from    => $self->{name},
