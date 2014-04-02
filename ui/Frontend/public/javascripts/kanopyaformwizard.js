@@ -367,7 +367,7 @@ var KanopyaFormWizard = (function() {
             }
 
             // Get link_to attribute PK name for relation
-            var link_to_attribute_pk_name = this.attributedefs[name].link_to + '_id';
+            var link_to_attribute_pk_name = attr.link_to + '_id';
 
             // Check if a welcome value is defined
             if (attr.welcome && $.isEmptyObject(this.data)) {
@@ -406,8 +406,15 @@ var KanopyaFormWizard = (function() {
                 var pixels_by_character = 13;
                 width = attr.size * pixels_by_character;
             }
-            input = $("<input>", { type : attr.type ? toInputType(attr.type) : 'text',
-                                   class : 'ui-corner-all ui-widget-content', width: width - 1, height: 18 });
+            var inputdef = { type   : attr.type ? toInputType(attr.type) : 'text',
+                             class  : 'ui-corner-all ui-widget-content',
+                             width  : width - 1,
+                             height : 18 };
+
+            if (attr.size) {
+                inputdef['maxlength'] = attr.size;
+            }
+            input = $("<input>", inputdef);
         }
 
         // Set the input attributes
