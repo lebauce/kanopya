@@ -531,7 +531,7 @@ sub appendToHierarchyGroups {
             $mastergroup->appendEntity(entity => $self);
         }
         catch (Kanopya::Exception::Internal::NotFound $err) {
-            # No master grouyp fr this level of the hierachy
+            # No master group for this level of the hierarchy
         }
         catch ($err) {
             $err->rethrow();
