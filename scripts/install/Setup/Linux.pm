@@ -837,6 +837,8 @@ sub _configure_puppetmaster {
     );
 
     try {
+        system('mkdir -p /etc/puppet/manifests/');
+        system('mkdir -p /etc/puppet/modules/');
         _writeFile(
            '/etc/puppet/manifests/site.pp',
            "Exec {\n" .
@@ -849,12 +851,13 @@ sub _configure_puppetmaster {
            "hiera_include('classes')\n"
         );
 
-        print 'ok';
+        print 'ok\n';
     }
-    catch (Kanopya::Exception::IO $err) {
-        print "failed ! Please check your puppet configuration, $err\n";
-        return;
-    }
+    # let thorw the exception as puppet is required for a proper setup
+    # catch (Kanopya::Exception::IO $err) {
+    #     print "failed ! Please check your puppet configuration, $err\n";
+    #     return;
+    # }
     catch ($err) {
         $err->rethrow();
     }
@@ -884,10 +887,11 @@ sub _configure_puppetmaster {
             host_fqdn   => $kanopya_master->node->fqdn
         );
     }
-    catch (Kanopya::Exception::IO $err) {
-        print "failed ! Please chack your puppet configuration, $err\n";
-        return;
-    }
+    # let thorw the exception as puppet is required for a proper setup
+    # catch (Kanopya::Exception::IO $err) {
+    #     print "failed ! Please check your puppet configuration, $err\n";
+    #     return;
+    # }
     catch ($err) {
         $err->rethrow();
     }
