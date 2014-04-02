@@ -75,6 +75,10 @@ sub addNode {
     unlink "$args{mount_point}/etc/rc0.d/S35networking";
 }
 
+sub _getShell() {
+    return "/bin/bash";
+}
+
 sub _writeNetConf {
     my ($self, %args) = @_;
 
