@@ -60,6 +60,7 @@ use constant ATTR_DEF => {
     cluster_name => {
         label        => 'Instance name',
         pattern      => '^[\w\d]+$',
+        size         => 200,
         is_mandatory => 1,
         is_editable  => 0
     },

@@ -221,6 +221,7 @@ function loadServicesDetails(cid, eid, is_iaas) {
                             label        : 'Instance name',
                             type         : 'string',
                             pattern      : '^[a-zA-Z_0-9]+$',
+                            size         : 200,
                             is_mandatory : true,
                             is_editable  : false
                         },

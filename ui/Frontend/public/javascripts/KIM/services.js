@@ -82,6 +82,7 @@ function servicesList (container_id, elem_id) {
                         label        : 'Instance name',
                         type         : 'string',
                         pattern      : '^[a-zA-Z_0-9]+$',
+                        size         : 200,
                         is_mandatory : true,
                         is_editable  : true
                     },

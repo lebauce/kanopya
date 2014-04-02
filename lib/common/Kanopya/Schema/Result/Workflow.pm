@@ -59,17 +59,17 @@ __PACKAGE__->table("workflow");
   is_nullable: 0
   size: 32
 
+=head2 timeout
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_nullable: 1
+
 =head2 related_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
   is_foreign_key: 1
-  is_nullable: 1
-
-=head2 timeout
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
   is_nullable: 1
 
 =cut
@@ -91,6 +91,8 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
     size => 32,
   },
+  "timeout",
+  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
   "related_id",
   {
     data_type => "integer",
@@ -98,8 +100,6 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 1,
   },
-  "timeout",
-  { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 1 },
 );
 
 =head1 PRIMARY KEY
@@ -212,8 +212,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-31 10:46:02
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:nc+iQhVBOOORg4DkbrIycA
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-04-02 11:56:56
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+3q6Z3Qik01XZlPGN7l+Eg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

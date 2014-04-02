@@ -69,6 +69,10 @@ sub main {
     my $cluster;
     lives_ok {
         $cluster = Kanopya::Tools::Create->createCluster(
+            cluster_name => "default_cluster_name_with_maximum_length_of_db_200" .
+                            "default_cluster_name_with_maximum_length_of_db_200" .
+                            "default_cluster_name_with_maximum_length_of_db_200" .
+                            "default_cluster_name_with_maximum_length_of_db_200"
             cluster_conf => {
                 masterimage_id => $masterimage->id,
             },
