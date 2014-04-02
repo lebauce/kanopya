@@ -1221,7 +1221,7 @@ sub checkAttr {
     elsif ((defined $args{value}) && (defined $definition->{size}) && (scalar $args{value}) &&
            (length($args{value}) > $definition->{size})) {
         throw Kanopya::Exception::Internal::WrongValue(
-                  error => "Too long <$args{value}> for attribute <$args{name}>, " .
+                  error => "Too long value <$args{value}> for attribute <$args{name}>, " .
                            "max length <$definition->{size}>"
               );
     }
