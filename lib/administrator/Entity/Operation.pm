@@ -52,7 +52,6 @@ use constant OPERATION_STATES => (
     'postreported',
     'waiting_validation',
     'validated',
-    'blocked',
     'failed',
     'cancelled',
     'succeeded',
@@ -151,7 +150,8 @@ sub new {
                                        'params'      => undef,
                                        'harmless'    => 0,
                                        'group'       => undef,
-                                       'related_id'  => undef });
+                                       'related_id'  => undef,
+                                       'timeout'     => undef });
 
     my $operationtype = Operationtype->find(hash => { operationtype_name => $args{type} });
 
@@ -161,8 +161,7 @@ sub new {
         $workflow = Entity::Workflow->get(id => $args{workflow_id});
     }
     else {
-        $workflow = Entity::Workflow->new(related_id => $args{related_id});
-        $args{workflow_id} = $workflow->id;
+        $workflow = Entity::Workflow->new(related_id => $args{related_id}, timeout => $args{timeout});
     }
 
     # Compute the execution time if required
@@ -174,26 +173,21 @@ sub new {
     Kanopya::Database::beginTransaction;
 
     try {
-        $log->debug("Enqueuing new operation <$args{type}>, in workflow <$args{workflow_id}>");
+        $log->debug("Enqueuing new operation <$args{type}>, in workflow <" . $workflow->id . ">");
+        $self = $class->SUPER::new(operationtype_id     => $operationtype->id,
+                                   state                => "pending",
+                                   execution_rank       => $workflow->getNextRank(),
+                                   workflow_id          => $workflow->id,
+                                   priority             => $args{priority},
+                                   harmless             => $args{harmless},
+                                   creation_date        => \"CURRENT_DATE()",
+                                   creation_time        => \"CURRENT_TIME()",
+                                   hoped_execution_time => $hoped_execution_time,
+                                   owner_id             => Kanopya::Database::currentUser);
 
-        my $params = {
-            operationtype_id     => $operationtype->id,
-            state                => "pending",
-            execution_rank       => $class->getNextRank(workflow_id => $args{workflow_id}),
-            workflow_id          => $args{workflow_id},
-            priority             => $args{priority},
-            harmless             => $args{harmless},
-            creation_date        => \"CURRENT_DATE()",
-            creation_time        => \"CURRENT_TIME()",
-            hoped_execution_time => $hoped_execution_time,
-            owner_id             => Kanopya::Database::currentUser,
-        };
         if (defined $args{group}) {
-            $params->{operation_group_id} = $args{group}->id;
+            $self->operation_group($args{group}->id);
         }
-
-        $self = $class->SUPER::new(%$params);
-
         if (defined $args{params}) {
             $self->serializeParams(params => $args{params});
         }
@@ -409,14 +403,14 @@ sub validate {
     try {
         $executor = $self->workflow->relatedServiceProvider->getManager(manager_type => 'ExecutionManager');
     }
+    catch (Kanopya::Exception::Internal $err) {
+        throw Kanopya::Exception::Internal(
+                  error => "Can not validate operation <" . $self->id .
+                           "> without related service provider on the workflow."
+              );
+    }
     catch ($err) {
-        if ($err->isa('Kanopya::Exception::Internal')) {
-            throw Kanopya::Exception::Internal(
-                      error => "Can not validate operation <" . $self->id .
-                               "> without related service provider on the workflow."
-                  );
-        }
-        else { $err->rethrow(); }
+        $err->rethrow();
     }
 
     # Push a message on the channel 'operation_result' to continue the workflow
@@ -437,7 +431,24 @@ Deny the operation that the execution has been stopped because it require valida
 sub deny {
     my ($self, %args) = @_;
 
+    my $executor;
+    try {
+        $executor = $self->workflow->relatedServiceProvider->getManager(manager_type => 'ExecutionManager');
+    }
+    catch (Kanopya::Exception::Internal $err) {
+        throw Kanopya::Exception::Internal(
+                  error => "Can not validate operation <" . $self->id .
+                           "> without related service provider on the workflow."
+              );
+    }
+    catch ($err) {
+        $err->rethrow();
+    }
+
     $self->workflow->cancel();
+
+    # Push a message on the channel 'operation_result' to continue the workflow
+    $executor->terminate(operation_id => $self->id, status => 'waiting_validation');
 
     $self->removeValidationPerm();
 }
@@ -619,32 +630,5 @@ sub setHopedExecutionTime {
     my $t = time + $args{value};
     $self->hoped_execution_time($t);
 }
-
-
-=pod
-=begin classdoc
-
-Compute the next operation rank within the workflow.
-
-=end classdoc
-=cut
-
-sub getNextRank {
-    my ($class, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'workflow_id' ]);
-
-    my $operation;
-    try {
-        $operation = Entity::Operation->find(hash     => { workflow_id => $args{workflow_id} },
-                                             order_by => 'execution_rank desc');
-    }
-    catch ($err) {
-        return 0;
-    }
-
-    return $operation->execution_rank + 1;
-}
-
 
 1;

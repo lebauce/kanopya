@@ -38,7 +38,6 @@ use Entity::ServiceProvider::Cluster;
 use Data::Dumper;
 
 use TryCatch;
-my $err;
 
 use Log::Log4perl 'get_logger';
 my $log = get_logger("");
@@ -240,18 +239,20 @@ sub setConsumerState {
                          optional => { 'consumer' => $self });
 
     my $state;
-    eval {
-        $state = $self->findRelated(filters => ['entity_states'],
-                                    hash    => {consumer_id => $args{consumer}->id});
-    };
-    if ($@) {
+    try {
+        $state = $self->findRelated(filters => [ 'entity_states' ],
+                                    hash    => { consumer_id => $args{consumer}->id });
+        $state->prev_state($state->state);
+        $state->state($args{state});
+
+    }
+    catch (Kanopya::Exception::Internal::NotFound $err) {
         EntityState->new(entity_id   => $self->id, 
                          consumer_id => $args{consumer}->id,
                          state       => $args{state});
     }
-    else {
-        $state->setAttr(name => 'prev_state', value => $state->state);
-        $state->setAttr(name => 'state', value => $args{state}, save => 1);
+    catch ($err) {
+        $err->rethrow();
     }
 }
 
@@ -262,16 +263,14 @@ sub removeState {
                          optional => { 'consumer' => $self });
 
     my $estate;
-    eval {
+    try {
         $estate = $self->findRelated(filters => ['entity_states'],
                                      hash    => {consumer_id => $args{consumer}->id});
-    };
-    if ($@) {
+        $estate->delete();
+    }
+    catch ($err) {
         # Do not throw exception during state manipulation during cancel
         $log->error('EntityState from entity <'.$self->id.'>, consumer_id <'.$args{consumer}->id.'> not found');
-    }
-    else {
-        $estate->delete();
     }
 }
 
@@ -307,14 +306,12 @@ sub restoreState {
 sub getMasterGroup {
     my $self = shift;
 
-    my $group;
-    eval {
-        $group = Entity::Gp->find(hash => { gp_name => $self->getMasterGroupName });
-    };
-    if ($@) {
-        $group = Entity::Gp->find(hash => { gp_name => 'Entity' });
+    try {
+        return Entity::Gp->find(hash => { gp_name => $self->getMasterGroupName });
     }
-    return $group;
+    catch ($er) {
+        return Entity::Gp->find(hash => { gp_name => 'Entity' });
+    }
 }
 
 
@@ -344,7 +341,7 @@ sub addPerm {
     General::checkParams(args => \%args, required => [ 'method', 'consumer' ]);
 
     #$log->debug("Add permission on <$self>, for <$args{method}>, to <$args{consumer}>");
-    eval {
+    try {
         if ($class) {
             # Consumed is an entity instance
             Entityright->addPerm(
@@ -365,13 +362,12 @@ sub addPerm {
                 method      => $args{method},
             );
         }
-    };
-    if ($@) {
-        my $err = $@;
-        if (! $err->isa("Kanopya::Exception::DB")) {
-            $err->rethrow();
-        }
+    }
+    catch (Kanopya::Exception::DB $err) {
         #$log->debug("Permission already exists, skipping.");
+    }
+    catch ($err) {
+        $err->rethrow();
     }
 }
 
@@ -411,15 +407,14 @@ sub checkPerm {
 
     General::checkParams(args => \%args, required => [ 'method', 'user_id' ]);
 
-    eval {
+    try {
         # Check each combination of consumer related ids and
         # consumer ones for the method.
         Entityright->match(consumer_id => $args{user_id},
                            consumed_id => $self->id,
                            method      => $args{method});
-    };
-    if ($@) {
-        my $err = $@;
+    }
+    catch ($err) {
         $log->debug($err);
         throw Kanopya::Exception::Permission::Denied(
             error => "No permissions found for user <" . $args{user_id} .
@@ -531,17 +526,15 @@ sub appendToHierarchyGroups {
     # Try to add the instance to master groups of the whole hierarchy.
     for my $groupname (reverse(split(/::/, "$args{hierarchy}"))) {
         my $mastergroup;
-        eval {
+        try {
             $mastergroup = Entity::Gp->find(hash => { gp_name => $groupname });
-        };
-        if ($@) {
-            my $exception = $@;
-            if (not $exception->isa('Kanopya::Exception::Internal::NotFound')) {
-                $exception->rethrow();
-            }
-        }
-        else {
             $mastergroup->appendEntity(entity => $self);
+        }
+        catch (Kanopya::Exception::Internal::NotFound $err) {
+            # No master group for this level of the hierarchy
+        }
+        catch ($err) {
+            $err->rethrow();
         }
     }
 }
@@ -554,22 +547,23 @@ sub lock {
     General::checkParams(args => \%args, required => [ 'consumer' ]);
 
     my $consumer_id = $args{consumer}->id;
-    eval {
+    try {
         EntityLock->new(entity_id => $self->id, consumer_id => $consumer_id);
-    };
-    if ($@) {
+    }
+    catch ($err) {
         # Check if the lock is already owned by the workflow
-        my $lock;
-        eval {
-            $lock = EntityLock->find(hash => { entity_id => $self->id, consumer_id => $consumer_id });
-        };
-        if (not $lock) {
+        try {
+            EntityLock->find(hash => { entity_id => $self->id, consumer_id => $consumer_id });
+            $log->debug($self->class_type->class_type . "<" .
+                        $self->id . "> already locked by the consumer <$consumer_id>");
+        }
+        catch (Kanopya::Exception::Internal::NotFound $err) {
             throw Kanopya::Exception::Execution::Locked(
                       error => $self->class_type->class_type . " <" . $self->id . "> already locked."
                   );
-        } else {
-            $log->debug($self->class_type->class_type . "<" .
-                        $self->id . "> already locked by the consumer <$consumer_id>");
+        }
+        catch ($err) {
+            $err->rethrow();
         }
     }
 }
@@ -580,20 +574,16 @@ sub unlock {
 
     General::checkParams(args => \%args, required => [ 'consumer' ]);
 
-    my $lock;
-    eval {
-        $lock = EntityLock->find(hash => { entity_id => $self->id, consumer_id => $args{consumer}->id });
-    };
-    if ($@) {
-        my $error = $@;
-        if ($error->isa('Kanopya::Exception::Internal::NotFound')) {
-            $log->debug($self->class_type->class_type . "<" .
-                        $self->id . "> lock does not exists any more.");
-        }
-        else { throw $error; }
-    }
-    else {
+    try {
+        my $lock = EntityLock->find(hash => { entity_id => $self->id, consumer_id => $args{consumer}->id });
         $lock->delete();
+    }
+    catch (Kanopya::Exception::Internal::NotFound $err) {
+        $log->debug($self->class_type->class_type . "<" .
+                    $self->id . "> lock does not exists any more.");
+    }
+    catch ($err) {
+        $err->rethrow();
     }
 }
 

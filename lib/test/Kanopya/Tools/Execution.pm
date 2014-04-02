@@ -50,7 +50,7 @@ my @args = ();
 BEGIN {
     # Test will fail if any executor is running
     my $executor_exist = `ps aux | grep kanopya-executor | grep -cv grep`;
-    if ($executor_exist == 1) {
+    if ($executor_exist != 0) {
         throw Kanopya::Exception::Internal(error => 'An executor is already running');
     }
 }
