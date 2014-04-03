@@ -24,8 +24,8 @@ General Combination class. Implement delete function of combinations and getDepe
 =end classdoc
 =cut
 
-package Entity::Combination;
-use base Entity;
+package Entity::Metric::Combination;
+use base Entity::Metric;
 
 use strict;
 use warnings;

@@ -24,8 +24,8 @@ Aggregation of a collector indicator value for each node of the service, accordi
 
 =cut
 
-package Entity::Clustermetric;
-use base 'Entity';
+package Entity::Metric::Clustermetric;
+use base 'Entity::Metric';
 
 use strict;
 use warnings;
@@ -33,7 +33,7 @@ use warnings;
 use General;
 use TimeData::RRDTimeData;
 use Entity::CollectorIndicator;
-use Entity::Combination::AggregateCombination;
+use Entity::Metric::Combination::AggregateCombination;
 
 use DescriptiveStatisticsFunction;
 use TryCatch;
@@ -349,17 +349,15 @@ Compute the aggregate combinations instances which depend on the clustermetric i
 sub getDependentCombinations {
     my $self = shift;
 
-    my @aggregate_combinations_from_same_service = Entity::Combination::AggregateCombination->search(
-                                                       hash => {
-                                                           service_provider_id => $self->clustermetric_service_provider_id
-                                                       }
-                                                   );
+    my @combs = Entity::Metric::Combination::AggregateCombination->search(hash => {
+                    service_provider_id => $self->clustermetric_service_provider_id
+                });
 
     my $id = $self->id;
 
     my @combinations =();
     LOOP:
-    for my $aggregate_combination (@aggregate_combinations_from_same_service) {
+    for my $aggregate_combination (@combs) {
         my @cluster_metric_ids = $aggregate_combination->dependentClusterMetricIds;
 
         for my $cluster_metric_id (@cluster_metric_ids) {
@@ -456,7 +454,7 @@ Delete the instance, the RRD and all the instances which depend on it.
 sub delete {
     my $self = shift;
 
-    my @aggregate_combinations = Entity::Combination::AggregateCombination->search(hash => {
+    my @aggregate_combinations = Entity::Metric::Combination::AggregateCombination->search(hash => {
                                      service_provider_id => $self->clustermetric_service_provider_id
                                  });
 

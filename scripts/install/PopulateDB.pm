@@ -171,11 +171,12 @@ my @classes = (
     'Entity::Component::Virtualization::Vsphere5',
     'Entity::Indicator',
     'Entity::CollectorIndicator',
-    'Entity::Clustermetric',
-    'Entity::Combination',
-    'Entity::Combination::NodemetricCombination',
-    'Entity::Combination::ConstantCombination',
-    'Entity::Combination::AggregateCombination',
+    'Entity::Metric::Clustermetric',
+    'Entity::Metric',
+    'Entity::Metric::Combination',
+    'Entity::Metric::Combination::NodemetricCombination',
+    'Entity::Metric::Combination::ConstantCombination',
+    'Entity::Metric::Combination::AggregateCombination',
     'Entity::AggregateCondition',
     'Entity::Rule::AggregateRule',
     'Entity::NodemetricCondition',
@@ -1653,7 +1654,7 @@ sub registerKanopyaMaster {
     # Create the host for the Kanopya master
     my ( $sysname, $nodename, $release, $version, $machine ) = POSIX::uname();
     my $domain = $args{admin_domainname};
- 
+
     my $date = today();
     my $year = $date->year;
     my $month = $date->month;
@@ -1661,7 +1662,7 @@ sub registerKanopyaMaster {
     if (length ($month) == 1) {
         $month = '0' . $month;
     }
-   
+
     my $kanopya_initiator = "iqn.$year-$month."
         . join('.', reverse split(/\./, $domain)) . ':' . time();
 
@@ -1767,7 +1768,7 @@ sub registerKanopyaMaster {
 
     my $iscsitarget = $admin_cluster->getComponent(name => 'Iscsitarget');
     $iscsitarget->insertDefaultExtendedConfiguration();
-    
+
     $admin_cluster->addManagerParameter(
         manager_type => "ExportManager",
         name => "iscsi_portals",
@@ -2166,10 +2167,10 @@ sub configureDefaultOrchestrationPolicyService {
 
         # Node level
         # Node metric combinations
-        my $nmcomb = Entity::Combination::NodemetricCombination->new(
-            service_provider_id             => $sp->id,
-            nodemetric_combination_formula  => 'id'.$indic->id
-        );
+        my $nmcomb = Entity::Metric::Combination::NodemetricCombination->new(
+                         service_provider_id             => $sp->id,
+                         nodemetric_combination_formula  => 'id' . $indic->id
+                     );
 
         if (exists $noderule_conf->{$indic_label}) {
             # Node condition
@@ -2193,14 +2194,14 @@ sub configureDefaultOrchestrationPolicyService {
         # Service level
         for my $func ('sum', 'mean') {
              # Cluster metrics and combinations
-            my $cm = Entity::Clustermetric->new(
-                clustermetric_service_provider_id       => $sp->id,
-                clustermetric_indicator_id              => $indic->id,
-                clustermetric_statistics_function_name  => $func,
-                clustermetric_window_time               => '600',
-            );
+            my $cm = Entity::Metric::Clustermetric->new(
+                         clustermetric_service_provider_id       => $sp->id,
+                         clustermetric_indicator_id              => $indic->id,
+                         clustermetric_statistics_function_name  => $func,
+                         clustermetric_window_time               => '600',
+                     );
 
-            my $acomb = Entity::Combination::AggregateCombination->new(
+            my $acomb = Entity::Metric::Combination::AggregateCombination->new(
                 service_provider_id             => $sp->id,
                 aggregate_combination_formula   => 'id'.$cm->id
             );
@@ -2235,18 +2236,18 @@ sub configureDefaultOrchestrationPolicyService {
     );
     my @total_ids;
     for my $indic (@state_indics) {
-        Entity::Combination::NodemetricCombination->new(
+        Entity::Metric::Combination::NodemetricCombination->new(
             service_provider_id             => $sp->id,
             nodemetric_combination_formula  => 'id'.$indic->id,
             nodemetric_combination_label    => 'is'.$indic->indicator->indicator_name,
         );
-        my $cm = Entity::Clustermetric->new(
-            clustermetric_service_provider_id       => $sp->id,
-            clustermetric_indicator_id              => $indic->id,
-            clustermetric_statistics_function_name  => 'sum',
-            clustermetric_window_time               => '600',
-        );
-        Entity::Combination::AggregateCombination->new(
+        my $cm = Entity::Metric::Clustermetric->new(
+                     clustermetric_service_provider_id      => $sp->id,
+                     clustermetric_indicator_id             => $indic->id,
+                     clustermetric_statistics_function_name => 'sum',
+                     clustermetric_window_time              => '600',
+                 );
+        Entity::Metric::Combination::AggregateCombination->new(
             service_provider_id             => $sp->id,
             aggregate_combination_formula   => 'id'.$cm->id,
             aggregate_combination_label     => $indic->indicator->indicator_name . ' nodes',
@@ -2254,7 +2255,8 @@ sub configureDefaultOrchestrationPolicyService {
         push @total_ids, $cm->id;
     }
     my @total_formula = join ' + ', map { 'id'.$_} @total_ids;
-    my $acomb = Entity::Combination::AggregateCombination->new(
+
+    Entity::Metric::Combination::AggregateCombination->new(
         service_provider_id             => $sp->id,
         aggregate_combination_formula   => @total_formula,
         aggregate_combination_label     => 'All nodes',

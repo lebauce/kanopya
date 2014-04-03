@@ -25,9 +25,9 @@ lives_ok {
 
     use Entity::ServiceProvider::Cluster;
     use Entity::Component::MockMonitor;
-    
-    use Entity::Clustermetric;
-    use Entity::Combination::AggregateCombination;
+
+    use Entity::Metric::Clustermetric;
+    use Entity::Metric::Combination::AggregateCombination;
     use Entity::AggregateCondition;
     use Entity::Rule::AggregateRule;
 
@@ -56,7 +56,7 @@ sub registerCluster {
     my ($self, %args) = @_;
 
     my $cluster = Kanopya::Tools::Create->createCluster(cluster_conf => {
-                      cluster_name         => "Cluster" . $serviceload, 
+                      cluster_name         => "Cluster" . $serviceload,
                       cluster_basehostname => "default" . $serviceload
                   });
 
@@ -65,7 +65,7 @@ sub registerCluster {
         manager_type    => 'CollectorManager',
         no_default_conf => 1,
     );
- 
+
     addNode(cluster => $cluster, number => $nodeload);
 
     $serviceload++;
@@ -94,14 +94,14 @@ sub addNode {
 sub addAggregateRule {
     my (%args) = @_;
 
-    my $cm = Entity::Clustermetric->new(
+    my $cm = Entity::Metric::Clustermetric->new(
                  clustermetric_service_provider_id      => $args{cluster}->id,
                  clustermetric_indicator_id             => ($indic1->id),
                  clustermetric_statistics_function_name => 'sum',
                  clustermetric_window_time              => '1200',
              );
 
-    my $comb = Entity::Combination::AggregateCombination->new(
+    my $comb = Entity::Metric::Combination::AggregateCombination->new(
                    service_provider_id           =>  $args{cluster}->id,
                    aggregate_combination_formula => 'id'.($cm->id),
                );

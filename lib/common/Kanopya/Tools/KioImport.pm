@@ -27,17 +27,17 @@ use Entity::Component::Sco;
 use Node;
 use Entity::Rule::AggregateRule;
 use ServiceProviderManager;
-use Entity::Combination::AggregateCombination;
+use Entity::Metric::Combination::AggregateCombination;
 use Entity::AggregateCondition;
 use Entity::ServiceProvider::Cluster;
-use Entity::Clustermetric;
+use Entity::Metric::Clustermetric;
 use Entity::CollectorIndicator;
 use Entity::Indicator;
-use Entity::Combination::ConstantCombination;
+use Entity::Metric::Combination::ConstantCombination;
 use Dashboard;
 use Entity::Host;
 use Entity::Indicator;
-use Entity::Combination::NodemetricCombination;
+use Entity::Metric::Combination::NodemetricCombination;
 use Entity::NodemetricCondition;
 use Entity::Rule::NodemetricRule;
 use ParamPreset;
@@ -256,7 +256,7 @@ sub importKanopyaData {
                 $collector_indicator_map->{ $old_clustermetric->{clustermetric_indicator_id} };
 
             $clustermetric_map->{$old_clustermetric->{clustermetric_id}} =
-                Entity::Clustermetric->new(
+                Entity::Metric::Clustermetric->new(
                     clustermetric_label                    => $old_clustermetric->{clustermetric_label},
                     clustermetric_indicator_id             => $clustermetric_indicator_id,
                     clustermetric_statistics_function_name => $old_clustermetric->{clustermetric_statistics_function_name},
@@ -276,7 +276,7 @@ sub importKanopyaData {
                 my $ac_formula = $old_combination->{aggregate_combination_formula};
                 $ac_formula =~ s/id(\d+)/id$formula_map->{clustermetrics}->{$1}/g;
 
-                $combination_id = Entity::Combination::AggregateCombination->new(
+                $combination_id = Entity::Metric::Combination::AggregateCombination->new(
                     aggregate_combination_label           => $old_combination->{aggregate_combination_label},
                     aggregate_combination_formula         => $ac_formula,
                     aggregate_combination_formula_string  => $old_combination->{aggregate_combination_formula_string},
@@ -290,7 +290,7 @@ sub importKanopyaData {
                 my $nc_formula =  $old_combination->{nodemetric_combination_formula};
                 $nc_formula =~ s/id(\d+)/id$formula_map->{collector_indicators}->{$1}/g;
 
-                $combination_id = Entity::Combination::NodemetricCombination->new(
+                $combination_id = Entity::Metric::Combination::NodemetricCombination->new(
                     nodemetric_combination_label          => $old_combination->{nodemetric_combination_label},
                     nodemetric_combination_formula        => $nc_formula,
                     nodemetric_combination_formula_string => $old_combination->{nodemetric_combination_formula_string},
@@ -300,7 +300,7 @@ sub importKanopyaData {
                 $combination_map->{ $old_combination->{nodemetric_combination_id} } = $combination_id;
             }
             elsif (defined $old_combination->{constant_combination_id}) { # constant combination
-                $combination_id = Entity::Combination::ConstantCombination->new(
+                $combination_id = Entity::Metric::Combination::ConstantCombination->new(
                     value               => $old_combination->{value},
                     combination_unit    => $old_combination->{combination_unit},
                     service_provider_id => $new_externalcluster->id,
