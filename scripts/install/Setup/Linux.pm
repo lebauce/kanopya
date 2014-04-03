@@ -839,6 +839,7 @@ sub _configure_puppetmaster {
     try {
         system('mkdir -p /etc/puppet/manifests/');
         system('mkdir -p /etc/puppet/modules/');
+        system('mkdir -p /var/lib/puppet/ssl/certs/');
         _writeFile(
            '/etc/puppet/manifests/site.pp',
            "Exec {\n" .
