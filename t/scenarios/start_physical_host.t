@@ -18,28 +18,19 @@ use ClassType::ComponentType;
 
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
-    level=>'DEBUG',
-    file=>'start_physical_host.t.log',
-    layout=>'%F %L %p %m%n'
+    level  => 'INFO',
+    file   => __FILE__ . '.log',
+    layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
 
 use Kanopya::Database;
-use Entity::ServiceProvider::Cluster;
-use Entity::User;
-use Entity::Kernel;
-use Entity::Processormodel;
-use Entity::Hostmodel;
-use Entity::Masterimage;
-use Entity::Network;
-use Entity::Netconf;
-use Entity::Poolip;
-use Entity::Operation;
-use Entity::Systemimage;
 
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::Register;
 use Kanopya::Tools::Retrieve;
 use Kanopya::Tools::Create;
+
+use Entity::Systemimage;
 
 my $testing = 0;
 my $NB_HYPERVISORS = 1;
@@ -69,6 +60,10 @@ sub main {
     my $cluster;
     lives_ok {
         $cluster = Kanopya::Tools::Create->createCluster(
+            cluster_name => "default_cluster_name_with_maximum_length_of_db_200" .
+                            "default_cluster_name_with_maximum_length_of_db_200" .
+                            "default_cluster_name_with_maximum_length_of_db_200" .
+                            "default_cluster_name_with_maximum_length_of_db_200",
             cluster_conf => {
                 masterimage_id => $masterimage->id,
             },

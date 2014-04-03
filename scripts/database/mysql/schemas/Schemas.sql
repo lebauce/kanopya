@@ -126,7 +126,7 @@ CREATE TABLE `node` (
 
 CREATE TABLE `cluster` (
   `cluster_id` int(8) unsigned NOT NULL,
-  `cluster_name` char(32) NOT NULL,
+  `cluster_name` char(200) NOT NULL,
   `cluster_desc` char(255) DEFAULT NULL,
   `cluster_type` int(1) unsigned DEFAULT NULL,
   `cluster_min_node` int(2) unsigned NOT NULL,

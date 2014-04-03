@@ -1218,6 +1218,13 @@ sub checkAttr {
                   error => "Wrong value <$args{value}> for attribute <$args{name}>"
               );
     }
+    elsif ((defined $args{value}) && (defined $definition->{size}) && (scalar $args{value}) &&
+           (length($args{value}) > $definition->{size})) {
+        throw Kanopya::Exception::Internal::WrongValue(
+                  error => "Too long value <$args{value}> for attribute <$args{name}>, " .
+                           "max length <$definition->{size}>"
+              );
+    }
     elsif (defined $args{value} && blessed($args{value}) && $args{value}->isa("BaseDB")) {
         throw Kanopya::Exception::Internal::WrongValue(
                   error => "Unsupported object $args{name} of type " . blessed($args{value})

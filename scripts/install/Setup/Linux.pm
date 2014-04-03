@@ -852,7 +852,7 @@ sub _configure_puppetmaster {
            "hiera_include('classes')\n"
         );
 
-        print 'ok\n';
+        print "ok\n";
     }
     # let thorw the exception as puppet is required for a proper setup
     # catch (Kanopya::Exception::IO $err) {

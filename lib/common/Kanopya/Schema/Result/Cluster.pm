@@ -50,7 +50,7 @@ __PACKAGE__->table("cluster");
 
   data_type: 'char'
   is_nullable: 0
-  size: 32
+  size: 200
 
 =head2 cluster_desc
 
@@ -177,7 +177,7 @@ __PACKAGE__->add_columns(
     is_nullable => 0,
   },
   "cluster_name",
-  { data_type => "char", is_nullable => 0, size => 32 },
+  { data_type => "char", is_nullable => 0, size => 200 },
   "cluster_desc",
   { data_type => "char", is_nullable => 1, size => 255 },
   "cluster_type",
@@ -412,8 +412,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-12-18 15:35:47
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ac/nzFNwUMNAcEolnz4NWQ
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-04-02 11:56:55
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:TNG698G4c16by3yKJP0bow
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
