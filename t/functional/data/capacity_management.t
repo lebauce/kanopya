@@ -26,8 +26,6 @@ use ClassType::ComponentType;
 
 Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
-Kanopya::Database::beginTransaction;
-
 my @vms;
 my @hvs;
 my $coef = 1024**3;

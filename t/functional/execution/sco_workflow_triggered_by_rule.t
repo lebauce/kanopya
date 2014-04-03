@@ -62,7 +62,6 @@ catch ($err) {
 }
 
 sub main {
-    Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
     if ($testing == 1) {
         Kanopya::Database::beginTransaction;
