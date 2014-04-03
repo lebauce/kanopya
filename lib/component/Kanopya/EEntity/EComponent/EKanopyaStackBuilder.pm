@@ -703,6 +703,8 @@ sub notificationMessage {
     # Customer notfication
     if ($args{subscriber}->isa('Entity::User::Customer')) {
         if (! ($args{operation}->isa('EEntity::EOperation::EConfigureStack') && $args{state} eq "succeeded")) {
+            $self->warn("Unsupported tuple user_type/state/operation_type, " .
+                        "Customer/$args{state}/$args{operation} redirecting to generic notification...");
             return $self->SUPER::notificationMessage(%args);
         }
 
@@ -734,6 +736,8 @@ sub notificationMessage {
             $templatedata->{state} = "timeouted";
         }
         else {
+            $self->warn("Unsupported tuple user_type/state/operation_type, " .
+                        "User/$args{state}/$args{operation} redirecting to generic notification...");
             return $self->SUPER::notificationMessage(%args);
         }
 
