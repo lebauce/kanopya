@@ -698,7 +698,8 @@ sub notificationMessage {
                          workflow        => $args{operation}->workflow->label,
                          workflow_id     => $args{operation}->workflow->id,
                          operation_state => $args{state},
-                         user            => $args{operation}->{context}->{user} };
+                         user            => $args{operation}->{context}->{user},
+                         stack_id        => $args{operation}->{params}->{stack_id} };
 
     # Customer notfication
     if ($args{subscriber}->isa('Entity::User::Customer')) {
@@ -709,6 +710,13 @@ sub notificationMessage {
         }
 
         $templatefile = "stack-builder-owner-notification-mail";
+        try {
+            $templatedata->{access_ip} = $args{operation}->{context}->{novacontroller}->getAccessIp();
+        }
+        catch ($err) {
+            $log->error("Unable to get the novacontoller access ip for owner notification:$err");
+        }
+        $templatedata->{admin_password} = $args{operation}->{params}->{admin_password};
     }
     # Support notfication
     else {
@@ -741,7 +749,6 @@ sub notificationMessage {
             return $self->SUPER::notificationMessage(%args);
         }
 
-        $templatedata->{stack_id} = $args{operation}->{params}->{stack_id};
         $templatefile = "stack-builder-support-notification-mail";
     }
 

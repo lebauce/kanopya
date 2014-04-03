@@ -1,21 +1,22 @@
 Hi [% user.user_firstname %],
 
 Before accessing your stack, please read the entire email.
-You recently launched a stack on www.PimpMyStack.net. If you did not, please ignore this email.
+You recently launched a stack on www.pimpmystack.net. If you did not, please ignore this email.
 
 Before accessing to your stacks make sure to check the following steps:
 
 1) Make sure your VPN is activated, you received the VPN configuration files in a previous email. If you didn't or can't find it, please contact us at support@pimpmystack.net
 
-2) Make sure the VPN is activated. You need to be logged on PimpMyStack.net and click the button on pimpmystack.net/My account,
+2) Make sure the VPN is activated. You need to be logged on pimpmystack.net and click the button on www.pimpmystack.net/My account,
 
-After, you can connect to your OpenStack using this credentials :
-Your OpenStack Password:  SKDJLSDJSKLJ
-Your Horizon URL: www.sdsdksljls/slfjslfj/Sdsd.com
+After, you can connect to your OpenStack using this credentials:
 
+Your OpenStack login:       [% user.user_login %]
+Your OpenStack password:    [% admin_password %]
+Your OpenStack Horizon URL: http://[% access_ip %]/
 
-Your IP ....
-Your ....
+Visit http://www..pimpmystack.net?q=content/builder/#/[% stack_id %] to get more informations about your stack.
+
   
 Keep in mind that complete guides and scenarios are available on the scenarios menu:
 - How to : Open a VPN connection with OpenVPN  
