@@ -387,7 +387,12 @@ sub _generateUserAccount {
                       content => "User account $login already exists");
     } else {
         # create the user account
-        my $cmd = "chroot " . $args{mount_point} . " useradd -m -p '$password' $login";
+        my $params = " -m -p '$password' $login";
+        my $shell = _getShell();
+        if (defined $shell) {
+            $params .= " -s $shell";
+        }
+        my $cmd = "chroot " . $args{mount_point} . " useradd $params";
         my $result = $econtext->execute(command => $cmd);
 
         # add a sudoers file
@@ -410,6 +415,10 @@ sub _generateUserAccount {
             $result = $econtext->execute(command => $cmd);
         }
     }
+}
+
+sub _getShell() {
+    return undef;
 }
 
 sub _disableRootPassword {
