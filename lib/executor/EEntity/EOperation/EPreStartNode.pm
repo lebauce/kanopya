@@ -89,11 +89,7 @@ sub execute {
         );
     }
 
-    # Define a hostname
-    my $hostname = $self->{context}->{cluster}->cluster_basehostname;
-    if ($self->{context}->{cluster}->cluster_max_node > 1) {
-        $hostname .=  $self->{params}->{node_number};
-    }
+    my $hostname = $self->{context}->{cluster}->getNodeHostname(node_number => $self->{params}->{node_number});
 
     # Register the node in the cluster
     my $params = { host        => $self->{context}->{host},
