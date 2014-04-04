@@ -192,9 +192,11 @@ sub test_service_creation_from_service_template {
             iscsi_portals => [ IscsiPortal->find()->id ]
         };
 
-        Entity::ServiceProvider::Cluster->create(cluster_name        => "test_cluster",
-                                                 owner_id            => Entity::User->find()->id,
-                                                 service_template_id => $service_template->id,
-                                                 %$additional_policy_aprams);
-    } "Create an empty policies of each type.";
+        Entity::ServiceProvider::Cluster->buildInstantiationParams(
+            cluster_name        => "test_cluster",
+            owner_id            => Entity::User->find()->id,
+            service_template_id => $service_template->id,
+            %$additional_policy_aprams
+        );
+    } "Create service from service template.";
 }
