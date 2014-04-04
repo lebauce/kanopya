@@ -121,12 +121,20 @@ sub main {
 
     diag('Stopping cluster');
     lives_ok {
+        my ($state, $timestamp) = $cluster->getState();
+        if ($state ne 'up') {
+            die "Cluster should be up, not $state";
+        }
         Kanopya::Tools::Execution->executeOne(entity => $cluster->stop());
         Kanopya::Tools::Execution->executeAll(timeout => 3600);
     } 'Stopping cluster';
 
     diag('Stopping NAS');
     lives_ok {
+        my ($state, $timestamp) = $nas->getState();
+        if ($state ne 'up') {
+            die "Cluster should be up, not $state";
+        }
         Kanopya::Tools::Execution->executeOne(entity => $nas->stop());
         Kanopya::Tools::Execution->executeAll(timeout => 3600);
     } 'Stopping NAS';

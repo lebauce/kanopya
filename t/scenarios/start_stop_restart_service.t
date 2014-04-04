@@ -42,6 +42,10 @@ sub main {
 
     diag('Stop service instance');
     lives_ok {
+        my ($state, $timestamp) = $cluster->getState();
+        if ($state ne 'up') {
+            die "Cluster should be up, not $state";
+        }
         Kanopya::Tools::Execution->executeOne(entity => $cluster->stop());
         Kanopya::Tools::Execution->executeAll(timeout => 3600);
     } 'Stopping service instance';
@@ -53,6 +57,10 @@ sub main {
 
     diag('Restop service instance');
     lives_ok {
+        my ($state, $timestamp) = $cluster->getState();
+        if ($state ne 'up') {
+            die "Cluster should be up, not $state";
+        }
         Kanopya::Tools::Execution->executeOne(entity => $cluster->stop());
         Kanopya::Tools::Execution->executeAll(timeout => 3600);
     } 'Restop service instance';

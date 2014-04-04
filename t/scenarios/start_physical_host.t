@@ -77,15 +77,17 @@ sub main {
 
     diag('Stopping cluster');
     lives_ok {
+        my ($state, $timestamp) = $cluster->getState();
+        if ($state ne 'up') {
+            die "Cluster should be up, not $state";
+        }
         Kanopya::Tools::Execution->executeOne(entity => $cluster->stop());
-        Kanopya::Tools::Execution->executeAll(timeout => 3600);
     } 'Stopping cluster';
 
     diag('Remove cluster');
     lives_ok {
         Kanopya::Tools::Execution->executeOne(entity => $cluster->deactivate());
         Kanopya::Tools::Execution->executeOne(entity => $cluster->remove());
-        Kanopya::Tools::Execution->executeAll(timeout => 3600);
     } 'Removing cluster';
 
     my @systemimages = Entity::Systemimage->search();
