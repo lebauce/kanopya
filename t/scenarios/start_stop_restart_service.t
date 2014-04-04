@@ -42,7 +42,7 @@ sub main {
 
     diag('Stop service instance');
     lives_ok {
-        my ($state, $timestamp) = $cluster->getState();
+        my ($state, $timestamp) = $cluster->reload->getState();
         if ($state ne 'up') {
             die "Cluster should be up, not $state";
         }
@@ -57,7 +57,7 @@ sub main {
 
     diag('Restop service instance');
     lives_ok {
-        my ($state, $timestamp) = $cluster->getState();
+        my ($state, $timestamp) = $cluster->reload->getState();
         if ($state ne 'up') {
             die "Cluster should be up, not $state";
         }

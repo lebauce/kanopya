@@ -221,7 +221,7 @@ sub stop_2nd_hv_with_hv {
 
 sub stop_vm_cluster {
     lives_ok {
-        my ($state, $timestamp) = $vm_cluster->getState();
+        my ($state, $timestamp) = $vm_cluster->reload->getState();
         if ($state ne 'up') {
             die "Cluster should be up, not $state";
         }

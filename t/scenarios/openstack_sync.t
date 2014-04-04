@@ -80,7 +80,7 @@ sub main {
 
     diag('Stop NovaController instance');
     lives_ok {
-        my ($state, $timestamp) = $cloud->getState();
+        my ($state, $timestamp) = $cloud->reload->getState();
         if ($state ne 'up') {
             die "Cluster should be up, not $state";
         }

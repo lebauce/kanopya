@@ -77,14 +77,14 @@ sub main {
 
     diag('Stopping cluster');
     lives_ok {
-        my ($state, $timestamp) = $cluster->getState();
+        my ($state, $timestamp) = $cluster->reload->getState();
         if ($state ne 'up') {
             die "Cluster should be up, not $state";
         }
         Kanopya::Tools::Execution->executeOne(entity => $cluster->stop());
     } 'Stopping cluster';
 
-    diag('Remove cluster');
+    diag('Remove cluster');s
     lives_ok {
         Kanopya::Tools::Execution->executeOne(entity => $cluster->deactivate());
         Kanopya::Tools::Execution->executeOne(entity => $cluster->remove());

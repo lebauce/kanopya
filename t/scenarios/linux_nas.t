@@ -121,7 +121,7 @@ sub main {
 
     diag('Stopping cluster');
     lives_ok {
-        my ($state, $timestamp) = $cluster->getState();
+        my ($state, $timestamp) = $cluster->reload->getState();
         if ($state ne 'up') {
             die "Cluster should be up, not $state";
         }
@@ -131,7 +131,7 @@ sub main {
 
     diag('Stopping NAS');
     lives_ok {
-        my ($state, $timestamp) = $nas->getState();
+        my ($state, $timestamp) = $nas->reload->getState();
         if ($state ne 'up') {
             die "Cluster should be up, not $state";
         }
