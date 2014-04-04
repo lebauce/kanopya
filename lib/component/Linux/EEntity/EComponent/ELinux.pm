@@ -387,7 +387,12 @@ sub _generateUserAccount {
                       content => "User account $login already exists");
     } else {
         # create the user account
-        my $cmd = "chroot " . $args{mount_point} . " useradd -m -p '$password' $login";
+        my $params = " -m -p '$password' $login";
+        my $shell = _getShell();
+        if (defined $shell) {
+            $params .= " -s $shell";
+        }
+        my $cmd = "chroot " . $args{mount_point} . " useradd $params";
         my $result = $econtext->execute(command => $cmd);
 
         # add a sudoers file
@@ -400,7 +405,7 @@ sub _generateUserAccount {
             # create ssh directory and authorized_keys file
             my $dir = $args{mount_point} . "/home/$login/.ssh";
 
-            $cmd = "mkdir $dir";
+            $cmd = "umask 077 && mkdir $dir";
             $result = $econtext->execute(command => $cmd);
 
             $cmd = "umask 177 && echo '$sshkey' > $dir/authorized_keys";
@@ -412,6 +417,10 @@ sub _generateUserAccount {
     }
 }
 
+sub _getShell() {
+    return undef;
+}
+
 sub _disableRootPassword {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, required => [ 'cluster', 'host', 'mount_point', 'econtext' ]);
@@ -420,7 +429,7 @@ sub _disableRootPassword {
     my $cmd = 'grep "^root:" ' . $args{mount_point} . '/etc/shadow';
     my $result = $args{econtext}->execute(command => $cmd);
     if ($result->{stdout} =~ m/root:\$/) {
-        $cmd = 'chroot ' . $args{mount_point} . ' passwd -d root';
+        $cmd = 'chroot ' . $args{mount_point} . ' passwd -dl root';
         $args{econtext}->execute(command => $cmd);
         $log->info('root password deleted');
     }

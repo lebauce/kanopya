@@ -68,7 +68,7 @@ Generate a time serie according to a function
 @optional season Saisonality in second (reset all func vars each saison)
 @optional srand Seed for the rand
 @optional time End time for the series (seconds since Epoch). Default now
-@optional step Step in second between to point
+@optional step Step in second between two points
 @optional noneg Replace generated negative values by 0
 
 =end classdoc
@@ -84,7 +84,7 @@ sub generate {
         $args{'precision'}  || {},
         $args{step}         || 1,
         $args{'srand'},
-        $args{season},
+        $args{season}       || {},
     );
     my %precision = %$prec;
 
@@ -106,7 +106,8 @@ sub generate {
     my $start_time = $end_time - $step * $rows;
 
     # Default vars precision
-    map { $precision{$_} = $precision{$_} || 1 } @func_vars;
+    map { $precision{$_} ||= 1 } @func_vars;
+
     $self->{precision} = \%precision;
 
     # Default vars init value
@@ -114,17 +115,21 @@ sub generate {
 
     my $time = $start_time + $step;
 
+    $season = $args{season}->{'X'};
     # Fill rrd with generated data
     my @serie;
     for my $n (1..$rows) {
         my $value = eval($func);
+
         $value = (defined $args{noneg} && $value < 0) ? 0 : $value;
         push @serie, $value;
-        map { $vars{$_} += $precision{$_} } @func_vars;
-        $time += $step;
-        if (defined $season && $time % $season == 0) {
-            # reset func var
-            map { $vars{$_} = 0 } @func_vars;
+
+        for my $var (@func_vars) {
+            $time += $step;
+            $vars{$var} += $precision{$var};
+            if (defined $args{season}->{$var} && ($time % $args{season}->{$var}) == 0) {
+                $vars{$var} = 0;
+            }
         }
     }
 
@@ -132,7 +137,7 @@ sub generate {
     $self->{end_time}   = $time;
     $self->{step}       = $step;
     $self->{serie}      = \@serie;
-    $self->{season}     = $season;
+    $self->{season}     = $args{season};
 }
 
 =pod

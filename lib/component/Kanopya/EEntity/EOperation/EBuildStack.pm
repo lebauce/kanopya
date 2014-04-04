@@ -65,7 +65,6 @@ Create all service required for a stack
 
 sub execute {
     my ($self, %args) = @_;
-    $self->SUPER::execute(%args);
 
     # Call the method on the corresponding component
     $self->{context}->{stack_builder}->buildStack(
@@ -76,6 +75,24 @@ sub execute {
         # TODO: Let all EEntity access to the workflow that they related
         workflow  => $self->workflow,
         erollback => $self->{erollback}
+    );
+}
+
+
+=pod
+=begin classdoc
+
+Set created services inactive
+
+=end classdoc
+=cut
+
+sub cancel {
+    my ($self, %args) = @_;
+
+    $self->{context}->{stack_builder}->cancelBuildStack(
+        user     => $self->{context}->{user},
+        stack_id => $self->{params}->{stack_id},
     );
 }
 

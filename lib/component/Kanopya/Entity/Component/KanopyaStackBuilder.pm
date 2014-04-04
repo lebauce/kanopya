@@ -32,6 +32,7 @@ use warnings;
 
 use Entity::User;
 use Kanopya::Exceptions;
+use NotificationSubscription;
 
 use Data::Dumper;
 use Log::Log4perl "get_logger";
@@ -111,7 +112,9 @@ sub buildStack {
 
     General::checkParams(args     => \%args,
                          required => [ 'stack' ],
-                         optional => { 'owner_id' => Kanopya::Database::currentUser });
+                         optional => { 'owner_id' => Kanopya::Database::currentUser,
+                                       # Set default timeout to 4 hours
+                                       'timeout'  => 4 * 60 * 60 });
 
     # TODO: Check existance of PimpMyStack policies
     my @templates = Entity::ServiceTemplate->search(hash => { service_name => { 'LIKE' => 'PMS%' } });
@@ -245,29 +248,138 @@ sub buildStack {
               )
     }
 
+    # Set the notification subscription for the owner of the stack
+    $self->subscribeSupportNotifications();
+    $self->subscribeOwnerNotifications(owner_id => $args{owner_id});
+
     # Run the workflow BuildStack
-    $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
-        name   => 'BuildStack',
-        params => {
-            services => \@services,
-            stack_id  => $args{stack}->{stack_id},
-            iprange  => $args{stack}->{iprange},
-            context => {
+    my $workflow = $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+        name       => 'BuildStack',
+        related_id => $self->service_provider->id,
+        timeout    => $args{timeout},
+        params     => {
+            services   => \@services,
+            stack_id   => $args{stack}->{stack_id},
+            iprange    => $args{stack}->{iprange},
+            context    => {
                 stack_builder => $self,
                 user          => Entity::User->get(id => $args{owner_id}),
             },
-        }
+        },
     );
+
+    $workflow->addPerm(consumer => $workflow->owner, method => 'get');
+    $workflow->addPerm(consumer => $workflow->owner, method => 'cancel');
+
+    return $workflow;
 }
 
 
 sub endStack {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'stack' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'stack_id' ],
+                         optional => { 'owner_id' => Kanopya::Database::currentUser
+                                       # Set default timeout to 1 hour
+                                       'timeout'  => 1 * 60 * 60 });
 
-    # TODO: run workflow EndStack.
+    # Run the workflow EndStack
+    my $workflow = $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+        name       => 'EndStack',
+        related_id => $self->service_provider->id,
+        timeout    => $args{timeout},
+        params     => {
+            stack_id => $args{stack_id},
+            context  => {
+                stack_builder => $self,
+                user          => Entity::User->get(id => $args{owner_id}),
+            },
+        }
+    );
+
+    $workflow->addPerm(consumer => $workflow->owner, method => 'get');
+    $workflow->addPerm(consumer => $workflow->owner, method => 'cancel');
+
+    return $workflow;
 }
 
+
+sub subscribeSupportNotifications {
+    my ($self, %args) = @_;
+
+    # Try to get the support user from configuration
+    my $support = defined $self->support_user
+                      ? $self->support_user
+                      : Entity::User->find(hash => { user_login => 'admin' } );
+
+    # TODO: If some notifcations exists, and the subcripber is defferent from
+    #       support, remove them.
+
+    # The support will be notified when the buildStack workflow start
+    $self->subscribe(subscriber_id   => $support->id,
+                     operationtype   => "buildStack",
+                     operation_state => "processing");
+
+    # The support will be notified when the buildStack workflow succeed
+    $self->subscribe(subscriber_id   => $support->id,
+                     operationtype   => "configureStack",
+                     operation_state => "succeeded");
+
+    # The support will be notified when the configureStack operation is interrupted
+    $self->subscribe(subscriber_id   => $support->id,
+                     operationtype   => "configureStack",
+                     operation_state => "interrupted");
+
+    # The support will be notified when the buildStack workflow fail
+    $self->subscribe(subscriber_id   => $support->id,
+                     operationtype   => "buildStack",
+                     operation_state => "cancelled");
+
+    # The support will be notified when the endStack workflow start
+    $self->subscribe(subscriber_id   => $support->id,
+                     operationtype   => "stopStack",
+                     operation_state => "processing");
+
+    # The support will be notified when the endStack workflow succeed
+    $self->subscribe(subscriber_id   => $support->id,
+                     operationtype   => "endStack",
+                     operation_state => "succeeded");
+
+    # The support will be notified when a StopNode workflow fail
+    $self->subscribe(subscriber_id   => $support->id,
+                     operationtype   => "PreStopNode",
+                     operation_state => "failed");
+
+    # The support will be notified when the endStack workflow fail
+    $self->subscribe(subscriber_id   => $support->id,
+                     operationtype   => "unconfigureStack",
+                     operation_state => "cancelled");
+
+    # The support will be notified on every timeouted operation
+    $self->subscribe(subscriber_id   => $support->id,
+                     operation_state => "timeouted");
+}
+
+sub subscribeOwnerNotifications {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'owner_id' ]);
+
+    # The owner will be notified when the buildStack workflow succeed
+    $self->subscribe(subscriber_id   => $args{owner_id},
+                     operationtype   => "configureStack",
+                     operation_state => "succeeded");
+}
+
+sub unsubscribeOwnerNotifications {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'owner_id' ]);
+
+    for my $subscription (NotificationSubscription->search(hash => { subscriber_id => $args{owner_id} })) {
+        $self->unsubscribe(notification_subscription_id => $subscription->id);
+    }
+}
 
 1;

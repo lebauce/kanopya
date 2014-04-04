@@ -106,7 +106,7 @@ class Hiera
 
       def restquery(node)
 
-        query = "#{Config[:kanopya][:api]}/api/node?node_hostname=#{node}"
+        query = "#{Config[:kanopya][:api]}/api/node?expand=puppet_manifest&node_hostname=#{node}"
         debug("Query: #{query}")
         request = Net::HTTP::Get.new("#{query}")
         request["Cookie"] = @cookie

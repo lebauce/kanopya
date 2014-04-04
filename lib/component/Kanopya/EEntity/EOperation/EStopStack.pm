@@ -25,13 +25,12 @@ Create all service required for a stack
 =end classdoc
 =cut
 
-package EEntity::EOperation::EValidateStack;
+package EEntity::EOperation::EStopStack;
 use base "EEntity::EOperation";
 
 use strict;
 use warnings;
 
-use Data::Dumper;
 use Log::Log4perl "get_logger";
 use Date::Simple (':all');
 
@@ -49,35 +48,32 @@ my $log = get_logger("");
 sub check {
     my ($self, %args) = @_;
 
-    General::checkParams(args     => $self->{context},
-                         required => [ 'stack_builder', 'user', 'keystone', 'novacontroller', 'neutron',
-                                       'glance', 'novacompute', 'cinder' ]);
+    General::checkParams(args => $self->{context}, required => [ "stack_builder", "user" ]);
+
+    General::checkParams(args => $self->{params}, required => [ "stack_id" ]);
 }
 
 
 =pod
 =begin classdoc
 
-Create all service required for a stack
+Stop all services started for a stack
 
 =end classdoc
 =cut
 
 sub execute {
     my ($self, %args) = @_;
-    $self->SUPER::execute(%args);
 
     # Call the method on the corresponding component
-    $self->{context}->{stack_builder}->validateStack(
-        user           => $self->{context}->{user},
-        keystone       => $self->{context}->{keystone},
-        novacontroller => $self->{context}->{novacontroller},
-        neutron        => $self->{context}->{neutron},
-        glance         => $self->{context}->{glance},
-        novacompute    => $self->{context}->{novacompute},
-        cinder         => $self->{context}->{cinder},
-        erollback      => $self->{erollback}
+    $self->{context}->{stack_builder}->stopStack(
+        stack_id  => $self->{params}->{stack_id},
+        user      => $self->{context}->{user},
+        # TODO: Let all EEntity access to the workflow that they related
+        workflow  => $self->workflow,
+        erollback => $self->{erollback}
     );
 }
+
 
 1;

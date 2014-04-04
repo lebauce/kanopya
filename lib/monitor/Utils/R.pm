@@ -65,63 +65,6 @@ use constant ACF => {
 
 =begin classdoc
 
-Convert a forecast object extracted from R into a Perl-usable format (simple array containing the forecasts).
-
-@param R_forecast_ref a ref to the forecast object (from the forecast package) extracted from R.
-
-@return the forecasteds values (array ref).
-
-=end classdoc
-
-=cut
-
-sub convertRForecast {
-    my ($self, %args) = @_;
-
-    General::checkParams(args     => \%args,
-                         required => ['R_forecast_ref', 'freq']);
-
-    # Raw R data
-    my @R_forecast_raw = @{$args{R_forecast_ref}};
-
-    if ($R_forecast_raw[0] ne 'Point' && $R_forecast_raw[1] ne 'Forecast') {
-        throw Kanopya::Exception(error => 'Wrong R output data structure');
-    }
-
-    my $current_pt  = 2;
-    my $cols_number = 2;
-
-    while ($R_forecast_raw[$current_pt] eq "Lo" || $R_forecast_raw[$current_pt] eq "Hi") {
-        $current_pt += 2;
-        $cols_number++;
-    }
-
-    # True if the given freq is a special freq, ie which implies a 2-columns label
-    my %double_label_frequencies = %{FORECAST->{'DOUBLE_LABEL_FREQS'}};
-    my $special_freq = exists($double_label_frequencies{$args{freq}});
-
-    my $rows_number = $special_freq ? (@R_forecast_raw - $current_pt)/ ($cols_number + 1)
-                    :                 (@R_forecast_raw - $current_pt)/ ($cols_number)
-                    ;
-
-    my $forecast_column = FORECAST->{'FORECAST_COLUMN'};
-
-    my @forecasts = ();
-    for my $row (0..$rows_number - 1) {
-        my $index = $special_freq ? (($cols_number + 1) * $row) + $forecast_column + 1
-                   :                (($cols_number) * $row) + $forecast_column
-                   ;
-        $index += $current_pt;
-        push(@forecasts, $R_forecast_raw[$index]);
-    }
-
-    return \@forecasts;
-}
-
-=pod
-
-=begin classdoc
-
 Print the R forecast object with a table representation.
 
 @param R_forecast_ref A ref to the forecast object extracted from R.

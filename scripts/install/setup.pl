@@ -5,9 +5,14 @@ use warnings;
 use Kanopya::Exceptions;
 
 use Getopt::Std;
-
 use TryCatch;
-my $err;
+use Log::Log4perl qw(:easy get_logger);
+
+Log::Log4perl->easy_init({
+    level  => 'DEBUG',
+    file   => 'setup.log',
+    layout => '%d [ %H - %P ] %p -> %M - %m%n'
+});
 
 sub print_usage {
     print "Usage: setup.pl\n";

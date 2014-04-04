@@ -32,7 +32,6 @@ use NetconfPoolip;
 use NetconfIface;
 use ComponentCategory;
 use ComponentCategory::ManagerCategory;
-use ClassType::DataModelType;
 use Manager::HostManager;
 use Dhcpd3Subnet;
 
@@ -80,6 +79,7 @@ my @classes = (
     'Entity::Component::KanopyaFront',
     'Entity::Component::KanopyaAggregator',
     'Entity::Component::KanopyaRulesEngine',
+    'Entity::Component::KanopyaMailNotifier',
     'Entity::Component::KanopyaOpenstackSync',
     'Entity::Component::KanopyaStackBuilder',
     'Entity::Component::UcsManager',
@@ -154,7 +154,6 @@ my @classes = (
     'Entity::Host::VirtualMachine::Opennebula3Vm',
     'Entity::Host::Hypervisor::OpenstackHypervisor',
     'Entity::Host::VirtualMachine::OpenstackVm',
-    'Entity::Component::Mailnotifier0',
     'Entity::Host::VirtualMachine::Opennebula3Vm::Opennebula3KvmVm',
     'Entity::ServiceTemplate',
     'Entity::Policy',
@@ -183,15 +182,6 @@ my @classes = (
     'Entity::Rule::NodemetricRule',
     'Entity::WorkflowDef',
     'Entity::Rule',
-    'Entity::DataModel',
-    'Entity::DataModel::AnalyticRegression',
-    'Entity::DataModel::RDataModel',
-    'Entity::DataModel::AnalyticRegression::LinearRegression',
-    'Entity::DataModel::AnalyticRegression::LogarithmicRegression',
-    'Entity::DataModel::RDataModel::AutoArima',
-    'Entity::DataModel::RDataModel::ExponentialSmoothing',
-    'Entity::DataModel::RDataModel::StlForecast',
-    'Entity::DataModel::RDataModel::ExpR',
     'Entity::TimePeriod',
     'Entity::Component::Ceph',
     'Entity::Component::Ceph::CephMon',
@@ -691,7 +681,11 @@ sub registerOperations {
         # Workflow BuildStack
         [ 'BuildStack', 'Building stack' ],
         [ 'StartStack', 'Starting stack' ],
-        [ 'ValidateStack', 'Validating stack' ],
+        [ 'ConfigureStack', 'Configuring stack' ],
+        # Workflow EndStack
+        [ 'UnconfigureStack', 'Unconfiguring stack' ],
+        [ 'StopStack', 'Stopping stack' ],
+        [ 'EndStack', 'Ending stack' ],
     ];
 
     for my $operation (@{$operations}) {
@@ -719,63 +713,6 @@ sub registerManagerCategories {
     for my $manager (@{$managers}) {
         ComponentCategory::ManagerCategory->new(
             category_name  => $manager
-        );
-    }
-}
-
-sub registerDataModelTypes {
-    my %args = @_;
-
-    my @data_model_class_names = (
-        'Entity::DataModel::AnalyticRegression::LinearRegression',
-        'Entity::DataModel::AnalyticRegression::LogarithmicRegression',
-        'Entity::DataModel::RDataModel::AutoArima',
-        'Entity::DataModel::RDataModel::ExponentialSmoothing',
-        'Entity::DataModel::RDataModel::StlForecast',
-    );
-
-    my @data_model_labels = (
-        'Linear Regression',
-        'Logarithmic Regression',
-        'Automatically fitted ARIMA model',
-        'Exponential smoothing state space model',
-        'Seasonal forecast model',
-    );
-
-    my @data_model_descriptions = (
-        'Perform a prediction using a classic linear regression. The model ' .
-        'follows a line equation form : y = a*t + b (t represents the time, a and b are computed '.
-        'parameters).',
-
-        'Perform a prediction using a logarithmic regression. The model is ' .
-        'based on a equation with the following form : a*log(t) + b (t represents the time, a and b are ' .
-        ' computed parameters).',
-
-        'Perform a prediction by fitting automaticallly an ARIMA model (Auto Regressive Integrated Moving ' .
-        'Average). ARIMA is a purely statistic model of a time series, suited for performing complex ' .
-        'forecasts. This model is adapted for time series showing complex patterns, including trends and ' .
-        'seasonality, but can be slow when applied to large data sets.',
-
-        'Perform a prediction fitting an Exponential Smoothing State Space model. It is a statistic model ' .
-        'which uses a similar approach as ARIMA models, but which handles better noisy data. Exponential ' .
-        'smoothing is generally slower than ARIMA for small time series ( < ~5000 observations), but more' .
-        'suited for big data sets.',
-
-        'Perform a forecast fitting either an ARIMA or an Exponential Smoothing model assuming that the ' .
-        'data is highly seasonal. This approach is particularly fast and adapted when the model seem to ' .
-        'show a complex seasonality.',
-    );
-
-    my @data_model;
-    for my $class_name (@data_model_class_names) {
-        push @data_model, ClassType->find(hash => {class_type => $class_name});
-    }
-
-    for my $i (0..$#data_model) {
-        ClassType::DataModelType->promote(
-            promoted                    => $data_model[$i],
-            data_model_type_label       => $data_model_labels[$i],
-            data_model_type_description => $data_model_descriptions[$i],
         );
     }
 }
@@ -1017,7 +954,7 @@ sub registerComponents {
             service_provider_types => [ 'Cluster', 'Kanopya' ],
         },
         {
-            component_name         => 'Mailnotifier',
+            component_name         => 'KanopyaMailNotifier',
             component_version      => 0,
             deployable             => 0,
             component_categories   => [ 'NotificationManager' ],
@@ -1226,6 +1163,7 @@ sub registerComponents {
             component_name         => 'KanopyaStackBuilder',
             component_version      => 0,
             deployable             => 0,
+            component_template     => 'components/stackbuilder',
             component_categories   => [ ],
             service_provider_types => [ 'Kanopya', 'Centos6' ],
         },
@@ -1317,7 +1255,6 @@ sub registerComponents {
         );
 
         if (defined $component_type->{component_template}) {
-            my $template_name = lc $component_type->{component_name};
             ComponentTemplate->new(
                 component_template_name      => lc($component_type->{component_name}),
                 component_template_directory => $component_type->{component_template},
@@ -1687,7 +1624,7 @@ sub registerKanopyaMaster {
             name => $distro
         },
         {
-            name => "Mailnotifier",
+            name => "KanopyaMailNotifier",
             manager => "NotificationManager",
             conf => {
                 smtp_server => "localhost"
@@ -2151,9 +2088,20 @@ sub populate_workflow_def {
         steps => [
             Operationtype->find( hash => { operationtype_name => 'BuildStack' })->id,
             Operationtype->find( hash => { operationtype_name => 'StartStack' })->id,
-            Operationtype->find( hash => { operationtype_name => 'ValidateStack' })->id,
+            Operationtype->find( hash => { operationtype_name => 'ConfigureStack' })->id,
         ],
         description => "Build stack"
+    );
+
+    $kanopya_wf_manager->createWorkflowDef(
+        workflow_name => 'EndStack',
+        params => {},
+        steps => [
+            Operationtype->find( hash => { operationtype_name => 'UnconfigureStack' })->id,
+            Operationtype->find( hash => { operationtype_name => 'StopStack' })->id,
+            Operationtype->find( hash => { operationtype_name => 'EndStack' })->id,
+        ],
+        description => "End stack"
     );
 }
 
@@ -2355,9 +2303,6 @@ sub populateDB {
 
     print "\t- Registering users and groups...\n";
     registerUsers(%args);
-
-    print "\t- Registering data model types...\n";
-    registerDataModelTypes(%args);
 
     print "\t- Registering tags...\n";
     registerTags(%args);

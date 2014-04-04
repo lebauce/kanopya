@@ -92,7 +92,6 @@ Override the parent constructor to register existing nova controllers.
 
 sub new {
     my ($class, %args) = @_;
-    General::checkParams(args => \%args, optional => { "duration" => undef });
 
     my $self = $class->SUPER::new(confkey => 'openstack-sync', %args);
 

@@ -31,14 +31,12 @@ my $errmsg;
 sub check {
     my $self = shift;
     my %args = @_;
-    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "host_to_deactivate" ]);
 }
 
 sub execute{
     my $self = shift;
-    $self->SUPER::execute();
 
     # Check if host is not active
     if (not $self->{context}->{host_to_deactivate}->active) {

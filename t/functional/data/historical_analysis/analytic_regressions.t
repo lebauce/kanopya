@@ -33,8 +33,8 @@ my $service_data_model;
 my $service_data_log_model;
 my $comb;
 my $cm;
-use Entity::DataModel::AnalyticRegression::LinearRegression;
-use Entity::DataModel::AnalyticRegression::LogarithmicRegression;
+use DataModel::AnalyticRegression::LinearRegression;
+use DataModel::AnalyticRegression::LogarithmicRegression;
 
 main();
 
@@ -59,7 +59,7 @@ sub testLinearRegression {
     my @data = (7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 31, 33, 35, 37, 39, 41, 43, 45);
 
     # Initialize the LinearRegression
-    my $model = Entity::DataModel::AnalyticRegression::LinearRegression->new(
+    my $model = DataModel::AnalyticRegression::LinearRegression->new(
         combination_id => $comb->id,
     );
 
@@ -85,7 +85,7 @@ sub testLinearRegression {
                 die ("LinearRegression prediction test : Incorrect value forecasted ($forecast[$i] instead " .
                      "of $expected[$i])");
             }
-        } 
+        }
     } 'LinearRegression : Testing predict';
 }
 
@@ -96,7 +96,7 @@ sub testLogarithmicRegression {
                 22.72219, 22.97866);
 
     # Initialize the LinearRegression
-    my $model = Entity::DataModel::AnalyticRegression::LogarithmicRegression->new(
+    my $model = DataModel::AnalyticRegression::LogarithmicRegression->new(
         combination_id => $comb->id,
     );
 
@@ -115,7 +115,7 @@ sub testLogarithmicRegression {
             predict_end   => 24,
         );
         my @forecast = @{$forecast_ref};
-        my @expected = (19.51293, 19.98948, 20.42453, 20.82475, 21.19529, 21.54025, 21.86294, 22.16607, 
+        my @expected = (19.51293, 19.98948, 20.42453, 20.82475, 21.19529, 21.54025, 21.86294, 22.16607,
                         22.45186, 22.72219, 22.97866, 23.22261, 23.45521, 23.67747, 23.89027, 24.09438);
         my $eps      = 0.001;
         for my $i (0..$#forecast) {
@@ -123,11 +123,11 @@ sub testLogarithmicRegression {
                 die ("LogarithmicRegression prediction test : Incorrect value forecasted ($forecast[$i] instead " .
                      "of $expected[$i])");
             }
-        } 
+        }
     } 'LogarithmicRegression : Testing predict';
 }
 
-#    # Configure 
+#    # Configure
 #    $model->configure(
 #        data           => \@training_data,
 #        freq           => $args{freq},

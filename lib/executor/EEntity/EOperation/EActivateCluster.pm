@@ -31,7 +31,6 @@ my $errmsg;
 sub check {
     my $self = shift;
     my %args = @_;
-    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "cluster" ]);
 }
@@ -39,7 +38,6 @@ sub check {
 
 sub execute {
     my $self = shift;
-    $self->SUPER::execute();
 
     # Check if cluster is not active
     if ($self->{context}->{cluster}->active) {

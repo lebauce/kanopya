@@ -70,7 +70,6 @@ sub resolve {
 
     General::checkParams(args => \%args, required => ['trigger_entity', 'entity_id', 'alert_message']);
 
-    $log->debug('Try to resolve alert from entity <'.($args{trigger_entity}->id).'> with message: '.$args{alert_message});
     eval {
         my $alert = $class->findActive(trigger_entity => $args{trigger_entity}, alert_message => $args{alert_message});
         $alert->mark_resolved();
@@ -81,8 +80,6 @@ sub throw {
     my ($class, %args) = @_;
 
     General::checkParams(args => \%args, required => ['trigger_entity', 'entity_id', 'alert_message']);
-
-    $log->debug('Try to throw alert from entity <'.($args{trigger_entity}->id).'> with message: '.$args{alert_message});
 
     eval {
         $class->findActive(trigger_entity => $args{trigger_entity}, alert_message => $args{alert_message});

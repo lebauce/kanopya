@@ -36,7 +36,6 @@ sub check {
 
 sub execute {
     my ($self, %args) = @_;
-    $self->SUPER::execute();
 
     DataModelSelector->selectDataModel(
         combination => $self->{context}->{combination},

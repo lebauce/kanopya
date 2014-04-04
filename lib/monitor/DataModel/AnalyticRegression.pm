@@ -16,16 +16,16 @@
 
 =begin classdoc
 
-Abstract class which represents a DataModel using a regression caracterized by an analytical function to 
+Abstract class which represents a DataModel using a regression caracterized by an analytical function to
 perform a prediction.
 
 =end classdoc
 
 =cut
 
-package Entity::DataModel::AnalyticRegression;
+package DataModel::AnalyticRegression;
 
-use base 'Entity::DataModel';
+use base 'DataModel';
 
 use strict;
 use warnings;

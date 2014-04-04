@@ -63,13 +63,13 @@ sub methods {
         addNodeMetric => {
             description => 'Produce a node metric.',
             message_queuing => {
-                queue => 'node_metric'
+                queue => 'kanopya.aggregator.node_metric'
             }
         },
         addClusterMetric => {
             description => 'Produce a node metric.',
             message_queuing => {
-                queue => 'cluster_metric'
+                queue => 'kanopya.aggregator.cluster_metric'
             }
         },
     };

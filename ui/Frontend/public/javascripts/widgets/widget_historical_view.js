@@ -600,7 +600,7 @@ function _pickTimeRange(graph, callback) {
 
 function initForecastControl(widget_div) {
     // Fill data model type list
-    $.get('/api/datamodeltype', function(types) {
+    $.post('/api/combination/availableDataModels', function(types) {
         var datamodel_type_list = widget_div.find('.datamodel_type_list');
         $(types).each( function () {
             datamodel_type_list.append($('<option>', {
@@ -609,6 +609,7 @@ function initForecastControl(widget_div) {
                 title   : this.data_model_type_description
             }).prop('selected', true));
         });
+
         datamodel_type_list.multiselect({
             noneSelectedText: 'Select model',
             selectedText    : "# selected models",
@@ -642,7 +643,7 @@ function _autoPredict(params) {
     var predict_params = {
         data_start            : current_selected_start_time,
         data_end              : current_selected_end_time,
-        predict_start_tstamps : dateTimeToEpoch(time_settings.start),
+        predict_start_tstamps : current_selected_end_time + 1,
         predict_end_tstamps   : dateTimeToEpoch(time_settings.end),
     };
 

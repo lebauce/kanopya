@@ -84,8 +84,6 @@ Check if the cluster is stable.
 
 sub prepare {
     my ($self, %args) = @_;
-    $self->SUPER::prepare(%args);
-
 
     # Check cluster states
     my @entity_states = $self->{context}->{cluster}->entity_states;
@@ -192,11 +190,6 @@ sub prerequisites {
         return -1;
     }
 
-    # The cluster is now required in the context, so the following block do not make sens.
-    #if (not defined $self->{context}->{cluster}) {
-    #     my $cluster = Entity->get(id => $self->{context}->{host}->node->service_provider_id);
-    #     $self->{context}->{cluster} = $cluster;
-    #}
     return 0;
 }
 
@@ -211,7 +204,6 @@ Configure the components for the node removal.
 
 sub execute {
     my $self = shift;
-    $self->SUPER::execute();
 
     my @components = $self->{context}->{cluster}->getComponents(category => "all");
     $log->info('Inform cluster components about node removal');
@@ -237,7 +229,7 @@ Set host state
 
 sub postrequisites {
     my ($self, %args) = @_;
-    $self->SUPER::cancel(%args);
+
     $self->{context}->{host}->setConsumerState(state => 'stopping', consumer => $self->workflow);
     return 0;
 }
@@ -252,7 +244,6 @@ Restore the clutser and host states.
 
 sub cancel {
     my ($self, %args) = @_;
-    $self->SUPER::cancel(%args);
 
     $self->{context}->{cluster}->restoreState();
     if (defined $self->{context}->{host_manager_sp}) {

@@ -23,16 +23,16 @@ and imitating the behaviour of an expert.
 
 =cut
 
-package Entity::DataModel::RDataModel::ExpR;
+package DataModel::RDataModel::ExpR;
 
-use base 'Entity::DataModel::RDataModel';
+use base 'DataModel::RDataModel';
 
 use strict;
 use warnings;
 
-use Entity::DataModel::RDataModel::AutoArima;
-use Entity::DataModel::RDataModel::ExponentialSmoothing;
-use Entity::DataModel::RDataModel::StlForecast;
+use DataModel::RDataModel::AutoArima;
+use DataModel::RDataModel::ExponentialSmoothing;
+use DataModel::RDataModel::StlForecast;
 
 use Kanopya::Exceptions;
 
@@ -71,18 +71,18 @@ sub predict {
 
     my @timeserie = @{$args{data}};
 
-    my $forecasts; 
-    # If the seasonality is > 1 use stlf, 
+    my $forecasts;
+    # If the seasonality is > 1 use stlf,
     # else : if the dataset length is < MIN_ETS, use autoarima
-    # else use ets. 
+    # else use ets.
     if ($args{freq} > 1) {
-        $forecasts = Entity::DataModel::RDataModel::StlForecast->predict(%args);
+        $forecasts = DataModel::RDataModel::StlForecast->predict(%args);
     }
     elsif (scalar(@timeserie) < MIN_ETS) {
-        $forecasts = Entity::DataModel::RDataModel::AutoArima->predict(%args);
+        $forecasts = DataModel::RDataModel::AutoArima->predict(%args);
     }
     else {
-        $forecasts = Entity::DataModel::RDataModel::ExponentialSmoothing->predict(%args);
+        $forecasts = DataModel::RDataModel::ExponentialSmoothing->predict(%args);
     }
 
     return $forecasts;

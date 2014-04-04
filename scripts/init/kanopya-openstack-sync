@@ -32,6 +32,7 @@ PERL5LIB=\
 /opt/kanopya/lib/external:\
 /opt/kanopya/lib/external/NetApp:\
 /opt/kanopya/lib/orchestrator:\
+/opt/kanopya/lib/component/Kanopya:\
 /opt/kanopya/lib/mock
 
 export PERL5LIB

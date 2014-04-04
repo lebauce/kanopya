@@ -20,7 +20,7 @@ Log::Log4perl -> easy_init({
     layout => '%F %L %p %m%n'
 });
 
-use Entity::DataModel::RDataModel::StlForecast;
+use DataModel::RDataModel::StlForecast;
 
 main();
 
@@ -36,7 +36,7 @@ sub checkPredict {
 
         # Expected values (manually computed from R)
         my @expected_values = (5, 12, 13, 15, 13);
-        my $forecast = Entity::DataModel::RDataModel::StlForecast->predict(
+        my $forecast = DataModel::RDataModel::StlForecast->predict(
             data => \@data,
             freq     => 6,
             predict_end => 23,
@@ -54,78 +54,49 @@ sub checkPredict {
 sub checkExceptions {
 
     throws_ok {
-        my %data = (
-            1 => 5,
-            2 => 12,
-            3 => 13,
-            4 => 15,
-            5 => 13,
-            6 => 12,
+        my @data = (5, 12, 13, 15, 13, 12);
+
+        DataModel::RDataModel::StlForecast->predict(
+            data        => \@data,
+            freq        => 6,
+            predict_end => 8,
         );
-        Entity::DataModel::RDataModel::StlForecast->predict(
-            data => \%data,
-            freq     => 6,
-            end_time => 8,
-        );
-    } 'Kanopya::Exception',
+    } 'Kanopya::Exception::Internal::IncorrectParam',
       'StlForecast predict method called with a dataset which contains less than two period';
 
     throws_ok {
-        my %data = (
-            1  => 5,
-            2  => 12,
-            3  => 13,
-            4  => 15,
-            5  => 13,
-            6  => 12,
-            7  => 5,
-            8  => 12,
-            9  => 13,
-            10 => 15,
-            11 => 13,
-            12 => 12,
-            13 => 5,
-            14 => 12,
-            15 => 13,
-            16 => 15,
-            17 => 13,
-            18 => 12,
-        );
-        Entity::DataModel::RDataModel::StlForecast->predict(
-            data => \%data,
+        my @data = (5, 12, 13, 15, 13, 12, 5, 12, 13, 15, 13, 12, 5, 12, 13, 15, 13, 12);
+
+        DataModel::RDataModel::StlForecast->predict(
+            data => \@data,
             freq     => 6,
-            end_time => 8,
+            predict_end => 8,
         );
-    } 'Kanopya::Exception',
+    } 'Kanopya::Exception::Internal::IncorrectParam',
       'StlForecast predict method called for forecasting a value before the last value of the ' .
       'dataset';
 
     throws_ok {
-        my %data = (
-            1  => 5,
-            2  => 12,
-            3  => 13,
-            4  => 15,
-            5  => 13,
-            6  => 12,
-            7  => 5,
-            8  => 12,
-            9  => 13,
-            10 => 15,
-            11 => 13,
-            12 => 12,
-            13 => 5,
-            14 => 12,
-            15 => 13,
-            16 => 15,
-            17 => 13,
-            18 => 12,
-        );
-        Entity::DataModel::RDataModel::StlForecast->predict(
-            data => \%data,
+        my @data = (5, 12, 13, 15, 13, 12, 5, 12, 13, 15, 13, 12, 5, 12, 13, 15, 13, 12);
+
+        DataModel::RDataModel::StlForecast->predict(
+            data => \@data,
             freq     => 1,
-            end_time => 25,
+            predict_end => 25,
         );
-    } 'Kanopya::Exception',
+    } 'Kanopya::Exception::Internal::IncorrectParam',
       'StlForecast predict method called for forecasting a non seasonal time serie ';
+
+
+    throws_ok {
+        my @data = (5, 12, 13, 15, 13, 12, 5, 12, 13, 15, 13, 12, 5, 12, 13, 15, 13, 12);
+
+        DataModel::RDataModel::StlForecast->predict(
+            data => \@data,
+            freq       => 8,
+            predict_start => 5,
+            predict_end => 25,
+        );
+    } 'Kanopya::Exception::Internal::IncorrectParam',
+      'predict start before end of time serie';
 }

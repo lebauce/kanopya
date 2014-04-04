@@ -106,4 +106,31 @@ This method must be implemented in child classes
 
 sub send {}
 
+=pod
+
+=begin classdoc
+
+Check if a command exists in the context
+
+@param command the name of the command
+
+@return the local path of the software using the which command or an emtpy string if the command doesn't exist
+
+=end classdoc
+
+=cut
+
+sub which {
+
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ "command" ]);
+
+    my $result = $self->execute(command => 'which ' . $args{command});
+
+    chomp $result->{stdout};
+
+    return $result->{stdout};
+}
+
 1;

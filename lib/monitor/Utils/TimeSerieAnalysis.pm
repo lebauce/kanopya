@@ -117,7 +117,9 @@ sub _checkLength {
     my $experimental_length = scalar(@{$args{real_data_ref}});
 
     if ($theorical_length != $experimental_length) {
-        throw Kanopya::Exception(error => 'Accuracy : trying to compare two different-sized dataset.');
+        throw Kanopya::Exception::Internal::Inconsistency(
+                  error => 'Accuracy : trying to compare two different-sized dataset.'
+              );
     }
     else {
         return $theorical_length;
@@ -661,7 +663,7 @@ Compute the granularity of the timeserie and the preduct times in points (predic
 @param predict_start_tstamps The starting point wished for the prediction, in timestamps.
 @param predict_end_tstamps The ending point wished for the prediction, in timestamps.
 
-@return the granularity of the timeserie and the predicts times (in points) in a hash ('granularity' && 
+@return the granularity of the timeserie and the predicts times (in points) in a hash ('granularity' &&
         'predict_start' && 'predict_end').
 
 =end classdoc

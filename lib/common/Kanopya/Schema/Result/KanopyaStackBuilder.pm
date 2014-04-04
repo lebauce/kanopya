@@ -1,12 +1,12 @@
 use utf8;
-package Kanopya::Schema::Result::Mailnotifier0;
+package Kanopya::Schema::Result::KanopyaStackBuilder;
 
 # Created by DBIx::Class::Schema::Loader
 # DO NOT MODIFY THE FIRST PART OF THIS FILE
 
 =head1 NAME
 
-Kanopya::Schema::Result::Mailnotifier0
+Kanopya::Schema::Result::KanopyaStackBuilder
 
 =cut
 
@@ -31,73 +31,43 @@ use base 'DBIx::Class::IntrospectableM2M';
 
 use base qw/DBIx::Class::Core/;
 
-=head1 TABLE: C<mailnotifier0>
+=head1 TABLE: C<kanopya_stack_builder>
 
 =cut
 
-__PACKAGE__->table("mailnotifier0");
+__PACKAGE__->table("kanopya_stack_builder");
 
 =head1 ACCESSORS
 
-=head2 mailnotifier0_id
+=head2 kanopya_stack_builder_id
 
   data_type: 'integer'
   extra: {unsigned => 1}
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 smtp_server
-
-  data_type: 'char'
-  default_value: 'localhost'
-  is_nullable: 1
-  size: 255
-
-=head2 smtp_login
-
-  data_type: 'char'
-  is_nullable: 1
-  size: 32
-
-=head2 smtp_passwd
-
-  data_type: 'char'
-  is_nullable: 1
-  size: 32
-
-=head2 use_ssl
+=head2 support_user_id
 
   data_type: 'integer'
-  default_value: 0
   extra: {unsigned => 1}
+  is_foreign_key: 1
   is_nullable: 1
 
 =cut
 
 __PACKAGE__->add_columns(
-  "mailnotifier0_id",
+  "kanopya_stack_builder_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
   },
-  "smtp_server",
-  {
-    data_type => "char",
-    default_value => "localhost",
-    is_nullable => 1,
-    size => 255,
-  },
-  "smtp_login",
-  { data_type => "char", is_nullable => 1, size => 32 },
-  "smtp_passwd",
-  { data_type => "char", is_nullable => 1, size => 32 },
-  "use_ssl",
+  "support_user_id",
   {
     data_type => "integer",
-    default_value => 0,
     extra => { unsigned => 1 },
+    is_foreign_key => 1,
     is_nullable => 1,
   },
 );
@@ -106,17 +76,17 @@ __PACKAGE__->add_columns(
 
 =over 4
 
-=item * L</mailnotifier0_id>
+=item * L</kanopya_stack_builder_id>
 
 =back
 
 =cut
 
-__PACKAGE__->set_primary_key("mailnotifier0_id");
+__PACKAGE__->set_primary_key("kanopya_stack_builder_id");
 
 =head1 RELATIONS
 
-=head2 mailnotifier0
+=head2 kanopya_stack_builder
 
 Type: belongs_to
 
@@ -125,15 +95,35 @@ Related object: L<Kanopya::Schema::Result::Component>
 =cut
 
 __PACKAGE__->belongs_to(
-  "mailnotifier0",
+  "kanopya_stack_builder",
   "Kanopya::Schema::Result::Component",
-  { component_id => "mailnotifier0_id" },
+  { component_id => "kanopya_stack_builder_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
+=head2 support_user
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:KBEFQkaQaqsyBkoGfu3PUw
+Type: belongs_to
+
+Related object: L<Kanopya::Schema::Result::User>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "support_user",
+  "Kanopya::Schema::Result::User",
+  { user_id => "support_user_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "SET NULL",
+    on_update     => "NO ACTION",
+  },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-26 15:17:11
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:woMnRcOC1h+aEr3I3ACD3A
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -52,8 +52,6 @@ our %resources = (
     "containeraccess"          => "Entity::ContainerAccess",
     "customer"                 => "Entity::User::Customer",
     "dashboard"                => "Dashboard",
-    "datamodel"                => "Entity::DataModel",
-    "datamodeltype"            => "ClassType::DataModelType",
     "debian"                   => "Entity::Component::Linux::Debian",
     "entity"                   => "Entity",
     "entitycomment"            => "EntityComment",
@@ -88,6 +86,7 @@ our %resources = (
     "kanopyaexecutor"          => "Entity::Component::KanopyaExecutor",
     "kanopyafront"             => "Entity::Component::KanopyaFront",
     "kanopyaopenstacksync"     => "Entity::Component::KanopyaOpenstackSync",
+    "kanopyamailnotifier"      => "Entity::Component::KanopyaMailNotifier",
     "kanopyarulesengine"       => "Entity::Component::KanopyaRulesEngine",
     "keepalived1"              => "Entity::Component::Keepalived1",
     "keepalived1vrrpinstance"  => "Keepalived1Vrrpinstance",
@@ -98,7 +97,6 @@ our %resources = (
     "lvm2vg"                   => "Lvm2Vg",
     "lvm2"                     => "Entity::Component::Lvm2",
     "lvmcontainer"             => "Entity::Container::LvmContainer",
-    "mailnotifier0"            => "Entity::Component::Mailnotifier0",
     "managercategory"          => "ComponentCategory::ManagerCategory",
     "masterimage"              => "Entity::Masterimage",
     "memcached1"               => "Entity::Component::Memcached1",
@@ -262,6 +260,9 @@ sub getResources {
         $params{prefetch} = \@prefetch;
         delete $query{expand};
     }
+    elsif (not defined $params{prefetch}) {
+        $params{prefetch} = [];
+    }
 
     # Handle custom search options
     my @customs = grep { $_ =~ '^custom\.' } keys %query;
@@ -297,8 +298,7 @@ sub getResources {
         $result = $class->search(hash => \%query, %params);
     }
 
-    $rows = (defined ($params{dataType}) && $params{dataType} eq "hash") ?
-                $result->{rows} : $result;
+    $rows = (defined ($params{dataType}) && $params{dataType} eq "hash") ? $result->{rows} : $result;
     if (ref $rows eq "ARRAY") {
         for my $obj (@$rows) {
             push @$objs, $obj->toJSON(virtuals => 1,
@@ -315,7 +315,8 @@ sub getResources {
     if (defined ($params{dataType}) && $params{dataType} eq "hash") {
         $result->{rows} = $objs;
         return $result;
-    } else {
+    }
+    else {
         return $objs;
     }
 }

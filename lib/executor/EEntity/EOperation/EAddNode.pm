@@ -61,7 +61,6 @@ my $errmsg;
 
 sub check {
     my ($self, %args) = @_;
-    $self->SUPER::check(%args);
 
     General::checkParams(args     => $self->{context},
                          required => [ "cluster" ],
@@ -104,7 +103,6 @@ Check if the cluster is stable, ask to the manager the permission to use them.
 
 sub prepare {
     my ($self, %args) = @_;
-    $self->SUPER::prepare(%args);
 
     # Ask to the manager if we can use them
     $self->{context}->{host_manager}->increaseConsumers();
@@ -284,7 +282,6 @@ the database with the infrastructure if required.
 
 sub execute {
     my $self = shift;
-    $self->SUPER::execute();
 
     # Get the node number
     $self->{params}->{node_number} = $self->{context}->{cluster}->getNewNodeNumber();
@@ -318,7 +315,7 @@ sub execute {
     }
 
     # Check if a host is specified.
-    if (defined $self->{context}->{forced_host} &&
+    if (exists $self->{context}->{forced_host} && defined $self->{context}->{forced_host} &&
         ($self->{context}->{forced_host}->host_manager_id == $self->{context}->{host_manager}->id)) {
         $self->{context}->{host} = delete $self->{context}->{forced_host};
     }
@@ -459,7 +456,6 @@ Set the host as 'locked'.
 
 sub finish {
     my ($self, %args) = @_;
-    $self->SUPER::finish(%args);
 
     $self->{context}->{host}->setState(state => "locked");
     $self->{context}->{host}->setConsumerState(state => 'adding', consumer => $self->workflow);
@@ -491,7 +487,6 @@ Restore the clutser and host states.
 
 sub cancel {
     my ($self, %args) = @_;
-    $self->SUPER::cancel(%args);
 
     if (defined $self->{params}->{needhypervisor}) {
         $self->{context}->{cluster}->setState(state => 'up');

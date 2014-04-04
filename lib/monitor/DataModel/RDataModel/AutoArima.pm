@@ -16,21 +16,23 @@
 
 =begin classdoc
 
-Data Model for performing a forecast using the "stlf" (Loess Seasonal Decomposition of Time Series) algorithm
-from the R forecast package. STLF IS A HIGHLY SEASONAL MODEL, SEASONALITY MUST BE >1 AND THERE MUST BE AT 
-LEAST TWO PERIODS IN THE DATA.
+Data Model for performing a forecast using the auto.arima method implemented in R.
+
+@since 2013-Feb-27
+@instance hash
+@self $self
 
 =end classdoc
 
 =cut
 
-package Entity::DataModel::RDataModel::StlForecast;
+package DataModel::RDataModel::AutoArima;
 
-use base 'Entity::DataModel::RDataModel';
+use base 'DataModel::RDataModel';
 
 use strict;
 use warnings;
-
+use Data::Dumper;
 use Kanopya::Exceptions;
 
 # logger
@@ -41,7 +43,7 @@ my $log = get_logger("");
 
 =begin classdoc
 
-Make a prediction calling the stlf method from the R forecast package.
+Make a prediction calling the auto.arima method from the R forecast package.
 
 @param data A reference to an array containing the values of the time serie.
 @param freq The frequency (or seasonality) of the time serie.
@@ -72,21 +74,17 @@ sub predict {
     my $horizon     = $args{predict_end} - @{$args{data}} + 1;
 
 # 3- Forecast with R
-    my $R_forecast_ref = $self->_forecastFromR(timeserie_ref => \@timeserie,
-                                               freq          => $args{freq},
-                                               horizon       => $horizon,
+    my $forecasts = $self->_forecastFromR(timeserie_ref => \@timeserie,
+                                          freq          => $args{freq},
+                                          horizon       => $horizon,
     );
 
-    my @forecasts = @{Utils::R->convertRForecast(R_forecast_ref => $R_forecast_ref,
-                                                 freq           => $args{freq}
-    )};
-
-    return \@forecasts;
+    return $forecasts;
 }
 
 sub label {
     my $self = shift;
-    return 'STLF ' . $self->time_label();
+    return 'Auto Arima ' . $self->time_label();
 }
 
 sub isSeasonal {
@@ -97,7 +95,7 @@ sub isSeasonal {
 
 =begin classdoc
 
-Checks that the given parameters for computing the stlf method are valid.
+Checks that the given parameters for computing the auto arima method are valid.
 
 @param timestamps_ref A reference to the timestamps of the time serie (array).
 @param timeserie_ref A reference to the values of the time serie (array).
@@ -114,22 +112,18 @@ sub _checkParams {
     General::checkParams(args     => \%args,
                          required => ['timeserie_ref', 'freq', 'predict_end']);
 
-    # Check that the given data has a seasonality >1
-    if ($args{freq} <= 1) {
-        throw Kanopya::Exception(error => 'STLF : bad parameter : The serie is not seasonal (freq must be ' .
-                                          'at least 2)');
-    }
-
     # Check that at least two periods are present in the timeserie
     if (@{$args{timeserie_ref}}/$args{freq} < 2) {
-        throw Kanopya::Exception(error => 'STLF : bad parameters (there must be'
-                                          .' at least two periods in the given data)');
+        throw Kanopya::Exception::Internal::IncorrectParam(
+                  error => 'AutoArima: bad parameters (there must be at least two periods in the given data)'
+              );
     }
 
     # Check that the given end time is strictly after the last available data from the given set
     if ($args{predict_end} <= $#{$args{timeserie_ref}}) {
-        throw Kanopya::Exception(error => 'STLF : bad parameters (trying to ' .
-                                          'forecast the past...)');
+        throw Kanopya::Exception::Internal::IncorrectParam(
+                  error => 'AutoArima : bad parameters (trying to forecast the past...)'
+              );
     }
 }
 
@@ -137,7 +131,8 @@ sub _checkParams {
 
 =begin classdoc
 
-Initializes the R binding and the R objects, forecast with the stlf method from the forecast package.
+Initializes the R binding and the R objects, fits the Arima model with the automated algorithm from the
+forecast package.
 
 @param timeserie_ref A reference to the values of the time serie (array).
 @param freq The frequence (ie seasonality) of the time serie.
@@ -166,10 +161,12 @@ sub _forecastFromR {
     # Run R commands
     $R->run(q`library(forecast);`                                            # Load the forecast package
             . qq`time_serie <- ts(dataset, start=1, frequency=$freq);`       # Create the time serie
-            . qq`forecast <- stlf(time_serie, h=$hor);`);                    # fit and forecast with stlf
+            . qq`forecast <- forecast(auto.arima(time_serie), h=$hor);`);    # fit and forecast with arima
+
+    my $forecast = $R->get('as.numeric(forecast$mean)');
 
     # Return the forecast computed by R
-    return $R->get('forecast');
+    return $forecast;
 }
 
 1;

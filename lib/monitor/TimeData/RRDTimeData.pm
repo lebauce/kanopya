@@ -279,7 +279,7 @@ sub fetchTimeDataStore {
 
     #if not defined, start is (end - 1 day), and end is (now)
     if (defined $start){
-        $cmd .= ' -s '.$start;
+        $cmd .= ' -s '.($start - 1);
     }
     if (defined $end){
         $cmd .= ' -e '.$end;
@@ -301,10 +301,10 @@ sub fetchTimeDataStore {
     $exec =~ s/,/./g;
     #we split the string into an array
     my @values = split(' ', $exec);
-    #print Dumper(\@values);
+
     #The first entry is the DS' name. We remove it from the list.
     shift (@values);
-    #print Dumper(\@values);
+
     #We convert the list into the final hash that is returned to the caller.
     my %values = @values;
 
@@ -316,9 +316,17 @@ sub fetchTimeDataStore {
     while (my ($timestamp, $value) = each %values) {
         if (($value eq '-1.#IND000000e+000') or ($value eq '-nan')){
             $values{$timestamp} = undef;
-            }
+        }
     }
-    #$log->debug(Dumper(\%values));
+
+    # Remove out of range values
+    my @timestamps = (keys %values);
+    for my $timestamp (@timestamps) {
+        if ($timestamp < $start || $timestamp > $end) {
+            delete $values{$timestamp};
+        }
+    }
+
     return %values;
 }
 
@@ -522,25 +530,25 @@ sub _configTimeDataStore {
     #value in the configuration file markups would result in a code error
     #at parsing
 
-    #if the frequency only is defined, we generate CDP number and heartbeat 
+    #if the frequency only is defined, we generate CDP number and heartbeat
     #in this case, by default we will set the rrd to store data for 1 week
     if (defined $args{collect_frequency} && ! defined $args{storage_duration}) {
         $config{step}      = $args{collect_frequency};
         $config{CDP}       = 604800 / $config{step};
-        $config{heartbeat} = $config{step} * 2; 
+        $config{heartbeat} = $config{step} * 2;
     }
     #if the storage duration only is defined, we generate step, heartbeat, and CDP number
     #step by default will be 5 mn
     elsif (defined $args{storage_duration} && ! defined $args{collect_frequency}) {
         $config{step}      = 300 ;
         $config{CDP}       = $args{storage_duration} / $config{step};
-        $config{heartbeat} = $config{step} * 2; 
+        $config{heartbeat} = $config{step} * 2;
     }
     #if both storage duration and frequency are defined, we generate heartbeat and CDP number
     elsif (defined $args{collect_frequency} && defined $args{storage_duration}) {
         $config{step}      = $args{collect_frequency};
         $config{CDP}       = $args{storage_duration} / $config{step};
-        $config{heartbeat} = $config{step} * 2; 
+        $config{heartbeat} = $config{step} * 2;
     }
     else {
         throw Kanopya::Exception::Internal(

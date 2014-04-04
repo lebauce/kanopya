@@ -37,14 +37,30 @@ use Entity::Workflow;
 use Operationtype;
 use ParamPreset;
 use OldOperation;
-use Hash::Merge;
 
+use Hash::Merge;
+use TryCatch;
 use Data::Dumper;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
-use TryCatch;
-my $err;
+
+use constant OPERATION_STATES => (
+    'ready',
+    'processing',
+    'prereported',
+    'postreported',
+    'waiting_validation',
+    'validated',
+    'failed',
+    'cancelled',
+    'succeeded',
+    'pending',
+    'statereported',
+    'interrupted',
+    'timeouted'
+);
+
 
 use constant ATTR_DEF => {
     operationtype_id => {
@@ -52,8 +68,7 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
     },
     state => {
-        pattern      => '^ready|processing|prereported|postreported|waiting_validation|' .
-                        'validated|blocked|cancelled|succeeded|pending|statereported|interrupted$',
+        pattern      => '^' . join('|', Entity::Operation::OPERATION_STATES) . '$',
         default      => 'pending',
         is_mandatory => 0,
     },
@@ -116,7 +131,9 @@ If params are given in parameters, serialize its in database.
 
 @optional params      the operation parameters hash
 @optional workflow_id the workflow that the operation belongs to
+@optional harmless    flag to set the operatio as harmless
 @optional related_id  the related entity of the workflow
+@optional group       the operation group
 
 @return the operation instance.
 
@@ -124,15 +141,17 @@ If params are given in parameters, serialize its in database.
 =cut
 
 sub new {
-    my $class = shift;
-    my %args = @_;
+    my ($class, %args) = @_;
     my $self;
 
     General::checkParams(args     => \%args,
                          required => [ 'priority', 'type' ],
                          optional => { 'workflow_id' => undef,
                                        'params'      => undef,
-                                       'related_id'  => undef });
+                                       'harmless'    => 0,
+                                       'group'       => undef,
+                                       'related_id'  => undef,
+                                       'timeout'     => undef });
 
     my $operationtype = Operationtype->find(hash => { operationtype_name => $args{type} });
 
@@ -142,33 +161,33 @@ sub new {
         $workflow = Entity::Workflow->get(id => $args{workflow_id});
     }
     else {
-        $workflow = Entity::Workflow->new(related_id => $args{related_id});
-        $args{workflow_id} = $workflow->id;
+        $workflow = Entity::Workflow->new(related_id => $args{related_id}, timeout => $args{timeout});
     }
 
     # Compute the execution time if required
-    my $hoped_execution_time = defined $args{hoped_execution_time} ? time + $args{hoped_execution_time} : undef;
+    my $hoped_execution_time = defined $args{hoped_execution_time}
+                                   ? time + $args{hoped_execution_time}
+                                   : undef;
 
     # Get the next execution rank within the creation transation.
     Kanopya::Database::beginTransaction;
 
     try {
-        $log->debug("Enqueuing new operation <$args{type}>, in workflow <$args{workflow_id}>");
+        $log->debug("Enqueuing new operation <$args{type}>, in workflow <" . $workflow->id . ">");
+        $self = $class->SUPER::new(operationtype_id     => $operationtype->id,
+                                   state                => "pending",
+                                   execution_rank       => $workflow->getNextRank(),
+                                   workflow_id          => $workflow->id,
+                                   priority             => $args{priority},
+                                   harmless             => $args{harmless},
+                                   creation_date        => \"CURRENT_DATE()",
+                                   creation_time        => \"CURRENT_TIME()",
+                                   hoped_execution_time => $hoped_execution_time,
+                                   owner_id             => Kanopya::Database::currentUser);
 
-        my $params = {
-            operationtype_id     => $operationtype->id,
-            state                => "pending",
-            execution_rank       => $class->getNextRank(workflow_id => $args{workflow_id}),
-            workflow_id          => $args{workflow_id},
-            priority             => $args{priority},
-            creation_date        => \"CURRENT_DATE()",
-            creation_time        => \"CURRENT_TIME()",
-            hoped_execution_time => $hoped_execution_time,
-            owner_id             => Kanopya::Database::currentUser,
-        };
-
-        $self = $class->SUPER::new(%$params);
-
+        if (defined $args{group}) {
+            $self->operation_group_id($args{group}->id);
+        }
         if (defined $args{params}) {
             $self->serializeParams(params => $args{params});
         }
@@ -178,9 +197,13 @@ sub new {
             $workflow->workflow_name($self->label);
         }
     }
-    catch ($err) {
+    catch (Kanopya::Exception $err) {
         Kanopya::Database::rollbackTransaction;
         $err->rethrow();
+    }
+    catch ($err) {
+        Kanopya::Database::rollbackTransaction;
+        throw Kanopya::Exception(error => $err);
     }
 
     Kanopya::Database::commitTransaction;
@@ -201,8 +224,7 @@ the entities objects of the context are serialized by there ids.
 =cut
 
 sub serializeParams {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'params' ]);
 
@@ -253,8 +275,7 @@ sub serializeParams {
         $self->param_preset->update(params => $args{params}, override => 1);
     }
     else {
-        my $preset = ParamPreset->new(params => $args{params});
-        $self->setAttr(name => 'param_preset_id', value => $preset->id, save => 1);
+        $self->param_preset_id(ParamPreset->new(params => $args{params})->id);
     }
 }
 
@@ -273,8 +294,7 @@ form there ids.
 =cut
 
 sub unserializeParams {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, optional => { 'skip_not_found' => 0 });
 
@@ -317,8 +337,7 @@ fail, then a lock is already in db for the entity.
 =cut
 
 sub lockContext {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, optional => { 'skip_not_found' => 0 });
 
@@ -348,8 +367,7 @@ Remove the possible lock objects related to the entities of the context.
 =cut
 
 sub unlockContext {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, optional => { 'skip_not_found' => 0 });
 
@@ -379,21 +397,20 @@ Validate the operation that the execution has been stopped because it require va
 =cut
 
 sub validate {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     my $executor;
     try {
         $executor = $self->workflow->relatedServiceProvider->getManager(manager_type => 'ExecutionManager');
     }
+    catch (Kanopya::Exception::Internal $err) {
+        throw Kanopya::Exception::Internal(
+                  error => "Can not validate operation <" . $self->id .
+                           "> without related service provider on the workflow."
+              );
+    }
     catch ($err) {
-        if ($err->isa('Kanopya::Exception::Internal')) {
-            throw Kanopya::Exception::Internal(
-                      error => "Can not validate operation <" . $self->id .
-                               "> without related service provider on the workflow."
-                  );
-        }
-        else { $err->rethrow(); }
+        $err->rethrow();
     }
 
     # Push a message on the channel 'operation_result' to continue the workflow
@@ -412,10 +429,26 @@ Deny the operation that the execution has been stopped because it require valida
 =cut
 
 sub deny {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
+
+    my $executor;
+    try {
+        $executor = $self->workflow->relatedServiceProvider->getManager(manager_type => 'ExecutionManager');
+    }
+    catch (Kanopya::Exception::Internal $err) {
+        throw Kanopya::Exception::Internal(
+                  error => "Can not validate operation <" . $self->id .
+                           "> without related service provider on the workflow."
+              );
+    }
+    catch ($err) {
+        $err->rethrow();
+    }
 
     $self->workflow->cancel();
+
+    # Push a message on the channel 'operation_result' to continue the workflow
+    $executor->terminate(operation_id => $self->id, status => 'waiting_validation');
 
     $self->removeValidationPerm();
 }
@@ -430,8 +463,7 @@ Add permissions required by the consumer user to validate/deny the operation.
 =cut
 
 sub addValidationPerm {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'consumer' ]);
 
@@ -449,8 +481,7 @@ Remove permissions required by the consumer user to validate/deny the operation.
 =cut
 
 sub removeValidationPerm {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     $self->removePerm(method => 'validate');
     $self->removePerm(method => 'deny');
@@ -466,8 +497,7 @@ Remove the related param preset from db.
 =cut
 
 sub removePresets {
-    my $self  = shift;
-    my %args  = @_;
+    my ($self, %args) = @_;
 
     # Firstly empty the old pattern
     my $presets = $self->param_preset;
@@ -480,9 +510,19 @@ sub removePresets {
     }
 }
 
+
+=pod
+=begin classdoc
+
+Build the operation label from parameters content
+
+@return the operation label
+
+=end classdoc
+=cut
+
 sub label {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     my $type = $self->operationtype;
     if ($type->operationtype_label) {
@@ -498,23 +538,53 @@ sub label {
     return $type->operationtype_name;
 }
 
+
+=pod
+=begin classdoc
+
+Shortcut vitual attribute to get the operation type name.
+
+@return the operation type name
+
+=end classdoc
+=cut
+
 sub type {
-    my $self = shift;
+    my ($self, %args) = @_;
 
     return $self->operationtype->operationtype_name;
 }
 
+
+=pod
+=begin classdoc
+
+Alias for the operation constructor.
+
+@return the operation instance
+
+=end classdoc
+=cut
+
 sub enqueue {
-    my $class = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'priority', 'type' ]);
 
     return Entity::Operation->new(%args);
 }
 
+
+=pod
+=begin classdoc
+
+Override the parent method to fill to old operations with the deleted one.
+
+=end classdoc
+=cut
+
 sub delete {
-    my $self = shift;
+    my ($self, %args) = @_;
 
     # Uncomment this line if we do not want to keep old parameters
     # $self->removePresets();
@@ -533,46 +603,32 @@ sub delete {
         execution_status => $self->state,
         param_preset_id  => $self->param_preset_id,
     );
+
+    # Delete the corresponding operation group if
+    # it is the last remaining operation in the group
+    if (defined $self->operation_group && scalar($self->operation_group->operations) <= 1) {
+        $self->operation_group->delete();
+    }
     $self->SUPER::delete();
 }
 
+
+=pod
+=begin classdoc
+
+Update the hoped execution time of the operation. Usefull while reporting
+the operation execution in the future.
+
+=end classdoc
+=cut
+
 sub setHopedExecutionTime {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => ['value']);
 
     my $t = time + $args{value};
     $self->hoped_execution_time($t);
-}
-
-sub getNextRank {
-    my $class = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'workflow_id' ]);
-
-    my $operation;
-    try {
-        $operation = Entity::Operation->find(hash     => { workflow_id => $args{workflow_id} },
-                                             order_by => 'execution_rank desc');
-    }
-    catch ($err) {
-        $log->debug("No previous operation in queue for workflow $args{workflow_id}");
-        return 0;
-    }
-    my $last_in_db = $operation->execution_rank;
-    $log->debug("Previous operation in queue is $last_in_db");
-    return $last_in_db + 1;
-}
-
-sub setState {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'state' ]);
-
-    $self->setAttr(name => 'state', value => $args{state}, save => 1);
 }
 
 1;

@@ -70,7 +70,7 @@ sub testBestModel {
                                                  'AnalyticRegression::LogarithmicRegression',],
                    );
 
-        if ($pred->{data_model} ne 'Entity::DataModel::AnalyticRegression::LinearRegression') {
+        if ($pred->{data_model} ne 'DataModel::AnalyticRegression::LinearRegression') {
             die 'Wrong Linear Model';
         }
 
@@ -84,7 +84,7 @@ sub testBestModel {
                                               'AnalyticRegression::LogarithmicRegression',],
                 );
 
-        if ($pred->{data_model} ne 'Entity::DataModel::AnalyticRegression::LogarithmicRegression') {
+        if ($pred->{data_model} ne 'DataModel::AnalyticRegression::LogarithmicRegression') {
             die 'Wrong Logarithmic Model';
         }
 
@@ -107,7 +107,7 @@ sub testAutoPredict {
         my @timestamps = @{$extracted{timestamps_ref}};
         my @values     = @{$extracted{values_ref}};
 
-        my %forecast = %{DataModelSelector->autoPredict(
+        my %forecast = %{DataModelSelector->autoPredictData(
             predict_start_tstamps => 45,
             predict_end_tstamps  => 61,
             timeserie             => \%timeserie,
@@ -133,15 +133,15 @@ sub testAutoPredict {
         my @timestamps = @{$extracted{timestamps_ref}};
         my @values     = @{$extracted{values_ref}};
 
-        my $forecast = DataModelSelector->autoPredict(
-                           predict_start_tstamps => 45,
+        my $forecast = DataModelSelector->autoPredictData(
+                           predict_start_tstamps => 50,
                            predict_end_tstamps   => 61,
                            timeserie             => \%timeserie,
                        );
 
-         if ($forecast->{data_model} ne 'Entity::DataModel::RDataModel::ExpR') {
+         if ($forecast->{data_model} ne 'DataModel::RDataModel::ExpR') {
             die 'Wrong data model got <' . $forecast->{data_model}
-                . '> expect <Entity::DataModel::RDataModel::ExpR>';
+                . '> expect <DataModel::RDataModel::ExpR>';
          }
 
     } 'DataModelSelector : Testing autoPredict Method';
@@ -176,7 +176,7 @@ sub testDataModelSelector {
 
     lives_ok {
         %accuracy_lin_reg = %{DataModelSelector->evaluateDataModelAccuracy(
-            data_model_class => 'Entity::DataModel::AnalyticRegression::LinearRegression',
+            data_model_class => 'DataModel::AnalyticRegression::LinearRegression',
             data             => \@values,
             combination_id   => $comb->id,
         )};
@@ -184,7 +184,7 @@ sub testDataModelSelector {
 
     lives_ok {
         %accuracy_log_reg = %{DataModelSelector->evaluateDataModelAccuracy(
-            data_model_class => 'Entity::DataModel::AnalyticRegression::LogarithmicRegression',
+            data_model_class => 'DataModel::AnalyticRegression::LogarithmicRegression',
             data             => \@values,
             combination_id   => $comb->id,
         )};
@@ -192,7 +192,7 @@ sub testDataModelSelector {
 
     lives_ok {
         %accuracy_auto_arima = %{DataModelSelector->evaluateDataModelAccuracy(
-            data_model_class => 'Entity::DataModel::RDataModel::AutoArima',
+            data_model_class => 'DataModel::RDataModel::AutoArima',
             data             => \@values,
             combination_id   => $comb->id,
             freq             => 6,
@@ -201,7 +201,7 @@ sub testDataModelSelector {
 
     lives_ok {
         %accuracy_exp_smoothing = %{DataModelSelector->evaluateDataModelAccuracy(
-            data_model_class => 'Entity::DataModel::RDataModel::ExponentialSmoothing',
+            data_model_class => 'DataModel::RDataModel::ExponentialSmoothing',
             data             => \@values,
             combination_id   => $comb->id,
             freq             => 6,
@@ -210,7 +210,7 @@ sub testDataModelSelector {
 
     lives_ok {
         %accuracy_stlf = %{DataModelSelector->evaluateDataModelAccuracy(
-            data_model_class => 'Entity::DataModel::RDataModel::StlForecast',
+            data_model_class => 'DataModel::RDataModel::StlForecast',
             data             => \@values,
             combination_id   => $comb->id,
             freq             => 6,
@@ -219,7 +219,7 @@ sub testDataModelSelector {
 
     lives_ok {
         %accuracy_exp_r = %{DataModelSelector->evaluateDataModelAccuracy(
-            data_model_class => 'Entity::DataModel::RDataModel::ExpR',
+            data_model_class => 'DataModel::RDataModel::ExpR',
             data             => \@values,
             combination_id   => $comb->id,
             freq             => 6,
@@ -231,12 +231,12 @@ sub testDataModelSelector {
         lives_ok {
             $best_model = DataModelSelector->chooseBestDataModel(
                 accuracy_measures => {
-                    'Entity::DataModel::AnalyticRegression::LinearRegression' => {%accuracy_lin_reg},
-                    'Entity::DataModel::LogarithmicRegression'                => {%accuracy_log_reg},
-                    'Entity::DataModel::RDataModel::AutoArima'                => {%accuracy_auto_arima},
-                    'Entity::DataModel::RDataModel::ExponentialSmoothing'     => {%accuracy_exp_smoothing},
-                    'Entity::DataModel::RDataModel::StlForecast'              => {%accuracy_stlf},
-                    'Entity::DataModel::RDataModel::ExpR'                     => {%accuracy_exp_r},
+                    'DataModel::AnalyticRegression::LinearRegression' => {%accuracy_lin_reg},
+                    'DataModel::LogarithmicRegression'                => {%accuracy_log_reg},
+                    'DataModel::RDataModel::AutoArima'                => {%accuracy_auto_arima},
+                    'DataModel::RDataModel::ExponentialSmoothing'     => {%accuracy_exp_smoothing},
+                    'DataModel::RDataModel::StlForecast'              => {%accuracy_stlf},
+                    'DataModel::RDataModel::ExpR'                     => {%accuracy_exp_r},
                 },
                 choice_strategy   => $strategy,
             );
@@ -246,12 +246,12 @@ sub testDataModelSelector {
     throws_ok {
         my $best_model = DataModelSelector->chooseBestDataModel(
             accuracy_measures => {
-                    'Entity::DataModel::AnalyticRegression::LinearRegression' => {%accuracy_lin_reg},
-                    'Entity::DataModel::LogarithmicRegression'                => {%accuracy_log_reg},
-                    'Entity::DataModel::RDataModel::AutoArima'                => {%accuracy_auto_arima},
-                    'Entity::DataModel::RDataModel::ExponentialSmoothing'     => {%accuracy_exp_smoothing},
-                    'Entity::DataModel::RDataModel::StlForecast'              => {%accuracy_stlf},
-                    'Entity::DataModel::RDataModel::ExpR'                     => {%accuracy_exp_r},
+                    'DataModel::AnalyticRegression::LinearRegression' => {%accuracy_lin_reg},
+                    'DataModel::LogarithmicRegression'                => {%accuracy_log_reg},
+                    'DataModel::RDataModel::AutoArima'                => {%accuracy_auto_arima},
+                    'DataModel::RDataModel::ExponentialSmoothing'     => {%accuracy_exp_smoothing},
+                    'DataModel::RDataModel::StlForecast'              => {%accuracy_stlf},
+                    'DataModel::RDataModel::ExpR'                     => {%accuracy_exp_r},
             },
             choice_strategy   => 'Are you kidding me ?!',
         );

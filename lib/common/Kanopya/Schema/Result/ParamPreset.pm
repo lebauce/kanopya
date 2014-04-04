@@ -94,21 +94,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 data_models
-
-Type: has_many
-
-Related object: L<Kanopya::Schema::Result::DataModel>
-
-=cut
-
-__PACKAGE__->has_many(
-  "data_models",
-  "Kanopya::Schema::Result::DataModel",
-  { "foreign.param_preset_id" => "self.param_preset_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 old_operations
 
 Type: has_many
@@ -215,8 +200,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-03 12:34:48
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:LccuVtCfrbD7Egbcduih6w
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-24 16:34:10
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3u+JwfqBWraOqzQLyf1p2g
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

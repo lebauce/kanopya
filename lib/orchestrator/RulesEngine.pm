@@ -101,7 +101,9 @@ sub oneRun {
         $log->warn("RulesEngine duration > ruleengine time step ($self->{config}->{time_step})");
     }
     else {
-        sleep($self->{config}->{time_step} - $update_duration);
+        my $waiting_time = $self->{config}->{time_step} - $update_duration;
+        $log->info("Wainting for $waiting_time seconds");
+        sleep($waiting_time);
     }
 }
 
@@ -171,8 +173,22 @@ sub evalRules {
     my $memoization= {};
     for my $rule (@{$args{rules}}) {
         $log->info('Evaluation rule <'.($rule->id)."> '".($rule->formula_string)."'");
+
         eval {
-            my $evaluation = $rule->evaluate(memoization => $memoization);
+            my $evaluation;
+            if ($rule->isa('Entity::Rule::NodemetricRule')) {
+                my @nodes = $rule->service_provider->search(
+                                related => 'nodes', hash => {-not => {monitoring_state => 'disabled'}}
+                            );
+
+                for my $node (@nodes) {
+                    $evaluation->{$node->id} = $rule->evaluate(memoization => $memoization,
+                                                               node        => $node);
+                }
+            }
+            else {
+                $evaluation = $rule->evaluate(memoization => $memoization);
+            }
             $rule->setEvaluation(evaluation => $evaluation, memoization => $memoization);
             $rule->manageWorkflows(evaluation => $evaluation, memoization => $memoization);
         };

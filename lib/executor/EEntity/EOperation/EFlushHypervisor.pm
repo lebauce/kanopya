@@ -58,7 +58,6 @@ sub check {
 
 sub prepare {
     my $self = shift;
-    $self->SUPER::prepare();
 
     my ($hv_state, $hv_timestamp) = $self->{context}->{cloud_manager_sp}->reload->getState;
     if (not ($hv_state eq 'up')) {
@@ -74,7 +73,6 @@ sub prepare {
 
 sub prerequisites {
     my $self = shift;
-    $self->SUPER::prerequisites();
 
     # variable used in maintenance workflows
     $self->{context}->{host_to_deactivate} = $self->{context}->{flushed_hypervisor};
@@ -161,7 +159,7 @@ sub prerequisites {
 
 sub execute {
     my $self = shift;
-    $self->SUPER::execute();
+
 #    $log->info('Flush hypervisor '.$self->{context}->{flushed_hypervisor}->node->node_hostname);
 #
 #    for my $operation (@{$self->{params}->{flushRes}}) {
@@ -201,7 +199,6 @@ Restore the clutser and host states.
 
 sub cancel {
     my ($self, %args) = @_;
-    $self->SUPER::finish(%args);
 
     my ($hv_state, $hv_timestamp) = $self->{context}->{cloud_manager_sp}->reload->getState;
 

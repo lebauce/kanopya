@@ -33,7 +33,6 @@ use General;
 use Node;
 use Harddisk;
 use Entity::Iface;
-use Entity::Workflow;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -104,6 +103,7 @@ use constant ATTR_DEF => {
         pattern      => '^\d*$',
         is_mandatory => 1,
         is_editable  => 1,
+        default      => 1<<30,
     },
     host_core => {
         label        => 'CPU capability',
@@ -112,6 +112,7 @@ use constant ATTR_DEF => {
         pattern      => '^\d*$',
         is_mandatory => 1,
         is_editable  => 1,
+        default      => 1,
     },
     host_initiatorname => {
         label        => 'Iscsi initiator name',
@@ -146,7 +147,7 @@ use constant ATTR_DEF => {
         type         => 'relation',
         relation     => 'single_multi',
         is_mandatory => 0,
-        is_editable  => 1, 
+        is_editable  => 1,
     },
     admin_ip => {
         label        => 'Administration ip',

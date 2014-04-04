@@ -30,6 +30,7 @@ use strict;
 use warnings;
 
 use TryCatch;
+use Switch;
 use Clone qw(clone);
 use NetAddr::IP;
 
@@ -58,6 +59,20 @@ sub buildStack {
     General::checkParams(args     => \%args,
                          required => [ 'services', 'stack_id', 'iprange', 'user', 'workflow' ]);
 
+    # Check no cluster are active for this stack id
+    my @clusters = Entity::ServiceProvider::Cluster->search(hash => {
+                       'owner_id' => $args{user}->id,
+                       'active'   => 1,
+                       'entity_tags.tag.tag' => "stack_" . $args{stack_id}
+                   });
+
+    if (scalar(@clusters) > 0) {
+        throw Kanopya::Exception::Internal(
+                  error => "Found " . scalar(@clusters) . " active cluster(s) with tag " .
+                           "stack_" . $args{stack_id} . ", can not build stack."
+              );
+    }
+
     # Deduce the network to use from iprange
     my $ip = NetAddr::IP->new($args{iprange});
     my $network = Entity::Network->find(hash => { network_addr => $ip->addr, network_netmask => $ip-> mask});
@@ -67,10 +82,10 @@ sub buildStack {
     my $portal;
     my $portalip = $ip + 253;
     try {
-        $portal = IscsiPortal->find(hash => { iscsi_portal_ip => $portalip });
+        $portal = IscsiPortal->find(hash => { iscsi_portal_ip => $portalip->addr() });
     }
     catch ($err) {
-        $log->warn("Unable to find iscsi portal with ip " . $portalip);
+        $log->warn("Unable to find iscsi portal with ip " . $portalip->addr());
         $portal = IscsiPortal->find();
     }
 
@@ -97,17 +112,34 @@ sub buildStack {
                 netconfs       => [ $vmsnetconf->id ]
             },
         ],
+        entity_tags => [ Entity::Tag->findOrCreate(tag => "stack_" . $args{stack_id})->id ]
     };
 
-    my $stack_tag = Entity::Tag->new(tag => "stack_".$args{stack_id});
-    delete $args{stack_id};
-
     # Create each instance in an embedded workflow
-    for my $servicedef (@{ $args{services} }) {
+    for my $servicedef (@{ delete $args{services} }) {
         General::checkParams(args => $servicedef, required => [ 'service_template_id' ]);
 
         # Build the cluster name from owner infos
-        my $cluster_name = $args{user}->user_login . "_" . $servicedef->{service_template_id};
+        my $cluster_name = $args{user}->user_login . "_" . $servicedef->{service_template_id} . "_" .
+                           $args{stack_id};
+
+        $log->info("Creating 1 service with service_template " . $servicedef->{service_template_id} .
+                   " for stack $args{stack_id}, with name $cluster_name.");
+
+        # If some inactive instance exists from old builds, add a version numer to the name
+        my @old = Entity::ServiceProvider::Cluster->search(hash => {
+                       'owner_id'            => $args{user}->id,
+                       'service_template_id' => $servicedef->{service_template_id},
+                       'entity_tags.tag.tag' => "stack_" . $args{stack_id}
+                   });
+
+        if (scalar(@old)) {
+            $cluster_name .= "_v" . scalar(@old);
+
+            $log->info("Found " . scalar(@old) . " old service(s) of stack " . $args{stack_id} .
+                       ", add version number to the service name: $cluster_name");
+        }
+
         my $params = Entity::ServiceProvider::Cluster->buildInstantiationParams(
                          cluster_name => $cluster_name,
                          # Add the specific params
@@ -115,8 +147,6 @@ sub buildStack {
                          # Add the common params
                          %{ clone($common_params) }
                      );
-
-        $params->{cluster_params}->{entity_tags} = [$stack_tag->id];
 
         $args{workflow}->enqueueNow(operation => {
             type       => 'AddCluster',
@@ -131,20 +161,23 @@ sub startStack {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'user', 'workflow' ],
+                         required => [ 'user', 'workflow', 'stack_id' ],
                          optional => { 'erollback' => undef });
 
     # Retrieve the created cluster from name
-    # TODO: Be sure to imprive the search pattern to not get old stacks of the user
+    # NOTE: the service of a current stack are active
     my @clusters = Entity::ServiceProvider::Cluster->search(hash => {
-                       owner_id => $args{user}->id,
-                       active   => 1,
+                       'owner_id' => $args{user}->id,
+                       'active'   => 1,
+                       'entity_tags.tag.tag' => "stack_" . $args{stack_id}
                    });
 
+    $log->info("Found " . scalar(@clusters) . " services for stack $args{stack_id}.");
     if (scalar(@clusters) <= 0) {
         throw Kanopya::Exception::Internal(
-                  error => 'Unable to find active clusters of the stack, ' . 
-                           'no cluster found with owner ' .  $args{user}->user_login
+                  error => "Unable to find active clusters of the stack, " . 
+                           "no active cluster found with owner " .  $args{user}->user_login .
+                           ", with tag stack_" . $args{stack_id}
               );
     }
 
@@ -169,6 +202,16 @@ sub startStack {
         $components->{lc($type)}->{serviceprovider}
             = $components->{lc($type)}->{component}->service_provider;
     }
+
+    $log->info("Check components extra configuration.");
+
+    # Check the extra configuration
+    General::checkParams(args => $components->{neutron}->{component}->extraConfiguration,
+                         required => [ 'network' ]);
+    General::checkParams(args => $components->{glance}->{component}->extraConfiguration,
+                         required => [ 'images' ]);
+
+    $log->info("Configuring cross stack components references.");
 
     $components->{keystone}->{component}->setConf(conf => {
         mysql5_id => $components->{mysql}->{component}->id,
@@ -199,13 +242,18 @@ sub startStack {
         $components->{novacontroller}->{component}->id
     );
 
-    # Create a volume group on the controller fro Cinder.
+    $log->info("Creating volume group for cinder volumes.");
+
+    # Create a volume group on the controller for Cinder.
     my $vg = Lvm2Vg->new(lvm2_id           => $components->{lvm}->{component}->id,
                          lvm2_vg_name      => "cinder-volumes",
                          lvm2_vg_freespace => 0,
                          lvm2_vg_size      => 10 * 1024 * 1024 * 1024);
 
     Lvm2Pv->new(lvm2_vg_id => $vg->id, lvm2_pv_name => "/dev/sda2");
+
+    $log->info("Creating and exporting logical volume nova-instances-" . $args{user}->user_login .
+               " on Kanopya");
 
     # Create a logical volume on Kanopya to store nova instance meta data.
     my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster;
@@ -258,30 +306,24 @@ sub startStack {
         device     => $export->container_access_export
     );
 
-    # Check the extra configuration
-    General::checkParams(args => $components->{neutron}->{component}->extraConfiguration, required => [ 'network' ]);
-    General::checkParams(args => $components->{glance}->{component}->extraConfiguration, required => [ 'images' ]);
-
     # Start the database first, then the controller, then the compute
     my @bypriority;
     for my $component ('mysql', 'novacontroller', 'novacompute') {
         if (scalar(grep { $_->id == $components->{$component}->{serviceprovider}->id } @bypriority) <= 0) {
-            $log->info("Start service " . $components->{$component}->{serviceprovider}->label .
-                       " in the current workflow.");
-
             push @bypriority, $components->{$component}->{serviceprovider};
         }
     }
 
     # Finally start the instances
     # Note: reverse the array as enqueueNow insert operations at the head of the list.
-    for my $instance (reverse @bypriority) {
+    for my $cluster (reverse @bypriority) {
+        $log->info("Starting service " . $cluster->label. " in an embedded workflow...");
         $args{workflow}->enqueueNow(workflow => {
             name       => 'AddNode',
-            related_id => $instance->id,
+            related_id => $cluster->id,
             params     => {
                 context => {
-                    cluster => $instance,
+                    cluster => $cluster,
                 },
             },
         });
@@ -298,12 +340,12 @@ sub startStack {
     }
 }
 
-sub validateStack {
+sub configureStack {
     my ($self, %args) = @_;
     my ($result, $command);
 
     General::checkParams(args     => \%args,
-                         required => [ 'user', 'keystone', 'novacontroller',
+                         required => [ 'user', 'iprange', 'keystone', 'novacontroller',
                                        'neutron', 'glance', 'novacompute', 'cinder' ]);
 
     try {
@@ -401,7 +443,8 @@ sub validateStack {
                 $result = $args{glance}->getEContext->execute(command => $command);
                 if ($result->{exitcode}) {
                     throw Kanopya::Exception::Execution(
-                              error => "Failed to import image " . $imgname . " on Glance:\n$result->{stderr}"
+                              error => "Failed to import image " . $imgname .
+                                       " on Glance:\n$result->{stderr}"
                           );
                 }
             }
@@ -411,6 +454,34 @@ sub validateStack {
         }
 
         $args{glance}->getEContext->execute(command => 'rm -rf /tmp/glance');
+
+        # Firewall post-configuration
+        my $fw_login = 'api';
+        my $fw_password = 'mdp';
+        my $fw_url = 'https://10.100.1.254';
+        my $tmp = $self->getEContext()->execute(command => 'tempfile')->{stdout};
+        chomp $tmp;
+
+        # Firewall login
+        my $curl_base = "curl -kc $tmp ";
+        my $cmd = "$curl_base $fw_url/index.php";
+        my $html =  $self->getEContext()->execute(command => $cmd)->{stdout};
+        $html =~ m/.*value="(sid:[a-zA-Z0-9,]*)".*/;
+        my $csrf = $1;
+
+        # Send login details... No simple way for success verification.
+        $cmd = "$curl_base --data \"usernamefld=$fw_login" .
+               "&passwordfld=$fw_password&login=Login&__csrf_magic=" .
+               "$csrf\" $fw_url/index.php";
+        $self->getEContext()->execute(command => $cmd);
+
+        #And configure firewall via "API"
+        $cmd = "$curl_base --data \"user=" . $args{user}->user_login . "&subnet_adm=$neutron_net" .
+               "&subnet_vm=" . $args{iprange} . "\" $fw_url./pms_create_route.php";
+        $self->getEContext()->execute(command => $cmd);
+
+        $cmd = "rm $tmp";
+        $self->getEContext()->execute(command => $cmd);
     }
     catch ($err) {
         throw Kanopya::Exception::Execution::OperationInterrupted(
@@ -420,7 +491,141 @@ sub validateStack {
 
 }
 
-sub cancelStack {
+
+sub unconfigureStack {
+    my ($self, %args) = @_;
+    my ($result, $command);
+
+    General::checkParams(args => \%args, required => [ 'user', 'stack_id' ]);
+}
+
+
+sub stopStack {
+    my ($self, %args) = @_;
+    my ($result, $command);
+
+    General::checkParams(args => \%args, required => [ 'user', 'stack_id', 'workflow' ]);
+
+    # Retrieve the clusters of the current stack
+    my @clusters = Entity::ServiceProvider::Cluster->search(hash => {
+                       'owner_id' => $args{user}->id,
+                       'active'   => 1,
+                       'entity_tags.tag.tag' => "stack_" . $args{stack_id}
+                   });
+
+    $log->info("Found " . scalar(@clusters) . " services for stack $args{stack_id}.");
+    if (scalar(@clusters) <= 0) {
+        throw Kanopya::Exception::Internal(
+                  error => "Unable to find active clusters of the stack, " .
+                           "no active cluster found with owner " .  $args{user}->user_login .
+                           ", with tag stack_" . $args{stack_id}
+              );
+    }
+
+    # Stop the instances in embedded workflows
+    for my $cluster (@clusters) {
+        # Set the cluster as inactive for this stack
+        $cluster->active(0);
+
+        my ($state, $timestamp) = $cluster->getState;
+        if ($state ne 'down') {
+            $log->info("Stopping service " . $cluster->label   . " in an embedded workflow...");
+            $args{workflow}->enqueueNow(
+                operation => {
+                    type       => 'StopCluster',
+                    priority   => 200,
+                    related_id => $cluster->id,
+                    params     => {
+                        context => {
+                            cluster => $cluster,
+                        },
+                    },
+                },
+                # Enqueue the workflow as harmless, to avoid errors raise the cancel of the whole workflow.
+                # The endStack step will check if clusters has been successfully stopped
+                harmless => 1,
+            );
+        }
+        else {
+            $log->info("Service " . $cluster->label. " is down do not stopping it.");
+        }
+    }
+}
+
+
+sub endStack {
+    my ($self, %args) = @_;
+    my ($result, $command);
+
+    General::checkParams(args => \%args, required => [ 'user', 'stack_id', 'workflow' ]);
+
+    # Retrieve services from the failed operation(s) of the StopCluster embedded workflow(s)
+    my @clusters;
+    for my $failed ($args{workflow}->search(related => 'operations', hash => { "me.state" => "failed" })) {
+         my $context = $failed->unserializeParams(skip_not_found => $args{skip_not_found})->{context};
+         if ((defined $context->{cluster}) &&
+             (scalar(grep { $_->id == $context->{cluster}->id } @clusters) <= 0)) {
+             push @clusters, $context->{cluster};
+         }
+    }
+
+    if (scalar(@clusters)) {
+        $log->info("Found " . scalar(@clusters) .
+                   " services not properly stopped for stack $args{stack_id}.");
+
+        # If service not stopped properly, force stop it
+        for my $cluster (@clusters) {
+            # Force stop if required
+            my ($state, $timestamp) = $cluster->getState;
+            if ($state ne 'down' || scalar($cluster->nodes)) {
+                $log->info("Service " . $cluster->label . " not has not stopped properly, force stop...");
+
+                # NOTE: Do not set the operation as harmless because the ForceStopCluster
+                #       should never fail
+                $args{workflow}->enqueueNow(operation => {
+                    type       => 'ForceStopCluster',
+                    priority   => 200,
+                    related_id => $cluster->id,
+                    params     => {
+                        context => {
+                            cluster => $cluster,
+                        },
+                    },
+                });
+            }
+        }
+    }
+    else {
+        $log->info("All services of the stack $args{stack_id} has been stopped properly.");
+    }
+
+    # Remove prevuoisly subscribed owner notifications
+    $self->unsubscribeOwnerNotifications(owner_id => $args{user}->id);
+}
+
+
+sub cancelBuildStack {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'user' ]);
+
+    # Remove prevuoisly subscribed owner notifications
+    $self->unsubscribeOwnerNotifications(owner_id => $args{user}->id);
+
+    # Retrieve the clusters of the current stack
+    my @clusters = Entity::ServiceProvider::Cluster->search(hash => {
+                       'owner_id' => $args{user}->id,
+                       'active'   => 1,
+                       'entity_tags.tag.tag' => "stack_" . $args{stack_id}
+                   });
+
+    for my $cluster (@clusters) {
+        # Set the cluster as inactive for this stack
+        $cluster->active(0);
+    }
+}
+
+sub cancelStartStack {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'user' ]);
@@ -465,5 +670,107 @@ sub cancelStack {
         throw Kanopya::Exception(error => "$err");
     }
 }
+
+
+=pod
+=begin classdoc
+
+Build a notification message with a given Operation
+
+@param operation the operation that is executing
+@state the state of the operation
+
+@return notification message
+
+=end classdoc
+=cut
+
+sub notificationMessage {
+    my $self    = shift;
+    my %args    = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'operation', 'state', 'subscriber' ],
+                         optional => { 'reason' => undef });
+
+    my $templatefile;
+    my $template = Template->new($self->getTemplateConfiguration());
+    my $templatedata = { operation       => $args{operation}->label,
+                         operation_id    => $args{operation}->id,
+                         workflow        => $args{operation}->workflow->label,
+                         workflow_id     => $args{operation}->workflow->id,
+                         operation_state => $args{state},
+                         reason          => $args{reason},
+                         user            => $args{operation}->{context}->{user},
+                         stack_id        => $args{operation}->{params}->{stack_id} };
+
+    # Customer notfication
+    if ($args{subscriber}->isa('Entity::User::Customer')) {
+        if (! ($args{operation}->isa('EEntity::EOperation::EConfigureStack') && $args{state} eq "succeeded")) {
+            $log->warn("Unsupported tuple user_type/state/operation_type, " .
+                        "Customer/$args{state}/$args{operation} redirecting to generic notification...");
+            return $self->SUPER::notificationMessage(%args);
+        }
+
+        $templatefile = "stack-builder-owner-notification-mail";
+        try {
+            $templatedata->{access_ip} = $args{operation}->{context}->{novacontroller}->getAccessIp();
+        }
+        catch ($err) {
+            $log->error("Unable to get the novacontoller access ip for owner notification:$err");
+        }
+        $templatedata->{admin_password} = $args{operation}->{params}->{admin_password};
+    }
+    # Support notfication
+    else {
+        if (($args{operation}->isa('EEntity::EOperation::EBuildStack')) &&
+            ($args{state} =~ m/processing|cancelled/ )) {
+            $templatedata->{state} = $args{state} eq "processing" ? "starting" : "failed";
+        }
+        elsif ($args{operation}->isa('EEntity::EOperation::EConfigureStack') &&
+               ($args{state} =~ m/succeeded|interrupted/ )) {
+            $templatedata->{state} = $args{state} eq "succeeded" ? "started" : "interrupted";
+        }
+        elsif ($args{operation}->isa('EEntity::EOperation::EStopStack') &&
+               $args{state} eq "processing") {
+            $templatedata->{state} = "stopping";
+        }
+        elsif ($args{operation}->isa('EEntity::EOperation::EEndStack') &&
+               $args{state} eq "succeeded") {
+            $templatedata->{state} = "stopped";
+        }
+        elsif ($args{operation}->isa('EEntity::EOperation::EUnconfigureStack') &&
+               $args{state} eq "cancelled") {
+            $templatedata->{state} = "failed";
+        }
+        elsif ($args{state} eq "timeouted") {
+            $templatedata->{state} = "timeouted";
+        }
+        else {
+            $log->warn("Unsupported tuple user_type/state/operation_type, " .
+                        "User/$args{state}/$args{operation} redirecting to generic notification...");
+            return $self->SUPER::notificationMessage(%args);
+        }
+
+        $templatefile = "stack-builder-support-notification-mail";
+    }
+
+    $templatefile = $self->getTemplateDirectory . "/" . $templatefile;
+
+    my $message = "";
+    $template->process($templatefile . '.tt', $templatedata, \$message)
+        or throw Kanopya::Exception::Internal(
+             error => "Error when processing template " . $templatefile . ".tt"
+         );
+
+    my $subject = "";
+    $template->process($templatefile . '-subject.tt', $templatedata, \$subject)
+        or throw Kanopya::Exception::Internal(
+             error => "Error when processing template " . $templatefile . "subject.tt"
+         );
+
+    return ($subject, $message);
+}
+
 
 1;

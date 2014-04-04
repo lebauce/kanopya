@@ -88,19 +88,19 @@ sub methods {
         run => {
             description => 'produce a workflow to run.',
             message_queuing => {
-                queue => 'workflow'
+                queue => 'kanopya.executor.workflow'
             }
         },
         execute => {
             description => 'produce an operation to execute',
             message_queuing => {
-                queue => 'operation'
+                queue => 'kanopya.executor.operation'
             }
         },
         terminate => {
             description => 'produce an operation execution result.',
             message_queuing => {
-                queue => 'operation_result'
+                queue => 'kanopya.executor.operation_result'
             }
         },
     };
@@ -152,10 +152,15 @@ sub terminate {
 
     General::checkParams(args     => \%args,
                          required => [ 'operation_id', 'status' ],
-                         optional => { 'exception' => undef });
+                         optional => { 'exception' => undef, 'time' => undef });
 
     # Publish on the 'operation_result' queue
-    MessageQueuing::RabbitMQ::Sender::terminate($self, %args);
+    MessageQueuing::RabbitMQ::Sender::terminate($self,
+                                                operation_id => $args{operation_id},
+                                                status       => $args{status},
+                                                exception    => $args{exception},
+                                                time         => $args{time},
+                                                %{ Kanopya::Database::_adm->{config}->{amqp} });
 }
 
 

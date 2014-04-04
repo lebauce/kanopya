@@ -42,7 +42,6 @@ sub check {
 
 sub execute {
     my $self = shift;
-    $self->SUPER::execute();
 
     if (not $self->{context}->{host}->isa('EEntity::EHost::EHypervisor')) {
         my $error = 'Operation can only be applied to an hypervisor';
@@ -68,14 +67,8 @@ sub execute {
 
 sub finish {
     my ($self) = @_;
-    $self->SUPER::finish();
 
     delete $self->{context}->{host};
 }
 
-sub cancel {
-    my $self = shift;
-
-    $self->SUPER::cancel();
-}
 1;

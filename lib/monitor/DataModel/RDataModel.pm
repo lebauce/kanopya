@@ -12,14 +12,34 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-package ClassType::DataModelType;
-use base 'ClassType';
+=pod
 
-use warnings;
+=begin classdoc
+
+Abstract class representing a DataModel which uses R to perform a forecast. Most of the time, these DataModels
+won't need a configuration step or any particular entry in the database because the only thing they do is
+calling R and let him do the prediction.
+
+=end classdoc
+
+=cut
+
+package DataModel::RDataModel;
+
+use base 'DataModel';
+
 use strict;
+use warnings;
 
-use constant ATTR_DEF => {};
+# Module for binding R into Perl
+use Statistics::R;
 
-sub getAttrDef { return ATTR_DEF; }
+# Module for R objects conversions
+use Utils::R;
+
+# Not necessary here
+sub configure {
+
+}
 
 1;

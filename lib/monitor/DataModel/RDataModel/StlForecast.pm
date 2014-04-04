@@ -16,16 +16,17 @@
 
 =begin classdoc
 
-Data Model for performing a forecast using the "ets" (Exponential Smoothing State Space Model) algorithm from
-the R forecast package.
+Data Model for performing a forecast using the "stlf" (Loess Seasonal Decomposition of Time Series) algorithm
+from the R forecast package. STLF IS A HIGHLY SEASONAL MODEL, SEASONALITY MUST BE >1 AND THERE MUST BE AT
+LEAST TWO PERIODS IN THE DATA.
 
 =end classdoc
 
 =cut
 
-package Entity::DataModel::RDataModel::ExponentialSmoothing;
+package DataModel::RDataModel::StlForecast;
 
-use base 'Entity::DataModel::RDataModel';
+use base 'DataModel::RDataModel';
 
 use strict;
 use warnings;
@@ -40,7 +41,7 @@ my $log = get_logger("");
 
 =begin classdoc
 
-Make a prediction calling the ets method from the R forecast package.
+Make a prediction calling the stlf method from the R forecast package.
 
 @param data A reference to an array containing the values of the time serie.
 @param freq The frequency (or seasonality) of the time serie.
@@ -57,9 +58,24 @@ sub predict {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => ['data', 'freq', 'predict_end']);
+                         required => ['data', 'freq', 'predict_end'],
+                         optional => {'predict_start' => scalar @{$args{data}}});
 
     my @timeserie = @{$args{data}};
+
+    if (@timeserie - 1 > $args{predict_start}) {
+        throw Kanopya::Exception::Internal::IncorrectParam(
+                  error => 'Warning prediction must start after timeserie '
+              );
+    }
+
+    if ($args{predict_start} > $args{predict_end}) {
+        throw Kanopya::Exception::Internal::IncorrectParam(
+                  error => 'Warning start and end timestamps are not coherent'
+              );
+    }
+
+
 
 # 1- Check parameters
     $self->_checkParams(timeserie_ref => \@timeserie,
@@ -71,20 +87,20 @@ sub predict {
     my $horizon     = $args{predict_end} - @{$args{data}} + 1;
 
 # 3- Forecast with R
-    my $R_forecast_ref = $self->_forecastFromR(timeserie_ref => \@timeserie,
+    my $forecasts = $self->_forecastFromR(timeserie_ref => \@timeserie,
                                                freq          => $args{freq},
-                                               horizon       => $horizon,
-    );
-    my @forecasts = @{Utils::R->convertRForecast(R_forecast_ref => $R_forecast_ref,
-                                                 freq           => $args{freq}
-    )};
+                                               horizon       => $horizon,);
 
-    return \@forecasts;
+    # consider only the last ($args{predict_end} - $args{predict_start}) th values
+
+    my @selection = @$forecasts[($args{predict_start} - $args{predict_end} - 1)..-1];
+
+    return \@selection;
 }
 
 sub label {
     my $self = shift;
-    return 'Exponential Smoothing ' . $self->time_label();
+    return 'STLF ' . $self->time_label();
 }
 
 sub isSeasonal {
@@ -95,7 +111,7 @@ sub isSeasonal {
 
 =begin classdoc
 
-Checks that the given parameters for computing the ets method are valid.
+Checks that the given parameters for computing the stlf method are valid.
 
 @param timestamps_ref A reference to the timestamps of the time serie (array).
 @param timeserie_ref A reference to the values of the time serie (array).
@@ -112,25 +128,34 @@ sub _checkParams {
     General::checkParams(args     => \%args,
                          required => ['timeserie_ref', 'freq', 'predict_end']);
 
+    # Check that the given data has a seasonality >1
+    if ($args{freq} <= 1) {
+        throw Kanopya::Exception::Internal::IncorrectParam(
+                  error => 'STLF : bad parameter : The serie is not seasonal (freq must be at least 2)'
+              );
+    }
+
     # Check that at least two periods are present in the timeserie
     if (@{$args{timeserie_ref}}/$args{freq} < 2) {
-        throw Kanopya::Exception(error => 'Exponential Smoothing : bad parameters (there must be'
-                                          .' at least two periods in the given data)');
+        throw Kanopya::Exception::Internal::IncorrectParam(
+                  error => 'STLF : bad parameters (there must be at least two periods in the given data)'
+              );
     }
 
     # Check that the given end time is strictly after the last available data from the given set
     if ($args{predict_end} <= $#{$args{timeserie_ref}}) {
-        throw Kanopya::Exception(error => 'Exponential Smoothing : bad parameters (trying to ' .
-                                          'forecast the past...)');
+        throw Kanopya::Exception::Internal::IncorrectParam(
+                  error => 'STLF : bad parameters (trying to forecast the past...)'
+              );
     }
 }
+
 
 =pod
 
 =begin classdoc
 
-Initializes the R binding and the R objects, fits the ets model with the automated algorithm from the
-forecast package.
+Initializes the R binding and the R objects, forecast with the stlf method from the forecast package.
 
 @param timeserie_ref A reference to the values of the time serie (array).
 @param freq The frequence (ie seasonality) of the time serie.
@@ -159,10 +184,12 @@ sub _forecastFromR {
     # Run R commands
     $R->run(q`library(forecast);`                                            # Load the forecast package
             . qq`time_serie <- ts(dataset, start=1, frequency=$freq);`       # Create the time serie
-            . qq`forecast <- forecast(ets(time_serie), h=$hor);`);           # fit and forecast with ets
+            . qq`forecast <- stlf(time_serie, h=$hor);`);                    # fit and forecast with stlf
 
     # Return the forecast computed by R
-    return $R->get('forecast');
+    my $forecast = $R->get('as.numeric(forecast$mean)');
+    return $forecast;
 }
+
 
 1;

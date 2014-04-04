@@ -60,7 +60,6 @@ sub prepare {
 
 sub execute {
     my ($self, %args) = @_;
-    $self->SUPER::execute();
 
     my $node = $self->{context}->{host}->node;
 
@@ -223,9 +222,8 @@ sub postrequisites {
 
 sub finish {
     my ($self) = @_;
-    $self->SUPER::finish();
 
-#    # Insert context for next operation defined in workflow_def (scalecpu and scalememory)
+    # Insert context for next operation defined in workflow_def (scalecpu and scalememory)
     $self->{params}->{cpu_number} = $self->{params}->{host_core_origin};
     $self->{params}->{memory}     = $self->{params}->{host_ram_origin};
 
@@ -239,7 +237,8 @@ sub finish {
 
 sub cancel {
     my $self = shift;
-    $self->SUPER::cancel();
+
     $self->{context}->{host_manager_sp}->removeState(consumer => $self->workflow);
 }
+
 1;

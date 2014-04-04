@@ -48,7 +48,6 @@ my $errmsg;
 
 sub check {
     my ($self, %args)  = @_;
-    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "cluster" ]);
 }
@@ -64,7 +63,6 @@ Check if the cluster is stable.
 
 sub prepare {
     my ($self, %args) = @_;
-    $self->SUPER::prepare(%args);
 
     # Check the cluster state
     my ($state, $timestamp) = $self->{context}->{cluster}->reload->getState;
@@ -88,7 +86,6 @@ Fail if the cluster has no nodes.
 
 sub execute {
     my ($self, %args)  = @_;
-    $self->SUPER::execute();
 
     my @nodes = $self->{context}->{cluster}->nodes;
     if (not scalar(@nodes)) {
@@ -111,26 +108,32 @@ sub postrequisites {
 
     # Remove node from the less important to the most important
     # Note: nodesByWeight return the node list sorted from the most important to the less important
-    #       but as we use enqueueNow, workflow wil be executed in the reserve order than we
+    #       but as we use enqueueNow, the workflow will be executed in the reserve order than we
     #       enqueued them.
     NODE:
     foreach my $node ($self->{context}->{cluster}->nodesByWeight()) {
         # We stop nodes with state 'up' only
         # TODO: manage other node states
         my ($state, $timestamp) = $node->host->getState();
-        if ($state ne 'up') { next NODE; }
+        if ($state ne 'up') {
+            $log->warn("Node " . $node->label . " is not 'up', do not stopping it...");
+            next NODE;
+        }
 
         # Stop the node in an embedded workflow
-        $self->workflow->enqueueNow(workflow => {
-            name       => 'StopNode',
-            related_id => $self->{context}->{cluster}->id,
-            params     => {
-                context => {
-                    cluster => $self->{context}->{cluster}->_entity,
-                    host    => $node->host,
+        $self->workflow->enqueueNow(
+            workflow => {
+                name       => 'StopNode',
+                related_id => $self->{context}->{cluster}->id,
+                params     => {
+                    context => {
+                        cluster => $self->{context}->{cluster}->_entity,
+                        host    => $node->host,
+                    }
                 }
-            }
-        });
+            },
+            harmless => $self->harmless,
+        );
     }
 
     return 0;
@@ -147,7 +150,6 @@ Set the cluster as stopping
 
 sub finish {
     my ($self, %args)  = @_;
-    $self->SUPER::finish();
 
     $self->{context}->{cluster}->setState(state => 'stopping');
 }

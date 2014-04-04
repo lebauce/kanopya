@@ -1,0 +1,6 @@
+The stack [% stack_id %] of customer [% user.user_login %] ([% user.user_email %]) [% IF state == 'timeouted' %]has reach the execution timeout[% ELSE %]is [% state %][% END %].
+[% IF state == 'failed' %]
+Error: [% reason %][% END %]
+(Workflow "[% workflow %]" ([% workflow_id %]), operation "[% operation %]" ([% operation_id %]) with state "[% operation_state %]").
+
+Kanopya execution system.

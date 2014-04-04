@@ -197,7 +197,7 @@ class kanopya::openstack::nova::controller(
   }
 
   if defined(Class['kanopya::apache']) {
-    class { 'openstack::horizon':
+    class { 'kanopya::openstack::horizon':
       secret_key    => 'dummy_secret_key',
       keystone_host => $keystone_ip
     }

@@ -94,6 +94,7 @@ sub _init {
         'kanopya-rulesengine',
         'kanopya-front',
         'kanopya-openstack-sync',
+        'kanopya-mail-notifier',
     ];
 
     $self->{parameters} = [
@@ -487,6 +488,10 @@ sub _generate_kanopya_conf {
           template => 'openstack-sync.conf.tt',
           data     => { admin_password => $self->{parameters_values}->{mysql_kanopya_passwd}, }
         },
+        { path     => $self->{installpath} . '/conf/mail-notifier.conf',
+          template => 'mail-notifier.conf.tt',
+          data     => { admin_password => $self->{parameters_values}->{mysql_kanopya_passwd}, }
+        },
         { path     => $self->{installpath} . '/conf/monitor.conf',
           template => 'monitor.conf.tt',
           data     => { internal_net_add  => $self->{parameters_values}->{admin_ip},
@@ -539,6 +544,10 @@ sub _generate_kanopya_conf {
         },
         { path     => $self->{installpath} . '/conf/openstack-sync-log.conf',
           template => 'openstack-sync-log.conf.tt',
+          data     => { logdir => $self->{parameters_values}->{log_dir}.'/' }
+        },
+        { path     => $self->{installpath} . '/conf/mail-notifier-log.conf',
+          template => 'mail-notifier-log.conf.tt',
           data     => { logdir => $self->{parameters_values}->{log_dir}.'/' }
         },
         { path     => $self->{installpath} . '/conf/webui-log.conf',
@@ -828,6 +837,9 @@ sub _configure_puppetmaster {
     );
 
     try {
+        system('mkdir -p /etc/puppet/manifests/');
+        system('mkdir -p /etc/puppet/modules/');
+        system('mkdir -p /var/lib/puppet/ssl/certs/');
         _writeFile(
            '/etc/puppet/manifests/site.pp',
            "Exec {\n" .
@@ -840,12 +852,13 @@ sub _configure_puppetmaster {
            "hiera_include('classes')\n"
         );
 
-        print 'ok';
+        print "ok\n";
     }
-    catch (Kanopya::Exception::IO $err) {
-        print "failed ! Please check your puppet configuration, $err\n";
-        return;
-    }
+    # let thorw the exception as puppet is required for a proper setup
+    # catch (Kanopya::Exception::IO $err) {
+    #     print "failed ! Please check your puppet configuration, $err\n";
+    #     return;
+    # }
     catch ($err) {
         $err->rethrow();
     }
@@ -875,10 +888,11 @@ sub _configure_puppetmaster {
             host_fqdn   => $kanopya_master->node->fqdn
         );
     }
-    catch (Kanopya::Exception::IO $err) {
-        print "failed ! Please chack your puppet configuration, $err\n";
-        return;
-    }
+    # let thorw the exception as puppet is required for a proper setup
+    # catch (Kanopya::Exception::IO $err) {
+    #     print "failed ! Please check your puppet configuration, $err\n";
+    #     return;
+    # }
     catch ($err) {
         $err->rethrow();
     }
@@ -1187,7 +1201,7 @@ sub loadPoliciesAndServices {
         my $node = shift;
 
         if (ref($node) eq 'HASH') {
-            for my $key (keys $node) {
+            for my $key (keys %$node) {
                 if ($key =~ m/^.*_id$/) {
                     if (ref($node->{$key}) eq "HASH") {
                         $node->{$key} = _findReferencedObject($node->{$key});
@@ -1277,7 +1291,7 @@ sub loadPoliciesAndServices {
             # Firstly create policies
             if (defined $templates->{$json_file}->{policies}) {
                 print "Create policies...\n\n";
-                for my $policy (values $templates->{$json_file}->{policies}) {
+                for my $policy (values %{$templates->{$json_file}->{policies}}) {
                     General::checkParams(args => $policy, required => [ "policy_name", "policy_type" ]);
 
                     print "Policy: $policy->{policy_name}...\n";
@@ -1299,7 +1313,7 @@ sub loadPoliciesAndServices {
             # Then create services
             if (defined $templates->{$json_file}->{services}) {
                 print "\nCreate services...\n\n";
-                for my $service (values $templates->{$json_file}->{services}) {
+                for my $service (values %{$templates->{$json_file}->{services}}) {
                     General::checkParams(args => $service, required => [ "service_name" ]);
 
                     print "Service: $service->{service_name}...\n";

@@ -109,11 +109,11 @@ class kanopya::openstack::cinder::server(
     keystone_tenant    => 'services',
     keystone_password  => $keystone_password,
     bind_host          => $components[cinder][listen][volume_api][ip],
-    require            => Exec['/usr/bin/cinder-manage db sync'],
   }
 
   exec { "/usr/bin/cinder-manage db sync":
-    path => "/usr/bin:/usr/sbin:/bin:/sbin",
+    path    => "/usr/bin:/usr/sbin:/bin:/sbin",
+    require => Class['cinder'],
   }
 
   cinder_config {

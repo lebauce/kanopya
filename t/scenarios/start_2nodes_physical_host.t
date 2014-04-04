@@ -89,6 +89,10 @@ sub main {
 
     diag('Stopping cluster');
     lives_ok {
+        my ($state, $timestamp) = $cluster->reload->getState();
+        if ($state ne 'up') {
+            die "Cluster should be up, not $state";
+        }
         Kanopya::Tools::Execution->executeOne(entity => $cluster->stop());
         Kanopya::Tools::Execution->executeAll(timeout => 3600);
     } 'Stopping cluster';

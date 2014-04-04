@@ -34,7 +34,6 @@ my $errmsg;
 sub check {
     my $self = shift;
     my %args = @_;
-    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "cluster" ]);
 
@@ -43,33 +42,9 @@ sub check {
 
 sub execute {
     my $self = shift;
-    $self->SUPER::execute();
 
-    # Check if cluster is active
-    if ($self->{context}->{cluster}->active) {
-        $errmsg = "Cluster <" . $self->{context}->{cluster}->id . "> is active";
-        throw Kanopya::Exception::Internal(error => $errmsg);
-    }
-
-    # Delete the cluster remaning systemimages
-    my @systemimages = $self->{context}->{cluster}->systemimages;
-
-    if (scalar(@systemimages) > 0 && ! $self->{params}->{keep_systemimages}) {
-        $log->info("Removing the <" . scalar(@systemimages) . "> cluster systemimage(s)");
-        for my $systemimage (map {  EEntity->new(entity => $_)  } @systemimages) {
-            $log->debug("Removing systemimage <" . $systemimage->systemimage_name . ">");
-            $systemimage->remove(erollback => $self->{erollback});
-        }
-    }
-
-    # Remove cluster directory
-    my $dir = $self->_executor->getConf->{clusters_directory} . '/' . 
-              $self->{context}->{cluster}->cluster_name;
-
-    my $command = "rm -r $dir";
-    $self->getEContext->execute(command => $command);
-
-    $self->{context}->{cluster}->delete();
+    $self->{context}->{cluster}->remove(keep_systemimages => $self->{params}->{keep_systemimages},
+                                        erollback         => $self->{erollback});
 }
 
 1;

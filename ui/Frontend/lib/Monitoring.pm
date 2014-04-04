@@ -244,32 +244,35 @@ the second containing the corresponding values
 
 sub _computeNodemetricCombination {
     my %args = @_;
-    my $cluster_id = $args{cluster_id};
-    my $nodemetric_combination = Entity::Combination::NodemetricCombination->get('id' => $args{combination_id});
+
+    my $comb = Entity::Combination::NodemetricCombination->get(id => $args{combination_id});
+
     my %rep;
     my $error;
     my $evaluation = {};
+
     eval {
-        my $evaluation_fqdn = $nodemetric_combination->evaluate(format => 'host_name');
-        while (my ($nodename, $metrics) = each %$evaluation_fqdn) {
-             $nodename =~ s/\..*//;
-             $evaluation->{$nodename} = $metrics;
+
+        my $cluster = Entity::ServiceProvider->get(id => $args{cluster_id});
+
+        for my $node ($cluster->nodes) {
+            my $nodename = $node->node_hostname;
+            $nodename =~ s/\..*//;
+            $evaluation->{$nodename} = $comb->evaluate(node => $node);
         }
-        $log->debug('[Cluster id '.$cluster_id.']: Requested combination value for each node: '.Dumper $evaluation);
+
+        $log->debug('[Cluster id '.$args{cluster_id}.']: Requested combination value for each node: '.Dumper $evaluation);
     };
-    # error catching
     if ($@) {
         $error="$@";
         $log->error($error);
         $rep{'error'} = $error;
-        return \%rep;
     # we catch the fact that there is no value available for the selected nodemetric
     }
     elsif (scalar(keys %{$evaluation}) == 0) {
         $error='No indicator values returned by monitored nodes';
         $log->error($error);
         $rep{'error'} = $error;
-        return \%rep;
     }
     else {
         #we create an array containing the values, to be sorted
@@ -297,9 +300,9 @@ sub _computeNodemetricCombination {
         $rep{'nodes'}   = \@nodes;
         $rep{'values'}  = \@values;
         $rep{'undef'}   = \@nodes_undef;
-        $rep{'unit'}    = $nodemetric_combination->getUnit();
-        return \%rep;
+        $rep{'unit'}    = $comb->getUnit();
     }
+    return \%rep;
 }
 
 1;

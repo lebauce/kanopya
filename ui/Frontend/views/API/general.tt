@@ -28,6 +28,10 @@
                   <li><a href="#delete">Delete</a></li>
                   <li><a href="#jsonrpc">Method call (JSONRPC)</a></li>
                   <li><a href="#metadata">Resource information</a></li>
+                  <li><a href="#troubleshooting">Troubleshooting</a></li>
+                  <ul class="nav nav-list nav-pills nav-stacked" >
+                      <li><a href="#trouble_ambiguous">Ambiguous column in where clause</a></li>
+                  </ul>
                   <li><a href="#issues">Known issues</a></li>
                 </ul>
         </div>
@@ -251,16 +255,36 @@ GET /api/cluster/1?expand=nodes
 GET /api/cluster?expand=nodes.host
 </pre>
                 <div class="alert alert-block">
-                    <h4>Warning</h4>
+                    <h4>Expand and filtering on the same relation</h4>
+                    <p>
+                        Only filtered related resources will appears in the list of extended resources.
+                    </p>
+                </div>
+                <div class="alert alert-block">
+                    <h4>Warning : Expand multiple relationships</h4>
                     <p>
                         Expand multiple relationships can lead to performance issue and even unusable response data. In particular when manipulating "multi" relations.
                         It is better to avoid multi expands or use with caution.
                     </p>
                 </div>
                 <div class="alert alert-block">
-                    <h4>Expand and filtering on the same relation</h4>
+                    <h4>Warning : Expand and filtering on different relations</h4>
                     <p>
-                        Only filtered related resources will appears in the list of extended resources.
+                        If filtering on a attribute defined in boths resource types then an exception is thrown due to "ambiguous" column.
+                        For example 'cluster' and 'host' have an 'active' attribute so this request wil fail:
+<pre>
+GET /api/cluster?active=1&expand=nodes.host
+</pre>
+                    </p>
+                    <p>
+                        The solution is to resolve the ambiguity:
+<pre>
+GET /api/cluster?me.active=1&expand=nodes.host
+GET /api/cluster?nodes.host.active=1&expand=nodes.host
+</pre>
+                    </p>
+                    <p>
+                        For detailed instruction on how to resolve ambiguity, see the Troubleshooting section.
                     </p>
                 </div>
               <h2 id='pagination'>Pagination</h2>
@@ -646,6 +670,60 @@ GET /api/attributes/user
 }
 </pre>
         </section>
+
+        <!-- Troubleshooting
+        ================================================== -->
+        <section id="troubleshooting">
+              <div class="page-header">
+                <h1>Troubleshooting</h1>
+              </div>
+
+              <h2 id="trouble_ambiguous">Column 'column_name' in where clause is ambiguous</h2>
+
+              <h3>Reason</h3>
+              <p>
+                This error happens when filtering a resource on an attribute and expand relation which contains the same attribute name.
+<pre>
+GET /api/cluster?owner_id=1707&expand=nodes.host
+</pre>
+Response:
+<pre style="height:300px;overflow-y:auto">
+{
+
+    "exception": "Kanopya::Exception::Internal",
+    "status": "error",
+    "reason": "DBIx::Class::ResultSet::next(): DBI Exception: DBD::mysql::st execute failed: Column 'owner_id' in where clause is ambiguous [for Statement \"SELECT me.cluster_id, me.cluster_name, me.cluster_desc, me.cluster_type, me.cluster_min_node, me.cluster_max_node, me.cluster_priority, me.cluster_boot_policy, me.cluster_si_persistent, me.cluster_domainname, me.cluster_nameserver1, me.cluster_nameserver2, me.cluster_state, me.cluster_prev_state, me.cluster_basehostname, me.default_gateway_id, me.active, me.kernel_id, me.masterimage_id, me.service_template_id, cluster.service_provider_id, cluster.service_provider_type_id, service_provider.entity_id, service_provider.class_type_id, service_provider.entity_comment_id, service_provider.owner_id, nodes.node_id, nodes.service_provider_id, nodes.host_id, nodes.node_number, nodes.node_hostname, nodes.systemimage_id, nodes.node_state, nodes.node_prev_state, nodes.monitoring_state, host.host_id, host.host_manager_id, host.hostmodel_id, host.processormodel_id, host.kernel_id, host.host_serial_number, host.host_desc, host.active, host.host_initiatorname, host.host_ram, host.host_core, host.host_state, host.host_prev_state, host_2.entity_id, host_2.class_type_id, host_2.entity_comment_id, host_2.owner_id FROM cluster me JOIN service_provider cluster ON cluster.service_provider_id = me.cluster_id JOIN entity service_provider ON service_provider.entity_id = cluster.service_provider_id LEFT JOIN node nodes ON nodes.service_provider_id = cluster.service_provider_id LEFT JOIN host host ON host.host_id = nodes.host_id LEFT JOIN entity host_2 ON host_2.entity_id = host.host_id WHERE ( owner_id = ? ) ORDER BY nodes.service_provider_id\" with ParamValues: 0=\"1707\"] at /opt/kanopya/lib/administrator/BaseDB.pm line 637\n"
+
+}
+</pre>
+              </p>
+
+              <h3>Solution</h3>
+              <p>
+              We can see in the reason that attribute 'owner_id' appears for service_provider (parent class of cluster) and for host, so the ambiguity.
+              We just need to tell which one we want in the request.
+              If we want filter on the owner of the cluster:
+<pre>
+GET /api/cluster?expand=nodes.host&service_provider.owner_id=1707
+</pre>
+              Else if we want filter on the owner of the hosts, this is a bit more tricky in this special case because the filter is on a foreign key ('_id' attribute), so we must change a bit the filter (see the resources part to identify relationship and attributes name):
+<pre>
+GET /api/cluster?expand=nodes.host&nodes.host.owner.user_id=1707
+</pre>
+
+
+              In the case of the attribute is on the current resource (not a parent class) we can use 'me' to resolve the ambiguity:
+<pre>
+GET /api/cluster?expand=nodes.host&me.active=1
+</pre>
+              Conversely, if we want filter on the host attribute:
+<pre>
+GET /api/cluster?expand=nodes.host&nodes.host.active=1
+</pre>
+              </p>
+
+        </section>
+
 
          <!-- Issues
         ================================================== -->

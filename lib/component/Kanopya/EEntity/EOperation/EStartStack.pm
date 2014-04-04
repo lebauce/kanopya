@@ -53,6 +53,8 @@ sub check {
     my ($self, %args) = @_;
 
     General::checkParams(args => $self->{context}, required => [ "stack_builder", "user" ]);
+
+    General::checkParams(args => $self->{params}, required => [ "stack_id" ]);
 }
 
 
@@ -66,11 +68,11 @@ Create all service required for a stack
 
 sub execute {
     my ($self, %args) = @_;
-    $self->SUPER::execute(%args);
 
     # Call the method on the corresponding component
     my $components = $self->{context}->{stack_builder}->startStack(
                          user      => $self->{context}->{user},
+                         stack_id  => $self->{params}->{stack_id},
                          # TODO: Let all EEntity access to the workflow that they related
                          workflow  => $self->workflow,
                          erollback => $self->{erollback}
@@ -96,7 +98,7 @@ Delete object possibly created at startStack step.
 sub cancel {
     my ($self, %args) = @_;
 
-    $self->{context}->{stack_builder}->cancelStack(
+    $self->{context}->{stack_builder}->cancelStartStack(
         user => $self->{context}->{user},
     );
 }

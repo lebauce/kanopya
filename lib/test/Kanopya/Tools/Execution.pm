@@ -50,7 +50,7 @@ my @args = ();
 BEGIN {
     # Test will fail if any executor is running
     my $executor_exist = `ps aux | grep kanopya-executor | grep -cv grep`;
-    if ($executor_exist == 1) {
+    if ($executor_exist != 0) {
         throw Kanopya::Exception::Internal(error => 'An executor is already running');
     }
 }
@@ -111,7 +111,9 @@ Purge the executor queues.
 sub purgeQueues {
     my ($self, %args) = @_;
 
-    for my $queue ('workflow', 'operation', 'operation_result') {
+    for my $queue ('kanopya.executor.workflow',
+                   'kanopya.executor.operation',
+                   'kanopya.executor.operation_result') {
         $executor->purgeQueue(queue => $queue);
     }
 }

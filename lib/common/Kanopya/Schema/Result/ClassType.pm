@@ -94,21 +94,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 data_model_type
-
-Type: might_have
-
-Related object: L<Kanopya::Schema::Result::DataModelType>
-
-=cut
-
-__PACKAGE__->might_have(
-  "data_model_type",
-  "Kanopya::Schema::Result::DataModelType",
-  { "foreign.data_model_type_id" => "self.class_type_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 entities
 
 Type: has_many
@@ -140,8 +125,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:r6w/iSE9aVkXgAitY5tEKg
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-24 16:34:10
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:+Np+E2EIixUlYwr14fpl6Q
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

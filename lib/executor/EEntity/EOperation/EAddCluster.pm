@@ -42,6 +42,7 @@ use Entity::Gp;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
+use TryCatch;
 
 my $log = get_logger("");
 my $errmsg;
@@ -58,7 +59,6 @@ my $errmsg;
 
 sub check {
     my ($self, %args) = @_;
-    $self->SUPER::check(%args);
 
     # Check if all required params group are defined
     General::checkParams(args => $self->{params}, required => [ "cluster_params", "managers" ]);
@@ -84,7 +84,6 @@ Create the cluster and apply the configuration.
 
 sub execute {
     my ($self, %args) = @_;
-    $self->SUPER::execute(%args);
 
     if (defined $self->{params}->{cluster_params}->{kernel_id} and
         not $self->{params}->{cluster_params}->{kernel_id}) {
@@ -124,7 +123,6 @@ Set the cluster as down.
 
 sub finish {
     my ($self, %args) = @_;
-    $self->SUPER::finish(%args);
 
     $self->{context}->{cluster}->setState(state => 'down');
 
@@ -135,6 +133,28 @@ sub finish {
     delete $self->{params}->{billing_limits};
     delete $self->{params}->{orchestration};
     delete $self->{params}->{cluster_params};
+}
+
+
+=pod
+=begin classdoc
+
+Remove the cluster.
+
+=end classdoc
+=cut
+
+sub cancel {
+    my ($self, %args) = @_;
+
+    try {
+        # Deactivate and remove the cluster
+        $self->{context}->{cluster}->active(0);
+        $self->{context}->{cluster}->remove();
+    }
+    catch ($err) {
+        $log->error("Unable to remove cluster:\n$err");
+    }
 }
 
 1;

@@ -35,7 +35,6 @@ my $errmsg;
 sub check {
     my $self = shift;
     my %args = @_;
-    $self->SUPER::check();
 
     General::checkParams(args => $self->{context}, required => [ "systemimage" ]);
 }
@@ -44,7 +43,6 @@ sub check {
 sub prepare {
     my $self = shift;
     my %args = @_;
-    $self->SUPER::prepare();
 
     # Check if systemimage is not active
     # TODO: The following code is useless as we do not change any state within prepare.
@@ -56,7 +54,6 @@ sub prepare {
 
 sub execute{
     my $self = shift;
-    $self->SUPER::execute();
 
     $self->{context}->{systemimage}->remove();
 }
