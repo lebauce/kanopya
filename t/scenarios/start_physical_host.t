@@ -84,7 +84,7 @@ sub main {
         Kanopya::Tools::Execution->executeOne(entity => $cluster->stop());
     } 'Stopping cluster';
 
-    diag('Remove cluster');s
+    diag('Remove cluster');
     lives_ok {
         Kanopya::Tools::Execution->executeOne(entity => $cluster->deactivate());
         Kanopya::Tools::Execution->executeOne(entity => $cluster->remove());
