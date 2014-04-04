@@ -596,7 +596,7 @@ sub handleResult {
                     }
                 }
                 # Set operations of the group as failed, to avoid the workflow execute them
-                $tofail->setState(state => "failed");
+                $tofail->setState(state => "failed", reason => $args{exception});
             }
 
             # Continue the workflow
@@ -639,7 +639,7 @@ sub handleResult {
                             $log->error("Error during operation cancel :\n$err");
                         }
                     }
-                    $tocancel->setState(state => 'cancelled');
+                    $tocancel->setState(state => 'cancelled', reason => $args{exception});
                     $tocancel->remove();
                 }
                 $workflow->cancel();

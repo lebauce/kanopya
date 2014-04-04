@@ -689,7 +689,9 @@ sub notificationMessage {
     my $self    = shift;
     my %args    = @_;
 
-    General::checkParams(args => \%args, required => [ 'operation', 'state', 'subscriber' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'operation', 'state', 'subscriber' ],
+                         optional => { 'reason' => undef });
 
     my $templatefile;
     my $template = Template->new($self->getTemplateConfiguration());
@@ -698,6 +700,7 @@ sub notificationMessage {
                          workflow        => $args{operation}->workflow->label,
                          workflow_id     => $args{operation}->workflow->id,
                          operation_state => $args{state},
+                         reason          => $args{reason},
                          user            => $args{operation}->{context}->{user},
                          stack_id        => $args{operation}->{params}->{stack_id} };
 

@@ -241,14 +241,17 @@ sub notificationMessage {
     my $self    = shift;
     my %args    = @_;
 
-    General::checkParams(args => \%args, required => [ 'operation', 'state', 'subscriber' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'operation', 'state', 'subscriber' ],
+                         optional => { 'reason' => undef });
 
     my $template = Template->new(General::getTemplateConfiguration());
     my $templatedata = { operation       => $args{operation}->label,
                          operation_id    => $args{operation}->id,
                          workflow        => $args{operation}->workflow->label,
                          workflow_id     => $args{operation}->workflow->id,
-                         operation_state => $args{state} };
+                         operation_state => $args{state},
+                         reason          => $args{reason} };
 
     my $message = "";
     $template->process('notificationmail.tt', $templatedata, \$message)

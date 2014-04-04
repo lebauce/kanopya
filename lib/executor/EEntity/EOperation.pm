@@ -256,12 +256,13 @@ notifications set on this operation for this state
 sub setState {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'state' ]);
+    General::checkParams(args => \%args, required => [ 'state' ], optional => { 'reason' => undef });
 
     # For each entity in the context, check if notifiaction/validation are set for this state
     # If at least one require validation, the operation do not change this state,
     # and validation is requested to caller.
-    my $validation = $self->processNotificationSubscriptions(state => $args{state});
+    my $validation = $self->processNotificationSubscriptions(state  => $args{state},
+                                                             reason => $args{reason});
     if ($validation) {
         throw Kanopya::Exception::Execution::OperationRequireValidation();
     }
@@ -335,6 +336,7 @@ sub processNotificationSubscriptions {
                 # Get the message depending of the subscription entity type
                 ($subject, $message) = $entity->notificationMessage(operation  => $self,
                                                                     state      => $args{state},
+                                                                    reason     => $args{reason},
                                                                     subscriber => $subscription->subscriber);
             }
 
