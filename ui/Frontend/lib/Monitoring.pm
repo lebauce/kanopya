@@ -12,8 +12,8 @@ use Dancer ':syntax';
 use Dancer::Plugin::Ajax;
 use Data::Dumper;
 
-use Entity::Combination::NodemetricCombination;
-use Entity::Combination::AggregateCombination;
+use Entity::Metric::Combination::NodemetricCombination;
+use Entity::Metric::Combination::AggregateCombination;
 use DateTime::Format::Strptime;
 use Log::Log4perl "get_logger";
 
@@ -184,7 +184,7 @@ sub _computeClustermetricCombination () {
     my $combination_id = $args{combination_id};
     my $start_timestamp = $args{start_tms};
     my $stop_timestamp = $args{stop_tms};
-    my $combination = Entity::Combination::AggregateCombination->get('id' => $combination_id);
+    my $combination = Entity::Metric::Combination::AggregateCombination->get('id' => $combination_id);
     my $error;
     my %aggregate_combination;
     my @histovalues;
@@ -245,7 +245,7 @@ the second containing the corresponding values
 sub _computeNodemetricCombination {
     my %args = @_;
 
-    my $comb = Entity::Combination::NodemetricCombination->get(id => $args{combination_id});
+    my $comb = Entity::Metric::Combination::NodemetricCombination->get(id => $args{combination_id});
 
     my %rep;
     my $error;

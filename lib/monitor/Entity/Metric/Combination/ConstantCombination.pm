@@ -26,11 +26,11 @@ Constant value used as combination
 
 =cut
 
-package Entity::Combination::ConstantCombination;
+package Entity::Metric::Combination::ConstantCombination;
+use base Entity::Metric::Combination;
 
 use strict;
 use warnings;
-use base 'Entity::Combination';
 use Entity::Indicator;
 use Data::Dumper;
 # logger

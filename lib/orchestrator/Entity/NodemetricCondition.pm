@@ -18,9 +18,7 @@
 
 Condition on combination value
 
-@see <package>Entity::Combination</package>
-@see <package>Entity::Combination::ConstantCombination</package>
-@see <package>Entity::Combination::NodemetricCombination</package>
+@see <package>Entity::Metric::Combination::ConstantCombination</package>
 
 =end classdoc
 
@@ -32,9 +30,8 @@ use base Entity;
 use strict;
 use warnings;
 
-use Entity::Combination;
 use Entity::Rule::NodemetricRule;
-use Entity::Combination::ConstantCombination;
+use Entity::Metric::Combination::ConstantCombination;
 
 use TryCatch;
 my $err;
@@ -112,19 +109,19 @@ sub new {
     my %args = @_;
 
     if ((! defined $args{right_combination_id}) && defined $args{nodemetric_condition_threshold}  ) {
-        my $comb =  Entity::Combination::ConstantCombination->new (
-            service_provider_id => $args{nodemetric_condition_service_provider_id},
-            value => $args{nodemetric_condition_threshold}
-        );
+        my $comb =  Entity::Metric::Combination::ConstantCombination->new (
+                        service_provider_id => $args{nodemetric_condition_service_provider_id},
+                        value => $args{nodemetric_condition_threshold}
+                    );
         delete $args{nodemetric_condition_threshold};
         $args{right_combination_id} = $comb->id;
     }
 
     if ((! defined $args{left_combination_id}) && defined $args{nodemetric_condition_threshold}  ) {
-        my $comb =  Entity::Combination::ConstantCombination->new (
-            service_provider_id => $args{nodemetric_condition_service_provider_id},
-            value => $args{nodemetric_condition_threshold}
-        );
+        my $comb =  Entity::Metric::Combination::ConstantCombination->new (
+                        service_provider_id => $args{nodemetric_condition_service_provider_id},
+                        value => $args{nodemetric_condition_threshold}
+                    );
         delete $args{nodemetric_condition_threshold};
         $args{left_combination_id} = $comb->id;
     }
@@ -182,7 +179,7 @@ sub toString {
 
     # Not used yet due to bad Combination::computeUnit() behavior (see also AggregateCondition::toString())
     my $unit = '';
-    if ((ref $self->right_combination) eq 'Entity::Combination::ConstantCombination') {
+    if ((ref $self->right_combination) eq 'Entity::Metric::Combination::ConstantCombination') {
         my $left_unit = $self->left_combination->combination_unit;
         if ($left_unit && (($left_unit ne '?') || ($left_unit ne '-'))) {
             $unit = $left_unit;
@@ -255,16 +252,14 @@ Find all the rules which depends on the NodemetricCondition
 
 sub getDependentRules {
     my $self = shift;
-    my @rules_from_same_service = Entity::Rule::NodemetricRule->search(
-                                      hash => {
-                                          service_provider_id => $self->nodemetric_condition_service_provider_id
-                                      }
-                                  );
+    my @servicerules = Entity::Rule::NodemetricRule->search(hash => {
+                    service_provider_id => $self->nodemetric_condition_service_provider_id
+                });
 
     my @rules;
     my $id = $self->id;
     RULE:
-    for my $rule (@rules_from_same_service) {
+    for my $rule (@servicerules) {
         my @rule_dependant_condition_ids = $rule->getDependentConditionIds;
         for my $condition_id (@rule_dependant_condition_ids) {
             if ($id == $condition_id) {
@@ -314,11 +309,14 @@ Delete instance and delete dependant object on cascade.
 
 sub delete {
     my $self = shift;
-    my @rules_from_same_service = Entity::Rule::NodemetricRule->search(hash => {service_provider_id => $self->nodemetric_condition_service_provider_id});
+    my @rules = Entity::Rule::NodemetricRule->search(hash => {
+                    service_provider_id => $self->nodemetric_condition_service_provider_id
+                });
+
     my $id = $self->id;
     RULE:
-    while(@rules_from_same_service) {
-        my $rule = pop @rules_from_same_service;
+    while(@rules) {
+        my $rule = pop @rules;
         my @rule_dependant_condition_ids = $rule->getDependentConditionIds;
         for my $condition_id (@rule_dependant_condition_ids) {
             if ($id == $condition_id) {
@@ -391,18 +389,18 @@ sub update {
     my $old_right_combination = $self->right_combination;
 
     if (! defined $args{left_combination_id}) {
-        my $new_left_combination =  Entity::Combination::ConstantCombination->new (
-            service_provider_id => $service_provider_id,
-            value => $args{nodemetric_condition_threshold}
-        );
+        my $new_left_combination = Entity::Metric::Combination::ConstantCombination->new (
+                                       service_provider_id => $service_provider_id,
+                                       value => $args{nodemetric_condition_threshold}
+                                   );
         delete $args{nodemetric_condition_threshold};
         $args{left_combination_id} = $new_left_combination->id;
     }
     elsif (! defined $args{right_combination_id}) {
-        my $new_right_combination =  Entity::Combination::ConstantCombination->new (
-            service_provider_id => $service_provider_id,
-            value => $args{nodemetric_condition_threshold}
-        );
+        my $new_right_combination = Entity::Metric::Combination::ConstantCombination->new (
+                                        service_provider_id => $service_provider_id,
+                                        value => $args{nodemetric_condition_threshold}
+                                    );
         delete $args{nodemetric_condition_threshold};
         $args{right_combination_id} = $new_right_combination->id;
     }

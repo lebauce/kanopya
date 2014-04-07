@@ -28,12 +28,12 @@ use RulesEngine;
 use Aggregator;
 use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
-use Entity::Combination::NodemetricCombination;
 use Entity::NodemetricCondition;
 use Entity::Rule::NodemetricRule;
+use Entity::Metric::Clustermetric;
+use Entity::Metric::Combination::AggregateCombination;
+use Entity::Metric::Combination::NodemetricCombination;
 use VerifiedNoderule;
-use Entity::Clustermetric;
-use Entity::Combination::AggregateCombination;
 
 use Kanopya::Tools::TestUtils 'expectedException';
 
@@ -246,15 +246,15 @@ sub check_rule_verification {
 
 sub test_rrd_remove {
     lives_ok {
-        my @cms = Entity::Clustermetric->search (hash => {
-            clustermetric_service_provider_id => $service_provider->id
-        });
+        my @cms = Entity::Metric::Clustermetric->search (hash => {
+                      clustermetric_service_provider_id => $service_provider->id
+                  });
 
         my @cm_ids = map {$_->id} @cms;
         while (@cms) { (pop @cms)->delete(); };
 
         diag('Check if all aggregrate combinations have been deleted');
-        my @acs = Entity::Combination::AggregateCombination->search (hash => {
+        my @acs = Entity::Metric::Combination::AggregateCombination->search (hash => {
             service_provider_id => $service_provider->id
         });
         if ( scalar @acs == 0 ) {
@@ -321,17 +321,17 @@ sub _service_rule_objects_creation {
                                   hash    => {collector_manager_id => $mock_monitor->id}
                               );
 
-    my $cm1 = Entity::Clustermetric->new(
-        clustermetric_service_provider_id => $service_provider->id,
-        clustermetric_indicator_id => $collector_indicator->id,
-        clustermetric_statistics_function_name => 'count',
-        clustermetric_window_time => '1200',
-    );
+    my $cm1 = Entity::Metric::Clustermetric->new(
+                  clustermetric_service_provider_id => $service_provider->id,
+                  clustermetric_indicator_id => $collector_indicator->id,
+                  clustermetric_statistics_function_name => 'count',
+                  clustermetric_window_time => '1200',
+              );
 
-    $acomb1 = Entity::Combination::AggregateCombination->new(
-        service_provider_id             =>  $service_provider->id,
-        aggregate_combination_formula   => 'id'.($cm1->id),
-    );
+    $acomb1 = Entity::Metric::Combination::AggregateCombination->new(
+                  service_provider_id           =>  $service_provider->id,
+                  aggregate_combination_formula => 'id' . ($cm1->id),
+              );
 }
 
 sub _node_rule_objects_creation {
@@ -345,10 +345,11 @@ sub _node_rule_objects_creation {
                                   hash    => {collector_manager_id => $mock_monitor->id}
                               );
     # Create nodemetric rule objects
-    my $ncomb1 = Entity::Combination::NodemetricCombination->new(
-        service_provider_id             => $service_provider->id,
-        nodemetric_combination_formula  => 'id'.$collector_indicator->id.' + id'.$collector_indicator->id,
-    );
+    my $ncomb1 = Entity::Metric::Combination::NodemetricCombination->new(
+                     service_provider_id             => $service_provider->id,
+                     nodemetric_combination_formula  => 'id' . $collector_indicator->id
+                                                        . ' + id' . $collector_indicator->id,
+                 );
 
     my $nc1 = Entity::NodemetricCondition->new(
         nodemetric_condition_service_provider_id => $service_provider->id,

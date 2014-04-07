@@ -24,11 +24,11 @@ lives_ok {
     use Kanopya::Database;
     use Entity::ServiceProvider::Externalcluster;
     use Entity::Component::MockMonitor;
-    use Entity::Clustermetric;
+    use Entity::Metric::Clustermetric;
     use Entity::AggregateCondition;
-    use Entity::Combination::AggregateCombination;
+    use Entity::Metric::Combination::AggregateCombination;
     use Entity::Rule::AggregateRule;
-    use Entity::Combination::NodemetricCombination;
+    use Entity::Metric::Combination::NodemetricCombination;
     use Entity::NodemetricCondition;
     use Entity::Rule::NodemetricRule;
 } 'All uses';
@@ -73,13 +73,11 @@ sub testNodeRuleImport {
     my ($cloned_ncomb, $cloned_ncond);
 
     lives_ok {
-        $cloned_ncomb = Entity::Combination::NodemetricCombination->find(
-            hash => {
-                service_provider_id             => $sp_dest->id,
-                nodemetric_combination_label    => 'node combi label',
-                nodemetric_combination_formula  => 'id'.($indic->id),
-            }
-        );
+        $cloned_ncomb = Entity::Metric::Combination::NodemetricCombination->find(hash => {
+                            service_provider_id             => $sp_dest->id,
+                            nodemetric_combination_label    => 'node combi label',
+                            nodemetric_combination_formula  => 'id'.($indic->id),
+                        });
     } 'Node combination cloned';
 
     lives_ok {
@@ -94,13 +92,11 @@ sub testNodeRuleImport {
     } 'Node condition cloned';
 
     lives_ok {
-        Entity::Combination::ConstantCombination->find(
-            hash => {
-                service_provider_id     => $sp_dest->id,
-                constant_combination_id => $cloned_ncond->right_combination_id,
-                value                   => '-1.2',
-            }
-        );
+        Entity::Metric::Combination::ConstantCombination->find(hash => {
+            service_provider_id     => $sp_dest->id,
+            constant_combination_id => $cloned_ncond->right_combination_id,
+            value                   => '-1.2',
+        });
     } 'Constant combination cloned';
 
     lives_ok {
@@ -131,24 +127,21 @@ sub testServiceRuleImport {
     my ($cloned_cm, $cloned_acomb, $cloned_acond, $cloned_ar);
 
     lives_ok {
-        $cloned_cm = Entity::Clustermetric->find(
+        $cloned_cm = Entity::Metric::Clustermetric->find(
             hash => {
                 clustermetric_service_provider_id       => $sp_dest->id,
                 clustermetric_indicator_id              => $indic->id,
                 clustermetric_statistics_function_name  => 'mean',
-                clustermetric_window_time               => '1200',
             }
         );
     } 'Service metric cloned';
 
     lives_ok {
-        $cloned_acomb = Entity::Combination::AggregateCombination->find(
-            hash => {
-                service_provider_id             =>  $sp_dest->id,
-                aggregate_combination_label     => 'service comb label',
-                aggregate_combination_formula   => 'id'.($cloned_cm->id),
-            }
-        );
+        $cloned_acomb = Entity::Metric::Combination::AggregateCombination->find(hash => {
+                            service_provider_id             =>  $sp_dest->id,
+                            aggregate_combination_label     => 'service comb label',
+                            aggregate_combination_formula   => 'id'.($cloned_cm->id),
+                        });
     } 'Service combination cloned';
 
     lives_ok {
@@ -163,13 +156,11 @@ sub testServiceRuleImport {
     } 'Service condition cloned';
 
     lives_ok {
-        Entity::Combination::ConstantCombination->find(
-            hash => {
-                service_provider_id     => $sp_dest->id,
-                constant_combination_id => $cloned_acond->right_combination_id,
-                value                   => '12.34',
-            }
-        );
+        Entity::Metric::Combination::ConstantCombination->find(hash => {
+            service_provider_id     => $sp_dest->id,
+            constant_combination_id => $cloned_acond->right_combination_id,
+            value                   => '12.34',
+        });
     } 'Constant combination cloned';
 
     lives_ok {
@@ -281,11 +272,11 @@ sub init {
     );
 
     #  Nodemetric combination
-    $ncomb = Entity::Combination::NodemetricCombination->new(
-        service_provider_id             => $sp_src->id,
-        nodemetric_combination_label    => 'node combi label',
-        nodemetric_combination_formula  => 'id'.($indic->id),
-    );
+    $ncomb = Entity::Metric::Combination::NodemetricCombination->new(
+                 service_provider_id            => $sp_src->id,
+                 nodemetric_combination_label   => 'node combi label',
+                 nodemetric_combination_formula => 'id' . ($indic->id),
+             );
 
     # Nodemetric condition
    $ncond = Entity::NodemetricCondition->new(
@@ -306,19 +297,18 @@ sub init {
     );
 
     # Clustermetric
-    $cm = Entity::Clustermetric->new(
-        clustermetric_service_provider_id       => $sp_src->id,
-        clustermetric_indicator_id              => $indic->id,
-        clustermetric_statistics_function_name  => 'mean',
-        clustermetric_window_time               => '1200',
-    );
+    $cm = Entity::Metric::Clustermetric->new(
+              clustermetric_service_provider_id       => $sp_src->id,
+              clustermetric_indicator_id              => $indic->id,
+              clustermetric_statistics_function_name  => 'mean',
+          );
 
     # Aggregate Combination
-    $acomb = Entity::Combination::AggregateCombination->new(
-        service_provider_id             =>  $sp_src->id,
-        aggregate_combination_label     => 'service comb label',
-        aggregate_combination_formula   => 'id'.($cm->id),
-    );
+    $acomb = Entity::Metric::Combination::AggregateCombination->new(
+                 service_provider_id           =>  $sp_src->id,
+                 aggregate_combination_label   => 'service comb label',
+                 aggregate_combination_formula => 'id' . ($cm->id),
+             );
 
     # Aggregate Condition
     $acond = Entity::AggregateCondition->new(

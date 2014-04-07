@@ -38,9 +38,9 @@ use BillingManager;
 use ServiceProviderManager;
 use Entity::Component;
 use Entity::Workflow;
-use Entity::Clustermetric;
-use Entity::Combination::NodemetricCombination;
-use Entity::Combination::AggregateCombination;
+use Entity::Metric::Clustermetric;
+use Entity::Metric::Combination::NodemetricCombination;
+use Entity::Metric::Combination::AggregateCombination;
 use Entity::ServiceTemplate;
 use Entity::Billinglimit;
 use ClassType::ComponentType;
@@ -500,7 +500,7 @@ sub configureManagers {
 
     # Get export manager parameter related to si shared value.
     my $readonly_param = $export_manager->getReadOnlyParameter(
-                             readonly => 0 
+                             readonly => 0
                          );
 
     # TODO: This will be usefull for the first call to applyPolicies at the cluster creation,
@@ -548,15 +548,15 @@ sub configureBillingLimits {
                                           "collector_manager_id"     => $collector_manager->id }
                             );
 
-            my $cm = Entity::Clustermetric->findOrCreate(
-                clustermetric_label                    => "Billing" . $name,
-                clustermetric_service_provider_id      => $self->id,
-                clustermetric_indicator_id             => $indicator->id,
-                clustermetric_statistics_function_name => "sum",
-                clustermetric_window_time              => '1200',
-            );
+            my $cm = Entity::Metric::Clustermetric->findOrCreate(
+                         clustermetric_label                    => "Billing" . $name,
+                         clustermetric_service_provider_id      => $self->id,
+                         clustermetric_indicator_id             => $indicator->id,
+                         clustermetric_statistics_function_name => "sum",
+                         clustermetric_window_time              => '1200',
+                     );
 
-            Entity::Combination::AggregateCombination->findOrCreate(
+            Entity::Metric::Combination::AggregateCombination->findOrCreate(
                 aggregate_combination_label     => "Billing" . $name,
                 service_provider_id             => $self->id,
                 aggregate_combination_formula   => 'id' . $cm->id
@@ -1070,7 +1070,7 @@ sub generateOverLoadNodemetricRules {
             service_provider_id             => $service_provider_id,
         };
 
-        my $comb = Entity::Combination::NodemetricCombination->new(%$combination_param);
+        my $comb = Entity::Metric::Combination::NodemetricCombination->new(%$combination_param);
 
         my $condition_param = {
             left_combination_id      => $comb->getAttr(name=>'nodemetric_combination_id'),
@@ -1113,7 +1113,7 @@ sub generateDefaultMonitoringConfiguration {
             nodemetric_combination_formula  => 'id' . $indicator->id,
             service_provider_id             => $service_provider_id,
         };
-        Entity::Combination::NodemetricCombination->new(%$combination_param);
+        Entity::Metric::Combination::NodemetricCombination->new(%$combination_param);
     }
 
     #definition of the functions
@@ -1128,13 +1128,13 @@ sub generateDefaultMonitoringConfiguration {
                 clustermetric_statistics_function_name => $func,
                 clustermetric_window_time              => '1200',
             };
-            my $cm = Entity::Clustermetric->new(%$cm_params);
+            my $cm = Entity::Metric::Clustermetric->new(%$cm_params);
 
             my $acf_params = {
                 service_provider_id             => $service_provider_id,
                 aggregate_combination_formula   => 'id' . $cm->id
             };
-            my $clustermetric_combination = Entity::Combination::AggregateCombination->new(%$acf_params);
+            my $clustermetric_combination = Entity::Metric::Combination::AggregateCombination->new(%$acf_params);
         }
     }
 }

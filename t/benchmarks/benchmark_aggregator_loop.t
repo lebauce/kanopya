@@ -50,7 +50,7 @@ sub registerCluster {
     my ($self, %args) = @_;
 
     my $cluster = Kanopya::Tools::Create->createCluster(cluster_conf => {
-                      cluster_name         => "Cluster" . $serviceload, 
+                      cluster_name         => "Cluster" . $serviceload,
                       cluster_basehostname => "default" . $serviceload
                   });
 
@@ -60,13 +60,13 @@ sub registerCluster {
         no_default_conf => 1,
     );
 
-    Entity::Clustermetric->new(
+    Entity::Metric::Clustermetric->new(
         clustermetric_service_provider_id      => $cluster->id,
         clustermetric_indicator_id             => ($indic1->id),
         clustermetric_statistics_function_name => 'sum',
         clustermetric_window_time              => '1200',
     );
- 
+
     addNode(cluster => $cluster, number => $nodeload);
 
     $serviceload++;
@@ -89,7 +89,7 @@ sub addNode {
     );
     $host->setState(state => 'up');
     $host->setNodeState(state => 'in');
-        
+
 }
 
 sub benchmarkAggregatorUpdate {
@@ -128,11 +128,11 @@ eval{
     benchmarkAggregatorUpdate();
 
     my @clusters = Entity::ServiceProvider::Cluster->search(hash => {});
-    
+
     my $benchmark = 0;
     for my $indicator (Entity::CollectorIndicator->search(hash => { collector_manager_id => $mock_monitor->id })) {
         for my $cluster (@clusters) {
-            Entity::Clustermetric->new(
+            Entity::Metric::Clustermetric->new(
                 clustermetric_service_provider_id      => $cluster->id,
                 clustermetric_indicator_id             => ($indicator->id),
                 clustermetric_statistics_function_name => 'sum',

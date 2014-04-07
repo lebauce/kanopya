@@ -25,8 +25,8 @@ Mathematical formula of collector indicators
 
 =cut
 
-package Entity::Combination::NodemetricCombination;
-use base Entity::Combination;
+package Entity::Metric::Combination::NodemetricCombination;
+use base Entity::Metric::Combination;
 
 use strict;
 use warnings;
@@ -451,11 +451,15 @@ Compute the combination value using a hash value for each CollectorIndicator.
 =cut
 
 sub compute {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     my @requiredArgs = $self->getDependentCollectorIndicatorIds();
-    Entity::Combination::checkMissingParams(args => \%args, required => \@requiredArgs);
+
+    Entity::Metric::Combination::checkMissingParams(
+        args => \%args,
+        required => \@requiredArgs
+    );
+
     foreach my $ci_id (@requiredArgs) {
         if (! defined $args{$ci_id}) {
             return undef;

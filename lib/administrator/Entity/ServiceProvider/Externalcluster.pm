@@ -33,13 +33,13 @@ use warnings;
 use Kanopya::Exceptions;
 use General;
 
-use Entity::Combination::NodemetricCombination;
+use Entity::Metric::Combination::NodemetricCombination;
 use Entity::NodemetricCondition;
 use Entity::Rule::NodemetricRule;
-use Entity::Combination::AggregateCombination;
+use Entity::Metric::Combination::AggregateCombination;
 use Entity::AggregateCondition;
 use Entity::Rule::AggregateRule;
-use Entity::Clustermetric;
+use Entity::Metric::Clustermetric;
 use Entity::CollectorIndicator;
 use Entity::ServiceProvider::Cluster;
 
@@ -404,13 +404,13 @@ sub generateClustermetricAndCombination{
         clustermetric_statistics_function_name => $func,
         clustermetric_window_time              => '1200',
     };
-    my $cm = Entity::Clustermetric->new(%$cm_params);
+    my $cm = Entity::Metric::Clustermetric->new(%$cm_params);
 
     my $acf_params = {
         service_provider_id             => $extcluster_id,
         aggregate_combination_formula   => 'id'.($cm->getAttr(name => 'clustermetric_id'))
     };
-    my $aggregate_combination = Entity::Combination::AggregateCombination->new(%$acf_params);
+    my $aggregate_combination = Entity::Metric::Combination::AggregateCombination->new(%$acf_params);
     my $rep = {
         cm_id => $cm->getAttr(name => 'clustermetric_id'),
         comb_id => $aggregate_combination->id,
@@ -500,13 +500,13 @@ sub monitoringDefaultInit {
             clustermetric_statistics_function_name => 'sum',
             clustermetric_window_time              => '1200',
         };
-        my $cm = Entity::Clustermetric->new(%$cm_params);
+        my $cm = Entity::Metric::Clustermetric->new(%$cm_params);
 
         my $acf_params = {
             service_provider_id             => $service_provider_id,
             aggregate_combination_formula   => 'id'.($cm->getAttr(name => 'clustermetric_id'))
         };
-        Entity::Combination::AggregateCombination->new(%$acf_params);
+        Entity::Metric::Combination::AggregateCombination->new(%$acf_params);
     }
 }
 
@@ -547,7 +547,7 @@ sub ruleGeneration{
         aggregate_combination_formula   => 'id'.($std_ids->{cm_id}).'/ id'.($mean_ids->{cm_id}),
     };
 
-    my $coef_comb = Entity::Combination::AggregateCombination->new(%$combination_params);
+    my $coef_comb = Entity::Metric::Combination::AggregateCombination->new(%$combination_params);
 
    my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
@@ -720,7 +720,7 @@ sub generateCoefficientOfVariationRules {
         aggregate_combination_formula   => 'id'.($id_std).'/ id'.($id_mean),
     };
 
-    my $aggregate_combination = Entity::Combination::AggregateCombination->new(%$combination_params);
+    my $aggregate_combination = Entity::Metric::Combination::AggregateCombination->new(%$combination_params);
 
     my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
@@ -752,7 +752,7 @@ sub generateStandardDevRuleForNormalizedIndicatorsRules {
         aggregate_combination_formula   => 'id'.($id_std),
     };
 
-    my $aggregate_combination = Entity::Combination::AggregateCombination->new(%$combination_params);
+    my $aggregate_combination = Entity::Metric::Combination::AggregateCombination->new(%$combination_params);
 
     my $condition_params = {
         aggregate_condition_service_provider_id => $extcluster_id,
@@ -787,7 +787,7 @@ sub generateNodeMetricRules{
         service_provider_id             => $extcluster_id,
     };
 
-    my $comb = Entity::Combination::NodemetricCombination->new(%$combination_param);
+    my $comb = Entity::Metric::Combination::NodemetricCombination->new(%$combination_param);
 
     my $creation_conf = {
         'Memory/PercentMemoryUsed' => {

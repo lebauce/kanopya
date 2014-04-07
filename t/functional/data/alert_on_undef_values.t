@@ -17,8 +17,8 @@ use Aggregator;
 use RulesEngine;
 use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
-use Entity::Clustermetric;
-use Entity::Combination::NodemetricCombination;
+use Entity::Metric::Clustermetric;
+use Entity::Metric::Combination::NodemetricCombination;
 
 Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
@@ -82,31 +82,31 @@ eval{
         }
     );
 
-    my $cm = Entity::Clustermetric->new(
-        clustermetric_service_provider_id => $service_provider->id,
-        clustermetric_indicator_id => ($coll_indic1->id),
-        clustermetric_statistics_function_name => 'mean',
-        clustermetric_window_time => '1200',
-    );
+    my $cm = Entity::Metric::Clustermetric->new(
+                 clustermetric_service_provider_id => $service_provider->id,
+                 clustermetric_indicator_id => ($coll_indic1->id),
+                 clustermetric_statistics_function_name => 'mean',
+                 clustermetric_window_time => '1200',
+             );
 
-    my $cm2 = Entity::Clustermetric->new(
-        clustermetric_service_provider_id => $service_provider->id,
-        clustermetric_indicator_id => ($coll_indic2->id),
-        clustermetric_statistics_function_name => 'sum',
-        clustermetric_window_time => '1200',
-    );
-
-    # Create nodemetric rule objects
-    my $ncomb1 = Entity::Combination::NodemetricCombination->new(
-        service_provider_id => $service_provider->id,
-        nodemetric_combination_formula => 'id'.($coll_indic1->id),
-    );
+    my $cm2 = Entity::Metric::Clustermetric->new(
+                 clustermetric_service_provider_id => $service_provider->id,
+                 clustermetric_indicator_id => ($coll_indic2->id),
+                 clustermetric_statistics_function_name => 'sum',
+                 clustermetric_window_time => '1200',
+              );
 
     # Create nodemetric rule objects
-    my $ncomb2 = Entity::Combination::NodemetricCombination->new(
-        service_provider_id => $service_provider->id,
-        nodemetric_combination_formula => 'id'.($coll_indic2->id),
-    );
+    my $ncomb1 = Entity::Metric::Combination::NodemetricCombination->new(
+                     service_provider_id => $service_provider->id,
+                     nodemetric_combination_formula => 'id'.($coll_indic1->id),
+                 );
+
+    # Create nodemetric rule objects
+    my $ncomb2 = Entity::Metric::Combination::NodemetricCombination->new(
+                     service_provider_id => $service_provider->id,
+                     nodemetric_combination_formula => 'id'.($coll_indic2->id),
+                 );
 
     my $nc1 = Entity::NodemetricCondition->new(
         nodemetric_condition_service_provider_id => $service_provider->id,
@@ -150,16 +150,16 @@ if($@) {
 }
 
 sub test_rrd_remove {
-    my @cms = Entity::Clustermetric->search (hash => {
-        clustermetric_service_provider_id => $service_provider->id
-    });
+    my @cms = Entity::Metric::Clustermetric->search (hash => {
+                  clustermetric_service_provider_id => $service_provider->id
+              });
 
     my @cm_ids = map {$_->id} @cms;
     while (@cms) { (pop @cms)->delete(); };
 
-    my @acs = Entity::Combination::AggregateCombination->search (hash => {
-        service_provider_id => $service_provider->id
-    });
+    my @acs = Entity::Metric::Combination::AggregateCombination->search (hash => {
+                  service_provider_id => $service_provider->id
+              });
 
     if (! (scalar @acs == 0)) {die 'Check all aggregate combinations are deleted';}
 

@@ -554,7 +554,7 @@ sub search {
     # If the table does not match the class, the conrete table does not exists,
     # so filter on the class type.
     if ($class =~ m/::/ and $class !~ m/::$table$/) {
-        $args{hash}->{'class_type.class_type'} = $class;
+        $args{hash}->{'class_type.class_type'} = {-like => $class.'%'};
     }
 
     my $virtuals = {};
@@ -2229,7 +2229,7 @@ sub _classHierarchy {
     my $class = ref($self) || $self;
     my @supers = Class::ISA::super_path($class);
 
-    my @hierarchy;
+    my @hierarchy = ();
     if (defined ($supers[0]) && $supers[0] eq 'BaseDB') {
         @hierarchy = $class->_className;
     }
@@ -2237,11 +2237,41 @@ sub _classHierarchy {
         @hierarchy = split(/::/, $class);
     }
 
-    @hierarchy = grep { eval { Kanopya::Database::schema->source($_) }; not $@ } @hierarchy;
+    my $has_shema = {};
 
-    my @klasses;
-    return grep { push @klasses, $_; $class->isa(join('::', @klasses))
-                                         or (join('::', @klasses) eq join('::', @hierarchy)) } @hierarchy;
+    # Record classes with tables (i.e. with schemas)
+    for my $hclass (@hierarchy) {
+        try {
+            Kanopya::Database::schema->source($hclass);
+            $has_shema->{$hclass} = 1;
+        }
+        catch ($err) {
+            # corresponding class has no schema
+        }
+    }
+
+    my @output  = ();
+    my @klasses = ();
+
+    CLASS:
+    for my $hclass (@hierarchy) {
+        push @klasses, $hclass;
+        my $current_class = join('::', @klasses);
+
+        # Do not keep classes without schemas
+        if (! defined $has_shema->{$hclass}) {
+            next CLASS;
+        }
+
+        # Legacy Code
+        # Manage last classes of hierarchy which do not
+        # inheritate direclty previous hierarchy class
+        if ($class->isa($current_class) or ($current_class eq join('::', @hierarchy))) {
+            push @output, $hclass;
+        }
+    }
+
+    return @output;
 }
 
 

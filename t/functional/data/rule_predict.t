@@ -10,9 +10,9 @@ use Kanopya::Database;
 use Aggregator;
 use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
-use Entity::Clustermetric;
-use Entity::Combination::AggregateCombination;
-use Entity::Combination::NodemetricCombination;
+use Entity::Metric::Clustermetric;
+use Entity::Metric::Combination::AggregateCombination;
+use Entity::Metric::Combination::NodemetricCombination;
 use Kanopya::Tools::TimeSerie;
 
 use Log::Log4perl qw(:easy);
@@ -140,18 +140,17 @@ sub setup {
     );
 
     # Clustermetric
-    $cm = Entity::Clustermetric->new(
-        clustermetric_service_provider_id => $service_provider->id,
-        clustermetric_indicator_id => ($indic1->id),
-        clustermetric_statistics_function_name => 'sum',
-        clustermetric_window_time => '1200',
-    );
+    $cm = Entity::Metric::Clustermetric->new(
+              clustermetric_service_provider_id => $service_provider->id,
+              clustermetric_indicator_id => ($indic1->id),
+              clustermetric_statistics_function_name => 'sum',
+          );
 
     # Combination
-    $acomb = Entity::Combination::AggregateCombination->new(
-        service_provider_id             =>  $service_provider->id,
-        aggregate_combination_formula   => 'id'.($cm->id),
-    );
+    $acomb = Entity::Metric::Combination::AggregateCombination->new(
+                 service_provider_id             =>  $service_provider->id,
+                 aggregate_combination_formula   => 'id' . ($cm->id),
+             );
 
     # Condition
     $acond = Entity::AggregateCondition->new(
