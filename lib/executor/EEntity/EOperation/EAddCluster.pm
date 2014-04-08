@@ -150,7 +150,7 @@ sub cancel {
     try {
         # Deactivate and remove the cluster
         $self->{context}->{cluster}->active(0);
-        $self->{context}->{cluster}->remove();
+        $self->{context}->{cluster}->remove(erollback => $self->{erollback});
     }
     catch ($err) {
         $log->error("Unable to remove cluster:\n$err");
