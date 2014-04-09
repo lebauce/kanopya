@@ -326,6 +326,9 @@ sub startStack {
     # Declare the password list and Keystone vars associed
     my %hierapassword;
 
+    $hierapassword{adminpassword}->{hieravars}  = [
+        'kanopya::openstack::keystone::admin_password'
+    ];
     $hierapassword{glancemysqlpassword}->{hieravars}  = [
         'kanopya::openstack::glance::database_password'
     ];
@@ -372,6 +375,12 @@ sub startStack {
            $self->getEContext->execute(command => $command);
         }
     }
+
+    #Set NovaController Component API Password
+    $components->{novacontroller}->{component}->setConf(conf => {
+        api_user     => 'admin',
+        api_password => $hierapassword{adminpassword}->{password},
+    });
 
     # Finally start the instances
     # Note: reverse the array as enqueueNow insert operations at the head of the list.
@@ -432,11 +441,20 @@ sub configureStack {
 
         my $mirror_url = 'http://mirror.intranet.hederatech.com/cloudimages';
 
+        my $api_user = 'admin';
+        my $api_password = 'keystone';
+        if (defined $args{novacontroller}->api_user) {
+           $api_user = $args{novacontroller}->api_user;
+        }
+        if (defined $args{novacontroller}->api_password) {
+            $api_password = $args{novacontroller}->api_password;
+        }
+
         # Create openrc file
         my $openrc = "# Environement variables needed by OpenStack CLI commands.\n" .
                      "# See http://docs.openstack.org/user-guide/content/cli_openrc.html\n".
-                     "export OS_TENANT_NAME=openstack\nexport OS_USERNAME=admin\n" .
-                     "export OS_PASSWORD=keystone\nexport OS_AUTH_URL=http://" .
+                     "export OS_TENANT_NAME=openstack\nexport OS_USERNAME=$api_user\n" .
+                     "export OS_PASSWORD=$api_password\nexport OS_AUTH_URL=http://" .
                      $args{novacontroller}->getMasterNode->host->getAdminIface->getIPAddr . ":5000/v2.0/";
 
         $command = 'echo "'. $openrc . '" > /root/openrc.sh && chmod +x /root/openrc.sh';

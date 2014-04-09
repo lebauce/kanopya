@@ -46,11 +46,22 @@ my $log = get_logger("");
 sub api {
     my $self = shift;
 
+    my $api_user = 'admin';
+    my $api_password = 'keystone';
+
+    if (defined $self->api_user) {
+        $api_user = $self->api_user;
+    }
+
+    if (defined $self->api_password) {
+        $api_password = $self->api_password;
+    }
+
     my $credentials = {
         auth => {
             passwordCredentials => {
-                username    => "admin",
-                password    => "keystone"
+                username    => $api_user,
+                password    => $api_password,
             },
             tenantName      => "openstack"
         }

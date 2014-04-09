@@ -74,6 +74,18 @@ __PACKAGE__->table("nova_controller");
   is_foreign_key: 1
   is_nullable: 1
 
+=head2 api_user
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 255
+
+=head2 api_password
+
+  data_type: 'varchar'
+  is_nullable: 1
+  size: 255
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -112,6 +124,10 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 1,
   },
+  "api_user",
+  { data_type => "varchar", is_nullable => 1, size => 255 },
+  "api_password",
+  { data_type => "varchar", is_nullable => 1, size => 255 },
 );
 
 =head1 PRIMARY KEY
