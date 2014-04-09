@@ -18,7 +18,7 @@ use ClassType::ComponentType;
 
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
-    level  => 'INFO',
+    level  => 'DEBUG',
     file   => __FILE__ . '.log',
     layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
@@ -93,7 +93,6 @@ sub main {
         }
     } 'Cluser should be down';
 
-    diag('Check if systemimage have been deleted');
     my @nodes = $cluster->nodes;
     ok(scalar(@nodes) == 0, "The cluster should have no nodes");
 
