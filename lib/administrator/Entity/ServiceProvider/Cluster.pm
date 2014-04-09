@@ -1002,7 +1002,7 @@ sub getNewNodeNumber {
 
     my @current_nodes_number = ();
     for my $host (@nodes) {
-        push @current_nodes_number, $host->getNodeNumber();
+        push @current_nodes_number, $host->node->node_number;
     }
 
     # http://rosettacode.org/wiki/Sort_an_integer_array#Perl
