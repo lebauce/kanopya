@@ -2874,7 +2874,7 @@ sub parseException {
                                                            entry => $1,
                                                            key   => $2);
     }
-    
+
     if ($error =~ m/a foreign key constraint fails \(\`kanopya\`.\`([\w-]*)\`, /) {
         my $dependant = $1;
         
@@ -2895,6 +2895,7 @@ sub parseException {
 
     return Kanopya::Exception::DB->new(error => $error);
 }
+
 
 =pod
 =begin classdoc

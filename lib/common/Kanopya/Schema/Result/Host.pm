@@ -240,7 +240,7 @@ __PACKAGE__->belongs_to(
   "host_manager",
   "Kanopya::Schema::Result::Component",
   { component_id => "host_manager_id" },
-  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
+  { is_deferrable => 1, on_delete => "NO ACTION", on_update => "NO ACTION" },
 );
 
 =head2 hostmodel
@@ -379,8 +379,8 @@ __PACKAGE__->might_have(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-12-17 12:00:32
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9VnbwtjJl4zalAJmGugQwg
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-04-09 18:27:12
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:3Tbc9hdgmEWcB9MM6vaJsg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

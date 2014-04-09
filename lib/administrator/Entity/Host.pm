@@ -537,7 +537,7 @@ sub getModel {
 sub remoteSessionUrl {
     my $self = shift;
 
-   return $self->getHostManager->getRemoteSessionURL(host => $self);
+   return $self->host_manager->getRemoteSessionURL(host => $self);
 }
 
 =pod

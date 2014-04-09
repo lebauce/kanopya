@@ -92,9 +92,11 @@ CREATE TABLE `entity_state` (
 
 CREATE TABLE `service_provider` (
   `service_provider_id` int(8) unsigned NOT NULL,
+  `service_manager_id` int(8) unsigned DEFAULT NULL,
   `service_provider_type_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`service_provider_id`),
   FOREIGN KEY (`service_provider_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`service_manager_id`) REFERENCES `component` (`component_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   FOREIGN KEY (`service_provider_type_id`) REFERENCES `service_provider_type` (`service_provider_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -481,7 +483,7 @@ CREATE TABLE `host` (
   FOREIGN KEY (`hostmodel_id`) REFERENCES `hostmodel` (`hostmodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   FOREIGN KEY (`processormodel_id`) REFERENCES `processormodel` (`processormodel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   FOREIGN KEY (`kernel_id`) REFERENCES `kernel` (`kernel_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  FOREIGN KEY (`host_manager_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`host_manager_id`) REFERENCES `component` (`component_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1013,7 +1015,7 @@ CREATE TABLE `message` (
 
 CREATE TABLE `component` (
   `component_id` int(8) unsigned NOT NULL,
-  `service_provider_id` int(8) unsigned,
+  `service_provider_id` int(8) unsigned DEFAULT NULL,
   `component_type_id` int(8) unsigned NOT NULL,
   `component_template_id` int(8) unsigned DEFAULT NULL,
   `param_preset_id` int(8) unsigned DEFAULT NULL,

@@ -216,7 +216,7 @@ my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
 =begin classdoc
 
 Build the cluster configuration pattern (CCP) from the service template
-and additional params, and call the executor to create the cluster.
+and additional params, and call the service manager to create the cluster.
 
 Example of CCP:
 
@@ -266,12 +266,69 @@ sub create {
 
     General::checkParams(args => \%args, required => [ 'cluster_name', 'owner_id' ]);
 
-    my $kanopya = $class->getKanopyaCluster();
-    $kanopya->getManager(manager_type => 'ExecutionManager')->enqueue(
-        type       => 'AddCluster',
-        params     => $class->buildInstantiationParams(%args),
-        related_id => $kanopya->id
-    );
+    return $class->getKanopyaCluster->getComponent(name => "KanopyaServiceManager")->createService(
+               %{ $class->buildInstantiationParams(%args) }
+           );
+}
+
+sub remove {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { 'keep_systemimages' => 0 });
+
+    return $self->service_manager->removeService(service => $self, %args);
+}
+
+sub forceStop {
+    my ($self, %args) = @_;
+
+    return $self->service_manager->forceStopService(service => $self);
+}
+
+sub activate {
+    my ($self, %args) = @_;
+
+    return $self->service_manager->activateService(service => $self);
+}
+
+sub deactivate {
+    my ($self, %args) = @_;
+
+    return $self->service_manager->deactivateService(service => $self);
+}
+
+sub addNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { 'component_types' => undef });
+
+    return $self->service_manager->addNode(service => $self, %args);
+}
+
+sub removeNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['node_id']);
+
+    return $self->service_manager->removeNode(service => $self, %args);
+}
+
+sub start {
+    my ($self, %args) = @_;
+
+    return $self->service_manager->startService(service => $self);
+}
+
+sub stop {
+    my ($self, %args) = @_;
+
+    return $self->service_manager->stopService(service => $self);
+}
+
+sub reconfigure {
+    my ($self, %args) = @_;
+
+    return $self->service_manager->reconfigureService(service => $self);
 }
 
 sub buildInstantiationParams {
@@ -575,6 +632,7 @@ sub configureOrchestration {
     }
 }
 
+
 sub getNodeHostname {
     my ($self, %args) = @_;
 
@@ -587,6 +645,7 @@ sub getNodeHostname {
 
     return $hostname;
 }
+
 
 sub remove {
     my ($self, %args) = @_;
@@ -892,84 +951,6 @@ sub isLoadBalanced {
 }
 
 
-sub addNode {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, optional => { 'component_types' => undef });
-
-    # Add the component type list to the args if defined
-    my $components_params = {};
-    if (defined $args{component_types}) {
-        $components_params = {
-            component_types => $args{component_types},
-        };
-    }
-
-    my $workflow = $self->getManager(manager_type => 'ExecutionManager')->run(
-        name       => 'AddNode',
-        related_id => $self->id,
-        params     => {
-            context => {
-                cluster => $self,
-            },
-            %$components_params
-        }
-    );
-
-    $workflow->addPerm(consumer => $self->owner, method => 'get');
-    $workflow->addPerm(consumer => $self->owner, method => 'cancel');
-    return $workflow;
-}
-
-sub removeNode {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['node_id']);
-
-    my $host = Node->get(id => $args{node_id})->host;
-    my $workflow = $self->getManager(manager_type => 'ExecutionManager')->run(
-        name       => 'StopNode',
-        related_id => $self->id,
-        params     => {
-            context => {
-                cluster => $self,
-                host    => $host,
-            }
-        }
-    );
-
-    $workflow->addPerm(consumer => $self->owner, method => 'get');
-    $workflow->addPerm(consumer => $self->owner, method => 'cancel');
-    return $workflow;
-}
-
-sub start {
-    my $self = shift;
-
-    # Enqueue operation AddNode.
-    my $workflow = $self->addNode();
-    return $workflow;
-}
-
-sub stop {
-    my $self = shift;
-
-    my $workflow = $self->getManager(manager_type => 'ExecutionManager')->enqueue(
-        type   => 'StopCluster',
-        params => { 
-            context => {
-                cluster => $self,
-            }
-        }
-    );
-
-    $workflow->addPerm(consumer => $self->owner, method => 'get');
-    $workflow->addPerm(consumer => $self->owner, method => 'cancel');
-    return $workflow;
-}
-
 sub getState {
     my $self = shift;
     my $state = $self->cluster_state;
@@ -1221,23 +1202,6 @@ sub unlock {
 
     # Unlock the cluster himself
     $self->SUPER::unlock(%args);
-}
-
-sub reconfigure {
-    my ($self, %args) = @_;
-
-    $args{cluster} = $self;
-    my $workflow = $self->getManager(manager_type => 'ExecutionManager')->enqueue(
-        type   => 'UpdateCluster',
-        params => {
-            context => \%args
-        }
-    );
-
-    $workflow->addPerm(consumer => $self->owner, method => 'get');
-    $workflow->addPerm(consumer => $self->owner, method => 'cancel');
-
-    return $workflow;
 }
 
 sub update {

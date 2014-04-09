@@ -18,7 +18,7 @@
 =pod
 =begin classdoc
 
-Kanopya executor runs workflows and operations
+Execution entity for component KanopyaStackBuilder.
 
 =end classdoc
 =cut

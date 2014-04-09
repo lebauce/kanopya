@@ -15,6 +15,8 @@ use Kanopya::Config;
 my $kanopya = Kanopya::Config::getKanopyaDir;
 
 my @kanopyalibs = ($kanopya . '/lib/administrator',
+                   $kanopya . '/lib/service',
+                   $kanopya . '/lib/deployment',
                    $kanopya . '/lib/common',
                    $kanopya . '/lib/executor',
                    $kanopya . '/lib/external',

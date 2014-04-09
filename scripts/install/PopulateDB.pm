@@ -2,7 +2,14 @@
 # The other way to insert data during setup is Data.sql.tt (pb: id management)
 #
 
-use lib qw(/opt/kanopya/lib/common/ /opt/kanopya/lib/administrator/ /opt/kanopya/lib/executor/ /opt/kanopya/lib/monitor/ /opt/kanopya/lib/orchestrator/ /opt/kanopya/lib/external);
+use lib qw(/opt/kanopya/lib/common/
+           /opt/kanopya/lib/administrator/
+           /opt/kanopya/lib/deployment/
+           /opt/kanopya/lib/service/
+           /opt/kanopya/lib/executor/
+           /opt/kanopya/lib/monitor/
+           /opt/kanopya/lib/orchestrator/
+           /opt/kanopya/lib/external);
 
 use General;
 use Kanopya::Database;
@@ -76,6 +83,7 @@ my @classes = (
     'Entity::Container::NetappVolume',
     'Entity::Container::FileContainer',
     'Entity::Component',
+    'Entity::Component::KanopyaAnomalyDetector',
     'Entity::Component::KanopyaExecutor',
     'Entity::Component::KanopyaFront',
     'Entity::Component::KanopyaAggregator',
@@ -83,7 +91,8 @@ my @classes = (
     'Entity::Component::KanopyaMailNotifier',
     'Entity::Component::KanopyaOpenstackSync',
     'Entity::Component::KanopyaStackBuilder',
-    'Entity::Component::KanopyaAnomalyDetector',
+    'Entity::Component::KanopyaDeploymentManager',
+    'Entity::Component::KanopyaServiceManager',
     'Entity::Component::UcsManager',
     'Entity::Component::Fileimagemanager0',
     'Entity::Component::NetappManager',
@@ -708,6 +717,7 @@ sub registerManagerCategories {
         'HostManager',
         'DiskManager',
         'ExportManager',
+        'DeploymentManager',
         'CollectorManager',
         'NotificationManager',
         'WorkflowManager',
@@ -1144,6 +1154,19 @@ sub registerComponents {
             service_provider_types => [ 'Kanopya', 'Centos6' ],
         },
         {
+            component_name         => 'KanopyaDeploymentManager',
+            component_version      => 0,
+            deployable             => 0,
+            component_categories   => [ 'DeploymentManager' ],
+            service_provider_types => [ 'Kanopya', 'Centos6' ],
+        },
+        {
+            component_name         => 'KanopyaServiceManager',
+            component_version      => 0,
+            deployable             => 0,
+            service_provider_types => [ 'Kanopya', 'Centos6' ],
+        },
+        {
             component_name         => 'KanopyaAggregator',
             component_version      => 0,
             deployable             => 0,
@@ -1537,12 +1560,9 @@ sub registerKanopyaMaster {
         die "Unknown distribution";
     }
 
-    my $components = [
-        {
-            name => 'KanopyaFront'
-        },
-        {
-            name    => 'KanopyaExecutor',
+    my $components = {
+        'KanopyaFront' => {},
+        'KanopyaExecutor' => {
             manager => 'ExecutionManager',
             conf    => {
                 masterimages_directory => $args{masterimages_directory} || "/var/lib/kanopya/masterimages/",
@@ -1550,14 +1570,15 @@ sub registerKanopyaMaster {
                 private_directory      => $args{private_directory} || "/var/lib/kanopya/private/"
             },
         },
-        {
-            name => 'KanopyaOpenstackSync',
-        },
-        {
-            name => 'KanopyaStackBuilder',
-        },
-        {
-            name => 'KanopyaAggregator'
+        'KanopyaDeploymentManager' => {
+            manager => 'DeploymentManager',
+            require => {
+                kanopya_executor => 'KanopyaExecutor',
+                dhcp_component   => 'Dhcpd',
+                tftp_component   => 'Tftpd',
+                system_component => $distro,
+
+            }
         },
         {
             name => 'KanopyaAnomalyDetector'
@@ -1565,41 +1586,35 @@ sub registerKanopyaMaster {
         {
             name => 'KanopyaRulesEngine'
         },
-        {
-            name => 'Lvm',
+        'KanopyaServiceManager' => {
+            require => { kanopya_executor => 'KanopyaExecutor' }
+        },
+        'KanopyaOpenstackSync' => {},
+        'KanopyaStackBuilder' => {},
+        'KanopyaAggregator' => {},
+        'KanopyaRulesEngine' => {},
+        'Lvm' => {
             manager => 'DiskManager'
         },
-        {
-            name => 'Storage'
-        },
-        {
-            name => 'Iscsitarget',
+        'Storage' => {},
+        'Iscsitarget' =>  {
             manager => 'ExportManager'
         },
-        {
-            name => 'Iscsi'
-        },
-        {
-            name => 'Fileimagemanager'
-        },
-        {
-            name => "Dhcpd",
+        'Iscsi' => {},
+        'Fileimagemanager' => {},
+        'Dhcpd' => {
             conf => {
                 dhcpd3_domain_name =>  "hedera-technology.com",
                 dhcpd3_servername  => "node001"
-            }
+            },
         },
-        {
-            name => "Tftpd",
+        'Tftpd' => {
             conf => {
                 tftpd_repository => defined $args{tftp_directory} ? $args{tftp_directory} : "/var/lib/kanopya/tftp/"
             }
         },
-        {
-            name => "Snmpd",
-        },
-        {
-            name => "Nfsd",
+        'Snmpd' => {},
+        'Nfsd' => {
             conf => {
                 nfsd3_need_gssd => 'no',
                 nfsd3_rpcnfsdcount => 8,
@@ -1607,62 +1622,75 @@ sub registerKanopyaMaster {
                 nfsd3_need_svcgssd => 'no'
             }
         },
-        {
-            name => "Syslogng",
-        },
-        {
-            name => "Puppetmaster",
+        'Syslogng' => {},
+        'Puppetmaster' => {
             conf => {
                 puppetmaster2_options => ""
             }
         },
-        {
-            name => "Puppetagent",
+        'Puppetagent' => {
             conf => {
                 puppetagent2_options    => '--no-client',
                 puppetagent2_mode       => "kanopya",
                 puppetagent2_masterfqdn => $hostname . '.' . $args{admin_domainname},
                 puppetagent2_masterip   => $args{poolip_addr}
-            }
+            },
+            require => { puppet_master => 'Puppetmaster' }
         },
-        {
-            name => "Mysql"
-        },
-        {
-            name => "Kanopyacollector",
+        'Mysql' => {},
+        'Kanopyacollector' => {
             manager => 'CollectorManager'
         },
-        {
-            name => "Kanopyaworkflow"
-        },
-        {
-            name => $distro
-        },
-        {
-            name => "KanopyaMailNotifier",
+        'Kanopyaworkflow' => {},
+        'KanopyaMailNotifier' => {
             manager => "NotificationManager",
             conf => {
                 smtp_server => "localhost"
             }
         },
-        {
-            name => "Amqp",
-        },
-        {
-            name => 'Physicalhoster',
+        'Amqp' => {},
+        'Physicalhoster' => {
             manager => 'HostManager'
         },
-        {
-            name => "Openssh",
-        },
-    ];
+        'Openssh' => {},
+        $distro => {},
+    };
 
-    for my $component (@{$components}) {
-        installComponent(cluster => $admin_cluster,
-                         name    => $component->{name},
-                         manager => $component->{manager},
-                         conf    => $component->{conf},
-                         extra   => $component->{extra});
+    # Install components
+    for my $name (keys %{ $components }) {
+        my $component = $components->{$name};
+        if (exists $component->{instance}) {
+            next;
+        }
+
+        # TODO: use recursivity to handle requirements
+        my $conf = $component->{conf};
+        if (defined $component->{require}) {
+            for my $relation (keys $component->{require}) {
+                my $required = $components->{$component->{require}->{$relation}};
+                if (defined $required->{instance}) {
+                    $conf->{$relation} = $required->{instance};
+                }
+                else  {
+                    $conf->{$relation} = installComponent(cluster => $admin_cluster,
+                                                          name    => $component->{require}->{$relation},
+                                                          manager => $required->{manager},
+                                                          conf    => $required->{conf},
+                                                          extra   => $required->{extra});
+                    $components->{$component->{require}->{$relation}}->{instance} = $conf->{$relation};
+                }
+                # WORKAROUND: PuppetAgent require PuppetMaster but do not take it in parameter
+                # TODO: Link PuppetAgent with PuppetMaster in database.
+                if ($name eq 'Puppetagent' && $relation eq 'puppet_master') {
+                    delete $conf->{$relation};
+                }
+            }
+        }
+        $component->{instance} = installComponent(cluster => $admin_cluster,
+                                                  name    => $name,
+                                                  manager => $component->{manager},
+                                                  conf    => $conf,
+                                                  extra   => $component->{extra});
     }
 
     # Create the host for the Kanopya master
@@ -1797,12 +1825,11 @@ sub registerKanopyaMaster {
 
     my $ehost = EEntity->new(entity => $admin_host);
 
-    $admin_host->setAttr(name  => "host_core",
-                         value => $ehost->getTotalCpu);
+    $admin_host->host_core($ehost->getTotalCpu);
+    $admin_host->host_ram($ehost->getTotalMemory);
 
-    $admin_host->setAttr(name  => "host_ram",
-                         value => $ehost->getTotalMemory);
-    $admin_host->save();
+    # Set service manager to the kanopya service
+    $admin_cluster->service_manager($components->{'KanopyaServiceManager'}->{instance});
 
     return $admin_cluster;
 }
@@ -1833,6 +1860,7 @@ sub installComponent {
                                    manager_type => $args{manager},
                                    manager_params => $args{params});
     }
+    return $comp;
 }
 
 sub registerScopes {

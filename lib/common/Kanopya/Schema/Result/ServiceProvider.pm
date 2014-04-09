@@ -46,6 +46,13 @@ __PACKAGE__->table("service_provider");
   is_foreign_key: 1
   is_nullable: 0
 
+=head2 service_manager_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 0
+
 =head2 service_provider_type_id
 
   data_type: 'integer'
@@ -57,6 +64,13 @@ __PACKAGE__->table("service_provider");
 
 __PACKAGE__->add_columns(
   "service_provider_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 0,
+  },
+  "service_manager_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -349,6 +363,21 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 service_manager
+
+Type: belongs_to
+
+Related object: L<Kanopya::Schema::Result::Component>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "service_manager",
+  "Kanopya::Schema::Result::Component",
+  { component_id => "service_manager_id" },
+  { is_deferrable => 1, on_delete => "NO ACTION", on_update => "NO ACTION" },
+);
+
 =head2 service_provider
 
 Type: belongs_to
@@ -440,8 +469,8 @@ Composing rels: L</collects> -> indicatorset
 __PACKAGE__->many_to_many("indicatorsets", "collects", "indicatorset");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:H5gQ9wwOMpcsL/ElxvpwVA
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-04-09 18:27:13
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:estHY/KLaua5xygknq6dQA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
