@@ -54,10 +54,23 @@ sub addHost {
 
     my $dhcp_subnet = Dhcpd3Subnet->findOrCreate(network_id => $subnet->id,
                                                  dhcpd3_id  => $self->id);
-
-    return Dhcpd3Host->findOrCreate(iface_id         => $pxe_iface->id,
-                                    dhcpd3_hosts_pxe => $args{pxe},
-                                    dhcpd3_subnet_id => $dhcp_subnet->id);
+    my $dhcp_host;
+    try {
+        $dhcp_host = Dhcpd3Host->find(
+                         hash => {
+                             iface_id         => $pxe_iface->id,
+                             dhcpd3_subnet_id => $dhcp_subnet->id
+                         }
+                     );
+        $dhcp_host->dhcpd3_hosts_pxe($args{pxe});
+    } 
+    catch (Kanopya::Exception::Internal::NotFound $err) {
+        $dhcp_host = Dhcpd3Host->new(iface_id         => $pxe_iface->id,
+                                     dhcpd3_hosts_pxe => $args{pxe},
+                                     dhcpd3_subnet_id => $dhcp_subnet->id);
+    }
+    
+    return $dhcp_host;
 }
 
 sub removeHost {
