@@ -130,7 +130,7 @@ sub main {
         }
         else {
             ($state = $args{message}) =~ s/^.* //g;
-            $state =~ s/\.\n.*\n.*//g;
+            $state =~ s/\.(.*\n.*)*//g;
         }
 
         # For succeded state, the notification message is about "executed"
