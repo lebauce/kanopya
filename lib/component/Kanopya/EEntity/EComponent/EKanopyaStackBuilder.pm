@@ -329,6 +329,9 @@ sub startStack {
     $hierapassword{adminpassword}->{hieravars}  = [
         'kanopya::openstack::keystone::admin_password'
     ];
+    $hierapassword{admintoken}->{hieravars}  = [
+        'kanopya::openstack::keystone::admin_token'
+    ];
     $hierapassword{glancemysqlpassword}->{hieravars}  = [
         'kanopya::openstack::glance::database_password'
     ];
