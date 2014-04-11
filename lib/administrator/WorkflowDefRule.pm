@@ -15,6 +15,15 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+=begin classdoc
+
+Link between a rule and a workflow def
+Hold the workflow def params for the associated rule
+
+=end classdoc
+=cut
+
 package WorkflowDefRule;
 use base BaseDB;
 
