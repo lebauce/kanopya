@@ -481,7 +481,7 @@ sub startHost {
     # generate image template for the vm and register it
     my $cluster = Entity->get(id => $args{host}->getClusterId());
     my $disk_params = $cluster->getManagerParameters(manager_type => 'DiskManager');
-    my $image = $args{host}->getNodeSystemimage();
+    my $image = $args{host}->node->systemimage;
     my $image_name = $image->systemimage_name;
 
     my $repo = $self->getImageRepository(
@@ -544,11 +544,7 @@ sub stopHost {
     General::checkParams(args => \%args, required => [ 'host' ]);
 
     # retrieve vm info from opennebula
-
     my $hostname = $args{host}->node->node_hostname;
-
-    my $image = $args{host}->getNodeSystemimage();
-
     my $xml = $self->onevm_show(vm_nameorid => $hostname);
 
     # delete the vm
@@ -557,11 +553,11 @@ sub stopHost {
     # delete the vnets
     my @ifaces = $args{host}->getIfaces();
     for my $iface (@ifaces) {
-        my $name = $xml->{NAME}.'-'.$iface->getAttr(name => 'iface_name');
+        my $name = $xml->{NAME}.'-'.$iface->iface_name;
         $self->onevnet_delete(vnet_nameorid => $name);
     }
     # delete the image
-    my $name = $image->getAttr(name => 'systemimage_name');
+    my $name = $args{host}->node->systemimage->systemimage_name;
     $self->oneimage_delete(image_nameorid => $name);
 }
 
@@ -850,7 +846,7 @@ sub generateXenVmTemplate {
     my $kernel_version = $kernel->kernel_version;
 
     my $disk_params = $cluster->getManagerParameters(manager_type => 'DiskManager');
-    my $image = $args{host}->getNodeSystemimage();
+    my $image = $args{host}->node->systemimage;
     my $image_name = $image->systemimage_name;
     my $hostname = $args{host}->node->node_hostname;
 
@@ -961,8 +957,7 @@ sub generateKvmVmTemplate {
                  );
 
     my $disk_params = $cluster->getManagerParameters(manager_type => 'DiskManager');
-    my $image = $args{host}->getNodeSystemimage();
-    my $image_name = $image->systemimage_name;
+    my $image_name = $args{host}->node->systemimage->systemimage_name;
     my $hostname = $args{host}->node->node_hostname;
 
     my %repo = $self->getImageRepository(

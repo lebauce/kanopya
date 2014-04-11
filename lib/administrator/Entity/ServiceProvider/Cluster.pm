@@ -974,11 +974,13 @@ sub setState {
 
     General::checkParams(args => \%args, required => [ 'state' ]);
 
+    # Change the state only if different form current one to do not loose the original state
     my ($state, $timestamp) = $self->getState();
-    $self->setAttr(name => 'cluster_prev_state', value => $state);
-    $self->setAttr(name => 'cluster_state', value => $args{state} . ":" . time);
-    $self->save();
-    $log->debug('Changing cluster <'.$self->cluster_name.'> state from <'.$state.'> to <'.$args{state}.'>');
+    if ($state ne $args{state}) {
+        $self->cluster_prev_state($state);
+        $self->cluster_state($args{state} . ":" . time);
+        $log->debug("Changing cluster <" . $self->cluster_name . "> state from <$state> to <$args{state}>");
+    }
 }
 
 sub restoreState {
@@ -988,8 +990,9 @@ sub restoreState {
     my ($previous, $dummy) = split(/:/,  $self->cluster_prev_state);
     my ($current, $timestamp) = $self->getState();
 
-    $self->setAttr(name => 'cluster_prev_state', value => $current . ":" . $timestamp);
-    $self->setAttr(name => 'cluster_state', value => $previous . ":" . time, save => 1);
+    # Do no set the previous state to the current to avoid consecutive restoreState interchange
+    # state, just restore the original state on time.
+    $self->cluster_state( $previous . ":" . time);
     $log->debug('Restoring cluster <'.$self->cluster_name.'> state from <'.$current.'> to <'.$previous.'>');
 }
 
@@ -1002,7 +1005,7 @@ sub getNewNodeNumber {
 
     my @current_nodes_number = ();
     for my $host (@nodes) {
-        push @current_nodes_number, $host->getNodeNumber();
+        push @current_nodes_number, $host->node->node_number;
     }
 
     # http://rosettacode.org/wiki/Sort_an_integer_array#Perl

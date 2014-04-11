@@ -150,7 +150,7 @@ sub execute {
     }
 
     # Use the first systemimage container access found, as all should access to the same container.
-    my @accesses = $self->{context}->{host}->getNodeSystemimage->container_accesses;
+    my @accesses = $self->{context}->{host}->node->systemimage->container_accesses;
     $self->{context}->{container_access} = EEntity->new(entity => pop @accesses);
 
     # Firstly compute the node configuration

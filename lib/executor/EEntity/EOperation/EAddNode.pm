@@ -119,25 +119,32 @@ sub prepare {
     }
 
     # Check cluster states
+    # TODO: Definitely clean the entity states mechanism
+    my $updating_in_workflow;
     my @entity_states = $self->{context}->{cluster}->entity_states;
-
     for my $entity_state (@entity_states) {
-        throw Kanopya::Exception::Execution::InvalidState(
-                  error => "The cluster <"
-                           .$self->{context}->{host_manager}->service_provider->cluster_name
-                           .'> is <'.$entity_state->state
-                           .'> which is not a correct state to accept addnode'
-              );
+        # The only authorized state is 'updating' by the current workflow, that correspond to
+        # a multi node StartCluster workflow.
+        if ($entity_state->consumer->id == $self->workflow->id && $entity_state->state eq 'updating') {
+            $updating_in_workflow = 1;
+        }
+        else {
+            throw Kanopya::Exception::Execution::InvalidState(
+                      error => "The cluster <"
+                               .$self->{context}->{host_manager}->service_provider->cluster_name
+                               .'> is <'.$entity_state->state
+                               .'> which is not a correct state to accept addnode'
+                  );
+        }
     }
 
     # Check the cluster state
     my ($state, $timestamp) = $self->{context}->{cluster}->reload->getState;
-
-    if (not (($state eq 'up') || ($state eq 'down'))) {
+    if (! ($state eq 'up' || $state eq 'down' || ($state eq 'updating' && $updating_in_workflow))) {
         $log->debug("State is <$state> which is an invalid state");
         throw Kanopya::Exception::Execution::InvalidState(
                   error => "The cluster <" . $self->{context}->{cluster}->cluster_name .
-                           "> has to be <up||down> not <$state>"
+                           "> has to be <up|down|updating (by current workflow only)> not <$state>"
               );
     }
 
@@ -494,7 +501,6 @@ sub cancel {
     else {
         $self->{context}->{cluster}->restoreState();
     }
-
 
     $self->{context}->{cluster}->removeState(consumer => $self->workflow);
 

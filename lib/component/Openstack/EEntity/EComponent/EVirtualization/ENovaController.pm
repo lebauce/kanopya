@@ -460,7 +460,7 @@ sub startHost {
                 'rxtx_factor'                 => 1,
                 'OS-FLV-EXT-DATA:ephemeral'   => 0,
                 'disk'                        => $diskless ?
-                                                 0 : $args{host}->getNodeSystemimage
+                                                 0 : $args{host}->node->systemimage
                                                                 ->getContainer->container_size / 1024 / 1024
             },
         }
@@ -485,7 +485,7 @@ sub startHost {
         my $apiRoute     = $api->compute->servers;
         if ($disk_manager->isa('Entity::Component::Openstack::Cinder')) {
             $isCinder    = 1;
-            my $volumeId = $disk_manager->getVolumeId(container => $args{host}->getNodeSystemimage->getContainer);
+            my $volumeId = $disk_manager->getVolumeId(container => $args{host}->node->systemimage->getContainer);
             $volume      = [
                 {
                     volume_size           => '',
@@ -553,7 +553,7 @@ sub registerSystemImage {
 
     General::checkParams(args => \%args, required => [ 'host', 'cluster' ]);
 
-    my $image = $args{host}->getNodeSystemimage();
+    my $image = $args{host}->node->systemimage;
     my $disk_params = $args{cluster}->getManagerParameters(manager_type => 'DiskManager');
     my $image_name = $image->systemimage_name;
     my $image_type = $disk_params->{image_type};

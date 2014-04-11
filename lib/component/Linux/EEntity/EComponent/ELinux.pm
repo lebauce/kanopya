@@ -649,7 +649,6 @@ sub customizeInitramfs {
 
     my $econtext = $self->_host->getEContext;
     my $initrddir = $args{initrd_dir};
-    my $systemimage = $args{host}->getNodeSystemimage;
     my $ifaces = $args{host}->getIfaces;
     my $hostname = $args{host}->node->node_hostname;
 
@@ -662,7 +661,7 @@ sub customizeInitramfs {
     # TODO check targetname is the same for each container access
     my $portals = [];
     my $target = "";
-    for my $container_access ($systemimage->container_accesses) {
+    for my $container_access ($args{host}->node->systemimage->container_accesses) {
         push @$portals, { ip   => $container_access->container_access_ip,
                           port => $container_access->container_access_port };
         $target = $container_access->container_access_export;

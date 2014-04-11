@@ -164,35 +164,7 @@ sub execute {
 =pod
 =begin classdoc
 
-Add another node if the number of nodes not reach the min node number
-
-=end classdoc
-=cut
-
-sub postrequisites {
-    my ($self, %args)  = @_;
-
-    # Add another node in a embedded workflow if required
-    my @nodes = $self->{context}->{cluster}->nodes;
-    if (scalar(@nodes) < $self->{context}->{cluster}->cluster_min_node) {
-        $self->workflow->enqueueNow(workflow => {
-            name       => 'AddNode',
-            related_id => $self->{context}->{cluster}->id,
-            params     => {
-                context => {
-                    cluster => $self->{context}->{cluster}->_entity,
-                },
-            },
-        });
-    }
-    return 0;
-}
-
-
-=pod
-=begin classdoc
-
-Set the cluster as up.
+Set the cluster as up if all node started, start the other nodes instead.
 
 =end classdoc
 =cut
@@ -209,8 +181,24 @@ sub finish {
         return 0;
     }
 
-    $self->{context}->{cluster}->setState(state => "up");
-    $self->{context}->{cluster}->removeState(consumer => $self->workflow);
+    # Add another node in a embedded workflow if required
+    my @nodes = $self->{context}->{cluster}->nodes;
+    if (scalar(@nodes) < $self->{context}->{cluster}->cluster_min_node) {
+        $self->workflow->enqueueNow(workflow => {
+            name       => 'AddNode',
+            related_id => $self->{context}->{cluster}->id,
+            params     => {
+                context => {
+                    cluster => $self->{context}->{cluster}->_entity,
+                },
+            },
+        });
+    }
+    # Set the cluster up instead
+    else {
+        $self->{context}->{cluster}->setState(state => "up");
+        $self->{context}->{cluster}->removeState(consumer => $self->workflow);
+    }
 
     if (defined $self->{context}->{host_manager_sp}) {
         $self->{context}->{host_manager_sp}->setState(state => 'up');
