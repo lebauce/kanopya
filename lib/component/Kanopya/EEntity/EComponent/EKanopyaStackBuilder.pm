@@ -163,6 +163,9 @@ sub startStack {
                          required => [ 'user', 'workflow', 'stack_id' ],
                          optional => { 'erollback' => undef });
 
+    my $iprange = NetAddr::IP->new($args{iprange});
+    my $ip = $iprange + 253;
+
     # Retrieve the created cluster from name
     # NOTE: the service of a current stack are active
     my @clusters = Entity::ServiceProvider::Cluster->search(hash => {
@@ -240,6 +243,17 @@ sub startStack {
     $components->{novacompute}->{component}->iaas_id(
         $components->{novacontroller}->{component}->id
     );
+
+    my @puppetagents = Entity::Component->search( 
+        hash => {
+            'component_type.component_name' => 'Puppetagent',
+            'service_provider_id'           => \@clusterids,
+        },
+    );
+
+    for my $puppetagent (@puppetagents) {
+        $puppetagent->puppetagent2_masterip($ip->addr());
+    }
 
     $log->info("Creating volume group for cinder volumes.");
 
