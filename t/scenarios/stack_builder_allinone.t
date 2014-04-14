@@ -84,10 +84,7 @@ sub main {
                         component_type => 'Glance',
                         conf => {
                             extra => {
-                                images => {
-                                    'ubuntu-12.04' => 'precise-server-cloudimg-amd64-disk1.img',
-                                    'fedora-20'    => 'Fedora-x86_64-20-20131211.1-sda.qcow2'
-                                }
+                                images => {}
                             }
                         }
                     },
@@ -138,6 +135,38 @@ sub main {
        $build_stack = $builder->buildStack(stack => $stack, owner_id => $customer->id);
        Kanopya::Tools::Execution->executeOne(entity => $build_stack);
     } 'Run workflow BuildStack';
+
+    lives_ok {
+        # Find clusters, and associed files
+        my $controller = Entity::ServiceProvider::Cluster->find(hash => {'service_template.service_name' =>  'PMS AllInOne Controller'});
+
+        my $fqdn = $controller->getNodeHostname(node_number => 1) . '.';
+        $fqdn .= $controller->cluster_domainname;
+
+        my $filename = '/var/lib/kanopya/clusters/override/' . $fqdn . '.yaml';
+
+        if (! -e $filename) {
+            throw Kanopya::Exception (error => 'Hiera yaml file for cluster ' . $controller->cluster_name .
+                                               ', ' . $filename . ', is not found');
+        }
+
+        # Get OS API password :
+        $novacontroller = Entity::Component->find(hash => {
+                                            'component_type.component_name' => 'NovaController',
+                                            'service_provider_id' => $controller->id,
+                                        });
+        if (!defined $novacontroller->api_password) {
+            throw Kanopya::Exception (error => 'API password for cluster' . $controller->cluster_name .
+                                               ' is not defined !');
+        }
+
+        # Test file strings :
+
+
+        # Test somes values on host
+
+
+    }
 
     my $end_stack;
     lives_ok {
