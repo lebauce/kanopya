@@ -159,7 +159,7 @@ sub runWorkflow {
     }
     catch ($err) {
         $log->warn("$err");
-        $workflow->finish();
+        $workflow->cancel();
     }
 
     # Acknowledge the message
