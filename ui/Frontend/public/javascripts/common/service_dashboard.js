@@ -179,6 +179,10 @@ function loadServicesOverview (container_id, elem_id) {
             $('<button>', { 'class' : 'savedashboard', html : 'Save Dashboard'})
             .button({ icons : { primary : 'ui-icon-import' } })
     );
+    action_div.append(
+            $('<button>', { 'class' : 'editlayout', html : 'Edit Layout'})
+            .button({ icons : { primary : 'ui-icon-plusthick' } })
+    );
 
     //service_dashboard.setLayout(undefined);
     //service_dashboard.setLayout('layout2');

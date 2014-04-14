@@ -109,7 +109,17 @@ var mainmenu_def = {
         ],
         'Time periods' : [
             { label : 'Time periods', id : 'timeperiods', onLoad : function(cid, eid) { require('common/limits.js'); timePeriods.load(cid, eid); } }
+        ]
+    },
+    'Regis'    : {
+        'SubRegis1' : [
+            { label : 'SubRegis1-TabRegis1', id : 'subregis1-tabregis1', onLoad : function(cid, eid) { require('common/service_rules.js'); loadServicesRules(cid, kanopya_cluster); }, icon : 'rules' },
+            { label : 'SubRegis1-TabRegis2', id : 'service_details', onLoad : function(cid, eid) { require('KIM/services_details.js'); loadServicesDetails(cid, kanopya_cluster); }, icon : 'search' }
         ],
+        'SubRegis2' : [
+            { label : 'SubRegis2-TabRegis1', id : 'users', onLoad : users.load_content },
+            { label : 'SubRegis2-TabRegis2', id : 'groups', onLoad : function(cid, eid) { require('common/users.js'); groupsList(cid, eid); } }
+        ]
     }
 };
 
