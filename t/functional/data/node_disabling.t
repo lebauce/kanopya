@@ -34,6 +34,7 @@ use Entity::Metric::Clustermetric;
 use Entity::Metric::Combination::AggregateCombination;
 use Entity::Metric::Combination::NodemetricCombination;
 use VerifiedNoderule;
+use Entity::Node;
 
 use Kanopya::Tools::TestUtils 'expectedException';
 
@@ -90,19 +91,19 @@ sub node_disabling {
     );
 
     # Create three nodes
-    my $node1 = Node->new(
+    my $node1 = Entity::Node->new(
         node_hostname => 'test_node_1',
         service_provider_id   => $service_provider->id,
         monitoring_state    => 'up',
     );
 
-    my $node2 = Node->new(
+    my $node2 = Entity::Node->new(
         node_hostname => 'test_node_2',
         service_provider_id   => $service_provider->id,
         monitoring_state    => 'up',
     );
 
-    my $node3 = Node->new(
+    my $node3 = Entity::Node->new(
         node_hostname => 'test_node_3',
         service_provider_id   => $service_provider->id,
         monitoring_state    => 'up',
@@ -138,7 +139,7 @@ sub node_disabling {
         $aggregator->update();
 
         # Reload object to get changes
-        $node3 = Node->get(id => $node3->id);
+        $node3 = Entity::Node->get(id => $node3->id);
         diag('Check disabling node 3');
         if ( $node3->monitoring_state eq 'disabled' ) {
             diag('## disabled');
@@ -156,7 +157,7 @@ sub node_disabling {
         }
 
         $node3->enable();
-        $node3 = Node->get(id => $node3->id);
+        $node3 = Entity::Node->get(id => $node3->id);
         diag('Check enabling node 3');
         if ( $node3->monitoring_state ne 'disabled' ) {
             diag('## enabled');

@@ -64,18 +64,9 @@ sub check {
     my ($self, %args) = @_;
 
     General::checkParams(args     => $self->{context},
-                         required => [ "cluster" ],
+                         required => [ "service_manager", "cluster", "host_manager",
+                                       "disk_manager", "export_manager" ],
                          optional => { "forced_host" => undef });
-
-    # Add the manager to the context
-    # TODO: Probably not the proper place...
-    my $cluster = $self->{context}->{cluster};
-    $self->{context}->{host_manager}
-        = EEntity->new(entity => $cluster->getManager(manager_type => 'HostManager'));
-    $self->{context}->{disk_manager}
-        = EEntity->new(entity => $cluster->getManager(manager_type => 'DiskManager'));
-    $self->{context}->{export_manager}
-        = EEntity->new(entity => $cluster->getManager(manager_type => 'ExportManager'));
 
     # TODO: Move this virtual machine specific code to the host manager
     if ($self->{context}->{host_manager}->hostType eq 'Virtual Machine') {

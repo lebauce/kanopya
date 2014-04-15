@@ -16,9 +16,9 @@ use Kanopya::Exceptions;
 
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
-    level=>'DEBUG',
-    file=>'setup_unmanaged_storage_host.t.log',
-    layout=>'%F %L %p %m%n'
+    level  => 'DEBUG',
+    file   => __FILE__ . '.log',
+    layout => '%F %L %p %m%n'
 });
 
 use Kanopya::Database;
@@ -54,7 +54,15 @@ main();
 sub main {
     if ($testing == 1) {
         Kanopya::Database::beginTransaction;
+
+        Kanopya::Tools::Register->registerHost(board => {
+            ram  => 1073741824,
+            core => 4,
+            serial_number => 0,
+            ifaces => [ { name => 'eth0', pxe => 1, mac => '00:00:00:00:00:00' } ]
+        });
     }
+
 
     diag('Create and configure cluster');
     _create_and_configure_cluster();
@@ -176,6 +184,11 @@ sub _create_and_configure_cluster {
         push @iscsi_portal_ids, $portal->id;
     }
 
+    diag('Retrieve admin NetConf');
+    my $adminnetconf = Entity::Netconf->find(hash => {
+                           netconf_name => "Kanopya admin"
+                       });
+
     diag('Create cluster');
     my $cluster_create = Entity::ServiceProvider::Cluster->create(
         active                 => 1,
@@ -216,6 +229,12 @@ sub _create_and_configure_cluster {
                     lun           => 0
                 }
             },
+        },
+        interfaces => {
+            eth0 => {
+                interface_name => 'eth0',
+                netconfs  => { $adminnetconf->id => $adminnetconf->id },
+            }
         },
     );
     Kanopya::Tools::Execution->executeOne(entity => $cluster_create);

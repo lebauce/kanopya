@@ -61,6 +61,7 @@ sub check {
     my ($self, %args) = @_;
 
     # Check if all required params group are defined
+    General::checkParams(args => $self->{context}, required => [ "service_manager" ]);
     General::checkParams(args => $self->{params}, required => [ "cluster_params", "managers" ]);
 
     # Check required params within cluster params
@@ -98,10 +99,14 @@ sub execute {
               );
     }
 
-    # Cluster creation
-    my $cluster = Entity::ServiceProvider::Cluster->new(%{ $self->{params}->{cluster_params} });
-    $self->{context}->{cluster} = EEntity->new(data => $cluster);
+    # Instantiate the cluster
+    my $cluster = Entity::ServiceProvider::Cluster->new(
+                      service_manager_id => $self->{context}->{service_manager}->id,
+                      %{ $self->{params}->{cluster_params} }
+                  );
 
+    # Execute create on the cluster
+    $self->{context}->{cluster} = EEntity->new(data => $cluster);
     $self->{context}->{cluster}->create(managers        => $self->{params}->{managers},
                                         components      => $self->{params}->{components},
                                         interfaces      => $self->{params}->{interfaces},

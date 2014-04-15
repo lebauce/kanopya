@@ -19,7 +19,7 @@ use strict;
 sub isUp {
     my ($self, %args) = @_;
 
-    General::checkParams( args => \%args, required => [ 'cluster', 'host' ] );
+    General::checkParams( args => \%args, required => [ 'host' ] );
     my $result = $self->SUPER::isUp(%args);
     if($result) {
         my $cmd = "mysqladmin flush-hosts";

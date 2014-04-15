@@ -13,20 +13,22 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=>__FILE__.'.log', layout=>'%F %L %p %m%n'});
 my $log = get_logger("");
 
-    use Kanopya::Database;
-    use Aggregator;
-    use RulesEngine;
-    use Entity::ServiceProvider::Externalcluster;
-    use Entity::Component::MockMonitor;
-    use Entity::Metric::Clustermetric;
-    use Entity::AggregateCondition;
-    use Entity::Rule::AggregateRule;
-    use Entity::Metric::Combination::AggregateCombination;
-    use Entity::Metric::Combination::NodemetricCombination;
-    use Entity::Metric::Nodemetric;
-    use Entity::NodemetricCondition;
-    use Entity::Rule::NodemetricRule;
-    use VerifiedNoderule;
+
+use Kanopya::Database;
+use Aggregator;
+use RulesEngine;
+use Entity::ServiceProvider::Externalcluster;
+use Entity::Component::MockMonitor;
+use Entity::Metric::Clustermetric;
+use Entity::Metric::Nodemetric;
+use Entity::AggregateCondition;
+use Entity::Rule::AggregateRule;
+use Entity::Metric::Combination::AggregateCombination;
+use Entity::Metric::Combination::NodemetricCombination;
+use Entity::NodemetricCondition;
+use Entity::Rule::NodemetricRule;
+use VerifiedNoderule;
+use Entity::Node;
 
 Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
@@ -68,14 +70,14 @@ eval{
     );
 
     # Create node
-    $node = Node->new(
+    $node = Entity::Node->new(
         node_hostname => 'node_1',
         service_provider_id   => $service_provider->id,
         monitoring_state    => 'up',
     );
 
     # Create node
-    $node2 = Node->new(
+    $node2 = Entity::Node->new(
         node_hostname => 'node_2',
         service_provider_id   => $service_provider->id,
         monitoring_state    => 'up',

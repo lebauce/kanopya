@@ -22,15 +22,14 @@ my $log = get_logger("");
 my $errmsg;
 
 # generate configuration files on node
-sub addNode {
+sub configureNode {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => ['cluster','host','mount_point']);
-
-    my $conf = $self->_entity->getConf();
+                         required => [ 'host','mount_point' ]);
 
     # Generation of php.ini
+    my $conf = $self->getConf();
     my $data = { session_handler => $conf->{php5_session_handler},
                  session_path    => $conf->{php5_session_path} };
 
@@ -45,7 +44,6 @@ sub addNode {
     }
     
     my $file = $self->generateNodeFile(
-        cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/php5/apache2/php.ini',
         template_dir  => 'components/php5',

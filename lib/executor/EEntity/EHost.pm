@@ -59,7 +59,7 @@ sub start {
 
     # Sommetimes a host can be promoted to another object type
     # So reload the object to be sure to have the good type.
-    return EEntity->new(data => Entity->get(id => $self->id));
+    return $self->reload;
 }
 
 sub halt {

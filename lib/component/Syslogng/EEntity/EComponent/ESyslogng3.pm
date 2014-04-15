@@ -24,30 +24,18 @@ my $errmsg;
 # generate configuration files on node
 sub configureNode {
     my ($self, %args) = @_;
-    
+
     General::checkParams(args     => \%args,
                          required => [ "host", "mount_point" ]);
 
-    my $data = $self->_entity->getConf();
-        
     $self->generateNodeFile(
-        cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/syslog-ng/syslog-ng.conf',
         template_dir  => "components/syslogng",
         template_file => 'syslog-ng.conf.tt',
-        data          => $data,
+        data          => $self->getConf(),
         mount_point   => $args{mount_point}
     );
-}
-
-sub addNode {
-    my ($self, %args) = @_;
-    
-    General::checkParams(args     => \%args,
-                         required => [ 'host', 'mount_point', 'cluster' ]);
-
-    $self->configureNode(%args);
 
     # add init scripts
     $self->addInitScripts(

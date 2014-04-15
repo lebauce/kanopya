@@ -26,7 +26,6 @@ use Utils::TimeSerieAnalysis;
 use Kanopya::Tools::TimeSerie;
 use Entity::Metric::Combination::AggregateCombination;
 use DataModelSelector;
-use Node;
 use Entity::CollectorIndicator;
 use Entity::Metric::Clustermetric;
 use Entity::Component::MockMonitor;

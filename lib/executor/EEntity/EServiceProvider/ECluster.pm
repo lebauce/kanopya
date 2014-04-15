@@ -122,26 +122,6 @@ sub remove {
 }
 
 
-sub checkComponents {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'host' ]);
-
-    my @components = sort { $a->priority <=> $b->priority } $args{host}->node->components;
-    foreach my $component (@components) {
-        my $component_name = $component->component_type->component_name;
-        $log->debug("Browsing component: " . $component_name);
-
-        my $ecomponent = EEntity->new(entity => $component);
-
-        if (not $ecomponent->isUp(host => $args{host}, cluster => $self)) {
-            $log->info("Component <$component_name> not yet operational on host <" . $args{host}->id .  ">");
-            return 0;
-        }
-    }
-    return 1;
-}
-
 sub postStartNode {
     my ($self, %args) = @_;
 
@@ -159,20 +139,20 @@ sub postStartNode {
     }
 }
 
-sub stopNode {
+sub readyNodeAddition {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
+    # Ask to all cluster component if they are ready for node addition.
     my @components = $self->getComponents(category => "all");
-    $log->info('Processing cluster components configuration for this node');
-
-    foreach my $component (@components) {
-        EEntity->new(data => $component)->stopNode(
-            host    => $args{host},
-            cluster => $self
-        );
+    foreach my $component (map { EEntity->new(entity => $_) } @components) {
+        if (! $component->readyNodeAddition(host_id => $args{host}->id)) {
+            $log->info("Component " . $component->label . " not ready for node addition");
+            return 0;
+        }
     }
+    return 1;
 }
 
 sub readyNodeRemoving {
@@ -182,13 +162,15 @@ sub readyNodeRemoving {
 
     # Ask to all cluster component if they are ready for node addition.
     my @components = $self->getComponents(category => "all");
-    foreach my $component (@components) {
-        if (not EEntity->new(entity => $component)->readyNodeRemoving(host_id => $args{host}->id)) {
+    foreach my $component (map { EEntity->new(entity => $_) } @components) {
+        $log->info("Component " . $component->label . " not ready for node removing");
+        if (! $component->readyNodeRemoving(host_id => $args{host}->id)) {
             return 0;
         }
     }
     return 1;
 }
+
 
 sub postStopNode {
     my ($self, %args) = @_;

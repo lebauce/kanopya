@@ -44,9 +44,9 @@ use Entity::Rule::AggregateRule;
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::TestUtils 'expectedException';
 use Operationtype;
+use Entity::Node;
 
 use TryCatch;
-my $err;
 
 my $testing = 0;
 
@@ -98,7 +98,7 @@ sub sco_workflow_triggered_by_rule {
     push @all_objects, $service_provider;
 
     # Create one node
-    my $node = Node->new(
+    my $node = Entity::Node->new(
         node_hostname => 'test_node',
         service_provider_id   => $service_provider->id,
         monitoring_state    => 'up',

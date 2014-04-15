@@ -105,7 +105,7 @@ CREATE TABLE `service_provider` (
 --
 
 CREATE TABLE `node` (
-  `node_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `node_id` int(8) unsigned NOT NULL,
   `service_provider_id` int(8) unsigned NOT NULL,
   `host_id` int(8) unsigned DEFAULT NULL,
   `node_number` int(8) unsigned NOT NULL,
@@ -115,6 +115,7 @@ CREATE TABLE `node` (
   `node_prev_state` char(32),
   `monitoring_state` char(32) NOT NULL DEFAULT 'enabled',
   PRIMARY KEY (`node_id`),
+  FOREIGN KEY (`node_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`host_id`),
   UNIQUE KEY (`node_hostname`,`service_provider_id`),
   FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,

@@ -28,21 +28,20 @@ Prepare the node removal. Select a node to remove if not defined,
 =cut
 
 package EEntity::EOperation::EPostStopNode;
-use base "EEntity::EOperation";
+use base EEntity::EOperation;
 
 use strict;
 use warnings;
 
-use Log::Log4perl "get_logger";
-use Data::Dumper;
 use Kanopya::Exceptions;
-use Entity::ServiceProvider::Cluster;
-use Entity::Systemimage;
 use EEntity;
+
+use TryCatch;
 use String::Random;
+use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
-my $errmsg;
+
 
 
 =pod
@@ -65,73 +64,6 @@ sub check {
 =pod
 =begin classdoc
 
-Wait for the host shut done properly.
-
-=end classdoc
-=cut
-
-sub prerequisites {
-    my $self  = shift;
-    my %args  = @_;
-
-    # Duration to wait before retrying prerequistes
-    my $delay = 10;
-
-    # Duration to wait for setting host broken
-    my $broken_time = 240;
-
-    my $cluster_id = $self->{context}->{cluster}->id;
-    my $host_id    = $self->{context}->{host}->id;
-
-    # Check how long the host is 'stopping'
-    my @state = $self->{context}->{host}->getState;
-    my $stopping_time = time() - $state[1];
-
-    if($stopping_time > $broken_time) {
-        $self->{context}->{host}->setState(state => 'broken');
-    }
-
-    my $node_ip = $self->{context}->{host}->adminIp;
-    if (not $node_ip) {
-        throw Kanopya::Exception::Internal(error => "Host <$host_id> has no admin ip.");
-    }
-
-    # Instanciate an econtext to try initiating an ssh connexion.
-    eval {
-        $self->{context}->{host}->getEContext;
-
-        # Check if all host components are up.
-        my @components = $self->{context}->{cluster}->getComponents(category => "all");
-        foreach my $component (@components) {
-            my $component_name = $component->component_type->component_name;
-            $log->debug("Browse component: " . $component_name);
-    
-            my $ecomponent = EEntity->new(data => $component);
-    
-            if ($ecomponent->isUp(host => $self->{context}->{host}, cluster => $self->{context}->{cluster})) {
-                $log->debug("Component <$component_name> on host <$host_id> from cluster <$cluster_id> up.");
-                return $delay;
-            }
-        }
-    };
-    if ($@) {
-        $log->debug("Could not connect to host <$host_id> from cluster <$cluster_id> with ip <$node_ip>.");
-    }
-
-    my $result;
-    eval {
-        $result = $self->{context}->{host}->checkUp();
-    };
-    if (not $@ and $result) {
-        return $delay;
-    }
-    return 0;
-}
-
-
-=pod
-=begin classdoc
-
 Configure the cluster component due to the node removal, release user quotas,
 remove the system image if the cluster is non persistent.
 
@@ -140,25 +72,6 @@ remove the system image if the cluster is non persistent.
 
 sub execute {
     my $self = shift;
-
-    # stop the host
-    $self->{context}->{host}->stop();
-    
-    # Instanciate bootserver Cluster and dhcpd component
-    my $bootserver = Entity::ServiceProvider::Cluster->getKanopyaCluster;
-    my $dhcpd = EEntity->new(data => $bootserver->getComponent(name => "Dhcpd", 
-                                                               version => "3"));
-
-    # Remove Host from the dhcp
-    $dhcpd->removeHost(host => $self->{context}->{host});
-    $dhcpd->applyConfiguration();
-
-    my $systemimage_name = $self->{context}->{cluster}->cluster_name;
-    $systemimage_name .= '_' . $self->{context}->{host}->node->node_number;
-    my $systemimage = $self->{context}->{host}->node->systemimage;
-
-    # Finally save the host
-    $self->{context}->{host}->save();
 
     # Update the user quota on ram and cpu
     $self->{context}->{cluster}->owner->releaseQuota(
@@ -173,21 +86,28 @@ sub execute {
     $log->info('Processing cluster components configuration for this node');
     $self->{context}->{cluster}->postStopNode(host => $self->{context}->{host});
 
+    $log->info('Unregister the nodes');
     $self->{context}->{cluster}->unregisterNode(node => $self->{context}->{host}->node);
 
-    # delete the image if persistent policy not set
-    if ($self->{context}->{cluster}->cluster_si_persistent eq '0') {
-        $log->info("cluster image persistence is not set, deleting $systemimage_name");
-        eval {
-            $self->{context}->{systemimage} = EEntity->new(data => $systemimage);
-        };
-        if ($@) {
-            $log->debug("Could not find systemimage with name <$systemimage_name> for removal.");
-        } 
-        $self->{context}->{systemimage}->remove(erollback => $self->{erollback});
+    # Handle the remaning system image of the node
+    try {
+        my $image = EEntity->new(data => $self->{context}->{host}->node->systemimage);
 
-    } else {
-        $log->info("cluster image persistence is set, keeping $systemimage_name image");
+        # Delete the image if persistent policy not set
+        if ($self->{context}->{cluster}->cluster_si_persistent eq '0') {
+            $image->remove(erollback => $self->{erollback});
+
+        } else {
+            $log->info("Cluster image persistence is set, keeping image " . $image->label);
+        }
+    }
+    catch (Kanopya::Exception::Internal::NotFound $err) {
+        $log->warn("Could not find systemimage from node " . $self->{context}->{host}->label .
+                   " for removal.");
+    }
+    catch (Kanopya::Exception::Execution $err) {
+        $log->warn("Unable to remove system image for node ". $self->{context}->{host}->label);
+        $log->error("$err");
     }
 }
 

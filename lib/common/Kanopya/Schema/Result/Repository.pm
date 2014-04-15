@@ -123,36 +123,6 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "NO ACTION", on_update => "NO ACTION" },
 );
 
-=head2 opennebula3_repository
-
-Type: might_have
-
-Related object: L<Kanopya::Schema::Result::Opennebula3Repository>
-
-=cut
-
-__PACKAGE__->might_have(
-  "opennebula3_repository",
-  "Kanopya::Schema::Result::Opennebula3Repository",
-  { "foreign.opennebula3_repository_id" => "self.repository_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 openstack_repository
-
-Type: might_have
-
-Related object: L<Kanopya::Schema::Result::OpenstackRepository>
-
-=cut
-
-__PACKAGE__->might_have(
-  "openstack_repository",
-  "Kanopya::Schema::Result::OpenstackRepository",
-  { "foreign.openstack_repository_id" => "self.repository_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 repository
 
 Type: belongs_to
@@ -168,39 +138,9 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
-=head2 virtualization
 
-Type: belongs_to
-
-Related object: L<Kanopya::Schema::Result::Virtualization>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "virtualization",
-  "Kanopya::Schema::Result::Virtualization",
-  { virtualization_id => "virtualization_id" },
-  { is_deferrable => 1, on_delete => "NO ACTION", on_update => "NO ACTION" },
-);
-
-=head2 vsphere5_repository
-
-Type: might_have
-
-Related object: L<Kanopya::Schema::Result::Vsphere5Repository>
-
-=cut
-
-__PACKAGE__->might_have(
-  "vsphere5_repository",
-  "Kanopya::Schema::Result::Vsphere5Repository",
-  { "foreign.vsphere5_repository_id" => "self.repository_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:RemVIVismTK5YvY2+zoEFg
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-27 11:45:21
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:PP9rv4nfi1+tctqkSfasjw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

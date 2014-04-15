@@ -28,8 +28,10 @@ use base "EManager::EHostManager";
 
 use strict;
 use warnings;
-use Data::Dumper;
 
+use Entity::Node;
+
+use Data::Dumper;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("executor");
@@ -398,7 +400,7 @@ sub checkVMPlacementIntegrity {
     }
 
     my $hypervisor_hostname = $detail->{hypervisor};
-    my $hypervisor_id = Node->find(hash => {node_hostname => $hypervisor_hostname})->host->id;
+    my $hypervisor_id = Entity::Node->find(hash => {node_hostname => $hypervisor_hostname})->host->id;
     my $db_hypervisor = $args{host}->hypervisor;
 
     if (defined $db_hypervisor && ($hypervisor_id == $db_hypervisor->id)) {

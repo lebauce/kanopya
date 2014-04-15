@@ -14,6 +14,7 @@ use Entity::Metric::Clustermetric;
 use Entity::Metric::Combination::AggregateCombination;
 use Entity::Metric::Combination::NodemetricCombination;
 use Kanopya::Tools::TimeSerie;
+use Entity::Node;
 
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({level=>'DEBUG', file=> __FILE__.'.log', layout=>'%F %L %p %m%n'});
@@ -118,14 +119,14 @@ sub setup {
     );
 
     # Create node 1
-    $node_1 = Node->new(
+    $node_1 = Entity::Node->new(
         node_hostname => 'node_1',
         service_provider_id   => $service_provider->id,
         monitoring_state    => 'up',
     );
 
     # Create node 2
-    $node_2 = Node->new(
+    $node_2 = Entity::Node->new(
         node_hostname => 'node_2',
         service_provider_id   => $service_provider->id,
         monitoring_state    => 'up',

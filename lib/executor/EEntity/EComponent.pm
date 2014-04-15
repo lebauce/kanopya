@@ -173,14 +173,15 @@ sub generateNodeFile {
 
 sub generateConfiguration {}
 
-sub addNode {}
-sub stopNode {}
-sub postStartNode {}
-sub preStartNode{}
-sub preStopNode{return 0;}
-sub postStopNode{}
+sub configureNode {}
+
+sub preStartNode {}
 sub readyNodeAddition { return 1; }
+sub postStartNode {}
+
+sub preStopNode {}
 sub readyNodeRemoving { return 1; }
+sub postStopNode {}
 
 sub cleanNode {
     my $self = shift;
@@ -197,8 +198,8 @@ sub cleanNode {
 sub isUp {
     my ($self, %args) = @_;
 
-    General::checkParams( args => \%args, required => [ 'cluster', 'host' ] );
-    
+    General::checkParams( args => \%args, required => [ 'host' ] );
+
     my $availability = 1;
     my $execution_list = $self->_entity->getExecToTest(host => $args{host});
     my $net_conf = $self->_entity->getNetConf();

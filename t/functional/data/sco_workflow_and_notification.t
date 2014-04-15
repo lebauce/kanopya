@@ -25,7 +25,7 @@ use Entity::Component::Sco;
 use Entity::Component::KanopyaMailNotifier;
 use Entity::User;
 use Entity::WorkflowDef;
-
+use Entity::Node;
 use NotificationSubscription;
 use Kanopya::Tools::TestUtils 'expectedException';
 
@@ -426,7 +426,7 @@ sub _create_infra {
                                   manager_id   => $mailNotifier->id);
 
     # Create one node
-    my $node = Node->new(
+    my $node = Entity::Node->new(
         node_hostname => 'test_node',
         service_provider_id   => $service_provider->id,
         monitoring_state    => 'up',

@@ -29,6 +29,7 @@ use Entity::Metric::Clustermetric;
 use Entity::Metric::Combination::AggregateCombination;
 use Entity::Metric::Combination::NodemetricCombination;
 use Kanopya::Tools::TimeSerie;
+use Entity::Node;
 
 use Kanopya::Tools::TestUtils 'expectedException';
 
@@ -659,7 +660,7 @@ sub testBigAggregation {
         my $aggregator          = $args{aggregator};
 
         # Delete all nodes
-        map {$_->delete()} Node->search(hash => {node_hostname => {-like => 'node_%'}});
+        map {$_->delete()} Entity::Node->search(hash => {node_hostname => {-like => 'node_%'}});
 
         # Create nodes
         for my $i (1..$nodes_count) {
@@ -714,7 +715,7 @@ sub testStatisticFunctions {
 
     lives_ok {
         # Delete all nodes
-        map {$_->delete()} Node->search(hash => {node_hostname => {-like => 'node_%'}});
+        map {$_->delete()} Entity::Node->search(hash => {node_hostname => {-like => 'node_%'}});
 
         # Create nodes
         for my $i (0..9) {

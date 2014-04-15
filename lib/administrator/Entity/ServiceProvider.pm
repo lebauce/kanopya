@@ -27,6 +27,7 @@ package Entity::ServiceProvider;
 use base Entity;
 
 use General;
+use Entity::Node;
 use ClassType::ComponentType;
 use ClassType::ServiceProviderType;
 use ComponentCategory::ManagerCategory;
@@ -168,7 +169,7 @@ sub registerNode {
         $log->debug("Node number <$args{number}> computed for node $args{hostname}");
     }
 
-    my $node = Node->new(
+    my $node = Entity::Node->new(
                    service_provider_id => $self->id,
                    node_hostname       => $args{hostname},
                    host_id             => $args{host} ? $args{host}->id : undef,
@@ -275,7 +276,7 @@ sub getNodeMonitoringData {
     General::checkParams(args => \%args, required => [ 'node_id', 'indicator_ids' ]);
 
     my $node_id = delete $args{node_id};
-    return Node->get(id => $node_id)->getMonitoringData(%args);
+    return Entity::Node->get(id => $node_id)->getMonitoringData(%args);
 }
 
 
@@ -292,7 +293,7 @@ sub enableNode {
 
     General::checkParams(args => \%args, required => [ 'node_id' ]);
 
-    return Node->get(id => $args{node_id})->enable();
+    return Entity::Node->get(id => $args{node_id})->enable();
 }
 
 
@@ -309,7 +310,7 @@ sub disableNode {
 
     General::checkParams(args => \%args, required => [ 'node_id' ]);
 
-    return Node->get(id => $args{node_id})->disable();
+    return Entity::Node->get(id => $args{node_id})->disable();
 }
 
 sub getNodesMetrics {}
@@ -333,7 +334,7 @@ sub getManager {
 sub getNodes {
     my ($self, %args) = @_;
 
-    my @nodes = Node->search(hash => {
+    my @nodes = Entity::Node->search(hash => {
                     service_provider_id => $self->id(),
                 });
 
@@ -732,7 +733,7 @@ sub checkBillingLimits {
     my $cluster_metrics = $self->getServiceMetricsValues();
 
     while ((my $metric, $value) = each %{ $args{metrics} }) {
-        $log->info("checking Billing limit for $metric");
+        $log->debug("checking Billing limit for $metric");
 
         my $service_metric_limit = $self->getLimit(type => $metric);
 

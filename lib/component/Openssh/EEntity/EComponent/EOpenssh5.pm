@@ -70,7 +70,7 @@ sub isUp {
     return 1;
 }
 
-sub addNode {
+sub configureNode {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'host', 'mount_point' ]);

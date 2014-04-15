@@ -113,7 +113,14 @@ sub enqueue {
     General::checkParams(args     => \%args,
                          required => [ 'type' ],
                          optional => { 'params'   => {},
-                                       'priority' => 200 });
+                                       'priority' => 200,
+                                       'workflow' => undef });
+
+    # If workflow specified, insert the operation at the current rank of the running workflow
+    my $workflow = delete $args{workflow};
+    if (defined $workflow) {
+        return $workflow->enqueueNow(operation => \%args);
+    }
 
     my $operation = Entity::Operation->enqueue(%args);
 
@@ -171,9 +178,17 @@ sub run {
                          required => [ 'name' ],
                          optional => { 'params'     => undef,
                                        'related_id' => undef,
-                                       'rule_id'    => undef });
+                                       'rule_id'    => undef,
+                                       'workflow'   => undef });
 
-    my $workflow = Entity::Workflow->run(%args);
+    # If workflow specified, insert the embedded workflow
+    # at the current rank of the running workflow
+    my $workflow = delete $args{workflow};
+    if (defined $workflow) {
+        return $workflow->enqueueNow(workflow => \%args);
+    }
+
+    $workflow = Entity::Workflow->run(%args);
 
     # Publish on the 'workflow' queue
     eval {

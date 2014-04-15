@@ -130,6 +130,14 @@ sub new {
 
 Use the executor to run the operation AddCluster.
 
+@param node the node to deploy
+@param systemimage the systemiage to use to deploy the node
+@param boot_mode, the boot mode for the deplyoment
+
+@optional hypervisor the hypervisor to use for virtuals nodes
+@optional kernel_id force the kernel to use
+@optional workflow in which to embed the deployment operation
+
 =end classdoc
 =cut
 
@@ -137,10 +145,23 @@ sub deployNode {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'node', 'systemimage' ],
-                         optional => { 'workflow' => undef });
+                         required => [ 'node', 'systemimage', 'boot_mode' ],
+                         optional => { 'hypervisor' => undef, 'kernel_id' => undef, 'workflow' => undef });
 
-    return $self->kanopya_executor->enqueue(type => 'DeployNode', params => %args);
+    $args{context}->{deployment_manager} = $self;
+    return $self->kanopya_executor->enqueue(
+               type     => 'DeployNode',
+               workflow => $args{workflow},
+               params => {
+                   context => {
+                       deployment_manager => $self,
+                       node               => $args{node},
+                       systemimage        => $args{systemimage},
+                   },
+                   boot_mode => $args{boot_mode},
+                   kernel_id => $args{kernel_id},
+               }
+           );
 }
 
 
@@ -148,6 +169,10 @@ sub deployNode {
 =begin classdoc
 
 Use the executor to run the operation ReleaseNode.
+
+@param node the node to deploy
+
+@optional workflow in which to embed the deployment operation
 
 =end classdoc
 =cut
@@ -159,7 +184,12 @@ sub releaseNode {
                          required => [ 'node' ],
                          optional => { 'workflow' => undef });
 
-    return $self->kanopya_executor->enqueue(type => 'ReleaseNode', params => %args);
+    $args{context}->{deployment_manager} = $self;
+    return $self->kanopya_executor->enqueue(
+               type     => 'ReleaseNode',
+               workflow => $args{workflow},
+               params   => %args
+           );
 }
 
 1;

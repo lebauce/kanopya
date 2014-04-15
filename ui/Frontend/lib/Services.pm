@@ -5,7 +5,7 @@ use Dancer::Plugin::Ajax;
 
 use Log::Log4perl "get_logger";
 
-use Node;
+use Entity::Node;
 
 my $log = get_logger("");
 
@@ -69,7 +69,7 @@ get '/nodes' => sub {
             (defined($params{service_provider_id}))
                 ? { service_provider_id => $params{service_provider_id} }
                 : { };
-        my @nodes        = Node->search(hash => $hash, prefetch => [ 'verified_noderules' ]);
+        my @nodes        = Entity::Node->search(hash => $hash, prefetch => [ 'verified_noderules' ]);
         $result->{page}  = $page;
         $result->{total} = scalar(@nodes);
         $result->{pages} = $result->{total} / $rows;

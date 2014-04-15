@@ -27,7 +27,6 @@ use UserProfile;
 use ComponentTemplate;
 use Indicatorset;
 use Ip;
-use Node;
 use ServiceProviderManager;
 use Lvm2Vg;
 use Lvm2Pv;
@@ -202,7 +201,8 @@ my @classes = (
     'Entity::Component::Ceph::CephOsd',
     'Entity::Tag',
     'Entity::Component::HpcManager',
-    'Entity::ServiceProvider::Hpc7000'
+    'Entity::ServiceProvider::Hpc7000',
+    'Entity::Node'
 );
 
 sub registerKernels {
@@ -686,12 +686,13 @@ sub registerOperations {
         # Workflow AddNode
         [ 'AddNode', 'Preparing a new node for instance "[% cluster ? cluster : "n/a" %]"' ],
         [ 'PreStartNode', 'Configuring node "[% host ? host : "n/a" %]"' ],
-        [ 'StartNode', 'Starting node "[% host ? host : "n/a" %]"' ],
         [ 'PostStartNode', 'Validating node "[% host ? host : "n/a" %]"' ],
         # Workflow StopNode
-        [ 'StopNode', 'Stopping node "[% host ? host : "n/a" %]"' ],
         [ 'PreStopNode', 'Configuring node removal for instance "[% cluster ? cluster : "n/a" %]"' ],
         [ 'PostStopNode', 'Finalizing removing node "[% host ? host : "n/a" %]"' ],
+        # Workflow Deploy/ReleaseNode
+        [ 'DeployNode', 'Deploying node "[% host ? host : "n/a" %]"' ],
+        [ 'ReleaseNode', 'Releasing node "[% host ? host : "n/a" %]"' ],
         # Workflow BuildStack
         [ 'BuildStack', 'Building stack' ],
         [ 'StartStack', 'Starting stack' ],
@@ -1950,7 +1951,6 @@ sub populate_workflow_def {
     # AddNode workflow def
     my $addnode_op_id = Operationtype->find( hash => { operationtype_name => 'AddNode' })->id;
     my $prestart_op_id = Operationtype->find( hash => { operationtype_name => 'PreStartNode' })->id;
-    my $start_op_id = Operationtype->find( hash => { operationtype_name => 'StartNode' })->id;
     my $poststart_op_id = Operationtype->find( hash => { operationtype_name => 'PostStartNode' })->id;
     my $addnode_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'AddNode',
@@ -1965,13 +1965,12 @@ sub populate_workflow_def {
                 delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             }
         },
-        steps => [ $addnode_op_id, $prestart_op_id, $start_op_id, $poststart_op_id ],
+        steps => [ $addnode_op_id, $prestart_op_id, $poststart_op_id ],
         description => "Adding node to instance \"[% cluster %]\""
     );
 
     # StopNode workflow def
     my $prestop_op_id = Operationtype->find( hash => { operationtype_name => 'PreStopNode' })->id;
-    my $stop_op_id = Operationtype->find( hash => { operationtype_name => 'StopNode' })->id;
     my $poststop_op_id = Operationtype->find( hash => { operationtype_name => 'PostStopNode' })->id;
     my $stopnode_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'StopNode',
@@ -1986,7 +1985,7 @@ sub populate_workflow_def {
                 delay => { label => 'Delay', unit => 'seconds', description => $delay_desc},
             }
         },
-        steps => [ $prestop_op_id, $stop_op_id, $poststop_op_id ],
+        steps => [ $prestop_op_id, $poststop_op_id ],
         description => "Removing node \"[% host %]\" from service \"[% cluster %]\""
     );
 

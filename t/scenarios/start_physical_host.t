@@ -32,7 +32,7 @@ use Kanopya::Tools::Create;
 
 use Entity::Systemimage;
 
-my $testing = 0;
+my $testing = 1;
 my $NB_HYPERVISORS = 1;
 
 main();

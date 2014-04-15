@@ -25,6 +25,7 @@ use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
 use DataModelSelector;
 use Utils::TimeSerieAnalysis;
+use Entity::Node;
 
 my $testing = 1;
 my $service_provider;
@@ -289,7 +290,7 @@ sub setup {
     );
 
     # Create node 1
-    $node_1 = Node->new(
+    $node_1 = Entity::Node->new(
                   node_hostname         => 'node_1',
                   service_provider_id   => $service_provider->id,
                   monitoring_state      => 'up',

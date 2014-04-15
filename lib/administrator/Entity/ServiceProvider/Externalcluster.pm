@@ -43,7 +43,7 @@ use Entity::Metric::Clustermetric;
 use Entity::CollectorIndicator;
 use Entity::ServiceProvider::Cluster;
 
-use Node;
+use Entity::Node;
 
 use Log::Log4perl "get_logger";
 use Data::Dumper;
@@ -213,7 +213,7 @@ sub getNodeState {
 
     General::checkParams(args => \%args, required => [ 'hostname' ]);
 
-    return Node->find(hash => { node_hostname => $args{hostname} })->monitoring_state;
+    return Entity::Node->find(hash => { node_hostname => $args{hostname} })->monitoring_state;
 }
 
 sub updateNodeState {
@@ -224,7 +224,7 @@ sub updateNodeState {
     my $state    = $args{state};
     my $host;
 
-    $host = Node->find(hash => {
+    $host = Entity::Node->find(hash => {
                 node_hostname       => $hostname,
                 service_provider_id => $self->id,
             });
@@ -842,7 +842,7 @@ sub removeNode {
 
     General::checkParams(args => \%args, required => ['node_id']);
 
-    my $node = Node->get(id => $args{node_id});
+    my $node = Entity::Node->get(id => $args{node_id});
     $self->unregisterNode(node => $node);
     return;
 }

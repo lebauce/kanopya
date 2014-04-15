@@ -23,8 +23,8 @@ A Node is a started host. It might refers to a started physical computer or a st
 =end classdoc
 =cut
 
-package Node;
-use base 'BaseDB';
+package Entity::Node;
+use base Entity;
 
 use strict;
 use warnings;
@@ -383,6 +383,30 @@ sub puppetManifest {
     }
 
     return $puppetagent->getPuppetDefinitions(node => $self);
+}
+
+
+=pod
+=begin classdoc
+
+Browse the node components to find any loadbalanced one
+
+=end classdoc
+=cut
+
+sub isLoadBalanced {
+    my $self = shift;
+
+    # Search for a potential 'loadbalanced' component
+    my $is_loadbalanced = 0;
+    foreach my $component ($self->components) {
+        my $clusterization_type = $component->getClusterizationType();
+        if ($clusterization_type && ($clusterization_type eq 'loadbalanced')) {
+            $is_loadbalanced = 1;
+            last;
+        }
+    }
+    return $is_loadbalanced;
 }
 
 1;

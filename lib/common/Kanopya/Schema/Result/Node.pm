@@ -43,7 +43,7 @@ __PACKAGE__->table("node");
 
   data_type: 'integer'
   extra: {unsigned => 1}
-  is_auto_increment: 1
+  is_foreign_key: 1
   is_nullable: 0
 
 =head2 service_provider_id
@@ -105,7 +105,7 @@ __PACKAGE__->add_columns(
   {
     data_type => "integer",
     extra => { unsigned => 1 },
-    is_auto_increment => 1,
+    is_foreign_key => 1,
     is_nullable => 0,
   },
   "service_provider_id",
@@ -223,6 +223,21 @@ __PACKAGE__->belongs_to(
   },
 );
 
+=head2 node
+
+Type: belongs_to
+
+Related object: L<Kanopya::Schema::Result::Entity>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "node",
+  "Kanopya::Schema::Result::Entity",
+  { entity_id => "node_id" },
+  { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
+);
+
 =head2 nodemetrics
 
 Type: has_many
@@ -304,8 +319,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-05-30 11:56:37
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:26njX/CXJ6NoA0wl7Q/Rjw
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-27 11:45:21
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:c9avhCuqFC1rwWppCq2nXw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

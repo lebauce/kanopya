@@ -114,36 +114,6 @@ __PACKAGE__->belongs_to(
   },
 );
 
-=head2 opennebula3_vm
-
-Type: might_have
-
-Related object: L<Kanopya::Schema::Result::Opennebula3Vm>
-
-=cut
-
-__PACKAGE__->might_have(
-  "opennebula3_vm",
-  "Kanopya::Schema::Result::Opennebula3Vm",
-  { "foreign.opennebula3_vm_id" => "self.virtual_machine_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 openstack_vm
-
-Type: might_have
-
-Related object: L<Kanopya::Schema::Result::OpenstackVm>
-
-=cut
-
-__PACKAGE__->might_have(
-  "openstack_vm",
-  "Kanopya::Schema::Result::OpenstackVm",
-  { "foreign.openstack_vm_id" => "self.virtual_machine_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 virtual_machine
 
 Type: belongs_to
@@ -159,24 +129,9 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
-=head2 vsphere5_vm
 
-Type: might_have
-
-Related object: L<Kanopya::Schema::Result::Vsphere5Vm>
-
-=cut
-
-__PACKAGE__->might_have(
-  "vsphere5_vm",
-  "Kanopya::Schema::Result::Vsphere5Vm",
-  { "foreign.vsphere5_vm_id" => "self.virtual_machine_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:FoxlqlvznpWAfAosEA4Mpg
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-27 11:45:21
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:05zMiEbBHafldWtRG9ZcGw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

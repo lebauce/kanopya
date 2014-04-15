@@ -24,7 +24,7 @@ use Entity::Component;
 use Entity::Component::ActiveDirectory;
 use Entity::Component::Scom;
 use Entity::Component::Sco;
-use Node;
+use Entity::Node;
 use Entity::Rule::AggregateRule;
 use ServiceProviderManager;
 use Entity::Metric::Combination::AggregateCombination;
@@ -212,7 +212,7 @@ sub importKanopyaData {
         # register node(s)
         if (defined @{ $service_provider->{externalnodes} }) {
             for my $old_externalnode (@{ $service_provider->{externalnodes} }) {
-                my $new_node = Node->new(
+                my $new_node = Entity::Node->new(
                     node_hostname       => $old_externalnode->{externalnode_hostname},
                     node_number         => 0,
                     monitoring_state    => $old_externalnode->{externalnode_state},

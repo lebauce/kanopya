@@ -67,8 +67,8 @@ sub postrequisites {
 
     # Check if all host components are up.
     for my $host (@hosts) {
-        if (not $self->{context}->{cluster}->checkComponents(host => $host)) {
-            throw Kanopya::Exception::Internal("Failed to update " . $host->node->node_hostname);
+        if (not $host->node->checkComponents()) {
+            throw Kanopya::Exception::Internal("Failed to update " . $host->node->label);
         }
 
         $self->{context}->{cluster}->postStartNode(

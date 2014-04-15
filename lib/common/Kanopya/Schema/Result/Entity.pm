@@ -614,6 +614,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 node
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Node>
+
+=cut
+
+__PACKAGE__->might_have(
+  "node",
+  "Kanopya::Schema::Result::Node",
+  { "foreign.node_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 nodemetric_condition
 
 Type: might_have
@@ -940,8 +955,8 @@ Composing rels: L</entity_tags> -> tag
 __PACKAGE__->many_to_many("tags", "entity_tags", "tag");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-04-10 17:45:31
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ZOcscDZaALFbOKJrMcLYnw
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-27 11:45:21
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:elHqtWVRm/Dw7t7gJSTUAQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

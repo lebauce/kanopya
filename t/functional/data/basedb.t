@@ -31,6 +31,11 @@ use Entity::User;
 use General;
 use Lvm2Vg;
 use Kanopya::Database;
+use Entity::Component::Physicalhoster0;
+use ClassType;
+use Entity::Component::KanopyaAggregator;
+use Entity::Node;
+
 
 Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
@@ -111,7 +116,7 @@ sub test_promote_demote {
         }
     } 'Promote ClassType to ClassType::ServiceProviderType';
 
-    my $host = Node->find()->host;
+    my $host = Entity::Node->find()->host;
     my $sp   = Entity::ServiceProvider::Cluster->find();
 
     throws_ok {

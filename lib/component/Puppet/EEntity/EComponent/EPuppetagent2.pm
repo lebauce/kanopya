@@ -25,22 +25,31 @@ use Kanopya::Exceptions;
 my $log = get_logger("");
 my $errmsg;
 
-# generate configuration files on node
+
 sub configureNode {
     my ($self, %args) = @_;
-    General::checkParams(args     => \%args,
-                         required => ['cluster','host','mount_point']);
-    
-    my $conf = $self->_entity->getConf();
+
+    General::checkParams(args => \%args, required => [ 'mount_point', 'host' ]);
+
+    if ($self->puppetagent2_mode eq 'kanopya') {
+        # create, sign and push a puppet certificate on the image
+        $log->info('Puppent agent component configured with kanopya puppet master');
+        my $puppetmaster = EEntity->new(entity => $self->getPuppetMaster);
+
+        $puppetmaster->createHostCertificate(
+            mount_point => $args{mount_point},
+            host_fqdn   => $args{host}->node->fqdn
+        );
+    }
 
     # Generation of /etc/default/puppet
+    my $conf = $self->getConf();
     my $data = { 
         puppetagent2_bootstart => 'yes',
         puppetagent2_options   => $conf->{puppetagent2_options},
     };
     
     my $file = $self->generateNodeFile(
-        cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/default/puppet',
         template_dir  => 'components/puppetagent',
@@ -55,7 +64,6 @@ sub configureNode {
     };
      
     $file = $self->generateNodeFile( 
-        cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/puppet/puppet.conf',
         template_dir  => 'components/puppetagent',
@@ -65,36 +73,12 @@ sub configureNode {
     );
 
     $file = $self->generateNodeFile(
-        cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/puppet/auth.conf',
         template_dir  => 'components/puppetagent',
         template_file => 'auth.conf.tt',
         data          => $data,
         mount_point   => $args{mount_point}
-    );
-}
-
-sub addNode {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'cluster','mount_point', 'host' ]);
-
-    if ($self->puppetagent2_mode eq 'kanopya') {
-        # create, sign and push a puppet certificate on the image
-        $log->info('Puppent agent component configured with kanopya puppet master');
-        my $puppetmaster = EEntity->new(entity => $self->getPuppetMaster);
-
-        $puppetmaster->createHostCertificate(
-            mount_point => $args{mount_point},
-            host_fqdn   => $args{host}->node->fqdn
-        );
-    }
-
-    $self->configureNode(
-        cluster     => $args{cluster},
-        mount_point => $args{mount_point},
-        host        => $args{host}
     );
 
     $self->addInitScripts(
@@ -183,16 +167,16 @@ sub applyConfiguration {
 sub isUp {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
+    my $cluster      = $args{host}->node->service_provider;
     my $puppetmaster = (Entity::ServiceProvider::Cluster->getKanopyaCluster)->getComponent(name => 'Puppetmaster');
     my $econtext     = (EEntity->new(data => $puppetmaster))->getEContext;
 
     my $reconfigure = { };
-    $self->applyConfiguration(cluster => $args{cluster},
-                              host    => $args{host});
+    $self->applyConfiguration(cluster => $cluster, host => $args{host});
 
-    my @components  = $args{cluster}->getComponents(category => "all");
+    my @components  = $cluster->getComponents(category => "all");
     # Sort the components by service provider
     for my $component (@components) {
         my $defs = $component->getPuppetDefinition(%args);
@@ -211,15 +195,15 @@ sub isUp {
 
     # Reconfigure the required components for each cluster
     for my $cluster_id (keys %{$reconfigure}) {
-        my $cluster = $reconfigure->{$cluster_id}->[0]->service_provider;
+        my $toreconfigure = $reconfigure->{$cluster_id}->[0]->service_provider;
         my @tags = map {
                        'kanopya::' . lc($_->component_type->component_name)
                    } @{$reconfigure->{$cluster_id}};
-        EEntity->new(entity => $cluster)->reconfigure(tags => \@tags);
+        EEntity->new(entity => $toreconfigure)->reconfigure(tags => \@tags);
     }
 
     if (scalar (keys %{$reconfigure})) {
-        $self->applyConfiguration(cluster => $args{cluster},
+        $self->applyConfiguration(cluster => $cluster,
                                   host    => $args{host});
     }
 

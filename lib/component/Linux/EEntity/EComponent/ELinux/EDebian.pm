@@ -28,13 +28,13 @@ my $log = get_logger("");
 my $errmsg;
 
 # generate configuration files on node
-sub addNode {
+sub configureNode {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => ['cluster','host','mount_point']);
+                         required => [ 'host', 'mount_point' ]);
 
-    $self->SUPER::addNode(%args);
+    $self->SUPER::configureNode(%args);
 
     my $econtext = $self->_host->getEContext;
     my $grep_result = $econtext->execute(
@@ -83,14 +83,15 @@ sub _writeNetConf {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'cluster', 'host', 'mount_point', 'ifaces' ]);
+                         required => [ 'host', 'mount_point', 'ifaces' ]);
+
+    my $cluster = $args{host}->node->service_provider;
 
     #we ignore the slave interfaces in the case of bonding
     my @ifaces = @{ $args{ifaces} };
-    my $host_params = $args{cluster}->getManagerParameters(manager_type => 'HostManager');
+    my $host_params = $cluster->getManagerParameters(manager_type => 'HostManager');
 
     my $file = $self->generateNodeFile(
-        cluster       => $args{cluster},
         host          => $args{host},
         file          => '/etc/network/interfaces',
         template_dir  => 'internal',
@@ -98,7 +99,7 @@ sub _writeNetConf {
         data          => {
             deploy_on_disk => $host_params->{deploy_on_disk},
             interfaces     => \@ifaces,
-            boot_policy    => $args{cluster}->cluster_boot_policy
+            boot_policy    => $cluster->cluster_boot_policy
         },
         mount_point   => $args{mount_point}
     );
@@ -137,7 +138,7 @@ sub customizeInitramfs {
     my ($self, %args) = @_;
 
     General::checkParams(args     =>\%args,
-                         required => [ 'initrd_dir', 'cluster', 'host' ]);
+                         required => [ 'initrd_dir', 'host' ]);
 
     $self->SUPER::customizeInitramfs(%args);
 

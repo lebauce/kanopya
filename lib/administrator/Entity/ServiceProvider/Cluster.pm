@@ -30,7 +30,7 @@ use strict;
 use warnings;
 
 use General;
-use Node;
+use Entity::Node;
 use Entity::CollectorIndicator;
 use Indicatorset;
 use Collect;
@@ -495,6 +495,12 @@ sub configureManagers {
         $args{managers}->{execution_manager} = { manager_id   => $execution_manager->id,
                                                  manager_type => "ExecutionManager" };
 
+        # Add default deployment manager
+        # TODO: Get from the system policy
+        my $deployment_manager = $kanopya->getComponent(name => "KanopyaDeploymentManager");
+        $args{managers}->{deployment_manager} = { manager_id   => $deployment_manager->id,
+                                                  manager_type => "DeploymentManager" };
+
         for my $manager (values %{$args{managers}}) {
             # Check if the manager is already set, add it otherwise,
             # and set manager parameters if defined.
@@ -775,7 +781,7 @@ sub addComponents {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'nodes', 'component_types' ]);
-    my @nodes = Node->search(hash => { node_id => $args{nodes} });
+    my @nodes = Entity::Node->search(hash => { node_id => $args{nodes} });
     my @component_types = ClassType::ComponentType->search(hash => { component_type_id => $args{component_types} });
 
     for my $component_type (@component_types) {
@@ -919,35 +925,12 @@ sub getHostManager {
     return $self->getManager(manager_type => 'HostManager');
 }
 
-sub getCurrentNodesCount {
-    my $self = shift;
-
-    my @nodes = $self->nodes;
-    return scalar(@nodes);
-}
-
 sub getQoSConstraints {
     my $self = shift;
     my %args = @_;
 
     # TODO retrieve from db (it's currently done by RulesManager, move here)
     return { max_latency => 22, max_abort_rate => 0.3 } ;
-}
-
-sub isLoadBalanced {
-    my $self = shift;
-
-    # Search for a potential 'loadbalanced' component
-    my $is_loadbalanced = 0;
-    my $cluster_components = $self->getComponents(category => "all");
-    foreach my $component (@{ $cluster_components }) {
-        my $clusterization_type = $component->getClusterizationType();
-        if ($clusterization_type && ($clusterization_type eq 'loadbalanced')) {
-            $is_loadbalanced = 1;
-            last;
-        }
-    }
-    return $is_loadbalanced;
 }
 
 

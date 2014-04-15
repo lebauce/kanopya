@@ -37,6 +37,8 @@ use base Entity::Component;
 use strict;
 use warnings;
 
+use Entity::Node;
+
 use TryCatch;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
@@ -58,9 +60,10 @@ Use the executor to run the operation AddCluster.
 sub createService {
     my ($self, %args) = @_;
 
+    $args{context}->{service_manager} = $self;
     return $self->kanopya_executor->enqueue(
                type       => 'AddCluster',
-               params     => %args,
+               params     => \%args,
            );
 }
 
@@ -85,7 +88,8 @@ sub removeService {
                        type   => 'RemoveCluster',
                        params => {
                            context => {
-                               cluster => $args{service},
+                               service_manager => $self,
+                               cluster         => $args{service},
                            },
                            keep_systemimages => $args{keep_systemimages}
                        }
@@ -115,7 +119,8 @@ sub forceStopService {
                        type   => 'ForceStopCluster',
                        params => {
                            context => {
-                               cluster => $args{service},
+                               service_manager => $self,
+                               cluster         => $args{service},
                            }
                        }
                    );
@@ -144,7 +149,8 @@ sub activateService {
                        type   => 'ActivateCluster',
                        params => {
                            context => {
-                               cluster => $args{service},
+                               service_manager => $self,
+                               cluster         => $args{service},
                            }
                        }
                    );
@@ -173,7 +179,8 @@ sub deactivateService {
                        type   => 'DeactivateCluster',
                        params => {
                            context => {
-                               cluster => $args{service},
+                               service_manager => $self,
+                               cluster         => $args{service},
                            }
                        }
                    );
@@ -210,8 +217,11 @@ sub addNode {
                        related_id => $args{service}->id,
                        params     => {
                            context => {
-                               cluster      => $args{service},
-                               host_manager => $args{service}->getManager(manager_type => 'HostManager'),
+                               service_manager => $self,
+                               cluster         => $args{service},
+                               host_manager    => $args{service}->getManager(manager_type => 'HostManager'),
+                               disk_manager    => $args{service}->getManager(manager_type => 'DiskManager'),
+                               export_manager  => $args{service}->getManager(manager_type => 'ExportManager'),
                            },
                            %$components_params
                        }
@@ -241,8 +251,9 @@ sub removeNode {
                        related_id => $args{service}->id,
                        params     => {
                            context => {
-                               cluster => $args{service},
-                               host    => Node->get(id => $args{node_id})->host,
+                               service_manager => $self,
+                               cluster         => $args{service},
+                               host            => Entity::Node->get(id => $args{node_id})->host,
                            },
                        }
                    );
@@ -288,7 +299,8 @@ sub stopService {
                        related_id => $args{service}->id,
                        params     => {
                            context => {
-                               cluster => $args{service},
+                               service_manager => $self,
+                               cluster         => $args{service},
                            },
                        }
                    );
@@ -317,7 +329,8 @@ sub reconfigureService {
                        related_id => $args{service}->id,
                        params     => {
                            context => {
-                               cluster => $args{service},
+                               service_manager => $self,
+                               cluster         => $args{service},
                            },
                        }
                    );

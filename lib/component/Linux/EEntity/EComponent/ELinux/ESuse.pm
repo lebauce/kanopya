@@ -44,7 +44,7 @@ sub _writeNetConf {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'cluster', 'host', 'mount_point', 'ifaces', 'econtext' ]);
+                         required => [ 'host', 'mount_point', 'ifaces', 'econtext' ]);
 
     for my $iface (@{ $args{ifaces} }) {
 
@@ -54,7 +54,6 @@ sub _writeNetConf {
             foreach my $slave (@{ $iface->{slaves} }) {
                 $template_file = 'ifcfg-bonded-slave.tt';
                 my $file = $self->generateNodeFile(
-                    cluster       => $args{cluster},
                     host          => $args{host},
                     file          => '/etc/sysconfig/network/ifcfg-' . $slave->iface_name,
                     template_dir  => 'components/suse',
@@ -70,7 +69,6 @@ sub _writeNetConf {
         }
 
         my $file = $self->generateNodeFile(
-            cluster       => $args{cluster},
             host          => $args{host},
             file          => '/etc/sysconfig/network/ifcfg-' . $iface->{name},
             template_dir  => 'components/suse',
@@ -87,7 +85,6 @@ sub _writeNetConf {
                 $vlan_infos{iface_name} = $iface->{name};
 
                 my $file = $self->generateNodeFile(
-                    cluster       => $args{cluster},
                     host          => $args{host},
                     file          => '/etc/sysconfig/network/ifcfg-' . $vlan_id,
                     template_dir  => 'components/suse',

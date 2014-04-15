@@ -6,7 +6,7 @@ use warnings;
 use Kanopya::Exceptions;
 use Kanopya::Database;
 use General;
-use Node;
+use Entity::Node;
 
 use TryCatch;
 use XML::Simple;
@@ -48,7 +48,7 @@ my $component_name = 'Kanopya' . ucfirst($daemon);
 # Get the node on wich is instaled the component
 my $node;
 try {
-    $node = Node->find(hash => { 'node_hostname' => $hostname });
+    $node = Entity::Node->find(hash => { 'node_hostname' => $hostname });
 }
 catch ($err) {
     print "Unable to find node with hostname <$hostname>:\n$err\n";

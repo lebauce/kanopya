@@ -144,36 +144,6 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
-=head2 keepalived1_vrrpinstance_interfaces
-
-Type: has_many
-
-Related object: L<Kanopya::Schema::Result::Keepalived1Vrrpinstance>
-
-=cut
-
-__PACKAGE__->has_many(
-  "keepalived1_vrrpinstance_interfaces",
-  "Kanopya::Schema::Result::Keepalived1Vrrpinstance",
-  { "foreign.interface_id" => "self.interface_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 keepalived1_vrrpinstance_virtualip_interfaces
-
-Type: has_many
-
-Related object: L<Kanopya::Schema::Result::Keepalived1Vrrpinstance>
-
-=cut
-
-__PACKAGE__->has_many(
-  "keepalived1_vrrpinstance_virtualip_interfaces",
-  "Kanopya::Schema::Result::Keepalived1Vrrpinstance",
-  { "foreign.virtualip_interface_id" => "self.interface_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 netconf_interfaces
 
 Type: has_many
@@ -215,8 +185,8 @@ Composing rels: L</netconf_interfaces> -> netconf
 __PACKAGE__->many_to_many("netconfs", "netconf_interfaces", "netconf");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-01-30 17:59:16
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:AnCnzh0sRqij0YK+t4sFNw
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-27 11:45:21
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:PAZ2OvAyIH5rDGASPocM9g
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

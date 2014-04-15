@@ -30,7 +30,7 @@ use base 'Entity::Rule';
 use strict;
 use warnings;
 
-use Node;
+use Entity::Node;
 use Entity::NodemetricCondition;
 use Entity::ServiceProvider;
 use VerifiedNoderule;
@@ -249,7 +249,7 @@ sub isVerifiedForANode{
     my ($self, %args) = @_;
 
     my $node_id = (defined $args{node_hostname}) ?
-                          Node->find (hash => {node_hostname => $args{node_hostname}})->id :
+                          Entity::Node->find (hash => {node_hostname => $args{node_hostname}})->id :
                           $args{node_id};
 
     my $verified_noderule_state;
@@ -546,7 +546,7 @@ sub manageWorkflows {
             $log->info('Trigger Workflow <' . $workflow_def->id . '>');
 
             # Launch workflow
-            my $workflow = $self->triggerWorkflow(host_name => Node->get(id => $node_id)->node_hostname);
+            my $workflow = $self->triggerWorkflow(host_name => Entity::Node->get(id => $node_id)->node_hostname);
 
             WorkflowNoderule->new(node_id            => $node_id,
                                   nodemetric_rule_id => $self->id,

@@ -68,57 +68,6 @@ sub check {
 =pod
 =begin classdoc
 
-Wait for the to be up.
-
-=end classdoc
-=cut
-
-sub prerequisites {
-    my ($self, %args) = @_;
-
-    # Duration to wait before retrying prerequistes
-    my $delay = 10;
-
-    # Duration to wait for setting host broken
-    my $broken_time = 240;
-
-    my $host_id = $self->{context}->{host}->id;
-
-    # Check how long the host is 'starting'
-    my @state = $self->{context}->{host}->getState;
-    my $starting_time = time() - $state[1];
-    if($starting_time > $broken_time) {
-        $self->{context}->{host}->timeOuted();
-    }
-
-    my $node_ip = $self->{context}->{host}->adminIp;
-    if (not $node_ip) {
-        throw Kanopya::Exception::Internal(error => "Host <$host_id> has no admin ip.");
-    }
-
-    if (! $self->{context}->{host}->checkUp()) {
-        $log->info("Host <$host_id> not yet reachable at <$node_ip>");
-        return $delay;
-    }
-
-    # Check if all host components are up.
-    if (not $self->{context}->{cluster}->checkComponents(host => $self->{context}->{host})) {
-        return $delay;
-    }
-
-    # Node is up
-    $self->{context}->{host}->setState(state => "up");
-    $self->{context}->{host}->setNodeState(state => "in");
-
-    $log->info("Host <$host_id> is 'up'");
-
-    return 0;
-}
-
-
-=pod
-=begin classdoc
-
 Configure the component as the new node is up.
 
 =end classdoc
@@ -138,7 +87,7 @@ sub execute {
                      );
         # And apply the configuration on every node of the cluster
         $eagent->applyConfiguration(cluster => $self->{context}->{cluster},
-                                    tags    => [ "kanopya::operation::poststartnode" ]);
+                                    tags    => [ "kanopya::service::poststartnode" ]);
     };
     if ($@) {
         my $err = $@;

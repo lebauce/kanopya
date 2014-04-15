@@ -81,12 +81,11 @@ sub new {
     $p->port_number(22);
     if (not $p->ping($args{ip}, 2)) {
         $p->close();
-        $errmsg = "EContext::SSH->new : can't contact $args{ip} on port $args{port}";
+        $errmsg = "Can't contact $args{ip} on port $args{port}";
         $log->debug($errmsg);
         throw Kanopya::Exception::Network(error => $errmsg);
     }
     $p->close();
-    $log->debug("Remote econtext ssh instanciate");
 
     bless $self, $class;
     return $self;
@@ -161,7 +160,7 @@ sub execute {
                                          optional => { 'timeout' => $self->{timeout} });
 
     if ($args{command} =~ m/2>/) {
-        $errmsg = "EContext::SSH->execute : command must not contain stderr redirection (2>)!";
+        $errmsg = "Command must not contain stderr redirection (2>)!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
@@ -187,7 +186,7 @@ sub execute {
              $result->{exitcode} = $1;
 
          } else {
-             $errmsg = "EContext::SSH->execute : error occured during execution: ".$error;
+             $errmsg = "Error occured during execution: ".$error;
              $log->error($errmsg);
              throw Kanopya::Exception::Execution(error => $errmsg);
          }
@@ -222,7 +221,7 @@ sub send {
                                                       group => undef });
 
     if (not -e $args{src}) {
-        $errmsg = "EContext::SSH->execute src file $args{src} no found";
+        $errmsg = "Src file $args{src} no found";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
@@ -244,7 +243,7 @@ sub send {
 
     # return TRUE if success
     if (not $success) {
-        $errmsg = "EContext::SSH->send failed while putting $args{src} to $args{dest}!";
+        $errmsg = "Send failed while putting $args{src} to $args{dest}!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
@@ -277,7 +276,7 @@ sub retrieve {
 
     # return TRUE if success
     if (not $success) {
-        $errmsg = "EContext::SSH->retrieve failed while getting $args{src} to $args{dest}!";
+        $errmsg = "Retrieve failed while getting $args{src} to $args{dest}!";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal(error => $errmsg);
     }

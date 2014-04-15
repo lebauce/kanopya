@@ -277,7 +277,7 @@ sub enqueueNow {
 
     Kanopya::Database::beginTransaction;
 
-    my $incr_num = $self->_updatePendingOperationRank( offset => (scalar @$operations_to_enqueue) );
+    my $incr_num = $self->_updatePendingOperationRank(offset => (scalar @$operations_to_enqueue));
 
     my $rank_offset = 0;
     for my $operation_to_enqueue (@$operations_to_enqueue) {
@@ -294,6 +294,13 @@ sub enqueueNow {
     }
 
     Kanopya::Database::commitTransaction;
+
+    if (defined $args{operation}) {
+        return pop @{ $operations_to_enqueue };
+    }
+    else {
+        return $self;
+    }
 }
 
 

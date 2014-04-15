@@ -56,7 +56,6 @@ use Entity::Host::VirtualMachine::Vsphere5Vm;
 use Entity::Host::Hypervisor::Vsphere5Hypervisor;
 use Entity::ContainerAccess;
 use Entity::Host;
-use Node;
 
 use Data::Dumper;
 use Log::Log4perl "get_logger";

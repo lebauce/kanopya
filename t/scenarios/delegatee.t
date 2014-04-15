@@ -22,7 +22,7 @@ my $testing = 1;
 use Kanopya::Database;
 use General;
 
-use Node;
+use Entity::Node;
 use Entity::ServiceProvider;
 use Entity::User::Customer;
 use Entity::Metric::Combination::AggregateCombination;
@@ -72,7 +72,7 @@ sub main {
     # Create a node
     my $adminnode;
     lives_ok {
-        $adminnode = Node->apiCall(
+        $adminnode = Entity::Node->apiCall(
                          method => 'create',
                          params => {
                              service_provider_id => $admincluster->id,
@@ -83,7 +83,7 @@ sub main {
 
     # Retreive, update and remove the node
     lives_ok {
-        Node->apiCall(method => 'get', params => { id => $adminnode->id });
+        Entity::Node->apiCall(method => 'get', params => { id => $adminnode->id });
     } 'Get a node from apiCall as admin';
 
     lives_ok {
@@ -112,7 +112,7 @@ sub main {
     # Create a node
     my $customernode;
     throws_ok {
-        $customernode = Node->apiCall(
+        $customernode = Entity::Node->apiCall(
                             method => 'create',
                             params => {
                                 service_provider_id => $admincluster->id,
@@ -124,7 +124,7 @@ sub main {
 
     # Retreive, update and remove the node
     throws_ok {
-        Node->apiCall(method => 'get', params => { id => $adminnode->id });
+        Entity::Node->apiCall(method => 'get', params => { id => $adminnode->id });
     } 'Kanopya::Exception::Permission::Denied',
       'Get a node from apiCall as customer';
 
@@ -153,7 +153,7 @@ sub main {
 
     # Create a node
     lives_ok {
-        $customernode = Node->apiCall(
+        $customernode = Entity::Node->apiCall(
                             method => 'create',
                             params => {
                                 service_provider_id => $customercluster->id,
@@ -164,7 +164,7 @@ sub main {
 
     # Retreive, update and remove the node
     lives_ok {
-        Node->apiCall(method => 'get', params => { id => $customernode->id });
+        Entity::Node->apiCall(method => 'get', params => { id => $customernode->id });
     } 'Get a node from apiCall as customer';
 
     lives_ok {

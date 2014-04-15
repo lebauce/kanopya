@@ -86,7 +86,7 @@ sub copy {
     # we encounter a kernel crash.
     if ($args{dest}->isa("EEntity::EContainer::EFileContainer")) {
         my $eexport_manager = EEntity->new(
-                                  entity => $args{dest}->container_access->getExportManager
+                                  entity => $args{dest}->container_access->export_manager
                               );
 
         if ($eexport_manager->getEContext->isa("EContext::Local") and

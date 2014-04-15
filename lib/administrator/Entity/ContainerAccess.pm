@@ -142,23 +142,6 @@ sub getContainer {
 =pod
 =begin classdoc
 
-Accessor to get the component that provides the container access.
-
-@return the component instance.
-
-=end classdoc
-=cut
-
-sub getExportManager {
-    my $self = shift;
-
-    return $self->export_manager;
-}
-
-
-=pod
-=begin classdoc
-
 Specific method to specify the attribute to use to display the container access.
 
 @return the label attribute.

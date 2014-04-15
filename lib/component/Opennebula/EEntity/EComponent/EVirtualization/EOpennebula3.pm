@@ -44,18 +44,10 @@ use Entity::Repository::Opennebula3Repository;
 my $log = get_logger("");
 my $errmsg;
 
-sub addNode {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'host', 'mount_point', 'cluster' ]);
-
-    $self->configureNode(%args);
-}
-
 sub configureNode {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster', 'host', 'mount_point' ]);
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point' ]);
 
     my $masternode = $self->getMasterNode;
     my $hypervisor_type = $self->getHypervisorType();
@@ -439,7 +431,7 @@ sub halt {
 sub isUp {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
     my $hostip = $args{host}->adminIp;
     my $masternodeip = $self->getMasterNode->adminIp;

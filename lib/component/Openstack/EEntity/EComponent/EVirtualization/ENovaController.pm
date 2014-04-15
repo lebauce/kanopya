@@ -79,15 +79,6 @@ sub api {
                                config      => $config);
 }
 
-sub addNode {
-    my ($self, %args) = @_;
-
-    General::checkParams(
-        args     => \%args,
-        required => [ 'host', 'mount_point', 'cluster' ]
-    );
-}
-
 sub postStartNode {
     my ($self, %args) = @_;
     
@@ -433,11 +424,15 @@ sub startHost {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'host', 'cluster' ]);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
     if (! defined $args{hypervisor}) {
         throw Kanopya::Exception::Internal(error => "No hypervisor available");
     }
+
+    # Get the cluster from the host as startHost do not take cluster as param any more
+    # TODO: Do not required the host cluster
+    my $cluster = $args{host}->node->service_provider;
 
     my $api = $self->api;
     my $image_id;

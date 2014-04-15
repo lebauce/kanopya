@@ -259,7 +259,7 @@ eval {
         for my $export (reverse @exports) {
             if (not $handlefilecontainer or $export->isa('EEntity::EContainerAccess::EFileContainerAccess')) {
                 lives_ok {
-                    my $eexport_manager = EEntity->new(data => $export->getExportManager);
+                    my $eexport_manager = EEntity->new(data => $export->export_manager);
                     $eexport_manager->removeExport(container_access => $export, econtext => $econtext);
                 } "Remove export $export";
             }

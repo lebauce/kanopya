@@ -18,7 +18,7 @@ use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
 use Entity::Indicator;
 use Entity::CollectorIndicator;
-use Node;
+use Entity::Node;
 use Entity::Metric::Combination::NodemetricCombination;
 use Entity::NodemetricCondition;
 use Entity::Rule::NodemetricRule;
@@ -110,7 +110,7 @@ sub main {
     push @entities, $manager;
 
     # Create one node
-    $node = Node->new(
+    $node = Entity::Node->new(
         node_hostname => 'test_node',
         service_provider_id   => $service_provider->id,
         monitoring_state    => 'up',
@@ -143,13 +143,13 @@ sub main {
 
     push @entities, $m2;
 
-    Node->new(
+    Entity::Node->new(
         node_hostname => 'test_node2_sp1',
         service_provider_id   => $service_provider->id,
         monitoring_state    => 'up',
     );
 
-    Node->new(
+    Entity::Node->new(
         node_hostname => 'test_node1_sp2',
         service_provider_id   => $service_provider2->id,
         monitoring_state    => 'up',

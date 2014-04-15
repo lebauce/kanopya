@@ -22,12 +22,12 @@ use General;
 use Entity;
 use ParamPreset;
 use Kanopya::Tools::TestUtils 'expectedException';
-
+use Entity::Node;
 use Entity::Component::Virtualization::NovaController;
 use OpenstackSync;
 use Kanopya::Tools::Register;
 use Kanopya::Tools::Create;
-use Node;
+
 Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
 my $nova_controller;
@@ -143,7 +143,7 @@ sub test_create_and_delete_vm {
         OpenstackSync->novaNotificationAnalyser(%$message, host_manager => $nova_controller);
 
         expectedException {
-            Node->get(id => $node->id);
+            Entity::Node->get(id => $node->id);
         } 'Kanopya::Exception::Internal::NotFound', 'Node <' .$node->id. '> not deleted';
 
         expectedException {

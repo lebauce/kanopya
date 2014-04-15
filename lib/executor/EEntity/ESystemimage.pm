@@ -100,7 +100,7 @@ sub deactivate {
     $log->info("Remove all container accesses");
     try {
         for my $container_access (map { EEntity->new(data => $_) } $self->container_accesses) {
-            my $export_manager = EEntity->new(data => $container_access->getExportManager);
+            my $export_manager = EEntity->new(data => $container_access->export_manager);
 
             $export_manager->removeExport(container_access => $container_access,
                                           erollback        => $args{erollback});

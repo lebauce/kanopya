@@ -135,21 +135,6 @@ __PACKAGE__->has_many(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 dhcpd3_subnets
-
-Type: has_many
-
-Related object: L<Kanopya::Schema::Result::Dhcpd3Subnet>
-
-=cut
-
-__PACKAGE__->has_many(
-  "dhcpd3_subnets",
-  "Kanopya::Schema::Result::Dhcpd3Subnet",
-  { "foreign.network_id" => "self.network_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 network
 
 Type: belongs_to
@@ -181,8 +166,8 @@ __PACKAGE__->has_many(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:MTqih9+T9jX5xP49VnNkYg
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-27 11:45:21
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ZP8RnOeNJLD1LehMY8jfQQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

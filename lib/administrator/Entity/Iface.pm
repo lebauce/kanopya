@@ -102,7 +102,7 @@ sub assignIp {
                 }
                 $ip->setAttr(name  => 'iface_id', value => $self->id, save => 1);
 
-                $log->debug("Ip " . $ip->ip_addr . " assigned to iface ". $self->iface_name);
+                $log->info("Ip " . $ip->ip_addr . " assigned to iface ". $self->iface_name);
 
                 # TODO: handle multiple ip on one iface.
                 last NETCONFS;

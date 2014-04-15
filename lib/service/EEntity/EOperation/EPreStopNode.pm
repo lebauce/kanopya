@@ -222,17 +222,50 @@ sub execute {
 =pod
 =begin classdoc
 
-Set host state
+Ask to the cluster component if they are ready for th node removal
 
 =end classdoc
 =cut
 
 sub postrequisites {
+    my $self  = shift;
+    my %args  = @_;
+    my $delay = 10;
+
+    if (! $self->{context}->{cluster}->readyNodeRemoving(host => $self->{context}->{host})) {
+        $log->debug("Cluster <" . $self->{context}->{cluster}->label .
+                    "> not ready for node removing, retrying in $delay seconds");
+        return $delay;
+    }
+
+    $log->info("Cluster <" . $self->{context}->{cluster}->label .
+               "> ready for node removing, releasing node.");
+    return 0;
+}
+
+
+=pod
+=begin classdoc
+
+Set host state
+
+=end classdoc
+=cut
+
+sub finish {
     my ($self, %args) = @_;
 
     $self->{context}->{host}->setConsumerState(state => 'stopping', consumer => $self->workflow);
+
+    # Ask to the deployment manager t release the node
+    $self->{context}->{cluster}->getManager(manager_type => 'DeploymentManager')->releaseNode(
+        node     => $self->{context}->{host}->node,
+        workflow => $self->workflow
+    );
+
     return 0;
 }
+
 
 =pod
 =begin classdoc
