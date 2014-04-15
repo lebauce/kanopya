@@ -2,7 +2,19 @@
 
 =head1 SCOPE
 
-TODO
+This test follow theses steps :
+- Get the stackbuiler component,
+- Prepare Kanopya for using it (creates a dedicated user, and add some IP adresses)
+- build a stack with it, with topology "All In One",
+- Start the stack with it,
+- Test existance of Hiera yaml files for password override,
+- Test existance of OS API password in NovaController component,
+- Extract passwords from Hiera override files
+- Test if OS API password from Hiera and NovaController component are the same,
+- Test if Hiera send the sames variables as defined in file,
+- Test if password are correct on node openrc.sh and nova.conf
+- Test connetction to OpenStack API with Kanopya classes
+- And finally stop the stack
 
 =head1 PRE-REQUISITE
 
@@ -19,6 +31,12 @@ use Kanopya::Tools::Register;
 use Entity::ServiceProvider::Cluster;
 use Entity::Network;
 use Entity::User::Customer::StackBuilderCustomer;
+
+use OpenStack::API;
+
+use Data::Dumper;
+
+use YAML qw'LoadFile';
 
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
@@ -46,7 +64,7 @@ sub main {
     `ip addr add $ip/24 dev eth1`;
 
     lives_ok {
-        $masterimage = Kanopya::Tools::Register::registerMasterImage();
+        my $masterimage = Kanopya::Tools::Register::registerMasterImage();
     } 'Register master image';
 
     my $builder;
@@ -144,21 +162,20 @@ sub main {
     } 'Run workflow BuildStack';
 
     lives_ok {
-        # Find clusters, and associed files
+        # Find controller cluster, and associed files
         my $controller = Entity::ServiceProvider::Cluster->find(hash => {'service_template.service_name' =>  'PMS AllInOne Controller'});
 
-        my $fqdn = $controller->getNodeHostname(node_number => 1) . '.';
+        my $host = my $fqdn = $controller->getNodeHostname(node_number => 1) . '.';
         $fqdn .= $controller->cluster_domainname;
 
         my $filename = '/var/lib/kanopya/clusters/override/' . $fqdn . '.yaml';
-
         if (! -e $filename) {
             throw Kanopya::Exception (error => 'Hiera yaml file for cluster ' . $controller->cluster_name .
                                                ', ' . $filename . ', is not found');
         }
 
-        # Get OS API password :
-        $novacontroller = Entity::Component->find(hash => {
+        # Get OS API password
+        my $novacontroller = Entity::Component->find(hash => {
                                             'component_type.component_name' => 'NovaController',
                                             'service_provider_id' => $controller->id,
                                         });
@@ -167,10 +184,86 @@ sub main {
                                                ' is not defined !');
         }
 
-        # Test file strings :
+        # Extract some "tests passwords" from Hiera yaml backend
+        my $hieravars = LoadFile($filename);
 
+        if ($hieravars->{'kanopya::openstack::keystone::admin_password'} ne $novacontroller->api_password || $hieravars->{'kanopya::openstack::nova::controller::keystone_password'} eq '') {
+            throw Kanopya::Exception (error => 'Some variables are badly defined on Hiera files !');
+        }
+
+        # Test Hiera variables
+        my $hiera = `hiera -c /etc/puppet/hiera.yaml 'kanopya::openstack::keystone::admin_password' 'clientcert=$fqdn' 'host=$host' 'cluster=$controller->cluster_name'`;
+        chomp($hiera);
+        my $apipass = quotemeta($novacontroller->api_password);
+        if ($hiera !~ m/$apipass/) {
+            throw Kanopya::Exception (error => 'API password for cluster' . $controller->cluster_name .
+                                               ' is not correct on Hiera !'
+                                     );
+        }
+
+        while ((my $var, my $pass) = each %$hieravars) {
+            my $pass = quotemeta($pass);
+            $hiera = `hiera -c /etc/puppet/hiera.yaml '$var' 'clientcert=$fqdn' 'host=$host' 'cluster=$controller->cluster_name'`;
+            if ($hiera !~ m/$pass/) {
+                throw Kanopya::Exception (error => 'Password ' . $var . ' for cluster' . $controller->cluster_name .
+                                                   ' is not correct in Hiera !'
+                                         )
+            }
+        }
 
         # Test somes values on host
+        my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
+        my $kanopyahost = EEntity->new(data =>  @{$kanopya->getHosts()}[0]);
+        my $controllerhost = EEntity->new(data =>  @{$controller->getHosts()}[0]);
+
+        ## Needed for build a context out of Executor
+        my $context = EContext->new(src_host => $kanopyahost,
+                                    dst_host => $controllerhost,
+                                    key      => '/var/lib/kanopya/private/kanopya_rsa' );
+
+        my $command = 'grep OS_PASSWORD /root/openrc.sh';
+        my $openrcpassword = $context->execute(command => $command);
+        if ($openrcpassword->{stdout} !~ m/$apipass/) {
+            throw Kanopya::Exception (error => 'API password for cluster' . $controller->cluster_name .
+                                               ' is not correct on openrc file');
+        }
+
+        $command = 'grep ^admin_password /etc/nova/nova.conf';
+        my $novakeystonepassword = $context->execute(command => $command);
+        my $novakeystoneonhiera = quotemeta($hieravars->{'kanopya::openstack::nova::controller::keystone_password'});
+        if ($novakeystonepassword->{stdout} !~ m/$novakeystoneonhiera/) {
+            throw Kanopya::Exception (error => 'Nova password on keystone for cluster' . $controller->cluster_name .
+                                               ' is not correct on /etc/nova/nova.conf');
+        }
+
+        # Connect to the OpenStack API and try it
+        my $apicredentials = {
+            auth => {
+                passwordCredentials => {
+                    username    => 'admin',
+                    password    => $apipass,
+                },
+                tenantName      => "openstack"
+            }
+        };
+    
+        my $apiconfig = {
+            verify_ssl => 0,
+            identity => {
+                url     => 'http://'.$fqdn.':5000/v2.0'
+            },
+        };
+    
+        my $api = OpenStack::API->new(credentials => $apicredentials,
+                                      config      => $apiconfig);
+
+        my $response = $api->endpoints;
+        if( ! exists $response->{api}->{config} ||
+                ! keys $response->{api}->{config} ) {
+                throw Kanopya::Exception::Execution::API(
+                        error         => 'Openstack API call returns no endpoints'
+                    )
+        }
 
 
     }
