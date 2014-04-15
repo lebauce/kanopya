@@ -746,36 +746,6 @@ sub getParams {
 =pod
 =begin classdoc
 
-Utility method to search among existing managers in function of
-manager category.
-
-@return a manager list.
-
-=end classdoc
-=cut
-
-sub searchManagers {
-    my $self  = shift;
-    my %args  = @_;
-
-    General::checkParams(args => \%args,
-                         required => [ 'component_category' ],
-                         optional => { 'service_provider_id' => undef });
-
-    my $searchargs = {
-        custom => { category => $args{component_category} }
-    };
-    if (defined $args{service_provider_id}) {
-        $searchargs->{hash}->{service_provider_id} = $args{service_provider_id};
-    }
-
-    return Entity::Component->search(%$searchargs);
-}
-
-
-=pod
-=begin classdoc
-
 Check if the given attr trigger the reload ofattr def
 by setting it to an undef value.
 

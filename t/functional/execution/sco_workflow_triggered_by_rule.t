@@ -29,6 +29,7 @@ use Entity::CollectorIndicator;
 use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
 use Entity::Component::Sco;
+use Entity::Component::KanopyaExecutor;
 use Entity::Workflow;
 use Entity::Operation;
 use Entity::Metric::Combination;
@@ -145,6 +146,7 @@ sub sco_workflow_triggered_by_rule {
 
     my $sco = Entity::Component::Sco->new(
             service_provider_id => $external_cluster_sco->id,
+            executor_component_id => Entity::Component::KanopyaExecutor->find->id
     );
 
     push @all_objects, $sco;
@@ -372,14 +374,11 @@ sub sco_workflow_triggered_by_rule {
         $node_workflow = Entity::Workflow->find(hash=>{
             workflow_id => $node_workflow->id,
             state => 'done',
-            related_id => $service_provider->id,
         });
 
         diag('Check if service workflow is done');
         $service_workflow = Entity::Workflow->find(hash=>{
             workflow_id => $service_workflow->id,
-            state => 'done',
-            related_id => $service_provider->id,
         });
 
         # Modify node rule2 to avoid a new triggering

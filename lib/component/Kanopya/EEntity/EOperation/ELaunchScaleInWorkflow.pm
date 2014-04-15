@@ -66,8 +66,6 @@ sub execute{
     delete $self->{params}->{scalein_value};
     delete $self->{params}->{scalein_type};
 
-    my $cluster_id = $self->{context}->{host}->getClusterId();
-
     my $cm = CapacityManagement->new(
                  cloud_manager => $self->{context}->{cloudmanager_comp},
              );

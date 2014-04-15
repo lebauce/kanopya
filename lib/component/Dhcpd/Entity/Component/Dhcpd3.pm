@@ -21,7 +21,6 @@ use warnings;
 
 use General;
 use Kanopya::Exceptions;
-use Entity::ServiceProvider::Cluster;
 use Dhcpd3Host;
 use Dhcpd3Subnet;
 
@@ -42,7 +41,6 @@ sub addHost {
     General::checkParams(args => \%args, required => [ 'host' ],
                                          optional => { pxe => 0 });
 
-    my $cluster = $args{host}->node->service_provider;
     my $pxe_iface = $args{host}->getPXEIface;
     my $subnet = ($pxe_iface->networks)[0];
     if (! defined $subnet) {
@@ -103,15 +101,24 @@ sub getNetConf {
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
 
-    my $cluster = $self->service_provider;
-    my $pxeserver = $cluster->getComponent(category => "Tftpserver");
-    my $ip = $pxeserver->getAccessIp(service => 'tftp');
+    General::checkParams(args => \%args, required => [ 'host' ]);
+
+    # Search tftp server on the master node of dhcp
+    my $ip;
+    try {
+        my $pxeserver = $self->getMasterNode->getComponent(category => "Tftpserver");
+        $ip = $pxeserver->getAccessIp(service => 'tftp');
+    }
+    catch {
+        # No tftp server coupled with dhcp
+    }
+
     my @interfaces = map { $_->iface_name } $args{host}->getIfaces();
     my $hosts = {};
     my $pools = {};
 
+    my $system = $self->getMasterNode->getComponent(category => "System");
     for my $dhcp_subnet ($self->dhcpd3_subnets) {
         my $subnet = $dhcp_subnet->network;
         my $addr = NetAddr::IP->new($subnet->network_addr, $subnet->network_netmask);
@@ -134,9 +141,9 @@ sub getPuppetDefinition {
                 my $host = $iface->host;
 
                 my $gateway = undef;
-                if (defined $args{cluster}->default_gateway) {
-                    if ($iface->getPoolip->network->id == $args{cluster}->default_gateway->id) {
-                        $gateway = $args{cluster}->default_gateway->network_gateway;
+                if (defined $system->default_gateway) {
+                    if ($iface->getPoolip->network->id == $system->default_gateway->id) {
+                        $gateway = $system->default_gateway->network_gateway;
                     }
                 }
 
@@ -144,9 +151,11 @@ sub getPuppetDefinition {
                     mac => $iface->iface_mac_addr,
                     ip  => $iface->getIPAddr,
                     tag => 'kanopya::dhcpd',
-                    $dhcp_host->dhcpd3_hosts_pxe ? (pxeserver => $ip, pxefilename => "pxelinux.0")
-                                                 : ()
                 };
+                if ($dhcp_host->dhcpd3_hosts_pxe && $ip) {
+                    $hosts->{$host->node->node_hostname}->{pxeserver} = $ip;
+                    $hosts->{$host->node->node_hostname}->{pxefilename} = "pxelinux.0",
+                }
             }
             catch ($err) {
                 $log->error("Unable to handle dhcp for dhcp_host:\n$err");
@@ -162,10 +171,9 @@ sub getPuppetDefinition {
                     interfaces => \@interfaces,
                     # pxeserver => $ip,
                     # pxefilename => 'pxelinux.0',
-                    ntpservers => [ $ip ],
-                    dnsdomain => [ $cluster->cluster_domainname ],
-                    nameservers => [ $cluster->cluster_nameserver1,
-                                     $cluster->cluster_nameserver2 ],
+                    ntpservers  => $ip ? [ $ip ] : [],
+                    dnsdomain   => [ $system->domainname ],
+                    nameservers => [ $system->nameserver1, $system->nameserver2 ],
                     hosts => $hosts,
                     pools => $pools,
                 }
@@ -174,15 +182,39 @@ sub getPuppetDefinition {
     } );
 }
 
+=pod
+=begin classdoc
+
+Override the parent method to add a workaround for the Kanopya master
+to know all the hosts.
+
+=end classdoc
+=cut
+
 sub getHostsEntries {
-    my $self = shift;
+    my ($self, %args) = @_;
 
-    my @entries;
-    for my $cluster (Entity::ServiceProvider::Cluster->search()) {
-        @entries = (@entries, $cluster->getHostEntries());
+    General::checkParams(args => \%args, optional => { "dependencies" => 0 });
+
+    # Add the host entry for all nodes
+    my $entries = {};
+    for my $node (Entity::Node->search()) {
+        my $adminip = $node->adminIp;
+        my $system = $node->getComponent(category => "System");
+        if (! defined $adminip) {
+            $log->warn("Skipping node <" .  $node->label . "> as it has not admin ip.");
+            next;
+        }
+        $entries->{$adminip} = {
+            fqdn    => $node->fqdn,
+            # Use a hash to store aliases as Hash::Marge module do not merge arrays
+            aliases => {
+                'hostname.domainname' => $node->node_hostname . "." . $system->domainname,
+                'hostname'            => $node->node_hostname,
+            },
+        };
     }
-
-    return \@entries;
+    return $entries;
 }
 
 1;

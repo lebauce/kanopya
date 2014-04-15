@@ -63,7 +63,7 @@ sub main {
         $cluster = Kanopya::Tools::Create->createCluster(
                        cluster_name => "default_cluster_name",
                        cluster_conf => {
-                           cluster_min_node => 2,
+                           cluster_max_node => 2,
                            masterimage_id   => $masterimage->id,
                        },
                    );
@@ -82,9 +82,13 @@ sub main {
     }
 
     diag('Start physical host that should fail');
-    throws_ok {
+    lives_ok {
         Kanopya::Tools::Execution->startCluster(cluster => $cluster);
-    } 'Kanopya::Exception::Internal', 'Start cluster';
+    } 'Start first node';
+
+    throws_ok {
+        Kanopya::Tools::Execution->addNode(cluster => $cluster);
+    } 'Kanopya::Exception::Internal', 'Start second node';
 
     lives_ok {
         my ($state, $timestamp) = $cluster->reload->getState();

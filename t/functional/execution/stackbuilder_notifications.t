@@ -19,6 +19,7 @@ use Kanopya::Tools::Execution;
 use EEntity;
 use Entity::User::Customer::StackBuilderCustomer;
 use Entity::Component::KanopyaStackBuilder;
+use Entity::Component::KanopyaExecutor;
 use Entity::Operation;
 use Entity::Operationtype;
 use NotificationSubscription;
@@ -116,7 +117,8 @@ sub main {
                             },
                             stack_id => $stackid,
                             admin_password => $admin_password
-                        }
+                        },
+                        workflow_manager => Entity::Component::KanopyaExecutor->find
                     ));
 
     my $message =  EEntity->new(entity => $customer)->notificationMessage(operation  => $operation,

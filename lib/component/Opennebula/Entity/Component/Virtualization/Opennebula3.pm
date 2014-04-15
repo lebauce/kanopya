@@ -51,6 +51,14 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
+    executor_component_id => {
+        label        => 'Workflow manager',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^[0-9\.]*$',
+        is_mandatory => 1,
+        is_editable  => 0,
+    },
     install_dir => {
         label        => 'Installation directory',
         type         => 'string',
@@ -185,18 +193,23 @@ sub checkScaleMemory {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    my $node = $args{host}->node;
+    # NOTE: We can not use the monitoring library it require the service api
+    # TODO: Remove dependency of the monitoring api on the service api
 
-    my $indicator_oid = 'XenTotalMemory'; # Memory Total
-    my $indicator_id  = Indicator->find(hash => { 'indicator_oid'  => $indicator_oid })->id();
+    throw Kanopya::Exception::NotImplemented();
 
-    my $raw_data = $node->getMonitoringData(raw => 1, time_span => 600, indicator_ids => [$indicator_id]);
+    # my $node = $args{host}->node;
 
-    $log->info(Dumper $raw_data);
-    my $ram_current = pop @{$raw_data->{$indicator_oid}};
-    my $ram_before  = pop @{$raw_data->{$indicator_oid}};
+    # my $indicator_oid = 'XenTotalMemory'; # Memory Total
+    # my $indicator_id  = Indicator->find(hash => { 'indicator_oid'  => $indicator_oid })->id();
 
-    return { ram_current => $ram_current, ram_before => $ram_before };
+    # my $raw_data = $node->getMonitoringData(raw => 1, time_span => 600, indicator_ids => [$indicator_id]);
+
+    # $log->info(Dumper $raw_data);
+    # my $ram_current = pop @{$raw_data->{$indicator_oid}};
+    # my $ram_before  = pop @{$raw_data->{$indicator_oid}};
+
+    # return { ram_current => $ram_current, ram_before => $ram_before };
 }
 
 
@@ -335,21 +348,19 @@ sub needBridge {
     return 1;
 }
 
-sub getHostsEntries {
-    my $self = shift;
-    my @hosts_entries = ();
 
-    for my $vmm ($self->vmms) {
-        foreach my $host ($vmm->service_provider->getHosts()) {
-            push @hosts_entries, {
-                fqdn    => $host->node->fqdn,
-                aliases => [ $host->node->node_hostname ],
-                ip      => $host->adminIp
-            };
-        }
-    }
+=pod
+=begin classdoc
 
-    return \@hosts_entries;
+Opennebula depends on its virtual machines managers.
+
+=end classdoc
+=cut
+
+sub getDependentComponents {
+    my ($self, %args) = @_;
+
+    return $self->vmms;
 }
 
 sub getTemplateDataOned {
@@ -420,7 +431,9 @@ sub addVM {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ 'hypervisor', 'host', 'id' ]);
+    General::checkParams(args     => \%args,
+                         required => [ 'hypervisor', 'host', 'id' ],
+                         optional => { 'max_core' => undef });
 
     my $vmtype  = 'Entity::Host::VirtualMachine::Opennebula3Vm';
     if ($self->hypervisor eq 'kvm') {
@@ -434,11 +447,8 @@ sub addVM {
                        );
 
     if ($self->hypervisor eq 'kvm') {
-        my $cluster = Entity->get(id => $args{host}->getClusterId());
-        my $host_params = $cluster->getManagerParameters(manager_type => 'HostManager');
-
         $opennebulavm->setAttr(name => 'opennebula3_kvm_vm_cores',
-                               value => $host_params->{max_core} || $args{host}->host_core);
+                               value => $args{max_core} || $args{host}->host_core);
 
     }
     $opennebulavm->setAttr(name => 'hypervisor_id', value => $args{hypervisor}->id);

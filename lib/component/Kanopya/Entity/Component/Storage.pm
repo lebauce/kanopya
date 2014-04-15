@@ -24,6 +24,7 @@ use warnings;
 
 use Kanopya::Exceptions;
 
+use TryCatch;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
@@ -31,6 +32,14 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
+    executor_component_id => {
+        label        => 'Workflow manager',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^[0-9\.]*$',
+        is_mandatory => 1,
+        is_editable  => 0,
+    },
     disk_type => {
         is_virtual => 1
     }
@@ -48,7 +57,12 @@ sub getExportManagers {
     my $self = shift;
     my %args = @_;
 
-    return [ $self->service_provider->getComponent(name => "Iscsi") ];
+    try {
+        return [ $self->getMasterNode->getComponent(name => "Iscsi") ];
+    }
+    catch ($err) {
+        return $self->SUPER::getExportManagers(%args);
+    }
 }
 
 sub getReadOnlyParameter {
@@ -74,7 +88,7 @@ sub getExportManagerFromBootPolicy {
     General::checkParams(args => \%args, required => [ "boot_policy" ]);
 
     if ($args{boot_policy} eq Manager::HostManager->BOOT_POLICIES->{root_iscsi}) {
-        return $self->service_provider->getComponent(name => "Iscsi");
+        return $self->getMasterNode->getComponent(name => "Iscsi");
     }
 
     throw Kanopya::Exception::Internal::UnknownCategory(
@@ -88,7 +102,7 @@ sub getBootPolicyFromExportManager {
 
     General::checkParams(args => \%args, required => [ "export_manager" ]);
 
-    if ($args{export_manager}->id == $self->service_provider->getComponent(name => "Iscsi")->id) {
+    if ($args{export_manager}->id == $self->getMasterNode->getComponent(name => "Iscsi")->id) {
         return Manager::HostManager->BOOT_POLICIES->{root_iscsi};
     }
 

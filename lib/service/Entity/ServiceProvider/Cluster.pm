@@ -46,15 +46,18 @@ use Entity::Billinglimit;
 use ClassType::ComponentType;
 use Manager::HostManager;
 use Kanopya::Config;
+use Entity::Rule::NodemetricRule;
+use VerifiedNoderule;
 
 use Data::Dumper;
 use Hash::Merge;
+use TryCatch;
 use DateTime;
 
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
-my $errmsg;
+
 
 use constant ATTR_DEF => {
     cluster_name => {
@@ -128,6 +131,7 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_editable  => 1
     },
+
     cluster_basehostname => {
         label        => 'Base host name',
         pattern      => '^[a-z0-9-]*$',
@@ -443,6 +447,19 @@ sub applyPolicies {
             if ($args{update}) { next; }
 
             for my $component (values %$value) {
+                # If installing the system component, set the required configuration from cluster definition
+                my $componenttype = ClassType::ComponentType->get(id => $component->{component_type});
+                if ($componenttype->hasCategory(category => "System")) {
+                    $component->{component_configuration}->{owner_id} = $self->owner_id;
+                    $component->{component_configuration}->{domainname} = $self->cluster_domainname;
+                    $component->{component_configuration}->{nameserver1} = $self->cluster_nameserver1;
+                    $component->{component_configuration}->{nameserver2} = $self->cluster_nameserver2;
+                    $component->{component_configuration}->{default_gateway_id} = $self->default_gateway_id;
+                }
+                # Give ref to the executor user by the service manager itself
+                $component->{component_configuration}->{executor_component}
+                    = $self->service_manager->executor_component;
+
                 # TODO: Check if the component is already installed
                 $self->addComponent(
                     component_type_id             => $component->{component_type},
@@ -489,11 +506,6 @@ sub configureManagers {
         my $collector_manager = $kanopya->getComponent(name => "Kanopyacollector", version => "1");
         $args{managers}->{collector_manager} = { manager_id   => $collector_manager->id,
                                                  manager_type => "CollectorManager" };
-
-        # Add default execution manager
-        my $execution_manager = $kanopya->getComponent(name => "KanopyaExecutor");
-        $args{managers}->{execution_manager} = { manager_id   => $execution_manager->id,
-                                                 manager_type => "ExecutionManager" };
 
         # Add default deployment manager
         # TODO: Get from the system policy
@@ -653,81 +665,6 @@ sub getNodeHostname {
 }
 
 
-sub remove {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, optional => { 'keep_systemimages' => 0 });
-
-    $log->debug("New Operation Remove Cluster with cluster id : " .  $self->id);
-    my $workflow = $self->getManager(manager_type => 'ExecutionManager')->enqueue(
-        type   => 'RemoveCluster',
-        params => { 
-            context => {
-                cluster => $self,
-            },
-            keep_systemimages => $args{keep_systemimages}
-        }
-    );
-
-    $workflow->addPerm(consumer => $self->owner, method => 'get');
-    $workflow->addPerm(consumer => $self->owner, method => 'cancel');
-    return $workflow;
-}
-
-sub forceStop {
-    my $self = shift;
-
-    $log->debug("New Operation Force Stop Cluster with cluster: " . $self->id);
-    my $workflow = $self->getManager(manager_type => 'ExecutionManager')->enqueue(
-        type   => 'ForceStopCluster',
-        params => { 
-            context => {
-                cluster => $self,
-            }
-        }
-    );
-
-    $workflow->addPerm(consumer => $self->owner, method => 'get');
-    $workflow->addPerm(consumer => $self->owner, method => 'cancel');
-    return $workflow;
-}
-
-sub activate {
-    my $self = shift;
-
-    $log->debug("New Operation ActivateCluster with cluster_id : " . $self->id);
-    my $workflow = $self->getManager(manager_type => 'ExecutionManager')->enqueue(
-        type   => 'ActivateCluster',
-        params => { 
-            context => {
-                cluster => $self,
-            }
-        }
-    );
-
-    $workflow->addPerm(consumer => $self->owner, method => 'get');
-    $workflow->addPerm(consumer => $self->owner, method => 'cancel');
-    return $workflow;
-}
-
-sub deactivate {
-    my $self = shift;
-
-    $log->debug("New Operation DeactivateCluster with cluster_id : " . $self->id);
-    my $workflow = $self->getManager(manager_type => 'ExecutionManager')->enqueue(
-        type   => 'DeactivateCluster',
-        params => { 
-            context => {
-                cluster => $self,
-            }
-        }
-    );
-
-    $workflow->addPerm(consumer => $self->owner, method => 'get');
-    $workflow->addPerm(consumer => $self->owner, method => 'cancel');
-    return $workflow;
-}
-
 sub toString {
     my $self = shift;
     return $self->cluster_name . ' (Cluster)';
@@ -803,12 +740,6 @@ sub addComponents {
 
         # register component on nodes
         for my $node (@nodes) {
-            if ($node->service_provider->id != $self->id) {
-                throw Kanopya::Exception::Internal(
-                    error => "Node <$node->node_hostname> do not come from this service provider <" .
-                             $self->id . ">"
-                );
-            }
             $component->registerNode(node        => $node,
                                      master_node => ($node->node_number == 1) ? 1 : 0);
         }
@@ -851,6 +782,8 @@ sub registerNode {
         $args{host}->addPerm(consumer => $self->owner, method => 'get');
     }
 
+    $self->undefNodeRules(node => $node);
+
     return $node;
 }
 
@@ -882,41 +815,6 @@ sub getHosts {
 
     my @hosts = map { $_->host } $self->nodes;
     return wantarray ? @hosts : \@hosts;
-}
-
-sub getHostEntries {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, optional => { "components" => undef });
-
-    my $kanopya = $self->getKanopyaCluster();
-    my @host_entries;
-
-    # we add each nodes
-    foreach my $host ($self->getHosts()) {
-        push @host_entries, {
-            fqdn    => $host->node->fqdn,
-            ip      => $host->adminIp,
-            aliases => [
-                $host->node->node_hostname . "." . $kanopya->cluster_domainname,
-                $host->node->node_hostname
-            ],
-        };
-    }
-
-    if ($args{components}) {
-        # we ask components for additional hosts entries
-        my @components = $self->getComponents(category => 'all');
-        foreach my $component (@components) {
-            my $entries = $component->getHostsEntries();
-            if (defined $entries) {
-                foreach my $entry (@$entries) {
-                    push @host_entries, $entry;
-                }
-            }
-        }
-    }
-    return @host_entries;
 }
 
 sub getHostManager {
@@ -1190,6 +1088,10 @@ sub unlock {
 sub update {
     my ($self, %args) = @_;
 
+    General::checkParams(args      => \%args,
+                         optional => { 'components' => undef,
+                                       'node'       => undef });
+
     my $context = { };
     my $require_op = 0;
 
@@ -1220,6 +1122,42 @@ sub update {
 
     return $updated;
 }
+
+
+=pod
+=begin classdoc
+
+Initialize all nodemetric rules related to the Node instance to undef.
+
+@optional component_types
+
+=end classdoc
+=cut
+
+sub undefNodeRules {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'node' ]);
+
+    # my @nm_rules = $self->service_provider->nodemetric_rules;
+    # TODO try to allow a direct relation
+
+    my @nm_rules = Entity::Rule::NodemetricRule->search(hash => { service_provider_id => $self->id });
+    foreach my $nm_rule (@nm_rules) {
+        try {
+            VerifiedNoderule->new(
+                verified_noderule_node_id            => $args{node}->id,
+                verified_noderule_state              => 'undef',
+                verified_noderule_nodemetric_rule_id => $nm_rule->id,
+            );
+        }
+        catch(Kanopya::Exception::DB::DuplicateEntry $err) {
+            $log->debug('Nodemetric rules <' . $nm_rule->label .
+                        '> is already undef for node <' . $args{node}->label . '>');
+        }
+    }
+}
+
 
 sub propagatePermissions {
     my ($self, %args) = @_;

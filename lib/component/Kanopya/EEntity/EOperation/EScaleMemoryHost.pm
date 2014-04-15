@@ -24,7 +24,6 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
-use Entity::ServiceProvider::Cluster;
 use Entity::Host;
 use EEntity;
 use CapacityManagement;
@@ -46,12 +45,7 @@ sub execute {
 
     # Verify if there is enough resource in HV
     my $vm_id = $self->{context}->{host}->id;
-    my $host_cluster = Entity::ServiceProvider::Cluster->find(hash => {
-                           cluster_id => $self->{context}->{host}->getClusterId(),
-                       });
-
     my $cm = CapacityManagement->new(
-                 cluster_id    => $self->{context}->{host}->getClusterId(),
                  cloud_manager => $self->{context}->{cloudmanager_comp},
              );
 
@@ -71,16 +65,9 @@ sub execute {
     # Check billing limit before launching scale, but only in case of scale up
     if ($self->{params}->{memory} > $self->{context}->{host}->host_ram) {
         my $ram_to_add = $self->{params}->{memory} - $self->{context}->{host}->host_ram;
-        $host_cluster->checkBillingLimits(metrics => { ram => $ram_to_add });
-    }
 
-    # Check if the given ram amount is not bellow the initial ram.
-    my $host_manager_params = $self->{context}->{host}->node->service_provider->getManagerParameters(manager_type => 'HostManager');
-    if ($host_manager_params->{ram} > $self->{params}->{memory}) {
-        $errmsg = "Could not scale memory bellow the initial ram amount <" .
-                  ($host_manager_params->{ram} / 1024 / 1024) . "Mo >";
-        $log->debug($errmsg);
-        throw Kanopya::Exception::Internal(error => $errmsg);
+        # TODO: Manage the billing checks from the service manager component
+        # $host_cluster->checkBillingLimits(metrics => { ram => $ram_to_add });
     }
 
     $self->{context}->{cloudmanager_comp}->scaleMemory(host   => $self->{context}->{host},

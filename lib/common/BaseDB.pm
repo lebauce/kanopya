@@ -393,7 +393,7 @@ sub getAttr {
     # Check if the attribiute exists in attrdef
     my $definition = $class->_attributesDefinition(include_reverse => 1)->{$args{name}};
     if (! defined $definition) {
-        throw Kanopya::Exception::Internal::UnknownAttribute(error => "Unknown attribute <$args{name}>");
+        throw Kanopya::Exception::Internal::UnknownAttribute(error => "$class, unknown attribute <$args{name}>");
     }
 
     # Get the dbix row corresponding to the hierarchy level of the attribute
@@ -1130,7 +1130,7 @@ sub checkAttributes {
         }
         elsif (! $args{ignore_missing}) {
             throw Kanopya::Exception::Internal::IncorrectParam(
-                      error => "Missing mandatory attribute <$mandatory>"
+                      error => "$class: Missing mandatory attribute <$mandatory>"
                   );
         }
     }
@@ -1190,7 +1190,7 @@ sub checkAttr {
     # Check if the attribiute exists in attrdef
     my $definition = $class->_attributesDefinition->{$args{name}};
     if (! defined $definition) {
-        throw Kanopya::Exception::Internal::IncorrectParam(error => "Unknown attribute <$args{name}>");
+        throw Kanopya::Exception::Internal::IncorrectParam(error => "$class: unknown attribute <$args{name}>");
     }
 
     # If the attr is a single relation with a value as object,
@@ -1358,6 +1358,8 @@ sub checkUserPerm {
 
             # TODO: use DBIx::Class::ResultSet->new_result and bless it to 'class' instead of a 'get'
             $args{params}->{$key} = $paramclass->get(id => $param->{pk});
+            $log->debug("Replace the json object parameter $key with pk $param->{pk} " .
+                        "by the corresponding object " . $args{params}->{$key});
         }
     }
 
@@ -2093,40 +2095,6 @@ sub _importToRelated {
 
     # Create the object
     return $caller_class->new(%$attrs);
-}
-
-
-=pod
-
-Utility method used to clone a formula
-Clone all objects used in formula and translate formula to use cloned object ids
-
-@param dest_sp_id id of the service provider where to import all cloned objects
-@param formula string representing a formula (i.e operators and object ids in the format "idXXX")
-@param formula_class class of object used in formula
-
-@return the cloned object
-
-=end classdoc
-=cut
-
-sub _cloneFormula {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => ['dest_sp_id', 'formula', 'formula_class']);
-
-    my $formula = $args{formula};
-    # Get ids in formula
-    my %ids = map { $_ => undef } ($formula =~ m/id(\d+)/g);
-    # Clone objects used in formula
-    %ids = map {
-        $_ => $args{formula_class}->get(id => $_)->clone(dest_service_provider_id => $args{dest_sp_id})->id
-    } keys %ids;
-
-    # Replace ids in formula with cloned objects ids
-    $formula =~ s/id(\d+)/id$ids{$1}/g;
-
-    return $formula;
 }
 
 

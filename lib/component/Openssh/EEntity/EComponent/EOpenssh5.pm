@@ -31,8 +31,6 @@ use warnings;
 use Template;
 use String::Random;
 
-use Entity::ServiceProvider::Cluster;
-
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -75,10 +73,7 @@ sub configureNode {
 
     General::checkParams(args => \%args, required => [ 'host', 'mount_point' ]);
 
-    my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
-    my $executor = $kanopya->getComponent(name => "KanopyaExecutor");
-    my $privatedir = $executor->private_directory;
-
+    my $privatedir = $self->_executor->private_directory;
     my $rsapubkey_cmd = "mkdir -m 600 -p $args{mount_point}/root/.ssh ; " .
                         "install -m 600 $privatedir/kanopya_rsa.pub " .
                         "$args{mount_point}/root/.ssh/authorized_keys";

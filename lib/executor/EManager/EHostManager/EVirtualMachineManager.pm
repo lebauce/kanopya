@@ -40,23 +40,25 @@ my $errmsg;
 sub getFreeHost {
     my ($self,%args) = @_;
 
-    General::checkParams(args => \%args, required => [ "cluster" ]);
+    General::checkParams(args     => \%args,
+                         required => [ "interfaces", "ram" ],
+                         optional => { "core" => undef, "cpu" => undef });
 
-    my $cluster     = $args{cluster};
-    my $host_params = $cluster->getManagerParameters(manager_type => "HostManager");
-    my @interfaces  = $cluster->interfaces;
+    # We are not consistent yet for the arg "core"
+    if (! (defined($args{core}) || defined($args{cpu}))) {
+        General::checkParams(args => \%args, required => [ "core" ]);
+    }
+    elsif (defined($args{cpu})) {
+        $args{core} = delete $args{cpu};
+    }
 
     $log->info("Looking for a virtual host");
     my $host;
     eval {
-        $host = $self->createVirtualHost(
-                    core   => $host_params->{core},
-                    ram    => $host_params->{ram},
-                    ifaces => scalar @interfaces,
-                );
+        $host = $self->createVirtualHost(ifaces => scalar(@{ delete $args{inerfaces} }), %args);
     };
     if ($@) {
-        $errmsg = "Virtual Machine Manager component <" . $self->getAttr(name => 'component_id') .
+        $errmsg = "Virtual Machine Manager component <" . $self->label .
                   "> No capabilities to host this vm core <$args{core}> and ram <$args{ram}>:\n" . $@;
         # We can't create virtual host for some reasons (e.g can't meet constraints)
         throw Kanopya::Exception::Internal(error => $errmsg);

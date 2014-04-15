@@ -46,13 +46,6 @@ __PACKAGE__->table("kanopya_deployment_manager");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 kanopya_executor_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 0
-
 =head2 dhcp_component_id
 
   data_type: 'integer'
@@ -78,13 +71,6 @@ __PACKAGE__->table("kanopya_deployment_manager");
 
 __PACKAGE__->add_columns(
   "kanopya_deployment_manager_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 0,
-  },
-  "kanopya_executor_id",
   {
     data_type => "integer",
     extra => { unsigned => 1 },
@@ -158,21 +144,6 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
-=head2 kanopya_executor
-
-Type: belongs_to
-
-Related object: L<Kanopya::Schema::Result::KanopyaExecutor>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "kanopya_executor",
-  "Kanopya::Schema::Result::KanopyaExecutor",
-  { kanopya_executor_id => "kanopya_executor_id" },
-  { is_deferrable => 1, on_delete => "NO ACTION", on_update => "NO ACTION" },
-);
-
 =head2 system_component
 
 Type: belongs_to
@@ -204,8 +175,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-04-11 12:10:37
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:HX5ile4gWMd77O6Hq8heoQ
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-04-23 17:33:14
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:6vJ5WVxZ1wNck+na8Jsbjg
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

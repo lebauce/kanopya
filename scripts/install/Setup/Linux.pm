@@ -634,7 +634,7 @@ sub _create_database {
     print "ok\n";
 
     # components schema
-    print "\n - Create components schemas...";
+    print "\n - Create components schemas...\n";
     open(my $FILE, '<', $self->{installpath} . '/conf/components.conf');
     my @lines = <$FILE>;
     close($FILE);
@@ -644,6 +644,7 @@ sub _create_database {
        if(( ! $line ) || ( $line =~ /^#/ )) {
            next LINE;
        }
+       print "\t - Create schema for component $line\n";
        system("mysql -h $host  -P $port -u kanopya -p$userpasswd < $self->{dbschema_path}/schemas/components/$line.sql");
     }
     print "ok\n";
@@ -666,9 +667,9 @@ sub _create_database {
         admin_interface          => $self->{parameters_values}->{admin_iface},
         admin_password           => $self->{parameters_values}->{mysql_kanopya_passwd},
         admin_kernel             => undef,
-        tmstp                    => time()
+        tmstp                    => time(),
+        include_mocks            => $self->{include_mocks}
     );
-
 
     my %nsinfo = $self-> _getNameServerInfo();
     if (@{ $nsinfo{nameservers} } > 0) {
@@ -883,10 +884,7 @@ sub _configure_puppetmaster {
     my $linux = $kanopya->getComponent(category => "System");
     my $elinux = EEntity->new(entity => $linux);
 
-    $elinux->generateConfiguration(
-        host    => $kanopya_master,
-        cluster => $kanopya,
-    );
+    $elinux->generateConfiguration(host => $kanopya_master);
 
     my $puppetmaster = $kanopya->getComponent(name => "Puppetmaster");
     my $epuppetmaster = EEntity->new(entity => $puppetmaster);

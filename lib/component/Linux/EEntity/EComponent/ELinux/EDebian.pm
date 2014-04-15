@@ -48,7 +48,7 @@ sub configureNode {
     }
 
     # adjust some requirements on the image
-    my $data = $self->_entity->getConf();
+    my $data = $self->getConf();
     my $automountnfs = 0;
     for my $mountdef (@{$data->{linuxes_mount}}) {
         my $mountpoint = $mountdef->{linux_mount_point};
@@ -83,23 +83,18 @@ sub _writeNetConf {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'host', 'mount_point', 'ifaces' ]);
+                         required => [ 'host', 'mount_point', 'ifaces', 'deploy_on_disk', 'boot_policy' ]);
 
-    my $cluster = $args{host}->node->service_provider;
-
-    #we ignore the slave interfaces in the case of bonding
     my @ifaces = @{ $args{ifaces} };
-    my $host_params = $cluster->getManagerParameters(manager_type => 'HostManager');
-
     my $file = $self->generateNodeFile(
         host          => $args{host},
         file          => '/etc/network/interfaces',
         template_dir  => 'internal',
         template_file => 'network_interfaces.tt',
         data          => {
-            deploy_on_disk => $host_params->{deploy_on_disk},
+            deploy_on_disk => $args{deploy_on_disk},
             interfaces     => \@ifaces,
-            boot_policy    => $cluster->cluster_boot_policy
+            boot_policy    => $args{boot_policy}
         },
         mount_point   => $args{mount_point}
     );

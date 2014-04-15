@@ -210,8 +210,12 @@ sub test3c {
     ##########################
 
     lives_ok {
-        my $selected_host = DecisionMaker::HostSelector->getHost(cluster => $cluster);
-
+        my @interfaces = $cluster->interfaces;
+        my $selected_host = DecisionMaker::HostSelector->getHost(
+                                host_manager => Entity::Component::Physicalhoster0->find(),
+                                interfaces   => \@interfaces,
+                                %{ $host_manager_conf->{managers}->{host_manager}->{manager_params} },
+                            );
         # The selected host must be the 2nd.
         if ($selected_host->id != $host2->id) {
             die ("Test 3.c : Wrong host selected");

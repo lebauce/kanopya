@@ -301,18 +301,18 @@ sub processNotificationSubscriptions {
                             );
 
         # TODO: Use multi recipient send, instead of sending one mail per subcriber
+        SUBSCRIPTION:
         for my $subscription (@subscriptions) {
             # Try to get the notification manager to use
             my $notifier;
             try {
-                $notifier = $subscription->service_provider->getManager(
-                                manager_type => 'NotificationManager'
-                            );
+                $notifier = $self->workflow->workflow_manager->notifier_component;
             }
             catch ($err) {
-                $log->warn("Unable to get the notification manager for service provider <" .
-                            ref($subscription->service_provider) . ">, skip notification...");
-                next;
+                # TODO: Allow to overive the notifer in the workflow attributes/prams
+                $log->warn("Unable to find any notification manager, skip notification...");
+                $log->debug("$err");
+                next SUBSCRIPTION;
             }
 
             # Check for validation set for the state 'processing'

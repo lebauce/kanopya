@@ -35,12 +35,11 @@ use Entity::Component;
 use Entity::Interface;
 use Entity::Metric::Nodemetric;
 use ServiceProviderManager;
+use Entity::Rule::NodemetricRule;
+use VerifiedNoderule;
 
 use List::Util qw[min max];
-
 use TryCatch;
-my $err;
-
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
@@ -177,7 +176,13 @@ sub registerNode {
                    monitoring_state    => $args{monitoring_state},
                    node_number         => $args{number},
                    systemimage_id      => $args{systemimage} ? $args{systemimage}->id : undef,
+                   owner_id            => $self->owner_id,
                );
+
+    # Enable the node if monitoring enabled
+    if ($node->monitoring_state eq 'enabled') {
+        $self->enableNode(node_id => $node->id);
+    }
 
     # Force to install required component if not defined
     for my $required (@{ $self->getRequiredComponents() }) {
@@ -188,12 +193,7 @@ sub registerNode {
 
     # Link the service provider components to the new node
     for my $component (@{ $args{components} }) {
-        if ($component->service_provider->id != $self->id) {
-            throw Kanopya::Exception::Internal(
-                      error => "Component <$component> do not come from this " .
-                               "service provider <" . $self->id . ">"
-                  );
-        }
+        $log->info("Register component \"" . $component->label . "\" on node " . $node->label);
         $component->registerNode(node => $node, master_node => ($node->node_number == 1) ? 1 : 0);
     }
 
@@ -244,6 +244,25 @@ sub unregisterNode {
 
     General::checkParams(args => \%args, required => [ 'node' ]);
 
+    # Remove collector indicators if managed by a collector
+    try {
+        my $collector = $self->getManager(manager_type => 'CollectorManager');
+
+        my @collector_indicators = $collector->collector_indicators;
+        for my $collector_indicator (@collector_indicators) {
+            my $indicator = $collector_indicator->indicator;
+            my $rrd_name = $indicator->id . '_' . $args{node}->node_hostname;
+            $log->info('Deleting RRD file ' . $rrd_name);
+            TimeData::RRDTimeData->deleteTimeDataStore(name => $rrd_name);
+        }
+    }
+    catch (Kanopya::Exception::Internal::NotFound $err) {
+        $log->warn("No collector manager defined, skipping deletion of indicators");
+    }
+    catch ($err) {
+        $err->rethrow();
+    }
+
     if (defined $args{node}->host) {
         # Free assigned ips
         my @ifaces = $args{node}->host->getIfaces;
@@ -275,8 +294,23 @@ sub getNodeMonitoringData {
 
     General::checkParams(args => \%args, required => [ 'node_id', 'indicator_ids' ]);
 
-    my $node_id = delete $args{node_id};
-    return Entity::Node->get(id => $node_id)->getMonitoringData(%args);
+    my $node = Entity::Node->get(id => $args{node_id});
+    my $manager = $self>getManager(manager_type => 'CollectorManager');
+
+    # Construst indicators params as expected by CollectorManager
+    my %indicators;
+    for my $indic_id (@{$args{indicator_ids}}) {
+        $indicators{$indic_id} = Entity::Indicator->get(id => $indic_id);
+    }
+    delete $args{indicator_ids};
+
+    my $data = $manager->retrieveData(
+        nodelist    => [ $node->node_hostname ],
+        indicators  => \%indicators,
+        %args
+    );
+
+    return $data->{$node->node_hostname} || {};
 }
 
 
@@ -293,7 +327,24 @@ sub enableNode {
 
     General::checkParams(args => \%args, required => [ 'node_id' ]);
 
-    return Entity::Node->get(id => $args{node_id})->enable();
+    my $node = Entity::Node->get(id => $args{node_id});
+
+    my @nm_rules = Entity::Rule::NodemetricRule->search(hash => { service_provider_id => $self->id });
+    foreach my $nm_rule (@nm_rules) {
+        try {
+            VerifiedNoderule->new(
+                verified_noderule_node_id            => $node->id,
+                verified_noderule_state              => 'undef',
+                verified_noderule_nodemetric_rule_id => $nm_rule->id,
+            );
+        }
+        catch(Kanopya::Exception::DB::DuplicateEntry $err) {
+            my $msg = 'Nodemetric rules <' . $nm_rule->id .'> is already undef for node <' . $node->id . '>';
+            $log->debug($msg);
+        }
+    }
+
+    return $node->enable();
 }
 
 
@@ -310,7 +361,14 @@ sub disableNode {
 
     General::checkParams(args => \%args, required => [ 'node_id' ]);
 
-    return Entity::Node->get(id => $args{node_id})->disable();
+    my $node = Entity::Node->get(id => $args{node_id});
+
+    my @verified_noderules = $node->verified_noderules;
+    while(@verified_noderules) {
+        (pop @verified_noderules)->delete();
+    }
+
+    return $node->disable();
 }
 
 sub getNodesMetrics {}
@@ -611,11 +669,6 @@ sub addComponent {
     # For instance install the component on all node of the service provider,
     # use the first started node as master node for the component.
     for my $node ($self->nodes) {
-        if ($node->service_provider->id != $self->id) {
-            throw Kanopya::Exception::Internal(
-                      error => "Node <$node> do not come from this service provider <" . $self->id . ">"
-                  );
-        }
         $component->registerNode(node => $node, master_node => ($node->node_number == 1));
     }
 

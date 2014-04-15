@@ -64,10 +64,8 @@ sub getNetConf {
 
 sub getPuppetDefinition {
     my ($self, %args) = @_;
-    my $definition = $self->SUPER::getPuppetDefinition(%args);
 
-    my @nodes = $self->getActiveNodes;
-    my @nodes_hostnames = map {$_->node_hostname} @nodes;
+    my @nodes_hostnames = map { $_->node_hostname } @{ $self->getActiveNodes };
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         amqp => {

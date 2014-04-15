@@ -101,7 +101,7 @@ sub createDisk {
                          required => [ "name" ]);
 
     $log->debug("New Operation CreateDisk with attrs : " . %args);
-    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
+    $self->executor_component->enqueue(
         type     => 'CreateDisk',
         params   => {
             context => {
@@ -120,7 +120,7 @@ sub removeDisk {
     General::checkParams(args => \%args, required => [ "container" ]);
 
     $log->debug("New Operation RemoveDisk with attrs : " . %args);
-    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
+    $self->executor_component->enqueue(
         type     => 'RemoveDisk',
         params   => {
             context => {

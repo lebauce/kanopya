@@ -42,7 +42,7 @@ sub execute {
         throw Kanopya::Exception(error => $error);
     }
 
-    my @cloudmanagers = $self->{context}->{host}->node->service_provider->getComponents(category => 'HostManager');
+    my @cloudmanagers = $self->{context}->{host}->node->getMasterNode->getComponents(category => 'HostManager');
     $self->{context}->{cloud_manager} = EEntity->new(data => $cloudmanagers[0]);
 
     my $vm_min_effective_ram = $self->{context}->{host}->getMinEffectiveRamVm(); #vm / ram

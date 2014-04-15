@@ -34,6 +34,7 @@ use warnings;
 use General;
 use Kanopya::Exceptions;
 
+use TryCatch;
 use Log::Log4perl "get_logger";
 use Date::Simple (':all');
 
@@ -46,10 +47,11 @@ my $log = get_logger("");
 @param deployment_manager the deployment component used to deploy the node
 @param node the node to deploy
 @param systemimage the systemiage to use to deploy the node
-@param boot_mode, the boot mode for the deplyoment
+@param boot_policy, the boot policy for the deplyoment
 
 @optional hypervisor the hypervisor to use for virtuals nodes
 @optional kernel_id force the kernel to use
+@optional deploy_on_disk activate the on disk deployment
 
 =end classdoc
 =cut
@@ -63,8 +65,8 @@ sub check {
                          optional => { 'hypervisor' => undef });
 
     General::checkParams(args     => $self->{params},
-                         required => [ 'boot_mode' ],
-                         optional => { 'kernel_id' => undef });
+                         required => [ 'boot_policy' ],
+                         optional => { 'deploy_on_disk' => 0, 'kernel_id' => undef });
 }
 
 
@@ -80,15 +82,16 @@ sub execute {
     my ($self, %args) = @_;
 
     $self->{context}->{deployment_manager}->deployNode(
-        node        => $self->{context}->{node},
-        systemimage => $self->{context}->{systemimage},
-        boot_mode   => $self->{params}->{boot_mode},
-        kernel_id   => $self->{params}->{kernel_id},
-        hypervisor  => $self->{context}->{hypervisor},
-        erollback   => $self->{erollback}
+        node           => $self->{context}->{node},
+        systemimage    => $self->{context}->{systemimage},
+        boot_policy    => $self->{params}->{boot_policy},
+        deploy_on_disk => $self->{params}->{deploy_on_disk},
+        kernel_id      => $self->{params}->{kernel_id},
+        hypervisor     => $self->{context}->{hypervisor},
+        erollback      => $self->{erollback}
     );
 
-    $self->{context}->{host}->setNodeState(state => "goingin");
+    $self->{context}->{node}->setState(state => "goingin");
 }
 
 =pod
@@ -111,8 +114,8 @@ sub postrequisites {
     # Check how long the host is 'starting'
     my @state = $self->{context}->{node}->host->getState;
     my $starting_time = time() - $state[1];
-    if($starting_time > $broken_time) {
-        $self->{context}->{node}->host->timeOuted();
+    if ($starting_time > $broken_time) {
+        EEntity->new(entity => $self->{context}->{node}->host)->timeOuted();
     }
 
     my $node_ip = $self->{context}->{node}->host->adminIp;
@@ -133,9 +136,61 @@ sub postrequisites {
         return $delay;
     }
 
+    # If deployed on disk, remove the bost from teh dhcp to avoid the PXE
+    # at the next reboot
+    if ($self->{params}->{deploy_on_disk}) {
+        # Check if the host has already been deployed
+        my $hd = $self->{context}->{node}->host->find(related  => 'harddisks' ,
+                                                      order_by => 'harddisk_device');
+
+        if (! (defined $hd->deployed_on_id && $hd->deployed_on_id == $self->{context}->{node}->id)) {
+            # Try connecting to the host, delay if it fails
+            try {
+                if ($args{node}->getEContext->execute(command => "true")->{exitcode}) {
+                    throw Kanopya::Exception::Execution();
+                }
+            }
+            catch ($err) {
+                return $delay;
+            }
+
+            # Verify hostname
+            my $theoricalhostname = $self->{context}->{node}->node_hostname;
+            my $realhostname = $self->{context}->{node}->getEContext->execute(command => 'hostname -s');
+
+            chomp($realhostname->{stdout});
+            if ($theoricalhostname ne $realhostname->{stdout}) {
+                throw Kanopya::Exception::Execution::OperationInterrupted(
+                    error => "System hostname \"$realhostname->{stdout}\" is different than " .
+                             "the database hostname for host \"$theoricalhostname\". " .
+                             "Is PXE boot working properly ?"
+                );
+            }
+
+            # Disable PXE boot but keep the host entry
+            $hd->deployed_on_id($self->{context}->{node}->id);
+            my $dhcp = EEntity->new(entity => $self->{context}->{deployment_manager}->dhcp_component);
+            $dhcp->removeHost(host => $args{node}->host);
+            $dhcp->addHost(host => $args{node}->host, pxe => 0);
+            $dhcp->applyConfiguration();
+
+            # Now reboot the host
+            try {
+                $args{node}->getEContext->execute(
+                    command => "sync; echo 1 > /proc/sys/kernel/sysrq; echo b > /proc/sysrq-trigger"
+                );
+            }
+            catch ($err) {
+                $log->warn("Unable to reboot the host: $err");
+            }
+
+            return $delay;
+        }
+    }
+
     # Node is up
     $self->{context}->{node}->host->setState(state => "up");
-    $self->{context}->{node}->host->setNodeState(state => "in");
+    $self->{context}->{node}->setState(state => "in");
 
     $log->info("Host \"" . $self->{context}->{node}->host->label .  "\" is 'up'");
 

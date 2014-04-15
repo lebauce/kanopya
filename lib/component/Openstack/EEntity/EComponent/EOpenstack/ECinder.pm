@@ -203,7 +203,7 @@ sub getLunId {
 sub postStartNode {
     my ($self , %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
     my $e_controller = EEntity->new(entity => $self->nova_controller);
     my $api = $e_controller->api;

@@ -39,6 +39,14 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
+    executor_component_id => {
+        label        => 'Workflow manager',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^[0-9\.]*$',
+        is_mandatory => 1,
+        is_editable  => 0,
+    },
     mysql5_id => {
         label        => 'Database server',
         type         => 'relation',
@@ -210,7 +218,7 @@ sub getPuppetDefinition {
         cinder => {
             classes => {
                 'kanopya::openstack::cinder::server' => {
-                    email => $self->service_provider->owner->user_email,
+                    email => $self->getMasterNode->owner->user_email,
                     database_user => $name,
                     database_name => $name,
                     rabbit_user => $name,
@@ -222,22 +230,29 @@ sub getPuppetDefinition {
                 },
                 'kanopya::openstack::cinder::ceph' => {}
             },
-            dependencies => [ $controller->amqp,
-                              $self->mysql5,
-                              $controller->keystone ]
+            dependencies => $self->getDependentComponents()
         }
     } );
 }
 
-sub getHostsEntries {
-    my $self = shift;
 
-    my @entries = ($self->nova_controller->keystone->service_provider->getHostEntries(),
-                   $self->nova_controller->amqp->service_provider->getHostEntries(),
-                   $self->mysql5->service_provider->getHostEntries());
+=pod
+=begin classdoc
 
-    return \@entries;
+Cinder depend on the keystone and amqp of the novacontroller
+and its mysql.
+
+=end classdoc
+=cut
+
+sub getDependentComponents {
+    my ($self, %args) = @_;
+
+    return [ $self->nova_controller->keystone,
+             $self->nova_controller->amqp,
+             $self->mysql5 ];
 }
+
 
 sub checkConfiguration {
     my $self = shift;

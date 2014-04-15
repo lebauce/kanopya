@@ -22,6 +22,8 @@ use BaseDB;
 use General;
 use Entity;
 use Entity::Workflow;
+use Entity::Operationtype;
+use Entity::Component::KanopyaExecutor;
 
 use Kanopya::Tools::TestUtils 'expectedException';
 
@@ -44,13 +46,13 @@ sub main {
 
 sub createWorkflow {
     lives_ok {
-        $workflow = Entity::Workflow->run(name => 'AddNode');
+        $workflow = Entity::Workflow->run(name => 'AddNode', workflow_manager => Entity::Component::KanopyaExecutor->find());
         my @operations = $workflow->operations;
-        my @expectedOperationNames = ('AddNode','PreStartNode', 'StartNode', 'PostStartNode');
+        my @expectedOperationNames = ('AddNode','PreStartNode', 'PostStartNode');
 
         for my $i (0..@expectedOperationNames-1) {
             if ($operations[$i]->operationtype->operationtype_name ne $expectedOperationNames[$i]) {
-                die 'Wrond operation name <'.$operations[$i]->operationtype->operationtype_name.'> expected <'.$expectedOperationNames[$i].'>';
+                die 'Wrong operation name <'.$operations[$i]->operationtype->operationtype_name.'> expected <'.$expectedOperationNames[$i].'>';
             }
         }
     } 'Workflow creation';
@@ -60,12 +62,12 @@ sub enqueueBefore {
     lives_ok {
         # Enqueue one operation before all operations;
         my @operations = $workflow->searchRelated(filters => ['operations'], order_by=> 'execution_rank ASC');
-        my $op =  { priority => 200,
-                    type     => 'LaunchSCOWorkflow' };
+        my $op =  { priority      => 200,
+                    operationtype => Entity::Operationtype->find(hash => { operationtype_name => 'LaunchSCOWorkflow' }) };
 
         $workflow->enqueueBefore(current_operation => $operations[0], operation => $op);
         @operations = $workflow->searchRelated(filters => ['operations'], order_by=> 'execution_rank ASC');
-        my @expectedOperationNames = ('LaunchSCOWorkflow', 'AddNode','PreStartNode', 'StartNode', 'PostStartNode');
+        my @expectedOperationNames = ('LaunchSCOWorkflow', 'AddNode','PreStartNode', 'PostStartNode');
 
         for my $i (0..@expectedOperationNames-1) {
             if ($operations[$i]->operationtype->operationtype_name ne $expectedOperationNames[$i]) {
@@ -80,12 +82,12 @@ sub enqueueBefore {
         # Enqueue one operation before all operations;
         my @operations = $workflow->searchRelated(filters => ['operations'], order_by=> 'execution_rank ASC');
         my $op =  { priority => 200,
-                    type     => 'SynchronizeInfrastructure' };
+                    operationtype => Entity::Operationtype->find(hash => { operationtype_name => 'SynchronizeInfrastructure' }) };
 
         $workflow->enqueueBefore(current_operation => $operations[2], operation => $op);
         @operations = $workflow->searchRelated(filters => ['operations'], order_by=> 'execution_rank ASC');
         my @expectedOperationNames = ('LaunchSCOWorkflow', 'AddNode', 'SynchronizeInfrastructure',
-                                      'PreStartNode', 'StartNode', 'PostStartNode');
+                                      'PreStartNode', 'PostStartNode');
 
 
         for my $i (0..@expectedOperationNames-1) {
@@ -105,11 +107,9 @@ sub enqueueBefore {
         my @expectedOperationNames = ('LaunchSCOWorkflow',
                                       'AddNode',
                                       'PreStopNode',
-                                      'StopNode',
                                       'PostStopNode',
                                       'SynchronizeInfrastructure',
                                       'PreStartNode',
-                                      'StartNode',
                                       'PostStartNode');
 
         for my $i (0..@expectedOperationNames-1) {
@@ -129,12 +129,12 @@ sub enqueueNow {
         $operations[1]->state('processing');
 
         my $op =  { priority => 200,
-                    type     => 'ActivateHost' };
+                    operationtype => Entity::Operationtype->find(hash => { operationtype_name => 'ActivateHost' }) };
 
         $workflow->enqueueNow(operation => $op);
 
         @operations = $workflow->searchRelated(filters => ['operations'], order_by=> 'execution_rank ASC');
-        my @expectedOperationNames = ('AddNode','PreStartNode', 'ActivateHost', 'StartNode', 'PostStartNode');
+        my @expectedOperationNames = ('AddNode','PreStartNode', 'ActivateHost', 'PostStartNode');
 
         for my $i (0..@expectedOperationNames-1) {
             if ($operations[$i]->operationtype->operationtype_name ne $expectedOperationNames[$i]) {
@@ -145,15 +145,15 @@ sub enqueueNow {
 
     lives_ok {
         my $op =  { priority => 200,
-                    type     => 'ActivateHost' };
+                    operationtype => Entity::Operationtype->find(hash => { operationtype_name => 'ActivateHost' }) };
 
         my $workflow_to_enqueue = { name => 'StopNode' };
         $workflow->enqueueNow(workflow => $workflow_to_enqueue);
 
         my @operations = $workflow->searchRelated(filters => ['operations'], order_by=> 'execution_rank ASC');
         my @expectedOperationNames = ('AddNode','PreStartNode',
-                                      'PreStopNode', 'StopNode', 'PostStopNode',
-                                      'ActivateHost', 'StartNode', 'PostStartNode');
+                                      'PreStopNode', 'PostStopNode',
+                                      'ActivateHost', 'PostStartNode');
 
         for my $i (0..@expectedOperationNames-1) {
             if ($operations[$i]->operationtype->operationtype_name ne $expectedOperationNames[$i]) {
@@ -175,14 +175,14 @@ sub paramPresetTransmission {
         $operation->state('succeeded');
 
         my $op1 =  {priority => 200,
-                    type     => 'ActivateHost',
+                    operationtype => Entity::Operationtype->find(hash => { operationtype_name => 'ActivateHost' }),
                     params   => {
                         param1 => 'parameter_1_1',
                         param2 => 'parameter_2_1',
                     }};
 
         my $op2 =  {priority => 200,
-                    type     => 'SynchronizeInfrastructure',
+                    operationtype => Entity::Operationtype->find(hash => { operationtype_name => 'SynchronizeInfrastructure' }),
                     params   => {
                         param1 => 'parameter_1_2',
                         param3 => 'parameter_3_2',

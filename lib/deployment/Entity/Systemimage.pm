@@ -40,13 +40,7 @@ use constant ATTR_DEF => {
     },
     systemimage_desc => {
         pattern      => '^.*$',
-        is_mandatory => 1,
-    },
-    service_provider_id => {
-        type         => 'relation',
-        relation     => 'single',
-        pattern      => '\d+',
-        is_mandatory => 1,
+        is_mandatory => 0,
     },
     active => {
         pattern      => '^[01]$',
@@ -93,10 +87,8 @@ sub remove {
     
     $log->debug("New Operation RemoveSystemimage with id : <" . $self->id . ">");
 
-    # Use the execution manager of the service on which the disk manager is installed
-    my $diskmanager = $self->getContainer->disk_manager;
-    my $executor = $diskmanager->service_provider->getManager(manager_type => 'ExecutionManager');
-    $executor->enqueue(
+    # Use the executor of the the disk manager
+    $self->getContainer->disk_manager->executor_component->enqueue(
         type     => 'RemoveSystemimage',
         params   => {
             context => {
@@ -104,54 +96,6 @@ sub remove {
             }
         }
     );
-}
-
-sub toString {
-    my $self = shift;
-
-    return $self->systemimage_name;
-}
-
-
-sub getInstalledComponents {
-    my $self = shift;
-    if(! $self->{_dbix}->in_storage) {
-        $errmsg = "Entity::Systemimage->getInstalledComponents must be called on an already save instance";
-        $log->error($errmsg);
-        throw Kanopya::Exception(error => $errmsg);
-    }
-    my $components = [];
-    my $search = $self->{_dbix}->components_installed->search(undef, 
-        { '+columns' => {'component_name' => 'component_type.component_name', 
-                         'component_version' => 'component_type.component_version', 
-                         'component_category' => 'component_type.component_category' },
-            join => ['component_type'] } 
-    );
-    while (my $row = $search->next) {
-        my $tmp = {};
-        $tmp->{component_type_id} = $row->get_column('component_type_id');
-        $tmp->{component_name} = $row->get_column('component_name');
-        $tmp->{component_version} = $row->get_column('component_version');
-        $tmp->{component_category} = $row->get_column('component_category');
-        push @$components, $tmp;
-    }
-    $log->debug('systemimage components:'.Dumper($components));
-    return $components;
-}
-
-
-sub cloneComponentsInstalledFrom {
-    my $self = shift;
-    my %args = @_;
-    
-    General::checkParams(args => \%args, required => ['systemimage_source_id']);
-
-    my $si_source = Entity::Systemimage->get(id => $args{systemimage_source_id});
-    my $rs = $si_source->{_dbix}->components_installed->search;
-    while(my $component = $rs->next) {
-        $self->{_dbix}->components_installed->create(
-            {    component_type_id => $component->get_column('component_type_id') });    
-    }
 }
 
 sub getContainer {

@@ -28,10 +28,7 @@ my $errmsg;
 sub postStartNode {
     my ($self, %args) = @_;
 
-    General::checkParams(
-        args     => \%args,
-        required => [ 'cluster', 'host' ]
-    );
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
     $self->iaas->registerHypervisor(host => $args{host});
 }

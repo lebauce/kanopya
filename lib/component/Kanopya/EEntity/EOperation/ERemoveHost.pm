@@ -22,7 +22,6 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use Entity::ServiceProvider;
 use Entity::Host;
 
 use Data::Dumper;

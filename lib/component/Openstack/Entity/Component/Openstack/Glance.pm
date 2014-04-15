@@ -63,38 +63,42 @@ sub getPuppetDefinition {
     my ($self, %args) = @_;
     my $definition = $self->SUPER::getPuppetDefinition(%args);
 
-    my $sql = $self->mysql5;
-    my $keystone = $self->nova_controller->keystone;
-    my $name = "glance-" . $self->id;
-    
-    if (ref($sql) ne 'Entity::Component::Mysql5') {
+    if (ref($self->mysql5) ne 'Entity::Component::Mysql5') {
         throw Kanopya::Exception::Internal(
             error => "Only mysql is currently supported as DB backend"
         );
     }
 
+    my $name = "glance-" . $self->id; 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         glance => {
             classes => {
                 'kanopya::openstack::glance' => {
-                    email => $self->service_provider->owner->user_email,
+                    email => $self->getMasterNode->owner->user_email,
                     database_user => $name,
                     database_name => $name
                 }
             },
-            dependencies => [ $sql, $keystone ]
+            dependencies => $self->getDependentComponents()
         }
-    } );
+    });
 }
 
-sub getHostsEntries {
-    my $self = shift;
 
-    my @entries = ($self->nova_controller->keystone->service_provider->getHostEntries(),
-                   $self->mysql5->service_provider->getHostEntries());
+=pod
+=begin classdoc
 
-    return \@entries;
+Glance depend on the keystone of the nova controller and its mysql.
+
+=end classdoc
+=cut
+
+sub getDependentComponents {
+    my ($self, %args) = @_;
+
+    return [ $self->nova_controller->keystone, $self->mysql5 ];
 }
+
 
 sub checkConfiguration {
     my $self = shift;

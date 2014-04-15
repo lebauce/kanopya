@@ -78,10 +78,18 @@ sub new {
     my $class = shift;
     my %args = @_;
 
+    General::checkParams(args => \%args, required => [ 'executor_component_id' ]);
+
+    my $executor_id = delete $args{executor_component_id};
     my $self = $class->SUPER::new(%args);
 
     my $ucsmanager = ClassType::ComponentType->find(hash => { component_name => 'UcsManager' });
-    $self->addComponent(component_type_id => $ucsmanager->id);
+    $self->addComponent(
+        component_type_id => $ucsmanager->id,
+        component_configuration => {
+            executor_component_id => $executor_id
+        }
+    );
 
     return $self;
 }

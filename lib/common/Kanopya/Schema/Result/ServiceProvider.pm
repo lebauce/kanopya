@@ -241,21 +241,6 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
-=head2 harddisks
-
-Type: has_many
-
-Related object: L<Kanopya::Schema::Result::Harddisk>
-
-=cut
-
-__PACKAGE__->has_many(
-  "harddisks",
-  "Kanopya::Schema::Result::Harddisk",
-  { "foreign.service_provider_id" => "self.service_provider_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 indicators
 
 Type: has_many
@@ -329,21 +314,6 @@ Related object: L<Kanopya::Schema::Result::Node>
 __PACKAGE__->has_many(
   "nodes",
   "Kanopya::Schema::Result::Node",
-  { "foreign.service_provider_id" => "self.service_provider_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 notification_subscriptions
-
-Type: has_many
-
-Related object: L<Kanopya::Schema::Result::NotificationSubscription>
-
-=cut
-
-__PACKAGE__->has_many(
-  "notification_subscriptions",
-  "Kanopya::Schema::Result::NotificationSubscription",
   { "foreign.service_provider_id" => "self.service_provider_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
@@ -433,21 +403,6 @@ __PACKAGE__->belongs_to(
   },
 );
 
-=head2 systemimages
-
-Type: has_many
-
-Related object: L<Kanopya::Schema::Result::Systemimage>
-
-=cut
-
-__PACKAGE__->has_many(
-  "systemimages",
-  "Kanopya::Schema::Result::Systemimage",
-  { "foreign.service_provider_id" => "self.service_provider_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 unified_computing_system
 
 Type: might_have
@@ -474,8 +429,8 @@ Composing rels: L</collects> -> indicatorset
 __PACKAGE__->many_to_many("indicatorsets", "collects", "indicatorset");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-04-14 15:18:02
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9UcszgrL43kjCoqPgseE4A
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-05-13 11:28:31
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:00KABEVaOKKumgrF5RbrOQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

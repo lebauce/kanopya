@@ -29,6 +29,7 @@ use EEntity;
 use EEntity;
 use Entity::NetconfRole;
 
+use TryCatch;
 use Template;
 use String::Random;
 use IO::Socket;
@@ -57,7 +58,7 @@ sub create {
     }
 
     # Create cluster directory
-    my $dir = $self->_executor->getConf->{clusters_directory} . '/' . $self->cluster_name;
+    my $dir = $self->_executor->getConf->{clusters_directory};
     my $command = "mkdir -p $dir";
     $self->_host->getEContext->execute(command => $command);
 
@@ -105,18 +106,20 @@ sub remove {
     }
 
     # Delete the cluster remaning systemimages
-    my @systemimages = $self->systemimages;
-    if (scalar(@systemimages) > 0 && ! $args{keep_systemimages}) {
-        $log->info("Removing the <" . scalar(@systemimages) . "> cluster systemimage(s)");
-        for my $systemimage (map {  EEntity->new(entity => $_)  } @systemimages) {
-            $log->debug("Removing systemimage <" . $systemimage->systemimage_name . ">");
-            $systemimage->remove(erollback => $args{erollback});
+    try {
+        my @systemimages = $self->systemimages;
+        if (scalar(@systemimages) > 0 && ! $args{keep_systemimages}) {
+            $log->info("Removing the <" . scalar(@systemimages) . "> cluster systemimage(s)");
+            for my $systemimage (map {  EEntity->new(entity => $_)  } @systemimages) {
+                $log->debug("Removing systemimage <" . $systemimage->systemimage_name . ">");
+                $systemimage->remove(erollback => $args{erollback});
+            }
         }
     }
+    catch ($err) {
+        $log->warn("Unable to remove system iamges of the cluster: $err");
+    }
 
-    # Remove cluster directory
-    my $dir = $self->_executor->getConf->{clusters_directory} . '/' . $self->cluster_name;
-    $self->_host->getEContext->execute(command => "rm -r $dir");
 
     $self->delete();
 }
@@ -131,11 +134,8 @@ sub postStartNode {
 
     $log->info('Processing cluster components configuration for this node');
     foreach my $component (@components) {
-        EEntity->new(entity => $component)->postStartNode(
-            cluster   => $self,
-            host      => $args{host},
-            erollback => $args{erollback}
-        );
+        EEntity->new(entity => $component)->postStartNode(host      => $args{host},
+                                                          erollback => $args{erollback});
     }
 }
 
@@ -180,19 +180,19 @@ sub postStopNode {
     # Ask to all cluster component if they are ready for node addition.
     my @components = $self->getComponents(category => "all");
     foreach my $component (@components) {
-        EEntity->new(data => $component)->postStopNode(
-            host    => $args{host},
-            cluster => $self
-        );
+        EEntity->new(data => $component)->postStopNode(host => $args{host});
     }
 }
 
 sub reconfigure {
     my ($self, %args) = @_;
 
+    General::checkParams(args     => \%args,
+                         optional => { 'host' => undef, 'tags' => [] });
+
     my $agent = $self->getComponent(category => "Configurationagent");
-    my $eagent = EEntity->new(data => $agent);
-    $eagent->applyConfiguration(%args, cluster => $self);
+    my @nodes = map { $_->node } defined($args{host}) ? ($args{host}) : @{ $self->getHosts() };
+    EEntity->new(data => $agent)->applyConfiguration(nodes => \@nodes, tags => $args{tags});
 }
 
 sub unregisterNode {
@@ -202,15 +202,13 @@ sub unregisterNode {
 
     # remove the node working directory where generated files are
     # stored.
-    my $dir = $self->_executor->getConf->{clusters_directory} . '/' .
-              $self->cluster_name . '/' . $args{node}->node_hostname;
+    my $dir = $self->_executor->getConf->{clusters_directory} . '/' . $args{node}->node_hostname;
 
     $self->_host->getEContext->execute(command => "rm -r $dir");
     $self->_host->getEContext->execute(
         command => "rm /var/lib/puppet/yaml/node/" . $args{node}->fqdn . ".yaml"
     );
 
-    $args{node}->setAttr(name => "node_hostname", value => undef, save => 1);
     $args{node}->host->setAttr(name => "host_initiatorname", value => undef, save => 1);
 
     return $self->_entity->unregisterNode(%args);

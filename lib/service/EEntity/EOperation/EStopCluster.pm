@@ -123,9 +123,8 @@ sub postrequisites {
         # Stop the node in an embedded workflow
         $self->workflow->enqueueNow(
             workflow => {
-                name       => 'StopNode',
-                related_id => $self->{context}->{cluster}->id,
-                params     => {
+                name   => 'StopNode',
+                params => {
                     context => {
                         cluster => $self->{context}->{cluster}->_entity,
                         host    => $node->host,

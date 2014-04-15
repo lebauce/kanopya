@@ -62,4 +62,12 @@ sub checkComponents {
     return 1;
 }
 
+
+sub getEContext {
+    my $self = shift;
+
+    return EEntity->new(entity => $self->host)->getEContext();
+}
+
+
 1;

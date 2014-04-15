@@ -115,7 +115,7 @@ sub startHost {
 
     my $current_state = $args{host}->getState();
 
-    if (exists $args{erollback}) {
+    if (exists $args{erollback} and defined $args{erollback}) {
         $args{erollback}->add(
             function   => $args{host}->_entity->can('save'),
             parameters => [ $args{host} ]

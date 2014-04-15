@@ -34,6 +34,7 @@ use Kanopya::Database;
 use Entity::Component::Physicalhoster0;
 use ClassType;
 use Entity::Component::KanopyaAggregator;
+use Entity::Component::KanopyaExecutor;
 use Entity::Node;
 
 
@@ -281,7 +282,7 @@ sub test_new_and_update {
     } 'Update Entity::Host attributes from diferent hierarchy levels';
 
     throws_ok {
-        $host->update(host_manager_id => undef);
+        $host->update(host_serial_number => undef);
     } 'Kanopya::Exception::Internal::WrongValue', 'Update Entity::Host with undefined mandatory attr';
 
     lives_ok {
@@ -528,8 +529,9 @@ sub test_search_on_virtual_attributes {
 
 sub test_specific_relations {
     # Test comparison operators for strings
-    my $sp = Entity::ServiceProvider->find();
-    my $nova_controller = $sp->addComponent(component_type_id => ClassType::ComponentType->find(hash => { component_name => 'NovaController' })->id);
+    my $sp = Entity::ServiceProvider->find(hash => { 'service_provider_type_id' => undef });
+    my $nova_controller = $sp->addComponent(component_type_id => ClassType::ComponentType->find(hash => { component_name => 'NovaController' })->id,
+                                            component_configuration => { executor_component_id => Entity::Component::KanopyaExecutor->find()->id });
     lives_ok {
         my @repos = $nova_controller->repositories;
     } 'Get values for relation repositories on NovaController';

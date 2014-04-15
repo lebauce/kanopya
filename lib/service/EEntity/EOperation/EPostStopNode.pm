@@ -86,9 +86,6 @@ sub execute {
     $log->info('Processing cluster components configuration for this node');
     $self->{context}->{cluster}->postStopNode(host => $self->{context}->{host});
 
-    $log->info('Unregister the nodes');
-    $self->{context}->{cluster}->unregisterNode(node => $self->{context}->{host}->node);
-
     # Handle the remaning system image of the node
     try {
         my $image = EEntity->new(data => $self->{context}->{host}->node->systemimage);
@@ -109,6 +106,9 @@ sub execute {
         $log->warn("Unable to remove system image for node ". $self->{context}->{host}->label);
         $log->error("$err");
     }
+
+    $log->info('Unregister the node');
+    $self->{context}->{cluster}->unregisterNode(node => $self->{context}->{host}->node);
 }
 
 

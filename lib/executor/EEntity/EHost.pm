@@ -50,10 +50,8 @@ sub start {
     my $self = shift;
     my %args = @_;
 
-    $self->getHostManager->startHost(host       => $self,
-                                     hypervisor => $args{hypervisor},
-                                     cluster    => $args{cluster},
-                                     erollback  => $args{erollback});
+    # Do not known the list of params, it dpends of the type of host manager
+    $self->getHostManager->startHost(host => $self, %args);
 
     $self->setState(state => 'starting');
 
@@ -66,7 +64,8 @@ sub halt {
     my $self = shift;
     my %args = @_;
 
-    my $result = $self->getEContext->execute(command => 'poweroff');
+    $self->getHostManager->haltHost(host => $self);
+
     $self->setState(state => 'stopping');
 }
 
@@ -115,7 +114,7 @@ Return the component to interrogate to get system informations
 sub getSystemComponent {
     my $self = shift;
 
-    return EEntity->new(entity => $self->node->service_provider->getComponent(category => "System"));
+    return EEntity->new(entity => $self->node->getComponent(category => "System"));
 }
 
 

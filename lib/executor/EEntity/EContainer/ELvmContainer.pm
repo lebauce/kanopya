@@ -31,7 +31,7 @@ sub getDefaultExportManager {
     my $self = shift;
     my %args = @_;
 
-    return $self->getDiskManager()->getMasterNode->getComponent(category => "BlockExportManager");
+    return $self->disk_manager->getMasterNode->getComponent(category => "BlockExportManager");
 }
 
 1;

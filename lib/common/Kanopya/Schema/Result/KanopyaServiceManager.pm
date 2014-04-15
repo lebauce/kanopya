@@ -46,13 +46,6 @@ __PACKAGE__->table("kanopya_service_manager");
   is_foreign_key: 1
   is_nullable: 0
 
-=head2 kanopya_executor_id
-
-  data_type: 'integer'
-  extra: {unsigned => 1}
-  is_foreign_key: 1
-  is_nullable: 1
-
 =cut
 
 __PACKAGE__->add_columns(
@@ -62,13 +55,6 @@ __PACKAGE__->add_columns(
     extra => { unsigned => 1 },
     is_foreign_key => 1,
     is_nullable => 0,
-  },
-  "kanopya_executor_id",
-  {
-    data_type => "integer",
-    extra => { unsigned => 1 },
-    is_foreign_key => 1,
-    is_nullable => 1,
   },
 );
 
@@ -86,26 +72,6 @@ __PACKAGE__->set_primary_key("kanopya_service_manager_id");
 
 =head1 RELATIONS
 
-=head2 kanopya_executor
-
-Type: belongs_to
-
-Related object: L<Kanopya::Schema::Result::KanopyaExecutor>
-
-=cut
-
-__PACKAGE__->belongs_to(
-  "kanopya_executor",
-  "Kanopya::Schema::Result::KanopyaExecutor",
-  { kanopya_executor_id => "kanopya_executor_id" },
-  {
-    is_deferrable => 1,
-    join_type     => "LEFT",
-    on_delete     => "NO ACTION",
-    on_update     => "NO ACTION",
-  },
-);
-
 =head2 kanopya_service_manager
 
 Type: belongs_to
@@ -122,8 +88,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-04-09 17:48:56
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:15n/yyVHuryh9Ht4bxzbtg
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-04-23 17:33:14
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:O1Exjfe/s+u9CxwKaqGIUQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

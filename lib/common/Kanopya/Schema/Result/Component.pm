@@ -74,6 +74,13 @@ __PACKAGE__->table("component");
   is_foreign_key: 1
   is_nullable: 1
 
+=head2 executor_component_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =cut
 
 __PACKAGE__->add_columns(
@@ -112,6 +119,13 @@ __PACKAGE__->add_columns(
     is_foreign_key => 1,
     is_nullable => 1,
   },
+  "executor_component_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
 );
 
 =head1 PRIMARY KEY
@@ -125,25 +139,6 @@ __PACKAGE__->add_columns(
 =cut
 
 __PACKAGE__->set_primary_key("component_id");
-
-=head1 UNIQUE CONSTRAINTS
-
-=head2 C<service_provider_id>
-
-=over 4
-
-=item * L</service_provider_id>
-
-=item * L</component_type_id>
-
-=back
-
-=cut
-
-__PACKAGE__->add_unique_constraint(
-  "service_provider_id",
-  ["service_provider_id", "component_type_id"],
-);
 
 =head1 RELATIONS
 
@@ -473,8 +468,8 @@ Composing rels: L</workflow_def_managers> -> workflow_def
 __PACKAGE__->many_to_many("workflow_defs", "workflow_def_managers", "workflow_def");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-27 11:45:21
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:9n9RiUVvI7Q49nXwGXw2nw
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-27 12:03:40
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:7KRzp+rSaTrOS11ifZrViQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -32,6 +32,38 @@ use Log::Log4perl 'get_logger';
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
+    owner_id => {
+        label        => 'User',
+        pattern      => '^\d+$',
+        type         => 'relation',
+        relation     => 'single',
+        is_mandatory => 1,
+        is_editable  => 0
+    },
+    domainname => {
+        label        => 'Domain',
+        pattern      => '^[a-z0-9-]+(\.[a-z0-9-]+)+$',
+        is_mandatory => 1,
+        is_editable  => 0
+    },
+    nameserver1 => {
+        label        => 'Primary name server',
+        pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
+        is_mandatory => 1,
+        is_editable  => 1
+    },
+    nameserver2 => {
+        label        => 'Secondary name server',
+        pattern      => '^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$',
+        is_mandatory => 1,
+        is_editable  => 1
+    },
+    default_gateway_id => {
+        label        => 'Default gateway network',
+        pattern      => '\d+',
+        is_mandatory => 0,
+        is_editable  => 1
+    },
     linuxes_mount => {
         label => 'Filesystems mounts',
         type => 'relation',
@@ -134,10 +166,10 @@ sub removeMount {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
     my $nfs;
-    my $ntp = $self->service_provider->getKanopyaCluster->getComponent(category => 'System');
+    my $ntpserver = Entity::ServiceProvider::Cluster->getKanopyaCluster->getComponent(category => 'System');
     my $conf = $self->getConf();
     my $tag = 'kanopya::' . lc($self->component_type->component_name);
     my $classes = {};
@@ -145,15 +177,15 @@ sub getPuppetDefinition {
     my $mounts = {};
     my $swaps = {};
 
-    if (Entity::ServiceProvider::Cluster->getKanopyaCluster->id == $args{cluster}->id) {
+    if ($ntpserver->id == $self->id) {
         $classes->{"kanopya::ntp::server"} = {
             tag => $tag
         };
     }
     else {
         $classes->{"kanopya::ntp::client"} = {
-            server => $ntp->getMasterNode->adminIp,
-            tag => $tag
+            server => $ntpserver->getMasterNode->adminIp,
+            tag    => $tag
         };
     }
 

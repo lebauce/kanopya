@@ -66,11 +66,13 @@ eval{
     $node_1 = $service_provider->registerNode(hostname         => 'node_1',
                                               monitoring_state => 'up',
                                               number           => 1);
+    $service_provider->enableNode(node_id => $node_1->id);
 
     # Create node 2
     $node_2 = $service_provider->registerNode(hostname         => 'node_2',
                                               monitoring_state => 'up',
                                               number           => 1);
+    $service_provider->enableNode(node_id => $node_2->id);
 
     # Get indicators
     $indic1 = Entity::CollectorIndicator->find (
@@ -667,6 +669,7 @@ sub testBigAggregation {
             $service_provider->registerNode(hostname         => 'node_' . $i,
                                             monitoring_state => 'up',
                                             number           => $i);
+            $service_provider->enableNode(node_id => $node->id);
         }
 
         my $cm = Entity::Metric::Clustermetric->new(
@@ -722,6 +725,7 @@ sub testStatisticFunctions {
             $service_provider->registerNode(hostname         => 'node_' . $i,
                                             monitoring_state => 'up',
                                             number           => $i);
+            $service_provider->enableNode(node_id => $node->id);
         }
 
         my $mock_conf  = "{'default':{'const':null},"

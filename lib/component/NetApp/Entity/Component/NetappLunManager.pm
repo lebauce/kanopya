@@ -42,6 +42,14 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
+    executor_component_id => {
+        label        => 'Workflow manager',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^[0-9\.]*$',
+        is_mandatory => 1,
+        is_editable  => 0,
+    },
     disk_type => {
         is_virtual => 1
     },
@@ -134,8 +142,6 @@ sub getBootPolicyFromExportManager {
 
     General::checkParams(args => \%args, required => [ "export_manager" ]);
 
-    my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
-
     if ($args{export_manager}->id == $self->id) {
         return Manager::HostManager->BOOT_POLICIES->{pxe_iscsi};
     }
@@ -176,7 +182,7 @@ sub createDisk {
                          required => [ "volume_id", "disk_name", "size", "filesystem" ]);
 
     $log->debug("New Operation CreateDisk with attrs : " . %args);
-    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
+    $self->executor_component->enqueue(
         type     => 'CreateDisk',
         params   => {
             name       => $args{disk_name},
@@ -200,7 +206,7 @@ sub createExport {
                          required => [ "container", "export_name", "typeio", "iomode" ]);
 
     $log->debug("New Operation CreateExport with attrs : " . %args);
-    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
+    $self->executor_component->enqueue(
         type     => 'CreateExport',
         params   => {
             context => {

@@ -12,6 +12,14 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+=pod
+=begin classdoc
+
+Execution class for Dhcpd3 component.
+
+=end classdoc
+=cut
+
 package EEntity::EComponent::EDhcpd3;
 
 use strict;
@@ -28,7 +36,7 @@ sub addHost {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'host' ]);
-    
+
     my $erollback = $args{erollback};
     delete $args{erollback};
     $self->_entity->addHost(%args);
@@ -46,7 +54,7 @@ sub removeHost {
 
     my $ret = $self->_entity->removeHost(%args);
     
-    if (exists $args{erollback}) {
+    if (exists $args{erollback} and defined $args{erollback}) {
         $args{erollback}->add(
             function   => $self->can('addHost'),
             parameters => [ $self, $args{host} ]

@@ -32,7 +32,6 @@ use warnings;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 use Kanopya::Exceptions;
-use Entity::ServiceProvider;
 use Entity::Host;
 use EntityState;
 use CapacityManagement;
@@ -197,12 +196,6 @@ sub execute {
         throw Kanopya::Exception::Internal(error => 'VM is not up');
     }
 
-    # Check if host is on the hypervisors cluster
-    if ($self->{context}->{host}->getClusterId() !=
-        $self->{context}->{vm}->hypervisor->getClusterId()) {
-        throw Kanopya::Exception::Internal::WrongValue(error => "VM is not on the hypervisor cluster");
-    }
-
     # Check if the destination differs from the source
     my $vm_state = $self->{context}->{cloudmanager_comp}->getVMState(
         host => $self->{context}->{vm},
@@ -217,10 +210,8 @@ sub execute {
     }
     else {
         # Check if there is enough resource in destination host
-        my $vm_id      = $self->{context}->{vm}->getAttr(name => 'entity_id');
-        my $cluster_id = $self->{context}->{vm}->getClusterId();
-        my $hv_id      = $self->{context}->{'host'}->id();
-
+        my $vm_id = $self->{context}->{vm}->getAttr(name => 'entity_id');
+        my $hv_id = $self->{context}->{'host'}->id();
         my $cm = CapacityManagement->new(
                      cloud_manager => $self->{context}->{cloudmanager_comp},
                  );

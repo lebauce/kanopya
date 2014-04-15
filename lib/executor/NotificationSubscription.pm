@@ -46,10 +46,6 @@ use constant ATTR_DEF => {
         pattern      => '^' . join('|', Entity::Operation::OPERATION_STATES) . '$',
         is_mandatory => 1,
     },
-    service_provider_id => {
-        pattern      => '^\d*$',
-        is_mandatory => 1,
-    },
     validation => {
         pattern      => '^[01]$',
         is_mandatory => 0,

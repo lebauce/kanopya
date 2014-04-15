@@ -70,11 +70,12 @@ Base method to authenticate daemon to the api.
 
 sub new {
     my ($class, %args) = @_;
+    (my $classname = $class) =~ s/.*\:\://g;
 
     General::checkParams(args     => \%args,
                          optional => { 'confkey' => undef,
                                        'config'  => {},
-                                       'name'    => $class });
+                                       'name'    => $classname });
 
     my $self = { name => $args{name}, component => undef };
     bless $self, $class;

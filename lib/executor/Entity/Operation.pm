@@ -131,7 +131,7 @@ If params are given in parameters, serialize its in database.
 @optional params      the operation parameters hash
 @optional workflow_id the workflow that the operation belongs to
 @optional harmless    flag to set the operatio as harmless
-@optional related_id  the related entity of the workflow
+@optional workflow_manager the workflow_manager component
 @optional group       the operation group
 
 @return the operation instance.
@@ -145,12 +145,12 @@ sub new {
 
     General::checkParams(args     => \%args,
                          required => [ 'priority', 'operationtype' ],
-                         optional => { 'workflow_id' => undef,
-                                       'params'      => undef,
-                                       'harmless'    => 0,
-                                       'group'       => undef,
-                                       'related_id'  => undef,
-                                       'timeout'     => undef });
+                         optional => { 'workflow_id'      => undef,
+                                       'params'           => undef,
+                                       'harmless'         => 0,
+                                       'group'            => undef,
+                                       'workflow_manager' => undef,
+                                       'timeout'          => undef });
 
     # If workflow not defined, initiate a new one with parameters
     my $workflow;
@@ -158,7 +158,8 @@ sub new {
         $workflow = Entity::Workflow->get(id => $args{workflow_id});
     }
     else {
-        $workflow = Entity::Workflow->new(related_id => $args{related_id}, timeout => $args{timeout});
+        General::checkParams(args => \%args, required => [ 'workflow_manager' ]);
+        $workflow = Entity::Workflow->new(workflow_manager => $args{workflow_manager}, timeout => $args{timeout});
     }
 
     # Compute the execution time if required
@@ -170,7 +171,8 @@ sub new {
     Kanopya::Database::beginTransaction;
 
     try {
-        $log->debug("Enqueuing new operation <$args{type}>, in workflow <" . $workflow->id . ">");
+        $log->debug("Enqueuing new operation <" . $args{operationtype}->label .
+                    ">, in workflow <" . $workflow->id . ">");
         $self = $class->SUPER::new(operationtype_id     => $args{operationtype}->id,
                                    state                => "pending",
                                    execution_rank       => $workflow->getNextRank(),
@@ -399,22 +401,8 @@ Validate the operation that the execution has been stopped because it require va
 sub validate {
     my ($self, %args) = @_;
 
-    my $executor;
-    try {
-        $executor = $self->workflow->relatedServiceProvider->getManager(manager_type => 'ExecutionManager');
-    }
-    catch (Kanopya::Exception::Internal $err) {
-        throw Kanopya::Exception::Internal(
-                  error => "Can not validate operation <" . $self->id .
-                           "> without related service provider on the workflow."
-              );
-    }
-    catch ($err) {
-        $err->rethrow();
-    }
-
     # Push a message on the channel 'operation_result' to continue the workflow
-    $executor->terminate(operation_id => $self->id, status => 'validated');
+    $self->workflow->workflow_manager->terminate(operation_id => $self->id, status => 'validated');
 
     $self->removeValidationPerm();
 }
@@ -431,24 +419,12 @@ Deny the operation that the execution has been stopped because it require valida
 sub deny {
     my ($self, %args) = @_;
 
-    my $executor;
-    try {
-        $executor = $self->workflow->relatedServiceProvider->getManager(manager_type => 'ExecutionManager');
-    }
-    catch (Kanopya::Exception::Internal $err) {
-        throw Kanopya::Exception::Internal(
-                  error => "Can not validate operation <" . $self->id .
-                           "> without related service provider on the workflow."
-              );
-    }
-    catch ($err) {
-        $err->rethrow();
-    }
-
     $self->workflow->cancel();
 
     # Push a message on the channel 'operation_result' to continue the workflow
-    $executor->terminate(operation_id => $self->id, status => 'waiting_validation');
+    $self->workflow->workflow_manager->terminate(
+        operation_id => $self->id, status => 'waiting_validation'
+    );
 
     $self->removeValidationPerm();
 }

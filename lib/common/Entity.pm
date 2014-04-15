@@ -33,7 +33,6 @@ use Entity::Gp;
 use Kanopya::Exceptions;
 
 use Data::Dumper;
-
 use TryCatch;
 
 use Log::Log4perl 'get_logger';
@@ -100,6 +99,7 @@ sub methods {
 
 Override BaseDB constructor to add the newly created entity
 to the corresponding groups of the whole class hierarchy. 
+Also use the current logged in user to set the owner_id if not defined.
 
 @return the entity instance
 
@@ -107,8 +107,10 @@ to the corresponding groups of the whole class hierarchy.
 =cut
 
 sub new {
-    my $class = shift;
-    my %args = @_;
+    my ($class, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         optional => { 'owner_id' => Kanopya::Database::currentUser });
 
     # Get the class_type_id for class name
     $args{class_type_id} = ClassType->find(hash => { class_type => $class })->id;
@@ -437,7 +439,6 @@ sub checkPerm {
         );
     }
 }
-
 
 sub activate {
     my $self = shift;

@@ -72,23 +72,31 @@ sub getPuppetDefinition {
             classes => {
                 'kanopya::openstack::keystone' => {
                     admin_password => 'keystone',
-                    email => $self->service_provider->owner->user_email,
+                    email => $self->getMasterNode->owner->user_email,
                     database_user => $name,
                     database_name => $name,
                 }
             },
-            dependencies => [ $sql ]
+            dependencies => $self->getDependentComponents()
         }
     } );
 }
 
-sub getHostsEntries {
-    my $self = shift;
 
-    my @entries = $self->mysql5->service_provider->getHostEntries();
+=pod
+=begin classdoc
 
-    return \@entries;
+Keystone depend on its mysql.
+
+=end classdoc
+=cut
+
+sub getDependentComponents {
+    my ($self, %args) = @_;
+
+    return [ $self->mysql5 ];
 }
+
 
 sub checkConfiguration {
     my $self = shift;

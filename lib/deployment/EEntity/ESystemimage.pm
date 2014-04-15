@@ -65,7 +65,8 @@ sub activate {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "container_accesses", "erollback" ]);
+                         required => [ "container_accesses" ],
+                         optional => { "erollback" => undef });
 
     # TODO: Check if the container of each container accesses is the same.
 
@@ -73,8 +74,7 @@ sub activate {
     $self->update(systemimage_container_accesses => $args{container_accesses});
 
     # Set system image active
-    $self->setAttr(name => 'active', value => 1);
-    $self->save();
+    $self->active(1);
 
     $log->info("System image <" . $self->systemimage_name . "> is now active");
 }
@@ -94,7 +94,7 @@ sub deactivate {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "erollback" ]);
+    General::checkParams(args => \%args, optional => { "erollback" => undef });
 
     # Get instances of container accesses from systemimages root container
     $log->info("Remove all container accesses");
@@ -131,7 +131,7 @@ sub remove {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args, required => [ "erollback" ]);
+    General::checkParams(args => \%args, optional => { "erollback" => undef });
 
     # Get the container before removing the container_access
     my $container;

@@ -22,8 +22,6 @@ use warnings;
 use EEntity;
 use Kanopya::Exceptions;
 
-use Entity::ServiceProvider;
-
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 

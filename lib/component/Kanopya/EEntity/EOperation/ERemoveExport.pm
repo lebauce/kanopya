@@ -38,11 +38,10 @@ sub check {
 sub execute {
     my ($self, %args) = @_;
 
-    # Check service provider state
-    my $storage_provider = $self->{context}->{export_manager}->service_provider;
-    my ($state, $timestamp) = $storage_provider->getState();
+    # Check export manager state
+    my ($state, $timestamp) = $self->{context}->{export_manager}->getMasterNode->getState();
     if ($state ne 'up'){
-        $errmsg = "Service provider has to be up !";
+        $errmsg = "Export manager has to be up !";
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }
 

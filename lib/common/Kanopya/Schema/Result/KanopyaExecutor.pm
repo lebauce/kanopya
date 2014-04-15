@@ -52,6 +52,13 @@ __PACKAGE__->table("kanopya_executor");
   is_nullable: 1
   size: 255
 
+=head2 notifier_component_id
+
+  data_type: 'integer'
+  extra: {unsigned => 1}
+  is_foreign_key: 1
+  is_nullable: 1
+
 =head2 time_step
 
   data_type: 'integer'
@@ -88,6 +95,13 @@ __PACKAGE__->add_columns(
   },
   "control_queue",
   { data_type => "char", is_nullable => 1, size => 255 },
+  "notifier_component_id",
+  {
+    data_type => "integer",
+    extra => { unsigned => 1 },
+    is_foreign_key => 1,
+    is_nullable => 1,
+  },
   "time_step",
   { data_type => "integer", extra => { unsigned => 1 }, is_nullable => 0 },
   "masterimages_directory",
@@ -112,18 +126,18 @@ __PACKAGE__->set_primary_key("kanopya_executor_id");
 
 =head1 RELATIONS
 
-=head2 kanopya_deployment_managers
+=head2 components
 
 Type: has_many
 
-Related object: L<Kanopya::Schema::Result::KanopyaDeploymentManager>
+Related object: L<Kanopya::Schema::Result::Component>
 
 =cut
 
 __PACKAGE__->has_many(
-  "kanopya_deployment_managers",
-  "Kanopya::Schema::Result::KanopyaDeploymentManager",
-  { "foreign.kanopya_executor_id" => "self.kanopya_executor_id" },
+  "components",
+  "Kanopya::Schema::Result::Component",
+  { "foreign.executor_component_id" => "self.kanopya_executor_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -142,24 +156,44 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
-=head2 kanopya_service_managers
+=head2 notifier_component
+
+Type: belongs_to
+
+Related object: L<Kanopya::Schema::Result::Component>
+
+=cut
+
+__PACKAGE__->belongs_to(
+  "notifier_component",
+  "Kanopya::Schema::Result::Component",
+  { component_id => "notifier_component_id" },
+  {
+    is_deferrable => 1,
+    join_type     => "LEFT",
+    on_delete     => "NO ACTION",
+    on_update     => "NO ACTION",
+  },
+);
+
+=head2 workflows
 
 Type: has_many
 
-Related object: L<Kanopya::Schema::Result::KanopyaServiceManager>
+Related object: L<Kanopya::Schema::Result::Workflow>
 
 =cut
 
 __PACKAGE__->has_many(
-  "kanopya_service_managers",
-  "Kanopya::Schema::Result::KanopyaServiceManager",
-  { "foreign.kanopya_executor_id" => "self.kanopya_executor_id" },
+  "workflows",
+  "Kanopya::Schema::Result::Workflow",
+  { "foreign.workflow_manager_id" => "self.kanopya_executor_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-04-09 17:48:56
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:fmh7RACdvWtrV+G5k0bh6A
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-05-13 11:28:31
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:XLG6GDgx+hae4liOGemBtA
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

@@ -21,8 +21,7 @@ use Entity::ServiceProvider::Cluster;
 use strict;
 use warnings;
 
-use constant ATTR_DEF => {
-};
+use constant ATTR_DEF => {};
 
 sub methods {
     return {
@@ -45,8 +44,7 @@ sub synchronize {
     my $self = shift;
 
     my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster();
-
-    $kanopya->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+    $kanopya->getComponent(name => "KanopyaExecutor")->run(
         name   => 'Synchronize',
         params => {
             context => {

@@ -214,7 +214,13 @@ sub test4a {
     lives_ok {
 
         expectedException {
-            my $selected_host = DecisionMaker::HostSelector->getHost(cluster => $cluster);
+            my @interfaces = $cluster->interfaces;
+            my $selected_host = DecisionMaker::HostSelector->getHost(
+                                    host_manager => Entity::Component::Physicalhoster0->find(),
+                                    interfaces   => \@interfaces,
+                                    %{ $host_manager_conf->{managers}->{host_manager}->{manager_params} },
+                                );
+
         } 'Kanopya::Exception', 'Test 4.a : Wrong host selected expected no host';
 
         # Create Host 6
@@ -238,8 +244,14 @@ sub test4a {
         );
         push @hosts, $host;
 
+        my @interfaces = $cluster->interfaces;
+        my $selected_host = DecisionMaker::HostSelector->getHost(
+                                host_manager => Entity::Component::Physicalhoster0->find(),
+                                interfaces   => \@interfaces,
+                                %{ $host_manager_conf->{managers}->{host_manager}->{manager_params} },
+                            );
 
-        $selected_host = DecisionMaker::HostSelector->getHost(cluster => $cluster);
+
         # The selected host must be the last one.
         if ($selected_host->id != $hosts[-1]->id) {
             die ('Test 4.a : Wrong host <'.($selected_host->id).'> selected, expected <'.($hosts[3]->id).'>');

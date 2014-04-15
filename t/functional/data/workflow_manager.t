@@ -11,7 +11,7 @@ use Data::Dumper;
 use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
     level  => 'DEBUG',
-    file   => 'workflowDef.log',
+    file   => 'workflow_manager.log',
     layout => '%F %L %p %m%n'
 });
 my $log = get_logger("");
@@ -22,6 +22,7 @@ use General;
 use Entity;
 use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::Kanopyaworkflow0;
+use Entity::Component::KanopyaExecutor;
 use Entity::Component::Sco;
 use Kanopya::Tools::TestUtils 'expectedException';
 use Data::Compare;
@@ -277,7 +278,8 @@ sub createObjects {
                      );
 
         # Create workflow defs for Entity::Component::Sco
-        $sco_wfmanager = Entity::Component::Sco->new(service_provider_id => $service_provider->id);
+        $sco_wfmanager = Entity::Component::Sco->new(service_provider_id => $service_provider->id,
+                                                     executor_component_id => Entity::Component::KanopyaExecutor->find->id);
         $sco_wfdefs[0] = $sco_wfmanager->createWorkflowDef(workflow_name => 'myscoworkflowdef',
                                                            params        => {sco_param_0 => 'sco_param_0'});
 

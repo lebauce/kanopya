@@ -32,7 +32,17 @@ is $created_post_content->{vlan_name}, 'testvlan', "created vlan $post_id has co
 is $created_post_content->{vlan_number}, '102', "created vlan $post_id has correct value for param vlan_number";
 
 # POST ON A RESOURCE WITH RELATION
-my $operation_creation = dancer_response POST => '/api/operation', { params => { type => 'AddNode', priority => 200 } };
+my $response = dancer_response GET => '/api/operationtype';
+my $operationtype = pop Dancer::from_json($response->{content});
+$response = dancer_response GET => '/api/kanopyaexecutor';
+my $executor = pop Dancer::from_json($response->{content});
+my $operation_creation = dancer_response POST => '/api/operation', {
+	params => {
+		operationtype    => $operationtype,
+		workflow_manager => $executor,
+		priority         => 200
+	}
+};
 is $operation_creation->{status}, '200', 'reponse for POST /api/operation is 200';
 
 my $operation_content = Dancer::from_json($operation_creation->{content});

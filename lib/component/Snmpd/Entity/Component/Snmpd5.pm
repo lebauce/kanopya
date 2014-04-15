@@ -25,6 +25,7 @@ use warnings;
 use Kanopya::Config;
 use Kanopya::Exceptions;
 use Entity;
+use Entity::ServiceProvider::Cluster;
 
 use Hash::Merge qw(merge);
 use Log::Log4perl "get_logger";
@@ -49,7 +50,9 @@ sub getNetConf {
 sub getPuppetDefinition {
     my ($self, %args) = @_;
 
-    my $collector = $self->service_provider->getManager(manager_type => 'CollectorManager');
+    my $collector = Entity::ServiceProvider::Cluster->getKanopyaCluster->getComponent(
+                        category => 'CollectorManager'
+                    );
 
     return merge($self->SUPER::getPuppetDefinition(%args), {
         snmpd => {

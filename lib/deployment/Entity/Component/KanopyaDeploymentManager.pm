@@ -44,7 +44,7 @@ my $log = get_logger("");
 
 
 use constant ATTR_DEF => {
-    kanopya_executor_id => {
+    executor_component_id => {
         label        => 'Workflow manager',
         type         => 'relation',
         relation     => 'single',
@@ -95,7 +95,7 @@ sub new {
     my ($class, %args) = @_;
 
     General::checkParams(args => \%args,
-                         required => [ 'kanopya_executor', 'dhcp_component',
+                         required => [ 'executor_component', 'dhcp_component',
                                        'tftp_component', 'system_component' ]);
 
     my @wrongs;
@@ -129,11 +129,12 @@ Use the executor to run the operation AddCluster.
 
 @param node the node to deploy
 @param systemimage the systemiage to use to deploy the node
-@param boot_mode, the boot mode for the deplyoment
+@param boot_policy, the boot policy for the deplyoment
 
 @optional hypervisor the hypervisor to use for virtuals nodes
 @optional kernel_id force the kernel to use
 @optional workflow in which to embed the deployment operation
+@optional deploy_on_disk activate the on disk deployment
 
 =end classdoc
 =cut
@@ -142,11 +143,12 @@ sub deployNode {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'node', 'systemimage', 'boot_mode' ],
-                         optional => { 'hypervisor' => undef, 'kernel_id' => undef, 'workflow' => undef });
+                         required => [ 'node', 'systemimage', 'boot_policy' ],
+                         optional => { 'hypervisor' => undef, 'kernel_id' => undef,
+                                       'deploy_on_disk' => 0, 'workflow' => undef });
 
     $args{context}->{deployment_manager} = $self;
-    return $self->kanopya_executor->enqueue(
+    return $self->executor_component->enqueue(
                type     => 'DeployNode',
                workflow => $args{workflow},
                params => {
@@ -155,8 +157,9 @@ sub deployNode {
                        node               => $args{node},
                        systemimage        => $args{systemimage},
                    },
-                   boot_mode => $args{boot_mode},
-                   kernel_id => $args{kernel_id},
+                   boot_policy    => $args{boot_policy},
+                   deploy_on_disk => $args{deploy_on_disk},
+                   kernel_id      => $args{kernel_id},
                }
            );
 }
@@ -182,10 +185,15 @@ sub releaseNode {
                          optional => { 'workflow' => undef });
 
     $args{context}->{deployment_manager} = $self;
-    return $self->kanopya_executor->enqueue(
+    return $self->executor_component->enqueue(
                type     => 'ReleaseNode',
                workflow => $args{workflow},
-               params   => %args
+               params   => {
+                   context => {
+                       deployment_manager => $self,
+                       node               => $args{node},
+                   },
+               }
            );
 }
 

@@ -368,17 +368,6 @@ sub triggerWorkflow {
 
     General::checkParams(args => \%args, optional => { host_name => undef });
 
-    my $execution_manager;
-    try {
-        $execution_manager = $self->service_provider->getManager(manager_type => 'ExecutionManager');
-    }
-    catch ($err) {
-        throw Kanopya::Exception::Internal(
-                  error => "Service provider <" . $self->service_provider->label .
-                           "> has no Execution Manager. Cannot trigger workflow"
-              );
-    }
-
     my $association;
     try {
         $association = $self->find(related => "workflow_def_rules");
@@ -417,9 +406,8 @@ sub triggerWorkflow {
                           );
 
     #run the workflow with the fully defined params
-    return $execution_manager->run(
+    return $wf_manager->executor_component->run(
                name       => $association->workflow_def->workflow_def_name,
-               related_id => $self->service_provider_id,
                params     => $workflow_params,
                rule       => $self,
            );
@@ -576,6 +564,40 @@ sub isActive {
     }
 
     return $active;
+}
+
+
+=pod
+
+Utility method used to clone a formula
+Clone all objects used in formula and translate formula to use cloned object ids
+
+@param dest_sp_id id of the service provider where to import all cloned objects
+@param formula string representing a formula (i.e operators and object ids in the format "idXXX")
+@param formula_class class of object used in formula
+
+@return the cloned object
+
+=end classdoc
+=cut
+
+sub _cloneFormula {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => ['dest_sp_id', 'formula', 'formula_class']);
+
+    my $formula = $args{formula};
+    # Get ids in formula
+    my %ids = map { $_ => undef } ($formula =~ m/id(\d+)/g);
+    # Clone objects used in formula
+    %ids = map {
+        $_ => $args{formula_class}->get(id => $_)->clone(dest_service_provider_id => $args{dest_sp_id})->id
+    } keys %ids;
+
+    # Replace ids in formula with cloned objects ids
+    $formula =~ s/id(\d+)/id$ids{$1}/g;
+
+    return $formula;
 }
 
 1;

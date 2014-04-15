@@ -160,7 +160,7 @@ sub main {
     rrd_creation();
     indicator_deletion();
     rrd_deletion();
-    delete_node();
+    unregister_node();
     clean_test();
 
     if ($testing == 1) {
@@ -168,11 +168,12 @@ sub main {
     }
 }
 
-sub delete_node {
+sub unregister_node {
     lives_ok {
         diag('Deleting node...');
         my $node_hostname = $node->node_hostname;
-        $node->remove();
+        $service_provider->unregisterNode(node => $node);
+
         my $used_indicators = $aggregator->_getUsedIndicators(service_provider     => $service_provider,
                                                               include_nodemetric   => 1);
 

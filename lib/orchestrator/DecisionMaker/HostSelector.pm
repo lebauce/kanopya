@@ -52,9 +52,16 @@ use constant {
 Select and return the more suitable host according to constraints
 
 All constraints args are optional, not defined means no constraint for this arg
-Final constraints are intersection of input constraints and cluster components contraints.
+Final constraints are intersection of input constraints and cluster components constraints.
 
-@param cluster The cluster containing all the constraints, and a reference to the free hosts list.
+@param host_manager the caller host manager
+@param interfaces the network interfaces constraints
+@param core the core number constraints
+@param ram the ram amount constraint
+
+@optional deploy_on_disk the on disk deployable constraints
+@optional tags the tag list constraints
+@optional no_tags the no_tag list constraints
 
 @return the selected host
 
@@ -64,9 +71,11 @@ Final constraints are intersection of input constraints and cluster components c
 sub getHost {
     my ($class, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ "cluster" ]);
+    General::checkParams(args     => \%args,
+                         required => [ "host_manager", "interfaces", "core", "ram" ],
+                         optional => { "deploy_on_disk" => 0, "tags" => [], "no_tags" => [] });
 
-    my @free_hosts = $args{cluster}->getManager(manager_type => "HostManager")->getFreeHosts();
+    my @free_hosts = $args{host_manager}->getFreeHosts();
 
     $log->debug('Number of free hosts in the host manager : ' . scalar(@free_hosts));
     $log->debug('Retrieving id of master network to exclude it from the constraints');
@@ -76,7 +85,7 @@ sub getHost {
     $log->debug('Creating JSON structure for hosts description');
 
     # Pre-filter the host list from required ifaces names on cluster
-    # TODO: hande the contraints on the iface name in the constraint solver
+    # TODO: hande the constraints on the iface name in the constraint solver
 
     # INFRASTRUCTURE
     my @json_infrastructure;
@@ -84,9 +93,9 @@ sub getHost {
     HOST:
     for my $host (@free_hosts) {
         # Pre-filter the host list from required ifaces names on cluster
-        # TODO: hande the contraints on the iface name in the constraint solver
+        # TODO: hande the constraints on the iface name in the constraint solver
         INTERFACE:
-        for my $interface ($args{cluster}->interfaces) {
+        for my $interface (@{ $args{interfaces} }) {
             try {
                 $host->find(related => 'ifaces', hash => { iface_name => $interface->interface_name });
             }
@@ -142,10 +151,10 @@ sub getHost {
 
     # Construct json interfaces (bonds number + netIPs)
     my @json_interfaces;
-    for my $interface ($args{cluster}->interfaces) {
+    for my $interface (@{ $args{interfaces} }) {
         my @networks;
 
-        # Do not handle contraints on network connectivity if the host's ifaces not configured
+        # Do not handle constraints on network connectivity if the host's ifaces not configured
         # this must implemented in the constraint solver, disable network connectivity contrains for now.
         # for my $netconf ($interface->netconfs) {
         #     # Add id of all networks in the current netconf
@@ -160,22 +169,21 @@ sub getHost {
     }
 
     # Construct the constraint json object
-    my $host_params  = $args{cluster}->getManagerParameters(manager_type => "HostManager");
     my $json_constraints = {
         cpu => {
-            nbCoresMin => $host_params->{core},
+            nbCoresMin => $args{core},
         },
         ram => {
-            qtyMin => $host_params->{ram}/1024/1024,
+            qtyMin => $args{ram}/1024/1024,
         },
         network => {
             interfaces => \@json_interfaces,
         },
         storage => {
-            hardDisksNumberMin => $host_params->{deploy_on_disk} ? 1 : 0,
+            hardDisksNumberMin => $args{deploy_on_disk},
         },
-        tagsMin => defined( $host_params->{tags} ) ? $host_params->{tags} : [],
-        noTags => defined( $host_params->{no_tags} ) ? $host_params->{no_tags} : [],
+        tagsMin => $args{tags},
+        noTags  => $args{no_tags},
     };
 
     $log->debug('Creating JSON temp files');

@@ -72,9 +72,7 @@ sub new {
     my $self = $class->SUPER::new(%args);
 
     # Compute the current consomation value for the resource
-    my @services = Entity::ServiceProvider::Cluster->search(hash => {
-                       user_id => $self->user->id
-                   });
+    my @nodes = Entity::Node->search(hash => { user_id => $self->user->id });
 
     my $hostattr;
     if ($self->resource eq 'ram') {
@@ -84,14 +82,10 @@ sub new {
     }
 
     my $consumed = 0;
-    for my $service (@services) {
-        my @nodes = $service->nodes;
-        for my $node (@nodes) {
-            $consumed += $node->host->$hostattr;
-        }
+    for my $node (@nodes) {
+        $consumed += $node->host->$hostattr;
     }
-    $self->setAttr(name => 'current', value => $consumed);
-    $self->save();
+    $self->current($consumed);
 
     return $self;
 }

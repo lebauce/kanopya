@@ -48,6 +48,14 @@ use Log::Log4perl 'get_logger';
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
+    workflow_manager_id => {
+        label        => 'Workflow manager',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^[0-9\.]*$',
+        is_mandatory => 1,
+        is_editable  => 0,
+    },
     workflow_name => {
         pattern      => '^.*$',
         is_mandatory => 0,
@@ -55,10 +63,6 @@ use constant ATTR_DEF => {
     state => {
         pattern      => '^.*$',
         default      => 'pending',
-        is_mandatory => 0,
-    },
-    related_id => {
-        pattern      => '^\d+$',
         is_mandatory => 0,
     },
     user => {
@@ -87,37 +91,15 @@ my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
 =pod
 =begin classdoc
 
-@constructor
-
-Override the constructor to set the owner to the current logged user.
-
-=end classdoc
-=cut
-
-sub new {
-    my ($class, %args) = @_;
-
-    General::checkParams(args     => \%args,
-                         optional => { 'owner_id' => Kanopya::Database::currentUser });
-
-    return $class->SUPER::new(%args);
-}
-
-
-=pod
-=begin classdoc
-
 Instanciate and run a new workflow from a already defined WorfklowDef
 
 @param name WorfkDef name
+@param workflow_manager the workflow manager component
 
 @optional params the workflow parameters
 @optional timeout the number of second to consider the workflow timeouted
 @optional rule the rule which have triggered the workflow if the workflow is triggered by a rule
-@optional related_id the entity related to the workflow
 @optional owner_id the user owner of the workflow
-
-@optional related_id Entity related to the workflow
 
 =end classdoc
 =cut
@@ -126,12 +108,11 @@ sub run {
     my ($class, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'name' ],
-                         optional => { 'params'     => {},
-                                       'timeout'    => undef,
-                                       'rule'       => undef,
-                                       'related_id' => undef,
-                                       'owner_id'   => Kanopya::Database::currentUser });
+                         required => [ 'name', 'workflow_manager' ],
+                         optional => { 'params'   => {},
+                                       'timeout'  => undef,
+                                       'rule'     => undef,
+                                       'owner_id' => Kanopya::Database::currentUser });
 
     my $def = Entity::WorkflowDef->find(hash => { workflow_def_name => delete $args{name} });
 
@@ -139,10 +120,10 @@ sub run {
     my $label = $class->formatLabel(params => $args{params}, description => $def->description);
 
     my $timeout = defined ($args{timeout}) ? (time + $args{timeout}) : undef;
-    my $workflow = Entity::Workflow->new(workflow_name => $label,
-                                         related_id    => delete $args{related_id},
-                                         owner_id      => delete $args{owner_id},
-                                         timeout       => $timeout);
+    my $workflow = Entity::Workflow->new(workflow_name    => $label,
+                                         workflow_manager => $args{workflow_manager},
+                                         owner_id         => delete $args{owner_id},
+                                         timeout          => $timeout);
 
     my @steps = WorkflowStep->search(hash     => { workflow_def_id => $def->id },
                                      order_by => 'workflow_step_id asc');
@@ -182,7 +163,6 @@ Enqueue an operation in the workflow
 @param type Operation type
 
 @optional params operation parameters
-@optional related_id related entity
 
 @return enqueued Operation
 
@@ -504,6 +484,21 @@ sub finish {
 =pod
 =begin classdoc
 
+Ask to the workflow manager to resume the workflow
+
+=end classdoc
+=cut
+
+sub resume {
+    my ($self, %args) = @_;
+
+    $self->workflow_manager->resume(workflow_id => $self->id);
+}
+
+
+=pod
+=begin classdoc
+
 Build a user friendly label from context params contents, and a template toolkit formated description.
 
 =end classdoc
@@ -528,28 +523,6 @@ sub formatLabel {
     $template->process(\$desctemplate, $allparams, \$label);
 
     return $label;
-}
-
-
-=pod
-=begin classdoc
-
-Get related service provider.?
-Throw Kanopya::Exception::Internal if related entity is not a service provider
-
-=end classdoc
-=cut
-
-
-sub relatedServiceProvider {
-    my $self = shift;
-
-    if (defined $self->related and $self->related->isa('Entity::ServiceProvider')) {
-        return $self->related;
-    }
-    throw Kanopya::Exception::Internal(
-          error => "Related entity is not a service provider."
-      );
 }
 
 

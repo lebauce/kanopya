@@ -332,29 +332,4 @@ sub findOrCreate {
     }
 }
 
-
-=pod
-=begin classdoc
-
-Overwrite delete in order to forbid user deletion when linked to a ServiceProvider
-
-=end classdoc
-=cut
-
-sub delete {
-    my ($self, %args) = @_;
-
-    my @clusters = $self->search(related => 'entities',
-                                 hash    => {
-                                    'class_type.class_type' => 'Entity::ServiceProvider::Cluster',
-                                 });
-
-    if (scalar @clusters > 0) {
-        throw Kanopya::Exception::DB::DeleteCascade(label     => $self->label,
-                                                    dependant => ref $clusters[0]);
-    }
-
-    return $self->SUPER::delete(%args);
-}
-
 1;

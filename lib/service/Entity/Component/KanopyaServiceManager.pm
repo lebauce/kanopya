@@ -61,7 +61,7 @@ sub createService {
     my ($self, %args) = @_;
 
     $args{context}->{service_manager} = $self;
-    return $self->kanopya_executor->enqueue(
+    return $self->executor_component->enqueue(
                type       => 'AddCluster',
                params     => \%args,
            );
@@ -84,7 +84,7 @@ sub removeService {
                          optional => { 'keep_systemimages' => 0 });
 
     $log->debug("New Operation Remove Cluster with cluster id : " .  $args{service}->id);
-    my $workflow = $self->kanopya_executor->enqueue(
+    my $workflow = $self->executor_component->enqueue(
                        type   => 'RemoveCluster',
                        params => {
                            context => {
@@ -115,7 +115,7 @@ sub forceStopService {
     General::checkParams(args => \%args, required => [ 'service' ]);
 
     $log->debug("New Operation Force Stop Cluster with cluster: " . $args{service}->id);
-    my $workflow = $self->kanopya_executor->enqueue(
+    my $workflow = $self->executor_component->enqueue(
                        type   => 'ForceStopCluster',
                        params => {
                            context => {
@@ -145,7 +145,7 @@ sub activateService {
     General::checkParams(args => \%args, required => [ 'service' ]);
 
     $log->debug("New Operation ActivateCluster with cluster_id : " . $args{service}->id);
-    my $workflow = $self->kanopya_executor->enqueue(
+    my $workflow = $self->executor_component->enqueue(
                        type   => 'ActivateCluster',
                        params => {
                            context => {
@@ -175,7 +175,7 @@ sub deactivateService {
     General::checkParams(args => \%args, required => [ 'service' ]);
 
     $log->debug("New Operation DeactivateCluster with cluster_id : " . $args{service}->id);
-    my $workflow = $self->kanopya_executor->enqueue(
+    my $workflow = $self->executor_component->enqueue(
                        type   => 'DeactivateCluster',
                        params => {
                            context => {
@@ -212,10 +212,9 @@ sub addNode {
         };
     }
 
-    my $workflow = $self->kanopya_executor->run(
-                       name       => 'AddNode',
-                       related_id => $args{service}->id,
-                       params     => {
+    my $workflow = $self->executor_component->run(
+                       name   => 'AddNode',
+                       params => {
                            context => {
                                service_manager => $self,
                                cluster         => $args{service},
@@ -246,10 +245,9 @@ sub removeNode {
 
     General::checkParams(args => \%args, required => [ 'service' ]);
 
-    my $workflow = $self->kanopya_executor->run(
-                       name       => 'StopNode',
-                       related_id => $args{service}->id,
-                       params     => {
+    my $workflow = $self->executor_component->run(
+                       name   => 'StopNode',
+                       params => {
                            context => {
                                service_manager => $self,
                                cluster         => $args{service},
@@ -294,10 +292,9 @@ sub stopService {
 
     General::checkParams(args => \%args, required => [ 'service' ]);
 
-    my $workflow = $self->kanopya_executor->enqueue(
-                       name       => 'StopCluster',
-                       related_id => $args{service}->id,
-                       params     => {
+    my $workflow = $self->executor_component->enqueue(
+                       type   => 'StopCluster',
+                       params => {
                            context => {
                                service_manager => $self,
                                cluster         => $args{service},
@@ -324,10 +321,9 @@ sub reconfigureService {
 
     General::checkParams(args => \%args, required => [ 'service' ]);
 
-    my $workflow = $self->kanopya_executor->enqueue(
-                       name       => 'UpdateCluster',
-                       related_id => $args{service}->id,
-                       params     => {
+    my $workflow = $self->executor_component->enqueue(
+                       type   => 'UpdateCluster',
+                       params => {
                            context => {
                                service_manager => $self,
                                cluster         => $args{service},

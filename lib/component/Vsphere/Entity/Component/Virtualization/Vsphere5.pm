@@ -63,7 +63,16 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("administrator");
 my $errmsg;
 
+
 use constant ATTR_DEF => {
+    executor_component_id => {
+        label        => 'Workflow manager',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^[0-9\.]*$',
+        is_mandatory => 1,
+        is_editable  => 0,
+    },
     repositories => {
         label       => 'Virtual machine images repositories',
         type        => 'relation',
@@ -946,9 +955,6 @@ sub registerVm {
                 manager_type => 'HostManager',
                 manager_id   => $self->id
             );
-
-            # add default execution manager
-            $self->_addExecutionManager(cluster => $service_provider);
         };
         if ($@) {
             $errmsg = 'Could not create new service provider to register vsphere vm: '. $@;
@@ -1321,36 +1327,6 @@ sub promoteVm {
     return $args{host};
 }
 
-=pod
-
-=begin classdoc
-
-Add default execution manager to a cluster
-
-@param cluster the cluster on which manager will be added
-
-=end classdoc
-
-=cut
-
-sub _addExecutionManager {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'cluster' ]);
-
-    my $service_provider = $args{cluster};
-
-    # Find the kanopya cluster
-    my $kanopya = $service_provider->getKanopyaCluster();
-
-    # Add default execution manager
-    my $execution_manager = $kanopya->getComponent(name => "KanopyaExecutor");
-
-    $service_provider->addManager(
-        manager_id   => $execution_manager->id,
-        manager_type => "ExecutionManager"
-    );
-}
 
 sub _registerTemplate {
     my ($self, %args) = @_;

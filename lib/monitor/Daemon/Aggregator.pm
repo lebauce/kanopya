@@ -248,10 +248,12 @@ sub update {
                 $collector_manager = $service_provider->getManager(manager_type => 'CollectorManager');
             };
             if (not $@){
-                next CLUSTER if ( 0 == $service_provider->nodes);
+                my @nodes = $service_provider->nodes;
+                next CLUSTER if (scalar(@nodes) == 0);
                 my $start,
                 my $timeinfo = "duration: ";
-                $log->info('Aggregator collecting for service provider '.  $service_provider->id);
+                $log->info('Aggregator collecting for service provider '.  $service_provider->id .
+                           ' with ' . scalar(@nodes) . ' nodes');
 
                 # Get all indicators used by the service
                 $start = time();

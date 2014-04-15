@@ -66,22 +66,18 @@ sub retrieveData {
     General::checkParams(args => \%args, required => ['var_map']);
 
     my @oid_list = values (%{ $args{var_map} });
-    my $service_provider;
     my $vsphere;
     my $results;
     my $time;
 
     if ($self->{host}->isa("Entity::Host::VirtualMachine::Vsphere5Vm")) {
-        $vsphere = $self->{host}->getHostManager();
-        $results  = $self->_retrieveVmData(oid_list => \@oid_list, vsphere => $vsphere);
+        $vsphere = $self->{host}->host_manager;
+        $results = $self->_retrieveVmData(oid_list => \@oid_list, vsphere => $vsphere);
         $time    = time();
     }
     elsif ($self->{host}->isa("Entity::Host::Hypervisor::Vsphere5Hypervisor")) {
-        $service_provider = $self->{host}->getCluster();
-        $vsphere = $service_provider->getComponent(
-                       name    => 'Vsphere',
-                       version => 5
-        );
+        $vsphere = $self->{host}->node->getComponent(name    => 'Vsphere',
+                                                     version => 5);
         $results  = $self->_retrieveHypervisorData(oid_list => \@oid_list, vsphere => $vsphere);
         $time    = time();
     }

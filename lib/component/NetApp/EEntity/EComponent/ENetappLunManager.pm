@@ -161,7 +161,7 @@ sub createExport {
 
     $log->info("Added iSCSI export for lun " . $args{container}->container_name);
 
-    if (defined $args{erollback}) {
+    if (exists $args{erollback} and defined $args{erollback}) {
         $args{erollback}->add(
             function   => $self->can('removeExport'),
             parameters => [ $self, "container_access", $container_access, ]
@@ -194,9 +194,8 @@ sub addExportClient {
 
     my $host = $args{host};
     my $lun = $args{export}->getContainer;
-    my $cluster = Entity->get(id => $host->getClusterId());
     my $path = $lun->getPath();
-    my $initiator_group = 'igroup_kanopya_' . $cluster->getAttr(name => "cluster_name");
+    my $initiator_group = 'igroup_kanopya_' . $self->getMasterNode->node_hostname;
 
     eval {
         $self->_entity->igroup_create('initiator-group-name' => $initiator_group,

@@ -68,7 +68,7 @@ sub createExport {
 
     $self->generate();
 
-    $log->debug("Added iSCSI Export of device <$device> with target <$disk_targetname>");
+    $log->info("Added iSCSI Export of device <$device> with target <$disk_targetname>");
 
     if (exists $args{erollback} and defined $args{erollback}) {
         $args{erollback}->add(
@@ -336,7 +336,7 @@ sub generate {
         send          => 1
     );
 
-    if (exists $args{erollback}) {
+    if (exists $args{erollback} and defined $args{erollback}) {
         $args{erollback}->add(
             function   => $self->can('generate'),
             parameters => [ $self ]
@@ -347,8 +347,7 @@ sub generate {
 sub postStartNode {
     my ($self, %args) = @_;
 
-    General::checkParams(args     => \%args,
-                         required => [ 'cluster', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
     IscsiPortal->findOrCreate(
         iscsi_id          => $self->id,

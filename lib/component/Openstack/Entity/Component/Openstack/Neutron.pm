@@ -66,29 +66,35 @@ sub getPuppetDefinition {
             classes => {
                 'kanopya::openstack::neutron::server' => {
                     bridge_flat => 'br-flat',
-                    email => $self->service_provider->owner->user_email,
+                    email => $self->getMasterNode->owner->user_email,
                     database_user => $name,
                     database_name => $name,
                     rabbit_user => $name,
                     rabbit_virtualhost => 'openstack-' . $self->nova_controller->id
                 }
             },
-            dependencies => [ $self->nova_controller->keystone,
-                              $self->nova_controller->amqp,
-                              $self->mysql5 ]
+            dependencies => $self->getDependentComponents()
         }
     } );
 }
 
-sub getHostsEntries {
-    my $self = shift;
 
-    my @entries = ($self->nova_controller->keystone->service_provider->getHostEntries(),
-                   $self->nova_controller->amqp->service_provider->getHostEntries(),
-                   $self->mysql5->service_provider->getHostEntries());
+=pod
+=begin classdoc
 
-    return \@entries;
+Glance depend on the keystone and amqp of the nova controller and its mysql.
+
+=end classdoc
+=cut
+
+sub getDependentComponents {
+    my ($self, %args) = @_;
+
+    return [ $self->nova_controller->keystone,
+             $self->nova_controller->amqp,
+             $self->mysql5 ];
 }
+
 
 sub checkConfiguration {
     my $self = shift;

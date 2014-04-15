@@ -101,7 +101,7 @@ sub getPuppetDefinition {
             classes => {
                 "kanopya::openstack::nova::compute" => {
                     bridge_uplinks => \@uplinks,
-                    email => $self->nova_controller->service_provider->owner->user_email,
+                    email => $self->nova_controller->getMasterNode->owner->user_email,
                     libvirt_type => $self->libvirt_type,
                     rabbit_user => "nova-" . $self->nova_controller->id,
                     rabbit_virtualhost => 'openstack-' . $self->nova_controller->id
@@ -112,19 +112,25 @@ sub getPuppetDefinition {
     } );
 }
 
-sub getHostsEntries {
-    my $self = shift;
 
-    my @entries;
-    for my $glance ($self->nova_controller->glances) {
-        @entries = (@entries, $glance->service_provider->getHostEntries());
-    }
+=pod
+=begin classdoc
 
-    @entries = ($self->nova_controller->keystone->service_provider->getHostEntries(),
-                $self->nova_controller->amqp->service_provider->getHostEntries());
+NovaCompute depend on the keystone, amqp and glances of the nova controller.
 
-    return \@entries;
+=end classdoc
+=cut
+
+sub getDependentComponents {
+    my ($self, %args) = @_;
+
+    my @dependent = ($self->nova_controller->glances,
+                     $self->nova_controller->keystone,
+                     $self->nova_controller->amqp);
+
+    return \@dependent;
 }
+
 
 sub checkConfiguration {
     my $self = shift;

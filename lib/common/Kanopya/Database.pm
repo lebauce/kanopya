@@ -41,7 +41,6 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("connection");
 
 use TryCatch;
-my $err;
 
 # Loading schemas, firstly load custom schema definition
 # and then load generated ones.
@@ -82,15 +81,16 @@ sub _adm {
         $adm->{config} = _loadconfig();
     }
 
-    if (not defined $adm->{schema}) {
+    if (! defined $adm->{schema}) {
         $adm->{schema} = _connectdb(config => $adm->{config});
     }
 
     unless ($args{no_user_check} or ! $adm->{global_user_check}) {
         if (not exists $ENV{EID} or not defined $ENV{EID}) {
-            $err = "No valid session registered:";
-            $err .= " authenticate must be call with a valid login/password pair";
-            throw Kanopya::Exception::AuthenticationRequired(error => $err);
+            throw Kanopya::Exception::AuthenticationRequired(
+                      error => "No valid session registered: " . 
+                               "authenticate must be called with a valid login/password pair"
+                  );
         }
 
         if (! defined $adm->{user} || $adm->{user}->{user_id} != $ENV{EID}) {
@@ -195,7 +195,13 @@ Return the current logged user id.
 =cut
 
 sub currentUser {
-    return user->{user_id};
+    try {
+        return user->{user_id};
+    }
+    catch ($err) {
+        # No user logged in
+        return undef;
+    }
 }
 
 
@@ -217,9 +223,10 @@ sub authenticate {
                         user_password => General::cryptPassword(password => $args{password}),
                     })->single;
 
-    if(not defined $user_data) {
-        $err = "Authentication failed for login " . $args{login};
-        throw Kanopya::Exception::AuthenticationFailed(error => $err);
+    if(! defined $user_data) {
+        throw Kanopya::Exception::AuthenticationFailed(
+                  error => "Authentication failed for login " . $args{login}
+              );
     }
     else {
         $log->debug("Authentication succeed for login " . $args{login});

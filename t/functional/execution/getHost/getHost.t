@@ -48,6 +48,7 @@ use Test::Exception;
 use Kanopya::Exceptions;
 
 use Entity::Netconf;
+use Entity::Component::Physicalhoster0;
 use Kanopya::Tools::Create;
 use Kanopya::Tools::Register;
 

@@ -50,6 +50,14 @@ use constant ATTR_DEF => {
         is_mandatory => 0,
         is_editable  => 1
     },
+    notifier_component_id => {
+        label        => 'Notification manager',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^[0-9\.]*$',
+        is_mandatory => 0,
+        is_editable  => 1,
+    },
     time_step => {
         label        => 'Workflow pooling frequency',
         #type         => 'time',
@@ -117,14 +125,15 @@ sub enqueue {
                                        'priority' => 200,
                                        'workflow' => undef });
 
+    $args{operationtype} = Entity::Operationtype->find(hash => { operationtype_name => delete $args{type} });
+
     # If workflow specified, insert the operation at the current rank of the running workflow
     my $workflow = delete $args{workflow};
     if (defined $workflow) {
         return $workflow->enqueueNow(operation => \%args);
     }
 
-    $args{operationtype} = Entity::Operationtype->find(hash => { operationtype_name => delete $args{type} });
-    my $operation = Entity::Operation->enqueue(%args);
+    my $operation = Entity::Operation->enqueue(workflow_manager => $self, %args);
 
     # Publish on the 'workflow' queue
     eval {
@@ -179,7 +188,6 @@ sub run {
     General::checkParams(args     => \%args,
                          required => [ 'name' ],
                          optional => { 'params'     => undef,
-                                       'related_id' => undef,
                                        'rule_id'    => undef,
                                        'workflow'   => undef });
 
@@ -190,7 +198,7 @@ sub run {
         return $workflow->enqueueNow(workflow => \%args);
     }
 
-    $workflow = Entity::Workflow->run(%args);
+    $workflow = Entity::Workflow->run(workflow_manager => $self, %args);
 
     # Publish on the 'workflow' queue
     eval {
@@ -281,9 +289,9 @@ sub getPuppetDefinition {
                     allow => [ "*" ]
                 } ]
             },
-            dependencies => [ $self->service_provider->getComponent(name => "Amqp"),
-                              $self->service_provider->getComponent(name => "Mysql"),
-                              $self->service_provider->getComponent(name => "Puppetmaster") ]
+            dependencies => [ $self->getMasterNode->getComponent(name => "Amqp"),
+                              $self->getMasterNode->getComponent(name => "Mysql"),
+                              $self->getMasterNode->getComponent(name => "Puppetmaster") ]
         }
     } );
 }

@@ -16,6 +16,8 @@ use base 'EEntity::EComponent';
 
 use strict;
 use warnings;
+
+use TryCatch;
 use Log::Log4perl "get_logger";
 
 my $log = get_logger("");
@@ -28,7 +30,10 @@ sub configureNode {
     General::checkParams(args => \%args, required => [ 'mount_point', 'host' ]);
 
     # Memcached run only on master node
-    if (not defined $self->getMasterNode) {
+    try {
+        $self->getMasterNode;
+    }
+    catch (Kanopya::Exception::Internal::NotFound $err) {
         # no masternode defined, this host becomes the masternode
 
         # Generation of memcached.conf
@@ -47,6 +52,7 @@ sub configureNode {
         $self->addInitScripts(mountpoint => $args{mount_point},
                               scriptname => 'memcached');
     }
+    catch ($err) { $err->rethrow() }
 }
 
 1;

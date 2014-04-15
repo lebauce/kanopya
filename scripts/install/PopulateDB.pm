@@ -9,7 +9,8 @@ use lib qw(/opt/kanopya/lib/common/
            /opt/kanopya/lib/executor/
            /opt/kanopya/lib/monitor/
            /opt/kanopya/lib/orchestrator/
-           /opt/kanopya/lib/external);
+           /opt/kanopya/lib/external
+           /opt/kanopya/lib/mock);
 
 use General;
 use Kanopya::Database;
@@ -46,7 +47,6 @@ use Date::Simple (':all');
 use Class::ISA;
 
 use TryCatch;
-my $err;
 
 # Catch warnings to clean the setup output (this warnings are not kanopya code related)
 $SIG{__WARN__} = sub {
@@ -132,6 +132,7 @@ my @classes = (
     'Entity::Repository::Opennebula3Repository',
     'Entity::Repository::Vsphere5Repository',
     'Entity::Component::Physicalhoster0',
+    'Entity::Component::DummyHostManager',
     'Entity::Component::Vmm',
     'Entity::Component::Vmm::Kvm',
     'Entity::Component::Vmm::Xen',
@@ -728,7 +729,6 @@ sub registerManagerCategories {
         'NotificationManager',
         'WorkflowManager',
         'DirectoryServiceManager',
-        'ExecutionManager',
     ];
 
     for my $manager (@{$managers}) {
@@ -1156,7 +1156,6 @@ sub registerComponents {
             component_name         => 'KanopyaExecutor',
             component_version      => 0,
             deployable             => 0,
-            component_categories   => [ 'ExecutionManager' ],
             service_provider_types => [ 'Kanopya', 'Centos6' ],
         },
         {
@@ -1252,7 +1251,18 @@ sub registerComponents {
         },
     ];
 
-    for my $component_type (@{$components}) {
+    # Include the mocks
+    if ($args{include_mocks}) {
+        push @{ $components }, {
+            component_name         => 'DummyHostManager',
+            component_version      => 0,
+            deployable             => 0,
+            component_categories   => [ 'Hostmanager' ],
+            service_provider_types => [ 'Cluster', 'Kanopya' ],
+        },
+    }
+
+    for my $component_type (@{ $components }) {
         my $class_type;
         eval {
             $class_type = ClassType->find(hash => {
@@ -1569,21 +1579,22 @@ sub registerKanopyaMaster {
     my $components = {
         'KanopyaFront' => {},
         'KanopyaExecutor' => {
-            manager => 'ExecutionManager',
             conf    => {
                 masterimages_directory => $args{masterimages_directory} || "/var/lib/kanopya/masterimages/",
                 clusters_directory     => $args{clusters_directory} || "/var/lib/kanopya/clusters/",
                 private_directory      => $args{private_directory} || "/var/lib/kanopya/private/"
             },
+            require => {
+                notifier_component => 'KanopyaMailNotifier',
+            }
         },
         'KanopyaDeploymentManager' => {
             manager => 'DeploymentManager',
             require => {
-                kanopya_executor => 'KanopyaExecutor',
+                executor_component => 'KanopyaExecutor',
                 dhcp_component   => 'Dhcpd',
                 tftp_component   => 'Tftpd',
                 system_component => $distro,
-
             }
         },
         {
@@ -1593,21 +1604,31 @@ sub registerKanopyaMaster {
             name => 'KanopyaRulesEngine'
         },
         'KanopyaServiceManager' => {
-            require => { kanopya_executor => 'KanopyaExecutor' }
+            require => { executor_component => 'KanopyaExecutor' },
         },
         'KanopyaOpenstackSync' => {},
-        'KanopyaStackBuilder' => {},
+        'KanopyaStackBuilder' => {
+            require => { executor_component => 'KanopyaExecutor' },
+        },
         'KanopyaAggregator' => {},
         'KanopyaRulesEngine' => {},
         'Lvm' => {
+            require => { executor_component => 'KanopyaExecutor' },
             manager => 'DiskManager'
         },
-        'Storage' => {},
+        'Storage' => {
+            require => { executor_component => 'KanopyaExecutor' },
+        },
         'Iscsitarget' =>  {
+            require => { executor_component => 'KanopyaExecutor' },
             manager => 'ExportManager'
         },
-        'Iscsi' => {},
-        'Fileimagemanager' => {},
+        'Iscsi' => {
+            require => { executor_component => 'KanopyaExecutor' },
+        },
+        'Fileimagemanager' => {
+            require => { executor_component => 'KanopyaExecutor' },
+        },
         'Dhcpd' => {
             conf => {
                 dhcpd3_domain_name =>  "hedera-technology.com",
@@ -1621,6 +1642,7 @@ sub registerKanopyaMaster {
         },
         'Snmpd' => {},
         'Nfsd' => {
+            require => { executor_component => 'KanopyaExecutor' },
             conf => {
                 nfsd3_need_gssd => 'no',
                 nfsd3_rpcnfsdcount => 8,
@@ -1647,7 +1669,9 @@ sub registerKanopyaMaster {
         'Kanopyacollector' => {
             manager => 'CollectorManager'
         },
-        'Kanopyaworkflow' => {},
+        'Kanopyaworkflow' => {
+            require => { executor_component => 'KanopyaExecutor' },
+        },
         'KanopyaMailNotifier' => {
             manager => "NotificationManager",
             conf => {
@@ -1656,47 +1680,24 @@ sub registerKanopyaMaster {
         },
         'Amqp' => {},
         'Physicalhoster' => {
+            require => { executor_component => 'KanopyaExecutor' },
             manager => 'HostManager'
         },
         'Openssh' => {},
-        $distro => {},
+        $distro => {
+            conf => {
+                owner_id           => $admin->id,
+                domainname         => $args{admin_domainname},
+                nameserver1        => defined $args{kanopya_nameserver1} ? $args{kanopya_nameserver1} : '8.8.8.8',
+                nameserver2        => defined $args{kanopya_nameserver2} ? $args{kanopya_nameserver2} : '8.8.4.4',
+                default_gateway_id => $admin_network->id,
+            }
+        },
     };
 
-    # Install components
-    for my $name (keys %{ $components }) {
-        my $component = $components->{$name};
-        if (exists $component->{instance}) {
-            next;
-        }
-
-        # TODO: use recursivity to handle requirements
-        my $conf = $component->{conf};
-        if (defined $component->{require}) {
-            for my $relation (keys $component->{require}) {
-                my $required = $components->{$component->{require}->{$relation}};
-                if (defined $required->{instance}) {
-                    $conf->{$relation} = $required->{instance};
-                }
-                else  {
-                    $conf->{$relation} = installComponent(cluster => $admin_cluster,
-                                                          name    => $component->{require}->{$relation},
-                                                          manager => $required->{manager},
-                                                          conf    => $required->{conf},
-                                                          extra   => $required->{extra});
-                    $components->{$component->{require}->{$relation}}->{instance} = $conf->{$relation};
-                }
-                # WORKAROUND: PuppetAgent require PuppetMaster but do not take it in parameter
-                # TODO: Link PuppetAgent with PuppetMaster in database.
-                if ($name eq 'Puppetagent' && $relation eq 'puppet_master') {
-                    delete $conf->{$relation};
-                }
-            }
-        }
-        $component->{instance} = installComponent(cluster => $admin_cluster,
-                                                  name    => $name,
-                                                  manager => $component->{manager},
-                                                  conf    => $conf,
-                                                  extra   => $component->{extra});
+    # include the mocks
+    if ($args{include_mocks}) {
+        $components->{DummyHostManager} = {}
     }
 
     # Create the host for the Kanopya master
@@ -1726,9 +1727,7 @@ sub registerKanopyaMaster {
                               interface_name      => $args{admin_interface}
                           );
 
-    my $physical_hoster = $admin_cluster->getComponent(name => 'Physicalhoster');
     my $admin_host = Entity::Host->new(
-                         host_manager_id    => $physical_hoster->id,
                          host_serial_number => "1",
                          host_desc          => "Admin host",
                          active             => 1,
@@ -1766,11 +1765,53 @@ sub registerKanopyaMaster {
     NetconfIface->new(netconf_id => $netconf->id, iface_id => $admin_iface->id);
 
     # Finally register the new node in the admin cluster
-    $admin_cluster->registerNode(hostname         => $hostname,
-                                 host             => $admin_host,
-                                 state            => "in",
-                                 number           => 1,
-                                 monitoring_state => 'disabled');
+    my $admin_node = $admin_cluster->registerNode(
+                         hostname         => $hostname,
+                         host             => $admin_host,
+                         state            => "in",
+                         number           => 1,
+                         monitoring_state => 'disabled'
+                     );
+
+    # Install components
+    # TODO: use recursivity to handle requirements, force priority for now
+    for my $name ('KanopyaExecutor', (keys %{ $components })) {
+        my $component = $components->{$name};
+        if (exists $component->{instance}) {
+            next;
+        }
+
+        my $conf = $component->{conf};
+        if (defined $component->{require}) {
+            for my $relation (keys $component->{require}) {
+                my $required = $components->{$component->{require}->{$relation}};
+                if (defined $required->{instance}) {
+                    $conf->{$relation} = $required->{instance};
+                }
+                else  {
+                    $conf->{$relation} = installComponent(cluster => $admin_cluster,
+                                                          name    => $component->{require}->{$relation},
+                                                          manager => $required->{manager},
+                                                          conf    => $required->{conf},
+                                                          extra   => $required->{extra});
+                    $components->{$component->{require}->{$relation}}->{instance} = $conf->{$relation};
+                }
+                # WORKAROUND: PuppetAgent require PuppetMaster but do not take it in parameter
+                # TODO: Link PuppetAgent with PuppetMaster in database.
+                if ($name eq 'Puppetagent' && $relation eq 'puppet_master') {
+                    delete $conf->{$relation};
+                }
+            }
+        }
+        $component->{instance} = installComponent(cluster => $admin_cluster,
+                                                  name    => $name,
+                                                  manager => $component->{manager},
+                                                  conf    => $conf,
+                                                  extra   => $component->{extra});
+    }
+
+    # Set the host manager for the admin host
+    $admin_host->host_manager($admin_cluster->getComponent(name => 'Physicalhoster'));
 
     # Configure components on kanopya master
     my $kanopyacollector = $admin_cluster->getComponent(name => 'Kanopyacollector');
@@ -1837,11 +1878,30 @@ sub registerKanopyaMaster {
     # Set service manager to the kanopya service
     $admin_cluster->service_manager($components->{'KanopyaServiceManager'}->{instance});
 
+    # Check component availability
+    print "\t- Check availability of the registred components\n";
+    my @components = sort { $a->priority <=> $b->priority } $admin_node->components;
+    foreach my $component (map { EEntity->new(entity => $_) } @components) {
+        print "\t\t- Checking component " . $component->label . "...\n";
+        try {
+            if ($component->isUp(host => $admin_node->host)) {
+                print "\t\t\t=> up\n";
+            }
+            else {
+                print "\t\t\t=> down\n";
+            }
+        }
+        catch ($err) {
+            print "\t\t\t=> down, $err\n";
+        }
+    }
     return $admin_cluster;
 }
 
 sub installComponent {
     my %args = @_;
+
+    print "\t\t- Installing component $args{name}...\n";
 
     # Get the template if exists
     my $component_template;

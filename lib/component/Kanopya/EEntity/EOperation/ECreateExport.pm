@@ -22,7 +22,6 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
-use Entity::ServiceProvider;
 use Entity::Container;
 use EEntity;
 
@@ -45,11 +44,10 @@ sub check {
 sub execute {
     my $self = shift;
 
-    # Check state of the storage_provider
-    my $storage_provider = $self->{context}->{export_manager}->service_provider;
-    my ($state, $timestamp) = $storage_provider->getState();
+    # Check state of the export manager
+    my ($state, $timestamp) = $self->{context}->{export_manager}->getMasterNode->getState();
     if ($state ne 'up'){
-        $errmsg = "ServiceProvider has to be up !";
+        $errmsg = "Export manager has to be up !";
         $log->error($errmsg);
         throw Kanopya::Exception::Execution(error => $errmsg);
     }

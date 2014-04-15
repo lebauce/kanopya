@@ -35,6 +35,8 @@ use base 'Entity::Policy';
 use strict;
 use warnings;
 
+use Entity::Component;
+
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
@@ -57,20 +59,9 @@ use constant POLICY_ATTR_DEF => {
     },
 };
 
-use constant POLICY_SELECTOR_ATTR_DEF => {
-    host_provider_id => {
-        label        => 'Host provider',
-        type         => 'relation',
-        relation     => 'single',
-        pattern      => '^\d*$',
-        is_mandatory => 1,
-        reload       => 1,
-    },
-};
+use constant POLICY_SELECTOR_ATTR_DEF => {};
 
-use constant POLICY_SELECTOR_MAP => {
-    host_provider_id => [ 'host_manager_id' ]
-};
+use constant POLICY_SELECTOR_MAP => {};
 
 sub getPolicyAttrDef { return POLICY_ATTR_DEF; }
 sub getPolicySelectorAttrDef { return POLICY_SELECTOR_ATTR_DEF; }
@@ -100,54 +91,27 @@ sub getPolicyDef {
                          optional => { 'params' => {}, 'trigger' => undef });
 
     # Add the dynamic attributes to displayed
-    push @{ $args{attributes}->{displayed} }, 'host_provider_id';
     push @{ $args{attributes}->{displayed} }, 'host_manager_id';
 
-    # Build the host provider list
-    my $providers = {};
-    for my $component ($class->searchManagers(component_category => 'HostManager')) {
-        $providers->{$component->service_provider->id} = $component->service_provider->toJSON;
+    # Build the list of host managers
+    my $manager_options = {};
+    for my $component (Entity::Component->search(custom => { category => 'HostManager' })) {
+        $manager_options->{$component->id} = $component->toJSON;
+        $manager_options->{$component->id}->{label} = $component->host_type;
     }
-    my @hostproviders = values %{ $providers };
-    $args{attributes}->{attributes}->{host_provider_id}->{options} = \@hostproviders;
+    my @options = values %{ $manager_options };
+    $args{attributes}->{attributes}->{host_manager_id}->{options} = \@options;
 
-    # Fill the value of host provider if not defined in params
-    if (not defined $args{params}->{host_provider_id}) {
-        if (defined $args{params}->{host_manager_id}) {
-            # Find it from the manager if defined
-            $args{params}->{host_provider_id}
-                = Entity->get(id => $args{params}->{host_manager_id})->service_provider->id;
-        }
-        elsif ($args{set_mandatory}) {
-            # Use the first one in options instead
-            $self->setFirstSelected(name       => 'host_provider_id',
-                                    attributes => $args{attributes}->{attributes},
-                                    params     => $args{params});
-        }
+    # If host_manager_id defined but do not corresponding to a available value,
+    # it is an old value, so delete it.
+    if (not defined $manager_options->{$args{params}->{host_manager_id}}) {
+        delete $args{params}->{host_manager_id};
     }
-
-    # Build the list of host managers of the host provider if defined
-    if (defined $args{params}->{host_provider_id}) {
-        my $manager_options = {};
-        for my $component ($class->searchManagers(component_category  => 'HostManager',
-                                                  service_provider_id => $args{params}->{host_provider_id})) {
-            $manager_options->{$component->id} = $component->toJSON;
-            $manager_options->{$component->id}->{label} = $component->host_type;
-        }
-        my @options = values %{ $manager_options };
-        $args{attributes}->{attributes}->{host_manager_id}->{options} = \@options;
-
-        # If host_manager_id defined but do not corresponding to a available value,
-        # it is an old value, so delete it.
-        if (not defined $manager_options->{$args{params}->{host_manager_id}}) {
-            delete $args{params}->{host_manager_id};
-        }
-        # If no host_manager_id defined and and attr is mandatory, use the first one as value
-        if (! defined $args{params}->{host_manager_id} and $args{set_mandatory}) {
-            $self->setFirstSelected(name       => 'host_manager_id',
-                                    attributes => $args{attributes}->{attributes},
-                                    params     => $args{params});
-        }
+    # If no host_manager_id defined and and attr is mandatory, use the first one as value
+    if (! defined $args{params}->{host_manager_id} and $args{set_mandatory}) {
+        $self->setFirstSelected(name       => 'host_manager_id',
+                                attributes => $args{attributes}->{attributes},
+                                params     => $args{params});
     }
 
     if (defined $args{params}->{host_manager_id}) {
@@ -167,55 +131,6 @@ sub getPolicyDef {
     }
 
     return $args{attributes};
-}
-
-
-=pod
-=begin classdoc
-
-For the hosting policy, the attribute host_manager_id is
-added to the non editable attrs because it is never stored in
-the params preset of the policy.
-
-@return the non editable params list
-
-=end classdoc
-=cut
-
-sub getNonEditableAttributes {
-    my ($self, %args) = @_;
-
-    my $definition = $self->SUPER::getNonEditableAttributes();
-
-    # Add the host_provider_id as a non editable attr if host_manager_id
-    # defined as as a non editable attr.
-    if (defined $definition->{host_manager_id}) {
-        $definition->{host_provider_id} = 1;
-    }
-    return $definition;
-}
-
-
-=pod
-=begin classdoc
-
-Remove possibly defined host_provider_id from params, as it is a
-field convenient for manager selection only.
-
-@return a policy pattern fragment
-
-=end classdoc
-=cut
-
-sub getPatternFromParams {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'params' ]);
-
-    delete $args{params}->{host_provider_id};
-
-    return $self->SUPER::getPatternFromParams(params => $args{params});
 }
 
 1;

@@ -33,12 +33,12 @@ use warnings;
 use General;
 
 use Manager::HostManager;
-use Entity::ServiceProvider;
 use Entity::Container::LvmContainer;
 use Lvm2Pv;
 use Lvm2Vg;
 use Kanopya::Exceptions;
 
+use TryCatch;
 use Hash::Merge qw(merge);
 
 use Log::Log4perl "get_logger";
@@ -46,6 +46,14 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
+    executor_component_id => {
+        label        => 'Workflow manager',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^[0-9\.]*$',
+        is_mandatory => 1,
+        is_editable  => 0,
+    },
     lvm2_vgs => {
         label        => 'Volume groups',
         type         => 'relation',
@@ -218,13 +226,12 @@ sub getExportManagerFromBootPolicy {
 
     General::checkParams(args => \%args, required => [ "boot_policy" ]);
 
-    my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
-
+    my $master = $self->getMasterNode();
     if ($args{boot_policy} eq Manager::HostManager->BOOT_POLICIES->{pxe_iscsi}) {
-        return $cluster->getComponent(name => "Iscsitarget", version => "1");
+        return $master->getComponent(name => "Iscsitarget", version => "1");
     }
     elsif ($args{boot_policy} eq Manager::HostManager->BOOT_POLICIES->{pxe_nfs}) {
-        return $cluster->getComponent(name => "Nfsd", version => "3");
+        return $master->getComponent(name => "Nfsd", version => "3");
     }
     
     throw Kanopya::Exception::Internal::UnknownCategory(
@@ -238,12 +245,11 @@ sub getBootPolicyFromExportManager {
 
     General::checkParams(args => \%args, required => [ "export_manager" ]);
 
-    my $cluster = Entity::ServiceProvider->get(id => $self->getAttr(name => 'service_provider_id'));
-
-    if ($args{export_manager}->id == $cluster->getComponent(name => "Iscsitarget", version => "1")->id) {
+    my $master = $self->getMasterNode();
+    if ($args{export_manager}->id == $master->getComponent(name => "Iscsitarget", version => "1")->id) {
         return Manager::HostManager->BOOT_POLICIES->{pxe_iscsi};
     }
-    elsif ($args{export_manager}->id == $cluster->getComponent(name => "Nfsd", version => "3")->id) {
+    elsif ($args{export_manager}->id == $master->getComponent(name => "Nfsd", version => "3")->id) {
         return Manager::HostManager->BOOT_POLICIES->{pxe_nfs};
     }
 
@@ -256,10 +262,16 @@ sub getExportManagers {
     my $self = shift;
     my %args = @_;
 
-    my $cluster = $self->service_provider;
-
-    return [ $cluster->getComponent(name => "Iscsitarget", version => "1"),
-             $cluster->getComponent(name => "Nfsd", version => "3") ];
+    my @managers;
+    for my $manager ("Iscsitarget", "Nfsd") {
+        try {
+            push @managers, $self->getMasterNode->getComponent(name => $manager);
+        }
+        catch ($err) {
+            # No manager or master node found
+        }
+    }
+    return \@managers;
 }
 
 
@@ -271,7 +283,7 @@ sub createDisk {
                          required => [ "vg_id", "name", "size", "filesystem" ]);
 
     $log->debug("New Operation CreateDisk with attrs : " . %args);
-    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
+    $self->executor_component->enqueue(
         type     => 'CreateDisk',
         params   => {
             name       => $args{name},

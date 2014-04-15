@@ -72,7 +72,7 @@ sub getCloudManager {
 sub maintenance {
     my $self = shift;
 
-    $self->getCloudManager->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+    $self->getCloudManager->executor_component->run(
         name   => 'HypervisorMaintenance',
         params => {
             context => {
@@ -85,7 +85,7 @@ sub maintenance {
 sub resubmitVms {
     my $self = shift;
 
-    $self->getCloudManager->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+    $self->getCloudManager->executor_component->run(
         name   => 'ResubmitHypervisor',
         params => {
             context => {

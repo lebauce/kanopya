@@ -82,8 +82,10 @@ sub create {
                          required => [ 'file_path' ],
                          optional => { 'keep_file' => 0 });
 
+    # Get the deployment component on kanopya
+    # TODO: Move this methode on the KanopyaDeploymentManager
     my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster;
-    $kanopya->getManager(manager_type => 'ExecutionManager')->enqueue(
+    $kanopya->getComponent(name => 'KanopyaDeploymentManager')->executor_component->enqueue(
         type   => 'DeployMasterimage',
         params => {
             file_path => $args{file_path},
@@ -95,8 +97,10 @@ sub create {
 sub remove {
     my $self = shift;
 
+    # Get the deployment component on kanopya
+    # TODO: Move this methode on the KanopyaDeploymentManager
     my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster;
-    $kanopya->getManager(manager_type => 'ExecutionManager')->enqueue(
+    $kanopya->getComponent(name => 'KanopyaDeploymentManager')->executor_component->enqueue(
         type     => 'RemoveMasterimage',
         params  => {
             context => {

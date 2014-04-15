@@ -100,12 +100,13 @@ sub execute {
 
     # If components to install on the node defined,
     if ($self->{params}->{component_types}) {
-        $params->{components} = $self->{context}->{cluster}->searchRelated(
-                                    filters => [ 'components' ],
-                                    hash    => {
-                                        'component_type.component_type_id' => $self->{params}->{component_types}
-                                    }
-                                );
+        $params->{components}
+            = $self->{context}->{cluster}->search(
+                  related => 'components',
+                  hash    => {
+                      'component_type.component_type_id' => $self->{params}->{component_types}
+                  }
+              );
     }
     $self->{context}->{cluster}->registerNode(%$params);
 
@@ -154,16 +155,14 @@ sub finish {
     $self->{context}->{host}->setNodeState(state => "pregoingin");
 
     # Ask to the DeploymentManager to deploy the node from the systemimage
-    my $boot_mode = $self->{context}->{cluster}->cluster_boot_policy;
-    if ($self->{context}->{cluster}->getManagerParameters(manager_type => 'HostManager')->{deploy_on_disk}) {
-        $boot_mode = "deploy on disk from " . $boot_mode;
-    }
     $self->{context}->{cluster}->getManager(manager_type => 'DeploymentManager')->deployNode(
-        node         => $self->{context}->{host}->node,
-        systemimage  => $self->{context}->{systemimage},
-        boot_mode    => $boot_mode,
-        kernel_id    => $self->{context}->{cluster}->kernel_id,
-        workflow     => $self->workflow
+        node           => $self->{context}->{host}->node,
+        systemimage    => $self->{context}->{systemimage},
+        boot_policy    => $self->{context}->{cluster}->cluster_boot_policy,
+        kernel_id      => $self->{context}->{cluster}->kernel_id,
+        workflow       => $self->workflow,
+        # Add the hosting params for deploy_on_disk parameter
+        %{ $self->{context}->{cluster}->getManagerParameters(manager_type => 'HostManager') }
     );
 }
 
@@ -181,7 +180,6 @@ sub cancel {
 
     if (defined $self->{context}->{host}->node) {
         my $dir = $self->_executor->getConf->{clusters_directory};
-        $dir .= '/' . $self->{context}->{cluster}->cluster_name;
         $dir .= '/' . $self->{context}->{host}->node->node_hostname;
         $self->getEContext->execute(command => "rm -r $dir");
 

@@ -33,7 +33,6 @@ package Entity::Operationtype;
 use base Entity;
 
 use NotificationSubscription;
-use Entity::ServiceProvider::Cluster;
 
 use strict;
 use warnings;
@@ -84,13 +83,8 @@ sub subscribe {
 
     General::checkParams(args     => \%args,
                          required => [ 'subscriber_id', 'entity_id' ],
-                         optional => { 'operation_state'     => "processing",
-                                       'service_provider_id' => undef,
-                                       'validation'          => 0 });
-
-    if (not defined $args{service_provider_id}) {
-        $args{service_provider_id} = Entity::ServiceProvider::Cluster->getKanopyaCluster()->id;
-    }
+                         optional => { 'operation_state' => "processing",
+                                       'validation'      => 0 });
 
     return NotificationSubscription->findOrCreate(
         entity_id           => $args{entity_id},
@@ -98,10 +92,10 @@ sub subscribe {
         # If called on the class, subscribe for all operation types
         operationtype_id    => ref($self) ? $self->id : undef,
         operation_state     => $args{operation_state},
-        service_provider_id => $args{service_provider_id},
         validation          => $args{validation},
     );
 }
+
 
 =pod
 =begin classdoc

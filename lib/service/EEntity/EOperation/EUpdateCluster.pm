@@ -46,9 +46,8 @@ sub execute {
             data => $puppetagent
         );
 
-        $self->{context}->{puppetagent}->applyConfiguration(
-            cluster => $self->{context}->{cluster}
-        );
+        my @nodes = map { $_->node } @{ $self->{context}->{cluster}->getHosts() };
+        $self->{context}->{puppetagent}->applyConfiguration(nodes => \@nodes);
     }
 }
 
@@ -71,10 +70,8 @@ sub postrequisites {
             throw Kanopya::Exception::Internal("Failed to update " . $host->node->label);
         }
 
-        $self->{context}->{cluster}->postStartNode(
-            host      => $host,
-            erollback => $self->{erollback},
-        );
+        $self->{context}->{cluster}->postStartNode(host      => $host,
+                                                   erollback => $self->{erollback});
     }
 }
 

@@ -41,6 +41,14 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
+    executor_component_id => {
+        label        => 'Workflow manager',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^[0-9\.]*$',
+        is_mandatory => 1,
+        is_editable  => 0,
+    },
     repositories => {
         label       => 'Virtual machine images repositories',
         type        => 'relation',
@@ -221,7 +229,7 @@ sub getPuppetDefinition {
             classes => {
                 "kanopya::openstack::nova::controller" => {
                     admin_password => 'nova',
-                    email => $self->service_provider->owner->user_email,
+                    email => $self->getMasterNode->owner->user_email,
                     database_user => $name,
                     database_name => $name,
                     rabbit_user => $name,
@@ -234,27 +242,31 @@ sub getPuppetDefinition {
     } );
 }
 
-sub getHostsEntries {
-    my $self = shift;
 
-    my @entries;
+=pod
+=begin classdoc
 
+NovaController depend on its keystone, amqp, mysql, computes, glances and neutrons if exists.
+
+=end classdoc
+=cut
+
+sub getDependentComponents {
+    my ($self, %args) = @_;
+
+    my @entries = ($self->vmms, $self->glances, $self->neutrons);
     if ($self->keystone) {
-        push @entries, $self->keystone->service_provider->getHostEntries();
+        push @entries, $self->keystone;
     }
     if ($self->amqp) {
-        push @entries,$self->amqp->service_provider->getHostEntries();
+        push @entries, $self->amqp;
     }
     if ($self->mysql5) {
-        push @entries, $self->mysql5->service_provider->getHostEntries();
+        push @entries, $self->mysql5;
     }
-        
-    for my $component (($self->vmms, $self->glances, $self->neutrons)) {
-        @entries = (@entries, $component->service_provider->getHostEntries());
-    }
-
     return \@entries;
 }
+
 
 sub checkConfiguration {
     my $self = shift;
@@ -264,7 +276,7 @@ sub checkConfiguration {
     }
 
     my @glances = $self->glances;
-    for my $component ($self->mysql5, $self->amqp, $self->keystone, @glances) {
+    for my $component (@{ $self->getDependentComponents() }) {
         $self->checkDependency(component => $component);
     }
 }
@@ -417,7 +429,7 @@ sub setConf {
     }
 
     for my $vmm ($self->vmms) {
-        my $linux = $vmm->service_provider->getComponent(category => "System");
+        my $linux = $vmm->getMasterNode->getComponent(category => "System");
         my $oldconf = $linux->getConf();
         my @mounts = (@{$oldconf->{linuxes_mount}}, @mountentries);
         $linux->setConf(conf => { linuxes_mount => \@mounts });

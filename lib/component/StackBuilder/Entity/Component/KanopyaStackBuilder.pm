@@ -39,7 +39,16 @@ use Data::Dumper;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
-use constant ATTR_DEF => {};
+use constant ATTR_DEF => {
+    executor_component_id => {
+        label        => 'Workflow manager',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^[0-9\.]*$',
+        is_mandatory => 1,
+        is_editable  => 0,
+    }
+};
 
 sub getAttrDef { return ATTR_DEF; }
 
@@ -254,9 +263,8 @@ sub buildStack {
     $self->subscribeOwnerNotifications(owner_id => $args{owner_id});
 
     # Run the workflow BuildStack
-    my $workflow = $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+    my $workflow = $self->executor_component->run(
         name       => 'BuildStack',
-        related_id => $self->service_provider->id,
         timeout    => $args{timeout},
         params     => {
             services   => \@services,
@@ -286,9 +294,8 @@ sub endStack {
                                        'timeout'  => 1 * 60 * 60 });
 
     # Run the workflow EndStack
-    my $workflow = $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+    my $workflow = $self->executor_component->run(
         name       => 'EndStack',
-        related_id => $self->service_provider->id,
         timeout    => $args{timeout},
         params     => {
             stack_id => $args{stack_id},

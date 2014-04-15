@@ -29,9 +29,9 @@ use base Entity;
 use strict;
 use warnings;
 
-use ComponentNode;
+use General;
+use Kanopya::Exceptions;
 use Entity::Indicator;
-use Entity::Rule::NodemetricRule;
 
 use TryCatch;
 
@@ -39,11 +39,6 @@ use Log::Log4perl 'get_logger';
 my $log = get_logger("");
 
 use constant ATTR_DEF => {
-    service_provider_id => {
-        pattern      => '^.*$',
-        is_delegatee => 1,
-        is_mandatory => 1,
-    },
     host_id => {
         pattern      => '^\d+$',
         is_mandatory => 0,
@@ -52,7 +47,7 @@ use constant ATTR_DEF => {
         label        => 'Hostname',
         type         => 'string',
         pattern      => '^[\w\d\-\.]*$',
-        is_mandatory => 0,
+        is_mandatory => 1,
     },
     node_number => {
         pattern      => '^\d+$',
@@ -99,56 +94,11 @@ sub methods { return {}; }
 =pod
 =begin classdoc
 
-@constructor
+Find a component with name or version on the node.
 
-Create a new Node.
-
-=end classdoc
-=cut
-
-sub new {
-    my $class = shift;
-    my %args = @_;
-
-    my $self = $class->SUPER::new( %args );
-
-    $self->_undefRules();
-
-    return $self;
-}
-
-
-=pod
-=begin classdoc
-
-A component to the Node instance
-
-@optional component_types
-
-=end classdoc
-=cut
-
-sub update {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, optional => { 'component_types' => undef });
-
-    if (defined $args{component_types}) {
-        my $component_types = delete $args{component_types};
-        $self->service_provider->addComponents(
-            nodes           => [ $self->id ],
-            component_types => $component_types
-        );
-    }
-}
-
-
-=pod
-=begin classdoc
-
-Returns components linked to the Node instance.
-
-@optional component_types
+@optional name search components by name
+@optional version search components by version
+@optional category search components by category
 
 =end classdoc
 =cut
@@ -156,8 +106,56 @@ Returns components linked to the Node instance.
 sub getComponent {
     my ($self, %args) = @_;
 
-    return $self->service_provider->getComponent(node => $self, %args);
+    General::checkParams(args => \%args,
+                         optional => { 'name' => undef, 'version' => undef, 'category' => undef });
+
+    # Build the search pattern from args
+    my $searchpattern = { hash => {} };
+    if (defined $args{name}) {
+        $searchpattern->{hash}->{'component_type.component_name'} = $args{name};
+        if (defined $args{version}) {
+            $searchpattern->{hash}->{'component_type.component_version'} = $args{version};
+        }
+    }
+    elsif (defined $args{category}) {
+        $searchpattern->{custom}->{category} = $args{category};
+    }
+    else {
+        throw Kanopya::Exception::Internal::MissingParam(
+                  error => "You must specify <name> or <version> parameter."
+              )
+    }
+    return $self->find(related => 'components', %{ $searchpattern });
 }
+
+
+sub getState {
+    my $self = shift;
+    my $state = $self->node_state;
+    return wantarray ? split(/:/, $state) : $state;
+}
+
+
+sub getPrevState {
+    my $self = shift;
+    my $state = $self->node_prev_state;
+    return wantarray ? split(/:/, $state) : $state;
+}
+
+
+sub setState {
+    my $self = shift;
+    my %args = @_;
+
+    General::checkParams(args => \%args, required => [ 'state' ]);
+
+    my $new_state = $args{state};
+    my $current_state = $self->getState();
+
+    $self->node_prev_state($current_state || "");
+    $self->node_state($new_state . ":" . time);
+}
+
 
 sub rulestate {
     my $self = shift;
@@ -170,42 +168,7 @@ sub rulestate {
 =pod
 =begin classdoc
 
-Initialize all nodemetric rules related to the Node instance to undef.
-
-@optional component_types
-
-=end classdoc
-=cut
-
-sub _undefRules {
-    my $self = shift;
-
-    # my @nm_rules = $self->service_provider->nodemetric_rules;
-    # TODO try to allow a direct relation
-
-    my @nm_rules = Entity::Rule::NodemetricRule->search(hash => {service_provider_id => $self->service_provider_id});
-
-    foreach my $nm_rule (@nm_rules) {
-        try {
-            VerifiedNoderule->new(
-                verified_noderule_node_id            => $self->id,
-                verified_noderule_state              => 'undef',
-                verified_noderule_nodemetric_rule_id => $nm_rule->id,
-            );
-        }
-        catch(Kanopya::Exception::DB::DuplicateEntry $err) {
-            my $msg = 'Nodemetric rules <'.$nm_rule->id
-                      .'> is already undef for node <'.$self->id.'>';
-            $log->debug($msg);
-        }
-    }
-}
-
-
-=pod
-=begin classdoc
-
-Disable a Node instance by managing its state and its linked rules.
+Disable a Node instance
 
 =end classdoc
 =cut
@@ -213,10 +176,6 @@ Disable a Node instance by managing its state and its linked rules.
 sub disable {
     my $self = shift;
 
-    my @verified_noderules = $self->verified_noderules;
-    while(@verified_noderules) {
-        (pop @verified_noderules)->delete();
-    }
     $self->monitoring_state('disabled');
 }
 
@@ -224,7 +183,7 @@ sub disable {
 =pod
 =begin classdoc
 
-Enable a Node instance by managing its state and its linked rules.
+Enable a Node instance
 
 =end classdoc
 =cut
@@ -232,82 +191,7 @@ Enable a Node instance by managing its state and its linked rules.
 sub enable {
     my $self = shift;
 
-    $self->_undefRules();
     $self->monitoring_state('enabled');
-}
-
-
-=pod
-=begin classdoc
-
-Retrieve monitoring data of a list of indicator given by their ids.
-
-@param indicator_ids array ref of indicator ids
-
-@return hash ref {indicator oid => indicator value}
-
-=end classdoc
-=cut
-
-sub getMonitoringData {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'indicator_ids' ]);
-
-    my $manager = $self->service_provider->getManager(manager_type => 'CollectorManager');
-
-    # Construst indicators params as expected by CollectorManager
-    my %indicators;
-    for my $indic_id (@{$args{indicator_ids}}) {
-        $indicators{$indic_id} = Entity::Indicator->get(id => $indic_id);
-    }
-    delete $args{indicator_ids};
-
-    my $data = $manager->retrieveData(
-        nodelist    => [ $self->node_hostname ],
-        indicators  => \%indicators,
-        %args
-    );
-
-    return $data->{$self->node_hostname} || {};
-}
-
-
-=pod
-=begin classdoc
-
-Remove node Instance by launching a 'StopNode' Workflow.
-
-@optional dryrun do not remove the node if defined
-
-=end classdoc
-=cut
-
-sub remove {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, optional => { 'dryrun' => undef });
-
-    if (not defined $args{dryrun}) {
-        $self->service_provider->removeNode('node_id' => $self->id);
-    }
-
-    my $manager;
-    eval {
-        $manager = $self->service_provider->getManager(manager_type => 'CollectorManager');
-    };
-
-    if (defined $manager) {
-        my @collector_indicators = $manager->collector_indicators;
-
-        for my $collector_indicator (@collector_indicators) {
-            my $indicator = $collector_indicator->indicator;
-            my $rrd_name = $indicator->id.'_'.$self->node_hostname;
-            $log->info('delete '.$rrd_name);
-            TimeData::RRDTimeData->deleteTimeDataStore(name => $rrd_name);
-        }
-    }
-    return;
 }
 
 
@@ -341,7 +225,18 @@ Concat Node hostname to node domain in order to get fqdn.
 sub fqdn {
     my $self = shift;
 
-    return $self->node_hostname . '.' . $self->service_provider->cluster_domainname;
+    try {
+        return $self->node_hostname . '.' . $self->getComponent(category => "System")->domainname;
+    }
+    catch (Kanopya::Exception::Internal::NotFound $err) {
+        throw Kanopya::Exception::Internal::NotFound(
+                 error => "No \"System\" component found on node <" . $self->label .
+                          ">, required to build the fqdn of the node."
+              );
+    }
+    catch ($err) {
+        $err->rethrow();
+    }
 }
 
 =pod
@@ -376,7 +271,7 @@ sub puppetManifest {
 
     my $puppetagent;
     eval {
-        $puppetagent = $self->service_provider->getComponent(name => "Puppetagent");
+        $puppetagent = $self->getComponent(name => "Puppetagent");
     };
     if ($@) {
         return { };
@@ -407,6 +302,38 @@ sub isLoadBalanced {
         }
     }
     return $is_loadbalanced;
+}
+
+
+=pod
+=begin classdoc
+
+Use the hostname as label.
+
+=end classdoc
+=cut
+
+sub _labelAttr { return 'node_hostname'; }
+
+
+=pod
+=begin classdoc
+
+Forbid to access to the service provider from the node.
+
+=end classdoc
+=cut
+
+sub service_provider {
+    my ($self, @args) = @_;
+
+    # throw Kanopya::Exception::Internal::Deprecated(
+    #           error => "Accessing to the service provider from a node is deprecated"
+    #       );
+    if (scalar(@args)) {
+        return $self->setAttr(name => 'service_provider', value => pop(@args));
+    }
+    return $self->getAttr(name => 'service_provider');
 }
 
 1;

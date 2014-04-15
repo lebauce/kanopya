@@ -37,6 +37,8 @@ use base 'Entity::Policy';
 use strict;
 use warnings;
 
+use Entity::Component;
+
 use Data::Dumper;
 use Log::Log4perl 'get_logger';
 
@@ -67,19 +69,9 @@ use constant POLICY_ATTR_DEF => {
     }
 };
 
-use constant POLICY_SELECTOR_ATTR_DEF => {
-    storage_provider_id => {
-        label        => 'Data store',
-        type         => 'relation',
-        relation     => 'single',
-        pattern      => '^\d*$',
-        reload       => 1,
-        is_mandatory => 1,
-    },
-};
+use constant POLICY_SELECTOR_ATTR_DEF => {};
 
 use constant POLICY_SELECTOR_MAP => {
-    storage_provider_id => [ 'disk_manager_id' ],
     disk_manager_id     => [ 'export_manager_id' ]
 };
 
@@ -111,55 +103,27 @@ sub getPolicyDef {
                          optional => { 'params' => {}, 'trigger' => undef });
 
     # Add the dynamic attributes to displayed
-    push @{ $args{attributes}->{displayed} }, 'storage_provider_id';
     push @{ $args{attributes}->{displayed} }, 'disk_manager_id';
 
-    # Build the storage provider list
-    my $providers = {};
-    for my $component ($class->searchManagers(component_category => 'DiskManager')) {
-        $providers->{$component->service_provider->id} = $component->service_provider->toJSON;
+    # Build the list of disk managers
+    my $manager_options = {};
+    for my $component (Entity::Component->search(custom => { category => 'DiskManager' })) {
+        $manager_options->{$component->id} = $component->toJSON;
+        $manager_options->{$component->id}->{label} = $component->disk_type;
     }
-    my @storageproviders = values %{$providers};
-    $args{attributes}->{attributes}->{storage_provider_id}->{options} = \@storageproviders;
+    my @diskmanageroptions = values %{$manager_options};
+    $args{attributes}->{attributes}->{disk_manager_id}->{options} = \@diskmanageroptions;
 
-    # If storage_provider_id not defined, select it from the disk manager or
-    # select the first one.
-    if (! $args{params}->{storage_provider_id}) {
-        if ($args{params}->{disk_manager_id}) {
-            $args{params}->{storage_provider_id}
-                = Entity->get(id => $args{params}->{disk_manager_id})->service_provider->id;
-        }
-        elsif ($args{set_mandatory}) {
-            $self->setFirstSelected(name       => 'storage_provider_id',
-                                    attributes => $args{attributes}->{attributes},
-                                    params     => $args{params});
-        }
+    # If disk_manager_id defined but do not corresponding to a available value,
+    # it is an old value, so delete it.
+    if (not $manager_options->{$args{params}->{disk_manager_id}}) {
+        delete $args{params}->{disk_manager_id};
     }
-
-    # Build the list of disk manager of the storage provider
-    if ($args{params}->{storage_provider_id}) {
-        my $manager_options = {};
-        my @managers = $class->searchManagers(component_category  => 'DiskManager',
-                                              service_provider_id => $args{params}->{storage_provider_id});
-
-        for my $component (@managers) {
-            $manager_options->{$component->id} = $component->toJSON;
-            $manager_options->{$component->id}->{label} = $component->disk_type;
-        }
-        my @diskmanageroptions = values %{$manager_options};
-        $args{attributes}->{attributes}->{disk_manager_id}->{options} = \@diskmanageroptions;
-
-        # If disk_manager_id defined but do not corresponding to a available value,
-        # it is an old value, so delete it.
-        if (not $manager_options->{$args{params}->{disk_manager_id}}) {
-            delete $args{params}->{disk_manager_id};
-        }
-        # If no disk_manager_id defined and and attr is mandatory, use the first one as value
-        if (! $args{params}->{disk_manager_id} && $args{set_mandatory}) {
-            $self->setFirstSelected(name       => 'disk_manager_id',
-                                    attributes => $args{attributes}->{attributes},
-                                    params     => $args{params});
-        }
+    # If no disk_manager_id defined and and attr is mandatory, use the first one as value
+    if (! $args{params}->{disk_manager_id} && $args{set_mandatory}) {
+        $self->setFirstSelected(name       => 'disk_manager_id',
+                                attributes => $args{attributes}->{attributes},
+                                params     => $args{params});
     }
 
     if ($args{params}->{disk_manager_id}) {
@@ -230,58 +194,6 @@ sub getPolicyDef {
     }
 
     return $args{attributes};
-}
-
-
-=pod
-
-=begin classdoc
-
-For the network policy, the attribute storage_provider_id is
-added to the non editable attrs because it is never stored in
-the params preset of the policy.
-
-@return the non editable params list
-
-=end classdoc
-
-=cut
-
-sub getNonEditableAttributes {
-    my ($self, %args) = @_;
-
-    my $definition = $self->SUPER::getNonEditableAttributes();
-
-    # Add the storage_provider_id as a non editable attr if disk_manager_id
-    # or export_manager_id defined as a non editable attr.
-    if (defined $definition->{disk_manager_id} or defined $definition->{export_manager_id}) {
-        $definition->{storage_provider_id} = 1;
-    }
-    return $definition;
-}
-
-=pod
-
-=begin classdoc
-
-Remove possibly defined storage_provider_id from params, as it is a
-field convenient for manager selection only.
-
-@return a policy pattern fragment
-
-=end classdoc
-
-=cut
-
-sub getPatternFromParams {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => [ 'params' ]);
-
-    delete $args{params}->{storage_provider_id};
-
-    return $self->SUPER::getPatternFromParams(params => $args{params});
 }
 
 1;

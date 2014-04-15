@@ -16,7 +16,7 @@ use Kanopya::Exceptions;
 
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
-    level  => 'DEBUG',
+    level  => 'INFO',
     file   => __FILE__ . '.log',
     layout => '%F %L %p %m%n'
 });
@@ -34,33 +34,25 @@ use Entity::Poolip;
 use Entity::Operation;
 use IscsiPortal;
 use ClassType::ComponentType;
+use Entity::Component::DummyHostManager;
 
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::Register;
 use Kanopya::Tools::Retrieve;
 use Kanopya::Tools::TestUtils 'expectedException';
 
-# Set a mock for startHost
-#use EEntity::EComponent::EPhysicalhoster0;
-#use EEntity::EHost;
-#
-#EEntity::EHost->setMock(mock => 'EHostMock');
-#EEntity::EComponent::EPhysicalhoster0->setMock(mock => 'EPhysicalhoster0Mock');
+use String::Random;
 
-my $testing = 1;
+my $random = String::Random->new;
+my $cluster_name = $random->randpattern("nnCccCCnnncCCnncnCCn");
+
+my $testing = 0;
 
 main();
 
 sub main {
     if ($testing == 1) {
         Kanopya::Database::beginTransaction;
-
-        Kanopya::Tools::Register->registerHost(board => {
-            ram  => 1073741824,
-            core => 4,
-            serial_number => 0,
-            ifaces => [ { name => 'eth0', pxe => 1, mac => '00:00:00:00:00:00' } ]
-        });
     }
 
 
@@ -73,6 +65,15 @@ sub main {
     diag('Stop, deactivate and remove unmanaged iscsi host');
     stop_deactivate_and_remove_iscsi_host();
 
+    diag('Create and configure cluster');
+    _create_and_configure_cluster();
+
+    diag('Start unmanaged iscsi host');
+    start_iscsi_host();
+
+    diag('Force stop, deactivate and remove unmanaged iscsi host');
+    stop_deactivate_and_remove_iscsi_host(force => 1);
+
     if ($testing == 1) {
         Kanopya::Database::rollbackTransaction;
     }
@@ -81,14 +82,14 @@ sub main {
 sub start_iscsi_host {
     lives_ok {
         diag('retrieve Cluster via name');
-        my $cluster = Kanopya::Tools::Retrieve->retrieveCluster(criteria => {cluster_name => 'UnmanagedStorageCluster'});
+        my $cluster = Kanopya::Tools::Retrieve->retrieveCluster(criteria => {cluster_name => $cluster_name});
 
         diag('Cluster start operation');
         Kanopya::Tools::Execution->executeOne(entity => $cluster->start());
 
-        my ($state, $timestemp) = $cluster->getState;
+        my ($state, $timestemp) = $cluster->reload->getState;
         if ($state eq 'up') {
-            diag("Cluster $cluster->cluster_name started successfully");
+            diag("Cluster " . $cluster->cluster_name . " started successfully");
         }
         else {
             die "Cluster is not 'up'";
@@ -97,16 +98,18 @@ sub start_iscsi_host {
 }
 
 sub stop_deactivate_and_remove_iscsi_host {
+    my (%args) = @_;
+
     lives_ok {
         diag('retrieve Cluster via name');
-        my $cluster = Kanopya::Tools::Retrieve->retrieveCluster(criteria => {cluster_name => 'UnmanagedStorageCluster'});
+        my $cluster = Kanopya::Tools::Retrieve->retrieveCluster(criteria => {cluster_name => $cluster_name});
         my $cluster_name = $cluster->cluster_name;
         my $cluster_id = $cluster->id;
 
         diag('Cluster stop operation');
-        Kanopya::Tools::Execution->executeOne(entity => $cluster->forceStop);
+        Kanopya::Tools::Execution->executeOne(entity => $args{force} ? $cluster->forceStop : $cluster->stop);
 
-        my ($state, $timestemp) = $cluster->getState;
+        my ($state, $timestemp) = $cluster->reload->getState;
         if ($state eq 'down') {
             diag("Cluster $cluster_name stopped successfully");
         }
@@ -140,7 +143,7 @@ sub _create_and_configure_cluster {
     my $kanopya_cluster = Kanopya::Tools::Retrieve->retrieveCluster();
 
     diag('Get physical hoster');
-    my $physical_hoster = $kanopya_cluster->getHostManager();
+    my $dummy_host_manager = Entity::Component::DummyHostManager->find;
 
     diag('Retrieve disk manager');
     my $disk_manager = EEntity->new(
@@ -169,9 +172,6 @@ sub _create_and_configure_cluster {
 #    diag('Get a kernel for KVM');
 #    my $kernel = Entity::Kernel->find(hash => { kernel_name => '2.6.32-279.5.1.el6.x86_64' });
 
-    diag('Retrieve physical hosts');
-    my @hosts = Entity::Host->find(hash => { host_manager_id => $physical_hoster->id });
-
     diag('Retrieve the admin user');
     $admin_user = Entity::User->find(hash => { user_login => 'admin' });
 
@@ -190,22 +190,23 @@ sub _create_and_configure_cluster {
                        });
 
     diag('Create cluster');
-    my $cluster_create = Entity::ServiceProvider::Cluster->create(
+    my $cluster_def = {
         active                 => 1,
-        cluster_name           => "UnmanagedStorageCluster",
+        cluster_name           => $cluster_name,
+        kernel_id              => Entity::Kernel->find()->id,
         cluster_min_node       => "1",
         cluster_max_node       => "3",
         cluster_priority       => "100",
         cluster_si_persistent  => 1,
         cluster_domainname     => 'my.domain',
-        cluster_basehostname   => 'one',
+        cluster_basehostname   => $random->randpattern("nnccnnncnncnn"),
         cluster_nameserver1    => '208.67.222.222',
         cluster_nameserver2    => '127.0.0.1',
         # cluster_boot_policy    => 'PXE Boot via ISCSI',
         owner_id               => $admin_user->id,
         managers               => {
             host_manager => {
-                manager_id     => $physical_hoster->id,
+                manager_id     => $dummy_host_manager->id,
                 manager_type   => "HostManager",
                 manager_params => {
                     cpu        => 1,
@@ -236,6 +237,16 @@ sub _create_and_configure_cluster {
                 netconfs  => { $adminnetconf->id => $adminnetconf->id },
             }
         },
-    );
+    };
+
+    for my $component_name ("Puppetagent", "Debian") {
+        $cluster_def->{components}->{$component_name} = {
+            component_type => ClassType::ComponentType->find(hash => {
+                                   component_name => $component_name
+                              })->id,
+        };
+    }
+    my $cluster_create = Entity::ServiceProvider::Cluster->create(%$cluster_def);
+
     Kanopya::Tools::Execution->executeOne(entity => $cluster_create);
 }

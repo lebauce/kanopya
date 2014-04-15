@@ -174,7 +174,7 @@ sub main {
 
     # Enqueue an operation that should succeed
     my $add_host;
-    my $executor = $physicalhoster->service_provider->getManager(manager_type => 'ExecutionManager');
+    my $executor = $physicalhoster->executor_component;
     lives_ok {
         $add_host = $executor->enqueue(
                         type     => 'AddHost',
@@ -303,7 +303,6 @@ sub main {
                             host_core          => 1,
                             host_ram           => 1
                         },
-                        related_id => $physicalhoster->service_provider->id,
                     );
         Kanopya::Tools::Execution->oneRun();
 
@@ -332,7 +331,6 @@ sub main {
                             host_core          => 1,
                             host_ram           => 1
                         },
-                        related_id => $physicalhoster->service_provider->id,
                     );
         Kanopya::Tools::Execution->oneRun();
 

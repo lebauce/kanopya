@@ -319,8 +319,11 @@ sub execute {
     }
     else {
         # Get a free host
+        my @interfaces = $self->{context}->{cluster}->interfaces;
+        my $host_params = $self->{context}->{cluster}->getManagerParameters(manager_type => 'HostManager');
         $self->{context}->{host} = $self->{context}->{host_manager}->getFreeHost(
-                                       cluster => $self->{context}->{cluster}
+                                       interfaces => \@interfaces,
+                                       %{ $host_params }
                                    );
 
         if (not defined $self->{context}->{host}) {
@@ -367,16 +370,11 @@ sub execute {
             my $systemimage_desc = 'System image for node ' . $self->{params}->{node_number}  .' in cluster ' .
                                    $self->{context}->{cluster}->cluster_name . '.';
 
-            eval {
-               my $entity = Entity::Systemimage->new(systemimage_name    => $systemimage_name,
-                                                     systemimage_desc    => $systemimage_desc,
-                                                     service_provider_id => $self->{context}->{cluster}->id);
-               $self->{context}->{systemimage} = EEntity->new(data => $entity);
-            };
-            if($@) {
-                throw Kanopya::Exception::Internal::WrongValue(error => $@);
-            }
             $self->{params}->{create_systemimage} = 1;
+            $self->{context}->{systemimage} = EEntity->new(data => Entity::Systemimage->new(
+                                                  systemimage_name    => $systemimage_name,
+                                                  systemimage_desc    => $systemimage_desc,
+                                              ));
         }
     }
 

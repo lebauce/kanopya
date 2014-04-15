@@ -12,7 +12,7 @@ use Log::Log4perl qw(:easy);
 Log::Log4perl->easy_init({
     level  => 'DEBUG',
     file   => 'openstack_sync.log',
-    layout => '%F %L %p %m%n'
+    layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
 my $log = get_logger("");
 
@@ -24,11 +24,16 @@ use ParamPreset;
 use Kanopya::Tools::TestUtils 'expectedException';
 use Entity::Node;
 use Entity::Component::Virtualization::NovaController;
+use Entity::Component::KanopyaExecutor;
 use Daemon::MessageQueuing::OpenstackSync;
 use Kanopya::Tools::Register;
 use Kanopya::Tools::Create;
+use Kanopya::Tools::Execution;
 
-Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
+use String::Random;
+
+my $random = String::Random->new;
+my $postfix = $random->randpattern("nnCccCCnnncCCnncnCCn");
 
 my $nova_controller;
 my $hypervisor1 = 'hypervisor_1';
@@ -52,17 +57,33 @@ sub main {
 
 sub register_infrastructure {
 
+
+    Kanopya::Tools::Register->registerHost(board => {
+        ram  => 1073741824,
+        core => 4,
+        serial_number => $postfix,
+        ifaces => [ { name => 'eth0', pxe => 1, mac => '00:00:00:00:00:00' } ]
+    });
+
+    diag('Register master image');
+    my $masterimage;
+    lives_ok {
+        $masterimage = Kanopya::Tools::Register::registerMasterImage();
+    } 'Register master image';
+
     my $nova_cluster = Kanopya::Tools::Create->createCluster(
                            cluster_conf => {
-                               cluster_name => 'nova_cluster',
+                               cluster_name => 'nova_cluster' . $postfix,
                                cluster_basehostname => 'nova',
+                               masterimage_id => $masterimage->id,
                            },
                        );
 
-    Kanopya::Tools::Execution->executeAll();
+    Kanopya::Tools::Execution->startCluster(cluster => $nova_cluster);
 
     $nova_controller = Entity::Component::Virtualization::NovaController->new(
-                           service_provider_id => $nova_cluster->id
+                           service_provider_id   => $nova_cluster->id,
+                           executor_component_id => Entity::Component::KanopyaExecutor->find->id
                        );
 
     # Add a fake hypervisor
@@ -90,12 +111,12 @@ sub register_infrastructure {
 
     my $cluster = Kanopya::Tools::Create->createCluster(
                       cluster_conf => {
-                          cluster_name         => 'compute_clustera',
+                          cluster_name         => 'compute_clustera' . $postfix,
                           cluster_basehostname => 'computea',
                       },
                   );
 
-    Kanopya::Tools::Execution->executeAll();
+    Kanopya::Tools::Execution->startCluster(cluster => $cluster);
 
     $hv_host_1 = $hv_host_1->reload;
     $hv_host_2 = $hv_host_2->reload;

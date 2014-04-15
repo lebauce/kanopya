@@ -158,6 +158,11 @@ my @skip_resources = (
     'netapplunmanager',
     'netappvolumemanager',
     'hpc7000', # need HpcManager
+    'netapp',
+    'netappaggregate',
+    'netapplun',
+    'netappvolume',
+    'unifiedcomputingsystem'
 );
 
 # Some regexp can not be correctly parsed and bad value are generated, so we fix it
@@ -186,6 +191,12 @@ my %attribute_fixed_value = (
     'clustermetric' => {
         'clustermetric_statistics_function_name' => 'mean'
     },
+);
+
+# Filled at runtime
+my %common_fixed_value = (
+    domainname    => 'my.domain',
+    node_hostname => 'hostname'
 );
 
 sub fillMissingFixedAttr {
@@ -241,6 +252,14 @@ sub fillMissingFixedAttr {
     $json = Dancer::from_json($resp->{content});
     $attribute_fixed_value{anomaly}{related_metric_id} = $json->[0]->{pk};
 
+    # Retrieve an executor
+    $resp = dancer_response(GET => "/api/kanopyaexecutor", {});
+    my $executor = Dancer::from_json($resp->{content})->[0];
+    $common_fixed_value{executor_component_id} = $executor->{pk};
+
+    # Do not understand why the executor_component_id is NON mandatory in attributes
+    # Force to add this param.
+    $attribute_fixed_value{fileimagemanager0}{executor_component_id} = $executor->{pk};
 }
 
 sub run {
@@ -277,7 +296,8 @@ sub run {
             my $rq  = dancer_response GET => '/api/entity';
             if ($rq->{status} ne 200) {
                 die 'Wrong status GET /api/entity got <' . $rq->{status}
-                    . '> instead of <200> after managing resource < ' . $resource_name . '>';
+                    . '> instead of <200> after managing resource < ' . $resource_name . '>'
+                    . ', ' . $rq->{content};
             }
         } 'Manage '. $resource_name;
     }
@@ -294,7 +314,10 @@ sub _generate_values {
     while (my ($attr_name, $attr_def) = each %{$resource_info->{attributes}}) {
         if ($attr_def->{is_mandatory}) {
             my $value = '';
-            if (exists $attribute_fixed_value{$resource_name}{$attr_name}) {
+            if (exists $common_fixed_value{$attr_name}) {
+                $value = $common_fixed_value{$attr_name};
+            }
+            elsif (exists $attribute_fixed_value{$resource_name}{$attr_name}) {
                 # value can not be generated
                 $value = $attribute_fixed_value{$resource_name}{$attr_name};
             }
@@ -331,6 +354,10 @@ sub _generate_values {
             }
             $params{$attr_name} = $value;
         }
+        elsif (exists $attribute_fixed_value{$resource_name}{$attr_name}) {
+            # value can not be generated
+            $params{$attr_name} = $attribute_fixed_value{$resource_name}{$attr_name};
+        }
     }
     return \%params;
 }
@@ -353,7 +380,7 @@ sub post_resource {
     if (!$persistent) {
         if ($new_resp->{status} ne $expect_status) {
            die 'POST <' . $resource_name . '> with only mandatory attributes got <'
-               . $new_resp->{status} . '> expected <' . $expect_status . '> ';
+               . $new_resp->{status} . '> expected <' . $expect_status . '>, ' . $new_resp->{content};
        }
     }
 

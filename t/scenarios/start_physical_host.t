@@ -18,7 +18,7 @@ use ClassType::ComponentType;
 
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
-    level  => 'INFO',
+    level  => 'DEBUG',
     file   => __FILE__ . '.log',
     layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
@@ -32,7 +32,7 @@ use Kanopya::Tools::Create;
 
 use Entity::Systemimage;
 
-my $testing = 1;
+my $testing = 0;
 my $NB_HYPERVISORS = 1;
 
 main();

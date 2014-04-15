@@ -137,6 +137,7 @@ sub postrequisites {
     # Finally ask to the host manager to check if node is still power on
     try {
         if ($self->{context}->{host}->checkUp()) {
+            $log->info("Node already up, waiting...");
             return $delay;
         }
     }

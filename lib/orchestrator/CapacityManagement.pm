@@ -44,7 +44,7 @@ use List::Util;
 use Entity;
 use EEntity;
 use Message;
-use Entity::ServiceProvider::Cluster;
+
 # logger
 use Log::Log4perl "get_logger";
 my $log = get_logger("");

@@ -23,7 +23,6 @@ use warnings;
 
 use CapacityManagement;
 use Kanopya::Exceptions;
-use Entity::ServiceProvider::Cluster;
 use Entity::Host;
 use EEntity;
 
@@ -47,12 +46,7 @@ sub execute {
 
     # Verify if there is enough resource in HV
     my $vm_id = $self->{context}->{host}->id;
-    my $host_cluster = Entity::ServiceProvider::Cluster->find(hash => {
-                           cluster_id => $self->{context}->{host}->getClusterId(),
-                       });
-
     my $cm    = CapacityManagement->new(
-        cluster_id    => $self->{context}->{host}->getClusterId(),
         cloud_manager => $self->{context}->{cloudmanager_comp},
     );
 
@@ -72,7 +66,9 @@ sub execute {
     # Check billing limit before launching scale, but only in case of scale up
     if ($self->{params}->{cpu_number} > $self->{context}->{host}->host_core) {
         my $cpu_to_add = $self->{params}->{cpu_number} - $self->{context}->{host}->host_core;
-        $host_cluster->checkBillingLimits(metrics => { cpu => $cpu_to_add });
+
+        # TODO: Manage the billing checks from the service manager component
+        # $host_cluster->checkBillingLimits(metrics => { cpu => $cpu_to_add });
     }
 
     $self->{context}->{cloudmanager_comp}->scaleCpu(host       => $self->{context}->{host},

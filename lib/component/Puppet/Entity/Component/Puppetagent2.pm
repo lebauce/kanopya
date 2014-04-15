@@ -26,6 +26,7 @@ use Entity::ServiceProvider::Cluster;
 use Kanopya::Exceptions;
 use Kanopya::Config;
 
+use TryCatch;
 use Hash::Merge qw(merge);
 
 use Log::Log4perl "get_logger";
@@ -87,33 +88,60 @@ sub getPuppetMaster {
     my $self = shift;
     my %args = @_;
 
+    # Get the puppet master on kanopya
+    # TOD: Set the puppet master to the puppet agent attributes
     my $kanopya_cluster = Entity::ServiceProvider::Cluster->getKanopyaCluster();
     return $kanopya_cluster->getComponent(name => "Puppetmaster");
 }
 
+
+=begin classdoc
+
+Override the parent method to manually add the puppet master ip and fqdn,
+as the puppet agent do not have regular ref to tis master.
+
+=end classdoc
+=cut
+
 sub getHostsEntries {
-    my ($self) = @_;
+    my ($self, %args) = @_;
 
-    my $fqdn = $self->puppetagent2_masterfqdn;
-    my @tmp = split(/\./, $fqdn);
-    my $hostname = shift @tmp;
+    General::checkParams(args => \%args, optional => { "dependencies" => 0 });
 
-    return [ { ip         => $self->puppetagent2_masterip,
-               fqdn       => $fqdn,
-               aliases    => [ $hostname ] } ];
+    # Get the entries of the hosts on which the puppet agent is installed
+    my $entries = $self->SUPER::getHostsEntries(%args);
+
+    # Manually add the puppet master in hosts entries
+    if ($args{dependencies}) {
+        my $fqdn = $self->puppetagent2_masterfqdn;
+        my @names = split(/\./, $fqdn);
+        $entries->{$self->puppetagent2_masterip} = {
+            fqdn    => $fqdn,
+            aliases => {
+                'hostname' => shift(@names)
+            }
+        };
+    }
+    return $entries;
 }
+
 
 sub getBaseConfiguration {
     my ($class) = @_;
 
-    my $master = $class->getPuppetMaster->getMasterNode;
-
-    return $master ? {
-        puppetagent2_options    => '--no-client',
-        puppetagent2_mode       => 'kanopya',
-        puppetagent2_masterip   => $master->adminIp,
-        puppetagent2_masterfqdn => $master->fqdn
-    } : { };
+    try {
+        my $master = $class->getPuppetMaster->getMasterNode;
+        return {
+            puppetagent2_options    => '--no-client',
+            puppetagent2_mode       => 'kanopya',
+            puppetagent2_masterip   => $master->adminIp,
+            puppetagent2_masterfqdn => $master->fqdn
+        }
+    }
+    catch (Kanopya::Exception::Internal::NotFound $err) {
+        return {};
+    }
+    catch ($err) { $err->rethrow() }
 }
 
 sub getPuppetDefinitions {
@@ -123,26 +151,20 @@ sub getPuppetDefinitions {
 
     my $node = $args{node};
     my $host = $node->host;
-    my $cluster = $node->service_provider;
-    my @components = sort { $a->priority <=> $b->priority } $node->components;
-    my $cluster_name = $cluster->cluster_name;
-    my $sourcepath = $cluster_name . '/' . $node->node_hostname;
-
     my $definition = {
         host_fqdn  => $node->fqdn,
-        cluster    => $cluster_name,
-        sourcepath => $sourcepath,
+        sourcepath => $node->node_hostname,
         admin_ip   => $node->adminIp,
     };
  
+    my @components = sort { $a->priority <=> $b->priority } $node->components;
     foreach my $component (@components) {
         my $config_hash = {};
         my $component_name = lc($component->component_type->component_name);
         my $component_node = $component->find(related => 'component_nodes',
                                               hash    => { node_id => $node->id });
 
-        my $puppet_definitions = $component->getPuppetDefinition(host    => $host,
-                                                                 cluster => $cluster);
+        my $puppet_definitions = $component->getPuppetDefinition(host => $host);
 
         my $listen = {};
         my $access = {};
@@ -174,8 +196,8 @@ sub getPuppetDefinitions {
                 my @nodes = map { $_->fqdn } $dependency->nodes;
                 my $hash = { nodes => \@nodes, %{$chunk->{params} || {}} };
 
-                if (($dependency->service_provider->id == $cluster->id) ||
-                    (($dependency->service_provider->getState)[0] eq "up")) {
+                # TODO: test the state of the component instead of the node
+                if (($dependency->getMasterNode->getState)[0] eq "in") {
                     $netconf = $dependency->getNetConf;
                     for my $service (keys %{$netconf}) {
                         $hash->{$service} = {
@@ -187,9 +209,10 @@ sub getPuppetDefinitions {
                 }
             }
 
-            my @classes = keys %{$chunk->{classes}};
+            my @classes = keys %{ $chunk->{classes} };
             my $data = {
-                classes    => \@classes,
+                # Keep the classes hash for merge, witch to list bofore returning the manifest
+                classes    => $chunk->{classes},
                 components => { $component_name => $configuration },
                 %{$chunk->{params} || {}}
             };
@@ -199,11 +222,17 @@ sub getPuppetDefinitions {
                 for my $parameter (keys %{$parameters}) {
                     $data->{$class . '::' . $parameter} = $parameters->{$parameter};
                 }
+                # Remove the classe hash values to avoid to merge them
+                # $chunk->{classes}->{$class} = undef;
             }
 
             $definition = merge($definition, $data);
         }
     }
+
+    # Return the classes as a list
+    my @classes = keys %{ $definition->{classes} };
+    $definition->{classes} = \@classes;
 
     return $definition;
 }

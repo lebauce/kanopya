@@ -123,20 +123,16 @@ sub generateNodeFile {
     General::checkParams(
         args     => \%args,
         required => [ 'file', 'template_dir', 'template_file', 'data' ],
-        optional => { cluster => undef, host => undef, send => 0,
-                      mount_point => '', mode => undef, user => undef,
-                      group => undef }
+        optional => { host => undef, send => 0, mount_point => '',
+                      mode => undef, user => undef, group => undef }
     );
 
-    $args{cluster} = $args{cluster} || $self->service_provider;
     $args{host} = $args{host} || EEntity->new(entity => $self->getMasterNode->host);
 
-    my $path = $self->_executor->getConf->{clusters_directory};
-    $path .= '/' . $args{cluster}->cluster_name;
-    $path .= '/' . $args{host}->node->node_hostname;
-    $path .= '/' . $args{file};
-    my ($filename, $directories, $prefix) = fileparse($path);
+    my $path = $self->_executor->getConf->{clusters_directory} . '/' .
+               $args{host}->node->node_hostname . '/' . $args{file};
 
+    my ($filename, $directories, $prefix) = fileparse($path);
     $self->_host->getEContext->execute(command => "mkdir -p $directories");
 
     $self->generateFile(
@@ -187,8 +183,7 @@ sub cleanNode {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams(args => \%args,
-                         required => [ 'host' ]);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
     eval { $self->preStopNode(%args); };
     eval { $self->stopNode(%args); };
@@ -201,8 +196,8 @@ sub isUp {
     General::checkParams( args => \%args, required => [ 'host' ] );
 
     my $availability = 1;
-    my $execution_list = $self->_entity->getExecToTest(host => $args{host});
-    my $net_conf = $self->_entity->getNetConf();
+    my $execution_list = $self->getExecToTest(host => $args{host});
+    my $net_conf = $self->getNetConf();
 
     # Test executable
     foreach my $i (keys %$execution_list) {
@@ -240,25 +235,29 @@ sub isUp {
     return 1;
 }
 
-sub getEContext {
+sub getEContext { 
     my ($self) = @_;
 
     return $self->SUPER::getEContext(dst_host => $self->getMasterNode->host);
 }
 
+
+=pod
+=begin classdoc
+
+Apply the component configuration on all nodes where it is running.
+
+=end classdoc
+=cut
+
 sub applyConfiguration {
     my ($self, %args) = @_;
 
     my $tags = $args{tags} || [ 'kanopya::' . lc($self->component_type->component_name) ];
-    my $cluster = $self->service_provider;
-    my $epuppet = EEntity->new(entity => $cluster->getComponent(category => "Configurationagent"));
-    my @hosts = map { EEntity->new(entity => $_->host) } $self->getActiveNodes();
 
-    return $epuppet->applyConfiguration(
-               cluster => $cluster,
-               hosts   => \@hosts,
-               tags    => $tags
-           );
+    my $puppet = $self->getMasterNode->getComponent(category => "Configurationagent");
+    return EEntity->new(entity => $puppet)->applyConfiguration(nodes => $self->getActiveNodes(),
+                                                               tags  => $tags);
 }
 
 1;

@@ -118,7 +118,14 @@ sub test2a {
     ##########################
 
     throws_ok {
-        my $selected_host = DecisionMaker::HostSelector->getHost(cluster => $cluster);
+        my @interfaces = $cluster->interfaces;
+        my $selected_host = DecisionMaker::HostSelector->getHost(
+                                host_manager => Entity::Component::Physicalhoster0->find(),
+                                interfaces   => \@interfaces,
+                                %{ $host_manager_conf->{managers}->{host_manager}->{manager_params} },
+                            );
+
+
     } 'Kanopya::Exception',
       'Test 2.a : None of the hosts match the minimum RAM constraint';
 }

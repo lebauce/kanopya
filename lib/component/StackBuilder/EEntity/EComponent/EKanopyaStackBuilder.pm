@@ -152,7 +152,6 @@ sub buildStack {
             type       => 'AddCluster',
             priority   => 200,
             params     => $params,
-            related_id => $self->service_provider->id
         });
     }
 }
@@ -314,7 +313,7 @@ sub startStack {
         $err->rethrow();
     }
 
-    $components->{novacompute}->{component}->service_provider->getComponent(category => "System")->addMount(
+    $components->{novacompute}->{component}->getMasterNode->getComponent(category => "System")->addMount(
         mountpoint => "/var/lib/nova/instances",
         filesystem => "nfs",
         options    => "vers=3",
@@ -417,7 +416,6 @@ sub startStack {
         $log->info ("Starting service " . $cluster->label. " in an embedded workflow...");
         $args{workflow}->enqueueNow(workflow => {
             name       => 'AddNode',
-            related_id => $cluster->id,
             params     => {
                 context => {
                     cluster => $cluster,
@@ -643,7 +641,6 @@ sub stopStack {
                 operation => {
                     type       => 'StopCluster',
                     priority   => 200,
-                    related_id => $cluster->id,
                     params     => {
                         context => {
                             cluster => $cluster,
@@ -694,7 +691,6 @@ sub endStack {
                 $args{workflow}->enqueueNow(operation => {
                     type       => 'ForceStopCluster',
                     priority   => 200,
-                    related_id => $cluster->id,
                     params     => {
                         context => {
                             cluster => $cluster,

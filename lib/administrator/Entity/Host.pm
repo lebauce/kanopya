@@ -33,6 +33,7 @@ use General;
 use Harddisk;
 use Entity::Iface;
 
+use TryCatch;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
@@ -46,7 +47,7 @@ use constant ATTR_DEF => {
         type         => 'relation',
         relation     => 'single',
         pattern      => '^[0-9\.]*$',
-        is_mandatory => 1,
+        is_mandatory => 0,
         is_editable  => 0,
     },
     hostmodel_id => {
@@ -244,29 +245,18 @@ sub setState {
 
 sub getNodeState {
     my $self = shift;
-    my $state = $self->node->node_state;
-    return wantarray ? split(/:/, $state) : $state;
+    return $self->node->getState();
 }
 
 sub getPrevNodeState {
     my $self = shift;
-    my $state = $self->node->node_prev_state;
-    return wantarray ? split(/:/, $state) : $state;
+    return $self->node->getPrevState();
 }
 
 sub setNodeState {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'state' ]);
-
-    my $new_state = $args{state};
-    my $current_state = $self->getNodeState();
-
-    my $node = $self->node;
-    $node->setAttr(name => 'node_prev_state', value => $current_state || "");
-    $node->setAttr(name => 'node_state', value => $new_state . ":" . time);
-    $node->save();
+    return $self->node->setState(%args);
 }
 
 
@@ -278,7 +268,7 @@ sub updateCPU {
     # If the host is a node, then it is used in a cluster
     # belonging to a user, so update quota
     if ($self->node) {
-        my $user = $self->node->service_provider->owner;
+        my $user = $self->node->owner;
 
         if ($args{cpu_number} < $self->host_core) {
             $user->releaseQuota(resource => 'cpu',
@@ -301,7 +291,7 @@ sub updateMemory {
     # If the host is a node, then it is used in a cluster
     # belonging to a user, so update quota
     if ($self->node) {
-        my $user = $self->node->service_provider->owner;
+        my $user = $self->node->owner;
 
         if ($args{memory} < $self->host_ram) {
             $user->releaseQuota(resource => 'ram',
@@ -513,19 +503,12 @@ Return a string representation of the entity
 sub label {
     my $self = shift;
 
-    return $self->node
-         ? $self->node->node_hostname
-         : $self->host_serial_number;
-}
-
-sub getClusterId {
-    my $self = shift;
-    return $self->node->service_provider->id;
-}
-
-sub getCluster {
-    my $self = shift;
-    return $self->node->service_provider;
+    try {
+        return $self->node->node_hostname;
+    }
+    catch ($err) {
+        return $self->host_serial_number;
+    }
 }
 
 sub getModel {

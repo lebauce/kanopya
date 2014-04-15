@@ -142,14 +142,10 @@ sub createHostManifest {
                          optional => { configuration => {} });
 
     my $fqdn = $args{node}->fqdn;
-    my $cluster = $args{node}->service_provider->cluster_name;
-    my $sourcepath = $cluster . '/' . $args{node}->node_hostname;
-
     my $data = {
         host_fqdn          => $fqdn,
-        cluster            => $cluster,
         puppet_definitions => $args{puppet_definitions},
-        sourcepath         => $sourcepath
+        sourcepath         => $args{node}->node_hostname
     };
 
     $self->generateFile(
@@ -167,7 +163,7 @@ sub createHostManifest {
     close $fh;
 
     my $path = $self->_executor->getConf->{clusters_directory} . '/' .
-               $sourcepath . '/' .
+               $args{node}->node_hostname . '/' .
                $fqdn . ".yaml";
 
     $self->getEContext->send(src   => $filename,

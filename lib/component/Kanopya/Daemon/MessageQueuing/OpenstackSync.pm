@@ -348,7 +348,7 @@ sub computeInstanceCreateEnd {
                        cluster_domainname    => 'my.domain',
                        cluster_nameserver1   => '127.0.0.1',
                        cluster_nameserver2   => '127.0.0.1',
-                       owner_id              => $args{host_manager}->service_provider->owner_id,
+                       owner_id              => $args{host_manager}->getMasterNode->owner_id,
                        service_template_id   => $generic_service->id,
                    );
     }

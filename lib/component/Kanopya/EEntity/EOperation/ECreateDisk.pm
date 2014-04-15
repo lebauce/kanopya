@@ -22,8 +22,6 @@ use warnings;
 use EEntity;
 use Kanopya::Exceptions;
 
-use Entity::ServiceProvider;
-
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
@@ -42,11 +40,10 @@ sub check {
 sub execute {
     my ($self, %args) = @_;
 
-    # Check service provider state
-    my $storage_provider = $self->{context}->{disk_manager}->service_provider;
-    my ($state, $timestamp) = $storage_provider->getState();
+    # Check disk manager state
+    my ($state, $timestamp) = $self->{context}->{disk_manager}->getMasterNode->getState();
     if ($state ne 'up'){
-        $errmsg = "Service provider has to be up !";
+        $errmsg = "Disk manager has to be up !";
         $log->error($errmsg);
         throw Kanopya::Exception::Internal::IncorrectParam(error => $errmsg);
     }

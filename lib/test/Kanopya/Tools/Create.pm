@@ -138,6 +138,8 @@ sub createCluster {
         $service_template_id = Entity::ServiceTemplate->find(hash => { service_name => "Generic service" })->id;
     };
 
+    # Add reqyired system component with proper configuration
+    my $system = 
     my $default_conf = {
         active                => 1,
         cluster_name          => 'DefaultCluster',

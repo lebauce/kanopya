@@ -69,7 +69,7 @@ sub getHostManagerParams {
         cpu     => $definition->{cpu},
         ram     => $definition->{ram},
         tags    => $definition->{tags},
-	no_tags => $definition->{no_tags},
+	    no_tags => $definition->{no_tags},
 
     };
 }
@@ -174,7 +174,7 @@ sub createHost {
     General::checkParams(args     => \%args,
                          required => [ "host_core", "host_serial_number", "host_ram" ]);
 
-    return $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
+    return $self->executor_component->enqueue(
         type     => 'AddHost',
         params   => {
             context  => {
@@ -191,7 +191,7 @@ sub removeHost {
 
     General::checkParams(args  => \%args, required => [ "host" ]);
 
-    return $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
+    return $self->executor_component->enqueue(
         type     => 'RemoveHost',
         params   => {
             context  => {
@@ -206,7 +206,7 @@ sub activateHost {
 
     General::checkParams(args  => \%args, required => [ "host" ]);
 
-    return $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
+    return $self->executor_component->enqueue(
         type     => 'ActivateHost',
         params   => {
             context => {
@@ -221,7 +221,7 @@ sub deactivateHost {
 
     General::checkParams(args  => \%args, required => [ "host" ]);
 
-    return $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
+    return $self->executor_component->enqueue(
         type     => 'DeactivateHost',
         params   => {
             context => {
@@ -236,7 +236,7 @@ sub resubmitHost {
 
     General::checkParams(args  => \%args, required => [ "host" ]);
 
-    return $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+    return $self->executor_component->run(
         name   => 'ResubmitNode',
         params => {
             context => {

@@ -34,6 +34,7 @@ use Kanopya::Config;
 use General;
 use ParamPreset;
 use ClassType::ComponentType;
+use ComponentNode;
 
 use Data::Dumper;
 use TryCatch;
@@ -43,12 +44,6 @@ my $log = get_logger("");
 my $errmsg;
 
 use constant ATTR_DEF => {
-    service_provider_id => {
-        pattern        => '^\d*$',
-        is_mandatory   => 1,
-        is_extended    => 0,
-        is_editable    => 0
-    },
     component_type_id => {
         label          => 'Component type',
         pattern        => '^\d*$',
@@ -63,6 +58,14 @@ use constant ATTR_DEF => {
         is_mandatory   => 0,
         is_extended    => 0,
         is_editable    => 0
+    },
+    executor_component_id => {
+        label        => 'Workflow manager',
+        type         => 'relation',
+        relation     => 'single',
+        pattern      => '^[0-9\.]*$',
+        is_mandatory => 0,
+        is_editable  => 0,
     },
     param_presets => {
         is_virtual   => 1,
@@ -86,14 +89,23 @@ sub methods {
     };
 }
 
+my $merge = Hash::Merge->new('LEFT_PRECEDENT');
+
+
 sub label {
     my $self = shift;
 
-    return $self->component_type->component_name .
-               (defined $self->service_provider ? " (on " . $self->service_provider->label . ")" : "");
-}
+    my $label = $self->component_type->component_name;
+    try {
+        $label .= " (on " . $self->getMasterNode->label . ")";
+    }
+    catch (Kanopya::Exception::Internal::NotFound $err) {
+       # Component not installed on any node yet
+    }
+    catch ($err) { $err->rethrow() }
 
-my $merge = Hash::Merge->new('LEFT_PRECEDENT');
+    return $label;
+}
 
 
 =pod
@@ -234,19 +246,13 @@ sub getTemplateConfiguration {
 =pod
 =begin classdoc
 
-Overrided to remove associated service_provider_manager.
-Managers can't be cascade deleted because they are linked either to a a connector or a component.
+Overrided to remove associated param presets.
 
 =end classdoc
 =cut
 
 sub remove {
     my $self = shift;
-
-    my @managers = ServiceProviderManager->search(hash => { manager_id => $self->id });
-    for my $manager (@managers) {
-        $manager->remove();
-    }
 
     if (defined $self->param_preset) {
         $self->param_preset->remove();
@@ -269,16 +275,18 @@ sub registerNode {
 
 sub getMasterNode {
     my $self = shift;
-    my $masternode;
 
     try {
-        $masternode = $self->findRelated(filters => [ 'component_nodes' ],
-                                         hash => { master_node => 1 })->node;
-    } catch($err) {
-        $masternode = undef;
+        return $self->findRelated(filters => [ 'component_nodes' ],
+                                  hash    => { master_node => 1 })->node;
     }
-
-    return $masternode;
+    catch (Kanopya::Exception::Internal::NotFound $err) {
+        throw Kanopya::Exception::Internal::NotFound(
+                  error => "Component <" . $self->component_type->component_name .
+                           "> has no master node yet."
+              );
+    }
+    catch ($err) { $err->rethrow(); }
 }
 
 sub getActiveNodes {
@@ -294,7 +302,7 @@ sub getActiveNodes {
         }
     }
 
-    return @nodes;
+    return \@nodes;
 }
 
 sub toString {
@@ -371,20 +379,49 @@ sub checkAttribute {
 
 }
 
+=pod
+=begin classdoc
+
+Check the state of component dependency.
+
+@param component the component that we depend on
+
+=end classdoc
+=cut
+
 sub checkDependency {
     my ($self, %args) = @_;
+
     General::checkParams(args => \%args, required => [ 'component' ]);
 
-    my $component = $args{component};
-    my ($state, $uptime) = $component->service_provider->getState();
-    if ($component->service_provider->id != $self->service_provider->id &&
-        $state ne "up" && $state ne "updating") {
+    my ($state, $uptime) = $args{component}->getState();
+    # The state is the node state no "in" seems "up"
+    if ($state ne "in") {
         throw Kanopya::Exception::InvalidConfiguration(
-            error => "$component on ".$component->service_provider->cluster_name." has to be up to start $self (not $state)",
-            component => $self
-        );
+                  error     => $args{component}->label . " has to be up to start " .
+                               $self->label . " (not $state)",
+                  component => $self
+              );
     }
 }
+
+
+=pod
+=begin classdoc
+
+Assuming that the state of a component is the state of the master node of the component.
+
+=end classdoc
+=cut
+
+sub getState {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'component' ]);
+
+    return $self->getMasterNode->getState();
+}
+
 
 sub getClusterizationType {}
 
@@ -392,7 +429,70 @@ sub getExecToTest {}
 
 sub getNetConf {}
 
-sub getHostsEntries { return; }
+
+=pod
+=begin classdoc
+
+Return the hosts entries required for the component efficiency.
+Basically a component require all hosts entries of the nodes on which it is distributed.
+
+Conrete components could override this method to add entries of the hosts
+of the components that it depends on.
+
+@return ip address
+
+=end classdoc
+=cut
+
+sub getHostsEntries {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, optional => { "dependencies" => 0 });
+
+    # Basically return the entries of the hosts where is distributed the component
+    my $entries = {};
+    for my $node ($self->nodes) {
+        my $adminip = $node->adminIp;
+        my $system = $node->getComponent(category => "System");
+        if (! defined $adminip) {
+            $log->warn("Skipping node <" .  $node->label . "> as it has not admin ip.");
+            next;
+        }
+        $entries->{$node->adminIp} = {
+            fqdn    => $node->fqdn,
+            # Use a hash to store aliases as Hash::Marge module do not merge arrays
+            aliases => {
+                'hostname.domainname' => $node->node_hostname . "." . $system->domainname,
+                'hostname'            => $node->node_hostname,
+            },
+        }
+    }
+
+    if ($args{dependencies}) {
+        for my $dependency (@{ $self->getDependentComponents }) {
+            $entries = $merge->merge($entries, $dependency->getHostsEntries);
+        }
+    }
+    return $entries;
+}
+
+
+=pod
+=begin classdoc
+
+Override in sub classes to return the conrete component dependecencies.
+
+@return the list of dependent components.
+
+=end classdoc
+=cut
+
+sub getDependentComponents {
+    my ($self, %args) = @_;
+
+    return [];
+}
+
 
 =pod
 =begin classdoc
@@ -435,7 +535,7 @@ sub getAccessIp {
 
     General::checkParams(args => \%args, optional => { 'port' => undef, 'service' => undef });
 
-    my $keepalived = eval { $self->service_provider->getComponent(name => 'Keepalived') };
+    my $keepalived = eval { $self->getMasterNode->getComponent(name => 'Keepalived') };
     if ($keepalived) {
         my @vrrpinstances = $keepalived->keepalived1_vrrpinstances;
         return $vrrpinstances[0]->virtualip->ip_addr;
@@ -623,5 +723,28 @@ sub paramPresets {
         }
     }
 }
+
+
+=pod
+=begin classdoc
+
+Forbid to access to the service provider from the component.
+
+=end classdoc
+=cut
+
+sub service_provider {
+    my ($self, @args) = @_;
+
+    # throw Kanopya::Exception::Internal::Deprecated(
+    #           error => "Accessing to the service provider from a component is deprecated"
+    #       );
+    $log->warn("Accessing to the service provider from a component is deprecated");
+
+    if (scalar(@args)) {
+        return $self->setAttr(name => 'service_provider', value => pop(@args));
+    }
+    return $self->getAttr(name => 'service_provider');
+};
 
 1;

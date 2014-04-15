@@ -221,7 +221,7 @@ sub createExport {
                          required => [ "container", "export_name", "typeio", "iomode" ]);
 
     $log->debug("New Operation CreateExport with attrs : " . %args);
-    $self->service_provider->getManager(manager_type => 'ExecutionManager')->enqueue(
+    $self->executor_component->enqueue(
         type     => 'CreateExport',
         params   => {
             context => {

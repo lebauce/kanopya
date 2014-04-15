@@ -21,16 +21,15 @@ use base "EEntity::EOperation";
 use strict;
 use warnings;
 
+use Kanopya::Exceptions;
+use Entity;
+use EEntity;
+
+use TryCatch;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
-use Kanopya::Exceptions;
-use Entity;
-
-use EEntity;
-
 my $log = get_logger("");
-my $errmsg;
 
 
 sub check {
@@ -43,59 +42,31 @@ sub check {
 
 sub execute {
     my $self = shift;
-
-    # Instanciate bootserver Cluster
-    my $bootserver = Entity::ServiceProvider::Cluster->getKanopyaCluster;
-
-    # Instanciate dhcpd component.
-    $self->{context}->{component_dhcpd}
-        = EEntity->new(data => $bootserver->getComponent(name => "Dhcpd", version => "3"));
  
+    # Force stop all nodes of the cluster
     foreach my $node (reverse $self->{context}->{cluster}->nodesByWeight()) {
-        my $ehost = EEntity->new(data => $node->host);
-        eval {
-            # Halt Node
-            $ehost->halt();
-        };
-        if ($@) {
-            my $error = $@;
-            $errmsg = "Problem with node <" . $node->host->host_id . "> during force stop cluster : $error";
-            $log->warn($errmsg);
+        try {
+            # Ask to the deployment manager t release the node
+            my $deployer = $self->{context}->{cluster}->getManager(manager_type => 'DeploymentManager');
+            EEntity->new(entity => $deployer)->releaseNode(node     => $node,
+                                                           workflow => $self->workflow);
         }
-
-        eval {
-            # Update Dhcp component conf
-            $self->{context}->{component_dhcpd}->removeHost(
-                host => $node->host
-            );
-        };
-        if ($@) {
-            my $error = $@;
-            $errmsg = "Problem with node <" . $node->host->id .
-                      "> during dhcp configuration update : $error";
-            $log->warn($errmsg);
+        catch ($err) {
+            $log->warn($err);
         }
 
         # component migration
         $log->info('Processing cluster components quick remove for node <' . $node->host->id . '>');
 
+        my $ehost = EEntity->new(entity => $node->host);
         my @components = $self->{context}->{cluster}->getComponents(category => "all");
         foreach my $component (@components) {
-            EEntity->new(data => $component)->cleanNode(
-                host        => $ehost,
-                mount_point => '',
-                cluster     => $self->{context}->{cluster}
-            );
+            EEntity->new(data => $component)->cleanNode(host => $ehost);
         }
 
-        $node->node_hostname(undef);
         $node->host->host_initiatorname(undef);
-
         $self->{context}->{cluster}->unregisterNode(node => $node);
     }
-
-    # Generate and reload Dhcp conf
-    $self->{context}->{component_dhcpd}->applyConfiguration();
 
     $self->{context}->{cluster}->setState(state => "down");
 }

@@ -38,7 +38,7 @@ my $log = get_logger("");
 sub vmm {
     my $self = shift;
 
-    return EEntity->new(entity => $self->node->service_provider->getComponent(category => "Hypervisor"));
+    return EEntity->new(entity => $self->node->getMasterNode->getComponent(category => "Hypervisor"));
 }
 
 

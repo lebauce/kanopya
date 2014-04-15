@@ -183,6 +183,10 @@ use Exception::Class (
         isa         => 'Kanopya::Exception::Execution',
         description => 'Resource busy',
     },
+    Kanopya::Exception::Execution::ResourceNotFound => {
+        isa         => 'Kanopya::Exception::Execution',
+        description => 'Resource not found',
+    },
     Kanopya::Exception::Execution::AlreadyExists => {
         isa         => 'Kanopya::Exception::Execution',
         description => 'Already exist',

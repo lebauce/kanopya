@@ -22,6 +22,7 @@ use Entity::ServiceProvider::Externalcluster;
 use CapacityManagement;
 use ChocoCapacityManagement;
 use Entity::Component::Virtualization::Opennebula3;
+use Entity::Component::KanopyaExecutor;
 use ClassType::ComponentType;
 
 Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
@@ -49,11 +50,10 @@ sub main {
     $service_provider_hypervisors = Entity::ServiceProvider->new();
 
     $one = $service_provider_hypervisors->addComponent(
-        component_type_id => ClassType::ComponentType->find(
-            hash => {
-                component_name => 'Opennebula',
-            }
-        )->id,
+        component_type_id => ClassType::ComponentType->find(hash => { component_name => 'Opennebula' })->id,
+        component_configuration => {
+            executor_component_id => Entity::Component::KanopyaExecutor->find()->id
+        }
     );
 
     # Create entity with random arguments because only used for their ids

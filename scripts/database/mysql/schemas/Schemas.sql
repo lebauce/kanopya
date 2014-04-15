@@ -106,7 +106,7 @@ CREATE TABLE `service_provider` (
 
 CREATE TABLE `node` (
   `node_id` int(8) unsigned NOT NULL,
-  `service_provider_id` int(8) unsigned NOT NULL,
+  `service_provider_id` int(8) unsigned DEFAULT NULL,
   `host_id` int(8) unsigned DEFAULT NULL,
   `node_number` int(8) unsigned NOT NULL,
   `node_hostname` char(255) NOT NULL,
@@ -467,7 +467,7 @@ CREATE TABLE `nfs_container_access_client` (
 
 CREATE TABLE `host` (
   `host_id` int(8) unsigned NOT NULL,
-  `host_manager_id` int(8) unsigned NOT NULL,
+  `host_manager_id` int(8) unsigned DEFAULT NULL,
   `hostmodel_id` int(8) unsigned NULL DEFAULT NULL,
   `processormodel_id` int(8) unsigned NULL DEFAULT NULL,
   `kernel_id` int(8) unsigned DEFAULT NULL,
@@ -549,10 +549,10 @@ CREATE TABLE `harddisk` (
   `host_id` int(8) unsigned NOT NULL,
   `harddisk_device` char(32) NOT NULL,
   `harddisk_size` bigint unsigned DEFAULT 0,
-  `service_provider_id` int(8) unsigned DEFAULT NULL,
+  `deployed_on_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`harddisk_id`),
   FOREIGN KEY (`host_id`) REFERENCES `host` (`host_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE SET NULL ON UPDATE NO ACTION
+  FOREIGN KEY (`deployed_on_id`) REFERENCES `node` (`node_id`) ON DELETE SET NULL ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -636,10 +636,10 @@ CREATE TABLE `workflow` (
   `workflow_name` char(64) DEFAULT NULL,
   `state` char(32) NOT NULL DEFAULT 'pending',
   `timeout` int(4) unsigned DEFAULT NULL,
-  `related_id` int(8) unsigned NULL DEFAULT NULL,
+  `workflow_manager_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`workflow_id`),
   FOREIGN KEY (`workflow_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`related_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+FOREIGN KEY (`workflow_manager_id`) REFERENCES `kanopya_executor` (`kanopya_executor_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -729,11 +729,9 @@ CREATE TABLE `systemimage` (
   `systemimage_name` char(32) NOT NULL,
   `systemimage_desc` char(255) DEFAULT NULL,
   `active` int(1) unsigned NOT NULL,
-  `service_provider_id` int(8) unsigned NOT NULL,
   PRIMARY KEY (`systemimage_id`),
   FOREIGN KEY (`systemimage_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  UNIQUE KEY (`systemimage_name`),
-  FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  UNIQUE KEY (`systemimage_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1021,13 +1019,14 @@ CREATE TABLE `component` (
   `component_type_id` int(8) unsigned NOT NULL,
   `component_template_id` int(8) unsigned DEFAULT NULL,
   `param_preset_id` int(8) unsigned DEFAULT NULL,
-  UNIQUE KEY (`service_provider_id`, `component_type_id`),
+  `executor_component_id` int(8) unsigned DEFAULT NULL,
   PRIMARY KEY (`component_id`),
   FOREIGN KEY (`component_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`component_template_id`) REFERENCES `component_template` (`component_template_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
   FOREIGN KEY (`component_type_id`) REFERENCES `component_type` (`component_type_id`) ON DELETE NO ACTION ON UPDATE NO ACTION,
-  FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE SET NULL ON UPDATE NO ACTION
+  FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE SET NULL ON UPDATE NO ACTION,
+  FOREIGN KEY (`executor_component_id`) REFERENCES `kanopya_executor` (`kanopya_executor_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1562,14 +1561,12 @@ CREATE TABLE `notification_subscription` (
   `entity_id` int(8) unsigned NOT NULL,
   `operationtype_id` int(8) unsigned DEFAULT NULL,
   `operation_state`  char(32) NOT NULL DEFAULT "processing",
-  `service_provider_id` int(8) unsigned NOT NULL,
   `validation` int(1) unsigned NOT NULL DEFAULT 0,
   PRIMARY KEY (`notification_subscription_id`),
   UNIQUE KEY (`subscriber_id`, `entity_id`, `operationtype_id`, `operation_state`),
   FOREIGN KEY (`subscriber_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`entity_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`operationtype_id`) REFERENCES `operationtype` (`operationtype_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
-  FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+  FOREIGN KEY (`operationtype_id`) REFERENCES `operationtype` (`operationtype_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
@@ -1578,7 +1575,7 @@ CREATE TABLE `notification_subscription` (
 
 CREATE TABLE `externalcluster` (
   `externalcluster_id` int(8) unsigned NOT NULL,
-  `externalcluster_name` char(32) NOT NULL,
+  `externalcluster_name` char(200) NOT NULL,
   `externalcluster_desc` char(255) DEFAULT NULL,
   `externalcluster_state` char(32) NOT NULL DEFAULT 'down:0',
   `externalcluster_prev_state` char(32),

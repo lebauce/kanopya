@@ -689,6 +689,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 operationtype
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Operationtype>
+
+=cut
+
+__PACKAGE__->might_have(
+  "operationtype",
+  "Kanopya::Schema::Result::Operationtype",
+  { "foreign.operationtype_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 owner
 
 Type: belongs_to
@@ -889,6 +904,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 workflow
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Workflow>
+
+=cut
+
+__PACKAGE__->might_have(
+  "workflow",
+  "Kanopya::Schema::Result::Workflow",
+  { "foreign.workflow_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 workflow_def
 
 Type: might_have
@@ -901,36 +931,6 @@ __PACKAGE__->might_have(
   "workflow_def",
   "Kanopya::Schema::Result::WorkflowDef",
   { "foreign.workflow_def_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 workflow_workflow
-
-Type: might_have
-
-Related object: L<Kanopya::Schema::Result::Workflow>
-
-=cut
-
-__PACKAGE__->might_have(
-  "workflow_workflow",
-  "Kanopya::Schema::Result::Workflow",
-  { "foreign.workflow_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 workflows_related
-
-Type: has_many
-
-Related object: L<Kanopya::Schema::Result::Workflow>
-
-=cut
-
-__PACKAGE__->has_many(
-  "workflows_related",
-  "Kanopya::Schema::Result::Workflow",
-  { "foreign.related_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -955,8 +955,8 @@ Composing rels: L</entity_tags> -> tag
 __PACKAGE__->many_to_many("tags", "entity_tags", "tag");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-27 11:45:21
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:elHqtWVRm/Dw7t7gJSTUAQ
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-06-27 12:03:40
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:LaykuahqV/4IZ1TBqoMwdQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

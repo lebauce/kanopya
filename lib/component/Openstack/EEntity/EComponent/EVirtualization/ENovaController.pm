@@ -82,7 +82,7 @@ sub api {
 sub postStartNode {
     my ($self, %args) = @_;
     
-    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
     try {
         my $api = $self->api;
@@ -160,7 +160,7 @@ sub postStartNode {
 sub postStopNode {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'cluster', 'host' ]);
+    General::checkParams(args => \%args, required => [ 'host' ]);
 
     # Unregister the NovaController from the OpenstackSync.
     if (defined $self->kanopya_openstack_sync && scalar($self->nodes) <= 1) {

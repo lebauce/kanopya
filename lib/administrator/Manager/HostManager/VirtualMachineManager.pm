@@ -147,7 +147,7 @@ sub scaleHost {
         }
     };
 
-    $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+    return $self->executor_component->run(
         name   => 'ScaleIn' . ($args{scalein_type} eq 'memory' ? "Memory" : "CPU"),
         params => $wf_params
     );
@@ -177,9 +177,8 @@ sub migrate {
         }
     };
 
-    return $self->service_provider->getManager(manager_type => 'ExecutionManager')->run(
+    return $self->executor_component->run(
                name       => 'MigrateWorkflow',
-               related_id => $hypervisor->getClusterId(),
                params     => $wf_params
            );
 }

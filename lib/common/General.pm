@@ -64,8 +64,6 @@ sub checkParams {
         
     for my $param (@$required) {
         if (! exists $caller_args->{$param} or ! defined $caller_args->{$param}) {
-            $err = "$caller_sub_name needs a '$param' named argument!";
-
             throw Kanopya::Exception::Internal::MissingParam(sub_name   => $caller_sub_name,
                                                              param_name => $param );
         }

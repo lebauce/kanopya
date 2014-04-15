@@ -76,18 +76,16 @@ Configure the component as the new node is up.
 sub execute {
     my ($self, %args) = @_;
 
-    $self->{context}->{cluster}->postStartNode(
-        host      => $self->{context}->{host},
-        erollback => $self->{erollback},
-    );
+    $self->{context}->{cluster}->postStartNode(host      => $self->{context}->{host},
+                                               erollback => $self->{erollback});
 
     eval {
         my $eagent = EEntity->new(
                          entity => $self->{context}->{cluster}->getComponent(category => "Configurationagent")
                      );
         # And apply the configuration on every node of the cluster
-        $eagent->applyConfiguration(cluster => $self->{context}->{cluster},
-                                    tags    => [ "kanopya::service::poststartnode" ]);
+        my @nodes = map { $_->node } @{ $self->{context}->{cluster}->getHosts() };
+        $eagent->applyConfiguration(nodes => \@nodes, tags => [ "kanopya::service::poststartnode" ]);
     };
     if ($@) {
         my $err = $@;
@@ -134,9 +132,8 @@ sub finish {
     my @nodes = $self->{context}->{cluster}->nodes;
     if (scalar(@nodes) < $self->{context}->{cluster}->cluster_min_node) {
         $self->workflow->enqueueNow(workflow => {
-            name       => 'AddNode',
-            related_id => $self->{context}->{cluster}->id,
-            params     => {
+            name   => 'AddNode',
+            params => {
                 context => {
                     cluster => $self->{context}->{cluster}->_entity,
                 },
