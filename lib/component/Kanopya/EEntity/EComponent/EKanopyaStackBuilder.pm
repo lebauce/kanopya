@@ -160,7 +160,7 @@ sub startStack {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'user', 'workflow', 'stack_id' ],
+                         required => [ 'user', 'workflow', 'stack_id', 'iprange' ],
                          optional => { 'erollback' => undef });
 
     my $iprange = NetAddr::IP->new($args{iprange});
@@ -265,27 +265,28 @@ sub startStack {
 
     Lvm2Pv->new(lvm2_vg_id => $vg->id, lvm2_pv_name => "/dev/sda2");
 
-    $log->info("Creating and exporting logical volume nova-instances-" . $args{user}->user_login .
-               " on Kanopya");
-
     # Create a logical volume on Kanopya to store nova instance meta data.
+    my $nova_lv_name = "nova-instances-" . 
+                       $components->{novacompute}->{serviceprovider}->cluster_name;
+
+    $log->info("Creating and exporting logical volume $nova_lv_name");
+    
     my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster;
     my $lvm = EEntity->new(data => $kanopya->getComponent(name => "Lvm"));
     my $nfs = EEntity->new(data => $kanopya->getComponent(name => "Nfsd"));
 
     my $shared;
     try {
-        $shared = $lvm->createDisk(name       => "nova-instances-" . $args{user}->user_login,
+        $shared = $lvm->createDisk(name       => $nova_lv_name,
                                    size       => 1 * 1024 * 1024 * 1024,
                                    filesystem => "ext4",
                                    erollback  => $args{erollback});
     }
     catch (Kanopya::Exception::Execution::AlreadyExists $err) {
-        $log->warn("Logical volume nova-instances-" . $args{user}->user_login .
-                   " already exists, skip creation...");
+        $log->warn("Logical volume $nova_lv_name already exists, skip creation...");
 
         $shared = EEntity->new(data => Entity::Container->find(hash => {
-                      container_name => "nova-instances-" . $args{user}->user_login
+                      container_name => $nova_lv_name
                   }));
     }
     catch ($err) {
@@ -297,12 +298,12 @@ sub startStack {
     try {
         $export = $nfs->createExport(container      => $shared,
                                      client_name    => "*",
-                                     client_options => "rw,sync,fsid=0,no_root_squash",
+                                     client_options => "rw,sync,no_root_squash",
+                                     manager_ip     => $ip->addr(),
                                      erollback      => $args{erollback});
     }
     catch (Kanopya::Exception::Execution::ResourceBusy $err) {
-        $log->warn("Nfs export for volume nova-instances-" . $args{user}->user_login .
-                   " already exists, skip creation...");
+        $log->warn("Nfs export for volume $nova_lv_name already exists, skip creation...");
 
         $export = EEntity->new(data => Entity::ContainerAccess::NfsContainerAccess->find(hash => {
                       container_id => $shared->id
@@ -792,8 +793,8 @@ Build a notification message with a given Operation
 =cut
 
 sub notificationMessage {
-    my $self    = shift;
-    my %args    = @_;
+    
+    my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
                          required => [ 'operation', 'state', 'subscriber' ],
