@@ -107,6 +107,7 @@ class kanopya::openstack::cinder::server(
   class { 'cinder::api':
     keystone_auth_host => $keystone_ip,
     keystone_tenant    => 'services',
+    keystone_user      => $keystone_user,
     keystone_password  => $keystone_password,
     bind_host          => $components[cinder][listen][volume_api][ip],
   }

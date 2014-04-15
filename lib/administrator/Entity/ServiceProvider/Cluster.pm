@@ -580,6 +580,19 @@ sub configureOrchestration {
     }
 }
 
+sub getNodeHostname {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'node_number' ]);
+
+    my $hostname = $self->cluster_basehostname;
+    if ($self->cluster_max_node > 1) {
+        $hostname .=  $args{node_number};
+    }
+
+    return $hostname;
+}
+
 sub remove {
     my ($self, %args) = @_;
 

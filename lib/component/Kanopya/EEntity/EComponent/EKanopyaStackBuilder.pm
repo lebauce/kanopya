@@ -52,7 +52,6 @@ use Kanopya::Config;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
-
 sub buildStack {
     my ($self, %args) = @_;
 
@@ -314,10 +313,92 @@ sub startStack {
         }
     }
 
+    # Generate the password override file for hiera
+    my $hieradir = $self->_executor->getConf->{clusters_directory} . '/override';
+    my $hieratmp = $self->getEContext->execute(command => 'tempfile');
+    my $hieratmpfile = $hieratmp->{stdout};
+    chomp($hieratmpfile);
+
+    $self->getEContext->execute(command => 'chmod 644 ' . $hieratmpfile);
+
+    $self->getEContext->execute(command => 'mkdir -p /var/lib/kanopya/clusters/override');
+
+    # Declare the password list and Keystone vars associed
+    my %hierapassword;
+
+    $hierapassword{adminpassword}->{hieravars}  = [
+        'kanopya::openstack::keystone::admin_password'
+    ];
+    $hierapassword{admintoken}->{hieravars}  = [
+        'kanopya::openstack::keystone::admin_token'
+    ];
+    $hierapassword{glancemysqlpassword}->{hieravars}  = [
+        'kanopya::openstack::glance::database_password'
+    ];
+    $hierapassword{glancekeystonepassword}->{hieravars} = [
+        'kanopya::openstack::glance::keystone_password'
+    ];
+    $hierapassword{cinderrabbitpassword}->{hieravars}  = [
+        'kanopya::openstack::cinder::server::rabbit_password'
+    ];
+    $hierapassword{cindermysqlpassword}->{hieravars}  = [
+        'kanopya::openstack::cinder::server::database_password'
+    ];
+    $hierapassword{cinderkeystonepassword}->{hieravars} = [
+        'kanopya::openstack::cinder::server::keystone_password'
+    ];
+    $hierapassword{neutronrabbitpassword}->{hieravars}  = [
+        'kanopya::openstack::neutron::server::rabbit_password'
+    ];
+    $hierapassword{neutronmysqlpassword}->{hieravars}  = [
+        'kanopya::openstack::neutron::server::database_password'
+    ];
+    $hierapassword{neutronkeystonepassword}->{hieravars} = [
+        'kanopya::openstack::neutron::server::keystone_password',
+        'kanopya::openstack::nova::common::neutron_admin_password',
+        'kanopya::openstack::nova::compute::neutron_admin_password'
+    ];
+
+    $hierapassword{novarabbitpassword}->{hieravars}  = [
+        'kanopya::openstack::nova::controller::rabbit_password',
+        'kanopya::openstack::nova::compute::rabbit_password'
+    ];
+    $hierapassword{novamysqlpassword}->{hieravars}  = [
+        'kanopya::openstack::nova::controller::database_password'
+    ];
+    $hierapassword{novakeystonepassword}->{hieravars} = [
+        'kanopya::openstack::nova::controller::keystone_password'
+    ];
+
+    my $command;
+    for my $password (values %hierapassword) {
+        $password->{password} = String::Random::random_regex('[a-zA-Z0-9]{16}');
+        foreach my $hieravar (@{$password->{hieravars}}) {
+           $command  = "echo '$hieravar: \"$password->{password}\"' >> $hieratmpfile";
+           $self->getEContext->execute(command => $command);
+        }
+    }
+
+    #Set NovaController Component API Password
+    $components->{novacontroller}->{component}->setConf(conf => {
+        api_user     => 'admin',
+        api_password => $hierapassword{adminpassword}->{password},
+    });
+
     # Finally start the instances
     # Note: reverse the array as enqueueNow insert operations at the head of the list.
     for my $cluster (reverse @bypriority) {
-        $log->info("Starting service " . $cluster->label. " in an embedded workflow...");
+        $log->info('Install Hiera configuration for ' . $cluster->label);
+        my $hostname;
+        for (my $nodenumber = 1; $nodenumber <= $cluster->cluster_max_node; $nodenumber++) {
+            $hostname = $cluster->getNodeHostname( node_number => $nodenumber);
+            $hostname .= '.' . $cluster->cluster_domainname;
+
+            $command = 'cp ' . $hieratmpfile . ' ' . $hieradir . '/' . $hostname . '.yaml';
+            $self->getEContext->execute(command => $command);
+        }
+
+        $log->info ("Starting service " . $cluster->label. " in an embedded workflow...");
         $args{workflow}->enqueueNow(workflow => {
             name       => 'AddNode',
             related_id => $cluster->id,
@@ -328,6 +409,8 @@ sub startStack {
             },
         });
     }
+
+    $self->getEContext->execute(command => 'rm ' . $hieratmpfile);
 
     # Return the component instances to the operation that will keep its in the operation context
     return {
@@ -361,11 +444,20 @@ sub configureStack {
 
         my $mirror_url = 'http://mirror.intranet.hederatech.com/cloudimages';
 
+        my $api_user = 'admin';
+        my $api_password = 'keystone';
+        if (defined $args{novacontroller}->api_user) {
+           $api_user = $args{novacontroller}->api_user;
+        }
+        if (defined $args{novacontroller}->api_password) {
+            $api_password = $args{novacontroller}->api_password;
+        }
+
         # Create openrc file
         my $openrc = "# Environement variables needed by OpenStack CLI commands.\n" .
                      "# See http://docs.openstack.org/user-guide/content/cli_openrc.html\n".
-                     "export OS_TENANT_NAME=openstack\nexport OS_USERNAME=admin\n" .
-                     "export OS_PASSWORD=keystone\nexport OS_AUTH_URL=http://" .
+                     "export OS_TENANT_NAME=openstack\nexport OS_USERNAME=$api_user\n" .
+                     "export OS_PASSWORD=$api_password\nexport OS_AUTH_URL=http://" .
                      $args{novacontroller}->getMasterNode->host->getAdminIface->getIPAddr . ":5000/v2.0/";
 
         $command = 'echo "'. $openrc . '" > /root/openrc.sh && chmod +x /root/openrc.sh';
