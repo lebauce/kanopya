@@ -47,31 +47,41 @@ my $admin_password = "password";
 my $stackid = 123;
 my $access_ip = $stackbuilder->getAccessIp();
 
-my $expected_message = 'Hi ' . $firstname . ',
-
+# Expected mail body
+# Copy/Paste from stack-builder-owner-notification-mail.tt
+# Template variables replaced by their corresponding perl var
+# WARNING : var are interpolated so you have to escape $, % and @ if it's part of the mail
+my $expected_message = <<MAIL;
+Hi $firstname,
+Your stack have been deployed.
 Before accessing your stack, please read the entire email.
-You recently launched a stack on www.pimpmystack.net. If you did not, please ignore this email.
 
-Before accessing to your stacks make sure to check the following steps:
+How to connect to your Stack ?
+    1) Sign in on www.pimpmystack.net
+    2) Activate your access to the platform by clicking the "activate access" button on your profil page : www.pimpmystack.net/user
+       ( note : for security matters your access will be deactivated every 12 hours)
+    3) Download your vpn files from your profil page
+    4) Open a VPN client with your vpn files
+       (note: if you need help using your vpn files please reffer to the How to section below)
 
-1) Make sure your VPN is activated, you received the VPN configuration files in a previous email. If you didn\'t or can\'t find it, please contact us at support@pimpmystack.net
+Please find below the information you need to use your stack
+Horizon URL:        http://$access_ip/
+OpenStack login:    admin
+OpenStack Password: $admin_password
 
-2) Make sure the VPN is activated. You need to be logged on pimpmystack.net and click the button on www.pimpmystack.net/My account,
+Your host login: $login
+Your hosts IP adresses are displayed in the Stack Builder : www.pimpmystack.net?q=content/builder/#/$stackid
 
-After, you can connect to your OpenStack using this credentials:
+Keep in mind that complete guides and test scenarios are available on the scenarios menu:
+- How to : Open a VPN connection with OpenVPN
+- How to : Connect to your hosts (using your SSH key)
 
-Your OpenStack login:       ' . $login . '
-Your OpenStack password:    ' . $admin_password . '
-Your OpenStack Horizon URL: http://' . $access_ip . '/
+If you have any technical troubles, you can contact us with the contact form at www.pimpmystack.net/content/contact
 
-Visit http://www..pimpmystack.net?q=content/builder/#/' . $stackid . ' to get more informations about your stack.
+Thank you for using PimpMyStack!
 
-  
-Keep in mind that complete guides and scenarios are available on the scenarios menu:
-- How to : Open a VPN connection with OpenVPN  
-- How to : Connect to Horizon
-- How to : First commands on OpenStack
-';
+The PimpMyStack Team
+MAIL
 
 main();
 
