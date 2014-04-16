@@ -12,8 +12,8 @@ use File::Basename;
 package Util;
 our $tracelevel = 0;
 our $tracefilter;
-our $version = '5.0';
-our $script_version = "5.0";
+our $version = '5.5.0';
+our $script_version = '5.5.0';
 
 
 sub trace {
