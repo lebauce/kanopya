@@ -1988,7 +1988,7 @@ sub _joinQuery {
             }
 
             $relation = $source->relationship_info($comp);
-            if ($relation->{attrs}->{accessor} eq "multi") {
+            if (defined $relation->{attrs}->{accessor} && ($relation->{attrs}->{accessor} eq "multi")) {
                 $accessor = "multi";
             }
 
@@ -2002,14 +2002,11 @@ sub _joinQuery {
     }
 
     # Get all the hierarchy of the relation
-    my @indepth;
+    my @indepth = ();
     if ($args{indepth}) {
-        my $depth_source = $source;
-        my $parent = $class->_parentRelationName(schema => $depth_source);
-        while (defined $parent && $depth_source->has_relationship($parent)) {
-            @indepth = ($parent, @indepth);
-            $depth_source = $depth_source->related_source($parent);
-            $parent = $class->_parentRelationName(schema => $depth_source);
+        my $parent = $class->_parentRelationName(schema => $source);
+        if (defined $parent && $source->has_relationship($parent)) {
+            @indepth = (@indepth, $parent);
         }
     }
     @joins = (@joins, @indepth);
