@@ -22,7 +22,8 @@ use BaseDB;
 use Kanopya::Database;
 use General;
 use Entity::Component;
-
+use Entity::ServiceProvider::Cluster;
+use Entity::User;
 
 Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
@@ -35,7 +36,7 @@ sub main {
     }
 
     test_component_haproxy1s_listen_relation();
-
+    test_prefeches();
     if ($testing == 1) {
         Kanopya::Database::rollbackTransaction;
     }
@@ -53,3 +54,14 @@ sub test_component_haproxy1s_listen_relation {
     } 'Get relation <haproxy1s_listen> on a Entity::Component instance';
 }
 
+sub test_prefeches {
+    lives_ok {
+        my $kcluster = Entity::ServiceProvider::Cluster->getKanopyaCluster();
+        Entity::ServiceProvider->searchRelated(id      => $kcluster->id,
+                                               filters => ['aggregate_conditions'],
+                                               prefetch => ['left_combination']);
+
+        Entity::User->search('prefetch' => ['profiles']);
+
+    } 'Search with prefeches';
+}
