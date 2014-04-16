@@ -300,6 +300,22 @@ sub _generateHosts {
 
     my @hosts_entries = $args{cluster}->getHostEntries(components => 1);
 
+    my $hosts_tmp = {};
+    for my $entry (@hosts_entries) {
+        $hosts_tmp->{$entry->{ip}}->{$entry->{fqdn}} = 1;
+        for my $alias (@{$entry->{aliases}}) {
+            $hosts_tmp->{$entry->{ip}}->{$alias} = 1;
+        }
+    }
+
+    my @hosts;
+    for my $ip (keys $hosts_tmp) {
+        push @hosts, {
+            ip      => $ip,
+            aliases => [keys $hosts_tmp->{$ip}]
+        }
+    }
+
     $log->debug('Generate /etc/hosts file');
     my $file = $self->generateNodeFile(
         cluster       => $args{cluster},
@@ -307,7 +323,7 @@ sub _generateHosts {
         file          => '/etc/hosts',
         template_dir  => 'components/linux',
         template_file => 'hosts.tt',
-        data          => { hosts => \@hosts_entries }
+        data          => { hosts => \@hosts }
     );
 
     return { src  => $file, dest => '/etc/hosts' };
