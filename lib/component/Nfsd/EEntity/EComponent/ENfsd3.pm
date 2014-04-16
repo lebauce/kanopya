@@ -175,10 +175,6 @@ sub removeExport {
     $self->generateExports(data => $self->getTemplateDataExports());
 }
 
-sub reload {
-    my $self = shift;
-    $self->generateConf();
-}
 
 sub addExportClient {
     my $self = shift;

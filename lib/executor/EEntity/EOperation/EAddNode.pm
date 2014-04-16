@@ -109,7 +109,6 @@ sub prepare {
     $self->{context}->{disk_manager}->increaseConsumers();
     $self->{context}->{export_manager}->increaseConsumers();
 
-
     # $self->{params}->{needhypervisor} comes from the case of automatic hypervisor scaleout when
     # infrastructure needs more space
 
@@ -494,6 +493,13 @@ Restore the clutser and host states.
 
 sub cancel {
     my ($self, %args) = @_;
+
+    # If the managers has not been released at finish, decrease at cancel
+    if ($self->state ne 'succeeded') {
+        $self->{context}->{host_manager}->decreaseConsumers();
+        $self->{context}->{disk_manager}->decreaseConsumers();
+        $self->{context}->{export_manager}->decreaseConsumers();
+    }
 
     if (defined $self->{params}->{needhypervisor}) {
         $self->{context}->{cluster}->setState(state => 'up');

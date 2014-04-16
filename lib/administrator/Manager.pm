@@ -116,37 +116,4 @@ sub getManagerParamsDef {
     return {};
 }
 
-
-=pod
-=begin classdoc
-
-Try to increase the number of current consumers of the manager.
-Concrete managers could override this method and raise an exceptions
-if the manager has reach the maximum of simultaneous users.
-
-=end classdoc
-=cut
-
-sub increaseConsumers {
-    my ($self, %args) = @_;
-
-    # Use the following block to raise exception in concrete implementation of increaseConsumers.
-    #throw Kanopya::Exception::Execution::InvalidState(
-    #          error => "The xxxx manager has reach the maximum amount of consumers"
-    #      );
-}
-
-
-=pod
-=begin classdoc
-
-Decrease the number of current consumers of the manager.
-
-=end classdoc
-=cut
-
-sub decreaseConsumers {
-    my ($self, %args) = @_;
-}
-
 1;

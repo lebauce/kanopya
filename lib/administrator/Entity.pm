@@ -225,7 +225,12 @@ sub getState {
 =begin classdoc
 
 Set the state of the entity, if no consumer defined, use
-the entity itself. Consumers are the entities that hace change the state.
+the entity itself. Consumers are the entities that raise the state modification.
+
+@param state the state to set for this consumer
+
+@optional consumer the consumer entity
+@optional exclusive ensure that this state has not been set by the same consumer
 
 =end classdoc
 =cut
@@ -236,12 +241,19 @@ sub setConsumerState {
 
     General::checkParams(args     => \%args,
                          required => [ 'state' ],
-                         optional => { 'consumer' => $self });
+                         optional => { 'consumer' => $self, 'exclusive' => 0 });
 
     my $state;
     try {
-        $state = $self->findRelated(filters => [ 'entity_states' ],
-                                    hash    => { consumer_id => $args{consumer}->id });
+        $state = $self->find(related => 'entity_states',
+                             hash    => { consumer_id => $args{consumer}->id });
+
+        if ($args{exclusive} && $state->state eq $args{state}) {
+            throw Kanopya::Exception::Internal::Inconsistency(
+                      error => "Entity state <$args{state}> already set by consumer \"" .
+                               $state->consumer->label . "\"."
+                  );
+        }
         $state->prev_state($state->state);
         $state->state($args{state});
 
@@ -257,6 +269,16 @@ sub setConsumerState {
 }
 
 
+=pod
+=begin classdoc
+
+Remove the previously set state if exists.
+
+@optional consumer the consumer entity
+
+=end classdoc
+=cut
+
 sub removeState {
     my ($self, %args) = @_;
     General::checkParams(args     => \%args,
@@ -264,15 +286,17 @@ sub removeState {
 
     my $estate;
     try {
-        $estate = $self->findRelated(filters => ['entity_states'],
-                                     hash    => {consumer_id => $args{consumer}->id});
+        $estate = $self->find(related => 'entity_states',
+                              hash    => { consumer_id => $args{consumer}->id });
         $estate->delete();
     }
     catch ($err) {
         # Do not throw exception during state manipulation during cancel
-        $log->error('EntityState from entity <'.$self->id.'>, consumer_id <'.$args{consumer}->id.'> not found');
+        $log->warn('EntityState from entity <' . $self->label .
+                   '>, consumer_id <'.$args{consumer}->id.'> not found');
     }
 }
+
 
 =pod
 =begin classdoc

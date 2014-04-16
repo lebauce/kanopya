@@ -30,15 +30,14 @@ use base "EManager::EHostManager";
 use strict;
 use warnings;
 
-use Net::Ping;
-
 use General;
 use DecisionMaker::HostSelector;
 
+use Net::Ping;
+use TryCatch;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 my $errmsg;
-
 
 
 sub startHost {
@@ -169,14 +168,13 @@ sub stopHost {
     }
 }
 
-=pod
 
+=pod
 =begin classdoc
 
 Check up if the host is pingable
 
 =end classdoc
-
 =cut
 
 sub checkUp {
@@ -190,6 +188,50 @@ sub checkUp {
     $ping->close();
     return $pingable ? $pingable : 0;
 }
+
+
+=pod
+=begin classdoc
+
+Consumers are commonly increased when a new available host tis requested,
+so ensure only one entity is oncuming the PhysicalHoster together to avoid
+the same host is selected.
+Use the entity state mecanism to keep the information about current consuming.
+
+=end classdoc
+=cut
+
+sub increaseConsumers {
+    my ($self, %args) = @_;
+
+    try {
+        $self->setConsumerState(state => 'searching_host', exclusive => 1);
+    }
+    catch (Kanopya::Exception::Internal::Inconsistency $err) {
+        throw Kanopya::Exception::Execution::InvalidState(
+                 error => "Can not increase consumer, <" . $self->label . "> already in use."
+             );
+    }
+    catch ($err) {
+        $err->rethrow();
+    }
+}
+
+
+=pod
+=begin classdoc
+
+Decrease the number of current consumers of the manager.
+
+=end classdoc
+=cut
+
+sub decreaseConsumers {
+    my ($self, %args) = @_;
+
+    $self->removeState();
+}
+
 
 sub _getIPMITools {
     my ($self, %args) = @_;

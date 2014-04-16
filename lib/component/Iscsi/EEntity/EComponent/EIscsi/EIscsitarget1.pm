@@ -196,11 +196,6 @@ sub gettid {
     return $tid;
 }
 
-sub reload {
-    my $self = shift;
-    $self->generateConf();
-}
-
 sub addLun {
     my $self = shift;
     my %args  = @_;
