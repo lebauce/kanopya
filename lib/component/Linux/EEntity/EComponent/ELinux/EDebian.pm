@@ -75,7 +75,7 @@ sub addNode {
     unlink "$args{mount_point}/etc/rc0.d/S35networking";
 }
 
-sub _getShell() {
+sub _shell {
     return "/bin/bash";
 }
 

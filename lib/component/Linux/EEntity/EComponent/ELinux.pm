@@ -388,7 +388,7 @@ sub _generateUserAccount {
     } else {
         # create the user account
         my $params = " -m -p '$password' $login";
-        my $shell = _getShell();
+        my $shell = $self->_shell();
         if (defined $shell) {
             $params .= " -s $shell";
         }
@@ -417,7 +417,7 @@ sub _generateUserAccount {
     }
 }
 
-sub _getShell() {
+sub _shell {
     return undef;
 }
 
