@@ -170,8 +170,8 @@ sub main {
 
     my $end_stack;
     lives_ok {
-       $end_stack = $builder->endStack(stack_id => 123);
-       Kanopya::Tools::Execution->executeOne(entity => $end_stack, owner_id => $customer->id);
+       $end_stack = $builder->endStack(stack_id => 123, owner_id => $customer->id);
+       Kanopya::Tools::Execution->executeOne(entity => $end_stack);
     } 'Run workflow EndStack';
 
     if ($testing == 1) {
