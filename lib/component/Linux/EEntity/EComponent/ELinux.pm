@@ -302,17 +302,19 @@ sub _generateHosts {
 
     my $hosts_tmp = {};
     for my $entry (@hosts_entries) {
-        $hosts_tmp->{$entry->{ip}}->{$entry->{fqdn}} = 1;
         for my $alias (@{$entry->{aliases}}) {
-            $hosts_tmp->{$entry->{ip}}->{$alias} = 1;
+            $hosts_tmp->{$entry->{ip}}->{alias}->{$alias} = 1;
         }
+        undef $hosts_tmp->{$entry->{ip}}->{alias}->{$entry->{fqdn}};
+        $hosts_tmp->{$entry->{ip}}->{fqdn} = $entry->{fqdn};
     }
 
     my @hosts;
     for my $ip (keys $hosts_tmp) {
         push @hosts, {
             ip      => $ip,
-            aliases => [keys $hosts_tmp->{$ip}]
+            fqdn    => $hosts_tmp->{$ip}->{fqdn},
+            aliases => [keys $hosts_tmp->{$ip}->{alias}]
         }
     }
 
