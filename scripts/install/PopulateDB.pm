@@ -57,6 +57,7 @@ my @classes = (
     'Entity::Systemimage',
     'Entity::User',
     'Entity::User::Customer',
+    'Entity::User::Customer::StackBuilderCustomer',
     'Entity::ServiceProvider::Cluster',
     'Entity::ServiceProvider::Cluster::Ubuntu12',
     'Entity::ServiceProvider::Cluster::Centos6',
