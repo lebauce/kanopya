@@ -18,7 +18,7 @@ use Kanopya::Tools::Register;
 
 use Entity::ServiceProvider::Cluster;
 use Entity::Network;
-use Entity::User::Customer;
+use Entity::User::Customer::StackBuilderCustomer;
 
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
@@ -51,7 +51,7 @@ sub main {
 
     my $customer;
     lives_ok {
-        $customer = Entity::User::Customer->findOrCreate(
+        $customer = Entity::User::Customer::StackBuilderCustomer->findOrCreate(
             user_login     => 'stack_builder_test',
             user_password  => 'stack_builder_test',
             user_firstname => 'Stack Buil',

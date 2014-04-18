@@ -367,9 +367,9 @@ sub subscribeOwnerNotifications {
     General::checkParams(args => \%args, required => [ 'owner_id' ]);
 
     # The owner will be notified when the buildStack workflow succeed
-    $self->subscribe(subscriber_id   => $args{owner_id},
-                     operationtype   => "configureStack",
-                     operation_state => "succeeded");
+    Entity::User->get(id => $args{owner_id})->subscribe(subscriber_id   => $args{owner_id},
+                                                        operationtype   => "configureStack",
+                                                        operation_state => "succeeded");
 }
 
 sub unsubscribeOwnerNotifications {

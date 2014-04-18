@@ -52,6 +52,7 @@ use Kanopya::Config;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
+
 sub buildStack {
     my ($self, %args) = @_;
 
@@ -800,7 +801,6 @@ sub notificationMessage {
                          required => [ 'operation', 'state', 'subscriber' ],
                          optional => { 'reason' => undef });
 
-    my $templatefile;
     my $template = Template->new($self->getTemplateConfiguration());
     my $templatedata = { operation       => $args{operation}->label,
                          operation_id    => $args{operation}->id,
@@ -811,58 +811,37 @@ sub notificationMessage {
                          user            => $args{operation}->{context}->{user},
                          stack_id        => $args{operation}->{params}->{stack_id} };
 
-    # Customer notfication
-    if ($args{subscriber}->isa('Entity::User::Customer')) {
-        if (! ($args{operation}->isa('EEntity::EOperation::EConfigureStack') && $args{state} eq "succeeded")) {
-            $log->warn("Unsupported tuple user_type/state/operation_type, " .
-                        "Customer/$args{state}/$args{operation} redirecting to generic notification...");
-            return $self->SUPER::notificationMessage(%args);
-        }
-
-        $templatefile = "stack-builder-owner-notification-mail";
-        try {
-            $templatedata->{access_ip} = $args{operation}->{context}->{novacontroller}->getAccessIp();
-            $templatedata->{admin_password} = $args{operation}->{context}->{novacontroller}->api_password;
-        }
-        catch ($err) {
-            $log->error("Unable to get the novacontoller access ip for owner notification:$err");
-        }
-    }
     # Support notfication
+    if (($args{operation}->isa('EEntity::EOperation::EBuildStack')) &&
+        ($args{state} =~ m/processing|cancelled/ )) {
+        $templatedata->{state} = $args{state} eq "processing" ? "starting" : "failed";
+    }
+    elsif ($args{operation}->isa('EEntity::EOperation::EConfigureStack') &&
+           ($args{state} =~ m/succeeded|interrupted/ )) {
+        $templatedata->{state} = $args{state} eq "succeeded" ? "started" : "interrupted";
+    }
+    elsif ($args{operation}->isa('EEntity::EOperation::EStopStack') &&
+           $args{state} eq "processing") {
+        $templatedata->{state} = "stopping";
+    }
+    elsif ($args{operation}->isa('EEntity::EOperation::EEndStack') &&
+           $args{state} eq "succeeded") {
+        $templatedata->{state} = "stopped";
+    }
+    elsif ($args{operation}->isa('EEntity::EOperation::EUnconfigureStack') &&
+           $args{state} eq "cancelled") {
+        $templatedata->{state} = "failed";
+    }
+    elsif ($args{state} eq "timeouted") {
+        $templatedata->{state} = "timeouted";
+    }
     else {
-        if (($args{operation}->isa('EEntity::EOperation::EBuildStack')) &&
-            ($args{state} =~ m/processing|cancelled/ )) {
-            $templatedata->{state} = $args{state} eq "processing" ? "starting" : "failed";
-        }
-        elsif ($args{operation}->isa('EEntity::EOperation::EConfigureStack') &&
-               ($args{state} =~ m/succeeded|interrupted/ )) {
-            $templatedata->{state} = $args{state} eq "succeeded" ? "started" : "interrupted";
-        }
-        elsif ($args{operation}->isa('EEntity::EOperation::EStopStack') &&
-               $args{state} eq "processing") {
-            $templatedata->{state} = "stopping";
-        }
-        elsif ($args{operation}->isa('EEntity::EOperation::EEndStack') &&
-               $args{state} eq "succeeded") {
-            $templatedata->{state} = "stopped";
-        }
-        elsif ($args{operation}->isa('EEntity::EOperation::EUnconfigureStack') &&
-               $args{state} eq "cancelled") {
-            $templatedata->{state} = "failed";
-        }
-        elsif ($args{state} eq "timeouted") {
-            $templatedata->{state} = "timeouted";
-        }
-        else {
-            $log->warn("Unsupported tuple user_type/state/operation_type, " .
-                        "User/$args{state}/$args{operation} redirecting to generic notification...");
-            return $self->SUPER::notificationMessage(%args);
-        }
-
-        $templatefile = "stack-builder-support-notification-mail";
+        $log->warn("Unsupported tuple user_type/state/operation_type, " .
+                    "User/$args{state}/$args{operation} redirecting to generic notification...");
+        return $self->SUPER::notificationMessage(%args);
     }
 
-    $templatefile = $self->getTemplateDirectory . "/" . $templatefile;
+    my $templatefile = $self->getTemplateDirectory . "/stack-builder-support-notification-mail";
 
     my $message = "";
     $template->process($templatefile . '.tt', $templatedata, \$message)
