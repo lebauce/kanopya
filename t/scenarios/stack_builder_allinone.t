@@ -38,6 +38,13 @@ sub main {
         Kanopya::Database::beginTransaction;
     }
 
+    ##WorkAround PMS : add another IP address for Kanopya
+    my $ip = Entity::Network->find()->network_addr;
+    $ip =~ s/\.0$/\.253/;
+    `ip addr add $ip/24 dev eth1`;
+    $ip =~ s/\.253$/\.254/;
+    `ip addr add $ip/24 dev eth1`;
+
     lives_ok {
         $masterimage = Kanopya::Tools::Register::registerMasterImage();
     } 'Register master image';
