@@ -108,6 +108,17 @@ sub isUp {
         eval { $args{host}->getEContext->execute(command => "true"); };
         return 0 if $@;
 
+        # Verify hostname
+        my $theoricalhostname = $args{host}->node->node_hostname;
+        my $realhostname = $args{host}->getEContext->execute(command => 'hostname -s');
+
+        if ($theoricalhostname ne $realhostname->{stdout}) {
+            throw Kanopya::Exception::Execution::OperationInterrupted(
+                error => 'System hostname is different than Kanopya Hostname for host ' . $theoricalhostname .
+                         '. Is PXE boot working properly ?'
+            );
+        }
+
         # Disable PXE boot but keep the host entry
         eval {
             $harddisk->service_provider_id($args{cluster}->id);
