@@ -84,7 +84,9 @@ sub notificationMessage {
 
     try {
         $templatedata->{access_ip} = $args{operation}->{context}->{novacontroller}->getAccessIp();
-        $templatedata->{admin_password} = $args{operation}->{context}->{novacontroller}->api_password;
+        $templatedata->{admin_password} = defined($args{operation}->{params}->{admin_password})
+                                        ? $args{operation}->{params}->{admin_password}
+                                        : $args{operation}->{context}->{novacontroller}->api_password;
     }
     catch ($err) {
         $log->error("Unable to get the novacontoller access ip for owner notification: $err");

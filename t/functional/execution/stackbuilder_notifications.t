@@ -17,7 +17,7 @@ use Test::Differences;
 use Kanopya::Tools::Execution;
 
 use EEntity;
-use Entity::User::Customer;
+use Entity::User::Customer::StackBuilderCustomer;
 use Entity::Component::KanopyaStackBuilder;
 use Entity::Operation;
 use NotificationSubscription;
@@ -37,7 +37,7 @@ my $testing = 0;
 # Get the stackbuilder
 my $stackbuilder;
 lives_ok {
-    $stackbuilder = EEntity->new(entity => Entity::Component::KanopyaStackBuilder->find());
+    $stackbuilder = Entity::Component::KanopyaStackBuilder->find();
 } 'Get the KanopyaStackBuilder component';
 
 
@@ -94,7 +94,7 @@ sub main {
     # Create a customer to use as subscriber
     my $customer;
     lives_ok {
-        $customer = Entity::User::Customer->findOrCreate(
+        $customer = Entity::User::Customer::StackBuilderCustomer->findOrCreate(
             user_login     => $login,
             user_password  => 'flastpass',
             user_firstname => $firstname,
@@ -108,6 +108,7 @@ sub main {
                         type     => "ConfigureStack",
                         params   => {
                             context => {
+                                stack_builder  => $stackbuilder,
                                 user           => $customer,
                                 # We use any component here as the message builder method will call ->adminIp only
                                 novacontroller => $stackbuilder
@@ -117,9 +118,9 @@ sub main {
                         }
                     ));
 
-    my $message =  $stackbuilder->notificationMessage(operation  => $operation,
-                                                      state      => 'succeeded',
-                                                      subscriber => $customer);
+    my $message =  EEntity->new(entity => $customer)->notificationMessage(operation  => $operation,
+                                                                          state      => 'succeeded',
+                                                                          subscriber => $customer);
 
     eq_or_diff $expected_message, $message, "Compare builded notification with the execpted one";
 
