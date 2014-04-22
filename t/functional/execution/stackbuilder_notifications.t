@@ -53,16 +53,16 @@ my $access_ip = $stackbuilder->getAccessIp();
 # WARNING : var are interpolated so you have to escape $, % and @ if it's part of the mail
 my $expected_message = <<MAIL;
 Hi $firstname,
-Your stack have been deployed.
+Your stack has been deployed.
 Before accessing your stack, please read the entire email.
 
 How to connect to your Stack ?
     1) Sign in on www.pimpmystack.net
     2) Activate your access to the platform by clicking the "activate access" button on your profil page : www.pimpmystack.net/user
        ( note : for security matters your access will be deactivated every 12 hours)
-    3) Download your vpn files from your profil page
-    4) Open a VPN client with your vpn files
-       (note: if you need help using your vpn files please reffer to the How to section below)
+    3) Download your vpn file from your profil page
+    4) Open a VPN client with your vpn file
+       (note: if you need help using your vpn file please refer to the How to section below)
 
 Please find below the information you need to use your stack
 Horizon URL:        http://$access_ip/
