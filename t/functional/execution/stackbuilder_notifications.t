@@ -66,7 +66,7 @@ How to connect to your Stack ?
 
 Please find below the information you need to use your stack
 Horizon URL:        http://$access_ip/
-OpenStack login:    $login
+OpenStack login:    admin
 OpenStack Password: $admin_password
 
 Your host login: $login
