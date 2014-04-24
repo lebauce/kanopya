@@ -93,7 +93,7 @@ sub copy {
             $eexport_manager->isa("EEntity::EComponent::ENfsd3")) {
 
             my $mountpoint = $eexport_manager->getMountDir(
-                                 device => $args{dest}->container_access->container->container_device
+                                 container => $args{dest}->container_access->container
                              );
 
             my $container = EEntity->new(entity => Entity::Container::LocalContainer->new(
