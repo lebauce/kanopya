@@ -163,6 +163,7 @@ our %resources = (
     "serviceprovidertype"      => "ClassType::ServiceProviderType",
     "serviceprovidermanager"   => "ServiceProviderManager",
     "servicetemplate"          => "Entity::ServiceTemplate",
+    "stackbuildercustomer"     => "Entity::User::Customer::StackBuilderCustomer",
     "storage"                  => "Entity::Component::Storage",
     "storagepolicy"            => "Entity::Policy::StoragePolicy",
     "suse"                     => "Entity::Component::Linux::Suse",
