@@ -23,8 +23,8 @@ Log::Log4perl->easy_init({
 
 use Kanopya::Database;
 
-use RulesEngine;
-use Aggregator;
+use Daemon::RulesEngine;
+use Daemon::Aggregator;
 use Entity::CollectorIndicator;
 use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
@@ -80,7 +80,7 @@ sub main {
 }
 
 sub sco_workflow_triggered_by_rule {
-    my $aggregator= Aggregator->new();
+    my $aggregator = Daemon::Aggregator->new();
 
     my $external_cluster_mockmonitor = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Monitor',
@@ -122,7 +122,7 @@ sub sco_workflow_triggered_by_rule {
     $aggregator->update();
 
     # Launch orchestrator with no workflow to trigger
-    my $rulesengine = RulesEngine->new();
+    my $rulesengine = Daemon::RulesEngine->new();
     $rulesengine->_component->time_step(2);
     $rulesengine->refreshConfiguration();
 

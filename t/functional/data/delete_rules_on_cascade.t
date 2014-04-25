@@ -29,7 +29,7 @@ use Entity::AggregateCondition;
 use Entity::Metric::Combination::AggregateCombination;
 use Kanopya::Tools::TestUtils 'expectedException';
 use TryCatch;
-use Aggregator;
+use Daemon::Aggregator;
 
 Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
@@ -188,7 +188,7 @@ sub delete_node {
 
 sub rrd_creation {
     diag('Launch aggregator to create RRD');
-    $aggregator = Aggregator->new();
+    $aggregator = Daemon::Aggregator->new();
     $aggregator->update();
 
     lives_ok {

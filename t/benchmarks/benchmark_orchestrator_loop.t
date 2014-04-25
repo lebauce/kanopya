@@ -20,8 +20,8 @@ use Kanopya::Tools::Profiler;
 
 lives_ok {
     use Kanopya::Database;
-    use Aggregator;
-    use RulesEngine;
+    use Daemon::Aggregator;
+    use Daemon::RulesEngine;
 
     use Entity::ServiceProvider::Cluster;
     use Entity::Component::MockMonitor;
@@ -33,8 +33,8 @@ lives_ok {
 
 } 'All uses';
 
-my $aggregator   = Aggregator->new();
-my $rulesengine  = RulesEngine->new();
+my $aggregator   = Daemon::Aggregator->new();
+my $rulesengine  = Daemon::RulesEngine->new();
 my $profiler     = Kanopya::Tools::Profiler->new(schema => Kanopya::Database::schema);
 
 Kanopya::Database::beginTransaction;

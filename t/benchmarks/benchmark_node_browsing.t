@@ -14,7 +14,7 @@ Log::Log4perl->easy_init({ level=>'DEBUG', file=>'/tmp/benchmark_node_browsing.l
 my $log = get_logger("");
 
 lives_ok {
-    use StateManager;
+    use Daemon::StateManager;
     use Entity::ServiceProvider::Cluster;
     use Entity::Poolip;
     use Ip;

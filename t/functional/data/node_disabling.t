@@ -24,8 +24,8 @@ Log::Log4perl->easy_init({
 my $log = get_logger("");
 
 use Kanopya::Database;
-use RulesEngine;
-use Aggregator;
+use Daemon::RulesEngine;
+use Daemon::Aggregator;
 use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
 use Entity::NodemetricCondition;
@@ -68,8 +68,8 @@ sub main {
 }
 
 sub node_disabling {
-    $aggregator = Aggregator->new();
-    my $rulesengine = RulesEngine->new();
+    $aggregator = Daemon::Aggregator->new();
+    my $rulesengine = Daemon::RulesEngine->new();
     $rulesengine->{config}->{time_step} = 0;
 
     # Create externalcluster with a mock monitor

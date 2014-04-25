@@ -25,7 +25,7 @@
 =end classdoc
 =cut
 
-package MailNotifier;
+package Daemon::MessageQueuing::MailNotifier;
 use base Daemon::MessageQueuing;
 
 use strict;

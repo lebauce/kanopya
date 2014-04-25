@@ -14,7 +14,7 @@ Log::Log4perl->easy_init({ level=>'DEBUG', file=>'/tmp/benchmark_aggregator_loop
 my $log = get_logger("");
 
 lives_ok {
-    use Aggregator;
+    use Daemon::Aggregator;
     use Entity::ServiceProvider::Cluster;
     use Entity::Component::MockMonitor;
 
@@ -26,7 +26,7 @@ use Kanopya::Tools::Retrieve;
 use Kanopya::Tools::Create;
 use Kanopya::Tools::Profiler;
 
-my $aggregator = Aggregator->new();
+my $aggregator = Daemon::Aggregator->new();
 my $profiler   = Kanopya::Tools::Profiler->new(schema => Kanopya::Database::schema);
 
 Kanopya::Database::beginTransaction;

@@ -13,8 +13,8 @@ Log::Log4perl->easy_init({level=>'DEBUG', file=>'alert_on_undef_values.log', lay
 my $log = get_logger("");
 
 use Kanopya::Database;
-use Aggregator;
-use RulesEngine;
+use Daemon::Aggregator;
+use Daemon::RulesEngine;
 use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
 use Entity::Metric::Clustermetric;
@@ -31,10 +31,10 @@ my $aggregator;
 my $rulesengine;
 
 eval{
-    $aggregator  = Aggregator->new();
-    $rulesengine = RulesEngine->new();
+    $aggregator  = Daemon::Aggregator->new();
+    $rulesengine = Daemon::RulesEngine->new();
     $rulesengine->_component->time_step(2);
-    $rulesengine  = RulesEngine->new();
+    $rulesengine  = Daemon::RulesEngine->new();
 
     $service_provider = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Service Provider',

@@ -19,7 +19,7 @@ TODO
 =end classdoc
 =cut
 
-package Collector;
+package Daemon::Pooling::Collector;
 use base Daemon::Pooling;
 
 use strict;

@@ -43,7 +43,7 @@ Then Aggregator will:
 =end classdoc
 =cut
 
-package Aggregator;
+package Daemon::Aggregator;
 use base Daemon;
 
 use strict;

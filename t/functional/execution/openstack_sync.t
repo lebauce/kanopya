@@ -24,7 +24,7 @@ use ParamPreset;
 use Kanopya::Tools::TestUtils 'expectedException';
 use Entity::Node;
 use Entity::Component::Virtualization::NovaController;
-use OpenstackSync;
+use Daemon::MessageQueuing::OpenstackSync;
 use Kanopya::Tools::Register;
 use Kanopya::Tools::Create;
 
@@ -140,7 +140,7 @@ sub test_create_and_delete_vm {
         }
 
         $message = _get_delete_json(hostname => $hostname, instance_id => $instance_id);
-        OpenstackSync->novaNotificationAnalyser(%$message, host_manager => $nova_controller);
+        Daemon::MessageQueuing::OpenstackSync->novaNotificationAnalyser(%$message, host_manager => $nova_controller);
 
         expectedException {
             Entity::Node->get(id => $node->id);
@@ -180,7 +180,7 @@ sub test_create_and_rebuild_vm {
     my $node;
 
     lives_ok {
-        OpenstackSync->novaNotificationAnalyser(%$message, host_manager => $nova_controller);
+        Daemon::MessageQueuing::OpenstackSync->novaNotificationAnalyser(%$message, host_manager => $nova_controller);
 
         $node = check_node_existance(
                     hostname    => $hostname,
@@ -199,7 +199,7 @@ sub test_create_and_rebuild_vm {
                );
 
     lives_ok {
-        OpenstackSync->novaNotificationAnalyser(%$message, host_manager => $nova_controller);
+        Daemon::MessageQueuing::OpenstackSync->novaNotificationAnalyser(%$message, host_manager => $nova_controller);
                 $node = check_node_existance(
                     hostname    => $hostname,
                     ips         => [ $ip ],
@@ -223,12 +223,12 @@ sub create_vm {
                       hypervisor  => $args{hypervisor} || $hypervisor1,
                   );
 
-    OpenstackSync->novaNotificationAnalyser(%$message, host_manager => $nova_controller);
+    Daemon::MessageQueuing::OpenstackSync->novaNotificationAnalyser(%$message, host_manager => $nova_controller);
 
     my $node;
 
     lives_ok {
-        OpenstackSync->novaNotificationAnalyser(%$message, host_manager => $nova_controller);
+        Daemon::MessageQueuing::OpenstackSync->novaNotificationAnalyser(%$message, host_manager => $nova_controller);
 
         $node = check_node_existance(
                     hostname    => $args{hostname} || "test_vm",

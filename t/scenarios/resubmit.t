@@ -27,8 +27,8 @@ Log::Log4perl->easy_init({
 });
 
 use Kanopya::Database;
-use Aggregator;
-use RulesEngine;
+use Daemon::Aggregator;
+use Daemon::RulesEngine;
 use Entity;
 use Entity::Component::Virtualization::Opennebula3;
 use Entity::ServiceProvider::Externalcluster;
@@ -76,8 +76,8 @@ sub main {
         config    => $config,
     );
 
-    $aggregator  = Aggregator->new();
-    $rulesengine = RulesEngine->new();
+    $aggregator  = Daemon::Aggregator->new();
+    $rulesengine = Daemon::RulesEngine->new();
 
     #get orchestrator configuration
 

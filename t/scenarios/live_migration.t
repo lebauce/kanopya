@@ -24,7 +24,6 @@ Log::Log4perl->easy_init({
 });
 
 use Kanopya::Database;
-use Aggregator;
 use Entity;
 use Entity::Component::Virtualization::Opennebula3;
 use VerifiedNoderule;

@@ -30,7 +30,7 @@ workflow triggering.
 
 =cut
 
-package RulesEngine;
+package Daemon::RulesEngine;
 use base Daemon;
 
 use strict;

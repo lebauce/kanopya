@@ -31,7 +31,7 @@ The execution daemon, fetch jobs from the following messages queues:
 =end classdoc
 =cut
 
-package Executor;
+package Daemon::MessageQueuing::Executor;
 use base Daemon::MessageQueuing;
 
 use strict;

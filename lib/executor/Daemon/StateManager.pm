@@ -15,7 +15,7 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
-package StateManager;
+package Daemon::StateManager;
 use base Daemon;
 
 use strict;

@@ -36,7 +36,7 @@ see <https://wiki.openstack.org/wiki/NotificationSystem> for notification system
 =end classdoc
 =cut
 
-package OpenstackSync;
+package Daemon::MessageQueuing::OpenstackSync;
 use base Daemon::MessageQueuing;
 
 use strict;

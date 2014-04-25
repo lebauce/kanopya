@@ -45,6 +45,7 @@ use Kanopya::Exceptions;
 use Daemon;
 use Executor;
 use General;
+use Daemon::MessageQueuing::Executor;
 
 my @args = ();
 
@@ -55,7 +56,7 @@ BEGIN {
     }
 }
 
-my $executor = Executor->new();
+my $executor = Daemon::MessageQueuing::Executor->new();
 
 Kanopya::Tools::Execution->purgeQueues();
 

@@ -356,8 +356,9 @@ sub _component {
 
     return $self->{component} if defined $self->{component};
 
+    (my $name = $self->{name}) =~ s/.*:://g;
     try {
-        $self->{component} = $self->_host->node->getComponent(name => 'Kanopya' . $self->{name});
+        $self->{component} = $self->_host->node->getComponent(name => 'Kanopya' . $name);
     }
     catch (Kanopya::Exception::Internal::NotFound $err) {
         $log->warn("Could not find component corresponding to service <$self->{name}> " .

@@ -7,7 +7,7 @@ use Test::Exception;
 use Test::Pod;
 use Data::Dumper;
 use Kanopya::Database;
-use Aggregator;
+use Daemon::Aggregator;
 use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
 use Entity::Metric::Clustermetric;
@@ -98,7 +98,7 @@ sub fill_rrd {
 }
 
 sub setup {
-    $aggregator = Aggregator->new();
+    $aggregator = Daemon::Aggregator->new();
 
     $service_provider = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Service Provider',

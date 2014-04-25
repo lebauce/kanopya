@@ -13,7 +13,6 @@ Log::Log4perl->easy_init({
 });
 
 use Kanopya::Database;
-use Executor;
 use Entity::ServiceProvider::Cluster;
 use Entity::User;
 use Entity::Host;

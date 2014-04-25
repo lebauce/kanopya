@@ -19,7 +19,7 @@
 use strict;
 use warnings;
 
-use RulesEngine;
+use Daemon::RulesEngine;
 use Kanopya::Config;
 
 use Getopt::Std;
@@ -38,7 +38,7 @@ sub print_usage {
 my %opts = ();
 getopts("bp:", \%opts) or print_usage;
 
-my $rules_engine = RulesEngine->new();
+my $rules_engine = Daemon::RulesEngine->new();
 $rules_engine->run(name       => "kanopya-rulesengine",
                    daemonize  => $opts{b},
                    pidfile    => $opts{p});

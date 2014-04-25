@@ -22,7 +22,7 @@ my $log = get_logger("");
 
 
 use Kanopya::Database;
-use Aggregator;
+use Daemon::Aggregator;
 use Entity::ServiceProvider::Externalcluster;
 use Entity::Component::MockMonitor;
 use Entity::Metric::Clustermetric;
@@ -42,7 +42,7 @@ my ($node_1, $node_2, $node_3);
 my $service_provider;
 my $aggregator;
 eval{
-    $aggregator = Aggregator->new();
+    $aggregator = Daemon::Aggregator->new();
 
     $service_provider = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Service Provider'.time(),
