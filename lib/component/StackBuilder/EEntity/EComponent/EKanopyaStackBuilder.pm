@@ -471,7 +471,8 @@ sub configureStack {
 
         # Create openrc file
         my $openrc = "# Environement variables needed by OpenStack CLI commands.\n" .
-                     "# See http://docs.openstack.org/user-guide/content/cli_openrc.html\n".
+                     "# See http://docs.openstack.org/user-guide/content/cli_openrc.html\n" .
+                     "export LC_ALL='C'\n" .
                      "export OS_TENANT_NAME=openstack\nexport OS_USERNAME=$api_user\n" .
                      "export OS_PASSWORD=$api_password\nexport OS_AUTH_URL=http://" .
                      $args{novacontroller}->getMasterNode->host->getAdminIface->getIPAddr . ":5000/v2.0/";
