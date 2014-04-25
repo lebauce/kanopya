@@ -875,7 +875,7 @@ sub getVMDetails {
 
     return {
         state      => $state,
-        hypervisor => $self->getView($vm_view->host)->name,
+        hypervisor => ""
     };
 }
 
@@ -895,11 +895,7 @@ sub getVMState {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'host' ]);
-
-    my $details;
-    eval {
-        $details =  $self->getVMDetails(%args);
-    };
+    my $details =  $self->getVMDetails(%args);
 
     my $state_map = {
         'suspended'  => 'pend',
