@@ -564,6 +564,9 @@ var KanopyaFormWizard = (function() {
             // Set the serialize attribute to manage convertion from (selected) unit to final value
             // Warning : this will override serialize attribute if defined
             this.attributedefs[name].serialize = function(val, input) {
+                if (!val) {
+                    return null;
+                }
                 return parseInt(parseFloat(val) * getUnitMultiplicator('unit_' + $(input).attr('id')));
             }
 
