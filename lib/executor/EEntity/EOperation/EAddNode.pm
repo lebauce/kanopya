@@ -41,6 +41,7 @@ use CapacityManagement;
 use Entity::Workflow;
 use ClassType::ComponentType;
 
+use TryCatch;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
@@ -437,12 +438,24 @@ sub execute {
         my $portals = defined $createexport_params->{iscsi_portals} ?
                           delete $createexport_params->{iscsi_portals} : [ 0 ];
         for my $portal_id (@{ $portals }) {
-            push @accesses, $self->{context}->{export_manager}->createExport(
-                                export_name  => $self->{context}->{systemimage}->systemimage_name,
-                                iscsi_portal => $portal_id,
-                                erollback    => $self->{erollback},
-                                %{ $createexport_params }
-                            );
+            try {
+                push @accesses, $self->{context}->{export_manager}->createExport(
+                                    export_name  => $self->{context}->{systemimage}->systemimage_name,
+                                    iscsi_portal => $portal_id,
+                                    erollback    => $self->{erollback},
+                                    %{ $createexport_params }
+                                );
+            }
+            catch ($err) {
+                if (scalar(@accesses)) {
+                    $log->error("Exporting systemimage with portal <$portal_id> failed, but at least one export for " .
+                                "systemimage " . $self->{context}->{systemimage}->label . " succeeded, continuing...");
+                }
+                else {
+                    $err->rethrow();
+                }
+            }
+
         }
 
         # Activate the system by linking it to the container accesses
