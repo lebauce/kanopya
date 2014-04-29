@@ -2,6 +2,10 @@
 
 Post all resources
 
+=head1 USAGE
+
+You can pass a resource name to this test as script parameter in order to test only this resource
+
 =head1 DESCRIPTION
 
 For each available resources:
@@ -168,6 +172,9 @@ my %attribute_fixed_value = (
         'user_email' => 'foo@bar.fr'
     },
     'customer' => {
+        'user_email' => 'foo@bar.fr'
+    },
+    'stackbuildercustomer' => {
         'user_email' => 'foo@bar.fr'
     },
     'poolip' => {
