@@ -142,14 +142,14 @@ __PACKAGE__->has_many(
 
 Type: belongs_to
 
-Related object: L<Kanopya::Schema::Result::Entity>
+Related object: L<Kanopya::Schema::Result::Metric>
 
 =cut
 
 __PACKAGE__->belongs_to(
   "combination",
-  "Kanopya::Schema::Result::Entity",
-  { entity_id => "combination_id" },
+  "Kanopya::Schema::Result::Metric",
+  { metric_id => "combination_id" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
@@ -229,8 +229,8 @@ __PACKAGE__->belongs_to(
 );
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-24 16:34:10
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:kBzBFEocckB3vfGIHp4Fhw
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-04-10 11:38:04
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:o8j8U6TLP83MpNQ9ZqjWvw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

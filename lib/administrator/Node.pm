@@ -304,7 +304,7 @@ sub remove {
             my $indicator = $collector_indicator->indicator;
             my $rrd_name = $indicator->id.'_'.$self->node_hostname;
             $log->info('delete '.$rrd_name);
-            TimeData::RRDTimeData::deleteTimeDataStore(name => $rrd_name);
+            TimeData::RRDTimeData->deleteTimeDataStore(name => $rrd_name);
         }
     }
     return;

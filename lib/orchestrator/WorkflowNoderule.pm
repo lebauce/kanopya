@@ -132,7 +132,6 @@ sub manageWorkflowState {
         }
     }
 
-    $log->info('workflow_noderule extnode_id <'.$args{node_id}.'> nodemetric_rule_id <'.$args{nodemetric_rule_id}.'> not defined');
     return {state => 'ready_to_launch'};
 }
 

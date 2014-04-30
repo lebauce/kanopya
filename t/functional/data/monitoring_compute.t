@@ -17,17 +17,17 @@ use DataCache;
 DataCache::cacheActive(0);
 
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level=>'DEBUG', file=>'monitor_test.log', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=>__FILE__ . '.log', layout=>'%F %L %p %m%n'});
 my $log = get_logger("");
 
 
-    use Kanopya::Database;
-    use Aggregator;
-    use Entity::ServiceProvider::Externalcluster;
-    use Entity::Component::MockMonitor;
-    use Entity::Metric::Clustermetric;
-    use Entity::Metric::Combination::AggregateCombination;
-    use Entity::Metric::Combination::NodemetricCombination;
+use Kanopya::Database;
+use Aggregator;
+use Entity::ServiceProvider::Externalcluster;
+use Entity::Component::MockMonitor;
+use Entity::Metric::Clustermetric;
+use Entity::Metric::Combination::AggregateCombination;
+use Entity::Metric::Combination::NodemetricCombination;
 
 Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
@@ -47,7 +47,6 @@ eval{
     my $external_cluster_mockmonitor = Entity::ServiceProvider::Externalcluster->new(
             externalcluster_name => 'Test Monitor'.time(),
     );
-
 
     my $mock_monitor = Entity::Component::MockMonitor->new(
             service_provider_id => $external_cluster_mockmonitor->id,
@@ -404,7 +403,7 @@ sub testBigAggregation {
         my $aggregator          = $args{aggregator};
 
         # Delete all nodes
-        map {$_->delete()} Node->search(hash => {});
+        map {$_->delete()} Node->search(hash => {node_hostname => {-like => 'node_%'}});
 
         # Create nodes
         for my $i (1..$nodes_count) {
@@ -461,7 +460,7 @@ sub testStatisticFunctions {
 
     lives_ok {
         # Delete all nodes
-        map {$_->delete()} Node->search(hash => {});
+        map {$_->delete()} Node->search(hash => {node_hostname => {-like => 'node_%'}});
 
         # Create nodes
         for my $i (0..9) {

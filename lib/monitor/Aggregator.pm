@@ -36,12 +36,10 @@ Then Aggregator will:
 2. store values for each indicator for each nodes
 3. compute and store ClusterMetric
 
-Aggregator uses RRDTimeData to store data at service level
-and uses DataCache to (possibly) store data at node level.
+Aggregator uses DataCache to (possibly) store data at node level.
 
 @see <package>Entity::Metric::Combination::NodemetricCombination</package>
 @see <package>Entity::Metric::Clustermetric</package>
-@see <package>TimeData::RRDTimeData</package>
 @see <package>Manager::CollectorManager</package>
 
 =end classdoc
@@ -60,7 +58,6 @@ use Entity::ServiceProvider;
 use Entity::Indicator;
 use Entity::Metric::Combination::NodemetricCombination;
 use Entity::Metric::Clustermetric;
-use TimeData::RRDTimeData;
 
 use Kanopya::Config;
 use Message;
@@ -314,6 +311,7 @@ sub update {
     }
 }
 
+
 sub _checkNodesMetrics {
     my $self = shift;
     my %args = @_;
@@ -381,36 +379,29 @@ sub _computeCombinationAndFeedTimeDB {
         }
 
         eval {
-            my $clustermetric_id = $clustermetric->id;
+            my $statValue = undef;
+
             # Compute the $clustermetric value from all @dataStored values
             if (0 < (scalar @dataStored)) {
-                my $statValue = $clustermetric->compute(values => \@dataStored);
+                $statValue = $clustermetric->compute(values => \@dataStored);
 
-                # Store in DB and time stamp
-                TimeData::RRDTimeData::updateTimeDataStore(
-                    clustermetric_id => $clustermetric_id,
-                    time             => $args{timestamp},
-                    value            => $statValue,
-                    time_step        => $self->{config}->{time_step},
-                    storage_duration => $self->{config}->{storage_duration}
-                );
-                if (!defined $statValue) {
-                    $log->info("*** [WARNING] No statvalue computed for clustermetric " . $clustermetric_id);
+                if (! defined $statValue) {
+                    $log->info("No statvalue computed for clustermetric " . $clustermetric->id);
                 }
             }
             else {
                 # This case is current and produce lot of log
                 # TODO better handling (and user feedback) of missing data
-                $log->debug("*** [WARNING] No datas received for clustermetric " . $clustermetric_id);
-
-                TimeData::RRDTimeData::updateTimeDataStore(
-                    clustermetric_id => $clustermetric_id,
-                    time             => $args{timestamp},
-                    value            => undef,
-                    time_step        => $self->{config}->{time_step},
-                    storage_duration => $self->{config}->{storage_duration}
-                );
+                $log->debug("No datas received for clustermetric " . $clustermetric->id);
             }
+
+            $clustermetric->updateData(
+                time             => $args{timestamp},
+                value            => $statValue,
+                time_step        => $self->{config}->{time_step},
+                storage_duration => $self->{config}->{storage_duration}
+            );
+
         };
         if ($@) {
             # Handle error when create rrd then directly update with a time < creation time
@@ -431,16 +422,10 @@ Delete and create again every time data store for the clustermetrics
 =cut
 
 sub regenTimeDataStores {
-    my $self = shift;
-    my %args = @_;
+    my ($self, %args) = @_;
 
     foreach my $clustermetric (Entity::Metric::Clustermetric->search()) {
-        #delete previous rrd
-        TimeData::RRDTimeData::deleteTimeDataStore(name => $clustermetric->clustermetric_id);
-        #create new rrd
-        TimeData::RRDTimeData::createTimeDataStore(name              => $clustermetric->clustermetric_id,
-                                                   collect_frequency => $self->{config}->{time_step},
-                                                   storage_duration  => $self->{config}->{storage_duration});
+        $clustermetric->resetData();
     }
 }
 
@@ -464,10 +449,6 @@ sub resizeTimeDataStores {
     General::checkParams(args => \%args, required => [ 'storage_duration', 'old_storage_duration' ]);
 
     foreach my $clustermetric (Entity::Metric::Clustermetric->search()) {
-        TimeData::RRDTimeData::resizeTimeDataStore(clustermetric_id     => $clustermetric->clustermetric_id,
-                                                   storage_duration     => $args{storage_duration},
-                                                   old_storage_duration => $args{old_storage_duration},
-                                                   collect_frequency    => $self->{config}->{time_step});
     }
 }
 

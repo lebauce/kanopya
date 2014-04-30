@@ -128,4 +128,22 @@ sub removeCollectorIndicators {
 }
 
 
+=pod
+=begin classdoc
+
+Delete linked properly
+
+=end classdoc
+=cut
+
+sub delete {
+    my ($self, %args) = @_;
+
+    my @cis = $self->collector_indicators;
+    while (@cis) {
+        (pop @cis)->delete();
+    }
+
+    return $self->SUPER::delete(%args);
+}
 1;

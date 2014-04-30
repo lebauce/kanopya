@@ -472,14 +472,12 @@ sub manageWorkflows {
     # Update last workflow possibly launched status before trying to trigger a new one
     $self->_updateWorkflowStatus();
 
-    my $workflow_def_id = $self->workflow_def->id;
+    my $workflow_def = $self->workflow_def;
 
-    if (! defined $workflow_def_id) {
+    if (! defined $workflow_def) {
         # Skip workflow management when service provider has no workflow_def
-        $log->info('No workflow defined for rule <' . $self->id . '>');
         return;
     }
-
     my $evaluation = (values %{$args{evaluation}})[0];
 
     if (! defined $evaluation) {
@@ -491,7 +489,7 @@ sub manageWorkflows {
     if ($evaluation == 1){
         $log->info('Rule <'. $self->id. '> is verified');
         if ($self->state eq 'enabled') {
-            $log->info('Rule <'. $self->id. '> has launched a new workflow (' . $workflow_def_id .
+            $log->info('Rule <'. $self->id. '> has launched a new workflow (' . $workflow_def->id .
                        ') and was defined as triggered');
 
             my $workflow = $self->triggerWorkflow();

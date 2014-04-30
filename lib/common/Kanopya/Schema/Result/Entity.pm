@@ -189,21 +189,6 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "NO ACTION", on_update => "NO ACTION" },
 );
 
-=head2 clustermetric
-
-Type: might_have
-
-Related object: L<Kanopya::Schema::Result::Clustermetric>
-
-=cut
-
-__PACKAGE__->might_have(
-  "clustermetric",
-  "Kanopya::Schema::Result::Clustermetric",
-  { "foreign.clustermetric_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
 =head2 collector_indicator
 
 Type: might_have
@@ -216,21 +201,6 @@ __PACKAGE__->might_have(
   "collector_indicator",
   "Kanopya::Schema::Result::CollectorIndicator",
   { "foreign.collector_indicator_id" => "self.entity_id" },
-  { cascade_copy => 0, cascade_delete => 0 },
-);
-
-=head2 combination
-
-Type: might_have
-
-Related object: L<Kanopya::Schema::Result::Combination>
-
-=cut
-
-__PACKAGE__->might_have(
-  "combination",
-  "Kanopya::Schema::Result::Combination",
-  { "foreign.combination_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -551,6 +521,21 @@ __PACKAGE__->might_have(
   "masterimage",
   "Kanopya::Schema::Result::Masterimage",
   { "foreign.masterimage_id" => "self.entity_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+=head2 metric
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::Metric>
+
+=cut
+
+__PACKAGE__->might_have(
+  "metric",
+  "Kanopya::Schema::Result::Metric",
+  { "foreign.metric_id" => "self.entity_id" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
@@ -955,8 +940,8 @@ Composing rels: L</entity_tags> -> tag
 __PACKAGE__->many_to_many("tags", "entity_tags", "tag");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-24 16:34:10
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:afEc9I5Qq7Q2Baa7aS3Y+g
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-04-10 17:45:31
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:ZOcscDZaALFbOKJrMcLYnw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

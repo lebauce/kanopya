@@ -236,6 +236,11 @@ sub fillMissingFixedAttr {
     $json = Dancer::from_json($resp->{content});
     $attribute_fixed_value{node}{service_provider_id} = $json->[0]->{pk};
 
+    #related metric
+    $resp = dancer_response(GET => "/api/clustermetric", {});
+    $json = Dancer::from_json($resp->{content});
+    $attribute_fixed_value{anomaly}{related_metric_id} = $json->[0]->{pk};
+
 }
 
 sub run {

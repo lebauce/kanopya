@@ -31,10 +31,11 @@ use base Entity::Metric::Combination;
 use strict;
 use warnings;
 use Data::Dumper;
-use Entity::Metric::Clustermetric;
+use Entity::Metric;
 use Kanopya::Exceptions;
 use List::Util qw {reduce};
 use DataModelSelector;
+use TryCatch;
 
 # logger
 use Log::Log4perl "get_logger";
@@ -172,26 +173,29 @@ sub new {
 
 =begin classdoc
 
-Verify that each ids of the given formula refers to a Clustermetric
+Verify that each ids of the given formula refers to a Metric
 
 =end classdoc
 
 =cut
 
 sub _verify {
+    my ($self, %args) = @_;
+    General::checkParams(args => \%args, optional => {formula => ''});
 
-    my $formula = shift;
-
-    my @array = split(/(id\d+)/,$formula);
+    my @array = split(/(id\d+)/,$args{formula});
 
     for my $element (@array) {
         if ($element =~ m/id\d+/) {
-            if (! (Entity::Metric::Clustermetric->search(
-                       hash => {'clustermetric_id' => substr($element,2)}
-                   ))){
-                my $errmsg = "Creating combination formula with an unknown clusterMetric id ($element) ";
-                $log->error($errmsg);
+            try {
+                Entity::Metric->get(id => substr($element,2));
+            }
+            catch (Kanopya::Exception::Internal::NotFound $err) {
+                my $errmsg = "Creating combination formula with an unknown metric id ($element) ";
                 throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
+            }
+            catch ($err) {
+                $err->rethrow();
             }
         }
     }
@@ -218,18 +222,18 @@ sub toString {
     # replace each rule id by its evaluation
     for my $element (@array) {
         if ($element =~ m/id\d+/) {
-            $element = Entity::Metric::Clustermetric->get('id' => substr($element,2))
-                                                    ->clustermetric_formula_string;
+            $element = Entity::Metric->get('id' => substr($element,2))->label;
         }
     }
     return List::Util::reduce { $a . $b } @array;
 }
 
+
 =pod
 
 =begin classdoc
 
-Compute the combination value between two dates. Use fetch() method of Clustermetric.
+Compute the combination value between two dates. Use fetch() method of metric.
 
 @param start_time the begining date
 @param stop_time the ending date
@@ -244,14 +248,14 @@ sub evaluateTimeSerie {
     my $self = shift;
     my %args = @_;
 
-    General::checkParams args => \%args, required => ['start_time','stop_time'];
+    General::checkParams(args => \%args, required => ['start_time','stop_time']);
 
-    my @cm_ids = $self->dependentClusterMetricIds();
     my %allTheCMValues;
-    foreach my $cm_id (@cm_ids){
-        my $cm = Entity::Metric::Clustermetric->get('id' => $cm_id);
-        $allTheCMValues{$cm_id} = $cm->fetch(%args);
+    foreach my $cm_id ($self->dependentMetricIds()){
+        my $metric = Entity::Metric->get('id' => $cm_id);
+        $allTheCMValues{$cm_id} = $metric->fetch(%args);
     }
+
     return $self->_computeFromArrays(%allTheCMValues);
 }
 
@@ -317,7 +321,6 @@ sub _predict {
     my $timeserie = $self->evaluateTimeSerie(start_time => 2 * $time - $args{timestamp},
                                              stop_time  => $time,);
 
-
     my $prediction = DataModelSelector->autoPredictData(
                          predict_start_tstamps => $args{timestamp},
                          predict_end_tstamps   => $args{timestamp},
@@ -340,10 +343,9 @@ sub _predict {
 
 =begin classdoc
 
-Compute the combination value using the last Clustermetric values.
-Use evaluate() method of Clustermetric.
+Compute the combination value using the last Metric values.
 
-@return the computed value or undef if one Clustermetric is undef
+@return the computed value or undef if one Metric is undef
 
 =end classdoc
 
@@ -353,27 +355,15 @@ sub _evaluateLastValue {
     my ($self, %args) = @_;
     General::checkParams(args => \%args, optional => {'nodes' => undef});
 
-    my $formula = $self->aggregate_combination_formula;
+    my $values = {};
 
-    #Split aggregate_rule id from $formula
-    my @array = split(/(id\d+)/,$formula);
-    #replace each rule id by its evaluation
-    for my $element (@array) {
-        if ($element =~ m/id\d+/) {
-            #Remove "id" from the begining of $element, get the corresponding aggregator
-            $element = Entity::Metric::Clustermetric->get('id'=>substr($element,2))->lastValue(%args);
-            if (not defined $element) {
-                return undef;
-            }
-        }
+    my @ids = $self->dependentMetricIds();
+    for my $id (@ids) {
+        $values->{$id} = Entity::Metric->get(id => $id)->evaluate(%args);
     }
 
-    my $res = undef;
-    my $arrayString = '$res = '."@array";
-    eval $arrayString;
-    #Evaluate the logic formula
-
-    # $log->debug('Evaluate combination :'.($self->toString()));
+    my $res = $self->SUPER::computeFormula(formula => $self->aggregate_combination_formula,
+                                           values  => $values);
 
     if (defined $args{nodes}) {
         my %hash = map {$_->id => $res} @{$args{nodes}};
@@ -387,71 +377,15 @@ sub _evaluateLastValue {
 
 =begin classdoc
 
-Compute the combination value using a hash value for each Clustermetric.
-May be deprecated.
+Return the Entity::Metric ids of the formulas with no doublon.
 
-@param a value for each clustermetric of the formula.
-
-@return the computed value
+@return array of Entity::Metric ids of the formulas with no doublon.
 
 =end classdoc
 
 =cut
 
-sub compute {
-    my $self = shift;
-    my %args = @_;
-
-    my @requiredArgs = $self->dependentClusterMetricIds();
-
-    Entity::Metric::Combination::checkMissingParams(
-        args     => \%args,
-        required => $self->{_dependentClusterMetricIds}
-    );
-
-    foreach my $cm_id (@requiredArgs) {
-        if (! defined $args{$cm_id}) {
-            return undef;
-        }
-    }
-
-    my $formula = $self->aggregate_combination_formula;
-
-    #Split aggregate_rule id from $formula
-    my @array = split(/(id\d+)/,$formula);
-    #replace each rule id by its evaluation
-    for my $element (@array) {
-        if ($element =~ m/id\d+/) {
-            $element = $args{substr($element,2)};
-            if (!defined $element) {
-                return undef;
-            }
-        }
-     }
-
-    my $res = undef;
-    my $arrayString = '$res = '."@array";
-
-    #Evaluate the logic formula
-    eval $arrayString;
-
-    return $res;
-}
-
-
-=pod
-
-=begin classdoc
-
-Return the ids of Clustermetrics of the formulas with no doublon.
-
-@return array of ids of Clustermetrics of the formulas with no doublon.
-
-=end classdoc
-
-=cut
-
-sub dependentClusterMetricIds() {
+sub dependentMetricIds() {
     my $self = shift;
     my %ids = map { $_ => undef } ($self->aggregate_combination_formula =~ m/id(\d+)/g);
     return keys %ids;
@@ -462,10 +396,10 @@ sub dependentClusterMetricIds() {
 
 =begin classdoc
 
-Compute the combination value using a hash of timestamped values for each Clustermetric.
+Compute the combination value using a hash of timestamped values for each metric.
 May be deprecated.
 
-@param a value for each clustermetric of the formula.
+@param a value for each metrc of the formula.
 
 @return the timestamped computed values
 
@@ -473,12 +407,10 @@ May be deprecated.
 
 =cut
 
-sub _computeFromArrays{
-    my $self = shift;
-    my %args = @_;
+sub _computeFromArrays {
+    my ($self, %args) = @_;
 
-    my @requiredArgs = $self->dependentClusterMetricIds();
-
+    my @requiredArgs = $self->dependentMetricIds();
     General::checkParams args => \%args, required => \@requiredArgs;
 
     # Merge all the timestamps keys in one arrays
@@ -490,13 +422,19 @@ sub _computeFromArrays{
     @timestamps = $self->uniq(data => \@timestamps);
 
     my %rep;
+
     foreach my $timestamp (@timestamps){
         my %valuesForATimeStamp;
         foreach my $cm_id (@requiredArgs){
             $valuesForATimeStamp{$cm_id} = $args{$cm_id}->{$timestamp};
         }
-        $rep{$timestamp} = $self->compute(%valuesForATimeStamp);
+        # TODO check if $self->aggregate_combination_formula is cached
+        # and does not request the DB each time...
+
+        $rep{$timestamp} = self->SUPER::computeFormula(formula => $self->aggregate_combination_formula,
+                                                       values  => \%valuesForATimeStamp);
     }
+
     return wantarray ? %rep : \%rep;
 }
 
@@ -522,7 +460,7 @@ sub computeUnit {
 
     for my $element (@array) {
         if ($element =~ m/id\d+/) {
-            $element = Entity::Metric::Clustermetric->get('id' => substr($element,2))->getUnit();
+            $element = Entity::Metric->get('id' => substr($element,2))->getUnit();
 
             if (not defined $ref_element) {
                 $ref_element = $element;
@@ -585,7 +523,7 @@ sub clone {
         $args{attrs}->{aggregate_combination_formula} = $self->_cloneFormula(
             dest_sp_id    => $args{attrs}->{service_provider_id},
             formula       => $args{attrs}->{aggregate_combination_formula},
-            formula_class => 'Entity::Metric::Clustermetric'
+            formula_class => 'Entity::Metric'
         );
         return $args{attrs};
     };

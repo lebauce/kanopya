@@ -84,8 +84,6 @@ use constant {
                 'This model is adapted for time series showing complex patterns, ' .
                 'including trends and seasonality, ' .
                 'but can be slow when applied to large data sets.',
-
-
         },
         EXPONENTIAL_SMOOTHING => {
             class_type => 'DataModel::RDataModel::ExponentialSmoothing',

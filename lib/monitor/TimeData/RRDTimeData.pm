@@ -61,6 +61,16 @@ if ($^O eq 'MSWin32') {
     $move   = 'mv';
 }
 
+sub new {
+    my $class = shift;
+    my %args = @_;
+
+    my $self = {};
+    bless $self, $class;
+    return $self;
+}
+
+
 ###################################################################################################
 #########################################RRD MANIPULATION FUNCTIONS################################
 ###################################################################################################
@@ -93,13 +103,13 @@ sub createTimeDataStore {
     #                                                      RRA:AVERAGE:0.5:12:24'
     #                             );
 
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'name', 'collect_frequency', 'storage_duration' ],
+                         required => [ 'name', 'time_step', 'storage_duration' ],
                          optional => { 'skip_if_exists' => undef, time => undef });
 
-    my $name = _formatName(name => $args{'name'});
+    my $name = $self->_formatName(name => $args{'name'});
 
     # Do nothing if rrd already exists and skip_if_exists option is set
     return if (-e $dir.$name && $args{'skip_if_exists'});
@@ -111,8 +121,8 @@ sub createTimeDataStore {
     #configure the heartbeat, number of CDP and step according to the configuration
     my $config;
     try {
-        $config = _configTimeDataStore(collect_frequency => $args{collect_frequency},
-                                       storage_duration  => $args{storage_duration});
+        $config = $self->_configTimeDataStore(time_step => $args{time_step},
+                                              storage_duration  => $args{storage_duration});
     }
     catch ($err) {
         throw Kanopya::Exception(error => "$err");
@@ -127,7 +137,7 @@ sub createTimeDataStore {
         } else {
             my $time = $args{time} || time();
             my $moduloTime = $time % 60;
-            my $finalTime = $time - $moduloTime;
+            my $finalTime = $time - $moduloTime - $args{time_step};
             $opts .= '-b '.$finalTime.' ';
         }
 
@@ -140,7 +150,7 @@ sub createTimeDataStore {
         $opts .= '-s '.$config->{step}.' ';
         my $time = $args{time} || time();
         my $moduloTime = $time % 60;
-        my $finalTime = $time - $moduloTime;
+        my $finalTime = $time - $moduloTime - $args{time_step};
         $opts .= '-b '.$finalTime.' ';
     }
 
@@ -200,6 +210,7 @@ sub createTimeDataStore {
                   error => 'RRD creation failed: ' . $err
               );
     }
+    return;
 }
 
 
@@ -215,37 +226,18 @@ This method delete a RRD file.
 =end classdoc
 =cut
 
-sub deleteTimeDataStore{
-    my %args = @_;
+sub deleteTimeDataStore {
+    my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => ['name']);
 
-    my $name = _formatName(name => $args{'name'});
-    my $cmd = $delete.' '.$dir.$name;
+    my $name = $self->_formatName(name => $args{'name'});
+    if (-e $dir.$name) {
+        my $cmd = $delete.' '.$dir.$name;
+        return system ($cmd);
+    }
 
-    system ($cmd);
-}
-
-
-=pod
-=begin classdoc
-
-This method get info a RRD file.
-
-@param name RRD name
-
-=end classdoc
-=cut
-
-sub getTimeDataStoreInfo {
-    my %args = @_;
-
-    General::checkParams(args => \%args, required => ['name']);
-
-    my $name = _formatName(name => $args{'name'});
-    my $cmd = $rrd.' info '.$dir.$name;
-
-    system ($cmd);
+    return;
 }
 
 
@@ -268,28 +260,48 @@ Throws 'RRD fetch failed' if the fetch is a failure
 
 
 sub fetchTimeDataStore {
-    my %args = @_;
-    General::checkParams(args => \%args, required => ['name']);
+    my ($self, %args) = @_;
+    General::checkParams(args     => \%args,
+                         required => ['name'],
+                         optional => {output => 'hash'});
 
-    my $name = _formatName(name => $args{'name'});
+    my $name = $self->_formatName(name => $args{'name'});
     my $CF    = 'LAST';
-    my $start = $args{'start'};
-    my $end   = $args{'end'};
-    my $cmd   = $rrd.' fetch '.$dir.$name.' '.$CF;
 
     #if not defined, start is (end - 1 day), and end is (now)
-    if (defined $start){
-        $cmd .= ' -s '.($start - 1);
+    my $end;
+    my $start;
+    my $offset = 24*60*60; # one day in sec
+
+    # my $end   = $args{'end'}   || time();
+    # my $start = $args{'start'} || $end - 24*60*60;
+
+    if (defined $args{start} and ! defined $args{end}) {
+        $start = $args{start};
+        $end   = $args{start} + $offset;
     }
-    if (defined $end){
-        $cmd .= ' -e '.$end;
+    elsif (defined $args{end} and ! defined $args{start}) {
+        $start = $args{end} - $offset;
+        $end   = $args{end};
+    }
+    elsif (defined $args{start} and defined $args{end}) {
+        $start = $args{start};
+        $end   = $args{end};
+    }
+    else {
+        $end   = time();
+        $start = $end - $offset;
     }
 
-    $log->debug($cmd);
+    my $cmd   = $rrd.' fetch '.$dir.$name.' '.$CF;
+
+    $cmd .= ' -s '.($start - 1);
+    $cmd .= ' -e '.$end;
+
+    # $log->debug($cmd);
 
     #we store the ouput of the command into a string
     my $exec = `$cmd 2>&1`;
-    # print "back quotes output:\n ".$exec;
 
     if ($exec =~ m/^ERROR.*/){
         throw Kanopya::Exception::Internal(error => 'RRD fetch failed: '.$exec);
@@ -305,12 +317,12 @@ sub fetchTimeDataStore {
     #The first entry is the DS' name. We remove it from the list.
     shift (@values);
 
-    #We convert the list into the final hash that is returned to the caller.
-    my %values = @values;
-
-    if (scalar(keys %values) == 0) {
+    if (scalar(@values) == 0) {
         throw  Kanopya::Exception::Internal(error => 'no values could be retrieved from RRD');
     }
+
+    #We convert the list into the final hash that is returned to the caller.
+    my %values = @values;
 
     #we replace the '-1.#IND000000e+000' values for "undef"
     while (my ($timestamp, $value) = each %values) {
@@ -327,7 +339,17 @@ sub fetchTimeDataStore {
         }
     }
 
-    return %values;
+    # TODO compute this erlier and improve complexity avoiding sort...
+    if (defined $args{output} && $args{output} eq 'arrays') {
+        my @timestamps = sort keys %values;
+        my @values = map {$values{$_}} @timestamps;
+        return {
+            timestamps => \@timestamps,
+            values     => \@values,
+        }
+    }
+
+    return \%values;
 }
 
 
@@ -338,7 +360,7 @@ This method update values into a RRD file.
 throws 'RRD update failed' if the update is a failure
 WARNING: the code only catch the keyword 'ERROR' in the command return...
 
-@param clustermetric_id
+@param metric_id
 @param time
 @param value
 
@@ -348,33 +370,33 @@ WARNING: the code only catch the keyword 'ERROR' in the command return...
 =cut
 
 sub updateTimeDataStore {
-    my %args = @_;
+    my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'clustermetric_id', 'time', 'time_step', 'storage_duration' ]);
+    General::checkParams(args => \%args,
+                         required => [ 'metric_id', 'time'],
+                         optional => {datasource        => 'aggregate',
+                                      value             => 'U',
+                                      time_step         => undef,
+                                      storage_duration  => undef});
 
-    my $time = $args{'time'};
-    my $name = _formatName(name => $args{'clustermetric_id'});
+    if (not (-e $dir.$self->_formatName(name => $args{metric_id}))) {
+        $self->createTimeDataStore(name              => $args{metric_id},
+                                   time_step         => $args{time_step},
+                                   storage_duration  => $args{storage_duration},
+                                   time              => $args{time});
+    }
 
-    TimeData::RRDTimeData::createTimeDataStore(skip_if_exists    => 1,
-                                               name              => $args{'clustermetric_id'},
-                                               collect_frequency => $args{'time_step'},
-                                               storage_duration  => $args{'storage_duration'},
-                                               time              => $args{time});
+    my $cmd = $rrd . ' updatev ' . $dir . $self->_formatName(name => $args{metric_id})
+              . ' -t ' . $args{datasource} . ' ' . $args{time} . ':' . $args{value};
 
-    my $datasource = (defined $args{'datasource'}) ? $args{'datasource'} : 'aggregate';
-    my $value      = (defined $args{'value'})      ? $args{'value'}      : 'U';
-
-    my $cmd = $rrd.' updatev '.$dir.$name.' -t '.$datasource.' '.$time.':'.$value;
-#    $log->debug($cmd);
-    # print $cmd."\n";
+    $log->debug($cmd);
 
     my $exec =`$cmd 2>&1`;
-    # print $exec."\n";
-#    $log->debug($exec);
 
     if ($exec =~ m/^ERROR.*/) {
         throw Kanopya::Exception::Internal(error => 'RRD update failed: '.$exec);
     }
+    return;
 }
 
 
@@ -395,10 +417,10 @@ Warning the code only catch the keyword 'ERROR' in the command return...
 =cut
 
 sub getLastUpdatedValue {
-    my %args = @_;
+    my ($self, %args) = @_;
     General::checkParams(args => \%args, required => ['metric_uid'], optional => {fresh_only => undef});
 
-    my $name = _formatName(name => $args{'metric_uid'});
+    my $name = $self->_formatName(name => $args{'metric_uid'});
 
     my $cmd = $rrd.' lastupdate '.$dir.$name;
 
@@ -419,11 +441,14 @@ sub getLastUpdatedValue {
     shift (@values);
     # print Dumper(\@values);
     #We convert the list into the final hash that is returned to the caller.
-    my %values = @values;
 
-    if (scalar(keys %values) == 0) {
+    if (scalar(@values) == 0) {
         throw  Kanopya::Exception::Internal(error => 'no values could be retrieved from RRD');
     }
+
+
+    my $timestamp = $values[0];
+    my $value     = $values[1];
 
     my $heartbeat = 0;
     if ($args{fresh_only}) {
@@ -432,23 +457,19 @@ sub getLastUpdatedValue {
         if ($res =~ /minimal_heartbeat = (\d+)/) {
             $heartbeat = $1;
         }
+        if (time() - $timestamp > $heartbeat) {
+            return {};
+        }
     }
+
 
     #we replace the '-1.#IND000000e+000' values for "undef"
     # and we keep only fresh value if wanted
-    while (my ($timestamp, $value) = each %values) {
-        if ($value eq '-1.#IND000000e+000' || $value eq 'U') {
-            $values{$timestamp} = undef;
-        }
-        if ($args{fresh_only} && (time() - $timestamp > $heartbeat)) {
-            delete $values{$timestamp};
-        }
+    if (defined $value && ($value eq '-1.#IND000000e+000' || $value eq 'U')) {
+        $value = undef;
     }
 
-
-    #print Dumper(\%values);
-#    $log->debug(Dumper(\%values));
-    return %values;
+    return {timestamp => $timestamp, value => $value};
 }
 
 
@@ -459,24 +480,24 @@ This method grows or shrink a rrd
 
 @param storage_duration
 @param old_storage_duration
-@param collect_frequency
-@param clustermetric_id
+@param time_step
+@param metric_id
 
 =end classdoc
 =cut
 
 sub resizeTimeDataStore {
-    my %args = @_;
+    my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
                          required => [ 'storage_duration', 'old_storage_duration',
-                                       'collect_frequency', 'clustermetric_id' ]);
+                                       'time_step', 'metric_id' ]);
 
     my $new_duration = $args{storage_duration};
-    my $rrd_name     = _formatName(name => $args{clustermetric_id});
+    my $rrd_name     = $self->_formatName(name => $args{metric_id});
 
     #get collect frequency value
-    my $collect_frequency = $args{collect_frequency};
+    my $time_step = $args{time_step};
     my $old_duration      = $args{old_storage_duration};
 
     my $delta       = abs($new_duration - $old_duration);
@@ -485,7 +506,7 @@ sub resizeTimeDataStore {
     #Generate the CPD number to be added or remove and then resize the rrd
     #grow
     if ($delta != 0) {
-        my $CDPDiff = $delta / $collect_frequency;
+        my $CDPDiff = $delta / $time_step;
         my $cmd     = qq{$rrd resize $dir$rrd_name 0 $resize_type $CDPDiff};
 
         #resize the rrd
@@ -513,7 +534,7 @@ This method configure the step, heartbeat, and CDP number for a rrd
 
 @param storage_duration Storing time desired
 
-@param collect_frequency (if storage_duration not defined) Frequency desired
+@param time_step (if storage_duration not defined) Frequency desired
 
 @return \%config
 
@@ -521,7 +542,7 @@ This method configure the step, heartbeat, and CDP number for a rrd
 =cut
 
 sub _configTimeDataStore {
-    my %args = @_;
+    my ($self, %args) = @_;
 
     my %config;
 
@@ -532,21 +553,21 @@ sub _configTimeDataStore {
 
     #if the frequency only is defined, we generate CDP number and heartbeat
     #in this case, by default we will set the rrd to store data for 1 week
-    if (defined $args{collect_frequency} && ! defined $args{storage_duration}) {
-        $config{step}      = $args{collect_frequency};
+    if (defined $args{time_step} && ! defined $args{storage_duration}) {
+        $config{step}      = $args{time_step};
         $config{CDP}       = 604800 / $config{step};
         $config{heartbeat} = $config{step} * 2;
     }
     #if the storage duration only is defined, we generate step, heartbeat, and CDP number
     #step by default will be 5 mn
-    elsif (defined $args{storage_duration} && ! defined $args{collect_frequency}) {
+    elsif (defined $args{storage_duration} && ! defined $args{time_step}) {
         $config{step}      = 300 ;
         $config{CDP}       = $args{storage_duration} / $config{step};
         $config{heartbeat} = $config{step} * 2;
     }
     #if both storage duration and frequency are defined, we generate heartbeat and CDP number
-    elsif (defined $args{collect_frequency} && defined $args{storage_duration}) {
-        $config{step}      = $args{collect_frequency};
+    elsif (defined $args{time_step} && defined $args{storage_duration}) {
+        $config{step}      = $args{time_step};
         $config{CDP}       = $args{storage_duration} / $config{step};
         $config{heartbeat} = $config{step} * 2;
     }
@@ -559,6 +580,19 @@ sub _configTimeDataStore {
     return \%config;
 }
 
+=pod
+=begin classdoc
+
+Return rrd directory.
+
+@return string rrd directory
+
+=end classdoc
+=cut
+
+sub getDir {
+    return $dir;
+}
 
 =pod
 =begin classdoc
@@ -574,7 +608,11 @@ This method format a name argument for RRD.
 =cut
 
 sub _formatName {
-    my %args = @_;
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'name' ]);
+
     my $name = 'timeDB_'.$args{'name'}.'.rrd';
     return $name;
 }

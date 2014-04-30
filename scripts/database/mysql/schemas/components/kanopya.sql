@@ -41,6 +41,19 @@ CREATE TABLE `kanopya_aggregator` (
 )   ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 --
+-- Table structure for table `kanopya_anomaly_detector`
+--
+
+CREATE TABLE `kanopya_anomaly_detector` (
+    `kanopya_anomaly_detector_id` int(8) unsigned NOT NULL,
+    `control_queue` char(255) DEFAULT NULL,
+    `time_step` int(8) unsigned NOT NULL,
+    `storage_duration` int(8) unsigned NOT NULL,
+    PRIMARY KEY (`kanopya_anomaly_detector_id`),
+    FOREIGN KEY (`kanopya_anomaly_detector_id`) REFERENCES `component` (`component_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+)   ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--
 -- Table structure for table `kanopya_rules_engine`
 --
 
