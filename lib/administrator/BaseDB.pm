@@ -889,7 +889,7 @@ sub toJSON {
                 my $type = defined $definition->{type} ? $definition->{type} : '';
 
                 # Filter in function of options, keep the single relation ids only
-                my $on_demand;
+                my $on_demand = ! $definition->{on_demand};
                 if (ref($args{expand}) eq "ARRAY") {
                     $on_demand = (! $definition->{on_demand} || grep { $_ eq $attr } @{ $args{expand} });
                 }
