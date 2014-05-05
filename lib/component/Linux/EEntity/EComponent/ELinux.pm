@@ -111,11 +111,12 @@ sub isUp {
         # Verify hostname
         my $theoricalhostname = $args{host}->node->node_hostname;
         my $realhostname = $args{host}->getEContext->execute(command => 'hostname -s');
+        chomp($realhostname->{stdout});
 
         if ($theoricalhostname ne $realhostname->{stdout}) {
             throw Kanopya::Exception::Execution::OperationInterrupted(
-                error => 'System hostname is different than Kanopya Hostname for host ' . $theoricalhostname .
-                         '. Is PXE boot working properly ?'
+                error => 'System hostname "' . $realhostname->{stdout} . '" is different than Kanopya Hostname for host "' .
+                          $theoricalhostname . '". Is PXE boot working properly ?'
             );
         }
 
