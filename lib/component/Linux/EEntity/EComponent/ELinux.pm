@@ -322,11 +322,11 @@ sub _generateHosts {
     }
 
     my @hosts;
-    for my $ip (keys $hosts_tmp) {
+    for my $ip (keys %$hosts_tmp) {
         push @hosts, {
             ip      => $ip,
             fqdn    => $hosts_tmp->{$ip}->{fqdn},
-            aliases => [keys $hosts_tmp->{$ip}->{alias}]
+            aliases => [keys %{$hosts_tmp->{$ip}->{alias}}]
         }
     }
 
