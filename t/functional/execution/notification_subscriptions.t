@@ -336,6 +336,7 @@ sub main {
         $prereport = 0;
         $postreport = 1;
 
+        sleep 2;
         Kanopya::Tools::Execution->oneRun();
 
         $postreport = 0;
