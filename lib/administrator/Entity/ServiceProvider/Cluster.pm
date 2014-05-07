@@ -208,10 +208,8 @@ sub methods {
     };
 }
 
-sub label {
-    my $self = shift;
-    return $self->cluster_name;
-}
+
+my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
 
 
 =pod
@@ -317,9 +315,6 @@ sub buildConfigurationPattern {
     my ($self, %args) = @_;
     my $class = ref($self) || $self;
 
-    # Override params with policies param presets
-    my $merge = Hash::Merge->new('LEFT_PRECEDENT');
-
     my $service_template;
     my $confpattern = {};
 
@@ -337,11 +332,11 @@ sub buildConfigurationPattern {
     # (see Policy.pm), only if the id of the policy that the params belongs to is specified.
     # Otherwise, params must be given in the cluster configuration pattern format.
     for my $policy (@policies) {
-        $confpattern = $merge->merge($confpattern, $policy->getPattern(params => \%args));
+        $confpattern = $merge->merge($policy->getPattern(params => \%args), $confpattern);
     }
 
     # Then merge the configuration pattern with the remaining cluster params
-    return $merge->merge(\%args, $confpattern);
+    return $merge->merge($confpattern, \%args);
 }
 
 sub checkConfigurationPattern {
@@ -1291,6 +1286,13 @@ sub propagatePermissions {
         }
     }
 }
+
+
+sub label {
+    my $self = shift;
+    return $self->cluster_name;
+}
+
 
 sub getKanopyaCluster {
     my $self  = shift;

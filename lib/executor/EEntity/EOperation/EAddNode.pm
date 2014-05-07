@@ -391,7 +391,6 @@ sub execute {
 
     # Create system image for node if required.
     if ($self->{params}->{create_systemimage} and $self->{context}->{cluster}->masterimage) {
-
         # Creation of the device based on distribution device
         my $container = $self->{context}->{disk_manager}->createDisk(
                             name       => $self->{context}->{systemimage}->systemimage_name,
