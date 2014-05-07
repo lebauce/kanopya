@@ -99,11 +99,9 @@ sub copy {
 
         # We loop until readlink returns the correct result
         # Is it a bug in udev ?
-        do {
-            $dstdev = `readlink -f $dest_device`;
-            $dstdev =~ s/^\s+|\s+$//g;
-            sleep(1);
-        } while($dstdev eq $dest_device);
+        $dstdev = `readlink -f $dest_device`;
+        $dstdev =~ s/^\s+|\s+$//g;
+        sleep(1);
 
         my $partition = ($args{partition} <= 0) ? '' : "$args{partition}";
         $command = "/usr/bin/virt-resize --expand /dev/sda$partition $srcdev $dstdev";

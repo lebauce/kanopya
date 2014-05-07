@@ -147,7 +147,7 @@ sub create {
 =pod
 =begin classdoc
 
-Update an instance by setting values for attribute taht differs,
+Update an instance by setting values for attribute that differs,
 also handle the update of relations.
 
 @return the updated object
@@ -163,7 +163,7 @@ sub update {
 
     my $override = delete $args{override_relations};
     my $hash = \%args;
-
+    
     # Extract relation and virtuals for futher handling
     my $virtuals  = $class->_extractVirtuals(hash => $hash);
     my $relations = $class->_extractRelations(hash => $hash);
@@ -177,10 +177,11 @@ sub update {
         $dbix = $self->_dbixParent(dbix => $dbix, classname => $module->_className);
         $dbix->update(delete $attrs->{$module});
     }
-
+    
     # Populate relations and virtuals
     $self->_populateRelations(relations => $relations,
                               override  => $override);
+
     $self->_populateVirtuals(virtuals => $virtuals);
 
     return $self;
@@ -889,7 +890,7 @@ sub toJSON {
                 my $type = defined $definition->{type} ? $definition->{type} : '';
 
                 # Filter in function of options, keep the single relation ids only
-                my $on_demand;
+                my $on_demand = ! $definition->{on_demand};
                 if (ref($args{expand}) eq "ARRAY") {
                     $on_demand = (! $definition->{on_demand} || grep { $_ eq $attr } @{ $args{expand} });
                 }
@@ -1254,7 +1255,6 @@ sub apiCall {
 
     General::checkParams(args => \%args, required => [ 'method' ],
                                          optional => { 'params' => {} });
-
     my $userid   = Kanopya::Database::user->{user_id};
     my $usertype = Kanopya::Database::user->{user_system};
     my $godmode  = defined Kanopya::Database::config->{god_mode} &&
@@ -1265,7 +1265,20 @@ sub apiCall {
     }
 
     my $method = $args{method};
-    return $self->$method(%{ $args{params} });
+    my $ret;
+    eval {
+        $ret = $self->$method(%{ $args{params} });
+    };
+    if ($@) {
+        my $ex = $@;
+        $log->error($ex);
+        if (ref($ex) ne '' and $ex->isa('Exception::Class')) {
+            $ex->rethrow();
+        } else {
+            die $ex;
+        }
+    }
+    return $ret;
 }
 
 
@@ -1797,7 +1810,6 @@ sub _virtualAttribute {
     my $class = ref($self) or throw Kanopya::Exception::Method(error => $self);
 
     General::checkParams(args => \%args, required => [ 'name' ], optional => { 'value' => undef });
-
     # Try to find setter/getter method with name or camel-case name
     my $name = $args{name};
     if (! $self->can($name)) {
@@ -1807,7 +1819,7 @@ sub _virtualAttribute {
                       error => "Can not find setter/getter method for virtual attribute <$args{name}>");
         }
     }
-    # Get of set the virtual attribute in fucntion of value argument
+    # Get of set the virtual attribute in function of value argument
     if (defined $args{value}) {
         return $self->$name($args{value});
     }

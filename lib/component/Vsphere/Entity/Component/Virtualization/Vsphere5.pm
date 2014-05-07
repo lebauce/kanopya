@@ -335,7 +335,6 @@ sub retrieveDatacenters {
     my ($self,%args) = @_;
 
     General::checkParams(args => \%args, optional => {'id_request' => undef});
-
     my @datacenters_infos;
 
     my $datacenter_views;
@@ -364,7 +363,6 @@ sub retrieveDatacenters {
                            items_list  => \@datacenters_infos,
                        } :
                        \@datacenters_infos;
-
     return $response;
 }
 
@@ -1454,10 +1452,10 @@ sub _formatName {
 
     my $name = $args{name};
     if ($args{type} eq 'cluster') {
-        ($name = $args{name}) =~ s/[^A-Za-z0-9-]/-/g;
+        ($name = $args{name}) =~ s/[^A-Za-z0-9_]/_/g;
     }
     elsif ($args{type} eq 'node') {
-        ($name = $args{name}) =~ s/[^\w\d\-\.]/-/g;
+        ($name = $args{name}) =~ s/[^\w\d_]/_/g;
     }
 
     return $name;

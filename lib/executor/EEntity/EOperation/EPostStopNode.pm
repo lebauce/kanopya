@@ -239,8 +239,9 @@ sub finish {
     }
 
     $self->{context}->{cluster}->removeState(consumer => $self->workflow);
-    $self->{context}->{host}->removeState(consumer => $self->workflow);
-
+    if (! $self->{context}->{host}->isa("EEntity::EHost::EVirtualMachine")) {
+        $self->{context}->{host}->removeState(consumer => $self->workflow);
+    }
 }
 
 

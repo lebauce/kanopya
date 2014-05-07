@@ -122,6 +122,16 @@ hook 'before_error_init' => sub {
 
 };
 
+hook on_handler_exception => sub {
+    my $exception = shift;
+    $log->error(Data::Dumper->Dump([ $exception ]));
+};
+
+hook on_route_exception => sub {
+    my $exception = shift;
+    $log->error(Data::Dumper->Dump([ $exception ]));
+};
+
 hook 'after_error_render' => sub {
     status request->{status};
 };

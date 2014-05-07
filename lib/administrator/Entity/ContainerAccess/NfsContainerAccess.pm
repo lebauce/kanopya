@@ -40,7 +40,7 @@ use Entity::NfsContainerAccessClient;
 use constant ATTR_DEF => {
     options => {
         pattern      => '^.*$',
-        is_mandatory => 1,
+        is_mandatory => 0,
     },
     nfs_container_access_client_options => {
         label        => 'Client options',

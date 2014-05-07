@@ -149,7 +149,7 @@ sub _retrieveVmData {
                           name => $self->{host}->node->node_hostname
                       },
                       begin_entity => $hv_view,
-                   )->summary;
+                   );
 
     #finally retrieve the data
     my %values;
@@ -199,10 +199,10 @@ sub _retrieveHypervisorData {
     my $hv_view = $args{vsphere}->findEntityView(
                       view_type    => 'HostSystem',
                       hash_filter  => {
-                            name => $self->{host}->node->node_hostname
+                            'hardware.systemInfo.uuid' => $self->{host}->vsphere5_uuid
                       },
                       begin_entity => $dc_view,
-                  )->summary;
+                  );
 
     #finally retrieve the data
     my %values;
