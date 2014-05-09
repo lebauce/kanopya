@@ -21,9 +21,12 @@ use Entity::User;
 use Entity::ServiceProvider::Cluster;
 use Entity::ServiceTemplate;
 use Entity::Policy;
+use Entity::Policy::StoragePolicy;
 use Lvm2Vg;
 use Entity::Policy::HostingPolicy;
 use Entity::Component::Physicalhoster0;
+use Entity::Component::Lvm2;
+use Entity::Component::Iscsi::Iscsitarget1;
 
 Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
@@ -37,6 +40,7 @@ sub main {
     }
 
     test_policies_json();
+    test_policies_merge();
     test_service_template_json();
     test_service_template_creation();
     test_service_creation_from_service_template();
@@ -68,6 +72,40 @@ sub test_policies_json {
             }
         } "Check if the attrdef JSON contains editable attrs only.";
     }
+}
+
+sub test_policies_merge {
+
+    # Create a policy with presets containing arrays
+    my $policy = Entity::Policy::StoragePolicy->new(
+                     policy_name       => "storage_policy_test",
+                     policy_type       => "storage",
+                     disk_manager_id   => Entity::Component::Lvm2->find()->id,
+                     vg_id             => 1,
+                     export_manager_id => Entity::Component::Iscsi::Iscsitarget1->find()->id,
+                     iscsi_portals     => [ 1 ]
+                 );
+
+    my $params = Entity::ServiceProvider::Cluster->buildConfigurationPattern(
+                     policies          => ($policy),
+                     policy_type       => "storage",
+                     disk_manager_id   => Entity::Component::Lvm2->find()->id,
+                     vg_id             => 2,
+                     export_manager_id => Entity::Component::Iscsi::Iscsitarget1->find()->id,
+                     iscsi_portals     => [ 1 ]
+                 );
+
+    my @portals = @{ $params->{managers}->{export_manager}->{manager_params}->{iscsi_portals} };
+    my $vg_id = $params->{managers}->{disk_manager}->{manager_params}->{vg_id};
+    lives_ok {
+        if (scalar(@portals) != 1 || (pop @portals) != 1) {
+            die "Iscsiportals from the merged configuration pattern: " . Dumper(\@portals) .
+                " do not match the original value: [ 1 ]."
+        }
+        if ($vg_id != 2) {
+            die "Vg_id from the merged configuration pattern: " . $vg_id . " do not match the overriden value: 2";
+        }
+    } "Check if the service template attrdef JSON contains all policy type attributes.";
 }
 
 sub test_service_template_json {

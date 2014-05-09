@@ -101,7 +101,24 @@ sub getPolicyAttrDef { return POLICY_ATTR_DEF; }
 sub getPolicySelectorAttrDef { return POLICY_SELECTOR_ATTR_DEF; }
 sub getPolicySelectorMap { return POLICY_SELECTOR_MAP; }
 
-my $merge = Hash::Merge->new('LEFT_PRECEDENT');
+my $merge = Hash::Merge->new();
+$merge->specify_behavior({
+    'SCALAR' => {
+            'SCALAR' => sub { $_[1] },
+            'ARRAY'  => sub { [ $_[0], @{$_[1]} ] },
+            'HASH'   => sub { $_[1] },
+    },
+    'ARRAY' => {
+            'SCALAR' => sub { $_[1] },
+            'ARRAY'  => sub { [ @{$_[1]} ] },
+            'HASH'   => sub { $_[1] },
+    },
+    'HASH' => {
+            'SCALAR' => sub { $_[1] },
+            'ARRAY'  => sub { [ values %{$_[0]}, @{$_[1]} ] },
+            'HASH'   => sub { Hash::Merge::_merge_hashes( $_[0], $_[1] ) },
+    },
+});
 
 
 =pod
@@ -269,10 +286,10 @@ sub toJSON {
         # Build the static attribute definition
         my $attributes = {
             displayed  => [ 'policy_name', 'policy_desc' ],
-            attributes => $merge->merge(clone($class->getPolicyAttrDef),
-                                        clone($class->getPolicySelectorAttrDef)),
+            attributes => $merge->merge(clone($class->getPolicySelectorAttrDef),
+                                        clone($class->getPolicyAttrDef)),
         };
-        $attributes = $merge->merge($attributes, clone($class->SUPER::toJSON()));
+        $attributes = $merge->merge(clone($class->SUPER::toJSON()), $attributes);
 
         # Merge params with existing values
         # If the policy if is defined in params, instanciate it to merge params
@@ -302,7 +319,7 @@ sub toJSON {
     }
     # If called on an instance, return the attributes values
     else {
-        return $merge->merge($self->SUPER::toJSON(), $self->getParams());
+        return $merge->merge($self->getParams(), $self->SUPER::toJSON());
     }
 }
 
@@ -397,7 +414,7 @@ sub getPattern {
     # Set the option 'noarrays' for getting policy params because
     # the merge module is not able to merge arrays, so the resulting
     # merged params will have duplicated values in arrays.
-    my $params = $merge->merge($args{params}, $self->getParams(noarrays => 1));
+    my $params = $merge->merge($self->getParams(noarrays => 1), $args{params});
     my $pattern = $self->getPatternFromParams(params => $params);
 
     # Manually remove deleted params from the original params hashes,
@@ -410,7 +427,7 @@ sub getPattern {
     }
 
     # Finally merge the pattern built from input params with the static pattern from presets
-    return $merge->merge($pattern, $self->param_preset_id ? $self->param_preset->load() : {});
+    return $merge->merge($self->param_preset_id ? $self->param_preset->load() : {}, $pattern);
 }
 
 
@@ -537,7 +554,7 @@ sub mergeValues {
                 delete $args{values}->{$attrname};
             }
         }
-        $args{values} = $merge->merge($args{values}, $existing);
+        $args{values} = $merge->merge($existing, $args{values});
     }
     return $args{values};
 }
