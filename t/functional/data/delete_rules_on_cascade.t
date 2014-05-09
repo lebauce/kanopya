@@ -19,14 +19,14 @@ use Entity::Component::MockMonitor;
 use Entity::Indicator;
 use Entity::CollectorIndicator;
 use Node;
-use Entity::Combination::NodemetricCombination;
+use Entity::Metric::Combination::NodemetricCombination;
 use Entity::NodemetricCondition;
 use Entity::Rule::NodemetricRule;
 use VerifiedNoderule;
 use WorkflowNoderule;
-use Entity::Clustermetric;
+use Entity::Metric::Clustermetric;
 use Entity::AggregateCondition;
-use Entity::Combination::AggregateCombination;
+use Entity::Metric::Combination::AggregateCombination;
 use Kanopya::Tools::TestUtils 'expectedException';
 use TryCatch;
 use Aggregator;
@@ -193,9 +193,9 @@ sub rrd_creation {
 
     lives_ok {
 
-        my @cms = Entity::Clustermetric->search (hash => {
-            clustermetric_service_provider_id => $service_provider->id
-        });
+        my @cms = Entity::Metric::Clustermetric->search (hash => {
+                      clustermetric_service_provider_id => $service_provider->id
+                  });
 
         for my $cm (@cms) {
             if (! defined open(FILE,'/var/cache/kanopya/monitor/timeDB_'.$cm->id.'.rrd')) {
@@ -204,9 +204,9 @@ sub rrd_creation {
             }
         }
 
-        my @nms = Entity::Clustermetric->search (hash => {
-            clustermetric_service_provider_id => $service_provider->id
-        });
+        my @nms = Entity::Metric::Clustermetric->search (hash => {
+                      clustermetric_service_provider_id => $service_provider->id
+                  });
 
 
         my $used_indicators = $aggregator->_getUsedIndicators(service_provider     => $service_provider,
@@ -252,19 +252,20 @@ sub indicator_deletion {
 
         $indicator_deleted_id = $deleted_indicator->id;
         diag("Deleting indicator <$indicator_deleted_id>");
+
         $deleted_indicator->delete();
 
         expectedException {
-            Entity::Clustermetric->get(id => $cmd->id);
+            Entity::Metric::Clustermetric->get(id => $cmd->id);
         } 'Kanopya::Exception::Internal::NotFound', 'Error Clustermetric not deleted';
 
         expectedException {
-            Entity::Combination::AggregateCombination->get(id => $acombd1->id);
-        } 'Kanopya::Exception::Internal::NotFound', 'Error AggregateCombination not deleted';
+            Entity::Metric::Combination::AggregateCombination->get(id => $acombd1->id);
+        } 'Kanopya::Exception::Internal::NotFound', 'Error AggregateCombination 1 not deleted';
 
         expectedException {
-            Entity::Combination::AggregateCombination->get(id => $acombd2->id);
-        } 'Kanopya::Exception::Internal::NotFound', 'Error AggregateCombination not deleted';
+            Entity::Metric::Combination::AggregateCombination->get(id => $acombd2->id);
+        } 'Kanopya::Exception::Internal::NotFound', 'Error AggregateCombination 2 not deleted';
 
         expectedException {
             Entity::AggregateCondition->get(id => $acd1->id);
@@ -275,11 +276,11 @@ sub indicator_deletion {
         } 'Kanopya::Exception::Internal::NotFound', 'Error AggregateCondition not deleted';
 
         expectedException {
-            Entity::Combination::ConstantCombination->get(id => $acd1->right_combination_id)
+            Entity::Metric::Combination::ConstantCombination->get(id => $acd1->right_combination_id)
         } 'Kanopya::Exception::Internal::NotFound', 'Error ConstantCombination not deleted';
 
         expectedException {
-            Entity::Combination::ConstantCombination->get(id => $acd2->right_combination_id)
+            Entity::Metric::Combination::ConstantCombination->get(id => $acd2->right_combination_id)
         } 'Kanopya::Exception::Internal::NotFound', 'Error ConstantCombination not deleted';
 
         expectedException {
@@ -295,11 +296,11 @@ sub indicator_deletion {
         } 'Kanopya::Exception::Internal::NotFound', 'Error AggregateRule not deleted';
 
         expectedException {
-            Entity::Combination->get(id => $ncombd1->id);
+            Entity::Metric::Combination->get(id => $ncombd1->id);
         } 'Kanopya::Exception::Internal::NotFound', 'Error NodemetricCombination not deleted';
 
         expectedException {
-            Entity::Combination->get(id => $ncombd2->id);
+            Entity::Metric::Combination->get(id => $ncombd2->id);
         } 'Kanopya::Exception::Internal::NotFound', 'Error NodemetricCombination not deleted';
 
         expectedException {
@@ -314,11 +315,11 @@ sub indicator_deletion {
         $ncd1->right_combination_id;
 
         expectedException {
-            Entity::Combination->get(id => $ncd1->left_combination_id);
+            Entity::Metric::Combination->get(id => $ncd1->left_combination_id);
         } 'Kanopya::Exception::Internal::NotFound', 'Error left combination not deleted';
 
         expectedException {
-            Entity::Combination->get(id => $ncd1->right_combination_id);
+            Entity::Metric::Combination->get(id => $ncd1->right_combination_id);
         } 'Kanopya::Exception::Internal::NotFound', 'Error right combination not deleted';
 
 
@@ -326,11 +327,11 @@ sub indicator_deletion {
         $ncd2->right_combination_id;
 
         expectedException {
-            Entity::Combination->get(id => $ncd2->left_combination_id);
+            Entity::Metric::Combination->get(id => $ncd2->left_combination_id);
         } 'Kanopya::Exception::Internal::NotFound', 'Error  left combination not deleted';
 
         expectedException {
-            Entity::Combination->get(id => $ncd2->right_combination_id);
+            Entity::Metric::Combination->get(id => $ncd2->right_combination_id);
         } 'Kanopya::Exception::Internal::NotFound', 'Error right combination not deleted';
 
         expectedException {
@@ -345,14 +346,14 @@ sub indicator_deletion {
             Entity::Rule::NodemetricRule->get(id => $nrule3d->id);
         } 'Kanopya::Exception::Internal::NotFound', 'Error NodemetricRule not deleted';
 
-        Entity::Clustermetric->get(id => $cm2->id);
-        Entity::Clustermetric->get(id => $cm3->id);
-        Entity::Combination->get(id => $acomb3->id);
+        Entity::Metric::Clustermetric->get(id => $cm2->id);
+        Entity::Metric::Clustermetric->get(id => $cm3->id);
+        Entity::Metric::Combination->get(id => $acomb3->id);
         Entity::AggregateCondition->get(id => $ac3->id);
         Entity::Rule::AggregateRule->get(id => $rule4->id);
-        Entity::Combination->get(id => $ncomb3->id);
-        Entity::Combination->get(id => Entity::NodemetricCondition->get(id => $nc3->id)->left_combination_id);
-        Entity::Combination->get(id => Entity::NodemetricCondition->get(id => $nc3->id)->right_combination_id);
+        Entity::Metric::Combination->get(id => $ncomb3->id);
+        Entity::Metric::Combination->get(id => Entity::NodemetricCondition->get(id => $nc3->id)->left_combination_id);
+        Entity::Metric::Combination->get(id => Entity::NodemetricCondition->get(id => $nc3->id)->right_combination_id);
         Entity::Rule::NodemetricRule->get(id => $nrule4->id);
 
     } 'Delete indicator on cascade';
@@ -360,14 +361,14 @@ sub indicator_deletion {
 
 sub rrd_deletion {
     lives_ok {
-        my @cms = Entity::Clustermetric->search (hash => {
-            clustermetric_service_provider_id => $service_provider->id
-        });
+        my @cms = Entity::Metric::Clustermetric->search (hash => {
+                      clustermetric_service_provider_id => $service_provider->id
+                  });
 
         my @cm_ids = map {$_->id} @cms;
         while (@cms) { (pop @cms)->delete(); };
 
-        my @acs = Entity::Combination::AggregateCombination->search (hash => {
+        my @acs = Entity::Metric::Combination::AggregateCombination->search (hash => {
             service_provider_id => $service_provider->id
         });
 
@@ -401,38 +402,38 @@ sub rrd_deletion {
 sub service_rule_objects_creation {
 
     diag('Service rules related objects creation...');
-    $cmd = Entity::Clustermetric->new(
-        clustermetric_service_provider_id => $service_provider->id,
-        clustermetric_indicator_id => ($indicator_deleted->id),
-        clustermetric_statistics_function_name => 'mean',
-        clustermetric_window_time => '1200',
-    );
+    $cmd = Entity::Metric::Clustermetric->new(
+               clustermetric_service_provider_id => $service_provider->id,
+               clustermetric_indicator_id => ($indicator_deleted->id),
+               clustermetric_statistics_function_name => 'mean',
+               clustermetric_window_time => '1200',
+           );
 
-    $cm2 = Entity::Clustermetric->new(
-        clustermetric_service_provider_id => $service_provider->id,
-        clustermetric_indicator_id => ($indicator_other->id),
-        clustermetric_statistics_function_name => 'mean',
-        clustermetric_window_time => '1200',
-    );
+    $cm2 = Entity::Metric::Clustermetric->new(
+               clustermetric_service_provider_id => $service_provider->id,
+               clustermetric_indicator_id => ($indicator_other->id),
+               clustermetric_statistics_function_name => 'mean',
+               clustermetric_window_time => '1200',
+           );
 
-    $cm3 = Entity::Clustermetric->new(
-        clustermetric_service_provider_id => $service_provider->id,
-        clustermetric_indicator_id => ($indicator_other->id),
-        clustermetric_statistics_function_name => 'std',
-        clustermetric_window_time => '1200',
-    );
+    $cm3 = Entity::Metric::Clustermetric->new(
+               clustermetric_service_provider_id => $service_provider->id,
+               clustermetric_indicator_id => ($indicator_other->id),
+               clustermetric_statistics_function_name => 'std',
+               clustermetric_window_time => '1200',
+           );
 
-    $acombd1 = Entity::Combination::AggregateCombination->new(
+    $acombd1 = Entity::Metric::Combination::AggregateCombination->new(
         service_provider_id             =>  $service_provider->id,
         aggregate_combination_formula   => 'id'.($cmd->id).' + id'.($cm2->id),
     );
 
-    $acombd2 = Entity::Combination::AggregateCombination->new(
+    $acombd2 = Entity::Metric::Combination::AggregateCombination->new(
         service_provider_id             =>  $service_provider->id,
         aggregate_combination_formula   => 'id'.($cm3->id).' - id'.($cmd->id),
     );
 
-    $acomb3 = Entity::Combination::AggregateCombination->new(
+    $acomb3 = Entity::Metric::Combination::AggregateCombination->new(
         service_provider_id             =>  $service_provider->id,
         aggregate_combination_formula   => 'id'.($cm2->id).' + id'.($cm3->id),
     );
@@ -444,7 +445,7 @@ sub service_rule_objects_creation {
         threshold => '0',
     );
 
-    Entity::Combination::ConstantCombination->get(id => $acd1->right_combination_id);
+    Entity::Metric::Combination::ConstantCombination->get(id => $acd1->right_combination_id);
 
     $acd2 = Entity::AggregateCondition->new(
         aggregate_condition_service_provider_id => $service_provider->id,
@@ -453,7 +454,7 @@ sub service_rule_objects_creation {
         threshold => '0',
     );
 
-    Entity::Combination::ConstantCombination->get(id => $acd2->right_combination_id);
+    Entity::Metric::Combination::ConstantCombination->get(id => $acd2->right_combination_id);
 
     $ac3 = Entity::AggregateCondition->new(
         aggregate_condition_service_provider_id => $service_provider->id,
@@ -495,20 +496,23 @@ sub node_rule_objects_creation {
     my $rule2;
 
     # Create nodemetric rule objects
-    $ncombd1 = Entity::Combination::NodemetricCombination->new(
-        service_provider_id             => $service_provider->id,
-        nodemetric_combination_formula  => 'id'.($indicator_deleted->id).' + id'.($indicator_other->id),
-    );
+    $ncombd1 = Entity::Metric::Combination::NodemetricCombination->new(
+                   service_provider_id             => $service_provider->id,
+                   nodemetric_combination_formula  => 'id' . ($indicator_deleted->id)
+                                                      . ' + id' . ($indicator_other->id),
+               );
 
-    $ncombd2 = Entity::Combination::NodemetricCombination->new(
-        service_provider_id             => $service_provider->id,
-        nodemetric_combination_formula  => 'id'.($indicator_other->id).' + id'.($indicator_deleted->id),
-    );
+    $ncombd2 = Entity::Metric::Combination::NodemetricCombination->new(
+                   service_provider_id             => $service_provider->id,
+                   nodemetric_combination_formula  => 'id' . ($indicator_other->id)
+                                                      . ' + id' . ($indicator_deleted->id),
+               );
 
-    $ncomb3 = Entity::Combination::NodemetricCombination->new(
-        service_provider_id             => $service_provider->id,
-        nodemetric_combination_formula  => 'id'.($indicator_other->id).' + id'.($indicator_other->id),
-    );
+    $ncomb3 = Entity::Metric::Combination::NodemetricCombination->new(
+                  service_provider_id             => $service_provider->id,
+                  nodemetric_combination_formula  => 'id' . ($indicator_other->id)
+                                                     . ' + id' . ($indicator_other->id),
+              );
 
     $ncd1 = Entity::NodemetricCondition->new(
         nodemetric_condition_service_provider_id => $service_provider->id,

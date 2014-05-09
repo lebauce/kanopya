@@ -191,8 +191,7 @@ sub setConf {
     my %args = @_;
 
     General::checkParams(args => \%args, required => ['conf']);
-
-    $self->update(%{ $args{conf} });
+    return $self->update(%{ $args{conf} });
 }
 
 
@@ -603,12 +602,17 @@ Set/get the virtual attribute param_preset.
 
 sub paramPresets {
     my ($self, @args) = @_;
-
     if (scalar(@args)) {
         if (defined $self->param_preset) {
             $self->param_preset->remove();
         }
-        $self->param_preset_id(ParamPreset->new(params => pop @args)->id);
+        my $value = pop(@args);
+        if ($value eq '') {
+            $log->warn("Ignoring empty string for 'param_preset'");
+            return;
+        }
+        my $pp = ParamPreset->new(params => $value);
+        $self->param_preset_id($pp->id);
     }
     else {
         try {

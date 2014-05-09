@@ -35,7 +35,7 @@ function servicesList (container_id, elem_id) {
     // If the logged user is a customer, filter the list of service
     var customer_filter = '';
     if (current_user.profiles.length == 1 && current_user.profiles[0].profile_name === "Customer") {
-        customer_filter = '&owner_id=' + current_user.user_id;
+        customer_filter = '&service_provider.owner_id=' + current_user.user_id;
     }
 
     var grid = create_grid( {
@@ -247,7 +247,7 @@ function createServiceGraphs(cid, service_template_id) {
         graphs_visible = true;
         var customer_filter = '';
         if (current_user.profiles.length == 1 && current_user.profiles[0].profile_name === "Customer") {
-            customer_filter = '&owner.user_id=' + current_user.user_id;
+            customer_filter = '&service_provider.owner_id=' + current_user.user_id;
         }
         // Get infos
         var url = '/api/cluster?expand=nodes,nodes.host,owner&cluster_name=<>,Kanopya' + customer_filter;

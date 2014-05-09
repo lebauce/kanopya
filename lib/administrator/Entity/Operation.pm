@@ -259,11 +259,14 @@ sub serializeParams {
                 try {
                     $subvalue->reload();
                 }
-                catch ($err) {
+                catch (Kanopya::Exception::Internal::NotFound $err) {
                     $log->warn("Entity $subvalue <" . $subvalue->id . "> does not exists any more, " .
                                "removing it from context.");
                     delete $value->{$subkey};
                     next CONTEXT;
+                }
+                catch ($err) {
+                    $err->rethrow()
                 }
                 $value->{$subkey} = $subvalue->id;
             }

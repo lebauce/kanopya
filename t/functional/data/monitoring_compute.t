@@ -25,9 +25,9 @@ my $log = get_logger("");
     use Aggregator;
     use Entity::ServiceProvider::Externalcluster;
     use Entity::Component::MockMonitor;
-    use Entity::Clustermetric;
-    use Entity::Combination::AggregateCombination;
-    use Entity::Combination::NodemetricCombination;
+    use Entity::Metric::Clustermetric;
+    use Entity::Metric::Combination::AggregateCombination;
+    use Entity::Metric::Combination::NodemetricCombination;
 
 Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
 
@@ -130,12 +130,12 @@ sub testClusterMetric {
         my $service_provider = $args{service_provider};
         my $aggregator       = $args{aggregator};
 
-        my $cm = Entity::Clustermetric->new(
-            clustermetric_service_provider_id => $service_provider->id,
-            clustermetric_indicator_id => ($indic1->id),
-            clustermetric_statistics_function_name => 'mean',
-            clustermetric_window_time => '1200',
-        );
+        my $cm = Entity::Metric::Clustermetric->new(
+                     clustermetric_service_provider_id => $service_provider->id,
+                     clustermetric_indicator_id => ($indic1->id),
+                     clustermetric_statistics_function_name => 'mean',
+                     clustermetric_window_time => '1200',
+                 );
 
         # No node responds
         $service_provider->addManagerParameter(
@@ -193,35 +193,35 @@ sub testAggregateCombination {
         my $aggregator          = $args{aggregator};
 
         # Cluster metrics
-        my $cm1 = Entity::Clustermetric->new(
-            clustermetric_service_provider_id       => $service_provider->id,
-            clustermetric_indicator_id              => ($indic1->id),
-            clustermetric_statistics_function_name  => 'sum',
-            clustermetric_window_time               => '1200',
-        );
+        my $cm1 = Entity::Metric::Clustermetric->new(
+                      clustermetric_service_provider_id       => $service_provider->id,
+                      clustermetric_indicator_id              => ($indic1->id),
+                      clustermetric_statistics_function_name  => 'sum',
+                      clustermetric_window_time               => '1200',
+                  );
 
-        my $cm2 = Entity::Clustermetric->new(
-            clustermetric_service_provider_id       => $service_provider->id,
-            clustermetric_indicator_id              => ($indic2->id),
-            clustermetric_statistics_function_name  => 'sum',
-            clustermetric_window_time               => '1200',
-        );
+        my $cm2 = Entity::Metric::Clustermetric->new(
+                      clustermetric_service_provider_id       => $service_provider->id,
+                      clustermetric_indicator_id              => ($indic2->id),
+                      clustermetric_statistics_function_name  => 'sum',
+                      clustermetric_window_time               => '1200',
+                  );
 
         # Combination
-        my $acomb_ident = Entity::Combination::AggregateCombination->new(
-            service_provider_id             =>  $service_provider->id,
-            aggregate_combination_formula   => 'id'.($cm1->id),
-        );
+        my $acomb_ident = Entity::Metric::Combination::AggregateCombination->new(
+                              service_provider_id             =>  $service_provider->id,
+                              aggregate_combination_formula   => 'id'.($cm1->id),
+                          );
 
-        my $acomb_warn = Entity::Combination::AggregateCombination->new(
-            service_provider_id             =>  $service_provider->id,
-            aggregate_combination_formula   => '10 / id'.($cm1->id),
-        );
+        my $acomb_warn = Entity::Metric::Combination::AggregateCombination->new(
+                             service_provider_id             =>  $service_provider->id,
+                             aggregate_combination_formula   => '10 / id'.($cm1->id),
+                         );
 
-        my $acomb1 = Entity::Combination::AggregateCombination->new(
-            service_provider_id             =>  $service_provider->id,
-            aggregate_combination_formula   => 'id'.($cm1->id).'+'.'id'.($cm2->id).'*3',
-        );
+        my $acomb1 = Entity::Metric::Combination::AggregateCombination->new(
+                         service_provider_id             =>  $service_provider->id,
+                         aggregate_combination_formula   => 'id'.($cm1->id).'+'.'id'.($cm2->id).'*3',
+                     );
 
         my $mock_conf = "{'default':{ 'const':50 }, 'indics' : { 'Memory/Pool Paged Bytes' : { 'const':null }}}";
         $service_provider->addManagerParameter(
@@ -267,15 +267,16 @@ sub testAggregateCombination {
 
         if (! ($acomb1->evaluate() == 10+10*3)) { die 'Combination wrongly computed (with one node not responding)'}
 
-        my $acomb2 = Entity::Combination::AggregateCombination->new(
-            service_provider_id             =>  $service_provider->id,
-            aggregate_combination_formula   => '(3.5+id'.($cm1->id).')*(id'.($cm1->id).'/10.1-12.876)',
-        );
+        my $acomb2 = Entity::Metric::Combination::AggregateCombination->new(
+                         service_provider_id           =>  $service_provider->id,
+                         aggregate_combination_formula => '(3.5+id' . ($cm1->id)
+                                                          . ')*(id' . ($cm1->id).'/10.1-12.876)',
+                     );
 
-        my $acomb3 = Entity::Combination::AggregateCombination->new(
-            service_provider_id             =>  $service_provider->id,
-            aggregate_combination_formula   => '100000000000000000000000000 * id'.($cm1->id),
-        );
+        my $acomb3 = Entity::Metric::Combination::AggregateCombination->new(
+                         service_provider_id           =>  $service_provider->id,
+                         aggregate_combination_formula => '100000000000000000000000000 * id' . ($cm1->id),
+                     );
 
         $service_provider->addManagerParameter(
             manager_type    => 'CollectorManager',
@@ -302,15 +303,16 @@ sub testNodemetricCombination {
     lives_ok {
 
         # Combinations
-        my $ncomb_ident = Entity::Combination::NodemetricCombination->new(
-            service_provider_id             => $service_provider->id,
-            nodemetric_combination_formula  => 'id'.($indic1->id),
-        );
+        my $ncomb_ident = Entity::Metric::Combination::NodemetricCombination->new(
+                              service_provider_id             => $service_provider->id,
+                              nodemetric_combination_formula  => 'id' . ($indic1->id),
+                          );
 
-        my $ncomb2 = Entity::Combination::NodemetricCombination->new(
-            service_provider_id             => $service_provider->id,
-            nodemetric_combination_formula  => '(id'.($indic1->id).' + 5) * id'.($indic2->id),
-        );
+        my $ncomb2 = Entity::Metric::Combination::NodemetricCombination->new(
+                         service_provider_id             => $service_provider->id,
+                         nodemetric_combination_formula  => '(id' . ($indic1->id)
+                                                            . ' + 5) * id' . ($indic2->id),
+                     );
 
         my $mock_conf  = "{'default':{'const':null}}";
 
@@ -413,12 +415,12 @@ sub testBigAggregation {
             );
         }
 
-        my $cm = Entity::Clustermetric->new(
-            clustermetric_service_provider_id => $service_provider->id,
-            clustermetric_indicator_id => ($indic1->id),
-            clustermetric_statistics_function_name => 'sum',
-            clustermetric_window_time => '1200',
-        );
+        my $cm = Entity::Metric::Clustermetric->new(
+                     clustermetric_service_provider_id => $service_provider->id,
+                     clustermetric_indicator_id => ($indic1->id),
+                     clustermetric_statistics_function_name => 'sum',
+                     clustermetric_window_time => '1200',
+                 );
 
         $service_provider->addManagerParameter(
             manager_type    => 'CollectorManager',
@@ -493,7 +495,7 @@ sub testStatisticFunctions {
         my @cms = ();
         for my $func (@funcs) {
             push @cms,
-                Entity::Clustermetric->new(
+                Entity::Metric::Clustermetric->new(
                     clustermetric_service_provider_id       => $service_provider->id,
                     clustermetric_indicator_id              => ($indic1->id),
                     clustermetric_statistics_function_name  => $func,
@@ -504,7 +506,7 @@ sub testStatisticFunctions {
         my @acs = ();
         for my $cm (@cms) {
             push @acs,
-                Entity::Combination::AggregateCombination->new(
+                Entity::Metric::Combination::AggregateCombination->new(
                     service_provider_id             =>  $service_provider->id,
                     aggregate_combination_formula   => 'id'.($cm->id),
                 );
@@ -523,12 +525,12 @@ sub testCombinationUnit {
     lives_ok {
 
         # Cluster metrics
-        my $cm1 = Entity::Clustermetric->new(
-            clustermetric_service_provider_id       => $service_provider->id,
-            clustermetric_indicator_id              => ($indic1->id),
-            clustermetric_statistics_function_name  => 'sum',
-            clustermetric_window_time               => '1200',
-        );
+        my $cm1 = Entity::Metric::Clustermetric->new(
+                      clustermetric_service_provider_id       => $service_provider->id,
+                      clustermetric_indicator_id              => ($indic1->id),
+                      clustermetric_statistics_function_name  => 'sum',
+                      clustermetric_window_time               => '1200',
+                  );
 
         if (! ($cm1->getUnit() eq '%')) { die 'Fail in sum unit'}
 
@@ -541,17 +543,18 @@ sub testCombinationUnit {
         $cm1->update(clustermetric_statistics_function_name => 'kurtosis');
         if (! ($cm1->getUnit() eq '-')) {die 'Fail in no unit'}
 
-        my $cm2 = Entity::Clustermetric->new(
-            clustermetric_service_provider_id       => $service_provider->id,
-            clustermetric_indicator_id              => ($indic2->id),
-            clustermetric_statistics_function_name  => 'sum',
-            clustermetric_window_time               => '1200',
-        );
+        my $cm2 = Entity::Metric::Clustermetric->new(
+                      clustermetric_service_provider_id       => $service_provider->id,
+                      clustermetric_indicator_id              => ($indic2->id),
+                      clustermetric_statistics_function_name  => 'sum',
+                      clustermetric_window_time               => '1200',
+                  );
 
-        my $acomb = Entity::Combination::AggregateCombination->new(
-            service_provider_id             =>  $service_provider->id,
-            aggregate_combination_formula   => 'id'.($cm2->id).' + id'.($cm1->id),
-        );
+        my $acomb = Entity::Metric::Combination::AggregateCombination->new(
+                        service_provider_id             =>  $service_provider->id,
+                        aggregate_combination_formula   => 'id' . ($cm2->id)
+                                                           . ' + id' . ($cm1->id),
+                    );
 
         if (! ($acomb->getUnit() eq 'Bytes + -')) {die 'Fail in aggregate combination unit'}
 
@@ -560,10 +563,12 @@ sub testCombinationUnit {
         if (! ($acomb->getUnit() eq '- + Bytes')) {die 'Fail in aggregate combination update unit'}
 
         # Combinations
-        my $ncomb = Entity::Combination::NodemetricCombination->new(
-            service_provider_id             => $service_provider->id,
-            nodemetric_combination_formula  => 'id'.($indic1->id).' + id'.($indic2->id),
-        );
+        my $ncomb = Entity::Metric::Combination::NodemetricCombination->new(
+                        service_provider_id             => $service_provider->id,
+                        nodemetric_combination_formula  => 'id' . ($indic1->id)
+                                                           . ' + id' . ($indic2->id),
+                    );
+
         if (! ($ncomb->getUnit() eq '% + Bytes')) {die 'Fail in nodemetric combination unit'}
 
         $ncomb->update (nodemetric_combination_formula => 'id'.($indic2->id).' + id'.($indic1->id));
@@ -574,16 +579,16 @@ sub testCombinationUnit {
 
 sub test_rrd_remove {
     lives_ok {
-        my @cms = Entity::Clustermetric->search (hash => {
-            clustermetric_service_provider_id => $service_provider->id
-        });
+        my @cms = Entity::Metric::Clustermetric->search (hash => {
+                      clustermetric_service_provider_id => $service_provider->id
+                  });
 
         my @cm_ids = map {$_->id} @cms;
         while (@cms) { (pop @cms)->delete(); };
 
-        my @acs = Entity::Combination::AggregateCombination->search (hash => {
-            service_provider_id => $service_provider->id
-        });
+        my @acs = Entity::Metric::Combination::AggregateCombination->search (hash => {
+                      service_provider_id => $service_provider->id
+                  });
 
         if (! ((scalar @acs) == 0)) {die 'Fail '.(scalar @acs).' aggregate combinations have not been deleted'}
 

@@ -500,6 +500,12 @@ sub query_api_supported {
 }
 
 sub query_server_version {
+   BEGIN {
+      #To remove SSL Warning, switching from IO::Socket::SSL to Net::SSL
+      $ENV{PERL_NET_HTTPS_SSL_SOCKET_CLASS} = "Net::SSL";
+	  #To remove host verification
+      $ENV{PERL_LWP_SSL_VERIFY_HOSTNAME} = 0;
+   }
    my $url = shift;
    if ($url =~ s|http(s?)://(.*)/sdk.*|http$1://$2/sdk/vimService.wsdl|i) {
       # bug 288336
@@ -538,7 +544,12 @@ sub query_server_version {
       }
       
       my $xml_parser = XML::LibXML->new;   
-      my $result;   
+      my $result;
+
+      open VHH_DEBUG, '>>/tmp/vhh.debug';
+      print VHH_DEBUG "GET $url\n";
+      print VHH_DEBUG $response->content."\n\n";
+      close VHH_DEBUG;
 
       eval { $result = $xml_parser->parse_string($response->content) };
       if ($@) {
@@ -2164,9 +2175,13 @@ sub load_session_id {
 }
 
 sub request {
-   my ($self, $op_name, $body_content) = @_;
+   my ($self, $op_name, $body_content, $soap_action) = @_;
    my $user_agent = $self->{user_agent};
    my $url = $self->{url};
+
+   if (!$soap_action) {
+      $soap_action = '""';
+   }
 
    my $namespace = Vim::get_vim_namespace;
    confess "Not logged in and/or no XML namespace set" unless $namespace;
@@ -2176,7 +2191,7 @@ sub request {
    # http header
    my $http_header = HTTP::Headers->new(
                         Content_Type => 'text/xml',
-                        SOAPAction => '"urn:vim25/5.0"',
+                        SOAPAction => $soap_action,
                         Content_Length => byte_length($request_envelope));
    # request
    my $request = HTTP::Request->new('POST',

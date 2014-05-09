@@ -18,8 +18,7 @@
 
 Condition on aggregate combination (left operand) and agreggate combination or threshold (right operand)
 
-@see <package>Entity::Combination::AggregateCombination</package>
-@see <package>Entity::Combination::ConstantCombination</package>
+@see <package>Entity::Metric::Combination::ConstantCombination</package>
 
 =end classdoc
 
@@ -31,7 +30,8 @@ use base Entity;
 use strict;
 use warnings;
 
-use Entity::Combination::AggregateCombination;
+use Entity::Metric;
+use Entity::Metric::Combination::ConstantCombination;
 use Entity::Rule::AggregateRule;
 
 use Data::Dumper;
@@ -122,19 +122,19 @@ sub new {
     my %args = @_;
 
     if ((! defined $args{right_combination_id}) && defined $args{threshold}  ) {
-        my $comb = Entity::Combination::ConstantCombination->new (
-            service_provider_id => $args{aggregate_condition_service_provider_id},
-            value => $args{threshold}
-        );
+        my $comb = Entity::Metric::Combination::ConstantCombination->new(
+                       service_provider_id => $args{aggregate_condition_service_provider_id},
+                       value => $args{threshold}
+                   );
         delete $args{threshold};
         $args{right_combination_id} = $comb->id;
     }
 
     if ((! defined $args{left_combination_id}) && defined $args{threshold}  ) {
-        my $comb = Entity::Combination::ConstantCombination->new (
-            service_provider_id => $args{aggregate_condition_service_provider_id},
-            value => $args{threshold}
-        );
+        my $comb = Entity::Metric::Combination::ConstantCombination->new(
+                       service_provider_id => $args{aggregate_condition_service_provider_id},
+                       value => $args{threshold}
+                   );
         delete $args{threshold};
         $args{left_combination_id} = $comb->id;
     }
@@ -190,7 +190,7 @@ sub toString {
 
     # Not used yet due to bad Combination::computeUnit() behavior (see also NodemetricCondition::toString())
     my $unit = '';
-    if ((ref $self->right_combination) eq 'Entity::Combination::ConstantCombination') {
+    if ((ref $self->right_combination) eq 'Entity::Metric::Combination::ConstantCombination') {
         my $left_unit = $self->left_combination->combination_unit;
         if ($left_unit && (($left_unit ne '?') || ($left_unit ne '-'))) {
             $unit = $left_unit;
@@ -395,7 +395,7 @@ sub update {
     my $old_right_combination = $self->right_combination;
 
     if (! defined $args{left_combination_id}) {
-        my $new_left_combination =  Entity::Combination::ConstantCombination->new (
+        my $new_left_combination =  Entity::Metric::Combination::ConstantCombination->new (
             service_provider_id => $service_provider_id,
             value => $args{threshold}
         );
@@ -403,7 +403,7 @@ sub update {
         $args{left_combination_id} = $new_left_combination->id;
     }
     elsif (! defined $args{right_combination_id}) {
-        my $new_right_combination =  Entity::Combination::ConstantCombination->new (
+        my $new_right_combination =  Entity::Metric::Combination::ConstantCombination->new (
             service_provider_id => $service_provider_id,
             value => $args{threshold}
         );

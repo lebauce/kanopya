@@ -1,5 +1,6 @@
 class kanopya::openstack::keystone(
   $admin_password     = "admin",
+  $admin_token        = "admin_token",
   $email              = "nothing@nothing.com",
   $database_name      = "keystone",
   $database_user      = "keystone",
@@ -56,7 +57,7 @@ class kanopya::openstack::keystone(
     debug          => true,
     sql_connection => "mysql://${database_user}:${database_password}@${dbip}/${database_name}",
     catalog_type   => 'sql',
-    admin_token    => 'admin_token',
+    admin_token    => "${admin_token}",
     before         => [ Class['keystone::roles::admin'],
         Exec['/usr/bin/keystone-manage db_sync'] ]
   }

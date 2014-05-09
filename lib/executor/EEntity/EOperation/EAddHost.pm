@@ -56,21 +56,6 @@ sub check {
 =pod
 =begin classdoc
 
-Check if the host manager has not reach the maximum amount of consumers
-
-=end classdoc
-=cut
-
-sub prepare {
-    my ($self, %args) = @_;
-
-    $self->{context}->{host_manager}->increaseConsumers();
-}
-
-
-=pod
-=begin classdoc
-
 Call the host manager to create the new host.
 
 =end classdoc
@@ -84,19 +69,5 @@ sub execute {
     $log->info("Host <" . $host->id . "> is now created");
 }
 
-
-=pod
-=begin classdoc
-
-Decrease the number of consumers of the host manager as the host is successfully created.
-
-=end classdoc
-=cut
-
-sub finish {
-    my ($self, %args) = @_;
-
-    $self->{context}->{host_manager}->decreaseConsumers();
-}
 
 1;

@@ -39,8 +39,8 @@ Then Aggregator will:
 Aggregator uses RRDTimeData to store data at service level
 and uses DataCache to (possibly) store data at node level.
 
-@see <package>Entity::Combination::NodemetricCombination</package>
-@see <package>Entity::Clustermetric</package>
+@see <package>Entity::Metric::Combination::NodemetricCombination</package>
+@see <package>Entity::Metric::Clustermetric</package>
 @see <package>TimeData::RRDTimeData</package>
 @see <package>Manager::CollectorManager</package>
 
@@ -58,8 +58,10 @@ use Data::Dumper;
 use XML::Simple;
 use Entity::ServiceProvider;
 use Entity::Indicator;
+use Entity::Metric::Combination::NodemetricCombination;
+use Entity::Metric::Clustermetric;
 use TimeData::RRDTimeData;
-use Entity::Clustermetric;
+
 use Kanopya::Config;
 use Message;
 use Alert;
@@ -172,7 +174,7 @@ sub _getUsedIndicators {
 
     # Get indicators used by node metric combinations
     if ($args{include_nodemetric}) {
-        my @nmc = Entity::Combination::NodemetricCombination->search(
+        my @nmc = Entity::Metric::Combination::NodemetricCombination->search(
                       hash => {service_provider_id => $args{service_provider}->id},
                   );
 
@@ -249,7 +251,7 @@ sub update {
             };
             if (not $@){
                 next CLUSTER if ( 0 == $service_provider->nodes);
-                my $start, 
+                my $start,
                 my $timeinfo = "duration: ";
                 $log->info('Aggregator collecting for service provider '.  $service_provider->id);
 
@@ -289,7 +291,7 @@ sub update {
                     storage_duration => $self->{config}->{storage_duration}
                 );
                 $timeinfo .= "Nodes data storage: ".(time() - $start).", ";
-                
+
                 # Parse retriever return, compute clustermetric values and store in DB
                 if ($checker == 1) {
                     $start = time();
@@ -303,7 +305,7 @@ sub update {
                 $log->info($timeinfo);
                 1;
             }
-        
+
         };
         if ($@) {
             $log->error("An error occurred : " . $@);
@@ -432,7 +434,7 @@ sub regenTimeDataStores {
     my $self = shift;
     my %args = @_;
 
-    foreach my $clustermetric (Entity::Clustermetric->search()) {
+    foreach my $clustermetric (Entity::Metric::Clustermetric->search()) {
         #delete previous rrd
         TimeData::RRDTimeData::deleteTimeDataStore(name => $clustermetric->clustermetric_id);
         #create new rrd
@@ -461,7 +463,7 @@ sub resizeTimeDataStores {
 
     General::checkParams(args => \%args, required => [ 'storage_duration', 'old_storage_duration' ]);
 
-    foreach my $clustermetric (Entity::Clustermetric->search()) {
+    foreach my $clustermetric (Entity::Metric::Clustermetric->search()) {
         TimeData::RRDTimeData::resizeTimeDataStore(clustermetric_id     => $clustermetric->clustermetric_id,
                                                    storage_duration     => $args{storage_duration},
                                                    old_storage_duration => $args{old_storage_duration},

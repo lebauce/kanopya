@@ -41,6 +41,7 @@ use CapacityManagement;
 use Entity::Workflow;
 use ClassType::ComponentType;
 
+use TryCatch;
 use Log::Log4perl "get_logger";
 use Data::Dumper;
 
@@ -109,7 +110,6 @@ sub prepare {
     $self->{context}->{disk_manager}->increaseConsumers();
     $self->{context}->{export_manager}->increaseConsumers();
 
-
     # $self->{params}->{needhypervisor} comes from the case of automatic hypervisor scaleout when
     # infrastructure needs more space
 
@@ -119,25 +119,32 @@ sub prepare {
     }
 
     # Check cluster states
+    # TODO: Definitely clean the entity states mechanism
+    my $updating_in_workflow;
     my @entity_states = $self->{context}->{cluster}->entity_states;
-
     for my $entity_state (@entity_states) {
-        throw Kanopya::Exception::Execution::InvalidState(
-                  error => "The cluster <"
-                           .$self->{context}->{host_manager}->service_provider->cluster_name
-                           .'> is <'.$entity_state->state
-                           .'> which is not a correct state to accept addnode'
-              );
+        # The only authorized state is 'updating' by the current workflow, that correspond to
+        # a multi node StartCluster workflow.
+        if ($entity_state->consumer->id == $self->workflow->id && $entity_state->state eq 'updating') {
+            $updating_in_workflow = 1;
+        }
+        else {
+            throw Kanopya::Exception::Execution::InvalidState(
+                      error => "The cluster <"
+                               .$self->{context}->{host_manager}->service_provider->cluster_name
+                               .'> is <'.$entity_state->state
+                               .'> which is not a correct state to accept addnode'
+                  );
+        }
     }
 
     # Check the cluster state
     my ($state, $timestamp) = $self->{context}->{cluster}->reload->getState;
-
-    if (not (($state eq 'up') || ($state eq 'down'))) {
+    if (! ($state eq 'up' || $state eq 'down' || ($state eq 'updating' && $updating_in_workflow))) {
         $log->debug("State is <$state> which is an invalid state");
         throw Kanopya::Exception::Execution::InvalidState(
                   error => "The cluster <" . $self->{context}->{cluster}->cluster_name .
-                           "> has to be <up||down> not <$state>"
+                           "> has to be <up|down|updating (by current workflow only)> not <$state>"
               );
     }
 
@@ -384,7 +391,6 @@ sub execute {
 
     # Create system image for node if required.
     if ($self->{params}->{create_systemimage} and $self->{context}->{cluster}->masterimage) {
-
         # Creation of the device based on distribution device
         my $container = $self->{context}->{disk_manager}->createDisk(
                             name       => $self->{context}->{systemimage}->systemimage_name,
@@ -431,12 +437,24 @@ sub execute {
         my $portals = defined $createexport_params->{iscsi_portals} ?
                           delete $createexport_params->{iscsi_portals} : [ 0 ];
         for my $portal_id (@{ $portals }) {
-            push @accesses, $self->{context}->{export_manager}->createExport(
-                                export_name  => $self->{context}->{systemimage}->systemimage_name,
-                                iscsi_portal => $portal_id,
-                                erollback    => $self->{erollback},
-                                %{ $createexport_params }
-                            );
+            try {
+                push @accesses, $self->{context}->{export_manager}->createExport(
+                                    export_name  => $self->{context}->{systemimage}->systemimage_name,
+                                    iscsi_portal => $portal_id,
+                                    erollback    => $self->{erollback},
+                                    %{ $createexport_params }
+                                );
+            }
+            catch ($err) {
+                if (scalar(@accesses)) {
+                    $log->error("Exporting systemimage with portal <$portal_id> failed, but at least one export for " .
+                                "systemimage " . $self->{context}->{systemimage}->label . " succeeded, continuing...");
+                }
+                else {
+                    $err->rethrow();
+                }
+            }
+
         }
 
         # Activate the system by linking it to the container accesses
@@ -488,13 +506,19 @@ Restore the clutser and host states.
 sub cancel {
     my ($self, %args) = @_;
 
+    # If the managers has not been released at finish, decrease at cancel
+    if ($self->state ne 'succeeded') {
+        $self->{context}->{host_manager}->decreaseConsumers();
+        $self->{context}->{disk_manager}->decreaseConsumers();
+        $self->{context}->{export_manager}->decreaseConsumers();
+    }
+
     if (defined $self->{params}->{needhypervisor}) {
         $self->{context}->{cluster}->setState(state => 'up');
     }
     else {
         $self->{context}->{cluster}->restoreState();
     }
-
 
     $self->{context}->{cluster}->removeState(consumer => $self->workflow);
 

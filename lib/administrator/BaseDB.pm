@@ -147,7 +147,7 @@ sub create {
 =pod
 =begin classdoc
 
-Update an instance by setting values for attribute taht differs,
+Update an instance by setting values for attribute that differs,
 also handle the update of relations.
 
 @return the updated object
@@ -163,7 +163,7 @@ sub update {
 
     my $override = delete $args{override_relations};
     my $hash = \%args;
-
+    
     # Extract relation and virtuals for futher handling
     my $virtuals  = $class->_extractVirtuals(hash => $hash);
     my $relations = $class->_extractRelations(hash => $hash);
@@ -177,10 +177,11 @@ sub update {
         $dbix = $self->_dbixParent(dbix => $dbix, classname => $module->_className);
         $dbix->update(delete $attrs->{$module});
     }
-
+    
     # Populate relations and virtuals
     $self->_populateRelations(relations => $relations,
                               override  => $override);
+
     $self->_populateVirtuals(virtuals => $virtuals);
 
     return $self;
@@ -554,7 +555,7 @@ sub search {
     # If the table does not match the class, the conrete table does not exists,
     # so filter on the class type.
     if ($class =~ m/::/ and $class !~ m/::$table$/) {
-        $args{hash}->{'class_type.class_type'} = $class;
+        $args{hash}->{'class_type.class_type'} = {-like => $class.'%'};
     }
 
     my $virtuals = {};
@@ -889,7 +890,7 @@ sub toJSON {
                 my $type = defined $definition->{type} ? $definition->{type} : '';
 
                 # Filter in function of options, keep the single relation ids only
-                my $on_demand;
+                my $on_demand = ! $definition->{on_demand};
                 if (ref($args{expand}) eq "ARRAY") {
                     $on_demand = (! $definition->{on_demand} || grep { $_ eq $attr } @{ $args{expand} });
                 }
@@ -1254,7 +1255,6 @@ sub apiCall {
 
     General::checkParams(args => \%args, required => [ 'method' ],
                                          optional => { 'params' => {} });
-
     my $userid   = Kanopya::Database::user->{user_id};
     my $usertype = Kanopya::Database::user->{user_system};
     my $godmode  = defined Kanopya::Database::config->{god_mode} &&
@@ -1265,7 +1265,20 @@ sub apiCall {
     }
 
     my $method = $args{method};
-    return $self->$method(%{ $args{params} });
+    my $ret;
+    eval {
+        $ret = $self->$method(%{ $args{params} });
+    };
+    if ($@) {
+        my $ex = $@;
+        $log->error($ex);
+        if (ref($ex) ne '' and $ex->isa('Exception::Class')) {
+            $ex->rethrow();
+        } else {
+            die $ex;
+        }
+    }
+    return $ret;
 }
 
 
@@ -1797,7 +1810,6 @@ sub _virtualAttribute {
     my $class = ref($self) or throw Kanopya::Exception::Method(error => $self);
 
     General::checkParams(args => \%args, required => [ 'name' ], optional => { 'value' => undef });
-
     # Try to find setter/getter method with name or camel-case name
     my $name = $args{name};
     if (! $self->can($name)) {
@@ -1807,7 +1819,7 @@ sub _virtualAttribute {
                       error => "Can not find setter/getter method for virtual attribute <$args{name}>");
         }
     }
-    # Get of set the virtual attribute in fucntion of value argument
+    # Get of set the virtual attribute in function of value argument
     if (defined $args{value}) {
         return $self->$name($args{value});
     }
@@ -1988,7 +2000,7 @@ sub _joinQuery {
             }
 
             $relation = $source->relationship_info($comp);
-            if ($relation->{attrs}->{accessor} eq "multi") {
+            if (defined $relation->{attrs}->{accessor} && ($relation->{attrs}->{accessor} eq "multi")) {
                 $accessor = "multi";
             }
 
@@ -2002,14 +2014,11 @@ sub _joinQuery {
     }
 
     # Get all the hierarchy of the relation
-    my @indepth;
+    my @indepth = ();
     if ($args{indepth}) {
-        my $depth_source = $source;
-        my $parent = $class->_parentRelationName(schema => $depth_source);
-        while (defined $parent && $depth_source->has_relationship($parent)) {
-            @indepth = ($parent, @indepth);
-            $depth_source = $depth_source->related_source($parent);
-            $parent = $class->_parentRelationName(schema => $depth_source);
+        my $parent = $class->_parentRelationName(schema => $source);
+        if (defined $parent && $source->has_relationship($parent)) {
+            @indepth = (@indepth, $parent);
         }
     }
     @joins = (@joins, @indepth);
@@ -2229,7 +2238,7 @@ sub _classHierarchy {
     my $class = ref($self) || $self;
     my @supers = Class::ISA::super_path($class);
 
-    my @hierarchy;
+    my @hierarchy = ();
     if (defined ($supers[0]) && $supers[0] eq 'BaseDB') {
         @hierarchy = $class->_className;
     }
@@ -2237,11 +2246,41 @@ sub _classHierarchy {
         @hierarchy = split(/::/, $class);
     }
 
-    @hierarchy = grep { eval { Kanopya::Database::schema->source($_) }; not $@ } @hierarchy;
+    my $has_shema = {};
 
-    my @klasses;
-    return grep { push @klasses, $_; $class->isa(join('::', @klasses))
-                                         or (join('::', @klasses) eq join('::', @hierarchy)) } @hierarchy;
+    # Record classes with tables (i.e. with schemas)
+    for my $hclass (@hierarchy) {
+        try {
+            Kanopya::Database::schema->source($hclass);
+            $has_shema->{$hclass} = 1;
+        }
+        catch ($err) {
+            # corresponding class has no schema
+        }
+    }
+
+    my @output  = ();
+    my @klasses = ();
+
+    CLASS:
+    for my $hclass (@hierarchy) {
+        push @klasses, $hclass;
+        my $current_class = join('::', @klasses);
+
+        # Do not keep classes without schemas
+        if (! defined $has_shema->{$hclass}) {
+            next CLASS;
+        }
+
+        # Legacy Code
+        # Manage last classes of hierarchy which do not
+        # inheritate direclty previous hierarchy class
+        if ($class->isa($current_class) or ($current_class eq join('::', @hierarchy))) {
+            push @output, $hclass;
+        }
+    }
+
+    return @output;
 }
 
 

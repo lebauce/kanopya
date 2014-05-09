@@ -31,15 +31,15 @@ use Entity::Component::MockMonitor;
 use Entity::Component::Sco;
 use Entity::Workflow;
 use Entity::Operation;
-use Entity::Combination;
-use Entity::Combination::NodemetricCombination;
+use Entity::Metric::Combination;
+use Entity::Metric::Combination::NodemetricCombination;
 use Entity::NodemetricCondition;
 use Entity::Rule::NodemetricRule;
 use VerifiedNoderule;
 use WorkflowNoderule;
-use Entity::Clustermetric;
+use Entity::Metric::Clustermetric;
 use Entity::AggregateCondition;
-use Entity::Combination::AggregateCombination;
+use Entity::Metric::Combination::AggregateCombination;
 use Entity::Rule::AggregateRule;
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::TestUtils 'expectedException';
@@ -487,15 +487,15 @@ sub clean_infra {
     }
 
     if (defined $service_provider_id) {
-        my @cms = Entity::Clustermetric->search (hash => {
-            clustermetric_service_provider_id => $service_provider->id
-        });
+        my @cms = Entity::Metric::Clustermetric->search (hash => {
+                      clustermetric_service_provider_id => $service_provider->id
+                  });
         my @cm_ids = map {$_->id} @cms;
 
         diag('Check if all aggregrate combinations have been deleted');
-        my @acs = Entity::Combination::AggregateCombination->search (hash => {
-            service_provider_id => $service_provider->id
-        });
+        my @acs = Entity::Metric::Combination::AggregateCombination->search (hash => {
+                      service_provider_id => $service_provider->id
+                  });
         if ( scalar @acs == 0 ) {
             diag('-> checked');
         }
@@ -545,29 +545,27 @@ sub _service_rule_objects_creation {
         hash => {externalcluster_name => 'Test Service Provider'}
     );
 
-    my $cm1 = Entity::Clustermetric->new(
-        clustermetric_service_provider_id => $service_provider->id,
-        clustermetric_indicator_id => ((pop @indicators)->id),
-        clustermetric_statistics_function_name => 'mean',
-        clustermetric_window_time => '1200',
-    );
+    my $cm1 = Entity::Metric::Clustermetric->new(
+                  clustermetric_service_provider_id => $service_provider->id,
+                  clustermetric_indicator_id => ((pop @indicators)->id),
+                  clustermetric_statistics_function_name => 'mean',
+              );
 
-    my $cm2 = Entity::Clustermetric->new(
-        clustermetric_service_provider_id => $service_provider->id,
-        clustermetric_indicator_id => ((pop @indicators)->id),
-        clustermetric_statistics_function_name => 'std',
-        clustermetric_window_time => '1200',
-    );
+    my $cm2 = Entity::Metric::Clustermetric->new(
+                  clustermetric_service_provider_id => $service_provider->id,
+                  clustermetric_indicator_id => ((pop @indicators)->id),
+                  clustermetric_statistics_function_name => 'std',
+              );
 
-    my $acomb1 = Entity::Combination::AggregateCombination->new(
-        service_provider_id             =>  $service_provider->id,
-        aggregate_combination_formula   => 'id'.($cm1->id).' + id'.($cm2->id),
-    );
+    my $acomb1 = Entity::Metric::Combination::AggregateCombination->new(
+                     service_provider_id             =>  $service_provider->id,
+                     aggregate_combination_formula   => 'id' . ($cm1->id) . ' + id' . ($cm2->id),
+                 );
 
-    my $acomb2 = Entity::Combination::AggregateCombination->new(
-        service_provider_id             =>  $service_provider->id,
-        aggregate_combination_formula   => 'id'.($cm1->id).' + id'.($cm1->id),
-    );
+    my $acomb2 = Entity::Metric::Combination::AggregateCombination->new(
+                     service_provider_id             =>  $service_provider->id,
+                     aggregate_combination_formula   => 'id' . ($cm1->id) . ' + id' . ($cm1->id),
+                 );
 
     my $ac1 = Entity::AggregateCondition->new(
         aggregate_condition_service_provider_id => $service_provider->id,
@@ -612,15 +610,17 @@ sub _node_rule_objects_creation {
     );
 
     # Create nodemetric rule objects
-    my $ncomb1 = Entity::Combination::NodemetricCombination->new(
-        service_provider_id             => $service_provider->id,
-        nodemetric_combination_formula  => 'id'.((pop @indicators)->id).' + id'.((pop @indicators)->id),
-    );
+    my $ncomb1 = Entity::Metric::Combination::NodemetricCombination->new(
+                     service_provider_id             => $service_provider->id,
+                     nodemetric_combination_formula  => 'id' . ((pop @indicators)->id)
+                                                        . ' + id' . ((pop @indicators)->id),
+                 );
 
-    my $ncomb2 = Entity::Combination::NodemetricCombination->new(
-        service_provider_id             => $service_provider->id,
-        nodemetric_combination_formula  => 'id'.((pop @indicators)->id).' + id'.((pop @indicators)->id),
-    );
+    my $ncomb2 = Entity::Metric::Combination::NodemetricCombination->new(
+                     service_provider_id             => $service_provider->id,
+                     nodemetric_combination_formula  => 'id' . ((pop @indicators)->id)
+                                                        . ' + id' . ((pop @indicators)->id),
+                 );
 
     my $nc1 = Entity::NodemetricCondition->new(
         nodemetric_condition_service_provider_id => $service_provider->id,

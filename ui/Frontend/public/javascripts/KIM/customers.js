@@ -93,7 +93,7 @@ function Customers() {
 
     Customers.prototype.load_services = function(container_id, elem_id) {
         create_grid({
-            url: '/api/cluster?user_id=' + elem_id,
+            url: '/api/cluster?owner_id=' + elem_id,
             content_container_id: container_id,
             grid_id: 'customer_services_list',
             colNames: ['cluster id','Name', 'Description', '' ],

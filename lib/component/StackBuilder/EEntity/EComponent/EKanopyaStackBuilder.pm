@@ -161,8 +161,11 @@ sub startStack {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'user', 'workflow', 'stack_id' ],
+                         required => [ 'user', 'workflow', 'stack_id', 'iprange' ],
                          optional => { 'erollback' => undef });
+
+    my $iprange = NetAddr::IP->new($args{iprange});
+    my $ip = $iprange + 253;
 
     # Retrieve the created cluster from name
     # NOTE: the service of a current stack are active
@@ -242,6 +245,17 @@ sub startStack {
         $components->{novacontroller}->{component}->id
     );
 
+    my @puppetagents = Entity::Component->search( 
+        hash => {
+            'component_type.component_name' => 'Puppetagent',
+            'service_provider_id'           => \@clusterids,
+        },
+    );
+
+    for my $puppetagent (@puppetagents) {
+        $puppetagent->puppetagent2_masterip($ip->addr());
+    }
+
     $log->info("Creating volume group for cinder volumes.");
 
     # Create a volume group on the controller for Cinder.
@@ -252,27 +266,28 @@ sub startStack {
 
     Lvm2Pv->new(lvm2_vg_id => $vg->id, lvm2_pv_name => "/dev/sda2");
 
-    $log->info("Creating and exporting logical volume nova-instances-" . $args{user}->user_login .
-               " on Kanopya");
-
     # Create a logical volume on Kanopya to store nova instance meta data.
+    my $nova_lv_name = "nova-instances-" . 
+                       $components->{novacompute}->{serviceprovider}->cluster_name;
+
+    $log->info("Creating and exporting logical volume $nova_lv_name");
+    
     my $kanopya = Entity::ServiceProvider::Cluster->getKanopyaCluster;
     my $lvm = EEntity->new(data => $kanopya->getComponent(name => "Lvm"));
     my $nfs = EEntity->new(data => $kanopya->getComponent(name => "Nfsd"));
 
     my $shared;
     try {
-        $shared = $lvm->createDisk(name       => "nova-instances-" . $args{user}->user_login,
+        $shared = $lvm->createDisk(name       => $nova_lv_name,
                                    size       => 1 * 1024 * 1024 * 1024,
                                    filesystem => "ext4",
                                    erollback  => $args{erollback});
     }
     catch (Kanopya::Exception::Execution::AlreadyExists $err) {
-        $log->warn("Logical volume nova-instances-" . $args{user}->user_login .
-                   " already exists, skip creation...");
+        $log->warn("Logical volume $nova_lv_name already exists, skip creation...");
 
         $shared = EEntity->new(data => Entity::Container->find(hash => {
-                      container_name => "nova-instances-" . $args{user}->user_login
+                      container_name => $nova_lv_name
                   }));
     }
     catch ($err) {
@@ -284,12 +299,12 @@ sub startStack {
     try {
         $export = $nfs->createExport(container      => $shared,
                                      client_name    => "*",
-                                     client_options => "rw,sync,fsid=0,no_root_squash",
+                                     client_options => "rw,sync,no_root_squash",
+                                     manager_ip     => $ip->addr(),
                                      erollback      => $args{erollback});
     }
     catch (Kanopya::Exception::Execution::ResourceBusy $err) {
-        $log->warn("Nfs export for volume nova-instances-" . $args{user}->user_login .
-                   " already exists, skip creation...");
+        $log->warn("Nfs export for volume $nova_lv_name already exists, skip creation...");
 
         $export = EEntity->new(data => Entity::ContainerAccess::NfsContainerAccess->find(hash => {
                       container_id => $shared->id
@@ -314,10 +329,92 @@ sub startStack {
         }
     }
 
+    # Generate the password override file for hiera
+    my $hieradir = $self->_executor->getConf->{clusters_directory} . '/override';
+    my $hieratmp = $self->getEContext->execute(command => 'tempfile');
+    my $hieratmpfile = $hieratmp->{stdout};
+    chomp($hieratmpfile);
+
+    $self->getEContext->execute(command => 'chmod 644 ' . $hieratmpfile);
+
+    $self->getEContext->execute(command => 'mkdir -p /var/lib/kanopya/clusters/override');
+
+    # Declare the password list and Keystone vars associed
+    my %hierapassword;
+
+    $hierapassword{adminpassword}->{hieravars}  = [
+        'kanopya::openstack::keystone::admin_password'
+    ];
+    $hierapassword{admintoken}->{hieravars}  = [
+        'kanopya::openstack::keystone::admin_token'
+    ];
+    $hierapassword{glancemysqlpassword}->{hieravars}  = [
+        'kanopya::openstack::glance::database_password'
+    ];
+    $hierapassword{glancekeystonepassword}->{hieravars} = [
+        'kanopya::openstack::glance::keystone_password'
+    ];
+    $hierapassword{cinderrabbitpassword}->{hieravars}  = [
+        'kanopya::openstack::cinder::server::rabbit_password'
+    ];
+    $hierapassword{cindermysqlpassword}->{hieravars}  = [
+        'kanopya::openstack::cinder::server::database_password'
+    ];
+    $hierapassword{cinderkeystonepassword}->{hieravars} = [
+        'kanopya::openstack::cinder::server::keystone_password'
+    ];
+    $hierapassword{neutronrabbitpassword}->{hieravars}  = [
+        'kanopya::openstack::neutron::server::rabbit_password'
+    ];
+    $hierapassword{neutronmysqlpassword}->{hieravars}  = [
+        'kanopya::openstack::neutron::server::database_password'
+    ];
+    $hierapassword{neutronkeystonepassword}->{hieravars} = [
+        'kanopya::openstack::neutron::server::keystone_password',
+        'kanopya::openstack::nova::common::neutron_admin_password',
+        'kanopya::openstack::nova::compute::neutron_admin_password'
+    ];
+
+    $hierapassword{novarabbitpassword}->{hieravars}  = [
+        'kanopya::openstack::nova::controller::rabbit_password',
+        'kanopya::openstack::nova::compute::rabbit_password'
+    ];
+    $hierapassword{novamysqlpassword}->{hieravars}  = [
+        'kanopya::openstack::nova::controller::database_password'
+    ];
+    $hierapassword{novakeystonepassword}->{hieravars} = [
+        'kanopya::openstack::nova::controller::keystone_password'
+    ];
+
+    my $command;
+    for my $password (values %hierapassword) {
+        $password->{password} = String::Random::random_regex('[a-zA-Z0-9]{16}');
+        foreach my $hieravar (@{$password->{hieravars}}) {
+           $command  = "echo '$hieravar: \"$password->{password}\"' >> $hieratmpfile";
+           $self->getEContext->execute(command => $command);
+        }
+    }
+
+    #Set NovaController Component API Password
+    $components->{novacontroller}->{component}->setConf(conf => {
+        api_user     => 'admin',
+        api_password => $hierapassword{adminpassword}->{password},
+    });
+
     # Finally start the instances
     # Note: reverse the array as enqueueNow insert operations at the head of the list.
     for my $cluster (reverse @bypriority) {
-        $log->info("Starting service " . $cluster->label. " in an embedded workflow...");
+        $log->info('Install Hiera configuration for ' . $cluster->label);
+        my $hostname;
+        for (my $nodenumber = 1; $nodenumber <= $cluster->cluster_max_node; $nodenumber++) {
+            $hostname = $cluster->getNodeHostname( node_number => $nodenumber);
+            $hostname .= '.' . $cluster->cluster_domainname;
+
+            $command = 'cp ' . $hieratmpfile . ' ' . $hieradir . '/' . $hostname . '.yaml';
+            $self->getEContext->execute(command => $command);
+        }
+
+        $log->info ("Starting service " . $cluster->label. " in an embedded workflow...");
         $args{workflow}->enqueueNow(workflow => {
             name       => 'AddNode',
             related_id => $cluster->id,
@@ -328,6 +425,8 @@ sub startStack {
             },
         });
     }
+
+    $self->getEContext->execute(command => 'rm ' . $hieratmpfile);
 
     # Return the component instances to the operation that will keep its in the operation context
     return {
@@ -361,11 +460,21 @@ sub configureStack {
 
         my $mirror_url = 'http://mirror.intranet.hederatech.com/cloudimages';
 
+        my $api_user = 'admin';
+        my $api_password = 'keystone';
+        if (defined $args{novacontroller}->api_user) {
+           $api_user = $args{novacontroller}->api_user;
+        }
+        if (defined $args{novacontroller}->api_password) {
+            $api_password = $args{novacontroller}->api_password;
+        }
+
         # Create openrc file
         my $openrc = "# Environement variables needed by OpenStack CLI commands.\n" .
-                     "# See http://docs.openstack.org/user-guide/content/cli_openrc.html\n".
-                     "export OS_TENANT_NAME=openstack\nexport OS_USERNAME=admin\n" .
-                     "export OS_PASSWORD=keystone\nexport OS_AUTH_URL=http://" .
+                     "# See http://docs.openstack.org/user-guide/content/cli_openrc.html\n" .
+                     "export LC_ALL='C'\n" .
+                     "export OS_TENANT_NAME=openstack\nexport OS_USERNAME=$api_user\n" .
+                     "export OS_PASSWORD=$api_password\nexport OS_AUTH_URL=http://" .
                      $args{novacontroller}->getMasterNode->host->getAdminIface->getIPAddr . ":5000/v2.0/";
 
         $command = 'echo "'. $openrc . '" > /root/openrc.sh && chmod +x /root/openrc.sh';
@@ -686,14 +795,13 @@ Build a notification message with a given Operation
 =cut
 
 sub notificationMessage {
-    my $self    = shift;
-    my %args    = @_;
+    
+    my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
                          required => [ 'operation', 'state', 'subscriber' ],
                          optional => { 'reason' => undef });
 
-    my $templatefile;
     my $template = Template->new($self->getTemplateConfiguration());
     my $templatedata = { operation       => $args{operation}->label,
                          operation_id    => $args{operation}->id,
@@ -704,58 +812,37 @@ sub notificationMessage {
                          user            => $args{operation}->{context}->{user},
                          stack_id        => $args{operation}->{params}->{stack_id} };
 
-    # Customer notfication
-    if ($args{subscriber}->isa('Entity::User::Customer')) {
-        if (! ($args{operation}->isa('EEntity::EOperation::EConfigureStack') && $args{state} eq "succeeded")) {
-            $log->warn("Unsupported tuple user_type/state/operation_type, " .
-                        "Customer/$args{state}/$args{operation} redirecting to generic notification...");
-            return $self->SUPER::notificationMessage(%args);
-        }
-
-        $templatefile = "stack-builder-owner-notification-mail";
-        try {
-            $templatedata->{access_ip} = $args{operation}->{context}->{novacontroller}->getAccessIp();
-        }
-        catch ($err) {
-            $log->error("Unable to get the novacontoller access ip for owner notification:$err");
-        }
-        $templatedata->{admin_password} = $args{operation}->{params}->{admin_password};
-    }
     # Support notfication
+    if (($args{operation}->isa('EEntity::EOperation::EBuildStack')) &&
+        ($args{state} =~ m/processing|cancelled/ )) {
+        $templatedata->{state} = $args{state} eq "processing" ? "starting" : "failed";
+    }
+    elsif ($args{operation}->isa('EEntity::EOperation::EConfigureStack') &&
+           ($args{state} =~ m/succeeded|interrupted/ )) {
+        $templatedata->{state} = $args{state} eq "succeeded" ? "started" : "interrupted";
+    }
+    elsif ($args{operation}->isa('EEntity::EOperation::EStopStack') &&
+           $args{state} eq "processing") {
+        $templatedata->{state} = "stopping";
+    }
+    elsif ($args{operation}->isa('EEntity::EOperation::EEndStack') &&
+           $args{state} eq "succeeded") {
+        $templatedata->{state} = "stopped";
+    }
+    elsif ($args{operation}->isa('EEntity::EOperation::EUnconfigureStack') &&
+           $args{state} eq "cancelled") {
+        $templatedata->{state} = "failed";
+    }
+    elsif ($args{state} eq "timeouted") {
+        $templatedata->{state} = "timeouted";
+    }
     else {
-        if (($args{operation}->isa('EEntity::EOperation::EBuildStack')) &&
-            ($args{state} =~ m/processing|cancelled/ )) {
-            $templatedata->{state} = $args{state} eq "processing" ? "starting" : "failed";
-        }
-        elsif ($args{operation}->isa('EEntity::EOperation::EConfigureStack') &&
-               ($args{state} =~ m/succeeded|interrupted/ )) {
-            $templatedata->{state} = $args{state} eq "succeeded" ? "started" : "interrupted";
-        }
-        elsif ($args{operation}->isa('EEntity::EOperation::EStopStack') &&
-               $args{state} eq "processing") {
-            $templatedata->{state} = "stopping";
-        }
-        elsif ($args{operation}->isa('EEntity::EOperation::EEndStack') &&
-               $args{state} eq "succeeded") {
-            $templatedata->{state} = "stopped";
-        }
-        elsif ($args{operation}->isa('EEntity::EOperation::EUnconfigureStack') &&
-               $args{state} eq "cancelled") {
-            $templatedata->{state} = "failed";
-        }
-        elsif ($args{state} eq "timeouted") {
-            $templatedata->{state} = "timeouted";
-        }
-        else {
-            $log->warn("Unsupported tuple user_type/state/operation_type, " .
-                        "User/$args{state}/$args{operation} redirecting to generic notification...");
-            return $self->SUPER::notificationMessage(%args);
-        }
-
-        $templatefile = "stack-builder-support-notification-mail";
+        $log->warn("Unsupported tuple user_type/state/operation_type, " .
+                    "User/$args{state}/$args{operation} redirecting to generic notification...");
+        return $self->SUPER::notificationMessage(%args);
     }
 
-    $templatefile = $self->getTemplateDirectory . "/" . $templatefile;
+    my $templatefile = $self->getTemplateDirectory . "/stack-builder-support-notification-mail";
 
     my $message = "";
     $template->process($templatefile . '.tt', $templatedata, \$message)

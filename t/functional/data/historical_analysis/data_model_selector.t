@@ -304,21 +304,21 @@ sub setup {
                );
 
    # Clustermetric
-    $cm = Entity::Clustermetric->new(
-                 clustermetric_service_provider_id      => $service_provider->id,
-                 clustermetric_indicator_id             => ($indic_1->id),
-                 clustermetric_statistics_function_name => 'sum',
-                 clustermetric_window_time              => '1200',
-             );
+    $cm = Entity::Metric::Clustermetric->new(
+              clustermetric_service_provider_id      => $service_provider->id,
+              clustermetric_indicator_id             => ($indic_1->id),
+              clustermetric_statistics_function_name => 'sum',
+              clustermetric_window_time              => '1200',
+          );
 
     # Combination
-    $comb = Entity::Combination::AggregateCombination->new(
+    $comb = Entity::Metric::Combination::AggregateCombination->new(
                 service_provider_id           =>  $service_provider->id,
                 aggregate_combination_formula => 'id'.($cm->id),
             );
 
     #  Nodemetric combination
-    my $ncomb = Entity::Combination::NodemetricCombination->new(
+    my $ncomb = Entity::Metric::Combination::NodemetricCombination->new(
                     service_provider_id            => $service_provider->id,
                     nodemetric_combination_formula => 'id'.($indic_1->id),
                 );

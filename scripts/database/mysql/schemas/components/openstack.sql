@@ -45,6 +45,8 @@ CREATE TABLE `nova_controller` (
   `amqp_id` int(8) unsigned NULL DEFAULT NULL,
   `keystone_id` int(8) unsigned NULL DEFAULT NULL,
   `kanopya_openstack_sync_id` int(8) unsigned NULL DEFAULT NULL,
+  `api_user` varchar(255) DEFAULT NULL,
+  `api_password` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`nova_controller_id`),
   CONSTRAINT `fk_nova_controller_1` FOREIGN KEY (`nova_controller_id`) REFERENCES `virtualization` (`virtualization_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   FOREIGN KEY (`mysql5_id`) REFERENCES `mysql5` (`mysql5_id`) ON DELETE CASCADE ON UPDATE NO ACTION,

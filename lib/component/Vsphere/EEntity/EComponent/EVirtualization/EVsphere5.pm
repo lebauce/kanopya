@@ -184,8 +184,8 @@ sub startHost {
         %host_conf,
         hostname   => $host->node->node_hostname,
         guest_id   => $guest_id,
-        img_name   => $host->getNodeSystemimage->systemimage_name,
-        img_size   => $host->getNodeSystemimage->getContainer->container_size,
+        img_name   => $host->node->systemimage->systemimage_name,
+        img_size   => $host->node->systemimage->getContainer->container_size,
         diskless   => $diskless,
         memory     => $host_params->{ram},
         cores      => $host_params->{core},
@@ -587,7 +587,7 @@ sub dissociateDisk {
 
         if ($args{rename_disk}) {
             # Work around to rename systemimage disk file because vmware rename disk file to descriptor file
-            my $systemimage_name = $host->getNodeSystemimage->systemimage_name;
+            my $systemimage_name = $host->node->systemimage->systemimage_name;
             my $cluster     = Entity->get(id => $host->getClusterId());
             my $disk_params = $cluster->getManagerParameters(manager_type => 'DiskManager');
             my $container_access = Entity::ContainerAccess->get(id => $disk_params->{container_access_id});
@@ -875,7 +875,7 @@ sub getVMDetails {
 
     return {
         state      => $state,
-        hypervisor => $self->getView($vm_view->host)->name,
+        hypervisor => ""
     };
 }
 
@@ -895,11 +895,7 @@ sub getVMState {
     my ($self, %args) = @_;
 
     General::checkParams(args => \%args, required => [ 'host' ]);
-
-    my $details;
-    eval {
-        $details =  $self->getVMDetails(%args);
-    };
+    my $details =  $self->getVMDetails(%args);
 
     my $state_map = {
         'suspended'  => 'pend',

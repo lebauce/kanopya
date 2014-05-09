@@ -154,7 +154,7 @@ sub execute {
     $dhcpd->applyConfiguration();
 
     my $systemimage_name = $self->{context}->{cluster}->cluster_name;
-    $systemimage_name .= '_' . $self->{context}->{host}->getNodeNumber();
+    $systemimage_name .= '_' . $self->{context}->{host}->node->node_number;
     my $systemimage = $self->{context}->{host}->node->systemimage;
 
     # Finally save the host
@@ -239,8 +239,9 @@ sub finish {
     }
 
     $self->{context}->{cluster}->removeState(consumer => $self->workflow);
-    $self->{context}->{host}->removeState(consumer => $self->workflow);
-
+    if (! $self->{context}->{host}->isa("EEntity::EHost::EVirtualMachine")) {
+        $self->{context}->{host}->removeState(consumer => $self->workflow);
+    }
 }
 
 

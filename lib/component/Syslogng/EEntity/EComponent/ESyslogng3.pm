@@ -56,13 +56,4 @@ sub addNode {
     );
 }
 
-# Reload process
-sub reload {
-    my ($self, %args) = @_;
-
-    my $command = "invoke-rc.d syslog-ng restart";
-    my $result = $self->getEContext->execute(command => $command);
-    return undef;
-}
-
 1;

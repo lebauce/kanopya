@@ -249,22 +249,6 @@ sub getNodeState {
     return wantarray ? split(/:/, $state) : $state;
 }
 
-sub getNodeNumber {
-    my $self = shift;
-    my $node_number = $self->node->node_number;
-    return $node_number;
-}
-
-sub getNodeSystemimage {
-    my $self = shift;
-    return $self->node->systemimage;
-}
-
-sub getNode {
-    my $self = shift;
-    return $self->node;
-}
-
 sub getPrevNodeState {
     my $self = shift;
     my $state = $self->node->node_prev_state;

@@ -15,6 +15,20 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+=begin classdoc
+
+Base class to implement a Collector component.
+
+A collector is a tool retrieving monitoring data (indicators) from nodes.
+Using this manager we can:
+
+- configure what is collected
+- request collected values
+
+=end classdoc
+=cut
+
 package Manager::CollectorManager;
 use base "Manager";
 

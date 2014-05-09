@@ -37,3 +37,4 @@ amqp
 ceph
 hpc_manager
 swift
+stackbuilder

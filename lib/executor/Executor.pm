@@ -159,7 +159,7 @@ sub runWorkflow {
     }
     catch ($err) {
         $log->warn("$err");
-        $workflow->finish();
+        $workflow->cancel();
     }
 
     # Acknowledge the message
@@ -252,7 +252,7 @@ sub executeOperation {
                 if ($err->isa('Kanopya::Exception::Execution::InvalidState') or
                     $err->isa('Kanopya::Exception::Execution::OperationReported')) {
                     # TODO: Do not report the operation, implement a mechanism
-                    #       that re-trrgier operation that received InvalidState
+                    #       that re-trigger operation that received InvalidState
                     #       when the coresponding state change...
                     return $self->terminateOperation(operation => $operation,
                                                      status    => 'statereported',

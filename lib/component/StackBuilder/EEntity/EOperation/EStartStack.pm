@@ -52,9 +52,9 @@ my $merge = Hash::Merge->new('LEFT_PRECEDENT');
 sub check {
     my ($self, %args) = @_;
 
-    General::checkParams(args => $self->{context}, required => [ "stack_builder", "user" ]);
+    General::checkParams(args => $self->{context}, required => [ 'stack_builder', 'user' ]);
 
-    General::checkParams(args => $self->{params}, required => [ "stack_id" ]);
+    General::checkParams(args => $self->{params}, required => [ 'stack_id', 'iprange']);
 }
 
 
@@ -73,6 +73,7 @@ sub execute {
     my $components = $self->{context}->{stack_builder}->startStack(
                          user      => $self->{context}->{user},
                          stack_id  => $self->{params}->{stack_id},
+                         iprange   => $self->{params}->{iprange},
                          # TODO: Let all EEntity access to the workflow that they related
                          workflow  => $self->workflow,
                          erollback => $self->{erollback}

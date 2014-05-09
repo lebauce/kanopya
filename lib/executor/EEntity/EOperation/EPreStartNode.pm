@@ -89,11 +89,7 @@ sub execute {
         );
     }
 
-    # Define a hostname
-    my $hostname = $self->{context}->{cluster}->cluster_basehostname;
-    if ($self->{context}->{cluster}->cluster_max_node > 1) {
-        $hostname .=  $self->{params}->{node_number};
-    }
+    my $hostname = $self->{context}->{cluster}->getNodeHostname(node_number => $self->{params}->{node_number});
 
     # Register the node in the cluster
     my $params = { host        => $self->{context}->{host},
@@ -150,7 +146,7 @@ sub execute {
     }
 
     # Use the first systemimage container access found, as all should access to the same container.
-    my @accesses = $self->{context}->{host}->getNodeSystemimage->container_accesses;
+    my @accesses = $self->{context}->{host}->node->systemimage->container_accesses;
     $self->{context}->{container_access} = EEntity->new(entity => pop @accesses);
 
     # Firstly compute the node configuration

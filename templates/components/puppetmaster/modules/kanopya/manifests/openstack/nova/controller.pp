@@ -1,5 +1,4 @@
 class kanopya::openstack::nova::controller(
-  $admin_password     = 'nova',
   $email              = 'nothing@nothing.com',
   $keystone_user      = 'nova',
   $keystone_password  = 'nova',
@@ -8,7 +7,8 @@ class kanopya::openstack::nova::controller(
   $database_name      = 'nova',
   $rabbit_user        = 'nova',
   $rabbit_password    = 'nova',
-  $rabbit_virtualhost = '/'
+  $rabbit_virtualhost = '/',
+  $neutron_shared_secret = 'mysecret'
 ) {
   tag("kanopya::novacontroller")
 
@@ -132,11 +132,12 @@ class kanopya::openstack::nova::controller(
 
   class { 'nova::api':
     enabled          => true,
-    admin_password   => "${admin_password}",
+    admin_user       => "${keystone_user}",
+    admin_password   => "${keystone_password}",
     auth_host        => $keystone_ip,
     api_bind_address => $components[novacontroller][listen][compute_api][ip],
     metadata_listen  => $components[novacontroller][listen][metadata_api][ip],
-    neutron_metadata_proxy_shared_secret => 'mysecret',
+    neutron_metadata_proxy_shared_secret => $neutron_shared_secret,
     require          => [ Exec["/usr/bin/nova-manage db sync"],
                           Class['kanopya::openstack::repository'] ]
   }

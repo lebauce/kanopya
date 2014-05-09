@@ -120,7 +120,7 @@ sub get_property_list {
 package Datacenter;
 our @ISA = qw(ManagedEntity DatacenterOperations);
 
-VIMRuntime::make_get_set('Datacenter', 'vmFolder', 'hostFolder', 'datastoreFolder', 'networkFolder', 'datastore', 'network');
+VIMRuntime::make_get_set('Datacenter', 'vmFolder', 'hostFolder', 'datastoreFolder', 'networkFolder', 'datastore', 'network', 'configuration');
 
 our @property_list = (
    ['vmFolder', 'Folder', undef],
@@ -129,6 +129,7 @@ our @property_list = (
    ['networkFolder', 'Folder', undef],
    ['datastore', 'Datastore', 'true'],
    ['network', 'Network', 'true'],
+   ['configuration', 'DatacenterConfigInfo', undef],
 );
 sub get_property_list {
    my $class = shift;
@@ -164,6 +165,23 @@ sub get_property_list {
 ##################################################################################
 
 ##################################################################################
+package DatastoreNamespaceManager;
+our @ISA = qw(ViewBase DatastoreNamespaceManagerOperations);
+
+VIMRuntime::make_get_set('DatastoreNamespaceManager');
+
+our @property_list = (
+);
+sub get_property_list {
+   my $class = shift;
+   my @super_list = $class->SUPER::get_property_list();
+   return (@super_list, @property_list);
+}
+
+1;
+##################################################################################
+
+##################################################################################
 package DiagnosticManager;
 our @ISA = qw(ViewBase DiagnosticManagerOperations);
 
@@ -184,7 +202,7 @@ sub get_property_list {
 package DistributedVirtualSwitch;
 our @ISA = qw(ManagedEntity DistributedVirtualSwitchOperations);
 
-VIMRuntime::make_get_set('DistributedVirtualSwitch', 'uuid', 'capability', 'summary', 'config', 'networkResourcePool', 'portgroup');
+VIMRuntime::make_get_set('DistributedVirtualSwitch', 'uuid', 'capability', 'summary', 'config', 'networkResourcePool', 'portgroup', 'runtime');
 
 our @property_list = (
    ['uuid', undef, undef],
@@ -193,6 +211,7 @@ our @property_list = (
    ['config', 'DVSConfigInfo', undef],
    ['networkResourcePool', 'DVSNetworkResourcePool', 'true'],
    ['portgroup', 'DistributedVirtualPortgroup', 'true'],
+   ['runtime', 'DVSRuntimeInfo', undef],
 );
 sub get_property_list {
    my $class = shift;
@@ -492,12 +511,31 @@ sub get_property_list {
 ##################################################################################
 
 ##################################################################################
+package OpaqueNetwork;
+our @ISA = qw(Network OpaqueNetworkOperations);
+
+VIMRuntime::make_get_set('OpaqueNetwork');
+
+our @property_list = (
+);
+sub get_property_list {
+   my $class = shift;
+   my @super_list = $class->SUPER::get_property_list();
+   return (@super_list, @property_list);
+}
+
+1;
+##################################################################################
+
+##################################################################################
 package OvfManager;
 our @ISA = qw(ViewBase OvfManagerOperations);
 
-VIMRuntime::make_get_set('OvfManager');
+VIMRuntime::make_get_set('OvfManager', 'ovfImportOption', 'ovfExportOption');
 
 our @property_list = (
+   ['ovfImportOption', 'OvfOptionInfo', 'true'],
+   ['ovfExportOption', 'OvfOptionInfo', 'true'],
 );
 sub get_property_list {
    my $class = shift;
@@ -607,6 +645,24 @@ sub get_property_list {
 ##################################################################################
 
 ##################################################################################
+package ServiceManager;
+our @ISA = qw(ViewBase ServiceManagerOperations);
+
+VIMRuntime::make_get_set('ServiceManager', 'service');
+
+our @property_list = (
+   ['service', 'ServiceManagerServiceInfo', 'true'],
+);
+sub get_property_list {
+   my $class = shift;
+   my @super_list = $class->SUPER::get_property_list();
+   return (@super_list, @property_list);
+}
+
+1;
+##################################################################################
+
+##################################################################################
 package SessionManager;
 our @ISA = qw(ViewBase SessionManagerOperations);
 
@@ -619,6 +675,25 @@ our @property_list = (
    ['messageLocaleList', undef, 'true'],
    ['supportedLocaleList', undef, 'true'],
    ['defaultLocale', undef, undef],
+);
+sub get_property_list {
+   my $class = shift;
+   my @super_list = $class->SUPER::get_property_list();
+   return (@super_list, @property_list);
+}
+
+1;
+##################################################################################
+
+##################################################################################
+package SimpleCommand;
+our @ISA = qw(ViewBase SimpleCommandOperations);
+
+VIMRuntime::make_get_set('SimpleCommand', 'encodingType', 'entity');
+
+our @property_list = (
+   ['encodingType', undef, undef],
+   ['entity', 'ServiceManagerServiceInfo', undef],
 );
 sub get_property_list {
    my $class = shift;
@@ -1229,6 +1304,24 @@ sub get_property_list {
 ##################################################################################
 
 ##################################################################################
+package HostGraphicsManager;
+our @ISA = qw(ExtensibleManagedObject HostGraphicsManagerOperations);
+
+VIMRuntime::make_get_set('HostGraphicsManager', 'graphicsInfo');
+
+our @property_list = (
+   ['graphicsInfo', 'HostGraphicsInfo', 'true'],
+);
+sub get_property_list {
+   my $class = shift;
+   my @super_list = $class->SUPER::get_property_list();
+   return (@super_list, @property_list);
+}
+
+1;
+##################################################################################
+
+##################################################################################
 package HostHealthStatusSystem;
 our @ISA = qw(ViewBase HostHealthStatusSystemOperations);
 
@@ -1487,6 +1580,24 @@ sub get_property_list {
 ##################################################################################
 
 ##################################################################################
+package HostVFlashManager;
+our @ISA = qw(ViewBase HostVFlashManagerOperations);
+
+VIMRuntime::make_get_set('HostVFlashManager', 'vFlashConfigInfo');
+
+our @property_list = (
+   ['vFlashConfigInfo', 'HostVFlashManagerVFlashConfigInfo', undef],
+);
+sub get_property_list {
+   my $class = shift;
+   my @super_list = $class->SUPER::get_property_list();
+   return (@super_list, @property_list);
+}
+
+1;
+##################################################################################
+
+##################################################################################
 package HostVMotionSystem;
 our @ISA = qw(ExtensibleManagedObject HostVMotionSystemOperations);
 
@@ -1513,6 +1624,41 @@ VIMRuntime::make_get_set('HostVirtualNicManager', 'info');
 
 our @property_list = (
    ['info', 'HostVirtualNicManagerInfo', undef],
+);
+sub get_property_list {
+   my $class = shift;
+   my @super_list = $class->SUPER::get_property_list();
+   return (@super_list, @property_list);
+}
+
+1;
+##################################################################################
+
+##################################################################################
+package HostVsanInternalSystem;
+our @ISA = qw(ViewBase HostVsanInternalSystemOperations);
+
+VIMRuntime::make_get_set('HostVsanInternalSystem');
+
+our @property_list = (
+);
+sub get_property_list {
+   my $class = shift;
+   my @super_list = $class->SUPER::get_property_list();
+   return (@super_list, @property_list);
+}
+
+1;
+##################################################################################
+
+##################################################################################
+package HostVsanSystem;
+our @ISA = qw(ViewBase HostVsanSystemOperations);
+
+VIMRuntime::make_get_set('HostVsanSystem', 'config');
+
+our @property_list = (
+   ['config', 'VsanHostConfigInfo', undef],
 );
 sub get_property_list {
    my $class = shift;
@@ -2043,6 +2189,12 @@ sub HasPrivilegeOnEntity {
    return $response
 }
 
+sub HasPrivilegeOnEntities {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('HasPrivilegeOnEntities', %args));
+   return $response
+}
+
 
 1;
 ##################################################################################
@@ -2268,6 +2420,23 @@ sub PowerOnMultiVM {
    return $self->waitForTask($self->PowerOnMultiVM_Task(%args));
 }
 
+sub queryDatacenterConfigOptionDescriptor {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('queryDatacenterConfigOptionDescriptor', %args));
+   return $response
+}
+
+sub ReconfigureDatacenter_Task {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('ReconfigureDatacenter_Task', %args));
+   return $response
+}
+
+sub ReconfigureDatacenter {
+   my ($self, %args) = @_;
+   return $self->waitForTask($self->ReconfigureDatacenter_Task(%args));
+}
+
 
 1;
 ##################################################################################
@@ -2325,6 +2494,24 @@ sub DatastoreExitMaintenanceMode_Task {
 sub DatastoreExitMaintenanceMode {
    my ($self, %args) = @_;
    return $self->waitForTask($self->DatastoreExitMaintenanceMode_Task(%args));
+}
+
+
+1;
+##################################################################################
+
+##################################################################################
+package DatastoreNamespaceManagerOperations;
+sub CreateDirectory {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('CreateDirectory', %args));
+   return $response
+}
+
+sub DeleteDirectory {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('DeleteDirectory', %args));
+   return $response
 }
 
 
@@ -2494,6 +2681,45 @@ sub EnableNetworkResourceManagement {
    return $response
 }
 
+sub DVSRollback_Task {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('DVSRollback_Task', %args));
+   return $response
+}
+
+sub DVSRollback {
+   my ($self, %args) = @_;
+   return $self->waitForTask($self->DVSRollback_Task(%args));
+}
+
+sub CreateDVPortgroup_Task {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('CreateDVPortgroup_Task', %args));
+   return $response
+}
+
+sub CreateDVPortgroup {
+   my ($self, %args) = @_;
+   return $self->waitForTask($self->CreateDVPortgroup_Task(%args));
+}
+
+sub UpdateDVSHealthCheckConfig_Task {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('UpdateDVSHealthCheckConfig_Task', %args));
+   return $response
+}
+
+sub UpdateDVSHealthCheckConfig {
+   my ($self, %args) = @_;
+   return $self->waitForTask($self->UpdateDVSHealthCheckConfig_Task(%args));
+}
+
+sub LookupDvPortGroup {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('LookupDvPortGroup', %args));
+   return $response
+}
+
 
 1;
 ##################################################################################
@@ -2587,6 +2813,12 @@ sub SetExtensionCertificate {
 sub QueryManagedBy {
    my ($self, %args) = @_;
    my $response = Util::check_fault($self->invoke('QueryManagedBy', %args));
+   return $response
+}
+
+sub QueryExtensionIpAllocationUsage {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('QueryExtensionIpAllocationUsage', %args));
    return $response
 }
 
@@ -2781,6 +3013,12 @@ sub DestroyCollector {
 ##################################################################################
 package HostSystemOperations;
 our @ISA = qw(ManagedEntityOperations);
+sub QueryTpmAttestationReport {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('QueryTpmAttestationReport', %args));
+   return $response
+}
+
 sub QueryHostConnectionInfo {
    my ($self, %args) = @_;
    my $response = Util::check_fault($self->invoke('QueryHostConnectionInfo', %args));
@@ -2790,6 +3028,12 @@ sub QueryHostConnectionInfo {
 sub UpdateSystemResources {
    my ($self, %args) = @_;
    my $response = Util::check_fault($self->invoke('UpdateSystemResources', %args));
+   return $response
+}
+
+sub UpdateSystemSwapConfiguration {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('UpdateSystemSwapConfiguration', %args));
    return $response
 }
 
@@ -3000,6 +3244,30 @@ sub DestroyIpPool {
    return $response
 }
 
+sub AllocateIpv4Address {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('AllocateIpv4Address', %args));
+   return $response
+}
+
+sub AllocateIpv6Address {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('AllocateIpv6Address', %args));
+   return $response
+}
+
+sub ReleaseIpAllocation {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('ReleaseIpAllocation', %args));
+   return $response
+}
+
+sub QueryIPAllocations {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('QueryIPAllocations', %args));
+   return $response
+}
+
 
 1;
 ##################################################################################
@@ -3168,6 +3436,13 @@ sub DestroyNetwork {
    return $response
 }
 
+
+1;
+##################################################################################
+
+##################################################################################
+package OpaqueNetworkOperations;
+our @ISA = qw(NetworkOperations);
 
 1;
 ##################################################################################
@@ -3466,10 +3741,28 @@ sub RetrieveProductComponents {
 ##################################################################################
 
 ##################################################################################
+package ServiceManagerOperations;
+sub QueryServiceList {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('QueryServiceList', %args));
+   return $response
+}
+
+
+1;
+##################################################################################
+
+##################################################################################
 package SessionManagerOperations;
 sub UpdateServiceMessage {
    my ($self, %args) = @_;
    my $response = Util::check_fault($self->invoke('UpdateServiceMessage', %args));
+   return $response
+}
+
+sub LoginByToken {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('LoginByToken', %args));
    return $response
 }
 
@@ -3556,6 +3849,18 @@ sub CloneSession {
 ##################################################################################
 
 ##################################################################################
+package SimpleCommandOperations;
+sub ExecuteSimpleCommand {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('ExecuteSimpleCommand', %args));
+   return $response
+}
+
+
+1;
+##################################################################################
+
+##################################################################################
 package StoragePodOperations;
 our @ISA = qw(FolderOperations);
 
@@ -3578,6 +3883,12 @@ sub ConfigureDatastoreIORM {
 sub QueryIORMConfigOption {
    my ($self, %args) = @_;
    my $response = Util::check_fault($self->invoke('QueryIORMConfigOption', %args));
+   return $response
+}
+
+sub QueryDatastorePerformanceSummary {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('QueryDatastorePerformanceSummary', %args));
    return $response
 }
 
@@ -4390,6 +4701,12 @@ sub QueryFaultToleranceCompatibility {
    return $response
 }
 
+sub TerminateVM {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('TerminateVM', %args));
+   return $response
+}
+
 
 1;
 ##################################################################################
@@ -4475,6 +4792,17 @@ sub ReconfigureDVPortgroup {
    return $self->waitForTask($self->ReconfigureDVPortgroup_Task(%args));
 }
 
+sub DVPortgroupRollback_Task {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('DVPortgroupRollback_Task', %args));
+   return $response
+}
+
+sub DVPortgroupRollback {
+   my ($self, %args) = @_;
+   return $self->waitForTask($self->DVPortgroupRollback_Task(%args));
+}
+
 
 1;
 ##################################################################################
@@ -4540,6 +4868,34 @@ sub RectifyDvsOnHost {
    return $self->waitForTask($self->RectifyDvsOnHost_Task(%args));
 }
 
+sub DVSManagerExportEntity_Task {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('DVSManagerExportEntity_Task', %args));
+   return $response
+}
+
+sub DVSManagerExportEntity {
+   my ($self, %args) = @_;
+   return $self->waitForTask($self->DVSManagerExportEntity_Task(%args));
+}
+
+sub DVSManagerImportEntity_Task {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('DVSManagerImportEntity_Task', %args));
+   return $response
+}
+
+sub DVSManagerImportEntity {
+   my ($self, %args) = @_;
+   return $self->waitForTask($self->DVSManagerImportEntity_Task(%args));
+}
+
+sub DVSManagerLookupDvPortGroup {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('DVSManagerLookupDvPortGroup', %args));
+   return $response
+}
+
 
 1;
 ##################################################################################
@@ -4547,6 +4903,17 @@ sub RectifyDvsOnHost {
 ##################################################################################
 package VmwareDistributedVirtualSwitchOperations;
 our @ISA = qw(DistributedVirtualSwitchOperations);
+sub UpdateDVSLacpGroupConfig_Task {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('UpdateDVSLacpGroupConfig_Task', %args));
+   return $response
+}
+
+sub UpdateDVSLacpGroupConfig {
+   my ($self, %args) = @_;
+   return $self->waitForTask($self->UpdateDVSLacpGroupConfig_Task(%args));
+}
+
 
 1;
 ##################################################################################
@@ -5027,6 +5394,25 @@ sub QueryFirmwareConfigUploadURL {
 sub RestoreFirmwareConfiguration {
    my ($self, %args) = @_;
    my $response = Util::check_fault($self->invoke('RestoreFirmwareConfiguration', %args));
+   return $response
+}
+
+
+1;
+##################################################################################
+
+##################################################################################
+package HostGraphicsManagerOperations;
+our @ISA = qw(ExtensibleManagedObjectOperations);
+sub RefreshGraphicsManager {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('RefreshGraphicsManager', %args));
+   return $response
+}
+
+sub IsSharedGraphicsActive {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('IsSharedGraphicsActive', %args));
    return $response
 }
 
@@ -5586,6 +5972,12 @@ sub UnmountVmfsVolume {
    return $response
 }
 
+sub DeleteVmfsVolumeState {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('DeleteVmfsVolumeState', %args));
+   return $response
+}
+
 sub RescanVmfs {
    my ($self, %args) = @_;
    my $response = Util::check_fault($self->invoke('RescanVmfs', %args));
@@ -5626,6 +6018,17 @@ sub ResolveMultipleUnresolvedVmfsVolumes {
    my ($self, %args) = @_;
    my $response = Util::check_fault($self->invoke('ResolveMultipleUnresolvedVmfsVolumes', %args));
    return $response
+}
+
+sub ResolveMultipleUnresolvedVmfsVolumesEx_Task {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('ResolveMultipleUnresolvedVmfsVolumesEx_Task', %args));
+   return $response
+}
+
+sub ResolveMultipleUnresolvedVmfsVolumesEx {
+   my ($self, %args) = @_;
+   return $self->waitForTask($self->ResolveMultipleUnresolvedVmfsVolumesEx_Task(%args));
 }
 
 sub UnmountForceMountedVmfsVolume {
@@ -5760,6 +6163,12 @@ sub DetachScsiLun {
    return $response
 }
 
+sub DeleteScsiLunState {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('DeleteScsiLunState', %args));
+   return $response
+}
+
 sub AttachScsiLun {
    my ($self, %args) = @_;
    my $response = Util::check_fault($self->invoke('AttachScsiLun', %args));
@@ -5781,6 +6190,95 @@ sub DiscoverFcoeHbas {
 sub MarkForRemoval {
    my ($self, %args) = @_;
    my $response = Util::check_fault($self->invoke('MarkForRemoval', %args));
+   return $response
+}
+
+sub FormatVffs {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('FormatVffs', %args));
+   return $response
+}
+
+sub ExtendVffs {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('ExtendVffs', %args));
+   return $response
+}
+
+sub DestroyVffs {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('DestroyVffs', %args));
+   return $response
+}
+
+sub MountVffsVolume {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('MountVffsVolume', %args));
+   return $response
+}
+
+sub UnmountVffsVolume {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('UnmountVffsVolume', %args));
+   return $response
+}
+
+sub DeleteVffsVolumeState {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('DeleteVffsVolumeState', %args));
+   return $response
+}
+
+sub RescanVffs {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('RescanVffs', %args));
+   return $response
+}
+
+sub QueryAvailableSsds {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('QueryAvailableSsds', %args));
+   return $response
+}
+
+
+1;
+##################################################################################
+
+##################################################################################
+package HostVFlashManagerOperations;
+sub ConfigureVFlashResourceEx_Task {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('ConfigureVFlashResourceEx_Task', %args));
+   return $response
+}
+
+sub ConfigureVFlashResourceEx {
+   my ($self, %args) = @_;
+   return $self->waitForTask($self->ConfigureVFlashResourceEx_Task(%args));
+}
+
+sub HostConfigureVFlashResource {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('HostConfigureVFlashResource', %args));
+   return $response
+}
+
+sub HostRemoveVFlashResource {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('HostRemoveVFlashResource', %args));
+   return $response
+}
+
+sub HostConfigVFlashCache {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('HostConfigVFlashCache', %args));
+   return $response
+}
+
+sub HostGetVFlashModuleDefaultConfig {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('HostGetVFlashModuleDefaultConfig', %args));
    return $response
 }
 
@@ -5831,6 +6329,109 @@ sub SelectVnicForNicType {
 sub DeselectVnicForNicType {
    my ($self, %args) = @_;
    my $response = Util::check_fault($self->invoke('DeselectVnicForNicType', %args));
+   return $response
+}
+
+
+1;
+##################################################################################
+
+##################################################################################
+package HostVsanInternalSystemOperations;
+sub QueryCmmds {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('QueryCmmds', %args));
+   return $response
+}
+
+sub QueryPhysicalVsanDisks {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('QueryPhysicalVsanDisks', %args));
+   return $response
+}
+
+sub QueryVsanObjects {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('QueryVsanObjects', %args));
+   return $response
+}
+
+sub QueryObjectsOnPhysicalVsanDisk {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('QueryObjectsOnPhysicalVsanDisk', %args));
+   return $response
+}
+
+
+1;
+##################################################################################
+
+##################################################################################
+package HostVsanSystemOperations;
+sub QueryDisksForVsan {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('QueryDisksForVsan', %args));
+   return $response
+}
+
+sub AddDisks_Task {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('AddDisks_Task', %args));
+   return $response
+}
+
+sub AddDisks {
+   my ($self, %args) = @_;
+   return $self->waitForTask($self->AddDisks_Task(%args));
+}
+
+sub InitializeDisks_Task {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('InitializeDisks_Task', %args));
+   return $response
+}
+
+sub InitializeDisks {
+   my ($self, %args) = @_;
+   return $self->waitForTask($self->InitializeDisks_Task(%args));
+}
+
+sub RemoveDisk_Task {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('RemoveDisk_Task', %args));
+   return $response
+}
+
+sub RemoveDisk {
+   my ($self, %args) = @_;
+   return $self->waitForTask($self->RemoveDisk_Task(%args));
+}
+
+sub RemoveDiskMapping_Task {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('RemoveDiskMapping_Task', %args));
+   return $response
+}
+
+sub RemoveDiskMapping {
+   my ($self, %args) = @_;
+   return $self->waitForTask($self->RemoveDiskMapping_Task(%args));
+}
+
+sub UpdateVsan_Task {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('UpdateVsan_Task', %args));
+   return $response
+}
+
+sub UpdateVsan {
+   my ($self, %args) = @_;
+   return $self->waitForTask($self->UpdateVsan_Task(%args));
+}
+
+sub QueryHostStatus {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('QueryHostStatus', %args));
    return $response
 }
 
@@ -6027,6 +6628,17 @@ sub GenerateConfigTaskList {
    return $response
 }
 
+sub GenerateHostProfileTaskList_Task {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('GenerateHostProfileTaskList_Task', %args));
+   return $response
+}
+
+sub GenerateHostProfileTaskList {
+   my ($self, %args) = @_;
+   return $self->waitForTask($self->GenerateHostProfileTaskList_Task(%args));
+}
+
 sub QueryHostProfileMetadata {
    my ($self, %args) = @_;
    my $response = Util::check_fault($self->invoke('QueryHostProfileMetadata', %args));
@@ -6059,6 +6671,12 @@ sub UpdateAnswerFile {
 sub RetrieveAnswerFile {
    my ($self, %args) = @_;
    my $response = Util::check_fault($self->invoke('RetrieveAnswerFile', %args));
+   return $response
+}
+
+sub RetrieveAnswerFileForProfile {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('RetrieveAnswerFileForProfile', %args));
    return $response
 }
 
@@ -6277,6 +6895,12 @@ sub RemoveSnapshot {
 sub RenameSnapshot {
    my ($self, %args) = @_;
    my $response = Util::check_fault($self->invoke('RenameSnapshot', %args));
+   return $response
+}
+
+sub ExportSnapshot {
+   my ($self, %args) = @_;
+   my $response = Util::check_fault($self->invoke('ExportSnapshot', %args));
    return $response
 }
 

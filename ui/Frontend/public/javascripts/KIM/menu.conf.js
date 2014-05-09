@@ -20,7 +20,7 @@ var service_list_url = '/api/cluster';
 // If the logged user is a customer, filter the list of service
 var customer_filter = '';
 if (current_user.profiles.length == 1 && current_user.profiles[0].profile_name === "Customer") {
-    service_list_url += '?user_id=' + current_user.user_id;
+    service_list_url += '?owner_id=' + current_user.user_id;
 }
 
 // each link will show the div with id "view_<id>" and hide all div in "#view-container"

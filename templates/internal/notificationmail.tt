@@ -5,7 +5,7 @@ The operation "[% operation %]" ([% operation_id %]), from workflow "[% workflow
 Error: [% reason %]
 [% CASE 'cancelled' %]has failed, and has been cancelled.
 Error: [% reason %]
-[% CASE ['timeouted', 'cancelled'] %]reach the execution timeout.
+[% CASE 'timeouted' %]reach the execution timeout.
 [% CASE %]state changed to: [% operation_state %].
 [% END %]
 Kanopya execution system.

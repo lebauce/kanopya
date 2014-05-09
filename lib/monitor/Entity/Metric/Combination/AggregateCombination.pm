@@ -18,20 +18,20 @@
 
 Mathematical formula of cluster metrics.
 
-@see <package>Entity::Clustermetric</package>
+@see <package>Entity::Metric::Clustermetric</package>
 @see <package>Entity::Rule::AggregateRule</package>
 
 =end classdoc
 
 =cut
 
-package Entity::Combination::AggregateCombination;
+package Entity::Metric::Combination::AggregateCombination;
+use base Entity::Metric::Combination;
 
 use strict;
 use warnings;
 use Data::Dumper;
-use base 'Entity::Combination';
-use Entity::Clustermetric;
+use Entity::Metric::Clustermetric;
 use Kanopya::Exceptions;
 use List::Util qw {reduce};
 use DataModelSelector;
@@ -186,7 +186,9 @@ sub _verify {
 
     for my $element (@array) {
         if ($element =~ m/id\d+/) {
-            if (! (Entity::Clustermetric->search(hash => {'clustermetric_id' => substr($element,2)}))){
+            if (! (Entity::Metric::Clustermetric->search(
+                       hash => {'clustermetric_id' => substr($element,2)}
+                   ))){
                 my $errmsg = "Creating combination formula with an unknown clusterMetric id ($element) ";
                 $log->error($errmsg);
                 throw Kanopya::Exception::Internal::WrongValue(error => $errmsg);
@@ -216,7 +218,8 @@ sub toString {
     # replace each rule id by its evaluation
     for my $element (@array) {
         if ($element =~ m/id\d+/) {
-            $element = Entity::Clustermetric->get('id' => substr($element,2))->clustermetric_formula_string;
+            $element = Entity::Metric::Clustermetric->get('id' => substr($element,2))
+                                                    ->clustermetric_formula_string;
         }
     }
     return List::Util::reduce { $a . $b } @array;
@@ -246,7 +249,7 @@ sub evaluateTimeSerie {
     my @cm_ids = $self->dependentClusterMetricIds();
     my %allTheCMValues;
     foreach my $cm_id (@cm_ids){
-        my $cm = Entity::Clustermetric->get('id' => $cm_id);
+        my $cm = Entity::Metric::Clustermetric->get('id' => $cm_id);
         $allTheCMValues{$cm_id} = $cm->fetch(%args);
     }
     return $self->_computeFromArrays(%allTheCMValues);
@@ -358,7 +361,7 @@ sub _evaluateLastValue {
     for my $element (@array) {
         if ($element =~ m/id\d+/) {
             #Remove "id" from the begining of $element, get the corresponding aggregator
-            $element = Entity::Clustermetric->get('id'=>substr($element,2))->lastValue(%args);
+            $element = Entity::Metric::Clustermetric->get('id'=>substr($element,2))->lastValue(%args);
             if (not defined $element) {
                 return undef;
             }
@@ -401,7 +404,10 @@ sub compute {
 
     my @requiredArgs = $self->dependentClusterMetricIds();
 
-    Entity::Combination::checkMissingParams(args => \%args, required => \@requiredArgs);
+    Entity::Metric::Combination::checkMissingParams(
+        args     => \%args,
+        required => $self->{_dependentClusterMetricIds}
+    );
 
     foreach my $cm_id (@requiredArgs) {
         if (! defined $args{$cm_id}) {
@@ -516,7 +522,7 @@ sub computeUnit {
 
     for my $element (@array) {
         if ($element =~ m/id\d+/) {
-            $element = Entity::Clustermetric->get('id' => substr($element,2))->getUnit();
+            $element = Entity::Metric::Clustermetric->get('id' => substr($element,2))->getUnit();
 
             if (not defined $ref_element) {
                 $ref_element = $element;
@@ -579,7 +585,7 @@ sub clone {
         $args{attrs}->{aggregate_combination_formula} = $self->_cloneFormula(
             dest_sp_id    => $args{attrs}->{service_provider_id},
             formula       => $args{attrs}->{aggregate_combination_formula},
-            formula_class => 'Entity::Clustermetric'
+            formula_class => 'Entity::Metric::Clustermetric'
         );
         return $args{attrs};
     };

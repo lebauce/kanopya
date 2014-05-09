@@ -24,11 +24,11 @@ Log::Log4perl -> easy_init({
 
 use Utils::TimeSerieAnalysis;
 use Kanopya::Tools::TimeSerie;
-use Entity::Combination::AggregateCombination;
+use Entity::Metric::Combination::AggregateCombination;
 use DataModelSelector;
 use Node;
 use Entity::CollectorIndicator;
-use Entity::Clustermetric;
+use Entity::Metric::Clustermetric;
 use Entity::Component::MockMonitor;
 use Entity::ServiceProvider::Externalcluster;
 use DataModel;
@@ -1019,12 +1019,12 @@ sub createCombinationMetric {
                                                   );
 
    # Clustermetric
-    my $cm = Entity::Clustermetric->new(
-                                         clustermetric_service_provider_id      => $service_provider->id,
-                                         clustermetric_indicator_id             => ($indic->id),
-                                         clustermetric_statistics_function_name => $name_func,
-                                         clustermetric_window_time              => $window_time
-                                       );
+    my $cm = Entity::Metric::Clustermetric->new(
+                 clustermetric_service_provider_id      => $service_provider->id,
+                 clustermetric_indicator_id             => ($indic->id),
+                 clustermetric_statistics_function_name => $name_func,
+                 clustermetric_window_time              => $window_time
+             );
 
     return $cm;
 
@@ -1048,8 +1048,9 @@ sub linkTimeSerietoAggregateCombination {
     $time_serie->linkToMetric( metric => $args{'cm'} );
 
     # Combination
-    my $comb = Entity::Combination::AggregateCombination->new(
-                                            service_provider_id           =>  $args{'service_provider'}->id,
-                                            aggregate_combination_formula => 'id'.($args{'cm'}->id));
+    my $comb = Entity::Metric::Combination::AggregateCombination->new(
+                   service_provider_id           =>  $args{'service_provider'}->id,
+                   aggregate_combination_formula => 'id'.($args{'cm'}->id)
+               );
     return $comb;
 }

@@ -38,9 +38,9 @@ use BillingManager;
 use ServiceProviderManager;
 use Entity::Component;
 use Entity::Workflow;
-use Entity::Clustermetric;
-use Entity::Combination::NodemetricCombination;
-use Entity::Combination::AggregateCombination;
+use Entity::Metric::Clustermetric;
+use Entity::Metric::Combination::NodemetricCombination;
+use Entity::Metric::Combination::AggregateCombination;
 use Entity::ServiceTemplate;
 use Entity::Billinglimit;
 use ClassType::ComponentType;
@@ -208,10 +208,8 @@ sub methods {
     };
 }
 
-sub label {
-    my $self = shift;
-    return $self->cluster_name;
-}
+
+my $merge = Hash::Merge->new('RIGHT_PRECEDENT');
 
 
 =pod
@@ -317,9 +315,6 @@ sub buildConfigurationPattern {
     my ($self, %args) = @_;
     my $class = ref($self) || $self;
 
-    # Override params with policies param presets
-    my $merge = Hash::Merge->new('LEFT_PRECEDENT');
-
     my $service_template;
     my $confpattern = {};
 
@@ -337,11 +332,11 @@ sub buildConfigurationPattern {
     # (see Policy.pm), only if the id of the policy that the params belongs to is specified.
     # Otherwise, params must be given in the cluster configuration pattern format.
     for my $policy (@policies) {
-        $confpattern = $merge->merge($confpattern, $policy->getPattern(params => \%args));
+        $confpattern = $merge->merge($policy->getPattern(params => \%args), $confpattern);
     }
 
     # Then merge the configuration pattern with the remaining cluster params
-    return $merge->merge(\%args, $confpattern);
+    return $merge->merge($confpattern, \%args);
 }
 
 sub checkConfigurationPattern {
@@ -500,7 +495,7 @@ sub configureManagers {
 
     # Get export manager parameter related to si shared value.
     my $readonly_param = $export_manager->getReadOnlyParameter(
-                             readonly => 0 
+                             readonly => 0
                          );
 
     # TODO: This will be usefull for the first call to applyPolicies at the cluster creation,
@@ -548,15 +543,15 @@ sub configureBillingLimits {
                                           "collector_manager_id"     => $collector_manager->id }
                             );
 
-            my $cm = Entity::Clustermetric->findOrCreate(
-                clustermetric_label                    => "Billing" . $name,
-                clustermetric_service_provider_id      => $self->id,
-                clustermetric_indicator_id             => $indicator->id,
-                clustermetric_statistics_function_name => "sum",
-                clustermetric_window_time              => '1200',
-            );
+            my $cm = Entity::Metric::Clustermetric->findOrCreate(
+                         clustermetric_label                    => "Billing" . $name,
+                         clustermetric_service_provider_id      => $self->id,
+                         clustermetric_indicator_id             => $indicator->id,
+                         clustermetric_statistics_function_name => "sum",
+                         clustermetric_window_time              => '1200',
+                     );
 
-            Entity::Combination::AggregateCombination->findOrCreate(
+            Entity::Metric::Combination::AggregateCombination->findOrCreate(
                 aggregate_combination_label     => "Billing" . $name,
                 service_provider_id             => $self->id,
                 aggregate_combination_formula   => 'id' . $cm->id
@@ -578,6 +573,19 @@ sub configureOrchestration {
     for my $origin (@toclone) {
         $origin->clone(dest_service_provider_id => $self->id);
     }
+}
+
+sub getNodeHostname {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'node_number' ]);
+
+    my $hostname = $self->cluster_basehostname;
+    if ($self->cluster_max_node > 1) {
+        $hostname .=  $args{node_number};
+    }
+
+    return $hostname;
 }
 
 sub remove {
@@ -974,11 +982,13 @@ sub setState {
 
     General::checkParams(args => \%args, required => [ 'state' ]);
 
+    # Change the state only if different form current one to do not loose the original state
     my ($state, $timestamp) = $self->getState();
-    $self->setAttr(name => 'cluster_prev_state', value => $state);
-    $self->setAttr(name => 'cluster_state', value => $args{state} . ":" . time);
-    $self->save();
-    $log->debug('Changing cluster <'.$self->cluster_name.'> state from <'.$state.'> to <'.$args{state}.'>');
+    if ($state ne $args{state}) {
+        $self->cluster_prev_state($state);
+        $self->cluster_state($args{state} . ":" . time);
+        $log->debug("Changing cluster <" . $self->cluster_name . "> state from <$state> to <$args{state}>");
+    }
 }
 
 sub restoreState {
@@ -988,8 +998,9 @@ sub restoreState {
     my ($previous, $dummy) = split(/:/,  $self->cluster_prev_state);
     my ($current, $timestamp) = $self->getState();
 
-    $self->setAttr(name => 'cluster_prev_state', value => $current . ":" . $timestamp);
-    $self->setAttr(name => 'cluster_state', value => $previous . ":" . time, save => 1);
+    # Do no set the previous state to the current to avoid consecutive restoreState interchange
+    # state, just restore the original state on time.
+    $self->cluster_state( $previous . ":" . time);
     $log->debug('Restoring cluster <'.$self->cluster_name.'> state from <'.$current.'> to <'.$previous.'>');
 }
 
@@ -1002,7 +1013,7 @@ sub getNewNodeNumber {
 
     my @current_nodes_number = ();
     for my $host (@nodes) {
-        push @current_nodes_number, $host->getNodeNumber();
+        push @current_nodes_number, $host->node->node_number;
     }
 
     # http://rosettacode.org/wiki/Sort_an_integer_array#Perl
@@ -1070,7 +1081,7 @@ sub generateOverLoadNodemetricRules {
             service_provider_id             => $service_provider_id,
         };
 
-        my $comb = Entity::Combination::NodemetricCombination->new(%$combination_param);
+        my $comb = Entity::Metric::Combination::NodemetricCombination->new(%$combination_param);
 
         my $condition_param = {
             left_combination_id      => $comb->getAttr(name=>'nodemetric_combination_id'),
@@ -1113,7 +1124,7 @@ sub generateDefaultMonitoringConfiguration {
             nodemetric_combination_formula  => 'id' . $indicator->id,
             service_provider_id             => $service_provider_id,
         };
-        Entity::Combination::NodemetricCombination->new(%$combination_param);
+        Entity::Metric::Combination::NodemetricCombination->new(%$combination_param);
     }
 
     #definition of the functions
@@ -1128,13 +1139,13 @@ sub generateDefaultMonitoringConfiguration {
                 clustermetric_statistics_function_name => $func,
                 clustermetric_window_time              => '1200',
             };
-            my $cm = Entity::Clustermetric->new(%$cm_params);
+            my $cm = Entity::Metric::Clustermetric->new(%$cm_params);
 
             my $acf_params = {
                 service_provider_id             => $service_provider_id,
                 aggregate_combination_formula   => 'id' . $cm->id
             };
-            my $clustermetric_combination = Entity::Combination::AggregateCombination->new(%$acf_params);
+            my $clustermetric_combination = Entity::Metric::Combination::AggregateCombination->new(%$acf_params);
         }
     }
 }
@@ -1275,6 +1286,13 @@ sub propagatePermissions {
         }
     }
 }
+
+
+sub label {
+    my $self = shift;
+    return $self->cluster_name;
+}
+
 
 sub getKanopyaCluster {
     my $self  = shift;

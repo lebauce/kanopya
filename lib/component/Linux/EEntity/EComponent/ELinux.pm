@@ -108,6 +108,18 @@ sub isUp {
         eval { $args{host}->getEContext->execute(command => "true"); };
         return 0 if $@;
 
+        # Verify hostname
+        my $theoricalhostname = $args{host}->node->node_hostname;
+        my $realhostname = $args{host}->getEContext->execute(command => 'hostname -s');
+        chomp($realhostname->{stdout});
+
+        if ($theoricalhostname ne $realhostname->{stdout}) {
+            throw Kanopya::Exception::Execution::OperationInterrupted(
+                error => 'System hostname "' . $realhostname->{stdout} . '" is different than Kanopya Hostname for host "' .
+                          $theoricalhostname . '". Is PXE boot working properly ?'
+            );
+        }
+
         # Disable PXE boot but keep the host entry
         eval {
             $harddisk->service_provider_id($args{cluster}->id);
@@ -300,6 +312,24 @@ sub _generateHosts {
 
     my @hosts_entries = $args{cluster}->getHostEntries(components => 1);
 
+    my $hosts_tmp = {};
+    for my $entry (@hosts_entries) {
+        for my $alias (@{$entry->{aliases}}) {
+            $hosts_tmp->{$entry->{ip}}->{alias}->{$alias} = 1;
+        }
+        undef $hosts_tmp->{$entry->{ip}}->{alias}->{$entry->{fqdn}};
+        $hosts_tmp->{$entry->{ip}}->{fqdn} = $entry->{fqdn};
+    }
+
+    my @hosts;
+    for my $ip (keys $hosts_tmp) {
+        push @hosts, {
+            ip      => $ip,
+            fqdn    => $hosts_tmp->{$ip}->{fqdn},
+            aliases => [keys $hosts_tmp->{$ip}->{alias}]
+        }
+    }
+
     $log->debug('Generate /etc/hosts file');
     my $file = $self->generateNodeFile(
         cluster       => $args{cluster},
@@ -307,7 +337,7 @@ sub _generateHosts {
         file          => '/etc/hosts',
         template_dir  => 'components/linux',
         template_file => 'hosts.tt',
-        data          => { hosts => \@hosts_entries }
+        data          => { hosts => \@hosts }
     );
 
     return { src  => $file, dest => '/etc/hosts' };
@@ -388,7 +418,7 @@ sub _generateUserAccount {
     } else {
         # create the user account
         my $params = " -m -p '$password' $login";
-        my $shell = _getShell();
+        my $shell = $self->_shell();
         if (defined $shell) {
             $params .= " -s $shell";
         }
@@ -417,7 +447,7 @@ sub _generateUserAccount {
     }
 }
 
-sub _getShell() {
+sub _shell {
     return undef;
 }
 
@@ -649,7 +679,6 @@ sub customizeInitramfs {
 
     my $econtext = $self->_host->getEContext;
     my $initrddir = $args{initrd_dir};
-    my $systemimage = $args{host}->getNodeSystemimage;
     my $ifaces = $args{host}->getIfaces;
     my $hostname = $args{host}->node->node_hostname;
 
@@ -662,7 +691,7 @@ sub customizeInitramfs {
     # TODO check targetname is the same for each container access
     my $portals = [];
     my $target = "";
-    for my $container_access ($systemimage->container_accesses) {
+    for my $container_access ($args{host}->node->systemimage->container_accesses) {
         push @$portals, { ip   => $container_access->container_access_ip,
                           port => $container_access->container_access_port };
         $target = $container_access->container_access_export;

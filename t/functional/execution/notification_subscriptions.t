@@ -130,7 +130,7 @@ sub main {
         }
         else {
             ($state = $args{message}) =~ s/^.* //g;
-            $state =~ s/\.\n.*\n.*//g;
+            $state =~ s/\.(.*\n.*)*//g;
         }
 
         # For succeded state, the notification message is about "executed"
@@ -336,6 +336,7 @@ sub main {
         $prereport = 0;
         $postreport = 1;
 
+        sleep 2;
         Kanopya::Tools::Execution->oneRun();
 
         $postreport = 0;

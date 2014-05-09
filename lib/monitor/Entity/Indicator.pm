@@ -17,8 +17,8 @@ use base Entity;
 use strict;
 use warnings;
 
-use Entity::Clustermetric;
-use Entity::Combination::NodemetricCombination;
+use Entity::Metric::Clustermetric;
+use Entity::Metric::Combination::NodemetricCombination;
 use TimeData::RRDTimeData;
 
 use Data::Dumper;
@@ -107,7 +107,7 @@ sub getDependencies {
     my %dependencies;
 
     my @related_collector_indicators = $self->collector_indicators;
-    my @all_the_nodemetric_combinations = Entity::Combination::NodemetricCombination->search(hash => {});
+
 
     # Service
     for my $collector_indicator (@related_collector_indicators) {
@@ -118,7 +118,7 @@ sub getDependencies {
 
         my $collector_indicator_id  = $collector_indicator->id;
 
-        my @dependent_clustermetric = Entity::Clustermetric->search(
+        my @dependent_clustermetric = Entity::Metric::Clustermetric->search(
                                           hash => {
                                               clustermetric_indicator_id => $collector_indicator_id,
                                           }
@@ -132,9 +132,9 @@ sub getDependencies {
         }
 
         # Service related hierarchy
-
+        my @combs = Entity::Metric::Combination::NodemetricCombination->search(hash => {});
         NODEMETRIC_COMBINATION:
-        for my $nm_combi (@all_the_nodemetric_combinations) {
+        for my $nm_combi (@combs) {
             #TODO general getName() to be compaptible with KIM
             my $service_provider_name = $nm_combi->service_provider->externalcluster_name;
             my @collector_indicator_ids = $nm_combi->getDependentCollectorIndicatorIds();
@@ -176,10 +176,10 @@ sub delete {
         # Service related hierarchy
         $log->info("Entering nodemetric loop");
 
-        my @all_the_nodemetric_combinations = Entity::Combination::NodemetricCombination->search();
+        my @combs = Entity::Metric::Combination::NodemetricCombination->search();
         NODEMETRIC_COMBINATION:
-        while (@all_the_nodemetric_combinations) {
-            my $nm_combi  = pop @all_the_nodemetric_combinations;
+        while (@combs) {
+            my $nm_combi  = pop @combs;
             my @collector_indicator_ids = $nm_combi->getDependentCollectorIndicatorIds();
             for my $nm_indicator_id (@collector_indicator_ids) {
                 $log->debug($collector_indicator->id.' vs '.$nm_indicator_id);

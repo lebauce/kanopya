@@ -93,8 +93,8 @@ sub insertDefaultExtendedConfiguration {
         apache2_virtualhost_sslenable    => 'no',
         apache2_virtualhost_serveradmin  => 'admin@mycluster.com',
         apache2_virtualhost_documentroot => '/srv',
-        apache2_virtualhost_log          => '/tmp/apache_access.log',
-        apache2_virtualhost_errorlog     => '/tmp/apache_error.log',
+        apache2_virtualhost_log          => 'vhost_access.log',
+        apache2_virtualhost_errorlog     => 'vhost_error.log',
     );
 }
 
@@ -136,7 +136,8 @@ sub getPuppetDefinition {
             vhost_name => $vhost->apache2_virtualhost_servername,
             docroot => $vhost->apache2_virtualhost_documentroot,
             serveradmin => $vhost->apache2_virtualhost_serveradmin,
-            logroot => $vhost->apache2_virtualhost_log,
+            access_log_file => $vhost->apache2_virtualhost_log,
+            error_log_file => $vhost->apache2_virtualhost_errorlog
         };
     }
 

@@ -40,7 +40,8 @@ sub createExport {
     General::checkParams(args     => \%args,
                          required => [ 'container' ],
                          optional => { 'client_name'    => '*',
-                                       'client_options' => 'rw,sync,no_root_squash' });
+                                       'client_options' => 'rw,sync,no_root_squash',
+                                       'manager_ip'     => $self->getMasterNode->adminIp });
 
     # Check if the given container is provided by the same
     # storage provider than the nfsd storage provider.
@@ -86,13 +87,11 @@ sub createExport {
         $self->applyConfiguration(tags => [ 'mount' ]);
     }
 
-    my $manager_ip = $self->getMasterNode->adminIp;
-
     my $entity = Entity::ContainerAccess::NfsContainerAccess->new(
                      container               => $args{container}->_entity,
                      export_manager          => $self->_entity,
-                     container_access_export => $manager_ip . ':' . $mountpoint,
-                     container_access_ip     => $manager_ip,
+                     container_access_export => $args{manager_ip} . ':' . $mountpoint,
+                     container_access_ip     => $args{manager_ip},
                      container_access_port   => 2049,
                      options                 => $args{client_options},
                  );
@@ -175,10 +174,6 @@ sub removeExport {
     $self->generateExports(data => $self->getTemplateDataExports());
 }
 
-sub reload {
-    my $self = shift;
-    $self->generateConf();
-}
 
 sub addExportClient {
     my $self = shift;

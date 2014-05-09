@@ -15,6 +15,14 @@
 
 # Maintained by Dev Team of Hedera Technology <dev@hederatech.com>.
 
+=pod
+=begin classdoc
+
+Base class to implement system deamons.
+
+=end classdoc
+=cut
+
 package Manager::DaemonManager;
 use base Manager;
 use base MessageQueuing::RabbitMQ::Sender;
