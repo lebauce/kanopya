@@ -19,6 +19,7 @@ use Kanopya::Tools::Register;
 use Entity::User::Customer;
 use Entity::Component::Physicalhoster0;
 use Entity::Operation;
+use Entity::Operationtype;
 use NotificationSubscription;
 
 use Data::Dumper;
@@ -163,9 +164,11 @@ sub main {
     # Subscribe to notifications on the operation state
     for my $state (@states) {
         lives_ok {
-            $physicalhoster->subscribe(subscriber_id   => $customer->id,
-                                       operationtype   => "addhost",
-                                       operation_state => $state);
+            Entity::Operationtype->find(hash => { operationtype_name => "Addhost" })->subscribe(
+                subscriber_id   => $customer->id,
+                entity_id       => $physicalhoster->id,
+                operation_state => $state
+            );
         } "Subscribe to notifications on state $state for operation AddHost"
     }
 

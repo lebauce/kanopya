@@ -33,6 +33,7 @@ use warnings;
 use Entity::User;
 use Kanopya::Exceptions;
 use NotificationSubscription;
+use Entity::Operationtype;
 
 use Data::Dumper;
 use Log::Log4perl "get_logger";
@@ -317,48 +318,56 @@ sub subscribeSupportNotifications {
     #       support, remove them.
 
     # The support will be notified when the buildStack workflow start
-    $self->subscribe(subscriber_id   => $support->id,
-                     operationtype   => "buildStack",
-                     operation_state => "processing");
+    my $build_stack = Entity::Operationtype->find(hash => { operationtype_name => "buildStack" });
+    $build_stack->subscribe(subscriber_id   => $support->id,
+                            entity_id       => $self->id,
+                            operation_state => "processing");
+    # The support will be notified when the buildStack workflow fail
+    $build_stack->subscribe(subscriber_id   => $support->id,
+                            entity_id       => $self->id,
+                            operation_state => "cancelled");
 
     # The support will be notified when the buildStack workflow succeed
-    $self->subscribe(subscriber_id   => $support->id,
-                     operationtype   => "configureStack",
-                     operation_state => "succeeded");
-
+    my $conf_stack = Entity::Operationtype->find(hash => { operationtype_name => "configureStack" });
+    $conf_stack->subscribe(subscriber_id   => $support->id,
+                           entity_id       => $self->id,
+                           operation_state => "succeeded");
     # The support will be notified when the configureStack operation is interrupted
-    $self->subscribe(subscriber_id   => $support->id,
-                     operationtype   => "configureStack",
-                     operation_state => "interrupted");
-
-    # The support will be notified when the buildStack workflow fail
-    $self->subscribe(subscriber_id   => $support->id,
-                     operationtype   => "buildStack",
-                     operation_state => "cancelled");
+    $conf_stack->subscribe(subscriber_id   => $support->id,
+                           entity_id       => $self->id,
+                           operation_state => "interrupted");
 
     # The support will be notified when the endStack workflow start
-    $self->subscribe(subscriber_id   => $support->id,
-                     operationtype   => "stopStack",
-                     operation_state => "processing");
+    Entity::Operationtype->find(hash => { operationtype_name => "stopStack" })->subscribe(
+        subscriber_id   => $support->id,
+        entity_id       => $self->id,
+        operation_state => "processing"
+    );
 
     # The support will be notified when the endStack workflow succeed
-    $self->subscribe(subscriber_id   => $support->id,
-                     operationtype   => "endStack",
-                     operation_state => "succeeded");
+    Entity::Operationtype->find(hash => { operationtype_name => "endStack" })->subscribe(
+        subscriber_id   => $support->id,
+        entity_id       => $self->id,
+        operation_state => "succeeded"
+    );
 
     # The support will be notified when a StopNode workflow fail
-    $self->subscribe(subscriber_id   => $support->id,
-                     operationtype   => "PreStopNode",
-                     operation_state => "failed");
+    Entity::Operationtype->find(hash => { operationtype_name => "PreStopNode" })->subscribe(
+        subscriber_id   => $support->id,
+        entity_id       => $self->id,
+        operation_state => "failed"
+    );
 
     # The support will be notified when the endStack workflow fail
-    $self->subscribe(subscriber_id   => $support->id,
-                     operationtype   => "unconfigureStack",
-                     operation_state => "cancelled");
+    Entity::Operationtype->find(hash => { operationtype_name => "unconfigureStack" })->subscribe(
+        subscriber_id   => $support->id,
+        entity_id       => $self->id,
+        operation_state => "cancelled"
+    );
 
     # The support will be notified on every timeouted operation
-    $self->subscribe(subscriber_id   => $support->id,
-                     operation_state => "timeouted");
+    Entity::Operationtype->subscribe(subscriber_id   => $support->id,
+                                     operation_state => "timeouted");
 }
 
 sub subscribeOwnerNotifications {
@@ -367,9 +376,11 @@ sub subscribeOwnerNotifications {
     General::checkParams(args => \%args, required => [ 'owner_id' ]);
 
     # The owner will be notified when the buildStack workflow succeed
-    Entity::User->get(id => $args{owner_id})->subscribe(subscriber_id   => $args{owner_id},
-                                                        operationtype   => "configureStack",
-                                                        operation_state => "succeeded");
+    Entity::Operationtype->find(hash => { operationtype_name => "configureStack" })->subscribe(
+        subscriber_id   => $args{owner_id},
+        entity_id       => $args{owner_id},
+        operation_state => "succeeded"
+    );
 }
 
 sub unsubscribeOwnerNotifications {
@@ -378,7 +389,7 @@ sub unsubscribeOwnerNotifications {
     General::checkParams(args => \%args, required => [ 'owner_id' ]);
 
     for my $subscription (NotificationSubscription->search(hash => { subscriber_id => $args{owner_id} })) {
-        $self->unsubscribe(notification_subscription_id => $subscription->id);
+        Entity::Operationtype->unsubscribe(notification_subscription_id => $subscription->id);
     }
 }
 

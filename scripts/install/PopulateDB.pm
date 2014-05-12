@@ -15,7 +15,7 @@ use General;
 use Kanopya::Database;
 use Kanopya::Config;
 use Entity::Component;
-use Operationtype;
+use Entity::Operationtype;
 use EEntity;
 use ClassType;
 use ClassType::ComponentType;
@@ -166,6 +166,8 @@ my @classes = (
     'Entity::Host::VirtualMachine::OpenstackVm',
     'Entity::Host::VirtualMachine::Opennebula3Vm::Opennebula3KvmVm',
     'Entity::ServiceTemplate',
+    'Entity::Operation',
+    'Entity::Operationtype',
     'Entity::Policy',
     'Entity::Policy::HostingPolicy',
     'Entity::Policy::StoragePolicy',
@@ -174,7 +176,6 @@ my @classes = (
     'Entity::Policy::ScalabilityPolicy',
     'Entity::Policy::BillingPolicy',
     'Entity::Policy::OrchestrationPolicy',
-    'Entity::Operation',
     'Entity::Workflow',
     'Entity::Host::Hypervisor::Vsphere5Hypervisor',
     'Entity::Host::VirtualMachine::Vsphere5Vm',
@@ -307,7 +308,7 @@ sub registerUsers {
           desc    => 'Cluster master group containing all clusters',
           system  => 1,
           methods => {
-              'Sales' => [ 'get', 'create', 'subscribe', 'unsubscribe' ],
+              'Sales' => [ 'get', 'create' ],
           }
         },
         { name    => 'Kernel',
@@ -323,7 +324,11 @@ sub registerUsers {
         { name    => 'Operationtype',
           type    => 'Operationtype',
           desc    => 'Operationtype master group containing all operations',
-          system  => 1
+          system  => 1,
+          methods => {
+              'Sales' => [ 'subscribe', 'unsubscribe' ],
+              'Administrator' => [ 'subscribe', 'unsubscribe' ],
+          }
         },
         { name    => 'Masterimage',
           type    => 'Masterimage',
@@ -405,7 +410,7 @@ sub registerUsers {
           desc    => 'Entity master group containing all entities',
           system  => 1,
           methods => {
-              'Administrator' => [ 'create', 'update', 'remove', 'get', 'addPerm', 'removePerm', 'subscribe', 'unsubscribe' ],
+              'Administrator' => [ 'create', 'update', 'remove', 'get', 'addPerm', 'removePerm' ],
               'Guest'         => [ 'get' ]
           }
         },
@@ -704,7 +709,7 @@ sub registerOperations {
     ];
 
     for my $operation (@{$operations}) {
-        Operationtype->new(
+        Entity::Operationtype->new(
             operationtype_name  => $operation->[0],
             operationtype_label => $operation->[1] || ''
         );
@@ -1904,7 +1909,7 @@ sub populate_workflow_def {
                                  service_provider_id => $args{kanopya_master}->id
                              });
 
-    my $scale_op_id       = Operationtype->find( hash => { operationtype_name => 'LaunchScaleInWorkflow' })->id;
+    my $scale_op_id       = Entity::Operationtype->find( hash => { operationtype_name => 'LaunchScaleInWorkflow' })->id;
     my $scale_amount_desc = "Format:\n - '+value' to increase\n - '-value' to decrease\n - 'value' to set";
 
     my $delay_desc = 'Delay minimum between two workflow triggers';
@@ -1949,9 +1954,9 @@ sub populate_workflow_def {
     );
 
     # AddNode workflow def
-    my $addnode_op_id = Operationtype->find( hash => { operationtype_name => 'AddNode' })->id;
-    my $prestart_op_id = Operationtype->find( hash => { operationtype_name => 'PreStartNode' })->id;
-    my $poststart_op_id = Operationtype->find( hash => { operationtype_name => 'PostStartNode' })->id;
+    my $addnode_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'AddNode' })->id;
+    my $prestart_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'PreStartNode' })->id;
+    my $poststart_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'PostStartNode' })->id;
     my $addnode_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'AddNode',
         params => {
@@ -1970,8 +1975,8 @@ sub populate_workflow_def {
     );
 
     # StopNode workflow def
-    my $prestop_op_id = Operationtype->find( hash => { operationtype_name => 'PreStopNode' })->id;
-    my $poststop_op_id = Operationtype->find( hash => { operationtype_name => 'PostStopNode' })->id;
+    my $prestop_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'PreStopNode' })->id;
+    my $poststop_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'PostStopNode' })->id;
     my $stopnode_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'StopNode',
         params => {
@@ -1990,7 +1995,7 @@ sub populate_workflow_def {
     );
 
     # Optimiaas Workflow def
-    my $optimiaas_op_id = Operationtype->find( hash => { operationtype_name => 'LaunchOptimiaasWorkflow' })->id;
+    my $optimiaas_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'LaunchOptimiaasWorkflow' })->id;
     my $optimiaas_wf = $kanopya_wf_manager->createWorkflowDef(
                            workflow_name => 'OptimiaasWorkflow',
                            step          => [ $optimiaas_op_id ],
@@ -1998,7 +2003,7 @@ sub populate_workflow_def {
                        );
 
     # Migrate Workflow def
-    my $migrate_op_id = Operationtype->find( hash => { operationtype_name => 'MigrateHost' })->id;
+    my $migrate_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'MigrateHost' })->id;
     my $migrate_wf = $kanopya_wf_manager->createWorkflowDef(
                          workflow_name => 'MigrateWorkflow',
                          steps         => [ $migrate_op_id ],
@@ -2006,9 +2011,9 @@ sub populate_workflow_def {
                      );
 
     # ResubmitNode  workflow def
-    my $resubmit_node_op_id  = Operationtype->find( hash => { operationtype_name => 'ResubmitNode' })->id;
-    my $scale_cpu_op_id  = Operationtype->find( hash => { operationtype_name => 'ScaleCpuHost' })->id;
-    my $scale_mem_op_id  = Operationtype->find( hash => { operationtype_name => 'ScaleMemoryHost' })->id;
+    my $resubmit_node_op_id  = Entity::Operationtype->find( hash => { operationtype_name => 'ResubmitNode' })->id;
+    my $scale_cpu_op_id  = Entity::Operationtype->find( hash => { operationtype_name => 'ScaleCpuHost' })->id;
+    my $scale_mem_op_id  = Entity::Operationtype->find( hash => { operationtype_name => 'ScaleMemoryHost' })->id;
     my $resubmit_node_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'ResubmitNode',
         params => {
@@ -2027,7 +2032,7 @@ sub populate_workflow_def {
     );
 
     # RelieveHypervisor workflow def
-    my $relieve_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'RelieveHypervisor' })->id;
+    my $relieve_hypervisor_op_id  = Entity::Operationtype->find( hash => { operationtype_name => 'RelieveHypervisor' })->id;
     my $relieve_hypervisor_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'RelieveHypervisor',
         params => {
@@ -2046,8 +2051,8 @@ sub populate_workflow_def {
     );
 
     # MaintenanceHypervisor workflow def
-    my $flush_hypervisor_op_id = Operationtype->find( hash => { operationtype_name => 'FlushHypervisor' })->id;
-    my $deactivate_host_op_id  = Operationtype->find( hash => { operationtype_name => 'DeactivateHost' })->id;
+    my $flush_hypervisor_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'FlushHypervisor' })->id;
+    my $deactivate_host_op_id  = Entity::Operationtype->find( hash => { operationtype_name => 'DeactivateHost' })->id;
     my $hypervisor_maintenance_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'HypervisorMaintenance',
         params => {
@@ -2066,7 +2071,7 @@ sub populate_workflow_def {
     );
 
     # Hypervisor resubmit workflow def
-    my $resubmit_hypervisor_op_id  = Operationtype->find( hash => { operationtype_name => 'ResubmitHypervisor' })->id;
+    my $resubmit_hypervisor_op_id  = Entity::Operationtype->find( hash => { operationtype_name => 'ResubmitHypervisor' })->id;
     my $hypervisor_resubmit_wf = $kanopya_wf_manager->createWorkflowDef(
         workflow_name => 'ResubmitHypervisor',
         params => {
@@ -2116,7 +2121,7 @@ sub populate_workflow_def {
                 entity => { label => 'Entity' }
             }
         },
-        steps => [ Operationtype->find(hash => { operationtype_name => 'Synchronize' })->id ],
+        steps => [ Entity::Operationtype->find(hash => { operationtype_name => 'Synchronize' })->id ],
         description => "Synchronizing component \"[% entity %]\""
     );
 
@@ -2125,9 +2130,9 @@ sub populate_workflow_def {
         workflow_name => 'BuildStack',
         params => {},
         steps => [
-            Operationtype->find( hash => { operationtype_name => 'BuildStack' })->id,
-            Operationtype->find( hash => { operationtype_name => 'StartStack' })->id,
-            Operationtype->find( hash => { operationtype_name => 'ConfigureStack' })->id,
+            Entity::Operationtype->find( hash => { operationtype_name => 'BuildStack' })->id,
+            Entity::Operationtype->find( hash => { operationtype_name => 'StartStack' })->id,
+            Entity::Operationtype->find( hash => { operationtype_name => 'ConfigureStack' })->id,
         ],
         description => "Build stack"
     );
@@ -2136,9 +2141,9 @@ sub populate_workflow_def {
         workflow_name => 'EndStack',
         params => {},
         steps => [
-            Operationtype->find( hash => { operationtype_name => 'UnconfigureStack' })->id,
-            Operationtype->find( hash => { operationtype_name => 'StopStack' })->id,
-            Operationtype->find( hash => { operationtype_name => 'EndStack' })->id,
+            Entity::Operationtype->find( hash => { operationtype_name => 'UnconfigureStack' })->id,
+            Entity::Operationtype->find( hash => { operationtype_name => 'StopStack' })->id,
+            Entity::Operationtype->find( hash => { operationtype_name => 'EndStack' })->id,
         ],
         description => "End stack"
     );

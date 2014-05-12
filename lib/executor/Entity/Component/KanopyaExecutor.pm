@@ -32,6 +32,7 @@ use warnings;
 
 use Entity::Workflow;
 use Entity::Operation;
+use Entity::Operationtype;
 
 use Kanopya::Database;
 use Kanopya::Exceptions;
@@ -122,6 +123,7 @@ sub enqueue {
         return $workflow->enqueueNow(operation => \%args);
     }
 
+    $args{operationtype} = Entity::Operationtype->find(hash => { operationtype_name => delete $args{type} });
     my $operation = Entity::Operation->enqueue(%args);
 
     # Publish on the 'workflow' queue

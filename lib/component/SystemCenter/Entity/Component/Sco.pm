@@ -34,7 +34,7 @@ use warnings;
 
 use General;
 use Scope;
-use Operationtype;
+use Entity::Operationtype;
 use Entity::Workflow;
 use Entity::ServiceProvider;
 
@@ -89,7 +89,7 @@ sub createWorkflowDef {
                          optional => { 'params' => undef, 'steps' => [] });
 
     # Manually add the only step for all workflow definitions of Sco workfow manager
-    push @{$args{steps}}, Operationtype->find(hash => { operationtype_name => 'LaunchSCOWorkflow' })->id;
+    push @{$args{steps}}, Entity::Operationtype->find(hash => { operationtype_name => 'LaunchSCOWorkflow' })->id;
 
     return $self->SUPER::createWorkflowDef(%args);
 }

@@ -33,12 +33,11 @@ use strict;
 use warnings;
 
 use Entity::WorkflowDef;
+use Entity::Operationtype;
 use WorkflowDefRule;
+
 use Hash::Merge;
-
 use TryCatch;
-my $err;
-
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -107,10 +106,15 @@ sub methods {
         },
         deassociateWorkflow => {
             description => 'deassociate a workflow definition to the rule.',
-        }
+        },
+        subscribe => {
+            description => 'subscribe to notification about <object>',
+        },
+        unsubscribe => {
+            description => 'unsubscribe to notification about <object>',
+        },
     };
 }
-
 
 my $merge = Hash::Merge->new('LEFT_PRECEDENT');
 
@@ -437,8 +441,13 @@ sub subscribe {
     my $self        = shift;
     my %args        = @_;
 
-    my $result  = $self->SUPER::subscribe(%args);
+    General::checkParams(args => \%args, required => [ 'operationtype', 'subscriber_id' ]);
 
+    my $operationtype = Entity::Operationtype->find(hash => {
+                            operationtype_name => delete $args{operationtype}
+                        });
+
+    my $result = $operationtype->subscribe(entity_id => $self->id, %args);
     if (not defined $self->workflow_def) {
         try {
             $self->associateWithNotifyWorkflow();
@@ -469,7 +478,7 @@ sub unsubscribe {
 
     General::checkParams(args => \%args, required => [ 'notification_subscription_id' ]);
 
-    $self->SUPER::unsubscribe(%args);
+    Entity::Operationtype->unsubscribe(%args);
 
     if ($self->workflow_def->workflow_def_name eq $self->notifyWorkflowName) {
         if ($self->notification_subscription_entities == 0) {

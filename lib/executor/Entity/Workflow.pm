@@ -35,6 +35,7 @@ use ParamPreset;
 use OperationGroup;
 use Kanopya::Exceptions;
 use Entity::Operation;
+use Entity::Operationtype;
 use Kanopya::Database;
 
 use TryCatch;
@@ -148,19 +149,20 @@ sub run {
 
     my @operationtypes;
     for my $step (@steps) {
-        push @operationtypes, $step->operationtype->operationtype_name;
+        push @operationtypes, $step->operationtype;
     }
 
     # If a rule is defined, the workflow is triggered from a rule,
     # So add the rule in the context, and prepend the operation EProcessRule.
     if (defined $args{rule}) {
         $args{params}->{context}->{rule} = $args{rule};
-        unshift(@operationtypes, 'ProcessRule');
+        unshift @operationtypes,
+            Entity::Operationtype->find(hash => { operationtype_name => 'ProcessRule' });
     }
 
     my $group = OperationGroup->create();
     for my $operationtype (@operationtypes) {
-        $workflow->enqueue(priority => 200, type => $operationtype, group => $group, %args);
+        $workflow->enqueue(priority => 200, operationtype => $operationtype, group => $group, %args);
 
         # If some params has been given to the first operation, remove from args
         # to avoid given them to others operation of the workflow.
@@ -594,8 +596,8 @@ sub getOperationsParams {
 
     my @steps = $self->search(related => 'workflow_steps', order_by => 'workflow_step_id asc');
     my @operations_to_enqueue = map { {
-        priority => 200,
-        type     => $_->operationtype->operationtype_name,
+        priority      => 200,
+        operationtype => $_->operationtype,
     } } @steps;
     # Put params (and context) on the first operation only
     $operations_to_enqueue[0]->{params} = $self->{params};
@@ -634,9 +636,9 @@ sub _getOperationsToEnqueue {
                                          order_by => 'workflow_step_id asc' );
 
         @operations_to_enqueue = map { {
-            priority => 200,
-            group    => $group,
-            type     => $_->operationtype->operationtype_name,
+            priority      => 200,
+            group         => $group,
+            operationtype => $_->operationtype,
         } } @steps;
 
         # Put params (and context) on the first operation only

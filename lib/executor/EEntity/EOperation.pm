@@ -33,7 +33,6 @@ use Entity;
 use ERollback;
 use EEntity;
 use Entity::Operation;
-use Operationtype;
 use NotificationSubscription;
 use Entity::ServiceProvider::Cluster;
 

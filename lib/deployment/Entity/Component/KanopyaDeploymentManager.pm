@@ -43,11 +43,6 @@ use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
 
-use constant ATTR_DEF => {};
-
-sub getAttrDef { return ATTR_DEF; }
-
-
 use constant ATTR_DEF => {
     kanopya_executor_id => {
         label        => 'Workflow manager',
@@ -73,7 +68,7 @@ use constant ATTR_DEF => {
         is_mandatory => 1,
         is_editable  => 0,
     },
-     => {
+    system_component_id => {
         label        => 'Operating system manager',
         type         => 'relation',
         relation     => 'single',
@@ -82,6 +77,8 @@ use constant ATTR_DEF => {
         is_editable  => 0,
     },
 };
+
+sub getAttrDef { return ATTR_DEF; }
 
 
 =pod

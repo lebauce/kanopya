@@ -560,10 +560,11 @@ CREATE TABLE `harddisk` (
 --
 
 CREATE TABLE `operationtype` (
-  `operationtype_id` int(8) unsigned NOT NULL AUTO_INCREMENT,
+  `operationtype_id`  int(8) unsigned NOT NULL,
   `operationtype_name` char(64) DEFAULT NULL,
   `operationtype_label` char(128) DEFAULT NULL,
   PRIMARY KEY (`operationtype_id`),
+  FOREIGN KEY (`operationtype_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
   UNIQUE KEY (`operationtype_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 

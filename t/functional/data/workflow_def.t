@@ -23,7 +23,7 @@ use Entity;
 use Entity::WorkflowDef;
 use ParamPreset;
 use Kanopya::Tools::TestUtils 'expectedException';
-use Operationtype;
+use Entity::Operationtype;
 
 Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
@@ -85,7 +85,7 @@ sub main {
 
 
     lives_ok {
-        my @ops = Operationtype->search();
+        my @ops = Entity::Operationtype->search();
         my $op1 = pop @ops;
         my $op2 = pop @ops;
 

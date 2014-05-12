@@ -43,7 +43,6 @@ use Entity::Metric::Combination::AggregateCombination;
 use Entity::Rule::AggregateRule;
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::TestUtils 'expectedException';
-use Operationtype;
 use Entity::Node;
 
 use TryCatch;

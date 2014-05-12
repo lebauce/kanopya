@@ -34,7 +34,6 @@ use warnings;
 use Kanopya::Database;
 use General;
 use Entity::Workflow;
-use Operationtype;
 use ParamPreset;
 use OldOperation;
 
@@ -126,8 +125,8 @@ sub methods {
 Create a new operation from an operation type and a priority.
 If params are given in parameters, serialize its in database.
 
-@param type     the operation type
-@param priority the execution priority of the operation
+@param operationtype the operation type
+@param priority      the execution priority of the operation
 
 @optional params      the operation parameters hash
 @optional workflow_id the workflow that the operation belongs to
@@ -145,15 +144,13 @@ sub new {
     my $self;
 
     General::checkParams(args     => \%args,
-                         required => [ 'priority', 'type' ],
+                         required => [ 'priority', 'operationtype' ],
                          optional => { 'workflow_id' => undef,
                                        'params'      => undef,
                                        'harmless'    => 0,
                                        'group'       => undef,
                                        'related_id'  => undef,
                                        'timeout'     => undef });
-
-    my $operationtype = Operationtype->find(hash => { operationtype_name => $args{type} });
 
     # If workflow not defined, initiate a new one with parameters
     my $workflow;
@@ -174,7 +171,7 @@ sub new {
 
     try {
         $log->debug("Enqueuing new operation <$args{type}>, in workflow <" . $workflow->id . ">");
-        $self = $class->SUPER::new(operationtype_id     => $operationtype->id,
+        $self = $class->SUPER::new(operationtype_id     => $args{operationtype}->id,
                                    state                => "pending",
                                    execution_rank       => $workflow->getNextRank(),
                                    workflow_id          => $workflow->id,
@@ -572,7 +569,7 @@ Alias for the operation constructor.
 sub enqueue {
     my ($self, %args) = @_;
 
-    General::checkParams(args => \%args, required => [ 'priority', 'type' ]);
+    General::checkParams(args => \%args, required => [ 'priority', 'operationtype' ]);
 
     return Entity::Operation->new(%args);
 }

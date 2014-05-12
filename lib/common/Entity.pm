@@ -30,10 +30,7 @@ use Entityright;
 use EntityComment;
 use ClassType;
 use Entity::Gp;
-use Operationtype;
 use Kanopya::Exceptions;
-use NotificationSubscription;
-use Entity::ServiceProvider::Cluster;
 
 use Data::Dumper;
 
@@ -86,12 +83,6 @@ sub getAttrDef { return ATTR_DEF; }
 
 sub methods {
     return {
-        subscribe => {
-            description => 'subscribe to notification about <object>',
-        },
-        unsubscribe => {
-            description => 'unsubscribe to notification about <object>',
-        },
         addPerm => {
             description => 'add a permission for <object>',
         },
@@ -445,45 +436,6 @@ sub checkPerm {
                      ">, on method <$args{method}> of entity <" . $self->id . ">."
         );
     }
-}
-
-sub subscribe {
-    my $self = shift;
-    my %args = @_;
-
-    General::checkParams(args     => \%args,
-                         required => [ 'subscriber_id' ],
-                         optional => { 'operationtype'       => undef,
-                                       'operation_state'     => "processing",
-                                       'service_provider_id' => undef,
-                                       'validation'          => 0 });
-
-    if (not defined $args{service_provider_id}) {
-        $args{service_provider_id} = Entity::ServiceProvider::Cluster->getKanopyaCluster()->id;
-    }
-
-    # If operationtype not defined, subscribe for all operation types
-    my $operationtype_id;
-    if (defined $args{operationtype}) {
-        $operationtype_id = Operationtype->find(hash => { operationtype_name => $args{operationtype} })->id;
-    }
-
-    NotificationSubscription->findOrCreate(
-        entity_id           => $self->id,
-        subscriber_id       => $args{subscriber_id},
-        operationtype_id    => $operationtype_id,
-        operation_state     => $args{operation_state},
-        service_provider_id => $args{service_provider_id},
-        validation          => $args{validation},
-    );
-}
-
-sub unsubscribe {
-    my ($self, %args) = @_;
-
-    General::checkParams(args => \%args, required => [ 'notification_subscription_id' ]);
-
-    NotificationSubscription->get(id => $args{notification_subscription_id})->delete();
 }
 
 

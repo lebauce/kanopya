@@ -20,6 +20,7 @@ use EEntity;
 use Entity::User::Customer::StackBuilderCustomer;
 use Entity::Component::KanopyaStackBuilder;
 use Entity::Operation;
+use Entity::Operationtype;
 use NotificationSubscription;
 
 use Data::Dumper;
@@ -104,9 +105,9 @@ sub main {
     } 'Create a customer stack_builder_test for the subscriber';
 
     my $operation = EEntity::EOperation->new(operation => Entity::Operation->new(
-                        priority => 200,
-                        type     => "ConfigureStack",
-                        params   => {
+                        priority      => 200,
+                        operationtype => Entity::Operationtype->find(hash => { operationtype_name => "ConfigureStack" }),
+                        params        => {
                             context => {
                                 stack_builder  => $stackbuilder,
                                 user           => $customer,
