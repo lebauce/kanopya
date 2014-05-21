@@ -15,10 +15,11 @@ use Test::Exception;
 use Test::Pod;
 use Kanopya::Exceptions;
 
+use File::Basename;
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
     level  => 'INFO',
-    file   => __FILE__ . '.log',
+    file   => basename(__FILE__) . '.log',
     layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
 

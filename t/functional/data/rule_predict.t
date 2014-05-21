@@ -16,8 +16,9 @@ use Entity::Metric::Combination::NodemetricCombination;
 use Kanopya::Tools::TimeSerie;
 use Entity::Node;
 
+use File::Basename;
 use Log::Log4perl qw(:easy);
-Log::Log4perl->easy_init({level=>'DEBUG', file=> __FILE__.'.log', layout=>'%F %L %p %m%n'});
+Log::Log4perl->easy_init({level=>'DEBUG', file=> basename(__FILE__).'.log', layout=>'%F %L %p %m%n'});
 my $log = get_logger("");
 
 Kanopya::Database::authenticate( login =>'admin', password => 'K4n0pY4' );
