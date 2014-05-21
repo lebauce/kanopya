@@ -412,6 +412,24 @@ sub checkNodeDown {
 =pod
 =begin classdoc
 
+Ensure the component do not respond any-more and the host unreachable.
+
+=end classdoc
+=cut
+
+sub cancelPrepareNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'node' ]);
+
+    $self->unconfigureNode(node => $args{node});
+    EEntity->new(entity => $self->dhcp_component)->applyConfiguration();
+}
+
+
+=pod
+=begin classdoc
+
 Assign ip to the host network interfaces.
 
 =end classdoc
@@ -603,14 +621,6 @@ sub _generatePXEConf {
         pxe       => 1,
         erollback => $args{erollback}
     );
-
-    if (exists $args{erollback} and defined $args{erollback}) {
-        my $eroll_add_dhcp_host = $args{erollback}->getLastInserted();
-        $args{erollback}->insertNextErollBefore(erollback => $eroll_add_dhcp_host);
-
-        my $eroll_dhcp_generate = $args{erollback}->getLastInserted();
-        $args{erollback}->insertNextErollBefore(erollback => $eroll_dhcp_generate);
-    }
 
     $log->info('Kanopya dhcp server reconfigured');
 

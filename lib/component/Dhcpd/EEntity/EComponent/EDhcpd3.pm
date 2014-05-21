@@ -37,14 +37,7 @@ sub addHost {
 
     General::checkParams(args => \%args, required => [ 'host' ]);
 
-    my $erollback = $args{erollback};
-    delete $args{erollback};
     $self->_entity->addHost(%args);
-
-    if ($erollback) {
-        $erollback->add(function   => $self->can('removeHost'),
-                        parameters => [ $self, $args{host} ]);
-    }
 }
 
 sub removeHost {

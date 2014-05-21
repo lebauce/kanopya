@@ -92,4 +92,21 @@ sub execute {
     );
 }
 
+
+=pod
+=begin classdoc
+
+Ask to the deplyment manager to configure the node
+
+=end classdoc
+=cut
+
+sub cancel {
+    my ($self, %args) = @_;
+
+    $self->{context}->{deployment_manager}->cancelPrepareNode(
+        node => $self->{context}->{node},
+    );
+}
+
 1;
