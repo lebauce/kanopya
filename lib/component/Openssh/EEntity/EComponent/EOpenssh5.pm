@@ -28,9 +28,9 @@ use base "EEntity::EComponent";
 use strict;
 use warnings;
 
-use Template;
-use String::Random;
+use Kanopya::Exceptions;
 
+use TryCatch;
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
 
@@ -55,14 +55,15 @@ sub isUp {
 
     General::checkParams(args => \%args, required => [ "host" ]);
 
-    my $host = $args{host};
-
-    eval {
-        $host->getEContext->execute(command => "uptime");
-    };
-    if ($@) {
-        $log->info('isUp() check for host <' . $host->adminIp . '>, host not sshable');
+    try {
+        $args{host}->getEContext->execute(command => "uptime");
+    }
+    catch (Kanopya::Exception $err) {
+        $log->info("Try to contact host <" . $args{host}->adminIp . ">, host not sshable");
         return 0;
+    }
+    catch ($err) {
+        throw Kanopya::Exception(error => "$err");
     }
 
     return 1;
