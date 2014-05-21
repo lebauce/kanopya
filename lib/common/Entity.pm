@@ -134,22 +134,6 @@ sub new {
 =pod
 =begin classdoc
 
-Reload entity from database
-
-@return the reloaded instance
-
-=end classdoc
-=cut
-
-sub reload {
-    my $self = shift;
-    return Entity->get(id => $self->id);
-}
-
-
-=pod
-=begin classdoc
-
 Ensure to unlock the entity, whatever the consumer.
 
 =end classdoc

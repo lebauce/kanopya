@@ -375,6 +375,24 @@ sub get {
 =pod
 =begin classdoc
 
+Reload entity from database
+
+@return the reloaded instance
+
+=end classdoc
+=cut
+
+sub reload {
+    my ($self, %args) = @_;
+    my $class = ref($self) or throw Kanopya::Exception::Method(error => $self);
+
+    return $class->get(id => $self->id);
+}
+
+
+=pod
+=begin classdoc
+
 Retrieve a value given a name attribute, search this atribute throw the whole class hierarchy.
 
 @param name name of the attribute to get the value
