@@ -28,6 +28,7 @@ use Kanopya::Config;
 use EEntity;
 use EEntity;
 use Entity::NetconfRole;
+use Entity::Systemimage;
 
 use TryCatch;
 use Template;
@@ -107,7 +108,11 @@ sub remove {
 
     # Delete the cluster remaning systemimages
     try {
-        my @systemimages = $self->systemimages;
+        # TODO: Ensure we are not retrieving systemimage of oather clusters
+        my @systemimages =  Entity::Systemimage->search(hash => {
+                                systemimage_name => { 'LIKE' => $self->cluster_name . '_%' }
+                            });
+
         if (scalar(@systemimages) > 0 && ! $args{keep_systemimages}) {
             $log->info("Removing the <" . scalar(@systemimages) . "> cluster systemimage(s)");
             for my $systemimage (map {  EEntity->new(entity => $_)  } @systemimages) {
@@ -119,7 +124,6 @@ sub remove {
     catch ($err) {
         $log->warn("Unable to remove system iamges of the cluster: $err");
     }
-
 
     $self->delete();
 }

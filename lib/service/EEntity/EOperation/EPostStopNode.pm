@@ -34,6 +34,7 @@ use strict;
 use warnings;
 
 use Kanopya::Exceptions;
+use Entity::Systemimage;
 use EEntity;
 
 use TryCatch;
@@ -88,7 +89,14 @@ sub execute {
 
     # Handle the remaning system image of the node
     try {
-        my $image = EEntity->new(data => $self->{context}->{host}->node->systemimage);
+        # NOTE: Can not use the relation node->systemimage any more
+        # TODO: Keep the id of the system image to get it from deployment manager
+        my $systemimage_name = $self->{context}->{cluster}->cluster_name . '_' .
+                               $self->{context}->{host}->node->node_number;
+
+        my $image = EEntity->new(data => Entity::Systemimage->find(hash => {
+                        systemimage_name => $systemimage_name
+                    }));
 
         # Delete the image if persistent policy not set
         if ($self->{context}->{cluster}->cluster_si_persistent eq '0') {
