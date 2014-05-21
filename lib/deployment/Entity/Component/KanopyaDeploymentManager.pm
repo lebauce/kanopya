@@ -148,8 +148,8 @@ sub deployNode {
                                        'deploy_on_disk' => 0, 'workflow' => undef });
 
     $args{context}->{deployment_manager} = $self;
-    return $self->executor_component->enqueue(
-               type     => 'DeployNode',
+    return $self->executor_component->run(
+               name     => 'DeployNode',
                workflow => $args{workflow},
                params => {
                    context => {
@@ -185,8 +185,8 @@ sub releaseNode {
                          optional => { 'workflow' => undef });
 
     $args{context}->{deployment_manager} = $self;
-    return $self->executor_component->enqueue(
-               type     => 'ReleaseNode',
+    return $self->executor_component->run(
+               name     => 'ReleaseNode',
                workflow => $args{workflow},
                params   => {
                    context => {

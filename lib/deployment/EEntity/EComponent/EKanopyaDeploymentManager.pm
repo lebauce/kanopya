@@ -46,13 +46,13 @@ my $log = get_logger("");
 =begin classdoc
 
 Add the host as client for the exported systemimage,
-assign network interfaces, configure component on the systemimage,
-generate boot configuration and configure dhcp and tftp, and finally start the host
+assign network interfaces, configure components on the systemimage,
+generate boot configuration and configure dhcp and tftp.
 
 =end classdoc
 =cut
 
-sub deployNode {
+sub prepareNode {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
@@ -104,20 +104,29 @@ sub deployNode {
 
     # If the system image is configurable, configure the components
     if ($mountpoint) {
-        $log->info("Operate components configuration on mounted systemimage");
-        foreach my $component (map { EEntity->new(entity => $_) } $args{node}->components) {
-            $component->configureNode(host           => $args{node}->host,
-                                      mount_point    => $mountpoint,
-                                      boot_policy    => $args{boot_policy},
-                                      deploy_on_disk => $args{deploy_on_disk},
-                                      erollback      => $args{erollback});
+        try {
+            $log->info("Operate components configuration on mounted systemimage");
+            foreach my $component (map { EEntity->new(entity => $_) } $args{node}->components) {
+                $log->info("Configuring \"" . $component->label . "\" on node " . $args{node}->label);
+                $component->configureNode(host           => $args{node}->host,
+                                          mount_point    => $mountpoint,
+                                          boot_policy    => $args{boot_policy},
+                                          deploy_on_disk => $args{deploy_on_disk},
+                                          erollback      => $args{erollback});
+            }
         }
+        catch ($err) {
+            $container_access->umount(econtext => $self->getEContext, erollback => $args{erollback});
+            $err->rethrow();
+        }
+
+        # Umount system image container
+        $log->info("Unmounting the container access <" . $container_access->label . ">");
+        $container_access->umount(econtext => $self->getEContext, erollback => $args{erollback});
     }
 
     $log->info("Operate Boot Configuration");
-
     $self->_generateBootConf(node             => $args{node},
-                             mount_point      => $mountpoint,
                              container_access => $container_access,
                              boot_policy      => $args{boot_policy},
                              deploy_on_disk   => $args{deploy_on_disk},
@@ -130,48 +139,28 @@ sub deployNode {
     for my $bootserver (@bootservers) {
         EEntity->new(entity => $self->system_component)->generateConfiguration(host => $bootserver);
     }
+}
 
-    # Umount system image container
-    if ($mountpoint) {
-        $log->info("Unmounting the container access <" . $container_access->label . ">");
-        $container_access->umount(econtext => $self->getEContext, erollback => $args{erollback});
-    }
 
-    # Workaround to ensure the /etc/dhcp/dhcpd.hosts is pupolated by the dhcp_component,
-    # Loop until the files are populated.
-    my $times = 20;
-    my $retry = $times;
-    while ($retry > 0) {
-        # Apply dhcp and tftp configuration on the deployment server
-        my @apply = map { EEntity->new(entity => $_) } ($self->system_component, $self->dhcp_component);
-        for my $component (@apply) {
-            $component->applyConfiguration(tags => [ "kanopya::deployment::deploynode" ])
-        }
+=pod
+=begin classdoc
 
-        # Search for the host in the configuration file
-        my $indhcp = EEntity->new(entity => $self->dhcp_component)->getEContext->execute(
-                         command => "grep -i " . $args{node}->host->getPXEIface->iface_mac_addr .
-                                    " /etc/dhcp/dhcpd.hosts"
-                     );
+Apply the dhcp configuration on the boot server, and start the host.
 
-        # Stop looping if the dhcp is ok
-        if ($indhcp->{exitcode} == 0) {
-            if ($retry != $times) {
-                $log->warn("Populating dhcpd.hosts has required " . ($times - $retry) . " calls to " .
-                           "applyConfiguration on the dhcp component " . $self->dhcp_component->label);
-            }
-            last;
-        }
-        $retry--;
-    }
-    if ($retry == 0) {
-        my $msg = "Host mac address " . $args{node}->host->getPXEIface->iface_mac_addr .
-                  " not found in the dhcp configuration file /etc/dhcp/dhcpd.hosts" .
-                  " after $times retry of applyConfiguration on " . $self->dhcp_component->label;
-        if ($args{ensure_dhcp_conf}) {
-            throw Kanopya::Exception::Execution::ResourceNotFound(error => $msg);
-        }
-        $log->error($msg . ", continuing...");
+=end classdoc
+=cut
+
+sub deployNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args,
+                         required => [ 'node' ],
+                         optional => { 'hypervisor' => undef, 'erollback' => undef });
+
+    # Apply dhcp and tftp configuration on the deployment server
+    my @apply = map { EEntity->new(entity => $_) } ($self->system_component, $self->dhcp_component);
+    for my $component (@apply) {
+        $component->applyConfiguration(tags => [ "kanopya::deployment::deploynode" ])
     }
 
     # Finally we start the node
@@ -179,13 +168,147 @@ sub deployNode {
         hypervisor => $args{hypervisor}, # Required for vm add only
         erollback  => $args{erollback},
     );
+
+    $args{node}->setState(state => "goingin");
 }
 
 
 =pod
 =begin classdoc
 
-Remove the host from the dhcp and halt.
+Try to connect to the host, and check availability of the components.
+
+=end classdoc
+=cut
+
+sub checkNodeUp {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'node', 'deploy_on_disk' ]);
+
+    # Duration to wait before retrying prerequistes
+    my $delay = 10;
+
+    # Duration to wait for setting host broken
+    my $broken_time = 240;
+
+    # Check how long the host is 'starting'
+    my @state = $args{node}->host->getState;
+    my $starting_time = time() - $state[1];
+    if ($starting_time > $broken_time) {
+        EEntity->new(entity => $args{node}->host)->timeOuted();
+    }
+
+    my $node_ip = $args{node}->host->adminIp;
+    if (not $node_ip) {
+        throw Kanopya::Exception::Internal(
+                  error => "Host \"" . $args{node}->host->label .  "\" has no admin ip."
+              );
+    }
+
+    if (! EEntity->new(entity => $args{node}->host)->checkUp()) {
+        $log->info("Host \"" . $args{node}->host->label .
+                   "\" not yet reachable at <$node_ip>");
+        return $delay;
+    }
+
+    # Check if all host components are up.
+    if (! $args{node}->checkComponents()) {
+        return $delay;
+    }
+
+    # If deployed on disk, remove the bost from teh dhcp to avoid the PXE
+    # at the next reboot
+    if ($args{deploy_on_disk}) {
+        # Check if the host has already been deployed
+        my $hd = $args{node}->host->find(related  => 'harddisks' ,
+                                         order_by => 'harddisk_device');
+
+        if (! (defined $hd->deployed_on_id && $hd->deployed_on_id == $args{node}->id)) {
+            # Try connecting to the host, delay if it fails
+            try {
+                if ($args{node}->getEContext->execute(command => "true")->{exitcode}) {
+                    throw Kanopya::Exception::Execution();
+                }
+            }
+            catch ($err) {
+                return $delay;
+            }
+
+            # Verify hostname
+            my $theoricalhostname = $args{node}->node_hostname;
+            my $realhostname = $args{node}->getEContext->execute(command => 'hostname -s');
+
+            chomp($realhostname->{stdout});
+            if ($theoricalhostname ne $realhostname->{stdout}) {
+                throw Kanopya::Exception::Execution::OperationInterrupted(
+                    error => "System hostname \"$realhostname->{stdout}\" is different than " .
+                             "the database hostname for host \"$theoricalhostname\". " .
+                             "Is PXE boot working properly ?"
+                );
+            }
+
+            # Disable PXE boot but keep the host entry
+            $hd->deployed_on_id($args{node}->id);
+            my $dhcp = EEntity->new(entity => $self->dhcp_component);
+            $dhcp->removeHost(host => $args{node}->host);
+            $dhcp->addHost(host => $args{node}->host, pxe => 0);
+            $dhcp->applyConfiguration();
+
+            # Now reboot the host
+            try {
+                $args{node}->getEContext->execute(
+                    command => "sync; echo 1 > /proc/sys/kernel/sysrq; echo b > /proc/sysrq-trigger"
+                );
+            }
+            catch ($err) {
+                $log->warn("Unable to reboot the host: $err");
+            }
+
+            return $delay;
+        }
+    }
+
+    # Node is up
+    $args{node}->host->setState(state => "up");
+    $args{node}->setState(state => "in");
+
+    $log->info("Host \"" . $args{node}->host->label .  "\" is 'up'");
+
+    return 0;
+}
+
+
+=pod
+=begin classdoc
+
+Remove the host from the dhcp.
+
+=end classdoc
+=cut
+
+sub unconfigureNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'node' ]);
+
+    # Remove Host from the dhcp
+    try {
+        EEntity->new(entity => $self->dhcp_component)->removeHost(host => $args{node}->host);
+    }
+    catch (Kanopya::Exception::Internal::NotFound $err) {
+        $log->warn("Node " . $args{node}->node_hostname . " not found in dhcpd hosts")
+    }
+    catch ($err) {
+        $err->rethrow();
+    }
+}
+
+
+=pod
+=begin classdoc
+
+Apply the dhcp configuration and halt.
 
 =end classdoc
 =cut
@@ -195,23 +318,96 @@ sub releaseNode {
 
     General::checkParams(args => \%args, required => [ 'node' ]);
 
-    # Remove Host from the dhcp
-    try {
-        my $dchp = EEntity->new(entity => $self->dhcp_component);
-        $dchp->removeHost(host => $args{node}->host);
-        $dchp->applyConfiguration();
-    }
-    catch (Kanopya::Exception::Internal::NotFound $err) {
-        $log->warn("Node " . $args{node}->node_hostname . " not found in dhcpd hosts")
-    }
-    catch ($err) {
-        $err->rethrow();
-    }
+    # Apply the dhcpd configuration as the database transction
+    # has been commited since the configuration changes at unconfigureNode.
+    $log->info("Apply dhcp configuration");
+    EEntity->new(entity => $self->dhcp_component)->applyConfiguration();
 
     # Finaly halt the node
+    $log->info("Poweroff host " . $args{node}->host->label);
     EEntity->new(entity => $args{node}->host)->halt();
+
+    $args{node}->setState(state => "goingout");
 }
 
+
+=pod
+=begin classdoc
+
+Ensure the component do not respond any-more and the host unreachable.
+
+=end classdoc
+=cut
+
+sub checkNodeDown {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'node' ]);
+
+    # Duration to wait before retrying prerequistes
+    my $delay = 10;
+
+    # Duration to wait for setting host broken
+    my $broken_time = 240;
+
+    # Check how long the host is 'stopping'
+    my @state = $args{node}->host->getState;
+    my $stopping_time = time() - $state[1];
+
+    if($stopping_time > $broken_time) {
+        $args{node}->host->setState(state => 'broken');
+    }
+
+    my $node_ip = $args{node}->host->adminIp;
+    if (not $node_ip) {
+        throw Kanopya::Exception::Internal(
+                  error => "Host " . $args{node}->label .  " has no admin ip."
+              );
+    }
+
+    # Instanciate an econtext to try initiating an ssh connexion.
+    try {
+        $args{node}->getEContext;
+
+        # Check if all host components are down.
+        my @components = sort { $a->priority <=> $b->priority } $args{node}->components;
+        foreach my $component (map { EEntity->new(entity => $_) } @components) {
+            $log->debug("Browsing component: " . $component->label);
+
+            if ($component->isUp(host => EEntity->new(entity => $args{node}->host))) {
+                $log->info("Component " . $component->label .
+                           " still up on node " . $args{node}->label);
+                return $delay;
+            }
+            $log->info("Component " . $component->label . " do not respond any more");
+        }
+    }
+    catch (Kanopya::Exception::Network $err) {
+        $log->info("Node " . $args{node}->label . " do not repond to ssh any more");
+    }
+    catch (Kanopya::Exception $err) {
+        $err->rethrow();
+    }
+    catch ($err) {
+        throw Kanopya::Exception::Execution(error => $err);
+    }
+
+    # Finally ask to the host manager to check if node is still power on
+    try {
+        if (EEntity->new(entity => $args{node}->host)->checkUp()) {
+            $log->info("Node still up, waiting...");
+            return $delay;
+        }
+    }
+    catch {
+        # Check test failed, considering the host down
+    }
+
+    # Stop the host
+    EEntity->new(entity => $args{node}->host)->stop();
+
+    return 0;
+}
 
 
 =pod

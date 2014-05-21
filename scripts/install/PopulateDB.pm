@@ -697,8 +697,10 @@ sub registerOperations {
         [ 'PreStopNode', 'Configuring node removal for instance "[% cluster ? cluster : "n/a" %]"' ],
         [ 'PostStopNode', 'Finalizing removing node "[% host ? host : "n/a" %]"' ],
         # Workflow Deploy/ReleaseNode
-        [ 'DeployNode', 'Deploying node "[% host ? host : "n/a" %]"' ],
-        [ 'ReleaseNode', 'Releasing node "[% host ? host : "n/a" %]"' ],
+        [ 'PrepareNode', 'Configuring node "[% node ? node : "n/a" %]"' ],
+        [ 'UnconfigureNode', 'Unconfiguring node "[% node ? node : "n/a" %]"' ],
+        [ 'DeployNode', 'Deploying node "[% node ? node : "n/a" %]"' ],
+        [ 'ReleaseNode', 'Releasing node "[% node ? node : "n/a" %]"' ],
         # Workflow BuildStack
         [ 'BuildStack', 'Building stack' ],
         [ 'StartStack', 'Starting stack' ],
@@ -2052,6 +2054,24 @@ sub populate_workflow_def {
         },
         steps => [ $prestop_op_id, $poststop_op_id ],
         description => "Removing node \"[% host %]\" from service \"[% cluster %]\""
+    );
+
+    # DeployNode workflow def
+    my $confnode_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'PrepareNode' })->id;
+    my $deploynode_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'DeployNode' })->id;
+    my $deploynode_wf = $kanopya_wf_manager->createWorkflowDef(
+        workflow_name => 'DeployNode',
+        steps => [ $confnode_op_id, $deploynode_op_id, ],
+        description => "Deploying node \"[% node ? node : \"n/a\" %]\""
+    );
+
+    # ReleaseNode workflow def
+    my $unconfnode_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'UnconfigureNode' })->id;
+    my $releasenode_op_id = Entity::Operationtype->find( hash => { operationtype_name => 'ReleaseNode' })->id;
+    my $releasenode_wf = $kanopya_wf_manager->createWorkflowDef(
+        workflow_name => 'ReleaseNode',
+        steps => [ $unconfnode_op_id, $releasenode_op_id ],
+        description => "Releasing node \"[% node ? node : \"n/a\" %]\""
     );
 
     # Optimiaas Workflow def

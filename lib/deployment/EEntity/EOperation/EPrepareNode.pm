@@ -25,7 +25,7 @@ Deploy a node using given host, disk, and export managers.
 =end classdoc
 =cut
 
-package EEntity::EOperation::EDeployNode;
+package EEntity::EOperation::EPrepareNode;
 use base EEntity::EOperation;
 
 use strict;
@@ -61,17 +61,19 @@ sub check {
     my %args = @_;
 
     General::checkParams(args     => $self->{context},
-                         required => [ 'deployment_manager', 'node' ],
+                         required => [ 'deployment_manager', 'node', 'systemimage' ],
                          optional => { 'hypervisor' => undef });
 
-    General::checkParams(args => $self->{params}, optional => { 'deploy_on_disk' => 0  });
+    General::checkParams(args     => $self->{params},
+                         required => [ 'boot_policy' ],
+                         optional => { 'deploy_on_disk' => 0, 'kernel_id' => undef });
 }
 
 
 =pod
 =begin classdoc
 
-Ask to the deplyment manager to deploy the node
+Ask to the deplyment manager to configure the node
 
 =end classdoc
 =cut
@@ -79,72 +81,15 @@ Ask to the deplyment manager to deploy the node
 sub execute {
     my ($self, %args) = @_;
 
-    $self->{context}->{deployment_manager}->deployNode(
+    $self->{context}->{deployment_manager}->prepareNode(
         node           => $self->{context}->{node},
+        systemimage    => $self->{context}->{systemimage},
+        boot_policy    => $self->{params}->{boot_policy},
+        deploy_on_disk => $self->{params}->{deploy_on_disk},
+        kernel_id      => $self->{params}->{kernel_id},
         hypervisor     => $self->{context}->{hypervisor},
         erollback      => $self->{erollback}
     );
-}
-
-=pod
-=begin classdoc
-
-Wait for the to be up.
-
-=end classdoc
-=cut
-
-sub postrequisites {
-    my ($self, %args) = @_;
-
-    return $self->{context}->{deployment_manager}->checkNodeUp(
-        node           => $self->{context}->{node},
-        deploy_on_disk => $self->{params}->{deploy_on_disk},
-        erollback      => $self->{erollback}
-    );
-}
-
-
-=pod
-=begin classdoc
-
-Removing objects from the context
-
-=end classdoc
-=cut
-
-sub finish {
-    my ($self, %args) = @_;
-
-    delete $self->{context}->{deployment_manager};
-    # delete $self->{context}->{node};
-    delete $self->{context}->{systemimage};
-}
-
-
-=pod
-=begin classdoc
-
-Try to stop the node that has been possibly started.
-
-=end classdoc
-=cut
-
-sub cancel {
-    my ($self, %args) = @_;
-
-    eval {
-        EEntity->new(entity => $self->{context}->{node}->host)->halt();
-    };
-    if ($@) {
-        $log->warn($@);
-    }
-    eval {
-        EEntity->new(entity => $self->{context}->{node}->host)->stop();
-    };
-    if ($@) {
-        $log->warn($@);
-    }
 }
 
 1;

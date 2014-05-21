@@ -18,7 +18,7 @@
 =pod
 =begin classdoc
 
-Stop the host corresponding to the node to release.
+Remove the node from the dhcp server.
 
 @since    2012-Aug-20
 @instance hash
@@ -27,7 +27,7 @@ Stop the host corresponding to the node to release.
 =end classdoc
 =cut
 
-package EEntity::EOperation::EReleaseNode;
+package EEntity::EOperation::EUnconfigureNode;
 use base EEntity::EOperation;
 
 use Kanopya::Exceptions;
@@ -62,7 +62,7 @@ sub check {
 =pod
 =begin classdoc
 
-Stop the host, set the node a as 'goingout'.
+Remove the node from dhcp.
 
 =end classdoc
 =cut
@@ -70,38 +70,8 @@ Stop the host, set the node a as 'goingout'.
 sub execute {
     my $self = shift;
 
-    $self->{context}->{deployment_manager}->releaseNode(node => $self->{context}->{node});
+    $self->{context}->{deployment_manager}->unconfigureNode(node => $self->{context}->{node});
 }
 
-
-=pod
-=begin classdoc
-
-Wait for the host shutdown properly.
-
-=end classdoc
-=cut
-
-sub postrequisites {
-    my ($self, %args) = @_;
-
-    $self->{context}->{deployment_manager}->checkNodeDown(node => $self->{context}->{node});
-}
-
-
-=pod
-=begin classdoc
-
-Removing objects from the context
-
-=end classdoc
-=cut
-
-sub finish {
-    my ($self, %args) = @_;
-
-    delete $self->{context}->{deployment_manager};
-    delete $self->{context}->{node};
-}
 
 1;
