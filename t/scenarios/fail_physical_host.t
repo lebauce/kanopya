@@ -64,7 +64,7 @@ sub main {
         $cluster = Kanopya::Tools::Create->createCluster(
                        cluster_name => "default_cluster_name",
                        cluster_conf => {
-                           cluster_max_node => 2,
+                           cluster_min_node => 2,
                            masterimage_id   => $masterimage->id,
                        },
                    );
@@ -73,22 +73,19 @@ sub main {
     # Dynamically modify the EHost class to raise exception at postStart.
     use_ok ('EEntity::EHost');
 
-    my ($prereport, $postreport) = (0, 0);
+    my $fail_from_test = 0;
     sub EEntity::EHost::postStart {
         my ($self, %args) = @_;
 
         if ($self->node->node_number == 2) {
+            $fail_from_test = 1;
             throw Kanopya::Exception(error => "Second node fail !"); 
         }
     }
 
     diag('Start physical host that should fail');
-    lives_ok {
-        Kanopya::Tools::Execution->startCluster(cluster => $cluster);
-    } 'Start first node';
-
     throws_ok {
-        Kanopya::Tools::Execution->addNode(cluster => $cluster);
+        Kanopya::Tools::Execution->startCluster(cluster => $cluster);
     } 'Kanopya::Exception::Internal', 'Start second node';
 
     lives_ok {
@@ -100,6 +97,12 @@ sub main {
 
     my @nodes = $cluster->nodes;
     ok(scalar(@nodes) == 0, "The cluster should have no nodes");
+
+    lives_ok {
+        if (! $fail_from_test) {
+            die "The start cluster failed, but not from the test mock";
+        }
+    } 'The second node fail from test mock';
 
     if ($testing == 1) {
         Kanopya::Database::rollbackTransaction;

@@ -614,8 +614,8 @@ sub handleResult {
                           content => "[$operation] Execution Aborted : $args{exception}");
 
             # Try to cancel all workflow operations, and delete them.
-            $log->info("Cancelling " . $operation->workflow->workflow_name .
-                       " workflow <" . $operation->workflow->id . ">");
+            $log->info("Cancelling workflow \"" . $operation->workflow->workflow_name .
+                       "\"  <" . $operation->workflow->id . ">");
 
             # Restore context object states updated at 'prepare' step.
             try {
