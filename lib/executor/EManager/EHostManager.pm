@@ -108,7 +108,7 @@ sub haltHost {
 
     General::checkParams(args => \%args, required => [ "host" ]);
 
-    my $result = $self->getEContext->execute(command => 'poweroff');
+   return $args{host}->getEContext->execute(command => 'poweroff')->{exitcode};
 }
 
 
