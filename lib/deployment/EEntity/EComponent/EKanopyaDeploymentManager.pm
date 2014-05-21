@@ -101,7 +101,6 @@ sub prepareNode {
         $log->warn("Unable to mount the container access, continue in configuration less mode.");
     }
 
-
     # If the system image is configurable, configure the components
     if ($mountpoint) {
         try {

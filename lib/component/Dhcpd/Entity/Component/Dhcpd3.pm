@@ -67,7 +67,9 @@ sub addHost {
                                      dhcpd3_hosts_pxe => $args{pxe},
                                      dhcpd3_subnet_id => $dhcp_subnet->id);
     }
-    
+
+    $log->info("Host " . $args{host}->label . " added to dhcp with iface " . $pxe_iface->label .
+               ", and subnet " . $subnet->label);
     return $dhcp_host;
 }
 
@@ -88,6 +90,9 @@ sub removeHost {
     my $host = Dhcpd3Host->find(hash => { iface_id => $pxe_iface->id });
 
     $host->delete();
+
+    $log->info("Host " . $args{host}->label . " removed from dhcp with iface " . $pxe_iface->label .
+               ", and subnet " . $network->label);
 }
 
 sub getNetConf {
