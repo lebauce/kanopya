@@ -477,10 +477,6 @@ sub finish {
     $self->{context}->{host_manager}->decreaseConsumers();
     $self->{context}->{disk_manager}->decreaseConsumers();
     $self->{context}->{export_manager}->decreaseConsumers();
-
-    delete $self->{context}->{host_manager};
-    delete $self->{context}->{disk_manager};
-    delete $self->{context}->{export_manager};
 }
 
 
