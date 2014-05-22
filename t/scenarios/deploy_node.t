@@ -18,7 +18,7 @@ use Kanopya::Exceptions;
 use File::Basename;
 use Log::Log4perl qw(:easy get_logger);
 Log::Log4perl->easy_init({
-    level  => 'INFO',
+    level  => 'DEBUG',
     file   => basename(__FILE__) . '.log',
     layout => '%d [ %H - %P ] %p -> %M - %m%n'
 });
@@ -36,8 +36,9 @@ use Entity::Component::KanopyaExecutor;
 use Entity::Component::Lvm2;
 use Entity::Component::Iscsi::Iscsitarget1;
 use Entity::Component::Linux::Debian;
+use Entity::Component::Openssh5;
 
-my $testing = 1;
+my $testing = 0;
 
 main();
 
@@ -91,7 +92,7 @@ sub main {
         Entity::Component::Lvm2->new(executor_component => $executor)->registerNode(node => $node, master_node => 1);
         Entity::Component::Iscsi::Iscsitarget1->new(executor_component => $executor)->registerNode(node => $node, master_node => 1);
 
-        # Add the required system component
+        # Add the required system and ssh components
         # TODO: find the proper system component type frm the registred masterimage
         my $system = Entity::Component::Linux::Debian->new(
                          nameserver1        => '208.67.222.222',
@@ -101,7 +102,8 @@ sub main {
                      );
 
         $system->registerNode(node => $node, master_node => 1);
-    } 'Create the node';
+        Entity::Component::Openssh5->new()->registerNode(node => $node, master_node => 1);
+    } 'Add component to the node';
 
     diag('Create the system image for the node to deploy');
     my $systemimage;
