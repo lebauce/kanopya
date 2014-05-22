@@ -52,8 +52,9 @@ sub deployNode {
     my ($self, %args) = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ 'node', 'systemimage' ],
-                         optional => { 'workflow' => undef });
+                         required => [ 'node', 'systemimage', 'boot_policy' ],
+                         optional => { 'hypervisor' => undef, 'kernel_id' => undef,
+                                       'deploy_on_disk' => 0, 'workflow' => undef });
 
     throw Kanopya::Exception::NotImplemented();
 }
