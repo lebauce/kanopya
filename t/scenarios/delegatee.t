@@ -17,7 +17,7 @@ Log::Log4perl->easy_init({
 
 my $log = get_logger("");
 
-my $testing = 1;
+my $testing = 0;
 
 use Kanopya::Database;
 use General;

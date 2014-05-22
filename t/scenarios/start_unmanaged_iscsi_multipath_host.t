@@ -43,7 +43,7 @@ use Kanopya::Tools::Execution;
 use Kanopya::Tools::Register;
 use Kanopya::Tools::Retrieve;
 
-my $testing = 1;
+my $testing = 0;
 
 main();
 

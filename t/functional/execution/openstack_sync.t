@@ -51,19 +51,11 @@ sub main {
     test_create_and_delete_vm();
     test_create_and_rebuild_vm();
 
-     Kanopya::Database::rollbackTransaction;
-     # Kanopya::Database::commitTransaction;
+    Kanopya::Database::rollbackTransaction;
 }
 
 sub register_infrastructure {
 
-
-    Kanopya::Tools::Register->registerHost(board => {
-        ram  => 1073741824,
-        core => 4,
-        serial_number => $postfix,
-        ifaces => [ { name => 'eth0', pxe => 1, mac => '00:00:00:00:00:00' } ]
-    });
 
     diag('Register master image');
     my $masterimage;
@@ -78,8 +70,6 @@ sub register_infrastructure {
                                masterimage_id => $masterimage->id,
                            },
                        );
-
-    Kanopya::Tools::Execution->startCluster(cluster => $nova_cluster);
 
     $nova_controller = Entity::Component::Virtualization::NovaController->new(
                            service_provider_id   => $nova_cluster->id,
@@ -115,8 +105,6 @@ sub register_infrastructure {
                           cluster_basehostname => 'computea',
                       },
                   );
-
-    Kanopya::Tools::Execution->startCluster(cluster => $cluster);
 
     $hv_host_1 = $hv_host_1->reload;
     $hv_host_2 = $hv_host_2->reload;
