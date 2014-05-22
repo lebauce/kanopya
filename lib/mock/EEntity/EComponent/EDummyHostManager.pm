@@ -57,20 +57,32 @@ sub getFreeHost {
     my %args = @_;
 
     General::checkParams(args     => \%args,
-                         required => [ "interfaces", "ram" ],
-                         optional => { "deploy_on_disk" => 0, "tags" => [], "no_tags" => [],
-                                       "core" => undef, "cpu" => undef });
+                         required => [ "ram" ],
+                         optional => { "interfaces" => [], "deploy_on_disk" => 0,
+                                       "tags" => [], "no_tags" => [], "core" => undef, "cpu" => undef });
+
+    # We are not consistent yet for the arg "core"
+    if (! (defined($args{core}) || defined($args{cpu}))) {
+        General::checkParams(args => \%args, required => [ "core" ]);
+    }
+    elsif (defined($args{cpu})) {
+        $args{core} = delete $args{cpu};
+    }
 
     my $host = Entity::Host->new(active             => 1,
                                  host_manager_id    => $self->id,
                                  host_serial_number => $random->randpattern("CCccccn"),
-                                 host_ram           => 8 * 1024 * 1024 * 1024,
-                                 host_core          => 8);
+                                 host_ram           => $args{ram},
+                                 host_core          => $args{core});
+
+    my @interfaces = scalar(@{ $args{interfaces} })
+                   ? map { $_->interface_name } @{ $args{interfaces} },
+                   : ("eth0");
 
     my $pxe = 1;
-    for my $interface (@{ $args{interfaces} }) {
+    for my $interface (@interfaces) {
         my $mac = $random->randregex("[0-9][A-F]:[A-F][0-9]:[0-9][A-F]:[A-F][0-9]:[0-9][A-F]:[0-9][A-F]");
-        $host->addIface(iface_name => $interface->interface_name, iface_pxe => $pxe, iface_mac_addr => $mac);
+        $host->addIface(iface_name => $interface, iface_pxe => $pxe, iface_mac_addr => $mac);
 
         $pxe = 0;
     }

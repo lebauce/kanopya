@@ -169,7 +169,10 @@ sub addTarget {
 
     # Create the new target
     $cmd = "ietadm --op new --tid=$tid --params Name=$args{target_name}";
-    $self->getEContext->execute(command => $cmd);
+    my $res = $self->getEContext->execute(command => $cmd);
+    if ($res->{exitcode} != 0) {
+        throw Kanopya::Exception::Execution::CommandFailed(error => $res->{stderr});
+    }
 }
 
 sub gettid {
@@ -183,8 +186,7 @@ sub gettid {
                  );
 
     if ($result->{stdout} eq "") {
-        $errmsg = "EComponent::EIscsitarget1->gettid : no target name found for $args{target_name}!";
-        $log->error($errmsg);
+        $errmsg = "No target name found for $args{target_name}!";
         throw Kanopya::Exception::Internal(error => $errmsg);
     }
 
@@ -211,7 +213,10 @@ sub addLun {
                   "Type=$args{typeio}," .
                   "IOMode=$args{iomode}";
 
-    my $result = $self->getEContext->execute(command => $command);
+    my $res = $self->getEContext->execute(command => $command);
+    if ($res->{exitcode} != 0) {
+        throw Kanopya::Exception::Execution::CommandFailed(error => $res->{stderr});
+    }
 }
 
 sub removeTarget {

@@ -45,6 +45,12 @@ use Kanopya::Exceptions;
 use Daemon;
 use Executor;
 use General;
+use EEntity;
+use Entity::Component::Lvm2;
+use Entity::Component::Iscsi::Iscsitarget1;
+use Entity::Systemimage;
+use Entity::Component::KanopyaDeploymentManager;
+
 use Daemon::MessageQueuing::Executor;
 
 my @args = ();
@@ -316,6 +322,78 @@ sub addNode {
     }
 
     return $node;
+}
+
+
+sub deployNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'node' ]);
+
+    diag('Register master image');
+    my $masterimage;
+    lives_ok {
+        $masterimage = Kanopya::Tools::Register::registerMasterImage();
+    } 'Register master image';
+
+    diag('Create the system image for the node to deploy');
+    my $systemimage;
+    my $lvm = Entity::Component::Lvm2->find();
+    my $iscsi = Entity::Component::Iscsi::Iscsitarget1->find();
+    $systemimage = Entity::Systemimage->new(systemimage_name => "deploy_node_test" . time);
+
+    my $container = EEntity->new(entity => $lvm)->createDisk(
+                        name       => $systemimage ->systemimage_name,
+                        size       => 1024 * 1024 * 1024 * 4,
+                        filesystem => 'ext3',
+                    );
+
+    # Create a temporary local container to access to the masterimage file.
+    my $master_container = EEntity->new(entity => Entity::Container::LocalContainer->new(
+                               container_name       => $masterimage->masterimage_name,
+                               container_size       => $masterimage->masterimage_size,
+                               container_filesystem => 'ext3',
+                               container_device     => $masterimage->masterimage_file,
+                           ));
+
+    # Copy the masterimage container contents to the new container
+    $master_container->copy(dest     => $container,
+                            econtext => Kanopya::Tools::Execution->_executor->_host->getEContext);
+
+    # Remove the temporary container
+    $master_container->remove();
+
+    my $container_access = EEntity->new(entity => $iscsi)->createExport(
+                               container    => $container,
+                               export_name  => $systemimage->systemimage_name,
+                               iscsi_portal => IscsiPortal->find()->id
+                           );
+
+    EEntity->new(entity => $systemimage)->activate(container_accesses => [ $container_access ]);
+
+    diag('Deploy the node via the KanopyaDeploymentManager');
+    my $deployment_mamager = Entity::Component::KanopyaDeploymentManager->find();
+    my $operation = $deployment_mamager->deployNode(
+                        node         => $args{node},
+                        systemimage  => $systemimage,
+                        kernel_id    => $masterimage->masterimage_defaultkernel_id,
+                        boot_policy  => 'PXE Boot via ISCSI',
+                    );
+
+    Kanopya::Tools::Execution->executeOne(entity => $operation);
+}
+
+sub checkNodeUp {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'node' ]);
+
+    if (! EEntity->new(entity => $args{node}->host->reload)->checkUp()) {
+        die 'Host ' . $args{node}->host->label . ' not up.'
+    }
+    if (! EEntity->new(entity => $args{node}->reload)->checkComponents()) {
+        die 'Components of the node ' . $args{node}->label . ' are not up.'
+    }
 }
 
 

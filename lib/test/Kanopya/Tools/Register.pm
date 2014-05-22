@@ -43,6 +43,8 @@ use Kanopya::Tools::Execution;
 use General;
 use Entity::Host;
 use Entity::ServiceProvider::Cluster;
+use Entity::Component::Openssh5;
+use Entity::Component::Linux::Debian;
 use Entity::Masterimage;
 use Entity::Vlan;
 use Entity::Tag;
@@ -186,6 +188,64 @@ sub registerVlan {
 
     my $vlan = Entity::Vlan->new(vlan_name => $vlan_name, vlan_number => $vlan_number);
     NetconfVlan->new(netconf_id => $netconf->id, vlan_id => $vlan->id);
+}
+
+
+=pod
+
+=begin classdoc
+
+Register a node with components.
+
+=end classdoc
+
+=cut
+
+sub registerNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args     => \%args,
+                         required => [ 'host', 'hostname', 'netconf', 'nameserver1', 'nameserver2', 'domainname' ],
+                         optional => { 'components' => [], 'ip_addr' => undef });
+
+    # Set the proper netconf to the host of the node
+    my $iface = $args{host}->find(related => 'ifaces', hash => { iface_name => "eth0" });
+    $iface->update(netconf_ifaces => [ $args{netconf} ]);
+
+    my $node = Entity::Node->new(
+                   host          => $args{host},
+                   # Generate the hostname ourself as we are deploying the node ourself
+                   node_hostname => $args{hostname},
+                   node_state    => ($args{existing} ? 'in' : 'out') . ':' . time
+               );
+
+    diag('Add components on the node');
+    my @toregister = @{ $args{components} };
+
+    # TODO: find the proper system component type from the registred masterimage
+    push @toregister, Entity::Component::Openssh5->new();
+    push @toregister, Entity::Component::Linux::Debian->new(
+                         nameserver1        => $args{nameserver1},
+                         nameserver2        => $args{nameserver2},
+                         domainname         => $args{domainname},
+                         default_gateway_id => ($args{netconf}->poolips)[0]->network->id,
+                     );
+
+    for my $component (@toregister) {
+        $component->registerNode(node => $node, master_node => 1);
+    }
+
+    if ($args{existing}) {
+        diag('Set the down host to up, and out donw to in');
+        $args{host}->setState(state => 'up');
+
+        diag('Assign ip to the existing host');
+        # The Ip should be the same than at deployement because the deployment
+        # sequence has been rollbacked, and we are alone to use HCP
+        $args{host}->find(related => 'ifaces', hash => { iface_name => "eth0" })->assignIp(ip_addr => $args{ip_addr});
+    }
+
+    return $node;
 }
 
 1;

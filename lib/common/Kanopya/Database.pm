@@ -301,6 +301,51 @@ sub rollbackTransaction {
 =pod
 =begin classdoc
 
+Dump the database.
+
+@return the path of the created sql file
+
+=end classdoc
+=cut
+
+sub dumpDatabase {
+    my $dump_cmd = 'mysqldump'
+                   . ' --user=' . config->{user}
+                   . ' --password=' . config->{password}
+                   . ' ' . config->{name};
+
+    my $filepath = '/tmp/kanopya_dump_' . time() . '.sql';
+    system($dump_cmd . ' > ' . $filepath);
+
+    return $filepath;
+}
+
+
+=pod
+=begin classdoc
+
+Restore the database from sql file.
+
+=end classdoc
+=cut
+
+sub restoreDatabase {
+    my (%args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'filepath' ]);
+
+    my $restore_cmd = 'mysql'
+                      . ' --user=' . config->{user}
+                      . ' --password=' . config->{password}
+                      . ' ' . config->{name};
+
+    system($restore_cmd . ' < ' . $args{filepath});
+}
+
+
+=pod
+=begin classdoc
+
 Get the configuration config module and check the configuration
 constants existance
 

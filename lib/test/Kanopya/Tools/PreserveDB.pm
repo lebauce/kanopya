@@ -50,16 +50,7 @@ Dump kanopya DB in the file /tmp/kanopya_dump_<time>.sql where <time> is the cur
 =cut
 
 sub dumpKanopyaDB {
-    my $config = Kanopya::Database::config;
-    my $dump_cmd = 'mysqldump'
-                   . ' --user=' . $config->{user}
-                   . ' --password=' . $config->{password}
-                   . ' ' . $config->{name};
-
-    my $filepath = '/tmp/kanopya_dump_' . time() . '.sql';
-    system($dump_cmd . ' > ' . $filepath);
-
-    return $filepath;
+    return Kanopya::Database::dumpDatabase();
 }
 
 =pod
@@ -75,14 +66,10 @@ Restore kanopya DB from a sql file
 sub restoreKanopyaDB {
     my (%args) = @_;
     General::checkParams(args => \%args, required => [ 'filepath' ]);
-    my $config = Kanopya::Database::config;
-    my $restore_cmd = 'mysql'
-                      . ' --user=' . $config->{user}
-                      . ' --password=' . $config->{password}
-                      . ' ' . $config->{name};
 
-    system($restore_cmd . ' < ' . $args{filepath});
+    Kanopya::Database::restoreDatabase(filepath => $args{filepath});
 }
+
 
 # This code block is executed at the very beginning of the test
 BEGIN {

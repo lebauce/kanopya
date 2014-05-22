@@ -191,6 +191,10 @@ use Exception::Class (
         isa         => 'Kanopya::Exception::Execution',
         description => 'Already exist',
     },
+    Kanopya::Exception::Execution::CommandFailed => {
+        isa         => 'Kanopya::Exception::Execution',
+        description => 'Command failed',
+    },
     Kanopya::Exception::AuthenticationRequired => {
         isa         => 'Kanopya::Exception',
         description => 'Authentication required',
