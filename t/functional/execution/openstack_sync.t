@@ -63,6 +63,16 @@ sub register_infrastructure {
         $masterimage = Kanopya::Tools::Register::registerMasterImage();
     } 'Register master image';
 
+    # Add a fake hypervisor
+    my $noda_host = Kanopya::Tools::Register->registerHost(
+                        board => {
+                            serial_number => 1,
+                            core          => 10,
+                            ram           => 10*1024**3,
+                            ifaces        => [ { name => 'eth0',pxe  => 0 } ]
+                        },
+                    );
+
     my $nova_cluster = Kanopya::Tools::Create->createCluster(
                            cluster_conf => {
                                cluster_name => 'nova_cluster' . $postfix,
@@ -75,6 +85,10 @@ sub register_infrastructure {
                            service_provider_id   => $nova_cluster->id,
                            executor_component_id => Entity::Component::KanopyaExecutor->find->id
                        );
+
+    $nova_cluster->registerNode(hostname => "nova_master_node",
+                                host     => $noda_host,
+                                number   => 1);
 
     # Add a fake hypervisor
     my $hv_host_1 = Kanopya::Tools::Register->registerHost(
