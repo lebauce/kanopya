@@ -182,7 +182,6 @@ sub delete {
             my $nm_combi  = pop @combs;
             my @collector_indicator_ids = $nm_combi->getDependentCollectorIndicatorIds();
             for my $nm_indicator_id (@collector_indicator_ids) {
-                $log->debug($collector_indicator->id.' vs '.$nm_indicator_id);
                 if ($collector_indicator->id == $nm_indicator_id) {
                     $nm_combi->delete();
                     next NODEMETRIC_COMBINATION;
@@ -196,7 +195,7 @@ sub delete {
             for my $node (@nodes) {
                 my $rrd_name = $self->id.'_'.$node->node_hostname;
                 $log->info('delete '.$rrd_name);
-                TimeData::RRDTimeData::deleteTimeDataStore(name => $rrd_name);
+                TimeData::RRDTimeData->deleteTimeDataStore(name => $rrd_name);
             }
         }
 

@@ -393,7 +393,7 @@ sub addManagerParameter {
 Set parameters of a manager defined by its type.
 
 @param manager_type the type of the manager on which we set the params
-@param params the parameters hash to set 
+@param params the parameters hash to set
 
 =end classdoc
 =cut
@@ -479,7 +479,7 @@ sub getLimit {
         my $billing_limit_value;
         my $now = time() * 1000;
         for my $limit (@limits) {
-            if (($limit->start < $now) && ($limit->ending > $now)){ 
+            if (($limit->start < $now) && ($limit->ending > $now)){
                 $billing_limit_value = $billing_limit_value ?
                                            min($billing_limit_value, $limit->value) : $limit->value;
             }
@@ -518,7 +518,7 @@ sub getLimit {
     }
     else {
         return;
-    } 
+    }
 }
 
 
@@ -773,6 +773,13 @@ Overrides method in order to remove properly the components
 
 sub remove {
     my ($self, %args) = @_;
+
+
+    @metrics = ($self->clustermetrics,
+                $self->combinations);
+    while (@metrics) {
+        (pop @metrics)->remove();
+    }
 
     my @components = $self->components;
     while (@components) {

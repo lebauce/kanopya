@@ -31,7 +31,6 @@ use strict;
 use warnings;
 
 use General;
-use TimeData::RRDTimeData;
 use Entity::CollectorIndicator;
 use Entity::Metric::Combination::AggregateCombination;
 
@@ -102,7 +101,9 @@ sub methods {
     }
 }
 
-
+sub _labelAttr {
+    return 'clustermetric_formula_string';
+}
 =pod
 
 =begin classdoc
@@ -122,7 +123,7 @@ sub new {
     my $class = shift;
     my %args = @_;
 
-    my $self = $class->SUPER::new(%args);
+    my $self = $class->SUPER::new(%args, store => 'rrd');
 
     my $service_provider = $self->clustermetric_service_provider;
     my $collector = $service_provider->getManager(manager_type => "CollectorManager");
@@ -187,7 +188,7 @@ Aggregate values according to the related function of the clustermetric
 
 =cut
 
-sub compute{
+sub compute {
     my ($self, %args) = @_;
     General::checkParams args => \%args, required => ['values'];
 
@@ -197,75 +198,6 @@ sub compute{
 
     my $funcname = $self->clustermetric_statistics_function_name;
     return $stat->$funcname();
-}
-
-
-=pod
-
-=begin classdoc
-
-Returns clustermetric values between start_time and stop_time
-
-@param start_time start time in epoch
-@param stop_time stop time in epoch
-
-@return hashref {timestamp => value}
-
-=end classdoc
-
-=cut
-
-sub fetch {
-    my ($self, %args) = @_;
-    General::checkParams args => \%args, required => ['start_time', 'stop_time'];
-
-    my %rep = TimeData::RRDTimeData::fetchTimeDataStore(
-                  name   => $self->id,
-                  start  => $args{start_time},
-                  end    => $args{stop_time}
-              );
-    return \%rep;
-}
-
-
-=pod
-
-=begin classdoc
-
-Returns clustermetric last value
-
-@return clustermetric last value
-
-=end classdoc
-
-=cut
-
-sub lastValue {
-    my ($self, %args) = @_;
-
-    if (defined $args{memoization}->{$self->id}) {
-        return $args{memoization}->{$self->id};
-    }
-
-    my $result;
-    try {
-        my %last_value = TimeData::RRDTimeData::getLastUpdatedValue(metric_uid => $self->id);
-        my @indicator = (values %last_value);
-
-        if (defined $args{memoization}) {
-            $args{memoization}->{$self->id} = $indicator[0];
-        }
-
-        $result = $indicator[0];
-    }
-    catch (Kanopya::Exception::Internal $err) {
-        $result = undef;
-    }
-    catch ($err) {
-        $err->rethrow();
-    }
-
-    return $result;
 }
 
 
@@ -358,10 +290,10 @@ sub getDependentCombinations {
     my @combinations =();
     LOOP:
     for my $aggregate_combination (@combs) {
-        my @cluster_metric_ids = $aggregate_combination->dependentClusterMetricIds;
+        my @metric_ids = $aggregate_combination->dependentMetricIds;
 
-        for my $cluster_metric_id (@cluster_metric_ids) {
-            if ($id == $cluster_metric_id) {
+        for my $metric_id (@metric_ids) {
+            if ($id == $metric_id) {
                 push @combinations, $aggregate_combination;
                 next LOOP;
             }
@@ -463,16 +395,15 @@ sub delete {
     COMBI:
     while (@aggregate_combinations) {
         my $aggregate_combination = pop @aggregate_combinations;
-        my @cluster_metric_ids = $aggregate_combination->dependentClusterMetricIds();
+        my @metric_ids = $aggregate_combination->dependentMetricIds();
 
-        for my $cluster_metric_id (@cluster_metric_ids) {
-            if ($id == $cluster_metric_id) {
+        for my $metric_id (@metric_ids) {
+            if ($id == $metric_id) {
                 $aggregate_combination->delete();
                 next COMBI;
             }
         }
     }
-    TimeData::RRDTimeData::deleteTimeDataStore(name => $id);
     return $self->SUPER::delete();
 }
 

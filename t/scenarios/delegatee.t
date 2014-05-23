@@ -25,7 +25,7 @@ use General;
 use Node;
 use Entity::ServiceProvider;
 use Entity::User::Customer;
-use Entity::Combination::AggregateCombination;
+use Entity::Metric::Combination::AggregateCombination;
 
 use Kanopya::Tools::Execution;
 use Kanopya::Tools::Register;
@@ -42,8 +42,8 @@ sub main {
     }
 
     my $rand = new String::Random;
-            
-    # Create a customer 
+
+    # Create a customer
     my $customer = Entity::User::Customer->new(
         user_login     => 'customer',
         user_password  => 'customer',
@@ -51,7 +51,7 @@ sub main {
         user_lastname  => 'customer',
         user_email     => 'customer@customer.cu',
     );
-    # Retrieve the admin 
+    # Retrieve the admin
     my $admin = Entity::User->find(hash => { user_login => 'admin' });
 
     # Create a cluster for the customer
@@ -196,12 +196,14 @@ sub main {
     Kanopya::Database::authenticate(login => 'admin', password => 'K4n0pY4');
 
     # Find a Clustermetric
-    my $cm = Entity::Clustermetric->find(clustermetric_service_provider_id => $admincluster->id);
+    my $cm = Entity::Metric::Clustermetric->find(
+                 clustermetric_service_provider_id => $admincluster->id
+             );
 
     # Create a AggregateCombination
     my $admincombination;
     lives_ok {
-        $admincombination = Entity::Combination::AggregateCombination->apiCall(
+        $admincombination = Entity::Metric::Combination::AggregateCombination->apiCall(
                                 method => 'create',
                                 params => {
                                     service_provider_id           => $admincluster->id,
@@ -212,11 +214,14 @@ sub main {
 
     # Retreive, update and remove the AggregateCombination
     lives_ok {
-        Entity::Combination::AggregateCombination->apiCall(method => 'get', params => { id => $admincombination->id });
+        Entity::Metric::Combination::AggregateCombination->apiCall(
+            method => 'get',
+            params => { id => $admincombination->id }
+        );
     } 'Get a AggregateCombination from apiCall as admin';
 
     lives_ok {
-        Entity::Combination->apiCall(method => 'get', params => { id => $admincombination->id });
+        Entity::Metric::Combination->apiCall(method => 'get', params => { id => $admincombination->id });
     } 'Get a Combination from apiCall as admin';
 
     lives_ok {
@@ -232,7 +237,7 @@ sub main {
     } 'Remove the AggregateCombination from apiCall as admin';
 
     lives_ok {
-        $admincombination = Entity::Combination::AggregateCombination->apiCall(
+        $admincombination = Entity::Metric::Combination::AggregateCombination->apiCall(
                                 method => 'create',
                                 params => {
                                     service_provider_id           => $admincluster->id,
@@ -253,7 +258,7 @@ sub main {
     # Create a AggregateCombination
     my $customercombination;
     throws_ok {
-        $customercombination = Entity::Combination::AggregateCombination->apiCall(
+        $customercombination = Entity::Metric::Combination::AggregateCombination->apiCall(
                                    method => 'create',
                                    params => {
                                        service_provider_id           => $admincluster->id,
@@ -265,12 +270,15 @@ sub main {
 
     # Retreive, update and remove the AggregateCombination
     throws_ok {
-        Entity::Combination::AggregateCombination->apiCall(method => 'get', params => { id => $admincombination->id });
+        Entity::Metric::Combination::AggregateCombination->apiCall(
+            method => 'get',
+            params => { id => $admincombination->id }
+        );
     } 'Kanopya::Exception::Permission::Denied',
       'Get a AggregateCombination from apiCall as customer';
 
     throws_ok {
-        Entity::Combination->apiCall(method => 'get', params => { id => $admincombination->id });
+        Entity::Metric::Combination->apiCall(method => 'get', params => { id => $admincombination->id });
     } 'Kanopya::Exception::Permission::Denied',
       'Get a Combination from apiCall as admin';
 
@@ -299,7 +307,7 @@ sub main {
     # Create a AggregateCombination
     my $customercombination;
     lives_ok {
-        $customercombination = Entity::Combination::AggregateCombination->apiCall(
+        $customercombination = Entity::Metric::Combination::AggregateCombination->apiCall(
                                 method => 'create',
                                 params => {
                                     service_provider_id           => $customercluster->id,
@@ -310,11 +318,14 @@ sub main {
 
     # Retreive, update and remove the AggregateCombination
     lives_ok {
-        Entity::Combination::AggregateCombination->apiCall(method => 'get', params => { id => $customercombination->id });
+        Entity::Metric::Combination::AggregateCombination->apiCall(
+            method => 'get',
+            params => { id => $customercombination->id },
+        );
     } 'Get a AggregateCombination from apiCall as customer';
 
     lives_ok {
-        Entity::Combination->apiCall(method => 'get', params => { id => $customercombination->id });
+        Entity::Metric::Combination->apiCall(method => 'get', params => { id => $customercombination->id });
     } 'Get a Combination from apiCall as customer';
 
     lives_ok {
@@ -331,7 +342,7 @@ sub main {
     } 'Remove the AggregateCombination from apiCall as customer';
 
     lives_ok {
-        $customercombination = Entity::Combination::AggregateCombination->apiCall(
+        $customercombination = Entity::Metric::Combination::AggregateCombination->apiCall(
                                 method => 'create',
                                 params => {
                                     service_provider_id           => $customercluster->id,

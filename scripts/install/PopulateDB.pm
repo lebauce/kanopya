@@ -83,6 +83,7 @@ my @classes = (
     'Entity::Component::KanopyaMailNotifier',
     'Entity::Component::KanopyaOpenstackSync',
     'Entity::Component::KanopyaStackBuilder',
+    'Entity::Component::KanopyaAnomalyDetector',
     'Entity::Component::UcsManager',
     'Entity::Component::Fileimagemanager0',
     'Entity::Component::NetappManager',
@@ -174,6 +175,7 @@ my @classes = (
     'Entity::CollectorIndicator',
     'Entity::Metric::Clustermetric',
     'Entity::Metric',
+    'Entity::Metric::Anomaly',
     'Entity::Metric::Combination',
     'Entity::Metric::Combination::NodemetricCombination',
     'Entity::Metric::Combination::ConstantCombination',
@@ -1148,6 +1150,13 @@ sub registerComponents {
             service_provider_types => [ 'Kanopya', 'Centos6' ],
         },
         {
+            component_name         => 'KanopyaAnomalyDetector',
+            component_version      => 0,
+            deployable             => 0,
+            component_categories   => [ ],
+            service_provider_types => [ 'Kanopya', 'Centos6' ],
+        },
+        {
             component_name         => 'KanopyaRulesEngine',
             component_version      => 0,
             deployable             => 0,
@@ -1548,6 +1557,9 @@ sub registerKanopyaMaster {
         },
         {
             name => 'KanopyaAggregator'
+        },
+        {
+            name => 'KanopyaAnomalyDetector'
         },
         {
             name => 'KanopyaRulesEngine'
@@ -2339,7 +2351,7 @@ sub populateDB {
     print "\t- Create default orchestration policy...\n";
     populate_policies(kanopya_master => $kanopya_master);
 
-    print "\t- Populating DB done.\n"; 
+    print "\t- Populating DB done.\n";
 }
 
 1;

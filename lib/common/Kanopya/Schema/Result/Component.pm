@@ -497,6 +497,21 @@ __PACKAGE__->might_have(
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
+=head2 kanopya_anomaly_detector
+
+Type: might_have
+
+Related object: L<Kanopya::Schema::Result::KanopyaAnomalyDetector>
+
+=cut
+
+__PACKAGE__->might_have(
+  "kanopya_anomaly_detector",
+  "Kanopya::Schema::Result::KanopyaAnomalyDetector",
+  { "foreign.kanopya_anomaly_detector_id" => "self.component_id" },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
 =head2 kanopya_executor
 
 Type: might_have
@@ -1118,8 +1133,8 @@ Composing rels: L</workflow_def_managers> -> workflow_def
 __PACKAGE__->many_to_many("workflow_defs", "workflow_def_managers", "workflow_def");
 
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-03-27 16:40:07
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:z0RiHyhZ3u89iuNgudCkmw
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-04-10 17:45:31
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:Wmh5geO6AHIQBi7BoqsZSw
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration

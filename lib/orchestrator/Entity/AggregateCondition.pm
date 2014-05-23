@@ -239,8 +239,7 @@ sub evaluate{
             if (defined $args{memoization}) {
                 $args{memoization}->{$self->id} = 1;
             }
-            $self->setAttr(name => 'last_eval', value => 1);
-            $self->save();
+            $self->last_eval(1);
             return 1;
         }
         else {
@@ -248,16 +247,15 @@ sub evaluate{
             if (defined $args{memoization}) {
                 $args{memoization}->{$self->id} = 0;
             }
-            $self->setAttr(name => 'last_eval', value => 0);
-            $self->save();
+            $self->last_eval(0);
             return 0;
         }
     }
 
     # At lease one of both condition is undefinded
-    $log->warn('No data received from DB for '.($self->left_combination)." or ".($self->right_combination));
-    $self->setAttr(name => 'last_eval', value => undef);
-    $self->save();
+    $log->warn('No data received from DB from entity <'.($self->left_combination->id)
+               .'> or <'.($self->right_combination->id).'>');
+    $self->last_eval(undef);
     return undef;
 }
 

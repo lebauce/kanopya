@@ -19,7 +19,7 @@
 
 =begin classdoc
 
-Kanopya module to create items 
+Kanopya module to create items
 
 @since 13/12/12
 @instance hash
@@ -73,6 +73,7 @@ $merge->specify_behavior( {
     },
 } );
 
+
 =pod
 
 =begin classdoc
@@ -80,8 +81,8 @@ $merge->specify_behavior( {
 Create a cluster
 
 @optional cluster_conf override configuration for cluster
-@optional components components for the cluster 
-@optional managers managers for the cluster 
+@optional components components for the cluster
+@optional managers managers for the cluster
 @optional hosts hosts to be created along the cluster
 
 @warning cluster_basehostname use cluster_name
@@ -147,37 +148,49 @@ sub createCluster {
         cluster_domainname    => 'my.domain',
         cluster_nameserver1   => '208.67.222.222',
         cluster_nameserver2   => '127.0.0.1',
-        cluster_basehostname  => 'default',
         owner_id              => $args{owner_id},
-        default_gateway_id    => ($adminnetconf->poolips)[0]->network->id,
         service_template_id   => $service_template_id,
-        managers              => {
-            host_manager => {
-                manager_id     => $physical_hoster->id,
-                manager_type   => "HostManager",
-                    manager_params => {
-                        cpu => 1,
-                        ram => 2*1024*1024,
-                    },
-                },
-            disk_manager => {
-                manager_id     => $disk_manager->id,
-                manager_type   => "DiskManager",
+
+    };
+
+
+    if (defined $args{no_execution}) {
+        if (defined $args{cluster_conf}) {
+            $cluster_conf = $merge->merge($default_conf, $args{cluster_conf});
+        }
+        else {
+            $cluster_conf = $default_conf;
+        }
+        return Entity::ServiceProvider::Cluster->new(%$cluster_conf);
+    }
+
+    $default_conf->{default_gateway_id} = ($adminnetconf->poolips)[0]->network->id;
+    $default_conf->{components} = {};
+    $default_conf->{interfaces} = {};
+    $default_conf->{managers} = {
+        host_manager => {
+            manager_id     => $physical_hoster->id,
+            manager_type   => "HostManager",
                 manager_params => {
-                    vg_id => 1,
-                    systemimage_size => 4 * 1024 * 1024 * 1024,
+                    cpu => 1,
+                    ram => 2*1024*1024,
                 },
             },
-            export_manager => {
-                manager_id     => $export_manager->id,
-                manager_type   => "ExportManager",
-                manager_params => {
-                    iscsi_portals => \@iscsi_portal_ids,
-                }
+        disk_manager => {
+            manager_id     => $disk_manager->id,
+            manager_type   => "DiskManager",
+            manager_params => {
+                vg_id => 1,
+                systemimage_size => 4 * 1024 * 1024 * 1024,
             },
         },
-        components => {},
-        interfaces => {}
+        export_manager => {
+            manager_id     => $export_manager->id,
+            manager_type   => "ExportManager",
+            manager_params => {
+                iscsi_portals => \@iscsi_portal_ids,
+            }
+        },
     };
 
     if (defined $args{cluster_conf}) {
@@ -209,7 +222,7 @@ sub createCluster {
     if (defined $managers) {
         while (my ($manager,$mgr_conf) = each %$managers) {
             my $tmp = {
-                managers => { 
+                managers => {
                     $manager => {
                         manager_type => General::normalizeName($manager),
                         %$mgr_conf
@@ -314,7 +327,7 @@ sub createVmCluster {
     }
 
     $managers = $merge->merge($managers, $args{managers});
-                        
+
     delete $args{iaas};
     delete $args{container_name};
     delete $args{container_type};
@@ -518,7 +531,7 @@ sub createIaasCluster {
                 mysql5_id          => $db->id,
                 nova_controller_id => $virtualization->id,
             });
-            
+
             $vmm->setConf(conf => {
                 nova_controller_id => $virtualization->id,
                 iaas_id            => $virtualization->id,

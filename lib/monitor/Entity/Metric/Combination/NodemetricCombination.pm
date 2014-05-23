@@ -250,53 +250,6 @@ sub getDependentIndicatorIds{
 
 =begin classdoc
 
-Compute the combination value with the formula from given Indicator values
-
-@return the computed value
-
-=end classdoc
-
-=cut
-
-sub computeValueFromMonitoredValues {
-    my ($self, %args) = @_;
-    General::checkParams(args => \%args, required => [ 'monitored_values_for_one_node' ]);
-    my $monitored_values_for_one_node = $args{monitored_values_for_one_node};
-
-    #Split _rule id from $formula
-    my @array = split(/(id\d+)/,$self->nodemetric_combination_formula);
-
-    #replace each rule id by its evaluation
-    for my $element (@array) {
-        if( $element =~ m/id\d+/)
-        {
-            #Remove "id" from the begining of $element, get the corresponding aggregator and get the lastValueFromDB
-            my $indicator_id  = substr($element,2);
-            my $indicator_oid = Entity::CollectorIndicator->get(id => $indicator_id)->indicator->indicator_oid;
-            # Replace $element by its value
-            $element          = $monitored_values_for_one_node->{$indicator_oid};
-
-            if(not defined $element){
-                return undef;
-            }
-        }
-     }
-
-    my $res = -1;
-    my $arrayString = '$res = '."@array";
-
-    #Evaluate the logic formula
-    eval $arrayString;
-
-    $log->info("NM Combination value = $arrayString");
-    return $res;
-}
-
-
-=pod
-
-=begin classdoc
-
 Evaluate last value of the NodemetricCombination
 
 @return value combination value
@@ -329,10 +282,8 @@ sub evaluate {
 
     }
 
-    my $formula = $self->nodemetric_combination_formula;
-    $formula =~ s/id(\d+)/$values{$1}/g;
-
-    my $value = eval $formula;
+    my $value = $self->SUPER::computeFormula(formula => $self->nodemetric_combination_formula,
+                                             values => \%values);
 
     if (defined $args{memoization}) {
         $args{memoization}->{$self->id}->{$args{node}->id} = $value;
@@ -373,7 +324,7 @@ sub evaluateTimeSerie {
                     filters => ['nodes'],
                     hash    => (defined $args{node_ids}) ? {node_id => $args{node_ids}}
                              : {-not => {monitoring_state => 'disabled'}}
-                 );
+                );
     $args{nodes} = \@nodes;
 
     my @ci_ids = $self->getDependentCollectorIndicatorIds();
@@ -403,7 +354,7 @@ Compute the combination value using a hash of timestamped values for each Collec
 
 =cut
 
-sub _computeFromArrays{
+sub _computeFromArrays {
     my ($self, %args) = @_;
     my @requiredArgs = $self->getDependentCollectorIndicatorIds();
 
@@ -429,63 +380,14 @@ sub _computeFromArrays{
                 $valuesForATimeStamp{$ci_id} = $args{$ci_id}->{$node_id} ? $args{$ci_id}->{$node_id}{$timestamp}
                                                                          : undef;
             }
-            $rep{$node_id}{$timestamp} = $self->compute(%valuesForATimeStamp);
+            $rep{$node_id}{$timestamp} = $self->SUPER::computeFormula(
+                                            formula => $self->nodemetric_combination_formula,
+                                            values => \%valuesForATimeStamp
+                                         );
         }
     }
 
     return \%rep;
-}
-
-=pod
-
-=begin classdoc
-
-Compute the combination value using a hash value for each CollectorIndicator.
-
-@param dynamic A value for each CollectorIndicator of the formula.
-
-@return the computed value
-
-=end classdoc
-
-=cut
-
-sub compute {
-    my ($self, %args) = @_;
-
-    my @requiredArgs = $self->getDependentCollectorIndicatorIds();
-
-    Entity::Metric::Combination::checkMissingParams(
-        args => \%args,
-        required => \@requiredArgs
-    );
-
-    foreach my $ci_id (@requiredArgs) {
-        if (! defined $args{$ci_id}) {
-            return undef;
-        }
-    }
-
-    my $formula = $self->nodemetric_combination_formula;
-    #Split aggregate_rule id from $formula
-    my @array = split(/(id\d+)/,$formula);
-    #replace each rule id by its evaluation
-    for my $element (@array) {
-        if ($element =~ m/id\d+/) {
-            $element = $args{substr($element,2)};
-            if (!defined $element) {
-                return undef;
-            }
-        }
-     }
-
-    my $res = undef;
-    my $arrayString = '$res = '."@array";
-
-    #Evaluate the logic formula
-    eval $arrayString;
-
-    return $res;
 }
 
 =pod
@@ -546,7 +448,7 @@ sub updateFormulaString {
     $self->setAttr(name => 'nodemetric_combination_formula_string', value => $self->toString());
     $self->save();
     my @conditions = $self->getDependentConditions;
-    map { $_->updateFormulaString } @conditions;
+    return map { $_->updateFormulaString } @conditions;
 }
 
 =pod
@@ -564,7 +466,7 @@ updated instance.
 
 sub update {
     my ($self, %args) = @_;
-    my $rep = $self->SUPER::update (%args);
+    my $rep = $self->SUPER::update(%args);
     $self->updateFormulaString;
     $self->updateUnit;
     return $rep;
