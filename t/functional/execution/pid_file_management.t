@@ -11,6 +11,7 @@ Start/stop Kanopya daemons and make sure the PID files are correctly handled
 use strict;
 use warnings;
 
+use File::Slurp;
 use IO::File;
 use IPC::Cmd;
 use Test::More tests => 8;
@@ -28,16 +29,10 @@ sub _executor_pids() {
     return split /\s/, `pidof -x kanopya-executor`;
 }
 
-sub _read_file($) {
-    my ($file) = @_;
-    # http://www.perl.com/pub/2003/11/21/slurp.html
-    return do { local( @ARGV, $/ ) = $file ; <> } ;
-}
-
 sub _pidfile_contains_valid_pid {
     my ($pid_in_file) = @_;
     unless (defined $pid_in_file) {
-        $pid_in_file = _read_file($pidfile);
+        $pid_in_file = read_file($pidfile);
     }
     if (!defined($pid_in_file)) {
         note("pid_in_file is undef !");
@@ -67,10 +62,10 @@ sub prepare {
 }
 
 sub test_normal_operation {
-    system("service kanopya-executor start");
+    system("service kanopya-executor start --force");
     ok(-e $pidfile, 'PID file created');
     
-    my $old_pid = _read_file($pidfile);
+    my $old_pid = read_file($pidfile);
     ok(_pidfile_contains_valid_pid($old_pid), 'PID file contains the right value');
     
     system("service kanopya-executor stop");
@@ -78,7 +73,6 @@ sub test_normal_operation {
     is(scalar(_executor_pids()), 0, 'Kanopya Executor is not running');
     
     return $old_pid;
-    # TODO: write old value into the PID file, see how it reacts
 }
 
 sub test_with_old_pid($) {
@@ -89,7 +83,7 @@ sub test_with_old_pid($) {
     $pid_fh->print($old_pid);
     $pid_fh->close();
     
-    system("service kanopya-executor start");
+    system("service kanopya-executor start --force");
     ok(_pidfile_contains_valid_pid(), 'PID file contains the right value even after manipulation.');
     
     system("service kanopya-executor stop");

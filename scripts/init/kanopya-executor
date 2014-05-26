@@ -90,6 +90,8 @@ status() {
 
 case "$1" in
     start)
+        # an additional parameter might be useful to circumvent the "mock"
+        ADDITIONAL_PARAM="$2"
         start
     ;;
     stop)
