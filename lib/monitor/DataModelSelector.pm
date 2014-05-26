@@ -254,14 +254,25 @@ sub selectDataModel {
         if ($data_model_classes[$i] !~ m/^$base_name/) {
             $data_model_classes[$i] = BASE_NAME . $data_model_classes[$i];
         }
+        General::requireClass($data_model_classes[$i]);
     }
 
     # Compute the possible seasonality values
-    my @freqs = @{Utils::TimeSerieAnalysis->findSeasonality(data => $args{data})};
-    if (scalar(@freqs) == 0) {
+    # No need to compute seasonalities if no datamodel use seasonality
+
+    my @seasonal_models = grep {$_->isSeasonal()} @data_model_classes;
+
+    my @freqs;
+    if (@seasonal_models) {
+        @freqs = @{Utils::TimeSerieAnalysis->findSeasonality(data => $args{data})};
+        if (scalar(@freqs) == 0) {
+            @freqs = (1);
+        }
+        $log->debug("selectDataModel - possible frequencies computed : @freqs .");
+    }
+    else {
         @freqs = (1);
     }
-    $log->debug("selectDataModel - possible frequencies computed : @freqs .");
 
     # Models with the best freq found {class_name => $freq}
     my %freq_hash;
@@ -272,7 +283,6 @@ sub selectDataModel {
     my $error;
 
     for my $data_model_class (@data_model_classes) {
-        General::requireClass($data_model_class);
 
         # If the model is a seasonal one, try each possible seasonality value and only retain the best one
         if ($data_model_class->isSeasonal()) {
