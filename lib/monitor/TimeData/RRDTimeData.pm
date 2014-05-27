@@ -273,8 +273,6 @@ sub fetchTimeDataStore {
     my $start;
     my $offset = 24*60*60; # one day in sec
 
-    # my $end   = $args{'end'}   || time();
-    # my $start = $args{'start'} || $end - 24*60*60;
 
     if (defined $args{start} and ! defined $args{end}) {
         $start = $args{start};
@@ -312,44 +310,52 @@ sub fetchTimeDataStore {
     #replace the ',' by '.'
     $exec =~ s/,/./g;
     #we split the string into an array
-    my @values = split(' ', $exec);
+    my @exec_values = split(' ', $exec);
 
     #The first entry is the DS' name. We remove it from the list.
-    shift (@values);
+    shift (@exec_values);
 
-    if (scalar(@values) == 0) {
+    if (scalar(@exec_values) == 0) {
         throw  Kanopya::Exception::Internal(error => 'no values could be retrieved from RRD');
     }
 
-    #We convert the list into the final hash that is returned to the caller.
-    my %values = @values;
+    my @values     = ();
+    my @timestamps = ();
 
-    #we replace the '-1.#IND000000e+000' values for "undef"
-    while (my ($timestamp, $value) = each %values) {
-        if (($value eq '-1.#IND000000e+000') or ($value eq '-nan')){
-            $values{$timestamp} = undef;
-        }
-    }
+    my $timestamp;
+    my $value;
 
-    # Remove out of range values
-    my @timestamps = (keys %values);
-    for my $timestamp (@timestamps) {
+    VALUE:
+    for my $i (0..@exec_values / 2 - 1) {
+        $timestamp = $exec_values[2 * $i];
+        $value     = $exec_values[2 * $i + 1];
+
+        # Remove out of range values
         if ($timestamp < $start || $timestamp > $end) {
-            delete $values{$timestamp};
+            next VALUE;
         }
+
+        if (($value eq '-1.#IND000000e+000') or ($value eq '-nan')) {
+            $value = undef;
+        }
+
+        push @timestamps, $timestamp;
+        push @values, $value;
     }
 
-    # TODO compute this erlier and improve complexity avoiding sort...
     if (defined $args{output} && $args{output} eq 'arrays') {
-        my @timestamps = sort keys %values;
-        my @values = map {$values{$_}} @timestamps;
         return {
             timestamps => \@timestamps,
             values     => \@values,
         }
     }
 
-    return \%values;
+    my %hvalues;
+    while (@timestamps) {
+        $hvalues{pop @timestamps} = pop @values;
+    }
+
+    return \%hvalues;
 }
 
 
