@@ -78,7 +78,9 @@ Requires: perl-XML-LibXML
 Requires: perl-Net-SMTP-SSL
 Requires: perl-LDAP
 Requires: perl-Set-IntervalTree
-Requires: perl-File-Pid
+# Requires: perl-File-Pid
+# We now use Unix::PID::Tiny from CPAN. It is not packaged for RHEL.
+Requires: perl-IPC-Cmd
 Requires: perl-YAML
 Requires: redhat-lsb-core
 Requires: uuid
