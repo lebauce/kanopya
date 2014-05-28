@@ -447,18 +447,25 @@ sub isDaemonRunning {
     my @found_services = @{ $class->runningDaemons() };
     my @all_services   = @{ $class->daemonsToRun() };
 
-    if ($args{name} eq 'any') {
-        return (@found_services > 0 ? 1 : 0);
+    my $running = 0;
+    if ($args{name0} eq 'any') {
+        if (@found_services > 0) {
+            $running = 1;
+        }
     }
     elsif ($args{name} eq 'all') {
-        return (scalar(@found_services) == scalar(@all_services) ? 1 : 0);
+        if (scalar(@found_services) == scalar(@all_services)) {
+            $running = 1;
+        }
     }
     else {
         foreach my $found_service (@found_services) {
-            return 1 if $found_service eq $args{name};
+            if ($found_service eq $args{name}) {
+                $running = 1;
+            }
         }
-        return 0;
     }
+    return $running;
 }
 
 1;

@@ -40,7 +40,7 @@ sub methods {
 
 @constructor
 
-@param name String The name of this migration.
+@param name (String) The name of this migration.
 
 =end classdoc
 =cut

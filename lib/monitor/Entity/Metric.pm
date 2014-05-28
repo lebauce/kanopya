@@ -12,17 +12,6 @@
 #    You should have received a copy of the GNU Affero General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
-package Entity::Metric;
-use base Entity;
-use Entity::Metric::Anomaly;
-use ParamPreset;
-use TimeData;
-use TryCatch;
-
-use Log::Log4perl "get_logger";
-my $log = get_logger("");
-
 =pod
 =begin classdoc
 
@@ -36,6 +25,16 @@ Metric are TimeSeries entities. They can be stored in database (RRD) and/or be e
 
 =end classdoc
 =cut
+
+package Entity::Metric;
+use base Entity;
+use Entity::Metric::Anomaly;
+use ParamPreset;
+use TimeData;
+use TryCatch;
+
+use Log::Log4perl "get_logger";
+my $log = get_logger("");
 
 sub new {
     my ($class, %args) = @_;

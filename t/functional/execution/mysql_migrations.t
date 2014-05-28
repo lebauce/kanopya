@@ -14,6 +14,7 @@ use warnings;
 
 use DatabaseMigration::Transient;
 use File::Glob;
+use IO::Dir;
 use IO::File;
 use IPC::Cmd;
 use Kanopya::Config;
@@ -21,10 +22,9 @@ use Kanopya::Database;
 use Test::More tests => 7;
 
 my $migration_basedir = DatabaseMigration::Transient->migrationsDirectory;
-mkdir $migration_basedir; # it might be empty and therefore impossible to put under Git version control
 my $migration_base = "201405111624_migrationtest";
 
-system("perl ".Kanopya::Config->getKanopyaDir."/tools/kanopya_services.pl stop");
+prepare();
 
 ###############################################################################
 
@@ -154,6 +154,7 @@ unlike( $output,
     "After a failed first migration, the second one must not run" );
 
 cleanup();
+cleanup_final();
 
 # end of main script, subroutines follow
 
@@ -176,6 +177,23 @@ sub runOutput {
     return $output;
 }
 
+sub prepare {
+    # Prepare a clean migration directory
+    if (-d $migration_basedir) {
+        # disable existing migrations by renaming them
+        foreach my $suffix ('pl', 'sql') {
+            foreach my $file_to_rename (File::Glob::bsd_glob("${migration_basedir}/*.${suffix}")) {
+                rename $file_to_rename, "${file_to_rename}.migrationtest-disabled";
+            }
+        }
+    } else {
+        mkdir $migration_basedir; # empty directories do not make it into Git
+    }
+
+    system("perl ".Kanopya::Config->getKanopyaDir."/tools/kanopya_services.pl stop");
+}
+
+# Cleanup that can be called several times
 sub cleanup {
     foreach my $file_to_remove (File::Glob::bsd_glob("${migration_basedir}/${migration_base}*")) {
         unlink $file_to_remove;
@@ -183,4 +201,22 @@ sub cleanup {
     my $dbh = Kanopya::Database::dbh;
     my $cmd = "DELETE FROM database_migration WHERE name LIKE '${migration_base}%'"; 
     $dbh->do($cmd);
+}
+
+# Only call this once, at the very end.
+sub cleanup_final {
+    my %renamings;
+    my $dir = IO::Dir->new($migration_basedir);
+    my $file;
+    while (defined($file = $dir->read)) {
+        if ($file =~ /^(.*)\.migrationtest-disabled$/) {
+            $renamings{$file} = $1;
+        }
+    }
+    $dir->close();
+    
+    my $orig_file;
+    while (($file, $orig_file) = each %renamings) {
+        rename "${migration_basedir}/${file}", "${migration_basedir}/${orig_file}";
+    }    
 }

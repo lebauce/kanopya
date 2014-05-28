@@ -37,7 +37,7 @@ use TryCatch;
 
 @constructor
 
-@param name String The name of this migration.
+@param name (String) The name of this migration.
 
 =end classdoc
 =cut
@@ -55,7 +55,7 @@ sub new {
 =pod
 =begin classdoc
 
-@return String The name of this migration.
+@return (String) The name of this migration.
 
 =end classdoc
 =cut
@@ -70,9 +70,9 @@ sub name () {
 
 Get or set the full path to the SQL script to run in this migration.
 
-@param sql_script String If given, set the full path to the SQL script.
+@param sql_script (String) If given, set the full path to the SQL script.
 
-@return String If no parameter was given, return the full path to the SQL script.
+@return (String) If no parameter was given, return the full path to the SQL script.
 
 =end classdoc
 =cut
@@ -91,9 +91,9 @@ sub sql_script ($) {
 
 Get or set the full path to the Perl script to run in this migration.
 
-@param sql_script String If given, set the full path to the Perl script.
+@param sql_script (String) If given, set the full path to the Perl script.
 
-@return String If no parameter was given, return the full path to the Perl script.
+@return (String) If no parameter was given, return the full path to the Perl script.
 
 =end classdoc
 =cut
@@ -197,9 +197,9 @@ Reformat SQL lines into statements. Just looks for combinations of
 semicolons and linebreaks. You'd need a proper SQL parser to do this
 better (e.g. recognise multiple SQL statements in one single line).
 
-@param listref Listref A list of SQL script lines
+@param script_lines (Arrayref) A list of SQL script lines
 
-@return Listref A list of SQL statements
+@return (Arrayref) A list of SQL statements
 
 =end classdoc
 =cut
@@ -216,7 +216,7 @@ Private helper function.
 Execute the given bunch of SQL statements.
 Throws an exception for a runtime error.
 
-@param listref Listref A list of SQL statments
+@param sql_statements (Arrayref) A list of SQL statments
 
 =end classdoc
 =cut
@@ -277,7 +277,7 @@ sub runPerl {
 
 Class or object method.
 
-@return String The full path to the migration directory
+@return (String) The full path to the migration directory
 
 =end classdoc
 =cut
@@ -293,7 +293,7 @@ sub migrationsDirectory {
 Class method. Scan the migrations directory for all migrations,
 filter out those that have been run, and sort and return the rest.
 
-@return Listref A listref of DatabaseMigration::Transient objects to run.
+@return (Arrayref) A list of DatabaseMigration::Transient objects to run.
 
 =end classdoc
 =cut
