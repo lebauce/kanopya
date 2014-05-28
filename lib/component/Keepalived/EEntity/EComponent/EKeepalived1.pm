@@ -19,4 +19,14 @@ use base 'EEntity::EComponent';
 use strict;
 use warnings;
 
+sub addNode {
+    my ($self, %args) = @_;
+
+    General::checkParams(args => \%args, required => [ 'host', 'mount_point' ]);
+
+    my $cmd = "echo 'net.ipv4.ip_nonlocal_bind=1' >> $args{mount_point}/etc/sysctl.conf";
+
+    $self->_host->getEContext->execute(command => $cmd);
+}
+
 1;
