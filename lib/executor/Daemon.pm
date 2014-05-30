@@ -38,6 +38,7 @@ use Kanopya::Config;
 
 use Manager::DaemonManager;
 
+use IPC::Cmd;
 use POSIX qw(setsid);
 use Unix::PID::Tiny;
 
@@ -369,6 +370,91 @@ sub _component {
     }
 
     return $self->{component};
+}
+
+=pod
+=begin classdoc
+
+Class method.
+
+@return Listref A list of all HCM services that should normally be running
+
+=end classdoc
+=cut
+
+sub daemonsToRun {
+    return [ map ("kanopya-$_",
+        qw(aggregator collector front executor mail-notifier openstack-sync rulesengine state-manager))
+    ];
+}
+
+=pod
+=begin classdoc
+
+Class method.
+
+@return Listref A list of HCM services that are currently running.
+
+=end classdoc
+=cut
+
+sub runningDaemons {
+    my ($class)= @_;
+    
+    my @all_services = @{ $class->daemonsToRun() };
+    my $ps_auxww; 
+    IPC::Cmd::run(command => "ps auxww", buffer  => \$ps_auxww);
+    
+    my @found_services = ();
+    foreach my $service (@all_services) {
+        my $search = quotemeta($service);
+        if ($ps_auxww =~ /$search /) {
+            push @found_services, $service;
+        }
+    }
+    return \@found_services;
+}
+
+=pod
+=begin classdoc
+
+Class method.
+
+@param name String Checks whether the given HCM service is running.
+"HCM service" is any string returned by daemonsToRun().
+The parameter can be a particular HCM service, "any" or "all".
+
+@return Integer Boolean value: 1 or 0.
+
+=end classdoc
+=cut
+
+sub isDaemonRunning {
+    my ($class, %args)= @_;
+    General::checkParams(args => \%args, required => [ 'name' ]);
+    
+    my @found_services = @{ $class->runningDaemons() };
+    my @all_services   = @{ $class->daemonsToRun() };
+
+    my $running = 0;
+    if ($args{name0} eq 'any') {
+        if (@found_services > 0) {
+            $running = 1;
+        }
+    }
+    elsif ($args{name} eq 'all') {
+        if (scalar(@found_services) == scalar(@all_services)) {
+            $running = 1;
+        }
+    }
+    else {
+        foreach my $found_service (@found_services) {
+            if ($found_service eq $args{name}) {
+                $running = 1;
+            }
+        }
+    }
+    return $running;
 }
 
 1;

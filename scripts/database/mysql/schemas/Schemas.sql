@@ -1788,5 +1788,15 @@ CREATE TABLE `entity_tag` (
   FOREIGN KEY (`tag_id`) REFERENCES `tag` (`tag_id`) ON DELETE NO ACTION ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--
+-- Table structure for table `database_migration`
+--
+CREATE TABLE `database_migration` (
+  -- `database_migration_id` int(8) unsigned NOT NULL,
+  `name`                  varchar(255) NOT NULL,
+  PRIMARY KEY (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
 SET foreign_key_checks=1;
 

@@ -42,15 +42,15 @@ use Log::Log4perl qw(:easy);
 my $log = get_logger("");
 
 use Kanopya::Exceptions;
-use General;
+use Daemon;
 use Executor;
+use General;
 
 my @args = ();
 
 BEGIN {
     # Test will fail if any executor is running
-    my $executor_exist = `ps aux | grep kanopya-executor | grep -cv grep`;
-    if ($executor_exist != 0) {
+    if (Daemon->isDaemonRunning(name => 'kanopya-executor')) {
         throw Kanopya::Exception::Internal(error => 'An executor is already running');
     }
 }
