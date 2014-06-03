@@ -1305,6 +1305,20 @@ CREATE TABLE `collect` (
   FOREIGN KEY (`service_provider_id`) REFERENCES `service_provider` (`service_provider_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
+--
+-- Table structure for table `metric`
+--
+
+CREATE TABLE `metric` (
+  `metric_id` int(8) unsigned NOT NULL,
+  `param_preset_id` int(8) unsigned DEFAULT NULL,
+  PRIMARY KEY (`metric_id`),
+  FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE SET NULL ON UPDATE NO ACTION,
+  FOREIGN KEY (`metric_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+
 --
 -- Table structure for table `clustermetric`
 --
@@ -1324,17 +1338,22 @@ CREATE TABLE `clustermetric` (
   FOREIGN KEY (`clustermetric_id`) REFERENCES `metric` (`metric_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+
 --
--- Table structure for table `metric`
+-- Table structure for table `nodemetric`
 --
 
-CREATE TABLE `metric` (
-  `metric_id` int(8) unsigned NOT NULL,
-  `param_preset_id` int(8) unsigned DEFAULT NULL,
-  PRIMARY KEY (`metric_id`),
-  FOREIGN KEY (`param_preset_id`) REFERENCES `param_preset` (`param_preset_id`) ON DELETE SET NULL ON UPDATE NO ACTION,
-  FOREIGN KEY (`metric_id`) REFERENCES `entity` (`entity_id`) ON DELETE CASCADE ON UPDATE NO ACTION
+CREATE TABLE `nodemetric` (
+  `nodemetric_id` int(8) unsigned NOT NULL,
+  `nodemetric_label` char(255),
+  `nodemetric_node_id` int(8) unsigned NOT NULL,
+  `nodemetric_indicator_id` int(8) unsigned NOT NULL,
+  PRIMARY KEY (`nodemetric_id`),
+  FOREIGN KEY (`nodemetric_indicator_id`) REFERENCES `collector_indicator` (`collector_indicator_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`nodemetric_node_id`) REFERENCES `node` (`node_id`) ON DELETE CASCADE ON UPDATE NO ACTION,
+  FOREIGN KEY (`nodemetric_id`) REFERENCES `metric` (`metric_id`) ON DELETE CASCADE ON UPDATE NO ACTION
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 
 --
 -- Table structure for table `anomaly`

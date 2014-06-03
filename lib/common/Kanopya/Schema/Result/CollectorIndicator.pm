@@ -162,9 +162,26 @@ __PACKAGE__->belongs_to(
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "NO ACTION" },
 );
 
+=head2 nodemetrics
 
-# Created by DBIx::Class::Schema::Loader v0.07033 @ 2013-11-20 15:15:44
-# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:K3hMcIP4Vy+ojbCUXbbivw
+Type: has_many
+
+Related object: L<Kanopya::Schema::Result::Nodemetric>
+
+=cut
+
+__PACKAGE__->has_many(
+  "nodemetrics",
+  "Kanopya::Schema::Result::Nodemetric",
+  {
+    "foreign.nodemetric_indicator_id" => "self.collector_indicator_id",
+  },
+  { cascade_copy => 0, cascade_delete => 0 },
+);
+
+
+# Created by DBIx::Class::Schema::Loader v0.07033 @ 2014-05-30 11:56:36
+# DO NOT MODIFY THIS OR ANYTHING ABOVE! md5sum:LPBsFmXWIrD8ip5q76vndQ
 
 
 # You can replace this text with custom code or comments, and it will be preserved on regeneration
