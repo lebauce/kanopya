@@ -59,18 +59,14 @@ eval{
     );
 
     # Create node 1
-    $node_1 = Node->new(
-        node_hostname => 'node_1',
-        service_provider_id   => $service_provider->id,
-        monitoring_state    => 'up',
-    );
+    $node_1 = $service_provider->registerNode(hostname         => 'node_1',
+                                              monitoring_state => 'up',
+                                              number           => 1);
 
     # Create node 2
-    $node_2 = Node->new(
-        node_hostname => 'node_2',
-        service_provider_id   => $service_provider->id,
-        monitoring_state    => 'up',
-    );
+    $node_2 = $service_provider->registerNode(hostname         => 'node_2',
+                                              monitoring_state => 'up',
+                                              number           => 1);
 
     # Get indicators
     $indic1 = Entity::CollectorIndicator->find (
@@ -407,11 +403,9 @@ sub testBigAggregation {
 
         # Create nodes
         for my $i (1..$nodes_count) {
-            Node->new(
-                node_hostname => 'node_' . $i,
-                service_provider_id   => $service_provider->id,
-                monitoring_state    => 'up',
-            );
+            $service_provider->registerNode(hostname         => 'node_' . $i,
+                                            monitoring_state => 'up',
+                                            number           => $i);
         }
 
         my $cm = Entity::Metric::Clustermetric->new(
@@ -464,11 +458,9 @@ sub testStatisticFunctions {
 
         # Create nodes
         for my $i (0..9) {
-            Node->new(
-                node_hostname => 'node_' . $i,
-                service_provider_id   => $service_provider->id,
-                monitoring_state    => 'up',
-            );
+            $service_provider->registerNode(hostname         => 'node_' . $i,
+                                            monitoring_state => 'up',
+                                            number           => $i);
         }
 
         my $mock_conf  = "{'default':{'const':null},"
