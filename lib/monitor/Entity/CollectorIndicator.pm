@@ -84,27 +84,24 @@ sub lastValue {
         return \%id_values;
     }
 
-    my @node_hostnames = map {$_->node_hostname} @missing_nodes;
-    my $service_provider = $missing_nodes[0]->service_provider;
+    my @node_hostnames = map { $_->node_hostname } @missing_nodes;
 
-    my $data = DataCache::nodeMetricLastValue(
-                   collector_indicator => $self,
-                   node_names          => \@node_hostnames,
-                   service_provider    => $service_provider
-               );
-
+    # Get all node metric related to nodes
+    my @nodemetrics = Entity::Metric::Nodemetric->search(
+                          hash => { 'nodemetric_node.node_hostname' => \@node_hostnames }
+                      );
 
     my %hostname_values;
-
-    for my $node (@missing_nodes) {
-       $id_values{$node->id} = $data->{$node->node_hostname};
-       $hostname_values{$node->node_hostname} = $data->{$node->node_hostname};
+    for my $nodemetric (@nodemetrics) {
+       my $node = $nodemetric->nodemetric_node;
+       $hostname_values{$node->node_hostname} = $id_values{$node->id} = $nodemetric->lastValue;
        if (defined $args{memoization}) {
            $args{memoization}->{$self->id}->{$node->id} = $id_values{$node->id};
        }
     }
 
-    $self->throwUndefAlert(hostname_values => \%hostname_values, service_provider => $service_provider);
+    $self->throwUndefAlert(hostname_values  => \%hostname_values,
+                           service_provider => $missing_nodes[0]->service_provider);
 
     return \%id_values;
 }
@@ -125,20 +122,19 @@ Return values between start_time and stop_time for several nodes
 
 sub fetch {
     my ($self, %args) = @_;
+
     General::checkParams(args => \%args, required => ['nodes', 'start_time', 'end_time']);
 
+    # Get all node metric related to nodes
     my @node_hostnames = map {$_->node_hostname} @{$args{nodes}};
+    my @nodemetrics = Entity::Metric::Nodemetric->search(
+                          hash => { 'nodemetric_node.node_hostname' => \@node_hostnames }
+                      );
 
-    my $data = DataCache->nodeMetricFetch(
-                   indicator    => $self->indicator,
-                   node_names   => \@node_hostnames,
-                   start_time   => $args{start_time},
-                   end_time     => $args{end_time},
-               );
-
-     my %id_values;
-     for my $node (@{$args{nodes}}) {
-       $id_values{$node->id} = $data->{$node->node_hostname};
+    my %id_values;
+    for my $nodemetric (@nodemetrics) {
+        $id_values{$nodemetric->nodemetric_node->id} = $nodemetric->fetch(start_time => $args{start_time},
+                                                                          stop_time  => $args{end_time});
     }
 
     return \%id_values;

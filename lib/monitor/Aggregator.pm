@@ -36,8 +36,6 @@ Then Aggregator will:
 2. store values for each indicator for each nodes
 3. compute and store ClusterMetric
 
-Aggregator uses DataCache to (possibly) store data at node level.
-
 @see <package>Entity::Metric::Combination::NodemetricCombination</package>
 @see <package>Entity::Metric::Clustermetric</package>
 @see <package>Manager::CollectorManager</package>
@@ -63,7 +61,6 @@ use Entity::Metric::Nodemetric;
 use Kanopya::Config;
 use Message;
 use Alert;
-use DataCache;
 
 use Log::Log4perl "get_logger";
 my $log = get_logger("");
