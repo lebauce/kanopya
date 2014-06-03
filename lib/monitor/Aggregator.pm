@@ -58,6 +58,7 @@ use Entity::ServiceProvider;
 use Entity::Indicator;
 use Entity::Metric::Combination::NodemetricCombination;
 use Entity::Metric::Clustermetric;
+use Entity::Metric::Nodemetric;
 
 use Kanopya::Config;
 use Message;
@@ -280,13 +281,36 @@ sub update {
 
                 # Nodes metrics values cache
                 $start = time();
-                DataCache::storeNodeMetricsValues(
-                    indicators       => $wanted_indicators->{indicators},
-                    values           => $monitored_values,
-                    timestamp        => $timestamp,
-                    time_step        => $self->{config}->{time_step},
-                    storage_duration => $self->{config}->{storage_duration}
-                );
+                my @node_hostnames = keys %{ $monitored_values };
+                my @nodemetrics = Entity::Metric::Nodemetric->search(
+                                      hash => { 'nodemetric_node.node_hostname' => \@node_hostnames }
+                                  );
+
+                for my $nodemetric (@nodemetrics) {
+                    eval {
+                        my $hostname = $nodemetric->nodemetric_node->node_hostname;
+                        my $indicator_oid = $nodemetric->nodemetric_indicator->indicator->indicator_oid;
+
+                        my $value = $monitored_values->{$hostname}->{$indicator_oid};
+                        if (! defined $value) {
+                            throw Kanopya::Exception::Internal::Inconsistency(
+                                      error => "No monitoring data found for node \"$hostname\" " .
+                                               "and indicator \"$indicator_oid\""
+                                  );
+                        }
+
+                        $nodemetric->updateData(
+                            time             => $timestamp,
+                            value            => $value,
+                            time_step        => $self->{config}->{time_step},
+                            storage_duration => $self->{config}->{storage_duration}
+                        );
+                    };
+                    if ($@) {
+                        $log->warn($@);
+                    }
+                }
+
                 $timeinfo .= "Nodes data storage: ".(time() - $start).", ";
 
                 # Parse retriever return, compute clustermetric values and store in DB
