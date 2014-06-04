@@ -21,7 +21,7 @@ use parent 'BaseDB';
 
 use constant ATTR_DEF => {
     name => {
-        pattern      => '^.+$',
+        pattern      => '^.+$', # checked further in DatabaseMigration::Transient
         is_mandatory => 1,
         is_extended  => 0
     }

@@ -19,13 +19,14 @@ use IO::File;
 use IPC::Cmd;
 use Kanopya::Config;
 use Kanopya::Database;
-use Test::More tests => 7;
+use Test::More tests => 8;
 
 my $migration_basedir = DatabaseMigration::Transient->migrationsDirectory;
 my $migration_base = "201405111624_migrationtest";
 
 prepare();
 
+my $output;
 ###############################################################################
 
 writeMigration('01.sql', <<"MIGRATION_TEST_1" );
@@ -144,7 +145,7 @@ writeMigration('02.sql', <<"MIGRATION_TEST_6C" );
 NONSENSE
 MIGRATION_TEST_6C
 
-my $output = runOutput();
+$output = runOutput();
 
 like( $output, qr/Cleanup migration .+_migrationtest01 run/,
     "After failed Perl part of first migration, bring it down");
@@ -152,6 +153,12 @@ like( $output, qr/Cleanup migration .+_migrationtest01 run/,
 unlike( $output,
     qr/Running migration: .+_migrationtest02/,
     "After a failed first migration, the second one must not run" );
+    
+##############################################################################
+
+like (runOutput("--mark_as_applied_until 202001010000"),
+    qr/2 migrations marked as applied/,
+    "Mark as applied two migrations");
 
 cleanup();
 cleanup_final();
@@ -169,9 +176,11 @@ sub writeMigration {
 }
 
 sub runOutput {
+    my ($options) = @_;
+    $options = '' unless defined $options;
     my $output;
     IPC::Cmd::run(
-        command => "/usr/bin/perl ${migration_basedir}/../sbin/update.pl",
+        command => "/usr/bin/perl ${migration_basedir}/../sbin/update.pl $options",
         buffer  => \$output
     );
     return $output;

@@ -9,6 +9,9 @@ A model for a database migration. Allows to run SQL and Perl migration files.
 Instances of this class are NOT stored in the database. Instead, for each successful
 migration, the method runAll() will persist one new instance of "DatabaseMigration".
 
+The "12-number time string" used in several methods is of the form
+"[year][month][day][hour][minute]".
+
 Copyright © 2014 Hedera Technology SAS
 
 @see <a href="http://www.kanopya.org/projects/mcs/wiki/Database_Migrations">Wiki:
@@ -37,7 +40,8 @@ use TryCatch;
 
 @constructor
 
-@param name (String) The name of this migration.
+@param name (String) The name of this migration. Must start with a 12-number time string
+and an underscore.
 
 =end classdoc
 =cut
@@ -46,6 +50,12 @@ sub new {
     my ($class, %args) = @_;
     General::checkParams(args     => \%args,
                          required => [ 'name' ]);
+    
+    if ($args{name} !~ /^\d{12}_/) {
+        throw Kanopya::Exception(
+            error => "A migration name \"$args{name}\" must start with a time (12 numbers) and an underscore"
+        );
+    }
                          
     my $self = { name => $args{name} };
     bless $self, $class;
@@ -63,6 +73,34 @@ sub new {
 sub name () {
     my ($self) = @_;
     return $self->{name};
+}
+
+=pod
+=begin classdoc
+
+Save this migration into the database by
+instantiating a DatabaseMigration.
+
+=end classdoc
+=cut
+
+sub save () {
+    my ($self) = @_;
+    DatabaseMigration->new(name => $self->{name});
+}
+
+=pod
+=begin classdoc
+
+@return (String) The numeric part of this migration, as a 12-number string.
+
+=end classdoc
+=cut
+
+sub time () {
+    my ($self) = @_;
+    $self->{name} =~ /^\d{12}/; # cannot fail due to constructor checking
+    return $&;
 }
 
 =pod
@@ -360,7 +398,7 @@ sub runAll {
             Kanopya::Database::beginTransaction();
             print "Running migration: ".$migration->name()."\n";
             $migration->run();
-            DatabaseMigration->new(name => $migration->name());
+            $migration->save();
             Kanopya::Database::commitTransaction();
             print "Migration ".$migration->name()." run successfully.\n";
         } catch ($err) {
@@ -383,6 +421,33 @@ sub runAll {
         }
     }
     Kanopya::Database::global_user_check(value => 1);
+}
+
+=pod
+=begin classdoc
+
+Class method.
+Marks all found migrations smaller or equal to the given date as "applied"
+in the database, without executing them. This is useful for new installations
+whose database already contains some migrations.
+
+@param time (String) A 12-number time string (see class documentation).
+
+@return (int) The number of migrations that have just been marked as "applied".
+
+=end classdoc
+=cut
+sub markAsAppliedUntil ($) {
+    my ($class, $time) = @_;
+    my $i = 0;
+    my @migrations = @{$class->sortedPending()};
+    foreach my $migration (@migrations) {
+        if ($migration->time() le $time) {
+            $migration->save();
+            $i++;            
+        }
+    }
+    return $i;
 }
 
 1;
